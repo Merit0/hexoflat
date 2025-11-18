@@ -1,0 +1,197 @@
+.hex-tile.sea,
+.hex-tile.deep-sea {
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.hex-tile.no-terrain {
+    background: red;
+    box-shadow: inset 0 0 20px rgba(20, 40, 20, 0.4);
+}
+
+.hex-tile.field {
+    background: radial-gradient(
+            circle,
+            #fff361 40%,
+            #d1c843 70%,
+            #a89e27 100%
+    );
+    box-shadow: inset 0 0 20px rgba(20, 40, 20, 0.4);
+}
+
+.hex-tile-img-field {
+    width: 70%;
+    height: 80%;
+    position: absolute;
+}
+
+.hex-tile.camp {
+    background: radial-gradient(
+            circle,
+            rgba(207, 222, 253, 0.83) 30%,
+            #7089b8 70%,
+            #000c5a 100%
+    );
+    box-shadow: inset 0 0 20px rgba(30, 20, 10, 0.5);
+}
+
+.hex-tile-img-camp {
+    width: 96%;
+    height: 100%;
+    position: absolute;
+    z-index: 2;
+}
+
+.hex-tile.forest {
+    background: radial-gradient(
+            circle,
+            #b0d582 35%,
+            #7bb661 70%,
+            #4f8038 100%
+    );
+    box-shadow: inset 0 0 20px rgba(30, 60, 30, 0.4);
+}
+
+.hex-tile-img-forest {
+    width: 90%;
+    height: 100%;
+    position: absolute;
+    top: 4%;
+}
+
+.hex-tile.deep-forest {
+    background: radial-gradient(
+            circle,
+            #85aa5e 30%,
+            #598342 70%,
+            #324e25 100%
+    );
+    box-shadow: inset 0 0 20px rgba(0, 20, 0, 0.6);
+}
+
+.hex-tile-img-deep-forest {
+    width: 80%;
+    height: 92%;
+    position: absolute;
+    top: 8%;
+}
+
+.hex-tile.sea {
+    background: radial-gradient(
+            circle,
+            #92bfff 30%,
+            #6494ff 70%,
+            #3b69b7 100%
+    );
+    box-shadow: inset 0 0 20px rgba(0, 0, 50, 0.4);
+    z-index: 0;
+}
+
+.hex-tile.deep-sea {
+    background: radial-gradient(
+            circle,
+            #5fa0cf 20%,
+            #41729f 60%,
+            #264d6b 100%
+    );
+    box-shadow: inset 0 0 20px rgba(0, 0, 30, 0.5);
+    z-index: 0;
+}
+
+.hex-tile.mountain {
+    background: radial-gradient(
+            circle,
+            #a39b8e 10%,
+            #918a7e 40%,
+            #5a554d 100%
+    );
+    box-shadow: inset 0 0 20px rgba(20, 20, 20, 0.5);
+}
+
+.hex-tile-img-mountain {
+    width: 95%;
+    height: 110%;
+    position: absolute;
+}
+
+.hex-tile.desert {
+    background: radial-gradient(
+            circle,
+            #f3e2a1 15%,
+            #e0ce75 60%,
+            #cab94d 100%
+    );
+    box-shadow: inset 0 0 20px rgba(100, 70, 20, 0.4);
+}
+
+.hex-tile-img-desert {
+    width: 70%;
+    height: 90%;
+    position: absolute;
+}
+
+
+.hex-tile.deep-desert {
+    background: radial-gradient(
+            circle,
+            #e3c27a 20%,
+            #c99e4b 55%,
+            #805b24 100%
+    );
+    box-shadow: inset 0 0 20px rgba(70, 40, 10, 0.5);
+}
+
+.hex-tile-img-deep-desert {
+    width: 75%;
+    height: 100%;
+    position: absolute;
+}
+
+.hex-tile.swamp {
+    background: radial-gradient(
+            circle,
+            #a3a299 20%,
+            #4b552a 80%,
+            #4e5b9c 100%
+    );
+    box-shadow: inset 0 0 20px rgba(15, 25, 10, 0.5);
+}
+
+.hex-tile-img-swamp {
+    width: 90%;
+    height: 100%;
+    position: absolute;
+}
+
+.hex-tile.evil-portal {
+    background: radial-gradient(
+            circle,
+            #040404 25%,
+            #151515 30%,
+            #040404 100%
+    );
+    box-shadow: inset 0 0 20px rgba(30, 20, 10, 0.5);
+}
+
+.hex-tile-img-evil-portal {
+    width: 80%;
+    height: 80%;
+    position: absolute;
+}
+
+.hex-tile-monster-prison {
+    background: radial-gradient(
+            circle,
+            #040404 25%,
+            #151515 30%,
+            #040404 100%
+    );
+    box-shadow: inset 0 0 20px rgba(30, 20, 10, 0.5);
+}
+
+.hex-tile-img-monster-prison {
+    width: 110%;
+    height: 110%;
+    position: absolute;
+}

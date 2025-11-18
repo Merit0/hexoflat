@@ -1,0 +1,54 @@
+.damage-popup {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 2vh;
+    color: #ff4a4a;
+    font-weight: bold;
+    text-shadow: 0 0 5px black;
+    animation: damageFloat 1.2s ease-out;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.blood-splash {
+    position: absolute;
+    width: 20%;
+    height: 20%;
+    background-image: url('../assets/battle-effects/blood-splash-effect-image.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    animation: bloodFadeOut 2s ease-out forwards;
+    pointer-events: none;
+    z-index: 100;
+}
+
+@keyframes damageFloat {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+    30% {
+        transform: translate(-50%, -1.2vh) scale(1.25);
+        opacity: 1;
+    }
+    60% {
+        transform: translate(-50%, -2vh) scale(1.1);
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -3.2vh) scale(1);
+    }
+}
+
+@keyframes bloodFadeOut {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.3);
+    }
+}

@@ -1,0 +1,9 @@
+.battle-initial-tile-view {
+    will-change: transform;
+    background-size: 100% 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.battle-initial-tile-view:hover {
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
+}

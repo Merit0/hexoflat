@@ -1,0 +1,39 @@
+.enemy-stats-hover {
+    width: 100%;
+    bottom: 0;
+    position: absolute;
+    color: #ffef8a;
+    padding: 0.1vh 0.8vh;
+    border-radius: 5px;
+    font-size: 1.2vh;
+    font-weight: bold;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 15;
+}
+
+.battle-grid-tile:hover .enemy-stats-hover {
+    opacity: 1;
+}
+
+@keyframes dodgeShake {
+    0% {
+        transform: translateX(0);
+    }
+    20% {
+        transform: translateX(-4px);
+    }
+    40% {
+        transform: translateX(4px);
+    }
+    60% {
+        transform: translateX(-3px);
+    }
+    80% {
+        transform: translateX(3px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}

@@ -1,0 +1,18 @@
+.bagInventoryGrid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 10vh);
+    grid-template-rows: repeat(6, 10vh);
+    margin-top: 6vw;
+    gap: 0.1rem;
+}
+
+.bagGridContainer {
+    position: absolute;
+    top: 5%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}

@@ -1,12 +1,26 @@
 import {createRouter, createWebHistory} from "vue-router";
 import LoginPage from "@/a-game-scenes/login-scene/components/login-page.vue";
 import {useUserStore} from "@/stores/user-store";
+import HomeLocation from "@/a-game-scenes/home-scene/components/home-location.vue";
+import HexWorldMap from "@/a-game-scenes/silesia-world-scene/hex-world-map.vue";
 
 const routes = [
     {path: '/', component: LoginPage},
     {
         path: '/login',
-        component: LoginPage
+    component: LoginPage
+    },
+    {
+        path: "/camping",
+        name: "home-page",
+        component: HomeLocation,
+        meta: {requiresAuth: true},
+    },
+    {
+        path: "/silesia",
+        name: "silesia-world",
+        component: HexWorldMap,
+        meta: {requiresAuth: true}
     },
 ];
 

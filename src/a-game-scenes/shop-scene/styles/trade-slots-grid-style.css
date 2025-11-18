@@ -1,0 +1,45 @@
+.tradeInventoryGrid {
+    display: grid;
+    grid-template-columns: repeat(9, 10vh);
+    grid-template-rows: repeat(4, 10vh);
+    margin-top: 5vw;
+    gap: 0.2rem;
+}
+
+.tradeGridContainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.sellButton {
+    position: absolute;
+    width: 40%;
+    height: 40%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-image: url("src/a-game-scenes/shop-scene/assets/trade-sell-icon-image.png");
+    cursor: pointer;
+    transform: translateY(20px) scale(0.9);
+    opacity: 0;
+    z-index: 2;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    animation-delay: 0.2s;
+}
+
+.sellButton:hover {
+    animation: pulse 0.6s infinite ease-in-out;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6));
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}

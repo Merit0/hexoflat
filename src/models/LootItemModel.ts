@@ -1,7 +1,6 @@
 import { IHeroItem } from "@/abstraction/IHeroItem";
 import { ItemType } from "@/enums/ItemType";
 import { Rarity } from "@/enums/Rarity";
-import { v4 as uuid } from "uuid";
 
 export class LootItemModel implements IHeroItem {
   name: string;
@@ -12,7 +11,7 @@ export class LootItemModel implements IHeroItem {
   borderFrame: string;
   itemType: ItemType;
   rarity: Rarity;
-  id = uuid();
+  id = '1';
   place: "bag" | "chest" | "shop" | null | 'keeper' | 'grave';
 
   static mapToModel(data: any): LootItemModel {
@@ -26,7 +25,7 @@ export class LootItemModel implements IHeroItem {
     item.borderFrame = data.borderFrame;
     item.itemType = data.itemType;
     item.rarity = data.rarity;
-    item.id = data.id || uuid();
+    item.id = data.id || '';
     item.place = data.place ?? null;
 
     return item;

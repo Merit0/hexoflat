@@ -1,0 +1,41 @@
+.inventorySlotContainer {
+    position: relative;
+    width: 10vh;
+    height: 10vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.inventorySlotContainer.is-busy {
+    pointer-events: none;     /* не клікається під час анімації */
+    opacity: 0.85;            /* легкий візуальний стан "зайнято" */
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.inventoryFrameImage {
+    position: absolute;
+    width: 130%;
+    height: 130%;
+    background-image: url("../../shop-scene/assets/shop-inventory-frame-image.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 0;
+}
+
+.inventoryItemImage {
+    position: absolute;
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    z-index: 1;
+}
+
+.inventorySlotContainer:hover .sellButton {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}

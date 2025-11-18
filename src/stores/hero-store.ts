@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
-import {HeroModel} from "../models/HeroModel.ts";
-import {useUserStore} from "./user-store.ts";
+import {HeroModel} from "@/models/HeroModel";
+import {useUserStore} from "./user-store";
 import * as Request from '../api/Requests';
-import type {IHero} from "../abstraction/IHero.ts";
-import type TileModel from "../a-game-scenes/silesia-world-scene/models/tile-model.ts";
+import type {IHero} from "@/abstraction/IHero";
+import type TileModel from "@/a-game-scenes/silesia-world-scene/models/tile-model";
 
 export const useHeroStore = defineStore("hero", {
     state: () => ({

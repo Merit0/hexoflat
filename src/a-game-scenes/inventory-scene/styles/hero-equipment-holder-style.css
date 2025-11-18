@@ -1,0 +1,97 @@
+.hero-equipment-container {
+    position: absolute;
+    margin-top: 5vh;
+    display: flex;
+    left: 0.3rem;
+    flex-direction: column;
+    align-items: center;
+    width: 40vw;
+    height: 100%;
+    gap: 5vh;
+    padding: 1vh 0;
+    background: radial-gradient(
+            circle at center,
+            #7c5339 0%,
+            #6e351d 40%,
+            #43270a 70%,
+            #3a1406 100%
+    );
+    background-size: 100% 100%;
+    box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.02),
+    0 0 60px rgba(85, 0, 170, 0.15);
+    filter: brightness(1.1) contrast(1.1);
+}
+
+.equipment-row {
+    height: 10vh;
+    flex-direction: row;
+    padding: 0 0;
+}
+
+.hero-slot {
+    position: absolute;
+    top: 10vh;
+    width: 100%;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero-image {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.first-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 80%;
+    max-width: 100%;
+    margin-top: 10vh;
+
+}
+
+.second-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 90%;
+    max-width: 100%;
+}
+
+.third-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 90%;
+    max-width: 100%;
+}
+
+.fourth-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 80%;
+    max-width: 100%;
+}
+
+.equipment-holder-hero-image {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+}

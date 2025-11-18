@@ -1,0 +1,148 @@
+.slotContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2vh;
+    width: clamp(6vw, 20vw, 7vw);
+}
+
+.slotBackground {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.slotImage {
+    width: 80%;
+    height: 80%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.itemImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.slotFrame {
+    position: absolute;
+    width: 18vw;
+    height: 18vh;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.slotFrameImage {
+    width: 100%;
+    height: 100%;
+    background-image: url("src/a-game-scenes/shop-scene/assets/shop-item-frame.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.soldOut {
+    position: absolute;
+    width: 8vw;
+    height: 4vh;
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(39, 37, 37, 0.9);
+    border-radius: 2%;
+}
+
+.soldOutText {
+    color: #ff4d4d;
+    text-shadow: 0 0 6px rgba(255, 77, 77, 0.8);
+    font-weight: 700;
+    font-size: 1vw;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.slotPriceContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5vh;
+    z-index: 2;
+}
+
+.priceInfo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    text-align: center;
+}
+
+.noInfo {
+    width: 5vw;
+    height: 4vh;
+    display: flex;
+    align-items: center;
+    gap: 0.2vw;
+}
+
+.priceRow {
+    width: 5vw;
+    height: 4vh;
+    display: flex;
+    align-items: center;
+    gap: 0.2vw;
+}
+
+.itemPrice {
+    color: gold;
+    font-size: clamp(1vw, 2vw, 1vw);
+    font-weight: bold;
+}
+
+.coinIcon {
+    width: clamp(1vw, 2vw, 1vw);
+    height: clamp(1vw, 2vw, 1vw);
+    object-fit: contain;
+}
+
+.buyBtn {
+    background: rgb(43, 37, 37);
+    border: 2px solid #ffaa00;
+    padding: 0.4em 0.8em;
+    border-radius: 1vh;
+    font-weight: bold;
+    font-size: clamp(14px, 1vw, 16px);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.buyBtn.notEnough {
+    border-color: rgba(255, 0, 0, 0.5);
+    color: rgba(255, 0, 0, 0.6);
+    cursor: not-allowed;
+}
+
+.buyBtn.notEnough:hover {
+    background: rgba(117, 0, 0, 0.48);
+    transform: none;
+}
+
+.buyBtn.canAfford:hover {
+    background: rgb(74, 65, 65);
+    transform: scale(1.05);
+}
+
+
+.buyBtn:active {
+    transform: scale(0.95);
+    box-shadow: inset 0 0 8px rgba(255, 170, 0, 0.6);
+}

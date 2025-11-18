@@ -4,6 +4,8 @@ import UserModel from "@/models/UserModel";
 import router from "../router";
 import type MapModel from "../a-game-scenes/silesia-world-scene/models/map-model.ts";
 import {useHeroStore} from "./hero-store";
+import {HexMapProvider} from "@/a-game-scenes/silesia-world-scene/providers/hex-map-provider";
+import {HexMapModel} from "@/a-game-scenes/silesia-world-scene/models/hex-map-model";
 
 export const useUserStore = defineStore('user', {
     state: () => ({
@@ -44,25 +46,25 @@ export const useUserStore = defineStore('user', {
             const heroStore = useHeroStore();
 
             // mapLocationStore.initMapsList();
+            const silesiaMap: HexMapModel = HexMapProvider.getSilesia();
 
+            if (silesiaMap) {
+                try {
+                    // await Promise.all([
+                    //     mapLocationStore.resetAllMapLocations(silesiaMap),
+                    //     bagStore.resetBag(),
+                    // ]);
 
-            // if (silesiaMap) {
-            //     try {
-            //         // await Promise.all([
-            //         //     mapLocationStore.resetAllMapLocations(silesiaMap),
-            //         //     bagStore.resetBag(),
-            //         // ]);
-            //
-            //         localStorage.clear();
-            //         localStorage.setItem('uStatus', 'false');
-            //         this.user.setLoggedIn(false);
-            //         await router.push('/login');
-            //     } catch (error) {
-            //         console.error("Error during logout:", error);
-            //     }
-            // } else {
-            //     console.error('Silesia map not found');
-            // }
+                    localStorage.clear();
+                    localStorage.setItem('uStatus', 'false');
+                    this.user.setLoggedIn(false);
+                    await router.push('/login');
+                } catch (error) {
+                    console.error("Error during logout:", error);
+                }
+            } else {
+                console.error('Silesia map not found');
+            }
             heroStore.resetHero();
             localStorage.clear();
         },

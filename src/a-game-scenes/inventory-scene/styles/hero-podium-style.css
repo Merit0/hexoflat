@@ -1,0 +1,127 @@
+.hero-podium-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    gap: 3vh;
+    padding: 1vh 0;
+    background-size: 100% 100%;
+    filter: brightness(1.1) contrast(1.1);
+    border-radius: 10%;
+}
+
+.podium-equipment-row {
+    height: 10vh;
+    flex-direction: row;
+    padding: 0 0;
+}
+
+.podium-hero-slot {
+    position: absolute;
+    width: 100%;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.podium-hero-image {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+}
+
+.base-head {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/head.png");
+}
+
+.base-hand-l {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/hand-l.png");
+}
+
+.base-hand-r {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/hand-r.png");
+}
+
+.base-legs {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/base-legs.png");
+}
+
+.base-belt {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/base-belt.png");
+}
+
+.base-boots {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/base-boots.png");
+}
+
+.base-armor {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/base-torso.png");
+}
+
+.breath {
+    animation: breathe 2.5s ease-in-out infinite;
+    transform-origin: center center;
+}
+
+@keyframes breathe {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.03);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.stand-base {
+    background-image: url("/images/creatures_500_500/humans_500_500/hero-asmodei/body-parts/stand-base.png");
+}
+
+.podium-first-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 90%;
+    max-width: 100%;
+    margin-top: 5%;
+
+}
+
+.podium-second-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 98%;
+    max-width: 100%;
+}
+
+.podium-third-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 98%;
+    max-width: 100%;
+}
+
+.podium-fourth-equipment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: auto;
+    min-width: 90%;
+    max-width: 100%;
+}

@@ -1,0 +1,81 @@
+.modalCoinIcon {
+    width: clamp(1.3vw, 2vw, 18px);
+    height: clamp(1.3vw, 2vw, 18px);
+    object-fit: contain;
+}
+
+.confirmOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.confirmPopup {
+    width: 30vw;
+    background: rgba(35, 35, 35, 0.8);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.44);
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(44, 44, 44, 0.96);
+    color: rgb(203, 211, 255);
+}
+
+.popupText {
+    font-size: 1.3vw;
+    margin-bottom: 1.5rem;
+}
+
+.popupActions {
+    display: flex;
+    justify-content: space-around;
+}
+
+.confirmBtn, .cancelBtn {
+    padding: 0.6em 1.2em;
+    border-radius: 0.6rem;
+    font-weight: bold;
+    font-size: 1vw;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.confirmBtn {
+    background: rgba(180, 255, 238, 0.15);
+    border: 2px solid rgba(188, 255, 180, 0.4);
+    color: #dffbff;
+    text-shadow: 0 0 4px rgba(200, 240, 255, 0.6);
+    box-shadow: 0 0 8px rgba(160, 220, 255, 0.3);
+    backdrop-filter: blur(3px);
+    transition: all 0.3s ease;
+}
+
+.confirmBtn:hover {
+    color: #c1df00;
+    background: rgba(200, 255, 255, 0.3);
+    border-color: rgba(200, 245, 255, 0.6);
+    box-shadow: 0 0 12px rgba(231, 255, 160, 0.5);
+}
+
+.cancelBtn {
+    background: rgba(200, 150, 150, 0.1);
+    border: 2px solid rgba(255, 180, 180, 0.3);
+    color: #ffd6d6;
+    text-shadow: 0 0 4px rgba(255, 200, 200, 0.4);
+    box-shadow: 0 0 6px rgba(255, 150, 150, 0.2);
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease;
+}
+
+.cancelBtn:hover {
+    background: rgba(255, 180, 180, 0.2);
+    border-color: rgba(255, 180, 180, 0.5);
+    box-shadow: 0 0 10px rgba(255, 180, 180, 0.4);
+}
