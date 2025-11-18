@@ -1,0 +1,30 @@
+[
+    {
+        "name": "Merito",
+        "username": "merito",
+        "password": "2104",
+        "id": 1,
+        "loggedIn": false
+    },
+    {
+        "name": "Demon",
+        "username": "demon",
+        "password": "aaa",
+        "id": 2,
+        "loggedIn": false
+    },
+    {
+        "name": "Destroyer",
+        "username": "destroyer",
+        "password": "qwerty",
+        "id": 3,
+        "loggedIn": false
+    },
+    {
+        "name": "Ostap",
+        "username": "ostapik",
+        "password": "1111",
+        "id": 4,
+        "loggedIn": false
+    }
+]

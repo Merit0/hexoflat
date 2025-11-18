@@ -1,0 +1,67 @@
+[
+    {
+        "name": "Merito",
+        "currentHealth": 1000,
+        "maxHealth": 1000,
+        "attack": 100,
+        "defense": 0,
+        "coins": 10000,
+        "available": true,
+        "id": 1,
+        "kills": 0,
+        "maxEnergy": 100,
+        "currentEnergy": 100,
+        "heroSteps": 90,
+        "equipment": {
+            "weapon": null,
+            "shield": null,
+            "helm": null,
+            "armor": null,
+            "ring": null
+        },
+        "heroLocation": null
+    },
+    {
+        "name": "Demon",
+        "currentHealth": 80,
+        "maxHealth": 80,
+        "attack": 5,
+        "defense": 0,
+        "coins": 0,
+        "available": true,
+        "id": 2,
+        "kills": 0,
+        "maxEnergy": 100,
+        "currentEnergy": 100,
+        "equipment": {
+            "sword": null,
+            "shield": null,
+            "helm": null,
+            "armor": null,
+            "ring": null
+        }
+    },
+    {
+        "name": "Ostapik",
+        "currentHealth": 110,
+        "maxHealth": 110,
+        "attack": 15,
+        "defense": 0,
+        "coins": 20,
+        "available": true,
+        "id": 4,
+        "kills": 0,
+        "maxEnergy": 100,
+        "currentEnergy": 100,
+        "heroSteps": 0,
+        "stats": true,
+        "equipment": {
+            "sword": null,
+            "shield": null,
+            "helm": null,
+            "armor": null,
+            "ring": null
+        },
+        "heroLocation": null
+    }
+]
