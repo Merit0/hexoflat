@@ -1,13 +1,22 @@
 import {HexMapModel} from '@/a-game-scenes/silesia-world-scene/models/hex-map-model';
 import {HexTileModel} from '@/a-game-scenes/silesia-world-scene/models/hex-tile-model';
-import silesiaRegions from "@/a-game-scenes/silesia-world-scene/providers/region-provider";
+import forestLocation from "@/a-game-scenes/silesia-world-scene/providers/region-provider";
 
 export class HexMapProvider {
-    static getSilesia(): HexMapModel {
-        const map = new HexMapModel('silesia', 25, 11, silesiaRegions);
+    // static getSilesia(): HexMapModel {
+    //     const map = new HexMapModel('silesia', 27, 11, forestLocation);
+    //
+    //     this.generateTiles(map);
+    //     this.applyRegionTerrain(map);
+    //
+    //     return map;
+    // }
+
+    static getHomeLand(): HexMapModel {
+        const map = new HexMapModel('homeland', 26, 11, forestLocation);
 
         this.generateTiles(map);
-        this.applyRegionTerrain(map);
+        this.buildMap(map);
 
         return map;
     }
@@ -24,20 +33,20 @@ export class HexMapProvider {
         map.tiles = tiles;
     }
 
-    private static applyRegionTerrain(map: HexMapModel): void {
-        for (const region of map.regions) {
-            for (const [q, r] of region.coordinates) {
+    private static buildMap(map: HexMapModel): void {
+        for (const place of map.places) {
+            for (const [q, r] of place.coordinates) {
                 const tile = map.tiles.find(t => t.q === q && t.r === r);
                 if (!tile) {
-                    console.warn(`Missing tile [${q},${r}] for region ${region.key}`);
+                    console.warn(`Missing tile [${q},${r}] for place ${place.key}`);
                     continue;
                 }
 
-                const imagePath = region.images
-                    ? region.images[Math.floor(Math.random() * region.images.length)]
+                const imagePath = place.images
+                    ? place.images[Math.floor(Math.random() * place.images.length)]
                     : '';
 
-                tile.setTerrain(region.terrain, imagePath, region.key, region.name, region.requiredMyriads);
+                tile.setupPlace(place.place, imagePath, place.key, place.name);
             }
         }
     }

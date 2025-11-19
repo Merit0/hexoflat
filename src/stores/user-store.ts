@@ -2,7 +2,6 @@ import {defineStore} from 'pinia';
 import * as Request from '../api/Requests';
 import UserModel from "@/models/UserModel";
 import router from "../router";
-import type MapModel from "../a-game-scenes/silesia-world-scene/models/map-model.ts";
 import {useHeroStore} from "./hero-store";
 import {HexMapProvider} from "@/a-game-scenes/silesia-world-scene/providers/hex-map-provider";
 import {HexMapModel} from "@/a-game-scenes/silesia-world-scene/models/hex-map-model";
@@ -46,9 +45,9 @@ export const useUserStore = defineStore('user', {
             const heroStore = useHeroStore();
 
             // mapLocationStore.initMapsList();
-            const silesiaMap: HexMapModel = HexMapProvider.getSilesia();
+            const homeland: HexMapModel = HexMapProvider.getHomeLand();
 
-            if (silesiaMap) {
+            if (homeland) {
                 try {
                     // await Promise.all([
                     //     mapLocationStore.resetAllMapLocations(silesiaMap),

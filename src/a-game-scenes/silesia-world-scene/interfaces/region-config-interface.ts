@@ -13,6 +13,15 @@ export type TerrainType =
     | 'monster-prison'
     | 'camp';
 
+export type HexTileType =
+    'initial'
+    | 'empty'
+    | 'home'
+    | 'enemy'
+    | 'blocked'
+    | 'evil-portal'
+    | 'monster-prison';
+
 export interface IRegionConfig {
     key: string;
     terrain: TerrainType;
@@ -21,4 +30,13 @@ export interface IRegionConfig {
     images?: string[];
     backgroundImgPath?: string;
     requiredMyriads?: number;
+}
+
+export interface IHexMapConfig {
+    key: string;
+    place: HexTileType;
+    name?: string;
+    coordinates: [number, number][];
+    images?: string[];
+    backgroundImgPath?: string;
 }

@@ -1,5 +1,32 @@
-import type {IRegionConfig} from '@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface';
+import type {
+    IHexMapConfig,
+    IRegionConfig
+} from '@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface';
 
+const ROWS = 11; // 0..10
+const COLS = 26; // 0..25
+
+function generateAllEmptyCoordinates(rows: number, cols: number): [number, number][] {
+    const coords: [number, number][] = [];
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            coords.push([row, col]);
+        }
+    }
+
+    return coords;
+}
+
+const forestLocation: IHexMapConfig[] = [
+        {
+            key: '',
+            place: 'empty',
+            name: 'Nothing around',
+            coordinates: generateAllEmptyCoordinates(ROWS, COLS),
+        },
+    ]
+;
 const silesiaRegions: IRegionConfig[] = [
     {
         key: 'forest',
@@ -247,5 +274,4 @@ const silesiaRegions: IRegionConfig[] = [
         requiredMyriads: 100,
     }
 ];
-
-export default silesiaRegions;
+export default forestLocation;

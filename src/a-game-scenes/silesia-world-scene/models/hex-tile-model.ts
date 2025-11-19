@@ -1,11 +1,11 @@
-import {TerrainType} from "@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface";
+import {HexTileType} from "@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface";
 
 export class HexTileModel {
     q: number;
     r: number;
-    terrain: TerrainType;
+    place: HexTileType;
     imagePath: string;
-    regionKey?: string;
+    placeKey?: string;
     name?: string;
     isBlocked: boolean;
     requiredMyriads: number;
@@ -14,15 +14,15 @@ export class HexTileModel {
         this.q = q;
         this.r = r;
         this.isBlocked = true;
-        this.terrain = 'no-terrain';
+        this.place = 'empty';
         this.imagePath = '';
         this.requiredMyriads = 10;
     }
 
-    setTerrain(type: TerrainType, imagePath: string, regionKey?: string, name?: string, requiredMyriads?: number) {
-        this.terrain = type;
+    setupPlace(placeType: HexTileType, imagePath: string, placeKey?: string, name?: string, requiredMyriads?: number) {
+        this.place = placeType;
         this.imagePath = imagePath;
-        this.regionKey = regionKey;
+        this.placeKey = placeKey;
         if (name) this.name = name;
         if (requiredMyriads !== undefined) {
             this.requiredMyriads = requiredMyriads;

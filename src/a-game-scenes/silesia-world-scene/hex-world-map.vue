@@ -5,17 +5,17 @@
           v-for="tile in tiles"
           :key="tile.id"
           class="hex-tile"
-          :class="tile.terrain"
+          :class="tile.place"
           :style="getHexTileTransformStyle(tile)"
-          @click="tile.terrain !== 'sea' && tile.terrain !== 'deep-sea' ? onTileClick(tile) : null"
+          @click="tile.place !== 'blocked' && tile.place !== 'empty' ? onTileClick(tile) : null"
       >
         <div
-            :class="`hex-tile-img-${tile.terrain}`"
-            :style="getTileTerrainImage(tile)"
+            :class="`hex-tile-img-${tile.place}`"
+            :style="getHexTileImage(tile)"
         ></div>
-        <div v-if="tile.isBlocked" class="tile-lock">
-          <span class="lock-icon">🔒</span>
-        </div>
+<!--        <div v-if="tile.isBlocked" class="tile-lock">-->
+<!--          <span class="lock-icon">🔒</span>-->
+<!--        </div>-->
       </div>
     </div>
   </div>
@@ -39,8 +39,8 @@ const tiles = ref<HexTileModel[]>([]);
 tiles.value = store.map.tiles;
 
 
-const baseWidth = 1600;
-const baseHeight = 800;
+const baseWidth = 1760;
+const baseHeight = 700;
 const scale = ref(1);
 
 function updateScale() {
@@ -61,7 +61,7 @@ function getHexTileTransformStyle(tile: HexTileModel) {
   };
 }
 
-function getTileTerrainImage(tile: HexTileModel) {
+function getHexTileImage(tile: HexTileModel) {
   return {
     backgroundImage: `url(${tile.imagePath})`,
     backgroundSize: 'cover',
@@ -76,7 +76,8 @@ function onTileClick(tile: HexTileModel) {
     return Math.round(num * factor) / factor;
   }
 
-  if (tile.terrain === 'sea' || tile.terrain === 'deep-sea') {
+  if (tile.place === 'blocked' || tile.place === 'empty') {
+    console.log('Place is empty')
     return;
   }
   const hero: HeroModel = useHeroStore().hero;
@@ -90,12 +91,12 @@ function onTileClick(tile: HexTileModel) {
       return;
     }
   }
-  if (tile.regionKey && tile.regionKey !== 'camping') {
-    router.push(`/location/${tile.regionKey}`);
-  } else if (tile.regionKey && tile.regionKey === 'camping') {
-    router.push(`/${tile.regionKey}`);
+  if (tile.place !== 'home') {
+    router.push(`/location/${tile.placeKey}`);
+  } else if (tile.placeKey && tile.placeKey === 'home') {
+    router.push(`/${tile.placeKey}`);
   } else {
-    return new Error('Map region is not supported');
+    return new Error('Map place is not supported');
   }
 }
 
@@ -112,19 +113,18 @@ onBeforeUnmount(() => {
 @import "@/a-game-scenes/silesia-world-scene/styles/hex-tile-terrain-background-style.css";
 
 .hex-map {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #2e231d;
-  overflow: hidden;
+  background-image: url("@/a-game-scenes/silesia-world-scene/assets/dark-background.png");
 }
 
 .hex-map-wrapper {
   position: relative;
-  width: 85vw;
-  height: 80vh;
+  width: 92%;
+  height: 90%;
   transform-origin: center center;
 }
 
@@ -142,11 +142,12 @@ onBeforeUnmount(() => {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
   transform-origin: center;
+  background: rgba(11, 8, 8, 0.25);
 }
 
 .hex-tile:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 12px rgb(0, 0, 0);
   z-index: 10;
 }
 

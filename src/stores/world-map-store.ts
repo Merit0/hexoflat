@@ -14,7 +14,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         generateIfEmpty() {
             if (this.map) return;
 
-            this.map = HexMapProvider.getSilesia();
+            this.map = HexMapProvider.getHomeLand();
             this.saveToStorage();
         },
 
@@ -33,11 +33,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
             map.tiles = raw.tiles.map((t: HexTileModel) => {
                 const tile = new HexTileModel(t.q, t.r);
                 tile.isBlocked = t.isBlocked;
-                tile.terrain = t.terrain;
+                tile.place = t.place;
                 tile.imagePath = t.imagePath;
-                tile.regionKey = t.regionKey;
                 tile.name = t.name;
-                tile.requiredMyriads = t.requiredMyriads;
                 return tile;
             });
             this.map = map;

@@ -1,17 +1,17 @@
-import {IRegionConfig} from "@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface";
+import {IHexMapConfig} from "@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface";
 import {HexTileModel} from "@/a-game-scenes/silesia-world-scene/models/hex-tile-model";
 
 export class HexMapModel {
     name: string;
     width: number;
     height: number;
-    regions: IRegionConfig[];
+    places: IHexMapConfig[];
     tiles: HexTileModel[] = [];
 
-    constructor(name: string, width: number, height: number, regions: IRegionConfig[]) {
+    constructor(name: string, width: number, height: number, places: IHexMapConfig[]) {
         this.name = name;
         this.width = width;
         this.height = height;
-        this.regions = regions;
+        this.places = places;
     }
 }
