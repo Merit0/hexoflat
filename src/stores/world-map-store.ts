@@ -3,7 +3,7 @@ import {HexMapModel} from '@/a-game-scenes/silesia-world-scene/models/hex-map-mo
 import {HexTileModel} from '@/a-game-scenes/silesia-world-scene/models/hex-tile-model';
 import {HexMapProvider} from "@/a-game-scenes/silesia-world-scene/providers/hex-map-provider";
 
-const STORAGE_KEY = 'monstrum_world_map';
+const STORAGE_KEY = 'hexoflat';
 
 export const useWorldMapStore = defineStore('world-map-store', {
     state: () => ({
@@ -39,6 +39,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 return tile;
             });
             this.map = map;
+        },
+        clearWorld() {
+            console.log('Resetting map...')
+            this.map = null;
+            localStorage.removeItem(STORAGE_KEY);
         }
     }
 });

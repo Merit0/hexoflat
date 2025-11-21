@@ -1,9 +1,8 @@
 .login-form {
-    width: 100%;
+    width: 18vw;
     display: flex;
     flex-direction: column;
-    gap: 4rem;
-    padding: 0.5rem;
+    gap: 2rem;
 }
 
 .form-field {
@@ -13,11 +12,11 @@
 .login-form-input {
     width: 100%;
     padding: 0.2rem;
-    border: 1px solid #ae8e00;
+    border: 1px solid #a0abb8;
     border-radius: 6px;
-    font-size: 1rem;
-    color: white;
-    background: linear-gradient(135deg, #292929, #252121);
+    font-size: 1.5rem;
+    color: #d5f3ff;
+    background: linear-gradient(135deg, #1c2529, #1d2529);
 }
 
 .login-form-input:focus {
@@ -27,28 +26,27 @@
 
 .toggle-password {
     position: absolute;
-    right: 1rem;
+    right: 0.5rem;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     cursor: pointer;
-    color: #ffcccc;
+    color: #d5f3ff;
 }
 
 .login-form-submit {
     position: relative;
     width: 100%;
-    top: 10rem;
-    background: linear-gradient(135deg, #292929, #252121);
-    color: #ffb888;
+    background: linear-gradient(135deg, #191d23, #1b2426);
+    color: #d5f0ff;
     border-radius: 6px;
-    border: 1px solid #ae8e00;
+    border: 2px solid #d6ebff;
     font-size: 1rem;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 750;
     transition: background-color 0.2s ease;
-    height: 1.6rem;
+    height: 3rem;
     text-align: center;
 }
 
@@ -63,8 +61,7 @@
 
 .login-form-error {
     position: absolute;
-    top: 1rem;
-    margin-left: 100px;
+    bottom: 4rem;
     z-index: 1;
     padding: 0.3rem;
     color: #c62828;
@@ -84,5 +81,5 @@
 
 .login-form-input::placeholder {
     font-size: 10px;
-    color: #636363 !important;
+    color: #9ca2a6 !important;
 }

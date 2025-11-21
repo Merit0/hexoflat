@@ -1,32 +1,30 @@
-import type {
+import {
+    IHexCoordinates,
     IHexMapConfig,
     IRegionConfig
 } from '@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface';
 
-const ROWS = 11; // 0..10
-const COLS = 26; // 0..25
-
-function generateAllEmptyCoordinates(rows: number, cols: number): [number, number][] {
-    const coords: [number, number][] = [];
+function generateAllEmptyCoordinates(rows: number, cols: number): IHexCoordinates[] {
+    const coords: IHexCoordinates[] = [];
 
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
-            coords.push([row, col]);
+            coords.push({rowIndex: row, columnIndex: col});
         }
     }
 
     return coords;
 }
 
-const forestLocation: IHexMapConfig[] = [
+const forestLocationHexConfig: IHexMapConfig[] = [
         {
             key: '',
             place: 'empty',
             name: 'Nothing around',
-            coordinates: generateAllEmptyCoordinates(ROWS, COLS),
+            images: ['src/a-game-scenes/silesia-world-scene/assets/hex-tile-terrain-images/empty-tile-image.png'],
+            coordinates: generateAllEmptyCoordinates(11, 27),
         },
-    ]
-;
+    ];
 const silesiaRegions: IRegionConfig[] = [
     {
         key: 'forest',
@@ -274,4 +272,4 @@ const silesiaRegions: IRegionConfig[] = [
         requiredMyriads: 100,
     }
 ];
-export default forestLocation;
+export default forestLocationHexConfig;

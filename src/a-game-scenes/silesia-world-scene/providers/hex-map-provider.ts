@@ -13,7 +13,7 @@ export class HexMapProvider {
     // }
 
     static getHomeLand(): HexMapModel {
-        const map = new HexMapModel('homeland', 26, 11, forestLocation);
+        const map = new HexMapModel('homeland', 27, 11, forestLocation);
 
         this.generateTiles(map);
         this.buildMap(map);
@@ -35,10 +35,10 @@ export class HexMapProvider {
 
     private static buildMap(map: HexMapModel): void {
         for (const place of map.places) {
-            for (const [q, r] of place.coordinates) {
-                const tile = map.tiles.find(t => t.q === q && t.r === r);
+            for (const coordinates of place.coordinates) {
+                const tile = map.tiles.find(t => t.q === coordinates.columnIndex && t.r === coordinates.rowIndex);
                 if (!tile) {
-                    console.warn(`Missing tile [${q},${r}] for place ${place.key}`);
+                    console.warn(`Missing tile with coordinates: [${coordinates.columnIndex},${coordinates.rowIndex}] for place ${place.key}`);
                     continue;
                 }
 

@@ -32,11 +32,16 @@ export interface IRegionConfig {
     requiredMyriads?: number;
 }
 
+export interface IHexCoordinates {
+    columnIndex: number;
+    rowIndex: Number;
+}
+
 export interface IHexMapConfig {
     key: string;
     place: HexTileType;
     name?: string;
-    coordinates: [number, number][];
+    coordinates: IHexCoordinates[];
     images?: string[];
     backgroundImgPath?: string;
 }

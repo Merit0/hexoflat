@@ -5,6 +5,7 @@ import router from "../router";
 import {useHeroStore} from "./hero-store";
 import {HexMapProvider} from "@/a-game-scenes/silesia-world-scene/providers/hex-map-provider";
 import {HexMapModel} from "@/a-game-scenes/silesia-world-scene/models/hex-map-model";
+import {useWorldMapStore} from "@/stores/world-map-store";
 
 export const useUserStore = defineStore('user', {
     state: () => ({
@@ -41,31 +42,31 @@ export const useUserStore = defineStore('user', {
             return true;
         },
         async logout(): Promise<void> {
-            console.log('Logout initiated');
+            console.log("Logout initiated");
+
             const heroStore = useHeroStore();
+            const worldMapStore = useWorldMapStore();
 
-            // mapLocationStore.initMapsList();
-            const homeland: HexMapModel = HexMapProvider.getHomeLand();
+            try {
+                // await Request.logout() ...
 
-            if (homeland) {
+                this.user.setLoggedIn(false);
+            } catch (error) {
+                console.error("Error during logout:", error);
+            } finally {
+                worldMapStore.clearWorld();
+                heroStore.resetHero();
+                // bagStore.resetBag();
+
+                localStorage.clear();
+                localStorage.setItem("uStatus", "false");
+
                 try {
-                    // await Promise.all([
-                    //     mapLocationStore.resetAllMapLocations(silesiaMap),
-                    //     bagStore.resetBag(),
-                    // ]);
-
-                    localStorage.clear();
-                    localStorage.setItem('uStatus', 'false');
-                    this.user.setLoggedIn(false);
-                    await router.push('/login');
-                } catch (error) {
-                    console.error("Error during logout:", error);
+                    await router.push("/login");
+                } catch (e) {
+                    console.error("Router push failed during logout:", e);
                 }
-            } else {
-                console.error('Silesia map not found');
             }
-            heroStore.resetHero();
-            localStorage.clear();
         },
         async clearErrorMsg() {
             this.error = '';
