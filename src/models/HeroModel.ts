@@ -1,5 +1,5 @@
 import {IHero} from "@/abstraction/IHero";
-import TileModel, {ICoordinates} from "../a-game-scenes/silesia-world-scene/models/tile-model";
+import TileModel, {ICoordinates} from "@/a-game-scenes/homeland-scene/models/tile-model";
 
 
 export class HeroModel implements IHero {

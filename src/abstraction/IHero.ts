@@ -1,4 +1,4 @@
-import {type ICoordinates, TileModel} from "@/a-game-scenes/silesia-world-scene/models/tile-model";
+import {type ICoordinates, TileModel} from "@/a-game-scenes/homeland-scene/models/tile-model";
 
 
 export interface IHero {

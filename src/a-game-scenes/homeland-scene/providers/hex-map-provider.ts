@@ -1,6 +1,6 @@
-import {HexMapModel} from '@/a-game-scenes/silesia-world-scene/models/hex-map-model';
-import {HexTileModel} from '@/a-game-scenes/silesia-world-scene/models/hex-tile-model';
-import forestLocation from "@/a-game-scenes/silesia-world-scene/providers/region-provider";
+import {HexMapModel} from '@/a-game-scenes/homeland-scene/models/hex-map-model';
+import {HexTileModel} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
+import forestLocation from "@/a-game-scenes/homeland-scene/providers/region-provider";
 
 export class HexMapProvider {
     // static getSilesia(): HexMapModel {

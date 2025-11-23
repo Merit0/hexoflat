@@ -1,7 +1,7 @@
 import {
     IHexCoordinates,
     IHexMapConfig,
-} from '@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface';
+} from '@/a-game-scenes/homeland-scene/interfaces/region-config-interface';
 
 function generateAllEmptyCoordinates(rows: number, cols: number): IHexCoordinates[] {
     const coords: IHexCoordinates[] = [];
@@ -24,7 +24,7 @@ const baseEmpty: IHexMapConfig =
         key: '',
         place: 'empty',
         name: 'Nothing around',
-        images: ['src/a-game-scenes/silesia-world-scene/assets/hex-tile-terrain-images/empty-tile-image.png'],
+        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png'],
         coordinates: generateAllEmptyCoordinates(11, 27),
     };
 const objectsLayer: IHexMapConfig[] = [
@@ -32,7 +32,7 @@ const objectsLayer: IHexMapConfig[] = [
         key: 'boss-homeland',
         place: 'enemy',
         name: 'Skeletor',
-        images: ['src/a-game-scenes/silesia-world-scene/assets/hex-tile-terrain-images/skeletor-head-image.png'],
+        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/skeletor-head-image.png'],
         coordinates: [setCoordinates(3, 5)],
     },
     {

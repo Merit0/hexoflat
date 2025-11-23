@@ -1,5 +1,5 @@
-import {IHexMapConfig} from "@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface";
-import {HexTileModel} from "@/a-game-scenes/silesia-world-scene/models/hex-tile-model";
+import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 
 export class HexMapModel {
     name: string;

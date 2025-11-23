@@ -35,7 +35,7 @@ import {useHeroStore} from "@/stores/HeroStore";
 import EnemyModel from "@/models/EnemyModel";
 import {useOverlayStore} from "@/stores/overlay-store";
 import {useDiceStore} from "@/stores/DiceStore";
-import TileModel from "@/a-game-scenes/silesia-world-scene/models/tile-model";
+import TileModel from "@/a-game-scenes/homeland-scene/models/tile-model";
 import {useMapLocationStore} from "@/stores/map-location-store";
 import {throwWeapon} from "@/utils/projectile-utils";
 

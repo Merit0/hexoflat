@@ -1,4 +1,4 @@
-import {HexTileType} from "@/a-game-scenes/silesia-world-scene/interfaces/region-config-interface";
+import {HexTileType} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
 
 export class HexTileModel {
     q: number;

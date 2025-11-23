@@ -1,33 +1,26 @@
 <template>
-  <div class="hex-map">
-    <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
-      <div
-          v-for="tile in tiles"
-          :key="tile.id"
-          class="hex-tile"
-          :class="tile.place"
-          :style="getHexTileTransformStyle(tile)"
-          @click="tile.place !== 'blocked' && tile.place !== 'empty' ? onTileClick(tile) : null"
-      >
-        <div
-            :class="`hex-tile-img-${tile.place}`"
-            :style="getHexTileImage(tile)"
-        ></div>
-<!--        <div v-if="tile.isBlocked" class="tile-lock">-->
-<!--          <span class="lock-icon">🔒</span>-->
-<!--        </div>-->
-      </div>
-    </div>
+  <div
+      class="hex-tile"
+      :class="hexTile.place"
+      :style="getHexTileTransformStyle(hexTile)"
+      @click="hexTile.place !== 'blocked' && hexTile.place !== 'empty' ? onTileClick(hexTile) : null"
+  >
+    <div
+        :class="`hex-tile-img-${hexTile.place}`"
+        :style="getHexTileImage(hexTile)"
+    ></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount} from 'vue';
+import {ref, onMounted, onBeforeUnmount, defineProps} from 'vue';
 import {useRouter} from 'vue-router';
-import type {HexTileModel} from '@/a-game-scenes/silesia-world-scene/models/hex-tile-model';
-import {useHeroStore} from "@/stores/hero-store";
-import {HeroModel} from "@/models/HeroModel";
+import type {HexTileModel} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
 import {useWorldMapStore} from "@/stores/world-map-store";
+
+defineProps<{
+  hexTile: HexTileModel;
+}>();
 
 const router = useRouter();
 const store = useWorldMapStore();
@@ -94,24 +87,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-@import "@/a-game-scenes/silesia-world-scene/styles/hex-tile-terrain-background-style.css";
-
-.hex-map {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-image: url("@/a-game-scenes/silesia-world-scene/assets/dark-background.png");
-}
-
-.hex-map-wrapper {
-  position: relative;
-  width: 92%;
-  height: 90%;
-  transform-origin: center center;
-  overflow: hidden;
-}
+@import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
 
 .hex-tile {
   width: var(--hex-tile-width);
@@ -132,25 +108,5 @@ onBeforeUnmount(() => {
   transform: scale(1.1);
   box-shadow: 0 0 12px rgb(0, 0, 0);
   z-index: 10;
-}
-
-.tile-lock {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgba(128, 127, 127, 0.33);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  color: #fff;
-  border-radius: 8px;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.lock-icon {
-  position: absolute;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 </style>

@@ -1,5 +1,5 @@
 import MapModel from '../models/map-model';
-import {MapBuilder} from '@/a-game-scenes/silesia-world-scene/builders/map-builder';
+import {MapBuilder} from '@/a-game-scenes/homeland-scene/builders/map-builder';
 import {Complexity} from '@/enums/complexity';
 
 export class MapProvider {
