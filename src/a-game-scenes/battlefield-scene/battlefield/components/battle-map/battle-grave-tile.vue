@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import {computed, defineProps} from 'vue';
-import TileModel from '@/a-game-scenes/silesia-world-scene/models/tile-model';
+import TileModel from '@/a-game-scenes/homeland-scene/models/tile-model';
 import {useGraveStore} from '@/stores/grave-store';
 import {useOverlayStore} from "@/stores/overlay-store";
 import {EnemyType} from "@/enums/EnemyType";

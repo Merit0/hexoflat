@@ -1,9 +1,9 @@
-import { defineStore } from "pinia";
+import {defineStore} from "pinia";
 import {HeroModel} from "@/models/HeroModel";
 import {useUserStore} from "./user-store";
-import * as Request from '../api/Requests';
+import * as Request from "../api/Requests";
 import type {IHero} from "@/abstraction/IHero";
-import type TileModel from "@/a-game-scenes/silesia-world-scene/models/tile-model";
+import type TileModel from "@/a-game-scenes/homeland-scene/models/tile-model";
 
 export const useHeroStore = defineStore("hero", {
     state: () => ({
@@ -12,8 +12,13 @@ export const useHeroStore = defineStore("hero", {
         heroPositionsByMap: {} as Record<string, any>,
         flippedMy: true,
         heroMapTileBodyRotationAngle: 270,
-        heroTargetRotation: 270
+        heroTargetRotation: 270,
     }),
+
+    getters: {
+        coins: (s) => s.hero.coins,
+        isAlive: (s) => s.hero.getHealth() > 0,
+    },
 
     actions: {
         async getHero(): Promise<boolean> {
@@ -35,23 +40,14 @@ export const useHeroStore = defineStore("hero", {
                 .setKills(hero.kills)
                 .setCurrentEnergy(hero.currentEnergy)
                 .setMaxEnergy(hero.maxEnergy)
-                .setStats(hero.available)
-                .setEquipment(hero.equipment)
+                // .setEquipment(hero.equipment)
                 .setSteps(hero.heroSteps);
 
             return true;
         },
 
-        getHeroCoinsAmount(): number {
-            return this.hero.coins;
-        },
-
-        isAlive(): boolean {
-            return this.hero.getHealth() > 0;
-        },
-
         rest(): void {
-            this.hero.healthIncreaser();
+            this.hero.currentHealth += 1;
         },
 
         healHero(health: number): void {

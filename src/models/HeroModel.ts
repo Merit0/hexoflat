@@ -1,26 +1,23 @@
 import {IHero} from "@/abstraction/IHero";
-import TileModel, {ICoordinates} from "../a-game-scenes/silesia-world-scene/models/tile-model";
+import TileModel, {ICoordinates} from "@/a-game-scenes/homeland-scene/models/tile-model";
 
 
 export class HeroModel implements IHero {
+    id: number;
     name: string;
     currentHealth: number;
     maxHealth: number;
     attack: number;
     defense: number;
     coins: number;
-    stats: boolean;
     kills: number;
     currentEnergy: number;
     maxEnergy: number;
-    available: boolean;
-    id: number;
-    imgPath = "/images/heroes_150_150/hero-tile-image.png";
-    // equipment: EquipmentModel;
+    imgPath = "";
     currentTile: TileModel;
     heroLocation: ICoordinates;
-    flippedImage = false;
     heroSteps: number;
+    // equipment: EquipmentModel;
     // heroDices: DiceModel[] = [];
 
     constructor() {
@@ -29,10 +26,14 @@ export class HeroModel implements IHero {
         this.heroSteps = 0;
     }
 
-    getHeroDices(): DiceModel[] {
-        const actionFaces = ['sword', 'shield', 'energy'];
-        const diceWeights = [10, 2, 3]
-        return Array.from({length: 3}, () => new DiceModel(actionFaces, diceWeights));
+    // getHeroDices(): DiceModel[] {
+    //     const actionFaces = ['sword', 'shield', 'energy'];
+    //     const diceWeights = [10, 2, 3]
+    //     return Array.from({length: 3}, () => new DiceModel(actionFaces, diceWeights));
+    // }
+
+    public getName(): string {
+        return this.name;
     }
 
     public setName(name: string): HeroModel {
@@ -85,23 +86,14 @@ export class HeroModel implements IHero {
         return this;
     }
 
-    public setStats(stats: boolean): HeroModel {
-        this.stats = stats;
-        return this;
-    }
-
-    public setEquipment(equipment: EquipmentModel): HeroModel {
-        this.equipment = equipment;
-        return this;
-    }
+    // public setEquipment(equipment: EquipmentModel): HeroModel {
+    //     this.equipment = equipment;
+    //     return this;
+    // }
 
     public setSteps(steps: number): HeroModel {
         this.heroSteps = steps;
         return this;
-    }
-
-    public getName(): string {
-        return this.name;
     }
 
     public getHealth(): number {
@@ -116,29 +108,29 @@ export class HeroModel implements IHero {
         return Math.round((this.heroSteps / 10) * 10) / 10;
     }
 
-    public getMaxEnergy(): number {
-        return this.maxEnergy;
-    }
+    // public getMaxEnergy(): number {
+    //     return this.maxEnergy;
+    // }
 
-    public getAttack(): number {
-        return this.attack;
-    }
+    // public getAttack(): number {
+    //     return this.attack;
+    // }
+    //
+    // public getDefense(): number {
+    //     return this.defense;
+    // }
+    //
+    // public getCoins(): number {
+    //     return this.coins;
+    // }
 
-    public getDefense(): number {
-        return this.defense;
-    }
-
-    public getCoins(): number {
-        return this.coins;
-    }
-
-    public getId(): number {
-        return this.id;
-    }
-
-    public getEnemiesKilled(): number {
-        return this.kills;
-    }
+    // public getId(): number {
+    //     return this.id;
+    // }
+    //
+    // public getEnemiesKilled(): number {
+    //     return this.kills;
+    // }
 
     public addKilled(): void {
         this.kills += 1;
@@ -159,12 +151,12 @@ export class HeroModel implements IHero {
         }
     }
 
-    public takeDamage(damage: number): void {
-        this.currentHealth -= damage;
-        if (this.currentHealth < 1) {
-            this.currentHealth = 0;
-        }
-    }
+    // public takeDamage(damage: number): void {
+    //     this.currentHealth -= damage;
+    //     if (this.currentHealth < 1) {
+    //         this.currentHealth = 0;
+    //     }
+    // }
 
     public healthIncreaser(): void {
         this.currentHealth += 1;

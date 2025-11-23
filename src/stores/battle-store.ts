@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia';
-import TileModel from '@/a-game-scenes/silesia-world-scene/models/tile-model';
+import TileModel from '@/a-game-scenes/homeland-scene/models/tile-model';
 import EnemyModel from '@/models/EnemyModel';
 import {useHeroStore} from './hero-store';
 import {useDiceStore} from '@/stores/dice-store';

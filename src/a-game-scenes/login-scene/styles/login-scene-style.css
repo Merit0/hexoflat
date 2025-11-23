@@ -1,13 +1,3 @@
-.background-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: -1;
-}
-
 .login-page {
     display: flex;
     flex-direction: column;
@@ -15,21 +5,30 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
+    background-image: url("@/a-game-scenes/login-scene/assets/login-page-background.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
 }
 
 .login-container {
-    left: 900px;
-    top: 500px;
-    width: 100%;
-    max-width: 400px;
+    position: relative;
+    width: 40vw;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-.video-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
+.login-form-image {
+    position: relative;
     width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 0;
+    height: 80vh;
+    max-width: 700px;
+    max-height: 700px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-top: 5rem;
 }

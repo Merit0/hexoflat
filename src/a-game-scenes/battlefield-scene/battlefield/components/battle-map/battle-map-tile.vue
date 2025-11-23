@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import {computed, defineProps} from 'vue';
-import TileModel from '@/a-game-scenes/silesia-world-scene/models/tile-model';
+import TileModel from '@/a-game-scenes/homeland-scene/models/tile-model';
 import BattleEnemyTile from "@/a-game-scenes/battlefield-scene/battlefield/components/battle-map/battle-enemy-tile.vue";
 import BattleHeroTile from "@/a-game-scenes/battlefield-scene/battlefield/components/battle-map/battle-hero-tile.vue";
 import BattleGraveTile from "@/a-game-scenes/battlefield-scene/battlefield/components/battle-map/battle-grave-tile.vue";

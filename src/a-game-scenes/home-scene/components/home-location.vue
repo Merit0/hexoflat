@@ -1,6 +1,6 @@
 <template>
   <title>Camp</title>
-  <hero-details-bar :hero="hero"/>
+  <hero-details-bar :hero="hero" />
   <section class="campContent">
     <div class="scalableGridWrapper">
       <div class="buildingGrid">
@@ -39,6 +39,7 @@ import HeroDetailsBar from "@/a-game-scenes/home-scene/components/hero-details-b
 import {useOverlayStore} from "@/stores/overlay-store";
 import ShopOverlay from "@/a-game-scenes/shop-scene/components/shop-overlay.vue";
 import HeroInventoryOverlay from "@/a-game-scenes/inventory-scene/components/hero-inventory-overlay.vue";
+import {HeroModel} from "@/models/HeroModel";
 
 export default {
   name: "camping-page",
@@ -46,8 +47,9 @@ export default {
   data() {
     const heroStore = useHeroStore();
     const overlayStore = useOverlayStore();
+    const hero: HeroModel = heroStore.hero;
     return {
-      hero: heroStore.hero,
+      hero,
       heroStore,
       overlayStore,
       numberOfTiles: 75,
@@ -122,7 +124,7 @@ export default {
   flex-direction: column;
   height: 94vh;
   width: 100%;
-  background: #1e1e1e;
+  background: #1e262b;
   justify-content: center;
   align-items: center;
   position: relative;
@@ -148,8 +150,7 @@ export default {
 }
 
 .tileBackground {
-  background-image: url('/src/a-game-scenes/home-scene/assets/stone-tile-baground.png');
-  background-size: cover;
+  background: #000000;
 }
 
 .initBuildingTile {
@@ -200,7 +201,7 @@ export default {
   background-size: cover;
   background-position: center;
   border-radius: 8px;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgb(152, 152, 152);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 

@@ -36,10 +36,10 @@
 <script setup lang="ts">
 import { defineProps } from 'vue';
 import { useUserStore } from '@/stores/user-store';
-import { IHero } from '@/abstraction/IHero';
+import {HeroModel} from "@/models/HeroModel";
 
 defineProps<{
-  hero: IHero;
+  hero: HeroModel;
 }>();
 
 const userStore = useUserStore();
