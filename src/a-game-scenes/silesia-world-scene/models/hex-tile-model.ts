@@ -8,7 +8,6 @@ export class HexTileModel {
     placeKey?: string;
     name?: string;
     isBlocked: boolean;
-    requiredMyriads: number;
 
     constructor(q: number, r: number) {
         this.q = q;
@@ -16,7 +15,6 @@ export class HexTileModel {
         this.isBlocked = true;
         this.place = 'empty';
         this.imagePath = '';
-        this.requiredMyriads = 10;
     }
 
     setupPlace(placeType: HexTileType, imagePath: string, placeKey?: string, name?: string, requiredMyriads?: number) {
@@ -24,10 +22,6 @@ export class HexTileModel {
         this.imagePath = imagePath;
         this.placeKey = placeKey;
         if (name) this.name = name;
-        if (requiredMyriads !== undefined) {
-            this.requiredMyriads = requiredMyriads;
-            this.isBlocked = requiredMyriads > 0;
-        }
     }
 
     get id(): string {

@@ -71,25 +71,9 @@ function getHexTileImage(tile: HexTileModel) {
 }
 
 function onTileClick(tile: HexTileModel) {
-  const roundTo = (num: number, decimals = 1): number => {
-    const factor = Math.pow(10, decimals);
-    return Math.round(num * factor) / factor;
-  }
-
   if (tile.place === 'blocked' || tile.place === 'empty') {
     console.log('Place is empty')
     return;
-  }
-  const hero: HeroModel = useHeroStore().hero;
-  const worldMapStore = useWorldMapStore();
-  if (tile.isBlocked) {
-    if (hero.getHeroMyriads() >= tile.requiredMyriads) {
-      tile.isBlocked = false;
-      worldMapStore.saveToStorage();
-    } else {
-      alert(`Need more ${roundTo(tile.requiredMyriads - hero.getHeroMyriads())} myriads, to unlock location.`);
-      return;
-    }
   }
   if (tile.place !== 'home') {
     router.push(`/location/${tile.placeKey}`);
@@ -126,6 +110,7 @@ onBeforeUnmount(() => {
   width: 92%;
   height: 90%;
   transform-origin: center center;
+  overflow: hidden;
 }
 
 .hex-tile {
@@ -139,10 +124,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
   transform-origin: center;
-  background: rgba(11, 8, 8, 0.25);
 }
 
 .hex-tile:hover {

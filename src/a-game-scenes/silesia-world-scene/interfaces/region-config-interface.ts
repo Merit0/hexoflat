@@ -15,6 +15,7 @@ export type TerrainType =
 
 export type HexTileType =
     'initial'
+    | 'hero'
     | 'empty'
     | 'home'
     | 'enemy'
@@ -38,10 +39,10 @@ export interface IHexCoordinates {
 }
 
 export interface IHexMapConfig {
-    key: string;
     place: HexTileType;
-    name?: string;
     coordinates: IHexCoordinates[];
-    images?: string[];
     backgroundImgPath?: string;
+    images?: string[];
+    key?: string;
+    name?: string;
 }

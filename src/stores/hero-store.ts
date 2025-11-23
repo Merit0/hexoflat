@@ -16,7 +16,6 @@ export const useHeroStore = defineStore("hero", {
     }),
 
     getters: {
-        // сучасна практика: прості derived значення — у getters
         coins: (s) => s.hero.coins,
         isAlive: (s) => s.hero.getHealth() > 0,
     },
