@@ -14,7 +14,7 @@ export type TerrainType =
     | 'camp';
 
 export type HexTileType =
-    'initial'
+    'terrain'
     | 'hero'
     | 'empty'
     | 'home'
@@ -35,7 +35,7 @@ export interface IRegionConfig {
 
 export interface IHexCoordinates {
     columnIndex: number;
-    rowIndex: Number;
+    rowIndex: number;
 }
 
 export interface IHexMapConfig {

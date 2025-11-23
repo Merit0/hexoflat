@@ -3,7 +3,7 @@
     <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
       <hex-tile
           v-for="tile in tiles"
-          :key="tile.id"
+          :key="tile.tileId"
           :hex-tile="tile"/>
     </div>
   </div>

@@ -1,7 +1,6 @@
 import {defineStore} from 'pinia';
-import {HexMapModel} from '@/a-game-scenes/homeland-scene/models/hex-map-model';
-import {HexTileModel} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
-import {HexMapProvider} from "@/a-game-scenes/homeland-scene/providers/hex-map-provider";
+import HexMapModel from '@/a-game-scenes/homeland-scene/models/hex-map-model';
+import {HexMapProvider} from '@/a-game-scenes/homeland-scene/providers/hex-map-provider';
 
 const STORAGE_KEY = 'hexoflat';
 
@@ -14,6 +13,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         generateIfEmpty() {
             if (this.map) return;
 
+            console.log('Map generating....');
             this.map = HexMapProvider.getHomeLand();
             this.saveToStorage();
         },
@@ -29,16 +29,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (!saved) return;
 
             const raw = JSON.parse(saved);
-            const map = new HexMapModel(raw.name, raw.width, raw.height, raw.regions);
-            map.tiles = raw.tiles.map((t: HexTileModel) => {
-                const tile = new HexTileModel(t.q, t.r);
-                tile.isBlocked = t.isBlocked;
-                tile.place = t.place;
-                tile.imagePath = t.imagePath;
-                tile.name = t.name;
-                return tile;
-            });
-            this.map = map;
+            this.map = HexMapModel.fromJSON(raw);
+            console.log('Loaded from storage...')
         },
         clearWorld() {
             console.log('Resetting map...')

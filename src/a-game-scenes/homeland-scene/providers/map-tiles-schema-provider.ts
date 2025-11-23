@@ -44,8 +44,9 @@ const objectsLayer: IHexMapConfig[] = [
     },
 ];
 
-const forestLocationHexConfig: IHexMapConfig[] = [
+export const homelandPlacesConfig: IHexMapConfig[] = [
     baseEmpty,
     ...objectsLayer,
 ];
-export default forestLocationHexConfig;
+
+export default homelandPlacesConfig;

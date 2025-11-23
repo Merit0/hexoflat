@@ -184,7 +184,7 @@ function updateMapTileState() {
   const mapLocationStore = useMapLocationStore()
 
   const mapTile = mapLocationStore.currentLocation?.tiles.find(
-      t => t.id === battleStore.battleTileId
+      t => t.coordinates === battleStore.battleTileId
   );
 
   if (!mapTile) return;

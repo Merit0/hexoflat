@@ -3,8 +3,6 @@ import * as Request from '../api/Requests';
 import UserModel from "@/models/UserModel";
 import router from "../router";
 import {useHeroStore} from "./hero-store";
-import {HexMapProvider} from "@/a-game-scenes/homeland-scene/providers/hex-map-provider";
-import {HexMapModel} from "@/a-game-scenes/homeland-scene/models/hex-map-model";
 import {useWorldMapStore} from "@/stores/world-map-store";
 
 export const useUserStore = defineStore('user', {

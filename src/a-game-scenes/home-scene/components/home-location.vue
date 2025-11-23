@@ -92,9 +92,6 @@ export default {
     openInventory() {
       this.heroStore.inventoryShown = true;
     },
-    openDressingRoom() {
-      this.overlayStore.openOverlay('hero-dressing-room');
-    },
     openShop() {
       this.showShop = true;
     },

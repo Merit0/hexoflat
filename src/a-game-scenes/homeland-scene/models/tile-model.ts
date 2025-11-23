@@ -2,12 +2,9 @@ import {ChestModel} from "@/models/ChestModel";
 import EnemyModel from "../../../models/EnemyModel";
 import {HeroModel} from "@/models/HeroModel";
 import {LootItemModel} from "@/models/LootItemModel";
+import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
 // import {DungeonModel} from "@/a-game-scenes/dungeon-scene/dungeon-model";
 
-export interface ICoordinates {
-    x: number;
-    y: number;
-}
 
 export interface ITile {
     id: number;
@@ -21,7 +18,7 @@ export interface ITile {
     chest?: ChestModel;
     // grave?: GraveModel;
     // dungeon?: DungeonModel;
-    coordinates: ICoordinates;
+    coordinates: IHexCoordinates;
     isReachable: boolean;
     isHeroHere: boolean;
     isEnemyHere: boolean;
@@ -41,7 +38,7 @@ export class TileModel implements ITile {
     hero?: HeroModel;
     // grave?: GraveModel;
     // dungeon: DungeonModel;
-    coordinates: ICoordinates;
+    coordinates: IHexCoordinates;
     isReachable = false;
     isHeroHere = false;
     isEnemyHere = false;
@@ -50,7 +47,7 @@ export class TileModel implements ITile {
     isDungeon = false;
     isExit = false;
 
-    constructor(id: number, coordinates: ICoordinates) {
+    constructor(id: number, coordinates: IHexCoordinates) {
         this.id = id;
         this.coordinates = coordinates;
     }

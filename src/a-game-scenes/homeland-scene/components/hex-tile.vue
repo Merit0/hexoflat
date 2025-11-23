@@ -1,12 +1,10 @@
 <template>
   <div
       class="hex-tile"
-      :class="hexTile.place"
       :style="getHexTileTransformStyle(hexTile)"
-      @click="hexTile.place !== 'blocked' && hexTile.place !== 'empty' ? onTileClick(hexTile) : null"
   >
     <div
-        :class="`hex-tile-img-${hexTile.place}`"
+        :class="`hex-tile-img-${hexTile.tileType}`"
         :style="getHexTileImage(hexTile)"
     ></div>
   </div>
@@ -22,10 +20,8 @@ defineProps<{
   hexTile: HexTileModel;
 }>();
 
-const router = useRouter();
+// const router = useRouter();
 const store = useWorldMapStore();
-store.loadFromStorage();
-store.generateIfEmpty();
 
 
 const tiles = ref<HexTileModel[]>([]);
@@ -46,8 +42,8 @@ function getHexTileTransformStyle(tile: HexTileModel) {
   const tileWidth = window.innerWidth / 44.6;
   const tileHeight = tileWidth * 1.01;
 
-  const x = tileWidth * (3 / 2) * tile.q;
-  const y = Math.sqrt(3) * tileHeight * tile.r + (tile.q % 2 ? Math.sqrt(3) * tileHeight / 2 : 0);
+  const x = tileWidth * (3 / 2) * tile.coordinates.columnIndex;
+  const y = Math.sqrt(3) * tileHeight * tile.coordinates.rowIndex + (tile.coordinates.columnIndex % 2 ? Math.sqrt(3) * tileHeight / 2 : 0);
 
   return {
     transform: `translate(${x}px, ${y}px)`
@@ -63,19 +59,19 @@ function getHexTileImage(tile: HexTileModel) {
   };
 }
 
-function onTileClick(tile: HexTileModel) {
-  if (tile.place === 'blocked' || tile.place === 'empty') {
-    console.log('Place is empty')
-    return;
-  }
-  if (tile.place !== 'home') {
-    router.push(`/location/${tile.placeKey}`);
-  } else if (tile.placeKey && tile.placeKey === 'home') {
-    router.push(`/${tile.placeKey}`);
-  } else {
-    return new Error('Map place is not supported');
-  }
-}
+// function onTileClick(tile: HexTileModel) {
+//   if (tile.place === 'blocked' || tile.place === 'empty') {
+//     console.log('Place is empty')
+//     return;
+//   }
+//   if (tile.place !== 'home') {
+//     router.push(`/location/${tile.placeKey}`);
+//   } else if (tile.placeKey && tile.placeKey === 'home') {
+//     router.push(`/${tile.placeKey}`);
+//   } else {
+//     return new Error('Map place is not supported');
+//   }
+// }
 
 onMounted(() => {
   updateScale();
