@@ -1,5 +1,6 @@
 import type {HexTileType, IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import {RouteName} from "@/router/routes";
 
 type HexTileDraft = Partial<Pick<
     HexTileModel,
@@ -9,7 +10,7 @@ type HexTileDraft = Partial<Pick<
 export class HexTileBuilder {
     private draft: HexTileDraft = {};
 
-    key(tileKey: string): this {
+    key(tileKey: RouteName): this {
         this.draft.tileKey = tileKey;
         return this;
     }

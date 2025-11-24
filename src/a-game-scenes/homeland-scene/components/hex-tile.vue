@@ -16,7 +16,7 @@ import {ref, onMounted, onBeforeUnmount, defineProps} from 'vue';
 import {HexTileModel, IHexTile} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
 import {useWorldMapStore} from "@/stores/world-map-store";
 import {useOverlayStore} from "@/stores/overlay-store";
-import router from "@/router";
+import router, {RouteName} from "@/router";
 
 const overlayStore = useOverlayStore();
 
@@ -24,7 +24,6 @@ defineProps<{
   hexTile: IHexTile;
 }>();
 
-// const router = useRouter();
 const store = useWorldMapStore();
 
 
@@ -43,14 +42,16 @@ function updateScale() {
 }
 
 function onTileClick(tile: IHexTile) {
+  const urlPathEndpoint: RouteName = tile.tileKey;
   if (tile.tileKey) {
-    router.push(`/${tile.tileKey}`);
-  } else {
-    overlayStore.openOverlay("hex-tile-details", {
-      q: tile.coordinates.columnIndex,
-      r: tile.coordinates.rowIndex,
-    }, {bringToFront: true});
+    router.push({name: urlPathEndpoint});
+    return;
   }
+
+  overlayStore.openOverlay(
+      "hex-tile-details",
+      {coordinates: tile.coordinates},
+  );
 }
 
 function getHexTileTransformStyle(tile: IHexTile) {

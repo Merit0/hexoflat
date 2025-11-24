@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import {defineStore} from 'pinia';
 import {OverlayPayloads, OverlayType} from "@/types/overlay-types";
 
 type OverlayEntry<T extends OverlayType = OverlayType> = {
@@ -31,9 +31,9 @@ export const useOverlayStore = defineStore("overlay-store", {
         openOverlay<T extends OverlayType>(
             name: T,
             data?: OverlayPayloads[T],
-            opts: { bringToFront?: boolean } = {}
+            opts: { bringToFront: boolean } = {bringToFront: true}
         ) {
-            const existingIndex = this.stack.findIndex(e => e.name === name);
+            const existingIndex = this.stack.findIndex((e: OverlayEntry) => e.name === name);
 
             if (existingIndex !== -1) {
                 this.stack[existingIndex].data = data as OverlayPayloads[T];
@@ -45,7 +45,7 @@ export const useOverlayStore = defineStore("overlay-store", {
                 return;
             }
 
-            this.stack.push({ name, data } as OverlayEntry<T>);
+            this.stack.push({name, data} as OverlayEntry<T>);
         },
 
         closeOverlay(name?: OverlayType) {
@@ -53,7 +53,7 @@ export const useOverlayStore = defineStore("overlay-store", {
                 this.stack = [];
                 return;
             }
-            this.stack = this.stack.filter(e => e.name !== name);
+            this.stack = this.stack.filter((e: OverlayEntry) => e.name !== name);
         },
 
         closeTop() {
@@ -62,7 +62,7 @@ export const useOverlayStore = defineStore("overlay-store", {
 
         replaceTop<T extends OverlayType>(name: T, data?: OverlayPayloads[T]) {
             if (this.stack.length) this.stack.pop();
-            this.stack.push({ name, data } as OverlayEntry<T>);
+            this.stack.push({name, data} as OverlayEntry<T>);
         },
     },
 });

@@ -2,10 +2,11 @@ import {
     HexTileType,
     IHexCoordinates,
 } from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+import {RouteName} from "@/router/routes";
 
 export interface IHexTile {
     tileId: string;
-    tileKey: string;
+    tileKey?: RouteName;
     tileType: HexTileType;
     imagePath: string;
     description: string;
@@ -15,7 +16,7 @@ export interface IHexTile {
 
 export class HexTileModel implements IHexTile {
     private _tileId: string;
-    private _tileKey: string;
+    private _tileKey?: RouteName | null;
     private _tileType: HexTileType = 'empty';
     private _description: string = 'Nothing around';
     private _imagePath: string = '';
@@ -29,11 +30,11 @@ export class HexTileModel implements IHexTile {
         this._tileId = tileId;
     }
 
-    get tileKey(): string {
+    get tileKey(): RouteName | null {
         return this._tileKey;
     }
 
-    set tileKey(tileKey: string) {
+    set tileKey(tileKey: RouteName) {
         this._tileKey = tileKey;
     }
 

@@ -1,3 +1,5 @@
+import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+
 export type OverlayType =
     | 'hex-tile-details'
     | 'hero-dressing-room'
@@ -22,5 +24,5 @@ export type OverlayPayloads = {
     'grave-inventory': { graveId: string };
     'dungeon-preview': { dungeonKey: string };
     'confirm-escape-battle': { battleId: string };
-    'hex-tile-details': { q: number; r: number };
+    'hex-tile-details': { coordinates: IHexCoordinates };
 };

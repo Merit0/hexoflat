@@ -48,8 +48,8 @@ const tile = computed(() => {
   if (!map) return null;
 
   return map.tiles.find(t =>
-      t.coordinates.columnIndex === props.data.q &&
-      t.coordinates.rowIndex === props.data.r
+      t.coordinates.columnIndex === props.data.coordinates.columnIndex &&
+      t.coordinates.rowIndex === props.data.coordinates.rowIndex
   ) ?? null;
 });
 

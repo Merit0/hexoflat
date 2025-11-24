@@ -1,3 +1,5 @@
+import {RouteName} from "@/router/routes";
+
 export type TerrainType =
     'no-terrain'
     | 'forest'
@@ -39,7 +41,7 @@ export interface IHexCoordinates {
 }
 
 export interface IHexMapConfig {
-    key: string;
+    key?: RouteName;
     placeType: HexTileType;
     description: string;
     coordinates: IHexCoordinates[];
