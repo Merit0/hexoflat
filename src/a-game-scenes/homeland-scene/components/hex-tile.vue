@@ -2,6 +2,7 @@
   <div
       class="hex-tile"
       :style="getHexTileTransformStyle(hexTile)"
+      @click="onTileClick(hexTile)"
   >
     <div
         :class="`hex-tile-img-${hexTile.tileType}`"
@@ -14,6 +15,8 @@
 import {ref, onMounted, onBeforeUnmount, defineProps} from 'vue';
 import {HexTileModel, IHexTile} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
 import {useWorldMapStore} from "@/stores/world-map-store";
+import {useOverlayStore} from "@/stores/overlay-store";
+const overlayStore = useOverlayStore();
 
 defineProps<{
   hexTile: IHexTile;
@@ -35,6 +38,14 @@ function updateScale() {
   const scaleX = window.innerWidth / tileWidth;
   const scaleY = window.innerHeight / tileHeight;
   scale.value = Math.min(scaleX, scaleY); // однаковий масштаб по обом осям
+}
+
+function onTileClick(tile: IHexTile) {
+  console.log('openning tile deatils overlay!')
+  overlayStore.openOverlay("hex-tile-details", {
+    q: tile.coordinates.columnIndex,
+    r: tile.coordinates.rowIndex,
+  }, { bringToFront: true });
 }
 
 function getHexTileTransformStyle(tile: IHexTile) {
@@ -61,20 +72,6 @@ function getHexTileImage(tile: IHexTile) {
     backgroundPosition: 'center',
   };
 }
-
-// function onTileClick(tile: HexTileModel) {
-//   if (tile.place === 'blocked' || tile.place === 'empty') {
-//     console.log('Place is empty')
-//     return;
-//   }
-//   if (tile.place !== 'home') {
-//     router.push(`/location/${tile.placeKey}`);
-//   } else if (tile.placeKey && tile.placeKey === 'home') {
-//     router.push(`/${tile.placeKey}`);
-//   } else {
-//     return new Error('Map place is not supported');
-//   }
-// }
 
 onMounted(() => {
   updateScale();

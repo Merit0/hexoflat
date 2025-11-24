@@ -1,60 +1,257 @@
- @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+/* =========================================================
+   HEXOFLAT — GLOBAL THEME (Dark / Cold / Subtle accents)
+   ========================================================= */
 
- .page {
-    min-height: 100vh;
-    align-items :center;
+/* === FONTS === */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
+
+/* === ROOT TOKENS === */
+:root {
+    /* Typography */
+    --font-main: 'Cinzel', serif;
+
+    /* Hex sizing (твоя база — ок, далі можна підганяти в runtime) */
+    --hex-tile-width: 4.4vw;
+    --hex-tile-height: calc(var(--hex-tile-width) * 0.89);
+
+    /* ===== Core palette (dark creepy base + cold neutrals) ===== */
+    --bg-night: #0b0d10;        /* основний фон */
+    --bg-abyss: #07090c;        /* ще темніше для depth */
+    --bg-panel: rgba(255,255,255,0.04);
+    --bg-panel-strong: rgba(255,255,255,0.06);
+
+    --stroke-soft: rgba(255,255,255,0.10);
+    --stroke-strong: rgba(255,255,255,0.16);
+
+    /* Cold whites / grays with blue undertone */
+    --color-white: #f1f4f7;
+    --color-silver: #d7dde3;
+    --color-gray-light: #b8c0c8;
+    --color-gray: #8a939c;
+    --color-gray-dark: #565e66;
+    --color-charcoal: #23282d;
+
+    /* Icy blues (subtle) */
+    --blue-ice-1: #e6f1ff;
+    --blue-ice-2: #cfe3fb;
+    --blue-ice-3: #9fc2e8;
+    --blue-ice-4: #7aa3cf;
+    --blue-ice-glow: rgba(140,185,255,0.28);
+
+    /* ===== Text ===== */
+    --text-main: var(--color-white);
+    --text-normal: var(--color-silver);
+    --text-muted: var(--color-gray-light);
+    --text-faint: var(--color-gray);
+
+    /* ===== Accents (only cold / subtle) ===== */
+    --accent-main: var(--blue-ice-4);
+    --accent-hover: var(--blue-ice-3);
+    --accent-glow: var(--blue-ice-glow);
+
+    /* Status colors (very low saturation, only if needed) */
+    --status-danger: #c07a7a;   /* muted red */
+    --status-success: #8fb89a;  /* muted green */
+    --status-energy: #8fbfe6;   /* muted cyan/blue */
+    --status-rare: #9aa4d6;     /* muted violet/blue */
+
+    /* Shadows */
+    --shadow-soft: 0 8px 25px rgba(0,0,0,0.45);
+    --shadow-hard: 0 2px 6px rgba(0,0,0,0.70);
+    --text-shadow-soft: 0 1px 2px rgba(0,0,0,0.60);
+    --text-shadow-hard: 0 2px 4px rgba(0,0,0,0.85);
+
+    /* Overlay */
+    --overlay-bg: rgba(6, 8, 10, 0.68);
+
+    /* Radius / spacing helpers */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
 }
 
- :root {
-     --hex-tile-width: 4.4vw;
-     --hex-tile-height: calc(var(--hex-tile-width) * 0.88);
- }
-
-* {
+/* === RESET === */
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-html {
-    font-family: 'Poppins', sans-serif;
+/* === BASE DOCUMENT === */
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-main), serif;
+    font-size: 16px;
+    line-height: 1.35;
+    color: var(--text-normal);
+    background: radial-gradient(
+            1200px 800px at 50% -10%,
+            #11151a 0%,
+            var(--bg-night) 50%,
+            var(--bg-abyss) 100%
+    );
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
-.activeBtn:active {
-    transform: scale(0.98);
-    box-shadow: 3px 2px 22px 1px rgba(0, 0, 0, 0.24);
+body {
+    overflow: hidden; /* full-screen сцени */
+}
+
+/* === PAGE LAYOUT UTILITY === */
+.page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+/* =========================================================
+   BUTTONS (safe global base + utility for accent hover)
+   ========================================================= */
+
+button {
+    font-family: var(--font-main), serif;
+    color: var(--text-main);
+    background: var(--bg-panel);
+    border: 1px solid var(--stroke-soft);
+    border-radius: var(--radius-md);
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    transition: 0.18s ease;
+    box-shadow: var(--shadow-soft);
 }
 
 button:hover {
-    cursor: pointer;
+    border-color: var(--accent-main);
+    color: var(--accent-hover);
+    box-shadow: 0 0 10px var(--accent-glow);
 }
 
-button:hover,
-button:focus {
-    color: rgb(255, 123, 0);
+/* Легка "натисненість" */
+.activeBtn:active {
+    transform: scale(0.98);
+    box-shadow: var(--shadow-hard);
 }
 
-.mapTile {
-    height: 14vh;
-    aspect-ratio: 1 / 1;
-    box-sizing: border-box;
-    background-size: 100% 100%;
-    flex-shrink: 0;
-    border-radius: 4px;
-    justify-content: center;
+/* Якщо треба підсвічувати лише деякі кнопки */
+.btn-hover-accent:hover,
+.btn-hover-accent:focus-visible {
+    color: var(--accent-hover);
+}
+
+/* =========================================================
+   GLOBAL OVERLAY
+   ========================================================= */
+.globalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background-color: var(--overlay-bg);
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    align-content: center;
 }
 
- .globalOverlay {
-     top: 0;
-     left: 0;
-     right: 0;
-     bottom: 0;
-     z-index: 100;
-     position: absolute;
-     background-color: rgba(83, 83, 83, 0.21);
-     display: flex;
-     flex-direction: column;
-     align-items: center;
- }
+/* =========================================================
+   TYPOGRAPHY SYSTEM — Hexoflat Edition (cold / subtle)
+   ========================================================= */
+
+/* HEADERS */
+h1, .h1 {
+    font-size: clamp(2.2rem, 3vw, 3rem);
+    font-weight: 700;
+    color: var(--text-main);
+    text-shadow: var(--text-shadow-hard);
+    letter-spacing: 0.6px;
+}
+
+h2, .h2 {
+    font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+    font-weight: 600;
+    color: var(--text-main);
+    text-shadow: var(--text-shadow-soft);
+}
+
+h3, .h3 {
+    font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+h4, .h4 {
+    font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* PARAGRAPHS */
+p, .p {
+    font-size: 1rem;
+    color: var(--text-normal);
+    margin-bottom: 0.6rem;
+}
+
+.p-muted {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* UI LABELS */
+.label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+}
+
+.label-accent { color: var(--accent-main); }
+.label-danger { color: var(--status-danger); }
+.label-energy { color: var(--status-energy); }
+.label-rare   { color: var(--status-rare); }
+
+/* TOOLTIP */
+.tooltip-text {
+    font-size: 0.95rem;
+    color: var(--text-normal);
+    text-shadow: var(--text-shadow-soft);
+}
+
+.tooltip-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-shadow: var(--text-shadow-hard);
+}
+
+/* BATTLE NUMBERS */
+.number-damage {
+    color: var(--status-danger);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(192, 122, 122, 0.35);
+}
+
+.number-heal {
+    color: var(--status-success);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(143, 184, 154, 0.35);
+}
+
+.number-energy {
+    color: var(--status-energy);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(143, 191, 230, 0.35);
+}
+
+/* LINKS (cold accent) */
+a {
+    color: var(--accent-main);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-shadow: 0 0 8px var(--accent-glow);
+}
