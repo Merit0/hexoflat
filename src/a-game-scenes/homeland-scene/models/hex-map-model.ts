@@ -96,6 +96,7 @@ export default class HexMapModel implements IWorldMap {
             for (const c of place.coordinates) {
                 const key = `${c.columnIndex}:${c.rowIndex}`;
                 const tile = tileByCoordinate.get(key);
+                tile.tileKey = place.key;
                 tile.tileType = place.placeType;
                 tile.description = place.description;
                 tile.coordinates = {columnIndex: c.columnIndex, rowIndex: c.rowIndex};

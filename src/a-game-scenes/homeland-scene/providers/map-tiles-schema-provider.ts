@@ -2,7 +2,7 @@ import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/region-co
 
 export const homelandMapConfig: IHexMapConfig[] = [
     {
-        key: 'boss-homeland',
+        key: 'battle',
         placeType: 'enemy',
         description: 'Skeletor',
         images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/skeletor-head-image.png'],
@@ -11,8 +11,8 @@ export const homelandMapConfig: IHexMapConfig[] = [
     {
         key: 'camping',
         placeType: 'home',
-        description: 'Home Entrance',
-        images: [],
+        description: 'Here You will find peace!',
+        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/house-tile-image.png'],
         coordinates: [{ rowIndex: 0, columnIndex: 13 }],
     },
 ];
