@@ -26,21 +26,18 @@ const store = useWorldMapStore();
 const tiles = ref<HexTileModel[]>([]);
 tiles.value = store.map.tiles;
 
-
-const baseWidth = 1760;
-const baseHeight = 700;
-const GRID_COLUMNS = 41;
+const GRID_COLUMNS = 42;
+const tileWidth = window.innerWidth / GRID_COLUMNS;
+const tileHeight = tileWidth * 1.01;
 const scale = ref(1);
 
 function updateScale() {
-  const scaleX = window.innerWidth / baseWidth;
-  const scaleY = window.innerHeight / baseHeight;
+  const scaleX = window.innerWidth / tileWidth;
+  const scaleY = window.innerHeight / tileHeight;
   scale.value = Math.min(scaleX, scaleY); // однаковий масштаб по обом осям
 }
 
 function getHexTileTransformStyle(tile: IHexTile) {
-  const tileWidth = baseWidth / GRID_COLUMNS;
-  const tileHeight = tileWidth * 1.01;
 
   const x = tileWidth * (3 / 2) * tile.coordinates.columnIndex;
   const y =
@@ -91,9 +88,11 @@ onBeforeUnmount(() => {
 <style scoped>
 @import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
 
-/* ---------------------------
-   HEX TILE BASE
---------------------------- */
+:root {
+  --tx: 0px;
+  --ty: 0px;
+}
+
 .hex-tile {
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
@@ -112,14 +111,14 @@ onBeforeUnmount(() => {
   transform-origin: center center;
   will-change: transform;
 
-  /* головне: translate + базовий scale (трохи менший тайл для “gap”) */
-  transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 0.98));
+  /*gap between hex tiles*/
+  transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 1.05));
 
   transition: transform 0.16s ease, filter 0.16s ease;
 }
 
 .hex-tile:hover {
-  --hex-scale: 1.01;
+  --hex-scale: 1.1;
   filter: brightness(1.15);
   z-index: 50;
 }

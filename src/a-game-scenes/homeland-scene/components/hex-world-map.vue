@@ -38,13 +38,10 @@ store.generateIfEmpty();
 const tiles = ref<HexTileModel[]>([]);
 tiles.value = store.map.tiles;
 
-
-const baseWidth = 1760;
-const baseHeight = 700;
-const DESIGN_COLS = 40;
+const DESIGN_COLS = 41;
 const scale = ref(1);
 
-const tileWidth = baseWidth / DESIGN_COLS;
+const tileWidth = window.innerWidth / DESIGN_COLS;
 const tileHeight = tileWidth * 1.01;
 
 const mapBounds = computed(() => {
@@ -52,8 +49,7 @@ const mapBounds = computed(() => {
   let maxX = -Infinity, maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const {x, y} = calcHexPixelPosition(t, tileWidth, tileHeight);
-
+    const { x, y } = calcHexPixelPosition(t, tileWidth, tileHeight);
     if (x < minX) minX = x;
     if (y < minY) minY = y;
     if (x > maxX) maxX = x;
@@ -68,10 +64,11 @@ const mapBounds = computed(() => {
   };
 });
 
+
 function updateScale() {
-  const scaleX = window.innerWidth / baseWidth;
-  const scaleY = window.innerHeight / baseHeight;
-  scale.value = Math.min(scaleX, scaleY);
+  const sx = window.innerWidth / tileWidth;
+  const sy = window.innerHeight / tileHeight;
+  return Math.min(sx, sy);
 }
 
 onMounted(() => {
