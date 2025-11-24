@@ -12,12 +12,11 @@
 
 <script setup lang="ts">
 import {ref, onMounted, onBeforeUnmount, defineProps} from 'vue';
-import {useRouter} from 'vue-router';
-import type {HexTileModel} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
+import {HexTileModel, IHexTile} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
 import {useWorldMapStore} from "@/stores/world-map-store";
 
 defineProps<{
-  hexTile: HexTileModel;
+  hexTile: IHexTile;
 }>();
 
 // const router = useRouter();
@@ -30,6 +29,7 @@ tiles.value = store.map.tiles;
 
 const baseWidth = 1760;
 const baseHeight = 700;
+const GRID_COLUMNS = 41;
 const scale = ref(1);
 
 function updateScale() {
@@ -38,19 +38,25 @@ function updateScale() {
   scale.value = Math.min(scaleX, scaleY); // однаковий масштаб по обом осям
 }
 
-function getHexTileTransformStyle(tile: HexTileModel) {
-  const tileWidth = window.innerWidth / 44.6;
+function getHexTileTransformStyle(tile: IHexTile) {
+  const tileWidth = baseWidth / GRID_COLUMNS;
   const tileHeight = tileWidth * 1.01;
 
   const x = tileWidth * (3 / 2) * tile.coordinates.columnIndex;
-  const y = Math.sqrt(3) * tileHeight * tile.coordinates.rowIndex + (tile.coordinates.columnIndex % 2 ? Math.sqrt(3) * tileHeight / 2 : 0);
+  const y =
+      Math.sqrt(3) * tileHeight * tile.coordinates.rowIndex +
+      (tile.coordinates.columnIndex % 2
+          ? (Math.sqrt(3) * tileHeight) / 2
+          : 0);
 
   return {
-    transform: `translate(${x}px, ${y}px)`
-  };
+    '--tx': `${x}px`,
+    '--ty': `${y}px`,
+  } as Record<string, string>;
 }
 
-function getHexTileImage(tile: HexTileModel) {
+
+function getHexTileImage(tile: IHexTile) {
   return {
     backgroundImage: `url(${tile.imagePath})`,
     backgroundSize: 'cover',
@@ -85,24 +91,45 @@ onBeforeUnmount(() => {
 <style scoped>
 @import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
 
+/* ---------------------------
+   HEX TILE BASE
+--------------------------- */
 .hex-tile {
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
   position: absolute;
+
   clip-path: polygon(
       25% 0%, 75% 0%, 100% 50%,
       75% 100%, 25% 100%, 0% 50%
   );
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
-  transform-origin: center;
+  transform-origin: center center;
+  will-change: transform;
+
+  /* головне: translate + базовий scale (трохи менший тайл для “gap”) */
+  transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 0.98));
+
+  transition: transform 0.16s ease, filter 0.16s ease;
 }
 
 .hex-tile:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 12px rgb(0, 0, 0);
-  z-index: 10;
+  --hex-scale: 1.01;
+  filter: brightness(1.15);
+  z-index: 50;
 }
+
+.hex-tile > div {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+}
+
 </style>

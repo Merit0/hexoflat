@@ -3,7 +3,7 @@ import {
     IHexCoordinates,
 } from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
 
-interface IHexTile {
+export interface IHexTile {
     tileId: string;
     tileKey: string;
     tileType: HexTileType;
