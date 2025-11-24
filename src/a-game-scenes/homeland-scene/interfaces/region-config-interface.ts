@@ -39,10 +39,10 @@ export interface IHexCoordinates {
 }
 
 export interface IHexMapConfig {
-    place: HexTileType;
+    key: string;
+    placeType: HexTileType;
+    description: string;
     coordinates: IHexCoordinates[];
     backgroundImgPath?: string;
     images?: string[];
-    key?: string;
-    name?: string;
 }

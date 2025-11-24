@@ -69,16 +69,48 @@ export default class HexMapModel implements IWorldMap {
     }
 
     public generateTiles(): void {
+        console.log('Generating tiles...');
         this._tiles = [];
 
+        // 1) базова генерація пустих тайлів
         for (let q = 0; q < this.width; q++) {
             for (let r = 0; r < this.height; r++) {
                 const hex = new HexTileBuilder()
-                    .type('empty')
-                    .imagePath('src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png')
+                    .type("empty")
+                    .imagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
                     .coordinates({columnIndex: q, rowIndex: r})
                     .build();
+
                 this._tiles.push(hex);
+            }
+        }
+
+        if (!this.config.length) return;
+
+        const tileByCoordinate = new Map<string, HexTileModel>();
+        for (const t of this._tiles) {
+            tileByCoordinate.set(`${t.coordinates.columnIndex}:${t.coordinates.rowIndex}`, t);
+        }
+
+        for (const place of this.config) {
+            for (const c of place.coordinates) {
+                const key = `${c.columnIndex}:${c.rowIndex}`;
+                const tile = tileByCoordinate.get(key);
+                tile.tileType = place.placeType;
+                tile.description = place.description;
+                tile.coordinates = {columnIndex: c.columnIndex, rowIndex: c.rowIndex};
+
+                if (!tile) {
+                    console.warn(
+                        `Missing tile with coordinates: [${c.columnIndex},${c.rowIndex}] for place ${place.key}`
+                    );
+                    continue;
+                }
+
+                tile.imagePath =
+                    place.images?.length
+                        ? place.images[Math.floor(Math.random() * place.images.length)]
+                        : "";
             }
         }
     }
@@ -91,7 +123,6 @@ export default class HexMapModel implements IWorldMap {
             complexity: this.complexity,
             config: this.config,
             tiles: this.tiles.map(t => ({
-                // coordinates: {columnIndex: t.coordinates.columnIndex, rowIndex: t.coordinates.rowIndex},
                 imagePath: t.imagePath,
                 tileKey: t.tileKey,
                 tileType: t.tileType,
