@@ -2,7 +2,7 @@
   <div
       class="hex-tile"
       :style="getHexTileTransformStyle(hexTile)"
-      @click="onTileClick(hexTile)"
+      @click="emit('tile-click', hexTile)"
   >
     <div
         :class="`hex-tile-img-${hexTile.tileType}`"
@@ -12,21 +12,19 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, defineProps} from 'vue';
+import {ref, onMounted, onBeforeUnmount} from 'vue';
 import {HexTileModel, IHexTile} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
 import {useWorldMapStore} from "@/stores/world-map-store";
-import {useOverlayStore} from "@/stores/overlay-store";
-import router, {RouteName} from "@/router";
-
-const overlayStore = useOverlayStore();
 
 defineProps<{
   hexTile: IHexTile;
 }>();
 
+const emit = defineEmits<{
+  (e: "tile-click", tile: IHexTile): void;
+}>();
+
 const store = useWorldMapStore();
-
-
 const tiles = ref<HexTileModel[]>([]);
 tiles.value = store.map.tiles;
 
@@ -39,19 +37,6 @@ function updateScale() {
   const scaleX = window.innerWidth / tileWidth;
   const scaleY = window.innerHeight / tileHeight;
   scale.value = Math.min(scaleX, scaleY); // однаковий масштаб по обом осям
-}
-
-function onTileClick(tile: IHexTile) {
-  const urlPathEndpoint: RouteName = tile.tileKey;
-  if (tile.tileKey) {
-    router.push({name: urlPathEndpoint});
-    return;
-  }
-
-  overlayStore.openOverlay(
-      "hex-tile-details",
-      {coordinates: tile.coordinates},
-  );
 }
 
 function getHexTileTransformStyle(tile: IHexTile) {

@@ -16,6 +16,7 @@
             v-for="tile in tiles"
             :key="tile.tileId"
             :hex-tile="tile"
+            @tile-click="handleTileClick"
         />
       </div>
     </div>
@@ -29,6 +30,8 @@ import type {HexTileModel} from '@/a-game-scenes/homeland-scene/models/hex-tile-
 import {useWorldMapStore} from "@/stores/world-map-store";
 import HexTile from "@/a-game-scenes/homeland-scene/components/hex-tile.vue";
 import {calcHexPixelPosition} from "@/utils/tile-utils";
+import {useTileClick} from "@/composables/use-tile-click";
+const { handleTileClick } = useTileClick();
 
 const store = useWorldMapStore();
 store.loadFromStorage();

@@ -34,7 +34,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
 import { useUserStore } from '@/stores/user-store';
 import {HeroModel} from "@/models/HeroModel";
 
