@@ -1,5 +1,5 @@
 <template>
-  <div class="hex-map">
+  <div class="hex-map game-root">
     <div
         class="hex-map-wrapper"
         :style="{ transform: `scale(${scale})` }"

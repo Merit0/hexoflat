@@ -1,5 +1,5 @@
 <template>
-    <form class="login-form" @submit.prevent="onSubmit" novalidate>
+    <form class="login-form game-root" @submit.prevent="onSubmit" novalidate>
       <div class="form-field">
         <input
             v-model.trim="form.username"

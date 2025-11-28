@@ -1,5 +1,5 @@
 <template>
-  <div class="overlay-backdrop" @click.self="close">
+  <div class="overlay-backdrop game-root" @click.self="close">
     <div class="overlay-card">
       <header class="overlay-header">
         <h2>Hex Tile Details</h2>

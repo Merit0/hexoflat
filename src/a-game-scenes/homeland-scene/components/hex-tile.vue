@@ -1,6 +1,6 @@
 <template>
   <div
-      class="hex-tile"
+      class="hex-tile  game-root"
       :style="getHexTileTransformStyle(hexTile)"
       @click="emit('tile-click', hexTile)"
   >

@@ -1,5 +1,5 @@
 <template>
-  <div class="bar">
+  <div class="bar game-root">
     <div class="heroStats">
       <div class="item">
         <p class="heroDetailsText" label="heroName"> {{ hero.name }} </p>

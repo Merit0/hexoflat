@@ -1,7 +1,7 @@
 <template>
   <title>Camp</title>
   <hero-details-bar :hero="hero" />
-  <section class="campContent">
+  <section class="campContent game-root">
     <div class="scalableGridWrapper">
       <div class="buildingGrid">
         <div

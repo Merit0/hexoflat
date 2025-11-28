@@ -79,6 +79,11 @@
     box-sizing: border-box;
 }
 
+.game-root,
+.game-root * {
+    cursor: url("@/assets/cursors/base-cursor_48_48.png") 1 1, auto !important;
+}
+
 /* === BASE DOCUMENT === */
 html, body {
     width: 100%;
@@ -98,7 +103,8 @@ html, body {
 }
 
 body {
-    overflow: hidden; /* full-screen сцени */
+    overflow: hidden;
+    cursor: url("@/assets/cursors/base-cursor_48_48.png") 1 1, auto !important;
 }
 
 /* === PAGE LAYOUT UTILITY === */
