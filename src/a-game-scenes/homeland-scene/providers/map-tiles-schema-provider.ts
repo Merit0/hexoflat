@@ -1,4 +1,4 @@
-import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {ROUTES} from "@/router/routes";
 
 export const homelandMapConfig: IHexMapConfig[] = [

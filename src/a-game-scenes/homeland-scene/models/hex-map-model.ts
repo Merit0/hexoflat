@@ -1,4 +1,4 @@
-import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {Complexity} from "@/enums/complexity";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {HexTileBuilder} from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
@@ -72,11 +72,9 @@ export default class HexMapModel implements IWorldMap {
         console.log('Generating tiles...');
         this._tiles = [];
 
-        // 1) базова генерація пустих тайлів
         for (let q = 0; q < this.width; q++) {
             for (let r = 0; r < this.height; r++) {
                 const hex = new HexTileBuilder()
-                    .type("empty")
                     .imagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
                     .coordinates({columnIndex: q, rowIndex: r})
                     .build();

@@ -1,4 +1,4 @@
-import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 
 export type OverlayType =
     | 'hex-tile-details'

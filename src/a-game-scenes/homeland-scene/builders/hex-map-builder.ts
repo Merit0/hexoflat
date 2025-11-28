@@ -1,6 +1,6 @@
 import {Complexity} from "@/enums/complexity";
 import HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
-import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 
 interface IHexMapBuilder {
     name(mapName: string): this;

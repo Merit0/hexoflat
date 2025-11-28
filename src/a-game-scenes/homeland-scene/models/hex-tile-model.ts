@@ -1,15 +1,16 @@
 import {
     HexTileType,
     IHexCoordinates,
-} from "@/a-game-scenes/homeland-scene/interfaces/region-config-interface";
+} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {RouteName} from "@/router/routes";
 
 export interface IHexTile {
     tileId: string;
-    tileKey?: RouteName;
+    tileKey?: RouteName | null;
     tileType: HexTileType;
     imagePath: string;
     description: string;
+    isRevealed: boolean;
     coordinates: IHexCoordinates;
     coordinatesToString(): string;
 }
@@ -17,7 +18,8 @@ export interface IHexTile {
 export class HexTileModel implements IHexTile {
     private _tileId: string;
     private _tileKey?: RouteName | null;
-    private _tileType: HexTileType = 'empty';
+    private _tileType: HexTileType = 'fog';
+    private _isRevealed = false;
     private _description: string = 'Nothing around';
     private _imagePath: string = '';
     private _coordinates: IHexCoordinates = {columnIndex: 0, rowIndex: 0};
@@ -28,6 +30,14 @@ export class HexTileModel implements IHexTile {
 
     set tileId(tileId: string) {
         this._tileId = tileId;
+    }
+
+    get isRevealed(): boolean {
+        return this._isRevealed;
+    }
+
+    set isRevealed(isRevealedStatus: boolean) {
+        this._isRevealed = isRevealedStatus;
     }
 
     get tileKey(): RouteName | null {

@@ -81,7 +81,7 @@
 
 .game-root,
 .game-root * {
-    cursor: url("@/assets/cursors/base-cursor_48_48.png") 1 1, auto !important;
+    cursor: url("@/assets/cursors/base-cursor_40_40.png") 1 1, auto !important;
 }
 
 /* === BASE DOCUMENT === */
@@ -104,7 +104,7 @@ html, body {
 
 body {
     overflow: hidden;
-    cursor: url("@/assets/cursors/base-cursor_48_48.png") 1 1, auto !important;
+    cursor: url("@/assets/cursors/base-cursor_40_40.png") 1 1, auto !important;
 }
 
 /* === PAGE LAYOUT UTILITY === */
