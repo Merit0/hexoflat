@@ -1,4 +1,4 @@
-import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {HexTileType, IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {Complexity} from "@/enums/complexity";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {HexTileBuilder} from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
@@ -90,25 +90,25 @@ export default class HexMapModel implements IWorldMap {
             tileByCoordinate.set(`${t.coordinates.columnIndex}:${t.coordinates.rowIndex}`, t);
         }
 
-        for (const place of this.config) {
-            for (const c of place.coordinates) {
+        for (const tileConfig of this.config) {
+            for (const c of tileConfig.coordinates) {
                 const key = `${c.columnIndex}:${c.rowIndex}`;
                 const tile = tileByCoordinate.get(key);
-                tile.tileKey = place.key;
-                tile.tileType = place.placeType;
-                tile.description = place.description;
+                tile.tileKey = tileConfig.key;
+                tile.tileType = tileConfig.tileType;
+                tile.description = tileConfig.description;
                 tile.coordinates = {columnIndex: c.columnIndex, rowIndex: c.rowIndex};
 
                 if (!tile) {
                     console.warn(
-                        `Missing tile with coordinates: [${c.columnIndex},${c.rowIndex}] for place ${place.key}`
+                        `Missing tile with coordinates: [${c.columnIndex},${c.rowIndex}] for place ${tileConfig.key}`
                     );
                     continue;
                 }
 
                 tile.imagePath =
-                    place.images?.length
-                        ? place.images[Math.floor(Math.random() * place.images.length)]
+                    tileConfig.images?.length
+                        ? tileConfig.images[Math.floor(Math.random() * tileConfig.images.length)]
                         : "";
             }
         }
@@ -127,6 +127,7 @@ export default class HexMapModel implements IWorldMap {
                 tileType: t.tileType,
                 description: t.description,
                 coordinates: t.coordinates,
+                isRevealed: t.isRevealed,
             })),
         };
     }
@@ -141,10 +142,10 @@ export default class HexMapModel implements IWorldMap {
 
         map.tiles = raw.tiles.map((t: any) => {
             const tile = new HexTileModel();
-            tile.tileType = t.place ?? "empty";
+            tile.tileType = (t.tileType as HexTileType) ?? "fog";
+            tile.isRevealed = t.isRevealed ?? false;
             tile.imagePath = t.imagePath ?? "";
-            tile.tileKey = t.tileKey ?? "";
-            tile.tileType = t.tileType;
+            tile.tileKey = t.tileKey ?? null;
             tile.description = t.description ?? "";
             tile.coordinates = t.coordinates ?? {rowIndex: t.r, columnIndex: t.q};
             return tile;

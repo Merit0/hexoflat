@@ -4,11 +4,27 @@ import {RouteName} from "@/router/routes";
 
 type HexTileDraft = Partial<Pick<
     HexTileModel,
-    "tileKey" | "tileType" | "imagePath" | "description" | "coordinates"
+    'tileId'
+    | 'tileKey'
+    | 'tileType'
+    | 'imagePath'
+    | 'description'
+    | 'coordinates'
+    | 'isRevealed'
 >>;
 
 export class HexTileBuilder {
     private draft: HexTileDraft = {};
+
+    tileId(tileId: string): this {
+        this.draft.tileId = tileId;
+        return this;
+    }
+
+    isRevealed(revealedStatus: boolean): this {
+        this.draft.isRevealed = revealedStatus;
+        return this;
+    }
 
     routeKey(tileKey: RouteName): this {
         this.draft.tileKey = tileKey;
@@ -47,6 +63,7 @@ export class HexTileBuilder {
         const tile = new HexTileModel();
 
         tile.tileKey = this.draft.tileKey;
+        tile.isRevealed = this.draft.isRevealed ?? false;
         tile.tileType = this.draft.tileType ?? tile.tileType;
         tile.coordinates = this.draft.coordinates;
         tile.imagePath = this.draft.imagePath ?? "";

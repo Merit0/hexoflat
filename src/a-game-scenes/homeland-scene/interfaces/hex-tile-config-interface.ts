@@ -17,7 +17,7 @@ export interface IHexCoordinates {
 
 export interface IHexMapConfig {
     key?: RouteName;
-    placeType: HexTileType;
+    tileType: HexTileType;
     description: string;
     coordinates: IHexCoordinates[];
     backgroundImgPath?: string;

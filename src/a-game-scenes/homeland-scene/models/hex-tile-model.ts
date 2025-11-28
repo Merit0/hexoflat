@@ -3,6 +3,7 @@ import {
     IHexCoordinates,
 } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {RouteName} from "@/router/routes";
+import {HexTileBuilder} from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
 
 export interface IHexTile {
     tileId: string;
@@ -82,5 +83,16 @@ export class HexTileModel implements IHexTile {
 
     coordinatesToString(): string {
         return `${this.coordinates.columnIndex},${this.coordinates.rowIndex}`;
+    }
+
+    static fromJSON(raw: any): HexTileModel {
+        return new HexTileBuilder()
+            .tileId(raw.tileId)
+            .routeKey(raw.tileKey)
+            .type(raw.tileType)
+            .isRevealed(raw.isRevealed)
+            .imagePath(raw.imagePath)
+            .coordinates(raw.coordinates)
+            .build();
     }
 }
