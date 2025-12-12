@@ -27,7 +27,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         initHeroPosition() {
             if (!this.map) return;
 
-            const campTile = this.map.tiles.find(
+            const campTile: HexTileModel = this.map.tiles.find(
                 (t: HexTileModel) => t.tileType === 'home'
             );
 

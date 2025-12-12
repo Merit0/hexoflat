@@ -16,6 +16,7 @@
             v-for="tile in tiles"
             :key="tile.tileId"
             :hex-tile="tile"
+            :hero-coordinates="store.heroCoordinates"
             @tile-click="handleTileClick"
         />
       </div>

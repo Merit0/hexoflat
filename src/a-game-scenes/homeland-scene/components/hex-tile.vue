@@ -1,6 +1,6 @@
 <template>
   <div
-      class="hex-tile  game-root"
+      class="hex-tile game-root"
       :style="getHexTileTransformStyle(hexTile)"
       @click="emit('tile-click', hexTile)"
   >
@@ -8,16 +8,19 @@
         :class="`hex-tile-img-${hexTile.tileType}`"
         :style="getHexTileImage(hexTile)"
     ></div>
+
+    <div v-if="isHeroHere" class="hero-sprite"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount} from 'vue';
+import {ref, onMounted, onBeforeUnmount, computed} from 'vue';
 import {HexTileModel, IHexTile} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
 import {useWorldMapStore} from "@/stores/world-map-store";
 
-defineProps<{
+const props = defineProps<{
   hexTile: IHexTile;
+  heroCoordinates: { columnIndex: number; rowIndex: number } | null;
 }>();
 
 const emit = defineEmits<{
@@ -32,6 +35,15 @@ const GRID_COLUMNS = 42;
 const tileWidth = window.innerWidth / GRID_COLUMNS;
 const tileHeight = tileWidth * 1.01;
 const scale = ref(1);
+
+const isHeroHere = computed(() => {
+  if (!props.heroCoordinates) return false;
+
+  return (
+      props.heroCoordinates.columnIndex === props.hexTile.coordinates.columnIndex &&
+      props.heroCoordinates.rowIndex === props.hexTile.coordinates.rowIndex
+  );
+});
 
 function updateScale() {
   const scaleX = window.innerWidth / tileWidth;
@@ -117,6 +129,18 @@ onBeforeUnmount(() => {
   background-size: cover;
   background-position: center;
   pointer-events: none;
+}
+
+.hero-sprite {
+  position: absolute;
+  inset: 0;
+  background-color: #ffffff;
+  //background-image: url("/src/a-game-scenes/homeland-scene/assets");
+  //background-size: contain;
+  //background-repeat: no-repeat;
+  //background-position: center;
+  pointer-events: none;
+  z-index: 5;
 }
 
 </style>
