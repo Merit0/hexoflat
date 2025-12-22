@@ -11,7 +11,7 @@
         <div class="row"><span class="label">tileType</span><span>{{ tile.tileType }}</span></div>
         <div class="row"><span class="label">image</span><span>{{ tile.imagePath }}</span></div>
         <div class="row"><span class="label">description</span><span>{{ tile.description }}</span></div>
-        <div class="row"><span class="label">imagePath</span><span>{{ tile.imagePath }}</span></div>
+        <div class="row"><span class="label">revealed status</span><span>{{ tile.isRevealed }}</span></div>
 
         <div class="row">
           <span class="label">coords</span>

@@ -1,14 +1,11 @@
 import {RouteName} from "@/router/routes";
 
 export type HexTileType =
-    'terrain'
-    | 'hero'
-    | 'fog'
+    'rock'
     | 'tree'
     | 'empty'
     | 'home'
-    | 'enemy'
-    | 'blocked';
+    | 'enemy';
 
 export interface IHexCoordinates {
     columnIndex: number;

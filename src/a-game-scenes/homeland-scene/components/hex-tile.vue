@@ -66,13 +66,16 @@ function getHexTileTransformStyle(tile: IHexTile) {
   } as Record<string, string>;
 }
 
-
 function getHexTileImage(tile: IHexTile) {
+  const img = tile.isRevealed
+      ? tile.imagePath
+      : "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/fog-tile-image-2.png";
+
   return {
-    backgroundImage: `url(${tile.imagePath})`,
-    backgroundSize: 'cover',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
+    backgroundImage: `url(${img})`,
+    backgroundSize: "cover",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
   };
 }
 
@@ -135,10 +138,6 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   background-color: #ffffff;
-  //background-image: url("/src/a-game-scenes/homeland-scene/assets");
-  //background-size: contain;
-  //background-repeat: no-repeat;
-  //background-position: center;
   pointer-events: none;
   z-index: 5;
 }

@@ -19,7 +19,7 @@ export interface IHexTile {
 export class HexTileModel implements IHexTile {
     private _tileId: string;
     private _tileKey?: RouteName | null;
-    private _tileType: HexTileType = 'fog';
+    private _tileType: HexTileType = 'empty';
     private _isRevealed = false;
     private _description: string = 'Nothing around';
     private _imagePath: string = '';
