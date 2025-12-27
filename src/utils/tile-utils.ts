@@ -1,12 +1,14 @@
-import {IHexTile} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import { IHexTile } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 
-export function calcHexPixelPosition(tile: IHexTile, tileWidth: number, tileHeight: number) {
-    const x = tileWidth * (3 / 2) * tile.coordinates.columnIndex;
-    const y =
-        Math.sqrt(3) * tileHeight * tile.coordinates.rowIndex +
-        (tile.coordinates.columnIndex % 2
-            ? (Math.sqrt(3) * tileHeight) / 2
-            : 0);
+export function calcHexPixelPosition(
+    tile: IHexTile,
+    tileWidth: number
+) {
+    const q = tile.coordinates.columnIndex;
+    const r = tile.coordinates.rowIndex;
+
+    const x = tileWidth * (3 / 2) * q;
+    const y = tileWidth * Math.sqrt(3) * (r + (q % 2 ? 0.5 : 0));
 
     return { x, y };
 }

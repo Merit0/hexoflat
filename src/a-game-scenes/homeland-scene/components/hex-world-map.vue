@@ -1,22 +1,23 @@
 <template>
   <div class="hex-map game-root">
-    <div
-        class="hex-map-wrapper"
-        :style="{ transform: `scale(${scale})` }"
-    >
+    <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
       <div
           class="hex-map-inner"
           :style="{
-        width: mapBounds.width + 'px',
-        height: mapBounds.height + 'px',
-        transform: `translate(${-mapBounds.offsetX}px, ${-mapBounds.offsetY}px)`
-      }"
+          width: mapBounds.width + 'px',
+          height: mapBounds.height + 'px',
+          transform: `translate(${-mapBounds.offsetX}px, ${-mapBounds.offsetY}px)`,
+        }"
       >
-        <hex-tile
+        <HeroHexTile
+            :coord="store.heroCoordinates"
+            :tileWidth="tileWidth"
+        />
+
+        <HexTile
             v-for="tile in tiles"
             :key="tile.tileId"
             :hex-tile="tile"
-            :hero-coordinates="store.heroCoordinates"
             @tile-click="handleTileClick"
         />
       </div>
@@ -24,67 +25,82 @@
   </div>
 </template>
 
-
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, computed} from 'vue';
-import type {HexTileModel} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
-import {useWorldMapStore} from "@/stores/world-map-store";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import type { HexTileModel } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import { useWorldMapStore } from "@/stores/world-map-store";
 import HexTile from "@/a-game-scenes/homeland-scene/components/hex-tile.vue";
-import {calcHexPixelPosition} from "@/utils/tile-utils";
-import {useTileClick} from "@/composables/use-tile-click";
+import HeroHexTile from "@/a-game-scenes/homeland-scene/components/hero-hex-tile.vue";
+import { calcHexPixelPosition } from "@/utils/tile-utils";
+import { useTileClick } from "@/composables/use-tile-click";
+
 const { handleTileClick } = useTileClick();
 
 const store = useWorldMapStore();
 store.loadFromStorage();
 store.generateIfEmpty();
 
+const tiles = computed<HexTileModel[]>(() => store.map?.tiles ?? []);
 
-const tiles = ref<HexTileModel[]>([]);
-tiles.value = store.map.tiles;
+/**
+ * ⚠️ MUST MATCH hex-tile.vue
+ */
+const GRID_COLUMNS = 42;
 
-const DESIGN_COLS = 41;
 const scale = ref(1);
-
-const tileWidth = window.innerWidth / DESIGN_COLS;
-const tileHeight = tileWidth * 1.01;
+const tileWidth = window.innerWidth / GRID_COLUMNS;
+const rowStep = computed(() => tileWidth * Math.sqrt(3));
 
 const mapBounds = computed(() => {
   let minX = Infinity, minY = Infinity;
   let maxX = -Infinity, maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const { x, y } = calcHexPixelPosition(t, tileWidth, tileHeight);
+    const { x, y } = calcHexPixelPosition(t, tileWidth);
+
     if (x < minX) minX = x;
     if (y < minY) minY = y;
     if (x > maxX) maxX = x;
     if (y > maxY) maxY = y;
   }
 
+  if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+    return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
+  }
+
   return {
+    // ширина одного кроку по X у формулі: x = tileWidth * 1.5 * q
+    // але для bounds достатньо додати tileWidth як “приблизну ширину елемента” (для overflow)
     width: maxX - minX + tileWidth,
-    height: maxY - minY + tileHeight,
+    // по Y додаємо “крок ряду”, щоб крайній ряд не обрізався
+    height: maxY - minY + rowStep.value,
     offsetX: minX,
-    offsetY: minY
+    offsetY: minY,
   };
 });
 
-
 function updateScale() {
-  const sx = window.innerWidth / tileWidth;
-  const sy = window.innerHeight / tileHeight;
-  return Math.min(sx, sy);
+  if (mapBounds.value.width <= 0 || mapBounds.value.height <= 0) return;
+
+  const padding = 40;
+
+  const sx = (window.innerWidth - padding) / mapBounds.value.width;
+  const sy = (window.innerHeight - padding) / mapBounds.value.height;
+
+  scale.value = Math.min(sx, sy, 1);
 }
 
+watch(mapBounds, () => updateScale(), { immediate: true });
+
 onMounted(() => {
-  updateScale();
-  window.addEventListener('resize', updateScale);
+  window.addEventListener("resize", updateScale);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateScale);
+  window.removeEventListener("resize", updateScale);
 });
-
 </script>
+
 <style scoped>
 @import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
 
@@ -111,5 +127,4 @@ onBeforeUnmount(() => {
   width: max-content;
   height: max-content;
 }
-
 </style>

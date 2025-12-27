@@ -8,61 +8,30 @@
         :class="`hex-tile-img-${hexTile.tileType}`"
         :style="getHexTileImage(hexTile)"
     ></div>
-
-    <div v-if="isHeroHere" class="hero-sprite"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, computed} from 'vue';
-import {HexTileModel, IHexTile} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
-import {useWorldMapStore} from "@/stores/world-map-store";
+import type { IHexTile } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import { calcHexPixelPosition } from "@/utils/tile-utils";
 
 const props = defineProps<{
   hexTile: IHexTile;
-  heroCoordinates: { columnIndex: number; rowIndex: number } | null;
 }>();
 
 const emit = defineEmits<{
   (e: "tile-click", tile: IHexTile): void;
 }>();
 
-const store = useWorldMapStore();
-const tiles = ref<HexTileModel[]>([]);
-tiles.value = store.map.tiles;
-
 const GRID_COLUMNS = 42;
 const tileWidth = window.innerWidth / GRID_COLUMNS;
-const tileHeight = tileWidth * 1.01;
-const scale = ref(1);
-
-const isHeroHere = computed(() => {
-  if (!props.heroCoordinates) return false;
-
-  return (
-      props.heroCoordinates.columnIndex === props.hexTile.coordinates.columnIndex &&
-      props.heroCoordinates.rowIndex === props.hexTile.coordinates.rowIndex
-  );
-});
-
-function updateScale() {
-  const scaleX = window.innerWidth / tileWidth;
-  const scaleY = window.innerHeight / tileHeight;
-  scale.value = Math.min(scaleX, scaleY); // однаковий масштаб по обом осям
-}
 
 function getHexTileTransformStyle(tile: IHexTile) {
-
-  const x = tileWidth * (3 / 2) * tile.coordinates.columnIndex;
-  const y =
-      Math.sqrt(3) * tileHeight * tile.coordinates.rowIndex +
-      (tile.coordinates.columnIndex % 2
-          ? (Math.sqrt(3) * tileHeight) / 2
-          : 0);
+  const { x, y } = calcHexPixelPosition(tile, tileWidth);
 
   return {
-    '--tx': `${x}px`,
-    '--ty': `${y}px`,
+    "--tx": `${x}px`,
+    "--ty": `${y}px`,
   } as Record<string, string>;
 }
 
@@ -78,32 +47,27 @@ function getHexTileImage(tile: IHexTile) {
     backgroundPosition: "center",
   };
 }
-
-onMounted(() => {
-  updateScale();
-  window.addEventListener('resize', updateScale);
-});
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateScale);
-});
 </script>
 
 <style scoped>
 @import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
 
-:root {
+.hex-tile {
+  /* дефолти для css-vars позиції */
   --tx: 0px;
   --ty: 0px;
-}
 
-.hex-tile {
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
   position: absolute;
 
   clip-path: polygon(
-      25% 0%, 75% 0%, 100% 50%,
-      75% 100%, 25% 100%, 0% 50%
+      25% 0%,
+      75% 0%,
+      100% 50%,
+      75% 100%,
+      25% 100%,
+      0% 50%
   );
 
   display: flex;
@@ -114,8 +78,7 @@ onBeforeUnmount(() => {
   transform-origin: center center;
   will-change: transform;
 
-  /*gap between hex tiles*/
-  transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 1.05));
+  transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 1));
 
   transition: transform 0.16s ease, filter 0.16s ease;
 }
@@ -133,13 +96,4 @@ onBeforeUnmount(() => {
   background-position: center;
   pointer-events: none;
 }
-
-.hero-sprite {
-  position: absolute;
-  inset: 0;
-  background-color: #ffffff;
-  pointer-events: none;
-  z-index: 5;
-}
-
 </style>
