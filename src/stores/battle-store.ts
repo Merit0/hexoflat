@@ -50,13 +50,13 @@ export const useBattleStore = defineStore('battle-store', {
             this.previousHeroTileId = hero.currentTile?.id ?? null;
 
             const tiles: TileModel[] = [];
-            for (let y = 0; y < GRID_SIZE; y++) {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    const index = y * GRID_SIZE + x;
-                    const t = new TileModel(index, {x, y});
-                    tiles.push(t);
-                }
-            }
+            // for (let y = 0; y < GRID_SIZE; y++) {
+            //     for (let x = 0; x < GRID_SIZE; x++) {
+            //         const index = y * GRID_SIZE + x;
+            //         const t = new TileModel(index, {columnIndex, rowIndex});
+            //         tiles.push(t);
+            //     }
+            // }
 
             const centerIndex = CENTER.y * GRID_SIZE + CENTER.x;
             tiles[centerIndex].isHeroHere = true;

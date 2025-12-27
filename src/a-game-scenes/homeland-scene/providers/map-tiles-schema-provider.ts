@@ -1,0 +1,18 @@
+import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {ROUTES} from "@/router/routes";
+
+export const homelandMapConfig: IHexMapConfig[] = [
+    {
+        tileType: 'enemy',
+        description: 'Skeletor',
+        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/skeletor-head-image.png'],
+        coordinates: [{ rowIndex: 3, columnIndex: 5 }],
+    },
+    {
+        key: ROUTES.CAMPING,
+        tileType: 'home',
+        description: 'Here You will find peace!',
+        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/house-tile-image.png'],
+        coordinates: [{ rowIndex: 0, columnIndex: 13 }],
+    },
+];

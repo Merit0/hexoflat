@@ -1,112 +1,98 @@
 <template>
   <div
-      class="hex-tile"
-      :class="hexTile.place"
+      class="hex-tile game-root"
       :style="getHexTileTransformStyle(hexTile)"
-      @click="hexTile.place !== 'blocked' && hexTile.place !== 'empty' ? onTileClick(hexTile) : null"
+      @click="emit('tile-click', hexTile)"
   >
     <div
-        :class="`hex-tile-img-${hexTile.place}`"
+        :class="`hex-tile-img-${hexTile.tileType}`"
         :style="getHexTileImage(hexTile)"
     ></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, defineProps} from 'vue';
-import {useRouter} from 'vue-router';
-import type {HexTileModel} from '@/a-game-scenes/homeland-scene/models/hex-tile-model';
-import {useWorldMapStore} from "@/stores/world-map-store";
+import type { IHexTile } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import { calcHexPixelPosition } from "@/utils/tile-utils";
 
-defineProps<{
-  hexTile: HexTileModel;
+const props = defineProps<{
+  hexTile: IHexTile;
 }>();
 
-const router = useRouter();
-const store = useWorldMapStore();
-store.loadFromStorage();
-store.generateIfEmpty();
+const emit = defineEmits<{
+  (e: "tile-click", tile: IHexTile): void;
+}>();
 
+const GRID_COLUMNS = 42;
+const tileWidth = window.innerWidth / GRID_COLUMNS;
 
-const tiles = ref<HexTileModel[]>([]);
-tiles.value = store.map.tiles;
-
-
-const baseWidth = 1760;
-const baseHeight = 700;
-const scale = ref(1);
-
-function updateScale() {
-  const scaleX = window.innerWidth / baseWidth;
-  const scaleY = window.innerHeight / baseHeight;
-  scale.value = Math.min(scaleX, scaleY); // однаковий масштаб по обом осям
-}
-
-function getHexTileTransformStyle(tile: HexTileModel) {
-  const tileWidth = window.innerWidth / 44.6;
-  const tileHeight = tileWidth * 1.01;
-
-  const x = tileWidth * (3 / 2) * tile.q;
-  const y = Math.sqrt(3) * tileHeight * tile.r + (tile.q % 2 ? Math.sqrt(3) * tileHeight / 2 : 0);
+function getHexTileTransformStyle(tile: IHexTile) {
+  const { x, y } = calcHexPixelPosition(tile, tileWidth);
 
   return {
-    transform: `translate(${x}px, ${y}px)`
-  };
+    "--tx": `${x}px`,
+    "--ty": `${y}px`,
+  } as Record<string, string>;
 }
 
-function getHexTileImage(tile: HexTileModel) {
+function getHexTileImage(tile: IHexTile) {
+  const img = tile.isRevealed
+      ? tile.imagePath
+      : "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/fog-tile-image-2.png";
+
   return {
-    backgroundImage: `url(${tile.imagePath})`,
-    backgroundSize: 'cover',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
+    backgroundImage: `url(${img})`,
+    backgroundSize: "cover",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
   };
 }
-
-function onTileClick(tile: HexTileModel) {
-  if (tile.place === 'blocked' || tile.place === 'empty') {
-    console.log('Place is empty')
-    return;
-  }
-  if (tile.place !== 'home') {
-    router.push(`/location/${tile.placeKey}`);
-  } else if (tile.placeKey && tile.placeKey === 'home') {
-    router.push(`/${tile.placeKey}`);
-  } else {
-    return new Error('Map place is not supported');
-  }
-}
-
-onMounted(() => {
-  updateScale();
-  window.addEventListener('resize', updateScale);
-});
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateScale);
-});
 </script>
 
 <style scoped>
 @import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
 
 .hex-tile {
+  --tx: 0px;
+  --ty: 0px;
+
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
   position: absolute;
+
   clip-path: polygon(
-      25% 0%, 75% 0%, 100% 50%,
-      75% 100%, 25% 100%, 0% 50%
+      25% 0%,
+      75% 0%,
+      100% 50%,
+      75% 100%,
+      25% 100%,
+      0% 50%
   );
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
-  transform-origin: center;
+  transform-origin: center center;
+  will-change: transform;
+
+  transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 1));
+
+  transition: transform 0.16s ease, filter 0.16s ease;
 }
 
 .hex-tile:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 12px rgb(0, 0, 0);
-  z-index: 10;
+  --hex-scale: 1.05;
+  filter: brightness(1.15);
+  z-index: 50;
+}
+
+.hex-tile > div {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
 }
 </style>

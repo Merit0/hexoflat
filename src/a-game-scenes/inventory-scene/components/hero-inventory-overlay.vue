@@ -7,7 +7,7 @@
       <div class="bottom-wooden-plank"></div>
       <hero-bag-inventory/>
       <div class="hero-content">
-        <HeroEquipmentHolder :equipment="hero.equipment"/>
+<!--        <HeroEquipmentHolder :equipment="hero.equipment"/>-->
       </div>
     </div>
   </div>

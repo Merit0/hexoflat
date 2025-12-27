@@ -1,7 +1,7 @@
 <template>
   <title>Camp</title>
   <hero-details-bar :hero="hero" />
-  <section class="campContent">
+  <section class="campContent game-root">
     <div class="scalableGridWrapper">
       <div class="buildingGrid">
         <div
@@ -29,7 +29,7 @@
       :show-shop-overlay="showShop"
       @closeShop="closeShop"
   />
-  <hero-inventory-overlay></hero-inventory-overlay>
+<!--  <hero-inventory-overlay></hero-inventory-overlay>-->
 </template>
 
 <script lang="ts">
@@ -38,12 +38,12 @@ import router from "@/router";
 import HeroDetailsBar from "@/a-game-scenes/home-scene/components/hero-details-bar.vue";
 import {useOverlayStore} from "@/stores/overlay-store";
 import ShopOverlay from "@/a-game-scenes/shop-scene/components/shop-overlay.vue";
-import HeroInventoryOverlay from "@/a-game-scenes/inventory-scene/components/hero-inventory-overlay.vue";
+// import HeroInventoryOverlay from "@/a-game-scenes/inventory-scene/components/hero-inventory-overlay.vue";
 import {HeroModel} from "@/models/HeroModel";
 
 export default {
   name: "camping-page",
-  components: {HeroDetailsBar, HeroInventoryOverlay, ShopOverlay},
+  components: {HeroDetailsBar, ShopOverlay},
   data() {
     const heroStore = useHeroStore();
     const overlayStore = useOverlayStore();
@@ -91,9 +91,6 @@ export default {
     },
     openInventory() {
       this.heroStore.inventoryShown = true;
-    },
-    openDressingRoom() {
-      this.overlayStore.openOverlay('hero-dressing-room');
     },
     openShop() {
       this.showShop = true;

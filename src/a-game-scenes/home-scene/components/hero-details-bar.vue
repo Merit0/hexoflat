@@ -1,5 +1,5 @@
 <template>
-  <div class="bar">
+  <div class="bar game-root">
     <div class="heroStats">
       <div class="item">
         <p class="heroDetailsText" label="heroName"> {{ hero.name }} </p>
@@ -34,7 +34,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
 import { useUserStore } from '@/stores/user-store';
 import {HeroModel} from "@/models/HeroModel";
 

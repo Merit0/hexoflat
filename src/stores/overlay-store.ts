@@ -1,42 +1,68 @@
-import { defineStore } from 'pinia';
+import {defineStore} from 'pinia';
+import {OverlayPayloads, OverlayType} from "@/types/overlay-types";
 
-export type OverlayType = 'hero-dressing-room'
-    | 'battle'
-    | 'chest-inventory'
-    | 'shop'
-    | 'mapInfo'
-    | 'dialogue'
-    | 'hero-inventory'
-    | 'grave-inventory'
-    | 'dungeon-preview'
-    | 'confirm-escape-battle';
+type OverlayEntry<T extends OverlayType = OverlayType> = {
+    name: T;
+    data: OverlayPayloads[T];
+};
 
-export const useOverlayStore = defineStore('overlay-store', {
+export const useOverlayStore = defineStore("overlay-store", {
     state: () => ({
-        activeOverlays: [] as OverlayType[],
-        overlayData: {} as Record<OverlayType, any>,
+        stack: [] as OverlayEntry[], //last overlay on top
     }),
 
+    getters: {
+        activeOverlays: (s): OverlayType[] => s.stack.map(e => e.name),
+        topOverlay: (s): OverlayEntry | null =>
+            s.stack.length ? s.stack[s.stack.length - 1] : null,
+
+        isOverlay:
+            (s) =>
+                (name: OverlayType): boolean =>
+                    s.stack.some(e => e.name === name),
+
+        getOverlayData:
+            (s) =>
+                <T extends OverlayType>(name: T): OverlayPayloads[T] | undefined =>
+                    s.stack.find(e => e.name === name)?.data as OverlayPayloads[T] | undefined,
+    },
+
     actions: {
-        openOverlay(name: OverlayType, data: Record<string, any> = {}) {
-            if (!this.activeOverlays.includes(name)) {
-                this.activeOverlays.push(name);
+        openOverlay<T extends OverlayType>(
+            name: T,
+            data?: OverlayPayloads[T],
+            opts: { bringToFront: boolean } = {bringToFront: true}
+        ) {
+            const existingIndex = this.stack.findIndex((e: OverlayEntry) => e.name === name);
+
+            if (existingIndex !== -1) {
+                this.stack[existingIndex].data = data as OverlayPayloads[T];
+
+                if (opts.bringToFront) {
+                    const [entry] = this.stack.splice(existingIndex, 1);
+                    this.stack.push(entry);
+                }
+                return;
             }
-            this.overlayData[name] = data;
+
+            this.stack.push({name, data} as OverlayEntry<T>);
         },
 
         closeOverlay(name?: OverlayType) {
-            if (name) {
-                this.activeOverlays = this.activeOverlays.filter(o => o !== name);
-                delete this.overlayData[name];
-            } else {
-                this.activeOverlays = [];
-                this.overlayData = {};
+            if (!name) {
+                this.stack = [];
+                return;
             }
+            this.stack = this.stack.filter((e: OverlayEntry) => e.name !== name);
         },
 
-        isOverlay(name: OverlayType): boolean {
-            return this.activeOverlays.includes(name);
+        closeTop() {
+            this.stack.pop();
+        },
+
+        replaceTop<T extends OverlayType>(name: T, data?: OverlayPayloads[T]) {
+            if (this.stack.length) this.stack.pop();
+            this.stack.push({name, data} as OverlayEntry<T>);
         },
     },
 });
