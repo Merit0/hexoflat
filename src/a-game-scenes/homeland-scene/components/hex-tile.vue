@@ -53,7 +53,6 @@ function getHexTileImage(tile: IHexTile) {
 @import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
 
 .hex-tile {
-  /* дефолти для css-vars позиції */
   --tx: 0px;
   --ty: 0px;
 
@@ -84,7 +83,7 @@ function getHexTileImage(tile: IHexTile) {
 }
 
 .hex-tile:hover {
-  --hex-scale: 1.1;
+  --hex-scale: 1.05;
   filter: brightness(1.15);
   z-index: 50;
 }

@@ -30,9 +30,7 @@ const style = computed(() => {
   position: absolute;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
-
   background: #ffffff;
-
   clip-path: polygon(
       25% 0%,
       75% 0%,
