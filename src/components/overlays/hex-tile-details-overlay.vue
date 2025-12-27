@@ -13,14 +13,14 @@
         <div class="row"><span class="label">description</span><span>{{ tile.description }}</span></div>
         <div class="row"><span class="label">revealed status</span><span>{{ tile.isRevealed }}</span></div>
 
+        <div v-if="tile.resource" class="row">
+          <span class="label">Resource</span>
+          <span>[{{ tile.resource.resourceDescription }}]</span>
+        </div>
         <div class="row">
           <span class="label">coords</span>
           <span>[{{ tile.coordinates.columnIndex }}, {{ tile.coordinates.rowIndex }}]</span>
         </div>
-
-<!--        <div class="row"><span class="label">isBlocked</span><span>{{ tile.isBlocked }}</span></div>-->
-
-        <!-- якщо є інші поля — додай тут -->
       </div>
 
       <div v-else class="content empty">

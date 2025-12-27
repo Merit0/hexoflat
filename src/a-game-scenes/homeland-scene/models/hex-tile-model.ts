@@ -1,6 +1,6 @@
 import {
     HexTileType,
-    IHexCoordinates,
+    IHexCoordinates, IResourceConfig, TResourceKind,
 } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {RouteName} from "@/router/routes";
 import {HexTileBuilder} from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
@@ -13,6 +13,7 @@ export interface IHexTile {
     description: string;
     isRevealed: boolean;
     coordinates: IHexCoordinates;
+    resource: IResourceConfig | undefined;
     coordinatesToString(): string;
 }
 
@@ -24,6 +25,14 @@ export class HexTileModel implements IHexTile {
     private _description: string = 'Nothing around';
     private _imagePath: string = '';
     private _coordinates: IHexCoordinates = {columnIndex: 0, rowIndex: 0};
+    private _resource?: {
+        kind: TResourceKind;
+        resourceImagePaths?: string[];
+        resourceDescription?: string;
+        regrowAt?: number | null;
+        regrowMs?: number;
+        isAvailable?: boolean;
+    };
 
     get tileId(): string {
         return this._tileId;
@@ -81,9 +90,18 @@ export class HexTileModel implements IHexTile {
         this._imagePath = imagPath;
     }
 
+    get resource(): IResourceConfig {
+        return this._resource;
+    }
+
+    set resource(resource: IResourceConfig) {
+        this._resource = resource;
+    }
+
     coordinatesToString(): string {
         return `${this.coordinates.columnIndex},${this.coordinates.rowIndex}`;
     }
+
 
     static fromJSON(raw: any): HexTileModel {
         return new HexTileBuilder()

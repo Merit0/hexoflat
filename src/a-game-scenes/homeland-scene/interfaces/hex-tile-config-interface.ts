@@ -1,11 +1,23 @@
 import {RouteName} from "@/router/routes";
 
 export type HexTileType =
-    'rock'
-    | 'tree'
+    | 'resource'
     | 'empty'
     | 'home'
     | 'enemy';
+
+export type TResourceKind =
+    'tree'
+    | 'rock'
+    | 'ore'
+    | 'herb';
+
+export interface IResourceConfig {
+    kind: TResourceKind;
+    regrowMs?: number;
+    resourceImagePaths?: string[];
+    resourceDescription?: string;
+}
 
 export interface IHexCoordinates {
     columnIndex: number;
@@ -19,4 +31,5 @@ export interface IHexMapConfig {
     coordinates: IHexCoordinates[];
     backgroundImgPath?: string;
     images?: string[];
+    resource?: IResourceConfig;
 }

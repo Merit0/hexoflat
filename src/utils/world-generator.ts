@@ -63,6 +63,18 @@ export class WorldGenerator {
                     place.images?.length
                         ? place.images[Math.floor(Math.random() * place.images.length)]
                         : (place.backgroundImgPath ?? tile.imagePath);
+                if(place.tileType === 'resource') {
+                    tile.resource = {
+                        kind: place.resource?.kind ?? 'tree',
+                        regrowMs: place.resource?.regrowMs,
+                        regrowAt: null,
+                        isAvailable: true,
+                        resourceDescription: place.resource?.resourceDescription ?? place.description,
+                        resourceImagePaths: place.resource?.resourceImagePaths?.length
+                            ? place.resource.resourceImagePaths[Math.floor(Math.random() * place.resource.resourceImagePaths.length)]
+                            : undefined,
+                    };
+                }
             }
         }
     }

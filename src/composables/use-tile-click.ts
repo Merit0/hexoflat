@@ -24,6 +24,11 @@ export function useTileClick() {
             return;
         }
 
+        if (tile.tileType === 'enemy' || tile.tileType === "resource") {
+            overlayStore.openOverlay("hex-tile-details", {coordinates: tile.coordinates});
+            return;
+        }
+
         const moved = worldMapStore.moveHeroTo(tile.coordinates);
         if (moved) return;
 

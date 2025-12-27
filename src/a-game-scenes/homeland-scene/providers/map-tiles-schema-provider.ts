@@ -9,6 +9,21 @@ export const homelandMapConfig: IHexMapConfig[] = [
         coordinates: [{ rowIndex: 3, columnIndex: 5 }],
     },
     {
+        tileType: 'resource',
+        description: 'This resource can be collected!',
+        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/tree-tile-image.png'],
+        resource: {
+            kind: 'tree',
+            regrowMs: 1000 * 60 * 5,
+            resourceDescription: 'This tree can be chopped!',
+            resourceImagePaths: ['src/.../tree-tile-image.png'],
+        },
+        coordinates: [
+            { rowIndex: 4, columnIndex: 15 }, { rowIndex: 4, columnIndex: 16 },
+            { rowIndex: 5, columnIndex: 15 }, { rowIndex: 5, columnIndex: 16 },
+        ],
+    },
+    {
         key: ROUTES.CAMPING,
         tileType: 'home',
         description: 'Here You will find peace!',

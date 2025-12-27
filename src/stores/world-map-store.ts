@@ -45,7 +45,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         initHeroNearCampRandom() {
             if (!this.map) return;
 
-            const campTile = this.map.tiles.find(t => t.tileType === "home");
+            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.tileType === "home");
             if (!campTile) {
                 this.heroCoordinates = {columnIndex: 0, rowIndex: 0};
                 return;
@@ -98,35 +98,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
             }
         },
 
-        initFogAndReveal() {
-            if (!this.map || !this.heroCoordinates) return;
-
-            for (const t of this.map.tiles) {
-                t.isRevealed = false;
-            }
-
-            const byKey = new Map<string, HexTileModel>();
-            for (const t of this.map.tiles) {
-                byKey.set(coordinateKey(t.coordinates), t);
-            }
-
-            const coordinatesToReveal: IHexCoordinates[] = [
-                this.heroCoordinates,
-                ...getOddQNeighbors(this.heroCoordinates),
-            ];
-
-            for (const c of coordinatesToReveal) {
-                const tile = byKey.get(coordinateKey(c));
-                if (tile) {
-                    tile.isRevealed = true;
-                }
-            }
-        },
-
         makeCampSafeZone() {
             if (!this.map) return;
 
-            const campTile = this.map.tiles.find(t => t.tileType === "home");
+            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.tileType === "home");
             if (!campTile) return;
 
             const byKey = new Map<string, HexTileModel>();
@@ -229,7 +204,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (!tile.isRevealed) return;
 
             // POC блокери (потім замінимо на interaction rules)
-            if (tile.tileType === "enemy" || tile.tileType === "rock") return;
+            if (tile.tileType === "enemy") return;
 
             // (опціонально) не заходимо на home
             if (tile.tileType === "home") return;

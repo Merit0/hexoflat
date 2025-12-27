@@ -128,6 +128,7 @@ export default class HexMapModel implements IWorldMap {
                 description: t.description,
                 coordinates: t.coordinates,
                 isRevealed: t.isRevealed,
+                resource: t.resource,
             })),
         };
     }
@@ -142,7 +143,7 @@ export default class HexMapModel implements IWorldMap {
 
         map.tiles = raw.tiles.map((t: any) => {
             const tile = new HexTileModel();
-            tile.tileType = (t.tileType as HexTileType) ?? "fog";
+            tile.tileType = (t.tileType as HexTileType) ?? "empty";
             tile.isRevealed = t.isRevealed ?? false;
             tile.imagePath = t.imagePath ?? "";
             tile.tileKey = t.tileKey ?? null;
