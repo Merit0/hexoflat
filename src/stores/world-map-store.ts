@@ -4,6 +4,7 @@ import {HexMapProvider} from '@/a-game-scenes/homeland-scene/providers/hex-map-p
 import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
+import {useHeroToolStore} from "@/stores/hero-tool-store";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -184,7 +185,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
         },
 
         moveHeroTo(target: IHexCoordinates): boolean {
+            const heroToolStore = useHeroToolStore();
+
             if (!this.map || !this.heroCoordinates) return;
+
+            if (heroToolStore.isDragging) return false;
 
             // тільки на сусіда
             const neighbors = getOddQNeighbors(this.heroCoordinates);

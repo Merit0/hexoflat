@@ -9,11 +9,16 @@
           transform: `translate(${-mapBounds.offsetX}px, ${-mapBounds.offsetY}px)`,
         }"
       >
-        <HeroHexTile
+        <hero-hex-tile
             :coord="store.heroCoordinates"
             :tileWidth="tileWidth"
         />
-
+        <tool-hex-tile
+            :coord="heroToolStore.hover"
+            :tileWidth="tileWidth"
+            :tool="tool"
+            @hide="heroToolStore.stopTool()"
+        />
         <HexTile
             v-for="tile in tiles"
             :key="tile.tileId"
@@ -31,20 +36,20 @@ import type { HexTileModel } from "@/a-game-scenes/homeland-scene/models/hex-til
 import { useWorldMapStore } from "@/stores/world-map-store";
 import HexTile from "@/a-game-scenes/homeland-scene/components/hex-tile.vue";
 import HeroHexTile from "@/a-game-scenes/homeland-scene/components/hero-hex-tile.vue";
+import ToolHexTile from "@/a-game-scenes/homeland-scene/components/tool-hex-tile.vue";
 import { calcHexPixelPosition } from "@/utils/tile-utils";
 import { useTileClick } from "@/composables/use-tile-click";
+import {useHeroToolStore} from "@/stores/hero-tool-store";
 
 const { handleTileClick } = useTileClick();
 
 const store = useWorldMapStore();
+const heroToolStore = useHeroToolStore();
 store.loadFromStorage();
 store.generateIfEmpty();
 
 const tiles = computed<HexTileModel[]>(() => store.map?.tiles ?? []);
-
-/**
- * ⚠️ MUST MATCH hex-tile.vue
- */
+const tool = computed(() => heroToolStore.activeTool);
 const GRID_COLUMNS = 42;
 
 const scale = ref(1);
@@ -79,6 +84,10 @@ const mapBounds = computed(() => {
   };
 });
 
+function onKey(e: KeyboardEvent) {
+  if (e.key === "Escape") heroToolStore.stopTool();
+}
+
 function updateScale() {
   if (mapBounds.value.width <= 0 || mapBounds.value.height <= 0) return;
 
@@ -94,10 +103,12 @@ watch(mapBounds, () => updateScale(), { immediate: true });
 
 onMounted(() => {
   window.addEventListener("resize", updateScale);
+  window.addEventListener("keydown", onKey)
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", updateScale);
+  window.removeEventListener("keydown", onKey)
 });
 </script>
 

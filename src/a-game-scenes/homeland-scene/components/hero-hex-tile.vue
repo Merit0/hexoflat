@@ -1,11 +1,12 @@
 <template>
-  <div class="hero-hex-tile" :style="style"></div>
+  <div class="hero-hex-tile" @click="openInventory" :style="style"></div>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import type { IHexCoordinates } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import { calcHexPixelPosition } from "@/utils/tile-utils";
+import {useOverlayStore} from "@/stores/overlay-store";
 
 const props = defineProps<{
   coord: IHexCoordinates | null;
@@ -23,6 +24,12 @@ const style = computed(() => {
     transform: `translate(${x}px, ${y}px)`,
   } as Record<string, string>;
 });
+
+const openInventory = () => {
+  const overlayStore = useOverlayStore();
+  console.log('inventory opened!')
+  overlayStore.openOverlay("hero-inventory");
+}
 </script>
 
 <style scoped>
@@ -30,7 +37,7 @@ const style = computed(() => {
   position: absolute;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
-  background: #ffffff;
+  background: #bbffb9;
   clip-path: polygon(
       25% 0%,
       75% 0%,
@@ -44,6 +51,5 @@ const style = computed(() => {
   transition: transform 180ms ease-out;
 
   z-index: 100;
-  pointer-events: none;
 }
 </style>

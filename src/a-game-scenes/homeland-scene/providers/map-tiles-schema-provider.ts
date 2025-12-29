@@ -5,7 +5,7 @@ export const homelandMapConfig: IHexMapConfig[] = [
     {
         tileType: 'enemy',
         description: 'Skeletor',
-        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/skeletor-head-image.png'],
+        images: ['src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/skeletor-boss-image.png'],
         coordinates: [{ rowIndex: 3, columnIndex: 5 }],
     },
     {
