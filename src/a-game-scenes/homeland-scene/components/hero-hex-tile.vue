@@ -37,7 +37,10 @@ const openInventory = () => {
   position: absolute;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
-  background: #bbffb9;
+  background-image: url("@/assets/hero-asssets/assasin-tile-image.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
   clip-path: polygon(
       25% 0%,
       75% 0%,

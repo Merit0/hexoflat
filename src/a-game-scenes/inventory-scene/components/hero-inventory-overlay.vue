@@ -29,7 +29,7 @@
             :class="{ selected: selectedTool === 'axe' }"
             @click="selectTool('axe')"
         >
-          <span v-if="selectedTool !== 'axe'" class="hex-label">AXE</span>
+          <span v-if="selectedTool !== 'axe'" class="hex-label"></span>
 
           <button
               v-else
@@ -160,13 +160,6 @@ function useSelectedTool() {
   0 10px 25px rgba(230, 193, 90, 0.35);
 }
 
-/* AXE – синій */
-.hex-tile.axe {
-  background: linear-gradient(145deg, #5aa3e6, #2d5f9c);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15),
-  0 10px 25px rgba(90, 163, 230, 0.35);
-}
-
 .hex-label {
   font-size: 12px;
   font-weight: 600;
@@ -244,11 +237,11 @@ function useSelectedTool() {
   0 10px 25px rgba(230, 193, 90, 0.35);
 }
 
-/* AXE – blue */
 .hex-tile.axe {
-  background: linear-gradient(145deg, #5aa3e6, #2d5f9c);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15),
-  0 10px 25px rgba(90, 163, 230, 0.35);
+  background-image: url("@/assets/tools-assets/axe-tile-image.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .hex-label {

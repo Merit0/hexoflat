@@ -77,9 +77,11 @@ const toolClass = computed(() => {
   background: linear-gradient(145deg, #e6c15a, #b8922d);
 }
 
-/* 🔵 AXE */
 .tool-hex-tile.axe {
-  background: linear-gradient(145deg, #5aa3e6, #2d5f9c);
+  background-image: url("@/assets/tools-assets/axe-tool-image.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .hide-btn {
