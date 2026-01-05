@@ -58,7 +58,6 @@ export class HexTileBuilder {
 
     build(): HexTileModel {
         if (!this.draft.coordinates) throw new Error("HexTileBuilder: coordinates are required");
-        console.log('DRAFT type' + this.draft.tileType)
 
         const tile = new HexTileModel();
 

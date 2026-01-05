@@ -8,6 +8,7 @@
     <button class="hide-btn" @click.stop="emit('hide')">
       HIDE
     </button>
+    <div v-if="props.actionHint" class="action-chip">{{ props.actionHint }}</div>
   </div>
 </template>
 
@@ -20,6 +21,7 @@ const props = defineProps<{
   coord: IHexCoordinates | null;
   tileWidth: number;
   tool: "hand" | "axe" | null;
+  actionHint?: string
 }>();
 
 const emit = defineEmits<{
@@ -40,7 +42,6 @@ const style = computed(() => {
 });
 
 const toolClass = computed(() => {
-  console.log('TOOL -> ' + props.tool)
   if (!props.tool) return "";
   return props.tool === "axe" ? "axe" : "hand";
 });
@@ -117,5 +118,25 @@ const toolClass = computed(() => {
 
 .hide-btn:active {
   transform: scale(0.96);
+}
+
+.action-chip {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  padding: 6px 10px;
+  border-radius: 999px;
+
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #f2e9d3;
+
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+
+  pointer-events: none;
 }
 </style>

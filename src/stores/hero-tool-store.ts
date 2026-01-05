@@ -1,15 +1,18 @@
-// hero-tool-store.types.ts
 import type { IHexCoordinates } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import { defineStore } from "pinia";
 import { coordinateKey, getOddQNeighbors } from "@/utils/hex-utils";
+import type { ResolvedAction } from "@/game-resolvers/interactions-resolver";
+
 
 export type HeroToolType = "hand" | "axe";
 
 export interface HeroToolState {
-    activeTool: HeroToolType | null;      // що зараз “в руках”
-    isDragging: boolean;                   // чи активний режим перетягування
-    origin: IHexCoordinates | null;        // координати героя на момент активації
-    hover: IHexCoordinates | null;         // над яким тайлом зараз інструмент
+    activeTool: HeroToolType | null;
+    isDragging: boolean;
+    origin: IHexCoordinates | null;
+    hover: IHexCoordinates | null;
+    availableActions: ResolvedAction[] | [];
+    hintLabel: string | null;
 }
 
 export const useHeroToolStore = defineStore("heroTool", {
@@ -19,6 +22,8 @@ export const useHeroToolStore = defineStore("heroTool", {
         origin: null,
         hover: null,
         allowedKeys: [],
+        availableActions: [] as ResolvedAction[],
+        hintLabel: null as string | null,
     }),
 
     getters: {
@@ -57,6 +62,17 @@ export const useHeroToolStore = defineStore("heroTool", {
             this.origin = null;
             this.hover = null;
             this.allowedKeys = [];
+            this.clearResolvedActions();
+        },
+
+        setResolvedActions(actions: ResolvedAction[]) {
+            this.availableActions = actions;
+            this.hintLabel = actions.length ? actions[0].label : null;
+        },
+
+        clearResolvedActions() {
+            this.availableActions = [];
+            this.hintLabel = null;
         },
     },
 });

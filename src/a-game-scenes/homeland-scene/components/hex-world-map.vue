@@ -17,6 +17,7 @@
             :coord="heroToolStore.hover"
             :tileWidth="tileWidth"
             :tool="tool"
+            :actionHint="heroToolStore.hintLabel || undefined"
             @hide="heroToolStore.stopTool()"
         />
         <HexTile
@@ -40,11 +41,15 @@ import ToolHexTile from "@/a-game-scenes/homeland-scene/components/tool-hex-tile
 import { calcHexPixelPosition } from "@/utils/tile-utils";
 import { useTileClick } from "@/composables/use-tile-click";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
+import {resolveActions} from "@/game-resolvers/interactions-resolver";
+import {objectFromTile} from "@/factory/hex-object-factory";
 
 const { handleTileClick } = useTileClick();
 
 const store = useWorldMapStore();
 const heroToolStore = useHeroToolStore();
+const worldMapStore = useWorldMapStore();
+
 store.loadFromStorage();
 store.generateIfEmpty();
 
@@ -55,6 +60,41 @@ const GRID_COLUMNS = 42;
 const scale = ref(1);
 const tileWidth = window.innerWidth / GRID_COLUMNS;
 const rowStep = computed(() => tileWidth * Math.sqrt(3));
+
+function getTileByCoord(coord: any) {
+  return worldMapStore.map.tiles.find((t: any) =>
+      t.coordinates.rowIndex === coord.rowIndex &&
+      t.coordinates.columnIndex === coord.columnIndex
+  );
+}
+
+watch(
+    () => [heroToolStore.isDragging, heroToolStore.activeTool, heroToolStore.hover] as const,
+    ([isDragging, tool, hover]) => {
+      if (!isDragging || !tool || !hover) {
+        heroToolStore.clearResolvedActions();
+        return;
+      }
+
+      const tile = getTileByCoord(hover);
+      if (!tile) {
+        heroToolStore.clearResolvedActions();
+        return;
+      }
+
+      const obj = objectFromTile(tile);
+      if (!obj || !obj.isInteractable) {
+        heroToolStore.clearResolvedActions();
+        return;
+      }
+
+      console.log("HOVER TILE:", tile?.tileType, tile?.resource, tile?.imagePath);
+      const actions = resolveActions(tool, obj);
+      heroToolStore.setResolvedActions(actions);
+
+    },
+    { immediate: true }
+);
 
 const mapBounds = computed(() => {
   let minX = Infinity, minY = Infinity;
