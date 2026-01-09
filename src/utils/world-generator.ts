@@ -3,6 +3,7 @@ import { HexTileBuilder } from "@/a-game-scenes/homeland-scene/builders/hex-tile
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {IWorldGenerator} from "@/abstraction/world-generator-interface";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
+import {HexObjectKind} from "@/models/hexobject-model";
 
 export class WorldGenerator {
     constructor(private readonly generator: IWorldGenerator) {}
@@ -63,17 +64,28 @@ export class WorldGenerator {
                     place.images?.length
                         ? place.images[Math.floor(Math.random() * place.images.length)]
                         : (place.backgroundImgPath ?? tile.imagePath);
-                if(place.tileType === 'resource') {
-                    tile.resource = {
-                        kind: place.resource?.kind ?? 'tree',
-                        regrowMs: place.resource?.regrowMs,
-                        regrowAt: null,
+                if (place.hexobject) {
+                    const kind = (place.hexobject.kind ?? "tree") as HexObjectKind;
+
+                    tile.hexobject = {
+                        id: `${coordinateKey(tile.coordinates)}:${kind}`,
+                        kind,
+                        isInteractable: place.hexobject.isInteractable ?? true,
                         isAvailable: true,
-                        resourceDescription: place.resource?.resourceDescription ?? place.description,
-                        resourceImagePaths: place.resource?.resourceImagePaths?.length
-                            ? place.resource.resourceImagePaths[Math.floor(Math.random() * place.resource.resourceImagePaths.length)]
-                            : undefined,
+                        regrowMs: place.hexobject.regrowMs,
+                        regrowAt: null,
+                        traits: {
+                            collectable: true,
+                            cuttable: kind === "tree",
+                            pickupable: kind === "coin",
+                            mineable: kind === "rock",
+                        },
+                        blocksMovement: kind === "tree" || kind === "rock",
+                        description: place.hexobject.description ?? place.description,
+                        spritePath: place.hexobject.spritePath,
                     };
+                } else {
+                    tile.hexobject = null;
                 }
             }
         }
