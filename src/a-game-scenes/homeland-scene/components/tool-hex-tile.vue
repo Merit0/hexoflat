@@ -79,7 +79,7 @@ const toolClass = computed(() => {
 }
 
 .tool-hex-tile.axe {
-  background-image: url("@/assets/tools-assets/axe-tool-image.png");
+  background-image: url("@/assets/tools-assets/axe-tile-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

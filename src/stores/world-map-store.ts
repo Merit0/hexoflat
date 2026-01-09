@@ -193,6 +193,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (!tile.isRevealed) return;
             if (tile.tileType === "enemy") return;
             if (tile.tileType === "home") return;
+            const obj = tile.hexobject;
+            if (obj?.blocksMovement) { return; }
 
             this.heroCoordinates = {...target};
             this.revealAroundHero();
@@ -227,19 +229,14 @@ export const useWorldMapStore = defineStore('world-map-store', {
                     if (!tile) continue;
 
                     if (!tile.resource) {
-                        const picked =
-                            place.resource?.resourceImagePaths?.length
-                                ? place.resource.resourceImagePaths[Math.floor(Math.random() * place.resource.resourceImagePaths.length)]
-                                : undefined;
-
                         tile.tileType = "resource";
                         tile.resource = {
                             kind: place.resource?.kind ?? "tree",
                             regrowMs: place.resource?.regrowMs,
                             regrowAt: null,
                             isAvailable: true,
+                            isInteractable: true,
                             resourceDescription: place.resource?.resourceDescription ?? place.description,
-                            imagePath: picked,
                             imagePaths: place.resource?.resourceImagePaths ?? [],
                         };
                     }

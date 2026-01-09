@@ -8,7 +8,11 @@
   >
     <div
         :style="getHexTileImage(hexTile)"
-    ></div>
+    >
+      <div v-if="!hexTile.hexobject && hexTile.isRevealed" class="new-class">
+        q{{ hexTile.coordinates.columnIndex }} · r{{ hexTile.coordinates.rowIndex }}
+      </div>
+    </div>
     <div v-if="isAllowedTarget" class="tool-target-glow"></div>
   </div>
 </template>
@@ -120,9 +124,7 @@ function getHexTileImage(tile: IHexTile) {
 
 .tool-target-glow {
   position: absolute;
-  inset: 6px;
   pointer-events: none;
-
   clip-path: polygon(
       25% 0%,
       75% 0%,
@@ -140,7 +142,6 @@ function getHexTileImage(tile: IHexTile) {
   50% { opacity: 0.44; transform: scale(1.02); }
 }
 
-/* 🟡 підсвітка для HAND */
 .hex-tile.is-tool-target.tool-hand .tool-target-glow {
   background: rgba(230, 193, 90, 0.18);
   box-shadow:
@@ -148,12 +149,34 @@ function getHexTileImage(tile: IHexTile) {
       0 10px 28px rgba(230, 193, 90, 0.18);
 }
 
-/* 🔵 підсвітка для AXE */
 .hex-tile.is-tool-target.tool-axe .tool-target-glow {
-  background: rgba(90, 163, 230, 0.18);
+  background: rgba(203, 48, 48, 0.18);
   box-shadow:
       0 0 0 1px rgba(90, 163, 230, 0.28),
       0 10px 28px rgba(90, 163, 230, 0.18);
+}
+
+.new-class {
+  position: absolute;
+  left: 50%;
+  bottom: 40%;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  line-height: 1;
+  letter-spacing: 0.4px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(253, 255, 230, 0.82);
+  box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.45),
+      0 0 10px rgba(140, 185, 255, 0.08);
+
+  pointer-events: none;
+
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
 }
 
 </style>

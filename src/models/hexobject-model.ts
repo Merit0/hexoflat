@@ -14,4 +14,11 @@ export interface HexObjectModel {
     traits: HexObjectTraits;
     spritePath?: string;
     description?: string;
+    blocksMovement?: boolean;
+
+    isAvailable: boolean;
+    regrowMs?: number;
+    regrowAt?: number | null;
+
+    durability?: number;
 }

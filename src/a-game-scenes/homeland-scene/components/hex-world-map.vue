@@ -20,7 +20,7 @@
             :actionHint="heroToolStore.hintLabel || undefined"
             @hide="heroToolStore.stopTool()"
         />
-        <HexTile
+        <hex-tile
             v-for="tile in tiles"
             :key="tile.tileId"
             :hex-tile="tile"
@@ -42,10 +42,8 @@ import { calcHexPixelPosition } from "@/utils/tile-utils";
 import { useTileClick } from "@/composables/use-tile-click";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {resolveActions} from "@/game-resolvers/interactions-resolver";
-import {objectFromTile} from "@/factory/hex-object-factory";
 
 const { handleTileClick } = useTileClick();
-
 const store = useWorldMapStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
@@ -82,16 +80,19 @@ watch(
         return;
       }
 
-      const obj = objectFromTile(tile);
-      if (!obj || !obj.isInteractable) {
+      const obj = tile.hexobject ?? null;
+      if (!obj) {
         heroToolStore.clearResolvedActions();
         return;
       }
 
-      console.log("HOVER TILE:", tile?.tileType, tile?.resource, tile?.imagePath);
+      if (!obj.isAvailable || !obj.isInteractable) {
+        heroToolStore.clearResolvedActions();
+        return;
+      }
+      
       const actions = resolveActions(tool, obj);
       heroToolStore.setResolvedActions(actions);
-
     },
     { immediate: true }
 );
@@ -160,9 +161,10 @@ onBeforeUnmount(() => {
   place-items: center;
   width: 100svw;
   height: 100svh;
-  background-image: url("@/a-game-scenes/homeland-scene/assets/dark-background.png");
-  background-size: cover;
+  background-image: url("@/a-game-scenes/homeland-scene/assets/game-board.png");
+  background-size: 100% 100%;
   background-position: center;
+  background-repeat: no-repeat;
   overflow: clip;
 }
 

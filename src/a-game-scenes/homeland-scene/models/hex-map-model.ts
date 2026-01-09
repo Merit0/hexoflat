@@ -2,6 +2,7 @@ import {HexTileType, IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfa
 import {Complexity} from "@/enums/complexity";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {HexTileBuilder} from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
+import {HexObjectModel} from "@/models/hexobject-model";
 
 interface IWorldMap {
     name: string;
@@ -128,7 +129,7 @@ export default class HexMapModel implements IWorldMap {
                 description: t.description,
                 coordinates: t.coordinates,
                 isRevealed: t.isRevealed,
-                resource: t.resource,
+                hexobject: t.hexobject,
             })),
         };
     }
@@ -145,10 +146,33 @@ export default class HexMapModel implements IWorldMap {
             const tile = new HexTileModel();
             tile.tileType = (t.tileType as HexTileType) ?? "empty";
             tile.isRevealed = t.isRevealed ?? false;
+            tile.resource = t.resource ?? null;
             tile.imagePath = t.imagePath ?? "";
             tile.tileKey = t.tileKey ?? null;
             tile.description = t.description ?? "";
-            tile.coordinates = t.coordinates ?? {rowIndex: t.r, columnIndex: t.q};
+            tile.coordinates = t.coordinates ?? { rowIndex: t.r, columnIndex: t.q };
+
+            const o: HexObjectModel | null = t.hexobject ?? null;
+            tile.hexobject = o
+                ? {
+                    id: o.id ?? "",
+                    kind: o.kind ?? "tree",
+                    isInteractable: o.isInteractable ?? true,
+                    isAvailable: o.isAvailable ?? true,
+                    regrowMs: o.regrowMs ?? null,
+                    regrowAt: o.regrowAt ?? null,
+                    traits: {
+                        collectable: o.traits?.collectable ?? false,
+                        cuttable: o.traits?.cuttable ?? false,
+                        pickupable: o.traits?.pickupable ?? false,
+                        mineable: o.traits?.mineable ?? false,
+                    },
+                    description: o.description ?? "",
+                    spritePath: o.spritePath ?? undefined,
+                    blocksMovement: o.blocksMovement ?? true,
+                }
+                : null;
+
             return tile;
         });
 

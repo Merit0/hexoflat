@@ -1,4 +1,5 @@
 import {RouteName} from "@/router/routes";
+import {HexObjectModel} from "@/models/hexobject-model";
 
 export type HexTileType =
     | 'resource'
@@ -31,5 +32,5 @@ export interface IHexMapConfig {
     coordinates: IHexCoordinates[];
     backgroundImgPath?: string;
     images?: string[];
-    resource?: IResourceConfig;
+    hexobject?: HexObjectModel;
 }
