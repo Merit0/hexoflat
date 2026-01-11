@@ -1,33 +1,21 @@
 import type {HexTileType, IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
-import {RouteName} from "@/router/routes";
 
 type HexTileDraft = Partial<Pick<
     HexTileModel,
     'tileId'
     | 'tileKey'
     | 'tileType'
-    | 'imagePath'
-    | 'description'
     | 'coordinates'
     | 'isRevealed'
+    | 'hexBackgroundImagePath'
 >>;
 
 export class HexTileBuilder {
     private draft: HexTileDraft = {};
 
-    tileId(tileId: string): this {
-        this.draft.tileId = tileId;
-        return this;
-    }
-
     isRevealed(revealedStatus: boolean): this {
         this.draft.isRevealed = revealedStatus;
-        return this;
-    }
-
-    routeKey(tileKey: RouteName): this {
-        this.draft.tileKey = tileKey;
         return this;
     }
 
@@ -36,13 +24,8 @@ export class HexTileBuilder {
         return this;
     }
 
-    imagePath(imagePath: string): this {
-        this.draft.imagePath = imagePath;
-        return this;
-    }
-
-    description(descriptionTile: string): this {
-        this.draft.description = descriptionTile;
+    hexBackgroundImagePath(hexBackgroundImagePath: string): this {
+        this.draft.hexBackgroundImagePath = hexBackgroundImagePath;
         return this;
     }
 
@@ -65,8 +48,7 @@ export class HexTileBuilder {
         tile.isRevealed = this.draft.isRevealed ?? false;
         tile.tileType = this.draft.tileType ?? tile.tileType;
         tile.coordinates = this.draft.coordinates;
-        tile.imagePath = this.draft.imagePath ?? "";
-        tile.description = this.draft.description ?? tile.description;
+        tile.hexBackgroundImagePath = this.draft.hexBackgroundImagePath ?? "";
 
         this.reset();
 

@@ -6,10 +6,9 @@
       @click="emit('tile-click', hexTile)"
       @pointerenter="onEnter"
   >
-    <div
-        :style="getHexTileImage(hexTile)"
-    >
-      <div v-if="!hexTile.hexobject && hexTile.isRevealed" class="new-class">
+    <div class="hex-layer hex-tile-bg" :style="getHexTileBackgroundStyle(hexTile)"></div>
+    <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)">
+      <div v-if="!hexTile.hexobject && hexTile.isRevealed" class="coordinates-class">
         q{{ hexTile.coordinates.columnIndex }} · r{{ hexTile.coordinates.rowIndex }}
       </div>
     </div>
@@ -63,7 +62,20 @@ function onEnter() {
 
 function getHexTileImage(tile: IHexTile) {
   const img = tile.isRevealed
-      ? tile.imagePath
+      ? tile?.hexobject?.spritePath
+      : "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/fog-tile-image.png";
+
+  return {
+    backgroundImage: `url(${img})`,
+    backgroundSize: "cover",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+  };
+}
+
+function getHexTileBackgroundStyle(tile: IHexTile) {
+  const img = tile.isRevealed
+      ? (tile.hexBackgroundImagePath || "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
       : "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/fog-tile-image.png";
 
   return {
@@ -156,7 +168,7 @@ function getHexTileImage(tile: IHexTile) {
       0 10px 28px rgba(90, 163, 230, 0.18);
 }
 
-.new-class {
+.coordinates-class {
   position: absolute;
   left: 50%;
   bottom: 40%;
@@ -177,6 +189,20 @@ function getHexTileImage(tile: IHexTile) {
   text-overflow: ellipsis;
   white-space: nowrap;
   opacity: 0.85;
+}
+
+.hex-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.hex-tile-bg {
+  z-index: 1;
+}
+
+.hexobject-sprite {
+  z-index: 2;
+  pointer-events: none;
 }
 
 </style>

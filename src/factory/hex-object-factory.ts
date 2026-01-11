@@ -1,61 +1,38 @@
-import type { HexObjectModel, HexObjectKind } from "@/models/hexobject-model";
 import { coordinateKey } from "@/utils/hex-utils";
-import type { IHexTile } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import type { IHexCoordinates } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import { EHexobjectGroup, type THexobject, type THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
+import { HEX_OBJECT_PROTOTYPES } from "@/game-prototypes/hexobject-prototypes";
 
+export class HexObjectFactory {
+    static create(key: string, coord: IHexCoordinates, overrides?: Record<string, any>): THexobject {
+        const proto = HEX_OBJECT_PROTOTYPES[key];
 
-export function objectFromTile(tile: IHexTile): HexObjectModel | null {
-    if (tile.tileType !== "resource") return null;
+        if (!proto) {
+            throw new Error(`Unknown Hexobject key: ${key}`);
+        }
 
-    const res: any = (tile as any).resource;
-    if (!res) return null;
+        const base = structuredClone(proto) as THexobjectPrototype;
+        const id = `${coordinateKey(coord)}:${key}`;
+        const built: THexobject = { ...(base as any), id };
 
-    const kind = tile.resource?.kind as HexObjectKind | undefined;
-    if (!kind) return null;
+        if (overrides) {
+            this.applyOverrides(built, overrides);
+        }
 
-    const spritePath =
-        typeof res.imagePath === "string"
-            ? res.imagePath
-            : Array.isArray(res.imagePaths) && res.imagePaths.length
-                ? res.imagePaths[0]
-                : undefined;
-
-    const baseId = `${coordinateKey(tile.coordinates)}:${kind}`;
-
-    if (kind === "tree") {
-        return {
-            id: baseId,
-            kind: "tree",
-            isInteractable: true,
-            isAvailable: true,
-            traits: { collectable: true, cuttable: true },
-            description: "A tree that can be chopped",
-            spritePath,
-        };
+        return built;
     }
 
-    if (kind === "coin") {
-        return {
-            id: baseId,
-            kind: "coin",
-            isInteractable: true,
-            isAvailable: true,
-            traits: { collectable: true, pickupable: true },
-            description: "A coin you can pick up",
-            spritePath,
-        };
-    }
+    private static applyOverrides(obj: THexobject, overrides: Record<string, any>) {
+        if (obj.groupType === EHexobjectGroup.RESOURCE) {
+            if (typeof overrides.regrowMs === "number") obj.resource.regrowMs = overrides.regrowMs;
+            if (typeof overrides.amount === "number") obj.resource.amount = overrides.amount;
+            if (typeof overrides.isAvailable === "boolean") obj.resource.isAvailable = overrides.isAvailable;
+            if (typeof overrides.regrowAt === "number" || overrides.regrowAt === null) obj.resource.regrowAt = overrides.regrowAt;
+        }
 
-    if (kind === "rock") {
-        return {
-            id: baseId,
-            kind: "rock",
-            isInteractable: true,
-            isAvailable: true,
-            traits: { mineable: true },
-            description: "A rock (needs proper tool)",
-            spritePath,
-        };
+        if (obj.groupType === EHexobjectGroup.TOOL) {
+            if (typeof overrides.durability === "number") obj.tool.durability = overrides.durability;
+            if (typeof overrides.durabilityMax === "number") obj.tool.durabilityMax = overrides.durabilityMax;
+        }
     }
-
-    return null;
 }

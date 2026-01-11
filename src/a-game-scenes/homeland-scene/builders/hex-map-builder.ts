@@ -1,13 +1,13 @@
 import {Complexity} from "@/enums/complexity";
 import HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
-import {IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
 
 interface IHexMapBuilder {
     name(mapName: string): this;
     complexity(mapComplexity: Complexity): this;
     width(mapWidth: number): this;
     height(height: number): this;
-    config(mapTilesConfig: IHexMapConfig[]): this;
+    config(mapTilesConfig: IHexMapPlacement[]): this;
 }
 
 export class HexMapBuilder implements IHexMapBuilder {
@@ -37,7 +37,7 @@ export class HexMapBuilder implements IHexMapBuilder {
         return this;
     }
 
-    public config(mapTilesConfig: IHexMapConfig[]): this {
+    public config(mapTilesConfig: IHexMapPlacement[]): this {
         this.draft.config = mapTilesConfig;
 
         return this;

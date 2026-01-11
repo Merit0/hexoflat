@@ -86,11 +86,11 @@ watch(
         return;
       }
 
-      if (!obj.isAvailable || !obj.isInteractable) {
+      if (!obj.isInteractable || !obj.isInteractable) {
         heroToolStore.clearResolvedActions();
         return;
       }
-      
+
       const actions = resolveActions(tool, obj);
       heroToolStore.setResolvedActions(actions);
     },

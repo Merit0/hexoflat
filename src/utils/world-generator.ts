@@ -3,7 +3,7 @@ import { HexTileBuilder } from "@/a-game-scenes/homeland-scene/builders/hex-tile
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {IWorldGenerator} from "@/abstraction/world-generator-interface";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
-import {HexObjectKind} from "@/models/hexobject-model";
+import {HexObjectFactory} from "@/factory/hex-object-factory";
 
 export class WorldGenerator {
     constructor(private readonly generator: IWorldGenerator) {}
@@ -35,8 +35,7 @@ export class WorldGenerator {
                 const hex: HexTileModel = new HexTileBuilder()
                     .type("empty")
                     .isRevealed(false)
-                    .imagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
-                    .description("Nothing around")
+                    .hexBackgroundImagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
                     .coordinates({ columnIndex: q, rowIndex: r })
                     .build();
 
@@ -57,33 +56,12 @@ export class WorldGenerator {
                 const tile = byKey.get(coordinateKey(c));
                 if (!tile) continue;
 
-                tile.tileKey = place.key ?? null;
-                tile.tileType = place.tileType;
-                tile.description = place.description ?? "";
-                tile.imagePath =
-                    place.images?.length
-                        ? place.images[Math.floor(Math.random() * place.images.length)]
-                        : (place.backgroundImgPath ?? tile.imagePath);
+                tile.tileKey = place.rootPathKey ?? null;
                 if (place.hexobject) {
-                    const kind = (place.hexobject.kind ?? "tree") as HexObjectKind;
+                    const kind = (place.hexobject.hexobjectKey ?? "tree");
 
-                    tile.hexobject = {
-                        id: `${coordinateKey(tile.coordinates)}:${kind}`,
-                        kind,
-                        isInteractable: place.hexobject.isInteractable ?? true,
-                        isAvailable: true,
-                        regrowMs: place.hexobject.regrowMs,
-                        regrowAt: null,
-                        traits: {
-                            collectable: true,
-                            cuttable: kind === "tree",
-                            pickupable: kind === "coin",
-                            mineable: kind === "rock",
-                        },
-                        blocksMovement: kind === "tree" || kind === "rock",
-                        description: place.hexobject.description ?? place.description,
-                        spritePath: place.hexobject.spritePath,
-                    };
+                    tile.hexobject = HexObjectFactory.create(kind, tile.coordinates);
+                    console.log(`Created ${kind} at ${tile.coordinates}`);
                 } else {
                     tile.hexobject = null;
                 }
@@ -92,24 +70,20 @@ export class WorldGenerator {
     }
 
     private applySafeZone(map: HexMapModel) {
-        const home = map.tiles.find(t => t.tileType === "home");
-        if (!home) return;
+        const campingHexobjectKey = 'camping';
+        const camping = map.tiles.find(t => t.hexobject?.hexobjectKey === campingHexobjectKey);
+        if (!camping) return;
 
         const byKey = new Map<string, any>();
         for (const t of map.tiles) byKey.set(coordinateKey(t.coordinates), t);
 
-        // POC: radius 1 — просто 6 сусідів
-        const neighbors = getOddQNeighbors(home.coordinates);
+        const neighbors = getOddQNeighbors(camping.coordinates);
 
         for (const c of neighbors) {
             const tile = byKey.get(coordinateKey(c));
             if (!tile) continue;
+            if (tile.tileType === campingHexobjectKey) continue;
 
-            // safe-zone перемагає процедурку, але не чіпає home
-            if (tile.tileType === "home") continue;
-
-            // якщо там був enemy/rock з конфігу — тут рішення:
-            // для POC я рекомендую: safe-zone ПЕРЕМАГАЄ все, крім home
             tile.tileType = "empty";
             tile.tileKey = null;
             tile.description = "Nothing around";

@@ -4,7 +4,7 @@ import { coordinateKey, getOddQNeighbors } from "@/utils/hex-utils";
 import type { ResolvedAction } from "@/game-resolvers/interactions-resolver";
 
 
-export type HeroToolType = "hand" | "axe";
+export type HeroToolType = 'hand' | 'axe' | 'pickaxe';
 
 export interface HeroToolState {
     activeTool: HeroToolType | null;

@@ -16,11 +16,12 @@
 import { computed } from "vue";
 import type { IHexCoordinates } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import { calcHexPixelPosition } from "@/utils/tile-utils";
+import {HeroToolType} from "@/stores/hero-tool-store";
 
 const props = defineProps<{
   coord: IHexCoordinates | null;
   tileWidth: number;
-  tool: "hand" | "axe" | null;
+  tool: HeroToolType;
   actionHint?: string
 }>();
 
@@ -42,7 +43,7 @@ const style = computed(() => {
 });
 
 const toolClass = computed(() => {
-  if (!props.tool) return "";
+  if (!props.tool) return '';
   return props.tool === "axe" ? "axe" : "hand";
 });
 </script>

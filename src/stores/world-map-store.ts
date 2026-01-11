@@ -5,6 +5,7 @@ import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-til
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
+import {EHexCollision} from "@/abstraction/hexobject-abstraction";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -44,7 +45,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         initHeroNearCampRandom() {
             if (!this.map) return;
 
-            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.tileType === "home");
+            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.hexobject?.hexobjectKey === "camping");
             if (!campTile) {
                 this.heroCoordinates = {columnIndex: 0, rowIndex: 0};
                 return;
@@ -100,7 +101,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         makeCampSafeZone() {
             if (!this.map) return;
 
-            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.tileType === "home");
+            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.hexobject?.hexobjectKey === "camping");
             if (!campTile) return;
 
             const byKey = new Map<string, HexTileModel>();
@@ -114,12 +115,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 const tile = byKey.get(coordinateKey(c));
                 if (!tile) continue;
 
-                if (tile.tileType === "home") continue;
+                if (tile.hexobject?.hexobjectKey === "camping") continue;
 
                 tile.tileType = "empty";
                 tile.tileKey = null;
-                tile.description = "Nothing around";
-                tile.imagePath = "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png";
             }
         },
 
@@ -157,44 +156,32 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 return;
             }
 
-            const roll = Math.random();
-
-            if (roll < 0.3) {
-                tile.tileType = "tree";
-                tile.description = "A tree. Could be chopped.";
-                tile.imagePath = "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/tree-tile-image.png";
-            } else {
-                tile.tileType = "empty";
-                tile.description = "Nothing around";
-                tile.imagePath = "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png";
-            }
-
             this.saveToStorage();
         },
 
         moveHeroTo(target: IHexCoordinates): boolean {
             const heroToolStore = useHeroToolStore();
 
-            if (!this.map || !this.heroCoordinates) return;
+            if (!this.map || !this.heroCoordinates) return false;
             if (heroToolStore.isDragging) return false;
 
             const neighbors = getOddQNeighbors(this.heroCoordinates);
             const isNeighbor = neighbors.some(n =>
                 n.columnIndex === target.columnIndex && n.rowIndex === target.rowIndex
             );
-            if (!isNeighbor) return;
+            if (!isNeighbor) return false;
 
             const tile: HexTileModel = this.map.tiles.find((t: HexTileModel) =>
                 t.coordinates.columnIndex === target.columnIndex &&
                 t.coordinates.rowIndex === target.rowIndex
             );
 
-            if (!tile) return;
-            if (!tile.isRevealed) return;
-            if (tile.tileType === "enemy") return;
-            if (tile.tileType === "home") return;
-            const obj = tile.hexobject;
-            if (obj?.blocksMovement) { return; }
+            if (!tile) return false;
+            if (!tile.isRevealed) return false;
+            if (tile.hexobject) {
+                if (tile.hexobject.collision === EHexCollision.SOLID) return false;
+                if (tile.hexobject.hexobjectKey === "camping") return false;
+            }
 
             this.heroCoordinates = {...target};
             this.revealAroundHero();

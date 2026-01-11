@@ -1,13 +1,13 @@
-import type { IHexMapConfig } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import { Complexity } from "@/enums/complexity";
+import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
 
 export interface IWorldGenerator {
     worldName: string;
     worldWidth: number;
     worldHeight: number;
     worldComplexity: Complexity;
-    config: IHexMapConfig[];
+    config: IHexMapPlacement[];
 
-    treeChance: number;      // 0.10
-    safeZoneRadius: number;  // 1 (поки що)
+    treeChance: number;
+    safeZoneRadius: number;
 }

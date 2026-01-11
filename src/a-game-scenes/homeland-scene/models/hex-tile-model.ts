@@ -1,22 +1,19 @@
 import {
     HexTileType,
-    IHexCoordinates, IResourceConfig, TResourceKind,
+    IHexCoordinates,
 } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {RouteName} from "@/router/routes";
-import {HexTileBuilder} from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
-import {HexObjectModel} from "@/models/hexobject-model";
+import {THexobject} from "@/abstraction/hexobject-abstraction";
 
 export interface IHexTile {
     tileId: string;
     tileKey?: RouteName | null;
     tileType: HexTileType;
-    imagePath: string;
-    description: string;
+    hexBackgroundImagePath: string;
     isRevealed: boolean;
     coordinates: IHexCoordinates;
-    resource: IResourceConfig | undefined;
     coordinatesToString(): string;
-    hexobject: HexObjectModel | null;
+    hexobject: THexobject | null;
 }
 
 export class HexTileModel implements IHexTile {
@@ -24,24 +21,15 @@ export class HexTileModel implements IHexTile {
     private _tileKey?: RouteName | null;
     private _tileType: HexTileType = 'empty';
     private _isRevealed = false;
-    private _description: string = 'Nothing around';
-    private _imagePath: string = '';
-    private _hexobject: HexObjectModel | null = null;
+    private _hexBackgroundImagePath: string = '';
+    private _hexobject: THexobject | null = null;
     private _coordinates: IHexCoordinates = {columnIndex: 0, rowIndex: 0};
-    private _resource?: {
-        kind: TResourceKind;
-        resourceImagePaths?: string[];
-        resourceDescription?: string;
-        regrowAt?: number | null;
-        regrowMs?: number;
-        isAvailable?: boolean;
-    };
 
-    get hexobject(): HexObjectModel | null {
+    get hexobject(): THexobject | null {
         return this._hexobject;
     }
 
-    set hexobject(hexobject: HexObjectModel | null) {
+    set hexobject(hexobject: THexobject | null) {
         this._hexobject = hexobject;
     }
 
@@ -77,14 +65,6 @@ export class HexTileModel implements IHexTile {
         this._tileType = tileType;
     }
 
-    get description(): string {
-        return this._description;
-    }
-
-    set description(description: string) {
-        this._description = description;
-    }
-
     get coordinates(): IHexCoordinates {
         return this._coordinates;
     }
@@ -93,35 +73,15 @@ export class HexTileModel implements IHexTile {
         this._coordinates = coordinates;
     }
 
-    get imagePath(): string {
-        return this._imagePath;
+    get hexBackgroundImagePath(): string {
+        return this._hexBackgroundImagePath;
     }
 
-    set imagePath(imagPath: string) {
-        this._imagePath = imagPath;
-    }
-
-    get resource(): IResourceConfig {
-        return this._resource;
-    }
-
-    set resource(resource: IResourceConfig) {
-        this._resource = resource;
+    set hexBackgroundImagePath(imagPath: string) {
+        this._hexBackgroundImagePath = imagPath;
     }
 
     coordinatesToString(): string {
         return `${this.coordinates.columnIndex},${this.coordinates.rowIndex}`;
-    }
-
-
-    static fromJSON(raw: any): HexTileModel {
-        return new HexTileBuilder()
-            .tileId(raw.tileId)
-            .routeKey(raw.tileKey)
-            .type(raw.tileType)
-            .isRevealed(raw.isRevealed)
-            .imagePath(raw.imagePath)
-            .coordinates(raw.coordinates)
-            .build();
     }
 }

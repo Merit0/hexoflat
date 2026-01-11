@@ -1,15 +1,17 @@
-import {HexTileType, IHexMapConfig} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {Complexity} from "@/enums/complexity";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import {HexTileBuilder} from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
-import {HexObjectModel} from "@/models/hexobject-model";
+import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
+import {HexTileType, IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {EHexobjectGroup, THexobject} from "@/abstraction/hexobject-abstraction";
+import {HexObjectFactory} from "@/factory/hex-object-factory";
 
 interface IWorldMap {
     name: string;
     width: number;
     height: number;
     complexity: Complexity;
-    config: IHexMapConfig[];
+    config: IHexMapPlacement[];
     tiles: HexTileModel[];
 }
 
@@ -18,7 +20,7 @@ export default class HexMapModel implements IWorldMap {
     private _width: number;
     private _height: number;
     private _complexity: Complexity;
-    private _mapTilesConfig: IHexMapConfig[];
+    private _mapTilesConfig: IHexMapPlacement[];
     private _tiles: HexTileModel[] = [];
 
     set name(mapName: string) {
@@ -45,11 +47,11 @@ export default class HexMapModel implements IWorldMap {
         return this._height;
     }
 
-    set config(mapTilesConfig: IHexMapConfig[]) {
+    set config(mapTilesConfig: IHexMapPlacement[]) {
         this._mapTilesConfig = mapTilesConfig;
     }
 
-    get config(): IHexMapConfig[] {
+    get config(): IHexMapPlacement[] {
         return this._mapTilesConfig;
     }
 
@@ -76,7 +78,7 @@ export default class HexMapModel implements IWorldMap {
         for (let q = 0; q < this.width; q++) {
             for (let r = 0; r < this.height; r++) {
                 const hex = new HexTileBuilder()
-                    .imagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
+                    .hexBackgroundImagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
                     .coordinates({columnIndex: q, rowIndex: r})
                     .build();
 
@@ -95,21 +97,19 @@ export default class HexMapModel implements IWorldMap {
             for (const c of tileConfig.coordinates) {
                 const key = `${c.columnIndex}:${c.rowIndex}`;
                 const tile = tileByCoordinate.get(key);
-                tile.tileKey = tileConfig.key;
-                tile.tileType = tileConfig.tileType;
-                tile.description = tileConfig.description;
+                tile.tileKey = tileConfig.rootPathKey;
                 tile.coordinates = {columnIndex: c.columnIndex, rowIndex: c.rowIndex};
 
                 if (!tile) {
                     console.warn(
-                        `Missing tile with coordinates: [${c.columnIndex},${c.rowIndex}] for place ${tileConfig.key}`
+                        `Missing tile with coordinates: [${c.columnIndex},${c.rowIndex}] for place ${tileConfig.hexobject.hexobjectKey}`
                     );
                     continue;
                 }
 
-                tile.imagePath =
-                    tileConfig.images?.length
-                        ? tileConfig.images[Math.floor(Math.random() * tileConfig.images.length)]
+                tile.hexBackgroundImagePath =
+                    tileConfig.initialTileImage?.length
+                        ? tileConfig.initialTileImage[Math.floor(Math.random() * tileConfig.initialTileImage.length)]
                         : "";
             }
         }
@@ -123,10 +123,9 @@ export default class HexMapModel implements IWorldMap {
             complexity: this.complexity,
             config: this.config,
             tiles: this.tiles.map(t => ({
-                imagePath: t.imagePath,
+                imagePath: t.hexBackgroundImagePath,
                 tileKey: t.tileKey,
                 tileType: t.tileType,
-                description: t.description,
                 coordinates: t.coordinates,
                 isRevealed: t.isRevealed,
                 hexobject: t.hexobject,
@@ -146,36 +145,75 @@ export default class HexMapModel implements IWorldMap {
             const tile = new HexTileModel();
             tile.tileType = (t.tileType as HexTileType) ?? "empty";
             tile.isRevealed = t.isRevealed ?? false;
-            tile.resource = t.resource ?? null;
-            tile.imagePath = t.imagePath ?? "";
+            tile.hexBackgroundImagePath = t.imagePath ?? "";
             tile.tileKey = t.tileKey ?? null;
-            tile.description = t.description ?? "";
-            tile.coordinates = t.coordinates ?? { rowIndex: t.r, columnIndex: t.q };
+            tile.coordinates = t.coordinates ?? {rowIndex: t.r, columnIndex: t.q};
 
-            const o: HexObjectModel | null = t.hexobject ?? null;
-            tile.hexobject = o
-                ? {
-                    id: o.id ?? "",
-                    kind: o.kind ?? "tree",
-                    isInteractable: o.isInteractable ?? true,
-                    isAvailable: o.isAvailable ?? true,
-                    regrowMs: o.regrowMs ?? null,
-                    regrowAt: o.regrowAt ?? null,
-                    traits: {
-                        collectable: o.traits?.collectable ?? false,
-                        cuttable: o.traits?.cuttable ?? false,
-                        pickupable: o.traits?.pickupable ?? false,
-                        mineable: o.traits?.mineable ?? false,
-                    },
-                    description: o.description ?? "",
-                    spritePath: o.spritePath ?? undefined,
-                    blocksMovement: o.blocksMovement ?? true,
-                }
+            const savedObj: THexobject | null = t.hexobject ?? null;
+
+            tile.hexobject = savedObj
+                ? this.hydrateHexobject(savedObj, tile.coordinates)
                 : null;
 
             return tile;
         });
 
         return map;
+    }
+
+    private static hydrateHexobject(saved: THexobject, coord: IHexCoordinates): THexobject {
+        const overrides: Record<string, any> = {};
+
+        if (saved.groupType === EHexobjectGroup.RESOURCE) {
+            if (typeof saved.resource?.regrowMs === "number") overrides.regrowMs = saved.resource.regrowMs;
+            if (typeof saved.resource?.amount === "number") overrides.amount = saved.resource.amount;
+            if (typeof saved.resource?.isAvailable === "boolean") overrides.isAvailable = saved.resource.isAvailable;
+            if (typeof saved.resource?.regrowAt === "number" || saved.resource?.regrowAt === null) {
+                overrides.regrowAt = saved.resource.regrowAt;
+            }
+        }
+
+        if (saved.groupType === EHexobjectGroup.TOOL) {
+            if (typeof saved.tool?.durability === "number") overrides.durability = saved.tool.durability;
+            if (typeof saved.tool?.durabilityMax === "number") overrides.durabilityMax = saved.tool.durabilityMax;
+        }
+
+        const built = HexObjectFactory.create(saved.hexobjectKey, coord, overrides);
+
+        switch (saved.groupType) {
+            case EHexobjectGroup.CREATURE: {
+                if ("creature" in built && "creature" in saved) {
+                    built.creature.hp = saved.creature.hp ?? built.creature.hp;
+                    built.creature.hpMax = saved.creature.hpMax ?? built.creature.hpMax;
+                    built.creature.faction = saved.creature.faction ?? built.creature.faction;
+                }
+                break;
+            }
+
+            case EHexobjectGroup.CONSTRUCTION: {
+                if ("construction" in built && "construction" in saved) {
+                    built.construction.integrity = saved.construction.integrity ?? built.construction.integrity;
+                }
+                break;
+            }
+
+            case EHexobjectGroup.WEAPON: {
+                if ("weapon" in built && "weapon" in saved) {
+                    built.weapon.damageMin = saved.weapon.damageMin ?? built.weapon.damageMin;
+                    built.weapon.damageMax = saved.weapon.damageMax ?? built.weapon.damageMax;
+                }
+                if ("equipment" in built && "equipment" in saved) {
+                    built.equipment.durability = saved.equipment.durability ?? built.equipment.durability;
+                    built.equipment.durabilityMax = saved.equipment.durabilityMax ?? built.equipment.durabilityMax;
+                }
+                break;
+            }
+
+            case EHexobjectGroup.RESOURCE:
+            case EHexobjectGroup.TOOL:
+            default: break;
+        }
+
+        return built;
     }
 }
