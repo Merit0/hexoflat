@@ -7,6 +7,7 @@ import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {EHexCollision} from "@/abstraction/hexobject-abstraction";
 import {WorldTickFeature} from "@/features/resource-features/world-tick-feature";
+import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resource-spawner-feature";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -229,27 +230,21 @@ export const useWorldMapStore = defineStore('world-map-store', {
         hydrateResourcesFromConfig() {
             if (!this.map?.config?.length) return;
 
-            const byKey = new Map<string, any>();
-            for (const t of this.map.tiles) byKey.set(coordinateKey(t.coordinates), t);
+            const tileByKey = new Map<string, HexTileModel>();
+            for (const t of this.map.tiles) {
+                tileByKey.set(`${t.coordinates.columnIndex}:${t.coordinates.rowIndex}`, t);
+            }
 
-            for (const place of this.map.config) {
-                if (place.tileType !== "resource") continue;
+            for (const placement of this.map.config) {
+                if (!placement.hexobject) continue;
 
-                for (const c of place.coordinates) {
-                    const tile = byKey.get(coordinateKey(c));
+                for (const c of placement.coordinates) {
+                    const tile = tileByKey.get(`${c.columnIndex}:${c.rowIndex}`);
                     if (!tile) continue;
 
-                    if (!tile.resource) {
-                        tile.tileType = "resource";
-                        tile.resource = {
-                            kind: place.resource?.kind ?? "tree",
-                            regrowMs: place.resource?.regrowMs,
-                            regrowAt: null,
-                            isAvailable: true,
-                            isInteractable: true,
-                            resourceDescription: place.resource?.resourceDescription ?? place.description,
-                            imagePaths: place.resource?.resourceImagePaths ?? [],
-                        };
+                    // ✅ merge-only: лише додаємо спавнер, якщо його ще нема
+                    if (!tile.resourceSpawner) {
+                        new AddResourceSpawnerFeature(tile, placement.hexobject).add();
                     }
                 }
             }
@@ -297,7 +292,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 this.revealAroundHero();
             }
 
-            // ✅ ALWAYS start loop when map is ready
             this.startWorldLoop();
 
             console.log("Loaded from storage...");

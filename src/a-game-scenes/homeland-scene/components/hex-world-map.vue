@@ -14,12 +14,12 @@
             :tileWidth="tileWidth"
         />
         <tool-hex-tile
+            v-if="heroToolStore.isDragging && activeTool"
             :coord="heroToolStore.hover"
             :tileWidth="tileWidth"
-            :tool="tool"
+            :tool="activeTool"
             :actionHint="heroToolStore.hintLabel || undefined"
             @hide="heroToolStore.stopTool()"
-            @action="onToolAction()"
         />
         <hex-tile
             v-for="tile in tiles"
@@ -33,18 +33,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import type { HexTileModel } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
-import { useWorldMapStore } from "@/stores/world-map-store";
+import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue";
+import type {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import {useWorldMapStore} from "@/stores/world-map-store";
 import HexTile from "@/a-game-scenes/homeland-scene/components/hex-tile.vue";
 import HeroHexTile from "@/a-game-scenes/homeland-scene/components/hero-hex-tile.vue";
 import ToolHexTile from "@/a-game-scenes/homeland-scene/components/tool-hex-tile.vue";
-import { calcHexPixelPosition } from "@/utils/tile-utils";
-import { useTileClick } from "@/composables/use-tile-click";
+import {calcHexPixelPosition} from "@/utils/tile-utils";
+import {useTileClick} from "@/composables/use-tile-click";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {resolveActions} from "@/game-resolvers/interactions-resolver";
 import {HeroToolType} from "@/enums/hero-tool-type";
-import {CutResourceFeature} from "@/features/resource-features/cut-resource-feature";
 
 const { handleTileClick } = useTileClick();
 const store = useWorldMapStore();
@@ -55,7 +54,7 @@ store.loadFromStorage();
 store.generateIfEmpty();
 
 const tiles = computed<HexTileModel[]>(() => store.map?.tiles ?? []);
-const tool = computed(() => heroToolStore.activeTool);
+const activeTool = computed(() => heroToolStore.activeTool);
 const GRID_COLUMNS = 42;
 
 const scale = ref(1);
@@ -127,25 +126,6 @@ const mapBounds = computed(() => {
     offsetY: minY,
   };
 });
-
-function onToolAction() {
-  const tile = getTileByCoord(heroToolStore.hover) //todo: why here is hover not coordinatesHover
-  if (!tile?.hexobject) return;
-
-  const tool: HeroToolType = heroToolStore.activeTool ?? HeroToolType.HAND;
-  const actions = resolveActions(tool, tile.hexobject);
-
-  // візьми найкращу дію (ти вже так робиш)
-  const best = actions.sort((a,b) => b.priority - a.priority)[0];
-  if (!best) return;
-
-  if (best.actioType === "CUT") {
-    const result: { ok } = new CutResourceFeature(tile, tool).cut();
-    if (result.ok) {
-      worldMapStore.saveToStorage(); // зберігаємо старт pendingAction (щоб після reload spinner лишився)
-    }
-  }
-}
 
 function onKey(e: KeyboardEvent) {
   if (e.key === "Escape") heroToolStore.stopTool();

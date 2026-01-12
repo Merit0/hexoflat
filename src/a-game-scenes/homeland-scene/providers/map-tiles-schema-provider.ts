@@ -7,7 +7,7 @@ export const homelandMapConfig: IHexMapPlacement[] = [
         coordinates: [{ rowIndex: 3, columnIndex: 5 }],
     },
     {
-        hexobject: { hexobjectKey: "tree", overrides: { regrowMs: 1000 * 60 * 5 } },
+        hexobject: { hexobjectKey: "tree", overrides: { regrowMs: 25000 } },
         coordinates: [
             { rowIndex: 4, columnIndex: 15 }, { rowIndex: 4, columnIndex: 16 },
             { rowIndex: 5, columnIndex: 15 }, { rowIndex: 5, columnIndex: 16 },
