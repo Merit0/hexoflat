@@ -55,6 +55,8 @@ export class CutResourceFeature {
             hexobjectKey: obj.hexobjectKey,
         };
 
+        heroToolStore.lockTool(this.hex.coordinates, now + 10000);
+
         console.log("Cut started (5s)...");
         return { ok: true };
     }

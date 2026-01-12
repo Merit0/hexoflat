@@ -13,6 +13,9 @@ export interface HeroToolState {
     hintLabel: string | null;
     durability: number;
     durabilityMax: number;
+    isLocked: boolean;
+    lockedUntil: number | null;
+    lockedToolCoordinates: IHexCoordinates | null;
 
     treesCut: number; //todo:
 }
@@ -26,6 +29,9 @@ export const useHeroToolStore = defineStore("heroTool", {
         allowedKeys: [],
         availableActions: [] as ResolvedAction[],
         hintLabel: null as string | null,
+        isLocked: false,
+        lockedUntil: null,
+        lockedToolCoordinates: null,
 
         // ✅ defaults (hand ignores these anyway)
         durability: 100,
@@ -41,15 +47,13 @@ export const useHeroToolStore = defineStore("heroTool", {
 
     actions: {
         useTool(tool: HeroToolType, heroCoords: IHexCoordinates) {
+            if (this.isLocked) return;
             this.activeTool = tool;
             this.isDragging = true;
             this.origin = { ...heroCoords };
             this.hover = null;
 
-            // optional: якщо хочеш різні дефолти під інструменти
-            // (або ти потім будеш сетати durability з інвентаря/прототипів)
             if (tool === HeroToolType.HAND) {
-                // hand doesn't use durability
             } else if (this.durabilityMax <= 0) {
                 this.durabilityMax = 100;
                 this.durability = Math.min(this.durability, this.durabilityMax);
@@ -60,8 +64,22 @@ export const useHeroToolStore = defineStore("heroTool", {
             this.hover = neighbors.length ? neighbors[0] : null;
         },
 
+        lockTool(coord: IHexCoordinates, untilMs: number) {
+            this.isLocked = true;
+            this.lockedUntil = untilMs;
+            this.lockedToolCoordinates = { ...coord };
+            this.hover = { ...coord };
+        },
+
+        unlockTool() {
+            this.isLocked = false;
+            this.lockedUntil = null;
+            this.lockedToolCoordinates = null;
+        },
+
         updateHover(coords: IHexCoordinates) {
             if (!this.isDragging || !this.origin) return;
+            if (this.isLocked) return;
 
             const key = coordinateKey(coords);
             if (!this.allowedKeySet.has(key)) return;

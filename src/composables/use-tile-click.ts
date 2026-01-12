@@ -32,7 +32,7 @@ export function useTileClick() {
             return;
         }
 
-        if (tile.tileType === 'enemy' || tile.hexobject) {
+        if (tile.hexobject) {
             overlayStore.openOverlay("hex-tile-details", {coordinates: tile.coordinates});
             return;
         }

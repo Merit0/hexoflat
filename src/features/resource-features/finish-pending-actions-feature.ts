@@ -32,6 +32,7 @@ export class FinishPendingActionsFeature {
             }
 
             tile.pendingAction = null;
+            heroToolStore.unlockTool();
             changed = true;
         }
 
