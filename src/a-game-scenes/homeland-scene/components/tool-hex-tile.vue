@@ -6,12 +6,12 @@
       <button
           v-if="actionHint && !isWorking"
           class="do-btn"
-          @click.stop="onDoAction"
+          @click.stop="executeAction"
       >
         {{ actionHint }}
       </button>
 
-      <div v-if="isWorking" class="time-chip">{{ secondsLeft }}s</div>
+      <div v-if="isWorking" class="time-chip label">{{ secondsLeft }}s</div>
     </div>
   </div>
 </template>
@@ -25,7 +25,8 @@ import {HeroToolType} from "@/enums/hero-tool-type";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {resolveActions} from "@/game-resolvers/interactions-resolver";
 import {useWorldMapStore} from "@/stores/world-map-store";
-import {CutResourceFeature} from "@/features/resource-features/cut-resource-feature";
+import {ACTION_TYPE_MAP} from "@/registry/action-starters-registry";
+import {ExecuteHexActionFeature} from "@/features/execute-hex-action-feature";
 import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 
 const props = defineProps<{
@@ -100,20 +101,20 @@ const secondsLeft = computed(() => {
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
 });
 
-function onDoAction() {
+function executeAction() {
   const tile = hoveredTile.value as HexTileModel;
   if (!tile?.hexobject) return;
 
-  const tool: HeroToolType = props.tool ?? HeroToolType.HAND;
+  const tool = props.tool;
   const actions = resolveActions(tool, tile.hexobject);
-  const best = actions.slice().sort((a, b) => b.priority - a.priority)[0];
+  const best = actions.slice().sort((a,b)=>b.priority-a.priority)[0];
   if (!best) return;
 
-  if (best.actioType === "CUT") {
-    const res = new CutResourceFeature(tile, tool).cut();
-    if (res.ok) {
-      worldMapStore.saveToStorage();
-    }
+  const actionType = ACTION_TYPE_MAP[best.actioType];
+  const res = new ExecuteHexActionFeature(tile).execute(actionType, tool, Date.now());
+
+  if (res.ok) {
+    worldMapStore.saveToStorage();
   }
 }
 
