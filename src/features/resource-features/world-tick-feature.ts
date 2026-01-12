@@ -15,15 +15,8 @@ export class WorldTickFeature {
     public tick(now = Date.now()): boolean {
         let changed = false;
 
-        // 1) finish actions (CUT end -> remove object, schedule respawn, counters)
-        const finish = new FinishPendingActionsFeature(this.map);
-        const finishChanged = finish.finish(now); // ✅ зробимо щоб він повертав boolean
-        changed = changed || finishChanged;
-
-        // 2) spawn resources (respawn when time)
-        const spawner = new SpawnResourceFeature(this.map);
-        const spawnChanged = spawner.spawn(now); // ✅ теж boolean
-        changed = changed || spawnChanged;
+        changed = new FinishPendingActionsFeature(this.map).finish(now) || changed;
+        changed = new SpawnResourceFeature(this.map).spawn(now) || changed;
 
         return changed;
     }

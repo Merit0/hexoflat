@@ -1,6 +1,6 @@
 <template>
   <div class="tool-hex-pos" :style="posStyle">
-    <div class="tool-hex-tile" :class="[toolClass, { working: isWorking }]">
+    <div class="tool-hex-tile" :class="[toolClass, { doing: isWorking }]">
       <button class="hide-btn" @click.stop="emit('hide')">HIDE</button>
 
       <button
@@ -262,11 +262,6 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
   }
 }
 
-.tool-hex-tile.cworking {
-  animation: tool-chop 220ms ease-in-out infinite;
-  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.55));
-}
-
 @keyframes tool-chop {
   0% {
     transform: translate(var(--tx), var(--ty)) rotate(-6deg) scale(1.02);
@@ -289,7 +284,7 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
   transition: transform 150ms ease-out;
 }
 
-.tool-hex-tile.working{
+.tool-hex-tile.doing{
   animation: tool-chop 220ms ease-in-out infinite;
   scale: 0.70;
 }
