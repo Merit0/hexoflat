@@ -1,10 +1,10 @@
-import type { HexTileModel } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
-import type { HeroToolType } from "@/enums/hero-tool-type";
-import { EHexActionType } from "@/enums/hex-action-type";
-import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import type { ResolvedActionType } from "@/game-resolvers/interactions-resolver";
+import type {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import {HeroToolType} from "@/enums/hero-tool-type";
+import {EHexActionType} from "@/enums/hex-action-type";
+import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
+import {getToolCapabilities, ResolvedActionType} from "@/game-resolvers/interactions-resolver";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
+import {useHeroToolStore} from "@/stores/hero-tool-store";
 
 export type StartResult =
     | { ok: true; endsAt: number }
@@ -13,9 +13,9 @@ export type StartResult =
 export type ActionStarter = (tile: HexTileModel, tool: HeroToolType, now: number) => StartResult;
 
 function isBusy(tile: HexTileModel, now: number): boolean {
-    const a = tile.pendingAction;
-    if (!a) return false;
-    if (now < a.endsAt) return true;
+    const action = tile.pendingAction;
+    if (!action) return false;
+    if (now < action.endsAt) return true;
     tile.pendingAction = null;
     return false;
 }
@@ -23,7 +23,7 @@ function isBusy(tile: HexTileModel, now: number): boolean {
 export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
     CUT: EHexActionType.CUT,
     MINE: EHexActionType.MINE,
-    PICKUP: EHexActionType.TAKE,
+    TAKE: EHexActionType.TAKE,
     OPEN: EHexActionType.OPEN,
     ATTACK: EHexActionType.ATTACK,
 };
@@ -42,17 +42,28 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             return { ok: false, message: "This resource is not cuttable!" };
         }
 
+        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const cutCfg = meta?.actions?.[EHexActionType.CUT];
+
+        const requiredTool: HeroToolType = cutCfg?.requiredTool ?? HeroToolType.AXE;
+        const durationMs: number = cutCfg?.durationMs ?? 5000;
+        const costPct: number = cutCfg?.durabilityCostPct ?? 0.1;
+
+        if (requiredTool && tool !== requiredTool) {
+            return { ok: false, message: `Need a tool: ${requiredTool}` };
+        }
+
         const cap = getToolCapabilities(tool);
         if (!cap.canCut) return { ok: false, message: "Need something to cut with!" };
-
+        //
         const heroToolStore = useHeroToolStore();
-        const okDur = heroToolStore.consumeDurability(0.1);
+        const okDur = heroToolStore.consumeDurability(costPct);
         if (!okDur) {
-            heroToolStore.activeTool = "hand" as HeroToolType;
+            heroToolStore.activeTool = HeroToolType.HAND;
             return { ok: false, message: "Tool is broken!" };
         }
 
-        const endsAt = now + 5000;
+        const endsAt = now + durationMs;
 
         tile.pendingAction = {
             type: EHexActionType.CUT,

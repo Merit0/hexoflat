@@ -2,23 +2,26 @@ import { EHexActionType } from "@/enums/hex-action-type";
 import type { HexTileModel } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
 import type { IPendingTileAction } from "@/abstraction/hex-tile-abstraction";
 import {IActionContext} from "@/abstraction/action-context";
-import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 
 export type ActionFinisher = (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => boolean;
 
 export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
-    [EHexActionType.CUT]: (tile, action, ctx) => {
+    [EHexActionType.CUT]: (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => {
         tile.hexobject = null;
 
-        if (action.hexobjectKey === HEXOBJECT_KEYS.TREE) {
-            ctx.heroToolStore.addTreeCut(1);
+        const meta = HEXOBJECT_META[action.hexobjectKey];
+        const wood = meta?.yields?.wood ?? 0;
+
+        if (wood > 0 && ctx.heroToolStore.addTreeCut) {
+            ctx.heroToolStore.addTreeCut(wood);
         }
 
         if (tile.resourceSpawner?.enabled) {
             tile.resourceSpawner.nextSpawnAt = ctx.now + tile.resourceSpawner.regrowMs;
         }
 
-        if ((ctx.heroToolStore as any).isLocked) {
+        if (ctx.heroToolStore.isLocked) {
             (ctx.heroToolStore as any).unlockTool?.();
         }
 
