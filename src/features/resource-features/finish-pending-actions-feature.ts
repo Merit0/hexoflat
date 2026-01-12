@@ -1,7 +1,7 @@
 import type HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
-import {IPendingTileAction} from "@/abstraction/hex-tile-abstraction";
-import {EHexActionType} from "@/enums/hex-action-type";
+import {IActionContext} from "@/abstraction/action-context";
+import {ACTION_FINISHERS} from "@/registry/action-finishers-registry";
 
 export class FinishPendingActionsFeature {
     private readonly map: HexMapModel;
@@ -12,54 +12,31 @@ export class FinishPendingActionsFeature {
 
     public finish(now = Date.now()): boolean {
         const heroToolStore = useHeroToolStore();
+
+        const ctx: IActionContext = {
+            map: this.map,
+            now,
+            heroToolStore,
+        };
+
         let changed = false;
 
         for (const tile of this.map.tiles) {
-            const hexPendingAction: IPendingTileAction = tile.pendingAction;
-            if (!hexPendingAction) continue;
+            const action = tile.pendingAction;
+            if (!action) continue;
 
-            // if action is not finished yet -> nothing
-            if (now < hexPendingAction.endsAt) continue;
+            // ще триває
+            if (now < action.endsAt) continue;
 
-            //action is finished -> do finalizing it
-            switch (hexPendingAction.type) {
-                case EHexActionType.CUT: {
-                    tile.hexobject = null;
-
-                    if (hexPendingAction.hexobjectKey === "tree") { //todo: TREE should be registered
-                        heroToolStore.addTreeCut(1);
-                    }
-
-                    // setup resource respawn if added from config
-                    if (tile.resourceSpawner?.enabled) {
-                        tile.resourceSpawner.nextSpawnAt = now + tile.resourceSpawner.regrowMs;
-                    }
-
-                    if (heroToolStore.isLocked) {
-                        heroToolStore.unlockTool();
-                    }
-
-                    changed = true;
-                    break;
-                }
-
-                case EHexActionType.MINE:
-                case EHexActionType.TAKE:
-                case EHexActionType.OPEN:
-                case EHexActionType.ATTACK: {
-                    if (heroToolStore.isLocked) {
-                        heroToolStore.unlockTool();
-                    }
-                    changed = true;
-                    break;
-                }
-
-                default: {
-                    changed = true;
-                    break;
-                }
+            const finisher = ACTION_FINISHERS[action.type];
+            if (finisher) {
+                changed = finisher(tile, action, ctx) || changed;
+            } else {
+                // якщо раптом немає фінішера — хоча б не залишати тайл “busy”
+                changed = true;
             }
 
+            // ✅ завжди очищаємо pendingAction
             tile.pendingAction = null;
             changed = true;
         }
