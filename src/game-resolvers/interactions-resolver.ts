@@ -7,7 +7,7 @@ export interface ToolCapabilities {
     canMine?: boolean;
 }
 
-export type ResolvedActionType = "CUT" | "PICKUP" | "MINE" | "ATTACK" | "OPEN";
+export type ResolvedActionType = "CUT" | "TAKE" | "MINE" | "ATTACK" | "OPEN";
 
 export interface ResolvedAction {
     actioType: ResolvedActionType;
@@ -17,9 +17,9 @@ export interface ResolvedAction {
 
 export function getToolCapabilities(tool: HeroToolType): ToolCapabilities {
     switch (tool) {
-        case "axe": return { canCut: true };
-        case "pickaxe": return { canMine: true };
-        case "hand": return { canPickup: true };
+        case HeroToolType.AXE: return { canCut: true };
+        case HeroToolType.PICKAXE: return { canMine: true };
+        case HeroToolType.HAND: return { canPickup: true };
         default: return {};
     }
 }
@@ -48,7 +48,7 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
             }
 
             if (cap.canPickup && (traits.pickupable || traits.collectable)) {
-                resolvedActions.push({actioType: "PICKUP", label: "Take", priority: 80});
+                resolvedActions.push({actioType: "TAKE", label: "Take", priority: 80});
             }
 
             if (cap.canMine && traits.mineable) {
@@ -71,7 +71,7 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
         case EHexobjectGroup.TOOL:
         case EHexobjectGroup.WEAPON: {
             if (obj.collision === EHexCollision.TRIGGER && cap.canPickup) {
-                resolvedActions.push({actioType: "PICKUP", label: "Take", priority: 80});
+                resolvedActions.push({actioType: "TAKE", label: "Take", priority: 80});
             }
             break;
         }

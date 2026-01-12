@@ -8,6 +8,7 @@ import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {EHexCollision} from "@/abstraction/hexobject-abstraction";
 import {WorldTickFeature} from "@/features/resource-features/world-tick-feature";
 import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resource-spawner-feature";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -120,7 +121,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 const tile = byKey.get(coordinateKey(c));
                 if (!tile) continue;
 
-                if (tile.hexobject?.hexobjectKey === "camping") continue;
+                if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING) continue;
 
                 tile.tileType = "empty";
                 tile.tileKey = null;
@@ -205,7 +206,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (!tile.isRevealed) return false;
             if (tile.hexobject) {
                 if (tile.hexobject.collision === EHexCollision.SOLID) return false;
-                if (tile.hexobject.hexobjectKey === "camping") return false;
+                if (tile.hexobject.hexobjectKey === HEXOBJECT_KEYS.CAMPING) return false;
             }
 
             this.heroCoordinates = {...target};

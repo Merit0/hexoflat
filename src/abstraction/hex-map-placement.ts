@@ -1,8 +1,9 @@
 import type { RouteName } from "@/router/routes";
 import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {THexobjectKey} from "@/registry/hexobjects-registry";
 
 export interface HexObjectPlacementRef {
-    hexobjectKey: string;
+    hexobjectKey: THexobjectKey;
     overrides?: Record<string, any>;
 }
 

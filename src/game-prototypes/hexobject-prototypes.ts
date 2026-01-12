@@ -1,8 +1,9 @@
 import {EHexCollision, EHexobjectGroup, THexobjectPrototype} from "@/abstraction/hexobject-abstraction";
+import {HEXOBJECT_KEYS, THexobjectKey} from "@/registry/hexobjects-registry";
 
-export const HEX_OBJECT_PROTOTYPES: Record<string, THexobjectPrototype> = {
-    tree: {
-        hexobjectKey: "tree",
+export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> = {
+    [HEXOBJECT_KEYS.TREE]: {
+        hexobjectKey: HEXOBJECT_KEYS.TREE,
         groupType: EHexobjectGroup.RESOURCE,
         isInteractable: true,
         description: "This is the Tree",
@@ -19,8 +20,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<string, THexobjectPrototype> = {
         spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/tree-tile-image.png',
     },
 
-    coin: {
-        hexobjectKey: "coin",
+    [HEXOBJECT_KEYS.COIN]: {
+        hexobjectKey: HEXOBJECT_KEYS.COIN,
         groupType: EHexobjectGroup.RESOURCE,
         isInteractable: true,
         description: 'U are lucky and find the Coins',
@@ -38,8 +39,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<string, THexobjectPrototype> = {
         spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/coin-image.png',
     },
 
-    rock: {
-        hexobjectKey: 'rock',
+    [HEXOBJECT_KEYS.ROCK]: {
+        hexobjectKey: HEXOBJECT_KEYS.ROCK,
         groupType: EHexobjectGroup.RESOURCE,
         isInteractable: true,
         description: 'This is the Rock!',
@@ -53,8 +54,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<string, THexobjectPrototype> = {
         spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/rock-image.png',
     },
 
-    skeletor: {
-        hexobjectKey: 'skeletor',
+    [HEXOBJECT_KEYS.SKELETOR]: {
+        hexobjectKey: HEXOBJECT_KEYS.SKELETOR,
         groupType: EHexobjectGroup.CREATURE,
         isInteractable: true,
         description: 'This is the Creature!',
@@ -67,8 +68,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<string, THexobjectPrototype> = {
         spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/skeletor-boss-image.png',
     },
 
-    axe: {
-        hexobjectKey: 'axe',
+    [HEXOBJECT_KEYS.AXE]: {
+        hexobjectKey: HEXOBJECT_KEYS.AXE,
         groupType: EHexobjectGroup.TOOL,
         isInteractable: true,
         description: 'This is the Axe! Use it to cut the trees. This tool can make damage! It is very durable.',
@@ -81,8 +82,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<string, THexobjectPrototype> = {
         spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/axe-tile-image.png',
     },
 
-    camping: {
-        hexobjectKey: "camping",
+    [HEXOBJECT_KEYS.CAMPING]: {
+        hexobjectKey: HEXOBJECT_KEYS.CAMPING,
         groupType: EHexobjectGroup.CONSTRUCTION,
         isInteractable: false,
         description: 'This is the Camping',

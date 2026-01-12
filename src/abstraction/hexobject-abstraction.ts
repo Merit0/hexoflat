@@ -1,3 +1,5 @@
+import {THexobjectKey} from "@/registry/hexobjects-registry";
+
 export type THexobjectGroup = EHexobjectGroup;
 export type THexCollision = EHexCollision;
 
@@ -8,7 +10,7 @@ interface IDurable {
 
 export interface IBaseHexobject {
     id: string;
-    hexobjectKey: string;
+    hexobjectKey: THexobjectKey;
     groupType: THexobjectGroup;
     isInteractable: boolean;
     spritePath?: string;
