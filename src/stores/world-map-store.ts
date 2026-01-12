@@ -6,6 +6,7 @@ import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {EHexCollision} from "@/abstraction/hexobject-abstraction";
+import {WorldTickFeature} from "@/features/resource-features/world-tick-feature";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -15,6 +16,8 @@ type TWorldState = {
 
 const STORAGE_KEY = 'hexoflat:map';
 const STORAGE_KEY_STATE = "hexoflat:worldState";
+
+let worldTimer: number | null = null;
 
 export const useWorldMapStore = defineStore('world-map-store', {
     state: () => ({
@@ -30,6 +33,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
             console.log("Map generating....");
             this.map = HexMapProvider.getHomeLand();
+            this.startWorldLoop();
 
             this.makeCampSafeZone();
 
@@ -119,6 +123,26 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
                 tile.tileType = "empty";
                 tile.tileKey = null;
+            }
+        },
+
+        startWorldLoop() {
+            if (worldTimer) return;
+
+            worldTimer = window.setInterval(() => {
+                if (!this.map) return;
+
+                const changed = new WorldTickFeature(this.map).tick(Date.now());
+                if (changed) {
+                    this.saveToStorage();
+                }
+            }, 250);
+        },
+
+        stopWorldLoop() {
+            if (worldTimer) {
+                window.clearInterval(worldTimer);
+                worldTimer = null;
             }
         },
 
@@ -236,7 +260,20 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (savedMap) {
                 const raw = JSON.parse(savedMap);
                 this.map = HexMapModel.fromJSON(raw);
+
+                // ⚠️ ВАЖЛИВО: hydrateResourcesFromConfig має бути "merge", не overwrite.
+                // Якщо вона зараз відновлює об'єкти насильно — перенеси її нижче і зроби safe (див. примітку).
                 this.hydrateResourcesFromConfig();
+
+                // ✅ reconcile world state always
+                const changed = new WorldTickFeature(this.map).tick(Date.now());
+
+                // ✅ save only if rehydrate/tick changed something
+                if ((this.map as any).__rehydrateChanged || changed) {
+                    this.saveToStorage();
+                    // можна очистити флаг, щоб не дратував
+                    (this.map as any).__rehydrateChanged = false;
+                }
             }
 
             const savedState = localStorage.getItem(STORAGE_KEY_STATE);
@@ -256,10 +293,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 this.revealAroundHero();
                 this.saveToStorage();
                 console.log("Loaded map, hero was missing -> initialized");
-                return;
+            } else {
+                this.revealAroundHero();
             }
 
-            this.revealAroundHero();
+            // ✅ ALWAYS start loop when map is ready
+            this.startWorldLoop();
 
             console.log("Loaded from storage...");
         },
@@ -267,6 +306,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         clearWorld() {
             console.log("Resetting map...");
             this.map = null;
+            this.stopWorldLoop();
             this.heroCoordinates = null;
             this.woodCollected = 0;
 

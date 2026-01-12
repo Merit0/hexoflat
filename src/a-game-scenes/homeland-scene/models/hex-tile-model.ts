@@ -4,6 +4,8 @@ import {
 } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
 import {RouteName} from "@/router/routes";
 import {THexobject} from "@/abstraction/hexobject-abstraction";
+import {IHexResourceSpawner} from "@/abstraction/hex-resource-spawner";
+import {IPendingTileAction} from "@/abstraction/hex-tile-abstraction";
 
 export interface IHexTile {
     tileId: string;
@@ -14,6 +16,9 @@ export interface IHexTile {
     coordinates: IHexCoordinates;
     coordinatesToString(): string;
     hexobject: THexobject | null;
+    resourceSpawner: IHexResourceSpawner | null;
+    pendingAction: IPendingTileAction | null;
+
 }
 
 export class HexTileModel implements IHexTile {
@@ -24,6 +29,8 @@ export class HexTileModel implements IHexTile {
     private _hexBackgroundImagePath: string = '';
     private _hexobject: THexobject | null = null;
     private _coordinates: IHexCoordinates = {columnIndex: 0, rowIndex: 0};
+    private _resourceSpawner: IHexResourceSpawner = null;
+    private _pendingAction: IPendingTileAction | null = null;
 
     get hexobject(): THexobject | null {
         return this._hexobject;
@@ -79,6 +86,22 @@ export class HexTileModel implements IHexTile {
 
     set hexBackgroundImagePath(imagPath: string) {
         this._hexBackgroundImagePath = imagPath;
+    }
+
+    get resourceSpawner(): IHexResourceSpawner {
+        return this._resourceSpawner;
+    }
+
+    set resourceSpawner(resourceSpawner: IHexResourceSpawner) {
+        this._resourceSpawner = resourceSpawner;
+    }
+
+    get pendingAction(): IPendingTileAction {
+        return this._pendingAction;
+    }
+
+    set pendingAction(pendingAction: IPendingTileAction) {
+        this._pendingAction = pendingAction;
     }
 
     coordinatesToString(): string {

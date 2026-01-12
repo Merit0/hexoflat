@@ -129,6 +129,8 @@ export default class HexMapModel implements IWorldMap {
                 coordinates: t.coordinates,
                 isRevealed: t.isRevealed,
                 hexobject: t.hexobject,
+                resourceSpawner: t.resourceSpawner,
+                pendingAction: t.pendingAction,
             })),
         };
     }
@@ -150,13 +152,53 @@ export default class HexMapModel implements IWorldMap {
             tile.coordinates = t.coordinates ?? {rowIndex: t.r, columnIndex: t.q};
 
             const savedObj: THexobject | null = t.hexobject ?? null;
+            tile.hexobject = savedObj ? this.hydrateHexobject(savedObj, tile.coordinates) : null;
 
-            tile.hexobject = savedObj
-                ? this.hydrateHexobject(savedObj, tile.coordinates)
-                : null;
+            tile.resourceSpawner = t.resourceSpawner ?? null;
+            tile.pendingAction = t.pendingAction ?? null;
 
             return tile;
         });
+
+        // ✅ Reconcile after hydration
+        const now = Date.now();
+        let changed = false;
+
+        for (const tile of map.tiles) {
+            // 1) Finish expired pending actions immediately
+            const a = tile.pendingAction;
+            if (a && now >= a.endsAt) {
+                if (a.type === "CUT") {
+                    if (tile.hexobject !== null) {
+                        tile.hexobject = null;
+                        changed = true;
+                    }
+
+                    if (tile.resourceSpawner?.enabled) {
+                        tile.resourceSpawner.nextSpawnAt = now + tile.resourceSpawner.regrowMs;
+                        changed = true;
+                    }
+                }
+
+                tile.pendingAction = null;
+                changed = true;
+            }
+
+            // 2) Optional: spawn immediately if respawn time already passed
+            const s = tile.resourceSpawner;
+            if (!tile.hexobject && s?.enabled && typeof s.nextSpawnAt === "number" && now >= s.nextSpawnAt) {
+                tile.hexobject = HexObjectFactory.create(
+                    s.proto.hexobjectKey,
+                    tile.coordinates,
+                    s.proto.overrides
+                );
+                s.nextSpawnAt = null;
+                changed = true;
+            }
+        }
+
+        // ✅ mark map as dirty so caller can save once
+        (map as any).__rehydrateChanged = changed;
 
         return map;
     }
@@ -211,7 +253,8 @@ export default class HexMapModel implements IWorldMap {
 
             case EHexobjectGroup.RESOURCE:
             case EHexobjectGroup.TOOL:
-            default: break;
+            default:
+                break;
         }
 
         return built;

@@ -4,6 +4,7 @@ import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model
 import {IWorldGenerator} from "@/abstraction/world-generator-interface";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
 import {HexObjectFactory} from "@/factory/hex-object-factory";
+import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resource-spawner-feature";
 
 export class WorldGenerator {
     constructor(private readonly generator: IWorldGenerator) {}
@@ -53,15 +54,17 @@ export class WorldGenerator {
 
         for (const place of map.config) {
             for (const c of place.coordinates) {
-                const tile = byKey.get(coordinateKey(c));
+                const tile: HexTileModel = byKey.get(coordinateKey(c));
                 if (!tile) continue;
 
                 tile.tileKey = place.rootPathKey ?? null;
                 if (place.hexobject) {
-                    const kind = (place.hexobject.hexobjectKey ?? "tree");
-
-                    tile.hexobject = HexObjectFactory.create(kind, tile.coordinates);
-                    console.log(`Created ${kind} at ${tile.coordinates}`);
+                    tile.hexobject = HexObjectFactory.create(
+                        place.hexobject.hexobjectKey,
+                        tile.coordinates,
+                        place.hexobject.overrides
+                    );
+                    new AddResourceSpawnerFeature(tile, place.hexobject).add();
                 } else {
                     tile.hexobject = null;
                 }

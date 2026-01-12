@@ -5,47 +5,124 @@
       :style="style"
       title="Tool"
   >
-    <button class="hide-btn" @click.stop="emit('hide')">
-      HIDE
+    <button class="hide-btn" @click.stop="emit('hide')">HIDE</button>
+
+    <button
+        v-if="actionHint && !isBusy"
+        class="do-btn"
+        @click.stop="onDoAction"
+    >
+      {{ actionHint }}
     </button>
-    <div v-if="props.actionHint" class="action-chip">{{ props.actionHint }}</div>
+
+    <!-- Spinner overlay -->
+    <div v-if="isBusy" class="action-overlay" @click.stop>
+      <div class="spinner"></div>
+      <div class="timer">{{ secondsLeft }}</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { IHexCoordinates } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
-import { calcHexPixelPosition } from "@/utils/tile-utils";
-import {HeroToolType} from "@/stores/hero-tool-store";
+import {computed, onBeforeUnmount, onMounted, ref} from "vue";
+import type {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {calcHexPixelPosition} from "@/utils/tile-utils";
+import {HeroToolType} from "@/enums/hero-tool-type";
+
+import {useHeroToolStore} from "@/stores/hero-tool-store";
+import {resolveActions} from "@/game-resolvers/interactions-resolver";
+import {useWorldMapStore} from "@/stores/world-map-store";
+import {CutResourceFeature} from "@/features/resource-features/cut-resource-feature";
 
 const props = defineProps<{
   coord: IHexCoordinates | null;
   tileWidth: number;
   tool: HeroToolType;
-  actionHint?: string
 }>();
 
 const emit = defineEmits<{
   (e: "hide"): void;
 }>();
 
-const style = computed(() => {
-  if (!props.coord || !props.tool) {
-    return { display: "none" } as Record<string, string>;
+const heroToolStore = useHeroToolStore();
+const worldMapStore = useWorldMapStore();
+
+const hoveredTile = computed(() => {
+  const c = props.coord;
+  if (!c || !worldMapStore.map) return null;
+
+  return (
+      worldMapStore.map.tiles.find(
+          (t: any) =>
+              t.coordinates.columnIndex === c.columnIndex &&
+              t.coordinates.rowIndex === c.rowIndex
+      ) ?? null
+  );
+});
+
+const actionHint = computed(() => {
+  const tile = hoveredTile.value;
+  if (!tile?.hexobject) return null;
+
+  const tool: HeroToolType = props.tool ?? HeroToolType.HAND;
+  const actions = resolveActions(tool, tile.hexobject);
+  heroToolStore.setResolvedActions(actions);
+
+  const best = actions.slice().sort((a, b) => b.priority - a.priority)[0];
+  return best?.label ?? null;
+});
+
+// --- timer для countdown
+const now = ref(Date.now());
+let timer: number | null = null;
+
+onMounted(() => {
+  timer = window.setInterval(() => (now.value = Date.now()), 200);
+});
+onBeforeUnmount(() => {
+  if (timer) window.clearInterval(timer);
+});
+
+const pendingAction = computed(() => hoveredTile.value?.pendingAction ?? null);
+
+const isBusy = computed(() => {
+  const a = pendingAction.value;
+  return !!a && now.value < a.endsAt;
+});
+
+const secondsLeft = computed(() => {
+  const a = pendingAction.value;
+  if (!a) return 0;
+  return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
+});
+
+function onDoAction() {
+  const tile = hoveredTile.value;
+  if (!tile?.hexobject) return;
+
+  const tool: HeroToolType = props.tool ?? HeroToolType.HAND;
+  const actions = resolveActions(tool, tile.hexobject);
+  const best = actions.slice().sort((a, b) => b.priority - a.priority)[0];
+  if (!best) return;
+
+  if (best.actioType === "CUT") {
+    const res = new CutResourceFeature(tile, tool).cut();
+    if (res.ok) {
+      worldMapStore.saveToStorage();
+    }
   }
+}
+
+const style = computed(() => {
+  if (!props.coord || !props.tool) return { display: "none" } as Record<string, string>;
 
   const pseudoTile = { coordinates: props.coord } as any;
   const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
 
-  return {
-    transform: `translate(${x}px, ${y}px)`,
-  } as Record<string, string>;
+  return { transform: `translate(${x}px, ${y}px)` } as Record<string, string>;
 });
 
-const toolClass = computed(() => {
-  if (!props.tool) return '';
-  return props.tool === "axe" ? "axe" : "hand";
-});
+const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
 </script>
 
 <style scoped>
@@ -140,4 +217,44 @@ const toolClass = computed(() => {
 
   pointer-events: none;
 }
+
+.do-btn{
+  position:absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(0,0,0,0.55);
+  color: #f2e9d3;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+.do-btn:hover{ filter: brightness(1.15); }
+.do-btn:active{ transform: translateX(-50%) scale(0.98); }
+
+.spinner{
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 4px solid rgba(255,255,255,0.25);
+  border-top-color: rgba(255,255,255,0.95);
+  animation: spin 0.8s linear infinite;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.55));
+}
+
+.timer{
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #f2e9d3;
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

@@ -1,5 +1,5 @@
-import type {HeroToolType} from "@/stores/hero-tool-store";
 import {EHexCollision, EHexobjectGroup, THexobject} from "@/abstraction/hexobject-abstraction";
+import {HeroToolType} from "@/enums/hero-tool-type";
 
 export interface ToolCapabilities {
     canCut?: boolean;
