@@ -6,13 +6,12 @@
         <close-hero-inventory-modal-button @click="closeInventory()"/>
       </header>
       <div class="hex-tools">
-        <!-- HAND -->
         <div
             class="hex-tile hand"
-            :class="{ selected: selectedTool === 'hand' }"
-            @click="selectTool('hand')"
+            :class="{ selected: selectedTool === HeroToolType.HAND }"
+            @click="selectTool(HeroToolType.HAND)"
         >
-          <span v-if="selectedTool !== 'hand'" class="hex-label">HAND</span>
+          <span v-if="selectedTool !== HeroToolType.HAND" class="hex-label"></span>
 
           <button
               v-else
@@ -22,14 +21,12 @@
             USE
           </button>
         </div>
-
-        <!-- AXE -->
         <div
             class="hex-tile axe"
-            :class="{ selected: selectedTool === 'axe' }"
-            @click="selectTool('axe')"
+            :class="{ selected: selectedTool === HeroToolType.AXE }"
+            @click="selectTool(HeroToolType.AXE)"
         >
-          <span v-if="selectedTool !== 'axe'" class="hex-label"></span>
+          <span v-if="selectedTool !== HeroToolType.AXE" class="hex-label"></span>
 
           <button
               v-else
@@ -40,41 +37,36 @@
           </button>
         </div>
       </div>
-
-      <!-- later -->
-      <!-- <hero-bag-inventory/> -->
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import {ref} from "vue";
 import CloseHeroInventoryModalButton from "@/components/gui/buttons/close-hero-inventory-modal-button.vue";
-import { useOverlayStore } from "@/stores/overlay-store";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import { useWorldMapStore } from "@/stores/world-map-store"; // <- підстав свій шлях/назву
-
-type ToolType = "hand" | "axe";
+import {useOverlayStore} from "@/stores/overlay-store";
+import {useHeroToolStore} from "@/stores/hero-tool-store";
+import {useWorldMapStore} from "@/stores/world-map-store";
+import {HeroToolType} from "@/enums/hero-tool-type";
 
 const overlayStore = useOverlayStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 
-const selectedTool = ref<ToolType | null>(null);
+const selectedTool = ref<HeroToolType | null>(null);
 
 function closeInventory() {
   selectedTool.value = null;
   overlayStore.closeOverlay();
 }
 
-function selectTool(tool: ToolType) {
+function selectTool(tool: HeroToolType) {
   selectedTool.value = selectedTool.value === tool ? null : tool;
 }
 
 function useSelectedTool() {
   if (!selectedTool.value) return;
 
-  // якщо координати героя у тебе називаються інакше — заміни тут
   heroToolStore.useTool(selectedTool.value, worldMapStore.heroCoordinates);
 
   selectedTool.value = null;
@@ -230,15 +222,15 @@ function useSelectedTool() {
   0 14px 30px rgba(0, 0, 0, 0.55);
 }
 
-/* HAND – yellow */
 .hex-tile.hand {
-  background: linear-gradient(145deg, #e6c15a, #b8922d);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15),
-  0 10px 25px rgba(230, 193, 90, 0.35);
+  background-image: url("@/assets/tools-assets/hand-hex-image.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .hex-tile.axe {
-  background-image: url("@/assets/tools-assets/axe-tile-image.png");
+  background-image: url("@/assets/tools-assets/axe-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

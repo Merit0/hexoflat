@@ -117,21 +117,12 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 
   transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 1));
 
-  transition: transform 0.16s ease, filter 0.16s ease;
+  transition: transform 0.16s ease;
 }
 
 .hex-tile:hover {
-  --hex-scale: 1.05;
-  filter: brightness(1.15);
+  --hex-scale: 1.02;
   z-index: 50;
-}
-
-.hex-tile > div {
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  pointer-events: none;
 }
 
 .tool-target-glow {
@@ -177,7 +168,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   line-height: 1;
   letter-spacing: 0.4px;
   font-variant-numeric: tabular-nums;
-  color: rgba(253, 255, 230, 0.82);
+  color: rgb(248, 255, 155);
   box-shadow:
       0 6px 18px rgba(0, 0, 0, 0.45),
       0 0 10px rgba(140, 185, 255, 0.08);
@@ -197,13 +188,27 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 }
 
 .hex-tile-bg {
+  image-rendering: smooth;
   z-index: 1;
   scale: 1.03;
+  transition: filter 0.16s ease, transform 0.16s ease;
+  will-change: filter, transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  filter:
+      contrast(1.1)
+      saturate(0.95)
+      brightness(1);
 }
 
 .hexobject-sprite {
   z-index: 2;
   pointer-events: none;
+}
+
+.hex-tile:hover .hex-tile-bg {
+  filter: brightness(1) contrast(1.02);
 }
 
 </style>

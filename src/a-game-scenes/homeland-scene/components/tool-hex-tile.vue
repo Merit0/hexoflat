@@ -146,13 +146,15 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
   0 12px 28px rgba(0, 0, 0, 0.55);
 }
 
-/* 🟡 HAND */
 .tool-hex-tile.hand {
-  background: linear-gradient(145deg, #e6c15a, #b8922d);
+  background-image: url("@/assets/tools-assets/hand-hex-image.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .tool-hex-tile.axe {
-  background-image: url("@/assets/tools-assets/axe-tile-image.png");
+  background-image: url("@/assets/tools-assets/axe-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
