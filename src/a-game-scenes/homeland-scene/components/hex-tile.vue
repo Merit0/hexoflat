@@ -198,6 +198,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 
 .hex-tile-bg {
   z-index: 1;
+  scale: 1.065;
 }
 
 .hexobject-sprite {

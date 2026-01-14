@@ -36,7 +36,7 @@ export class WorldGenerator {
                 const hex: HexTileModel = new HexTileBuilder()
                     .type("empty")
                     .isRevealed(false)
-                    .hexBackgroundImagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
+                    .hexBackgroundImagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/hex-ground-background-image.png")
                     .coordinates({ columnIndex: q, rowIndex: r })
                     .build();
 
