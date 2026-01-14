@@ -91,6 +91,6 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.OVERLAY,
-        spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/house-tile-image.png',
+        spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/camping-hex-image.png',
     },
 };
