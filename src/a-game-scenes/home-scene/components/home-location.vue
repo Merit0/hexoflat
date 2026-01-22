@@ -88,7 +88,7 @@ export default {
       router.push('/home');
     },
     exitOnMap() {
-      this.worldMapStore.placeHeroNearCamp()
+      this.worldMapStore.placeHeroNearCamp();
       router.push('/silesia');
     },
     openInventory() {
