@@ -65,7 +65,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             faction: "enemy"
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hexs/terrain-hexs/skeletor-hex-image.png',
+        spritePath: 'src/assets/enemy-assets/boss-hex-images/skeletor-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.AXE]: {
