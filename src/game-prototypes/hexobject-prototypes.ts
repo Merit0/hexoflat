@@ -20,8 +20,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         spritePath: 'src/assets/hexs/terrain-hexs/tree-hex-image.png',
     },
 
-    [HEXOBJECT_KEYS.COIN]: {
-        hexobjectKey: HEXOBJECT_KEYS.COIN,
+    [HEXOBJECT_KEYS.COINS]: {
+        hexobjectKey: HEXOBJECT_KEYS.COINS,
         groupType: EHexobjectGroup.RESOURCE,
         isInteractable: true,
         description: 'U are lucky and find the Coins',
@@ -36,7 +36,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowAt: null,
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/coin-image.png',
+        spritePath: 'src/assets/hexs/terrain-hexs/coins-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.ROCK]: {
