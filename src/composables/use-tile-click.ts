@@ -28,6 +28,7 @@ export function useTileClick() {
 
         const urlPathEndpoint: RouteName = tile.tileKey;
         if (tile.tileKey) {
+            if(tile.tileKey === "camping") worldMapStore.placeHeroNearCamp();
             router.push({name: urlPathEndpoint});
             return;
         }

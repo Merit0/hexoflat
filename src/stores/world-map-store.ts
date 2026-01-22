@@ -256,9 +256,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (savedMap) {
                 const raw = JSON.parse(savedMap);
                 this.map = HexMapModel.fromJSON(raw);
-
-                // ⚠️ ВАЖЛИВО: hydrateResourcesFromConfig має бути "merge", не overwrite.
-                // Якщо вона зараз відновлює об'єкти насильно — перенеси її нижче і зроби safe (див. примітку).
                 this.hydrateResourcesFromConfig();
 
                 // ✅ reconcile world state always
@@ -307,6 +304,29 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
             localStorage.removeItem(STORAGE_KEY);
             localStorage.removeItem(STORAGE_KEY_STATE);
+        },
+
+        placeHeroNearCamp() {
+            if (!this.map) return;
+
+            const campTile = this.map.tiles.find(t => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING);
+            if (!campTile) return;
+
+            const neighbors = getOddQNeighbors(campTile.coordinates);
+
+            const candidates = neighbors
+                .map(c => this.map!.tiles.find(t => t.coordinates.columnIndex === c.columnIndex && t.coordinates.rowIndex === c.rowIndex))
+                .filter(Boolean)
+                .filter(t => t!.isRevealed) // або прибери, якщо хочеш дозволити вихід у туман
+                .filter(t => t!.hexobject?.collision !== EHexCollision.SOLID); // не в дерево/камінь/ворога
+
+            const chosen = candidates.length
+                ? candidates[Math.floor(Math.random() * candidates.length)]!
+                : campTile; // fallback
+
+            this.heroCoordinates = { ...chosen.coordinates };
+            this.revealAroundHero();
+            this.saveToStorage();
         }
     }
 });
