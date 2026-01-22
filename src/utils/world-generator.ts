@@ -7,6 +7,7 @@ import {HexObjectFactory} from "@/factory/hex-object-factory";
 import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resource-spawner-feature";
 
 export class WorldGenerator {
+    private readonly terrainHexImgPath = 'src/assets/hexs/terrain-hexs/no.png'
     constructor(private readonly generator: IWorldGenerator) {}
 
     generate(): HexMapModel {
@@ -36,7 +37,7 @@ export class WorldGenerator {
                 const hex: HexTileModel = new HexTileBuilder()
                     .type("empty")
                     .isRevealed(false)
-                    .hexBackgroundImagePath("src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/ground-hex-image.png")
+                    .hexBackgroundImagePath(this.terrainHexImgPath)
                     .coordinates({ columnIndex: q, rowIndex: r })
                     .build();
 
@@ -90,7 +91,7 @@ export class WorldGenerator {
             tile.tileType = "empty";
             tile.tileKey = null;
             tile.description = "Nothing around";
-            tile.imagePath = "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png";
+            tile.imagePath = this.terrainHexImgPath;
         }
     }
 }

@@ -112,17 +112,24 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   justify-content: center;
 
   cursor: pointer;
-  transform-origin: center center;
-  will-change: transform;
-
-  transform: translate(var(--tx), var(--ty)) scale(var(--hex-scale, 1));
-
-  transition: transform 0.16s ease;
+  transform: translate(var(--tx), var(--ty));
 }
 
-.hex-tile:hover {
-  --hex-scale: 1.02;
-  z-index: 50;
+.hex-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: inherit;
+  pointer-events: none;
+
+  /* “скло” — холодний напівпрозорий шар */
+  background: linear-gradient(
+      145deg,
+      rgba(220, 235, 255, 0.18),
+      rgba(140, 170, 210, 0.10)
+  );
+
+  opacity: 0.45;
 }
 
 .tool-target-glow {
@@ -188,9 +195,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 }
 
 .hex-tile-bg {
-  image-rendering: smooth;
   z-index: 1;
-  scale: 1.03;
   transition: filter 0.16s ease, transform 0.16s ease;
   will-change: filter, transform;
   transform: translateZ(0);
@@ -205,10 +210,17 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 .hexobject-sprite {
   z-index: 2;
   pointer-events: none;
+
+  transform: scale(1);
+  transition: transform 120ms ease-out, filter 120ms ease-out;
+
+  image-rendering: crisp-edges;
+  will-change: transform;
 }
 
-.hex-tile:hover .hex-tile-bg {
-  filter: brightness(1) contrast(1.02);
+.hex-tile:hover .hexobject-sprite {
+  transform: scale(1.1);
+  filter: contrast(1.02);
 }
 
 </style>

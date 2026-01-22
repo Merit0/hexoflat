@@ -54,7 +54,12 @@ const posStyle = computed(() => {
   const pseudoTile = { coordinates: props.coord } as any;
   const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
 
-  return { transform: `translate(${x}px, ${y}px)` } as Record<string, string>;
+  const ix = Math.round(x);
+  const iy = Math.round(y);
+
+  return {
+    transform: `translate(${ix}px, ${iy}px)`
+  };
 });
 
 const hoveredTile = computed(() => {
@@ -136,8 +141,6 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
       0% 50%
   );
 
-  /* плавне “стрибаюче” прилипання */
-
 
   z-index: 120;
   pointer-events: auto;
@@ -147,14 +150,14 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
 }
 
 .tool-hex-tile.hand {
-  background-image: url("@/assets/tools-assets/hand-hex-image.png");
+  background-image: url("@/assets/hexs/terrain-hexs/hand-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .tool-hex-tile.axe {
-  background-image: url("@/assets/tools-assets/axe-hex-image.png");
+  background-image: url("@/assets/hexs/terrain-hexs/axe-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -162,7 +165,6 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
 
 .hide-btn {
   opacity: 0;
-  transform: scale(0.95);
   pointer-events: none;
 
   width: 64px;
@@ -182,7 +184,6 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
 
 .tool-hex-tile:hover .hide-btn {
   opacity: 1;
-  transform: scale(1);
   pointer-events: auto;
 }
 
@@ -284,7 +285,9 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
   height: var(--hex-tile-height);
   pointer-events: auto;
 
-  transition: transform 150ms ease-out;
+  transition: transform 120ms linear; /* linear краще за ease */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .tool-hex-tile.doing{

@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
   place-items: center;
   width: 100svw;
   height: 100svh;
-  background-image: url("@/a-game-scenes/homeland-scene/assets/game-board.png");
+  background-image: url("@/a-game-scenes/homeland-scene/assets/dark-board-stones.png");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;

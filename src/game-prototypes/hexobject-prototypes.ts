@@ -17,7 +17,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/tree-hex-image.png',
+        spritePath: 'src/assets/hexs/terrain-hexs/tree-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.COIN]: {
@@ -65,7 +65,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             faction: "enemy"
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/enemy-assets/boss-hex-images/skeletor-hex-image.png',
+        spritePath: 'src/assets/hexs/terrain-hexs/skeletor-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.AXE]: {
@@ -79,7 +79,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             capabilities: { canCut: true },
         },
         collision: EHexCollision.NONE,
-        spritePath: 'src/assets/tools-assets/axe-hex-image.png',
+        spritePath: 'src/assets/hexs/terrain-hexs/axe-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.CAMPING]: {
@@ -91,6 +91,6 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.OVERLAY,
-        spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/camping-hex-image.png',
+        spritePath: 'src/assets/hexs/terrain-hexs/camping-hex-image.png',
     },
 };
