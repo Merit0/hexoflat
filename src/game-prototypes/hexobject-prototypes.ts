@@ -58,7 +58,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         hexobjectKey: HEXOBJECT_KEYS.SKELETOR,
         groupType: EHexobjectGroup.CREATURE,
         isInteractable: true,
-        description: 'This is the Creature!',
+        description: 'This is the Skeletor. The King of all cursed bones!',
         creature: {
             hp: 30,
             hpMax: 30,

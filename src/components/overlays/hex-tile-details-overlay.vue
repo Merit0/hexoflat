@@ -16,6 +16,10 @@
           <span class="label">Resource</span>
           <span>[{{ tile.hexobject.description }}]</span>
         </div>
+        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CREATURE" class="row">
+          <span class="label">Creature</span>
+          <span>[{{ tile.hexobject.description }}]</span>
+        </div>
         <div class="row">
           <span class="label">coords</span>
           <span>[{{ tile.coordinates.columnIndex }}, {{ tile.coordinates.rowIndex }}]</span>
