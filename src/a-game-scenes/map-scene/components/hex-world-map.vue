@@ -19,7 +19,7 @@
             :tileWidth="tileWidth"
             :tool="activeTool"
             :actionHint="heroToolStore.hintLabel || undefined"
-            @hide="heroToolStore.stopTool()"
+            @hide="onHide"
         />
         <hex-tile
             v-for="tile in tiles"
@@ -44,6 +44,7 @@ import {useTileClick} from "@/composables/use-tile-click";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {resolveActions} from "@/game-resolvers/interactions-resolver";
 import {HeroToolType} from "@/enums/hero-tool-type";
+import HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 
 const { handleTileClick } = useTileClick();
 const store = useWorldMapStore();
@@ -128,7 +129,13 @@ const mapBounds = computed(() => {
 });
 
 function onKey(e: KeyboardEvent) {
-  if (e.key === "Escape") heroToolStore.stopTool();
+  if (e.key !== "Escape") return;
+  if (heroToolStore.isLocked) {
+    heroToolStore.cancelLockedAction("ESC");
+    worldMapStore.saveToStorage();
+  }
+  heroToolStore.stopTool();
+  worldMapStore.saveToStorage();
 }
 
 function updateScale() {
@@ -140,6 +147,15 @@ function updateScale() {
   const sy = (window.innerHeight - padding) / mapBounds.value.height;
 
   scale.value = Math.min(sx, sy, 1);
+}
+
+function onHide() {
+  if (heroToolStore.isLocked) {
+    heroToolStore.cancelLockedAction("HIDE");
+    worldMapStore.saveToStorage();
+  }
+
+  heroToolStore.stopTool();
 }
 
 watch(mapBounds, () => updateScale(), { immediate: true });

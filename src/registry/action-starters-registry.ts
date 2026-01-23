@@ -15,7 +15,14 @@ export type ActionStarter = (tile: HexTileModel, tool: HeroToolType, now: number
 function isBusy(tile: HexTileModel, now: number): boolean {
     const action = tile.pendingAction;
     if (!action) return false;
+
+    if (action.cancelled) {
+        tile.pendingAction = null;
+        return false;
+    }
+
     if (now < action.endsAt) return true;
+
     tile.pendingAction = null;
     return false;
 }
@@ -33,7 +40,12 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const obj = tile.hexobject;
         if (!obj) return { ok: false, message: "Hex has no object!" };
 
-        if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
+        const a = tile.pendingAction;
+        if (a) {
+            if (now < a.endsAt) return { ok: false, message: "Tile is busy!" };
+
+            tile.pendingAction = null;
+        }
 
         if (obj.groupType !== EHexobjectGroup.RESOURCE) {
             return { ok: false, message: "It is not resource!" };
@@ -55,7 +67,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
         const cap = getToolCapabilities(tool);
         if (!cap.canCut) return { ok: false, message: "Need something to cut with!" };
-        //
+
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);
         if (!okDur) {
@@ -70,10 +82,11 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             startedAt: now,
             endsAt,
             hexobjectKey: obj.hexobjectKey,
+            cancelled: false,
         };
 
         if ((heroToolStore as any).lockTool) {
-            (heroToolStore as any).lockTool(tile.coordinates, endsAt);
+            (heroToolStore as any).lockTool(tile, endsAt);
         }
 
         return { ok: true, endsAt };

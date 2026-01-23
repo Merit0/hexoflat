@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { coordinateKey, getOddQNeighbors } from "@/utils/hex-utils";
 import type { ResolvedAction } from "@/game-resolvers/interactions-resolver";
 import {HeroToolType} from "@/enums/hero-tool-type";
+import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 export interface HeroToolState {
     activeTool: HeroToolType | null;
@@ -14,8 +15,8 @@ export interface HeroToolState {
     durability: number;
     durabilityMax: number;
     isLocked: boolean;
+    lockedTile: HexTileModel | null;
     lockedUntil: number | null;
-    lockedToolCoordinates: IHexCoordinates | null;
 
     treesCut: number; //todo:
 }
@@ -31,9 +32,8 @@ export const useHeroToolStore = defineStore("heroTool", {
         hintLabel: null as string | null,
         isLocked: false,
         lockedUntil: null,
-        lockedToolCoordinates: null,
+        lockedTile: null,
 
-        // ✅ defaults (hand ignores these anyway)
         durability: 100,
         durabilityMax: 100,
 
@@ -64,17 +64,16 @@ export const useHeroToolStore = defineStore("heroTool", {
             this.hover = neighbors.length ? neighbors[0] : null;
         },
 
-        lockTool(coord: IHexCoordinates, untilMs: number) {
+        lockTool(tile: HexTileModel, untilMs: number) {
             this.isLocked = true;
             this.lockedUntil = untilMs;
-            this.lockedToolCoordinates = { ...coord };
-            this.hover = { ...coord };
+            this.lockedTile = tile;
         },
 
         unlockTool() {
             this.isLocked = false;
             this.lockedUntil = null;
-            this.lockedToolCoordinates = null;
+            this.lockedTile = null;
         },
 
         updateHover(coords: IHexCoordinates) {
@@ -143,5 +142,16 @@ export const useHeroToolStore = defineStore("heroTool", {
             this.durabilityMax = Math.max(0, Math.floor(durabilityMax));
             this.durability = Math.min(Math.max(0, Math.floor(durability)), this.durabilityMax);
         },
+
+        cancelLockedAction(reason: "ESC" | "HIDE" | "MOVE" = "ESC"): boolean {
+            const tile = this.lockedTile;
+            if (!tile?.pendingAction) return false;
+
+            tile.pendingAction.cancelled = true;
+            tile.pendingAction.cancelReason = reason;
+
+            this.unlockTool();
+            return true;
+        }
     },
 });

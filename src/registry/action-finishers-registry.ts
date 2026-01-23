@@ -8,6 +8,12 @@ export type ActionFinisher = (tile: HexTileModel, action: IPendingTileAction, ct
 
 export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     [EHexActionType.CUT]: (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => {
+
+        if (action.cancelled) {
+            (ctx.heroToolStore as any).unlockTool?.();
+            return true;
+        }
+
         tile.hexobject = null;
 
         const meta = HEXOBJECT_META[action.hexobjectKey];
