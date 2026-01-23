@@ -1,8 +1,8 @@
 import {defineStore} from 'pinia';
-import HexMapModel from '@/a-game-scenes/homeland-scene/models/hex-map-model';
-import {HexMapProvider} from '@/a-game-scenes/homeland-scene/providers/hex-map-provider';
-import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
-import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import HexMapModel from '@/a-game-scenes/map-scene/models/hex-map-model';
+import {HexMapProvider} from '@/a-game-scenes/map-scene/providers/hex-map-provider';
+import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {EHexCollision} from "@/abstraction/hexobject-abstraction";

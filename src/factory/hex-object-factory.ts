@@ -1,5 +1,5 @@
 import { coordinateKey } from "@/utils/hex-utils";
-import type { IHexCoordinates } from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import { EHexobjectGroup, type THexobject, type THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
 import { HEX_OBJECT_PROTOTYPES } from "@/game-prototypes/hexobject-prototypes";
 import {THexobjectKey} from "@/registry/hexobjects-registry";

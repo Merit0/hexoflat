@@ -1,4 +1,4 @@
-import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 
 // odd-q offset -> axial
 function oddQToAxial(c: IHexCoordinates) {

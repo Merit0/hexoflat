@@ -1,5 +1,6 @@
 import {IHero} from "@/abstraction/IHero";
-import TileModel, {ICoordinates} from "@/a-game-scenes/homeland-scene/models/tile-model";
+import TileModel from "@/a-game-scenes/map-scene/models/tile-model";
+import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 
 
 export class HeroModel implements IHero {
@@ -15,7 +16,7 @@ export class HeroModel implements IHero {
     maxEnergy: number;
     imgPath = "";
     currentTile: TileModel;
-    heroLocation: ICoordinates;
+    heroLocation: IHexCoordinates;
     heroSteps: number;
     // equipment: EquipmentModel;
     // heroDices: DiceModel[] = [];

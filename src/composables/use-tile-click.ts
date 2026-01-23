@@ -1,4 +1,4 @@
-import {IHexTile} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import {IHexTile} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {useOverlayStore} from "@/stores/overlay-store";
 import router, {RouteName} from "@/router";
 import {useWorldMapStore} from "@/stores/world-map-store";

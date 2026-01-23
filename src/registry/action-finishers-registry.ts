@@ -1,5 +1,5 @@
 import { EHexActionType } from "@/enums/hex-action-type";
-import type { HexTileModel } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import type { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import type { IPendingTileAction } from "@/abstraction/hex-tile-abstraction";
 import {IActionContext} from "@/abstraction/action-context";
 import {HEXOBJECT_META} from "@/registry/hexobject-meta";

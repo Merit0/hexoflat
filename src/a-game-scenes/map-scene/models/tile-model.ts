@@ -1,9 +1,7 @@
 import {ChestModel} from "@/models/ChestModel";
 import EnemyModel from "../../../models/EnemyModel";
 import {HeroModel} from "@/models/HeroModel";
-import {LootItemModel} from "@/models/LootItemModel";
-import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
-// import {DungeonModel} from "@/a-game-scenes/dungeon-scene/dungeon-model";
+import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 
 
 export interface ITile {

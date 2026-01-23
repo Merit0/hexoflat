@@ -1,4 +1,4 @@
-import type HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
+import type HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 import {FinishPendingActionsFeature} from "@/features/resource-features/finish-pending-actions-feature";
 import {SpawnResourceFeature} from "@/features/resource-features/spawn-resource-feature";
 

@@ -1,7 +1,7 @@
 import {
     HexTileType,
     IHexCoordinates,
-} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import {RouteName} from "@/router/routes";
 import {THexobject} from "@/abstraction/hexobject-abstraction";
 import {IHexResourceSpawner} from "@/abstraction/hex-resource-spawner";

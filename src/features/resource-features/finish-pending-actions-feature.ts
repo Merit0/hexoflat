@@ -1,4 +1,4 @@
-import type HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
+import type HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import {IActionContext} from "@/abstraction/action-context";
 import {ACTION_FINISHERS} from "@/registry/action-finishers-registry";

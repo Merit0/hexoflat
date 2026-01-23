@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import {computed, defineProps} from "vue";
-import TileModel from '@/a-game-scenes/homeland-scene/models/tile-model';
+import TileModel from '@/a-game-scenes/map-scene/models/tile-model';
 import {useBattleStore} from "@/stores/battle-store";
 import {useHeroStore} from "@/stores/hero-store";
 

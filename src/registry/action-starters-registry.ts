@@ -1,4 +1,4 @@
-import type {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HeroToolType} from "@/enums/hero-tool-type";
 import {EHexActionType} from "@/enums/hex-action-type";
 import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";

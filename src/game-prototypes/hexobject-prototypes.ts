@@ -51,7 +51,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowAt: null,
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/rock-image.png',
+        spritePath: 'src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/rock-image.png',
     },
 
     [HEXOBJECT_KEYS.SKELETOR]: {

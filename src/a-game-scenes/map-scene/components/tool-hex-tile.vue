@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref} from "vue";
-import type {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import type {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import {calcHexPixelPosition} from "@/utils/tile-utils";
 import {HeroToolType} from "@/enums/hero-tool-type";
 
@@ -27,7 +27,7 @@ import {resolveActions} from "@/game-resolvers/interactions-resolver";
 import {useWorldMapStore} from "@/stores/world-map-store";
 import {ACTION_TYPE_MAP} from "@/registry/action-starters-registry";
 import {ExecuteHexActionFeature} from "@/features/execute-hex-action-feature";
-import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 const props = defineProps<{
   coord: IHexCoordinates | null;

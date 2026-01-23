@@ -1,5 +1,5 @@
 import {Complexity} from "@/enums/complexity";
-import HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
+import HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
 
 interface IHexMapBuilder {

@@ -34,11 +34,11 @@
 
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue";
-import type {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {useWorldMapStore} from "@/stores/world-map-store";
-import HexTile from "@/a-game-scenes/homeland-scene/components/hex-tile.vue";
-import HeroHexTile from "@/a-game-scenes/homeland-scene/components/hero-hex-tile.vue";
-import ToolHexTile from "@/a-game-scenes/homeland-scene/components/tool-hex-tile.vue";
+import HexTile from "@/a-game-scenes/map-scene/components/hex-tile.vue";
+import HeroHexTile from "@/a-game-scenes/map-scene/components/hero-hex-tile.vue";
+import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue";
 import {calcHexPixelPosition} from "@/utils/tile-utils";
 import {useTileClick} from "@/composables/use-tile-click";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
@@ -156,14 +156,14 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-@import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
+@import "@/a-game-scenes/map-scene/styles/hex-tile-terrain-background-style.css";
 
 .hex-map {
   display: grid;
   place-items: center;
   width: 100svw;
   height: 100svh;
-  background-image: url("@/a-game-scenes/homeland-scene/assets/dark-board-stones.png");
+  background-image: url("@/a-game-scenes/map-scene/assets/dark-board-stones.png");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;

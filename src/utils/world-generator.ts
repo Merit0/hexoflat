@@ -1,6 +1,6 @@
-import HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
-import { HexTileBuilder } from "@/a-game-scenes/homeland-scene/builders/hex-tile-builder";
-import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
+import { HexTileBuilder } from "@/a-game-scenes/map-scene/builders/hex-tile-builder";
+import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {IWorldGenerator} from "@/abstraction/world-generator-interface";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
 import {HexObjectFactory} from "@/factory/hex-object-factory";

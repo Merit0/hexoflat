@@ -1,4 +1,4 @@
-import HexMapModel from "@/a-game-scenes/homeland-scene/models/hex-map-model";
+import HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 import { HexObjectFactory } from "@/factory/hex-object-factory";
 
 export class SpawnResourceFeature {

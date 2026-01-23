@@ -1,5 +1,5 @@
-import type {HexTileType, IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
-import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import type {HexTileType, IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 type HexTileDraft = Partial<Pick<
     HexTileModel,

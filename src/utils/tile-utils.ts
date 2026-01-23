@@ -1,4 +1,4 @@
-import { IHexTile } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 export function calcHexPixelPosition(
     tile: IHexTile,

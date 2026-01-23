@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IHexTile } from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import { calcHexPixelPosition } from "@/utils/tile-utils";
 import {computed} from "vue";
 import { coordinateKey } from "@/utils/hex-utils";
@@ -63,7 +63,7 @@ function onEnter() {
 function getHexTileImage(tile: IHexTile) {
   const img = tile.isRevealed
       ? tile?.hexobject?.spritePath
-      : "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/fog-tile-image.png";
+      : "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/fog-tile-image.png";
 
   return {
     backgroundImage: `url(${img})`,
@@ -75,8 +75,8 @@ function getHexTileImage(tile: IHexTile) {
 
 function getHexTileBackgroundStyle(tile: IHexTile) {
   const img = tile.isRevealed
-      ? (tile.hexBackgroundImagePath || "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
-      : "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/fog-tile-image.png";
+      ? (tile.hexBackgroundImagePath || "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
+      : "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/fog-tile-image.png";
 
   return {
     backgroundImage: `url(${img})`,
@@ -88,7 +88,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 </script>
 
 <style scoped>
-@import "@/a-game-scenes/homeland-scene/styles/hex-tile-terrain-background-style.css";
+@import "@/a-game-scenes/map-scene/styles/hex-tile-terrain-background-style.css";
 
 .hex-tile {
   --tx: 0px;
