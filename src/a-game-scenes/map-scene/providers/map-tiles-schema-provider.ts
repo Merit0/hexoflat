@@ -8,14 +8,6 @@ export const homelandMapConfig: IHexMapPlacement[] = [
         coordinates: [{ rowIndex: 3, columnIndex: 5 }],
     },
     {
-        hexobject: {hexobjectKey: HEXOBJECT_KEYS.COINS},
-        coordinates: [
-            { rowIndex: 6, columnIndex: 7 },
-            { rowIndex: 8, columnIndex: 2 },
-            { rowIndex: 9, columnIndex: 12 },
-        ],
-    },
-    {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 25000 } },
         coordinates: [
             { rowIndex: 4, columnIndex: 15 }, { rowIndex: 4, columnIndex: 16 },

@@ -97,9 +97,60 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         return { ok: false, message: "MINE is not implemented yet!" };
     },
 
-    [EHexActionType.TAKE]: (tile, _tool, now) => {
-        if (isBusy(tile, now)) return { ok: false, message: "Hex is busy!" };
-        return { ok: false, message: "TAKE is not implemented yet!" };
+    [EHexActionType.TAKE]: (tile, tool, now) => {
+        const obj = tile.hexobject;
+        if (!obj) return { ok: false, message: "Hex has no object!" };
+
+        if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
+
+        if (obj.groupType !== EHexobjectGroup.RESOURCE) {
+            return { ok: false, message: "It is not resource!" };
+        }
+
+        if (!obj.resource?.isAvailable) {
+            return { ok: false, message: "Resource is not available!" };
+        }
+
+        const traits = obj.resource?.traits ?? {};
+        if (!traits.pickupable && !traits.collectable) {
+            return { ok: false, message: "This resource cannot be taken!" };
+        }
+
+        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const cfg = meta?.actions?.[EHexActionType.TAKE];
+
+        const requiredTool = cfg?.requiredTool ?? HeroToolType.HAND;
+        const durationMs = cfg?.durationMs ?? 300;
+        const costPct = cfg?.durabilityCostPct ?? 0;
+
+        if (requiredTool && tool !== requiredTool) {
+            return { ok: false, message: `Need a tool: ${requiredTool}` };
+        }
+
+        const cap = getToolCapabilities(tool);
+        if (!cap.canPickup) return { ok: false, message: "Need something to pick up with!" };
+
+        const heroToolStore = useHeroToolStore();
+        const okDur = heroToolStore.consumeDurability(costPct);
+        if (!okDur) {
+            heroToolStore.activeTool = HeroToolType.HAND;
+            return { ok: false, message: "Tool is broken!" };
+        }
+
+        const endsAt = now + durationMs;
+
+        tile.pendingAction = {
+            type: EHexActionType.TAKE,
+            startedAt: now,
+            endsAt,
+            hexobjectKey: obj.hexobjectKey,
+            cancelled: false,
+        };
+
+        // lock на час дії (щоб не перетягувати/не спамити)
+        (heroToolStore as any).lockTool?.(tile.coordinates, endsAt);
+
+        return { ok: true, endsAt };
     },
 
     [EHexActionType.OPEN]: (tile, _tool, now) => {

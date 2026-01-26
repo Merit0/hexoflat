@@ -9,6 +9,7 @@ import {EHexCollision} from "@/abstraction/hexobject-abstraction";
 import {WorldTickFeature} from "@/features/resource-features/world-tick-feature";
 import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resource-spawner-feature";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import {CoinsGenerator} from "@/generators/coins-generator";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -35,7 +36,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
             console.log("Map generating....");
             this.map = HexMapProvider.getHomeLand();
-            this.startWorldLoop();
 
             this.makeCampSafeZone();
 
@@ -45,7 +45,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
             this.initFog();
             this.revealAroundHero();
+            this.initCoins();
             this.saveToStorage();
+            this.startWorldLoop();
         },
 
         initHeroNearCampRandom() {
@@ -229,23 +231,25 @@ export const useWorldMapStore = defineStore('world-map-store', {
         },
 
         hydrateResourcesFromConfig() {
-            if (!this.map?.config?.length) return;
+            const map = this.map;
+            if (!map?.config?.length) return;
 
             const tileByKey = new Map<string, HexTileModel>();
-            for (const t of this.map.tiles) {
+            for (const t of map.tiles) {
                 tileByKey.set(`${t.coordinates.columnIndex}:${t.coordinates.rowIndex}`, t);
             }
 
-            for (const placement of this.map.config) {
-                if (!placement.hexobject) continue;
+            for (const placement of map.config) {
+                const ref = placement.hexobject;
+                if (!ref) continue;
 
                 for (const c of placement.coordinates) {
                     const tile = tileByKey.get(`${c.columnIndex}:${c.rowIndex}`);
                     if (!tile) continue;
 
-                    // ✅ merge-only: лише додаємо спавнер, якщо його ще нема
+                    // ✅ тільки якщо це ресурс і має regrow
                     if (!tile.resourceSpawner) {
-                        new AddResourceSpawnerFeature(tile, placement.hexobject).add();
+                        new AddResourceSpawnerFeature(tile, ref).add();
                     }
                 }
             }
@@ -327,6 +331,18 @@ export const useWorldMapStore = defineStore('world-map-store', {
             this.heroCoordinates = { ...chosen.coordinates };
             this.revealAroundHero();
             this.saveToStorage();
+        },
+
+        initCoins() {
+            if (!this.map) return;
+
+            new CoinsGenerator(this.map, {
+                chance: 0.05,
+                maxCoinsOnMap: 15,
+                minAmount: 1,
+                maxAmount: 5,
+                skipSpawnerTiles: true,
+            }).generate();
         }
     }
 });

@@ -25,18 +25,15 @@ export class FinishPendingActionsFeature {
             const action = tile.pendingAction;
             if (!action) continue;
 
-            // ще триває
             if (now < action.endsAt) continue;
 
             const finisher = ACTION_FINISHERS[action.type];
             if (finisher) {
                 changed = finisher(tile, action, ctx) || changed;
             } else {
-                // якщо раптом немає фінішера — хоча б не залишати тайл “busy”
                 changed = true;
             }
 
-            // ✅ завжди очищаємо pendingAction
             tile.pendingAction = null;
             changed = true;
         }

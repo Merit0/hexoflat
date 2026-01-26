@@ -23,9 +23,6 @@ export interface HexobjectMeta {
         coins?: number;
         stone?: number;
     };
-
-    // дефолтний респавн (якщо хочеш винести з prototype)
-    regrowMsDefault?: number | null;
 }
 
 export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
@@ -42,7 +39,6 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
             },
         },
         yields: { wood: 1 },
-        regrowMsDefault: 30000,
     },
 
     [HEXOBJECT_KEYS.ROCK]: {
@@ -58,11 +54,10 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
             },
         },
         yields: { stone: 1 },
-        regrowMsDefault: null,
     },
 
-    [HEXOBJECT_KEYS.COIN]: {
-        key: HEXOBJECT_KEYS.COIN,
+    [HEXOBJECT_KEYS.COINS]: {
+        key: HEXOBJECT_KEYS.COINS,
         title: "Coin",
         subtitle: "Pick it up",
         actions: {
@@ -74,7 +69,6 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
             },
         },
         yields: { coins: 1 },
-        regrowMsDefault: null,
     },
 
     [HEXOBJECT_KEYS.SKELETOR]: { key: HEXOBJECT_KEYS.SKELETOR, title: "Skeletor" },

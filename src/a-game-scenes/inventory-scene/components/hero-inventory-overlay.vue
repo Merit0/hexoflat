@@ -5,6 +5,20 @@
         <h2>Hero Inventory</h2>
         <close-hero-inventory-modal-button @click="closeInventory()"/>
       </header>
+      <!-- ✅ RESOURCES PANEL -->
+      <section class="resources-panel">
+        <div class="res-chip">
+          <span class="res-icon">🪵</span>
+          <span class="res-name">Wood</span>
+          <span class="res-value">{{ wood }}</span>
+        </div>
+
+        <div class="res-chip">
+          <span class="res-icon">🪙</span>
+          <span class="res-name">Coins</span>
+          <span class="res-value">{{ coins }}</span>
+        </div>
+      </section>
       <div class="hex-tools">
         <div
             class="hex-tile hand"
@@ -42,18 +56,24 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue";
+import {computed, ref} from "vue";
 import CloseHeroInventoryModalButton from "@/components/gui/buttons/close-hero-inventory-modal-button.vue";
 import {useOverlayStore} from "@/stores/overlay-store";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {useWorldMapStore} from "@/stores/world-map-store";
 import {HeroToolType} from "@/enums/hero-tool-type";
+import {useGatheringStore} from "@/stores/gathering-store";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 const overlayStore = useOverlayStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 
 const selectedTool = ref<HeroToolType | null>(null);
+const gathering = useGatheringStore();
+
+const wood = computed(() => gathering.getCount(HEXOBJECT_KEYS.TREE));   // або WOOD key, якщо заведеш окремо
+const coins = computed(() => gathering.getCount(HEXOBJECT_KEYS.COINS));
 
 function closeInventory() {
   selectedTool.value = null;
@@ -128,10 +148,9 @@ function useSelectedTool() {
   cursor: pointer;
   user-select: none;
 
-  transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease,
-      filter 0.15s ease;
+  transition: transform 0.15s ease,
+  box-shadow 0.15s ease,
+  filter 0.15s ease;
 }
 
 /* hover */
@@ -162,10 +181,9 @@ function useSelectedTool() {
 
 .hex-tile.selected {
   filter: brightness(0.85);
-  box-shadow:
-      0 0 0 2px rgba(255,255,255,0.25),
-      0 0 0 6px rgba(255,255,255,0.06),
-      0 14px 30px rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25),
+  0 0 0 6px rgba(255, 255, 255, 0.06),
+  0 14px 30px rgba(0, 0, 0, 0.55);
 }
 
 /* tools row */
@@ -253,8 +271,8 @@ function useSelectedTool() {
   height: 32px;
 
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.55);
   color: #f2e9d3;
 
   font-weight: 800;
@@ -263,20 +281,72 @@ function useSelectedTool() {
 
   cursor: pointer;
 
-  transition:
-      transform 0.12s ease,
-      background 0.12s ease,
-      filter 0.12s ease;
+  transition: transform 0.12s ease,
+  background 0.12s ease,
+  filter 0.12s ease;
 }
 
 .hex-use-btn:hover {
   filter: brightness(1.15);
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   transform: scale(1.05);
 }
 
 .hex-use-btn:active {
   transform: scale(0.95);
+}
+
+.resources-panel {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0 16px;
+  padding: 10px;
+  border-radius: 14px;
+
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow:
+      0 0 0 1px rgba(255,255,255,0.06) inset,
+      0 12px 30px rgba(0,0,0,0.55);
+}
+
+.res-chip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.res-icon {
+  font-size: 16px;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55));
+}
+
+.res-name {
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: rgba(242,233,211,0.9);
+  text-transform: uppercase;
+}
+
+.res-value {
+  margin-left: auto;
+  font-weight: 900;
+  font-size: 14px;
+  color: #f2e9d3;
+  padding: 4px 10px;
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.45);
 }
 
 </style>
