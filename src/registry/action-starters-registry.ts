@@ -112,7 +112,8 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         }
 
         const traits = obj.resource?.traits ?? {};
-        if (!traits.pickupable && !traits.collectable) {
+        if (!traits.pickupable) {
+            console.warn("Resource is not pickupable or collectable:", obj.hexobjectKey);
             return { ok: false, message: "This resource cannot be taken!" };
         }
 

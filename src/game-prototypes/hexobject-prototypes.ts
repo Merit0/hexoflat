@@ -13,7 +13,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowAt: null,
             traits: {
                 collectable: true,
-                cuttable: true
+                cuttable: true,
+                // pickupable: false,
             },
         },
         collision: EHexCollision.SOLID,

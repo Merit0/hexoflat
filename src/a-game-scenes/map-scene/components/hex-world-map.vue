@@ -43,8 +43,6 @@ import {calcHexPixelPosition} from "@/utils/tile-utils";
 import {useTileClick} from "@/composables/use-tile-click";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {resolveActions} from "@/game-resolvers/interactions-resolver";
-import {HeroToolType} from "@/enums/hero-tool-type";
-import HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 
 const { handleTileClick } = useTileClick();
 const store = useWorldMapStore();
@@ -146,7 +144,7 @@ function updateScale() {
   const sx = (window.innerWidth - padding) / mapBounds.value.width;
   const sy = (window.innerHeight - padding) / mapBounds.value.height;
 
-  scale.value = Math.min(sx, sy, 1);
+  scale.value = Math.min(sx, sy, 1.1);
 }
 
 function onHide() {
