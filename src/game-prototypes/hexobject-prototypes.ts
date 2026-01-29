@@ -12,9 +12,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowMs: 1000 * 60 * 5,
             regrowAt: null,
             traits: {
-                collectable: true,
                 cuttable: true,
-                // pickupable: false,
             },
         },
         collision: EHexCollision.SOLID,
@@ -23,18 +21,15 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
 
     [HEXOBJECT_KEYS.COINS]: {
         hexobjectKey: HEXOBJECT_KEYS.COINS,
-        groupType: EHexobjectGroup.RESOURCE,
+        groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: 'U are lucky and find the Coins',
-        resource: {
-            isAvailable: true,
+        loot: {
+            name: 'Coins',
             amount: 1,
             traits: {
-                collectable: true,
-                pickupable: true
+                stackable: true,
             },
-            regrowMs: null,
-            regrowAt: null,
         },
         collision: EHexCollision.SOLID,
         spritePath: 'src/assets/hexs/terrain-hexs/coins-hex-image.png',
@@ -47,7 +42,9 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         description: 'This is the Rock!',
         resource: {
             isAvailable: true,
-            traits: { mineable: true },
+            traits: {
+                mineable: true,
+            },
             regrowMs: null,
             regrowAt: null,
         },

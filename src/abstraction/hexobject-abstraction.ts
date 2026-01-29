@@ -3,6 +3,21 @@ import {THexobjectKey} from "@/registry/hexobjects-registry";
 export type THexobjectGroup = EHexobjectGroup;
 export type THexCollision = EHexCollision;
 
+export interface ITraitable<TTraits> {
+    traits: TTraits;
+}
+
+export interface ILootTraits {
+    stackable?: boolean;
+}
+
+export interface IResourceTraits {
+    cuttable?: boolean;
+    mineable?: boolean;
+    pickable?: boolean;
+    requiresTool?: boolean;
+}
+
 interface IDurable {
     durability: number;
     durabilityMax: number;
@@ -19,17 +34,16 @@ export interface IBaseHexobject {
 }
 
 
-export interface IResource {
+export interface IResource extends ITraitable<IResourceTraits>{
     isAvailable: boolean;
     regrowMs?: number | null;
     regrowAt?: number | null;
     amount?: number;
-    traits: {
-        collectable?: boolean;
-        cuttable?: boolean;
-        mineable?: boolean;
-        pickupable?: boolean;
-    };
+}
+
+export interface ILoot extends ITraitable<ILootTraits>{
+    name: string
+    amount?: number;
 }
 
 export interface ICreature {
@@ -59,6 +73,7 @@ export interface IEquipment extends IDurable {}
 
 export type THexobjectPrototype =
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.RESOURCE; resource: IResource })
+    | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.LOOT; loot: ILoot })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
@@ -66,6 +81,7 @@ export type THexobjectPrototype =
 
 export type THexobject =
     | (IBaseHexobject & { groupType: EHexobjectGroup.RESOURCE; resource: IResource })
+    | (IBaseHexobject & { groupType: EHexobjectGroup.LOOT; loot: ILoot })
     | (IBaseHexobject & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (IBaseHexobject & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (IBaseHexobject & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
@@ -78,6 +94,7 @@ export enum EHexobjectGroup {
     TOOL = 'tool',
     WEAPON = 'weapon',
     CONSTRUCTION = 'construction',
+    LOOT = 'loot',
 }
 
 export enum EHexCollision {

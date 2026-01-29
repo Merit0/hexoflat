@@ -1,4 +1,4 @@
-import {EHexCollision, EHexobjectGroup, THexobject} from "@/abstraction/hexobject-abstraction";
+import {EHexCollision, EHexobjectGroup, IResourceTraits, THexobject} from "@/abstraction/hexobject-abstraction";
 import {HeroToolType} from "@/enums/hero-tool-type";
 import {EHexActionType} from "@/enums/hex-action-type";
 import {HEXOBJECT_META, HexobjectMeta} from "@/registry/hexobject-meta";
@@ -62,9 +62,9 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
 
     switch (obj.groupType) {
         case EHexobjectGroup.RESOURCE: {
-            if (!obj.resource.isAvailable) return [];
+            if (!obj.resource.isAvailable) break;
 
-            const traits = obj.resource.traits ?? {};
+            const traits:IResourceTraits = obj.resource.traits ?? {};
 
             if (cap.canCut && traits.cuttable) {
                 resolvedActions.push({
@@ -75,22 +75,37 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
                 );
             }
 
-            if (cap.canPickup && (traits.pickupable || traits.collectable)) {
+            if (cap.canPickup && (traits.pickable)) {
                 resolvedActions.push({
-                    actioType: 'TAKE',
-                    label: labelFromMeta(obj, EHexActionType.TAKE, 'Take'),
-                    priority: 80}
+                        actioType: 'TAKE',
+                        label: labelFromMeta(obj, EHexActionType.TAKE, 'Take'),
+                        priority: 80
+                    }
                 );
             }
 
             if (cap.canMine && traits.mineable) {
                 resolvedActions.push({
-                    actioType: "MINE",
-                    label: labelFromMeta(obj, EHexActionType.MINE, 'Mine'),
-                    priority: 85}
+                        actioType: "MINE",
+                        label: labelFromMeta(obj, EHexActionType.MINE, 'Mine'),
+                        priority: 85
+                    }
                 );
             }
 
+            break;
+        }
+
+        case EHexobjectGroup.LOOT: {
+            const amount = obj.loot?.amount ?? 0;
+            if (amount <= 0) break;
+            if (!cap.canPickup) break;
+            resolvedActions.push({
+                actioType: 'TAKE',
+                label: labelFromMeta(obj, EHexActionType.TAKE, 'Take'),
+                priority: 90
+                }
+            );
             break;
         }
 
@@ -114,7 +129,6 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
 
         case EHexobjectGroup.TOOL:
         case EHexobjectGroup.WEAPON: {
-            // if object located as TRIGGER — using TAKE action
             if (obj.collision === EHexCollision.TRIGGER && cap.canPickup) {
                 resolvedActions.push({
                     actioType: "TAKE",

@@ -1,7 +1,7 @@
 import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HeroToolType} from "@/enums/hero-tool-type";
 import {EHexActionType} from "@/enums/hex-action-type";
-import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
+import {EHexobjectGroup, IResourceTraits, ITraitable} from "@/abstraction/hexobject-abstraction";
 import {getToolCapabilities, ResolvedActionType} from "@/game-resolvers/interactions-resolver";
 import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
@@ -38,20 +38,20 @@ export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
 export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     [EHexActionType.CUT]: (tile, tool, now) => {
         const obj = tile.hexobject;
-        if (!obj) return { ok: false, message: "Hex has no object!" };
+        if (!obj) return {ok: false, message: "Hex has no object!"};
 
         const a = tile.pendingAction;
         if (a) {
-            if (now < a.endsAt) return { ok: false, message: "Tile is busy!" };
+            if (now < a.endsAt) return {ok: false, message: "Tile is busy!"};
 
             tile.pendingAction = null;
         }
 
         if (obj.groupType !== EHexobjectGroup.RESOURCE) {
-            return { ok: false, message: "It is not resource!" };
+            return {ok: false, message: "It is not resource!"};
         }
         if (!obj.resource?.traits?.cuttable) {
-            return { ok: false, message: "This resource is not cuttable!" };
+            return {ok: false, message: "This resource is not cuttable!"};
         }
 
         const meta = HEXOBJECT_META[obj.hexobjectKey];
@@ -62,17 +62,17 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const costPct: number = cutCfg?.durabilityCostPct ?? 0.1;
 
         if (requiredTool && tool !== requiredTool) {
-            return { ok: false, message: `Need a tool: ${requiredTool}` };
+            return {ok: false, message: `Need a tool: ${requiredTool}`};
         }
 
         const cap = getToolCapabilities(tool);
-        if (!cap.canCut) return { ok: false, message: "Need something to cut with!" };
+        if (!cap.canCut) return {ok: false, message: "Need something to cut with!"};
 
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);
         if (!okDur) {
             heroToolStore.activeTool = HeroToolType.HAND;
-            return { ok: false, message: "Tool is broken!" };
+            return {ok: false, message: "Tool is broken!"};
         }
 
         const endsAt = now + durationMs;
@@ -89,32 +89,34 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             (heroToolStore as any).lockTool(tile, endsAt);
         }
 
-        return { ok: true, endsAt };
+        return {ok: true, endsAt};
     },
 
     [EHexActionType.MINE]: (tile, _tool, now) => {
-        if (isBusy(tile, now)) return { ok: false, message: "Hex is busy!" };
-        return { ok: false, message: "MINE is not implemented yet!" };
+        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
+        return {ok: false, message: "MINE is not implemented yet!"};
     },
 
     [EHexActionType.TAKE]: (tile, tool, now) => {
         const obj = tile.hexobject;
-        if (!obj) return { ok: false, message: "Hex has no object!" };
 
+        if (!obj) return { ok: false, message: "Hex has no object!" };
+        if (!obj.isInteractable) return { ok: false, message: "HexObject is not interactable! Can't take it!" };
         if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
 
-        if (obj.groupType !== EHexobjectGroup.RESOURCE) {
-            return { ok: false, message: "It is not resource!" };
-        }
+        if (obj.groupType === EHexobjectGroup.RESOURCE) {
+            if (!obj.resource?.isAvailable) {
+                return { ok: false, message: "Resource is not available!" };
+            }
 
-        if (!obj.resource?.isAvailable) {
-            return { ok: false, message: "Resource is not available!" };
-        }
-
-        const traits = obj.resource?.traits ?? {};
-        if (!traits.pickupable) {
-            console.warn("Resource is not pickupable or collectable:", obj.hexobjectKey);
-            return { ok: false, message: "This resource cannot be taken!" };
+            const traits: IResourceTraits = obj.resource?.traits ?? {};
+            if (!traits.pickable) {
+                console.warn("Resource is not pickable by hand:", obj.hexobjectKey);
+                return { ok: false, message: "This resource cannot be taken by hand!" };
+            }
+        } else if (obj.groupType === EHexobjectGroup.LOOT) {
+        } else {
+            return { ok: false, message: "Unknown Hexobject type!" };
         }
 
         const meta = HEXOBJECT_META[obj.hexobjectKey];
@@ -125,17 +127,17 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const costPct = cfg?.durabilityCostPct ?? 0;
 
         if (requiredTool && tool !== requiredTool) {
-            return { ok: false, message: `Need a tool: ${requiredTool}` };
+            return {ok: false, message: `Need a tool: ${requiredTool}`};
         }
 
         const cap = getToolCapabilities(tool);
-        if (!cap.canPickup) return { ok: false, message: "Need something to pick up with!" };
+        if (!cap.canPickup) return {ok: false, message: "Need something to pick up with!"};
 
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);
         if (!okDur) {
             heroToolStore.activeTool = HeroToolType.HAND;
-            return { ok: false, message: "Tool is broken!" };
+            return {ok: false, message: "Tool is broken!"};
         }
 
         const endsAt = now + durationMs;
@@ -148,19 +150,18 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             cancelled: false,
         };
 
-        // lock на час дії (щоб не перетягувати/не спамити)
         (heroToolStore as any).lockTool?.(tile.coordinates, endsAt);
 
-        return { ok: true, endsAt };
+        return {ok: true, endsAt};
     },
 
     [EHexActionType.OPEN]: (tile, _tool, now) => {
-        if (isBusy(tile, now)) return { ok: false, message: "Hex is busy!" };
-        return { ok: false, message: "OPEN is not implemented yet!" };
+        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
+        return {ok: false, message: "OPEN is not implemented yet!"};
     },
 
     [EHexActionType.ATTACK]: (tile, _tool, now) => {
-        if (isBusy(tile, now)) return { ok: false, message: "Hex is busy!" };
-        return { ok: false, message: "ATTACK is not implemented yet!" };
+        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
+        return {ok: false, message: "ATTACK is not implemented yet!"};
     },
 };
