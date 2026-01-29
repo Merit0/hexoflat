@@ -97,6 +97,10 @@ export class HeroModel implements IHero {
         return this;
     }
 
+    public makeStep(): void {
+        this.heroSteps += 1;
+    }
+
     public getHealth(): number {
         return this.currentHealth;
     }

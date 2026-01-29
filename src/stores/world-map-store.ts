@@ -10,6 +10,7 @@ import {WorldTickFeature} from "@/features/resource-features/world-tick-feature"
 import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resource-spawner-feature";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 import {CoinsGenerator} from "@/generators/coins-generator";
+import {useHeroStore} from "@/stores/hero-store";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -189,6 +190,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
         moveHeroTo(target: IHexCoordinates): boolean {
             const heroToolStore = useHeroToolStore();
+            const heroStore = useHeroStore();
 
             if (!this.map || !this.heroCoordinates) return false;
             if (heroToolStore.isDragging) return false;
@@ -212,6 +214,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
             }
 
             this.heroCoordinates = {...target};
+            heroStore.hero?.makeStep();
             this.revealAroundHero();
             this.saveToStorage();
 

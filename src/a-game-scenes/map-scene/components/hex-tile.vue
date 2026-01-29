@@ -7,11 +7,7 @@
       @pointerenter="onEnter"
   >
     <div class="hex-layer hex-tile-bg" :style="getHexTileBackgroundStyle(hexTile)"></div>
-    <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)">
-      <div v-if="!hexTile.hexobject && hexTile.isRevealed" class="coordinates-class">
-        q{{ hexTile.coordinates.columnIndex }} · r{{ hexTile.coordinates.rowIndex }}
-      </div>
-    </div>
+    <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)"></div>
     <div v-if="isAllowedTarget" class="tool-target-glow"></div>
   </div>
 </template>

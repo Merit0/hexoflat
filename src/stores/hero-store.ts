@@ -8,11 +8,6 @@ import type TileModel from "@/a-game-scenes/map-scene/models/tile-model";
 export const useHeroStore = defineStore("hero", {
     state: () => ({
         hero: new HeroModel() as HeroModel,
-        inventoryShown: false,
-        heroPositionsByMap: {} as Record<string, any>,
-        flippedMy: true,
-        heroMapTileBodyRotationAngle: 270,
-        heroTargetRotation: 270,
     }),
 
     getters: {
@@ -71,24 +66,10 @@ export const useHeroStore = defineStore("hero", {
             this.hero.coins += coins;
         },
 
-        persistHeroLocation(): void {
-            if (this.hero.heroLocation) {
-                localStorage.setItem("hero-location", JSON.stringify(this.hero.heroLocation));
-            }
-        },
-
         resetHero(): void {
             console.log("Resetting hero state");
             this.hero = new HeroModel();
             this.heroPositionsByMap = {};
         },
-
-        setTargetRotation(angle: number) {
-            this.heroTargetRotation = angle;
-        },
-        tickRotation() {
-            this.heroMapTileBodyRotationAngle +=
-                (this.heroTargetRotation - this.heroMapTileBodyRotationAngle);
-        }
     },
 });
