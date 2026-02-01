@@ -4,7 +4,7 @@ import {useUserStore} from "@/stores/user-store";
 // lazy-load
 const LoginPage = () => import("@/a-game-scenes/login-scene/components/login-page.vue");
 const HomeLocation = () => import("@/a-game-scenes/home-scene/components/home-location.vue");
-const HexWorldMap = () => import("@/a-game-scenes/homeland-scene/components/hex-world-map.vue");
+const HexWorldMap = () => import("@/a-game-scenes/map-scene/components/hex-world-map.vue");
 
 export const ROUTES = {
     LOGIN: "login",

@@ -37,21 +37,22 @@ import {useHeroStore} from '@/stores/hero-store';
 import router from "@/router";
 import HeroDetailsBar from "@/a-game-scenes/home-scene/components/hero-details-bar.vue";
 import {useOverlayStore} from "@/stores/overlay-store";
-import ShopOverlay from "@/a-game-scenes/shop-scene/components/shop-overlay.vue";
-// import HeroInventoryOverlay from "@/a-game-scenes/inventory-scene/components/hero-inventory-overlay.vue";
-import {HeroModel} from "@/models/HeroModel";
+import {useWorldMapStore} from "@/stores/world-map-store";
+import {HeroModel} from "@/models/hero-model";
 
 export default {
   name: "camping-page",
-  components: {HeroDetailsBar, ShopOverlay},
+  components: {HeroDetailsBar},
   data() {
     const heroStore = useHeroStore();
+    const worldMapStore = useWorldMapStore();
     const overlayStore = useOverlayStore();
-    const hero: HeroModel = heroStore.hero;
+    const hero: HeroModel = heroStore.hero as HeroModel;
     return {
       hero,
       heroStore,
       overlayStore,
+      worldMapStore,
       numberOfTiles: 75,
       showShop: false,
       time: '',
@@ -86,7 +87,7 @@ export default {
       router.push('/home');
     },
     exitOnMap() {
-      // router.push('/forest-entrance');
+      this.worldMapStore.placeHeroNearCamp();
       router.push('/silesia');
     },
     openInventory() {
@@ -214,4 +215,3 @@ export default {
   position: relative;
 }
 </style>
-

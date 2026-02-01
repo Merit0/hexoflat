@@ -1,4 +1,4 @@
-import { IHero } from "@/abstraction/IHero";
+import { IHero } from "@/abstraction/hero-abstraction";
 
 export type User = {
   name: string;

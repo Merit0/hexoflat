@@ -10,12 +10,11 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
-import GameLogo from "@/a-game-scenes/login-scene/components/game-logo.vue";
 import LoginForm from "@/a-game-scenes/login-scene/components/login-form.vue";
 
 
 export default defineComponent({
-  components: {LoginForm, GameLogo},
+  components: {LoginForm},
 })
 </script>
 <style scoped>

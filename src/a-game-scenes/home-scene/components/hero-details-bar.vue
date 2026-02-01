@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user-store';
-import {HeroModel} from "@/models/HeroModel";
+import {HeroModel} from "@/models/hero-model";
 
 defineProps<{
   hero: HeroModel;

@@ -33,15 +33,12 @@ const registry = {
   inset: 0;
   display: flex;
   flex-direction: column;
-
-  /* коли нема оверлеїв — хост невидимий і не ловить кліки */
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   pointer-events: none;
 }
 
-/* коли є оверлеї — вмикаємо фон і кліки */
 .overlay-root--active {
   background: var(--overlay-bg);
   backdrop-filter: blur(6px);
@@ -49,7 +46,6 @@ const registry = {
   pointer-events: auto;
 }
 
-/* коли хочеш кастомну анімацію для появи оверлейних панелей:
 .overlay-root > * {
   animation: fadeIn 0.25s ease both;
 }
@@ -58,5 +54,4 @@ const registry = {
   from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1); }
 }
-*/
 </style>
