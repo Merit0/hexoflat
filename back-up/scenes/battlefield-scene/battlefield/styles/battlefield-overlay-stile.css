@@ -1,0 +1,27 @@
+.battlefield-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    background-color: rgba(83, 83, 83, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.battlefield-overlay-content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-image: url("../assets/arena-place.png");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+    width: 58vw;
+    height: 100vh;
+    overflow: hidden;
+}

@@ -13,9 +13,7 @@
     "useDefineForClassFields": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "types": [
-      "webpack-env"
-    ],
+    "types": ["vite/client"],
     "paths": {
       "@/*": [
         "src/*"
@@ -38,6 +36,7 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "back-up"
   ]
 }

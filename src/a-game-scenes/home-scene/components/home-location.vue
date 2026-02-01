@@ -37,18 +37,17 @@ import {useHeroStore} from '@/stores/hero-store';
 import router from "@/router";
 import HeroDetailsBar from "@/a-game-scenes/home-scene/components/hero-details-bar.vue";
 import {useOverlayStore} from "@/stores/overlay-store";
-import ShopOverlay from "@/a-game-scenes/shop-scene/components/shop-overlay.vue";
-import {HeroModel} from "@/models/HeroModel";
 import {useWorldMapStore} from "@/stores/world-map-store";
+import {HeroModel} from "@/models/hero-model";
 
 export default {
   name: "camping-page",
-  components: {HeroDetailsBar, ShopOverlay},
+  components: {HeroDetailsBar},
   data() {
     const heroStore = useHeroStore();
     const worldMapStore = useWorldMapStore();
     const overlayStore = useOverlayStore();
-    const hero: HeroModel = heroStore.hero;
+    const hero: HeroModel = heroStore.hero as HeroModel;
     return {
       hero,
       heroStore,

@@ -241,14 +241,14 @@ function useSelectedTool() {
 }
 
 .hex-tile.hand {
-  background-image: url("@/assets/hexs/terrain-hexs/hand-hex-image.png");
+  background-image: url("@/assets/hex-assets/hex-tools/hand-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .hex-tile.axe {
-  background-image: url("@/assets/hexs/terrain-hexs/axe-hex-image.png");
+  background-image: url("@/assets/hex-assets/hex-tools/axe-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

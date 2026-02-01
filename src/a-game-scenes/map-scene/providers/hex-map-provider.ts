@@ -1,7 +1,7 @@
 import HexMapModel from '@/a-game-scenes/map-scene/models/hex-map-model';
 import { homelandMapConfig } from '@/a-game-scenes/map-scene/providers/map-tiles-schema-provider';
 import {Complexity} from "@/enums/complexity";
-import {WorldGenerator} from "@/utils/world-generator";
+import {WorldGenerator} from "@/generators/world-generator";
 
 export class HexMapProvider {
     static getHomeLand(): HexMapModel {

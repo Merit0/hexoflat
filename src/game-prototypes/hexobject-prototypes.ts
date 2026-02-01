@@ -16,7 +16,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hexs/terrain-hexs/tree-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-resources/tree-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.COINS]: {
@@ -32,7 +32,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hexs/terrain-hexs/coins-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-loot/coins-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.ROCK]: {
@@ -49,7 +49,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowAt: null,
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/rock-image.png',
+        spritePath: 'src/assets/hex-assets/hex-resources/rock-image.png',
     },
 
     [HEXOBJECT_KEYS.SKELETOR]: {
@@ -77,7 +77,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             capabilities: { canCut: true },
         },
         collision: EHexCollision.NONE,
-        spritePath: 'src/assets/hexs/terrain-hexs/axe-hex-image.png',
+        spritePath: 'src/assets/enemy-assets/boss-hex-images/axe-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.CAMPING]: {
@@ -89,6 +89,6 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.OVERLAY,
-        spritePath: 'src/assets/hexs/terrain-hexs/camping-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-constructs/camping-hex-image.png',
     },
 };

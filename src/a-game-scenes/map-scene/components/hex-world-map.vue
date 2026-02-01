@@ -73,7 +73,7 @@ import { useWorldMapStore } from "@/stores/world-map-store";
 import HexTile from "@/a-game-scenes/map-scene/components/hex-tile.vue";
 import HeroHexTile from "@/a-game-scenes/map-scene/components/hero-hex-tile.vue";
 import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue";
-import { calcHexPixelPosition } from "@/utils/tile-utils";
+import { calcHexPixelPosition } from "@/utils/hex-utils";
 import { useTileClick } from "@/composables/use-tile-click";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { resolveActions } from "@/game-resolvers/interactions-resolver";
@@ -88,7 +88,7 @@ const worldMapStore = useWorldMapStore();
 worldStore.loadFromStorage();
 worldStore.generateIfEmpty();
 
-const tiles = computed<HexTileModel[]>(() => worldStore.map?.tiles ?? []);
+const tiles = computed(() => worldStore.map?.tiles ?? []);
 const activeTool = computed(() => heroToolStore.activeTool);
 
 const GRID_COLUMNS = 42;
@@ -237,9 +237,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-@import "@/a-game-scenes/map-scene/styles/hex-tile-terrain-background-style.css";
-
-/* --- page layout with top bar --- */
 .scene-root {
   width: 100vw;
   height: 100vh;
@@ -363,7 +360,7 @@ onBeforeUnmount(() => {
   height: 100vh;
   padding-top: 64px; /* reserve space for top bar */
 
-  background-image: url("@/a-game-scenes/map-scene/assets/dark-board-stones.png");
+  background-image: url("@/assets/board-assets/dark-board-stones.png");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;

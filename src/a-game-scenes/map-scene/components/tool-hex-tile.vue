@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref} from "vue";
 import type {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import {calcHexPixelPosition} from "@/utils/tile-utils";
+import {calcHexPixelPosition} from "@/utils/hex-utils";
 import {HeroToolType} from "@/enums/hero-tool-type";
 
 import {useHeroToolStore} from "@/stores/hero-tool-store";
@@ -150,14 +150,14 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
 }
 
 .tool-hex-tile.hand {
-  background-image: url("@/assets/hexs/terrain-hexs/hand-hex-image.png");
+  background-image: url("@/assets/hex-assets/hex-tools/hand-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .tool-hex-tile.axe {
-  background-image: url("@/assets/hexs/terrain-hexs/axe-hex-image.png");
+  background-image: url("@/assets/hex-assets/hex-tools/axe-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

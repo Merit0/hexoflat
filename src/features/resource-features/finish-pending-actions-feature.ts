@@ -1,6 +1,6 @@
 import type HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
-import {IActionContext} from "@/abstraction/action-context";
+import {IActionContext} from "@/abstraction/abstract-action";
 import {ACTION_FINISHERS} from "@/registry/action-finishers-registry";
 
 export class FinishPendingActionsFeature {

@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import { calcHexPixelPosition } from "@/utils/tile-utils";
+import { calcHexPixelPosition } from "@/utils/hex-utils";
 import {useOverlayStore} from "@/stores/overlay-store";
 
 const props = defineProps<{
