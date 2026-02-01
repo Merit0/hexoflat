@@ -10,7 +10,7 @@
       </div>
     </div>
 
-    <div class="topbar__center">
+    <div class="topbar__center chip">
       <div class="stat">
         <div class="stat__label">HP</div>
         <div class="stat__bar">
@@ -24,6 +24,7 @@
       <span class="chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
       <span class="chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
       <span class="chip muted" v-else>Status: <b>READY</b></span>
+      <button @click="userStore.logout()" class="logout">Logout</button>
     </div>
   </header>
 </template>
@@ -32,10 +33,12 @@ import {computed} from "vue";
 import {useHeroStore} from "@/stores/hero-store";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {useWorldMapStore} from "@/stores/world-map-store";
+import {useUserStore} from "@/stores/user-store";
 
 const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
 const heroToolStore = useHeroToolStore();
+const userStore = useUserStore();
 
 const activeTool = computed(() => heroToolStore.activeTool);
 
@@ -101,7 +104,7 @@ const toolLabel = computed(() => {
 }
 
 .hero-badge__name {
-  font-family: var(--font-main, serif);
+  font-family: var(--font-main, serif),serif;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: rgba(232, 242, 255, 0.92);
@@ -127,7 +130,7 @@ const toolLabel = computed(() => {
   border: 1px solid rgba(190, 220, 255, 0.14);
   color: rgba(220, 235, 255, 0.90);
 
-  font-size: 12px;
+  font-size: 1rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -150,14 +153,15 @@ const toolLabel = computed(() => {
 }
 
 .stat__label {
-  font-size: 12px;
+  font-size: 1rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(190, 220, 255, 0.75);
 }
 
 .stat__bar {
-  height: 10px;
+  height: 1rem
+;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(190, 220, 255, 0.12);
@@ -172,8 +176,20 @@ const toolLabel = computed(() => {
 }
 
 .stat__value {
-  font-size: 12px;
+  font-size: 1rem;
   letter-spacing: 0.06em;
   color: rgba(230, 245, 255, 0.88);
+}
+
+.logout {
+  width: 5vw;
+  height: 2vw;
+  color: rgb(255, 197, 197);
+  font-size: 1rem;
+  position: relative;
+  background-color: rgb(22, 22, 23);
+  border: 1px solid rgb(255, 223, 223);
+  border-radius: 20px;
+  margin-right: 5px;
 }
 </style>

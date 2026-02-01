@@ -25,11 +25,6 @@
       </div>
     </div>
   </section>
-  <shop-overlay
-      :show-shop-overlay="showShop"
-      @closeShop="closeShop"
-  />
-<!--  <hero-inventory-overlay></hero-inventory-overlay>-->
 </template>
 
 <script lang="ts">
@@ -95,9 +90,6 @@ export default {
     },
     openShop() {
       this.showShop = true;
-    },
-    closeShop() {
-      this.showShop = false;
     },
   },
   mounted() {
