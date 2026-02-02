@@ -6,6 +6,9 @@
           <div class="hero-badge__name chip">{{ heroName }}</div>
           <span class="chip">Steps: <b>{{ heroSteps }}</b></span>
           <span class="chip">Pos: <b>q{{ heroQ }}</b> · <b>r{{ heroR }}</b></span>
+          <span class="chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
+          <span class="chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
+          <span class="chip muted" v-else>Status: <b>READY</b></span>
         </div>
       </div>
     </div>
@@ -21,19 +24,22 @@
     </div>
 
     <div class="topbar__right">
-      <span class="chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
-      <span class="chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
-      <span class="chip muted" v-else>Status: <b>READY</b></span>
+      <div class="topbar__logger">
+        <game-events-logger/>
+      </div>
+
       <button @click="userStore.logout()" class="logout">Logout</button>
     </div>
   </header>
 </template>
+
 <script setup lang="ts">
-import {computed} from "vue";
-import {useHeroStore} from "@/stores/hero-store";
-import {useHeroToolStore} from "@/stores/hero-tool-store";
-import {useWorldMapStore} from "@/stores/world-map-store";
-import {useUserStore} from "@/stores/user-store";
+import { computed } from "vue";
+import { useHeroStore } from "@/stores/hero-store";
+import { useHeroToolStore } from "@/stores/hero-tool-store";
+import { useWorldMapStore } from "@/stores/world-map-store";
+import { useUserStore } from "@/stores/user-store";
+import GameEventsLogger from "@/a-game-scenes/game-events-logger/components/game-events-logger.vue";
 
 const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
@@ -101,10 +107,19 @@ const toolLabel = computed(() => {
 .topbar__right {
   justify-content: flex-end;
   gap: 8px;
+  min-width: 0; /* ✅ щоб елементи могли стискатись без зламу гріду */
 }
 
+/* ✅ Обгортка для логера в топбарі */
+.topbar__logger {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* (твоє — лишаю як є) */
 .hero-badge__name {
-  font-family: var(--font-main, serif),serif;
+  font-family: var(--font-main, serif), serif;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: rgba(232, 242, 255, 0.92);
@@ -128,7 +143,7 @@ const toolLabel = computed(() => {
 
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(190, 220, 255, 0.14);
-  color: rgba(220, 235, 255, 0.90);
+  color: rgba(220, 235, 255, 0.9);
 
   font-size: 1rem;
   letter-spacing: 0.06em;
@@ -160,8 +175,7 @@ const toolLabel = computed(() => {
 }
 
 .stat__bar {
-  height: 1rem
-;
+  height: 1rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(190, 220, 255, 0.12);
@@ -181,15 +195,20 @@ const toolLabel = computed(() => {
   color: rgba(230, 245, 255, 0.88);
 }
 
+/* ⚠️ Я трохи підправив logout: fixed width/height на vw дає дивні розміри.
+   Якщо хочеш лишити як є — повернеш назад, але так стабільніше. */
 .logout {
-  width: 5vw;
-  height: 2vw;
+  height: 32px;
+  padding: 0 14px;
   color: rgb(255, 197, 197);
-  font-size: 1rem;
-  position: relative;
+  font-size: 0.95rem;
+  font-weight: 600;
   background-color: rgb(22, 22, 23);
   border: 1px solid rgb(255, 223, 223);
-  border-radius: 20px;
-  margin-right: 5px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.logout:hover {
+  filter: brightness(1.06);
 }
 </style>
