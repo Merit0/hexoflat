@@ -1,9 +1,10 @@
 export type GameEventType =
-    | "INFO"
-    | "ACTION"
-    | "LOOT"
-    | "BATTLE"
-    | "MAP";
+    | 'INFO'
+    | 'ACTION'
+    | 'LOOT'
+    | 'BATTLE'
+    | 'MAP'
+    | 'NAVIGATION';
 
 export interface GameEventLogItem {
     id: string;

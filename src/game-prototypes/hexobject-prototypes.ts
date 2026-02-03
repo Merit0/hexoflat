@@ -83,12 +83,12 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
     [HEXOBJECT_KEYS.CAMPING]: {
         hexobjectKey: HEXOBJECT_KEYS.CAMPING,
         groupType: EHexobjectGroup.CONSTRUCTION,
-        isInteractable: false,
+        isInteractable: true,
         description: 'This is the Camping',
         construction: {
             integrity: 1000
         },
-        collision: EHexCollision.OVERLAY,
+        collision: EHexCollision.SOLID,
         spritePath: 'src/assets/hex-assets/hex-constructs/camping-hex-image.png',
     },
 };

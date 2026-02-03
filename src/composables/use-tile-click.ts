@@ -1,6 +1,5 @@
 import {IHexTile} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {useOverlayStore} from "@/stores/overlay-store";
-import router, {RouteName} from "@/router";
 import {useWorldMapStore} from "@/stores/world-map-store";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 
@@ -23,13 +22,6 @@ export function useTileClick() {
 
         if (!tile.isRevealed) {
             worldMapStore.revealTile(tile.coordinates);
-            return;
-        }
-
-        const urlPathEndpoint: RouteName = tile.tileKey;
-        if (tile.tileKey) {
-            if(tile.tileKey === "camping") worldMapStore.placeHeroNearCamp();
-            router.push({name: urlPathEndpoint});
             return;
         }
 

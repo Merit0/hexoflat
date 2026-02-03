@@ -93,7 +93,8 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         return true;
     },
 
-    [EHexActionType.MINE]: FINISH_UNLOCK_ONLY,
     [EHexActionType.OPEN]: FINISH_UNLOCK_ONLY,
+    [EHexActionType.ENTER]: FINISH_UNLOCK_ONLY,
+    [EHexActionType.MINE]: FINISH_UNLOCK_ONLY,
     [EHexActionType.ATTACK]: FINISH_UNLOCK_ONLY,
 };

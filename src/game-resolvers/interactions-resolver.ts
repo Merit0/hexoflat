@@ -1,61 +1,73 @@
-import {EHexCollision, EHexobjectGroup, IResourceTraits, THexobject} from "@/abstraction/hexobject-abstraction";
-import {HeroToolType} from "@/enums/hero-tool-type";
-import {EHexActionType} from "@/enums/hex-action-type";
-import {HEXOBJECT_META, HexobjectMeta} from "@/registry/hexobject-meta";
+import {
+    EHexCollision,
+    EHexobjectGroup,
+    IResourceTraits,
+    THexobject,
+} from "@/abstraction/hexobject-abstraction";
+import { HeroToolType } from "@/enums/hero-tool-type";
+import { EHexActionType } from "@/enums/hex-action-type";
+import { HEXOBJECT_META, HexobjectMeta } from "@/registry/hexobject-meta";
+import type { RouteLocationRaw } from "vue-router";
 
 export interface ToolCapabilities {
     canCut?: boolean;
     canPickup?: boolean;
     canMine?: boolean;
+    canEnter?: boolean;
 }
 
-export type ResolvedActionType = "CUT" | "TAKE" | "MINE" | "ATTACK" | "OPEN";
+export type ResolvedActionType =
+    | "CUT"
+    | "TAKE"
+    | "MINE"
+    | "ATTACK"
+    | "OPEN"
+    | "ENTER";
 
 export interface ResolvedAction {
     actioType: ResolvedActionType;
     label: string;
     priority: number;
+    navigateTo?: RouteLocationRaw;
 }
 
-export const RESOLVED_TO_HEX_ACTION: Record<ResolvedActionType, EHexActionType> = {
-    CUT: EHexActionType.CUT,
-    TAKE: EHexActionType.TAKE,
-    MINE: EHexActionType.MINE,
-    ATTACK: EHexActionType.ATTACK,
-    OPEN: EHexActionType.OPEN,
-};
+export type WorldResolvedActionType = Exclude<ResolvedActionType, "ENTER">;
+
+export const RESOLVED_TO_HEX_ACTION: Record<WorldResolvedActionType, EHexActionType> =
+    {
+        CUT: EHexActionType.CUT,
+        TAKE: EHexActionType.TAKE,
+        MINE: EHexActionType.MINE,
+        ATTACK: EHexActionType.ATTACK,
+        OPEN: EHexActionType.OPEN,
+    };
 
 export function getToolCapabilities(tool: HeroToolType): ToolCapabilities {
     switch (tool) {
         case HeroToolType.AXE:
-            return {canCut: true};
+            return { canCut: true };
         case HeroToolType.PICKAXE:
-            return {canMine: true};
+            return { canMine: true };
         case HeroToolType.HAND:
-            return {canPickup: true};
+            return {
+                canPickup: true,
+                canEnter: true,
+            };
         default:
             return {};
     }
 }
 
 function labelFromMeta(obj: THexobject, action: EHexActionType, fallback: string): string {
-    const meta: HexobjectMeta = HEXOBJECT_META[obj.hexobjectKey];
+    const key = obj.hexobjectKey;
+    if (!key) return fallback;
+
+    const meta: HexobjectMeta = HEXOBJECT_META[key];
     return meta?.actions?.[action]?.label ?? fallback;
 }
 
 export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAction[] {
     if (!obj.isInteractable) return [];
-
-    if (obj.collision === EHexCollision.OVERLAY) {
-        return [
-            {
-                actioType: "OPEN",
-                label: labelFromMeta(obj, EHexActionType.OPEN, 'Open'),
-                priority: 100
-            },
-        ];
-    }
-
 
     const cap = getToolCapabilities(tool);
     const resolvedActions: ResolvedAction[] = [];
@@ -64,33 +76,30 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
         case EHexobjectGroup.RESOURCE: {
             if (!obj.resource.isAvailable) break;
 
-            const traits:IResourceTraits = obj.resource.traits ?? {};
+            const traits: IResourceTraits = obj.resource.traits ?? {};
 
             if (cap.canCut && traits.cuttable) {
                 resolvedActions.push({
-                        actioType: 'CUT',
-                        label: labelFromMeta(obj, EHexActionType.CUT, 'Chop'),
-                        priority: 90
-                    }
-                );
+                    actioType: "CUT",
+                    label: labelFromMeta(obj, EHexActionType.CUT, "Chop"),
+                    priority: 90,
+                });
             }
 
-            if (cap.canPickup && (traits.pickable)) {
+            if (cap.canPickup && traits.pickable) {
                 resolvedActions.push({
-                        actioType: 'TAKE',
-                        label: labelFromMeta(obj, EHexActionType.TAKE, 'Take'),
-                        priority: 80
-                    }
-                );
+                    actioType: "TAKE",
+                    label: labelFromMeta(obj, EHexActionType.TAKE, "Take"),
+                    priority: 80,
+                });
             }
 
             if (cap.canMine && traits.mineable) {
                 resolvedActions.push({
-                        actioType: "MINE",
-                        label: labelFromMeta(obj, EHexActionType.MINE, 'Mine'),
-                        priority: 85
-                    }
-                );
+                    actioType: "MINE",
+                    label: labelFromMeta(obj, EHexActionType.MINE, "Mine"),
+                    priority: 85,
+                });
             }
 
             break;
@@ -100,12 +109,12 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
             const amount = obj.loot?.amount ?? 0;
             if (amount <= 0) break;
             if (!cap.canPickup) break;
+
             resolvedActions.push({
-                actioType: 'TAKE',
-                label: labelFromMeta(obj, EHexActionType.TAKE, 'Take'),
-                priority: 90
-                }
-            );
+                actioType: "TAKE",
+                label: labelFromMeta(obj, EHexActionType.TAKE, "Take"),
+                priority: 90,
+            });
             break;
         }
 
@@ -119,11 +128,22 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
         }
 
         case EHexobjectGroup.CONSTRUCTION: {
-            resolvedActions.push({
-                actioType: "OPEN",
-                label: labelFromMeta(obj, EHexActionType.OPEN, "Enter"),
-                priority: 60,
-            });
+            const key = obj.hexobjectKey;
+            if (!key) break;
+
+            const meta = HEXOBJECT_META[key];
+
+            if (cap.canEnter && meta?.route?.name) {
+                resolvedActions.push({
+                    actioType: "ENTER",
+                    label: meta.actions?.[EHexActionType.ENTER]?.label ?? "Enter",
+                    priority: 100,
+                    navigateTo: {
+                        name: meta.route.name,
+                        ...(meta.route.build ? meta.route.build(key) : { query: { key } }),
+                    },
+                });
+            }
             break;
         }
 
@@ -144,6 +164,5 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
     }
 
     resolvedActions.sort((a, b) => b.priority - a.priority);
-
     return resolvedActions;
 }
