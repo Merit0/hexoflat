@@ -14,7 +14,6 @@
       </div>
     </button>
 
-    <!-- DROPDOWN -->
     <transition name="logger-fade">
       <div v-if="isOpen" class="logger-dropdown" role="menu">
         <div class="dropdown-head">
@@ -26,6 +25,7 @@
           <div v-if="!list.length" class="dropdown-empty">No events yet</div>
 
           <div v-else class="row" v-for="e in list" :key="e.id">
+            <span class="hero-name">{{ e.actor ?? '' }}</span>
             <span class="row-msg">{{ e.message }}</span>
             <span class="row-time">{{ e.time }}</span>
           </div>
@@ -41,12 +41,9 @@ import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroStore} from "@/stores/hero-store";
 
 const gameEventsStore = useGameEventsStore();
-const heroStore = useHeroStore();
 
 const isOpen = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
-
-const heroName = computed(() => heroStore.hero?.name ?? "Hero");
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -106,7 +103,6 @@ onBeforeUnmount(() => {
   display: inline-block;
 }
 
-/* компактне "вікно" */
 .logger-compact {
   width: 360px;
   height: 44px;

@@ -1,58 +1,75 @@
-import { EHexActionType } from "@/enums/hex-action-type";
-import type { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import type { IPendingTileAction } from "@/abstraction/hex-tile-abstraction";
+import {EHexActionType} from "@/enums/hex-action-type";
+import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
+import type {IPendingTileAction} from "@/abstraction/hex-tile-abstraction";
 import {IActionContext} from "@/abstraction/abstract-action";
 import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import {useGatheringStore} from "@/stores/gathering-store";
+import {useHeroStore} from "@/stores/hero-store";
+import {useGameEventsStore} from "@/stores/game-events-store";
 
 export type ActionFinisher = (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => boolean;
 
+function ensureUnlocked(ctx: IActionContext) {
+    if (ctx.heroToolStore?.isLocked) (ctx.heroToolStore as any).unlockTool?.();
+}
 
+function handleCancelled(action: IPendingTileAction, ctx: IActionContext) {
+    if (!action.cancelled) return false;
+    ensureUnlocked(ctx);
+    return true;
+}
+
+function getHeroName() {
+    const heroStore = useHeroStore();
+    return heroStore.hero?.name ?? "Hero";
+}
+
+function logAction(message: string) {
+    const gameEventsStore = useGameEventsStore();
+    gameEventsStore.push(getHeroName(), message, "ACTION");
+}
+
+function consumeTileHexobject(tile: HexTileModel) {
+    tile.hexobject = null;
+}
+
+function scheduleRespawn(tile: HexTileModel, now: number) {
+    if (!tile.resourceSpawner?.enabled) return;
+    tile.resourceSpawner.nextSpawnAt = now + tile.resourceSpawner.regrowMs;
+}
+
+const FINISH_UNLOCK_ONLY: ActionFinisher = (_tile, _action, ctx) => {
+    ensureUnlocked(ctx);
+    return true;
+};
 
 export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
-    [EHexActionType.CUT]: (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => {
-    const gathering = useGatheringStore();
+    [EHexActionType.CUT]: (tile, action, ctx) => {
+        if (handleCancelled(action, ctx)) return true;
 
-        if (action.cancelled) {
-            (ctx.heroToolStore as any).unlockTool?.();
-            return true;
-        }
+        const gathering = useGatheringStore();
 
         gathering.add(action.hexobjectKey, 1);
+        logAction("cut the Tree");
 
-        tile.hexobject = null;
+        consumeTileHexobject(tile);
 
         const meta = HEXOBJECT_META[action.hexobjectKey];
         const wood = meta?.yields?.wood ?? 0;
-
         if (wood > 0 && ctx.heroToolStore.addTreeCut) {
             ctx.heroToolStore.addTreeCut(wood);
         }
 
-        if (tile.resourceSpawner?.enabled) {
-            tile.resourceSpawner.nextSpawnAt = ctx.now + tile.resourceSpawner.regrowMs;
-        }
-
-        if (ctx.heroToolStore.isLocked) {
-            (ctx.heroToolStore as any).unlockTool?.();
-        }
-
-        return true;
-    },
-
-    [EHexActionType.MINE]: (_tile, _action, ctx) => {
-        if ((ctx.heroToolStore as any).isLocked) (ctx.heroToolStore as any).unlockTool?.();
+        scheduleRespawn(tile, ctx.now);
+        ensureUnlocked(ctx);
         return true;
     },
 
     [EHexActionType.TAKE]: (tile, action, ctx) => {
-        const gathering = useGatheringStore();
-        if (action.cancelled) {
-            if (ctx.heroToolStore.isLocked) (ctx.heroToolStore as any).unlockTool?.();
-            return true;
-        }
+        if (handleCancelled(action, ctx)) return true;
 
-        // беремо amount з об'єкта прямо перед видаленням
+        const gathering = useGatheringStore();
+
         const amount =
             tile.hexobject?.groupType === "resource"
                 ? (tile.hexobject.resource.amount ?? 1)
@@ -62,29 +79,21 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         const baseCoins = meta?.yields?.coins ?? 0;
 
         if (baseCoins > 0) {
-            gathering.add(action.hexobjectKey, baseCoins * amount);
+            const coinsNumber = baseCoins * amount;
+            logAction(`took ${coinsNumber} ${action.hexobjectKey} from the ground.`);
+            gathering.add(action.hexobjectKey, coinsNumber);
         } else {
+            logAction(`took ${amount} ${action.hexobjectKey} from the ground.`);
             gathering.add(action.hexobjectKey, amount);
         }
 
-        tile.hexobject = null;
-
-        // if resource has spawner for TAKE action
-        if (tile.resourceSpawner?.enabled) {
-            tile.resourceSpawner.nextSpawnAt = ctx.now + tile.resourceSpawner.regrowMs;
-        }
-
-        if (ctx.heroToolStore.isLocked) (ctx.heroToolStore as any).unlockTool?.();
+        consumeTileHexobject(tile);
+        scheduleRespawn(tile, ctx.now);
+        ensureUnlocked(ctx);
         return true;
     },
 
-    [EHexActionType.OPEN]: (_tile, _action, ctx) => {
-        if ((ctx.heroToolStore as any).isLocked) (ctx.heroToolStore as any).unlockTool?.();
-        return true;
-    },
-
-    [EHexActionType.ATTACK]: (_tile, _action, ctx) => {
-        if ((ctx.heroToolStore as any).isLocked) (ctx.heroToolStore as any).unlockTool?.();
-        return true;
-    },
+    [EHexActionType.MINE]: FINISH_UNLOCK_ONLY,
+    [EHexActionType.OPEN]: FINISH_UNLOCK_ONLY,
+    [EHexActionType.ATTACK]: FINISH_UNLOCK_ONLY,
 };
