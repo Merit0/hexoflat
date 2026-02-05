@@ -1,0 +1,58 @@
+<template>
+  <div class="hero-hex-tile" @click="openInventory" :style="style"></div>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import { calcHexPixelPosition } from "@/utils/hex-utils";
+import {useOverlayStore} from "@/stores/overlay-store";
+
+const props = defineProps<{
+  coord: IHexCoordinates | null;
+  tileWidth: number;
+}>();
+
+const style = computed(() => {
+  if (!props.coord) {
+    return { display: "none" } as Record<string, string>;
+  }
+  const pseudoTile = { coordinates: props.coord } as any;
+  const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
+
+  return {
+    transform: `translate(${x}px, ${y}px)`,
+  } as Record<string, string>;
+});
+
+const openInventory = () => {
+  const overlayStore = useOverlayStore();
+  console.log('inventory opened!')
+  overlayStore.openOverlay("hero-inventory");
+}
+</script>
+
+<style scoped>
+.hero-hex-tile {
+  position: absolute;
+  width: var(--hex-tile-width);
+  height: var(--hex-tile-height);
+  background-image: url("@/assets/hero-asssets/merito-hex.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  clip-path: polygon(
+      25% 0%,
+      75% 0%,
+      100% 50%,
+      75% 100%,
+      25% 100%,
+      0% 50%
+  );
+
+  /* smooth hero move between tiles */
+  transition: transform 180ms ease-out;
+
+  z-index: 100;
+}
+</style>

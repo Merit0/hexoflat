@@ -25,8 +25,7 @@
 }
 
 .close-button-container {
-    position: absolute;;
-    left: 88%;
+    position: relative;
     width: 8vw;
     height: 6vh;
     align-content: center;

@@ -1,9 +1,17 @@
 import {defineStore} from 'pinia';
-import HexMapModel from '@/a-game-scenes/homeland-scene/models/hex-map-model';
-import {HexMapProvider} from '@/a-game-scenes/homeland-scene/providers/hex-map-provider';
-import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
-import {HexTileModel} from "@/a-game-scenes/homeland-scene/models/hex-tile-model";
+import HexMapModel from '@/a-game-scenes/map-scene/models/hex-map-model';
+import {HexMapProvider} from '@/a-game-scenes/map-scene/providers/hex-map-provider';
+import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
+import {useHeroToolStore} from "@/stores/hero-tool-store";
+import {EHexCollision} from "@/abstraction/hexobject-abstraction";
+import {WorldTickFeature} from "@/features/resource-features/world-tick-feature";
+import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resource-spawner-feature";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import {CoinsGenerator} from "@/generators/coins-generator";
+import {useHeroStore} from "@/stores/hero-store";
+import {useGameEventsStore} from "@/stores/game-events-store";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -13,6 +21,8 @@ type TWorldState = {
 
 const STORAGE_KEY = 'hexoflat:map';
 const STORAGE_KEY_STATE = "hexoflat:worldState";
+
+let worldTimer: number | null = null;
 
 export const useWorldMapStore = defineStore('world-map-store', {
     state: () => ({
@@ -31,21 +41,21 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
             this.makeCampSafeZone();
 
-            // якщо героя ще нема — ставимо і зберігаємо
             if (!this.heroCoordinates) {
-                this.initHeroNearCampRandom(); // або deterministic
+                this.initHeroNearCampRandom();
             }
 
             this.initFog();
             this.revealAroundHero();
-            // this.initFogAndReveal();
+            this.initCoins();
             this.saveToStorage();
+            this.startWorldLoop();
         },
 
         initHeroNearCampRandom() {
             if (!this.map) return;
 
-            const campTile = this.map.tiles.find(t => t.tileType === "home");
+            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.hexobject?.hexobjectKey === "camping");
             if (!campTile) {
                 this.heroCoordinates = {columnIndex: 0, rowIndex: 0};
                 return;
@@ -98,35 +108,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
             }
         },
 
-        initFogAndReveal() {
-            if (!this.map || !this.heroCoordinates) return;
-
-            for (const t of this.map.tiles) {
-                t.isRevealed = false;
-            }
-
-            const byKey = new Map<string, HexTileModel>();
-            for (const t of this.map.tiles) {
-                byKey.set(coordinateKey(t.coordinates), t);
-            }
-
-            const coordinatesToReveal: IHexCoordinates[] = [
-                this.heroCoordinates,
-                ...getOddQNeighbors(this.heroCoordinates),
-            ];
-
-            for (const c of coordinatesToReveal) {
-                const tile = byKey.get(coordinateKey(c));
-                if (tile) {
-                    tile.isRevealed = true;
-                }
-            }
-        },
-
         makeCampSafeZone() {
             if (!this.map) return;
 
-            const campTile = this.map.tiles.find(t => t.tileType === "home");
+            const campTile: HexTileModel = this.map.tiles.find((t: HexTileModel) => t.hexobject?.hexobjectKey === "camping");
             if (!campTile) return;
 
             const byKey = new Map<string, HexTileModel>();
@@ -140,38 +125,50 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 const tile = byKey.get(coordinateKey(c));
                 if (!tile) continue;
 
-                // safe-zone завжди порожній, але home не чіпаємо
-                if (tile.tileType === "home") continue;
+                if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING) continue;
 
-                // У POC safe-zone перемагає все, щоб було "кругом пусто"
                 tile.tileType = "empty";
                 tile.tileKey = null;
-                tile.description = "Nothing around";
-                tile.imagePath = "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png";
+            }
+        },
+
+        startWorldLoop() {
+            if (worldTimer) return;
+
+            worldTimer = window.setInterval(() => {
+                if (!this.map) return;
+
+                const changed = new WorldTickFeature(this.map).tick(Date.now());
+                if (changed) {
+                    this.saveToStorage();
+                }
+            }, 250);
+        },
+
+        stopWorldLoop() {
+            if (worldTimer) {
+                window.clearInterval(worldTimer);
+                worldTimer = null;
             }
         },
 
         revealTile(tileCoordinates: IHexCoordinates) {
             if (!this.map || !this.heroCoordinates) return;
 
-            // 1) знайдемо тайл по координатах
             const tile = this.map.tiles.find(
                 (t: HexTileModel) => t.coordinates.columnIndex === tileCoordinates.columnIndex
                     && t.coordinates.rowIndex === tileCoordinates.rowIndex
             );
             if (!tile) return;
 
-            // 2) якщо вже відкритий — нічого
             if (tile.isRevealed) return;
 
-            // 3) не відкриваємо тайл героя (він і так відкритий)
             const isHeroTile =
                 tile.coordinates.columnIndex === this.heroCoordinates.columnIndex &&
                 tile.coordinates.rowIndex === this.heroCoordinates.rowIndex;
 
             if (isHeroTile) return;
 
-            // 4) перевірка: чи це сусід героя (радіус 1)
             const neighbors = getOddQNeighbors(this.heroCoordinates);
             const isNeighbor = neighbors.some(n =>
                 n.columnIndex === tile.coordinates.columnIndex &&
@@ -180,11 +177,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
             if (!isNeighbor) return;
 
-            // 5) відкриваємо
             tile.isRevealed = true;
 
-            // 6) якщо тайл заданий конфігом (home/enemy/...) — не міняємо тип
-            //    “звичайний” тайл — це коли tileType empty (або твій дефолт)
             const isConfigTile = tile.tileType !== "empty";
 
             if (isConfigTile) {
@@ -192,55 +186,44 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 return;
             }
 
-            // 7) RNG: empty / tree
-            const roll = Math.random();
-
-            if (roll < 0.3) {
-                tile.tileType = "tree";
-                tile.description = "A tree. Could be chopped.";
-                tile.imagePath = "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/tree-tile-image.png";
-            } else {
-                tile.tileType = "empty";
-                tile.description = "Nothing around";
-                tile.imagePath = "src/a-game-scenes/homeland-scene/assets/hex-tile-terrain-images/empty-tile-image.png";
-            }
-
             this.saveToStorage();
         },
 
         moveHeroTo(target: IHexCoordinates): boolean {
-            if (!this.map || !this.heroCoordinates) return;
+            const heroToolStore = useHeroToolStore();
+            const heroStore = useHeroStore();
+            const gameEventsStore = useGameEventsStore();
 
-            // тільки на сусіда
+            if (!this.map || !this.heroCoordinates) return false;
+            if (heroToolStore.isDragging) return false;
+
             const neighbors = getOddQNeighbors(this.heroCoordinates);
             const isNeighbor = neighbors.some(n =>
                 n.columnIndex === target.columnIndex && n.rowIndex === target.rowIndex
             );
-            if (!isNeighbor) return;
+            if (!isNeighbor) return false;
 
-            // знаходимо тайл
             const tile: HexTileModel = this.map.tiles.find((t: HexTileModel) =>
                 t.coordinates.columnIndex === target.columnIndex &&
                 t.coordinates.rowIndex === target.rowIndex
             );
-            if (!tile) return;
 
-            // рухаємося лише на відкритий тайл (POC правило)
-            if (!tile.isRevealed) return;
+            if (!tile) return false;
+            if (!tile.isRevealed) return false;
+            if (tile.hexobject) {
+                if (tile.hexobject.collision === EHexCollision.SOLID) return false;
+                if (tile.hexobject.hexobjectKey === HEXOBJECT_KEYS.CAMPING) return false;
+            }
 
-            // POC блокери (потім замінимо на interaction rules)
-            if (tile.tileType === "enemy" || tile.tileType === "rock") return;
-
-            // (опціонально) не заходимо на home
-            if (tile.tileType === "home") return;
-
-            // рух
             this.heroCoordinates = {...target};
-
-            // відкриваємо нову зону
+            heroStore.hero?.makeStep();
+            const heroName = heroStore.hero?.name ?? "Hero";
+            gameEventsStore.push(
+                heroName,
+                `moved to [Q: ${target.columnIndex} | R: ${target.rowIndex}]`,
+                "INFO"
+            );
             this.revealAroundHero();
-
-            // зберігаємо
             this.saveToStorage();
 
             return true;
@@ -258,11 +241,47 @@ export const useWorldMapStore = defineStore('world-map-store', {
             localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(state));
         },
 
+        hydrateResourcesFromConfig() {
+            const map = this.map;
+            if (!map?.config?.length) return;
+
+            const tileByKey = new Map<string, HexTileModel>();
+            for (const t of map.tiles) {
+                tileByKey.set(`${t.coordinates.columnIndex}:${t.coordinates.rowIndex}`, t);
+            }
+
+            for (const placement of map.config) {
+                const ref = placement.hexobject;
+                if (!ref) continue;
+
+                for (const c of placement.coordinates) {
+                    const tile = tileByKey.get(`${c.columnIndex}:${c.rowIndex}`);
+                    if (!tile) continue;
+
+                    // ✅ тільки якщо це ресурс і має regrow
+                    if (!tile.resourceSpawner) {
+                        new AddResourceSpawnerFeature(tile, ref).add();
+                    }
+                }
+            }
+        },
+
         loadFromStorage() {
             const savedMap = localStorage.getItem(STORAGE_KEY);
             if (savedMap) {
                 const raw = JSON.parse(savedMap);
                 this.map = HexMapModel.fromJSON(raw);
+                this.hydrateResourcesFromConfig();
+
+                // ✅ reconcile world state always
+                const changed = new WorldTickFeature(this.map).tick(Date.now());
+
+                // ✅ save only if rehydrate/tick changed something
+                if ((this.map as any).__rehydrateChanged || changed) {
+                    this.saveToStorage();
+                    // можна очистити флаг, щоб не дратував
+                    (this.map as any).__rehydrateChanged = false;
+                }
             }
 
             const savedState = localStorage.getItem(STORAGE_KEY_STATE);
@@ -272,37 +291,69 @@ export const useWorldMapStore = defineStore('world-map-store', {
                 this.woodCollected = rawState.woodCollected ?? 0;
             }
 
-            // якщо карти нема — просто виходимо (а генерацію робить generateIfEmpty/boot)
             if (!this.map) {
                 console.log("Loaded state, but map missing");
                 return;
             }
 
-            // якщо героя нема — ініціалізуємо 1 раз
             if (!this.heroCoordinates) {
                 this.initHeroNearCampRandom();
                 this.revealAroundHero();
                 this.saveToStorage();
                 console.log("Loaded map, hero was missing -> initialized");
-                return;
+            } else {
+                this.revealAroundHero();
             }
 
-            // ✅ якщо герой є — просто гарантуємо, що зона навколо нього відкрита
-            this.revealAroundHero();
+            this.startWorldLoop();
 
-            // ❗ тут НЕ треба saveToStorage() постійно
             console.log("Loaded from storage...");
         },
 
         clearWorld() {
             console.log("Resetting map...");
             this.map = null;
+            this.stopWorldLoop();
             this.heroCoordinates = null;
             this.woodCollected = 0;
 
             localStorage.removeItem(STORAGE_KEY);
             localStorage.removeItem(STORAGE_KEY_STATE);
-        }
+        },
 
+        placeHeroNearCamp() {
+            if (!this.map) return;
+
+            const campTile = this.map.tiles.find(t => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING);
+            if (!campTile) return;
+
+            const neighbors = getOddQNeighbors(campTile.coordinates);
+
+            const candidates = neighbors
+                .map(c => this.map!.tiles.find(t => t.coordinates.columnIndex === c.columnIndex && t.coordinates.rowIndex === c.rowIndex))
+                .filter(Boolean)
+                .filter(t => t!.isRevealed) // або прибери, якщо хочеш дозволити вихід у туман
+                .filter(t => t!.hexobject?.collision !== EHexCollision.SOLID); // не в дерево/камінь/ворога
+
+            const chosen = candidates.length
+                ? candidates[Math.floor(Math.random() * candidates.length)]!
+                : campTile; // fallback
+
+            this.heroCoordinates = { ...chosen.coordinates };
+            this.revealAroundHero();
+            this.saveToStorage();
+        },
+
+        initCoins() {
+            if (!this.map) return;
+
+            new CoinsGenerator(this.map, {
+                chance: 0.05,
+                maxCoinsOnMap: 15,
+                minAmount: 1,
+                maxAmount: 5,
+                skipSpawnerTiles: true,
+            }).generate();
+        }
     }
 });

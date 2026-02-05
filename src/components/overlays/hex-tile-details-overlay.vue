@@ -7,20 +7,29 @@
       </header>
 
       <div v-if="tile" class="content">
-        <div class="row"><span class="label">tileKey</span><span>{{ tile.tileKey }}</span></div>
-        <div class="row"><span class="label">tileType</span><span>{{ tile.tileType }}</span></div>
-        <div class="row"><span class="label">image</span><span>{{ tile.imagePath }}</span></div>
-        <div class="row"><span class="label">description</span><span>{{ tile.description }}</span></div>
+        <div v-if="!tile.hexobject" class="row"><span class="label">Place</span><span>Nothing around here</span></div>
+        <div v-if="tile.hexobject" class="row"><span class="label">image</span><span>{{ tile.hexobject?.spritePath }}</span></div>
         <div class="row"><span class="label">revealed status</span><span>{{ tile.isRevealed }}</span></div>
-
+        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.RESOURCE" class="row">
+          <span class="label">Resource</span>
+          <span>[{{ tile.hexobject.description }}]</span>
+        </div>
+        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.LOOT" class="row">
+          <span class="label">Loot</span>
+          <span>[{{ tile.hexobject.description }}]</span>
+        </div>
+        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CONSTRUCTION" class="row">
+          <span class="label">Construction</span>
+          <span>[{{ tile.hexobject.description }}]</span>
+        </div>
+        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CREATURE" class="row">
+          <span class="label">Creature</span>
+          <span>[{{ tile.hexobject.description }}]</span>
+        </div>
         <div class="row">
           <span class="label">coords</span>
           <span>[{{ tile.coordinates.columnIndex }}, {{ tile.coordinates.rowIndex }}]</span>
         </div>
-
-<!--        <div class="row"><span class="label">isBlocked</span><span>{{ tile.isBlocked }}</span></div>-->
-
-        <!-- якщо є інші поля — додай тут -->
       </div>
 
       <div v-else class="content empty">
@@ -35,6 +44,7 @@ import { computed } from "vue";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { useOverlayStore } from "@/stores/overlay-store";
 import {OverlayPayloads} from "@/types/overlay-types";
+import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
 
 const props = defineProps<{
   data: OverlayPayloads["hex-tile-details"];

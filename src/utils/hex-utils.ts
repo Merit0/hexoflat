@@ -1,4 +1,5 @@
-import {IHexCoordinates} from "@/a-game-scenes/homeland-scene/interfaces/hex-tile-config-interface";
+import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 // odd-q offset -> axial
 function oddQToAxial(c: IHexCoordinates) {
@@ -30,4 +31,22 @@ export function getOddQNeighbors(center: IHexCoordinates): IHexCoordinates[] {
 
 export function coordinateKey(c: IHexCoordinates): string {
     return `${c.columnIndex}:${c.rowIndex}`;
+}
+
+export function calcHexPixelPosition(
+    tile: IHexTile,
+    tileWidth: number,
+    spacing = 0.93
+) {
+    const q = tile.coordinates.columnIndex;
+    const r = tile.coordinates.rowIndex;
+
+    const x = tileWidth * 1.5 * spacing * q;
+    const y =
+        tileWidth *
+        Math.sqrt(3) *
+        spacing *
+        (r + (q % 2 ? 0.5 : 0));
+
+    return { x, y };
 }
