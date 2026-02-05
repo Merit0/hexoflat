@@ -28,6 +28,10 @@ import {useWorldMapStore} from "@/stores/world-map-store";
 import {ACTION_TYPE_MAP} from "@/registry/action-starters-registry";
 import {ExecuteHexActionFeature} from "@/features/execute-hex-action-feature";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
+import router from "@/router";
+import {useHeroStore} from "@/stores/hero-store";
+import {useGameEventsStore} from "@/stores/game-events-store";
 
 const props = defineProps<{
   coord: IHexCoordinates | null;
@@ -41,6 +45,8 @@ const emit = defineEmits<{
 
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
+const heroStore = useHeroStore();
+const gameEventsStore = useGameEventsStore();
 
 const isWorking = computed(() => {
   const tile = hoveredTile.value;
@@ -49,10 +55,10 @@ const isWorking = computed(() => {
 });
 
 const posStyle = computed(() => {
-  if (!props.coord || !props.tool) return { display: "none" } as Record<string, string>;
+  if (!props.coord || !props.tool) return {display: "none"} as Record<string, string>;
 
-  const pseudoTile = { coordinates: props.coord } as any;
-  const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
+  const pseudoTile = {coordinates: props.coord} as any;
+  const {x, y} = calcHexPixelPosition(pseudoTile, props.tileWidth);
 
   const ix = Math.round(x);
   const iy = Math.round(y);
@@ -112,11 +118,40 @@ function executeAction() {
 
   const tool = props.tool;
   const actions = resolveActions(tool, tile.hexobject);
-  const best = actions.slice().sort((a,b)=>b.priority-a.priority)[0];
-  if (!best) return;
+  const bestAction = actions.slice().sort((a, b) => b.priority - a.priority)[0];
+  if (!bestAction) return;
 
-  const actionType = ACTION_TYPE_MAP[best.actioType];
-  const res = new ExecuteHexActionFeature(tile).execute(actionType, tool, Date.now());
+  if (bestAction.actioType === "ENTER") {
+    const key = tile.hexobject.hexobjectKey;
+    if (!key) return;
+
+    const meta = HEXOBJECT_META[key];
+    const route = meta?.route;
+
+    heroToolStore.clearResolvedActions();
+    heroToolStore.stopTool();
+
+    const heroName = heroStore.hero?.name ?? "Hero";
+    const destination = meta?.title ?? key;
+
+    if (route?.name) {
+      gameEventsStore.push(
+          heroName,
+          `navigated to ${destination}!`,
+          "NAVIGATION"
+      );
+      router.push({name: route.name, query: {key}}).catch(() => {
+      });
+    } else {
+      router.push({name: "construction", query: {key}}).catch(() => {
+      });
+    }
+
+    return;
+  }
+
+  const actionType = ACTION_TYPE_MAP[bestAction.actioType];
+  const res = new ExecuteHexActionFeature(tile).execute(actionType, tool);
 
   if (res.ok) {
     worldMapStore.saveToStorage();
@@ -278,9 +313,9 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
   }
 }
 
-.tool-hex-pos{
-  position:absolute;
-  z-index:120;
+.tool-hex-pos {
+  position: absolute;
+  z-index: 120;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
   pointer-events: auto;
@@ -290,33 +325,40 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
   transform: translateZ(0);
 }
 
-.tool-hex-tile.doing{
+.tool-hex-tile.doing {
   animation: tool-chop 220ms ease-in-out infinite;
   scale: 0.70;
 }
-@keyframes tool-chop{
-  0%{ transform: rotate(-6deg) scale(1.02); }
-  50%{ transform: rotate(7deg) scale(1.04); }
-  100%{ transform: rotate(-6deg) scale(1.02); }
+
+@keyframes tool-chop {
+  0% {
+    transform: rotate(-6deg) scale(1.02);
+  }
+  50% {
+    transform: rotate(7deg) scale(1.04);
+  }
+  100% {
+    transform: rotate(-6deg) scale(1.02);
+  }
 }
 
-.time-chip{
-  position:absolute;
+.time-chip {
+  position: absolute;
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
 
   min-width: 38px;
-  text-align:center;
+  text-align: center;
 
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(0,0,0,0.62);
-  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   color: #f2e9d3;
   font-weight: 900;
   font-size: 11px;
   letter-spacing: 0.08em;
-  pointer-events:none;
+  pointer-events: none;
 }
 </style>

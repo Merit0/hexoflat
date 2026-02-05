@@ -11,6 +11,7 @@ import {AddResourceSpawnerFeature} from "@/features/resource-features/add-resour
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 import {CoinsGenerator} from "@/generators/coins-generator";
 import {useHeroStore} from "@/stores/hero-store";
+import {useGameEventsStore} from "@/stores/game-events-store";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -191,6 +192,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         moveHeroTo(target: IHexCoordinates): boolean {
             const heroToolStore = useHeroToolStore();
             const heroStore = useHeroStore();
+            const gameEventsStore = useGameEventsStore();
 
             if (!this.map || !this.heroCoordinates) return false;
             if (heroToolStore.isDragging) return false;
@@ -215,6 +217,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
             this.heroCoordinates = {...target};
             heroStore.hero?.makeStep();
+            const heroName = heroStore.hero?.name ?? "Hero";
+            gameEventsStore.push(
+                heroName,
+                `moved to [Q: ${target.columnIndex} | R: ${target.rowIndex}]`,
+                "INFO"
+            );
             this.revealAroundHero();
             this.saveToStorage();
 

@@ -23,6 +23,14 @@ export interface HexobjectMeta {
         coins?: number;
         stone?: number;
     };
+
+    route?: {
+        name: string;
+        build?: (key: string) => {
+            params?: Record<string, any>;
+            query?: Record<string, any>;
+        };
+    };
 }
 
 export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
@@ -73,5 +81,15 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
 
     [HEXOBJECT_KEYS.SKELETOR]: { key: HEXOBJECT_KEYS.SKELETOR, title: "Skeletor" },
     [HEXOBJECT_KEYS.AXE]: { key: HEXOBJECT_KEYS.AXE, title: "Axe" },
-    [HEXOBJECT_KEYS.CAMPING]: { key: HEXOBJECT_KEYS.CAMPING, title: "Camp" },
+    [HEXOBJECT_KEYS.CAMPING]: {
+        key: HEXOBJECT_KEYS.CAMPING, title: "Camping",
+        subtitle: "Place to rest!",
+        actions: {
+            [EHexActionType.ENTER]: {
+                label: "Enter",
+                requiredTool: HeroToolType.HAND,
+            },
+        },
+        route: { name: "camping", build: (key) => ({ query: { key } }) }
+    },
 };

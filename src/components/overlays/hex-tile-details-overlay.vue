@@ -7,13 +7,19 @@
       </header>
 
       <div v-if="tile" class="content">
-        <div class="row"><span class="label">tileKey</span><span>{{ tile.tileKey }}</span></div>
-        <div class="row"><span class="label">tileType</span><span>{{ tile.tileType }}</span></div>
-        <div class="row"><span class="label">image</span><span>{{ tile.hexBackgroundImagePath }}</span></div>
         <div v-if="!tile.hexobject" class="row"><span class="label">Place</span><span>Nothing around here</span></div>
+        <div v-if="tile.hexobject" class="row"><span class="label">image</span><span>{{ tile.hexobject?.spritePath }}</span></div>
         <div class="row"><span class="label">revealed status</span><span>{{ tile.isRevealed }}</span></div>
         <div v-if="tile.hexobject?.groupType === EHexobjectGroup.RESOURCE" class="row">
           <span class="label">Resource</span>
+          <span>[{{ tile.hexobject.description }}]</span>
+        </div>
+        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.LOOT" class="row">
+          <span class="label">Loot</span>
+          <span>[{{ tile.hexobject.description }}]</span>
+        </div>
+        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CONSTRUCTION" class="row">
+          <span class="label">Construction</span>
           <span>[{{ tile.hexobject.description }}]</span>
         </div>
         <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CREATURE" class="row">

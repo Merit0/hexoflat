@@ -1,7 +1,7 @@
 import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HeroToolType} from "@/enums/hero-tool-type";
 import {EHexActionType} from "@/enums/hex-action-type";
-import {EHexobjectGroup, IResourceTraits, ITraitable} from "@/abstraction/hexobject-abstraction";
+import {EHexobjectGroup, IResourceTraits} from "@/abstraction/hexobject-abstraction";
 import {getToolCapabilities, ResolvedActionType} from "@/game-resolvers/interactions-resolver";
 import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
@@ -27,7 +27,9 @@ function isBusy(tile: HexTileModel, now: number): boolean {
     return false;
 }
 
-export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
+export type WorldResolvedActionType = Exclude<ResolvedActionType, "ENTER">;
+
+export const ACTION_TYPE_MAP: Record<WorldResolvedActionType, EHexActionType> = {
     CUT: EHexActionType.CUT,
     MINE: EHexActionType.MINE,
     TAKE: EHexActionType.TAKE,
@@ -155,13 +157,13 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         return {ok: true, endsAt};
     },
 
-    [EHexActionType.OPEN]: (tile, _tool, now) => {
-        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
-        return {ok: false, message: "OPEN is not implemented yet!"};
-    },
-
     [EHexActionType.ATTACK]: (tile, _tool, now) => {
         if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
         return {ok: false, message: "ATTACK is not implemented yet!"};
+    },
+
+    [EHexActionType.OPEN]: (tile, _tool, now) => {
+        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
+        return {ok: false, message: "OPEN is not implemented yet!"};
     },
 };
