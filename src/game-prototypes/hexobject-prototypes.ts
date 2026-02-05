@@ -80,11 +80,22 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         spritePath: 'src/assets/enemy-assets/boss-hex-images/axe-hex-image.png',
     },
 
-    [HEXOBJECT_KEYS.CAMPING]: {
-        hexobjectKey: HEXOBJECT_KEYS.CAMPING,
+    [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
+        hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
         groupType: EHexobjectGroup.CONSTRUCTION,
         isInteractable: true,
         description: 'This is the Camping',
+        construction: {
+            integrity: 1000
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/hex-assets/hex-constructs/camping-hex-image.png',
+    },
+
+    [HEXOBJECT_KEYS.HOMELAND_GATE]: {
+        hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
+        groupType: EHexobjectGroup.CONSTRUCTION,
+        isInteractable: true,
         construction: {
             integrity: 1000
         },

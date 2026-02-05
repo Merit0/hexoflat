@@ -132,18 +132,20 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
             if (!key) break;
 
             const meta = HEXOBJECT_META[key];
+            const enterCfg = meta?.actions?.[EHexActionType.ENTER];
 
-            if (cap.canEnter && meta?.route?.name) {
+            if (enterCfg) {
+                if (enterCfg.requiredTool && enterCfg.requiredTool !== tool) break;
+
+                if (!cap.canEnter) break;
+
                 resolvedActions.push({
-                    actioType: "ENTER",
-                    label: meta.actions?.[EHexActionType.ENTER]?.label ?? "Enter",
+                    actioType: EHexActionType.ENTER,
+                    label: enterCfg.label ?? "Enter",
                     priority: 100,
-                    navigateTo: {
-                        name: meta.route.name,
-                        ...(meta.route.build ? meta.route.build(key) : { query: { key } }),
-                    },
                 });
             }
+
             break;
         }
 

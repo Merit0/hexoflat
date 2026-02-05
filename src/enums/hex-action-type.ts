@@ -4,4 +4,5 @@ export enum EHexActionType {
     TAKE = "TAKE",
     OPEN = "OPEN",
     ATTACK = "ATTACK",
+    ENTER = "ENTER",
 }

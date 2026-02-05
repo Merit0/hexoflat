@@ -55,7 +55,6 @@ export class WorldGenerator {
                 const tile: HexTileModel = byKey.get(coordinateKey(c));
                 if (!tile) continue;
 
-                tile.tileKey = place.rootPathKey ?? null;
                 if (place.hexobject) {
                     tile.hexobject = HexObjectFactory.create(
                         place.hexobject.hexobjectKey,

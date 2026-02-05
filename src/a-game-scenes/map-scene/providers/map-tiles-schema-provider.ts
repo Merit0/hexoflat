@@ -1,4 +1,3 @@
-import {ROUTES} from "@/router/routes";
 import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
@@ -15,8 +14,14 @@ export const homelandMapConfig: IHexMapPlacement[] = [
         ],
     },
     {
-        rootPathKey: ROUTES.CAMPING,
-        hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAMPING },
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE },
         coordinates: [{ rowIndex: 0, columnIndex: 13 }],
+    },
+];
+
+export const campingMapConfig: IHexMapPlacement[] = [
+    {
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE },
+        coordinates: [{ rowIndex: 0, columnIndex: 0 }],
     },
 ];
