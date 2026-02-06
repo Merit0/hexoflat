@@ -57,7 +57,7 @@ function onEnter() {
 
 function getHexTileImage(tile: IHexTile) {
   const img = tile.isRevealed
-      ? tile?.hexobject?.spritePath
+      ? (tile.hexobject?.spritePath || "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
       : "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/empty-tile-image.png";
 
   return {

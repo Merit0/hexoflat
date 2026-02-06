@@ -1,5 +1,4 @@
 import {
-    HexTileType,
     IHexCoordinates,
 } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import {RouteName} from "@/router/routes";
@@ -9,8 +8,6 @@ import {IPendingTileAction} from "@/abstraction/hex-tile-abstraction";
 
 export interface IHexTile {
     tileId: string;
-    tileKey?: RouteName | null;
-    tileType: HexTileType;
     hexBackgroundImagePath: string;
     isRevealed: boolean;
     coordinates: IHexCoordinates;
@@ -24,7 +21,6 @@ export interface IHexTile {
 export class HexTileModel implements IHexTile {
     private _tileId: string;
     private _tileKey?: RouteName | null;
-    private _tileType: HexTileType = 'empty';
     private _isRevealed = false;
     private _hexBackgroundImagePath: string = '';
     private _hexobject: THexobject | null = null;
@@ -58,18 +54,6 @@ export class HexTileModel implements IHexTile {
 
     get tileKey(): RouteName | null {
         return this._tileKey;
-    }
-
-    set tileKey(tileKey: RouteName) {
-        this._tileKey = tileKey;
-    }
-
-    get tileType(): HexTileType {
-        return this._tileType;
-    }
-
-    set tileType(tileType: HexTileType) {
-        this._tileType = tileType;
     }
 
     get coordinates(): IHexCoordinates {

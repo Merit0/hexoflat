@@ -12,6 +12,7 @@ import { CoinsGenerator } from "@/generators/coins-generator";
 import { useHeroStore } from "@/stores/hero-store";
 import { useGameEventsStore } from "@/stores/game-events-store";
 import {LocationKey, MapDefinition, MapRegistry} from "@/registry/world-map-registry";
+import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -53,7 +54,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
             const locationKey = heroStore.nav.locationKey;
             const mapId = heroStore.nav.locationMapId ?? undefined;
 
-            this.openLocation(locationKey, mapId);
+            this.goToLocation(locationKey, mapId);
 
             if (this.currentMapId) {
                 const remembered = heroStore.nav.positionByMapId[this.currentMapId];
@@ -78,22 +79,41 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (this.currentMapId) this.saveToStorage(this.currentMapId);
 
             this.stopWorldLoop();
-
             this.openLocation(locationKey);
 
-            // ✅ restore position only if spawn !== "default"
-            if (this.currentMapId) {
-                const shouldUseRemembered = opts?.spawn !== "default";
-                const remembered = heroStore.nav.positionByMapId[this.currentMapId];
+            if (!this.currentMapId) return;
 
-                if (remembered && shouldUseRemembered) {
-                    this.heroCoordinates = { ...remembered };
-                } else {
-                    this.placeHeroAtEntry(locationKey);
-                }
+            const shouldUseRemembered = opts?.spawn !== "default";
+            const remembered = heroStore.nav.positionByMapId[this.currentMapId];
 
-                this.revealAroundHero();
-                this.saveToStorage(this.currentMapId);
+            if (remembered && shouldUseRemembered) {
+                this.heroCoordinates = { ...remembered };
+            } else {
+                this.placeHeroAtEntry(locationKey);
+            }
+
+            this.revealAroundHero();
+            this.revealEntryTile();
+            this.saveToStorage(this.currentMapId);
+        },
+
+        revealEntryTile() {
+            if (!this.map) return;
+
+            const entryPlacement: IHexMapPlacement =
+                this.map.config?.find((p: IHexMapPlacement) => p.entry?.type === "DEFAULT") ??
+                this.map.config?.find((p: IHexMapPlacement) => p.entry?.type === "SECRET");
+
+            const entryPlaceCoordinates: IHexCoordinates | undefined = entryPlacement?.coordinates?.[0];
+            if (!entryPlaceCoordinates) return;
+
+            const entryTile = this.map.tiles.find((t: HexTileModel) =>
+                t.coordinates.columnIndex === entryPlaceCoordinates.columnIndex &&
+                t.coordinates.rowIndex === entryPlaceCoordinates.rowIndex
+            );
+
+            if (entryTile) {
+                entryTile.isRevealed = true;
             }
         },
 
@@ -111,21 +131,15 @@ export const useWorldMapStore = defineStore("world-map-store", {
             this.currentLocationKey = locationKey;
             this.currentMapId = mapId;
 
-            // 1) load existing if possible
             this.loadFromStorage(mapId);
 
-            // 2) if no save -> generate new
             if (!this.map) {
                 const def = MapRegistry.get(locationKey);
                 this.map = def.create();
 
                 this.initFog();
                 this.initCoins();
-                this.placeHeroAtEntry(locationKey);
-                this.revealAroundHero();
                 this.saveToStorage(mapId);
-            } else {
-                this.revealAroundHero();
             }
 
             this.startWorldLoop();
@@ -160,7 +174,6 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             if (!this.map) return;
 
-            // ✅ Якщо координат нема — ставимо героя біля ENTRY цієї мапи
             if (!this.heroCoordinates) {
                 const def = MapRegistry.get(this.currentLocationKey);
 
@@ -356,14 +369,6 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (!isNeighbor) return;
 
             tile.isRevealed = true;
-
-            const isConfigTile = tile.tileType !== "empty";
-
-            if (isConfigTile) {
-                this.saveToStorage();
-                return;
-            }
-
             this.saveToStorage();
         },
 

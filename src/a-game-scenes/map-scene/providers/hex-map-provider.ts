@@ -11,7 +11,6 @@ export class HexMapProvider {
             worldHeight: 11,
             worldComplexity: Complexity.EASY,
             config: homelandMapConfig,
-            treeChance: 0.10,
             safeZoneRadius: 1,
         }).generate();
     }
@@ -23,7 +22,6 @@ export class HexMapProvider {
             worldHeight: 6,
             worldComplexity: Complexity.EASY,
             config: campingMapConfig,
-            treeChance: 0.10,
             safeZoneRadius: 1,
         }).generate();
     }

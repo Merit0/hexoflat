@@ -11,4 +11,8 @@ export interface IHexMapPlacement {
     description?: string;
     hexobject?: HexObjectPlacementRef;
     coordinates: IHexCoordinates[];
+    entry?: {
+        type: "DEFAULT" | "SECRET";
+        spawn?: "remember" | "default";
+    };
 }
