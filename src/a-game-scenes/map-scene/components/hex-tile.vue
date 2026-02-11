@@ -181,6 +181,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 .hexobject-sprite {
   z-index: 2;
   pointer-events: none;
+  top: -1%;
 
   transform: scale(1);
   transition: transform 120ms ease-out, filter 120ms ease-out;
