@@ -70,7 +70,7 @@ function getHexTileImage(tile: IHexTile) {
 
 function getHexTileBackgroundStyle(tile: IHexTile) {
   const img = tile.isRevealed
-      ? (tile.hexBackgroundImagePath || "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
+      ? (tile.hexBackgroundImagePath || "src/assets/hex-assets/empty-hex-image.png")
       : "src/assets/hex-assets/hex-effects/fog-tile-image.png";
 
   return {
@@ -158,29 +158,6 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   box-shadow:
       0 0 0 1px rgba(90, 163, 230, 0.28),
       0 10px 28px rgba(90, 163, 230, 0.18);
-}
-
-.coordinates-class {
-  position: absolute;
-  left: 50%;
-  bottom: 40%;
-  transform: translateX(-50%);
-  font-size: 0.5rem;
-  line-height: 1;
-  letter-spacing: 0.4px;
-  font-variant-numeric: tabular-nums;
-  color: rgb(248, 255, 155);
-  box-shadow:
-      0 6px 18px rgba(0, 0, 0, 0.45),
-      0 0 10px rgba(140, 185, 255, 0.08);
-
-  pointer-events: none;
-
-  max-width: 90%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  opacity: 0.85;
 }
 
 .hex-layer {
