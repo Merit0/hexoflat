@@ -191,7 +191,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 }
 
 .hex-tile:hover .hexobject-sprite {
-  transform: scale(1.1);
+  transform: scale(1.05);
   filter: contrast(1.02);
 }
 
