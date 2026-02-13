@@ -35,6 +35,22 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         spritePath: 'src/assets/hex-assets/hex-loot/coins-hex-image.png',
     },
 
+    [HEXOBJECT_KEYS.HEALTH_ELIXIR]: {
+        hexobjectKey: HEXOBJECT_KEYS.HEALTH_ELIXIR,
+        groupType: EHexobjectGroup.LOOT,
+        isInteractable: true,
+        description: 'U are lucky and find the Coins',
+        loot: {
+            name: 'Health Elixir',
+            amount: 10,
+            traits: {
+                stackable: true,
+            },
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/hex-assets/hex-loot/health-elixir-hex-image.png',
+    },
+
     [HEXOBJECT_KEYS.ROCK]: {
         hexobjectKey: HEXOBJECT_KEYS.ROCK,
         groupType: EHexobjectGroup.RESOURCE,
@@ -60,6 +76,20 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         creature: {
             hp: 30,
             hpMax: 30,
+            faction: "enemy"
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/enemy-assets/boss-hex-images/skeletor-hex-image.png',
+    },
+
+    [HEXOBJECT_KEYS.INFERNO]: {
+        hexobjectKey: HEXOBJECT_KEYS.INFERNO,
+        groupType: EHexobjectGroup.CREATURE,
+        isInteractable: true,
+        description: 'Here is the Hell. I am, Inferno ',
+        creature: {
+            hp: 100,
+            hpMax: 100,
             faction: "enemy"
         },
         collision: EHexCollision.SOLID,

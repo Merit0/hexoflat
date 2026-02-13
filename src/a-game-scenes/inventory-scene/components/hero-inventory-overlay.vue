@@ -129,30 +129,6 @@ function useSelectedTool() {
   margin-top: 18px;
 }
 
-/* base hex */
-.hex-tile {
-  width: 96px;
-  height: 96px;
-  clip-path: polygon(
-      25% 6%,
-      75% 6%,
-      100% 50%,
-      75% 94%,
-      25% 94%,
-      0% 50%
-  );
-
-  position: relative;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  user-select: none;
-
-  transition: transform 0.15s ease,
-  box-shadow 0.15s ease,
-  filter 0.15s ease;
-}
-
 /* hover */
 .hex-tile:hover {
   transform: translateY(-2px) scale(1.03);

@@ -7,10 +7,21 @@ export const homelandMapConfig: IHexMapPlacement[] = [
         coordinates: [{ rowIndex: 3, columnIndex: 5 }],
     },
     {
+        hexobject: {hexobjectKey: HEXOBJECT_KEYS.INFERNO},
+        coordinates: [{ rowIndex: 7, columnIndex: 22 }],
+    },
+    {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 25000 } },
         coordinates: [
             { rowIndex: 4, columnIndex: 15 }, { rowIndex: 4, columnIndex: 16 },
             { rowIndex: 5, columnIndex: 15 }, { rowIndex: 5, columnIndex: 16 },
+        ],
+    },
+    {
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.HEALTH_ELIXIR },
+        coordinates: [
+            { rowIndex: 0, columnIndex: 10 },
+            { rowIndex: 0, columnIndex: 15 },
         ],
     },
     {
