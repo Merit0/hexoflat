@@ -39,16 +39,48 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         hexobjectKey: HEXOBJECT_KEYS.HEALTH_ELIXIR,
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
-        description: 'U are lucky and find the Coins',
+        description: 'Bottle of Health potion!',
         loot: {
-            name: 'Health Elixir',
+            name: 'Health Potion',
+            amount: 1,
+            traits: {
+                stackable: true,
+            },
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_ELIXIR}-hex-image.png`,
+    },
+
+    [HEXOBJECT_KEYS.ENERGY_ELIXIR]: {
+        hexobjectKey: HEXOBJECT_KEYS.ENERGY_ELIXIR,
+        groupType: EHexobjectGroup.LOOT,
+        isInteractable: true,
+        description: 'Bottle of Energy potion!',
+        loot: {
+            name: 'Energy Potion',
             amount: 10,
             traits: {
                 stackable: true,
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-loot/health-elixir-hex-image.png',
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_ELIXIR}-hex-image.png`,
+    },
+
+    [HEXOBJECT_KEYS.MANA_ELIXIR]: {
+        hexobjectKey: HEXOBJECT_KEYS.MANA_ELIXIR,
+        groupType: EHexobjectGroup.LOOT,
+        isInteractable: true,
+        description: 'Bottle of Mana potion!',
+        loot: {
+            name: 'Mana Potion',
+            amount: 10,
+            traits: {
+                stackable: true,
+            },
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_ELIXIR}-hex-image.png`,
     },
 
     [HEXOBJECT_KEYS.ROCK]: {
