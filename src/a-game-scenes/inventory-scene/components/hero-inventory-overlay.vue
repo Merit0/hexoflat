@@ -5,7 +5,6 @@
         <h2>Hero Inventory</h2>
         <close-hero-inventory-modal-button @click="closeInventory()"/>
       </header>
-      <!-- ✅ RESOURCES PANEL -->
       <section class="resources-panel">
         <div class="res-chip">
           <span class="res-icon">🪵</span>
