@@ -10,6 +10,7 @@ export const HEXOBJECT_KEYS = {
     HEALTH_ELIXIR: "health-elixir",
     ENERGY_ELIXIR: "energy-elixir",
     MANA_ELIXIR: "mana-elixir",
+    FIREPLACE: "fireplace",
 } as const;
 
 export type THexobjectKey = typeof HEXOBJECT_KEYS[keyof typeof HEXOBJECT_KEYS];

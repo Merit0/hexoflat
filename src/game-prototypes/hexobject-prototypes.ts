@@ -158,10 +158,21 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
         groupType: EHexobjectGroup.CONSTRUCTION,
         isInteractable: true,
+        description: 'This is the Silesia entrance!',
         construction: {
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-constructs/camping-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-constructs/map-hex-image.png',
+    },
+    [HEXOBJECT_KEYS.FIREPLACE]: {
+        hexobjectKey: HEXOBJECT_KEYS.FIREPLACE,
+        groupType: EHexobjectGroup.CONSTRUCTION,
+        isInteractable: true,
+        construction: {
+            integrity: 1000
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/hex-assets/hex-constructs/fireplace-hex-image.png',
     },
 };

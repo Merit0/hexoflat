@@ -48,4 +48,8 @@ export const campingMapConfig: IHexMapPlacement[] = [
         coordinates: [{ rowIndex: 0, columnIndex: 0 }],
         entry: { type: "DEFAULT", spawn: "default" },
     },
+    {
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.FIREPLACE },
+        coordinates: [{ rowIndex: 2, columnIndex: 5 }]
+    },
 ];
