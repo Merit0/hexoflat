@@ -7,9 +7,9 @@ export const HEXOBJECT_KEYS = {
     AXE: "axe",
     CAMPING_ENTRANCE: "camping-entrance",
     HOMELAND_GATE: "homeland-gate",
-    HEALTH_ELIXIR: "health-elixir",
-    ENERGY_ELIXIR: "energy-elixir",
-    MANA_ELIXIR: "mana-elixir",
+    HEALTH_BOTTLE: "health-bottle",
+    ENERGY_BOTTLE: "energy-bottle",
+    MANA_BOTTLE: "mana-bottle",
     FIREPLACE: "fireplace",
 } as const;
 

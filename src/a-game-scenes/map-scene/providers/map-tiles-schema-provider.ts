@@ -18,19 +18,19 @@ export const homelandMapConfig: IHexMapPlacement[] = [
         ],
     },
     {
-        hexobject: { hexobjectKey: HEXOBJECT_KEYS.HEALTH_ELIXIR },
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.HEALTH_BOTTLE },
         coordinates: [
             { rowIndex: 0, columnIndex: 10 },
         ],
     },
     {
-        hexobject: { hexobjectKey: HEXOBJECT_KEYS.MANA_ELIXIR },
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.MANA_BOTTLE },
         coordinates: [
             { rowIndex: 0, columnIndex: 15 },
         ],
     },
     {
-        hexobject: { hexobjectKey: HEXOBJECT_KEYS.ENERGY_ELIXIR },
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE },
         coordinates: [
             { rowIndex: 0, columnIndex: 20 },
         ],

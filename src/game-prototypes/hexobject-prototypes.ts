@@ -32,11 +32,11 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-loot/coins-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-loot/coins-token-image.png',
     },
 
-    [HEXOBJECT_KEYS.HEALTH_ELIXIR]: {
-        hexobjectKey: HEXOBJECT_KEYS.HEALTH_ELIXIR,
+    [HEXOBJECT_KEYS.HEALTH_BOTTLE]: {
+        hexobjectKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: 'Bottle of Health potion!',
@@ -48,11 +48,11 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_ELIXIR}-hex-image.png`,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_BOTTLE}-token-image.png`,
     },
 
-    [HEXOBJECT_KEYS.ENERGY_ELIXIR]: {
-        hexobjectKey: HEXOBJECT_KEYS.ENERGY_ELIXIR,
+    [HEXOBJECT_KEYS.ENERGY_BOTTLE]: {
+        hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: 'Bottle of Energy potion!',
@@ -64,11 +64,11 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_ELIXIR}-hex-image.png`,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_BOTTLE}-token-image.png`,
     },
 
-    [HEXOBJECT_KEYS.MANA_ELIXIR]: {
-        hexobjectKey: HEXOBJECT_KEYS.MANA_ELIXIR,
+    [HEXOBJECT_KEYS.MANA_BOTTLE]: {
+        hexobjectKey: HEXOBJECT_KEYS.MANA_BOTTLE,
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: 'Bottle of Mana potion!',
@@ -80,7 +80,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_ELIXIR}-hex-image.png`,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_BOTTLE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.ROCK]: {

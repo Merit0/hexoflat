@@ -70,7 +70,7 @@ function getHexTileImage(tile: IHexTile) {
 
 function getHexTileBackgroundStyle(tile: IHexTile) {
   const img = tile.isRevealed
-      ? (tile.hexBackgroundImagePath || "src/assets/hex-assets/empty-hex-image.png")
+      ? (tile.hexBackgroundImagePath || "src/assets/hex-assets/token-placement-image.png")
       : "src/assets/hex-assets/hex-effects/fog-tile-image.png";
 
   return {
