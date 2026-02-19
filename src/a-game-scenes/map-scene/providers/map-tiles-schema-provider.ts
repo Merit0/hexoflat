@@ -49,7 +49,7 @@ export const homelandMapConfig: IHexMapPlacement[] = [
 export const campingMapConfig: IHexMapPlacement[] = [
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE },
-        coordinates: [{ rowIndex: 1, columnIndex: 1 }],
+        coordinates: [{ rowIndex: 0, columnIndex: 1 }],
         entry: { type: "DEFAULT", spawn: "default" },
     },
     {
@@ -59,7 +59,7 @@ export const campingMapConfig: IHexMapPlacement[] = [
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.WOOD_AND_LEAVES },
         coordinates: [
-            { rowIndex: 0, columnIndex: 0 }, { rowIndex: 0, columnIndex: 1 }, { rowIndex: 0, columnIndex: 2 },
+            { rowIndex: 0, columnIndex: 0 }, { rowIndex: 0, columnIndex: 2 },
             { rowIndex: 0, columnIndex: 3 }, { rowIndex: 0, columnIndex: 4}, { rowIndex: 0, columnIndex: 5 },
             { rowIndex: 0, columnIndex: 6 }, { rowIndex: 0, columnIndex: 7}, { rowIndex: 0, columnIndex: 8 },
 
