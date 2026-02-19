@@ -164,7 +164,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-constructs/camping-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-constructs/camping-token-image.png',
     },
 
     [HEXOBJECT_KEYS.HOMELAND_GATE]: {
@@ -176,16 +176,28 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-constructs/map-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-constructs/map-token-image.png',
     },
     [HEXOBJECT_KEYS.FIREPLACE]: {
         hexobjectKey: HEXOBJECT_KEYS.FIREPLACE,
         groupType: EHexobjectGroup.CONSTRUCTION,
+        description: 'This is the best place to relex!',
         isInteractable: true,
         construction: {
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-constructs/fireplace-hex-image.png',
+        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.FIREPLACE}-token-image.png`,
+    },
+    [HEXOBJECT_KEYS.WOOD_AND_LEAVES]: {
+        hexobjectKey: HEXOBJECT_KEYS.WOOD_AND_LEAVES,
+        groupType: EHexobjectGroup.CONSTRUCTION,
+        description: 'This is the nature!',
+        isInteractable: false,
+        construction: {
+            integrity: 1000
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.WOOD_AND_LEAVES}-token-image.png`,
     },
 };

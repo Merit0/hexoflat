@@ -49,11 +49,30 @@ export const homelandMapConfig: IHexMapPlacement[] = [
 export const campingMapConfig: IHexMapPlacement[] = [
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE },
-        coordinates: [{ rowIndex: 0, columnIndex: 0 }],
+        coordinates: [{ rowIndex: 1, columnIndex: 1 }],
         entry: { type: "DEFAULT", spawn: "default" },
     },
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.FIREPLACE },
         coordinates: [{ rowIndex: 2, columnIndex: 5 }]
+    },
+    {
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.WOOD_AND_LEAVES },
+        coordinates: [
+            { rowIndex: 0, columnIndex: 0 }, { rowIndex: 0, columnIndex: 1 }, { rowIndex: 0, columnIndex: 2 },
+            { rowIndex: 0, columnIndex: 3 }, { rowIndex: 0, columnIndex: 4}, { rowIndex: 0, columnIndex: 5 },
+            { rowIndex: 0, columnIndex: 6 }, { rowIndex: 0, columnIndex: 7}, { rowIndex: 0, columnIndex: 8 },
+
+            { rowIndex: 0, columnIndex: 9 },
+            { rowIndex: 1, columnIndex: 0 }, { rowIndex: 1, columnIndex: 9 },
+            { rowIndex: 2, columnIndex: 0 }, { rowIndex: 2, columnIndex: 9 },
+            { rowIndex: 3, columnIndex: 0 }, { rowIndex: 3, columnIndex: 9 },
+            { rowIndex: 4, columnIndex: 0 }, { rowIndex: 4, columnIndex: 9 },
+            { rowIndex: 5, columnIndex: 9 },
+
+            { rowIndex: 5, columnIndex: 0 }, { rowIndex: 5, columnIndex: 1 }, { rowIndex: 5, columnIndex: 2 },
+            { rowIndex: 5, columnIndex: 3 }, { rowIndex: 5, columnIndex: 4}, { rowIndex: 5, columnIndex: 5 },
+            { rowIndex: 5, columnIndex: 6 }, { rowIndex: 5, columnIndex: 7}, { rowIndex: 5, columnIndex: 8 },
+        ]
     },
 ];
