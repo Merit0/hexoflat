@@ -3,6 +3,7 @@ export const HEXOBJECT_KEYS = {
     COINS: "coins",
     ROCK: "rock",
     SKELETOR: "skeletor",
+    EMITTER: "emitter",
     INFERNO: "inferno",
     AXE: "axe",
     CAMPING_ENTRANCE: "camping-entrance",

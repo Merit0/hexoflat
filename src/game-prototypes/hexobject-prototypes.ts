@@ -10,7 +10,6 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         resource: {
             isAvailable: true,
             regrowMs: 1000 * 60 * 5,
-            regrowAt: null,
             traits: {
                 cuttable: true,
             },
@@ -112,6 +111,20 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         },
         collision: EHexCollision.SOLID,
         spritePath: 'src/assets/enemy-assets/boss-hex-images/skeletor-hex-image.png',
+    },
+
+    [HEXOBJECT_KEYS.EMITTER]: {
+        hexobjectKey: HEXOBJECT_KEYS.EMITTER,
+        groupType: EHexobjectGroup.CREATURE,
+        isInteractable: true,
+        description: 'This is the Emitter. The God of technology!',
+        creature: {
+            hp: 30,
+            hpMax: 30,
+            faction: "enemy"
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/enemy-assets/boss-hex-images/emitter-token-image.png',
     },
 
     [HEXOBJECT_KEYS.INFERNO]: {
