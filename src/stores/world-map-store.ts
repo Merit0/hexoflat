@@ -138,6 +138,9 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 this.map = def.create();
 
                 this.initFog();
+
+                this.hydrateResourcesFromConfig();
+
                 this.initCoins();
                 this.saveToStorage(mapId);
             }

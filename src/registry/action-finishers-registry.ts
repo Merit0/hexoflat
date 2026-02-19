@@ -50,7 +50,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         const gathering = useGatheringStore();
 
         gathering.add(action.hexobjectKey, 1);
-        logAction("cut the Tree");
+        logAction("Cut the Tree");
 
         consumeTileHexobject(tile);
 
