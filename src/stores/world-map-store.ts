@@ -286,7 +286,9 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
         initFog() {
             if (!this.map) return;
-            for (const t of this.map.tiles) t.isRevealed = false;
+
+            const all = this.map.fogPolicy === "ALL_REVEALED";
+            for (const t of this.map.tiles) t.isRevealed = all;
         },
 
         revealAroundHero() {

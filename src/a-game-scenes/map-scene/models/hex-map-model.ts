@@ -6,6 +6,8 @@ import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-con
 import {EHexobjectGroup, THexobject} from "@/abstraction/hexobject-abstraction";
 import {HexObjectFactory} from "@/factory/hex-object-factory";
 
+export type TFogPolicy = "FOG" | "ALL_REVEALED";
+
 interface IWorldMap {
     name: string;
     width: number;
@@ -22,6 +24,7 @@ export default class HexMapModel implements IWorldMap {
     private _complexity: Complexity;
     private _mapTilesConfig: IHexMapPlacement[];
     private _tiles: HexTileModel[] = [];
+    private _fogPolicy: TFogPolicy = "FOG";
 
     set name(mapName: string) {
         this._name = mapName;
@@ -63,13 +66,14 @@ export default class HexMapModel implements IWorldMap {
         return this._complexity;
     }
 
-    get tiles(): HexTileModel[] {
-        return this._tiles;
-    }
+    get tiles(): HexTileModel[] { return this._tiles;}
 
-    set tiles(tiles: HexTileModel[]) {
-        this._tiles = tiles;
-    }
+    set tiles(tiles: HexTileModel[]) {this._tiles = tiles;}
+
+    get fogPolicy(): TFogPolicy { return this._fogPolicy; }
+
+    set fogPolicy(v: TFogPolicy) { this._fogPolicy = v; }
+
 
     public generateTiles(): void {
         console.log('Generating tiles...');
@@ -121,6 +125,7 @@ export default class HexMapModel implements IWorldMap {
             height: this.height,
             complexity: this.complexity,
             config: this.config,
+            fogPolicy: this.fogPolicy,
             tiles: this.tiles.map(t => ({
                 imagePath: t.hexBackgroundImagePath,
                 tileKey: t.tileKey,

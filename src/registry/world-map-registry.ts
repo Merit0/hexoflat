@@ -1,4 +1,5 @@
 import type HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
+import type { TFogPolicy } from "@/a-game-scenes/map-scene/models/hex-map-model";
 import { HexMapProvider } from "@/a-game-scenes/map-scene/providers/hex-map-provider";
 import {HEXOBJECT_KEYS, THexobjectKey} from "@/registry/hexobjects-registry";
 
@@ -10,6 +11,7 @@ export type MapDefinition = {
     create: () => HexMapModel;
     entryHexobjectKey: THexobjectKey;
     safeZoneRadius?: number;
+    fogPolicy?: TFogPolicy;
 };
 
 export class MapRegistry {
@@ -20,6 +22,7 @@ export class MapRegistry {
             create: () => HexMapProvider.getCamping(),
             entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
             safeZoneRadius: 1,
+            fogPolicy: 'ALL_REVEALED'
         },
         homeland: {
             key: "homeland",
@@ -27,6 +30,7 @@ export class MapRegistry {
             create: () => HexMapProvider.getHomeLand(),
             entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
             safeZoneRadius: 1,
+            fogPolicy: 'FOG'
         },
     };
 

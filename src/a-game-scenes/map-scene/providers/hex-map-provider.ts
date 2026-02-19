@@ -12,6 +12,7 @@ export class HexMapProvider {
             worldComplexity: Complexity.EASY,
             config: homelandMapConfig,
             safeZoneRadius: 1,
+            fogMode: "FOG"
         }).generate();
     }
 
@@ -23,6 +24,7 @@ export class HexMapProvider {
             worldComplexity: Complexity.EASY,
             config: campingMapConfig,
             safeZoneRadius: 1,
+            fogMode: "ALL_REVEALED"
         }).generate();
     }
 }

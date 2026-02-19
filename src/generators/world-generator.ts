@@ -1,8 +1,8 @@
 import HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
-import { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import type { IHexMapPlacement } from "@/abstraction/hex-map-placement";
-import { coordinateKey, getOddQNeighbors } from "@/utils/hex-utils";
+import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
+import type {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import type {IHexMapPlacement} from "@/abstraction/hex-map-placement";
+import {coordinateKey, getOddQNeighbors} from "@/utils/hex-utils";
 import {IWorldGenerator} from "@/abstraction/world-generator-interface";
 import {HexObjectFactory} from "@/factory/hex-object-factory";
 import {THexobjectKey} from "@/registry/hexobjects-registry";
@@ -19,6 +19,7 @@ export class WorldGenerator {
         map.height = this.generator.worldHeight;
         map.complexity = this.generator.worldComplexity;
         map.config = this.generator.config;
+        map.fogPolicy = this.generator.fogMode ?? "FOG";
 
         (map as any).safeZoneRadius = this.generator.safeZoneRadius ?? 1;
 
@@ -33,13 +34,14 @@ export class WorldGenerator {
 
     private buildBaseGrid(width: number, height: number): HexTileModel[] {
         const tiles: HexTileModel[] = [];
+        const allRevealed = this.generator.fogMode === "ALL_REVEALED";
 
         for (let r = 0; r < height; r++) {
             for (let q = 0; q < width; q++) {
                 const t = new HexTileModel();
                 t.tileId = `${q}:${r}`;
                 t.coordinates = { columnIndex: q, rowIndex: r };
-                t.isRevealed = false;
+                t.isRevealed = allRevealed;
                 t.hexobject = null;
                 tiles.push(t);
             }
