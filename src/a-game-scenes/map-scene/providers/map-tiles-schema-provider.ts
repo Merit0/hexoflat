@@ -8,7 +8,7 @@ export const homelandMapConfig: IHexMapPlacement[] = [
     },
     {
         hexobject: {hexobjectKey: HEXOBJECT_KEYS.EMITTER},
-        coordinates: [{ rowIndex: 5, columnIndex: 8 }],
+        coordinates: [{ rowIndex: 0, columnIndex: 9 }],
     },
     {
         hexobject: {hexobjectKey: HEXOBJECT_KEYS.INFERNO},
