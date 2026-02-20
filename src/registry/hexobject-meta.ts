@@ -1,27 +1,34 @@
 import {HeroToolType} from "@/enums/hero-tool-type";
 import {EHexActionType} from "@/enums/hex-action-type";
 import {HEXOBJECT_KEYS, THexobjectKey} from "@/registry/hexobjects-registry";
+import {LocationKey} from "@/registry/world-map-registry";
 
 export interface HexobjectMeta {
-    key: THexobjectKey;
+    key: string;
 
-    // для UI
+    // UI
     title: string;
     subtitle?: string;
 
-    // які дії дозволені для цього об’єкта (високорівнево)
+    // allowed actions
     actions?: Partial<Record<EHexActionType, {
         label: string;
-        durationMs?: number;          // напр. CUT 5000
-        requiredTool?: HeroToolType;  // напр. "axe"
-        durabilityCostPct?: number;   // напр. 0.1
+        durationMs?: number;
+        requiredTool?: HeroToolType;
+        durabilityCostPct?: number;
     }>>;
 
-    // що дає цей об’єкт при успішній дії (поки прості лічильники)
+    // rewards
     yields?: {
         wood?: number;
         coins?: number;
         stone?: number;
+    };
+
+    enter?: {
+        type: "WORLD";
+        locationKey: LocationKey;
+        spawn?: "remember" | "default";
     };
 
     route?: {
@@ -81,15 +88,38 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
 
     [HEXOBJECT_KEYS.SKELETOR]: { key: HEXOBJECT_KEYS.SKELETOR, title: "Skeletor" },
     [HEXOBJECT_KEYS.AXE]: { key: HEXOBJECT_KEYS.AXE, title: "Axe" },
-    [HEXOBJECT_KEYS.CAMPING]: {
-        key: HEXOBJECT_KEYS.CAMPING, title: "Camping",
-        subtitle: "Place to rest!",
+    [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
+        key: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
+        title: "Camping Entrance",
+        subtitle: "Camping",
         actions: {
             [EHexActionType.ENTER]: {
                 label: "Enter",
+                durationMs: 400,
                 requiredTool: HeroToolType.HAND,
             },
         },
-        route: { name: "camping", build: (key) => ({ query: { key } }) }
+        enter: {
+            type: "WORLD",
+            locationKey: "camping",
+            spawn: "default",
+        },
+    },
+    [HEXOBJECT_KEYS.HOMELAND_GATE]: {
+        key: HEXOBJECT_KEYS.HOMELAND_GATE,
+        title: "Homeland Gate",
+        subtitle: "Silesia",
+        actions: {
+            [EHexActionType.ENTER]: {
+                label: "Enter",
+                durationMs: 400,
+                requiredTool: HeroToolType.HAND,
+            },
+        },
+        enter: {
+            type: "WORLD",
+            locationKey: "homeland",
+            spawn: "default",
+        },
     },
 };

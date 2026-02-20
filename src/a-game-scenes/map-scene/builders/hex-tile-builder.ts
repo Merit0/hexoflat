@@ -1,11 +1,9 @@
-import type {HexTileType, IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import type {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 type HexTileDraft = Partial<Pick<
     HexTileModel,
     'tileId'
-    | 'tileKey'
-    | 'tileType'
     | 'coordinates'
     | 'isRevealed'
     | 'hexBackgroundImagePath'
@@ -16,11 +14,6 @@ export class HexTileBuilder {
 
     isRevealed(revealedStatus: boolean): this {
         this.draft.isRevealed = revealedStatus;
-        return this;
-    }
-
-    type(tileType: HexTileType): this {
-        this.draft.tileType = tileType;
         return this;
     }
 
@@ -44,9 +37,7 @@ export class HexTileBuilder {
 
         const tile = new HexTileModel();
 
-        tile.tileKey = this.draft.tileKey;
         tile.isRevealed = this.draft.isRevealed ?? false;
-        tile.tileType = this.draft.tileType ?? tile.tileType;
         tile.coordinates = this.draft.coordinates;
         tile.hexBackgroundImagePath = this.draft.hexBackgroundImagePath ?? "";
 

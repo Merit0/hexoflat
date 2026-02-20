@@ -3,8 +3,16 @@ export const HEXOBJECT_KEYS = {
     COINS: "coins",
     ROCK: "rock",
     SKELETOR: "skeletor",
+    EMITTER: "emitter",
+    INFERNO: "inferno",
     AXE: "axe",
-    CAMPING: "camping",
+    CAMPING_ENTRANCE: "camping-entrance",
+    HOMELAND_GATE: "homeland-gate",
+    HEALTH_BOTTLE: "health-bottle",
+    ENERGY_BOTTLE: "energy-bottle",
+    MANA_BOTTLE: "mana-bottle",
+    FIREPLACE: "fireplace",
+    WOOD_AND_LEAVES: "wood-and-leaves",
 } as const;
 
 export type THexobjectKey = typeof HEXOBJECT_KEYS[keyof typeof HEXOBJECT_KEYS];

@@ -3,7 +3,6 @@
     <hero-details-top-bar/>
     <div class="hex-map">
       <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
-        <!-- Probe to measure REAL DOM hex size in px -->
         <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
 
         <div
@@ -42,20 +41,20 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import HexTile from "@/a-game-scenes/map-scene/components/hex-tile.vue";
 import HeroHexTile from "@/a-game-scenes/map-scene/components/hero-hex-tile.vue";
-import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue";
 import { calcHexPixelPosition } from "@/utils/hex-utils";
 import { useTileClick } from "@/composables/use-tile-click";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
-import { resolveActions } from "@/game-resolvers/interactions-resolver";
+import {resolveActions, ResolvedAction} from "@/game-resolvers/interactions-resolver";
 import HeroDetailsTopBar from "@/a-game-scenes/map-scene/components/hero-details-top-bar.vue";
+import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue";
 
 const { handleTileClick } = useTileClick();
 const worldStore = useWorldMapStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 
-worldStore.loadFromStorage();
-worldStore.generateIfEmpty();
+onMounted(() => worldStore.bootstrapWorld());
+onBeforeUnmount(() => worldStore.stopWorldLoop());
 
 const tiles = computed(() => worldStore.map?.tiles ?? []);
 const activeTool = computed(() => heroToolStore.activeTool);
@@ -98,7 +97,7 @@ watch(
         return;
       }
 
-      const actions = resolveActions(tool, tile.hexobject);
+      const actions: ResolvedAction[] = resolveActions(tool, tile.hexobject);
       heroToolStore.setResolvedActions(actions);
     },
     { immediate: true }

@@ -32,8 +32,6 @@ export function useTileClick() {
 
         const moved = worldMapStore.moveHeroTo(tile.coordinates);
         if (moved) return;
-
-        overlayStore.openOverlay("hex-tile-details", {coordinates: tile.coordinates});
     }
 
     return {handleTileClick};

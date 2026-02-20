@@ -122,29 +122,34 @@ function executeAction() {
   if (!bestAction) return;
 
   if (bestAction.actioType === "ENTER") {
-    const key = tile.hexobject.hexobjectKey;
+    const key = tile.hexobject?.hexobjectKey;
     if (!key) return;
 
     const meta = HEXOBJECT_META[key];
-    const route = meta?.route;
 
     heroToolStore.clearResolvedActions();
     heroToolStore.stopTool();
 
     const heroName = heroStore.hero?.name ?? "Hero";
-    const destination = meta?.title ?? key;
+    const destination = meta?.subtitle ?? key;
 
+    if (meta?.enter?.type === "WORLD") {
+      gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
+
+      const worldStore = useWorldMapStore();
+      worldStore.goToLocation(meta.enter.locationKey, { spawn: meta.enter.spawn });
+
+      return;
+    }
+
+    const route = meta?.route;
     if (route?.name) {
-      gameEventsStore.push(
-          heroName,
-          `navigated to ${destination}!`,
-          "NAVIGATION"
-      );
-      router.push({name: route.name, query: {key}}).catch(() => {
-      });
+      gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
+
+      const payload = route.build?.(key) ?? {};
+      router.push({ name: route.name, ...payload }).catch(() => {});
     } else {
-      router.push({name: "construction", query: {key}}).catch(() => {
-      });
+      router.push({ name: "construction", query: { key } }).catch(() => {});
     }
 
     return;

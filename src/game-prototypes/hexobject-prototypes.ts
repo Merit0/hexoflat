@@ -10,7 +10,6 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         resource: {
             isAvailable: true,
             regrowMs: 1000 * 60 * 5,
-            regrowAt: null,
             traits: {
                 cuttable: true,
             },
@@ -32,7 +31,55 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-loot/coins-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-loot/coins-token-image.png',
+    },
+
+    [HEXOBJECT_KEYS.HEALTH_BOTTLE]: {
+        hexobjectKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
+        groupType: EHexobjectGroup.LOOT,
+        isInteractable: true,
+        description: 'Bottle of Health potion!',
+        loot: {
+            name: 'Health Potion',
+            amount: 1,
+            traits: {
+                stackable: true,
+            },
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_BOTTLE}-token-image.png`,
+    },
+
+    [HEXOBJECT_KEYS.ENERGY_BOTTLE]: {
+        hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
+        groupType: EHexobjectGroup.LOOT,
+        isInteractable: true,
+        description: 'Bottle of Energy potion!',
+        loot: {
+            name: 'Energy Potion',
+            amount: 10,
+            traits: {
+                stackable: true,
+            },
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_BOTTLE}-token-image.png`,
+    },
+
+    [HEXOBJECT_KEYS.MANA_BOTTLE]: {
+        hexobjectKey: HEXOBJECT_KEYS.MANA_BOTTLE,
+        groupType: EHexobjectGroup.LOOT,
+        isInteractable: true,
+        description: 'Bottle of Mana potion!',
+        loot: {
+            name: 'Mana Potion',
+            amount: 10,
+            traits: {
+                stackable: true,
+            },
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_BOTTLE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.ROCK]: {
@@ -63,7 +110,35 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             faction: "enemy"
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/enemy-assets/boss-hex-images/skeletor-hex-image.png',
+        spritePath: 'src/assets/enemy-assets/boss-hex-images/skeletor-token-image.png',
+    },
+
+    [HEXOBJECT_KEYS.EMITTER]: {
+        hexobjectKey: HEXOBJECT_KEYS.EMITTER,
+        groupType: EHexobjectGroup.CREATURE,
+        isInteractable: true,
+        description: 'This is the Emitter. The God of technology!',
+        creature: {
+            hp: 30,
+            hpMax: 30,
+            faction: "enemy"
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/enemy-assets/boss-hex-images/emitter-token-image.png',
+    },
+
+    [HEXOBJECT_KEYS.INFERNO]: {
+        hexobjectKey: HEXOBJECT_KEYS.INFERNO,
+        groupType: EHexobjectGroup.CREATURE,
+        isInteractable: true,
+        description: 'Here is the Hell. I am, Inferno ',
+        creature: {
+            hp: 100,
+            hpMax: 100,
+            faction: "enemy"
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/enemy-assets/boss-hex-images/inferno-token-image.png',
     },
 
     [HEXOBJECT_KEYS.AXE]: {
@@ -80,8 +155,8 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         spritePath: 'src/assets/enemy-assets/boss-hex-images/axe-hex-image.png',
     },
 
-    [HEXOBJECT_KEYS.CAMPING]: {
-        hexobjectKey: HEXOBJECT_KEYS.CAMPING,
+    [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
+        hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
         groupType: EHexobjectGroup.CONSTRUCTION,
         isInteractable: true,
         description: 'This is the Camping',
@@ -89,6 +164,40 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-constructs/camping-hex-image.png',
+        spritePath: 'src/assets/hex-assets/hex-constructs/camping-token-image.png',
+    },
+
+    [HEXOBJECT_KEYS.HOMELAND_GATE]: {
+        hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
+        groupType: EHexobjectGroup.CONSTRUCTION,
+        isInteractable: true,
+        description: 'This is the Silesia entrance!',
+        construction: {
+            integrity: 1000
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: 'src/assets/hex-assets/hex-constructs/map-token-image.png',
+    },
+    [HEXOBJECT_KEYS.FIREPLACE]: {
+        hexobjectKey: HEXOBJECT_KEYS.FIREPLACE,
+        groupType: EHexobjectGroup.CONSTRUCTION,
+        description: 'This is the best place to relex!',
+        isInteractable: true,
+        construction: {
+            integrity: 1000
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.FIREPLACE}-token-image.png`,
+    },
+    [HEXOBJECT_KEYS.WOOD_AND_LEAVES]: {
+        hexobjectKey: HEXOBJECT_KEYS.WOOD_AND_LEAVES,
+        groupType: EHexobjectGroup.CONSTRUCTION,
+        description: 'This is the nature!',
+        isInteractable: false,
+        construction: {
+            integrity: 1000
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.WOOD_AND_LEAVES}-token-image.png`,
     },
 };

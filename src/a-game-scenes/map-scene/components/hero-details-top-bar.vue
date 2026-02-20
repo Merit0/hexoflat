@@ -24,6 +24,7 @@
     </div>
 
     <div class="topbar__right">
+      <span class="chip">Map: <b>{{ heroLocation }}</b></span>
       <div class="topbar__logger">
         <game-events-logger/>
       </div>
@@ -40,6 +41,7 @@ import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { useUserStore } from "@/stores/user-store";
 import GameEventsLogger from "@/a-game-scenes/game-events-logger/components/game-events-logger.vue";
+import {MapRegistry} from "@/registry/world-map-registry";
 
 const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
@@ -61,6 +63,13 @@ const hpPercent = computed(() => {
   const max = Math.max(1, Number(heroHpMax.value) || 1);
   const val = Math.max(0, Math.min(max, Number(heroHp.value) || 0));
   return Math.round((val / max) * 100);
+});
+
+const heroLocation = computed(() => {
+  const key = heroStore.nav.locationKey;
+  if (!key) return "Nowhere";
+
+  return MapRegistry.get(key)?.title ?? key;
 });
 
 const toolLabel = computed(() => {
