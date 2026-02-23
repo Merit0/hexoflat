@@ -247,13 +247,6 @@ function useSelectedTool() {
   background-repeat: no-repeat;
 }
 
-.hex-tile.axe {
-  background-image: url("@/assets/hexs/terrain-hexs/axe-hex-image.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
 .hex-label {
   font-size: 12px;
   font-weight: 700;

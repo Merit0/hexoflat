@@ -3,10 +3,6 @@ import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 export const homelandMapConfig: IHexMapPlacement[] = [
     {
-        hexobject: {hexobjectKey: HEXOBJECT_KEYS.SKELETOR},
-        coordinates: [{ rowIndex: 3, columnIndex: 5 }],
-    },
-    {
         hexobject: {hexobjectKey: HEXOBJECT_KEYS.EMITTER},
         coordinates: [{ rowIndex: 0, columnIndex: 9 }],
     },
@@ -34,6 +30,21 @@ export const homelandMapConfig: IHexMapPlacement[] = [
         ],
     },
     {
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAVE_ENTRANCE },
+        coordinates: [
+            { rowIndex: 0, columnIndex: 25 },
+        ],
+    },
+    {
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.ROCK },
+        coordinates: [
+            { rowIndex: 0, columnIndex: 26 },
+            { rowIndex: 1, columnIndex: 26 },
+            { rowIndex: 1, columnIndex: 25 },
+            { rowIndex: 0, columnIndex: 24 },
+        ],
+    },
+    {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE },
         coordinates: [
             { rowIndex: 0, columnIndex: 20 },
@@ -41,7 +52,7 @@ export const homelandMapConfig: IHexMapPlacement[] = [
     },
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE },
-        coordinates: [{ rowIndex: 0, columnIndex: 13 }],
+        coordinates: [{ rowIndex: 5, columnIndex: 13 }],
         entry: { type: "DEFAULT", spawn: "default" },
     },
 ];
@@ -74,5 +85,16 @@ export const campingMapConfig: IHexMapPlacement[] = [
             { rowIndex: 5, columnIndex: 3 }, { rowIndex: 5, columnIndex: 4}, { rowIndex: 5, columnIndex: 5 },
             { rowIndex: 5, columnIndex: 6 }, { rowIndex: 5, columnIndex: 7}, { rowIndex: 5, columnIndex: 8 },
         ]
+    },
+];
+
+export const skeletorsKingdomMapConfig: IHexMapPlacement[] = [
+    {
+        hexobject: { hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE },
+        coordinates: [{ rowIndex: 2, columnIndex: 0 }],
+    },
+    {
+        hexobject: {hexobjectKey: HEXOBJECT_KEYS.SKELETOR},
+        coordinates: [{ rowIndex: 2, columnIndex: 15 }],
     },
 ];

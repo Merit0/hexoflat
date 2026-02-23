@@ -25,7 +25,6 @@
             @click="selectTool(HeroToolType.HAND)"
         >
           <span v-if="selectedTool !== HeroToolType.HAND" class="hex-label"></span>
-
           <button
               v-else
               class="hex-use-btn"
@@ -40,6 +39,21 @@
             @click="selectTool(HeroToolType.AXE)"
         >
           <span v-if="selectedTool !== HeroToolType.AXE" class="hex-label"></span>
+
+          <button
+              v-else
+              class="hex-use-btn"
+              @click.stop="useSelectedTool()"
+          >
+            USE
+          </button>
+        </div>
+        <div
+            class="hex-tile pickaxe"
+            :class="{ selected: selectedTool === HeroToolType.PICKAXE }"
+            @click="selectTool(HeroToolType.PICKAXE)"
+        >
+          <span v-if="selectedTool !== HeroToolType.PICKAXE" class="hex-label"></span>
 
           <button
               v-else
@@ -224,6 +238,13 @@ function useSelectedTool() {
 
 .hex-tile.axe {
   background-image: url("@/assets/hex-assets/hex-tools/axe-hex-image.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hex-tile.pickaxe {
+  background-image: url("@/assets/hex-assets/hex-tools/pickaxe-token-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

@@ -94,9 +94,60 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         return {ok: true, endsAt};
     },
 
-    [EHexActionType.MINE]: (tile, _tool, now) => {
-        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
-        return {ok: false, message: "MINE is not implemented yet!"};
+    [EHexActionType.MINE]: (tile, tool, now) => {
+        const obj = tile.hexobject;
+        if (!obj) return {ok: false, message: "Hex has no object!"};
+
+        const a = tile.pendingAction;
+        if (a) {
+            if (now < a.endsAt) return {ok: false, message: "Tile is busy!"};
+
+            tile.pendingAction = null;
+        }
+
+        if (obj.groupType !== EHexobjectGroup.RESOURCE) {
+            return {ok: false, message: "It is not resource!"};
+        }
+        if (!obj.resource?.traits?.mineable) {
+            return {ok: false, message: "This resource is not mineable!"};
+        }
+
+        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const mineCfg = meta?.actions?.[EHexActionType.MINE];
+
+        const requiredTool: HeroToolType = mineCfg?.requiredTool ?? HeroToolType.PICKAXE;
+        const durationMs: number = mineCfg?.durationMs ?? 10000;
+        const costPct: number = mineCfg?.durabilityCostPct ?? 0.1;
+
+        if (requiredTool && tool !== requiredTool) {
+            return {ok: false, message: `Need a tool: ${requiredTool}`};
+        }
+
+        const cap = getToolCapabilities(tool);
+        if (!cap.canCut) return {ok: false, message: "Need something to mine with!"};
+
+        const heroToolStore = useHeroToolStore();
+        const okDur = heroToolStore.consumeDurability(costPct);
+        if (!okDur) {
+            heroToolStore.activeTool = HeroToolType.HAND;
+            return {ok: false, message: "Tool is broken!"};
+        }
+
+        const endsAt = now + durationMs;
+
+        tile.pendingAction = {
+            type: EHexActionType.MINE,
+            startedAt: now,
+            endsAt,
+            hexobjectKey: obj.hexobjectKey,
+            cancelled: false,
+        };
+
+        if ((heroToolStore as any).lockTool) {
+            (heroToolStore as any).lockTool(tile, endsAt);
+        }
+
+        return {ok: true, endsAt};
     },
 
     [EHexActionType.TAKE]: (tile, tool, now) => {

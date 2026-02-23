@@ -63,7 +63,7 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
         actions: {
             [EHexActionType.MINE]: {
                 label: "Mine",
-                durationMs: 6000,
+                durationMs: 10000,
                 requiredTool: HeroToolType.PICKAXE,
                 durabilityCostPct: 0.1,
             },
@@ -87,7 +87,9 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
     },
 
     [HEXOBJECT_KEYS.SKELETOR]: { key: HEXOBJECT_KEYS.SKELETOR, title: "Skeletor" },
+    [HEXOBJECT_KEYS.INFERNO]: { key: HEXOBJECT_KEYS.INFERNO, title: "Inferno" },
     [HEXOBJECT_KEYS.AXE]: { key: HEXOBJECT_KEYS.AXE, title: "Axe" },
+    [HEXOBJECT_KEYS.PICKAXE]: { key: HEXOBJECT_KEYS.AXE, title: "Pickaxe" },
     [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
         key: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
         title: "Camping Entrance",
@@ -120,6 +122,23 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
             type: "WORLD",
             locationKey: "homeland",
             spawn: "default",
+        },
+    },
+    [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
+        key: HEXOBJECT_KEYS.CAVE_ENTRANCE,
+        title: "Cave",
+        subtitle: "Cave with skeletons",
+        actions: {
+            [EHexActionType.ENTER]: {
+                label: "Enter",
+                durationMs: 400,
+                requiredTool: HeroToolType.HAND,
+            },
+        },
+        enter: {
+            type: "WORLD",
+            locationKey: "cave",
+            spawn: "remember"
         },
     },
 };

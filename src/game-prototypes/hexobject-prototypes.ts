@@ -86,7 +86,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         hexobjectKey: HEXOBJECT_KEYS.ROCK,
         groupType: EHexobjectGroup.RESOURCE,
         isInteractable: true,
-        description: 'This is the Rock!',
+        description: 'This is the minable Rock!',
         resource: {
             isAvailable: true,
             traits: {
@@ -96,7 +96,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowAt: null,
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-resources/rock-image.png',
+        spritePath: `src/assets/hex-assets/hex-resources/${}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.SKELETOR]: {
@@ -155,6 +155,20 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         spritePath: 'src/assets/enemy-assets/boss-hex-images/axe-hex-image.png',
     },
 
+    [HEXOBJECT_KEYS.PICKAXE]: {
+        hexobjectKey: HEXOBJECT_KEYS.PICKAXE,
+        groupType: EHexobjectGroup.TOOL,
+        isInteractable: true,
+        description: 'This is the Pickaxe! Use it to mine the resources. This tool can make damage! It is very durable.',
+        tool: {
+            durability: 100,
+            durabilityMax: 100,
+            capabilities: { canMine: true },
+        },
+        collision: EHexCollision.NONE,
+        spritePath: `src/assets/hex-assets/hex-tools/${HEXOBJECT_KEYS.PICKAXE}-token-image.png`,
+    },
+
     [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
         hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
         groupType: EHexobjectGroup.CONSTRUCTION,
@@ -165,6 +179,18 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
         },
         collision: EHexCollision.SOLID,
         spritePath: 'src/assets/hex-assets/hex-constructs/camping-token-image.png',
+    },
+
+    [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
+        hexobjectKey: HEXOBJECT_KEYS.CAVE_ENTRANCE,
+        groupType: EHexobjectGroup.CONSTRUCTION,
+        isInteractable: true,
+        description: 'This is the Cave',
+        construction: {
+            integrity: 1000
+        },
+        collision: EHexCollision.SOLID,
+        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.CAVE_ENTRANCE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.HOMELAND_GATE]: {

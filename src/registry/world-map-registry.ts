@@ -3,7 +3,7 @@ import type { TFogPolicy } from "@/a-game-scenes/map-scene/models/hex-map-model"
 import { HexMapProvider } from "@/a-game-scenes/map-scene/providers/hex-map-provider";
 import {HEXOBJECT_KEYS, THexobjectKey} from "@/registry/hexobjects-registry";
 
-export type LocationKey = "camping" | "homeland";
+export type LocationKey = "camping" | "homeland" | "cave";
 
 export type MapDefinition = {
     key: LocationKey;
@@ -28,6 +28,14 @@ export class MapRegistry {
             key: "homeland",
             title: 'Silesia',
             create: () => HexMapProvider.getHomeLand(),
+            entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
+            safeZoneRadius: 1,
+            fogPolicy: 'FOG'
+        },
+        cave: {
+            key: "cave",
+            title: 'Skeletor Kingdom',
+            create: () => HexMapProvider.getSkeletorsKingdom(),
             entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
             safeZoneRadius: 1,
             fogPolicy: 'FOG'
