@@ -13,6 +13,5 @@ export interface IHexMapPlacement {
     coordinates: IHexCoordinates[];
     entry?: {
         type: "DEFAULT" | "SECRET";
-        spawn?: "remember" | "default";
     };
 }

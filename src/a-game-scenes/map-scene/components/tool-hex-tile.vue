@@ -137,18 +137,14 @@ function executeAction() {
       gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
 
       const worldStore = useWorldMapStore();
-      worldStore.goToLocation(meta.enter.locationKey, { spawn: meta.enter.spawn });
+      worldStore.goToLocation(meta.enter.locationKey);
 
       const locationKey = meta?.enter?.locationKey;
       if (!locationKey) return;
 
-      // якщо хочеш ще spawn — прокинемо в query
-      const spawn = meta.enter.spawn;
-
       router.push({
         name: ROUTES.WORLD,
         params: { locationKey },
-        query: spawn ? { spawn: String(spawn) } : undefined,
       });
 
       return;

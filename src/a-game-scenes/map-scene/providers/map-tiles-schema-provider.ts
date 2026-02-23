@@ -90,6 +90,9 @@ export const skeletorsKingdomMapConfig: IHexMapPlacement[] = [
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE },
         coordinates: [{ rowIndex: 2, columnIndex: 0 }],
+        entry: {
+            type: "DEFAULT"
+        }
     },
     {
         hexobject: {hexobjectKey: HEXOBJECT_KEYS.SKELETOR},

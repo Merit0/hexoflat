@@ -123,7 +123,7 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
     },
     [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
         key: HEXOBJECT_KEYS.CAVE_ENTRANCE,
-        title: "Cave",
+        title: "Cave Entrance",
         subtitle: "Cave with skeletons",
         actions: {
             [EHexActionType.ENTER]: {
