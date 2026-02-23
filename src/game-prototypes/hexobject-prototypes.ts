@@ -96,7 +96,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowAt: null,
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-resources/${}-token-image.png`,
+        spritePath: `src/assets/hex-assets/hex-resources/${HEXOBJECT_KEYS.ROCK}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.SKELETOR]: {
