@@ -29,7 +29,7 @@ import {ACTION_TYPE_MAP} from "@/registry/action-starters-registry";
 import {ExecuteHexActionFeature} from "@/features/execute-hex-action-feature";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HEXOBJECT_META} from "@/registry/hexobject-meta";
-import router from "@/router";
+import router, {ROUTES} from "@/router";
 import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";
 
@@ -139,17 +139,19 @@ function executeAction() {
       const worldStore = useWorldMapStore();
       worldStore.goToLocation(meta.enter.locationKey, { spawn: meta.enter.spawn });
 
+      const locationKey = meta?.enter?.locationKey;
+      if (!locationKey) return;
+
+      // якщо хочеш ще spawn — прокинемо в query
+      const spawn = meta.enter.spawn;
+
+      router.push({
+        name: ROUTES.WORLD,
+        params: { locationKey },
+        query: spawn ? { spawn: String(spawn) } : undefined,
+      });
+
       return;
-    }
-
-    const route = meta?.route;
-    if (route?.name) {
-      gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
-
-      const payload = route.build?.(key) ?? {};
-      router.push({ name: route.name, ...payload }).catch(() => {});
-    } else {
-      router.push({ name: "construction", query: { key } }).catch(() => {});
     }
 
     return;
@@ -163,7 +165,7 @@ function executeAction() {
   }
 }
 
-const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
+const toolClass = computed(() => props.tool ?? "hand");
 </script>
 
 <style scoped>
@@ -190,14 +192,21 @@ const toolClass = computed(() => (props.tool === "axe" ? "axe" : "hand"));
 }
 
 .tool-hex-tile.hand {
-  background-image: url("@/assets/hex-assets/hex-tools/hand-hex-image.png");
+  background-image: url("/hex-assets/hex-tools/hand-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .tool-hex-tile.axe {
-  background-image: url("@/assets/hex-assets/hex-tools/axe-hex-image.png");
+  background-image: url("/hex-assets/hex-tools/axe-hex-image.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.tool-hex-tile.pickaxe {
+  background-image: url("/hex-assets/hex-tools/pickaxe-token-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

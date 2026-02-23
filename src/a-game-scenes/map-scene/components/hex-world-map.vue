@@ -47,11 +47,24 @@ import { useHeroToolStore } from "@/stores/hero-tool-store";
 import {resolveActions, ResolvedAction} from "@/game-resolvers/interactions-resolver";
 import HeroDetailsTopBar from "@/a-game-scenes/map-scene/components/hero-details-top-bar.vue";
 import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue";
+import {LocationKey} from "@/registry/world-map-registry";
+
+const props = defineProps<{
+  locationKey: LocationKey;
+}>();
 
 const { handleTileClick } = useTileClick();
 const worldStore = useWorldMapStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
+
+watch(
+    () => props.locationKey,
+    (locationKey) => {
+      worldStore.goToLocation(locationKey);
+    },
+    { immediate: true }
+);
 
 onMounted(() => worldStore.bootstrapWorld());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
@@ -197,7 +210,7 @@ onBeforeUnmount(() => {
   height: 100vh;
   padding-top: 5%;
 
-  background-image: url("@/assets/board-assets/dark-board-stones.png");
+  background-image: url("/board-assets/dark-board-stones.png");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;

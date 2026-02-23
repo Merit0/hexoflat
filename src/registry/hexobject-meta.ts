@@ -28,7 +28,6 @@ export interface HexobjectMeta {
     enter?: {
         type: "WORLD";
         locationKey: LocationKey;
-        spawn?: "remember" | "default";
     };
 
     route?: {
@@ -104,7 +103,6 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
         enter: {
             type: "WORLD",
             locationKey: "camping",
-            spawn: "default",
         },
     },
     [HEXOBJECT_KEYS.HOMELAND_GATE]: {
@@ -120,8 +118,7 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
         },
         enter: {
             type: "WORLD",
-            locationKey: "homeland",
-            spawn: "default",
+            locationKey: "silesia",
         },
     },
     [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
@@ -138,7 +135,6 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
         enter: {
             type: "WORLD",
             locationKey: "cave",
-            spawn: "remember"
         },
     },
 };

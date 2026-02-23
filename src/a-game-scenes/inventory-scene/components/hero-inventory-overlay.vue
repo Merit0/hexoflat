@@ -230,21 +230,21 @@ function useSelectedTool() {
 }
 
 .hex-tile.hand {
-  background-image: url("@/assets/hex-assets/hex-tools/hand-hex-image.png");
+  background-image: url("/hex-assets/hex-tools/hand-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .hex-tile.axe {
-  background-image: url("@/assets/hex-assets/hex-tools/axe-hex-image.png");
+  background-image: url("/hex-assets/hex-tools/axe-hex-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .hex-tile.pickaxe {
-  background-image: url("@/assets/hex-assets/hex-tools/pickaxe-token-image.png");
+  background-image: url("/hex-assets/hex-tools/pickaxe-token-image.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

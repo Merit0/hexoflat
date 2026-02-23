@@ -26,6 +26,7 @@ const emit = defineEmits<{
   (e: "tile-click", tile: IHexTile): void;
 }>();
 
+const EMPTY_TILE_URL = "/hex-assets/hex-tiles/empty-tile-image.png";
 const heroToolStore = useHeroToolStore();
 const GRID_COLUMNS = 42;
 const tileWidth = window.innerWidth / GRID_COLUMNS;
@@ -57,11 +58,11 @@ function onEnter() {
 
 function getHexTileImage(tile: IHexTile) {
   const img = tile.isRevealed
-      ? (tile.hexobject?.spritePath || "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/empty-tile-image.png")
-      : "src/a-game-scenes/map-scene/assets/hex-tile-terrain-images/empty-tile-image.png";
+      ? (tile.hexobject?.spritePath || EMPTY_TILE_URL)
+      : EMPTY_TILE_URL;
 
   return {
-    backgroundImage: `url(${img})`,
+    backgroundImage: `url("${img}")`,
     backgroundSize: "cover",
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
@@ -70,8 +71,8 @@ function getHexTileImage(tile: IHexTile) {
 
 function getHexTileBackgroundStyle(tile: IHexTile) {
   const img = tile.isRevealed
-      ? (tile.hexBackgroundImagePath || "src/assets/hex-assets/token-placement-image.png")
-      : "src/assets/hex-assets/hex-effects/fog-tile-image.png";
+      ? (tile.hexBackgroundImagePath || "/hex-assets/token-placement-image.png")
+      : "/hex-assets/hex-effects/fog-tile-image.png";
 
   return {
     backgroundImage: `url(${img})`,

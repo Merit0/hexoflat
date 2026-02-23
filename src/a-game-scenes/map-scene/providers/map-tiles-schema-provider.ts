@@ -53,7 +53,6 @@ export const homelandMapConfig: IHexMapPlacement[] = [
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE },
         coordinates: [{ rowIndex: 5, columnIndex: 13 }],
-        entry: { type: "DEFAULT", spawn: "default" },
     },
 ];
 
@@ -61,7 +60,6 @@ export const campingMapConfig: IHexMapPlacement[] = [
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE },
         coordinates: [{ rowIndex: 0, columnIndex: 1 }],
-        entry: { type: "DEFAULT", spawn: "default" },
     },
     {
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.FIREPLACE },

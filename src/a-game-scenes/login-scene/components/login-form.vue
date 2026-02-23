@@ -54,7 +54,7 @@
 import {useUserStore} from "@/stores/user-store";
 import {defineComponent, reactive, ref, onMounted} from 'vue';
 import { useRouter } from "vue-router";
-import { ROUTES } from "@/router/routes";
+import {ROUTES} from "@/router";
 
 export default defineComponent({
   name: "LoginForm",
@@ -79,8 +79,10 @@ export default defineComponent({
         form.username = '';
         form.password = '';
 
-        // ✅ go to world scene
-        await router.replace({ name: ROUTES.WORLD });
+        await router.replace({
+          name: ROUTES.WORLD,
+          params: { locationKey: "camping" },
+        });
       } catch (error) {
         console.error('Login failed:', error);
       } finally {

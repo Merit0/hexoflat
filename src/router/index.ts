@@ -1,21 +1,15 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 import { useUserStore } from "@/stores/user-store";
 
-// lazy-load
 const LoginPage = () => import("@/a-game-scenes/login-scene/components/login-page.vue");
 const HexWorldMap = () => import("@/a-game-scenes/map-scene/components/hex-world-map.vue");
 // const BattlePage = () => import("@/a-game-scenes/battle-scene/components/battle-page.vue"); // якщо є
 
 export const ROUTES = {
     LOGIN: "login",
-
-    // ✅ Single world route (all maps inside)
     WORLD: "world",
-
     BATTLE: "battle",
 } as const;
-
-export type RouteName = typeof ROUTES[keyof typeof ROUTES];
 
 const routes: RouteRecordRaw[] = [
     {
@@ -28,22 +22,20 @@ const routes: RouteRecordRaw[] = [
         component: LoginPage,
         meta: { requiresAuth: false },
     },
-
-    /**
-     * ✅ World scene (camping / homeland / ...)
-     * location перемикається через worldStore.goToLocation()
-     */
     {
-        path: "/world",
+        path: "/world/:locationKey?",
         name: ROUTES.WORLD,
         component: HexWorldMap,
+        props: (route) => ({
+            locationKey: (route.params.locationKey as string | undefined) ?? "camping",
+        }),
         meta: { requiresAuth: true },
     },
 
     {
         path: "/battle",
         name: ROUTES.BATTLE,
-        component: null, // TODO: заміниш на BattlePage коли буде
+        component: null,
         meta: { requiresAuth: true },
     },
 

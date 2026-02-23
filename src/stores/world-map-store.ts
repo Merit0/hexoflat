@@ -70,7 +70,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         // NAVIGATION
         // ======================================================
 
-        goToLocation(locationKey: LocationKey, opts?: { spawn?: "remember" | "default" }) {
+        goToLocation(locationKey: LocationKey) {
             const heroStore = useHeroStore();
 
             if (this.currentMapId && this.heroCoordinates) {
@@ -83,10 +83,9 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             if (!this.currentMapId) return;
 
-            const shouldUseRemembered = opts?.spawn !== "default";
             const remembered = heroStore.nav.positionByMapId[this.currentMapId];
 
-            if (remembered && shouldUseRemembered) {
+            if (remembered) {
                 this.heroCoordinates = { ...remembered };
             } else {
                 this.placeHeroAtEntry(locationKey);

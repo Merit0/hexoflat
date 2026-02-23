@@ -15,7 +15,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-resources/tree-hex-image.png',
+        spritePath: '/hex-assets/hex-resources/tree-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.COINS]: {
@@ -31,7 +31,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-loot/coins-token-image.png',
+        spritePath: '/hex-assets/hex-loot/coins-token-image.png',
     },
 
     [HEXOBJECT_KEYS.HEALTH_BOTTLE]: {
@@ -47,7 +47,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_BOTTLE}-token-image.png`,
+        spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_BOTTLE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.ENERGY_BOTTLE]: {
@@ -63,7 +63,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_BOTTLE}-token-image.png`,
+        spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_BOTTLE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.MANA_BOTTLE]: {
@@ -79,7 +79,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             },
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_BOTTLE}-token-image.png`,
+        spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_BOTTLE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.ROCK]: {
@@ -96,7 +96,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             regrowAt: null,
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-resources/${HEXOBJECT_KEYS.ROCK}-token-image.png`,
+        spritePath: `/hex-assets/hex-resources/${HEXOBJECT_KEYS.ROCK}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.SKELETOR]: {
@@ -110,7 +110,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             faction: "enemy"
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/enemy-assets/boss-hex-images/skeletor-token-image.png',
+        spritePath: '/enemy-assets/boss-hex-images/skeletor-token-image.png',
     },
 
     [HEXOBJECT_KEYS.EMITTER]: {
@@ -124,7 +124,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             faction: "enemy"
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/enemy-assets/boss-hex-images/emitter-token-image.png',
+        spritePath: '/enemy-assets/boss-hex-images/emitter-token-image.png',
     },
 
     [HEXOBJECT_KEYS.INFERNO]: {
@@ -138,7 +138,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             faction: "enemy"
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/enemy-assets/boss-hex-images/inferno-token-image.png',
+        spritePath: '/enemy-assets/boss-hex-images/inferno-token-image.png',
     },
 
     [HEXOBJECT_KEYS.AXE]: {
@@ -152,7 +152,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             capabilities: { canCut: true },
         },
         collision: EHexCollision.NONE,
-        spritePath: 'src/assets/enemy-assets/boss-hex-images/axe-hex-image.png',
+        spritePath: '/enemy-assets/boss-hex-images/axe-hex-image.png',
     },
 
     [HEXOBJECT_KEYS.PICKAXE]: {
@@ -166,7 +166,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             capabilities: { canMine: true },
         },
         collision: EHexCollision.NONE,
-        spritePath: `src/assets/hex-assets/hex-tools/${HEXOBJECT_KEYS.PICKAXE}-token-image.png`,
+        spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.PICKAXE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
@@ -178,7 +178,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-constructs/camping-token-image.png',
+        spritePath: '/hex-assets/hex-constructs/camping-token-image.png',
     },
 
     [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
@@ -190,7 +190,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.CAVE_ENTRANCE}-token-image.png`,
+        spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.CAVE_ENTRANCE}-token-image.png`,
     },
 
     [HEXOBJECT_KEYS.HOMELAND_GATE]: {
@@ -202,7 +202,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: 'src/assets/hex-assets/hex-constructs/map-token-image.png',
+        spritePath: '/hex-assets/hex-constructs/map-token-image.png',
     },
     [HEXOBJECT_KEYS.FIREPLACE]: {
         hexobjectKey: HEXOBJECT_KEYS.FIREPLACE,
@@ -213,7 +213,7 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.FIREPLACE}-token-image.png`,
+        spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.FIREPLACE}-token-image.png`,
     },
     [HEXOBJECT_KEYS.WOOD_AND_LEAVES]: {
         hexobjectKey: HEXOBJECT_KEYS.WOOD_AND_LEAVES,
@@ -224,6 +224,6 @@ export const HEX_OBJECT_PROTOTYPES: Record<THexobjectKey, THexobjectPrototype> =
             integrity: 1000
         },
         collision: EHexCollision.SOLID,
-        spritePath: `src/assets/hex-assets/hex-constructs/${HEXOBJECT_KEYS.WOOD_AND_LEAVES}-token-image.png`,
+        spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.WOOD_AND_LEAVES}-token-image.png`,
     },
 };

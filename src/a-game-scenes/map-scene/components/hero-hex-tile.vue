@@ -37,7 +37,7 @@ const openInventory = () => {
   position: absolute;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
-  background-image: url("@/assets/hero-asssets/spirit-hex-image.png");
+  background-image: url("/hero-asssets/spirit-hex-image.png");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
