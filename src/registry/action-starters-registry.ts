@@ -124,7 +124,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         }
 
         const cap = getToolCapabilities(tool);
-        if (!cap.canCut) return {ok: false, message: "Need something to mine with!"};
+        if (!cap.canMine) return {ok: false, message: "Need something to mine with!"};
 
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);

@@ -67,7 +67,7 @@ export const HEXOBJECT_META: Record<THexobjectKey, HexobjectMeta> = {
                 durabilityCostPct: 0.1,
             },
         },
-        yields: { stone: 1 },
+        yields: { stone: 10 },
     },
 
     [HEXOBJECT_KEYS.COINS]: {

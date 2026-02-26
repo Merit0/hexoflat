@@ -19,6 +19,7 @@ export interface HeroToolState {
     lockedUntil: number | null;
 
     treesCut: number; //todo:
+    stoneCollected: number; //todo:
 }
 
 export const useHeroToolStore = defineStore("heroTool", {
@@ -38,6 +39,7 @@ export const useHeroToolStore = defineStore("heroTool", {
         durabilityMax: 100,
 
         treesCut: 0,
+        stoneCollected: 0,
     }),
 
     getters: {
@@ -132,6 +134,10 @@ export const useHeroToolStore = defineStore("heroTool", {
 
         addTreeCut(amount = 1) {
             this.treesCut += amount;
+        },
+
+        collectStones(amount = 1) {
+            this.stoneCollected += amount;
         },
 
         /**

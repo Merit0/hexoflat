@@ -13,6 +13,12 @@
         </div>
 
         <div class="res-chip">
+          <span class="res-icon">X</span>
+          <span class="res-name">Stone</span>
+          <span class="res-value">{{ stone }}</span>
+        </div>
+
+        <div class="res-chip">
           <span class="res-icon">🪙</span>
           <span class="res-name">Coins</span>
           <span class="res-value">{{ coins }}</span>
@@ -87,6 +93,7 @@ const gathering = useGatheringStore();
 
 const wood = computed(() => gathering.getCount(HEXOBJECT_KEYS.TREE));   // або WOOD key, якщо заведеш окремо
 const coins = computed(() => gathering.getCount(HEXOBJECT_KEYS.COINS));
+const stone = computed(() => gathering.getCount(HEXOBJECT_KEYS.ROCK));
 
 function closeInventory() {
   selectedTool.value = null;

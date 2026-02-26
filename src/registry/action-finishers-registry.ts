@@ -65,6 +65,26 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         return true;
     },
 
+    [EHexActionType.MINE]: (tile, action, ctx) => {
+        if (handleCancelled(action, ctx)) return true;
+
+        const gathering = useGatheringStore();
+        const meta = HEXOBJECT_META[action.hexobjectKey];
+        const stone = meta?.yields?.stone ?? 0;
+        logAction(`Mine the ${stone} ${tile.hexobject.hexobjectKey}`);
+        gathering.add(action.hexobjectKey, stone);
+
+        // consumeTileHexobject(tile);
+
+        if (stone > 0 && ctx.heroToolStore.stoneCollected) {
+            ctx.heroToolStore.collectStones(stone);
+        }
+
+        scheduleRespawn(tile, ctx.now);
+        ensureUnlocked(ctx);
+        return true;
+    },
+
     [EHexActionType.TAKE]: (tile, action, ctx) => {
         if (handleCancelled(action, ctx)) return true;
 
@@ -95,6 +115,5 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
 
     [EHexActionType.OPEN]: FINISH_UNLOCK_ONLY,
     [EHexActionType.ENTER]: FINISH_UNLOCK_ONLY,
-    [EHexActionType.MINE]: FINISH_UNLOCK_ONLY,
     [EHexActionType.ATTACK]: FINISH_UNLOCK_ONLY,
 };

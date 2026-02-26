@@ -51,7 +51,7 @@ const gameEventsStore = useGameEventsStore();
 const isWorking = computed(() => {
   const tile = hoveredTile.value;
   const a = tile?.pendingAction;
-  return !!a && a.type === "CUT" && now.value < a.endsAt;
+  return (!!a && a.type === "CUT" || !!a && a.type === "MINE") && now.value < a.endsAt;
 });
 
 const posStyle = computed(() => {
