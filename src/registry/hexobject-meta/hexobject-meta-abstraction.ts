@@ -1,9 +1,15 @@
 import {EHexActionType} from "@/enums/hex-action-type";
 import {HeroToolType} from "@/enums/hero-tool-type";
 import {LocationKey} from "@/registry/world-map-registry";
+import {THexobjectKey} from "@/registry/hexobjects-registry";
+
+export type THexYieldKey = "wood" | "coins" | "stone";
+export type THexYields = Partial<Record<THexYieldKey, number>> & {
+    [key: string]: number | undefined;
+};
 
 export interface IHexobjectMeta {
-    key: string;
+    key: THexobjectKey;
 
     // UI
     title: string;
@@ -18,11 +24,7 @@ export interface IHexobjectMeta {
     }>>;
 
     // rewards
-    yields?: {
-        wood?: number;
-        coins?: number;
-        stone?: number;
-    };
+    yields?: THexYields;
 
     enter?: {
         type: "WORLD";
@@ -32,8 +34,8 @@ export interface IHexobjectMeta {
     route?: {
         name: string;
         build?: (key: string) => {
-            params?: Record<string, any>;
-            query?: Record<string, any>;
+            params?: Record<string, unknown>;
+            query?: Record<string, unknown>;
         };
     };
 }
