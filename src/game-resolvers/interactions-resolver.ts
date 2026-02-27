@@ -6,7 +6,7 @@ import {
 } from "@/abstraction/hexobject-abstraction";
 import { HeroToolType } from "@/enums/hero-tool-type";
 import { EHexActionType } from "@/enums/hex-action-type";
-import { HEXOBJECT_META, HexobjectMeta } from "@/registry/hexobject-meta";
+import { HEXOBJECT_META, HexobjectMeta } from "@/registry/hexobject-meta/hexobject-meta";
 import type { RouteLocationRaw } from "vue-router";
 
 export interface ToolCapabilities {

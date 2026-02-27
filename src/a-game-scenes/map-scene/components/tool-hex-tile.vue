@@ -28,7 +28,7 @@ import {useWorldMapStore} from "@/stores/world-map-store";
 import {ACTION_TYPE_MAP} from "@/registry/action-starters-registry";
 import {ExecuteHexActionFeature} from "@/features/execute-hex-action-feature";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta/hexobject-meta";
 import router, {ROUTES} from "@/router";
 import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";

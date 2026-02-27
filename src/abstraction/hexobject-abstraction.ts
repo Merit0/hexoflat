@@ -15,7 +15,6 @@ export interface IResourceTraits {
     cuttable?: boolean;
     mineable?: boolean;
     pickable?: boolean;
-    requiresTool?: boolean;
 }
 
 interface IDurable {
@@ -39,6 +38,9 @@ export interface IResource extends ITraitable<IResourceTraits>{
     regrowMs?: number | null;
     regrowAt?: number | null;
     amount?: number;
+    maxAmount: number;
+    requiredToolKey?: THexobjectKey | null;
+    traits: IResourceTraits;
 }
 
 export interface ILoot extends ITraitable<ILootTraits>{
