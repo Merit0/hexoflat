@@ -2,7 +2,7 @@ import {EHexActionType} from "@/enums/hex-action-type";
 import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import type {IPendingTileAction} from "@/abstraction/hex-tile-abstraction";
 import {IActionContext} from "@/abstraction/abstract-action";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta/hexobject-meta";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import {useGatheringStore} from "@/stores/gathering-store";
 import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";

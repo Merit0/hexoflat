@@ -6,8 +6,9 @@ import {
 } from "@/abstraction/hexobject-abstraction";
 import { HeroToolType } from "@/enums/hero-tool-type";
 import { EHexActionType } from "@/enums/hex-action-type";
-import { HEXOBJECT_META, HexobjectMeta } from "@/registry/hexobject-meta/hexobject-meta";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import type { RouteLocationRaw } from "vue-router";
+import {IHexobjectMeta} from "@/registry/hexobject-meta/hexobject-meta-abstraction";
 
 export interface ToolCapabilities {
     canCut?: boolean;
@@ -62,7 +63,7 @@ function labelFromMeta(obj: THexobject, action: EHexActionType, fallback: string
     const key = obj.hexobjectKey;
     if (!key) return fallback;
 
-    const meta: HexobjectMeta = HEXOBJECT_META[key];
+    const meta: IHexobjectMeta = HEXOBJECT_META[key];
     return meta?.actions?.[action]?.label ?? fallback;
 }
 

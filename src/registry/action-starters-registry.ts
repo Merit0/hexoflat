@@ -3,7 +3,7 @@ import {HeroToolType} from "@/enums/hero-tool-type";
 import {EHexActionType} from "@/enums/hex-action-type";
 import {EHexobjectGroup, IResourceTraits} from "@/abstraction/hexobject-abstraction";
 import {getToolCapabilities, ResolvedActionType} from "@/game-resolvers/interactions-resolver";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta/hexobject-meta";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 
 export type StartResult =
