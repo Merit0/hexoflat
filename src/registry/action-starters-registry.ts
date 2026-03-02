@@ -5,6 +5,10 @@ import {EHexobjectGroup, IResourceTraits} from "@/abstraction/hexobject-abstract
 import {getToolCapabilities, ResolvedActionType} from "@/game-resolvers/interactions-resolver";
 import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
+import {useWorldMapStore} from "@/stores/world-map-store";
+import router, {ROUTES} from "@/router";
+import {useGameEventsStore} from "@/stores/game-events-store";
+import {useHeroStore} from "@/stores/hero-store";
 
 export type StartResult =
     | { ok: true; endsAt: number }
@@ -27,14 +31,14 @@ function isBusy(tile: HexTileModel, now: number): boolean {
     return false;
 }
 
-export type WorldResolvedActionType = Exclude<ResolvedActionType, "ENTER">;
 
-export const ACTION_TYPE_MAP: Record<WorldResolvedActionType, EHexActionType> = {
+export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
     CUT: EHexActionType.CUT,
     MINE: EHexActionType.MINE,
     TAKE: EHexActionType.TAKE,
     OPEN: EHexActionType.OPEN,
     ATTACK: EHexActionType.ATTACK,
+    ENTER: EHexActionType.ENTER,
 };
 
 export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
@@ -153,23 +157,23 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     [EHexActionType.TAKE]: (tile, tool, now) => {
         const obj = tile.hexobject;
 
-        if (!obj) return { ok: false, message: "Hex has no object!" };
-        if (!obj.isInteractable) return { ok: false, message: "HexObject is not interactable! Can't take it!" };
-        if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
+        if (!obj) return {ok: false, message: "Hex has no object!"};
+        if (!obj.isInteractable) return {ok: false, message: "HexObject is not interactable! Can't take it!"};
+        if (isBusy(tile, now)) return {ok: false, message: "Tile is busy!"};
 
         if (obj.groupType === EHexobjectGroup.RESOURCE) {
             if (!obj.resource?.isAvailable) {
-                return { ok: false, message: "Resource is not available!" };
+                return {ok: false, message: "Resource is not available!"};
             }
 
             const traits: IResourceTraits = obj.resource?.traits ?? {};
             if (!traits.pickable) {
                 console.warn("Resource is not pickable by hand:", obj.hexobjectKey);
-                return { ok: false, message: "This resource cannot be taken by hand!" };
+                return {ok: false, message: "This resource cannot be taken by hand!"};
             }
         } else if (obj.groupType === EHexobjectGroup.LOOT) {
         } else {
-            return { ok: false, message: "Unknown Hexobject type!" };
+            return {ok: false, message: "Unknown Hexobject type!"};
         }
 
         const meta = HEXOBJECT_META[obj.hexobjectKey];
@@ -216,5 +220,39 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     [EHexActionType.OPEN]: (tile, _tool, now) => {
         if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
         return {ok: false, message: "OPEN is not implemented yet!"};
+    },
+
+    [EHexActionType.ENTER]: (tile, tool, now) => {
+        const heroToolStore = useHeroToolStore();
+        const heroStore = useHeroStore();
+        const gameEventsStore = useGameEventsStore();
+        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
+        const key = tile.hexobject?.hexobjectKey;
+        if (!key) return;
+
+        const meta = HEXOBJECT_META[key];
+
+        heroToolStore.clearResolvedActions();
+        heroToolStore.stopTool();
+
+        const heroName = heroStore.hero?.name ?? "Hero";
+        const destination = meta?.subtitle ?? key;
+
+        if (meta?.enter?.type === "WORLD") {
+            gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
+
+            const worldStore = useWorldMapStore();
+            worldStore.goToLocation(meta.enter.locationKey);
+
+            const locationKey = meta?.enter?.locationKey;
+            if (!locationKey) return;
+
+            router.push({
+                name: ROUTES.WORLD,
+                params: {locationKey},
+            });
+        }
+        const endsAt = now + 100;
+        return {ok: true, endsAt};
     },
 };

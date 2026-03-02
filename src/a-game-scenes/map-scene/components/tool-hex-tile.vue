@@ -28,10 +28,6 @@ import {useWorldMapStore} from "@/stores/world-map-store";
 import {ACTION_TYPE_MAP} from "@/registry/action-starters-registry";
 import {ExecuteHexActionFeature} from "@/features/execute-hex-action-feature";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta";
-import router, {ROUTES} from "@/router";
-import {useHeroStore} from "@/stores/hero-store";
-import {useGameEventsStore} from "@/stores/game-events-store";
 
 const props = defineProps<{
   coord: IHexCoordinates | null;
@@ -45,8 +41,6 @@ const emit = defineEmits<{
 
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
-const heroStore = useHeroStore();
-const gameEventsStore = useGameEventsStore();
 
 const isWorking = computed(() => {
   const tile = hoveredTile.value;
@@ -93,7 +87,6 @@ const actionHint = computed(() => {
   return best?.label ?? null;
 });
 
-// --- timer для countdown
 const now = ref(Date.now());
 let timer: number | null = null;
 
@@ -119,39 +112,8 @@ function executeAction() {
   const tool = props.tool;
   const actions = resolveActions(tool, tile.hexobject);
   const bestAction = actions.slice().sort((a, b) => b.priority - a.priority)[0];
+
   if (!bestAction) return;
-
-  if (bestAction.actioType === "ENTER") {
-    const key = tile.hexobject?.hexobjectKey;
-    if (!key) return;
-
-    const meta = HEXOBJECT_META[key];
-
-    heroToolStore.clearResolvedActions();
-    heroToolStore.stopTool();
-
-    const heroName = heroStore.hero?.name ?? "Hero";
-    const destination = meta?.subtitle ?? key;
-
-    if (meta?.enter?.type === "WORLD") {
-      gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
-
-      const worldStore = useWorldMapStore();
-      worldStore.goToLocation(meta.enter.locationKey);
-
-      const locationKey = meta?.enter?.locationKey;
-      if (!locationKey) return;
-
-      router.push({
-        name: ROUTES.WORLD,
-        params: { locationKey },
-      });
-
-      return;
-    }
-
-    return;
-  }
 
   const actionType = ACTION_TYPE_MAP[bestAction.actioType];
   const res = new ExecuteHexActionFeature(tile).execute(actionType, tool);
