@@ -4,11 +4,11 @@
       <button class="hide-btn" @click.stop="emit('hide')">HIDE</button>
 
       <button
-          v-if="actionHint && !isWorking"
+          v-if="bestActionLabel && !isWorking"
           class="do-btn"
           @click.stop="executeAction"
       >
-        {{ actionHint }}
+        {{ bestActionLabel }}
       </button>
 
       <div v-if="isWorking" class="time-chip label">{{ secondsLeft }}s</div>
@@ -17,20 +17,17 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref} from "vue";
-import type {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import {calcHexPixelPosition} from "@/utils/hex-utils";
-import {HeroToolType} from "@/enums/hero-tool-type";
-
-import {useHeroToolStore} from "@/stores/hero-tool-store";
-import {resolveActions} from "@/game-resolvers/interactions-resolver";
-import {useWorldMapStore} from "@/stores/world-map-store";
-import {ACTION_TYPE_MAP} from "@/registry/action-starters-registry";
-import {ExecuteHexActionFeature} from "@/features/execute-hex-action-feature";
-import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { calcHexPixelPosition } from "@/utils/hex-utils";
+import { HeroToolType } from "@/enums/hero-tool-type";
+import { useHeroToolStore } from "@/stores/hero-tool-store";
+import { resolveActions } from "@/game-resolvers/interactions-resolver";
+import { useWorldMapStore } from "@/stores/world-map-store";
+import { ACTION_TYPE_MAP } from "@/registry/action-starters-registry";
+import { ExecuteHexActionFeature } from "@/features/execute-hex-action-feature";
+import { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 const props = defineProps<{
-  coord: IHexCoordinates | null;
   tileWidth: number;
   tool: HeroToolType;
 }>();
@@ -42,88 +39,132 @@ const emit = defineEmits<{
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 
-const isWorking = computed(() => {
-  const tile = hoveredTile.value;
-  const a = tile?.pendingAction;
-  return (!!a && a.type === "CUT" || !!a && a.type === "MINE") && now.value < a.endsAt;
-});
-
-const posStyle = computed(() => {
-  if (!props.coord || !props.tool) return {display: "none"} as Record<string, string>;
-
-  const pseudoTile = {coordinates: props.coord} as any;
-  const {x, y} = calcHexPixelPosition(pseudoTile, props.tileWidth);
-
-  const ix = Math.round(x);
-  const iy = Math.round(y);
-
-  return {
-    transform: `translate(${ix}px, ${iy}px)`
-  };
-});
-
-const hoveredTile = computed(() => {
-  const c = props.coord;
-  if (!c || !worldMapStore.map) return null;
+/** ---------------------------
+ *  Tile lookup
+ *  -------------------------- */
+const hoveredTile = computed<HexTileModel | null>(() => {
+  const c = heroToolStore.hover;
+  const map = worldMapStore.map;
+  if (!c || !map) return null;
 
   return (
-      worldMapStore.map.tiles.find(
+      (map.tiles.find(
           (t: any) =>
               t.coordinates.columnIndex === c.columnIndex &&
               t.coordinates.rowIndex === c.rowIndex
-      ) ?? null
+      ) as HexTileModel | undefined) ?? null
   );
 });
 
-const actionHint = computed(() => {
-  const tile = hoveredTile.value;
-  if (!tile?.hexobject) return null;
+/** ---------------------------
+ *  Position style
+ *  -------------------------- */
+const posStyle = computed(() => {
+  if (!heroToolStore.hover) return { display: "none" } as Record<string, string>;
 
-  const tool: HeroToolType = props.tool ?? HeroToolType.HAND;
-  const actions = resolveActions(tool, tile.hexobject);
-  heroToolStore.setResolvedActions(actions);
+  const pseudoTile = { coordinates: heroToolStore.hover } as any;
+  const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
 
-  const best = actions.slice().sort((a, b) => b.priority - a.priority)[0];
-  return best?.label ?? null;
+  return {
+    transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
+  } as Record<string, string>;
 });
+
+/** ---------------------------
+ *  Tool class (normalized)
+ *  -------------------------- */
+const toolClass = computed((): "hand" | "axe" | "pickaxe" => {
+  const t = props.tool;
+  if (t === HeroToolType.AXE) return "axe";
+  if (t === HeroToolType.PICKAXE) return "pickaxe";
+  return "hand";
+});
+
+/** ---------------------------
+ *  Resolve actions (no side effects in computed)
+ *  -------------------------- */
+const resolvedActions = computed(() => {
+  const tile = hoveredTile.value;
+  if (!tile?.hexobject) return [];
+
+  const tool = props.tool ?? HeroToolType.HAND;
+  return resolveActions(tool, tile.hexobject) ?? [];
+});
+
+const bestAction = computed(() => {
+  const actions = resolvedActions.value;
+  if (!actions.length) return null;
+
+  return actions.reduce((best, a) => (!best || a.priority > best.priority ? a : best), null as any);
+});
+
+const bestActionLabel = computed(() => bestAction.value?.label ?? null);
+
+// update store in watch (clean)
+watch(
+    resolvedActions,
+    (actions) => {
+      heroToolStore.setResolvedActions(actions);
+    },
+    { immediate: true }
+);
+
+/** ---------------------------
+ *  Pending action + working state
+ *  -------------------------- */
+const pendingAction = computed(() => hoveredTile.value?.pendingAction ?? null);
 
 const now = ref(Date.now());
 let timer: number | null = null;
 
-onMounted(() => {
-  timer = window.setInterval(() => (now.value = Date.now()), 200);
-});
+watch(
+    () => pendingAction.value?.endsAt ?? null,
+    (endsAt) => {
+      if (timer) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+      if (!endsAt) return;
+
+      timer = window.setInterval(() => (now.value = Date.now()), 200);
+    },
+    { immediate: true }
+);
+
 onBeforeUnmount(() => {
   if (timer) window.clearInterval(timer);
 });
 
-const pendingAction = computed(() => hoveredTile.value?.pendingAction ?? null);
+const isWorking = computed(() => {
+  const a = pendingAction.value;
+  if (!a?.endsAt) return false;
+
+  return now.value < a.endsAt;
+});
 
 const secondsLeft = computed(() => {
   const a = pendingAction.value;
-  if (!a) return 0;
+  if (!a?.endsAt) return 0;
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
 });
 
+/** ---------------------------
+ *  Execute action
+ *  -------------------------- */
 function executeAction() {
-  const tile = hoveredTile.value as HexTileModel;
-  if (!tile?.hexobject) return;
+  const tile = hoveredTile.value;
+  const best = bestAction.value;
+  if (!tile?.hexobject || !best) return;
 
-  const tool = props.tool;
-  const actions = resolveActions(tool, tile.hexobject);
-  const bestAction = actions.slice().sort((a, b) => b.priority - a.priority)[0];
+  const actionType = ACTION_TYPE_MAP[best.actioType];
+  if (!actionType) return;
 
-  if (!bestAction) return;
-
-  const actionType = ACTION_TYPE_MAP[bestAction.actioType];
-  const res = new ExecuteHexActionFeature(tile).execute(actionType, tool);
+  const res = new ExecuteHexActionFeature(tile).execute(actionType, props.tool);
 
   if (res.ok) {
     worldMapStore.saveToStorage();
   }
 }
-
-const toolClass = computed(() => props.tool ?? "hand");
 </script>
 
 <style scoped>
@@ -141,7 +182,6 @@ const toolClass = computed(() => props.tool ?? "hand");
       0% 50%
   );
 
-
   z-index: 120;
   pointer-events: auto;
 
@@ -149,27 +189,20 @@ const toolClass = computed(() => props.tool ?? "hand");
   0 12px 28px rgba(0, 0, 0, 0.55);
 }
 
+/* tool skins */
 .tool-hex-tile.hand {
-  background-image: url("/hex-assets/hex-tools/hand-hex-image.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: url("/hex-assets/hex-tools/hand-hex-image.png") center/cover no-repeat;
 }
 
 .tool-hex-tile.axe {
-  background-image: url("/hex-assets/hex-tools/axe-hex-image.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: url("/hex-assets/hex-tools/axe-hex-image.png") center/cover no-repeat;
 }
 
 .tool-hex-tile.pickaxe {
-  background-image: url("/hex-assets/hex-tools/pickaxe-token-image.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: url("/hex-assets/hex-tools/pickaxe-token-image.png") center/cover no-repeat;
 }
 
+/* buttons */
 .hide-btn {
   opacity: 0;
   pointer-events: none;
@@ -203,26 +236,6 @@ const toolClass = computed(() => props.tool ?? "hand");
   transform: scale(0.96);
 }
 
-.action-chip {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-
-  padding: 6px 10px;
-  border-radius: 999px;
-
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #f2e9d3;
-
-  font-weight: 900;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-
-  pointer-events: none;
-}
-
 .do-btn {
   position: absolute;
   top: 10px;
@@ -246,45 +259,7 @@ const toolClass = computed(() => props.tool ?? "hand");
   transform: translateX(-50%) scale(0.98);
 }
 
-.spinner {
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  border: 4px solid rgba(255, 255, 255, 0.25);
-  border-top-color: rgba(255, 255, 255, 0.95);
-  animation: spin 0.8s linear infinite;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
-}
-
-.timer {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #f2e9d3;
-  font-weight: 900;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes tool-chop {
-  0% {
-    transform: translate(var(--tx), var(--ty)) rotate(-6deg) scale(1.02);
-  }
-  50% {
-    transform: translate(var(--tx), var(--ty)) rotate(7deg) scale(1.04);
-  }
-  100% {
-    transform: translate(var(--tx), var(--ty)) rotate(-6deg) scale(1.02);
-  }
-}
-
+/* pos wrapper */
 .tool-hex-pos {
   position: absolute;
   z-index: 120;
@@ -292,26 +267,21 @@ const toolClass = computed(() => props.tool ?? "hand");
   height: var(--hex-tile-height);
   pointer-events: auto;
 
-  transition: transform 120ms linear; /* linear краще за ease */
+  transition: transform 120ms linear;
   will-change: transform;
   transform: translateZ(0);
 }
 
+/* working anim */
 .tool-hex-tile.doing {
   animation: tool-chop 220ms ease-in-out infinite;
   scale: 0.70;
 }
 
 @keyframes tool-chop {
-  0% {
-    transform: rotate(-6deg) scale(1.02);
-  }
-  50% {
-    transform: rotate(7deg) scale(1.04);
-  }
-  100% {
-    transform: rotate(-6deg) scale(1.02);
-  }
+  0% { transform: rotate(-6deg) scale(1.02); }
+  50% { transform: rotate(7deg) scale(1.04); }
+  100% { transform: rotate(-6deg) scale(1.02); }
 }
 
 .time-chip {
