@@ -17,10 +17,8 @@
 
           <tool-hex-tile
               v-if="heroToolStore.isDragging && activeTool"
-              :coord="heroToolStore.hover"
               :tileWidth="tileWidth"
               :tool="activeTool"
-              :actionHint="heroToolStore.hintLabel || undefined"
               @hide="onHide"
           />
 

@@ -27,10 +27,10 @@
       <div class="hex-tools">
         <div
             class="hex-tile hand"
-            :class="{ selected: selectedTool === HeroToolType.HAND }"
-            @click="selectTool(HeroToolType.HAND)"
+            :class="{ selected: selectedTool === HEXOBJECT_KEYS.HAND }"
+            @click="selectTool(HEXOBJECT_KEYS.HAND)"
         >
-          <span v-if="selectedTool !== HeroToolType.HAND" class="hex-label"></span>
+          <span v-if="selectedTool !== HEXOBJECT_KEYS.HAND" class="hex-label"></span>
           <button
               v-else
               class="hex-use-btn"
@@ -41,10 +41,10 @@
         </div>
         <div
             class="hex-tile axe"
-            :class="{ selected: selectedTool === HeroToolType.AXE }"
-            @click="selectTool(HeroToolType.AXE)"
+            :class="{ selected: selectedTool === HEXOBJECT_KEYS.AXE }"
+            @click="selectTool(HEXOBJECT_KEYS.AXE)"
         >
-          <span v-if="selectedTool !== HeroToolType.AXE" class="hex-label"></span>
+          <span v-if="selectedTool !== HEXOBJECT_KEYS.AXE" class="hex-label"></span>
 
           <button
               v-else
@@ -56,10 +56,10 @@
         </div>
         <div
             class="hex-tile pickaxe"
-            :class="{ selected: selectedTool === HeroToolType.PICKAXE }"
-            @click="selectTool(HeroToolType.PICKAXE)"
+            :class="{ selected: selectedTool === HEXOBJECT_KEYS.PICKAXE }"
+            @click="selectTool(HEXOBJECT_KEYS.PICKAXE)"
         >
-          <span v-if="selectedTool !== HeroToolType.PICKAXE" class="hex-label"></span>
+          <span v-if="selectedTool !== HEXOBJECT_KEYS.PICKAXE" class="hex-label"></span>
 
           <button
               v-else
@@ -80,15 +80,15 @@ import CloseHeroInventoryModalButton from "@/components/gui/buttons/close-hero-i
 import {useOverlayStore} from "@/stores/overlay-store";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {useWorldMapStore} from "@/stores/world-map-store";
-import {HeroToolType} from "@/enums/hero-tool-type";
 import {useGatheringStore} from "@/stores/gathering-store";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 
 const overlayStore = useOverlayStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 
-const selectedTool = ref<HeroToolType | null>(null);
+const selectedTool = ref<TToolKeys | null>(null);
 const gathering = useGatheringStore();
 
 const wood = computed(() => gathering.getCount(HEXOBJECT_KEYS.TREE));   // або WOOD key, якщо заведеш окремо
@@ -100,7 +100,7 @@ function closeInventory() {
   overlayStore.closeOverlay();
 }
 
-function selectTool(tool: HeroToolType) {
+function selectTool(tool: TToolKeys) {
   selectedTool.value = selectedTool.value === tool ? null : tool;
 }
 

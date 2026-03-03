@@ -6,6 +6,7 @@ export const HEXOBJECT_KEYS = {
     EMITTER: "emitter",
     INFERNO: "inferno",
     AXE: "axe",
+    HAND: "hand",
     PICKAXE: "pickaxe",
     CAMPING_ENTRANCE: "camping-entrance",
     CAVE_ENTRANCE: "cave-entrance",

@@ -1,13 +1,10 @@
-import {
-    EHexCollision,
-    EHexobjectGroup,
-    IResourceTraits,
-    THexobject,
-} from "@/abstraction/hexobject-abstraction";
-import { HeroToolType } from "@/enums/hero-tool-type";
-import { EHexActionType } from "@/enums/hex-action-type";
-import { HEXOBJECT_META, HexobjectMeta } from "@/registry/hexobject-meta";
-import type { RouteLocationRaw } from "vue-router";
+import {EHexobjectGroup, IResourceTraits, THexobject} from "@/abstraction/hexobject-abstraction";
+import {EHexActionType} from "@/enums/hex-action-type";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
+import type {RouteLocationRaw} from "vue-router";
+import {IHexobjectMeta} from "@/registry/hexobject-meta/hexobject-meta-abstraction";
+import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
+import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 
 export interface ToolCapabilities {
     canCut?: boolean;
@@ -31,45 +28,30 @@ export interface ResolvedAction {
     navigateTo?: RouteLocationRaw;
 }
 
-export type WorldResolvedActionType = Exclude<ResolvedActionType, "ENTER">;
+export function getToolCapabilities(toolKey: TToolKeys): ToolCapabilities {
+    const toolProto = HEX_OBJECT_PROTOTYPES[toolKey];
 
-export const RESOLVED_TO_HEX_ACTION: Record<WorldResolvedActionType, EHexActionType> =
-    {
-        CUT: EHexActionType.CUT,
-        TAKE: EHexActionType.TAKE,
-        MINE: EHexActionType.MINE,
-        ATTACK: EHexActionType.ATTACK,
-        OPEN: EHexActionType.OPEN,
-    };
+    if (!toolProto) return {};
 
-export function getToolCapabilities(tool: HeroToolType): ToolCapabilities {
-    switch (tool) {
-        case HeroToolType.AXE:
-            return { canCut: true };
-        case HeroToolType.PICKAXE:
-            return { canMine: true };
-        case HeroToolType.HAND:
-            return {
-                canPickup: true,
-                canEnter: true,
-            };
-        default:
-            return {};
+    if (toolProto.groupType !== EHexobjectGroup.TOOL) {
+        return {};
     }
+
+    return toolProto.tool.capabilities ?? {};
 }
 
 function labelFromMeta(obj: THexobject, action: EHexActionType, fallback: string): string {
     const key = obj.hexobjectKey;
     if (!key) return fallback;
 
-    const meta: HexobjectMeta = HEXOBJECT_META[key];
+    const meta: IHexobjectMeta = HEXOBJECT_META[key];
     return meta?.actions?.[action]?.label ?? fallback;
 }
 
-export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAction[] {
+export function resolveActions(toolKey: TToolKeys, obj: THexobject): ResolvedAction[] {
     if (!obj.isInteractable) return [];
 
-    const cap = getToolCapabilities(tool);
+    const cap = getToolCapabilities(toolKey);
     const resolvedActions: ResolvedAction[] = [];
 
     switch (obj.groupType) {
@@ -135,7 +117,7 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
             const enterCfg = meta?.actions?.[EHexActionType.ENTER];
 
             if (enterCfg) {
-                if (enterCfg.requiredTool && enterCfg.requiredTool !== tool) break;
+                if (enterCfg.requiredTool && enterCfg.requiredTool !== toolKey) break;
 
                 if (!cap.canEnter) break;
 
@@ -146,18 +128,6 @@ export function resolveActions(tool: HeroToolType, obj: THexobject): ResolvedAct
                 });
             }
 
-            break;
-        }
-
-        case EHexobjectGroup.TOOL:
-        case EHexobjectGroup.WEAPON: {
-            if (obj.collision === EHexCollision.TRIGGER && cap.canPickup) {
-                resolvedActions.push({
-                    actioType: "TAKE",
-                    label: labelFromMeta(obj, EHexActionType.TAKE, "Take"),
-                    priority: 80,
-                });
-            }
             break;
         }
 

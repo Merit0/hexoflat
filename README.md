@@ -7,3 +7,7 @@ CUT
 → WorldTickFeature
 → SpawnResourceFeature
 → HexObjectFactory.create()
+
+todo:
+pnpm
+oxlint

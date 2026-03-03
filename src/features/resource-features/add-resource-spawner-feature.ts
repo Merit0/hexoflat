@@ -1,5 +1,5 @@
 import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
-import {HEX_OBJECT_PROTOTYPES} from "@/game-prototypes/hexobject-prototypes";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HexObjectPlacementRef} from "@/abstraction/hex-map-placement";
 
