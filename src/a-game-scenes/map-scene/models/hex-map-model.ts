@@ -2,9 +2,11 @@ import {Complexity} from "@/enums/complexity";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HexTileBuilder} from "@/a-game-scenes/map-scene/builders/hex-tile-builder";
 import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
-import {HexTileType, IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import {EHexobjectGroup, THexobject} from "@/abstraction/hexobject-abstraction";
 import {HexObjectFactory} from "@/factory/hex-object-factory";
+
+export type TFogPolicy = "FOG" | "ALL_REVEALED";
 
 interface IWorldMap {
     name: string;
@@ -22,6 +24,7 @@ export default class HexMapModel implements IWorldMap {
     private _complexity: Complexity;
     private _mapTilesConfig: IHexMapPlacement[];
     private _tiles: HexTileModel[] = [];
+    private _fogPolicy: TFogPolicy = "FOG";
 
     set name(mapName: string) {
         this._name = mapName;
@@ -63,13 +66,14 @@ export default class HexMapModel implements IWorldMap {
         return this._complexity;
     }
 
-    get tiles(): HexTileModel[] {
-        return this._tiles;
-    }
+    get tiles(): HexTileModel[] { return this._tiles;}
 
-    set tiles(tiles: HexTileModel[]) {
-        this._tiles = tiles;
-    }
+    set tiles(tiles: HexTileModel[]) {this._tiles = tiles;}
+
+    get fogPolicy(): TFogPolicy { return this._fogPolicy; }
+
+    set fogPolicy(v: TFogPolicy) { this._fogPolicy = v; }
+
 
     public generateTiles(): void {
         console.log('Generating tiles...');
@@ -97,7 +101,6 @@ export default class HexMapModel implements IWorldMap {
             for (const c of tileConfig.coordinates) {
                 const key = `${c.columnIndex}:${c.rowIndex}`;
                 const tile = tileByCoordinate.get(key);
-                tile.tileKey = tileConfig.rootPathKey;
                 tile.coordinates = {columnIndex: c.columnIndex, rowIndex: c.rowIndex};
 
                 if (!tile) {
@@ -122,10 +125,10 @@ export default class HexMapModel implements IWorldMap {
             height: this.height,
             complexity: this.complexity,
             config: this.config,
+            fogPolicy: this.fogPolicy,
             tiles: this.tiles.map(t => ({
                 imagePath: t.hexBackgroundImagePath,
                 tileKey: t.tileKey,
-                tileType: t.tileType,
                 coordinates: t.coordinates,
                 isRevealed: t.isRevealed,
                 hexobject: t.hexobject,
@@ -145,10 +148,8 @@ export default class HexMapModel implements IWorldMap {
 
         map.tiles = raw.tiles.map((t: any) => {
             const tile = new HexTileModel();
-            tile.tileType = (t.tileType as HexTileType) ?? "empty";
             tile.isRevealed = t.isRevealed ?? false;
             tile.hexBackgroundImagePath = t.imagePath ?? "";
-            tile.tileKey = t.tileKey ?? null;
             tile.coordinates = t.coordinates ?? {rowIndex: t.r, columnIndex: t.q};
 
             const savedObj: THexobject | null = t.hexobject ?? null;

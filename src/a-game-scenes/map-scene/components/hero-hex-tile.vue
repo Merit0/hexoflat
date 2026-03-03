@@ -27,7 +27,6 @@ const style = computed(() => {
 
 const openInventory = () => {
   const overlayStore = useOverlayStore();
-  console.log('inventory opened!')
   overlayStore.openOverlay("hero-inventory");
 }
 </script>
@@ -37,7 +36,7 @@ const openInventory = () => {
   position: absolute;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
-  background-image: url("@/assets/hero-asssets/merito-hex.png");
+  background-image: url("/hero-asssets/spirit-hex-image.png");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

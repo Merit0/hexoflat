@@ -53,23 +53,36 @@
 <script lang="ts">
 import {useUserStore} from "@/stores/user-store";
 import {defineComponent, reactive, ref, onMounted} from 'vue';
+import { useRouter } from "vue-router";
+import {ROUTES} from "@/router";
 
 export default defineComponent({
   name: "LoginForm",
   setup() {
     const userStore = useUserStore();
+    const router = useRouter();
+
     const form = reactive({
       username: "",
       password: ""
     });
+
     const showPassword = ref(false);
     const isLoading = ref(false);
+
     const onSubmit = async () => {
       try {
         isLoading.value = true;
+
         await userStore.login(form.username, form.password);
+
         form.username = '';
         form.password = '';
+
+        await router.replace({
+          name: ROUTES.WORLD,
+          params: { locationKey: "camping" },
+        });
       } catch (error) {
         console.error('Login failed:', error);
       } finally {
@@ -82,14 +95,12 @@ export default defineComponent({
     };
 
     const clearError = () => {
-      if (userStore.error) {
-        userStore.clearErrorMsg();
-      }
+      if (userStore.error) userStore.clearErrorMsg();
     };
 
     onMounted(() => {
       userStore.clearErrorMsg();
-      userStore.logout()
+      userStore.logout();
       document.title = 'Hexoflat - Login';
     });
 

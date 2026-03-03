@@ -2,11 +2,12 @@ import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-t
 import { defineStore } from "pinia";
 import { coordinateKey, getOddQNeighbors } from "@/utils/hex-utils";
 import type { ResolvedAction } from "@/game-resolvers/interactions-resolver";
-import {HeroToolType} from "@/enums/hero-tool-type";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
+import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 export interface HeroToolState {
-    activeTool: HeroToolType | null;
+    activeTool: TToolKeys | null;
     isDragging: boolean;
     origin: IHexCoordinates | null;
     hover: IHexCoordinates | null;
@@ -19,11 +20,12 @@ export interface HeroToolState {
     lockedUntil: number | null;
 
     treesCut: number; //todo:
+    stoneCollected: number; //todo:
 }
 
 export const useHeroToolStore = defineStore("heroTool", {
     state: (): HeroToolState & { allowedKeys: string[] } => ({
-        activeTool: "hand" as HeroToolType,
+        activeTool: HEXOBJECT_KEYS.HAND as TToolKeys,
         isDragging: false,
         origin: null,
         hover: null,
@@ -38,22 +40,23 @@ export const useHeroToolStore = defineStore("heroTool", {
         durabilityMax: 100,
 
         treesCut: 0,
+        stoneCollected: 0,
     }),
 
     getters: {
         allowedKeySet: (s) => new Set(s.allowedKeys),
-        isActive: (s) => (tool: HeroToolType) => s.activeTool === tool && s.isDragging,
+        isActive: (s) => (tool: TToolKeys) => s.activeTool === tool && s.isDragging,
     },
 
     actions: {
-        useTool(tool: HeroToolType, heroCoords: IHexCoordinates) {
+        useTool(tool: TToolKeys, heroCoords: IHexCoordinates) {
             if (this.isLocked) return;
             this.activeTool = tool;
             this.isDragging = true;
             this.origin = { ...heroCoords };
             this.hover = null;
 
-            if (tool === HeroToolType.HAND) {
+            if (tool === HEXOBJECT_KEYS.HAND) {
             } else if (this.durabilityMax <= 0) {
                 this.durabilityMax = 100;
                 this.durability = Math.min(this.durability, this.durabilityMax);
@@ -112,7 +115,7 @@ export const useHeroToolStore = defineStore("heroTool", {
          */
         consumeDurability(percent: number): boolean {
             // no tool / hand => no durability system
-            if (!this.activeTool || this.activeTool === "hand") return true;
+            if (!this.activeTool || this.activeTool === HEXOBJECT_KEYS.HAND) return true;
 
             // guard
             if (!Number.isFinite(percent) || percent <= 0) return true;
@@ -132,6 +135,10 @@ export const useHeroToolStore = defineStore("heroTool", {
 
         addTreeCut(amount = 1) {
             this.treesCut += amount;
+        },
+
+        collectStones(amount = 1) {
+            this.stoneCollected += amount;
         },
 
         /**

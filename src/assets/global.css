@@ -81,7 +81,7 @@
 
 .game-root,
 .game-root * {
-    cursor: url("@/assets/cursors/base-cursor_40_40.png") 1 1, auto !important;
+    cursor: url('/cursors/base-cursor_40_40.png') 1 1, auto !important;
 }
 
 /* === BASE DOCUMENT === */

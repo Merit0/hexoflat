@@ -1,54 +1,47 @@
-import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router";
-import {useUserStore} from "@/stores/user-store";
+import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
+import { useUserStore } from "@/stores/user-store";
 
-// lazy-load
 const LoginPage = () => import("@/a-game-scenes/login-scene/components/login-page.vue");
-const HomeLocation = () => import("@/a-game-scenes/home-scene/components/home-location.vue");
 const HexWorldMap = () => import("@/a-game-scenes/map-scene/components/hex-world-map.vue");
+// const BattlePage = () => import("@/a-game-scenes/battle-scene/components/battle-page.vue"); // якщо є
 
 export const ROUTES = {
     LOGIN: "login",
-    CAMPING: "camping",
+    WORLD: "world",
     BATTLE: "battle",
-    SILESIA_WORLD: "silesia-world",
 } as const;
-
-export type RouteName = typeof ROUTES[keyof typeof ROUTES];
 
 const routes: RouteRecordRaw[] = [
     {
         path: "/",
-        redirect: "/login", // без логіки тут
+        redirect: "/login",
     },
     {
         path: "/login",
         name: ROUTES.LOGIN,
         component: LoginPage,
-        meta: {requiresAuth: false},
+        meta: { requiresAuth: false },
     },
-
     {
-        path: "/camping",
-        name: ROUTES.CAMPING,
-        component: HomeLocation,
-        meta: {requiresAuth: true},
-    },
-
-    {
-        path: "/silesia",
-        name: ROUTES.SILESIA_WORLD,
+        path: "/world/:locationKey?",
+        name: ROUTES.WORLD,
         component: HexWorldMap,
-        meta: {requiresAuth: true},
+        props: (route) => ({
+            locationKey: (route.params.locationKey as string | undefined) ?? "camping",
+        }),
+        meta: { requiresAuth: true },
     },
+
     {
         path: "/battle",
         name: ROUTES.BATTLE,
         component: null,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
+
     {
         path: "/:pathMatch(.*)*",
-        redirect: {name: ROUTES.LOGIN},
+        redirect: { name: ROUTES.LOGIN },
     },
 ];
 
@@ -61,7 +54,7 @@ router.beforeEach((to) => {
     const userStore = useUserStore();
 
     if (to.meta.requiresAuth && !userStore.isUserLoggedIn) {
-        return {name: ROUTES.LOGIN};
+        return { name: ROUTES.LOGIN };
     }
 
     return true;

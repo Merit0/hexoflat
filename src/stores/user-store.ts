@@ -46,15 +46,12 @@ export const useUserStore = defineStore('user', {
             const worldMapStore = useWorldMapStore();
 
             try {
-                // await Request.logout() ...
-
                 this.user.setLoggedIn(false);
             } catch (error) {
                 console.error("Error during logout:", error);
             } finally {
-                worldMapStore.clearWorld();
+                worldMapStore.clearAllWorlds();
                 heroStore.resetHero();
-                // bagStore.resetBag();
 
                 localStorage.clear();
                 localStorage.setItem("uStatus", "false");

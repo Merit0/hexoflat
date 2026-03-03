@@ -1,7 +1,7 @@
 import { coordinateKey } from "@/utils/hex-utils";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import { EHexobjectGroup, type THexobject, type THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
-import { HEX_OBJECT_PROTOTYPES } from "@/game-prototypes/hexobject-prototypes";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
 import {THexobjectKey} from "@/registry/hexobjects-registry";
 
 export class HexObjectFactory {
