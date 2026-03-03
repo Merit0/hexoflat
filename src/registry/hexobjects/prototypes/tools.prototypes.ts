@@ -1,8 +1,9 @@
 import { EHexCollision, EHexobjectGroup, THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 
-type TToolKeys =
+export type TToolKeys =
     | typeof HEXOBJECT_KEYS.AXE
+    | typeof HEXOBJECT_KEYS.HAND
     | typeof HEXOBJECT_KEYS.PICKAXE;
 
 export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
@@ -14,7 +15,7 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
             "This is the Axe! Use it to cut the trees. This tool can make damage! It is very durable.",
         tool: { durability: 100, durabilityMax: 100, capabilities: { canCut: true } },
         collision: EHexCollision.NONE,
-        spritePath: "/enemy-assets/boss-hex-images/axe-hex-image.png",
+        spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.AXE}-hex-image.png`,
     },
 
     [HEXOBJECT_KEYS.PICKAXE]: {
@@ -26,5 +27,23 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
         tool: { durability: 100, durabilityMax: 100, capabilities: { canMine: true } },
         collision: EHexCollision.NONE,
         spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.PICKAXE}-token-image.png`,
+    },
+
+    [HEXOBJECT_KEYS.HAND]: {
+        hexobjectKey: HEXOBJECT_KEYS.HAND,
+        groupType: EHexobjectGroup.TOOL,
+        isInteractable: true,
+        description:
+            "This is the Hand! Use it to pick something.",
+        tool: {
+            durability: 1000000,
+            durabilityMax: 1000000,
+            capabilities: {
+                canPickup: true,
+                canEnter: true,
+            }
+        },
+        collision: EHexCollision.NONE,
+        spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.HAND}-hex-image.png`,
     },
 };

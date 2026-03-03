@@ -1,7 +1,6 @@
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import {IHexobjectMeta} from "@/registry/hexobject-meta/hexobject-meta-abstraction";
 import {EHexActionType} from "@/enums/hex-action-type";
-import {HeroToolType} from "@/enums/hero-tool-type";
 
 type TResourceMetaKeys =
     | typeof HEXOBJECT_KEYS.TREE
@@ -16,7 +15,7 @@ export const RESOURCE_META: Record<TResourceMetaKeys, IHexobjectMeta> = {
             [EHexActionType.CUT]: {
                 label: "Chop",
                 durationMs: 5000,
-                requiredTool: HeroToolType.AXE,
+                requiredTool: HEXOBJECT_KEYS.AXE,
                 durabilityCostPct: 0.1,
             },
         },
@@ -31,7 +30,7 @@ export const RESOURCE_META: Record<TResourceMetaKeys, IHexobjectMeta> = {
             [EHexActionType.MINE]: {
                 label: "Mine",
                 durationMs: 10000,
-                requiredTool: HeroToolType.PICKAXE,
+                requiredTool: HEXOBJECT_KEYS.PICKAXE,
                 durabilityCostPct: 0.1,
             },
         },

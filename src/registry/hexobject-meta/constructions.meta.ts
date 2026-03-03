@@ -1,7 +1,6 @@
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import {IHexobjectMeta} from "@/registry/hexobject-meta/hexobject-meta-abstraction";
 import {EHexActionType} from "@/enums/hex-action-type";
-import {HeroToolType} from "@/enums/hero-tool-type";
 
 type TConstructionMetaKeys =
     | typeof HEXOBJECT_KEYS.CAMPING_ENTRANCE
@@ -13,13 +12,13 @@ type TConstructionMetaKeys =
 export const CONSTRUCTION_META: Record<TConstructionMetaKeys, IHexobjectMeta> = {
     [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
         key: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
-        title: "Camp",
-        subtitle: "Entrance",
+        title: "Camping Gate",
+        subtitle: "Camping",
         actions: {
             [EHexActionType.ENTER]: {
                 label: "Enter",
                 durationMs: 400,
-                requiredTool: HeroToolType.HAND,
+                requiredTool: HEXOBJECT_KEYS.HAND,
             },
         },
         enter: {
@@ -30,13 +29,13 @@ export const CONSTRUCTION_META: Record<TConstructionMetaKeys, IHexobjectMeta> = 
 
     [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
         key: HEXOBJECT_KEYS.CAVE_ENTRANCE,
-        title: "Cave",
-        subtitle: "Entrance",
+        title: "Cave Entrance",
+        subtitle: "Forgotten Cave",
         actions: {
             [EHexActionType.ENTER]: {
                 label: "Enter",
                 durationMs: 400,
-                requiredTool: HeroToolType.HAND,
+                requiredTool: HEXOBJECT_KEYS.HAND,
             },
         },
         enter: {
@@ -48,12 +47,12 @@ export const CONSTRUCTION_META: Record<TConstructionMetaKeys, IHexobjectMeta> = 
     [HEXOBJECT_KEYS.HOMELAND_GATE]: {
         key: HEXOBJECT_KEYS.HOMELAND_GATE,
         title: "Homeland Gate",
-        subtitle: "Entrance",
+        subtitle: "Silesia",
         actions: {
             [EHexActionType.ENTER]: {
                 label: "Enter",
                 durationMs: 400,
-                requiredTool: HeroToolType.HAND,
+                requiredTool: HEXOBJECT_KEYS.HAND,
             },
         },
         enter: {

@@ -1,22 +1,19 @@
 <template>
   <div
       class="hex-tile game-root"
-      :class="tileClasses"
       :style="getHexTileTransformStyle(hexTile)"
       @click="emit('tile-click', hexTile)"
       @pointerenter="onEnter"
   >
     <div class="hex-layer hex-tile-bg" :style="getHexTileBackgroundStyle(hexTile)"></div>
     <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)"></div>
-    <div v-if="isAllowedTarget" class="tool-target-glow"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {computed} from "vue";
-import { coordinateKey, calcHexPixelPosition} from "@/utils/hex-utils";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
+import {calcHexPixelPosition} from "@/utils/hex-utils";
 
 const props = defineProps<{
   hexTile: IHexTile;
@@ -30,7 +27,6 @@ const EMPTY_TILE_URL = "/hex-assets/hex-tiles/empty-tile-image.png";
 const heroToolStore = useHeroToolStore();
 const GRID_COLUMNS = 42;
 const tileWidth = window.innerWidth / GRID_COLUMNS;
-const tileKey = computed(() => coordinateKey(props.hexTile.coordinates));
 
 function getHexTileTransformStyle(tile: IHexTile) {
   const { x, y } = calcHexPixelPosition(tile, tileWidth);
@@ -40,16 +36,6 @@ function getHexTileTransformStyle(tile: IHexTile) {
     "--ty": `${y}px`,
   } as Record<string, string>;
 }
-
-const isAllowedTarget = computed(() => {
-  return heroToolStore.isDragging && heroToolStore.allowedKeySet.has(tileKey.value);
-});
-
-const tileClasses = computed(() => ({
-  "is-tool-target": isAllowedTarget.value,
-  "tool-hand": heroToolStore.isDragging && heroToolStore.activeTool === "hand",
-  "tool-axe": heroToolStore.isDragging && heroToolStore.activeTool === "axe",
-}));
 
 function onEnter() {
   if (!heroToolStore.isDragging) return;

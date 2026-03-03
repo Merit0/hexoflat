@@ -1,6 +1,10 @@
 <template>
   <div class="tool-hex-pos" :style="posStyle">
-    <div class="tool-hex-tile" :class="[toolClass, { doing: isWorking }]">
+    <div
+        class="tool-hex-tile"
+        :class="{ doing: isWorking }"
+        :style="toolStyle"
+    >
       <button class="hide-btn" @click.stop="emit('hide')">HIDE</button>
 
       <button
@@ -19,17 +23,19 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { calcHexPixelPosition } from "@/utils/hex-utils";
-import { HeroToolType } from "@/enums/hero-tool-type";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { resolveActions } from "@/game-resolvers/interactions-resolver";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { ACTION_TYPE_MAP } from "@/registry/action-starters-registry";
 import { ExecuteHexActionFeature } from "@/features/execute-hex-action-feature";
 import { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
+import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
+import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 const props = defineProps<{
   tileWidth: number;
-  tool: HeroToolType;
+  // tool: HeroToolType; removed
 }>();
 
 const emit = defineEmits<{
@@ -38,6 +44,8 @@ const emit = defineEmits<{
 
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
+
+const activeToolKey = computed<TToolKeys>(() => heroToolStore.activeTool);
 
 /** ---------------------------
  *  Tile lookup
@@ -73,22 +81,27 @@ const posStyle = computed(() => {
 /** ---------------------------
  *  Tool class (normalized)
  *  -------------------------- */
-const toolClass = computed((): "hand" | "axe" | "pickaxe" => {
-  const t = props.tool;
-  if (t === HeroToolType.AXE) return "axe";
-  if (t === HeroToolType.PICKAXE) return "pickaxe";
-  return "hand";
+const toolStyle = computed(() => {
+
+  const key = activeToolKey.value ?? HEXOBJECT_KEYS.HAND;
+  const toolHexImagePath = HEX_OBJECT_PROTOTYPES[key].spritePath;
+
+  return {
+    backgroundImage: `url(${toolHexImagePath})`,
+    backgroundSize: "cover",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+  } as Record<string, string>;
 });
 
 /** ---------------------------
  *  Resolve actions (no side effects in computed)
  *  -------------------------- */
+
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
   if (!tile?.hexobject) return [];
-
-  const tool = props.tool ?? HeroToolType.HAND;
-  return resolveActions(tool, tile.hexobject) ?? [];
+  return resolveActions(activeToolKey.value, tile.hexobject);
 });
 
 const bestAction = computed(() => {
@@ -159,7 +172,7 @@ function executeAction() {
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
 
-  const res = new ExecuteHexActionFeature(tile).execute(actionType, props.tool);
+  const res = new ExecuteHexActionFeature(tile).execute(actionType, activeToolKey.value);
 
   if (res.ok) {
     worldMapStore.saveToStorage();

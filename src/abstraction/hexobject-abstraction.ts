@@ -59,6 +59,7 @@ export interface ITool extends IDurable {
         canCut?: boolean;
         canMine?: boolean;
         canPickup?: boolean;
+        canEnter?: boolean;
     };
 }
 

@@ -1,7 +1,7 @@
 import {EHexActionType} from "@/enums/hex-action-type";
-import {HeroToolType} from "@/enums/hero-tool-type";
 import {LocationKey} from "@/registry/world-map-registry";
 import {THexobjectKey} from "@/registry/hexobjects-registry";
+import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 
 export type THexYieldKey = "wood" | "coins" | "stone";
 export type THexYields = Partial<Record<THexYieldKey, number>> & {
@@ -19,7 +19,7 @@ export interface IHexobjectMeta {
     actions?: Partial<Record<EHexActionType, {
         label: string;
         durationMs?: number;
-        requiredTool?: HeroToolType;
+        requiredTool?: TToolKeys;
         durabilityCostPct?: number;
     }>>;
 

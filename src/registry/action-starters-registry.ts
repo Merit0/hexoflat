@@ -1,5 +1,4 @@
 import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {HeroToolType} from "@/enums/hero-tool-type";
 import {EHexActionType} from "@/enums/hex-action-type";
 import {EHexobjectGroup, IResourceTraits} from "@/abstraction/hexobject-abstraction";
 import {getToolCapabilities, ResolvedActionType} from "@/game-resolvers/interactions-resolver";
@@ -9,12 +8,14 @@ import {useWorldMapStore} from "@/stores/world-map-store";
 import router, {ROUTES} from "@/router";
 import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroStore} from "@/stores/hero-store";
+import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 export type StartResult =
     | { ok: true; endsAt: number }
     | { ok: false; message: string };
 
-export type ActionStarter = (tile: HexTileModel, tool: HeroToolType, now: number) => StartResult;
+export type ActionStarter = (tile: HexTileModel, tool: TToolKeys, now: number) => StartResult;
 
 function isBusy(tile: HexTileModel, now: number): boolean {
     const action = tile.pendingAction;
@@ -63,7 +64,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const meta = HEXOBJECT_META[obj.hexobjectKey];
         const cutCfg = meta?.actions?.[EHexActionType.CUT];
 
-        const requiredTool: HeroToolType = cutCfg?.requiredTool ?? HeroToolType.AXE;
+        const requiredTool: TToolKeys = cutCfg?.requiredTool ?? HEXOBJECT_KEYS.AXE;
         const durationMs: number = cutCfg?.durationMs ?? 5000;
         const costPct: number = cutCfg?.durabilityCostPct ?? 0.1;
 
@@ -77,7 +78,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);
         if (!okDur) {
-            heroToolStore.activeTool = HeroToolType.HAND;
+            heroToolStore.activeTool = HEXOBJECT_KEYS.HAND;
             return {ok: false, message: "Tool is broken!"};
         }
 
@@ -119,7 +120,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const meta = HEXOBJECT_META[obj.hexobjectKey];
         const mineCfg = meta?.actions?.[EHexActionType.MINE];
 
-        const requiredTool: HeroToolType = mineCfg?.requiredTool ?? HeroToolType.PICKAXE;
+        const requiredTool: TToolKeys = mineCfg?.requiredTool ?? HEXOBJECT_KEYS.PICKAXE;
         const durationMs: number = mineCfg?.durationMs ?? 10000;
         const costPct: number = mineCfg?.durabilityCostPct ?? 0.1;
 
@@ -133,7 +134,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);
         if (!okDur) {
-            heroToolStore.activeTool = HeroToolType.HAND;
+            heroToolStore.activeTool = HEXOBJECT_KEYS.HAND;
             return {ok: false, message: "Tool is broken!"};
         }
 
@@ -179,7 +180,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const meta = HEXOBJECT_META[obj.hexobjectKey];
         const cfg = meta?.actions?.[EHexActionType.TAKE];
 
-        const requiredTool = cfg?.requiredTool ?? HeroToolType.HAND;
+        const requiredTool = cfg?.requiredTool ?? HEXOBJECT_KEYS.HAND;
         const durationMs = cfg?.durationMs ?? 300;
         const costPct = cfg?.durabilityCostPct ?? 0;
 
@@ -193,7 +194,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);
         if (!okDur) {
-            heroToolStore.activeTool = HeroToolType.HAND;
+            heroToolStore.activeTool = HEXOBJECT_KEYS.HAND;
             return {ok: false, message: "Tool is broken!"};
         }
 
@@ -226,14 +227,25 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const heroToolStore = useHeroToolStore();
         const heroStore = useHeroStore();
         const gameEventsStore = useGameEventsStore();
-        if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
+
+        if (isBusy(tile, now)) return { ok:false, message:"Hex is busy!" };
+
         const key = tile.hexobject?.hexobjectKey;
-        if (!key) return;
+        if (!key) return { ok:false, message:"No object to enter!" };
 
         const meta = HEXOBJECT_META[key];
+        const cfg = meta?.actions?.[EHexActionType.ENTER];
+
+        const requiredToolKey = (cfg?.requiredTool ?? HEXOBJECT_KEYS.HAND) as TToolKeys;
+        if (requiredToolKey && tool !== requiredToolKey) {
+            return { ok:false, message:`Need a tool: ${requiredToolKey}` };
+        }
 
         heroToolStore.clearResolvedActions();
         heroToolStore.stopTool();
+
+        const cap = getToolCapabilities(tool);
+        if (!cap.canEnter) return { ok:false, message:"This tool can't enter!" };
 
         const heroName = heroStore.hero?.name ?? "Hero";
         const destination = meta?.subtitle ?? key;
@@ -244,15 +256,9 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             const worldStore = useWorldMapStore();
             worldStore.goToLocation(meta.enter.locationKey);
 
-            const locationKey = meta?.enter?.locationKey;
-            if (!locationKey) return;
-
-            router.push({
-                name: ROUTES.WORLD,
-                params: {locationKey},
-            });
+            router.push({ name: ROUTES.WORLD, params: { locationKey: meta.enter.locationKey } });
         }
-        const endsAt = now + 100;
-        return {ok: true, endsAt};
+
+        return { ok:true, endsAt: now + 100 };
     },
 };

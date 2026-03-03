@@ -27,7 +27,6 @@ const style = computed(() => {
 
 const openInventory = () => {
   const overlayStore = useOverlayStore();
-  console.log('inventory opened!')
   overlayStore.openOverlay("hero-inventory");
 }
 </script>
