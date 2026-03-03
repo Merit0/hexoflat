@@ -6,6 +6,8 @@ import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import {useGatheringStore} from "@/stores/gathering-store";
 import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";
+import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 export type ActionFinisher = (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => boolean;
 

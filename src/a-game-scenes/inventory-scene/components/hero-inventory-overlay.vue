@@ -1,355 +1,150 @@
 <template>
-  <div class="overlay-backdrop game-root">
-    <div class="inventory-overlay-card">
-      <header class="overlay-header">
-        <h2>Hero Inventory</h2>
-        <close-hero-inventory-modal-button @click="closeInventory()"/>
+  <div class="overlay-backdrop game-root" @click.self="closeInventory()">
+    <div class="board">
+      <header class="board-top">
+        <div class="tabs">
+          <button class="tab is-active">Inventory</button>
+          <button class="tab is-disabled" disabled>Skills</button>
+        </div>
       </header>
-      <section class="resources-panel">
-        <div class="res-chip">
-          <span class="res-icon">🪵</span>
-          <span class="res-name">Wood</span>
-          <span class="res-value">{{ wood }}</span>
-        </div>
 
-        <div class="res-chip">
-          <span class="res-icon">X</span>
-          <span class="res-name">Stone</span>
-          <span class="res-value">{{ stone }}</span>
-        </div>
-
-        <div class="res-chip">
-          <span class="res-icon">🪙</span>
-          <span class="res-name">Coins</span>
-          <span class="res-value">{{ coins }}</span>
+      <section class="board-body">
+        <inventory-board-grid/>
+        <div class="center-layer">
+          <token-details-panel v-if="selectedItem" :item="selectedItem"/>
+          <hero-equip-board v-else/>
         </div>
       </section>
-      <div class="hex-tools">
-        <div
-            class="hex-tile hand"
-            :class="{ selected: selectedTool === HEXOBJECT_KEYS.HAND }"
-            @click="selectTool(HEXOBJECT_KEYS.HAND)"
-        >
-          <span v-if="selectedTool !== HEXOBJECT_KEYS.HAND" class="hex-label"></span>
-          <button
-              v-else
-              class="hex-use-btn"
-              @click.stop="useSelectedTool()"
-          >
-            USE
-          </button>
-        </div>
-        <div
-            class="hex-tile axe"
-            :class="{ selected: selectedTool === HEXOBJECT_KEYS.AXE }"
-            @click="selectTool(HEXOBJECT_KEYS.AXE)"
-        >
-          <span v-if="selectedTool !== HEXOBJECT_KEYS.AXE" class="hex-label"></span>
 
-          <button
-              v-else
-              class="hex-use-btn"
-              @click.stop="useSelectedTool()"
-          >
-            USE
-          </button>
+      <!-- (опційно) нижня панель, поки пусто -->
+      <footer class="board-bottom">
+        <div class="hint">
+          <span v-if="selectedItem">Click token again to close details</span>
+          <span v-else>Pick items on map → tokens appear here</span>
         </div>
-        <div
-            class="hex-tile pickaxe"
-            :class="{ selected: selectedTool === HEXOBJECT_KEYS.PICKAXE }"
-            @click="selectTool(HEXOBJECT_KEYS.PICKAXE)"
-        >
-          <span v-if="selectedTool !== HEXOBJECT_KEYS.PICKAXE" class="hex-label"></span>
-
-          <button
-              v-else
-              class="hex-use-btn"
-              @click.stop="useSelectedTool()"
-          >
-            USE
-          </button>
-        </div>
-      </div>
+      </footer>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {computed, ref} from "vue";
-import CloseHeroInventoryModalButton from "@/components/gui/buttons/close-hero-inventory-modal-button.vue";
+import InventoryBoardGrid from "@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue";
+import HeroEquipBoard from "@/a-game-scenes/inventory-scene/components/hero-equip-board.vue";
+import TokenDetailsPanel from "@/a-game-scenes/inventory-scene/components/token-details-panel.vue";
+
+import {computed} from "vue";
 import {useOverlayStore} from "@/stores/overlay-store";
-import {useHeroToolStore} from "@/stores/hero-tool-store";
-import {useWorldMapStore} from "@/stores/world-map-store";
-import {useGatheringStore} from "@/stores/gathering-store";
-import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
-import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
+import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
 
 const overlayStore = useOverlayStore();
-const heroToolStore = useHeroToolStore();
-const worldMapStore = useWorldMapStore();
+const inv = useHeroInventoryStore();
 
-const selectedTool = ref<TToolKeys | null>(null);
-const gathering = useGatheringStore();
-
-const wood = computed(() => gathering.getCount(HEXOBJECT_KEYS.TREE));   // або WOOD key, якщо заведеш окремо
-const coins = computed(() => gathering.getCount(HEXOBJECT_KEYS.COINS));
-const stone = computed(() => gathering.getCount(HEXOBJECT_KEYS.ROCK));
+const selectedItem = computed(() => inv.selectedItem);
 
 function closeInventory() {
-  selectedTool.value = null;
-  overlayStore.closeOverlay();
-}
-
-function selectTool(tool: TToolKeys) {
-  selectedTool.value = selectedTool.value === tool ? null : tool;
-}
-
-function useSelectedTool() {
-  if (!selectedTool.value) return;
-
-  heroToolStore.useTool(selectedTool.value, worldMapStore.heroCoordinates);
-
-  selectedTool.value = null;
+  inv.clearSelection();
   overlayStore.closeOverlay();
 }
 </script>
 
 <style scoped>
-
 .overlay-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.68);
   display: grid;
   place-items: center;
   z-index: 2000;
 }
 
-.inventory-overlay-card {
-  width: min(520px, 92vw);
-  background: #0f1115;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 14px;
-  color: #8f846c;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
+.board {
+  width: min(1240px, 96vw);
+  height: min(720px, 92vh);
+  border-radius: 18px;
+  position: relative;
 
-.overlay-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
+  background: radial-gradient(1200px 600px at 50% 30%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.0)),
+  linear-gradient(180deg, rgba(20, 22, 28, 0.95), rgba(10, 11, 14, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.70);
 
-.hex-tools {
-  display: flex;
-  gap: 24px;
-  justify-content: center;
-  margin-top: 18px;
-}
-
-/* hover */
-.hex-tile:hover {
-  transform: translateY(-2px) scale(1.03);
-  filter: brightness(1.1);
-}
-
-/* active (на майбутнє selected/use) */
-.hex-tile:active {
-  transform: scale(0.97);
-}
-
-/* HAND – жовтий */
-.hex-tile.hand {
-  background: linear-gradient(145deg, #e6c15a, #b8922d);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15),
-  0 10px 25px rgba(230, 193, 90, 0.35);
-}
-
-.hex-label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgba(0, 0, 0, 0.75);
-  pointer-events: none;
-}
-
-.hex-tile.selected {
-  filter: brightness(0.85);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25),
-  0 0 0 6px rgba(255, 255, 255, 0.06),
-  0 14px 30px rgba(0, 0, 0, 0.55);
-}
-
-/* tools row */
-.hex-tools {
-  display: flex;
-  gap: 26px;
-  justify-content: center;
-  margin-top: 18px;
-}
-
-/* slot (hex + use button) */
-.tool-slot {
   display: grid;
-  justify-items: center;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+
+.board-top {
+  padding: 14px 14px 0;
+  display: grid;
   gap: 10px;
 }
 
-/* base hex */
-.hex-tile {
-  width: 96px;
-  height: 96px;
-  clip-path: polygon(
-      25% 6%,
-      75% 6%,
-      100% 50%,
-      75% 94%,
-      25% 94%,
-      0% 50%
-  );
-
+.tabs {
+  width: 100%;
   display: grid;
-  place-items: center;
-  cursor: pointer;
-  user-select: none;
-
-  transition: transform 0.15s ease,
-  box-shadow 0.15s ease,
-  filter 0.15s ease;
-}
-
-.hex-tile:hover {
-  transform: translateY(-2px) scale(1.03);
-  filter: brightness(1.1);
-}
-
-.hex-tile:active {
-  transform: scale(0.97);
-}
-
-/* selected ring */
-.hex-tile.selected {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25),
-  0 0 0 6px rgba(255, 255, 255, 0.06),
-  0 14px 30px rgba(0, 0, 0, 0.55);
-}
-
-.hex-tile.hand {
-  background-image: url("/hex-assets/hex-tools/hand-hex-image.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.hex-tile.axe {
-  background-image: url("/hex-assets/hex-tools/axe-hex-image.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.hex-tile.pickaxe {
-  background-image: url("/hex-assets/hex-tools/pickaxe-token-image.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.hex-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: rgba(0, 0, 0, 0.75);
-  pointer-events: none;
-}
-
-.hex-use-btn {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-
-  width: 64px;
-  height: 32px;
-
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.55);
-  color: #f2e9d3;
-
-  font-weight: 800;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-
-  cursor: pointer;
-
-  transition: transform 0.12s ease,
-  background 0.12s ease,
-  filter 0.12s ease;
-}
-
-.hex-use-btn:hover {
-  filter: brightness(1.15);
-  background: rgba(0, 0, 0, 0.7);
-  transform: scale(1.05);
-}
-
-.hex-use-btn:active {
-  transform: scale(0.95);
-}
-
-.resources-panel {
-  display: flex;
-  gap: 10px;
-  margin: 10px 0 16px;
-  padding: 10px;
-  border-radius: 14px;
-
-  background: rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow:
-      0 0 0 1px rgba(255,255,255,0.06) inset,
-      0 12px 30px rgba(0,0,0,0.55);
-}
-
-.res-chip {
-  flex: 1;
-  display: flex;
-  align-items: center;
+  grid-template-columns: 1fr 1fr; /* 50 / 50 */
   gap: 8px;
 
-  padding: 10px 12px;
+  padding: 8px;
+  border-radius: 14px;
+
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.tab {
+  width: 100%;
+  height: 44px;
+
   border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
 
-  background: rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.10);
-}
+  background: rgba(255, 0, 120, 0.14);
+  color: rgba(255, 255, 255, 0.90);
 
-.res-icon {
-  font-size: 16px;
-  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55));
-}
-
-.res-name {
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  font-size: 11px;
-  color: rgba(242,233,211,0.9);
+  font-weight: 1000;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
+  font-size: 13px;
 }
 
-.res-value {
-  margin-left: auto;
-  font-weight: 900;
-  font-size: 14px;
-  color: #f2e9d3;
-  padding: 4px 10px;
+.tab.is-active {
+  background: rgba(255, 0, 120, 0.30);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+}
+
+.tab.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.board-body {
+  position: relative;
+  padding: 10px 14px 12px;
+}
+
+.center-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none; /* центр не перекриває грід поки */
+}
+
+.board-bottom {
+  padding: 10px 14px 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.hint {
+  padding: 8px 14px;
   border-radius: 999px;
-
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.70);
+  font-weight: 700;
+  font-size: 12px;
 }
-
 </style>

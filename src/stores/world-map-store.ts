@@ -13,6 +13,7 @@ import { useHeroStore } from "@/stores/hero-store";
 import { useGameEventsStore } from "@/stores/game-events-store";
 import {LocationKey, MapDefinition, MapRegistry} from "@/registry/world-map-registry";
 import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
+import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -308,6 +309,9 @@ export const useWorldMapStore = defineStore("world-map-store", {
         },
 
         moveHeroTo(target: IHexCoordinates): boolean {
+            const inv = useHeroInventoryStore();
+            inv.addPickedHexobject(HEXOBJECT_KEYS.COINS, 5);
+            inv.addPickedHexobject(HEXOBJECT_KEYS.HEALTH_BOTTLE, 1);
             const heroToolStore = useHeroToolStore();
             const heroStore = useHeroStore();
             const events = useGameEventsStore();

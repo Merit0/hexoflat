@@ -1,6 +1,8 @@
 import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
+export type Axial = { q: number; r: number };
+
 // odd-q offset -> axial
 function oddQToAxial(c: IHexCoordinates) {
     const q = c.columnIndex;
@@ -48,5 +50,24 @@ export function calcHexPixelPosition(
         spacing *
         (r + (q % 2 ? 0.5 : 0));
 
+    return { x, y };
+}
+
+/**
+ * Pointy-top axial → pixel.
+ * size = "radius" гекса (від центру до вершини)
+ */
+export function axialToPixelPointy({ q, r }: Axial, size: number) {
+    const x = size * Math.sqrt(3) * (q + r / 2);
+    const y = size * (3 / 2) * r;
+    return { x, y };
+}
+
+/**
+ * Flat-top axial → pixel.
+ */
+export function axialToPixelFlat({ q, r }: Axial, size: number) {
+    const x = size * (3 / 2) * q;
+    const y = size * Math.sqrt(3) * (r + q / 2);
     return { x, y };
 }
