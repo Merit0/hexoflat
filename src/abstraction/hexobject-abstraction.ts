@@ -9,6 +9,8 @@ export interface ITraitable<TTraits> {
 
 export interface ILootTraits {
     stackable?: boolean;
+    maxStack?: number;
+    stackKey: THexobjectKey;
 }
 
 export interface IResourceTraits {
@@ -49,6 +51,7 @@ export interface ILoot extends ITraitable<ILootTraits>{
 }
 
 export interface ICreature {
+    name: string;
     hp: number;
     hpMax: number;
     faction?: "neutral" | "enemy" | "friendly";
@@ -98,6 +101,7 @@ export enum EHexobjectGroup {
     WEAPON = 'weapon',
     CONSTRUCTION = 'construction',
     LOOT = 'loot',
+    EQUIPMENT = 'equipment',
 }
 
 export enum EHexCollision {

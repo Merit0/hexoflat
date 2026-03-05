@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import {computed} from "vue";
 import {useHeroInventoryStore, type InventoryItem} from "@/stores/hero-inventory-store";
-import {resolveItemTraits} from "@/utils/inventory/traits-resolver";
+import {resolveInventoryView} from "@/utils/inventory/traits-resolver";
 
 const props = defineProps<{ item: InventoryItem }>();
 
@@ -26,7 +26,7 @@ const inv = useHeroInventoryStore();
 
 const rotation = computed(() => inv.ensureRotation(props.item.id));
 
-const meta = computed(() => resolveItemTraits(props.item.key));
+const meta = computed(() => resolveInventoryView(props.item.key));
 
 const showAmount = computed(() => (props.item.amount ?? 1) > 1);
 

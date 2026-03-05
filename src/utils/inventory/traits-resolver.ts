@@ -1,82 +1,127 @@
-import type { TEquipSlot, TInventoryItemType } from "@/stores/hero-inventory-store";
+import { THexobjectKey } from "@/registry/hexobjects-registry";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { HEXOBJECT_META } from "@/registry/hexobject-meta";
+import { EHexobjectGroup, THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
+import { assertNever } from "@/utils/assert-never";
+import { TEquipSlot } from "@/stores/hero-inventory-store";
 
-// ВАЖЛИВО: Підстав свої правильні імпорти
-import { HEXOBJECT_META } from "@/registry/hexobject-meta"; // якщо index.ts експортує
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
+export type ResolvedInventoryView = {
+    group: EHexobjectGroup;
+    iconPath: string;
 
-// Якщо ти маєш aggregated prototypes index — підстав сюди.
-// Напр.: import { ALL_PROTOTYPES } from "@/registry/hexobjects/prototypes";
-import { LOOT_PROTOTYPES } from "@/registry/hexobjects/prototypes/loot.prototypes";
-import { RESOURCE_PROTOTYPES } from "@/registry/hexobjects/prototypes/resources.prototypes";
-// tools/equipment додаси пізніше
+    title: string;
+    description: string;
 
-type ResolvedTraits = {
     stackable: boolean;
     stackKey?: string;
-    weightKg: number;
-    type: TInventoryItemType;
+    defaultAmount: number;
+
     equipSlot?: TEquipSlot;
-    iconPath: string;
-    title: string;
-    description?: string;
+    weightKg: number;
 };
 
-export function resolveItemTraits(key: string): ResolvedTraits {
-    const meta = (HEXOBJECT_META as any)?.[key];
+function resolveProtoFields(proto: THexobjectPrototype) {
+    const group = proto.groupType;
+    const iconPath = proto.spritePath ?? "";
+    const descriptionFallback = proto.description ?? "";
 
-    // 1) meta-first
-    if (meta) {
-        return {
-            stackable: !!meta?.traits?.stackable,
-            stackKey: meta?.traits?.stackKey,
-            weightKg: meta?.traits?.weightKg ?? 0,
-            type: (meta?.inventory?.type ?? "loot") as TInventoryItemType,
-            equipSlot: meta?.equip?.slot as TEquipSlot | undefined,
-            iconPath: meta?.iconPath ?? "",
-            title: meta?.title ?? key,
-            description: meta?.description ?? meta?.subtitle ?? "",
-        };
+    // defaults
+    let stackable = false;
+    let defaultAmount = 1;
+    let weightKg = 0;
+    let equipSlot: TEquipSlot | undefined = undefined;
+    let stackKey: string | undefined = undefined;
+
+    switch (proto.groupType) {
+        case EHexobjectGroup.LOOT: {
+            stackable = !!proto.loot.traits?.stackable;
+            defaultAmount = proto.loot.amount ?? 1;
+            // якщо захочеш stackKey/weight в loot.traits — додаси й тут
+            break;
+        }
+
+        case EHexobjectGroup.RESOURCE: {
+            // ресурси як токени: можна defaultAmount = resource.amount ?? 1
+            defaultAmount = proto.resource.amount ?? 1;
+            break;
+        }
+
+        case EHexobjectGroup.TOOL: {
+            // tools як інвентарні токени (не стак)
+            defaultAmount = 1;
+            // якщо вага є в equipment/tool пізніше — додаси
+            break;
+        }
+
+        case EHexobjectGroup.WEAPON: {
+            defaultAmount = 1;
+            // slot беремо з факту "weapon => equip slot weapon"
+            equipSlot = "weapon" as TEquipSlot; // або якщо у вас є строгий тип слотів — поставимо точно
+            // якщо вага живе в equipment.traits, можна додати
+            // weightKg = proto.equipment.traits?.weightKg ?? 0;  // якщо додаси поле
+            break;
+        }
+
+        case EHexobjectGroup.CREATURE: {
+            defaultAmount = 1;
+            break;
+        }
+
+        case EHexobjectGroup.CONSTRUCTION: {
+            defaultAmount = 1;
+            break;
+        }
+
+        default:
+            assertNever(proto, "Unhandled proto.groupType");
     }
 
-    // 2) fallback prototypes (мінімально, щоб уже працювало на твоїх LOOT_PROTOTYPES)
-    const loot = (LOOT_PROTOTYPES as any)?.[key];
-    if (loot) {
-        return {
-            stackable: !!loot?.loot?.traits?.stackable,
-            stackKey: key,
-            weightKg: loot?.loot?.traits?.weightKg ?? 0,
-            type: "loot",
-            equipSlot: undefined,
-            iconPath: loot?.spritePath ?? "",
-            title: loot?.loot?.name ?? key,
-            description: loot?.description ?? "",
-        };
-    }
+    return { group, iconPath, descriptionFallback, stackable, stackKey, defaultAmount, equipSlot, weightKg };
+}
 
-    const res = (RESOURCE_PROTOTYPES as any)?.[key];
-    if (res) {
-        // якщо ти реально хочеш дерево/камінь як токени, просто вмикай stackable в meta пізніше
+export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView {
+    const proto = HEX_OBJECT_PROTOTYPES[key];
+    const meta = HEXOBJECT_META[key];
+
+    // proto is required by satisfies Record<THexobjectKey,...>
+    // але якщо колись буде partial — зробимо страховку:
+    if (!proto) {
         return {
+            group: EHexobjectGroup.LOOT,
+            iconPath: "",
+            title: key,
+            description: "",
             stackable: false,
             stackKey: undefined,
-            weightKg: 0,
-            type: "resource",
+            defaultAmount: 1,
             equipSlot: undefined,
-            iconPath: res?.spritePath ?? "",
-            title: key,
-            description: res?.description ?? "",
+            weightKg: 0,
         };
     }
 
-    // 3) safe default
+    const p = resolveProtoFields(proto);
+
+    // meta overrides (UI + optional traits)
+    const title = meta?.title ?? key;
+    const description = meta?.subtitle ?? meta?.title ?? p.descriptionFallback;
+
+    // stack rules — якщо ти вирішив тримати stackable/stackKey в meta.traits, просто перезапиши
+    const metaStackable = !!meta?.traits?.stackable;
+    const stackable = meta?.traits ? metaStackable : p.stackable;
+    const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
+
+    // weightKg: якщо вага буде в meta.traits — можна зробити так само
+    const weightKg = meta?.traits?.weightKg ?? p.weightKg;
+
     return {
-        stackable: false,
-        stackKey: undefined,
-        weightKg: 0,
-        type: "loot",
-        equipSlot: undefined,
-        iconPath: "",
-        title: key,
-        description: "",
+        group: p.group,
+        iconPath: p.iconPath,
+        title,
+        description,
+        stackable,
+        stackKey,
+        defaultAmount: p.defaultAmount,
+        equipSlot: p.equipSlot,
+        weightKg,
     };
 }

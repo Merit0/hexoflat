@@ -1,43 +1,57 @@
 <template>
-  <div class="panel">
-    <div class="top">
-      <div class="thumb" :style="thumbStyle"></div>
+  <div class='panel'>
+    <div class='top'>
+      <div class='thumb' :style='thumbStyle'></div>
 
-      <div class="meta">
-        <div class="title">{{ traits.title }}</div>
-        <div class="sub">{{ item.key }}</div>
+      <div class='meta'>
+        <div class='title'>{{ traits.title }}</div>
+        <div class='sub'>{{ item.key }}</div>
       </div>
     </div>
 
-    <div class="desc">
-      {{ traits.description || "No description yet." }}
+    <div class='desc'>
+      {{ traits.description || 'No description yet.' }}
     </div>
 
-    <div class="row">
-      <div class="pill">Type: {{ item.type }}</div>
-      <div v-if="item.equipSlot" class="pill">Slot: {{ item.equipSlot }}</div>
-      <div v-if="item.amount > 1" class="pill">Amount: {{ item.amount }}</div>
+    <div class='row'>
+      <div class='pill'>Type: {{ item.type }}</div>
+      <div v-if='item.equipSlot' class='pill'>Slot: {{ item.equipSlot }}</div>
+      <div v-if='item.amount > 1' class='pill'>Amount: {{ item.amount }}</div>
     </div>
 
-    <div class="actions">
-      <button class="btn" disabled>Use</button>
-      <button class="btn" disabled>Equip</button>
-      <button class="btn" disabled>Drop</button>
+    <div class='actions'>
+      <button class='btn' disabled>Use</button>
+      <button class='btn' disabled>Equip</button>
+      <button class='btn' disabled>Drop</button>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import {computed} from "vue";
-import type {InventoryItem} from "@/stores/hero-inventory-store";
-import {resolveItemTraits} from "@/utils/inventory/traits-resolver";
+<script setup lang='ts'>
+import {computed} from 'vue';
+import type {InventoryItem} from '@/stores/hero-inventory-store';
+import {resolveInventoryView} from "@/utils/inventory/traits-resolver";
+import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
 
 const props = defineProps<{ item: InventoryItem }>();
 
-const traits = computed(() => resolveItemTraits(props.item.key));
+const traits = computed(() => resolveInventoryView(props.item.key));
+
 const thumbStyle = computed(() => ({
-  backgroundImage: traits.value.iconPath ? `url("${traits.value.iconPath}")` : "none",
+  backgroundImage: traits.value.iconPath ? `url('${traits.value.iconPath}')` : 'none',
 }));
+
+const actions = computed(() => {
+  if (!props.item) return [];
+  const a: Array<{ key: 'use' | 'equip' | 'drop'; label: string; disabled?: boolean }> = [];
+
+  if (props.item.type === EHexobjectGroup.LOOT) a.push({ key: 'use', label: 'USE' });
+  if (props.item.type === EHexobjectGroup.EQUIPMENT && props.item.equipSlot) a.push({ key: 'equip', label: 'EQUIP' });
+
+  a.push({ key: 'drop', label: 'DROP' });
+  return a;
+});
+
 </script>
 
 <style scoped>

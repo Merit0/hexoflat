@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
-import { resolveItemTraits } from "@/utils/inventory/traits-resolver";
-
-export type TInventoryItemType = "resource" | "loot" | "tool" | "equipment";
+import { resolveInventoryView } from "@/utils/inventory/traits-resolver";
+import {THexobjectKey} from "@/registry/hexobjects-registry";
+import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
 
 export type TEquipSlot =
     | "weapon"
@@ -13,15 +13,15 @@ export type TEquipSlot =
 
 export interface InventoryItem {
     id: string;
-    key: string; // HEXOBJECT_KEYS.*
-    type: TInventoryItemType;
+    key: THexobjectKey;
+    type: EHexobjectGroup;
 
     stackKey?: string; // usually key, if stackable
     amount: number;
 
     equipSlot?: TEquipSlot;
 
-    slotKey: string; // "r3c10"
+    slotKey: string;
     isNew: boolean;
 }
 
@@ -141,8 +141,8 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
          * Викликається коли герой підняв об'єкт з мапи.
          * key = HEXOBJECT_KEYS.*
          */
-        addPickedHexobject(key: string, amount = 1) {
-            const meta = resolveItemTraits(key);
+        addPickedHexobject(key: THexobjectKey, amount = 1) {
+            const meta = resolveInventoryView(key);
             const stackable = !!meta.stackable;
 
             // (пізніше) вантажність:
@@ -165,7 +165,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             const item: InventoryItem = {
                 id,
                 key,
-                type: meta.type,
+                type: meta.group,
                 stackKey: stackable ? (meta.stackKey ?? key) : undefined,
                 amount: stackable ? amount : 1,
                 equipSlot: meta.equipSlot,

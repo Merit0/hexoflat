@@ -1,5 +1,5 @@
-import { EHexCollision, EHexobjectGroup, THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
+import {EHexCollision, EHexobjectGroup, THexobjectPrototype} from "@/abstraction/hexobject-abstraction";
+import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 type TLootKeys =
     | typeof HEXOBJECT_KEYS.COINS
@@ -13,7 +13,14 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: "U are lucky and find the Coins",
-        loot: { name: "Coins", amount: 1, traits: { stackable: true } },
+        loot: {
+            name: "Coins",
+            amount: 1,
+            traits: {
+                stackable: true,
+                stackKey: HEXOBJECT_KEYS.COINS,
+            }
+        },
         collision: EHexCollision.SOLID,
         spritePath: "/hex-assets/hex-loot/coins-token-image.png",
     },
@@ -23,7 +30,15 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: "Bottle of Health potion!",
-        loot: { name: "Health Potion", amount: 1, traits: { stackable: true } },
+        loot: {
+            name: "Health Potion",
+            amount: 1,
+            traits: {
+                stackable: true,
+                stackKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
+                maxStack: 10,
+            }
+        },
         collision: EHexCollision.SOLID,
         spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_BOTTLE}-token-image.png`,
     },
@@ -33,7 +48,15 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: "Bottle of Energy potion!",
-        loot: { name: "Energy Potion", amount: 10, traits: { stackable: true } },
+        loot: {
+            name: "Energy Potion",
+            amount: 10,
+            traits: {
+                stackable: true,
+                stackKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
+                maxStack: 10,
+            }
+        },
         collision: EHexCollision.SOLID,
         spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_BOTTLE}-token-image.png`,
     },
@@ -43,7 +66,15 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
         groupType: EHexobjectGroup.LOOT,
         isInteractable: true,
         description: "Bottle of Mana potion!",
-        loot: { name: "Mana Potion", amount: 10, traits: { stackable: true } },
+        loot: {
+            name: "Mana Potion",
+            amount: 10,
+            traits: {
+                stackable: true,
+                stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,
+                maxStack: 10,
+            }
+        },
         collision: EHexCollision.SOLID,
         spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_BOTTLE}-token-image.png`,
     },
