@@ -1,7 +1,8 @@
-import { defineStore } from "pinia";
-import { resolveInventoryView } from "@/utils/inventory/traits-resolver";
+import {defineStore} from "pinia";
 import {THexobjectKey} from "@/registry/hexobjects-registry";
 import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
+import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
+import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 
 export type TEquipSlot =
     | "weapon"
@@ -36,7 +37,7 @@ function slotKey(r: number, c: number) {
 }
 
 function isBlocked(r: number, c: number, cfg: GridConfig) {
-    const { x, y, w, h } = cfg.blockedRect;
+    const {x, y, w, h} = cfg.blockedRect;
     return c >= x && c < x + w && r >= y && r < y + h;
 }
 
@@ -51,7 +52,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         grid: {
             cols: 12,
             rows: 7,
-            blockedRect: { x: 3, y: 1, w: 6, h: 5 },
+            blockedRect: {x: 3, y: 1, w: 6, h: 5},
         } as GridConfig,
 
         items: [] as InventoryItem[],
@@ -142,40 +143,68 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
          * key = HEXOBJECT_KEYS.*
          */
         addPickedHexobject(key: THexobjectKey, amount = 1) {
-            const meta = resolveInventoryView(key);
-            const stackable = !!meta.stackable;
+            const proto = HEX_OBJECT_PROTOTYPES[key];
+            const meta = HEXOBJECT_META[key];
 
-            // (пізніше) вантажність:
-            // const predicted = this.totalWeightKg + meta.weightKg * amount; if (predicted > this.carryCapacityKg) ...
+            const stackable = !!meta?.traits?.stackable;
+            const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
+            const maxStack = meta?.traits?.maxStack ?? null; // null/undefined => unlimited
 
-            if (stackable) {
-                const stackKey = meta.stackKey ?? key;
-                const existing = this.items.find(i => i.stackKey === stackKey);
-                if (existing) {
-                    existing.amount += amount;
-                    existing.isNew = true;
-                    return { ok: true };
+            let left = amount;
+
+            if (stackable && stackKey) {
+                // 1) fill existing stacks first
+                const stacks = this.items.filter(i => i.stackKey === stackKey);
+
+                for (const s of stacks) {
+                    if (left <= 0) break;
+
+                    if (!maxStack) {
+                        s.amount += left;
+                        s.isNew = true;
+                        return {ok: true};
+                    }
+
+                    const canAdd = Math.max(0, maxStack - s.amount);
+                    if (canAdd <= 0) continue;
+
+                    const add = Math.min(canAdd, left);
+                    s.amount += add;
+                    s.isNew = true;
+                    left -= add;
                 }
             }
 
-            const free = this.pickFreeSlot();
-            if (!free) return { ok: false, message: "Inventory is full!" };
+            // 2) create new stacks in free slots
+            while (left > 0) {
+                const free = this.pickFreeSlot();
+                if (!free) return {ok: false, message: "Inventory is full!"};
 
-            const id = crypto.randomUUID();
-            const item: InventoryItem = {
-                id,
-                key,
-                type: meta.group,
-                stackKey: stackable ? (meta.stackKey ?? key) : undefined,
-                amount: stackable ? amount : 1,
-                equipSlot: meta.equipSlot,
-                slotKey: free,
-                isNew: true,
-            };
+                const id = crypto.randomUUID();
 
-            this.items.push(item);
-            this.ensureRotation(id);
-            return { ok: true };
+                const addNow = (!stackable || !maxStack) ? left : Math.min(left, maxStack);
+
+                const item: InventoryItem = {
+                    id,
+                    key,
+                    type: proto.groupType, // або resolveInventoryView().group
+                    stackKey: stackable ? stackKey : undefined,
+                    amount: stackable ? addNow : 1,
+                    equipSlot: undefined, // якщо треба — резолвиш як зараз
+                    slotKey: free,
+                    isNew: true,
+                };
+
+                this.items.push(item);
+                this.ensureRotation(id);
+
+                left -= addNow;
+
+                // якщо не stackable — ми додали 1 штуку і виходимо
+                if (!stackable) break;
+            }
+
+            return {ok: true};
         },
 
         // utility на майбутнє (кнопка debug у дев-режимі)

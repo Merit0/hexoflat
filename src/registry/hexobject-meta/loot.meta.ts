@@ -12,6 +12,10 @@ export const LOOT_META: Record<TLootMetaKeys, IHexobjectMeta> = {
         key: HEXOBJECT_KEYS.COINS,
         title: "Coins",
         subtitle: "Lucky find",
+        traits: {
+            stackable: true,
+            stackKey: HEXOBJECT_KEYS.COINS,
+        },
         actions: {},      // або взагалі можеш не мати actions, якщо тип дозволяє
         yields: {},       // loot зазвичай дається не через yields, а через loot-прототип
     },
@@ -20,6 +24,11 @@ export const LOOT_META: Record<TLootMetaKeys, IHexobjectMeta> = {
         key: HEXOBJECT_KEYS.HEALTH_BOTTLE,
         title: "Health Potion",
         subtitle: "Restores health",
+        traits: {
+            stackable: true,
+            stackKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
+            maxStack: 10,
+        },
         actions: {},
         yields: {},
     },
@@ -28,6 +37,11 @@ export const LOOT_META: Record<TLootMetaKeys, IHexobjectMeta> = {
         key: HEXOBJECT_KEYS.ENERGY_BOTTLE,
         title: "Energy Potion",
         subtitle: "Restores energy",
+        traits: {
+            stackable: true,
+            stackKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
+            maxStack: 10,
+        },
         actions: {},
         yields: {},
     },
@@ -36,6 +50,11 @@ export const LOOT_META: Record<TLootMetaKeys, IHexobjectMeta> = {
         key: HEXOBJECT_KEYS.MANA_BOTTLE,
         title: "Mana Potion",
         subtitle: "Restores mana",
+        traits: {
+            stackable: true,
+            stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,
+            maxStack: 10,
+        },
         actions: {},
         yields: {},
     },
