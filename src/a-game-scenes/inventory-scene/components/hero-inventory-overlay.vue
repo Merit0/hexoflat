@@ -11,8 +11,8 @@
       <section class="board-body">
         <inventory-board-grid/>
         <div class="center-layer">
-          <token-details-panel v-if="selectedItem" :item="selectedItem"/>
-          <hero-equip-board v-else/>
+          <token-details-panel v-if="selectedItem" :item="selectedItem" />
+          <hero-equip-board v-else />
         </div>
       </section>
 
@@ -146,5 +146,16 @@ function closeInventory() {
   color: rgba(255, 255, 255, 0.70);
   font-weight: 700;
   font-size: 12px;
+}
+
+/* але самим центральним компонентам дозволимо кліки */
+.center-layer > * {
+  pointer-events: auto;
+}
+
+.center-layer :deep(.equip-root),
+.center-layer :deep(.token-details-root) {
+  max-width: 100%;
+  max-height: 100%;
 }
 </style>

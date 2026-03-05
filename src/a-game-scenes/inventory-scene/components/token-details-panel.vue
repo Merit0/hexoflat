@@ -42,9 +42,9 @@ const thumbStyle = computed(() => ({
 
 <style scoped>
 .panel {
-  width: 430px;
-  min-height: 260px;
-  border-radius: 16px;
+  width: 470px;
+  min-height: 380px;
+  border-radius: 10px;
 
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.12);

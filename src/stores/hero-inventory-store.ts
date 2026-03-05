@@ -51,7 +51,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         grid: {
             cols: 12,
             rows: 7,
-            blockedRect: { x: 4, y: 1, w: 4, h: 5 },
+            blockedRect: { x: 3, y: 1, w: 6, h: 5 },
         } as GridConfig,
 
         items: [] as InventoryItem[],

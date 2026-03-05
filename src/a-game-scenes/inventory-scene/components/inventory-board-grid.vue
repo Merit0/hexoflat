@@ -99,10 +99,9 @@ const centerHoleVars = computed(() => {
 
 .cell.selected {
   box-shadow:
-      0 0 0 2px rgba(255,255,255,0.95),
-      0 0 0 6px rgba(255,255,255,0.10),
-      0 18px 40px rgba(0,0,0,0.55);
-  border-color: rgba(255,255,255,0.65);
+      0 0 0 1px rgba(255,255,255,0.95),
+      0 6px 40px rgba(0,0,0,0.55);
+  border-color: rgb(255, 204, 0);
 }
 
 @media (max-width: 1100px) {

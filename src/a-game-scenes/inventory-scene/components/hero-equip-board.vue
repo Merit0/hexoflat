@@ -27,8 +27,8 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import {calcHexPixelPosition} from "@/utils/hex-utils";
 
-const BASE_HEX_SIZE = 100;
-const HEX_SCALE = 1.2; // +20%
+const BASE_HEX_SIZE = 110;
+const HEX_SCALE = 1.3; // +30%
 
 const HEX_SIZE = computed(() => BASE_HEX_SIZE * HEX_SCALE);
 
@@ -47,7 +47,7 @@ function readDomHexSize() {
   if (r.height > 0) domHexH.value = r.height;
 }
 
-const tileWidth = computed(() => domHexW.value || HEX_SIZE.value);
+const tileWidth = computed(() => HEX_SIZE.value);
 
 const center: Coord = {rowIndex: 0, columnIndex: 0};
 
@@ -107,15 +107,9 @@ const tiles = computed<PseudoTile[]>(() => {
 });
 
 /**
- * ---------- RING COMPRESSION ----------
- * We "pull" slot tiles closer to the hero by scaling their offset vector.
- * 1.00 = normal map spacing
- * 0.90 = closer
- * 0.85 = even closer
- *
- * Start with 0.88. If you want tighter, go 0.84..0.86.
+ * ---------- HEX RING COMPRESSION ----------
  */
-const RING_COMPRESS = 0.6;
+const RING_COMPRESS = 0.57;
 
 /**
  * Optional additional inset in px (after compress). Can be 0.
@@ -147,12 +141,11 @@ function compressAroundCenter(x: number, y: number) {
 /**
  * ---------- bounds (use COMPRESSED positions so container fits perfectly) ----------
  */
-const bleed = 2;
+const bleed = 10;
 
 const bounds = computed(() => {
-  const w = domHexW.value || 0;
-  const h = domHexH.value || 0;
-  if (!w || !h) return {width: 0, height: 0, offsetX: 0, offsetY: 0};
+  const w = HEX_SIZE.value;
+  const h = HEX_SIZE.value;
 
   let minX = Infinity, minY = Infinity;
   let maxX = -Infinity, maxY = -Infinity;
@@ -184,7 +177,8 @@ const innerStyle = computed(() => {
   return {
     width: `${b.width}px`,
     height: `${b.height}px`,
-    transform: `translate(${Math.round(-b.offsetX)}px, ${Math.round(-b.offsetY)}px)`,
+    paddingLeft: `${Math.round(-b.offsetX)}px`,
+    paddingTop: `${Math.round(-b.offsetY)}px`,
   } as Record<string, string>;
 });
 

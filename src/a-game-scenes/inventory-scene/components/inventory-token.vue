@@ -56,8 +56,8 @@ function onClick() {
 
   transform-origin: center center;
 
-  width: 86%;
-  height: 86%;
+  width: 90%;
+  height: 90%;
   border-radius: 14px;
 
   border: 1px solid rgba(0,0,0,0.35);
