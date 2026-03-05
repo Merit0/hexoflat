@@ -131,9 +131,8 @@ const centerHoleVars = computed(() => {
 
 .cell.blocked {
   background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.06);
   box-shadow: none;
-  opacity: 0.35;
+  opacity: 0;
 }
 
 /* “порожнє” за гексами — напівпрозора зона */

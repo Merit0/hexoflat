@@ -1,5 +1,5 @@
 <template>
-  <button
+  <div
       class="token"
       :class="{ 'is-selected': isSelected }"
       :style="tokenStyle"
@@ -10,7 +10,7 @@
     <div class="icon" :style="iconStyle"></div>
 
     <span v-if="showAmount" class="amount">x{{ item.amount }}</span>
-  </button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -48,45 +48,16 @@ function onClick() {
   position: absolute;
   left: 50%;
   top: 50%;
+  width: 100%;
+  height: 100%;
+  display: block;
 
-  transform:
-      translate(-50%, -50%)
-      rotate(var(--rot))
-      scale(1);
-
+  transform: translate(-50%, -50%) rotate(var(--rot)) scale(1);
   transform-origin: center center;
 
-  width: 90%;
-  height: 90%;
-  border-radius: 14px;
-
-  border: 1px solid rgba(0,0,0,0.35);
-  background: rgba(0,0,0,0.22);
-
-  box-shadow:
-      0 10px 22px rgba(0,0,0,0.28),
-      0 0 0 1px rgba(255,255,255,0.07) inset;
-
-  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
   cursor: pointer;
+  transition: transform 0.16s ease, filter 0.16s ease;
 }
-
-/* hover OR selected => same pose */
-.token:hover,
-.token.is-selected {
-  transform:
-      translate(-50%, -50%)
-      rotate(0deg)
-      scale(1.06);
-
-  z-index: 5;
-
-  box-shadow:
-      0 22px 46px rgba(0,0,0,0.55),
-      0 0 0 1px rgba(255,255,255,0.10) inset;
-}
-
-/* optional: якщо selected, можна прибрати реакцію на hover (не треба) */
 
 .token:hover,
 .token.is-selected {
@@ -94,12 +65,8 @@ function onClick() {
       translate(-50%, -50%)
       rotate(0deg)
       scale(1.06);
-
   z-index: 5;
-
-  box-shadow:
-      0 22px 46px rgba(0,0,0,0.55),
-      0 0 0 1px rgba(255,255,255,0.10) inset;
+  filter: brightness(1.08);
 }
 
 .badge {
@@ -117,17 +84,18 @@ function onClick() {
   font-size: 10px;
   letter-spacing: 0.08em;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  will-change: transform;
 }
 
 .icon {
   position: absolute;
-  inset: 10px 10px 16px 10px;
+  inset: 0;
 
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
 
-  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.55));
 }
 
 .amount {
@@ -144,12 +112,5 @@ function onClick() {
 
   font-weight: 900;
   font-size: 11px;
-}
-
-.cell.selected {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95),
-  0 0 0 6px rgba(255, 255, 255, 0.10),
-  0 18px 40px rgba(0, 0, 0, 0.55);
-  border-color: rgba(255, 255, 255, 0.65);
 }
 </style>
