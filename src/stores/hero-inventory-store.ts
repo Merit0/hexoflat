@@ -36,6 +36,30 @@ function slotKey(r: number, c: number) {
     return `r${r}c${c}`;
 }
 
+function equipSlotKey(slot: TEquipSlot) {
+    return `eq:${slot}`;
+}
+
+function parseEquipSlotKey(value: string | null | undefined): TEquipSlot | null {
+    if (!value) return null;
+    if (!value.startsWith("eq:")) return null;
+
+    const slot = value.slice(3) as TEquipSlot;
+
+    if (
+        slot === "weapon" ||
+        slot === "shield" ||
+        slot === "armor" ||
+        slot === "gloves" ||
+        slot === "helm" ||
+        slot === "boots"
+    ) {
+        return slot;
+    }
+
+    return null;
+}
+
 function isBlocked(r: number, c: number, cfg: GridConfig) {
     const {x, y, w, h} = cfg.blockedRect;
     return c >= x && c < x + w && r >= y && r < y + h;
@@ -61,16 +85,6 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         // UI-only stable rotation map
         rotationsById: {} as Record<string, number>,
 
-        // equip slots state (поки просто заглушка)
-        equipped: {
-            weapon: null as string | null,
-            shield: null as string | null,
-            armor: null as string | null,
-            gloves: null as string | null,
-            helm: null as string | null,
-            boots: null as string | null,
-        },
-
         carryCapacityKg: 5,
         draggingId: null as string | null,
         dragFromSlot: null as string | null,
@@ -82,9 +96,22 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         dragOffsetY: 0,
         dragWidth: 0,
         dragHeight: 0,
+
+        dragOverEquipSlot: null as TEquipSlot | null,
     }),
 
     getters: {
+        equippedItems(state): Record<TEquipSlot, InventoryItem | null> {
+            return {
+                weapon: state.items.find(i => i.slotKey === equipSlotKey("weapon")) ?? null,
+                shield: state.items.find(i => i.slotKey === equipSlotKey("shield")) ?? null,
+                armor: state.items.find(i => i.slotKey === equipSlotKey("armor")) ?? null,
+                gloves: state.items.find(i => i.slotKey === equipSlotKey("gloves")) ?? null,
+                helm: state.items.find(i => i.slotKey === equipSlotKey("helm")) ?? null,
+                boots: state.items.find(i => i.slotKey === equipSlotKey("boots")) ?? null,
+            };
+        },
+
         selectedItem(state): InventoryItem | null {
             return state.items.find(i => i.id === state.selectedItemId) ?? null;
         },
@@ -121,6 +148,55 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
     },
 
     actions: {
+        setDragOverEquip(slot: TEquipSlot | null) {
+            this.dragOverEquipSlot = slot;
+        },
+
+        moveItemToSlot(itemId: string, targetSlotKey: string) {
+            const fromItem = this.items.find(i => i.id === itemId);
+            if (!fromItem) return;
+
+            if (fromItem.slotKey === targetSlotKey) return;
+
+            const targetItem = this.items.find(i => i.slotKey === targetSlotKey);
+
+            if (!targetItem) {
+                fromItem.slotKey = targetSlotKey;
+                return;
+            }
+
+            const targetEquip = parseEquipSlotKey(targetSlotKey);
+
+            if (!targetEquip) {
+                const merged = this.mergeStacks(targetItem, fromItem);
+
+                if (merged) {
+                    targetItem.isNew = true;
+
+                    if (fromItem.amount <= 0) {
+                        const idx = this.items.findIndex(i => i.id === fromItem.id);
+                        if (idx !== -1) this.items.splice(idx, 1);
+                    }
+
+                    return;
+                }
+            }
+
+            const oldSlot = fromItem.slotKey;
+            fromItem.slotKey = targetSlotKey;
+            targetItem.slotKey = oldSlot;
+        },
+
+        dropToEquip(targetEquipSlot: TEquipSlot | null) {
+            if (!this.isDragging || !this.draggingId || !targetEquipSlot) {
+                this.cancelDrag();
+                return;
+            }
+
+            this.moveItemToSlot(this.draggingId, equipSlotKey(targetEquipSlot));
+            this.cancelDrag();
+        },
+
         isCellBlocked(r: number, c: number) {
             return isBlocked(r, c, this.grid);
         },
@@ -231,6 +307,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             this.draggingId = itemId;
             this.dragFromSlot = item.slotKey;
             this.dragOverSlot = null;
+            this.dragOverEquipSlot = null;
             this.isDragging = true;
 
             this.dragOffsetX = clientX - rect.left;
@@ -239,7 +316,6 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             this.dragPointerX = clientX;
             this.dragPointerY = clientY;
 
-            // важливо
             this.dragWidth = rect.width;
             this.dragHeight = rect.height;
         },
@@ -257,6 +333,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             this.draggingId = null;
             this.dragFromSlot = null;
             this.dragOverSlot = null;
+            this.dragOverEquipSlot = null;
             this.isDragging = false;
 
             this.dragPointerX = 0;
@@ -302,42 +379,8 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 return;
             }
 
-            const fromItem = this.items.find(i => i.id === this.draggingId);
-            if (!fromItem) {
-                this.cancelDrag();
-                return;
-            }
-
-            const targetItem = this.items.find(i => i.slotKey === targetSlot);
-
-            // 1) empty slot -> move
-            if (!targetItem) {
-                fromItem.slotKey = targetSlot;
-                this.cancelDrag();
-                return;
-            }
-
-            // 2) try stack merge
-            const merged = this.mergeStacks(targetItem, fromItem);
-
-            if (merged) {
-                targetItem.isNew = true;
-
-                if (fromItem.amount <= 0) {
-                    const idx = this.items.findIndex(i => i.id === fromItem.id);
-                    if (idx !== -1) this.items.splice(idx, 1);
-                }
-
-                this.cancelDrag();
-                return;
-            }
-
-            // 3) swap
-            const tmp = targetItem.slotKey;
-            targetItem.slotKey = fromItem.slotKey;
-            fromItem.slotKey = tmp;
-
+            this.moveItemToSlot(this.draggingId, targetSlot);
             this.cancelDrag();
-        }
+        },
     },
 });
