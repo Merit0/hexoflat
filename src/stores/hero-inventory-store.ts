@@ -76,6 +76,12 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         dragFromSlot: null as string | null,
         dragOverSlot: null as string | null,
         isDragging: false,
+        dragPointerX: 0,
+        dragPointerY: 0,
+        dragOffsetX: 0,
+        dragOffsetY: 0,
+        dragWidth: 0,
+        dragHeight: 0,
     }),
 
     getters: {
@@ -218,7 +224,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             delete this.rotationsById[id];
         },
 
-        startDrag(itemId: string) {
+        startDrag(itemId: string, clientX: number, clientY: number, rect: DOMRect) {
             const item = this.items.find(i => i.id === itemId);
             if (!item) return;
 
@@ -226,6 +232,21 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             this.dragFromSlot = item.slotKey;
             this.dragOverSlot = null;
             this.isDragging = true;
+
+            this.dragOffsetX = clientX - rect.left;
+            this.dragOffsetY = clientY - rect.top;
+
+            this.dragPointerX = clientX;
+            this.dragPointerY = clientY;
+
+            // важливо
+            this.dragWidth = rect.width;
+            this.dragHeight = rect.height;
+        },
+
+        updateDragPointer(clientX: number, clientY: number) {
+            this.dragPointerX = clientX;
+            this.dragPointerY = clientY;
         },
 
         setDragOver(slotKey: string | null) {

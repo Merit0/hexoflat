@@ -3,7 +3,6 @@
       class="token"
       :class="{
     'is-dragging': isDragging,
-    'is-selected': isSelected
   }"
       :style="tokenStyle"
       @pointerdown.prevent="onPointerDown"
@@ -14,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useHeroInventoryStore, type InventoryItem } from "@/stores/hero-inventory-store";
 import { resolveInventoryView } from "@/utils/inventory/traits-resolver";
 
@@ -22,13 +21,26 @@ const props = defineProps<{ item: InventoryItem }>();
 const inventoryStore = useHeroInventoryStore();
 
 const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
-
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const meta = computed(() => resolveInventoryView(props.item.key));
 
-const tokenStyle = computed(() => ({
-  "--rot": `${rotation.value}deg`,
-}));
+const tokenStyle = computed(() => {
+  if (isDragging.value) {
+    return {
+      position: "fixed",
+      left: `${inventoryStore.dragPointerX - inventoryStore.dragOffsetX}px`,
+      top: `${inventoryStore.dragPointerY - inventoryStore.dragOffsetY}px`,
+      width: `${inventoryStore.dragWidth}px`,
+      height: `${inventoryStore.dragHeight}px`,
+      transform: "rotate(0deg) scale(1.05)",
+      zIndex: 9999,
+    };
+  }
+
+  return {
+    "--rot": `${rotation.value}deg`,
+  };
+});
 
 const iconStyle = computed(() => ({
   backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : "none",
@@ -39,30 +51,49 @@ function onClick() {
   inventoryStore.toggleSelect(props.item.id);
 }
 
-const isSelected = computed(() => inventoryStore.selectedItemId === props.item.id);
-
 function getSlotKeyFromPoint(x: number, y: number): string | null {
-  const el = document.elementFromPoint(x, y) as HTMLElement | null;
-  if (!el) return null;
-  const cell = el.closest(".cell") as HTMLElement | null;
-  if (!cell || cell.classList.contains("blocked")) return null;
-  return cell.dataset.slotkey ?? null; // ми це додамо в grid
+  const els = document.elementsFromPoint(x, y) as HTMLElement[];
+  const cell = els.find((el) => el.classList?.contains("cell") && !el.classList.contains("blocked"));
+  return cell?.dataset.slotkey ?? null;
 }
 
 function onPointerDown(e: PointerEvent) {
-  // тільки ЛКМ/основний контакт
   if (e.button !== 0) return;
 
-  inventoryStore.startDrag(props.item.id);
+  const target = e.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+
+  let didDrag = false;
+  let dragStarted = false;
+
+  const startX = e.clientX;
+  const startY = e.clientY;
 
   const onMove = (ev: PointerEvent) => {
+    const dx = ev.clientX - startX;
+    const dy = ev.clientY - startY;
+
+    if (!dragStarted && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      dragStarted = true;
+      didDrag = true;
+
+      inventoryStore.startDrag(props.item.id, startX, startY, rect);
+    }
+
+    if (!dragStarted) return;
+
+    inventoryStore.updateDragPointer(ev.clientX, ev.clientY);
+
     const slot = getSlotKeyFromPoint(ev.clientX, ev.clientY);
     inventoryStore.setDragOver(slot);
   };
 
   const onUp = (ev: PointerEvent) => {
-    const slot = getSlotKeyFromPoint(ev.clientX, ev.clientY);
-    inventoryStore.dropTo(slot);
+    if (dragStarted) {
+      const slot = getSlotKeyFromPoint(ev.clientX, ev.clientY);
+      inventoryStore.dropTo(slot);
+    }
+
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
   };
@@ -72,7 +103,6 @@ function onPointerDown(e: PointerEvent) {
 }
 
 onBeforeUnmount(() => {
-  // safety: якщо компонент зник під час drag
   if (inventoryStore.draggingId === props.item.id) inventoryStore.cancelDrag();
 });
 </script>
@@ -87,7 +117,7 @@ onBeforeUnmount(() => {
   transform: translate(-50%, -50%) rotate(var(--rot)) scale(1);
   transform-origin: center center;
   cursor: grab;
-  transition: transform 0.16s ease, filter 0.16s ease;
+  transition: transform 0.08s linear, filter 0.12s ease;
 }
 
 .token:active {
@@ -103,7 +133,9 @@ onBeforeUnmount(() => {
 
 .token.is-dragging {
   filter: brightness(1.15);
-  z-index: 50;
+  z-index: 9999;
+  transition: none;
+  pointer-events: none;
 }
 
 .icon {
