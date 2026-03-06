@@ -1,5 +1,5 @@
 import {defineStore} from "pinia";
-import {THexobjectKey} from "@/registry/hexobjects-registry";
+import {HEXOBJECT_KEYS, THexobjectKey} from "@/registry/hexobjects-registry";
 import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
 import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
 import {HEXOBJECT_META} from "@/registry/hexobject-meta";
@@ -158,10 +158,36 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
             if (fromItem.slotKey === targetSlotKey) return;
 
+            // HAND не можна переносити у grid
+            if (fromItem.key === HEXOBJECT_KEYS.HAND) {
+                const targetEquip = parseEquipSlotKey(targetSlotKey);
+
+                if (targetEquip !== "weapon" && targetEquip !== "shield") {
+                    return;
+                }
+            }
+
             const targetItem = this.items.find(i => i.slotKey === targetSlotKey);
+
+            // якщо слот містить HAND і кладемо інший предмет
+            if (
+                targetItem &&
+                targetItem.key === HEXOBJECT_KEYS.HAND &&
+                fromItem.key !== HEXOBJECT_KEYS.HAND
+            ) {
+                const idx = this.items.findIndex(i => i.id === targetItem.id);
+                if (idx !== -1) this.items.splice(idx, 1);
+
+                fromItem.slotKey = targetSlotKey;
+
+                this.ensureDefaultHands();
+                return;
+            }
 
             if (!targetItem) {
                 fromItem.slotKey = targetSlotKey;
+
+                this.ensureDefaultHands();
                 return;
             }
 
@@ -178,6 +204,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                         if (idx !== -1) this.items.splice(idx, 1);
                     }
 
+                    this.ensureDefaultHands();
                     return;
                 }
             }
@@ -185,6 +212,8 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             const oldSlot = fromItem.slotKey;
             fromItem.slotKey = targetSlotKey;
             targetItem.slotKey = oldSlot;
+
+            this.ensureDefaultHands();
         },
 
         dropToEquip(targetEquipSlot: TEquipSlot | null) {
@@ -381,6 +410,33 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
             this.moveItemToSlot(this.draggingId, targetSlot);
             this.cancelDrag();
+        },
+
+        ensureDefaultHands() {
+            const hasWeaponHand = this.items.some(i => i.slotKey === "eq:weapon");
+            const hasShieldHand = this.items.some(i => i.slotKey === "eq:shield");
+
+            if (!hasWeaponHand) {
+                this.items.push({
+                    id: crypto.randomUUID(),
+                    key: HEXOBJECT_KEYS.HAND,
+                    type: EHexobjectGroup.TOOL,
+                    amount: 1,
+                    slotKey: "eq:weapon",
+                    isNew: false,
+                });
+            }
+
+            if (!hasShieldHand) {
+                this.items.push({
+                    id: crypto.randomUUID(),
+                    key: HEXOBJECT_KEYS.HAND,
+                    type: EHexobjectGroup.TOOL,
+                    amount: 1,
+                    slotKey: "eq:shield",
+                    isNew: false,
+                });
+            }
         },
     },
 });

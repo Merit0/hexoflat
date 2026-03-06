@@ -16,14 +16,21 @@
             t.kind,
             t.kind === 'slot' ? 'equip-hex' : '',
             t.kind === 'slot' && isDropSlot(t.id) ? dragStateClass(t.id) : '',
-            t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id) ? 'is-occupied' : ''
+            t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id) ? 'is-occupied' : '',
+            t.kind === 'slot' && isDropSlot(t.id) && isVirtualHandVisible(t.id) ? 'is-hand-slot' : ''
           ]"
             :data-eqslot="t.kind === 'slot' ? t.id : undefined"
             :style="[tileStyle(t), { width: HEX_SIZE + 'px', height: HEX_SIZE + 'px' }]"
+            @click="t.kind === 'slot' && isDropSlot(t.id) ? onEquipHexClick(t.id) : undefined"
         >
           <equip-token
               v-if="t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id)"
               :item="getEquippedItem(t.id)!"
+          />
+
+          <hand-equip-token
+              v-else-if="t.kind === 'slot' && isDropSlot(t.id) && isVirtualHandVisible(t.id)"
+              :is-selected="isHandSelected"
           />
         </div>
       </div>
@@ -37,12 +44,17 @@ import { calcHexPixelPosition } from "@/utils/hex-utils";
 import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-store";
 import EquipToken from "@/a-game-scenes/inventory-scene/components/equip-token.vue";
 import { resolveEquipCompatibility } from "@/utils/inventory/equip-compatibility";
+import { useHeroToolStore } from "@/stores/hero-tool-store";
+import {HeroToolType} from "../../../../back-up/enums/hero-tool-type";
 
 const inventoryStore = useHeroInventoryStore();
+const heroToolStore = useHeroToolStore();
 
 const BASE_HEX_SIZE = 110;
 const HEX_SCALE = 1.3;
 const HEX_SIZE = computed(() => BASE_HEX_SIZE * HEX_SCALE);
+
+const DEFAULT_HAND_SLOT: TEquipSlot = "weapon";
 
 type Coord = {
   rowIndex: number;
@@ -131,6 +143,22 @@ function dragStateClass(id: TEquipSlot) {
   return compatibility === "effect" ? "effect" : "mismatch";
 }
 
+function getEquippedItem(slot: TEquipSlot) {
+  return inventoryStore.items.find(i => i.slotKey === `eq:${slot}`) ?? null;
+}
+
+function isVirtualHandVisible(slot: TEquipSlot) {
+  return slot === DEFAULT_HAND_SLOT && !getEquippedItem(slot);
+}
+
+const isHandSelected = computed(() => heroToolStore.activeTool === HeroToolType.HAND);
+
+function onEquipHexClick(slot: TEquipSlot) {
+  if (!isVirtualHandVisible(slot)) return;
+
+  heroToolStore.activeTool = HeroToolType.HAND;
+}
+
 /* ---------- HEX RING COMPRESSION ---------- */
 const RING_COMPRESS = 0.57;
 const INSET_PX = computed(() => Math.round(HEX_SIZE.value * 0.015));
@@ -213,10 +241,6 @@ function tileStyle(t: PseudoTile) {
   } as Record<string, string>;
 }
 
-function getEquippedItem(slot: TEquipSlot) {
-  return inventoryStore.items.find(i => i.slotKey === `eq:${slot}`) ?? null;
-}
-
 function onResize() {
   readDomHexSize();
 }
@@ -277,6 +301,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.30);
   opacity: 0.96;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .equip-hex {
@@ -305,16 +330,19 @@ onBeforeUnmount(() => {
   filter: brightness(1.03) saturate(1.06);
 }
 
-.equip-hex.effect,
-.equip-hex.mismatch {
-  transition:
-      box-shadow 0.12s ease,
-      filter 0.12s ease,
-      background 0.12s ease,
-      border-color 0.12s ease;
-}
-
 .hex.slot.is-occupied {
   background: rgba(140, 155, 168, 0.22);
+}
+
+.hex.slot.is-hand-slot {
+  background: rgba(180, 150, 100, 0.18);
+}
+
+.eq-shield .equip-token {
+  transform: rotate(-8deg);
+}
+
+.eq-weapon .equip-token {
+  transform: rotate(8deg);
 }
 </style>

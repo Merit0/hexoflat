@@ -32,19 +32,23 @@ import InventoryBoardGrid from "@/a-game-scenes/inventory-scene/components/inven
 import HeroEquipBoard from "@/a-game-scenes/inventory-scene/components/hero-equip-board.vue";
 import TokenDetailsPanel from "@/a-game-scenes/inventory-scene/components/token-details-panel.vue";
 
-import {computed} from "vue";
+import {computed, onMounted} from "vue";
 import {useOverlayStore} from "@/stores/overlay-store";
 import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
 
 const overlayStore = useOverlayStore();
-const inv = useHeroInventoryStore();
+const heroInventoryStore = useHeroInventoryStore();
 
-const selectedItem = computed(() => inv.selectedItem);
+const selectedItem = computed(() => heroInventoryStore.selectedItem);
 
 function closeInventory() {
-  inv.clearSelection();
+  heroInventoryStore.clearSelection();
   overlayStore.closeOverlay();
 }
+
+onMounted(() => {
+  heroInventoryStore.ensureDefaultHands();
+});
 </script>
 
 <style scoped>
