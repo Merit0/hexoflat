@@ -88,8 +88,8 @@ const centerHoleStyle = computed(() => {
 const centerHoleVars = computed(() => {
   const { x, y, w, h } = inv.grid.blockedRect;
   return {
-    "--hole-left": `calc(${x} * var(--cell) + 14px)`,  // 14px = padding grid (як у .grid)
-    "--hole-top": `calc(${y} * var(--cell) + 14px)`,
+    "--hole-left": `calc(${x} * var(--cell) + 12px)`, //relating in css.grid class -> padding: 12px;
+    "--hole-top": `calc(${y} * var(--cell) + 12px)`,
     "--hole-w": `calc(${w} * var(--cell))`,
     "--hole-h": `calc(${h} * var(--cell))`,
   } as Record<string, string>;
@@ -109,8 +109,8 @@ const centerHoleVars = computed(() => {
   display: grid;
 
   --cell: 76px;
-  gap: 4px; /* було 10 */
-  padding: 12px; /* було 14 */
+  gap: 4px;
+  padding: 12px;
 
   border-radius: 10px;
 
@@ -206,9 +206,10 @@ const centerHoleVars = computed(() => {
 .cell:not(.blocked):hover {
   background: rgba(138, 173, 180, 0.3);
 }
+
 .cell.is-drop {
-  box-shadow:
-      0 0 0 2px rgba(140, 200, 255, 0.75),
-      0 10px 28px rgba(0,0,0,0.55);
+  //box-shadow:
+  //    0 0 0 2px rgba(195, 228, 255, 0.49),
+  //    0 5px 28px rgba(0,0,0,0.55);
 }
 </style>
