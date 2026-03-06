@@ -45,7 +45,7 @@ import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-
 import EquipToken from "@/a-game-scenes/inventory-scene/components/equip-token.vue";
 import { resolveEquipCompatibility } from "@/utils/inventory/equip-compatibility";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
-import {HeroToolType} from "../../../../back-up/enums/hero-tool-type";
+import {HeroToolType} from "@/enums/hero-tool-type";
 
 const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
