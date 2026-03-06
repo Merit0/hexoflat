@@ -63,7 +63,7 @@ const actions = computed(() => {
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-  0 26px 70px rgba(0, 0, 0, 0.70);
+  0 10px 30px rgba(0, 0, 0, 0.70);
 
   padding: 14px;
   color: rgba(255, 255, 255, 0.86);
@@ -80,10 +80,8 @@ const actions = computed(() => {
   width: 64px;
   height: 64px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.10);
-  background-position: center;
-  background-repeat: no-repeat;
+  background: rgba(255, 255, 255, 0.06) no-repeat center;
   background-size: contain;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
 }

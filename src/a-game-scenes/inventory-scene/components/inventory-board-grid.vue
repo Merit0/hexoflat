@@ -9,14 +9,27 @@
           :key="cell.key"
           class="cell"
           :class="{
-    blocked: cell.blocked,
-    selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId
+          blocked: cell.blocked,
+          selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId
   }"
+          @click.self="onCellClick(cell.key)"
       >
         <inventory-token
             v-if="!cell.blocked && itemsBySlot[cell.key]"
             :item="itemsBySlot[cell.key]"
         />
+        <span
+            v-if="!cell.blocked && itemsBySlot[cell.key]?.isNew"
+            class="badge"
+        >
+        </span>
+
+        <span
+            v-if="!cell.blocked && (itemsBySlot[cell.key]?.amount ?? 1) > 1"
+            class="amount"
+        >
+          {{ itemsBySlot[cell.key]!.amount }}
+        </span>
       </div>
     </div>
 
@@ -33,6 +46,14 @@ import InventoryToken from "@/a-game-scenes/inventory-scene/components/inventory
 const inv = useHeroInventoryStore();
 
 const itemsBySlot = computed(() => inv.itemsBySlot);
+
+function onCellClick(slotKey: string) {
+  const item = itemsBySlot.value[slotKey];
+
+  if (!item) {
+    inv.clearSelection();
+  }
+}
 
 const cells = computed(() => {
   const out: Array<{ key: string; r: number; c: number; blocked: boolean }> = [];
@@ -143,5 +164,44 @@ const centerHoleVars = computed(() => {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.badge,
+.amount {
+  pointer-events: none;
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  padding: 2px 2px;
+  border-radius: 999px;
+
+  background: rgba(140, 255, 102, 0.95);
+  border: 3px solid rgba(255, 255, 255, 0.18);
+  color: white;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  will-change: transform;
+}
+
+.amount {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+
+  padding: 1px 5px;
+  border-radius: 999px;
+
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+
+  font-weight: 900;
+  font-size: 11px;
+}
+
+.cell:not(.blocked):hover {
+  background: rgba(138, 173, 180, 0.3);
 }
 </style>
