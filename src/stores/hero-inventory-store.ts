@@ -71,8 +71,11 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             boots: null as string | null,
         },
 
-        // на майбутнє вантажність
         carryCapacityKg: 5,
+        draggingId: null as string | null,
+        dragFromSlot: null as string | null,
+        dragOverSlot: null as string | null,
+        isDragging: false,
     }),
 
     getters: {
@@ -214,5 +217,81 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             if (this.selectedItemId === id) this.selectedItemId = null;
             delete this.rotationsById[id];
         },
+
+        startDrag(itemId: string) {
+            const item = this.items.find(i => i.id === itemId);
+            if (!item) return;
+
+            this.draggingId = itemId;
+            this.dragFromSlot = item.slotKey;
+            this.dragOverSlot = null;
+            this.isDragging = true;
+        },
+
+        setDragOver(slotKey: string | null) {
+            this.dragOverSlot = slotKey;
+        },
+
+        cancelDrag() {
+            this.draggingId = null;
+            this.dragFromSlot = null;
+            this.dragOverSlot = null;
+            this.isDragging = false;
+        },
+
+        dropTo(targetSlot: string | null) {
+            if (!this.isDragging || !this.draggingId || !this.dragFromSlot) {
+                this.cancelDrag();
+                return;
+            }
+
+            // drop outside grid => просто відміна (пізніше тут буде "drop on ground")
+            if (!targetSlot) {
+                this.cancelDrag();
+                return;
+            }
+
+            // same slot => no-op
+            if (targetSlot === this.dragFromSlot) {
+                this.cancelDrag();
+                return;
+            }
+
+            const fromItem = this.items.find(i => i.id === this.draggingId);
+            if (!fromItem) {
+                this.cancelDrag();
+                return;
+            }
+
+            const targetItem = this.items.find(i => i.slotKey === targetSlot);
+
+            // 1) target empty -> move
+            if (!targetItem) {
+                fromItem.slotKey = targetSlot;
+                this.cancelDrag();
+                return;
+            }
+
+            // 2) stack merge
+            const canStack =
+                !!fromItem.stackKey &&
+                !!targetItem.stackKey &&
+                fromItem.stackKey === targetItem.stackKey;
+
+            if (canStack) {
+                targetItem.amount += fromItem.amount;
+                targetItem.isNew = true;
+                // remove fromItem
+                this.items = this.items.filter(i => i.id !== fromItem.id);
+                this.cancelDrag();
+                return;
+            }
+
+            const tmp = targetItem.slotKey;
+            targetItem.slotKey = fromItem.slotKey;
+            fromItem.slotKey = tmp;
+
+            this.cancelDrag();
+        }
     },
 });

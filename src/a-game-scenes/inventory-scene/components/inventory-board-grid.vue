@@ -8,9 +8,11 @@
           v-for="cell in cells"
           :key="cell.key"
           class="cell"
+          :data-slotkey="cell.key"
           :class="{
           blocked: cell.blocked,
-          selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId
+          selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId,
+          'is-drop': !cell.blocked && cell.key === inv.dragOverSlot
   }"
           @click.self="onCellClick(cell.key)"
       >
@@ -203,5 +205,10 @@ const centerHoleVars = computed(() => {
 
 .cell:not(.blocked):hover {
   background: rgba(138, 173, 180, 0.3);
+}
+.cell.is-drop {
+  box-shadow:
+      0 0 0 2px rgba(140, 200, 255, 0.75),
+      0 10px 28px rgba(0,0,0,0.55);
 }
 </style>
