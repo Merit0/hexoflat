@@ -13,12 +13,11 @@
             :key="t.id"
             class="hex"
             :class="[
-  t.kind,
-  t.kind === 'slot' ? 'equip-hex' : '',
-  t.kind === 'slot' && isDropSlot(t.id) ? dragStateClass(t.id) : '',
-  t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id) ? 'is-occupied' : ''
-]"
-            :data-slot="t.label"
+            t.kind,
+            t.kind === 'slot' ? 'equip-hex' : '',
+            t.kind === 'slot' && isDropSlot(t.id) ? dragStateClass(t.id) : '',
+            t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id) ? 'is-occupied' : ''
+          ]"
             :data-eqslot="t.kind === 'slot' ? t.id : undefined"
             :style="[tileStyle(t), { width: HEX_SIZE + 'px', height: HEX_SIZE + 'px' }]"
         >
@@ -33,20 +32,28 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref} from "vue";
-import {calcHexPixelPosition} from "@/utils/hex-utils";
-import {useHeroInventoryStore, type TEquipSlot} from "@/stores/hero-inventory-store";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { calcHexPixelPosition } from "@/utils/hex-utils";
+import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-store";
 import EquipToken from "@/a-game-scenes/inventory-scene/components/equip-token.vue";
+import { resolveEquipCompatibility } from "@/utils/inventory/equip-compatibility";
 
 const inventoryStore = useHeroInventoryStore();
 
 const BASE_HEX_SIZE = 110;
 const HEX_SCALE = 1.3;
-
 const HEX_SIZE = computed(() => BASE_HEX_SIZE * HEX_SCALE);
 
-type Coord = { rowIndex: number; columnIndex: number };
-type PseudoTile = { id: string; kind: "slot" | "hero"; label: string; coordinates: Coord };
+type Coord = {
+  rowIndex: number;
+  columnIndex: number;
+};
+
+type PseudoTile = {
+  id: string;
+  kind: "slot" | "hero";
+  coordinates: Coord;
+};
 
 const probeRef = ref<HTMLElement | null>(null);
 
@@ -57,7 +64,7 @@ function readDomHexSize() {
 }
 
 const tileWidth = computed(() => HEX_SIZE.value);
-const center: Coord = {rowIndex: 0, columnIndex: 0};
+const center: Coord = { rowIndex: 0, columnIndex: 0 };
 
 const tiles = computed<PseudoTile[]>(() => {
   const c = center;
@@ -66,44 +73,37 @@ const tiles = computed<PseudoTile[]>(() => {
     {
       id: "hero",
       kind: "hero",
-      label: "",
       coordinates: c,
     },
     {
       id: "helm",
       kind: "slot",
-      label: "HELM",
-      coordinates: {rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex},
+      coordinates: { rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex },
     },
     {
       id: "armor",
       kind: "slot",
-      label: "ARMOR",
-      coordinates: {rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex + 1},
+      coordinates: { rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex + 1 },
     },
     {
       id: "gloves",
       kind: "slot",
-      label: "GLOVES",
-      coordinates: {rowIndex: c.rowIndex, columnIndex: c.columnIndex + 1},
+      coordinates: { rowIndex: c.rowIndex, columnIndex: c.columnIndex + 1 },
     },
     {
       id: "boots",
       kind: "slot",
-      label: "BOOTS",
-      coordinates: {rowIndex: c.rowIndex + 1, columnIndex: c.columnIndex},
+      coordinates: { rowIndex: c.rowIndex + 1, columnIndex: c.columnIndex },
     },
     {
       id: "shield",
       kind: "slot",
-      label: "SHIELD",
-      coordinates: {rowIndex: c.rowIndex, columnIndex: c.columnIndex - 1},
+      coordinates: { rowIndex: c.rowIndex, columnIndex: c.columnIndex - 1 },
     },
     {
       id: "weapon",
       kind: "slot",
-      label: "WEAPON",
-      coordinates: {rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex - 1},
+      coordinates: { rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex - 1 },
     },
   ];
 });
@@ -121,14 +121,14 @@ function isDropSlot(id: string): id is TEquipSlot {
 
 function dragStateClass(id: TEquipSlot) {
   if (!inventoryStore.isDragging) return "";
-
   if (inventoryStore.dragOverEquipSlot !== id) return "";
 
   const dragged = inventoryStore.items.find(i => i.id === inventoryStore.draggingId);
   if (!dragged) return "";
 
-  // sandbox mode: під час наведення просто підсвічуємо активний слот
-  return "hover";
+  const compatibility = resolveEquipCompatibility(dragged, id);
+
+  return compatibility === "effect" ? "effect" : "mismatch";
 }
 
 /* ---------- HEX RING COMPRESSION ---------- */
@@ -136,7 +136,7 @@ const RING_COMPRESS = 0.57;
 const INSET_PX = computed(() => Math.round(HEX_SIZE.value * 0.015));
 
 function compressAroundCenter(x: number, y: number) {
-  const heroPos = calcHexPixelPosition({coordinates: center} as any, tileWidth.value);
+  const heroPos = calcHexPixelPosition({ coordinates: center } as any, tileWidth.value);
   const dx = x - heroPos.x;
   const dy = y - heroPos.y;
 
@@ -147,13 +147,14 @@ function compressAroundCenter(x: number, y: number) {
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
     const nx = dx / len;
     const ny = dy / len;
+
     return {
       x: cx - nx * INSET_PX.value,
       y: cy - ny * INSET_PX.value,
     };
   }
 
-  return {x: cx, y: cy};
+  return { x: cx, y: cy };
 }
 
 /* ---------- BOUNDS ---------- */
@@ -169,7 +170,7 @@ const bounds = computed(() => {
   let maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const p = calcHexPixelPosition({coordinates: t.coordinates} as any, tileWidth.value);
+    const p = calcHexPixelPosition({ coordinates: t.coordinates } as any, tileWidth.value);
     const pos = t.kind === "slot" ? compressAroundCenter(p.x, p.y) : p;
 
     minX = Math.min(minX, pos.x);
@@ -179,7 +180,7 @@ const bounds = computed(() => {
   }
 
   if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
-    return {width: 0, height: 0, offsetX: 0, offsetY: 0};
+    return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
   }
 
   return {
@@ -192,6 +193,7 @@ const bounds = computed(() => {
 
 const innerStyle = computed(() => {
   const b = bounds.value;
+
   return {
     width: `${b.width}px`,
     height: `${b.height}px`,
@@ -203,7 +205,7 @@ const innerStyle = computed(() => {
 const scale = ref(1);
 
 function tileStyle(t: PseudoTile) {
-  const p = calcHexPixelPosition({coordinates: t.coordinates} as any, tileWidth.value);
+  const p = calcHexPixelPosition({ coordinates: t.coordinates } as any, tileWidth.value);
   const pos = t.kind === "slot" ? compressAroundCenter(p.x, p.y) : p;
 
   return {
@@ -223,6 +225,7 @@ onMounted(() => {
   requestAnimationFrame(() => {
     readDomHexSize();
   });
+
   window.addEventListener("resize", onResize);
 });
 
@@ -263,8 +266,9 @@ onBeforeUnmount(() => {
 .hex.hero {
   background: radial-gradient(circle at 35% 25%, rgba(120, 220, 120, 0.92), rgba(20, 80, 30, 0.96));
   border: 2px solid rgba(20, 20, 20, 0.65);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25) inset,
-  0 22px 60px rgba(0, 0, 0, 0.55);
+  box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.25) inset,
+      0 22px 60px rgba(0, 0, 0, 0.55);
 }
 
 .hex.slot {
@@ -275,50 +279,42 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.hex.slot::after {
-  content: attr(data-slot);
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.7);
-  opacity: 0.55;
-  pointer-events: none;
-  z-index: 1;
-}
-
 .equip-hex {
-  transition: box-shadow 0.14s ease,
-  filter 0.14s ease;
+  transition:
+      box-shadow 0.12s ease,
+      filter 0.12s ease,
+      background 0.12s ease,
+      border-color 0.12s ease;
 }
 
-.equip-hex.match {
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25) inset,
-  0 0 22px rgba(120, 255, 140, 0.55),
-  0 18px 40px rgba(0, 0, 0, 0.55);
-  filter: brightness(1.08);
-}
-
-.equip-hex.neutral {
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25) inset,
-  0 0 18px rgba(120, 180, 255, 0.45),
-  0 18px 40px rgba(0, 0, 0, 0.55);
-  filter: brightness(1.04);
-}
-
-.hex.slot.is-occupied::after {
-  display: none;
-}
-
-.equip-hex.hover {
+.equip-hex.effect {
+  background: rgba(120, 200, 120, 0.25);
   box-shadow:
       0 0 0 2px rgba(0, 0, 0, 0.25) inset,
-      0 0 26px rgba(255, 220, 120, 0.7),
+      0 0 24px rgba(120, 255, 140, 0.62),
       0 18px 40px rgba(0, 0, 0, 0.55);
-  filter: brightness(1.1);
+  filter: brightness(1.1) saturate(1.08);
+}
+
+.equip-hex.mismatch {
+  background: rgba(220, 90, 90, 0.20);
+  box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.25) inset,
+      0 0 22px rgba(255, 110, 110, 0.48),
+      0 18px 40px rgba(0, 0, 0, 0.55);
+  filter: brightness(1.03) saturate(1.06);
+}
+
+.equip-hex.effect,
+.equip-hex.mismatch {
+  transition:
+      box-shadow 0.12s ease,
+      filter 0.12s ease,
+      background 0.12s ease,
+      border-color 0.12s ease;
+}
+
+.hex.slot.is-occupied {
+  background: rgba(140, 155, 168, 0.22);
 }
 </style>

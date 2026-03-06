@@ -83,7 +83,6 @@ export type THexobjectPrototype =
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
-    | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.WEAPON; equipment: IEquipment, weapon: IWeapon });
 
 export type THexobject =
     | (IBaseHexobject & { groupType: EHexobjectGroup.RESOURCE; resource: IResource })
@@ -91,14 +90,13 @@ export type THexobject =
     | (IBaseHexobject & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (IBaseHexobject & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (IBaseHexobject & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
-    | (IBaseHexobject & { groupType: EHexobjectGroup.WEAPON; equipment: IEquipment, weapon: IWeapon });
+    | (IBaseHexobject & { groupType: EHexobjectGroup.EQUIPMENT; equipment: IEquipment, weapon: IWeapon });
 
 
 export enum EHexobjectGroup {
     RESOURCE = 'resource',
     CREATURE = 'creature',
     TOOL = 'tool',
-    WEAPON = 'weapon',
     CONSTRUCTION = 'construction',
     LOOT = 'loot',
     EQUIPMENT = 'equipment',
