@@ -258,6 +258,37 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             this.dragFromSlot = null;
             this.dragOverSlot = null;
             this.isDragging = false;
+
+            this.dragPointerX = 0;
+            this.dragPointerY = 0;
+            this.dragOffsetX = 0;
+            this.dragOffsetY = 0;
+            this.dragWidth = 0;
+            this.dragHeight = 0;
+        },
+
+        mergeStacks(target: InventoryItem, from: InventoryItem): boolean {
+            if (!target.stackKey || !from.stackKey) return false;
+            if (target.stackKey !== from.stackKey) return false;
+
+            const meta = HEXOBJECT_META[from.key];
+            const maxStack = meta?.traits?.maxStack ?? null;
+
+            // unlimited stack
+            if (!maxStack) {
+                target.amount += from.amount;
+                return true;
+            }
+
+            const canAdd = Math.max(0, maxStack - target.amount);
+            if (canAdd <= 0) return false;
+
+            const add = Math.min(canAdd, from.amount);
+
+            target.amount += add;
+            from.amount -= add;
+
+            return true;
         },
 
         dropTo(targetSlot: string | null) {
@@ -266,14 +297,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 return;
             }
 
-            // drop outside grid => просто відміна (пізніше тут буде "drop on ground")
-            if (!targetSlot) {
-                this.cancelDrag();
-                return;
-            }
-
-            // same slot => no-op
-            if (targetSlot === this.dragFromSlot) {
+            if (!targetSlot || targetSlot === this.dragFromSlot) {
                 this.cancelDrag();
                 return;
             }
@@ -286,28 +310,29 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
             const targetItem = this.items.find(i => i.slotKey === targetSlot);
 
-            // 1) target empty -> move
+            // 1) empty slot -> move
             if (!targetItem) {
                 fromItem.slotKey = targetSlot;
                 this.cancelDrag();
                 return;
             }
 
-            // 2) stack merge
-            const canStack =
-                !!fromItem.stackKey &&
-                !!targetItem.stackKey &&
-                fromItem.stackKey === targetItem.stackKey;
+            // 2) try stack merge
+            const merged = this.mergeStacks(targetItem, fromItem);
 
-            if (canStack) {
-                targetItem.amount += fromItem.amount;
+            if (merged) {
                 targetItem.isNew = true;
-                // remove fromItem
-                this.items = this.items.filter(i => i.id !== fromItem.id);
+
+                if (fromItem.amount <= 0) {
+                    const idx = this.items.findIndex(i => i.id === fromItem.id);
+                    if (idx !== -1) this.items.splice(idx, 1);
+                }
+
                 this.cancelDrag();
                 return;
             }
 
+            // 3) swap
             const tmp = targetItem.slotKey;
             targetItem.slotKey = fromItem.slotKey;
             fromItem.slotKey = tmp;

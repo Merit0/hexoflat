@@ -3,6 +3,7 @@
       class="token"
       :class="{
     'is-dragging': isDragging,
+    'is-selected': isSelected
   }"
       :style="tokenStyle"
       @pointerdown.prevent="onPointerDown"
@@ -32,7 +33,7 @@ const tokenStyle = computed(() => {
       top: `${inventoryStore.dragPointerY - inventoryStore.dragOffsetY}px`,
       width: `${inventoryStore.dragWidth}px`,
       height: `${inventoryStore.dragHeight}px`,
-      transform: "rotate(0deg) scale(1.05)",
+      transform: "translate(0,0) rotate(0deg) scale(1.05)",
       zIndex: 9999,
     };
   }
@@ -41,6 +42,8 @@ const tokenStyle = computed(() => {
     "--rot": `${rotation.value}deg`,
   };
 });
+
+const isSelected = computed(() => inventoryStore.selectedItemId === props.item.id);
 
 const iconStyle = computed(() => ({
   backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : "none",
@@ -53,7 +56,11 @@ function onClick() {
 
 function getSlotKeyFromPoint(x: number, y: number): string | null {
   const els = document.elementsFromPoint(x, y) as HTMLElement[];
-  const cell = els.find((el) => el.classList?.contains("cell") && !el.classList.contains("blocked"));
+  const cell = els.find(el =>
+      el instanceof HTMLElement &&
+      el.classList.contains("cell") &&
+      !el.classList.contains("blocked")
+  );
   return cell?.dataset.slotkey ?? null;
 }
 
@@ -63,7 +70,6 @@ function onPointerDown(e: PointerEvent) {
   const target = e.currentTarget as HTMLElement;
   const rect = target.getBoundingClientRect();
 
-  let didDrag = false;
   let dragStarted = false;
 
   const startX = e.clientX;
@@ -75,8 +81,6 @@ function onPointerDown(e: PointerEvent) {
 
     if (!dragStarted && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
       dragStarted = true;
-      didDrag = true;
-
       inventoryStore.startDrag(props.item.id, startX, startY, rect);
     }
 
@@ -134,7 +138,7 @@ onBeforeUnmount(() => {
 .token.is-dragging {
   filter: brightness(1.15);
   z-index: 9999;
-  transition: none;
+  transition: none !important;
   pointer-events: none;
 }
 
