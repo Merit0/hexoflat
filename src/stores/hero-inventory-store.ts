@@ -256,7 +256,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
          * Викликається коли герой підняв об'єкт з мапи.
          * key = HEXOBJECT_KEYS.*
          */
-        addPickedHexobject(key: THexobjectKey, amount = 1) {
+        pickupFromWorld(key: THexobjectKey, amount = 1) {
             const proto = HEX_OBJECT_PROTOTYPES[key];
             const meta = HEXOBJECT_META[key];
 

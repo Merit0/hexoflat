@@ -99,6 +99,17 @@ export function resolveActions(toolKey: TToolKeys, obj: THexobject): ResolvedAct
             });
             break;
         }
+        case EHexobjectGroup.EQUIPMENT:
+        case EHexobjectGroup.TOOL: {
+            if (!cap.canPickup) break;
+
+            resolvedActions.push({
+                actioType: "TAKE",
+                label: labelFromMeta(obj, EHexActionType.TAKE, "Take"),
+                priority: 90,
+            });
+            break;
+        }
 
         case EHexobjectGroup.CREATURE: {
             resolvedActions.push({

@@ -173,6 +173,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
                 return {ok: false, message: "This resource cannot be taken by hand!"};
             }
         } else if (obj.groupType === EHexobjectGroup.LOOT) {
+        } else if (obj.groupType === EHexobjectGroup.TOOL) {
         } else {
             return {ok: false, message: "Unknown Hexobject type!"};
         }

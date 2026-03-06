@@ -7,7 +7,6 @@ import {useGatheringStore} from "@/stores/gathering-store";
 import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
-import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 
 export type ActionFinisher = (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => boolean;
 
@@ -76,7 +75,6 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         logAction(`Mine the ${stone} ${tile.hexobject.hexobjectKey}`);
         gathering.add(action.hexobjectKey, stone);
 
-        // consumeTileHexobject(tile);
 
         if (stone > 0 && ctx.heroToolStore.stoneCollected) {
             ctx.heroToolStore.collectStones(stone);
@@ -88,30 +86,35 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     },
 
     [EHexActionType.TAKE]: (tile, action, ctx) => {
+        const heroInventory = useHeroInventoryStore();
+
         if (handleCancelled(action, ctx)) return true;
 
-        const gathering = useGatheringStore();
+        const hexobject = tile.hexobject;
+        if (!hexobject) {
+            ensureUnlocked(ctx);
+            return false;
+        }
 
-        const amount =
-            tile.hexobject?.groupType === "resource"
-                ? (tile.hexobject.resource.amount ?? 1)
-                : 1;
+        const pickup = {
+            key: hexobject.hexobjectKey,
+            amount:
+                hexobject.groupType === "resource"
+                    ? (hexobject.resource?.amount ?? 1)
+                    : 1,
+        };
 
-        const meta = HEXOBJECT_META[action.hexobjectKey];
-        const baseCoins = meta?.yields?.coins ?? 0;
+        const result = heroInventory.pickupFromWorld(pickup.key, pickup.amount);
 
-        if (baseCoins > 0) {
-            const coinsNumber = baseCoins * amount;
-            logAction(`took ${coinsNumber} ${action.hexobjectKey} from the ground.`);
-            gathering.add(action.hexobjectKey, coinsNumber);
-        } else {
-            logAction(`took ${amount} ${action.hexobjectKey} from the ground.`);
-            gathering.add(action.hexobjectKey, amount);
+        if (!result?.ok) {
+            ensureUnlocked(ctx);
+            return false;
         }
 
         consumeTileHexobject(tile);
         scheduleRespawn(tile, ctx.now);
         ensureUnlocked(ctx);
+
         return true;
     },
 
