@@ -160,11 +160,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
             // HAND не можна переносити у grid
             if (fromItem.key === HEXOBJECT_KEYS.HAND) {
-                const targetEquip = parseEquipSlotKey(targetSlotKey);
-
-                if (targetEquip !== "weapon" && targetEquip !== "shield") {
-                    return;
-                }
+                return;
             }
 
             const targetItem = this.items.find(i => i.slotKey === targetSlotKey);
@@ -180,14 +176,14 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
                 fromItem.slotKey = targetSlotKey;
 
-                this.ensureDefaultHands();
+                this.fillEmptySlotsWithHands();
                 return;
             }
 
             if (!targetItem) {
                 fromItem.slotKey = targetSlotKey;
 
-                this.ensureDefaultHands();
+                this.fillEmptySlotsWithHands();
                 return;
             }
 
@@ -204,7 +200,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                         if (idx !== -1) this.items.splice(idx, 1);
                     }
 
-                    this.ensureDefaultHands();
+                    this.fillEmptySlotsWithHands();
                     return;
                 }
             }
@@ -213,7 +209,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             fromItem.slotKey = targetSlotKey;
             targetItem.slotKey = oldSlot;
 
-            this.ensureDefaultHands();
+            this.fillEmptySlotsWithHands();
         },
 
         dropToEquip(targetEquipSlot: TEquipSlot | null) {
@@ -256,8 +252,14 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
          * Викликається коли герой підняв об'єкт з мапи.
          * key = HEXOBJECT_KEYS.*
          */
-        pickupFromWorld(key: THexobjectKey, amount = 1) {
+        putToInventory(key: THexobjectKey, amount = 1) {
+            if (key === HEXOBJECT_KEYS.HAND) {
+                return { ok: false, message: "Hand cannot be added to inventory." };
+            }
             const proto = HEX_OBJECT_PROTOTYPES[key];
+            if (!proto) {
+                return { ok: false, message: `Unknown hexobject prototype: ${key}` };
+            }
             const meta = HEXOBJECT_META[key];
 
             const stackable = !!meta?.traits?.stackable;
@@ -327,6 +329,8 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             if (idx !== -1) this.items.splice(idx, 1);
             if (this.selectedItemId === id) this.selectedItemId = null;
             delete this.rotationsById[id];
+
+            this.fillEmptySlotsWithHands();
         },
 
         startDrag(itemId: string, clientX: number, clientY: number, rect: DOMRect) {
@@ -412,11 +416,12 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             this.cancelDrag();
         },
 
-        ensureDefaultHands() {
+        fillEmptySlotsWithHands() {
             const hasWeaponHand = this.items.some(i => i.slotKey === "eq:weapon");
             const hasShieldHand = this.items.some(i => i.slotKey === "eq:shield");
 
             if (!hasWeaponHand) {
+                const id = crypto.randomUUID();
                 this.items.push({
                     id: crypto.randomUUID(),
                     key: HEXOBJECT_KEYS.HAND,
@@ -425,9 +430,11 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                     slotKey: "eq:weapon",
                     isNew: false,
                 });
+                this.ensureRotation(id);
             }
 
             if (!hasShieldHand) {
+                const id = crypto.randomUUID();
                 this.items.push({
                     id: crypto.randomUUID(),
                     key: HEXOBJECT_KEYS.HAND,
@@ -436,6 +443,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                     slotKey: "eq:shield",
                     isNew: false,
                 });
+                this.ensureRotation(id);
             }
         },
     },

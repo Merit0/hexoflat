@@ -7,6 +7,7 @@ import {useGatheringStore} from "@/stores/gathering-store";
 import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
+import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
 
 export type ActionFinisher = (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => boolean;
 
@@ -96,15 +97,12 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
             return false;
         }
 
-        const pickup = {
-            key: hexobject.hexobjectKey,
-            amount:
-                hexobject.groupType === "resource"
-                    ? (hexobject.resource?.amount ?? 1)
-                    : 1,
-        };
+        const amount =
+            hexobject.groupType === EHexobjectGroup.RESOURCE
+                ? (hexobject.resource?.amount ?? 1)
+                : 1;
 
-        const result = heroInventory.pickupFromWorld(pickup.key, pickup.amount);
+        const result = heroInventory.putToInventory(hexobject.hexobjectKey, amount);
 
         if (!result?.ok) {
             ensureUnlocked(ctx);
@@ -112,7 +110,10 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         }
 
         consumeTileHexobject(tile);
-        scheduleRespawn(tile, ctx.now);
+        if (hexobject.groupType === EHexobjectGroup.RESOURCE) {
+            scheduleRespawn(tile, ctx.now);
+
+        }
         ensureUnlocked(ctx);
 
         return true;

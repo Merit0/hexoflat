@@ -15,6 +15,12 @@
             :data-eqslot="t.kind === 'slot' ? t.id : undefined"
             :style="[tileStyle(t), { width: HEX_SIZE + 'px', height: HEX_SIZE + 'px' }]"
         >
+          <div
+              v-if="t.kind === 'hero'"
+              class="hero-core-token"
+          >
+            <div class="hero-core-image" :style="heroImageStyle"></div>
+          </div>
           <equip-token
               v-if="t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id)"
               :item="getEquippedItem(t.id)!"
@@ -50,6 +56,12 @@ type PseudoTile = {
   kind: "slot" | "hero";
   coordinates: Coord;
 };
+
+const heroImagePath = computed(() => "/hero-asssets/spirit-hex-image.png");
+
+const heroImageStyle = computed(() => ({
+  backgroundImage: `url("${heroImagePath.value}")`,
+}));
 
 const tileWidth = computed(() => HEX_SIZE.value);
 const center: Coord = { rowIndex: 0, columnIndex: 0 };
@@ -224,14 +236,6 @@ function tileStyle(t: PseudoTile) {
   clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
 }
 
-.hex.hero {
-  background: radial-gradient(circle at 35% 25%, rgba(120, 220, 120, 0.92), rgba(20, 80, 30, 0.96));
-  border: 2px solid rgba(20, 20, 20, 0.65);
-  box-shadow:
-      0 0 0 2px rgba(0, 0, 0, 0.25) inset,
-      0 22px 60px rgba(0, 0, 0, 0.55);
-}
-
 .hex.slot {
   background: rgba(120, 160, 170, 0.24);
   border: 1px solid rgba(255, 255, 255, 0.10);
@@ -269,5 +273,31 @@ function tileStyle(t: PseudoTile) {
 
 .hex.slot.is-occupied {
   background: rgba(140, 155, 168, 0.22);
+}
+
+.hero-core-token {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+
+.hero-core-image {
+  width: 110%;
+  height: 110%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter:
+      drop-shadow(0 10px 18px rgba(0, 0, 0, 0.42));
+}
+
+.hex.hero {
+  border: 2px solid rgba(20, 20, 20, 0.65);
+  box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.25) inset,
+      0 22px 60px rgba(0, 0, 0, 0.55),
+      0 0 24px rgba(120, 255, 140, 0.18);
 }
 </style>

@@ -47,7 +47,7 @@ function closeInventory() {
 }
 
 onMounted(() => {
-  heroInventoryStore.ensureDefaultHands();
+  heroInventoryStore.fillEmptySlotsWithHands();
 });
 </script>
 

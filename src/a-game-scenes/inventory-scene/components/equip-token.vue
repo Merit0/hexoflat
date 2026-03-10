@@ -61,7 +61,12 @@ const worldMapStore = useWorldMapStore();
 const overlayStore = useOverlayStore();
 
 const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
-const isUsableTool = computed(() => props.item.type === EHexobjectGroup.TOOL);
+const isUsableTool = computed(() => {
+  return (
+      props.item.type === EHexobjectGroup.TOOL &&
+      isHandSlotKey(props.item.slotKey)
+  );
+});
 const isDefaultHandToken = computed(() => props.item.key === HEXOBJECT_KEYS.HAND);
 
 const meta = computed(() => resolveInventoryView(props.item.key));
@@ -95,6 +100,8 @@ function resolveToolType(): HeroToolType | null {
 }
 
 function useToolToken() {
+  if (!isUsableTool.value) return;
+
   const toolType = resolveToolType();
   if (!toolType) return;
 
@@ -128,6 +135,10 @@ function getDragTargetFromPoint(x: number, y: number): DragTarget {
   }
 
   return null;
+}
+
+function isHandSlotKey(slotKey: string) {
+  return slotKey === "eq:weapon" || slotKey === "eq:shield";
 }
 
 function onPointerDown(e: PointerEvent) {
