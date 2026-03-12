@@ -65,10 +65,8 @@ function isBlocked(r: number, c: number, cfg: GridConfig) {
     return c >= x && c < x + w && r >= y && r < y + h;
 }
 
-function hashRotationDeg(id: string) {
-    let h = 0;
-    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-    return (h % 31) - 15; // [-15..+15]
+function randomRotationDeg() {
+    return Math.floor(Math.random() * 31) - 15; // [-15..15]
 }
 
 export const useHeroInventoryStore = defineStore("heroInventory", {
@@ -175,6 +173,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 if (idx !== -1) this.items.splice(idx, 1);
 
                 fromItem.slotKey = targetSlotKey;
+                this.rerollRotation(fromItem.id);
 
                 this.fillEmptySlotsWithHands();
                 return;
@@ -182,6 +181,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
             if (!targetItem) {
                 fromItem.slotKey = targetSlotKey;
+                this.rerollRotation(fromItem.id);
 
                 this.fillEmptySlotsWithHands();
                 return;
@@ -194,13 +194,17 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
                 if (merged) {
                     targetItem.isNew = true;
+                    this.rerollRotation(targetItem.id);
 
                     if (fromItem.amount <= 0) {
                         const idx = this.items.findIndex(i => i.id === fromItem.id);
                         if (idx !== -1) this.items.splice(idx, 1);
+                        delete this.rotationsById[fromItem.id];
+                    } else {
+                        this.rerollRotation(fromItem.id);
                     }
 
-                    this.fillEmptySlotsWithHands();
+                    this.ensureDefaultHands();
                     return;
                 }
             }
@@ -208,6 +212,9 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             const oldSlot = fromItem.slotKey;
             fromItem.slotKey = targetSlotKey;
             targetItem.slotKey = oldSlot;
+
+            this.rerollRotation(fromItem.id);
+            this.rerollRotation(targetItem.id);
 
             this.fillEmptySlotsWithHands();
         },
@@ -227,7 +234,14 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         },
 
         ensureRotation(id: string) {
-            if (this.rotationsById[id] == null) this.rotationsById[id] = hashRotationDeg(id);
+            if (this.rotationsById[id] == null) {
+                this.rotationsById[id] = randomRotationDeg();
+            }
+            return this.rotationsById[id];
+        },
+
+        rerollRotation(id: string) {
+            this.rotationsById[id] = randomRotationDeg();
             return this.rotationsById[id];
         },
 

@@ -5,6 +5,7 @@
       :class="{
       'is-usable-tool': isUsableTool,
     }"
+      :style="tokenStyle"
       @pointerdown="onPointerDown"
   >
     <div class="icon" :style="iconStyle"></div>
@@ -61,12 +62,18 @@ const worldMapStore = useWorldMapStore();
 const overlayStore = useOverlayStore();
 
 const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
+const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const isUsableTool = computed(() => {
   return (
       props.item.type === EHexobjectGroup.TOOL &&
       isHandSlotKey(props.item.slotKey)
   );
 });
+
+const tokenStyle = computed(() => ({
+  "--rot": `${rotation.value}deg`,
+}) as Record<string, string>);
+
 const isDefaultHandToken = computed(() => props.item.key === HEXOBJECT_KEYS.HAND);
 
 const meta = computed(() => resolveInventoryView(props.item.key));
@@ -222,6 +229,8 @@ onBeforeUnmount(() => {
   cursor: grab;
   user-select: none;
   touch-action: none;
+  transform: rotate(var(--rot));
+  transform-origin: center center;
   transition: transform 0.08s linear, filter 0.12s ease;
 }
 

@@ -161,11 +161,19 @@ const centerHoleVars = computed(() => {
       border-color 0.12s ease;
 }
 
-.cell.selected {
-  box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.95),
-      0 6px 40px rgba(0, 0, 0, 0.55);
-  border-color: rgb(255, 204, 0);
+.grid {
+  --cell-active-border: rgba(255, 220, 150, 0.55);
+  --cell-active-shadow:
+      0 0 0 2px rgba(255, 200, 120, 0.5) inset,
+      0 0 16px rgba(255, 200, 120, 0.45),
+      0 0 30px rgba(255, 200, 120, 0.25),
+      0 10px 24px rgba(0, 0, 0, 0.30);
+}
+
+.cell.selected,
+.cell.magnet {
+  border-color: var(--cell-active-border);
+  box-shadow: var(--cell-active-shadow);
 }
 
 .cell.blocked {
@@ -176,17 +184,6 @@ const centerHoleVars = computed(() => {
 
 .cell:not(.blocked):hover {
   background: rgba(138, 173, 180, 0.3);
-}
-
-.cell.magnet {
-  transform: scale(1.05);
-  background: rgba(150, 185, 192, 0.34);
-  border-color: rgba(255, 220, 150, 0.55);
-  box-shadow:
-      0 0 0 2px rgba(255, 200, 120, 0.5) inset,
-      0 0 16px rgba(255, 200, 120, 0.45),
-      0 0 30px rgba(255, 200, 120, 0.25),
-      0 10px 24px rgba(0, 0, 0, 0.30);
 }
 
 .cell.is-drop {
