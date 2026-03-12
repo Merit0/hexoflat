@@ -1,8 +1,8 @@
-import {defineStore} from "pinia";
-import {HEXOBJECT_KEYS, THexobjectKey} from "@/registry/hexobjects-registry";
-import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
-import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta";
+import { defineStore } from "pinia";
+import { HEXOBJECT_KEYS, THexobjectKey } from "@/registry/hexobjects-registry";
+import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { HEXOBJECT_META } from "@/registry/hexobject-meta";
 
 export type TEquipSlot =
     | "weapon"
@@ -17,7 +17,7 @@ export interface InventoryItem {
     key: THexobjectKey;
     type: EHexobjectGroup;
 
-    stackKey?: string; // usually key, if stackable
+    stackKey?: string;
     amount: number;
 
     equipSlot?: TEquipSlot;
@@ -29,8 +29,17 @@ export interface InventoryItem {
 export interface GridConfig {
     cols: number;
     rows: number;
-    blockedRect: { x: number; y: number; w: number; h: number }; // 0-based
+    blockedRect: { x: number; y: number; w: number; h: number };
 }
+
+interface PersistedHeroInventory {
+    version: 1;
+    items: InventoryItem[];
+    rotationsById: Record<string, number>;
+    carryCapacityKg: number;
+}
+
+const INVENTORY_STORAGE_KEY = "hexoflat.hero.inventory.v1";
 
 function slotKey(r: number, c: number) {
     return `r${r}c${c}`;
@@ -61,12 +70,24 @@ function parseEquipSlotKey(value: string | null | undefined): TEquipSlot | null 
 }
 
 function isBlocked(r: number, c: number, cfg: GridConfig) {
-    const {x, y, w, h} = cfg.blockedRect;
+    const { x, y, w, h } = cfg.blockedRect;
     return c >= x && c < x + w && r >= y && r < y + h;
 }
 
 function randomRotationDeg() {
-    return Math.floor(Math.random() * 31) - 15; // [-15..15]
+    return Math.floor(Math.random() * 31) - 15;
+}
+
+function isSerializableInventoryItem(value: any): value is InventoryItem {
+    return (
+        value &&
+        typeof value.id === "string" &&
+        typeof value.key === "string" &&
+        typeof value.type === "string" &&
+        typeof value.amount === "number" &&
+        typeof value.slotKey === "string" &&
+        typeof value.isNew === "boolean"
+    );
 }
 
 export const useHeroInventoryStore = defineStore("heroInventory", {
@@ -74,16 +95,16 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         grid: {
             cols: 12,
             rows: 7,
-            blockedRect: {x: 3, y: 1, w: 6, h: 5},
+            blockedRect: { x: 3, y: 1, w: 6, h: 5 },
         } as GridConfig,
 
         items: [] as InventoryItem[],
         selectedItemId: null as string | null,
 
-        // UI-only stable rotation map
         rotationsById: {} as Record<string, number>,
 
         carryCapacityKg: 5,
+
         draggingId: null as string | null,
         dragFromSlot: null as string | null,
         dragOverSlot: null as string | null,
@@ -96,6 +117,8 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         dragHeight: 0,
 
         dragOverEquipSlot: null as TEquipSlot | null,
+
+        isHydrated: false,
     }),
 
     getters: {
@@ -141,13 +164,88 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                     if (!occ.has(key)) out.push(key);
                 }
             }
+
             return out;
         },
     },
 
     actions: {
+        hydrate() {
+            if (this.isHydrated) return;
+
+            try {
+                const raw = localStorage.getItem(INVENTORY_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw) as PersistedHeroInventory;
+
+                    if (parsed?.version === 1) {
+                        this.items = Array.isArray(parsed.items)
+                            ? parsed.items.filter(isSerializableInventoryItem)
+                            : [];
+
+                        this.rotationsById =
+                            parsed.rotationsById && typeof parsed.rotationsById === "object"
+                                ? parsed.rotationsById
+                                : {};
+
+                        this.carryCapacityKg =
+                            typeof parsed.carryCapacityKg === "number"
+                                ? parsed.carryCapacityKg
+                                : 5;
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to hydrate hero inventory:", error);
+            }
+
+            this.fillEmptySlotsWithHands();
+            this.resetRuntimeState();
+            this.isHydrated = true;
+        },
+
+        persist() {
+            try {
+                const payload: PersistedHeroInventory = {
+                    version: 1,
+                    items: this.items,
+                    rotationsById: this.rotationsById,
+                    carryCapacityKg: this.carryCapacityKg,
+                };
+
+                localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(payload));
+            } catch (error) {
+                console.error("Failed to persist hero inventory:", error);
+            }
+        },
+
+        clearPersistence() {
+            localStorage.removeItem(INVENTORY_STORAGE_KEY);
+        },
+
+        resetRuntimeState() {
+            this.selectedItemId = null;
+
+            this.draggingId = null;
+            this.dragFromSlot = null;
+            this.dragOverSlot = null;
+            this.dragOverEquipSlot = null;
+            this.isDragging = false;
+
+            this.dragPointerX = 0;
+            this.dragPointerY = 0;
+            this.dragOffsetX = 0;
+            this.dragOffsetY = 0;
+            this.dragWidth = 0;
+            this.dragHeight = 0;
+        },
+
         setDragOverEquip(slot: TEquipSlot | null) {
             this.dragOverEquipSlot = slot;
+        },
+
+        rerollRotation(id: string) {
+            this.rotationsById[id] = randomRotationDeg();
+            return this.rotationsById[id];
         },
 
         moveItemToSlot(itemId: string, targetSlotKey: string) {
@@ -156,26 +254,28 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
             if (fromItem.slotKey === targetSlotKey) return;
 
-            // HAND не можна переносити у grid
             if (fromItem.key === HEXOBJECT_KEYS.HAND) {
                 return;
             }
 
             const targetItem = this.items.find(i => i.slotKey === targetSlotKey);
 
-            // якщо слот містить HAND і кладемо інший предмет
             if (
                 targetItem &&
                 targetItem.key === HEXOBJECT_KEYS.HAND &&
                 fromItem.key !== HEXOBJECT_KEYS.HAND
             ) {
                 const idx = this.items.findIndex(i => i.id === targetItem.id);
-                if (idx !== -1) this.items.splice(idx, 1);
+                if (idx !== -1) {
+                    this.items.splice(idx, 1);
+                    delete this.rotationsById[targetItem.id];
+                }
 
                 fromItem.slotKey = targetSlotKey;
                 this.rerollRotation(fromItem.id);
 
                 this.fillEmptySlotsWithHands();
+                this.persist();
                 return;
             }
 
@@ -184,6 +284,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 this.rerollRotation(fromItem.id);
 
                 this.fillEmptySlotsWithHands();
+                this.persist();
                 return;
             }
 
@@ -204,7 +305,8 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                         this.rerollRotation(fromItem.id);
                     }
 
-                    this.ensureDefaultHands();
+                    this.fillEmptySlotsWithHands();
+                    this.persist();
                     return;
                 }
             }
@@ -217,6 +319,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             this.rerollRotation(targetItem.id);
 
             this.fillEmptySlotsWithHands();
+            this.persist();
         },
 
         dropToEquip(targetEquipSlot: TEquipSlot | null) {
@@ -240,15 +343,14 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             return this.rotationsById[id];
         },
 
-        rerollRotation(id: string) {
-            this.rotationsById[id] = randomRotationDeg();
-            return this.rotationsById[id];
-        },
-
         toggleSelect(id: string) {
             this.selectedItemId = this.selectedItemId === id ? null : id;
+
             const it = this.items.find(x => x.id === id);
-            if (it) it.isNew = false;
+            if (it && it.isNew) {
+                it.isNew = false;
+                this.persist();
+            }
         },
 
         clearSelection() {
@@ -262,28 +364,25 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             return slots[idx];
         },
 
-        /**
-         * Викликається коли герой підняв об'єкт з мапи.
-         * key = HEXOBJECT_KEYS.*
-         */
         putToInventory(key: THexobjectKey, amount = 1) {
             if (key === HEXOBJECT_KEYS.HAND) {
                 return { ok: false, message: "Hand cannot be added to inventory." };
             }
+
             const proto = HEX_OBJECT_PROTOTYPES[key];
             if (!proto) {
                 return { ok: false, message: `Unknown hexobject prototype: ${key}` };
             }
+
             const meta = HEXOBJECT_META[key];
 
             const stackable = !!meta?.traits?.stackable;
             const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
-            const maxStack = meta?.traits?.maxStack ?? null; // null/undefined => unlimited
+            const maxStack = meta?.traits?.maxStack ?? null;
 
             let left = amount;
 
             if (stackable && stackKey) {
-                // 1) fill existing stacks first
                 const stacks = this.items.filter(i => i.stackKey === stackKey);
 
                 for (const s of stacks) {
@@ -292,7 +391,9 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                     if (!maxStack) {
                         s.amount += left;
                         s.isNew = true;
-                        return {ok: true};
+                        this.rerollRotation(s.id);
+                        this.persist();
+                        return { ok: true };
                     }
 
                     const canAdd = Math.max(0, maxStack - s.amount);
@@ -302,25 +403,29 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                     s.amount += add;
                     s.isNew = true;
                     left -= add;
+                    this.rerollRotation(s.id);
+                }
+
+                if (left <= 0) {
+                    this.persist();
+                    return { ok: true };
                 }
             }
 
-            // 2) create new stacks in free slots
             while (left > 0) {
                 const free = this.pickFreeSlot();
-                if (!free) return {ok: false, message: "Inventory is full!"};
+                if (!free) return { ok: false, message: "Inventory is full!" };
 
                 const id = crypto.randomUUID();
-
-                const addNow = (!stackable || !maxStack) ? left : Math.min(left, maxStack);
+                const addNow = !stackable || !maxStack ? left : Math.min(left, maxStack);
 
                 const item: InventoryItem = {
                     id,
                     key,
-                    type: proto.groupType, // або resolveInventoryView().group
+                    type: proto.groupType,
                     stackKey: stackable ? stackKey : undefined,
                     amount: stackable ? addNow : 1,
-                    equipSlot: undefined, // якщо треба — резолвиш як зараз
+                    equipSlot: undefined,
                     slotKey: free,
                     isNew: true,
                 };
@@ -330,14 +435,13 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
                 left -= addNow;
 
-                // якщо не stackable — ми додали 1 штуку і виходимо
                 if (!stackable) break;
             }
 
-            return {ok: true};
+            this.persist();
+            return { ok: true };
         },
 
-        // utility на майбутнє (кнопка debug у дев-режимі)
         removeItem(id: string) {
             const idx = this.items.findIndex(i => i.id === id);
             if (idx !== -1) this.items.splice(idx, 1);
@@ -345,6 +449,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             delete this.rotationsById[id];
 
             this.fillEmptySlotsWithHands();
+            this.persist();
         },
 
         startDrag(itemId: string, clientX: number, clientY: number, rect: DOMRect) {
@@ -398,7 +503,6 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             const meta = HEXOBJECT_META[from.key];
             const maxStack = meta?.traits?.maxStack ?? null;
 
-            // unlimited stack
             if (!maxStack) {
                 target.amount += from.amount;
                 return true;
@@ -431,13 +535,13 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
         },
 
         fillEmptySlotsWithHands() {
-            const hasWeaponHand = this.items.some(i => i.slotKey === "eq:weapon");
-            const hasShieldHand = this.items.some(i => i.slotKey === "eq:shield");
+            const hasWeaponItem = this.items.some(i => i.slotKey === "eq:weapon");
+            const hasShieldItem = this.items.some(i => i.slotKey === "eq:shield");
 
-            if (!hasWeaponHand) {
+            if (!hasWeaponItem) {
                 const id = crypto.randomUUID();
                 this.items.push({
-                    id: crypto.randomUUID(),
+                    id,
                     key: HEXOBJECT_KEYS.HAND,
                     type: EHexobjectGroup.TOOL,
                     amount: 1,
@@ -447,10 +551,10 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 this.ensureRotation(id);
             }
 
-            if (!hasShieldHand) {
+            if (!hasShieldItem) {
                 const id = crypto.randomUUID();
                 this.items.push({
-                    id: crypto.randomUUID(),
+                    id,
                     key: HEXOBJECT_KEYS.HAND,
                     type: EHexobjectGroup.TOOL,
                     amount: 1,

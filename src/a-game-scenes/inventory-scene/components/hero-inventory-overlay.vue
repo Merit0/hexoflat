@@ -47,7 +47,7 @@ function closeInventory() {
 }
 
 onMounted(() => {
-  heroInventoryStore.fillEmptySlotsWithHands();
+  heroInventoryStore.hydrate();
 });
 </script>
 
