@@ -90,6 +90,11 @@ function isSerializableInventoryItem(value: any): value is InventoryItem {
     );
 }
 
+function getItemUnitWeightKg(key: THexobjectKey) {
+    if (key === HEXOBJECT_KEYS.HAND) return 0;
+    return HEXOBJECT_META[key]?.traits?.weightKG ?? 0;
+}
+
 export const useHeroInventoryStore = defineStore("heroInventory", {
     state: () => ({
         grid: {
@@ -103,7 +108,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
 
         rotationsById: {} as Record<string, number>,
 
-        carryCapacityKg: 5,
+        carryCapacityKg: 10,
 
         draggingId: null as string | null,
         dragFromSlot: null as string | null,
@@ -166,6 +171,23 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             }
 
             return out;
+        },
+
+        carriedWeightKg(state): number {
+            return state.items.reduce((sum, item) => {
+                if (item.key === HEXOBJECT_KEYS.HAND) return sum;
+
+                const unitWeight = getItemUnitWeightKg(item.key);
+                return sum + unitWeight * item.amount;
+            }, 0);
+        },
+
+        remainingCapacityKg(): number {
+            return Math.max(0, this.carryCapacityKg - this.carriedWeightKg);
+        },
+
+        isOverCapacity(): boolean {
+            return this.carriedWeightKg > this.carryCapacityKg;
         },
     },
 
@@ -374,8 +396,17 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 return { ok: false, message: `Unknown hexobject prototype: ${key}` };
             }
 
-            const meta = HEXOBJECT_META[key];
+            const unitWeightKg = getItemUnitWeightKg(key);
+            const incomingWeightKg = unitWeightKg * amount;
+            if (this.carriedWeightKg + incomingWeightKg > this.carryCapacityKg) {
+                console.warn("Carry limit exceeded:", incomingWeightKg, "kg");
+                return {
+                    ok: false,
+                    message: `Too heavy! Carry limit: ${this.carryCapacityKg} kg`,
+                };
+            }
 
+            const meta = HEXOBJECT_META[key];
             const stackable = !!meta?.traits?.stackable;
             const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
             const maxStack = meta?.traits?.maxStack ?? null;

@@ -11,6 +11,7 @@ export interface ILootTraits {
     stackable?: boolean;
     maxStack?: number;
     stackKey: THexobjectKey;
+    weightKG: number;
 }
 
 export interface IResourceTraits {
@@ -48,6 +49,7 @@ export interface IResource extends ITraitable<IResourceTraits>{
 export interface ILoot extends ITraitable<ILootTraits>{
     name: string
     amount?: number;
+    traits: ILootTraits
 }
 
 export interface ICreature {
@@ -64,6 +66,10 @@ export interface ITool extends IDurable {
         canPickup?: boolean;
         canEnter?: boolean;
     };
+
+    traits: {
+        weightKG: number;
+    }
 }
 
 export interface IConstruction {

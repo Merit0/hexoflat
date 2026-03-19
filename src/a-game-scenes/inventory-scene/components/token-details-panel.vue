@@ -15,6 +15,7 @@
 
     <div class='row'>
       <div class='pill'>Type: {{ item.type }}</div>
+      <div class='pill'>Weight: {{ traits.weightKg }}</div>
       <div v-if='item.equipSlot' class='pill'>Slot: {{ item.equipSlot }}</div>
       <div v-if='item.amount > 1' class='pill'>Amount: {{ item.amount }}</div>
     </div>

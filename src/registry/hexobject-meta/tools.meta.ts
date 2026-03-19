@@ -13,6 +13,7 @@ export const TOOL_META: Record<TToolMetaKeys, IHexobjectMeta> = {
         subtitle: "Tool",
         actions: {},
         yields: {},
+        traits:{ weightKG: 1 }
     },
 
     [HEXOBJECT_KEYS.PICKAXE]: {
@@ -21,6 +22,7 @@ export const TOOL_META: Record<TToolMetaKeys, IHexobjectMeta> = {
         subtitle: "Tool",
         actions: {},
         yields: {},
+        traits:{ weightKG: 1.5 }
     },
 
     [HEXOBJECT_KEYS.HAND]: {

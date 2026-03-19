@@ -36,12 +36,11 @@ function resolveProtoFields(proto: THexobjectPrototype) {
         case EHexobjectGroup.LOOT: {
             stackable = !!proto.loot.traits?.stackable;
             defaultAmount = proto.loot.amount ?? 1;
-            // якщо захочеш stackKey/weight в loot.traits — додаси й тут
+            weightKg = proto.loot.traits?.weightKG ?? 0;
             break;
         }
 
         case EHexobjectGroup.RESOURCE: {
-            // ресурси як токени: можна defaultAmount = resource.amount ?? 1
             defaultAmount = proto.resource.amount ?? 1;
             break;
         }
@@ -49,18 +48,19 @@ function resolveProtoFields(proto: THexobjectPrototype) {
         case EHexobjectGroup.TOOL: {
             // tools як інвентарні токени (не стак)
             defaultAmount = 1;
+            weightKg = proto.tool.traits?.weightKG ?? 0;
             // якщо вага є в equipment/tool пізніше — додаси
             break;
         }
 
-        case EHexobjectGroup.WEAPON: {
-            defaultAmount = 1;
-            // slot беремо з факту "weapon => equip slot weapon"
-            equipSlot = "weapon" as TEquipSlot; // або якщо у вас є строгий тип слотів — поставимо точно
-            // якщо вага живе в equipment.traits, можна додати
-            // weightKg = proto.equipment.traits?.weightKg ?? 0;  // якщо додаси поле
-            break;
-        }
+        // case EHexobjectGroup.EQUIPMENT: {
+        //     defaultAmount = 1;
+        //     // slot беремо з факту "weapon => equip slot weapon"
+        //     equipSlot = "weapon" as TEquipSlot; // або якщо у вас є строгий тип слотів — поставимо точно
+        //     // якщо вага живе в equipment.traits, можна додати
+        //     // weightKg = proto.equipment.traits?.weightKg ?? 0;  // якщо додаси поле
+        //     break;
+        // }
 
         case EHexobjectGroup.CREATURE: {
             defaultAmount = 1;
@@ -110,9 +110,6 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
     const stackable = meta?.traits ? metaStackable : p.stackable;
     const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
 
-    // weightKg: якщо вага буде в meta.traits — можна зробити так само
-    const weightKg = meta?.traits?.weightKg ?? p.weightKg;
-
     return {
         group: p.group,
         iconPath: p.iconPath,
@@ -122,6 +119,6 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
         stackKey,
         defaultAmount: p.defaultAmount,
         equipSlot: p.equipSlot,
-        weightKg,
+        weightKg: p.weightKg,
     };
 }

@@ -28,8 +28,8 @@ export interface IHexobjectMeta {
     traits?: {
         stackable?: boolean;
         stackKey?: string;
-        weightKg?: number;
         maxStack?: number;
+        weightKG: number;
     };
 
     inventory?: {

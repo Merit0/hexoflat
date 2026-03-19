@@ -19,6 +19,7 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
             traits: {
                 stackable: true,
                 stackKey: HEXOBJECT_KEYS.COINS,
+                weightKG: 0.001,
             }
         },
         collision: EHexCollision.SOLID,
@@ -37,6 +38,7 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
                 stackable: true,
                 stackKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
                 maxStack: 10,
+                weightKG: 0.1
             }
         },
         collision: EHexCollision.SOLID,
@@ -55,6 +57,7 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
                 stackable: true,
                 stackKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
                 maxStack: 10,
+                weightKG: 0.1,
             }
         },
         collision: EHexCollision.SOLID,
@@ -73,6 +76,7 @@ export const LOOT_PROTOTYPES: Record<TLootKeys, THexobjectPrototype> = {
                 stackable: true,
                 stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,
                 maxStack: 10,
+                weightKG: 0.1,
             }
         },
         collision: EHexCollision.SOLID,

@@ -1,6 +1,15 @@
 <template>
   <div class="equip-root">
     <div class="equip-wrapper" :style="{ transform: `scale(${scale})` }">
+      <div
+          class="carry-weight-badge"
+          :class="{ over: inventoryStore.isOverCapacity }"
+      >
+        <div class="weight-icon"></div>
+        <div class="weight-text">
+          {{ carried }} / {{ capacity }} kg
+        </div>
+      </div>
       <div class="equip-inner" :style="innerStyle">
         <div
             v-for="t in tiles"
@@ -211,6 +220,14 @@ function tileStyle(t: PseudoTile) {
     transform: `translate(${Math.round(pos.x)}px, ${Math.round(pos.y)}px)`,
   } as Record<string, string>;
 }
+
+const carried = computed(() =>
+    inventoryStore.carriedWeightKg.toFixed(2)
+);
+
+const capacity = computed(() =>
+    inventoryStore.carryCapacityKg.toFixed(2)
+);
 </script>
 
 <style scoped>
@@ -299,5 +316,59 @@ function tileStyle(t: PseudoTile) {
       0 0 0 2px rgba(0, 0, 0, 0.25) inset,
       0 22px 60px rgba(0, 0, 0, 0.55),
       0 0 24px rgba(120, 255, 140, 0.18);
+}
+
+.carry-weight-badge {
+  position: absolute;
+  right: -10%;
+  bottom: 1rem;
+
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+
+  background: linear-gradient(
+      180deg,
+      rgba(43, 46, 52, 0.95),
+      rgba(18, 12, 8, 0.96)
+  );
+
+  border: 1px solid rgba(170, 252, 255, 0.35);
+
+  color: rgba(255, 236, 186, 0.95);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+
+  box-shadow:
+      0 8px 18px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+
+  backdrop-filter: blur(6px);
+  z-index: 1;
+}
+
+.weight-icon {
+  width: 18px;
+  height: 18px;
+
+  background-image: url("public/board-assets"); /* або svg */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.carry-weight-badge.over {
+  border-color: rgba(255, 120, 120, 0.6);
+  box-shadow:
+      0 0 20px rgba(255, 80, 80, 0.4),
+      0 8px 18px rgba(0, 0, 0, 0.45);
+}
+
+.carry-weight-badge:hover {
+  transform: scale(1.05);
 }
 </style>
