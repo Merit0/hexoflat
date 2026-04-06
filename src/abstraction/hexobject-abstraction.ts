@@ -9,6 +9,9 @@ export interface ITraitable<TTraits> {
 
 export interface ILootTraits {
     stackable?: boolean;
+    maxStack?: number;
+    stackKey: THexobjectKey;
+    weightKG: number;
 }
 
 export interface IResourceTraits {
@@ -46,9 +49,11 @@ export interface IResource extends ITraitable<IResourceTraits>{
 export interface ILoot extends ITraitable<ILootTraits>{
     name: string
     amount?: number;
+    traits: ILootTraits
 }
 
 export interface ICreature {
+    name: string;
     hp: number;
     hpMax: number;
     faction?: "neutral" | "enemy" | "friendly";
@@ -61,6 +66,10 @@ export interface ITool extends IDurable {
         canPickup?: boolean;
         canEnter?: boolean;
     };
+
+    traits: {
+        weightKG: number;
+    }
 }
 
 export interface IConstruction {
@@ -80,7 +89,6 @@ export type THexobjectPrototype =
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
-    | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.WEAPON; equipment: IEquipment, weapon: IWeapon });
 
 export type THexobject =
     | (IBaseHexobject & { groupType: EHexobjectGroup.RESOURCE; resource: IResource })
@@ -88,16 +96,16 @@ export type THexobject =
     | (IBaseHexobject & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (IBaseHexobject & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (IBaseHexobject & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
-    | (IBaseHexobject & { groupType: EHexobjectGroup.WEAPON; equipment: IEquipment, weapon: IWeapon });
+    | (IBaseHexobject & { groupType: EHexobjectGroup.EQUIPMENT; equipment: IEquipment, weapon: IWeapon });
 
 
 export enum EHexobjectGroup {
     RESOURCE = 'resource',
     CREATURE = 'creature',
     TOOL = 'tool',
-    WEAPON = 'weapon',
     CONSTRUCTION = 'construction',
     LOOT = 'loot',
+    EQUIPMENT = 'equipment',
 }
 
 export enum EHexCollision {

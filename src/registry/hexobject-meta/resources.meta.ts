@@ -20,6 +20,9 @@ export const RESOURCE_META: Record<TResourceMetaKeys, IHexobjectMeta> = {
             },
         },
         yields: { wood: 1 },
+        traits:{
+            weightKG: 1,
+        }
     },
 
     [HEXOBJECT_KEYS.ROCK]: {
@@ -35,5 +38,8 @@ export const RESOURCE_META: Record<TResourceMetaKeys, IHexobjectMeta> = {
             },
         },
         yields: { stone: 10 },
+        traits:{
+            weightKG: 1,
+        }
     },
 };

@@ -158,23 +158,28 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     [EHexActionType.TAKE]: (tile, tool, now) => {
         const obj = tile.hexobject;
 
-        if (!obj) return {ok: false, message: "Hex has no object!"};
-        if (!obj.isInteractable) return {ok: false, message: "HexObject is not interactable! Can't take it!"};
-        if (isBusy(tile, now)) return {ok: false, message: "Tile is busy!"};
+        if (!obj) return { ok: false, message: "Hex has no object!" };
+        if (!obj.isInteractable) return { ok: false, message: "This object cannot be taken!" };
+        if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
+
+        const canTakeByGroup =
+            obj.groupType === EHexobjectGroup.RESOURCE ||
+            obj.groupType === EHexobjectGroup.LOOT ||
+            obj.groupType === EHexobjectGroup.TOOL;
+
+        if (!canTakeByGroup) {
+            return { ok: false, message: "This object cannot be taken!" };
+        }
 
         if (obj.groupType === EHexobjectGroup.RESOURCE) {
             if (!obj.resource?.isAvailable) {
-                return {ok: false, message: "Resource is not available!"};
+                return { ok: false, message: "Resource is not available!" };
             }
 
             const traits: IResourceTraits = obj.resource?.traits ?? {};
             if (!traits.pickable) {
-                console.warn("Resource is not pickable by hand:", obj.hexobjectKey);
-                return {ok: false, message: "This resource cannot be taken by hand!"};
+                return { ok: false, message: "This resource cannot be taken by hand!" };
             }
-        } else if (obj.groupType === EHexobjectGroup.LOOT) {
-        } else {
-            return {ok: false, message: "Unknown Hexobject type!"};
         }
 
         const meta = HEXOBJECT_META[obj.hexobjectKey];
@@ -185,17 +190,20 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const costPct = cfg?.durabilityCostPct ?? 0;
 
         if (requiredTool && tool !== requiredTool) {
-            return {ok: false, message: `Need a tool: ${requiredTool}`};
+            return { ok: false, message: `Need a tool: ${requiredTool}` };
         }
 
         const cap = getToolCapabilities(tool);
-        if (!cap.canPickup) return {ok: false, message: "Need something to pick up with!"};
+        if (!cap.canPickup) {
+            return { ok: false, message: "Need something to pick up with!" };
+        }
 
         const heroToolStore = useHeroToolStore();
         const okDur = heroToolStore.consumeDurability(costPct);
+
         if (!okDur) {
             heroToolStore.activeTool = HEXOBJECT_KEYS.HAND;
-            return {ok: false, message: "Tool is broken!"};
+            return { ok: false, message: "Tool is broken!" };
         }
 
         const endsAt = now + durationMs;
@@ -208,9 +216,9 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             cancelled: false,
         };
 
-        (heroToolStore as any).lockTool?.(tile.coordinates, endsAt);
+        heroToolStore.lockTool(tile, endsAt);
 
-        return {ok: true, endsAt};
+        return { ok: true, endsAt };
     },
 
     [EHexActionType.ATTACK]: (tile, _tool, now) => {
