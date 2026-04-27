@@ -101,6 +101,19 @@ const toolStyle = computed(() => {
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
   if (!tile?.hexobject) return [];
+
+  if (
+      worldMapStore.combatActive &&
+      tile.hexobject.groupType === "creature" &&
+      (
+          worldMapStore.combatTurnSide !== "hero" ||
+          worldMapStore.combatAttackUsed ||
+          activeToolKey.value !== HEXOBJECT_KEYS.AXE
+      )
+  ) {
+    return [];
+  }
+
   return resolveActions(activeToolKey.value, tile.hexobject);
 });
 

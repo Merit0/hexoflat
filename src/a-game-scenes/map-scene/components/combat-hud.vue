@@ -10,15 +10,31 @@
     </div>
 
     <div class="combat-hud__row">
-      <span class="chip" v-if="worldStore.combatActionMode">Action: <b>{{ worldStore.combatActionMode.toUpperCase() }}</b></span>
-      <span class="chip" v-else>Action: <b>NONE</b></span>
+      <span class="chip" v-if="worldStore.combatActionMode">Mode: <b>{{ worldStore.combatActionMode.toUpperCase() }}</b></span>
+      <span class="chip" v-else>Mode: <b>NONE</b></span>
       <span class="chip" v-if="worldStore.combatTurnSide === 'enemy'">Enemy turn is manual</span>
     </div>
 
     <div class="combat-hud__actions">
-      <button class="combat-btn attack" type="button" @click="worldStore.beginCombatAction('attack')">Attack</button>
-      <button class="combat-btn defend" type="button" @click="worldStore.beginCombatAction('defend')">Defend</button>
-      <button class="combat-btn muted" type="button" @click="worldStore.cancelCombatAction()">Cancel</button>
+      <button
+          class="combat-icon attack"
+          :class="{ 'is-glowing': attackReady, 'is-dim': !attackReady }"
+          type="button"
+          disabled
+          title="Attack becomes ready when axe is drawn"
+      >
+        <span>🪓</span>
+      </button>
+
+      <button
+          class="combat-icon defend"
+          :class="{ 'is-glowing': defendReady, 'is-active': worldStore.combatActionMode === 'defend', 'is-dim': !defendReady && worldStore.combatActionMode !== 'defend' }"
+          type="button"
+          @click="worldStore.beginCombatAction('defend')"
+      >
+        <span>🛡</span>
+      </button>
+
       <button class="combat-btn end" type="button" @click="worldStore.advanceCombatTurn()">Next Turn</button>
     </div>
   </aside>
@@ -26,15 +42,25 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
+import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { useWorldMapStore } from "@/stores/world-map-store";
 
 const worldStore = useWorldMapStore();
+const heroToolStore = useHeroToolStore();
 const now = ref(Date.now());
 let timer: number | null = null;
 let lastAdvancedAt: number | null = null;
 
 const moveBudget = computed(() => worldStore.getCombatMoveBudget());
 const actorLabel = computed(() => worldStore.combatTurnSide === "hero" ? "Hero" : "Enemy");
+const attackReady = computed(() => {
+  return worldStore.combatTurnSide === "hero"
+      && !worldStore.combatAttackUsed
+      && heroToolStore.activeTool === HEXOBJECT_KEYS.AXE
+      && heroToolStore.isDragging;
+});
+const defendReady = computed(() => worldStore.combatTurnSide === "hero" && !worldStore.combatDefendUsed);
 const secondsLeft = computed(() => {
   const endsAt = worldStore.combatTurnEndsAt;
   if (!worldStore.combatActive || !endsAt) return 0;
@@ -138,5 +164,44 @@ onBeforeUnmount(() => {
 
 .timer {
   color: rgba(255, 213, 154, 0.95);
+}
+
+.combat-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+  font-size: 24px;
+}
+
+.combat-icon.attack {
+  border-color: rgba(255, 120, 120, 0.45);
+}
+
+.combat-icon.defend {
+  border-color: rgba(120, 176, 255, 0.45);
+  cursor: pointer;
+}
+
+.combat-icon.is-glowing {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.16), 0 0 18px rgba(255, 126, 126, 0.28);
+}
+
+.combat-icon.defend.is-glowing {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.16), 0 0 18px rgba(120, 176, 255, 0.28);
+}
+
+.combat-icon.is-active {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.16), 0 0 22px rgba(120, 176, 255, 0.34);
+}
+
+.combat-icon.is-dim {
+  opacity: 0.38;
+  filter: saturate(0.4);
 }
 </style>

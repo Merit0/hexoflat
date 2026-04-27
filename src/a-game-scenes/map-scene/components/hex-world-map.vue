@@ -16,8 +16,10 @@
         >
           <enemy-vision-overlay
               :cells="enemyVisionCells"
-              :in-combat="isHeroInEnemyVision"
+              :in-combat="worldStore.combatActive"
           />
+
+          <combat-marker-overlay :markers="combatMarkers" />
 
           <move-preview-overlay
               :segments="movePreviewSegments"
@@ -61,6 +63,7 @@ import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue"
 import MovePreviewOverlay from "@/a-game-scenes/map-scene/components/move-preview-overlay.vue";
 import EnemyVisionOverlay from "@/a-game-scenes/map-scene/components/enemy-vision-overlay.vue";
 import CombatHud from "@/a-game-scenes/map-scene/components/combat-hud.vue";
+import CombatMarkerOverlay from "@/a-game-scenes/map-scene/components/combat-marker-overlay.vue";
 import {LocationKey} from "@/registry/world-map-registry";
 import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
@@ -157,6 +160,7 @@ watch(
 const movePreview = computed(() => {
   if (!worldStore.map || !worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
   if (heroToolStore.isDragging || worldStore.isHeroMoving) return null;
+  if (worldStore.combatActive && worldStore.combatTurnSide !== "hero") return null;
 
   const heroKey = coordinateKey(worldStore.heroCoordinates);
   const targetKey = coordinateKey(hoveredTileCoord.value);
@@ -165,7 +169,9 @@ const movePreview = computed(() => {
   const targetTile = getTileByCoord(hoveredTileCoord.value);
   if (!targetTile) return null;
 
-  const moveSteps = getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
+  const moveSteps = worldStore.combatActive
+      ? worldStore.combatStepsLeft
+      : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
   const path = findShortestPath(worldStore.map, worldStore.heroCoordinates, hoveredTileCoord.value, null);
 
   const isTraversableTarget = Boolean(
@@ -248,16 +254,19 @@ const enemyVisionCells = computed(() => {
 });
 
 const isHeroInEnemyVision = computed(() => {
-  if (!worldStore.map || !worldStore.heroCoordinates) return false;
+  return worldStore.getEnemyTilesSeeingHero().length > 0;
+});
 
-  return worldStore.map.tiles.some((tile) => {
-    const hexobject = tile.hexobject;
-    if (!hexobject || hexobject.groupType !== EHexobjectGroup.CREATURE) return false;
-    if (hexobject.creature?.faction !== "enemy") return false;
-    if (!tile.isRevealed) return false;
-
-    const visionRange = hexobject.creature.visionRange ?? 3;
-    return hexDistance(tile.coordinates, worldStore.heroCoordinates!) <= visionRange;
+const combatMarkers = computed(() => {
+  return worldStore.combatMarkers.map((marker) => {
+    const center = getTileCenter(marker.coord);
+    return {
+      key: `${marker.owner}:${coordinateKey(marker.coord)}`,
+      owner: marker.owner,
+      style: {
+        transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
+      } as Record<string, string>,
+    };
   });
 });
 

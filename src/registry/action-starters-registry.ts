@@ -223,7 +223,10 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     [EHexActionType.ATTACK]: (tile, _tool, now) => {
         if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
-        return {ok: false, message: "ATTACK is not implemented yet!"};
+        const worldMapStore = useWorldMapStore();
+        const res = worldMapStore.performHeroCombatAttack(tile, _tool);
+        if (!res.ok) return { ok: false, message: res.message };
+        return { ok: true, endsAt: now };
     },
 
     [EHexActionType.OPEN]: (tile, _tool, now) => {
@@ -235,8 +238,10 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const heroToolStore = useHeroToolStore();
         const heroStore = useHeroStore();
         const gameEventsStore = useGameEventsStore();
+        const worldStore = useWorldMapStore();
 
         if (isBusy(tile, now)) return { ok:false, message:"Hex is busy!" };
+        if (worldStore.combatActive) return { ok:false, message:"Cannot leave the map during combat!" };
 
         const key = tile.hexobject?.hexobjectKey;
         if (!key) return { ok:false, message:"No object to enter!" };
@@ -261,7 +266,6 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         if (meta?.enter?.type === "WORLD") {
             gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
 
-            const worldStore = useWorldMapStore();
             worldStore.goToLocation(meta.enter.locationKey);
 
             router.push({ name: ROUTES.WORLD, params: { locationKey: meta.enter.locationKey } });
