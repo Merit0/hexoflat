@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, Teleport } from "vue";
+import { computed, onBeforeUnmount, Teleport, type CSSProperties } from "vue";
 import {
   useHeroInventoryStore,
   type InventoryItem,
@@ -82,7 +82,7 @@ const iconStyle = computed(() => ({
   backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : "none",
 }));
 
-const dragGhostStyle = computed(() => ({
+const dragGhostStyle = computed<CSSProperties>(() => ({
   position: "fixed",
   left: `${inventoryStore.dragPointerX - inventoryStore.dragOffsetX}px`,
   top: `${inventoryStore.dragPointerY - inventoryStore.dragOffsetY}px`,

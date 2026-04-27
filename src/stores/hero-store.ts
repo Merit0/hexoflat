@@ -13,6 +13,10 @@ type HeroNavState = {
     returnStack: Array<{ locationKey: string; mapId: string }>;
 };
 
+type HeroProgressState = {
+    heroSteps: number;
+};
+
 function defaultNav(): HeroNavState {
     return {
         locationKey: "camping",
@@ -23,6 +27,7 @@ function defaultNav(): HeroNavState {
 }
 
 const HERO_NAV_KEY = "hexoflat:heroNav:v1";
+const HERO_PROGRESS_KEY = "hexoflat:heroProgress:v1";
 
 export const useHeroStore = defineStore("hero", {
     state: () => ({
@@ -38,6 +43,23 @@ export const useHeroStore = defineStore("hero", {
     actions: {
         saveNavToStorage() {
             localStorage.setItem(HERO_NAV_KEY, JSON.stringify(this.nav));
+        },
+
+        saveProgressToStorage() {
+            const progress: HeroProgressState = {
+                heroSteps: this.hero.heroSteps ?? 0,
+            };
+            localStorage.setItem(HERO_PROGRESS_KEY, JSON.stringify(progress));
+        },
+
+        hydrateProgressFromStorage() {
+            const raw = localStorage.getItem(HERO_PROGRESS_KEY);
+            if (!raw) return;
+
+            const progress = JSON.parse(raw) as Partial<HeroProgressState>;
+            if (typeof progress.heroSteps === "number") {
+                this.hero.setSteps(progress.heroSteps);
+            }
         },
 
         setLocation(locationKey: string, mapId: string) {
@@ -72,6 +94,8 @@ export const useHeroStore = defineStore("hero", {
                 .setMaxEnergy(hero.maxEnergy)
                 .setSteps(hero.heroSteps);
 
+            this.hydrateProgressFromStorage();
+
             return true;
         },
 
@@ -92,6 +116,7 @@ export const useHeroStore = defineStore("hero", {
             this.hero = new HeroModel();
             this.nav = defaultNav();
             localStorage.removeItem(HERO_NAV_KEY);
+            localStorage.removeItem(HERO_PROGRESS_KEY);
         },
     },
 });

@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, Teleport } from "vue";
+import { computed, onBeforeUnmount, Teleport, type CSSProperties } from "vue";
 import { useHeroInventoryStore, type InventoryItem, type TEquipSlot } from "@/stores/hero-inventory-store";
 import { resolveInventoryView } from "@/utils/inventory/traits-resolver";
 
@@ -46,7 +46,7 @@ const tokenStyle = computed(() => ({
   "--rot": `${rotation.value}deg`,
 }) as Record<string, string>);
 
-const dragGhostStyle = computed(() => {
+const dragGhostStyle = computed<CSSProperties>(() => {
   const snap = inventoryStore.dragOverSlot ? 1.12 : 1.05;
 
   return {

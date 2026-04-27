@@ -21,7 +21,7 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
                 weightKG: 1,
             }
         },
-        collision: EHexCollision.NONE,
+        collision: EHexCollision.SOLID,
         spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.AXE}-hex-image.png`,
     },
 
@@ -39,7 +39,7 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
                 weightKG: 1.5,
             }
         },
-        collision: EHexCollision.NONE,
+        collision: EHexCollision.SOLID,
         spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.PICKAXE}-token-image.png`,
     },
 

@@ -13,6 +13,10 @@ import { useHeroStore } from "@/stores/hero-store";
 import { useGameEventsStore } from "@/stores/game-events-store";
 import {LocationKey, MapDefinition, MapRegistry} from "@/registry/world-map-registry";
 import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
+import { getScoutMoveStepsForSteps } from "@/services/hero-movement/scout-progression";
+import { getReachableTileDistances } from "@/services/hero-movement/reachable-range-service";
+import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
+import { executeMovementRoute } from "@/services/hero-movement/movement-executor";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -42,6 +46,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         map: null as HexMapModel | null,
         heroCoordinates: null as IHexCoordinates | null,
         woodCollected: 0,
+        isHeroMoving: false,
 
         currentLocationKey: "camping" as LocationKey,
         currentMapId: null as string | null,
@@ -307,42 +312,62 @@ export const useWorldMapStore = defineStore("world-map-store", {
             }
         },
 
-        moveHeroTo(target: IHexCoordinates): boolean {
+        async moveHeroTo(target: IHexCoordinates): Promise<boolean> {
             const heroToolStore = useHeroToolStore();
             const heroStore = useHeroStore();
             const events = useGameEventsStore();
 
             if (!this.map || !this.heroCoordinates) return false;
-            if (heroToolStore.isDragging) return false;
+            if (heroToolStore.isDragging || this.isHeroMoving) return false;
 
-            const neighbors = getOddQNeighbors(this.heroCoordinates);
-            if (!neighbors.some(n =>
-                n.columnIndex === target.columnIndex &&
-                n.rowIndex === target.rowIndex
-            )) return false;
-
-            const tile: HexTileModel = this.map.tiles.find(
+            const tile = this.map.tiles.find(
                 (t: HexTileModel) =>
                     t.coordinates.columnIndex === target.columnIndex &&
                     t.coordinates.rowIndex === target.rowIndex
             );
             if (!tile || !tile.isRevealed) return false;
-
             if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
             if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING_ENTRANCE) return false;
 
-            this.heroCoordinates = { ...target };
-            heroStore.hero?.makeStep();
+            const moveSteps = getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
+            const reachable = getReachableTileDistances(this.map, this.heroCoordinates, moveSteps);
+            const targetKey = coordinateKey(target);
+            if (!reachable.has(targetKey)) return false;
+
+            const path = findShortestPath(this.map, this.heroCoordinates, target, moveSteps);
+            if (!path || path.length < 2) return false;
+
+            const route = path.slice(1);
+
+            if (heroToolStore.isLocked) {
+                heroToolStore.cancelLockedAction("MOVE");
+                this.saveToStorage();
+            }
+
+            this.isHeroMoving = true;
+
+            try {
+                await executeMovementRoute(route, async (coord) => {
+                    this.heroCoordinates = { ...coord };
+                    heroStore.hero?.makeStep();
+                    heroStore.saveProgressToStorage();
+
+                    this.revealAroundHero();
+                    this.saveToStorage();
+
+                    if (this.currentMapId && this.heroCoordinates) {
+                        heroStore.rememberPosition(this.currentMapId, this.heroCoordinates);
+                    }
+                });
+            } finally {
+                this.isHeroMoving = false;
+            }
 
             events.push(
                 heroStore.hero?.name ?? "Hero",
-                `moved to [${target.columnIndex}, ${target.rowIndex}]`,
+                `moved to [${target.columnIndex}, ${target.rowIndex}] by ${route.length} step(s)`,
                 "INFO"
             );
-
-            this.revealAroundHero();
-            this.saveToStorage();
-            heroStore.rememberPosition(this.currentMapId!, this.heroCoordinates);
 
             return true;
         },

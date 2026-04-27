@@ -240,7 +240,7 @@ export default class HexMapModel implements IWorldMap {
                 break;
             }
 
-            case EHexobjectGroup.WEAPON: {
+            case EHexobjectGroup.EQUIPMENT: {
                 if ("weapon" in built && "weapon" in saved) {
                     built.weapon.damageMin = saved.weapon.damageMin ?? built.weapon.damageMin;
                     built.weapon.damageMax = saved.weapon.damageMax ?? built.weapon.damageMax;

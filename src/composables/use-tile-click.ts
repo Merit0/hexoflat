@@ -8,7 +8,7 @@ export function useTileClick() {
     const worldMapStore = useWorldMapStore();
     const heroToolStore = useHeroToolStore();
 
-    function handleTileClick(tile: IHexTile) {
+    async function handleTileClick(tile: IHexTile) {
         // if (tile.isLocked) {
         //     overlayStore.openOverlay("tile-locked-hint", {coord: tile.coordinates});
         //     return;
@@ -30,7 +30,7 @@ export function useTileClick() {
             return;
         }
 
-        const moved = worldMapStore.moveHeroTo(tile.coordinates);
+        const moved = await worldMapStore.moveHeroTo(tile.coordinates);
         if (moved) return;
     }
 

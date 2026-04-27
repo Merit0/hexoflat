@@ -21,6 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "tile-click", tile: IHexTile): void;
+  (e: "tile-hover", tile: IHexTile): void;
 }>();
 
 const EMPTY_TILE_URL = "/hex-assets/hex-tiles/empty-tile-image.png";
@@ -38,6 +39,7 @@ function getHexTileTransformStyle(tile: IHexTile) {
 }
 
 function onEnter() {
+  emit("tile-hover", props.hexTile);
   if (!heroToolStore.isDragging) return;
   heroToolStore.updateHover(props.hexTile.coordinates);
 }
