@@ -22,6 +22,9 @@ type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
 };
 
+type CombatTurnSide = "hero" | "enemy";
+type CombatActionMode = "attack" | "defend" | null;
+
 const STORAGE_MAP_PREFIX = "hexoflat:world:map:v1:";
 const STORAGE_STATE_PREFIX = "hexoflat:world:state:v1:";
 const STORAGE_INDEX = "hexoflat:world:index:v1";
@@ -47,12 +50,63 @@ export const useWorldMapStore = defineStore("world-map-store", {
         heroCoordinates: null as IHexCoordinates | null,
         woodCollected: 0,
         isHeroMoving: false,
+        combatActive: false,
+        combatTurnSide: "hero" as CombatTurnSide,
+        combatStepsLeft: 0,
+        combatTurnEndsAt: null as number | null,
+        combatActionMode: null as CombatActionMode,
 
         currentLocationKey: "camping" as LocationKey,
         currentMapId: null as string | null,
     }),
 
     actions: {
+        getCombatMoveBudget(): number {
+            const heroStore = useHeroStore();
+            return getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
+        },
+
+        startCombat() {
+            if (this.combatActive) return;
+
+            this.combatActive = true;
+            this.beginCombatTurn("hero");
+            useGameEventsStore().push("Combat", "combat mode engaged", "INFO");
+        },
+
+        endCombat() {
+            this.combatActive = false;
+            this.combatTurnSide = "hero";
+            this.combatStepsLeft = 0;
+            this.combatTurnEndsAt = null;
+            this.combatActionMode = null;
+        },
+
+        beginCombatTurn(side: CombatTurnSide) {
+            this.combatTurnSide = side;
+            this.combatStepsLeft = this.getCombatMoveBudget();
+            this.combatTurnEndsAt = Date.now() + 30_000;
+            this.combatActionMode = null;
+
+            useGameEventsStore().push("Combat", `${side} turn started`, "INFO");
+        },
+
+        advanceCombatTurn() {
+            if (!this.combatActive) return;
+
+            const nextSide: CombatTurnSide = this.combatTurnSide === "hero" ? "enemy" : "hero";
+            this.beginCombatTurn(nextSide);
+        },
+
+        beginCombatAction(mode: Exclude<CombatActionMode, null>) {
+            if (!this.combatActive) return;
+            this.combatActionMode = this.combatActionMode === mode ? null : mode;
+        },
+
+        cancelCombatAction() {
+            this.combatActionMode = null;
+        },
+
         bootstrapWorld() {
             const heroStore = useHeroStore();
 
@@ -454,6 +508,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
             this.heroCoordinates = null;
             this.currentMapId = null;
             this.currentLocationKey = "camping";
+            this.endCombat();
         },
     },
 });

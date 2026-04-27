@@ -57,6 +57,7 @@ export interface ICreature {
     hp: number;
     hpMax: number;
     faction?: "neutral" | "enemy" | "friendly";
+    visionRange?: number;
 }
 
 export interface ITool extends IDurable {

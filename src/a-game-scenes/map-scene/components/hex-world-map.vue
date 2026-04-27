@@ -1,6 +1,7 @@
 <template>
   <div class="scene-root game-root">
     <hero-details-top-bar/>
+    <combat-hud />
     <div class="hex-map">
       <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
         <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
@@ -13,19 +14,15 @@
             transform: `translate(${Math.round(-mapBounds.offsetX)}px, ${Math.round(-mapBounds.offsetY)}px)`,
           }"
         >
-          <div
-              v-for="(segment, index) in movePreviewSegments"
-              :key="`preview-segment-${index}`"
-              class="move-preview-segment"
-              :class="{ 'is-reachable': movePreviewReachable, 'is-unreachable': !movePreviewReachable }"
-              :style="segment.style"
+          <enemy-vision-overlay
+              :cells="enemyVisionCells"
+              :in-combat="isHeroInEnemyVision"
           />
 
-          <div
-              v-if="movePreviewMarkerStyle"
-              class="move-preview-marker"
-              :class="{ 'is-reachable': movePreviewReachable, 'is-unreachable': !movePreviewReachable }"
-              :style="movePreviewMarkerStyle"
+          <move-preview-overlay
+              :segments="movePreviewSegments"
+              :marker-style="movePreviewMarkerStyle"
+              :reachable="movePreviewReachable"
           />
 
           <hero-hex-tile :coord="worldStore.heroCoordinates" :tileWidth="tileWidth" />
@@ -61,13 +58,16 @@ import { useHeroToolStore } from "@/stores/hero-tool-store";
 import {resolveActions, ResolvedAction} from "@/game-resolvers/interactions-resolver";
 import HeroDetailsTopBar from "@/a-game-scenes/map-scene/components/hero-details-top-bar.vue";
 import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue";
+import MovePreviewOverlay from "@/a-game-scenes/map-scene/components/move-preview-overlay.vue";
+import EnemyVisionOverlay from "@/a-game-scenes/map-scene/components/enemy-vision-overlay.vue";
+import CombatHud from "@/a-game-scenes/map-scene/components/combat-hud.vue";
 import {LocationKey} from "@/registry/world-map-registry";
 import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
 import { getScoutMoveStepsForSteps } from "@/services/hero-movement/scout-progression";
-import { coordinateKey } from "@/utils/hex-utils";
-import { EHexCollision } from "@/abstraction/hexobject-abstraction";
+import { coordinateKey, hexDistance } from "@/utils/hex-utils";
+import { EHexCollision, EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
 
@@ -218,6 +218,59 @@ const movePreviewMarkerStyle = computed(() => {
 
 const movePreviewReachable = computed(() => movePreview.value?.reachable ?? false);
 
+const enemyVisionCells = computed(() => {
+  if (!worldStore.map) return [];
+
+  const cells = new Map<string, { key: string; style: Record<string, string> }>();
+
+  for (const enemyTile of worldStore.map.tiles) {
+    const hexobject = enemyTile.hexobject;
+    if (!hexobject || hexobject.groupType !== EHexobjectGroup.CREATURE) continue;
+    if (hexobject.creature?.faction !== "enemy") continue;
+    if (!enemyTile.isRevealed) continue;
+
+    const visionRange = hexobject.creature.visionRange ?? 3;
+    for (const tile of worldStore.map.tiles) {
+      if (!tile.isRevealed) continue;
+      if (hexDistance(enemyTile.coordinates, tile.coordinates) > visionRange) continue;
+
+      const { x, y } = calcHexPixelPosition(tile, tileWidth);
+      cells.set(coordinateKey(tile.coordinates), {
+        key: coordinateKey(tile.coordinates),
+        style: {
+          transform: `translate(${x}px, ${y}px)`,
+        },
+      });
+    }
+  }
+
+  return [...cells.values()];
+});
+
+const isHeroInEnemyVision = computed(() => {
+  if (!worldStore.map || !worldStore.heroCoordinates) return false;
+
+  return worldStore.map.tiles.some((tile) => {
+    const hexobject = tile.hexobject;
+    if (!hexobject || hexobject.groupType !== EHexobjectGroup.CREATURE) return false;
+    if (hexobject.creature?.faction !== "enemy") return false;
+    if (!tile.isRevealed) return false;
+
+    const visionRange = hexobject.creature.visionRange ?? 3;
+    return hexDistance(tile.coordinates, worldStore.heroCoordinates!) <= visionRange;
+  });
+});
+
+watch(
+    isHeroInEnemyVision,
+    (inVision) => {
+      if (inVision && !worldStore.combatActive) {
+        worldStore.startCombat();
+      }
+    },
+    { immediate: true }
+);
+
 /* ---------- bounds ---------- */
 const bleed = 2;
 
@@ -337,51 +390,5 @@ onBeforeUnmount(() => {
 
 .hex-map-inner {
   position: relative;
-}
-
-.move-preview-segment {
-  position: absolute;
-  height: 4px;
-  transform-origin: 0 50%;
-  border-radius: 999px;
-  pointer-events: none;
-  z-index: 105;
-  box-shadow: 0 0 18px rgba(0, 0, 0, 0.28);
-}
-
-.move-preview-segment.is-reachable {
-  background: linear-gradient(90deg, rgba(103, 255, 157, 0.25), rgba(121, 255, 180, 0.95));
-}
-
-.move-preview-segment.is-unreachable {
-  background: linear-gradient(90deg, rgba(255, 108, 108, 0.25), rgba(255, 128, 128, 0.95));
-}
-
-.move-preview-marker {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  margin-left: -13px;
-  margin-top: -13px;
-  border-radius: 999px;
-  pointer-events: none;
-  z-index: 110;
-  backdrop-filter: blur(2px);
-}
-
-.move-preview-marker.is-reachable {
-  background: rgba(96, 255, 164, 0.16);
-  border: 2px solid rgba(132, 255, 184, 0.96);
-  box-shadow:
-      0 0 0 4px rgba(96, 255, 164, 0.12),
-      0 0 24px rgba(96, 255, 164, 0.4);
-}
-
-.move-preview-marker.is-unreachable {
-  background: rgba(255, 100, 100, 0.14);
-  border: 2px solid rgba(255, 126, 126, 0.96);
-  box-shadow:
-      0 0 0 4px rgba(255, 100, 100, 0.1),
-      0 0 24px rgba(255, 100, 100, 0.32);
 }
 </style>

@@ -229,6 +229,7 @@ export default class HexMapModel implements IWorldMap {
                     built.creature.hp = saved.creature.hp ?? built.creature.hp;
                     built.creature.hpMax = saved.creature.hpMax ?? built.creature.hpMax;
                     built.creature.faction = saved.creature.faction ?? built.creature.faction;
+                    built.creature.visionRange = saved.creature.visionRange ?? built.creature.visionRange;
                 }
                 break;
             }
