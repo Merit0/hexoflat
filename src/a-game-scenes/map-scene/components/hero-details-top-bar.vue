@@ -17,7 +17,6 @@
             </div>
           </div>
           <span class="chip">Scout: <b>{{ scoutRankShort }}</b></span>
-          <span class="chip">Pos: <b>q{{ heroQ }}</b> · <b>r{{ heroR }}</b></span>
           <span class="chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
           <span class="chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
           <span class="chip muted" v-else>Status: <b>READY</b></span>
@@ -37,6 +36,7 @@
 
     <div class="topbar__right">
       <span class="chip">Map: <b>{{ heroLocation }}</b></span>
+      <button class="settings-btn" type="button" @click="openSettings">⚙</button>
       <div class="topbar__logger">
         <game-events-logger/>
       </div>
@@ -52,16 +52,19 @@ import { useHeroStore } from "@/stores/hero-store";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { useUserStore } from "@/stores/user-store";
+import { useOverlayStore } from "@/stores/overlay-store";
+import { useHeroInventoryStore } from "@/stores/hero-inventory-store";
 import GameEventsLogger from "@/a-game-scenes/game-events-logger/components/game-events-logger.vue";
 import {MapRegistry} from "@/registry/world-map-registry";
 import { getScoutProgress } from "@/services/hero-movement/scout-progression";
+import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 
 const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
 const heroToolStore = useHeroToolStore();
+const heroInventoryStore = useHeroInventoryStore();
 const userStore = useUserStore();
-
-const activeTool = computed(() => heroToolStore.activeTool);
+const overlayStore = useOverlayStore();
 
 const heroName = computed(() => heroStore.hero?.name ?? "Hero");
 const heroSteps = computed(() => heroStore.hero?.heroSteps ?? 0);
@@ -70,9 +73,6 @@ const scoutMoveSteps = computed(() => scoutProgress.value.moveSteps);
 const scoutRankLabel = computed(() => scoutProgress.value.rankLabel);
 const nextScoutRankAt = computed(() => scoutProgress.value.nextRankAt);
 const scoutRankShort = computed(() => `R${scoutProgress.value.current.rank}`);
-
-const heroQ = computed(() => worldStore.heroCoordinates?.columnIndex ?? 0);
-const heroR = computed(() => worldStore.heroCoordinates?.rowIndex ?? 0);
 
 const heroHp = computed(() => heroStore.hero.currentHealth ?? 0);
 const heroHpMax = computed(() => heroStore.hero.maxHealth ?? 100);
@@ -90,11 +90,22 @@ const heroLocation = computed(() => {
   return MapRegistry.get(key)?.title ?? key;
 });
 
+function resolveHandLabel(itemKey: string | undefined) {
+  if (!itemKey || itemKey === HEXOBJECT_KEYS.HAND) return "hand";
+  if (String(itemKey).toLowerCase().includes("shield")) return "shield";
+  return "weapon";
+}
+
 const toolLabel = computed(() => {
-  const t = activeTool.value;
-  if (!t) return "";
-  return String(t).toUpperCase();
+  const equipped = heroInventoryStore.equippedItems;
+  const weaponLabel = resolveHandLabel(equipped.weapon?.key);
+  const shieldLabel = resolveHandLabel(equipped.shield?.key);
+  return `${weaponLabel} ${shieldLabel}`;
 });
+
+function openSettings() {
+  overlayStore.openOverlay("settings");
+}
 </script>
 
 <style scoped>
@@ -142,6 +153,20 @@ const toolLabel = computed(() => {
   display: flex;
   align-items: center;
   min-width: 0;
+}
+
+.settings-btn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(190, 220, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(240, 248, 255, 0.95);
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0;
 }
 
 /* (твоє — лишаю як є) */

@@ -62,7 +62,6 @@ const attackReady = computed(() => {
 });
 const defendReady = computed(() => {
   return worldStore.combatTurnSide === "hero"
-      && worldStore.combatAttackUsed
       && !worldStore.combatDefendUsed;
 });
 const secondsLeft = computed(() => {

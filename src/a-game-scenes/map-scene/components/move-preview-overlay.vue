@@ -34,20 +34,27 @@ defineProps<{
 <style scoped>
 .move-preview-segment {
   position: absolute;
-  height: 4px;
-  transform-origin: 0 50%;
-  border-radius: 999px;
+  width: var(--hex-tile-width);
+  height: var(--hex-tile-height);
   pointer-events: none;
   z-index: 95;
-  box-shadow: 0 0 18px rgba(0, 0, 0, 0.28);
+  clip-path: polygon(
+      25% 0%,
+      75% 0%,
+      100% 50%,
+      75% 100%,
+      25% 100%,
+      0% 50%
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .move-preview-segment.is-reachable {
-  background: linear-gradient(90deg, rgba(103, 255, 157, 0.25), rgba(121, 255, 180, 0.95));
+  background: radial-gradient(circle at 50% 50%, rgba(103, 255, 157, 0.22), rgba(103, 255, 157, 0.08) 58%, rgba(103, 255, 157, 0.02) 100%);
 }
 
 .move-preview-segment.is-unreachable {
-  background: linear-gradient(90deg, rgba(255, 108, 108, 0.25), rgba(255, 128, 128, 0.95));
+  background: radial-gradient(circle at 50% 50%, rgba(255, 108, 108, 0.20), rgba(255, 108, 108, 0.08) 58%, rgba(255, 108, 108, 0.02) 100%);
 }
 
 .move-preview-marker {

@@ -75,6 +75,9 @@ import { coordinateKey, getOddQNeighbors, hexDistance } from "@/utils/hex-utils"
 import { EHexCollision, EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
+import { useUiSettingsStore } from "@/stores/ui-settings-store";
+import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-store";
+import type { TToolKeys } from "@/registry/hexobjects/prototypes/tools.prototypes";
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -85,6 +88,8 @@ const worldStore = useWorldMapStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const heroStore = useHeroStore();
+const uiSettingsStore = useUiSettingsStore();
+const heroInventoryStore = useHeroInventoryStore();
 const hoveredTileCoord = ref<IHexCoordinates | null>(null);
 
 watch(
@@ -96,6 +101,8 @@ watch(
 );
 
 onMounted(() => worldStore.bootstrapWorld());
+onMounted(() => uiSettingsStore.hydrateFromStorage());
+onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
 
 const tiles = computed(() => worldStore.map?.tiles ?? []);
@@ -160,6 +167,7 @@ watch(
 );
 
 const movePreview = computed(() => {
+  if (!uiSettingsStore.showHeroMoveTrail) return null;
   if (!worldStore.map || !worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
   if (worldStore.isHeroMoving) return null;
   if (worldStore.combatActive && worldStore.combatTurnSide !== "hero") return null;
@@ -230,18 +238,13 @@ const movePreviewSegments = computed(() => {
   const path = movePreview.value?.path;
   if (!path || path.length < 2) return [];
 
-  return path.slice(0, -1).map((fromCoord, index) => {
-    const from = getTileCenter(fromCoord);
-    const to = getTileCenter(path[index + 1]);
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  return path.slice(1).map((coord) => {
+    const pseudoTile = { coordinates: coord } as any;
+    const { x, y } = calcHexPixelPosition(pseudoTile, tileWidth);
 
     return {
       style: {
-        width: `${Math.round(length)}px`,
-        transform: `translate(${Math.round(from.x)}px, ${Math.round(from.y)}px) rotate(${angle}deg)`,
+        transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
       } as Record<string, string>,
     };
   });
@@ -263,6 +266,7 @@ const movePreviewStepCost = computed(() => movePreview.value?.stepCost ?? 0);
 const movePreviewMarkerKind = computed(() => movePreview.value?.markerKind ?? "move");
 
 const enemyVisionCells = computed(() => {
+  if (!uiSettingsStore.showEnemyVisionArea) return [];
   if (!worldStore.map) return [];
 
   const cells = new Map<string, { key: string; style: Record<string, string> }>();
@@ -384,6 +388,47 @@ function onResize() {
   updateScale();
 }
 
+function resolveEquippedToolKey(slot: TEquipSlot): TToolKeys | null {
+  const item = heroInventoryStore.equippedItems[slot];
+  if (!item) return null;
+
+  switch (item.key) {
+    case HEXOBJECT_KEYS.HAND:
+      return HEXOBJECT_KEYS.HAND;
+    case HEXOBJECT_KEYS.AXE:
+      return HEXOBJECT_KEYS.AXE;
+    case HEXOBJECT_KEYS.PICKAXE:
+      return HEXOBJECT_KEYS.PICKAXE;
+    default:
+      return null;
+  }
+}
+
+function equipToolFromHand(slot: TEquipSlot) {
+  if (!worldStore.heroCoordinates) return;
+
+  const toolKey = resolveEquippedToolKey(slot);
+  if (!toolKey) return;
+
+  heroToolStore.useTool(toolKey, worldStore.heroCoordinates);
+}
+
+function onKeyDown(event: KeyboardEvent) {
+  if (event.repeat) return;
+
+  const target = event.target as HTMLElement | null;
+  if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+    return;
+  }
+
+  const key = event.key.toLowerCase();
+  if (key === "l") {
+    equipToolFromHand("shield");
+  } else if (key === "r") {
+    equipToolFromHand("weapon");
+  }
+}
+
 watch(mapBounds, updateScale, { immediate: true });
 
 onMounted(() => {
@@ -393,10 +438,12 @@ onMounted(() => {
   });
 
   window.addEventListener("resize", onResize);
+  window.addEventListener("keydown", onKeyDown);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", onResize);
+  window.removeEventListener("keydown", onKeyDown);
 });
 </script>
 
