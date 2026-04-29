@@ -38,6 +38,7 @@ type CombatMarker = {
     owner: CombatTurnSide;
     coord: IHexCoordinates;
     kind: "defend" | "attack-trace";
+    visible: boolean;
 };
 
 const STORAGE_MAP_PREFIX = "hexoflat:world:map:v1:";
@@ -270,9 +271,30 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (!this.combatActive) return;
             if (this.combatTurnSide !== "hero") return;
             if (mode === "attack" && this.combatAttackUsed) return;
+            if (mode === "defend" && !this.combatAttackUsed) return;
             if (mode === "defend" && this.combatDefendUsed) return;
             this.combatActionMode = this.combatActionMode === mode ? null : mode;
             this.saveToStorage();
+        },
+
+        revealCombatMarkers(owner: CombatTurnSide, kind: CombatMarker["kind"] = "defend") {
+            let changed = false;
+
+            this.combatMarkers = this.combatMarkers.map((marker) => {
+                if (marker.owner !== owner || marker.kind !== kind || marker.visible) {
+                    return marker;
+                }
+
+                changed = true;
+                return {
+                    ...marker,
+                    visible: true,
+                };
+            });
+
+            if (changed) {
+                this.saveToStorage();
+            }
         },
 
         cancelCombatAction() {
@@ -283,6 +305,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         placeCombatDefendMarker(target: IHexCoordinates): boolean {
             if (!this.combatActive) return false;
             if (this.combatTurnSide !== "hero") return false;
+            if (!this.combatAttackUsed) return false;
             if (this.combatActionMode !== "defend" || this.combatDefendUsed) return false;
             if (!this.heroCoordinates) return false;
 
@@ -305,6 +328,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 owner: "hero",
                 coord: { ...target },
                 kind: "defend",
+                visible: false,
             });
 
             this.combatDefendUsed = true;
@@ -367,6 +391,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 owner: "enemy",
                 coord: { ...chosen.coordinates },
                 kind: "defend",
+                visible: false,
             });
 
             useGameEventsStore().push("Combat", "enemy auto-raised shield", "INFO");
@@ -475,8 +500,10 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     owner: "enemy",
                     coord: { ...currentEnemyTile.coordinates },
                     kind: "attack-trace",
+                    visible: true,
                 });
                 this.saveToStorage();
+                this.revealCombatMarkers("hero");
 
                 if (blocked) {
                     events.push("Combat", `${currentEnemyTile.hexobject?.creature?.name ?? "Enemy"} hit the shield`, "INFO");
@@ -557,6 +584,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             this.combatAttackUsed = true;
             this.combatActionMode = null;
+            this.revealCombatMarkers("enemy");
 
             if (blocked) {
                 useGameEventsStore().push("Combat", `${obj.creature.name} blocked the hit`, "INFO");
@@ -713,6 +741,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     owner: marker.owner,
                     coord: { ...marker.coord },
                     kind: marker.kind,
+                    visible: marker.visible ?? true,
                 })) ?? [];
             } else {
                 this.heroCoordinates = null;
@@ -789,6 +818,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     owner: marker.owner,
                     coord: { ...marker.coord },
                     kind: marker.kind,
+                    visible: marker.visible,
                 })),
             };
 

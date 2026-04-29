@@ -60,7 +60,11 @@ const attackReady = computed(() => {
       && heroToolStore.activeTool === HEXOBJECT_KEYS.AXE
       && heroToolStore.isDragging;
 });
-const defendReady = computed(() => worldStore.combatTurnSide === "hero" && !worldStore.combatDefendUsed);
+const defendReady = computed(() => {
+  return worldStore.combatTurnSide === "hero"
+      && worldStore.combatAttackUsed
+      && !worldStore.combatDefendUsed;
+});
 const secondsLeft = computed(() => {
   const endsAt = worldStore.combatTurnEndsAt;
   if (!worldStore.combatActive || !endsAt) return 0;

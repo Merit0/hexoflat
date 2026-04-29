@@ -26,6 +26,7 @@
               :marker-style="movePreviewMarkerStyle"
               :reachable="movePreviewReachable"
               :step-cost="movePreviewStepCost"
+              :marker-kind="movePreviewMarkerKind"
           />
 
           <hero-hex-tile :coord="worldStore.heroCoordinates" :tileWidth="tileWidth" />
@@ -70,7 +71,7 @@ import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
 import { getScoutMoveStepsForSteps } from "@/services/hero-movement/scout-progression";
-import { coordinateKey, hexDistance } from "@/utils/hex-utils";
+import { coordinateKey, getOddQNeighbors, hexDistance } from "@/utils/hex-utils";
 import { EHexCollision, EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
@@ -160,8 +161,39 @@ watch(
 
 const movePreview = computed(() => {
   if (!worldStore.map || !worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
-  if (heroToolStore.isDragging || worldStore.isHeroMoving) return null;
+  if (worldStore.isHeroMoving) return null;
   if (worldStore.combatActive && worldStore.combatTurnSide !== "hero") return null;
+
+  if (worldStore.combatActionMode === "defend") {
+    const isAdjacent = getOddQNeighbors(worldStore.heroCoordinates).some((coord) =>
+        coord.columnIndex === hoveredTileCoord.value!.columnIndex &&
+        coord.rowIndex === hoveredTileCoord.value!.rowIndex
+    );
+    if (!isAdjacent) return null;
+
+    const targetTile = getTileByCoord(hoveredTileCoord.value);
+    const reachable = Boolean(
+        targetTile &&
+        targetTile.isRevealed &&
+        targetTile.hexobject?.collision !== EHexCollision.SOLID
+    );
+
+    return {
+      path: null,
+      reachable,
+      markerCoord: hoveredTileCoord.value,
+      stepCost: 0,
+      markerKind: "defend" as const,
+    };
+  }
+
+  const hasMovementSteps = worldStore.combatActive
+      ? worldStore.combatStepsLeft > 0
+      : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
+  const hasNoActiveTool = !heroToolStore.isDragging && (
+      !heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND
+  );
+  if (!hasMovementSteps || !hasNoActiveTool) return null;
 
   const heroKey = coordinateKey(worldStore.heroCoordinates);
   const targetKey = coordinateKey(hoveredTileCoord.value);
@@ -177,6 +209,7 @@ const movePreview = computed(() => {
 
   const isTraversableTarget = Boolean(
       targetTile.isRevealed &&
+      targetTile.hexobject?.groupType !== EHexobjectGroup.CONSTRUCTION &&
       targetTile.hexobject?.collision !== EHexCollision.SOLID &&
       targetTile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.CAMPING_ENTRANCE
   );
@@ -187,8 +220,9 @@ const movePreview = computed(() => {
   return {
     path,
     reachable,
-    markerCoord: hoveredTileCoord.value,
+    markerCoord: isTraversableTarget ? hoveredTileCoord.value : null,
     stepCost: route.length,
+    markerKind: "move" as const,
   };
 });
 
@@ -226,6 +260,7 @@ const movePreviewMarkerStyle = computed(() => {
 
 const movePreviewReachable = computed(() => movePreview.value?.reachable ?? false);
 const movePreviewStepCost = computed(() => movePreview.value?.stepCost ?? 0);
+const movePreviewMarkerKind = computed(() => movePreview.value?.markerKind ?? "move");
 
 const enemyVisionCells = computed(() => {
   if (!worldStore.map) return [];
@@ -261,7 +296,9 @@ const isHeroInEnemyVision = computed(() => {
 });
 
 const combatMarkers = computed(() => {
-  return worldStore.combatMarkers.map((marker) => {
+  return worldStore.combatMarkers
+      .filter((marker) => marker.visible)
+      .map((marker) => {
     const center = getTileCenter(marker.coord);
     return {
       key: `${marker.owner}:${marker.kind}:${coordinateKey(marker.coord)}`,

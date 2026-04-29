@@ -10,10 +10,14 @@
   <div
       v-if="markerStyle"
       class="move-preview-marker"
-      :class="{ 'is-reachable': reachable, 'is-unreachable': !reachable }"
+      :class="[
+        { 'is-reachable': reachable, 'is-unreachable': !reachable },
+        markerKind ? `kind-${markerKind}` : ''
+      ]"
       :style="markerStyle"
   >
-    <span class="move-preview-marker__cost">{{ stepCost }}</span>
+    <span v-if="markerKind === 'defend'" class="move-preview-marker__icon">🛡</span>
+    <span v-else class="move-preview-marker__cost">{{ stepCost }}</span>
   </div>
 </template>
 
@@ -23,6 +27,7 @@ defineProps<{
   markerStyle: Record<string, string> | null;
   reachable: boolean;
   stepCost: number;
+  markerKind?: "move" | "defend";
 }>();
 </script>
 
@@ -67,6 +72,12 @@ defineProps<{
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.48);
 }
 
+.move-preview-marker__icon {
+  font-size: 16px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.48));
+}
+
 .move-preview-marker.is-reachable {
   background: rgba(96, 255, 164, 0.16);
   border: 2px solid rgba(132, 255, 184, 0.96);
@@ -81,5 +92,13 @@ defineProps<{
   box-shadow:
       0 0 0 4px rgba(255, 100, 100, 0.1),
       0 0 24px rgba(255, 100, 100, 0.32);
+}
+
+.move-preview-marker.kind-defend {
+  background: rgba(92, 160, 255, 0.18);
+  border: 2px solid rgba(132, 188, 255, 0.96);
+  box-shadow:
+      0 0 0 4px rgba(96, 154, 255, 0.12),
+      0 0 24px rgba(96, 154, 255, 0.34);
 }
 </style>
