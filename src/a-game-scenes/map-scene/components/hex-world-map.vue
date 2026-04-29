@@ -25,6 +25,7 @@
               :segments="movePreviewSegments"
               :marker-style="movePreviewMarkerStyle"
               :reachable="movePreviewReachable"
+              :step-cost="movePreviewStepCost"
           />
 
           <hero-hex-tile :coord="worldStore.heroCoordinates" :tileWidth="tileWidth" />
@@ -187,6 +188,7 @@ const movePreview = computed(() => {
     path,
     reachable,
     markerCoord: hoveredTileCoord.value,
+    stepCost: route.length,
   };
 });
 
@@ -223,6 +225,7 @@ const movePreviewMarkerStyle = computed(() => {
 });
 
 const movePreviewReachable = computed(() => movePreview.value?.reachable ?? false);
+const movePreviewStepCost = computed(() => movePreview.value?.stepCost ?? 0);
 
 const enemyVisionCells = computed(() => {
   if (!worldStore.map) return [];
@@ -261,8 +264,9 @@ const combatMarkers = computed(() => {
   return worldStore.combatMarkers.map((marker) => {
     const center = getTileCenter(marker.coord);
     return {
-      key: `${marker.owner}:${coordinateKey(marker.coord)}`,
+      key: `${marker.owner}:${marker.kind}:${coordinateKey(marker.coord)}`,
       owner: marker.owner,
+      kind: marker.kind,
       style: {
         transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
       } as Record<string, string>,

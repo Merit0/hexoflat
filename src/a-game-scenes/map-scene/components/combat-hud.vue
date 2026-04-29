@@ -12,7 +12,7 @@
     <div class="combat-hud__row">
       <span class="chip" v-if="worldStore.combatActionMode">Mode: <b>{{ worldStore.combatActionMode.toUpperCase() }}</b></span>
       <span class="chip" v-else>Mode: <b>NONE</b></span>
-      <span class="chip" v-if="worldStore.combatTurnSide === 'enemy'">Enemy turn is manual</span>
+      <span class="chip" v-if="worldStore.combatTurnSide === 'enemy'">Enemy is acting</span>
     </div>
 
     <div class="combat-hud__actions">
@@ -93,6 +93,15 @@ watch(
       lastAdvancedAt = endsAt;
       worldStore.advanceCombatTurn();
     }
+);
+
+watch(
+    () => [worldStore.combatActive, worldStore.combatTurnSide, worldStore.isEnemyTurnResolving] as const,
+    ([active, side, resolving]) => {
+      if (!active || side !== "enemy" || resolving) return;
+      void worldStore.ensureEnemyTurnResolution();
+    },
+    { immediate: true }
 );
 
 onBeforeUnmount(() => {

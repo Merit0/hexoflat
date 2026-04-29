@@ -149,12 +149,12 @@ export class HeroModel implements IHero {
         }
     }
 
-    // public takeDamage(damage: number): void {
-    //     this.currentHealth -= damage;
-    //     if (this.currentHealth < 1) {
-    //         this.currentHealth = 0;
-    //     }
-    // }
+    public takeDamage(damage: number): void {
+        this.currentHealth -= damage;
+        if (this.currentHealth < 1) {
+            this.currentHealth = 0;
+        }
+    }
 
     public healthIncreaser(): void {
         this.currentHealth += 1;

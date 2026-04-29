@@ -74,8 +74,8 @@ const scoutRankShort = computed(() => `R${scoutProgress.value.current.rank}`);
 const heroQ = computed(() => worldStore.heroCoordinates?.columnIndex ?? 0);
 const heroR = computed(() => worldStore.heroCoordinates?.rowIndex ?? 0);
 
-const heroHp = computed(() => (heroStore as any)?.heroHp ?? (worldStore as any)?.hero?.hp ?? 100);
-const heroHpMax = computed(() => (heroStore as any)?.heroHpMax ?? (worldStore as any)?.hero?.hpMax ?? 100);
+const heroHp = computed(() => heroStore.hero.currentHealth ?? 0);
+const heroHpMax = computed(() => heroStore.hero.maxHealth ?? 100);
 
 const hpPercent = computed(() => {
   const max = Math.max(1, Number(heroHpMax.value) || 1);

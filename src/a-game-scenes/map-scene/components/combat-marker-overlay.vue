@@ -3,16 +3,16 @@
       v-for="marker in markers"
       :key="marker.key"
       class="combat-marker"
-      :class="`owner-${marker.owner}`"
+      :class="[ `owner-${marker.owner}`, `kind-${marker.kind}` ]"
       :style="marker.style"
   >
-    🛡
+    {{ marker.kind === "attack-trace" ? "✖" : "🛡" }}
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
-  markers: Array<{ key: string; owner: "hero" | "enemy"; style: Record<string, string> }>;
+  markers: Array<{ key: string; owner: "hero" | "enemy"; kind: "defend" | "attack-trace"; style: Record<string, string> }>;
 }>();
 </script>
 
@@ -38,5 +38,11 @@ defineProps<{
 
 .combat-marker.owner-enemy {
   box-shadow: 0 0 0 2px rgba(255, 120, 120, 0.35), 0 0 16px rgba(255, 120, 120, 0.2);
+}
+
+.combat-marker.kind-attack-trace {
+  color: rgba(255, 126, 126, 0.95);
+  background: rgba(48, 10, 10, 0.94);
+  box-shadow: 0 0 0 2px rgba(255, 80, 80, 0.4), 0 0 20px rgba(255, 80, 80, 0.24);
 }
 </style>

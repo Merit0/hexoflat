@@ -17,12 +17,14 @@ import { getScoutMoveStepsForSteps } from "@/services/hero-movement/scout-progre
 import { getReachableTileDistances } from "@/services/hero-movement/reachable-range-service";
 import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
 import { executeMovementRoute } from "@/services/hero-movement/movement-executor";
+import router, { ROUTES } from "@/router";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
     combatActive: boolean;
     combatTurnSide: CombatTurnSide;
     combatStepsLeft: number;
+    combatStoredStepsBeforeDefend: number | null;
     combatTurnEndsAt: number | null;
     combatActionMode: CombatActionMode;
     combatAttackUsed: boolean;
@@ -35,7 +37,7 @@ type CombatActionMode = "attack" | "defend" | null;
 type CombatMarker = {
     owner: CombatTurnSide;
     coord: IHexCoordinates;
-    kind: "defend";
+    kind: "defend" | "attack-trace";
 };
 
 const STORAGE_MAP_PREFIX = "hexoflat:world:map:v1:";
@@ -63,9 +65,12 @@ export const useWorldMapStore = defineStore("world-map-store", {
         heroCoordinates: null as IHexCoordinates | null,
         woodCollected: 0,
         isHeroMoving: false,
+        isEnemyTurnResolving: false,
+        pendingCampingRespawn: false,
         combatActive: false,
         combatTurnSide: "hero" as CombatTurnSide,
         combatStepsLeft: 0,
+        combatStoredStepsBeforeDefend: null as number | null,
         combatTurnEndsAt: null as number | null,
         combatActionMode: null as CombatActionMode,
         combatAttackUsed: false,
@@ -123,6 +128,90 @@ export const useWorldMapStore = defineStore("world-map-store", {
             return 10;
         },
 
+        clearStoredLocation(locationKey: LocationKey, mapId: string) {
+            const heroStore = useHeroStore();
+            const index = readIndex();
+
+            localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
+            localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
+
+            if (index[locationKey] === mapId) {
+                delete index[locationKey];
+                writeIndex(index);
+            }
+
+            heroStore.forgetPosition(mapId);
+        },
+
+        forgetStoredLocationPosition(locationKey: LocationKey) {
+            const heroStore = useHeroStore();
+            const index = readIndex();
+            const mapId = index[locationKey];
+
+            if (!mapId) return;
+
+            heroStore.forgetPosition(mapId);
+        },
+
+        placeHeroAtCampfire() {
+            if (!this.map) return;
+
+            const campfireTile = this.map.tiles.find(
+                (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE
+            );
+
+            if (!campfireTile) {
+                this.placeHeroAtEntry("camping");
+                return;
+            }
+
+            const byKey = new Map<string, HexTileModel>();
+            for (const tile of this.map.tiles) {
+                byKey.set(coordinateKey(tile.coordinates), tile);
+            }
+
+            const neighbor = getOddQNeighbors(campfireTile.coordinates)
+                .map((coord) => byKey.get(coordinateKey(coord)))
+                .find((tile) => tile && tile.hexobject?.collision !== EHexCollision.SOLID);
+
+            this.heroCoordinates = neighbor
+                ? { ...neighbor.coordinates }
+                : { ...campfireTile.coordinates };
+        },
+
+        async respawnHeroAtCamping() {
+            const heroStore = useHeroStore();
+            const events = useGameEventsStore();
+            const defeatedLocationKey = this.currentLocationKey;
+            const defeatedMapId = this.currentMapId;
+
+            this.endCombat();
+            if (defeatedMapId) {
+                this.clearStoredLocation(defeatedLocationKey, defeatedMapId);
+            }
+            this.forgetStoredLocationPosition("silesia");
+
+            this.stopWorldLoop();
+            this.pendingCampingRespawn = true;
+            this.heroCoordinates = null;
+            this.currentMapId = null;
+            heroStore.markCampRecoveryStart();
+            events.push("Combat", "hero was defeated and returned to camping", "INFO");
+
+            if (
+                router.currentRoute.value.name === ROUTES.WORLD
+                && router.currentRoute.value.params.locationKey !== "camping"
+            ) {
+                await router.push({
+                    name: ROUTES.WORLD,
+                    params: { locationKey: "camping" },
+                });
+                return;
+            }
+
+            this.goToLocation("camping");
+        },
+
         startCombat() {
             if (this.combatActive) return;
 
@@ -135,8 +224,10 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
         endCombat() {
             this.combatActive = false;
+            this.isEnemyTurnResolving = false;
             this.combatTurnSide = "hero";
             this.combatStepsLeft = 0;
+            this.combatStoredStepsBeforeDefend = null;
             this.combatTurnEndsAt = null;
             this.combatActionMode = null;
             this.combatAttackUsed = false;
@@ -148,6 +239,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         beginCombatTurn(side: CombatTurnSide) {
             this.combatTurnSide = side;
             this.combatStepsLeft = this.getCombatMoveBudget();
+            this.combatStoredStepsBeforeDefend = null;
             this.combatTurnEndsAt = Date.now() + 30_000;
             this.combatActionMode = null;
             this.combatAttackUsed = false;
@@ -161,6 +253,10 @@ export const useWorldMapStore = defineStore("world-map-store", {
             }
 
             this.saveToStorage();
+
+            if (side === "enemy") {
+                void this.ensureEnemyTurnResolution();
+            }
         },
 
         advanceCombatTurn() {
@@ -212,8 +308,32 @@ export const useWorldMapStore = defineStore("world-map-store", {
             });
 
             this.combatDefendUsed = true;
+            this.combatStoredStepsBeforeDefend = this.combatStepsLeft;
+            this.combatStepsLeft = 0;
             this.combatActionMode = null;
             useGameEventsStore().push("Combat", "hero placed shield", "INFO");
+            this.saveToStorage();
+            return true;
+        },
+
+        removeCombatDefendMarker(target: IHexCoordinates): boolean {
+            if (!this.combatActive) return false;
+            if (this.combatTurnSide !== "hero") return false;
+
+            const marker = this.combatMarkers.find((item) =>
+                item.owner === "hero"
+                && item.kind === "defend"
+                && item.coord.columnIndex === target.columnIndex
+                && item.coord.rowIndex === target.rowIndex
+            );
+            if (!marker) return false;
+
+            this.combatMarkers = this.combatMarkers.filter((item) => item !== marker);
+            this.combatDefendUsed = false;
+            this.combatStepsLeft = this.combatStoredStepsBeforeDefend ?? this.combatStepsLeft;
+            this.combatStoredStepsBeforeDefend = null;
+            this.combatActionMode = null;
+            useGameEventsStore().push("Combat", "hero removed shield", "INFO");
             this.saveToStorage();
             return true;
         },
@@ -231,7 +351,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             if (!adjacentEnemies.length) return;
 
-            const alreadyHasEnemyShield = this.combatMarkers.some((marker) => marker.owner === "enemy");
+            const alreadyHasEnemyShield = this.combatMarkers.some((marker) => marker.owner === "enemy" && marker.kind === "defend");
             if (alreadyHasEnemyShield) return;
 
             const anchorEnemy = adjacentEnemies[0];
@@ -251,6 +371,161 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             useGameEventsStore().push("Combat", "enemy auto-raised shield", "INFO");
             this.saveToStorage();
+        },
+
+        getEnemyCombatActorTile(): HexTileModel | null {
+            if (!this.map || !this.heroCoordinates) return null;
+
+            const enemyTiles = this.map.tiles
+                .filter((tile): tile is HexTileModel => !!tile.hexobject)
+                .filter((tile) => {
+                    const obj = tile.hexobject;
+                    return obj?.groupType === EHexobjectGroup.CREATURE && obj.creature.faction === "enemy";
+                })
+                .sort((a, b) => hexDistance(a.coordinates, this.heroCoordinates!) - hexDistance(b.coordinates, this.heroCoordinates!));
+
+            return enemyTiles[0] ?? null;
+        },
+
+        async moveEnemyAlongRoute(enemyTile: HexTileModel, route: IHexCoordinates[]) {
+            if (!route.length || !enemyTile.hexobject) return enemyTile;
+
+            let currentTile = enemyTile;
+            const enemyObject = enemyTile.hexobject;
+
+            await executeMovementRoute(route, async (coord) => {
+                const nextTile = this.getTileAt(coord);
+                if (!nextTile || nextTile === currentTile) return;
+
+                currentTile.hexobject = null;
+                nextTile.hexobject = enemyObject;
+                currentTile = nextTile;
+                this.combatStepsLeft = Math.max(0, this.combatStepsLeft - 1);
+                this.revealAroundHero();
+                this.saveToStorage();
+            });
+
+            return currentTile;
+        },
+
+        async ensureEnemyTurnResolution() {
+            const heroStore = useHeroStore();
+            const events = useGameEventsStore();
+
+            if (!this.combatActive || this.combatTurnSide !== "enemy" || !this.map || !this.heroCoordinates) return;
+            if (this.isEnemyTurnResolving || this.isHeroMoving) return;
+
+            const enemyTile = this.getEnemyCombatActorTile();
+            if (!enemyTile?.hexobject) {
+                this.advanceCombatTurn();
+                return;
+            }
+
+            this.isEnemyTurnResolving = true;
+
+            try {
+                const attackCandidates = getOddQNeighbors(this.heroCoordinates)
+                    .map((coord) => {
+                        const tile = this.getTileAt(coord);
+                        if (!tile) return null;
+
+                        const isCurrentEnemyTile =
+                            coord.columnIndex === enemyTile.coordinates.columnIndex &&
+                            coord.rowIndex === enemyTile.coordinates.rowIndex;
+                        if (isCurrentEnemyTile) {
+                            return {
+                                coord: { ...coord },
+                                route: [] as IHexCoordinates[],
+                            };
+                        }
+
+                        if (!tile.isRevealed) return null;
+                        if (tile.hexobject?.collision === EHexCollision.SOLID) return null;
+
+                        const path = findShortestPath(this.map, enemyTile.coordinates, coord, this.combatStepsLeft);
+                        if (!path || path.length < 2) return null;
+
+                        return {
+                            coord: { ...coord },
+                            route: path.slice(1),
+                        };
+                    })
+                    .filter((candidate): candidate is { coord: IHexCoordinates; route: IHexCoordinates[] } => !!candidate);
+
+                if (!attackCandidates.length) {
+                    this.combatStepsLeft = 0;
+                    this.saveToStorage();
+                    return;
+                }
+
+                const chosenAttack = attackCandidates[Math.floor(Math.random() * attackCandidates.length)];
+                let currentEnemyTile = await this.moveEnemyAlongRoute(enemyTile, chosenAttack.route);
+
+                await new Promise((resolve) => window.setTimeout(resolve, 5_000));
+
+                const blocked = this.combatMarkers.some((marker) =>
+                    marker.owner === "hero"
+                    && marker.kind === "defend"
+                    && marker.coord.columnIndex === chosenAttack.coord.columnIndex
+                    && marker.coord.rowIndex === chosenAttack.coord.rowIndex
+                );
+
+                this.combatMarkers = this.combatMarkers.filter((marker) => !(marker.owner === "enemy" && marker.kind === "attack-trace"));
+                this.combatMarkers.push({
+                    owner: "enemy",
+                    coord: { ...currentEnemyTile.coordinates },
+                    kind: "attack-trace",
+                });
+                this.saveToStorage();
+
+                if (blocked) {
+                    events.push("Combat", `${currentEnemyTile.hexobject?.creature?.name ?? "Enemy"} hit the shield`, "INFO");
+                } else {
+                    const damage = 1;
+                    heroStore.takeDamage(damage);
+                    events.push(currentEnemyTile.hexobject?.creature?.name ?? "Enemy", `hit ${heroStore.hero?.name ?? "Hero"} for ${damage}`, "INFO");
+
+                    if ((heroStore.hero.currentHealth ?? 0) <= 0) {
+                        await this.respawnHeroAtCamping();
+                        return;
+                    }
+                }
+
+                const retreatCandidates = this.map.tiles
+                    .filter((tile) => tile.isRevealed)
+                    .filter((tile) => !tile.hexobject || tile === currentEnemyTile)
+                    .filter((tile) => hexDistance(tile.coordinates, this.heroCoordinates!) > 1)
+                    .map((tile) => {
+                        const isCurrentEnemyTile =
+                            tile.coordinates.columnIndex === currentEnemyTile.coordinates.columnIndex &&
+                            tile.coordinates.rowIndex === currentEnemyTile.coordinates.rowIndex;
+                        if (isCurrentEnemyTile) return null;
+
+                        const path = findShortestPath(this.map!, currentEnemyTile.coordinates, tile.coordinates, this.combatStepsLeft);
+                        if (!path || path.length < 2) return null;
+
+                        return {
+                            coord: { ...tile.coordinates },
+                            route: path.slice(1),
+                        };
+                    })
+                    .filter((candidate): candidate is { coord: IHexCoordinates; route: IHexCoordinates[] } => !!candidate);
+
+                if (retreatCandidates.length && this.combatStepsLeft > 0) {
+                    const chosenRetreat = retreatCandidates[Math.floor(Math.random() * retreatCandidates.length)];
+                    currentEnemyTile = await this.moveEnemyAlongRoute(currentEnemyTile, chosenRetreat.route);
+                    events.push("Combat", `${currentEnemyTile.hexobject?.creature?.name ?? "Enemy"} retreated`, "INFO");
+                }
+
+                this.combatStepsLeft = 0;
+                this.saveToStorage();
+            } finally {
+                this.isEnemyTurnResolving = false;
+
+                if (this.combatActive && this.combatTurnSide === "enemy") {
+                    this.advanceCombatTurn();
+                }
+            }
         },
 
         performHeroCombatAttack(target: HexTileModel, toolKey: string): { ok: boolean; message: string } {
@@ -275,6 +550,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             const blocked = this.combatMarkers.some((marker) =>
                 marker.owner === "enemy"
+                && marker.kind === "defend"
                 && marker.coord.columnIndex === this.heroCoordinates!.columnIndex
                 && marker.coord.rowIndex === this.heroCoordinates!.rowIndex
             );
@@ -338,12 +614,15 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             const remembered = heroStore.nav.positionByMapId[this.currentMapId];
 
-            if (remembered) {
+            if (this.pendingCampingRespawn && locationKey === "camping") {
+                this.placeHeroAtCampfire();
+            } else if (remembered) {
                 this.heroCoordinates = { ...remembered };
             } else {
                 this.placeHeroAtEntry(locationKey);
             }
 
+            this.pendingCampingRespawn = false;
             this.revealAroundHero();
             this.revealEntryTile();
             this.saveToStorage(this.currentMapId);
@@ -425,6 +704,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 this.combatActive = raw.combatActive ?? false;
                 this.combatTurnSide = raw.combatTurnSide ?? "hero";
                 this.combatStepsLeft = raw.combatStepsLeft ?? 0;
+                this.combatStoredStepsBeforeDefend = raw.combatStoredStepsBeforeDefend ?? null;
                 this.combatTurnEndsAt = raw.combatTurnEndsAt ?? null;
                 this.combatActionMode = raw.combatActionMode ?? null;
                 this.combatAttackUsed = raw.combatAttackUsed ?? false;
@@ -440,6 +720,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 this.combatActive = false;
                 this.combatTurnSide = "hero";
                 this.combatStepsLeft = 0;
+                this.combatStoredStepsBeforeDefend = null;
                 this.combatTurnEndsAt = null;
                 this.combatActionMode = null;
                 this.combatAttackUsed = false;
@@ -499,6 +780,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 combatActive: this.combatActive,
                 combatTurnSide: this.combatTurnSide,
                 combatStepsLeft: this.combatStepsLeft,
+                combatStoredStepsBeforeDefend: this.combatStoredStepsBeforeDefend,
                 combatTurnEndsAt: this.combatTurnEndsAt,
                 combatActionMode: this.combatActionMode,
                 combatAttackUsed: this.combatAttackUsed,
@@ -524,9 +806,14 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (worldTimer) return;
 
             worldTimer = window.setInterval(() => {
+                const heroStore = useHeroStore();
+
                 if (!this.map || !this.currentMapId) return;
                 const changed = new WorldTickFeature(this.map).tick(Date.now());
-                if (changed) this.saveToStorage(this.currentMapId);
+                const healed = this.currentLocationKey === "camping"
+                    ? heroStore.syncCampRecovery(Date.now())
+                    : false;
+                if (changed || healed) this.saveToStorage(this.currentMapId);
             }, 250);
         },
 
@@ -625,6 +912,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (!path || path.length < 2) return false;
 
             const route = path.slice(1);
+            let stepsTaken = 0;
 
             if (heroToolStore.isLocked) {
                 heroToolStore.cancelLockedAction("MOVE");
@@ -636,6 +924,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
             try {
                 await executeMovementRoute(route, async (coord) => {
                     this.heroCoordinates = { ...coord };
+                    stepsTaken += 1;
                     if (this.combatActive) {
                         this.combatStepsLeft = Math.max(0, this.combatStepsLeft - 1);
                     }
@@ -651,6 +940,10 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     if (this.currentMapId && this.heroCoordinates) {
                         heroStore.rememberPosition(this.currentMapId, this.heroCoordinates);
                     }
+
+                    if (this.combatActive && this.combatStepsLeft <= 0) {
+                        return false;
+                    }
                 });
             } finally {
                 this.isHeroMoving = false;
@@ -658,7 +951,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             events.push(
                 heroStore.hero?.name ?? "Hero",
-                `moved to [${target.columnIndex}, ${target.rowIndex}] by ${route.length} step(s)`,
+                `moved to [${this.heroCoordinates.columnIndex}, ${this.heroCoordinates.rowIndex}] by ${stepsTaken} step(s)`,
                 "INFO"
             );
 

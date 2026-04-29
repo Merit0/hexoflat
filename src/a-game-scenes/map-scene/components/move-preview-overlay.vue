@@ -12,7 +12,9 @@
       class="move-preview-marker"
       :class="{ 'is-reachable': reachable, 'is-unreachable': !reachable }"
       :style="markerStyle"
-  />
+  >
+    <span class="move-preview-marker__cost">{{ stepCost }}</span>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +22,7 @@ defineProps<{
   segments: Array<{ style: Record<string, string> }>;
   markerStyle: Record<string, string> | null;
   reachable: boolean;
+  stepCost: number;
 }>();
 </script>
 
@@ -48,10 +51,20 @@ defineProps<{
   height: 26px;
   margin-left: -13px;
   margin-top: -13px;
+  display: grid;
+  place-items: center;
   border-radius: 999px;
   pointer-events: none;
   z-index: 110;
   backdrop-filter: blur(2px);
+}
+
+.move-preview-marker__cost {
+  color: rgba(245, 252, 255, 0.98);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.48);
 }
 
 .move-preview-marker.is-reachable {
