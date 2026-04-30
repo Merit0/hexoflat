@@ -49,7 +49,7 @@ export const useHeroToolStore = defineStore("heroTool", {
     },
 
     actions: {
-        useTool(tool: TToolKeys, heroCoords: IHexCoordinates) {
+        useTool(tool: TToolKeys, heroCoords: IHexCoordinates, preferredHover?: IHexCoordinates | null) {
             if (this.isLocked) return;
             this.activeTool = tool;
             this.isDragging = true;
@@ -64,6 +64,16 @@ export const useHeroToolStore = defineStore("heroTool", {
 
             const neighbors = getOddQNeighbors(heroCoords);
             this.allowedKeys = neighbors.map((c) => coordinateKey(c));
+
+            if (preferredHover) {
+                const preferredKey = coordinateKey(preferredHover);
+                const directNeighbor = neighbors.find((c) => coordinateKey(c) === preferredKey);
+                if (directNeighbor) {
+                    this.hover = directNeighbor;
+                    return;
+                }
+            }
+
             this.hover = neighbors.length ? neighbors[0] : null;
         },
 

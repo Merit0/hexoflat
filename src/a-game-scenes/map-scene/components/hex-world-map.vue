@@ -453,6 +453,32 @@ function resolveEquippedToolKey(slot: TEquipSlot): TToolKeys | null {
   }
 }
 
+function resolvePreferredToolHover(): IHexCoordinates | null {
+  if (!worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
+
+  const neighbors = getOddQNeighbors(worldStore.heroCoordinates);
+  const target = hoveredTileCoord.value;
+
+  const directNeighbor = neighbors.find((coord) =>
+      coord.columnIndex === target.columnIndex &&
+      coord.rowIndex === target.rowIndex
+  );
+  if (directNeighbor) return directNeighbor;
+
+  let bestCoord: IHexCoordinates | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (const neighbor of neighbors) {
+    const distance = hexDistance(neighbor, target);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestCoord = neighbor;
+    }
+  }
+
+  return bestCoord;
+}
+
 function equipToolFromHand(slot: TEquipSlot) {
   if (!worldStore.heroCoordinates) return;
 
@@ -460,7 +486,7 @@ function equipToolFromHand(slot: TEquipSlot) {
   if (!toolKey) return;
 
   activeHandSlot.value = slot;
-  heroToolStore.useTool(toolKey, worldStore.heroCoordinates);
+  heroToolStore.useTool(toolKey, worldStore.heroCoordinates, resolvePreferredToolHover());
 }
 
 function onWheel(event: WheelEvent) {
