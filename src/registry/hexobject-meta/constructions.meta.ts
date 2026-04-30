@@ -65,7 +65,13 @@ export const CONSTRUCTION_META: Record<TConstructionMetaKeys, IHexobjectMeta> = 
         key: HEXOBJECT_KEYS.FIREPLACE,
         title: "Fireplace",
         subtitle: "Rest spot",
-        actions: {}
+        actions: {
+            [EHexActionType.USE]: {
+                label: "Use",
+                durationMs: 10_000,
+                requiredTool: HEXOBJECT_KEYS.HAND,
+            },
+        }
     },
 
     [HEXOBJECT_KEYS.WOOD_AND_LEAVES]: {

@@ -11,12 +11,14 @@ export interface ToolCapabilities {
     canPickup?: boolean;
     canMine?: boolean;
     canEnter?: boolean;
+    canUse?: boolean;
 }
 
 export type ResolvedActionType =
     | "CUT"
     | "TAKE"
     | "MINE"
+    | "USE"
     | "ATTACK"
     | "OPEN"
     | "ENTER";
@@ -125,7 +127,20 @@ export function resolveActions(toolKey: TToolKeys, obj: THexobject): ResolvedAct
             if (!key) break;
 
             const meta = HEXOBJECT_META[key];
+            const useCfg = meta?.actions?.[EHexActionType.USE];
             const enterCfg = meta?.actions?.[EHexActionType.ENTER];
+
+            if (useCfg) {
+                if (!useCfg.requiredTool || useCfg.requiredTool === toolKey) {
+                    if (cap.canUse) {
+                        resolvedActions.push({
+                            actioType: EHexActionType.USE,
+                            label: useCfg.label ?? "Use",
+                            priority: 95,
+                        });
+                    }
+                }
+            }
 
             if (enterCfg) {
                 if (enterCfg.requiredTool && enterCfg.requiredTool !== toolKey) break;

@@ -16,7 +16,6 @@ type HeroNavState = {
 type HeroProgressState = {
     heroSteps: number;
     currentHealth: number;
-    lastCampHealAt: number | null;
 };
 
 function defaultNav(): HeroNavState {
@@ -35,7 +34,6 @@ export const useHeroStore = defineStore("hero", {
     state: () => ({
         hero: new HeroModel() as HeroModel,
         nav: defaultNav() as HeroNavState,
-        lastCampHealAt: null as number | null,
     }),
 
     getters: {
@@ -54,7 +52,6 @@ export const useHeroStore = defineStore("hero", {
             const progress: HeroProgressState = {
                 heroSteps: this.hero.heroSteps ?? 0,
                 currentHealth: this.hero.currentHealth ?? this.hero.maxHealth ?? 100,
-                lastCampHealAt: this.lastCampHealAt,
             };
             localStorage.setItem(HERO_PROGRESS_KEY, JSON.stringify(progress));
         },
@@ -70,14 +67,17 @@ export const useHeroStore = defineStore("hero", {
             if (typeof progress.currentHealth === "number") {
                 this.hero.setHealth(progress.currentHealth);
             }
-            this.lastCampHealAt = typeof progress.lastCampHealAt === "number"
-                ? progress.lastCampHealAt
-                : null;
         },
 
         setLocation(locationKey: string, mapId: string) {
             this.nav.locationKey = locationKey;
             this.nav.locationMapId = mapId;
+            this.saveNavToStorage();
+        },
+
+        setPendingLocation(locationKey: LocationKey) {
+            this.nav.locationKey = locationKey;
+            this.nav.locationMapId = null;
             this.saveNavToStorage();
         },
 
@@ -131,35 +131,9 @@ export const useHeroStore = defineStore("hero", {
             this.saveProgressToStorage();
         },
 
-        markCampRecoveryStart(now = Date.now()): void {
-            this.lastCampHealAt = now;
+        reviveAtOneHp(): void {
+            this.hero.setHealth(1);
             this.saveProgressToStorage();
-        },
-
-        syncCampRecovery(now = Date.now()): boolean {
-            if ((this.hero.currentHealth ?? 0) >= (this.hero.maxHealth ?? 100)) {
-                return false;
-            }
-
-            const lastHealAt = this.lastCampHealAt ?? now;
-            const elapsed = now - lastHealAt;
-            const healTicks = Math.floor(elapsed / 10_000);
-
-            if (healTicks < 1) {
-                if (this.lastCampHealAt === null) {
-                    this.lastCampHealAt = now;
-                    this.saveProgressToStorage();
-                }
-                return false;
-            }
-
-            this.hero.setHealth(Math.min(
-                this.hero.maxHealth ?? 100,
-                (this.hero.currentHealth ?? 0) + healTicks
-            ));
-            this.lastCampHealAt = lastHealAt + healTicks * 10_000;
-            this.saveProgressToStorage();
-            return true;
         },
 
         pay(coins: number): void {
@@ -174,7 +148,6 @@ export const useHeroStore = defineStore("hero", {
             console.log("Resetting hero state");
             this.hero = new HeroModel();
             this.nav = defaultNav();
-            this.lastCampHealAt = null;
             localStorage.removeItem(HERO_NAV_KEY);
             localStorage.removeItem(HERO_PROGRESS_KEY);
         },

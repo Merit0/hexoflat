@@ -34,8 +34,10 @@ export class FinishPendingActionsFeature {
                 changed = true;
             }
 
-            tile.pendingAction = null;
-            changed = true;
+            if (tile.pendingAction === action) {
+                tile.pendingAction = null;
+                changed = true;
+            }
         }
 
         return changed;

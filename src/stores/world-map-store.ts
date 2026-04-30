@@ -196,7 +196,8 @@ export const useWorldMapStore = defineStore("world-map-store", {
             this.pendingCampingRespawn = true;
             this.heroCoordinates = null;
             this.currentMapId = null;
-            heroStore.markCampRecoveryStart();
+            heroStore.setPendingLocation("camping");
+            heroStore.reviveAtOneHp();
             events.push("Combat", "hero was defeated and returned to camping", "INFO");
 
             if (
@@ -263,6 +264,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
         advanceCombatTurn() {
             if (!this.combatActive) return;
+            if (this.isEnemyTurnResolving) return;
 
             const nextSide: CombatTurnSide = this.combatTurnSide === "hero" ? "enemy" : "hero";
             this.beginCombatTurn(nextSide);
@@ -271,6 +273,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         beginCombatAction(mode: Exclude<CombatActionMode, null>) {
             if (!this.combatActive) return;
             if (this.combatTurnSide !== "hero") return;
+            if (this.isEnemyTurnResolving || this.isHeroMoving) return;
             if (mode === "attack" && this.combatAttackUsed) return;
             if (mode === "defend" && this.combatDefendUsed) return;
             this.combatActionMode = this.combatActionMode === mode ? null : mode;
@@ -313,6 +316,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         placeCombatDefendMarker(target: IHexCoordinates): boolean {
             if (!this.combatActive) return false;
             if (this.combatTurnSide !== "hero") return false;
+            if (this.isEnemyTurnResolving || this.isHeroMoving) return false;
             if (this.combatActionMode !== "defend" || this.combatDefendUsed) return false;
             if (!this.heroCoordinates) return false;
 
@@ -350,6 +354,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         removeCombatDefendMarker(target: IHexCoordinates): boolean {
             if (!this.combatActive) return false;
             if (this.combatTurnSide !== "hero") return false;
+            if (this.isEnemyTurnResolving || this.isHeroMoving) return false;
 
             const marker = this.combatMarkers.find((item) =>
                 item.owner === "hero"
@@ -516,7 +521,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 if (blocked) {
                     events.push("Combat", `${currentEnemyTile.hexobject?.creature?.name ?? "Enemy"} hit the shield`, "INFO");
                 } else {
-                    const damage = 1;
+                    const damage = currentEnemyTile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.SKELETOR ? 3 : 1;
                     heroStore.takeDamage(damage);
                     events.push(currentEnemyTile.hexobject?.creature?.name ?? "Enemy", `hit ${heroStore.hero?.name ?? "Hero"} for ${damage}`, "INFO");
 
@@ -568,6 +573,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
             if (!this.combatActive) return { ok: false, message: "Combat is not active." };
             if (this.combatTurnSide !== "hero") return { ok: false, message: "Not hero turn." };
+            if (this.isEnemyTurnResolving || this.isHeroMoving) return { ok: false, message: "Wait until enemy turn finishes." };
             if (this.combatAttackUsed) return { ok: false, message: "Attack already used this turn." };
             if (toolKey !== HEXOBJECT_KEYS.AXE) return { ok: false, message: "Need an axe to attack." };
             if (!this.heroCoordinates) return { ok: false, message: "Hero position is missing." };
@@ -844,14 +850,9 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (worldTimer) return;
 
             worldTimer = window.setInterval(() => {
-                const heroStore = useHeroStore();
-
                 if (!this.map || !this.currentMapId) return;
                 const changed = new WorldTickFeature(this.map).tick(Date.now());
-                const healed = this.currentLocationKey === "camping"
-                    ? heroStore.syncCampRecovery(Date.now())
-                    : false;
-                if (changed || healed) this.saveToStorage(this.currentMapId);
+                if (changed) this.saveToStorage(this.currentMapId);
             }, 250);
         },
 

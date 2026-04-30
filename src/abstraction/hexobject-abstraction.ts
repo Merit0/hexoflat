@@ -66,6 +66,7 @@ export interface ITool extends IDurable {
         canMine?: boolean;
         canPickup?: boolean;
         canEnter?: boolean;
+        canUse?: boolean;
     };
 
     traits: {

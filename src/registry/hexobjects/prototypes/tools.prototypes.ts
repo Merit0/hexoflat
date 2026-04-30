@@ -55,6 +55,7 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
             capabilities: {
                 canPickup: true,
                 canEnter: true,
+                canUse: true,
             },
             traits: { weightKG: 0 }
         },

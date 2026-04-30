@@ -14,6 +14,13 @@ export function useTileClick() {
         //     return;
         // }
 
+        if (
+            worldMapStore.combatActive &&
+            (worldMapStore.combatTurnSide !== "hero" || worldMapStore.isEnemyTurnResolving)
+        ) {
+            return;
+        }
+
         if (worldMapStore.combatActive && worldMapStore.combatTurnSide === "hero") {
             const removed = worldMapStore.removeCombatDefendMarker(tile.coordinates);
             if (removed) return;

@@ -166,26 +166,13 @@ export default class HexMapModel implements IWorldMap {
         let changed = false;
 
         for (const tile of map.tiles) {
-            // 1) Finish expired pending actions immediately
-            const a = tile.pendingAction;
-            if (a && now >= a.endsAt) {
-                if (a.type === "CUT") {
-                    if (tile.hexobject !== null) {
-                        tile.hexobject = null;
-                        changed = true;
-                    }
-
-                    if (tile.resourceSpawner?.enabled) {
-                        tile.resourceSpawner.nextSpawnAt = now + tile.resourceSpawner.regrowMs;
-                        changed = true;
-                    }
-                }
-
+            const action = tile.pendingAction;
+            if (action?.type === "USE") {
                 tile.pendingAction = null;
                 changed = true;
             }
 
-            // 2) Optional: spawn immediately if respawn time already passed
+            // 1) Optional: spawn immediately if respawn time already passed
             const s = tile.resourceSpawner;
             if (!tile.hexobject && s?.enabled && typeof s.nextSpawnAt === "number" && now >= s.nextSpawnAt) {
                 tile.hexobject = HexObjectFactory.create(

@@ -156,6 +156,7 @@ export const useHeroToolStore = defineStore("heroTool", {
 
             tile.pendingAction.cancelled = true;
             tile.pendingAction.cancelReason = reason;
+            tile.pendingAction.endsAt = Date.now();
 
             this.unlockTool();
             return true;

@@ -8,6 +8,7 @@ import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
 import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
+import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 
 export type ActionFinisher = (tile: HexTileModel, action: IPendingTileAction, ctx: IActionContext) => boolean;
 
@@ -116,6 +117,49 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         }
         ensureUnlocked(ctx);
 
+        return true;
+    },
+
+    [EHexActionType.USE]: (tile, action, ctx) => {
+        if (handleCancelled(action, ctx)) return true;
+
+        if (action.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+            const heroStore = useHeroStore();
+            const healAmount = Math.max(0, Number(action.meta?.healAmount ?? 0));
+
+            if (healAmount > 0) {
+                heroStore.healHero(healAmount);
+                logAction("Recovered by the fire");
+            }
+
+             const heroIsStillUsingFireplace =
+                ctx.heroToolStore.isDragging
+                && ctx.heroToolStore.activeTool === HEXOBJECT_KEYS.HAND
+                && ctx.heroToolStore.hover?.columnIndex === tile.coordinates.columnIndex
+                && ctx.heroToolStore.hover?.rowIndex === tile.coordinates.rowIndex;
+
+            const hasMoreHealthToRecover =
+                (heroStore.hero.currentHealth ?? 0) < (heroStore.hero.maxHealth ?? 100);
+
+            if (heroIsStillUsingFireplace && hasMoreHealthToRecover) {
+                const nextEndsAt = ctx.now + 10_000;
+
+                tile.pendingAction = {
+                    type: EHexActionType.USE,
+                    startedAt: ctx.now,
+                    endsAt: nextEndsAt,
+                    hexobjectKey: action.hexobjectKey,
+                    cancelled: false,
+                    meta: { healAmount: 1 },
+                };
+
+                ctx.heroToolStore.unlockTool();
+                ctx.heroToolStore.lockTool(tile, nextEndsAt);
+                return true;
+            }
+        }
+
+        ensureUnlocked(ctx);
         return true;
     },
 

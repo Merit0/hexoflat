@@ -37,6 +37,7 @@ export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
     CUT: EHexActionType.CUT,
     MINE: EHexActionType.MINE,
     TAKE: EHexActionType.TAKE,
+    USE: EHexActionType.USE,
     OPEN: EHexActionType.OPEN,
     ATTACK: EHexActionType.ATTACK,
     ENTER: EHexActionType.ENTER,
@@ -218,6 +219,59 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
         heroToolStore.lockTool(tile, endsAt);
 
+        return { ok: true, endsAt };
+    },
+
+    [EHexActionType.USE]: (tile, tool, now) => {
+        const obj = tile.hexobject;
+        if (!obj) return { ok: false, message: "Hex has no object!" };
+        if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
+
+        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const cfg = meta?.actions?.[EHexActionType.USE];
+        if (!cfg) return { ok: false, message: "This object cannot be used!" };
+
+        const requiredTool = cfg.requiredTool ?? HEXOBJECT_KEYS.HAND;
+        if (requiredTool && tool !== requiredTool) {
+            return { ok: false, message: `Need a tool: ${requiredTool}` };
+        }
+
+        const cap = getToolCapabilities(tool);
+        if (!cap.canUse) {
+            return { ok: false, message: "This tool can't use the object!" };
+        }
+
+        const heroStore = useHeroStore();
+        const heroToolStore = useHeroToolStore();
+
+        let durationMs = cfg.durationMs ?? 10_000;
+        const pendingMeta: Record<string, any> = {};
+
+        if (obj.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+            const maxHealth = Math.max(1, heroStore.hero.maxHealth ?? 1);
+            const currentHealth = Math.max(0, heroStore.hero.currentHealth ?? 0);
+            const missingHealth = Math.max(0, maxHealth - currentHealth);
+
+            if (missingHealth < 1) {
+                return { ok: false, message: "Health is already full." };
+            }
+
+            durationMs = 10_000;
+            pendingMeta.healAmount = 1;
+        }
+
+        const endsAt = now + durationMs;
+
+        tile.pendingAction = {
+            type: EHexActionType.USE,
+            startedAt: now,
+            endsAt,
+            hexobjectKey: obj.hexobjectKey,
+            cancelled: false,
+            meta: pendingMeta,
+        };
+
+        heroToolStore.lockTool(tile, endsAt);
         return { ok: true, endsAt };
     },
 

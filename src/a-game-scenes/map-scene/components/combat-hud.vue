@@ -30,12 +30,13 @@
           class="combat-icon defend"
           :class="{ 'is-glowing': defendReady, 'is-active': worldStore.combatActionMode === 'defend', 'is-dim': !defendReady && worldStore.combatActionMode !== 'defend' }"
           type="button"
+          :disabled="!heroControlsEnabled"
           @click="worldStore.beginCombatAction('defend')"
       >
         <span>🛡</span>
       </button>
 
-      <button class="combat-btn end" type="button" @click="worldStore.advanceCombatTurn()">Next Turn</button>
+      <button class="combat-btn end" type="button" :disabled="!heroControlsEnabled" @click="worldStore.advanceCombatTurn()">Next Turn</button>
     </div>
   </aside>
 </template>
@@ -54,14 +55,19 @@ let lastAdvancedAt: number | null = null;
 
 const moveBudget = computed(() => worldStore.getCombatMoveBudget());
 const actorLabel = computed(() => worldStore.combatTurnSide === "hero" ? "Hero" : "Enemy");
-const attackReady = computed(() => {
+const heroControlsEnabled = computed(() => {
   return worldStore.combatTurnSide === "hero"
+      && !worldStore.isEnemyTurnResolving
+      && !worldStore.isHeroMoving;
+});
+const attackReady = computed(() => {
+  return heroControlsEnabled.value
       && !worldStore.combatAttackUsed
       && heroToolStore.activeTool === HEXOBJECT_KEYS.AXE
       && heroToolStore.isDragging;
 });
 const defendReady = computed(() => {
-  return worldStore.combatTurnSide === "hero"
+  return heroControlsEnabled.value
       && !worldStore.combatDefendUsed;
 });
 const secondsLeft = computed(() => {
@@ -156,6 +162,14 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-main);
   cursor: pointer;
+}
+
+.combat-btn:disabled,
+.combat-icon:disabled {
+  cursor: default;
+  opacity: 0.38;
+  filter: saturate(0.4);
+  box-shadow: none;
 }
 
 .combat-btn.attack {

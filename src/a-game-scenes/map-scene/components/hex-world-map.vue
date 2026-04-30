@@ -20,6 +20,10 @@
           />
 
           <combat-marker-overlay :markers="combatMarkers" />
+          <camp-heal-overlay
+              :style="campHealHeartStyle"
+              :active="isCampfireHealActive"
+          />
 
           <move-preview-overlay
               :segments="movePreviewSegments"
@@ -66,6 +70,7 @@ import MovePreviewOverlay from "@/a-game-scenes/map-scene/components/move-previe
 import EnemyVisionOverlay from "@/a-game-scenes/map-scene/components/enemy-vision-overlay.vue";
 import CombatHud from "@/a-game-scenes/map-scene/components/combat-hud.vue";
 import CombatMarkerOverlay from "@/a-game-scenes/map-scene/components/combat-marker-overlay.vue";
+import CampHealOverlay from "@/a-game-scenes/map-scene/components/camp-heal-overlay.vue";
 import {LocationKey} from "@/registry/world-map-registry";
 import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
@@ -91,6 +96,11 @@ const heroStore = useHeroStore();
 const uiSettingsStore = useUiSettingsStore();
 const heroInventoryStore = useHeroInventoryStore();
 const hoveredTileCoord = ref<IHexCoordinates | null>(null);
+const activeHandSlot = ref<TEquipSlot>("weapon");
+const lastHandScrollAt = ref(0);
+const healTickerNow = ref(Date.now());
+const HAND_SCROLL_COOLDOWN_MS = 180;
+let healTickerTimer: number | null = null;
 
 watch(
     () => props.locationKey,
@@ -315,6 +325,45 @@ const combatMarkers = computed(() => {
   });
 });
 
+const activeCampfireActionTile = computed(() => {
+  if (!worldStore.map) return null;
+
+  return worldStore.map.tiles.find((tile) =>
+      tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE &&
+      tile.pendingAction?.type === "USE" &&
+      (tile.pendingAction.endsAt ?? 0) > healTickerNow.value
+  ) ?? null;
+});
+
+const isCampfireHealActive = computed(() => Boolean(activeCampfireActionTile.value?.pendingAction));
+
+const campHealEffectCoord = computed(() => {
+  if (!isCampfireHealActive.value || !worldStore.heroCoordinates) return null;
+
+  const neighborTiles = (getOddQNeighbors(worldStore.heroCoordinates)
+      .map((coord) => getTileByCoord(coord))
+      .filter(Boolean) as IHexTile[])
+      .filter((tile) => tile.isRevealed)
+      .filter((tile) => tile.hexobject?.collision !== EHexCollision.SOLID);
+
+  const emptyTile = neighborTiles.find((tile) => !tile.hexobject);
+  if (emptyTile) return emptyTile.coordinates;
+
+  const nonFireplaceTile = neighborTiles.find((tile) => tile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.FIREPLACE);
+  return nonFireplaceTile?.coordinates ?? null;
+});
+
+const campHealHeartStyle = computed(() => {
+  const coord = campHealEffectCoord.value;
+  if (!coord) return null;
+
+  const pseudoTile = { coordinates: coord } as any;
+  const { x, y } = calcHexPixelPosition(pseudoTile, tileWidth);
+  return {
+    transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
+  } as Record<string, string>;
+});
+
 watch(
     isHeroInEnemyVision,
     (inVision) => {
@@ -410,23 +459,32 @@ function equipToolFromHand(slot: TEquipSlot) {
   const toolKey = resolveEquippedToolKey(slot);
   if (!toolKey) return;
 
+  activeHandSlot.value = slot;
   heroToolStore.useTool(toolKey, worldStore.heroCoordinates);
 }
 
-function onKeyDown(event: KeyboardEvent) {
-  if (event.repeat) return;
-
+function onWheel(event: WheelEvent) {
   const target = event.target as HTMLElement | null;
   if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
     return;
   }
 
-  const key = event.key.toLowerCase();
-  if (key === "l") {
-    equipToolFromHand("shield");
-  } else if (key === "r") {
-    equipToolFromHand("weapon");
-  }
+  if (heroToolStore.isLocked || !worldStore.heroCoordinates) return;
+  if (event.deltaY === 0) return;
+
+  event.preventDefault();
+
+  const now = Date.now();
+  if (now - lastHandScrollAt.value < HAND_SCROLL_COOLDOWN_MS) return;
+  lastHandScrollAt.value = now;
+
+  const handSlots: TEquipSlot[] = ["weapon", "shield"];
+  const currentIndex = handSlots.indexOf(activeHandSlot.value);
+  const direction = event.deltaY > 0 ? 1 : -1;
+  const nextIndex = (currentIndex + direction + handSlots.length) % handSlots.length;
+  const nextSlot = handSlots[nextIndex];
+
+  equipToolFromHand(nextSlot);
 }
 
 watch(mapBounds, updateScale, { immediate: true });
@@ -438,12 +496,19 @@ onMounted(() => {
   });
 
   window.addEventListener("resize", onResize);
-  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("wheel", onWheel, { passive: false });
+  healTickerTimer = window.setInterval(() => {
+    healTickerNow.value = Date.now();
+  }, 250);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", onResize);
-  window.removeEventListener("keydown", onKeyDown);
+  window.removeEventListener("wheel", onWheel);
+  if (healTickerTimer) {
+    window.clearInterval(healTickerTimer);
+    healTickerTimer = null;
+  }
 });
 </script>
 

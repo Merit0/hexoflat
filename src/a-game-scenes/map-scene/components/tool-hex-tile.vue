@@ -32,6 +32,7 @@ import { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import { useHeroStore } from "@/stores/hero-store";
 
 const props = defineProps<{
   tileWidth: number;
@@ -44,6 +45,7 @@ const emit = defineEmits<{
 
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
+const heroStore = useHeroStore();
 
 const activeToolKey = computed<TToolKeys>(() => heroToolStore.activeTool);
 
@@ -171,6 +173,20 @@ const isWorking = computed(() => {
 const secondsLeft = computed(() => {
   const a = pendingAction.value;
   if (!a?.endsAt) return 0;
+
+  if (a.type === "USE" && a.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+    const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
+    const currentHp = Math.max(0, Math.min(maxHp, Number(heroStore.hero.currentHealth ?? 0)));
+    const missingHp = Math.max(0, maxHp - currentHp);
+    const currentCycleSeconds = Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
+
+    if (missingHp <= 1) {
+      return currentCycleSeconds;
+    }
+
+    return currentCycleSeconds + ((missingHp - 1) * 10);
+  }
+
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
 });
 
