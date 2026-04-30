@@ -6,12 +6,14 @@
       :style="style"
   >
     <div class="camp-heal-slot__heart">♥</div>
+    <div class="camp-heal-slot__label">{{ label }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
   active: boolean;
+  label: string;
   style: Record<string, string> | null;
 }>();
 </script>
@@ -72,6 +74,32 @@ defineProps<{
   opacity: 0.78;
   color: rgba(228, 236, 244, 0.88);
   text-shadow: 0 0 10px rgba(180, 192, 208, 0.18);
+}
+
+.camp-heal-slot__label {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(8, 14, 10, 0.72);
+  border: 1px solid rgba(148, 214, 166, 0.22);
+  color: rgba(236, 248, 239, 0.96);
+  font-family: var(--font-main), serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.camp-heal-slot.is-idle .camp-heal-slot__label {
+  background: rgba(20, 28, 24, 0.62);
+  border-color: rgba(188, 200, 214, 0.18);
+  color: rgba(220, 228, 238, 0.88);
 }
 
 @keyframes pulse-heart-bg {

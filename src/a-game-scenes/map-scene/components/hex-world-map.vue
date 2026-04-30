@@ -23,6 +23,7 @@
           <camp-heal-overlay
               :style="campHealHeartStyle"
               :active="isCampfireHealActive"
+              :label="campHealInfoLabel"
           />
 
           <move-preview-overlay
@@ -362,6 +363,12 @@ const campHealHeartStyle = computed(() => {
   return {
     transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
   } as Record<string, string>;
+});
+
+const campHealInfoLabel = computed(() => {
+  const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
+  const percentPerTick = Math.round((1 / maxHp) * 100);
+  return `${percentPerTick}%/10с`;
 });
 
 watch(
