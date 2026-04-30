@@ -318,6 +318,11 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const destination = meta?.subtitle ?? key;
 
         if (meta?.enter?.type === "WORLD") {
+            if (worldStore.isLocationRespawning(meta.enter.locationKey)) {
+                const remainingSeconds = Math.ceil(worldStore.getLocationRespawnRemainingMs(meta.enter.locationKey) / 1000);
+                return { ok:false, message:`Opens in ${remainingSeconds}s` };
+            }
+
             gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
 
             worldStore.goToLocation(meta.enter.locationKey);

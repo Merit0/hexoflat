@@ -215,6 +215,7 @@ export default class HexMapModel implements IWorldMap {
                 if ("creature" in built && "creature" in saved) {
                     built.creature.hp = saved.creature.hp ?? built.creature.hp;
                     built.creature.hpMax = saved.creature.hpMax ?? built.creature.hpMax;
+                    built.creature.attack = saved.creature.attack ?? built.creature.attack;
                     built.creature.faction = saved.creature.faction ?? built.creature.faction;
                     built.creature.visionRange = saved.creature.visionRange ?? built.creature.visionRange;
                 }
@@ -224,6 +225,7 @@ export default class HexMapModel implements IWorldMap {
             case EHexobjectGroup.CONSTRUCTION: {
                 if ("construction" in built && "construction" in saved) {
                     built.construction.integrity = saved.construction.integrity ?? built.construction.integrity;
+                    built.construction.isLocked = saved.construction.isLocked ?? built.construction.isLocked;
                 }
                 break;
             }

@@ -47,6 +47,7 @@
               v-for="tile in tiles"
               :key="tile.tileId"
               :hex-tile="tile"
+              :now-tick="healTickerNow"
               @tile-click="handleTileClick"
               @tile-hover="handleTileHover"
           />
@@ -370,6 +371,7 @@ const campHealInfoLabel = computed(() => {
   const percentPerTick = Math.round((1 / maxHp) * 100);
   return `${percentPerTick}%/10с`;
 });
+
 
 watch(
     isHeroInEnemyVision,

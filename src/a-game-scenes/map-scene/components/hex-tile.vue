@@ -7,16 +7,24 @@
   >
     <div class="hex-layer hex-tile-bg" :style="getHexTileBackgroundStyle(hexTile)"></div>
     <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)"></div>
+    <div v-if="constructionLockLabel" class="hex-tile-lock-chip">
+      {{ constructionLockLabel }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import {calcHexPixelPosition} from "@/utils/hex-utils";
+import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
+import { useWorldMapStore } from "@/stores/world-map-store";
+import { HEXOBJECT_META } from "@/registry/hexobject-meta";
 
 const props = defineProps<{
   hexTile: IHexTile;
+  nowTick?: number;
 }>();
 
 const emit = defineEmits<{
@@ -26,8 +34,35 @@ const emit = defineEmits<{
 
 const EMPTY_TILE_URL = "/hex-assets/hex-tiles/empty-tile-image.png";
 const heroToolStore = useHeroToolStore();
+const worldStore = useWorldMapStore();
 const GRID_COLUMNS = 42;
 const tileWidth = window.innerWidth / GRID_COLUMNS;
+
+const constructionLockLabel = computed(() => {
+  void props.nowTick;
+
+  const tile = props.hexTile;
+  const hexobject = tile.hexobject;
+  if (!tile.isRevealed || !hexobject) return null;
+  if (hexobject.groupType !== EHexobjectGroup.CONSTRUCTION) return null;
+
+  const enterCfg = HEXOBJECT_META[hexobject.hexobjectKey]?.enter;
+  if (enterCfg?.type === "WORLD") {
+    const remainingMs = worldStore.getLocationRespawnRemainingMs(enterCfg.locationKey);
+    if (remainingMs > 0) {
+      const totalSeconds = Math.ceil(remainingMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+  }
+
+  if (!hexobject.isInteractable && hexobject.construction.isLocked) {
+    return "locked";
+  }
+
+  return null;
+});
 
 function getHexTileTransformStyle(tile: IHexTile) {
   const { x, y } = calcHexPixelPosition(tile, tileWidth);
@@ -182,6 +217,30 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 .hex-tile:hover .hexobject-sprite {
   transform: scale(1.05);
   filter: contrast(1.02);
+}
+
+.hex-tile-lock-chip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  min-width: 38px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(22, 26, 34, 0.84);
+  border: 1px solid rgba(205, 214, 228, 0.22);
+  color: rgba(242, 233, 211, 0.96);
+  font-family: var(--font-main), serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
 }
 
 </style>

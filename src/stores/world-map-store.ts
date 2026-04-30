@@ -18,6 +18,7 @@ import { getReachableTileDistances } from "@/services/hero-movement/reachable-ra
 import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
 import { executeMovementRoute } from "@/services/hero-movement/movement-executor";
 import router, { ROUTES } from "@/router";
+import { HexObjectFactory } from "@/factory/hex-object-factory";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -44,6 +45,7 @@ type CombatMarker = {
 const STORAGE_MAP_PREFIX = "hexoflat:world:map:v1:";
 const STORAGE_STATE_PREFIX = "hexoflat:world:state:v1:";
 const STORAGE_INDEX = "hexoflat:world:index:v1";
+const STORAGE_RESPAWN_AT = "hexoflat:world:respawn-at:v1";
 
 function newId(): string {
     return crypto.randomUUID();
@@ -56,6 +58,15 @@ function readIndex(): Partial<Record<LocationKey, string>> {
 
 function writeIndex(index: Partial<Record<LocationKey, string>>) {
     localStorage.setItem(STORAGE_INDEX, JSON.stringify(index));
+}
+
+function readRespawnSchedule(): Partial<Record<LocationKey, number>> {
+    const raw = localStorage.getItem(STORAGE_RESPAWN_AT);
+    return raw ? JSON.parse(raw) : {};
+}
+
+function writeRespawnSchedule(schedule: Partial<Record<LocationKey, number>>) {
+    localStorage.setItem(STORAGE_RESPAWN_AT, JSON.stringify(schedule));
 }
 
 let worldTimer: number | null = null;
@@ -129,6 +140,13 @@ export const useWorldMapStore = defineStore("world-map-store", {
             return 10;
         },
 
+        getEnemyAttackDamage(enemyCoords?: IHexCoordinates | null) {
+            if (!enemyCoords) return 1;
+            const enemyTile = this.getTileAt(enemyCoords);
+            if (enemyTile?.hexobject?.groupType !== EHexobjectGroup.CREATURE) return 1;
+            return enemyTile.hexobject.creature.attack ?? 1;
+        },
+
         clearStoredLocation(locationKey: LocationKey, mapId: string) {
             const heroStore = useHeroStore();
             const index = readIndex();
@@ -152,6 +170,61 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (!mapId) return;
 
             heroStore.forgetPosition(mapId);
+        },
+
+        scheduleLocationRespawn(locationKey: LocationKey, delayMs: number) {
+            const schedule = readRespawnSchedule();
+            schedule[locationKey] = Date.now() + delayMs;
+            writeRespawnSchedule(schedule);
+        },
+
+        clearLocationRespawn(locationKey: LocationKey) {
+            const schedule = readRespawnSchedule();
+            if (!(locationKey in schedule)) return;
+            delete schedule[locationKey];
+            writeRespawnSchedule(schedule);
+        },
+
+        getLocationRespawnRemainingMs(locationKey: LocationKey) {
+            const schedule = readRespawnSchedule();
+            const respawnAt = schedule[locationKey];
+            if (!respawnAt) return 0;
+
+            return Math.max(0, respawnAt - Date.now());
+        },
+
+        isLocationRespawning(locationKey: LocationKey) {
+            return this.getLocationRespawnRemainingMs(locationKey) > 0;
+        },
+
+        syncLocationRespawn(locationKey: LocationKey) {
+            const schedule = readRespawnSchedule();
+            const respawnAt = schedule[locationKey];
+            if (!respawnAt) return;
+            if (Date.now() < respawnAt) return;
+
+            const index = readIndex();
+            const mapId = index[locationKey];
+            if (mapId) {
+                this.clearStoredLocation(locationKey, mapId);
+            }
+
+            delete schedule[locationKey];
+            writeRespawnSchedule(schedule);
+        },
+
+        hasLivingEnemyCreatures() {
+            if (!this.map) return false;
+
+            return this.map.tiles.some((tile) =>
+                tile.hexobject?.groupType === EHexobjectGroup.CREATURE &&
+                tile.hexobject.creature?.faction === "enemy"
+            );
+        },
+
+        hasGraveMarker() {
+            if (!this.map) return false;
+            return this.map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE);
         },
 
         placeHeroAtCampfire() {
@@ -521,7 +594,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 if (blocked) {
                     events.push("Combat", `${currentEnemyTile.hexobject?.creature?.name ?? "Enemy"} hit the shield`, "INFO");
                 } else {
-                    const damage = currentEnemyTile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.SKELETOR ? 3 : 1;
+                    const damage = this.getEnemyAttackDamage(currentEnemyTile.coordinates);
                     heroStore.takeDamage(damage);
                     events.push(currentEnemyTile.hexobject?.creature?.name ?? "Enemy", `hit ${heroStore.hero?.name ?? "Hero"} for ${damage}`, "INFO");
 
@@ -588,6 +661,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (!obj || obj.groupType !== EHexobjectGroup.CREATURE || obj.creature?.faction !== "enemy") {
                 return { ok: false, message: "Target is not an enemy creature." };
             }
+            const targetKey = obj.hexobjectKey;
 
             const blocked = this.combatMarkers.some((marker) =>
                 marker.owner === "enemy"
@@ -610,9 +684,16 @@ export const useWorldMapStore = defineStore("world-map-store", {
             useGameEventsStore().push(heroStore.hero?.name ?? "Hero", `hit ${obj.creature.name} for ${damage}`, "INFO");
 
             if (obj.creature.hp <= 0) {
-                target.hexobject = null;
+                target.hexobject = this.currentLocationKey === "cave" && targetKey === HEXOBJECT_KEYS.SKELETOR
+                    ? HexObjectFactory.create(HEXOBJECT_KEYS.GRAVE, target.coordinates)
+                    : null;
                 heroStore.hero?.addKilled();
                 useGameEventsStore().push("Combat", `${obj.creature.name} was defeated`, "INFO");
+            }
+
+            if (!this.hasLivingEnemyCreatures()) {
+                this.endCombat();
+                useGameEventsStore().push("Combat", "area cleared", "INFO");
             }
 
             this.saveToStorage();
@@ -643,6 +724,15 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
         goToLocation(locationKey: LocationKey) {
             const heroStore = useHeroStore();
+
+            if (locationKey !== this.currentLocationKey && this.isLocationRespawning(locationKey)) {
+                useGameEventsStore().push("World", `${MapRegistry.get(locationKey).title} is sealed for now.`, "INFO");
+                return;
+            }
+
+            if (this.currentLocationKey === "cave" && locationKey !== "cave" && this.hasGraveMarker()) {
+                this.scheduleLocationRespawn("cave", 60_000);
+            }
 
             if (this.currentMapId && this.heroCoordinates) {
                 heroStore.rememberPosition(this.currentMapId, this.heroCoordinates);
@@ -692,6 +782,8 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
         openLocation(locationKey: LocationKey, preferredMapId?: string) {
             const heroStore = useHeroStore();
+
+            this.syncLocationRespawn(locationKey);
 
             const index = readIndex();
             const mapId = preferredMapId ?? index[locationKey] ?? newId();

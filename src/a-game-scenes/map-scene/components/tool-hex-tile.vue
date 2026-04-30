@@ -33,6 +33,8 @@ import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
+import { HEXOBJECT_META } from "@/registry/hexobject-meta";
+import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 
 const props = defineProps<{
   tileWidth: number;
@@ -103,6 +105,19 @@ const toolStyle = computed(() => {
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
   if (!tile?.hexobject) return [];
+
+  if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
+    const enterCfg = HEXOBJECT_META[tile.hexobject.hexobjectKey]?.enter;
+    if (
+        !tile.hexobject.isInteractable ||
+        (
+            enterCfg?.type === "WORLD" &&
+            worldMapStore.isLocationRespawning(enterCfg.locationKey)
+        )
+    ) {
+      return [];
+    }
+  }
 
   if (
       worldMapStore.combatActive &&
@@ -296,6 +311,7 @@ function executeAction() {
 .do-btn:hover {
   filter: brightness(1.15);
 }
+
 
 .do-btn:active {
   transform: translateX(-50%) scale(0.98);

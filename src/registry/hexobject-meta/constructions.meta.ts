@@ -7,7 +7,8 @@ type TConstructionMetaKeys =
     | typeof HEXOBJECT_KEYS.CAVE_ENTRANCE
     | typeof HEXOBJECT_KEYS.HOMELAND_GATE
     | typeof HEXOBJECT_KEYS.FIREPLACE
-    | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES;
+    | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
+    | typeof HEXOBJECT_KEYS.GRAVE;
 
 export const CONSTRUCTION_META: Record<TConstructionMetaKeys, IHexobjectMeta> = {
     [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
@@ -78,5 +79,11 @@ export const CONSTRUCTION_META: Record<TConstructionMetaKeys, IHexobjectMeta> = 
         key: HEXOBJECT_KEYS.WOOD_AND_LEAVES,
         title: "Nature",
         subtitle: "Decoration"
+    },
+
+    [HEXOBJECT_KEYS.GRAVE]: {
+        key: HEXOBJECT_KEYS.GRAVE,
+        title: "Grave",
+        subtitle: "A fallen enemy rests here.",
     },
 };

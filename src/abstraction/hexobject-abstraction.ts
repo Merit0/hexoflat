@@ -56,6 +56,7 @@ export interface ICreature {
     name: string;
     hp: number;
     hpMax: number;
+    attack?: number;
     faction?: "neutral" | "enemy" | "friendly";
     visionRange?: number;
 }
@@ -76,6 +77,7 @@ export interface ITool extends IDurable {
 
 export interface IConstruction {
     integrity: number;
+    isLocked?: boolean;
 }
 
 export interface IWeapon {
