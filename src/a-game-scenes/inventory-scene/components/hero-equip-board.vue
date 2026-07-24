@@ -5,7 +5,7 @@
           class="carry-weight-badge"
           :class="{ over: inventoryStore.isOverCapacity }"
       >
-        <div class="weight-icon"></div>
+        <div class="weight-icon" aria-hidden="true">⚖</div>
         <div class="weight-text">
           {{ carried }} / {{ capacity }} kg
         </div>
@@ -352,11 +352,10 @@ const capacity = computed(() =>
 .weight-icon {
   width: 18px;
   height: 18px;
-
-  background-image: url("public/board-assets"); /* або svg */
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
 
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }

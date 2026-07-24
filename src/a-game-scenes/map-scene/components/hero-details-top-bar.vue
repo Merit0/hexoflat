@@ -131,6 +131,54 @@ function openSettings() {
   backdrop-filter: blur(6px);
 }
 
+/* Tablet: allow the bar to wrap into two rows instead of squeezing chips. */
+@media (max-width: 1024px) {
+  .topbar {
+    height: auto;
+    min-height: 64px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "left right"
+      "center center";
+    row-gap: 8px;
+  }
+
+  .topbar__left { grid-area: left; }
+  .topbar__right { grid-area: right; }
+  .topbar__center { grid-area: center; justify-content: center; }
+
+  .stat {
+    width: min(420px, 90vw);
+  }
+}
+
+/* Phone: stack everything, drop popovers to avoid overflow. */
+@media (max-width: 640px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "left"
+      "center"
+      "right";
+    padding: 8px 10px;
+  }
+
+  .topbar__left,
+  .topbar__right {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .hero-badge__sub {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .chip {
+    font-size: 0.85rem;
+  }
+}
+
 .topbar__left,
 .topbar__center,
 .topbar__right {
@@ -170,7 +218,11 @@ function openSettings() {
   color: rgba(240, 248, 255, 0.95);
   font-size: 18px;
   cursor: pointer;
-  opacity: 0;
+}
+
+.settings-btn:hover {
+  border-color: rgba(230, 245, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* (твоє — лишаю як є) */

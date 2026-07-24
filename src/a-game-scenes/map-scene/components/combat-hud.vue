@@ -21,7 +21,7 @@
           :class="{ 'is-glowing': attackReady, 'is-dim': !attackReady }"
           type="button"
           disabled
-          title="Attack becomes ready when a weapon is drawn"
+          :title="attackReady ? 'Drop the weapon on a target tile to attack' : 'Attack becomes ready when a weapon is drawn'"
       >
         <span>🪓</span>
       </button>
@@ -120,6 +120,25 @@ onBeforeUnmount(() => {
   background: linear-gradient(180deg, rgba(28, 8, 10, 0.96), rgba(18, 7, 9, 0.9));
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(8px);
+}
+
+@media (max-width: 640px) {
+  .combat-hud {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 10px 12px;
+  }
+
+  .combat-hud__row {
+    gap: 6px;
+  }
+
+  .combat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
 }
 
 .combat-hud__title {
