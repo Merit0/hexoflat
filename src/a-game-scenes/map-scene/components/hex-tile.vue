@@ -27,6 +27,7 @@ import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { HEXOBJECT_META } from "@/registry/hexobject-meta";
 import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { getTileWidth } from "@/a-game-scenes/map-scene/constants/hex-grid-constants";
 
 const props = defineProps<{
   hexTile: IHexTile;
@@ -41,8 +42,7 @@ const emit = defineEmits<{
 const EMPTY_TILE_URL = "/hex-assets/hex-tiles/empty-tile-image.png";
 const heroToolStore = useHeroToolStore();
 const worldStore = useWorldMapStore();
-const GRID_COLUMNS = 42;
-const tileWidth = window.innerWidth / GRID_COLUMNS;
+const tileWidth = getTileWidth();
 
 const constructionLockLabel = computed(() => {
   void props.nowTick;

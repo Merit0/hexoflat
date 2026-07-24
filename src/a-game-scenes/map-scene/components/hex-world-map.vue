@@ -87,6 +87,7 @@ import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-
 import type { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
 import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
 import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { getTileWidth } from "@/a-game-scenes/map-scene/constants/hex-grid-constants";
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -122,8 +123,7 @@ onBeforeUnmount(() => worldStore.stopWorldLoop());
 const tiles = computed(() => worldStore.map?.tiles ?? []);
 const activeTool = computed(() => heroToolStore.activeTool);
 
-const GRID_COLUMNS = 42;
-const tileWidth = window.innerWidth / GRID_COLUMNS;
+const tileWidth = getTileWidth();
 
 function handleTileHover(tile: IHexTile) {
   hoveredTileCoord.value = tile.coordinates;
