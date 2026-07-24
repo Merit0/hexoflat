@@ -5,6 +5,7 @@ import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
 import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import {EHexobjectGroup, THexobject} from "@/abstraction/hexobject-abstraction";
 import {HexObjectFactory} from "@/factory/hex-object-factory";
+import { normalizeHealthValue } from "@/utils/combat/health-format";
 
 export type TFogPolicy = "FOG" | "ALL_REVEALED";
 
@@ -166,26 +167,13 @@ export default class HexMapModel implements IWorldMap {
         let changed = false;
 
         for (const tile of map.tiles) {
-            // 1) Finish expired pending actions immediately
-            const a = tile.pendingAction;
-            if (a && now >= a.endsAt) {
-                if (a.type === "CUT") {
-                    if (tile.hexobject !== null) {
-                        tile.hexobject = null;
-                        changed = true;
-                    }
-
-                    if (tile.resourceSpawner?.enabled) {
-                        tile.resourceSpawner.nextSpawnAt = now + tile.resourceSpawner.regrowMs;
-                        changed = true;
-                    }
-                }
-
+            const action = tile.pendingAction;
+            if (action?.type === "USE") {
                 tile.pendingAction = null;
                 changed = true;
             }
 
-            // 2) Optional: spawn immediately if respawn time already passed
+            // 1) Optional: spawn immediately if respawn time already passed
             const s = tile.resourceSpawner;
             if (!tile.hexobject && s?.enabled && typeof s.nextSpawnAt === "number" && now >= s.nextSpawnAt) {
                 tile.hexobject = HexObjectFactory.create(
@@ -226,9 +214,11 @@ export default class HexMapModel implements IWorldMap {
         switch (saved.groupType) {
             case EHexobjectGroup.CREATURE: {
                 if ("creature" in built && "creature" in saved) {
-                    built.creature.hp = saved.creature.hp ?? built.creature.hp;
-                    built.creature.hpMax = saved.creature.hpMax ?? built.creature.hpMax;
+                    built.creature.hp = normalizeHealthValue(saved.creature.hp ?? built.creature.hp);
+                    built.creature.hpMax = normalizeHealthValue(saved.creature.hpMax ?? built.creature.hpMax, 0.1);
+                    built.creature.attack = saved.creature.attack ?? built.creature.attack;
                     built.creature.faction = saved.creature.faction ?? built.creature.faction;
+                    built.creature.visionRange = saved.creature.visionRange ?? built.creature.visionRange;
                 }
                 break;
             }
@@ -236,11 +226,12 @@ export default class HexMapModel implements IWorldMap {
             case EHexobjectGroup.CONSTRUCTION: {
                 if ("construction" in built && "construction" in saved) {
                     built.construction.integrity = saved.construction.integrity ?? built.construction.integrity;
+                    built.construction.isLocked = saved.construction.isLocked ?? built.construction.isLocked;
                 }
                 break;
             }
 
-            case EHexobjectGroup.WEAPON: {
+            case EHexobjectGroup.EQUIPMENT: {
                 if ("weapon" in built && "weapon" in saved) {
                     built.weapon.damageMin = saved.weapon.damageMin ?? built.weapon.damageMin;
                     built.weapon.damageMax = saved.weapon.damageMax ?? built.weapon.damageMax;

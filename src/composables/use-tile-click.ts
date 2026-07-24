@@ -8,11 +8,23 @@ export function useTileClick() {
     const worldMapStore = useWorldMapStore();
     const heroToolStore = useHeroToolStore();
 
-    function handleTileClick(tile: IHexTile) {
+    async function handleTileClick(tile: IHexTile) {
         // if (tile.isLocked) {
         //     overlayStore.openOverlay("tile-locked-hint", {coord: tile.coordinates});
         //     return;
         // }
+
+        if (
+            worldMapStore.combatActive &&
+            (worldMapStore.combatTurnSide !== "hero" || worldMapStore.isEnemyTurnResolving)
+        ) {
+            return;
+        }
+
+        if (worldMapStore.combatActive && worldMapStore.combatTurnSide === "hero") {
+            const removed = worldMapStore.removeCombatDefendMarker(tile.coordinates);
+            if (removed) return;
+        }
 
         if (heroToolStore.isDragging) {
             heroToolStore.updateHover(tile.coordinates);
@@ -30,7 +42,7 @@ export function useTileClick() {
             return;
         }
 
-        const moved = worldMapStore.moveHeroTo(tile.coordinates);
+        const moved = await worldMapStore.moveHeroTo(tile.coordinates);
         if (moved) return;
     }
 

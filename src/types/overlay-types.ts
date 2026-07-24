@@ -11,7 +11,8 @@ export type OverlayType =
     | 'hero-inventory'
     | 'grave-inventory'
     | 'dungeon-preview'
-    | 'confirm-escape-battle';
+    | 'confirm-escape-battle'
+    | 'settings';
 
 export type OverlayPayloads = {
     'hero-dressing-room': { tab?: 'body' | 'armor' | 'weapon' } | undefined;
@@ -25,4 +26,5 @@ export type OverlayPayloads = {
     'dungeon-preview': { dungeonKey: string };
     'confirm-escape-battle': { battleId: string };
     'hex-tile-details': { coordinates: IHexCoordinates };
+    'settings': undefined;
 };

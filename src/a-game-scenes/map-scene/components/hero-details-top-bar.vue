@@ -4,8 +4,19 @@
       <div class="hero-badge">
         <div class="hero-badge__sub">
           <div class="hero-badge__name chip">{{ heroName }}</div>
-          <span class="chip">Steps: <b>{{ heroSteps }}</b></span>
-          <span class="chip">Pos: <b>q{{ heroQ }}</b> · <b>r{{ heroR }}</b></span>
+          <div class="chip chip--with-popover">
+            Steps: <b>{{ heroSteps }}</b>
+            <div class="chip-popover">
+              <div class="chip-popover__title">{{ scoutRankLabel }}</div>
+              <div class="chip-popover__line">Move Steps: <b>{{ scoutMoveSteps }}</b></div>
+              <div class="chip-popover__line">Steps Walked: <b>{{ heroSteps }}</b></div>
+              <div class="chip-popover__line">
+                Next Rank:
+                <b>{{ nextScoutRankAt ?? "MAX" }}</b>
+              </div>
+            </div>
+          </div>
+          <span class="chip">Scout: <b>{{ scoutRankShort }}</b></span>
           <span class="chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
           <span class="chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
           <span class="chip muted" v-else>Status: <b>READY</b></span>
@@ -25,6 +36,7 @@
 
     <div class="topbar__right">
       <span class="chip">Map: <b>{{ heroLocation }}</b></span>
+      <button class="settings-btn" type="button" @click="openSettings">⚙</button>
       <div class="topbar__logger">
         <game-events-logger/>
       </div>
@@ -40,28 +52,38 @@ import { useHeroStore } from "@/stores/hero-store";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { useUserStore } from "@/stores/user-store";
+import { useOverlayStore } from "@/stores/overlay-store";
+import { useHeroInventoryStore } from "@/stores/hero-inventory-store";
 import GameEventsLogger from "@/a-game-scenes/game-events-logger/components/game-events-logger.vue";
 import {MapRegistry} from "@/registry/world-map-registry";
+import { getScoutProgress } from "@/services/hero-movement/scout-progression";
+import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 
 const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
 const heroToolStore = useHeroToolStore();
+const heroInventoryStore = useHeroInventoryStore();
 const userStore = useUserStore();
-
-const activeTool = computed(() => heroToolStore.activeTool);
+const overlayStore = useOverlayStore();
 
 const heroName = computed(() => heroStore.hero?.name ?? "Hero");
 const heroSteps = computed(() => heroStore.hero?.heroSteps ?? 0);
+const scoutProgress = computed(() => getScoutProgress(heroSteps.value));
+const scoutMoveSteps = computed(() => scoutProgress.value.moveSteps);
+const scoutRankLabel = computed(() => scoutProgress.value.rankLabel);
+const nextScoutRankAt = computed(() => scoutProgress.value.nextRankAt);
+const scoutRankShort = computed(() => `R${scoutProgress.value.current.rank}`);
 
-const heroQ = computed(() => worldStore.heroCoordinates?.columnIndex ?? 0);
-const heroR = computed(() => worldStore.heroCoordinates?.rowIndex ?? 0);
+function formatHeroStat(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
-const heroHp = computed(() => (heroStore as any)?.heroHp ?? (worldStore as any)?.hero?.hp ?? 100);
-const heroHpMax = computed(() => (heroStore as any)?.heroHpMax ?? (worldStore as any)?.hero?.hpMax ?? 100);
+const heroHp = computed(() => formatHeroStat(heroStore.hero.currentHealth ?? 0));
+const heroHpMax = computed(() => formatHeroStat(heroStore.hero.maxHealth ?? 100));
 
 const hpPercent = computed(() => {
-  const max = Math.max(1, Number(heroHpMax.value) || 1);
-  const val = Math.max(0, Math.min(max, Number(heroHp.value) || 0));
+  const max = Math.max(1, Number(heroStore.hero.maxHealth ?? 100) || 1);
+  const val = Math.max(0, Math.min(max, Number(heroStore.hero.currentHealth ?? 0) || 0));
   return Math.round((val / max) * 100);
 });
 
@@ -72,11 +94,22 @@ const heroLocation = computed(() => {
   return MapRegistry.get(key)?.title ?? key;
 });
 
+function resolveHandLabel(itemKey: string | undefined) {
+  if (!itemKey || itemKey === HEXOBJECT_KEYS.HAND) return "hand";
+  if (String(itemKey).toLowerCase().includes("shield")) return "shield";
+  return "weapon";
+}
+
 const toolLabel = computed(() => {
-  const t = activeTool.value;
-  if (!t) return "";
-  return String(t).toUpperCase();
+  const equipped = heroInventoryStore.equippedItems;
+  const weaponLabel = resolveHandLabel(equipped.weapon?.key);
+  const shieldLabel = resolveHandLabel(equipped.shield?.key);
+  return `${weaponLabel} ${shieldLabel}`;
 });
+
+function openSettings() {
+  overlayStore.openOverlay("settings");
+}
 </script>
 
 <style scoped>
@@ -126,6 +159,20 @@ const toolLabel = computed(() => {
   min-width: 0;
 }
 
+.settings-btn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(190, 220, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(240, 248, 255, 0.95);
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0;
+}
+
 /* (твоє — лишаю як є) */
 .hero-badge__name {
   font-family: var(--font-main, serif), serif;
@@ -159,6 +206,11 @@ const toolLabel = computed(() => {
   text-transform: uppercase;
 }
 
+.chip--with-popover {
+  position: relative;
+  cursor: help;
+}
+
 .chip b {
   font-weight: 800;
   color: rgba(240, 248, 255, 0.95);
@@ -166,6 +218,47 @@ const toolLabel = computed(() => {
 
 .chip.muted {
   opacity: 0.75;
+}
+
+.chip-popover {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 10px);
+  min-width: 260px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(8, 11, 16, 0.96);
+  border: 1px solid rgba(190, 220, 255, 0.18);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  z-index: 30;
+}
+
+.chip--with-popover:hover .chip-popover {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chip-popover__title {
+  margin-bottom: 8px;
+  color: rgba(240, 248, 255, 0.96);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.chip-popover__line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(214, 230, 248, 0.88);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 
 .stat {

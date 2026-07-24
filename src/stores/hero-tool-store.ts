@@ -3,11 +3,11 @@ import { defineStore } from "pinia";
 import { coordinateKey, getOddQNeighbors } from "@/utils/hex-utils";
 import type { ResolvedAction } from "@/game-resolvers/interactions-resolver";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
 
 export interface HeroToolState {
-    activeTool: TToolKeys | null;
+    activeTool: THeroToolKey | null;
     isDragging: boolean;
     origin: IHexCoordinates | null;
     hover: IHexCoordinates | null;
@@ -25,7 +25,7 @@ export interface HeroToolState {
 
 export const useHeroToolStore = defineStore("heroTool", {
     state: (): HeroToolState & { allowedKeys: string[] } => ({
-        activeTool: HEXOBJECT_KEYS.HAND as TToolKeys,
+        activeTool: HEXOBJECT_KEYS.HAND as THeroToolKey,
         isDragging: false,
         origin: null,
         hover: null,
@@ -45,11 +45,11 @@ export const useHeroToolStore = defineStore("heroTool", {
 
     getters: {
         allowedKeySet: (s) => new Set(s.allowedKeys),
-        isActive: (s) => (tool: TToolKeys) => s.activeTool === tool && s.isDragging,
+        isActive: (s) => (tool: THeroToolKey) => s.activeTool === tool && s.isDragging,
     },
 
     actions: {
-        useTool(tool: TToolKeys, heroCoords: IHexCoordinates) {
+        useTool(tool: THeroToolKey, heroCoords: IHexCoordinates, preferredHover?: IHexCoordinates | null) {
             if (this.isLocked) return;
             this.activeTool = tool;
             this.isDragging = true;
@@ -64,6 +64,16 @@ export const useHeroToolStore = defineStore("heroTool", {
 
             const neighbors = getOddQNeighbors(heroCoords);
             this.allowedKeys = neighbors.map((c) => coordinateKey(c));
+
+            if (preferredHover) {
+                const preferredKey = coordinateKey(preferredHover);
+                const directNeighbor = neighbors.find((c) => coordinateKey(c) === preferredKey);
+                if (directNeighbor) {
+                    this.hover = directNeighbor;
+                    return;
+                }
+            }
+
             this.hover = neighbors.length ? neighbors[0] : null;
         },
 
@@ -156,6 +166,7 @@ export const useHeroToolStore = defineStore("heroTool", {
 
             tile.pendingAction.cancelled = true;
             tile.pendingAction.cancelReason = reason;
+            tile.pendingAction.endsAt = Date.now();
 
             this.unlockTool();
             return true;

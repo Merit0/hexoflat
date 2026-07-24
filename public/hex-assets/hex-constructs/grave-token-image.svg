@@ -1,0 +1,19 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="graveBody" x1="128" y1="44" x2="128" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BFC6D1"/>
+      <stop offset="1" stop-color="#6B7380"/>
+    </linearGradient>
+    <radialGradient id="graveGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(128 176) rotate(90) scale(84 96)">
+      <stop stop-color="#A9D8B5" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#0F1A13" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" fill="transparent"/>
+  <ellipse cx="128" cy="184" rx="92" ry="62" fill="url(#graveGlow)"/>
+  <path d="M78 92C78 64.3858 100.386 42 128 42C155.614 42 178 64.3858 178 92V204H78V92Z" fill="url(#graveBody)" stroke="#E9EEF5" stroke-width="8"/>
+  <path d="M102 100H154" stroke="#4D5663" stroke-width="10" stroke-linecap="round"/>
+  <path d="M128 72V128" stroke="#4D5663" stroke-width="10" stroke-linecap="round"/>
+  <path d="M62 214H194" stroke="#515967" stroke-width="12" stroke-linecap="round"/>
+  <path d="M74 228H182" stroke="#39424F" stroke-width="10" stroke-linecap="round"/>
+</svg>

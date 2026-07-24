@@ -16,12 +16,13 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
         tool: {
             durability: 100,
             durabilityMax: 100,
-            capabilities: { canCut: true } ,
+            attackMultiplier: 1,
+            capabilities: { canCut: true, canAttack: true } ,
             traits: {
                 weightKG: 1,
             }
         },
-        collision: EHexCollision.NONE,
+        collision: EHexCollision.SOLID,
         spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.AXE}-hex-image.png`,
     },
 
@@ -39,7 +40,7 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
                 weightKG: 1.5,
             }
         },
-        collision: EHexCollision.NONE,
+        collision: EHexCollision.SOLID,
         spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.PICKAXE}-token-image.png`,
     },
 
@@ -52,9 +53,14 @@ export const TOOL_PROTOTYPES: Record<TToolKeys, THexobjectPrototype> = {
         tool: {
             durability: 1000000,
             durabilityMax: 1000000,
+            attackMultiplier: 0.1,
+            defense: 0.1,
             capabilities: {
                 canPickup: true,
                 canEnter: true,
+                canUse: true,
+                canAttack: true,
+                canBlock: true,
             },
             traits: { weightKG: 0 }
         },

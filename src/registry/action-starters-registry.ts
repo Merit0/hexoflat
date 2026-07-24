@@ -10,12 +10,13 @@ import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroStore} from "@/stores/hero-store";
 import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
 
 export type StartResult =
     | { ok: true; endsAt: number }
     | { ok: false; message: string };
 
-export type ActionStarter = (tile: HexTileModel, tool: TToolKeys, now: number) => StartResult;
+export type ActionStarter = (tile: HexTileModel, tool: THeroToolKey, now: number) => StartResult;
 
 function isBusy(tile: HexTileModel, now: number): boolean {
     const action = tile.pendingAction;
@@ -37,8 +38,10 @@ export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
     CUT: EHexActionType.CUT,
     MINE: EHexActionType.MINE,
     TAKE: EHexActionType.TAKE,
+    USE: EHexActionType.USE,
     OPEN: EHexActionType.OPEN,
     ATTACK: EHexActionType.ATTACK,
+    BLOCK: EHexActionType.BLOCK,
     ENTER: EHexActionType.ENTER,
 };
 
@@ -165,7 +168,8 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const canTakeByGroup =
             obj.groupType === EHexobjectGroup.RESOURCE ||
             obj.groupType === EHexobjectGroup.LOOT ||
-            obj.groupType === EHexobjectGroup.TOOL;
+            obj.groupType === EHexobjectGroup.TOOL ||
+            obj.groupType === EHexobjectGroup.EQUIPMENT;
 
         if (!canTakeByGroup) {
             return { ok: false, message: "This object cannot be taken!" };
@@ -221,9 +225,73 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         return { ok: true, endsAt };
     },
 
+    [EHexActionType.USE]: (tile, tool, now) => {
+        const obj = tile.hexobject;
+        if (!obj) return { ok: false, message: "Hex has no object!" };
+        if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
+
+        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const cfg = meta?.actions?.[EHexActionType.USE];
+        if (!cfg) return { ok: false, message: "This object cannot be used!" };
+
+        const requiredTool = cfg.requiredTool ?? HEXOBJECT_KEYS.HAND;
+        if (requiredTool && tool !== requiredTool) {
+            return { ok: false, message: `Need a tool: ${requiredTool}` };
+        }
+
+        const cap = getToolCapabilities(tool);
+        if (!cap.canUse) {
+            return { ok: false, message: "This tool can't use the object!" };
+        }
+
+        const heroStore = useHeroStore();
+        const heroToolStore = useHeroToolStore();
+
+        let durationMs = cfg.durationMs ?? 10_000;
+        const pendingMeta: Record<string, any> = {};
+
+        if (obj.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+            const maxHealth = Math.max(1, heroStore.hero.maxHealth ?? 1);
+            const currentHealth = Math.max(0, heroStore.hero.currentHealth ?? 0);
+            const missingHealth = Math.max(0, maxHealth - currentHealth);
+
+            if (missingHealth < 1) {
+                return { ok: false, message: "Health is already full." };
+            }
+
+            durationMs = 10_000;
+            pendingMeta.healAmount = 1;
+        }
+
+        const endsAt = now + durationMs;
+
+        tile.pendingAction = {
+            type: EHexActionType.USE,
+            startedAt: now,
+            endsAt,
+            hexobjectKey: obj.hexobjectKey,
+            cancelled: false,
+            meta: pendingMeta,
+        };
+
+        heroToolStore.lockTool(tile, endsAt);
+        return { ok: true, endsAt };
+    },
+
     [EHexActionType.ATTACK]: (tile, _tool, now) => {
         if (isBusy(tile, now)) return {ok: false, message: "Hex is busy!"};
-        return {ok: false, message: "ATTACK is not implemented yet!"};
+        const worldMapStore = useWorldMapStore();
+        const res = worldMapStore.performHeroCombatAttack(tile, _tool);
+        if (!res.ok) return { ok: false, message: res.message };
+        return { ok: true, endsAt: now };
+    },
+
+    [EHexActionType.BLOCK]: (tile, _tool, now) => {
+        if (isBusy(tile, now)) return { ok: false, message: "Hex is busy!" };
+        const worldMapStore = useWorldMapStore();
+        const placed = worldMapStore.placeCombatDefendMarker(tile.coordinates, _tool);
+        if (!placed) return { ok: false, message: "Cannot place block here." };
+        return { ok: true, endsAt: now };
     },
 
     [EHexActionType.OPEN]: (tile, _tool, now) => {
@@ -235,8 +303,10 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const heroToolStore = useHeroToolStore();
         const heroStore = useHeroStore();
         const gameEventsStore = useGameEventsStore();
+        const worldStore = useWorldMapStore();
 
         if (isBusy(tile, now)) return { ok:false, message:"Hex is busy!" };
+        if (worldStore.combatActive) return { ok:false, message:"Cannot leave the map during combat!" };
 
         const key = tile.hexobject?.hexobjectKey;
         if (!key) return { ok:false, message:"No object to enter!" };
@@ -259,9 +329,13 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const destination = meta?.subtitle ?? key;
 
         if (meta?.enter?.type === "WORLD") {
+            if (worldStore.isLocationRespawning(meta.enter.locationKey)) {
+                const remainingSeconds = Math.ceil(worldStore.getLocationRespawnRemainingMs(meta.enter.locationKey) / 1000);
+                return { ok:false, message:`Opens in ${remainingSeconds}s` };
+            }
+
             gameEventsStore.push(heroName, `navigated to ${destination}!`, "NAVIGATION");
 
-            const worldStore = useWorldMapStore();
             worldStore.goToLocation(meta.enter.locationKey);
 
             router.push({ name: ROUTES.WORLD, params: { locationKey: meta.enter.locationKey } });

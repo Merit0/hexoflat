@@ -4,7 +4,7 @@ import { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 export type Axial = { q: number; r: number };
 
 // odd-q offset -> axial
-function oddQToAxial(c: IHexCoordinates) {
+export function oddQToAxial(c: IHexCoordinates): Axial {
     const q = c.columnIndex;
     const r = c.rowIndex - ((q - (q & 1)) / 2);
     return { q, r };
@@ -33,6 +33,17 @@ export function getOddQNeighbors(center: IHexCoordinates): IHexCoordinates[] {
 
 export function coordinateKey(c: IHexCoordinates): string {
     return `${c.columnIndex}:${c.rowIndex}`;
+}
+
+export function hexDistance(from: IHexCoordinates, to: IHexCoordinates): number {
+    const a = oddQToAxial(from);
+    const b = oddQToAxial(to);
+
+    const dq = a.q - b.q;
+    const dr = a.r - b.r;
+    const ds = (-a.q - a.r) - (-b.q - b.r);
+
+    return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds));
 }
 
 export function calcHexPixelPosition(

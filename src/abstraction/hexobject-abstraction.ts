@@ -56,15 +56,22 @@ export interface ICreature {
     name: string;
     hp: number;
     hpMax: number;
+    attack: number;
     faction?: "neutral" | "enemy" | "friendly";
+    visionRange?: number;
 }
 
 export interface ITool extends IDurable {
+    attackMultiplier?: number;
+    defense?: number;
     capabilities: {
         canCut?: boolean;
         canMine?: boolean;
         canPickup?: boolean;
         canEnter?: boolean;
+        canUse?: boolean;
+        canAttack?: boolean;
+        canBlock?: boolean;
     };
 
     traits: {
@@ -74,14 +81,25 @@ export interface ITool extends IDurable {
 
 export interface IConstruction {
     integrity: number;
+    isLocked?: boolean;
 }
 
 export interface IWeapon {
     damageMin: number;
     damageMax: number;
+    attackMultiplier?: number;
 }
 
-export interface IEquipment extends IDurable {}
+export interface IEquipment extends IDurable {
+    defense?: number;
+    capabilities?: {
+        canAttack?: boolean;
+        canBlock?: boolean;
+    };
+    traits?: {
+        weightKG?: number;
+    };
+}
 
 export type THexobjectPrototype =
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.RESOURCE; resource: IResource })
@@ -89,6 +107,7 @@ export type THexobjectPrototype =
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
+    | (Omit<IBaseHexobject, "id"> & { groupType: EHexobjectGroup.EQUIPMENT; equipment: IEquipment; weapon?: IWeapon })
 
 export type THexobject =
     | (IBaseHexobject & { groupType: EHexobjectGroup.RESOURCE; resource: IResource })
@@ -96,7 +115,7 @@ export type THexobject =
     | (IBaseHexobject & { groupType: EHexobjectGroup.CREATURE; creature: ICreature })
     | (IBaseHexobject & { groupType: EHexobjectGroup.TOOL; tool: ITool })
     | (IBaseHexobject & { groupType: EHexobjectGroup.CONSTRUCTION; construction: IConstruction })
-    | (IBaseHexobject & { groupType: EHexobjectGroup.EQUIPMENT; equipment: IEquipment, weapon: IWeapon });
+    | (IBaseHexobject & { groupType: EHexobjectGroup.EQUIPMENT; equipment: IEquipment, weapon?: IWeapon });
 
 
 export enum EHexobjectGroup {

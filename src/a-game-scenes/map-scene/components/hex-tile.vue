@@ -6,27 +6,84 @@
       @pointerenter="onEnter"
   >
     <div class="hex-layer hex-tile-bg" :style="getHexTileBackgroundStyle(hexTile)"></div>
+    <div
+        v-if="defendMarkerSpritePath"
+        class="hex-layer hex-defend-marker"
+        :style="{ backgroundImage: `url('${defendMarkerSpritePath}')` }"
+    ></div>
     <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)"></div>
+    <div v-if="constructionLockLabel" class="hex-tile-lock-chip">
+      {{ constructionLockLabel }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import {calcHexPixelPosition} from "@/utils/hex-utils";
+import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
+import { useWorldMapStore } from "@/stores/world-map-store";
+import { HEXOBJECT_META } from "@/registry/hexobject-meta";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
 
 const props = defineProps<{
   hexTile: IHexTile;
+  nowTick?: number;
 }>();
 
 const emit = defineEmits<{
   (e: "tile-click", tile: IHexTile): void;
+  (e: "tile-hover", tile: IHexTile): void;
 }>();
 
 const EMPTY_TILE_URL = "/hex-assets/hex-tiles/empty-tile-image.png";
 const heroToolStore = useHeroToolStore();
+const worldStore = useWorldMapStore();
 const GRID_COLUMNS = 42;
 const tileWidth = window.innerWidth / GRID_COLUMNS;
+
+const constructionLockLabel = computed(() => {
+  void props.nowTick;
+
+  const tile = props.hexTile;
+  const hexobject = tile.hexobject;
+  if (!tile.isRevealed || !hexobject) return null;
+  if (hexobject.groupType !== EHexobjectGroup.CONSTRUCTION) return null;
+
+  const enterCfg = HEXOBJECT_META[hexobject.hexobjectKey]?.enter;
+  if (enterCfg?.type === "WORLD") {
+    const remainingMs = worldStore.getLocationRespawnRemainingMs(enterCfg.locationKey);
+    if (remainingMs > 0) {
+      const totalSeconds = Math.ceil(remainingMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+  }
+
+  if (!hexobject.isInteractable && hexobject.construction.isLocked) {
+    return "locked";
+  }
+
+  return null;
+});
+
+const defendMarkerSpritePath = computed(() => {
+  const tile = props.hexTile;
+  if (!tile.isRevealed) return null;
+
+  const marker = worldStore.combatMarkers.find((item) =>
+      item.visible &&
+      item.kind === "defend" &&
+      item.coord.columnIndex === tile.coordinates.columnIndex &&
+      item.coord.rowIndex === tile.coordinates.rowIndex
+  );
+  if (!marker?.toolKey) return null;
+
+  return HEX_OBJECT_PROTOTYPES[marker.toolKey]?.spritePath ?? null;
+});
 
 function getHexTileTransformStyle(tile: IHexTile) {
   const { x, y } = calcHexPixelPosition(tile, tileWidth);
@@ -38,6 +95,7 @@ function getHexTileTransformStyle(tile: IHexTile) {
 }
 
 function onEnter() {
+  emit("tile-hover", props.hexTile);
   if (!heroToolStore.isDragging) return;
   heroToolStore.updateHover(props.hexTile.coordinates);
 }
@@ -177,9 +235,42 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   will-change: transform;
 }
 
+.hex-defend-marker {
+  z-index: 1;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 68%;
+  background-position: center 68%;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.28));
+}
+
 .hex-tile:hover .hexobject-sprite {
   transform: scale(1.05);
   filter: contrast(1.02);
+}
+
+.hex-tile-lock-chip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  min-width: 38px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(22, 26, 34, 0.84);
+  border: 1px solid rgba(205, 214, 228, 0.22);
+  color: rgba(242, 233, 211, 0.96);
+  font-family: var(--font-main), serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
 }
 
 </style>

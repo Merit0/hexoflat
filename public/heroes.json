@@ -11,7 +11,7 @@
         "kills": 0,
         "maxEnergy": 100,
         "currentEnergy": 100,
-        "heroSteps": 0,
+        "heroSteps": 1000,
         "equipment": {
             "weapon": null,
             "shield": null,

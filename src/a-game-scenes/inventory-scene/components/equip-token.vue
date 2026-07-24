@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, Teleport } from "vue";
+import { computed, onBeforeUnmount, Teleport, type CSSProperties } from "vue";
 import {
   useHeroInventoryStore,
   type InventoryItem,
@@ -42,10 +42,10 @@ import {
 import { resolveInventoryView } from "@/utils/inventory/traits-resolver";
 import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
-import { HeroToolType } from "@/enums/hero-tool-type";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { useOverlayStore } from "@/stores/overlay-store";
+import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
 
 type DragTarget =
     | { kind: "grid"; slotKey: string }
@@ -65,7 +65,7 @@ const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const isUsableTool = computed(() => {
   return (
-      props.item.type === EHexobjectGroup.TOOL &&
+      (props.item.type === EHexobjectGroup.TOOL || props.item.type === EHexobjectGroup.EQUIPMENT) &&
       isHandSlotKey(props.item.slotKey)
   );
 });
@@ -82,7 +82,7 @@ const iconStyle = computed(() => ({
   backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : "none",
 }));
 
-const dragGhostStyle = computed(() => ({
+const dragGhostStyle = computed<CSSProperties>(() => ({
   position: "fixed",
   left: `${inventoryStore.dragPointerX - inventoryStore.dragOffsetX}px`,
   top: `${inventoryStore.dragPointerY - inventoryStore.dragOffsetY}px`,
@@ -93,14 +93,18 @@ const dragGhostStyle = computed(() => ({
   pointerEvents: "none",
 }));
 
-function resolveToolType(): HeroToolType | null {
+function resolveToolType(): THeroToolKey | null {
   switch (props.item.key) {
     case HEXOBJECT_KEYS.HAND:
-      return HeroToolType.HAND;
+      return HEXOBJECT_KEYS.HAND;
     case HEXOBJECT_KEYS.AXE:
-      return HeroToolType.AXE;
+      return HEXOBJECT_KEYS.AXE;
     case HEXOBJECT_KEYS.PICKAXE:
-      return HeroToolType.PICKAXE;
+      return HEXOBJECT_KEYS.PICKAXE;
+    case HEXOBJECT_KEYS.SWORD:
+      return HEXOBJECT_KEYS.SWORD;
+    case HEXOBJECT_KEYS.SHIELD:
+      return HEXOBJECT_KEYS.SHIELD;
     default:
       return null;
   }
