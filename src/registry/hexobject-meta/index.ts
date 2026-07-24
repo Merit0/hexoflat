@@ -5,6 +5,7 @@ import { LOOT_META } from "./loot.meta";
 import { CREATURE_META } from "./creatures.meta";
 import { TOOL_META } from "./tools.meta";
 import { CONSTRUCTION_META } from "./constructions.meta";
+import { EQUIPMENT_META } from "./equipment.meta";
 import {deepFreeze} from "@/utils/freeze/deep-freeze";
 import {IHexobjectMeta} from "@/registry/hexobject-meta/hexobject-meta-abstraction";
 
@@ -14,4 +15,5 @@ export const HEXOBJECT_META = deepFreeze({
     ...CREATURE_META,
     ...TOOL_META,
     ...CONSTRUCTION_META,
+    ...EQUIPMENT_META,
 }) satisfies Record<THexobjectKey, IHexobjectMeta>;

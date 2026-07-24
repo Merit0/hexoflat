@@ -26,11 +26,6 @@ export function useTileClick() {
             if (removed) return;
         }
 
-        if (worldMapStore.combatActive && worldMapStore.combatActionMode === "defend") {
-            const placed = worldMapStore.placeCombatDefendMarker(tile.coordinates);
-            if (placed) return;
-        }
-
         if (heroToolStore.isDragging) {
             heroToolStore.updateHover(tile.coordinates);
 

@@ -6,6 +6,11 @@
       @pointerenter="onEnter"
   >
     <div class="hex-layer hex-tile-bg" :style="getHexTileBackgroundStyle(hexTile)"></div>
+    <div
+        v-if="defendMarkerSpritePath"
+        class="hex-layer hex-defend-marker"
+        :style="{ backgroundImage: `url('${defendMarkerSpritePath}')` }"
+    ></div>
     <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)"></div>
     <div v-if="constructionLockLabel" class="hex-tile-lock-chip">
       {{ constructionLockLabel }}
@@ -21,6 +26,7 @@ import {calcHexPixelPosition} from "@/utils/hex-utils";
 import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { HEXOBJECT_META } from "@/registry/hexobject-meta";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
 
 const props = defineProps<{
   hexTile: IHexTile;
@@ -62,6 +68,21 @@ const constructionLockLabel = computed(() => {
   }
 
   return null;
+});
+
+const defendMarkerSpritePath = computed(() => {
+  const tile = props.hexTile;
+  if (!tile.isRevealed) return null;
+
+  const marker = worldStore.combatMarkers.find((item) =>
+      item.visible &&
+      item.kind === "defend" &&
+      item.coord.columnIndex === tile.coordinates.columnIndex &&
+      item.coord.rowIndex === tile.coordinates.rowIndex
+  );
+  if (!marker?.toolKey) return null;
+
+  return HEX_OBJECT_PROTOTYPES[marker.toolKey]?.spritePath ?? null;
 });
 
 function getHexTileTransformStyle(tile: IHexTile) {
@@ -212,6 +233,15 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 
   image-rendering: crisp-edges;
   will-change: transform;
+}
+
+.hex-defend-marker {
+  z-index: 1;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 68%;
+  background-position: center 68%;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.28));
 }
 
 .hex-tile:hover .hexobject-sprite {

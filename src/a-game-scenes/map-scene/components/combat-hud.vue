@@ -15,54 +15,15 @@
       <span class="chip" v-if="worldStore.combatTurnSide === 'enemy'">Enemy is acting</span>
     </div>
 
-    <div class="combat-hud__panels">
-      <section class="combat-panel">
-        <div class="combat-panel__title">Location</div>
-        <div class="combat-panel__line">Name: <b>{{ locationTitle }}</b></div>
-        <div class="combat-panel__line">Difficulty: <b>{{ locationDifficulty }}</b></div>
-        <div class="combat-panel__line">Progress: <b>{{ mapProgressLabel }}</b></div>
-        <div class="combat-panel__line combat-panel__line--stack">Enemies:</div>
-        <div class="combat-tags">
-          <span v-for="enemy in enemyRoster" :key="enemy.label" class="combat-tag">
-            {{ enemy.label }} {{ enemy.alive }}/{{ enemy.total }}
-          </span>
-        </div>
-      </section>
-
-      <section v-if="bossInfo" class="combat-panel boss-panel">
-        <div class="combat-panel__title">Boss</div>
-        <div class="combat-panel__line">Name: <b>{{ bossInfo.name }}</b></div>
-        <div class="combat-panel__line">HP: <b>{{ bossInfo.hp }}/{{ bossInfo.hpMax }}</b></div>
-        <div class="combat-panel__line">Attack: <b>{{ bossInfo.attack }}</b></div>
-        <div class="combat-panel__line">Steps: <b>{{ bossInfo.steps }}</b></div>
-        <div class="combat-panel__line combat-panel__line--stack">Special:</div>
-        <div class="combat-tags">
-          <span v-for="skill in bossInfo.skills" :key="skill" class="combat-tag combat-tag--boss">
-            {{ skill }}
-          </span>
-        </div>
-      </section>
-    </div>
-
     <div class="combat-hud__actions">
       <button
           class="combat-icon attack"
           :class="{ 'is-glowing': attackReady, 'is-dim': !attackReady }"
           type="button"
           disabled
-          title="Attack becomes ready when axe is drawn"
+          title="Attack becomes ready when a weapon is drawn"
       >
         <span>🪓</span>
-      </button>
-
-      <button
-          class="combat-icon defend"
-          :class="{ 'is-glowing': defendReady, 'is-active': worldStore.combatActionMode === 'defend', 'is-dim': !defendReady && worldStore.combatActionMode !== 'defend' }"
-          type="button"
-          :disabled="!heroControlsEnabled"
-          @click="worldStore.beginCombatAction('defend')"
-      >
-        <span>🛡</span>
       </button>
 
       <button class="combat-btn end" type="button" :disabled="!heroControlsEnabled" @click="worldStore.advanceCombatTurn()">Next Turn</button>
@@ -72,13 +33,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { useWorldMapStore } from "@/stores/world-map-store";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
-import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { Complexity } from "@/enums/complexity";
+import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
 
 const worldStore = useWorldMapStore();
 const heroToolStore = useHeroToolStore();
@@ -88,81 +45,6 @@ let lastAdvancedAt: number | null = null;
 
 const moveBudget = computed(() => worldStore.getCombatMoveBudget());
 const actorLabel = computed(() => worldStore.combatTurnSide === "hero" ? "Hero" : "Enemy");
-const locationTitle = computed(() => worldStore.map?.name ?? "Unknown");
-const locationDifficulty = computed(() => {
-  switch (worldStore.map?.complexity) {
-    case Complexity.EASY:
-      return "Easy";
-    case Complexity.NORMAL:
-      return "Normal";
-    case Complexity.HARD:
-      return "Hard";
-    case Complexity.EVIL:
-      return "Evil";
-    default:
-      return "Unknown";
-  }
-});
-const mapProgressLabel = computed(() => {
-  const map = worldStore.map;
-  if (!map?.tiles.length) return "0%";
-
-  const revealed = map.tiles.filter((tile) => tile.isRevealed).length;
-  const total = map.tiles.length;
-  const percent = Math.round((revealed / total) * 100);
-  return `${percent}% (${revealed}/${total})`;
-});
-const enemyRoster = computed(() => {
-  const map = worldStore.map;
-  if (!map) return [];
-
-  const totalByKey = new Map<string, number>();
-  for (const placement of map.config ?? []) {
-    const key = placement.hexobject?.hexobjectKey;
-    if (!key) continue;
-    const proto = HEX_OBJECT_PROTOTYPES[key];
-    if (!proto || proto.groupType !== EHexobjectGroup.CREATURE) continue;
-    totalByKey.set(key, (totalByKey.get(key) ?? 0) + placement.coordinates.length);
-  }
-
-  const aliveByKey = new Map<string, number>();
-  for (const tile of map.tiles) {
-    const key = tile.hexobject?.hexobjectKey;
-    if (!key) continue;
-    if (tile.hexobject?.groupType !== EHexobjectGroup.CREATURE) continue;
-    aliveByKey.set(key, (aliveByKey.get(key) ?? 0) + 1);
-  }
-
-  return [...totalByKey.entries()].map(([key, total]) => ({
-    label: HEXOBJECT_META[key]?.title ?? key,
-    total,
-    alive: aliveByKey.get(key) ?? 0,
-  }));
-});
-const bossInfo = computed(() => {
-  const bossTile = worldStore.map?.tiles.find((tile) =>
-      tile.hexobject?.groupType === EHexobjectGroup.CREATURE &&
-      [HEXOBJECT_KEYS.SKELETOR, HEXOBJECT_KEYS.EMITTER, HEXOBJECT_KEYS.INFERNO].includes(tile.hexobject.hexobjectKey as any)
-  );
-  const bossHexobject = bossTile?.hexobject;
-  if (!bossHexobject || bossHexobject.groupType !== EHexobjectGroup.CREATURE) return null;
-
-  const key = bossHexobject.hexobjectKey;
-  const skills = key === HEXOBJECT_KEYS.SKELETOR
-      ? ["Bone Cleave", "Crypt Rush", "Grave Omen"]
-      : key === HEXOBJECT_KEYS.INFERNO
-          ? ["Hellfire", "Burning Wake", "Ash Pulse"]
-          : ["Static Surge", "Pulse Grid", "Arc Burst"];
-
-  return {
-    name: bossHexobject.creature.name,
-    hp: bossHexobject.creature.hp,
-    hpMax: bossHexobject.creature.hpMax,
-    attack: bossHexobject.creature.attack ?? 1,
-    steps: worldStore.getCombatMoveBudget(),
-    skills,
-  };
-});
 const heroControlsEnabled = computed(() => {
   return worldStore.combatTurnSide === "hero"
       && !worldStore.isEnemyTurnResolving
@@ -171,12 +53,9 @@ const heroControlsEnabled = computed(() => {
 const attackReady = computed(() => {
   return heroControlsEnabled.value
       && !worldStore.combatAttackUsed
-      && heroToolStore.activeTool === HEXOBJECT_KEYS.AXE
+      && !!heroToolStore.activeTool
+      && !!getToolCapabilities(heroToolStore.activeTool).canAttack
       && heroToolStore.isDragging;
-});
-const defendReady = computed(() => {
-  return heroControlsEnabled.value
-      && !worldStore.combatDefendUsed;
 });
 const secondsLeft = computed(() => {
   const endsAt = worldStore.combatTurnEndsAt;
@@ -263,74 +142,6 @@ onBeforeUnmount(() => {
   gap: 10px;
 }
 
-.combat-hud__panels {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
-  gap: 10px;
-}
-
-.combat-panel {
-  display: grid;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.boss-panel {
-  border-color: rgba(255, 116, 116, 0.24);
-  box-shadow: inset 0 0 0 1px rgba(255, 116, 116, 0.08);
-}
-
-.combat-panel__title {
-  color: rgba(240, 248, 255, 0.94);
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.combat-panel__line {
-  color: rgba(220, 235, 255, 0.88);
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-}
-
-.combat-panel__line--stack {
-  margin-bottom: -2px;
-}
-
-.combat-panel__line b {
-  color: rgba(245, 250, 255, 0.96);
-}
-
-.combat-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.combat-tag {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(190, 220, 255, 0.14);
-  color: rgba(220, 235, 255, 0.9);
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.combat-tag--boss {
-  border-color: rgba(255, 116, 116, 0.28);
-  background: rgba(100, 20, 20, 0.24);
-  color: rgba(255, 218, 218, 0.94);
-}
-
 .combat-btn {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
@@ -405,11 +216,5 @@ onBeforeUnmount(() => {
 .combat-icon.is-dim {
   opacity: 0.38;
   filter: saturate(0.4);
-}
-
-@media (max-width: 920px) {
-  .combat-hud__panels {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

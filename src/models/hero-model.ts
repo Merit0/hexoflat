@@ -1,5 +1,6 @@
 import {IHero} from "@/abstraction/hero-abstraction";
 import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import { normalizeHealthValue, roundToSingleDecimal } from "@/utils/combat/health-format";
 
 
 export class HeroModel implements IHero {
@@ -41,12 +42,12 @@ export class HeroModel implements IHero {
     }
 
     public setMaxHealth(amount: number): HeroModel {
-        this.maxHealth = amount;
+        this.maxHealth = normalizeHealthValue(amount, 0.1);
         return this;
     }
 
     public setHealth(health: number): HeroModel {
-        this.currentHealth = health;
+        this.currentHealth = normalizeHealthValue(health);
         return this;
     }
 
@@ -150,19 +151,20 @@ export class HeroModel implements IHero {
     }
 
     public takeDamage(damage: number): void {
-        this.currentHealth -= damage;
+        this.currentHealth = normalizeHealthValue(this.currentHealth - damage);
         if (this.currentHealth < 1) {
             this.currentHealth = 0;
         }
     }
 
     public healthIncreaser(): void {
-        this.currentHealth += 1;
+        this.currentHealth = normalizeHealthValue(this.currentHealth + 1);
     }
 
     public adjustHealthOnStatChange(): void {
         if (this.currentHealth > this.maxHealth) {
             this.currentHealth = this.maxHealth;
         }
+        this.currentHealth = roundToSingleDecimal(this.currentHealth);
     }
 }

@@ -6,6 +6,7 @@ import { LOOT_PROTOTYPES } from "./loot.prototypes";
 import { CREATURE_PROTOTYPES } from "./creatures.prototypes";
 import { TOOL_PROTOTYPES } from "./tools.prototypes";
 import { CONSTRUCTION_PROTOTYPES } from "./constructions.prototypes";
+import { EQUIPMENT_PROTOTYPES } from "./equipment.prototypes";
 import {deepFreeze} from "@/utils/freeze/deep-freeze";
 
 export const HEX_OBJECT_PROTOTYPES = deepFreeze({
@@ -14,4 +15,5 @@ export const HEX_OBJECT_PROTOTYPES = deepFreeze({
     ...CREATURE_PROTOTYPES,
     ...TOOL_PROTOTYPES,
     ...CONSTRUCTION_PROTOTYPES,
+    ...EQUIPMENT_PROTOTYPES,
 }) satisfies Record<THexobjectKey, THexobjectPrototype>;

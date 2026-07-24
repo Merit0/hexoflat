@@ -4,7 +4,7 @@ import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import type {RouteLocationRaw} from "vue-router";
 import {IHexobjectMeta} from "@/registry/hexobject-meta/hexobject-meta-abstraction";
 import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
-import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
+import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
 
 export interface ToolCapabilities {
     canCut?: boolean;
@@ -12,6 +12,8 @@ export interface ToolCapabilities {
     canMine?: boolean;
     canEnter?: boolean;
     canUse?: boolean;
+    canAttack?: boolean;
+    canBlock?: boolean;
 }
 
 export type ResolvedActionType =
@@ -20,6 +22,7 @@ export type ResolvedActionType =
     | "MINE"
     | "USE"
     | "ATTACK"
+    | "BLOCK"
     | "OPEN"
     | "ENTER";
 
@@ -30,12 +33,19 @@ export interface ResolvedAction {
     navigateTo?: RouteLocationRaw;
 }
 
-export function getToolCapabilities(toolKey: TToolKeys): ToolCapabilities {
+export function getToolCapabilities(toolKey: THeroToolKey): ToolCapabilities {
     const toolProto = HEX_OBJECT_PROTOTYPES[toolKey];
 
     if (!toolProto) return {};
 
     if (toolProto.groupType !== EHexobjectGroup.TOOL) {
+        if (toolProto.groupType === EHexobjectGroup.EQUIPMENT) {
+            return {
+                canAttack: toolProto.equipment.capabilities?.canAttack,
+                canBlock: toolProto.equipment.capabilities?.canBlock,
+            };
+        }
+
         return {};
     }
 
@@ -50,7 +60,7 @@ function labelFromMeta(obj: THexobject, action: EHexActionType, fallback: string
     return meta?.actions?.[action]?.label ?? fallback;
 }
 
-export function resolveActions(toolKey: TToolKeys, obj: THexobject): ResolvedAction[] {
+export function resolveActions(toolKey: THeroToolKey, obj: THexobject): ResolvedAction[] {
     if (!obj.isInteractable) return [];
 
     const cap = getToolCapabilities(toolKey);

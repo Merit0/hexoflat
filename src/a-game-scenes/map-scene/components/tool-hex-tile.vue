@@ -5,15 +5,17 @@
         :class="{ doing: isWorking }"
         :style="toolStyle"
     >
-      <button class="hide-btn" @click.stop="emit('hide')">HIDE</button>
+      <div v-if="!isWorking" class="tool-actions-row">
+        <button
+            v-if="bestActionLabel"
+            class="do-btn"
+            @click.stop="executeAction"
+        >
+          {{ bestActionLabel }}
+        </button>
 
-      <button
-          v-if="bestActionLabel && !isWorking"
-          class="do-btn"
-          @click.stop="executeAction"
-      >
-        {{ bestActionLabel }}
-      </button>
+        <button v-else class="hide-btn" @click.stop="emit('hide')">-</button>
+      </div>
 
       <div v-if="isWorking" class="time-chip label">{{ secondsLeft }}s</div>
     </div>
@@ -24,17 +26,17 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { calcHexPixelPosition } from "@/utils/hex-utils";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
-import { resolveActions } from "@/game-resolvers/interactions-resolver";
+import { getToolCapabilities, resolveActions, type ResolvedAction } from "@/game-resolvers/interactions-resolver";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { ACTION_TYPE_MAP } from "@/registry/action-starters-registry";
 import { ExecuteHexActionFeature } from "@/features/execute-hex-action-feature";
 import { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
 import { HEXOBJECT_META } from "@/registry/hexobject-meta";
 import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
+import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
 
 const props = defineProps<{
   tileWidth: number;
@@ -49,7 +51,7 @@ const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const heroStore = useHeroStore();
 
-const activeToolKey = computed<TToolKeys>(() => heroToolStore.activeTool);
+const activeToolKey = computed<THeroToolKey | null>(() => heroToolStore.activeTool);
 
 /** ---------------------------
  *  Tile lookup
@@ -104,6 +106,30 @@ const toolStyle = computed(() => {
 
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
+  if (
+      worldMapStore.combatActive &&
+      worldMapStore.combatTurnSide === "hero" &&
+      !worldMapStore.isEnemyTurnResolving &&
+      !worldMapStore.isHeroMoving &&
+      heroToolStore.hover &&
+      activeToolKey.value
+  ) {
+    const capabilities = getToolCapabilities(activeToolKey.value);
+
+    if (
+        capabilities.canBlock &&
+        worldMapStore.combatAttackUsed &&
+        !worldMapStore.combatDefendUsed &&
+        worldMapStore.canPlaceCombatDefendMarker(heroToolStore.hover)
+    ) {
+      return [{
+        actioType: "BLOCK",
+        label: "Block",
+        priority: 110,
+      } satisfies ResolvedAction];
+    }
+  }
+
   if (!tile?.hexobject) return [];
 
   if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
@@ -125,7 +151,8 @@ const resolvedActions = computed(() => {
       (
           worldMapStore.combatTurnSide !== "hero" ||
           worldMapStore.combatAttackUsed ||
-          activeToolKey.value !== HEXOBJECT_KEYS.AXE
+          !activeToolKey.value ||
+          !getToolCapabilities(activeToolKey.value).canAttack
       )
   ) {
     return [];
@@ -211,7 +238,7 @@ const secondsLeft = computed(() => {
 function executeAction() {
   const tile = hoveredTile.value;
   const best = bestAction.value;
-  if (!tile?.hexobject || !best) return;
+  if (!tile || !best || !activeToolKey.value) return;
 
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
@@ -219,6 +246,9 @@ function executeAction() {
   const res = new ExecuteHexActionFeature(tile).execute(actionType, activeToolKey.value);
 
   if (res.ok) {
+    if (actionType === "BLOCK") {
+      heroToolStore.stopTool();
+    }
     worldMapStore.saveToStorage();
   }
 }
@@ -261,27 +291,23 @@ function executeAction() {
 
 /* buttons */
 .hide-btn {
-  opacity: 0;
-  pointer-events: none;
-
-  width: 64px;
-  height: 30px;
-  border-radius: 10px;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 999px;
 
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.55);
   color: #f2e9d3;
 
   font-weight: 900;
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.24);
 
-  transition: opacity 120ms ease, transform 120ms ease, background 120ms ease, filter 120ms ease;
-}
-
-.tool-hex-tile:hover .hide-btn {
-  opacity: 1;
-  pointer-events: auto;
+  transition: transform 120ms ease, background 120ms ease, filter 120ms ease;
 }
 
 .hide-btn:hover {
@@ -294,18 +320,17 @@ function executeAction() {
 }
 
 .do-btn {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 12px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.55);
   color: #f2e9d3;
   font-weight: 900;
+  font-size: 12px;
+  line-height: 1;
   letter-spacing: 0.12em;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
 }
 
 .do-btn:hover {
@@ -314,7 +339,7 @@ function executeAction() {
 
 
 .do-btn:active {
-  transform: translateX(-50%) scale(0.98);
+  transform: scale(0.98);
 }
 
 /* pos wrapper */
@@ -328,6 +353,21 @@ function executeAction() {
   transition: transform 120ms linear;
   will-change: transform;
   transform: translateZ(0);
+}
+
+.tool-actions-row {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(var(--hex-tile-width) * 0.72);
+  max-width: calc(var(--hex-tile-width) * 0.72);
+  z-index: 2;
+  pointer-events: auto;
 }
 
 /* working anim */

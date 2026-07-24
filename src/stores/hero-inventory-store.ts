@@ -10,7 +10,9 @@ export type TEquipSlot =
     | "armor"
     | "gloves"
     | "helm"
-    | "boots";
+    | "boots"
+    | "ring"
+    | "amulet";
 
 export interface InventoryItem {
     id: string;
@@ -61,7 +63,9 @@ function parseEquipSlotKey(value: string | null | undefined): TEquipSlot | null 
         slot === "armor" ||
         slot === "gloves" ||
         slot === "helm" ||
-        slot === "boots"
+        slot === "boots" ||
+        slot === "ring" ||
+        slot === "amulet"
     ) {
         return slot;
     }
@@ -135,6 +139,8 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 gloves: state.items.find(i => i.slotKey === equipSlotKey("gloves")) ?? null,
                 helm: state.items.find(i => i.slotKey === equipSlotKey("helm")) ?? null,
                 boots: state.items.find(i => i.slotKey === equipSlotKey("boots")) ?? null,
+                ring: state.items.find(i => i.slotKey === equipSlotKey("ring")) ?? null,
+                amulet: state.items.find(i => i.slotKey === equipSlotKey("amulet")) ?? null,
             };
         },
 

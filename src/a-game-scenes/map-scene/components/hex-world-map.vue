@@ -84,7 +84,9 @@ import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
 import { useUiSettingsStore } from "@/stores/ui-settings-store";
 import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-store";
-import type { TToolKeys } from "@/registry/hexobjects/prototypes/tools.prototypes";
+import type { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -184,19 +186,23 @@ const movePreview = computed(() => {
   if (worldStore.isHeroMoving) return null;
   if (worldStore.combatActive && worldStore.combatTurnSide !== "hero") return null;
 
-  if (worldStore.combatActionMode === "defend") {
+  const activeToolCapabilities = heroToolStore.activeTool ? getToolCapabilities(heroToolStore.activeTool) : {};
+
+  if (
+      worldStore.combatActive &&
+      worldStore.combatTurnSide === "hero" &&
+      heroToolStore.isDragging &&
+      activeToolCapabilities.canBlock &&
+      worldStore.combatAttackUsed &&
+      !worldStore.combatDefendUsed
+  ) {
     const isAdjacent = getOddQNeighbors(worldStore.heroCoordinates).some((coord) =>
         coord.columnIndex === hoveredTileCoord.value!.columnIndex &&
         coord.rowIndex === hoveredTileCoord.value!.rowIndex
     );
     if (!isAdjacent) return null;
 
-    const targetTile = getTileByCoord(hoveredTileCoord.value);
-    const reachable = Boolean(
-        targetTile &&
-        targetTile.isRevealed &&
-        targetTile.hexobject?.collision !== EHexCollision.SOLID
-    );
+    const reachable = worldStore.canPlaceCombatDefendMarker(hoveredTileCoord.value);
 
     return {
       path: null,
@@ -313,6 +319,7 @@ const isHeroInEnemyVision = computed(() => {
 
 const combatMarkers = computed(() => {
   return worldStore.combatMarkers
+      .filter((marker) => marker.kind !== "defend")
       .filter((marker) => marker.visible)
       .map((marker) => {
     const center = getTileCenter(marker.coord);
@@ -446,7 +453,15 @@ function onResize() {
   updateScale();
 }
 
-function resolveEquippedToolKey(slot: TEquipSlot): TToolKeys | null {
+function onKeyDown(event: KeyboardEvent) {
+  if (event.key !== "Escape") return;
+  if (!heroToolStore.isDragging && !heroToolStore.activeTool) return;
+
+  event.preventDefault();
+  onHide();
+}
+
+function resolveEquippedToolKey(slot: TEquipSlot): THeroToolKey | null {
   const item = heroInventoryStore.equippedItems[slot];
   if (!item) return null;
 
@@ -457,6 +472,10 @@ function resolveEquippedToolKey(slot: TEquipSlot): TToolKeys | null {
       return HEXOBJECT_KEYS.AXE;
     case HEXOBJECT_KEYS.PICKAXE:
       return HEXOBJECT_KEYS.PICKAXE;
+    case HEXOBJECT_KEYS.SWORD:
+      return HEXOBJECT_KEYS.SWORD;
+    case HEXOBJECT_KEYS.SHIELD:
+      return HEXOBJECT_KEYS.SHIELD;
     default:
       return null;
   }
@@ -532,6 +551,7 @@ onMounted(() => {
 
   window.addEventListener("resize", onResize);
   window.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("keydown", onKeyDown);
   healTickerTimer = window.setInterval(() => {
     healTickerNow.value = Date.now();
   }, 250);
@@ -540,6 +560,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("resize", onResize);
   window.removeEventListener("wheel", onWheel);
+  window.removeEventListener("keydown", onKeyDown);
   if (healTickerTimer) {
     window.clearInterval(healTickerTimer);
     healTickerTimer = null;

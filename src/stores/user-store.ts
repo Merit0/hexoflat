@@ -4,6 +4,7 @@ import UserModel from "@/models/user-model";
 import router from "../router";
 import {useHeroStore} from "./hero-store";
 import {useWorldMapStore} from "@/stores/world-map-store";
+import { useOverlayStore } from "@/stores/overlay-store";
 
 export const useUserStore = defineStore('user', {
     state: () => ({
@@ -44,12 +45,14 @@ export const useUserStore = defineStore('user', {
 
             const heroStore = useHeroStore();
             const worldMapStore = useWorldMapStore();
+            const overlayStore = useOverlayStore();
 
             try {
                 this.user.setLoggedIn(false);
             } catch (error) {
                 console.error("Error during logout:", error);
             } finally {
+                overlayStore.closeOverlay();
                 worldMapStore.clearAllWorlds();
                 heroStore.resetHero();
 

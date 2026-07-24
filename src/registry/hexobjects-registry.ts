@@ -8,6 +8,8 @@ export const HEXOBJECT_KEYS = {
     AXE: "axe",
     HAND: "hand",
     PICKAXE: "pickaxe",
+    SWORD: "sword",
+    SHIELD: "shield",
     CAMPING_ENTRANCE: "camping-entrance",
     CAVE_ENTRANCE: "cave-entrance",
     HOMELAND_GATE: "homeland-gate",

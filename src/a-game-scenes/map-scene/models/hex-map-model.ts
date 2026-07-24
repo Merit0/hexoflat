@@ -5,6 +5,7 @@ import {IHexMapPlacement} from "@/abstraction/hex-map-placement";
 import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import {EHexobjectGroup, THexobject} from "@/abstraction/hexobject-abstraction";
 import {HexObjectFactory} from "@/factory/hex-object-factory";
+import { normalizeHealthValue } from "@/utils/combat/health-format";
 
 export type TFogPolicy = "FOG" | "ALL_REVEALED";
 
@@ -213,8 +214,8 @@ export default class HexMapModel implements IWorldMap {
         switch (saved.groupType) {
             case EHexobjectGroup.CREATURE: {
                 if ("creature" in built && "creature" in saved) {
-                    built.creature.hp = saved.creature.hp ?? built.creature.hp;
-                    built.creature.hpMax = saved.creature.hpMax ?? built.creature.hpMax;
+                    built.creature.hp = normalizeHealthValue(saved.creature.hp ?? built.creature.hp);
+                    built.creature.hpMax = normalizeHealthValue(saved.creature.hpMax ?? built.creature.hpMax, 0.1);
                     built.creature.attack = saved.creature.attack ?? built.creature.attack;
                     built.creature.faction = saved.creature.faction ?? built.creature.faction;
                     built.creature.visionRange = saved.creature.visionRange ?? built.creature.visionRange;

@@ -53,14 +53,12 @@ function resolveProtoFields(proto: THexobjectPrototype) {
             break;
         }
 
-        // case EHexobjectGroup.EQUIPMENT: {
-        //     defaultAmount = 1;
-        //     // slot беремо з факту "weapon => equip slot weapon"
-        //     equipSlot = "weapon" as TEquipSlot; // або якщо у вас є строгий тип слотів — поставимо точно
-        //     // якщо вага живе в equipment.traits, можна додати
-        //     // weightKg = proto.equipment.traits?.weightKg ?? 0;  // якщо додаси поле
-        //     break;
-        // }
+        case EHexobjectGroup.EQUIPMENT: {
+            defaultAmount = 1;
+            equipSlot = HEXOBJECT_META[proto.hexobjectKey]?.equip?.slot as TEquipSlot | undefined;
+            weightKg = proto.equipment.traits?.weightKG ?? 0;
+            break;
+        }
 
         case EHexobjectGroup.CREATURE: {
             defaultAmount = 1;
@@ -109,6 +107,7 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
     const metaStackable = !!meta?.traits?.stackable;
     const stackable = meta?.traits ? metaStackable : p.stackable;
     const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
+    const equipSlot = meta?.equip?.slot ?? p.equipSlot;
 
     return {
         group: p.group,
@@ -118,7 +117,7 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
         stackable,
         stackKey,
         defaultAmount: p.defaultAmount,
-        equipSlot: p.equipSlot,
+        equipSlot,
         weightKg: p.weightKg,
     };
 }

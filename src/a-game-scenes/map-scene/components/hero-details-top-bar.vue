@@ -74,12 +74,16 @@ const scoutRankLabel = computed(() => scoutProgress.value.rankLabel);
 const nextScoutRankAt = computed(() => scoutProgress.value.nextRankAt);
 const scoutRankShort = computed(() => `R${scoutProgress.value.current.rank}`);
 
-const heroHp = computed(() => heroStore.hero.currentHealth ?? 0);
-const heroHpMax = computed(() => heroStore.hero.maxHealth ?? 100);
+function formatHeroStat(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+const heroHp = computed(() => formatHeroStat(heroStore.hero.currentHealth ?? 0));
+const heroHpMax = computed(() => formatHeroStat(heroStore.hero.maxHealth ?? 100));
 
 const hpPercent = computed(() => {
-  const max = Math.max(1, Number(heroHpMax.value) || 1);
-  const val = Math.max(0, Math.min(max, Number(heroHp.value) || 0));
+  const max = Math.max(1, Number(heroStore.hero.maxHealth ?? 100) || 1);
+  const val = Math.max(0, Math.min(max, Number(heroStore.hero.currentHealth ?? 0) || 0));
   return Math.round((val / max) * 100);
 });
 

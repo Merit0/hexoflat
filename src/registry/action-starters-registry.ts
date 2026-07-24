@@ -10,12 +10,13 @@ import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroStore} from "@/stores/hero-store";
 import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
+import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
 
 export type StartResult =
     | { ok: true; endsAt: number }
     | { ok: false; message: string };
 
-export type ActionStarter = (tile: HexTileModel, tool: TToolKeys, now: number) => StartResult;
+export type ActionStarter = (tile: HexTileModel, tool: THeroToolKey, now: number) => StartResult;
 
 function isBusy(tile: HexTileModel, now: number): boolean {
     const action = tile.pendingAction;
@@ -40,6 +41,7 @@ export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
     USE: EHexActionType.USE,
     OPEN: EHexActionType.OPEN,
     ATTACK: EHexActionType.ATTACK,
+    BLOCK: EHexActionType.BLOCK,
     ENTER: EHexActionType.ENTER,
 };
 
@@ -166,7 +168,8 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const canTakeByGroup =
             obj.groupType === EHexobjectGroup.RESOURCE ||
             obj.groupType === EHexobjectGroup.LOOT ||
-            obj.groupType === EHexobjectGroup.TOOL;
+            obj.groupType === EHexobjectGroup.TOOL ||
+            obj.groupType === EHexobjectGroup.EQUIPMENT;
 
         if (!canTakeByGroup) {
             return { ok: false, message: "This object cannot be taken!" };
@@ -280,6 +283,14 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const worldMapStore = useWorldMapStore();
         const res = worldMapStore.performHeroCombatAttack(tile, _tool);
         if (!res.ok) return { ok: false, message: res.message };
+        return { ok: true, endsAt: now };
+    },
+
+    [EHexActionType.BLOCK]: (tile, _tool, now) => {
+        if (isBusy(tile, now)) return { ok: false, message: "Hex is busy!" };
+        const worldMapStore = useWorldMapStore();
+        const placed = worldMapStore.placeCombatDefendMarker(tile.coordinates, _tool);
+        if (!placed) return { ok: false, message: "Cannot place block here." };
         return { ok: true, endsAt: now };
     },
 

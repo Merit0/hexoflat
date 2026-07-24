@@ -19,6 +19,10 @@ import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
 import { executeMovementRoute } from "@/services/hero-movement/movement-executor";
 import router, { ROUTES } from "@/router";
 import { HexObjectFactory } from "@/factory/hex-object-factory";
+import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
+import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { normalizeHealthValue, roundToSingleDecimal } from "@/utils/combat/health-format";
 
 type TWorldState = {
     heroCoordinates: IHexCoordinates | null;
@@ -40,6 +44,7 @@ type CombatMarker = {
     coord: IHexCoordinates;
     kind: "defend" | "attack-trace";
     visible: boolean;
+    toolKey?: THeroToolKey | null;
 };
 
 const STORAGE_MAP_PREFIX = "hexoflat:world:map:v1:";
@@ -145,6 +150,23 @@ export const useWorldMapStore = defineStore("world-map-store", {
             const enemyTile = this.getTileAt(enemyCoords);
             if (enemyTile?.hexobject?.groupType !== EHexobjectGroup.CREATURE) return 1;
             return enemyTile.hexobject.creature.attack ?? 1;
+        },
+
+        getCombatMarkerDefense(toolKey?: THeroToolKey | null) {
+            if (!toolKey) return 0;
+
+            const proto = HEX_OBJECT_PROTOTYPES[toolKey];
+            if (!proto) return 0;
+
+            if (proto.groupType === EHexobjectGroup.EQUIPMENT) {
+                return Math.max(0, Number(proto.equipment.defense ?? 0));
+            }
+
+            if (proto.groupType === EHexobjectGroup.TOOL) {
+                return Math.max(0, Number(proto.tool.defense ?? 0));
+            }
+
+            return 0;
         },
 
         clearStoredLocation(locationKey: LocationKey, mapId: string) {
@@ -386,12 +408,12 @@ export const useWorldMapStore = defineStore("world-map-store", {
             this.saveToStorage();
         },
 
-        placeCombatDefendMarker(target: IHexCoordinates): boolean {
+        canPlaceCombatDefendMarker(target: IHexCoordinates): boolean {
             if (!this.combatActive) return false;
             if (this.combatTurnSide !== "hero") return false;
             if (this.isEnemyTurnResolving || this.isHeroMoving) return false;
-            if (this.combatActionMode !== "defend" || this.combatDefendUsed) return false;
             if (!this.heroCoordinates) return false;
+            if (this.combatDefendUsed) return false;
 
             const isAdjacent = getOddQNeighbors(this.heroCoordinates).some((n) =>
                 n.columnIndex === target.columnIndex && n.rowIndex === target.rowIndex
@@ -401,6 +423,16 @@ export const useWorldMapStore = defineStore("world-map-store", {
             const tile = this.getTileAt(target);
             if (!tile || !tile.isRevealed) return false;
             if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
+            if (tile.hexobject) return false;
+
+            return true;
+        },
+
+        placeCombatDefendMarker(target: IHexCoordinates, toolKey?: THeroToolKey | null): boolean {
+            if (!this.canPlaceCombatDefendMarker(target)) return false;
+
+            const capabilities = toolKey ? getToolCapabilities(toolKey) : {};
+            if (!capabilities.canBlock) return false;
 
             this.combatMarkers = this.combatMarkers.filter((marker) => {
                 if (marker.owner !== "hero") return true;
@@ -413,6 +445,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 coord: { ...target },
                 kind: "defend",
                 visible: true,
+                toolKey: toolKey ?? null,
             });
 
             this.combatDefendUsed = true;
@@ -477,6 +510,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                 coord: { ...chosen.coordinates },
                 kind: "defend",
                 visible: false,
+                toolKey: HEXOBJECT_KEYS.SHIELD,
             });
 
             useGameEventsStore().push("Combat", "enemy auto-raised shield", "INFO");
@@ -574,7 +608,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
                 await new Promise((resolve) => window.setTimeout(resolve, 5_000));
 
-                const blocked = this.combatMarkers.some((marker) =>
+                const blockingMarker = this.combatMarkers.find((marker) =>
                     marker.owner === "hero"
                     && marker.kind === "defend"
                     && marker.coord.columnIndex === chosenAttack.coord.columnIndex
@@ -587,16 +621,36 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     coord: { ...currentEnemyTile.coordinates },
                     kind: "attack-trace",
                     visible: true,
+                    toolKey: null,
                 });
                 this.saveToStorage();
                 this.revealCombatMarkers("hero");
 
-                if (blocked) {
-                    events.push("Combat", `${currentEnemyTile.hexobject?.creature?.name ?? "Enemy"} hit the shield`, "INFO");
+                const rawDamage = this.getEnemyAttackDamage(currentEnemyTile.coordinates);
+                const blockDefense = blockingMarker ? this.getCombatMarkerDefense(blockingMarker.toolKey) : 0;
+                const finalDamage = Math.max(0, Number((rawDamage - blockDefense).toFixed(1)));
+
+                if (blockingMarker && finalDamage <= 0) {
+                    events.push(
+                        "Combat",
+                        `${currentEnemyTile.hexobject?.creature?.name ?? "Enemy"} blocked by shield [dmg:0]`,
+                        "BATTLE"
+                    );
                 } else {
-                    const damage = this.getEnemyAttackDamage(currentEnemyTile.coordinates);
-                    heroStore.takeDamage(damage);
-                    events.push(currentEnemyTile.hexobject?.creature?.name ?? "Enemy", `hit ${heroStore.hero?.name ?? "Hero"} for ${damage}`, "INFO");
+                    heroStore.takeDamage(finalDamage);
+                    if (blockingMarker) {
+                        events.push(
+                            currentEnemyTile.hexobject?.creature?.name ?? "Enemy",
+                            `broke through block for [dmg:${finalDamage.toFixed(1)}]`,
+                            "BATTLE"
+                        );
+                    } else {
+                        events.push(
+                            currentEnemyTile.hexobject?.creature?.name ?? "Enemy",
+                            `hit ${heroStore.hero?.name ?? "Hero"} for [dmg:${finalDamage.toFixed(1)}]`,
+                            "BATTLE"
+                        );
+                    }
 
                     if ((heroStore.hero.currentHealth ?? 0) <= 0) {
                         await this.respawnHeroAtCamping();
@@ -648,7 +702,8 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (this.combatTurnSide !== "hero") return { ok: false, message: "Not hero turn." };
             if (this.isEnemyTurnResolving || this.isHeroMoving) return { ok: false, message: "Wait until enemy turn finishes." };
             if (this.combatAttackUsed) return { ok: false, message: "Attack already used this turn." };
-            if (toolKey !== HEXOBJECT_KEYS.AXE) return { ok: false, message: "Need an axe to attack." };
+            const capabilities = getToolCapabilities(toolKey as THeroToolKey);
+            if (!capabilities.canAttack) return { ok: false, message: "Need a weapon to attack." };
             if (!this.heroCoordinates) return { ok: false, message: "Hero position is missing." };
 
             const isAdjacent = getOddQNeighbors(this.heroCoordinates).some((n) =>
@@ -663,7 +718,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
             }
             const targetKey = obj.hexobjectKey;
 
-            const blocked = this.combatMarkers.some((marker) =>
+            const blockingMarker = this.combatMarkers.find((marker) =>
                 marker.owner === "enemy"
                 && marker.kind === "defend"
                 && marker.coord.columnIndex === this.heroCoordinates!.columnIndex
@@ -674,14 +729,40 @@ export const useWorldMapStore = defineStore("world-map-store", {
             this.combatActionMode = null;
             this.revealCombatMarkers("enemy");
 
-            if (blocked) {
-                useGameEventsStore().push("Combat", `${obj.creature.name} blocked the hit`, "INFO");
+            const attacker = HEX_OBJECT_PROTOTYPES[toolKey as keyof typeof HEX_OBJECT_PROTOTYPES];
+            const attackMultiplier =
+                attacker?.groupType === EHexobjectGroup.EQUIPMENT
+                    ? (attacker.weapon?.attackMultiplier ?? 1)
+                    : attacker?.groupType === EHexobjectGroup.TOOL
+                        ? (attacker.tool.attackMultiplier ?? 1)
+                    : 1;
+            const rawDamage = Math.max(0.1, Number(((heroStore.hero?.attack ?? 8) * attackMultiplier).toFixed(1)));
+            const blockDefense = blockingMarker ? this.getCombatMarkerDefense(blockingMarker.toolKey) : 0;
+            const damage = Math.max(0, Number((rawDamage - blockDefense).toFixed(1)));
+
+            if (blockingMarker && damage <= 0) {
+                useGameEventsStore().push(
+                    "Combat",
+                    `${obj.creature.name} blocked the hit [dmg:0]`,
+                    "BATTLE"
+                );
                 return { ok: true, message: "Attack was blocked." };
             }
 
-            const damage = Math.max(1, heroStore.hero?.attack ?? 8);
-            obj.creature.hp = Math.max(0, obj.creature.hp - damage);
-            useGameEventsStore().push(heroStore.hero?.name ?? "Hero", `hit ${obj.creature.name} for ${damage}`, "INFO");
+            obj.creature.hp = normalizeHealthValue(obj.creature.hp - damage);
+            if (blockingMarker) {
+                useGameEventsStore().push(
+                    heroStore.hero?.name ?? "Hero",
+                    `broke through block for [dmg:${damage.toFixed(1)}]`,
+                    "BATTLE"
+                );
+            } else {
+                useGameEventsStore().push(
+                    heroStore.hero?.name ?? "Hero",
+                    `hit ${obj.creature.name} for [dmg:${damage.toFixed(1)}]`,
+                    "BATTLE"
+                );
+            }
 
             if (obj.creature.hp <= 0) {
                 target.hexobject = this.currentLocationKey === "cave" && targetKey === HEXOBJECT_KEYS.SKELETOR
@@ -848,6 +929,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     coord: { ...marker.coord },
                     kind: marker.kind,
                     visible: marker.visible ?? true,
+                    toolKey: marker.toolKey ?? null,
                 })) ?? [];
             } else {
                 this.heroCoordinates = null;
@@ -925,6 +1007,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     coord: { ...marker.coord },
                     kind: marker.kind,
                     visible: marker.visible,
+                    toolKey: marker.toolKey ?? null,
                 })),
             };
 

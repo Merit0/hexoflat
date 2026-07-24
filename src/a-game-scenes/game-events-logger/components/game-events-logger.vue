@@ -4,7 +4,12 @@
       <div v-if="lastTwo.length" class="compact-lines">
         <div v-for="e in lastTwo" :key="e.id" class="compact-line">
           <span class="hero-name">{{ e.actor ?? '' }}</span>
-          <span class="msg">{{ e.message }}</span>
+          <span class="msg">
+            <template v-for="(segment, index) in parseMessageSegments(e.message)" :key="`${e.id}-compact-${index}`">
+              <span v-if="segment.kind === 'damage'" class="number-damage">{{ segment.text }}</span>
+              <span v-else>{{ segment.text }}</span>
+            </template>
+          </span>
           <span class="time">- {{ e.time }}</span>
         </div>
       </div>
@@ -26,7 +31,12 @@
 
           <div v-else class="row" v-for="e in list" :key="e.id">
             <span class="hero-name">{{ e.actor ?? '' }}</span>
-            <span class="row-msg">{{ e.message }}</span>
+            <span class="row-msg">
+              <template v-for="(segment, index) in parseMessageSegments(e.message)" :key="`${e.id}-row-${index}`">
+                <span v-if="segment.kind === 'damage'" class="number-damage">{{ segment.text }}</span>
+                <span v-else>{{ segment.text }}</span>
+              </template>
+            </span>
             <span class="row-time">{{ e.time }}</span>
           </div>
         </div>
@@ -84,6 +94,35 @@ function onDocClick(ev: MouseEvent) {
 
 function onKeyDown(ev: KeyboardEvent) {
   if (ev.key === "Escape") close();
+}
+
+type MessageSegment =
+    | { kind: "text"; text: string }
+    | { kind: "damage"; text: string };
+
+function parseMessageSegments(message: string): MessageSegment[] {
+  const segments: MessageSegment[] = [];
+  const regex = /\[dmg:([^\]]+)\]/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(message))) {
+    const [fullMatch, damageValue] = match;
+    const index = match.index;
+
+    if (index > lastIndex) {
+      segments.push({ kind: "text", text: message.slice(lastIndex, index) });
+    }
+
+    segments.push({ kind: "damage", text: damageValue });
+    lastIndex = index + fullMatch.length;
+  }
+
+  if (lastIndex < message.length) {
+    segments.push({ kind: "text", text: message.slice(lastIndex) });
+  }
+
+  return segments.length ? segments : [{ kind: "text", text: message }];
 }
 
 onMounted(() => {
