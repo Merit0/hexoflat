@@ -2,34 +2,16 @@
   <div class="overlay-backdrop game-root" @click.self="close">
     <div class="overlay-card">
       <header class="overlay-header">
-        <h2>Hex Tile Details</h2>
-        <button class="close-btn" @click="close">✕</button>
+        <h2>{{ title }}</h2>
+        <button class="close-btn" aria-label="Close" @click="close">✕</button>
       </header>
 
       <div v-if="tile" class="content">
-        <div v-if="!tile.hexobject" class="row"><span class="label">Place</span><span>Nothing around here</span></div>
-        <div v-if="tile.hexobject" class="row"><span class="label">image</span><span>{{ tile.hexobject?.spritePath }}</span></div>
-        <div class="row"><span class="label">revealed status</span><span>{{ tile.isRevealed }}</span></div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.RESOURCE" class="row">
-          <span class="label">Resource</span>
-          <span>[{{ tile.hexobject.description }}]</span>
+        <div v-if="categoryLabel" class="row">
+          <span class="label">{{ categoryLabel }}</span>
+          <span>{{ tile!.hexobject!.description || "No further details." }}</span>
         </div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.LOOT" class="row">
-          <span class="label">Loot</span>
-          <span>[{{ tile.hexobject.description }}]</span>
-        </div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CONSTRUCTION" class="row">
-          <span class="label">Construction</span>
-          <span>[{{ tile.hexobject.description }}]</span>
-        </div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CREATURE" class="row">
-          <span class="label">Creature</span>
-          <span>[{{ tile.hexobject.description }}]</span>
-        </div>
-        <div class="row">
-          <span class="label">coords</span>
-          <span>[{{ tile.coordinates.columnIndex }}, {{ tile.coordinates.rowIndex }}]</span>
-        </div>
+        <p v-else class="empty-note">Nothing of interest here.</p>
       </div>
 
       <div v-else class="content empty">
@@ -53,6 +35,15 @@ const props = defineProps<{
 const worldMapStore = useWorldMapStore();
 const overlayStore = useOverlayStore();
 
+const CATEGORY_LABELS: Record<EHexobjectGroup, string> = {
+  [EHexobjectGroup.RESOURCE]: "Resource",
+  [EHexobjectGroup.LOOT]: "Loot",
+  [EHexobjectGroup.CONSTRUCTION]: "Construction",
+  [EHexobjectGroup.CREATURE]: "Creature",
+  [EHexobjectGroup.TOOL]: "Tool",
+  [EHexobjectGroup.EQUIPMENT]: "Equipment",
+};
+
 const tile = computed(() => {
   const map = worldMapStore.map;
   if (!map) return null;
@@ -61,6 +52,22 @@ const tile = computed(() => {
       t.coordinates.columnIndex === props.data.coordinates.columnIndex &&
       t.coordinates.rowIndex === props.data.coordinates.rowIndex
   ) ?? null;
+});
+
+const categoryLabel = computed(() => {
+  const hexobject = tile.value?.hexobject;
+  if (!hexobject) return null;
+  return CATEGORY_LABELS[hexobject.groupType] ?? null;
+});
+
+const title = computed(() => {
+  const hexobject = tile.value?.hexobject;
+  if (!hexobject) return "Empty Tile";
+
+  if (hexobject.groupType === EHexobjectGroup.CREATURE) return hexobject.creature.name;
+  if (hexobject.groupType === EHexobjectGroup.LOOT) return hexobject.loot.name;
+
+  return categoryLabel.value ?? "Hex Tile";
 });
 
 function close() {
@@ -110,4 +117,5 @@ function close() {
 }
 .label { opacity: 0.7; }
 .empty { opacity: 0.7; text-align: center; padding: 20px; }
+.empty-note { opacity: 0.7; padding: 6px 8px; }
 </style>
