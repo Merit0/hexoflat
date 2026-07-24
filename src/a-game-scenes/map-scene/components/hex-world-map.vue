@@ -1,13 +1,14 @@
 <template>
-  <div class="scene-root game-root">
+  <div class="scene-root game-root" data-testid="map-scene-root">
     <hero-details-top-bar/>
     <combat-hud />
-    <div class="hex-map">
+    <div class="hex-map" data-testid="hex-map">
       <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
         <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
 
         <div
             class="hex-map-inner"
+            data-testid="hex-map-inner"
             :style="{
             width: mapBounds.width + 'px',
             height: mapBounds.height + 'px',
@@ -62,7 +63,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import HexTile from "@/a-game-scenes/map-scene/components/hex-tile.vue";
 import HeroHexTile from "@/a-game-scenes/map-scene/components/hero-hex-tile.vue";
-import { calcHexPixelPosition } from "@/utils/hex-utils";
+import { calcHexPixelPosition, hexTranslateStyle } from "@/utils/hex-utils";
 import { useTileClick } from "@/composables/use-tile-click";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import {resolveActions, ResolvedAction} from "@/game-resolvers/interactions-resolver";
@@ -256,16 +257,9 @@ const movePreviewSegments = computed(() => {
   const path = movePreview.value?.path;
   if (!path || path.length < 2) return [];
 
-  return path.slice(1).map((coord) => {
-    const pseudoTile = { coordinates: coord } as any;
-    const { x, y } = calcHexPixelPosition(pseudoTile, tileWidth);
-
-    return {
-      style: {
-        transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
-      } as Record<string, string>,
-    };
-  });
+  return path.slice(1).map((coord) => ({
+    style: hexTranslateStyle(coord, tileWidth, { round: true }),
+  }));
 });
 
 const movePreviewMarkerStyle = computed(() => {
@@ -366,11 +360,7 @@ const campHealHeartStyle = computed(() => {
   const coord = campHealEffectCoord.value;
   if (!coord) return null;
 
-  const pseudoTile = { coordinates: coord } as any;
-  const { x, y } = calcHexPixelPosition(pseudoTile, tileWidth);
-  return {
-    transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
-  } as Record<string, string>;
+  return hexTranslateStyle(coord, tileWidth, { round: true });
 });
 
 const campHealInfoLabel = computed(() => {

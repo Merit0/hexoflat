@@ -33,14 +33,7 @@ defineProps<{
   content: "";
   position: absolute;
   inset: 0;
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
   background: radial-gradient(circle at 50% 45%, rgba(132, 222, 156, 0.24), rgba(18, 68, 34, 0.82));
   box-shadow:
       0 0 0 1px rgba(148, 214, 166, 0.34),

@@ -2,6 +2,7 @@
   <div
       v-if="!isDragging"
       class="token"
+      :data-testid="`inventory-token-${item.id}`"
       :class="{
       'is-selected': isSelected,
     }"
@@ -16,6 +17,7 @@
     <div
         v-if="isDragging"
         class="token drag-ghost"
+        :data-testid="`inventory-token-${item.id}-drag-ghost`"
         :style="dragGhostStyle"
     >
       <div class="icon" :style="iconStyle"></div>
@@ -24,18 +26,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, Teleport, type CSSProperties } from "vue";
-import { useHeroInventoryStore, type InventoryItem, type TEquipSlot } from "@/stores/hero-inventory-store";
+import { computed, Teleport, type CSSProperties } from "vue";
+import { useHeroInventoryStore, type InventoryItem } from "@/stores/hero-inventory-store";
 import { resolveInventoryView } from "@/utils/inventory/traits-resolver";
-
-type DragTarget =
-    | { kind: "grid"; slotKey: string }
-    | { kind: "equip"; equipSlot: TEquipSlot }
-    | null;
+import { useInventoryDragHandle } from "@/composables/use-inventory-drag";
 
 const props = defineProps<{ item: InventoryItem }>();
 
 const inventoryStore = useHeroInventoryStore();
+const { onPointerDown } = useInventoryDragHandle(() => props.item.id);
 
 const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
 const isSelected = computed(() => inventoryStore.selectedItemId === props.item.id);
@@ -69,98 +68,6 @@ function onClick() {
   if (inventoryStore.isDragging) return;
   inventoryStore.toggleSelect(props.item.id);
 }
-
-function getDragTargetFromPoint(x: number, y: number): DragTarget {
-  const els = document.elementsFromPoint(x, y) as HTMLElement[];
-
-  const equipHex = els.find((el) =>
-      el instanceof HTMLElement &&
-      el.classList.contains("equip-hex")
-  );
-
-  if (equipHex) {
-    const slot = equipHex.dataset.eqslot as TEquipSlot | undefined;
-    if (slot) return { kind: "equip", equipSlot: slot };
-  }
-
-  const cell = els.find((el) =>
-      el instanceof HTMLElement &&
-      el.classList.contains("cell") &&
-      !el.classList.contains("blocked")
-  );
-
-  if (cell) {
-    const slotKey = cell.dataset.slotkey;
-    if (slotKey) return { kind: "grid", slotKey };
-  }
-
-  return null;
-}
-
-function onPointerDown(e: PointerEvent) {
-  if (e.button !== 0) return;
-
-  const target = e.currentTarget as HTMLElement;
-  const rect = target.getBoundingClientRect();
-
-  let dragStarted = false;
-
-  const startX = e.clientX;
-  const startY = e.clientY;
-
-  const onMove = (ev: PointerEvent) => {
-    const dx = ev.clientX - startX;
-    const dy = ev.clientY - startY;
-
-    if (!dragStarted && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
-      dragStarted = true;
-      inventoryStore.startDrag(props.item.id, startX, startY, rect);
-    }
-
-    if (!dragStarted) return;
-
-    inventoryStore.updateDragPointer(ev.clientX, ev.clientY);
-
-    const dragTarget = getDragTargetFromPoint(ev.clientX, ev.clientY);
-
-    if (dragTarget?.kind === "grid") {
-      inventoryStore.setDragOver(dragTarget.slotKey);
-      inventoryStore.setDragOverEquip(null);
-    } else if (dragTarget?.kind === "equip") {
-      inventoryStore.setDragOver(null);
-      inventoryStore.setDragOverEquip(dragTarget.equipSlot);
-    } else {
-      inventoryStore.setDragOver(null);
-      inventoryStore.setDragOverEquip(null);
-    }
-  };
-
-  const onUp = (ev: PointerEvent) => {
-    if (dragStarted) {
-      const dragTarget = getDragTargetFromPoint(ev.clientX, ev.clientY);
-
-      if (dragTarget?.kind === "grid") {
-        inventoryStore.dropTo(dragTarget.slotKey);
-      } else if (dragTarget?.kind === "equip") {
-        inventoryStore.dropToEquip(dragTarget.equipSlot);
-      } else {
-        inventoryStore.cancelDrag();
-      }
-    }
-
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", onUp);
-  };
-
-  window.addEventListener("pointermove", onMove);
-  window.addEventListener("pointerup", onUp);
-}
-
-onBeforeUnmount(() => {
-  if (inventoryStore.draggingId === props.item.id) {
-    inventoryStore.cancelDrag();
-  }
-});
 </script>
 
 <style scoped>

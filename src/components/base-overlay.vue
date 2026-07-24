@@ -1,6 +1,7 @@
 <template>
   <div
       class="overlay-root"
+      data-testid="overlay-root"
       :class="{ 'overlay-root--active': overlay.stack.length > 0 }"
   >
     <component
@@ -8,6 +9,7 @@
         :key="entry.name + i"
         :is="registry[entry.name]"
         :data="entry.data"
+        :data-testid="`overlay-${entry.name}`"
         :style="{ zIndex: 2000 + i }"
         @close="overlay.closeOverlay(entry.name)"
     />

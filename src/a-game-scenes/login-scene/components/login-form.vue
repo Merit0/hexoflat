@@ -1,12 +1,12 @@
 <template>
-    <form class="login-form game-root" @submit.prevent="onSubmit" novalidate>
+    <form class="login-form game-root" data-testid="login-form" @submit.prevent="onSubmit" novalidate>
       <div class="form-field">
         <label class="sr-only" for="login-username">Username</label>
         <input
             id="login-username"
             v-model.trim="form.username"
             class="login-form-input"
-            data-testid="username"
+            data-testid="login-username-input"
             type="text"
             maxlength="40"
             autocomplete="username"
@@ -21,7 +21,7 @@
             id="login-password"
             v-model.trim="form.password"
             class="login-form-input"
-            data-testid="password"
+            data-testid="login-password-input"
             :type="showPassword ? 'text' : 'password'"
             maxlength="40"
             autocomplete="current-password"
@@ -32,6 +32,7 @@
         <button
             type="button"
             class="toggle-password"
+            data-testid="login-toggle-password-button"
             @click="togglePassword"
             aria-label="Toggle password visibility"
         >
@@ -40,6 +41,7 @@
       </div>
       <button
           class="login-form-submit"
+          data-testid="login-submit-button"
           type="submit"
           :disabled="isLoading"
           aria-label="Sign in"
@@ -48,7 +50,7 @@
       </button>
     </form>
     <transition name="fade">
-      <div v-if="userStore.error" class="login-form-error" role="alert" aria-live="assertive">
+      <div v-if="userStore.error" class="login-form-error" data-testid="login-error-message" role="alert" aria-live="assertive">
         {{ userStore.error }}
       </div>
     </transition>
@@ -78,7 +80,8 @@ export default defineComponent({
       try {
         isLoading.value = true;
 
-        await userStore.login(form.username, form.password);
+        const success = await userStore.login(form.username, form.password);
+        if (!success) return;
 
         form.username = '';
         form.password = '';

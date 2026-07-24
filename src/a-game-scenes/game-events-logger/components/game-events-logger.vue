@@ -1,6 +1,6 @@
 <template>
-  <div ref="rootEl" class="game-events-logger" :class="{ open: isOpen }">
-    <button class="logger-compact" type="button" @click="toggle" aria-haspopup="true" :aria-expanded="isOpen">
+  <div ref="rootEl" class="game-events-logger" :class="{ open: isOpen }" data-testid="events-logger">
+    <button class="logger-compact" data-testid="events-logger-toggle" type="button" @click="toggle" aria-haspopup="true" :aria-expanded="isOpen">
       <div v-if="lastTwo.length" class="compact-lines">
         <div v-for="e in lastTwo" :key="e.id" class="compact-line">
           <span class="hero-name">{{ e.actor ?? '' }}</span>
@@ -20,16 +20,16 @@
     </button>
 
     <transition name="logger-fade">
-      <div v-if="isOpen" class="logger-dropdown" role="menu">
+      <div v-if="isOpen" class="logger-dropdown" data-testid="events-logger-dropdown" role="menu">
         <div class="dropdown-head">
           <div class="title">Events (last 50)</div>
-          <button class="clear" type="button" @click="gameEventsStore.clear">Clear</button>
+          <button class="clear" data-testid="events-logger-clear-button" type="button" @click="gameEventsStore.clear">Clear</button>
         </div>
 
         <div class="dropdown-list">
           <div v-if="!list.length" class="dropdown-empty">No events yet</div>
 
-          <div v-else class="row" v-for="e in list" :key="e.id">
+          <div v-else class="row" v-for="e in list" :key="e.id" :data-testid="`events-logger-row-${e.id}`">
             <span class="hero-name">{{ e.actor ?? '' }}</span>
             <span class="row-msg">
               <template v-for="(segment, index) in parseMessageSegments(e.message)" :key="`${e.id}-row-${index}`">

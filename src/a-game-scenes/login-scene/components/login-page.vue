@@ -1,5 +1,5 @@
 <template>
-  <section class="login-page">
+  <section class="login-page" data-testid="login-page">
     <main class="login-container">
       <div class="login-form-image">
         <login-form></login-form>

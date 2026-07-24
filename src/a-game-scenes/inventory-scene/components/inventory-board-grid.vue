@@ -9,6 +9,7 @@
           :key="cell.key"
           class="cell"
           :data-slotkey="cell.key"
+          :data-testid="`inventory-cell-${cell.key}`"
           :class="{
           blocked: cell.blocked,
           selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId,

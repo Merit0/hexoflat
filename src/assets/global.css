@@ -68,6 +68,12 @@
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 18px;
+
+    /* ===== Hex geometry =====
+       Single source of truth for the flat-top hexagon silhouette.
+       Every hex-shaped element (tiles, tokens, overlays, equip slots)
+       should reference this instead of repeating the polygon() literal. */
+    --hex-clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
 }
 
 /* === RESET === */

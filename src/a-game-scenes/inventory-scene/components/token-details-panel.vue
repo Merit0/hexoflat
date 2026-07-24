@@ -1,10 +1,10 @@
 <template>
-  <div class='panel'>
+  <div class='panel' data-testid="token-details-panel">
     <div class='top'>
       <div class='thumb' :style='thumbStyle'></div>
 
       <div class='meta'>
-        <div class='title'>{{ traits.title }}</div>
+        <div class='title' data-testid="token-details-title">{{ traits.title }}</div>
         <div class='sub'>{{ item.key }}</div>
       </div>
     </div>
@@ -21,9 +21,9 @@
     </div>
 
     <div class='actions'>
-      <button class='btn' disabled>Use</button>
-      <button class='btn' disabled>Equip</button>
-      <button class='btn' disabled>Drop</button>
+      <button class='btn' data-testid="token-details-use-button" disabled>Use</button>
+      <button class='btn' data-testid="token-details-equip-button" disabled>Equip</button>
+      <button class='btn' data-testid="token-details-drop-button" disabled>Drop</button>
     </div>
   </div>
 </template>

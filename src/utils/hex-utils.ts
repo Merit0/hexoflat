@@ -1,7 +1,16 @@
 import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 
 export type Axial = { q: number; r: number };
+
+/**
+ * Anything that can be pixel-positioned on the hex grid.
+ * Deliberately narrower than IHexTile (Interface Segregation) so callers
+ * that only have coordinates (previews, markers, pseudo-tiles) don't need
+ * `as any` casts to a full tile model just to compute a position.
+ */
+export interface IHexPositioned {
+    coordinates: IHexCoordinates;
+}
 
 // odd-q offset -> axial
 export function oddQToAxial(c: IHexCoordinates): Axial {
@@ -47,7 +56,7 @@ export function hexDistance(from: IHexCoordinates, to: IHexCoordinates): number 
 }
 
 export function calcHexPixelPosition(
-    tile: IHexTile,
+    tile: IHexPositioned,
     tileWidth: number,
     spacing = 0.93
 ) {
@@ -62,6 +71,26 @@ export function calcHexPixelPosition(
         (r + (q % 2 ? 0.5 : 0));
 
     return { x, y };
+}
+
+/**
+ * Builds a ready-to-use `{ transform: translate(...) }` style object for a
+ * hex-positioned element. Centralizes a pattern that used to be re-typed in
+ * every component that places something on the hex grid (hero token, move
+ * preview markers, camp-heal effect, etc).
+ */
+export function hexTranslateStyle(
+    coord: IHexCoordinates,
+    tileWidth: number,
+    options: { round?: boolean } = {}
+): Record<string, string> {
+    const { x, y } = calcHexPixelPosition({ coordinates: coord }, tileWidth);
+    const px = options.round ? Math.round(x) : x;
+    const py = options.round ? Math.round(y) : y;
+
+    return {
+        transform: `translate(${px}px, ${py}px)`,
+    };
 }
 
 /**

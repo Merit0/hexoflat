@@ -1,10 +1,10 @@
 <template>
-  <div class="overlay-backdrop game-root" @click.self="closeInventory()">
+  <div class="overlay-backdrop game-root" data-testid="inventory-overlay" @click.self="closeInventory()">
     <div class="board">
       <header class="board-top">
         <div class="tabs">
-          <button class="tab is-active">Inventory</button>
-          <button class="tab is-disabled" disabled>Skills</button>
+          <button class="tab is-active" data-testid="inventory-tab-inventory">Inventory</button>
+          <button class="tab is-disabled" data-testid="inventory-tab-skills" disabled>Skills</button>
         </div>
       </header>
 
@@ -18,7 +18,7 @@
 
       <!-- (опційно) нижня панель, поки пусто -->
       <footer class="board-bottom">
-        <div class="hint">
+        <div class="hint" data-testid="inventory-hint">
           <span v-if="selectedItem">Click token again to close details</span>
           <span v-else>Pick items on map → tokens appear here</span>
         </div>

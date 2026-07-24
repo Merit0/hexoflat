@@ -1,5 +1,5 @@
 <template>
-  <div class="tool-hex-pos" :style="posStyle">
+  <div class="tool-hex-pos" :style="posStyle" data-testid="tool-hex-tile">
     <div
         class="tool-hex-tile"
         :class="{ doing: isWorking }"
@@ -9,15 +9,16 @@
         <button
             v-if="bestActionLabel"
             class="do-btn"
+            data-testid="tool-action-button"
             @click.stop="executeAction"
         >
           {{ bestActionLabel }}
         </button>
 
-        <button v-else class="hide-btn" @click.stop="emit('hide')">-</button>
+        <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">-</button>
       </div>
 
-      <div v-if="isWorking" class="time-chip label">{{ secondsLeft }}s</div>
+      <div v-if="isWorking" class="time-chip label" data-testid="tool-working-timer">{{ secondsLeft }}s</div>
     </div>
   </div>
 </template>
@@ -260,14 +261,7 @@ function executeAction() {
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
 
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
 
   z-index: 120;
   pointer-events: auto;

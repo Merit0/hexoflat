@@ -2,11 +2,11 @@
   <div class="overlay-backdrop game-root" @click.self="close">
     <div class="overlay-card">
       <header class="overlay-header">
-        <h2>{{ title }}</h2>
-        <button class="close-btn" aria-label="Close" @click="close">✕</button>
+        <h2 data-testid="tile-details-title">{{ title }}</h2>
+        <button class="close-btn" data-testid="tile-details-close-button" aria-label="Close" @click="close">✕</button>
       </header>
 
-      <div v-if="tile" class="content">
+      <div v-if="tile" class="content" data-testid="tile-details-content">
         <div v-if="categoryLabel" class="row">
           <span class="label">{{ categoryLabel }}</span>
           <span>{{ tile!.hexobject!.description || "No further details." }}</span>

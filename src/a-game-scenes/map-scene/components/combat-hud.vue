@@ -1,23 +1,24 @@
 <template>
-  <aside v-if="worldStore.combatActive" class="combat-hud">
+  <aside v-if="worldStore.combatActive" class="combat-hud" data-testid="combat-hud">
     <div class="combat-hud__title">Combat Mode</div>
 
     <div class="combat-hud__row">
-      <span class="chip">Turn: <b>{{ actorLabel }}</b></span>
-      <span class="chip">Steps Left: <b>{{ worldStore.combatStepsLeft }}</b></span>
+      <span class="chip" data-testid="combat-hud-turn-chip">Turn: <b>{{ actorLabel }}</b></span>
+      <span class="chip" data-testid="combat-hud-steps-left-chip">Steps Left: <b>{{ worldStore.combatStepsLeft }}</b></span>
       <span class="chip">Move Budget: <b>{{ moveBudget }}</b></span>
-      <span class="chip timer">Timer: <b>{{ secondsLeft }}s</b></span>
+      <span class="chip timer" data-testid="combat-hud-timer">Timer: <b>{{ secondsLeft }}s</b></span>
     </div>
 
     <div class="combat-hud__row">
-      <span class="chip" v-if="worldStore.combatActionMode">Mode: <b>{{ worldStore.combatActionMode.toUpperCase() }}</b></span>
-      <span class="chip" v-else>Mode: <b>NONE</b></span>
+      <span class="chip" data-testid="combat-hud-mode-chip" v-if="worldStore.combatActionMode">Mode: <b>{{ worldStore.combatActionMode.toUpperCase() }}</b></span>
+      <span class="chip" data-testid="combat-hud-mode-chip" v-else>Mode: <b>NONE</b></span>
       <span class="chip" v-if="worldStore.combatTurnSide === 'enemy'">Enemy is acting</span>
     </div>
 
     <div class="combat-hud__actions">
       <button
           class="combat-icon attack"
+          data-testid="combat-hud-attack-button"
           :class="{ 'is-glowing': attackReady, 'is-dim': !attackReady }"
           type="button"
           disabled
@@ -26,7 +27,7 @@
         <span>🪓</span>
       </button>
 
-      <button class="combat-btn end" type="button" :disabled="!heroControlsEnabled" @click="worldStore.advanceCombatTurn()">Next Turn</button>
+      <button class="combat-btn end" data-testid="combat-hud-next-turn-button" type="button" :disabled="!heroControlsEnabled" @click="worldStore.advanceCombatTurn()">Next Turn</button>
     </div>
   </aside>
 </template>

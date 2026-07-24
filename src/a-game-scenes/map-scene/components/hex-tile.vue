@@ -1,6 +1,7 @@
 <template>
   <div
       class="hex-tile game-root"
+      :data-testid="`hex-tile-${hexTile.coordinates.columnIndex}-${hexTile.coordinates.rowIndex}`"
       :style="getHexTileTransformStyle(hexTile)"
       @click="emit('tile-click', hexTile)"
       @pointerenter="onEnter"
@@ -12,7 +13,7 @@
         :style="{ backgroundImage: `url('${defendMarkerSpritePath}')` }"
     ></div>
     <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)"></div>
-    <div v-if="constructionLockLabel" class="hex-tile-lock-chip">
+    <div v-if="constructionLockLabel" class="hex-tile-lock-chip" data-testid="hex-tile-lock-chip">
       {{ constructionLockLabel }}
     </div>
   </div>
@@ -137,14 +138,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   height: var(--hex-tile-height);
   position: absolute;
 
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
 
   display: flex;
   align-items: center;
@@ -174,14 +168,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 .tool-target-glow {
   position: absolute;
   pointer-events: none;
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
 
   animation: glowPulse 1.25s ease-in-out infinite;
 }

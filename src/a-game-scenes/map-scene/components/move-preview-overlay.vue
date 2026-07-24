@@ -38,14 +38,7 @@ defineProps<{
   height: var(--hex-tile-height);
   pointer-events: none;
   z-index: 95;
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 

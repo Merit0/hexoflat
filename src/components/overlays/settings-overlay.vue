@@ -3,11 +3,12 @@
     <div class="overlay-card">
       <header class="overlay-header">
         <h2>Settings</h2>
-        <button class="close-btn" type="button" @click="close">Close</button>
+        <button class="close-btn" data-testid="settings-close-button" type="button" @click="close">Close</button>
       </header>
 
       <label class="setting-row">
         <input
+            data-testid="settings-move-trail-checkbox"
             :checked="uiSettings.showHeroMoveTrail"
             type="checkbox"
             @change="uiSettings.setHeroMoveTrail(($event.target as HTMLInputElement).checked)"
@@ -17,6 +18,7 @@
 
       <label class="setting-row">
         <input
+            data-testid="settings-vision-checkbox"
             :checked="uiSettings.showEnemyVisionArea"
             type="checkbox"
             @change="uiSettings.setEnemyVisionArea(($event.target as HTMLInputElement).checked)"

@@ -21,14 +21,7 @@ defineProps<{
   position: absolute;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
   pointer-events: none;
   z-index: 55;
   background:

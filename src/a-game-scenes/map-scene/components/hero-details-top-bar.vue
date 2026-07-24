@@ -1,10 +1,10 @@
 <template>
-  <header class="topbar">
+  <header class="topbar" data-testid="topbar">
     <div class="topbar__left">
       <div class="hero-badge">
         <div class="hero-badge__sub">
-          <div class="hero-badge__name chip">{{ heroName }}</div>
-          <div class="chip chip--with-popover">
+          <div class="hero-badge__name chip" data-testid="topbar-hero-name">{{ heroName }}</div>
+          <div class="chip chip--with-popover" data-testid="topbar-steps-chip">
             Steps: <b>{{ heroSteps }}</b>
             <div class="chip-popover">
               <div class="chip-popover__title">{{ scoutRankLabel }}</div>
@@ -16,32 +16,32 @@
               </div>
             </div>
           </div>
-          <span class="chip">Scout: <b>{{ scoutRankShort }}</b></span>
-          <span class="chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
-          <span class="chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
-          <span class="chip muted" v-else>Status: <b>READY</b></span>
+          <span class="chip" data-testid="topbar-scout-chip">Scout: <b>{{ scoutRankShort }}</b></span>
+          <span class="chip" data-testid="topbar-tool-chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
+          <span class="chip" data-testid="topbar-status-chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
+          <span class="chip muted" data-testid="topbar-status-chip" v-else>Status: <b>READY</b></span>
         </div>
       </div>
     </div>
 
     <div class="topbar__center chip">
-      <div class="stat">
+      <div class="stat" data-testid="topbar-hp-bar">
         <div class="stat__label">HP</div>
         <div class="stat__bar">
           <div class="stat__fill" :style="{ width: hpPercent + '%' }"></div>
         </div>
-        <div class="stat__value">{{ heroHp }}/{{ heroHpMax }}</div>
+        <div class="stat__value" data-testid="topbar-hp-value">{{ heroHp }}/{{ heroHpMax }}</div>
       </div>
     </div>
 
     <div class="topbar__right">
-      <span class="chip">Map: <b>{{ heroLocation }}</b></span>
-      <button class="settings-btn" type="button" @click="openSettings">⚙</button>
+      <span class="chip" data-testid="topbar-map-chip">Map: <b>{{ heroLocation }}</b></span>
+      <button class="settings-btn" data-testid="topbar-settings-button" type="button" @click="openSettings">⚙</button>
       <div class="topbar__logger">
         <game-events-logger/>
       </div>
 
-      <button @click="userStore.logout()" class="logout">Logout</button>
+      <button @click="userStore.logout()" class="logout" data-testid="topbar-logout-button">Logout</button>
     </div>
   </header>
 </template>

@@ -1,6 +1,7 @@
 <template>
   <div
       class="hero-hex-tile"
+      data-testid="hero-token"
       role="button"
       tabindex="0"
       aria-label="Open hero inventory"
@@ -14,7 +15,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import { calcHexPixelPosition } from "@/utils/hex-utils";
+import { hexTranslateStyle } from "@/utils/hex-utils";
 import {useOverlayStore} from "@/stores/overlay-store";
 
 const props = defineProps<{
@@ -26,12 +27,8 @@ const style = computed(() => {
   if (!props.coord) {
     return { display: "none" } as Record<string, string>;
   }
-  const pseudoTile = { coordinates: props.coord } as any;
-  const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
 
-  return {
-    transform: `translate(${x}px, ${y}px)`,
-  } as Record<string, string>;
+  return hexTranslateStyle(props.coord, props.tileWidth);
 });
 
 const openInventory = () => {
@@ -49,14 +46,7 @@ const openInventory = () => {
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
 
   /* smooth hero move between tiles */
   transition: transform 180ms ease-out;

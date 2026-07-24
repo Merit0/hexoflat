@@ -3,6 +3,7 @@
     <div class="equip-wrapper" :style="{ transform: `scale(${scale})` }">
       <div
           class="carry-weight-badge"
+          data-testid="equip-carry-weight"
           :class="{ over: inventoryStore.isOverCapacity }"
       >
         <div class="weight-icon" aria-hidden="true">⚖</div>
@@ -22,6 +23,7 @@
             t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id) ? 'is-occupied' : ''
           ]"
             :data-eqslot="t.kind === 'slot' ? t.id : undefined"
+            :data-testid="t.kind === 'slot' ? `equip-slot-${t.id}` : 'equip-hero-slot'"
             :style="[tileStyle(t), { width: HEX_SIZE + 'px', height: HEX_SIZE + 'px' }]"
         >
           <div
