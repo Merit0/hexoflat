@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from "vue";
 import { useOverlayStore } from "@/stores/overlay-store";
 import HeroInventoryOverlay from "@/a-game-scenes/inventory-scene/components/hero-inventory-overlay.vue";
 import HexTileDetailsOverlay from "@/components/overlays/hex-tile-details-overlay.vue";
@@ -27,6 +28,18 @@ const registry = {
   "hex-tile-details": HexTileDetailsOverlay,
   "settings": SettingsOverlay,
 } as const;
+
+// ✅ Escape закриває верхній оверлей у стеку, як і очікує гравець.
+function onKeyDown(event: KeyboardEvent) {
+  if (event.key !== "Escape") return;
+  if (!overlay.stack.length) return;
+
+  event.preventDefault();
+  overlay.closeTop();
+}
+
+onMounted(() => document.addEventListener("keydown", onKeyDown));
+onBeforeUnmount(() => document.removeEventListener("keydown", onKeyDown));
 </script>
 
 <style scoped>

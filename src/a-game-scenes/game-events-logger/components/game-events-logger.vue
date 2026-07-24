@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
 }
 
 .logger-compact {
-  width: 360px;
+  width: min(360px, 46vw);
   height: 44px;
   padding: 8px 10px;
   border-radius: 10px;
@@ -194,7 +194,7 @@ onBeforeUnmount(() => {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  width: 420px;
+  width: min(420px, 92vw);
   border-radius: 12px;
   border: 1px solid rgba(210, 235, 255, 0.45);
   background: rgba(8, 10, 14, 0.78);

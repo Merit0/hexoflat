@@ -1,5 +1,14 @@
 <template>
-  <div class="hero-hex-tile" @click="openInventory" :style="style"></div>
+  <div
+      class="hero-hex-tile"
+      role="button"
+      tabindex="0"
+      aria-label="Open hero inventory"
+      :style="style"
+      @click="openInventory"
+      @keydown.enter="openInventory"
+      @keydown.space.prevent="openInventory"
+  ></div>
 </template>
 
 <script setup lang="ts">
@@ -53,5 +62,10 @@ const openInventory = () => {
   transition: transform 180ms ease-out;
 
   z-index: 100;
+}
+
+.hero-hex-tile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(150, 200, 255, 0.85);
 }
 </style>

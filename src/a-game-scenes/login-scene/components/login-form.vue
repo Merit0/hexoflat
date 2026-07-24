@@ -1,26 +1,30 @@
 <template>
     <form class="login-form game-root" @submit.prevent="onSubmit" novalidate>
       <div class="form-field">
+        <label class="sr-only" for="login-username">Username</label>
         <input
+            id="login-username"
             v-model.trim="form.username"
             class="login-form-input"
             data-testid="username"
             type="text"
             maxlength="40"
-            autocomplete="off"
+            autocomplete="username"
             placeholder="Username"
             required
             @input="clearError"
         />
       </div>
       <div class="form-field">
+        <label class="sr-only" for="login-password">Password</label>
         <input
+            id="login-password"
             v-model.trim="form.password"
             class="login-form-input"
             data-testid="password"
             :type="showPassword ? 'text' : 'password'"
             maxlength="40"
-            autocomplete="off"
+            autocomplete="current-password"
             placeholder="Password"
             required
             @input="clearError"
@@ -44,7 +48,7 @@
       </button>
     </form>
     <transition name="fade">
-      <div v-if="userStore.error" class="login-form-error">
+      <div v-if="userStore.error" class="login-form-error" role="alert" aria-live="assertive">
         {{ userStore.error }}
       </div>
     </transition>
