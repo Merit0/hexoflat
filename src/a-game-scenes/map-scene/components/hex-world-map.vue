@@ -84,10 +84,10 @@ import { EHexCollision, EHexobjectGroup } from "@/abstraction/hexobject-abstract
 import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
 import { useUiSettingsStore } from "@/stores/ui-settings-store";
-import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-store";
-import type { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { useHeroInventoryStore } from "@/stores/hero-inventory-store";
+import type { TEquipSlot } from "@/abstraction/hexobject-abstraction";
+import type { THeroToolKey } from "@/content/equipment.content";
 import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
 import { getTileWidth } from "@/a-game-scenes/map-scene/constants/hex-grid-constants";
 
 const props = defineProps<{

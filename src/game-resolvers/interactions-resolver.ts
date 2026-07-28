@@ -1,10 +1,8 @@
 import {EHexobjectGroup, IResourceTraits, THexobject} from "@/abstraction/hexobject-abstraction";
 import {EHexActionType} from "@/enums/hex-action-type";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta";
 import type {RouteLocationRaw} from "vue-router";
-import {IHexobjectMeta} from "@/registry/hexobject-meta/hexobject-meta-abstraction";
-import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import {getPrototype, getMeta, type IHexobjectMeta} from "@/content";
+import { THeroToolKey } from "@/content/equipment.content";
 
 export interface ToolCapabilities {
     canCut?: boolean;
@@ -34,7 +32,7 @@ export interface ResolvedAction {
 }
 
 export function getToolCapabilities(toolKey: THeroToolKey): ToolCapabilities {
-    const toolProto = HEX_OBJECT_PROTOTYPES[toolKey];
+    const toolProto = getPrototype(toolKey);
 
     if (!toolProto) return {};
 
@@ -56,7 +54,7 @@ function labelFromMeta(obj: THexobject, action: EHexActionType, fallback: string
     const key = obj.hexobjectKey;
     if (!key) return fallback;
 
-    const meta: IHexobjectMeta = HEXOBJECT_META[key];
+    const meta: IHexobjectMeta = getMeta(key);
     return meta?.actions?.[action]?.label ?? fallback;
 }
 
@@ -136,7 +134,7 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
             const key = obj.hexobjectKey;
             if (!key) break;
 
-            const meta = HEXOBJECT_META[key];
+            const meta = getMeta(key);
             const useCfg = meta?.actions?.[EHexActionType.USE];
             const enterCfg = meta?.actions?.[EHexActionType.ENTER];
 

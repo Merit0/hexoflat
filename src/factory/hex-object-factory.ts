@@ -1,17 +1,12 @@
 import { coordinateKey } from "@/utils/hex-utils";
 import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
 import { EHexobjectGroup, type THexobject, type THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { getPrototype } from "@/content";
 import {THexobjectKey} from "@/registry/hexobjects-registry";
 
 export class HexObjectFactory {
     static create(key: THexobjectKey, coord: IHexCoordinates, overrides?: Record<string, any>): THexobject {
-        const proto: THexobjectPrototype = HEX_OBJECT_PROTOTYPES[key];
-
-        if (!proto) {
-            throw new Error(`Unknown Hexobject key: [ ${key} ]`);
-        }
-
+        const proto: THexobjectPrototype = getPrototype(key);
         const base: THexobjectPrototype = structuredClone(proto);
         const id = `${coordinateKey(coord)}:${key}`;
         const built: THexobject = { ...(base as any), id };

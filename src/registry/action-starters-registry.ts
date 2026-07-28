@@ -2,15 +2,15 @@ import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model
 import {EHexActionType} from "@/enums/hex-action-type";
 import {EHexobjectGroup, IResourceTraits} from "@/abstraction/hexobject-abstraction";
 import {getToolCapabilities, ResolvedActionType} from "@/game-resolvers/interactions-resolver";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta";
+import {getMeta} from "@/content";
 import {useHeroToolStore} from "@/stores/hero-tool-store";
 import {useWorldMapStore} from "@/stores/world-map-store";
 import router, {ROUTES} from "@/router";
 import {useGameEventsStore} from "@/stores/game-events-store";
 import {useHeroStore} from "@/stores/hero-store";
-import {TToolKeys} from "@/registry/hexobjects/prototypes/tools.prototypes";
+import {TToolKeys} from "@/content/tools.content";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { THeroToolKey } from "@/content/equipment.content";
 
 export type StartResult =
     | { ok: true; endsAt: number }
@@ -64,7 +64,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             return {ok: false, message: "This resource is not cuttable!"};
         }
 
-        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const meta = getMeta(obj.hexobjectKey);
         const cutCfg = meta?.actions?.[EHexActionType.CUT];
 
         const requiredTool: TToolKeys = cutCfg?.requiredTool ?? HEXOBJECT_KEYS.AXE;
@@ -120,7 +120,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             return {ok: false, message: "This resource is not mineable!"};
         }
 
-        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const meta = getMeta(obj.hexobjectKey);
         const mineCfg = meta?.actions?.[EHexActionType.MINE];
 
         const requiredTool: TToolKeys = mineCfg?.requiredTool ?? HEXOBJECT_KEYS.PICKAXE;
@@ -186,7 +186,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
             }
         }
 
-        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const meta = getMeta(obj.hexobjectKey);
         const cfg = meta?.actions?.[EHexActionType.TAKE];
 
         const requiredTool = cfg?.requiredTool ?? HEXOBJECT_KEYS.HAND;
@@ -230,7 +230,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         if (!obj) return { ok: false, message: "Hex has no object!" };
         if (isBusy(tile, now)) return { ok: false, message: "Tile is busy!" };
 
-        const meta = HEXOBJECT_META[obj.hexobjectKey];
+        const meta = getMeta(obj.hexobjectKey);
         const cfg = meta?.actions?.[EHexActionType.USE];
         if (!cfg) return { ok: false, message: "This object cannot be used!" };
 
@@ -311,7 +311,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
         const key = tile.hexobject?.hexobjectKey;
         if (!key) return { ok:false, message:"No object to enter!" };
 
-        const meta = HEXOBJECT_META[key];
+        const meta = getMeta(key);
         const cfg = meta?.actions?.[EHexActionType.ENTER];
 
         const requiredToolKey = (cfg?.requiredTool ?? HEXOBJECT_KEYS.HAND) as TToolKeys;

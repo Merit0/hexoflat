@@ -2,8 +2,9 @@ import type HexMapModel from "@/a-game-scenes/map-scene/models/hex-map-model";
 import type { TFogPolicy } from "@/a-game-scenes/map-scene/models/hex-map-model";
 import { HexMapProvider } from "@/a-game-scenes/map-scene/providers/hex-map-provider";
 import {HEXOBJECT_KEYS, THexobjectKey} from "@/registry/hexobjects-registry";
+import type { LocationKey } from "@/registry/location-key";
 
-export type LocationKey = "camping" | "silesia" | "cave";
+export type { LocationKey };
 
 export type MapDefinition = {
     key: LocationKey;

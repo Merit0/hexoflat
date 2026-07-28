@@ -1,18 +1,9 @@
 import { defineStore } from "pinia";
 import { HEXOBJECT_KEYS, THexobjectKey } from "@/registry/hexobjects-registry";
-import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
+import { EHexobjectGroup, type TEquipSlot } from "@/abstraction/hexobject-abstraction";
+import { getPrototype, getMeta, CONTENT_VERSION } from "@/content";
 
-export type TEquipSlot =
-    | "weapon"
-    | "shield"
-    | "armor"
-    | "gloves"
-    | "helm"
-    | "boots"
-    | "ring"
-    | "amulet";
+export type { TEquipSlot };
 
 export interface InventoryItem {
     id: string;
@@ -36,6 +27,7 @@ export interface GridConfig {
 
 interface PersistedHeroInventory {
     version: 1;
+    contentVersion: number;
     items: InventoryItem[];
     rotationsById: Record<string, number>;
     carryCapacityKg: number;
@@ -96,7 +88,7 @@ function isSerializableInventoryItem(value: any): value is InventoryItem {
 
 function getItemUnitWeightKg(key: THexobjectKey) {
     if (key === HEXOBJECT_KEYS.HAND) return 0;
-    return HEXOBJECT_META[key]?.traits?.weightKG ?? 0;
+    return getMeta(key)?.traits?.weightKG ?? 0;
 }
 
 export const useHeroInventoryStore = defineStore("heroInventory", {
@@ -206,7 +198,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 if (raw) {
                     const parsed = JSON.parse(raw) as PersistedHeroInventory;
 
-                    if (parsed?.version === 1) {
+                    if (parsed?.version === 1 && parsed?.contentVersion === CONTENT_VERSION) {
                         this.items = Array.isArray(parsed.items)
                             ? parsed.items.filter(isSerializableInventoryItem)
                             : [];
@@ -235,6 +227,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             try {
                 const payload: PersistedHeroInventory = {
                     version: 1,
+                    contentVersion: CONTENT_VERSION,
                     items: this.items,
                     rotationsById: this.rotationsById,
                     carryCapacityKg: this.carryCapacityKg,
@@ -397,7 +390,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 return { ok: false, message: "Hand cannot be added to inventory." };
             }
 
-            const proto = HEX_OBJECT_PROTOTYPES[key];
+            const proto = getPrototype(key);
             if (!proto) {
                 return { ok: false, message: `Unknown hexobject prototype: ${key}` };
             }
@@ -412,7 +405,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
                 };
             }
 
-            const meta = HEXOBJECT_META[key];
+            const meta = getMeta(key);
             const stackable = !!meta?.traits?.stackable;
             const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
             const maxStack = meta?.traits?.maxStack ?? null;
@@ -537,7 +530,7 @@ export const useHeroInventoryStore = defineStore("heroInventory", {
             if (!target.stackKey || !from.stackKey) return false;
             if (target.stackKey !== from.stackKey) return false;
 
-            const meta = HEXOBJECT_META[from.key];
+            const meta = getMeta(from.key);
             const maxStack = meta?.traits?.maxStack ?? null;
 
             if (!maxStack) {

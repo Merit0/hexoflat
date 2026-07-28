@@ -32,12 +32,11 @@ import { useWorldMapStore } from "@/stores/world-map-store";
 import { ACTION_TYPE_MAP } from "@/registry/action-starters-registry";
 import { ExecuteHexActionFeature } from "@/features/execute-hex-action-feature";
 import { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
+import {getPrototype, getMeta} from "@/content";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
 import { useHeroStore } from "@/stores/hero-store";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
 import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { THeroToolKey } from "@/content/equipment.content";
 
 const props = defineProps<{
   tileWidth: number;
@@ -91,7 +90,7 @@ const posStyle = computed(() => {
 const toolStyle = computed(() => {
 
   const key = activeToolKey.value ?? HEXOBJECT_KEYS.HAND;
-  const toolHexImagePath = HEX_OBJECT_PROTOTYPES[key].spritePath;
+  const toolHexImagePath = getPrototype(key).spritePath;
 
   return {
     backgroundImage: `url(${toolHexImagePath})`,
@@ -134,7 +133,7 @@ const resolvedActions = computed(() => {
   if (!tile?.hexobject) return [];
 
   if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
-    const enterCfg = HEXOBJECT_META[tile.hexobject.hexobjectKey]?.enter;
+    const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
     if (
         !tile.hexobject.isInteractable ||
         (

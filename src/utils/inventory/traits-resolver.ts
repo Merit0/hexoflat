@@ -1,9 +1,7 @@
 import { THexobjectKey } from "@/registry/hexobjects-registry";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
-import { EHexobjectGroup, THexobjectPrototype } from "@/abstraction/hexobject-abstraction";
+import { getPrototype, getMeta } from "@/content";
+import { EHexobjectGroup, THexobjectPrototype, type TEquipSlot } from "@/abstraction/hexobject-abstraction";
 import { assertNever } from "@/utils/assert-never";
-import { TEquipSlot } from "@/stores/hero-inventory-store";
 
 export type ResolvedInventoryView = {
     group: EHexobjectGroup;
@@ -55,7 +53,7 @@ function resolveProtoFields(proto: THexobjectPrototype) {
 
         case EHexobjectGroup.EQUIPMENT: {
             defaultAmount = 1;
-            equipSlot = HEXOBJECT_META[proto.hexobjectKey]?.equip?.slot as TEquipSlot | undefined;
+            equipSlot = getMeta(proto.hexobjectKey)?.equip?.slot as TEquipSlot | undefined;
             weightKg = proto.equipment.traits?.weightKG ?? 0;
             break;
         }
@@ -78,8 +76,8 @@ function resolveProtoFields(proto: THexobjectPrototype) {
 }
 
 export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView {
-    const proto = HEX_OBJECT_PROTOTYPES[key];
-    const meta = HEXOBJECT_META[key];
+    const proto = getPrototype(key);
+    const meta = getMeta(key);
 
     // proto is required by satisfies Record<THexobjectKey,...>
     // але якщо колись буде partial — зробимо страховку:

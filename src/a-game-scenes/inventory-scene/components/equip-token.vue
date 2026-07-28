@@ -46,7 +46,7 @@ import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
 import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { useWorldMapStore } from "@/stores/world-map-store";
 import { useOverlayStore } from "@/stores/overlay-store";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { THeroToolKey } from "@/content/equipment.content";
 import { useInventoryDragHandle } from "@/composables/use-inventory-drag";
 
 const props = defineProps<{

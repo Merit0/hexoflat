@@ -4,7 +4,7 @@ import { coordinateKey, getOddQNeighbors } from "@/utils/hex-utils";
 import type { ResolvedAction } from "@/game-resolvers/interactions-resolver";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { THeroToolKey } from "@/content/equipment.content";
 
 export interface HeroToolState {
     activeTool: THeroToolKey | null;

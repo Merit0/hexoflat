@@ -26,8 +26,7 @@ import { useHeroToolStore } from "@/stores/hero-tool-store";
 import {calcHexPixelPosition} from "@/utils/hex-utils";
 import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { useWorldMapStore } from "@/stores/world-map-store";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { getMeta, getPrototype } from "@/content";
 import { getTileWidth } from "@/a-game-scenes/map-scene/constants/hex-grid-constants";
 
 const props = defineProps<{
@@ -53,7 +52,7 @@ const constructionLockLabel = computed(() => {
   if (!tile.isRevealed || !hexobject) return null;
   if (hexobject.groupType !== EHexobjectGroup.CONSTRUCTION) return null;
 
-  const enterCfg = HEXOBJECT_META[hexobject.hexobjectKey]?.enter;
+  const enterCfg = getMeta(hexobject.hexobjectKey)?.enter;
   if (enterCfg?.type === "WORLD") {
     const remainingMs = worldStore.getLocationRespawnRemainingMs(enterCfg.locationKey);
     if (remainingMs > 0) {
@@ -83,7 +82,7 @@ const defendMarkerSpritePath = computed(() => {
   );
   if (!marker?.toolKey) return null;
 
-  return HEX_OBJECT_PROTOTYPES[marker.toolKey]?.spritePath ?? null;
+  return getPrototype(marker.toolKey)?.spritePath ?? null;
 });
 
 function getHexTileTransformStyle(tile: IHexTile) {

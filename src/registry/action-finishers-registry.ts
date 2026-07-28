@@ -2,7 +2,7 @@ import {EHexActionType} from "@/enums/hex-action-type";
 import type {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import type {IPendingTileAction} from "@/abstraction/hex-tile-abstraction";
 import {IActionContext} from "@/abstraction/abstract-action";
-import {HEXOBJECT_META} from "@/registry/hexobject-meta";
+import {getMeta} from "@/content";
 import {useGatheringStore} from "@/stores/gathering-store";
 import {useHeroStore} from "@/stores/hero-store";
 import {useGameEventsStore} from "@/stores/game-events-store";
@@ -57,7 +57,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
 
         consumeTileHexobject(tile);
 
-        const meta = HEXOBJECT_META[action.hexobjectKey];
+        const meta = getMeta(action.hexobjectKey);
         const wood = meta?.yields?.wood ?? 0;
         if (wood > 0 && ctx.heroToolStore.addTreeCut) {
             ctx.heroToolStore.addTreeCut(wood);
@@ -72,7 +72,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         if (handleCancelled(action, ctx)) return true;
 
         const gathering = useGatheringStore();
-        const meta = HEXOBJECT_META[action.hexobjectKey];
+        const meta = getMeta(action.hexobjectKey);
         const stone = meta?.yields?.stone ?? 0;
         logAction(`Mine the ${stone} ${tile.hexobject.hexobjectKey}`);
         gathering.add(action.hexobjectKey, stone);

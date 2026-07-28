@@ -1,7 +1,7 @@
 import type { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import { EHexActionType } from "@/enums/hex-action-type";
 import {ACTION_STARTERS} from "@/registry/action-starters-registry";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { THeroToolKey } from "@/content/equipment.content";
 
 export class ExecuteHexActionFeature {
     private readonly tile: HexTileModel;

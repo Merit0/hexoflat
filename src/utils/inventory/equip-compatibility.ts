@@ -1,6 +1,6 @@
-import type { InventoryItem, TEquipSlot } from "@/stores/hero-inventory-store";
-import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
+import type { InventoryItem } from "@/stores/hero-inventory-store";
+import { EHexobjectGroup, type TEquipSlot } from "@/abstraction/hexobject-abstraction";
+import { getMeta } from "@/content";
 
 export type TEquipCompatibility = "effect" | "mismatch";
 
@@ -38,14 +38,14 @@ export function resolveEquipCompatibility(
 
     if (isHandSlot(slot)) {
         if (item.type === EHexobjectGroup.EQUIPMENT) {
-            return HEXOBJECT_META[item.key]?.equip?.slot === slot ? "effect" : "mismatch";
+            return getMeta(item.key)?.equip?.slot === slot ? "effect" : "mismatch";
         }
 
         return canUseInHand(item) ? "effect" : "mismatch";
     }
 
     if (isEquipmentSlot(slot)) {
-        return isWearableEquipment(item) && HEXOBJECT_META[item.key]?.equip?.slot === slot
+        return isWearableEquipment(item) && getMeta(item.key)?.equip?.slot === slot
             ? "effect"
             : "mismatch";
     }

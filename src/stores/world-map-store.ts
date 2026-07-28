@@ -7,7 +7,7 @@ import { useHeroToolStore } from "@/stores/hero-tool-store";
 import { EHexCollision, EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
 import { WorldTickFeature } from "@/features/resource-features/world-tick-feature";
 import { AddResourceSpawnerFeature } from "@/features/resource-features/add-resource-spawner-feature";
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
+import { HEXOBJECT_KEYS, type THexobjectKey } from "@/registry/hexobjects-registry";
 import { CoinsGenerator } from "@/generators/coins-generator";
 import { useHeroStore } from "@/stores/hero-store";
 import { useGameEventsStore } from "@/stores/game-events-store";
@@ -19,12 +19,13 @@ import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
 import { executeMovementRoute } from "@/services/hero-movement/movement-executor";
 import router, { ROUTES } from "@/router";
 import { HexObjectFactory } from "@/factory/hex-object-factory";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { THeroToolKey } from "@/content/equipment.content";
 import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { getPrototype, CONTENT_VERSION } from "@/content";
 import { normalizeHealthValue, roundToSingleDecimal } from "@/utils/combat/health-format";
 
 type TWorldState = {
+    contentVersion: number;
     heroCoordinates: IHexCoordinates | null;
     combatActive: boolean;
     combatTurnSide: CombatTurnSide;
@@ -155,7 +156,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
         getCombatMarkerDefense(toolKey?: THeroToolKey | null) {
             if (!toolKey) return 0;
 
-            const proto = HEX_OBJECT_PROTOTYPES[toolKey];
+            const proto = getPrototype(toolKey);
             if (!proto) return 0;
 
             if (proto.groupType === EHexobjectGroup.EQUIPMENT) {
@@ -729,7 +730,7 @@ export const useWorldMapStore = defineStore("world-map-store", {
             this.combatActionMode = null;
             this.revealCombatMarkers("enemy");
 
-            const attacker = HEX_OBJECT_PROTOTYPES[toolKey as keyof typeof HEX_OBJECT_PROTOTYPES];
+            const attacker = getPrototype(toolKey as THexobjectKey);
             const attackMultiplier =
                 attacker?.groupType === EHexobjectGroup.EQUIPMENT
                     ? (attacker.weapon?.attackMultiplier ?? 1)
@@ -901,20 +902,26 @@ export const useWorldMapStore = defineStore("world-map-store", {
 
         loadFromStorage(mapId: string) {
             const savedMap = localStorage.getItem(STORAGE_MAP_PREFIX + mapId);
+            const parsedMap = savedMap ? JSON.parse(savedMap) as { contentVersion?: number; map?: unknown } : null;
 
-            if (savedMap) {
-                this.map = HexMapModel.fromJSON(JSON.parse(savedMap));
+            if (parsedMap && parsedMap.contentVersion === CONTENT_VERSION) {
+                this.map = HexMapModel.fromJSON(parsedMap.map);
                 this.hydrateResourcesFromConfig();
 
                 const changed = new WorldTickFeature(this.map).tick(Date.now());
                 if (changed) this.saveToStorage(mapId);
             } else {
+                if (parsedMap) {
+                    console.warn(`[world-map-store] Discarding saved map for "${mapId}": content version mismatch.`);
+                    localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
+                }
                 this.map = null;
             }
 
             const savedState = localStorage.getItem(STORAGE_STATE_PREFIX + mapId);
-            if (savedState) {
-                const raw = JSON.parse(savedState) as Partial<TWorldState>;
+            const raw = savedState ? JSON.parse(savedState) as Partial<TWorldState> : null;
+
+            if (raw && raw.contentVersion === CONTENT_VERSION) {
                 this.heroCoordinates = raw.heroCoordinates ?? null;
                 this.combatActive = raw.combatActive ?? false;
                 this.combatTurnSide = raw.combatTurnSide ?? "hero";
@@ -932,6 +939,10 @@ export const useWorldMapStore = defineStore("world-map-store", {
                     toolKey: marker.toolKey ?? null,
                 })) ?? [];
             } else {
+                if (raw) {
+                    console.warn(`[world-map-store] Discarding saved world state for "${mapId}": content version mismatch.`);
+                    localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
+                }
                 this.heroCoordinates = null;
                 this.woodCollected = 0;
                 this.combatActive = false;
@@ -988,11 +999,12 @@ export const useWorldMapStore = defineStore("world-map-store", {
             if (this.map) {
                 localStorage.setItem(
                     STORAGE_MAP_PREFIX + mapId,
-                    JSON.stringify(this.map)
+                    JSON.stringify({ contentVersion: CONTENT_VERSION, map: this.map })
                 );
             }
 
             const state: TWorldState = {
+                contentVersion: CONTENT_VERSION,
                 heroCoordinates: this.heroCoordinates,
                 combatActive: this.combatActive,
                 combatTurnSide: this.combatTurnSide,

@@ -3,6 +3,19 @@ import {THexobjectKey} from "@/registry/hexobjects-registry";
 export type THexobjectGroup = EHexobjectGroup;
 export type THexCollision = EHexCollision;
 
+export const EQUIP_SLOTS = [
+    "weapon",
+    "shield",
+    "armor",
+    "gloves",
+    "helm",
+    "boots",
+    "ring",
+    "amulet",
+] as const;
+
+export type TEquipSlot = typeof EQUIP_SLOTS[number];
+
 export interface ITraitable<TTraits> {
     traits: TTraits;
 }

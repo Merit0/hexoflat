@@ -1,5 +1,5 @@
 import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { getPrototype } from "@/content";
 import {HexTileModel} from "@/a-game-scenes/map-scene/models/hex-tile-model";
 import {HexObjectPlacementRef} from "@/abstraction/hex-map-placement";
 
@@ -13,7 +13,7 @@ export class AddResourceSpawnerFeature {
     }
 
     public add() {
-        const proto = HEX_OBJECT_PROTOTYPES[this.resourceReference.hexobjectKey];
+        const proto = getPrototype(this.resourceReference.hexobjectKey);
         if (!proto) return;
 
         if (proto.groupType !== EHexobjectGroup.RESOURCE) return;
