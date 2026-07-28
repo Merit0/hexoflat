@@ -82,7 +82,7 @@ export const useUserStore = defineStore('user', {
         }
       }
     },
-    async clearErrorMsg() {
+    clearErrorMsg() {
       this.error = '';
     },
   },

@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { calcHexPixelPosition } from '@/utils/hex-utils';
+import { calcHexPixelPosition, type IHexPositioned } from '@/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
   getToolCapabilities,
@@ -41,6 +41,7 @@ import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
 import { THeroToolKey } from '@/content/equipment.content';
+import { EHexActionType } from '@/enums/hex-action-type';
 
 const props = defineProps<{
   tileWidth: number;
@@ -65,11 +66,12 @@ const hoveredTile = computed<HexTileModel | null>(() => {
   const map = worldMapStore.map;
   if (!c || !map) return null;
 
+  const tiles = map.tiles as HexTileModel[];
   return (
-    (map.tiles.find(
-      (t: any) =>
+    tiles.find(
+      (t: HexTileModel) =>
         t.coordinates.columnIndex === c.columnIndex && t.coordinates.rowIndex === c.rowIndex,
-    ) as HexTileModel | undefined) ?? null
+    ) ?? null
   );
 });
 
@@ -77,14 +79,14 @@ const hoveredTile = computed<HexTileModel | null>(() => {
  *  Position style
  *  -------------------------- */
 const posStyle = computed(() => {
-  if (!heroToolStore.hover) return { display: 'none' } as Record<string, string>;
+  if (!heroToolStore.hover) return { display: 'none' };
 
-  const pseudoTile = { coordinates: heroToolStore.hover } as any;
+  const pseudoTile: IHexPositioned = { coordinates: heroToolStore.hover };
   const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
 
   return {
     transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
-  } as Record<string, string>;
+  };
 });
 
 /** ---------------------------
@@ -99,7 +101,7 @@ const toolStyle = computed(() => {
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'center',
-  } as Record<string, string>;
+  };
 });
 
 /** ---------------------------
@@ -148,7 +150,7 @@ const resolvedActions = computed(() => {
 
   if (
     worldMapStore.combatActive &&
-    tile.hexobject.groupType === 'creature' &&
+    tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
     (worldMapStore.combatTurnSide !== 'hero' ||
       worldMapStore.combatAttackUsed ||
       !activeToolKey.value ||
@@ -218,7 +220,7 @@ const secondsLeft = computed(() => {
   const a = pendingAction.value;
   if (!a?.endsAt) return 0;
 
-  if (a.type === 'USE' && a.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+  if (a.type === EHexActionType.USE && a.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
     const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
     const currentHp = Math.max(0, Math.min(maxHp, Number(heroStore.hero.currentHealth ?? 0)));
     const missingHp = Math.max(0, maxHp - currentHp);
@@ -248,7 +250,7 @@ function executeAction() {
   const res = new ExecuteHexActionFeature(tile).execute(actionType, activeToolKey.value);
 
   if (res.ok) {
-    if (actionType === 'BLOCK') {
+    if (actionType === EHexActionType.BLOCK) {
       heroToolStore.stopTool();
     }
     worldMapStore.saveToStorage();

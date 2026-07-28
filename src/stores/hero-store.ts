@@ -32,8 +32,8 @@ const HERO_PROGRESS_KEY = 'hexoflat:heroProgress:v1';
 
 export const useHeroStore = defineStore('hero', {
   state: () => ({
-    hero: new HeroModel() as HeroModel,
-    nav: defaultNav() as HeroNavState,
+    hero: new HeroModel(),
+    nav: defaultNav(),
   }),
 
   getters: {

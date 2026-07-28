@@ -1,5 +1,5 @@
 <template>
-  <form class="login-form game-root" data-testid="login-form" @submit.prevent="onSubmit" novalidate>
+  <form class="login-form game-root" data-testid="login-form" novalidate @submit.prevent="onSubmit">
     <div class="form-field">
       <label class="sr-only" for="login-username">Username</label>
       <input
@@ -33,8 +33,8 @@
         type="button"
         class="toggle-password"
         data-testid="login-toggle-password-button"
-        @click="togglePassword"
         aria-label="Toggle password visibility"
+        @click="togglePassword"
       >
         {{ showPassword ? 'Hide' : 'Show' }}
       </button>
@@ -113,7 +113,7 @@ export default defineComponent({
 
     onMounted(() => {
       userStore.clearErrorMsg();
-      userStore.logout();
+      void userStore.logout();
       document.title = 'Hexoflat - Login';
     });
 

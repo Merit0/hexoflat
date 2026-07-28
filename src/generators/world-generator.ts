@@ -5,7 +5,6 @@ import type { IHexMapPlacement } from '@/abstraction/hex-map-placement';
 import { coordinateKey, getOddQNeighbors } from '@/utils/hex-utils';
 import { IWorldGenerator } from '@/abstraction/world-generator-interface';
 import { HexObjectFactory } from '@/factory/hex-object-factory';
-import { THexobjectKey } from '@/registry/hexobjects-registry';
 import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
 
 export class WorldGenerator {
@@ -20,8 +19,6 @@ export class WorldGenerator {
     map.complexity = this.generator.worldComplexity;
     map.config = this.generator.config;
     map.fogPolicy = this.generator.fogMode ?? 'FOG';
-
-    (map as any).safeZoneRadius = this.generator.safeZoneRadius ?? 1;
 
     map.tiles = this.buildBaseGrid(map.width, map.height);
 
@@ -62,12 +59,12 @@ export class WorldGenerator {
         if (!tile) continue;
 
         if (placement.initialTileImage) {
-          (tile as any).initialTileImage = placement.initialTileImage;
+          tile.hexBackgroundImagePath = placement.initialTileImage;
         }
 
         if (placement.hexobject?.hexobjectKey) {
           tile.hexobject = HexObjectFactory.create(
-            placement.hexobject.hexobjectKey as THexobjectKey,
+            placement.hexobject.hexobjectKey,
             tile.coordinates,
             placement.hexobject.overrides,
           );
@@ -121,8 +118,8 @@ export class WorldGenerator {
 
           tile.hexobject = null;
 
-          if ((tile as any).resourceSpawner) (tile as any).resourceSpawner = null;
-          if ((tile as any).pendingAction) (tile as any).pendingAction = null;
+          if (tile.resourceSpawner) tile.resourceSpawner = null;
+          if (tile.pendingAction) tile.pendingAction = null;
 
           next.push(n);
         }

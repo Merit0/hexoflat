@@ -42,7 +42,6 @@ function measureAndScale() {
   if (!host || !content) return;
 
   const hostRect = host.getBoundingClientRect();
-  const contentRect = content.getBoundingClientRect();
 
   const availW = Math.max(0, hostRect.width - props.padding * 2);
   const availH = Math.max(0, hostRect.height - props.padding * 2);

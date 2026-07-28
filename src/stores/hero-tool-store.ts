@@ -25,7 +25,7 @@ export interface HeroToolState {
 
 export const useHeroToolStore = defineStore('heroTool', {
   state: (): HeroToolState & { allowedKeys: string[] } => ({
-    activeTool: HEXOBJECT_KEYS.HAND as THeroToolKey,
+    activeTool: HEXOBJECT_KEYS.HAND,
     isDragging: false,
     origin: null,
     hover: null,

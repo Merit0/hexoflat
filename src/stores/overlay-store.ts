@@ -35,7 +35,7 @@ export const useOverlayStore = defineStore('overlay-store', {
       const existingIndex = this.stack.findIndex((e: OverlayEntry) => e.name === name);
 
       if (existingIndex !== -1) {
-        this.stack[existingIndex].data = data as OverlayPayloads[T];
+        this.stack[existingIndex].data = data;
 
         if (opts.bringToFront) {
           const [entry] = this.stack.splice(existingIndex, 1);
@@ -44,7 +44,7 @@ export const useOverlayStore = defineStore('overlay-store', {
         return;
       }
 
-      this.stack.push({ name, data } as OverlayEntry<T>);
+      this.stack.push({ name, data });
     },
 
     closeOverlay(name?: OverlayType) {
@@ -61,7 +61,7 @@ export const useOverlayStore = defineStore('overlay-store', {
 
     replaceTop<T extends OverlayType>(name: T, data?: OverlayPayloads[T]) {
       if (this.stack.length) this.stack.pop();
-      this.stack.push({ name, data } as OverlayEntry<T>);
+      this.stack.push({ name, data });
     },
   },
 });

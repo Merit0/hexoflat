@@ -92,7 +92,7 @@ const centerHoleVars = computed(() => {
     '--hole-top': `calc(${y} * var(--cell) + 12px)`,
     '--hole-w': `calc(${w} * var(--cell))`,
     '--hole-h': `calc(${h} * var(--cell))`,
-  } as Record<string, string>;
+  };
 });
 </script>
 

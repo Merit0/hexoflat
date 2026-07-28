@@ -1,5 +1,4 @@
 import { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
-import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
 
 export interface IHero {
   id: number;

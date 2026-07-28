@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Teleport, type CSSProperties } from 'vue';
+import { computed, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@/utils/inventory/traits-resolver';
 import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
@@ -61,12 +61,9 @@ const isUsableTool = computed(() => {
   );
 });
 
-const tokenStyle = computed(
-  () =>
-    ({
-      '--rot': `${rotation.value}deg`,
-    }) as Record<string, string>,
-);
+const tokenStyle = computed(() => ({
+  '--rot': `${rotation.value}deg`,
+}));
 
 const isDefaultHandToken = computed(() => props.item.key === HEXOBJECT_KEYS.HAND);
 

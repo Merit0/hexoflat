@@ -39,9 +39,9 @@ pinia.use((context) => {
   try {
     const raw = window.localStorage.getItem(storeId);
     if (raw) {
-      const fromLocalStorage = serializer.deserialize(raw);
+      const fromLocalStorage: unknown = serializer.deserialize(raw);
       if (fromLocalStorage && typeof fromLocalStorage === 'object') {
-        context.store.$patch(fromLocalStorage);
+        context.store.$patch(fromLocalStorage as Partial<typeof context.store.$state>);
       }
     }
   } catch (e) {

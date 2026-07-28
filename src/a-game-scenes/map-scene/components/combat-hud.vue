@@ -18,11 +18,11 @@
     </div>
 
     <div class="combat-hud__row">
-      <span class="chip" data-testid="combat-hud-mode-chip" v-if="worldStore.combatActionMode"
+      <span v-if="worldStore.combatActionMode" class="chip" data-testid="combat-hud-mode-chip"
         >Mode: <b>{{ worldStore.combatActionMode.toUpperCase() }}</b></span
       >
-      <span class="chip" data-testid="combat-hud-mode-chip" v-else>Mode: <b>NONE</b></span>
-      <span class="chip" v-if="worldStore.combatTurnSide === 'enemy'">Enemy is acting</span>
+      <span v-else class="chip" data-testid="combat-hud-mode-chip">Mode: <b>NONE</b></span>
+      <span v-if="worldStore.combatTurnSide === 'enemy'" class="chip">Enemy is acting</span>
     </div>
 
     <div class="combat-hud__actions">

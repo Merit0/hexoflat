@@ -23,13 +23,13 @@
           <span class="chip" data-testid="topbar-scout-chip"
             >Scout: <b>{{ scoutRankShort }}</b></span
           >
-          <span class="chip" data-testid="topbar-tool-chip" v-if="toolLabel"
+          <span v-if="toolLabel" class="chip" data-testid="topbar-tool-chip"
             >Tool: <b>{{ toolLabel }}</b></span
           >
-          <span class="chip" data-testid="topbar-status-chip" v-if="heroToolStore.isLocked"
+          <span v-if="heroToolStore.isLocked" class="chip" data-testid="topbar-status-chip"
             >Status: <b>LOCKED</b></span
           >
-          <span class="chip muted" data-testid="topbar-status-chip" v-else
+          <span v-else class="chip muted" data-testid="topbar-status-chip"
             >Status: <b>READY</b></span
           >
         </div>
@@ -62,7 +62,7 @@
         <game-events-logger />
       </div>
 
-      <button @click="userStore.logout()" class="logout" data-testid="topbar-logout-button">
+      <button class="logout" data-testid="topbar-logout-button" @click="userStore.logout()">
         Logout
       </button>
     </div>
@@ -73,7 +73,6 @@
 import { computed } from 'vue';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import { useWorldMapStore } from '@/stores/world-map-store';
 import { useUserStore } from '@/stores/user-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -82,7 +81,6 @@ import { MapRegistry } from '@/registry/world-map-registry';
 import { getScoutProgress } from '@/services/hero-movement/scout-progression';
 import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
 
-const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
 const heroToolStore = useHeroToolStore();
 const heroInventoryStore = useHeroInventoryStore();

@@ -6,6 +6,10 @@ import { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-c
 import { EHexobjectGroup, THexobject } from '@/abstraction/hexobject-abstraction';
 import { HexObjectFactory } from '@/factory/hex-object-factory';
 import { normalizeHealthValue } from '@/utils/combat/health-format';
+import type { RouteName } from '@/router/routes';
+import type { IHexResourceSpawner } from '@/abstraction/hex-resource-spawner';
+import type { IPendingTileAction } from '@/abstraction/hex-tile-abstraction';
+import { EHexActionType } from '@/enums/hex-action-type';
 
 export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
 
@@ -16,6 +20,28 @@ interface IWorldMap {
   complexity: Complexity;
   config: IHexMapPlacement[];
   tiles: HexTileModel[];
+}
+
+export interface ISerializedHexTile {
+  imagePath?: string;
+  tileKey?: RouteName | null;
+  coordinates?: IHexCoordinates;
+  // Legacy save format used flat row/column fields instead of `coordinates`.
+  r?: number;
+  q?: number;
+  isRevealed?: boolean;
+  hexobject?: THexobject | null;
+  resourceSpawner?: IHexResourceSpawner | null;
+  pendingAction?: IPendingTileAction | null;
+}
+
+export interface ISerializedHexMap {
+  name: string;
+  width: number;
+  height: number;
+  complexity: Complexity;
+  config: IHexMapPlacement[];
+  tiles: ISerializedHexTile[];
 }
 
 export default class HexMapModel implements IWorldMap {
@@ -150,7 +176,7 @@ export default class HexMapModel implements IWorldMap {
     };
   }
 
-  public static fromJSON(raw: any): HexMapModel {
+  public static fromJSON(raw: ISerializedHexMap): HexMapModel {
     const map = new HexMapModel();
     map.name = raw.name;
     map.width = raw.width;
@@ -158,11 +184,11 @@ export default class HexMapModel implements IWorldMap {
     map.complexity = raw.complexity;
     map.config = raw.config;
 
-    map.tiles = raw.tiles.map((t: any) => {
+    map.tiles = raw.tiles.map((t) => {
       const tile = new HexTileModel();
       tile.isRevealed = t.isRevealed ?? false;
       tile.hexBackgroundImagePath = t.imagePath ?? '';
-      tile.coordinates = t.coordinates ?? { rowIndex: t.r, columnIndex: t.q };
+      tile.coordinates = t.coordinates ?? { rowIndex: t.r ?? 0, columnIndex: t.q ?? 0 };
 
       const savedObj: THexobject | null = t.hexobject ?? null;
       tile.hexobject = savedObj ? this.hydrateHexobject(savedObj, tile.coordinates) : null;
@@ -173,18 +199,16 @@ export default class HexMapModel implements IWorldMap {
       return tile;
     });
 
-    // ✅ Reconcile after hydration
+    // Reconcile after hydration: drop stale in-progress actions and spawn
+    // resources whose respawn timer already elapsed while the map was unloaded.
     const now = Date.now();
-    let changed = false;
 
     for (const tile of map.tiles) {
       const action = tile.pendingAction;
-      if (action?.type === 'USE') {
+      if (action?.type === EHexActionType.USE) {
         tile.pendingAction = null;
-        changed = true;
       }
 
-      // 1) Optional: spawn immediately if respawn time already passed
       const s = tile.resourceSpawner;
       if (
         !tile.hexobject &&
@@ -198,12 +222,8 @@ export default class HexMapModel implements IWorldMap {
           s.proto.overrides,
         );
         s.nextSpawnAt = null;
-        changed = true;
       }
     }
-
-    // ✅ mark map as dirty so caller can save once
-    (map as any).__rehydrateChanged = changed;
 
     return map;
   }

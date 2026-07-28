@@ -32,7 +32,6 @@
 import { computed } from 'vue';
 import type { InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@/utils/inventory/traits-resolver';
-import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
 
 const props = defineProps<{ item: InventoryItem }>();
 
@@ -41,18 +40,6 @@ const traits = computed(() => resolveInventoryView(props.item.key));
 const thumbStyle = computed(() => ({
   backgroundImage: traits.value.iconPath ? `url('${traits.value.iconPath}')` : 'none',
 }));
-
-const actions = computed(() => {
-  if (!props.item) return [];
-  const a: Array<{ key: 'use' | 'equip' | 'drop'; label: string; disabled?: boolean }> = [];
-
-  if (props.item.type === EHexobjectGroup.LOOT) a.push({ key: 'use', label: 'USE' });
-  if (props.item.type === EHexobjectGroup.EQUIPMENT && props.item.equipSlot)
-    a.push({ key: 'equip', label: 'EQUIP' });
-
-  a.push({ key: 'drop', label: 'DROP' });
-  return a;
-});
 </script>
 
 <style scoped>

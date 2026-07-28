@@ -32,7 +32,7 @@ function resolveProtoFields(proto: THexobjectPrototype) {
   let defaultAmount = 1;
   let weightKg = 0;
   let equipSlot: TEquipSlot | undefined = undefined;
-  let stackKey: string | undefined = undefined;
+  const stackKey: string | undefined = undefined;
 
   switch (proto.groupType) {
     case EHexobjectGroup.LOOT: {
@@ -57,7 +57,7 @@ function resolveProtoFields(proto: THexobjectPrototype) {
 
     case EHexobjectGroup.EQUIPMENT: {
       defaultAmount = 1;
-      equipSlot = getMeta(proto.hexobjectKey)?.equip?.slot as TEquipSlot | undefined;
+      equipSlot = getMeta(proto.hexobjectKey)?.equip?.slot;
       weightKg = proto.equipment.traits?.weightKG ?? 0;
       break;
     }

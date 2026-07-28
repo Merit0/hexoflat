@@ -25,7 +25,7 @@ const props = defineProps<{
 
 const style = computed(() => {
   if (!props.coord) {
-    return { display: 'none' } as Record<string, string>;
+    return { display: 'none' };
   }
 
   return hexTranslateStyle(props.coord, props.tileWidth);

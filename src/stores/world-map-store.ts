@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
-import HexMapModel from '@/a-game-scenes/map-scene/models/hex-map-model';
+import HexMapModel, {
+  type ISerializedHexMap,
+} from '@/a-game-scenes/map-scene/models/hex-map-model';
 import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
 import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
 import { coordinateKey, getOddQNeighbors, hexDistance } from '@/utils/hex-utils';
@@ -27,7 +29,7 @@ import { HexObjectFactory } from '@/factory/hex-object-factory';
 import { THeroToolKey } from '@/content/equipment.content';
 import { getToolCapabilities } from '@/game-resolvers/interactions-resolver';
 import { getPrototype, CONTENT_VERSION } from '@/content';
-import { normalizeHealthValue, roundToSingleDecimal } from '@/utils/combat/health-format';
+import { normalizeHealthValue } from '@/utils/combat/health-format';
 
 type TWorldState = {
   contentVersion: number;
@@ -66,9 +68,17 @@ function getCreatureOf(hexobject: THexobject | null | undefined): ICreature | un
   return hexobject?.groupType === EHexobjectGroup.CREATURE ? hexobject.creature : undefined;
 }
 
+function initialCombatTurnSide(): CombatTurnSide {
+  return 'hero';
+}
+
+function initialLocationKey(): LocationKey {
+  return 'camping';
+}
+
 function readIndex(): Partial<Record<LocationKey, string>> {
   const raw = localStorage.getItem(STORAGE_INDEX);
-  return raw ? JSON.parse(raw) : {};
+  return raw ? (JSON.parse(raw) as Partial<Record<LocationKey, string>>) : {};
 }
 
 function writeIndex(index: Partial<Record<LocationKey, string>>) {
@@ -77,7 +87,7 @@ function writeIndex(index: Partial<Record<LocationKey, string>>) {
 
 function readRespawnSchedule(): Partial<Record<LocationKey, number>> {
   const raw = localStorage.getItem(STORAGE_RESPAWN_AT);
-  return raw ? JSON.parse(raw) : {};
+  return raw ? (JSON.parse(raw) as Partial<Record<LocationKey, number>>) : {};
 }
 
 function writeRespawnSchedule(schedule: Partial<Record<LocationKey, number>>) {
@@ -95,7 +105,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     isEnemyTurnResolving: false,
     pendingCampingRespawn: false,
     combatActive: false,
-    combatTurnSide: 'hero' as CombatTurnSide,
+    combatTurnSide: initialCombatTurnSide(),
     combatStepsLeft: 0,
     combatStoredStepsBeforeDefend: null as number | null,
     combatTurnEndsAt: null as number | null,
@@ -104,7 +114,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     combatDefendUsed: false,
     combatMarkers: [] as CombatMarker[],
 
-    currentLocationKey: 'camping' as LocationKey,
+    currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
   }),
 
@@ -570,7 +580,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       let currentTile = enemyTile;
       const enemyObject = enemyTile.hexobject;
 
-      await executeMovementRoute(route, async (coord) => {
+      await executeMovementRoute(route, (coord) => {
         const nextTile = this.getTileAt(coord);
         if (!nextTile || nextTile === currentTile) return;
 
@@ -979,10 +989,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
     loadFromStorage(mapId: string) {
       const savedMap = localStorage.getItem(STORAGE_MAP_PREFIX + mapId);
       const parsedMap = savedMap
-        ? (JSON.parse(savedMap) as { contentVersion?: number; map?: unknown })
+        ? (JSON.parse(savedMap) as { contentVersion?: number; map?: ISerializedHexMap })
         : null;
 
-      if (parsedMap && parsedMap.contentVersion === CONTENT_VERSION) {
+      if (parsedMap?.map && parsedMap.contentVersion === CONTENT_VERSION) {
         const hydratedMap = HexMapModel.fromJSON(parsedMap.map);
         this.map = hydratedMap;
         this.hydrateResourcesFromConfig();
@@ -1231,7 +1241,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.isHeroMoving = true;
 
       try {
-        await executeMovementRoute(route, async (coord) => {
+        await executeMovementRoute(route, (coord) => {
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;
           if (this.combatActive) {

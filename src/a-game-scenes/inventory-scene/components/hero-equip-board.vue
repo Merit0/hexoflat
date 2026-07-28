@@ -141,7 +141,7 @@ const RING_COMPRESS = 0.57;
 const INSET_PX = computed(() => Math.round(HEX_SIZE.value * 0.015));
 
 function compressAroundCenter(x: number, y: number) {
-  const heroPos = calcHexPixelPosition({ coordinates: center } as any, tileWidth.value);
+  const heroPos = calcHexPixelPosition({ coordinates: center }, tileWidth.value);
   const dx = x - heroPos.x;
   const dy = y - heroPos.y;
 
@@ -175,7 +175,7 @@ const bounds = computed(() => {
   let maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const p = calcHexPixelPosition({ coordinates: t.coordinates } as any, tileWidth.value);
+    const p = calcHexPixelPosition({ coordinates: t.coordinates }, tileWidth.value);
     const pos = t.kind === 'slot' ? compressAroundCenter(p.x, p.y) : p;
 
     minX = Math.min(minX, pos.x);
@@ -204,13 +204,13 @@ const innerStyle = computed(() => {
     height: `${b.height}px`,
     paddingLeft: `${Math.round(-b.offsetX)}px`,
     paddingTop: `${Math.round(-b.offsetY)}px`,
-  } as Record<string, string>;
+  };
 });
 
 const scale = ref(1);
 
 function tileStyle(t: PseudoTile) {
-  const p = calcHexPixelPosition({ coordinates: t.coordinates } as any, tileWidth.value);
+  const p = calcHexPixelPosition({ coordinates: t.coordinates }, tileWidth.value);
   const pos = t.kind === 'slot' ? compressAroundCenter(p.x, p.y) : p;
 
   return {

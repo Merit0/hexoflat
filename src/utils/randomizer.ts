@@ -35,7 +35,7 @@ export class Randomizer {
     for (const key in chanceMap) {
       cumulative += chanceMap[key as T];
       if (roll <= cumulative) {
-        return key as T;
+        return key;
       }
     }
 

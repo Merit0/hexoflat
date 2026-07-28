@@ -32,11 +32,11 @@
             :marker-kind="movePreviewMarkerKind"
           />
 
-          <hero-hex-tile :coord="worldStore.heroCoordinates" :tileWidth="tileWidth" />
+          <hero-hex-tile :coord="worldStore.heroCoordinates" :tile-width="tileWidth" />
 
           <tool-hex-tile
             v-if="heroToolStore.isDragging && activeTool"
-            :tileWidth="tileWidth"
+            :tile-width="tileWidth"
             :tool="activeTool"
             @hide="onHide"
           />
@@ -60,7 +60,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import HexTile from '@/a-game-scenes/map-scene/components/hex-tile.vue';
 import HeroHexTile from '@/a-game-scenes/map-scene/components/hero-hex-tile.vue';
-import { calcHexPixelPosition, hexTranslateStyle } from '@/utils/hex-utils';
+import { calcHexPixelPosition, hexTranslateStyle, type IHexPositioned } from '@/utils/hex-utils';
+import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { resolveActions, ResolvedAction } from '@/game-resolvers/interactions-resolver';
@@ -78,6 +79,7 @@ import { findShortestPath } from '@/services/hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '@/services/hero-movement/scout-progression';
 import { coordinateKey, getOddQNeighbors, hexDistance } from '@/utils/hex-utils';
 import { EHexCollision, EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import { EHexActionType } from '@/enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
@@ -141,15 +143,16 @@ function readDomTileSize() {
 }
 
 /* ---------- tool resolver ---------- */
-function getTileByCoord(coord: any) {
-  return worldMapStore.map?.tiles.find(
-    (t: any) =>
+function getTileByCoord(coord: IHexCoordinates) {
+  const tiles = worldMapStore.map?.tiles as HexTileModel[] | undefined;
+  return tiles?.find(
+    (t: HexTileModel) =>
       t.coordinates.rowIndex === coord.rowIndex && t.coordinates.columnIndex === coord.columnIndex,
   );
 }
 
 function getTileCenter(coord: IHexCoordinates) {
-  const pseudoTile = { coordinates: coord } as any;
+  const pseudoTile: IHexPositioned = { coordinates: coord };
   const { x, y } = calcHexPixelPosition(pseudoTile, tileWidth);
 
   return {
@@ -275,7 +278,7 @@ const movePreviewMarkerStyle = computed(() => {
 
   return {
     transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
-  } as Record<string, string>;
+  };
 });
 
 const movePreviewReachable = computed(() => movePreview.value?.reachable ?? false);
@@ -328,7 +331,7 @@ const combatMarkers = computed(() => {
         kind: marker.kind,
         style: {
           transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
-        } as Record<string, string>,
+        },
       };
     });
 });
@@ -340,7 +343,7 @@ const activeCampfireActionTile = computed(() => {
     worldStore.map.tiles.find(
       (tile) =>
         tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE &&
-        tile.pendingAction?.type === 'USE' &&
+        tile.pendingAction?.type === EHexActionType.USE &&
         (tile.pendingAction.endsAt ?? 0) > healTickerNow.value,
     ) ?? null
   );
@@ -408,7 +411,7 @@ const mapBounds = computed(() => {
     maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const { x, y } = calcHexPixelPosition(t as any, tileWidth);
+    const { x, y } = calcHexPixelPosition(t, tileWidth);
 
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);

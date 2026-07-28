@@ -11,18 +11,18 @@ export type HeroList = Array<IHero>;
 
 export async function login(username: string, password: string) {
   const request = await fetch('/users.json');
-  const usersJson: UserList = await request.json();
+  const usersJson = (await request.json()) as UserList;
   return usersJson.find((user) => user.password === password && user.username === username);
 }
 
 export async function getUser() {
   const request = await fetch('/current.json');
-  const user: User = await request.json();
+  const user = (await request.json()) as User;
   return user;
 }
 
 export async function getHero(id: number) {
   const request = await fetch('/heroes.json');
-  const heroesJson: HeroList = await request.json();
+  const heroesJson = (await request.json()) as HeroList;
   return heroesJson.find((hero) => hero.id === id);
 }

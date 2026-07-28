@@ -9,9 +9,9 @@
       class="logger-compact"
       data-testid="events-logger-toggle"
       type="button"
-      @click="toggle"
       aria-haspopup="true"
       :aria-expanded="isOpen"
+      @click="toggle"
     >
       <div v-if="lastTwo.length" class="compact-lines">
         <div v-for="e in lastTwo" :key="e.id" class="compact-line">
@@ -52,10 +52,10 @@
           <div v-if="!list.length" class="dropdown-empty">No events yet</div>
 
           <div
-            v-else
-            class="row"
             v-for="e in list"
+            v-else
             :key="e.id"
+            class="row"
             :data-testid="`events-logger-row-${e.id}`"
           >
             <span class="hero-name">{{ e.actor ?? '' }}</span>
@@ -81,7 +81,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useGameEventsStore } from '@/stores/game-events-store';
-import { useHeroStore } from '@/stores/hero-store';
 
 const gameEventsStore = useGameEventsStore();
 

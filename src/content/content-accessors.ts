@@ -64,7 +64,7 @@ export function getMeta(key: THexobjectKey): IHexobjectMeta {
     key: content.hexobjectKey,
     title: content.title,
     subtitle: content.subtitle,
-    actions: content.actions as IHexobjectMeta['actions'],
+    actions: content.actions,
     traits: deriveMetaTraits(content),
     equip: content.equip,
     yields: content.yields,

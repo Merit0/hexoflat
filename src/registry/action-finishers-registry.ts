@@ -17,7 +17,7 @@ export type ActionFinisher = (
 ) => boolean;
 
 function ensureUnlocked(ctx: IActionContext) {
-  if (ctx.heroToolStore?.isLocked) (ctx.heroToolStore as any).unlockTool?.();
+  if (ctx.heroToolStore?.isLocked) ctx.heroToolStore.unlockTool();
 }
 
 function handleCancelled(action: IPendingTileAction, ctx: IActionContext) {

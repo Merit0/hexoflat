@@ -12,12 +12,12 @@ export class HexObjectFactory {
   static create(
     key: THexobjectKey,
     coord: IHexCoordinates,
-    overrides?: Record<string, any>,
+    overrides?: Record<string, unknown>,
   ): THexobject {
     const proto: THexobjectPrototype = getPrototype(key);
     const base: THexobjectPrototype = structuredClone(proto);
     const id = `${coordinateKey(coord)}:${key}`;
-    const built: THexobject = { ...(base as any), id };
+    const built: THexobject = { ...base, id };
 
     if (overrides) {
       this.applyOverrides(built, overrides);
@@ -26,7 +26,7 @@ export class HexObjectFactory {
     return built;
   }
 
-  private static applyOverrides(obj: THexobject, overrides: Record<string, any>) {
+  private static applyOverrides(obj: THexobject, overrides: Record<string, unknown>) {
     if (obj.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof overrides.regrowMs === 'number') obj.resource.regrowMs = overrides.regrowMs;
       if (typeof overrides.amount === 'number') obj.resource.amount = overrides.amount;

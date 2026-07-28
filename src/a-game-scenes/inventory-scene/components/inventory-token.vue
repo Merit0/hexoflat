@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Teleport, type CSSProperties } from 'vue';
+import { computed, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@/utils/inventory/traits-resolver';
 import { useInventoryDragHandle } from '@/composables/use-inventory-drag';
@@ -41,12 +41,9 @@ const isSelected = computed(() => inventoryStore.selectedItemId === props.item.i
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const meta = computed(() => resolveInventoryView(props.item.key));
 
-const tokenStyle = computed(
-  () =>
-    ({
-      '--rot': `${rotation.value}deg`,
-    }) as Record<string, string>,
-);
+const tokenStyle = computed(() => ({
+  '--rot': `${rotation.value}deg`,
+}));
 
 const dragGhostStyle = computed<CSSProperties>(() => {
   const snap = inventoryStore.dragOverSlot ? 1.12 : 1.05;

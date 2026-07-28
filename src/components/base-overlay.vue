@@ -6,8 +6,8 @@
   >
     <template v-for="(entry, i) in overlay.stack" :key="entry.name + i">
       <component
-        v-if="registry[entry.name]"
         :is="registry[entry.name]"
+        v-if="registry[entry.name]"
         :data="entry.data"
         :data-testid="`overlay-${entry.name}`"
         :style="{ zIndex: 2000 + i }"

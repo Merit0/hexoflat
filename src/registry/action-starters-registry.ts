@@ -92,9 +92,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
       cancelled: false,
     };
 
-    if ((heroToolStore as any).lockTool) {
-      (heroToolStore as any).lockTool(tile, endsAt);
-    }
+    heroToolStore.lockTool(tile, endsAt);
 
     return { ok: true, endsAt };
   },
@@ -148,9 +146,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
       cancelled: false,
     };
 
-    if ((heroToolStore as any).lockTool) {
-      (heroToolStore as any).lockTool(tile, endsAt);
-    }
+    heroToolStore.lockTool(tile, endsAt);
 
     return { ok: true, endsAt };
   },
@@ -312,7 +308,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     const meta = getMeta(key);
     const cfg = meta?.actions?.[EHexActionType.ENTER];
 
-    const requiredToolKey = (cfg?.requiredTool ?? HEXOBJECT_KEYS.HAND) as TToolKeys;
+    const requiredToolKey = cfg?.requiredTool ?? HEXOBJECT_KEYS.HAND;
     if (requiredToolKey && tool !== requiredToolKey) {
       return { ok: false, message: `Need a tool: ${requiredToolKey}` };
     }
@@ -338,7 +334,9 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
       worldStore.goToLocation(meta.enter.locationKey);
 
-      router.push({ name: ROUTES.WORLD, params: { locationKey: meta.enter.locationKey } });
+      void router
+        .push({ name: ROUTES.WORLD, params: { locationKey: meta.enter.locationKey } })
+        .catch((e: unknown) => console.error('Router push failed:', e));
     }
 
     return { ok: true, endsAt: now + 100 };

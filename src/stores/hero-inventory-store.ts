@@ -74,15 +74,17 @@ function randomRotationDeg() {
   return Math.floor(Math.random() * 31) - 15;
 }
 
-function isSerializableInventoryItem(value: any): value is InventoryItem {
+function isSerializableInventoryItem(value: unknown): value is InventoryItem {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+
   return (
-    value &&
-    typeof value.id === 'string' &&
-    typeof value.key === 'string' &&
-    typeof value.type === 'string' &&
-    typeof value.amount === 'number' &&
-    typeof value.slotKey === 'string' &&
-    typeof value.isNew === 'boolean'
+    typeof v.id === 'string' &&
+    typeof v.key === 'string' &&
+    typeof v.type === 'string' &&
+    typeof v.amount === 'number' &&
+    typeof v.slotKey === 'string' &&
+    typeof v.isNew === 'boolean'
   );
 }
 
@@ -91,18 +93,22 @@ function getItemUnitWeightKg(key: THexobjectKey) {
   return getMeta(key)?.traits?.weightKG ?? 0;
 }
 
+function emptyRotations(): Record<string, number> {
+  return {};
+}
+
 export const useHeroInventoryStore = defineStore('heroInventory', {
   state: () => ({
     grid: {
       cols: 12,
       rows: 7,
       blockedRect: { x: 3, y: 1, w: 6, h: 5 },
-    } as GridConfig,
+    },
 
     items: [] as InventoryItem[],
     selectedItemId: null as string | null,
 
-    rotationsById: {} as Record<string, number>,
+    rotationsById: emptyRotations(),
 
     carryCapacityKg: 10,
 
