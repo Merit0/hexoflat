@@ -6,6 +6,7 @@ import vueParser from 'vue-eslint-parser';
 import prettierConfig from 'eslint-config-prettier';
 
 const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
+const APP_SRC_FILES = ['src/**/*.{ts,vue}'];
 
 export default tseslint.config(
   {
@@ -14,7 +15,16 @@ export default tseslint.config(
 
   ...tseslint.configs.recommended,
   ...vuePlugin.configs['flat/recommended'],
-  ...tseslint.configs.recommendedTypeChecked,
+
+  // Type-checked rules require parserOptions.project/projectService, which
+  // we only set up for src/** below (the tree pnpm lint and lint-staged
+  // actually touch). Force `files` onto every rule-only config from
+  // recommendedTypeChecked so it can't leak onto untyped files like
+  // vite.config.ts or commitlint.config.js and crash on missing type info.
+  ...tseslint.configs.recommendedTypeChecked.map((config) => ({
+    ...config,
+    files: APP_SRC_FILES,
+  })),
 
   // Must come last: the typescript-eslint configs above each set
   // languageOptions.parser globally (no `files` filter), which clobbers
@@ -22,7 +32,7 @@ export default tseslint.config(
   // bundles parserOptions.project here too so nothing after it can reset
   // it via a fresh languageOptions.parserOptions object.
   {
-    files: ['src/**/*.{ts,vue}'],
+    files: APP_SRC_FILES,
     languageOptions: {
       parser: vueParser,
       parserOptions: {
