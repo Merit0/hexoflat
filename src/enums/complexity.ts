@@ -1,6 +1,6 @@
 export enum Complexity {
-    EVIL,
-    HARD,
-    NORMAL,
-    EASY
+  EVIL,
+  HARD,
+  NORMAL,
+  EASY,
 }

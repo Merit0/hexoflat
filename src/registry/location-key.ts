@@ -1,1 +1,1 @@
-export type LocationKey = "camping" | "silesia" | "cave";
+export type LocationKey = 'camping' | 'silesia' | 'cave';

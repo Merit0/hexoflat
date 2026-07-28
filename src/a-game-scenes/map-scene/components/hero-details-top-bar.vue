@@ -8,18 +8,30 @@
             Steps: <b>{{ heroSteps }}</b>
             <div class="chip-popover">
               <div class="chip-popover__title">{{ scoutRankLabel }}</div>
-              <div class="chip-popover__line">Move Steps: <b>{{ scoutMoveSteps }}</b></div>
-              <div class="chip-popover__line">Steps Walked: <b>{{ heroSteps }}</b></div>
+              <div class="chip-popover__line">
+                Move Steps: <b>{{ scoutMoveSteps }}</b>
+              </div>
+              <div class="chip-popover__line">
+                Steps Walked: <b>{{ heroSteps }}</b>
+              </div>
               <div class="chip-popover__line">
                 Next Rank:
-                <b>{{ nextScoutRankAt ?? "MAX" }}</b>
+                <b>{{ nextScoutRankAt ?? 'MAX' }}</b>
               </div>
             </div>
           </div>
-          <span class="chip" data-testid="topbar-scout-chip">Scout: <b>{{ scoutRankShort }}</b></span>
-          <span class="chip" data-testid="topbar-tool-chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
-          <span class="chip" data-testid="topbar-status-chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
-          <span class="chip muted" data-testid="topbar-status-chip" v-else>Status: <b>READY</b></span>
+          <span class="chip" data-testid="topbar-scout-chip"
+            >Scout: <b>{{ scoutRankShort }}</b></span
+          >
+          <span class="chip" data-testid="topbar-tool-chip" v-if="toolLabel"
+            >Tool: <b>{{ toolLabel }}</b></span
+          >
+          <span class="chip" data-testid="topbar-status-chip" v-if="heroToolStore.isLocked"
+            >Status: <b>LOCKED</b></span
+          >
+          <span class="chip muted" data-testid="topbar-status-chip" v-else
+            >Status: <b>READY</b></span
+          >
         </div>
       </div>
     </div>
@@ -35,29 +47,40 @@
     </div>
 
     <div class="topbar__right">
-      <span class="chip" data-testid="topbar-map-chip">Map: <b>{{ heroLocation }}</b></span>
-      <button class="settings-btn" data-testid="topbar-settings-button" type="button" @click="openSettings">⚙</button>
+      <span class="chip" data-testid="topbar-map-chip"
+        >Map: <b>{{ heroLocation }}</b></span
+      >
+      <button
+        class="settings-btn"
+        data-testid="topbar-settings-button"
+        type="button"
+        @click="openSettings"
+      >
+        ⚙
+      </button>
       <div class="topbar__logger">
-        <game-events-logger/>
+        <game-events-logger />
       </div>
 
-      <button @click="userStore.logout()" class="logout" data-testid="topbar-logout-button">Logout</button>
+      <button @click="userStore.logout()" class="logout" data-testid="topbar-logout-button">
+        Logout
+      </button>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useHeroStore } from "@/stores/hero-store";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import { useWorldMapStore } from "@/stores/world-map-store";
-import { useUserStore } from "@/stores/user-store";
-import { useOverlayStore } from "@/stores/overlay-store";
-import { useHeroInventoryStore } from "@/stores/hero-inventory-store";
-import GameEventsLogger from "@/a-game-scenes/game-events-logger/components/game-events-logger.vue";
-import {MapRegistry} from "@/registry/world-map-registry";
-import { getScoutProgress } from "@/services/hero-movement/scout-progression";
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
+import { computed } from 'vue';
+import { useHeroStore } from '@/stores/hero-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { useUserStore } from '@/stores/user-store';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import GameEventsLogger from '@/a-game-scenes/game-events-logger/components/game-events-logger.vue';
+import { MapRegistry } from '@/registry/world-map-registry';
+import { getScoutProgress } from '@/services/hero-movement/scout-progression';
+import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
 
 const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
@@ -66,7 +89,7 @@ const heroInventoryStore = useHeroInventoryStore();
 const userStore = useUserStore();
 const overlayStore = useOverlayStore();
 
-const heroName = computed(() => heroStore.hero?.name ?? "Hero");
+const heroName = computed(() => heroStore.hero?.name ?? 'Hero');
 const heroSteps = computed(() => heroStore.hero?.heroSteps ?? 0);
 const scoutProgress = computed(() => getScoutProgress(heroSteps.value));
 const scoutMoveSteps = computed(() => scoutProgress.value.moveSteps);
@@ -89,15 +112,15 @@ const hpPercent = computed(() => {
 
 const heroLocation = computed(() => {
   const key = heroStore.nav.locationKey;
-  if (!key) return "Nowhere";
+  if (!key) return 'Nowhere';
 
   return MapRegistry.get(key)?.title ?? key;
 });
 
 function resolveHandLabel(itemKey: string | undefined) {
-  if (!itemKey || itemKey === HEXOBJECT_KEYS.HAND) return "hand";
-  if (String(itemKey).toLowerCase().includes("shield")) return "shield";
-  return "weapon";
+  if (!itemKey || itemKey === HEXOBJECT_KEYS.HAND) return 'hand';
+  if (String(itemKey).toLowerCase().includes('shield')) return 'shield';
+  return 'weapon';
 }
 
 const toolLabel = computed(() => {
@@ -108,7 +131,7 @@ const toolLabel = computed(() => {
 });
 
 function openSettings() {
-  overlayStore.openOverlay("settings");
+  overlayStore.openOverlay('settings');
 }
 </script>
 
@@ -138,14 +161,21 @@ function openSettings() {
     min-height: 64px;
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "left right"
-      "center center";
+      'left right'
+      'center center';
     row-gap: 8px;
   }
 
-  .topbar__left { grid-area: left; }
-  .topbar__right { grid-area: right; }
-  .topbar__center { grid-area: center; justify-content: center; }
+  .topbar__left {
+    grid-area: left;
+  }
+  .topbar__right {
+    grid-area: right;
+  }
+  .topbar__center {
+    grid-area: center;
+    justify-content: center;
+  }
 
   .stat {
     width: min(420px, 90vw);
@@ -157,9 +187,9 @@ function openSettings() {
   .topbar {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "left"
-      "center"
-      "right";
+      'left'
+      'center'
+      'right';
     padding: 8px 10px;
   }
 
@@ -285,7 +315,9 @@ function openSettings() {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
-  transition: opacity 140ms ease, transform 140ms ease;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
   z-index: 30;
 }
 

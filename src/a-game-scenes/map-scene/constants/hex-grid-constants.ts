@@ -8,5 +8,5 @@
 export const GRID_COLUMNS = 42;
 
 export function getTileWidth(viewportWidth: number = window.innerWidth): number {
-    return viewportWidth / GRID_COLUMNS;
+  return viewportWidth / GRID_COLUMNS;
 }

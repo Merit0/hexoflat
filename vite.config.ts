@@ -1,22 +1,22 @@
-import {defineConfig} from 'vitest/config'
-import vue from '@vitejs/plugin-vue'
-import path from 'node:path'
+import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
+import path from 'node:path';
 
 export default defineConfig({
-    plugins: [vue()],
-    server: {
-        open: true,
+  plugins: [vue()],
+  server: {
+    open: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@core': path.resolve(__dirname, 'src/core'),
+      '@components': path.resolve(__dirname, 'src/components'),
+      '@stores': path.resolve(__dirname, 'src/stores'),
     },
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, 'src'),
-            '@core': path.resolve(__dirname, 'src/core'),
-            '@components': path.resolve(__dirname, 'src/components'),
-            '@stores': path.resolve(__dirname, 'src/stores'),
-        }
-    },
-    test: {
-        environment: 'node',
-        include: ['src/**/*.{test,spec}.ts'],
-    },
-})
+  },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.ts'],
+  },
+});

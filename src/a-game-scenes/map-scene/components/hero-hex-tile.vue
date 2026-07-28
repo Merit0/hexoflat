@@ -1,22 +1,22 @@
 <template>
   <div
-      class="hero-hex-tile"
-      data-testid="hero-token"
-      role="button"
-      tabindex="0"
-      aria-label="Open hero inventory"
-      :style="style"
-      @click="openInventory"
-      @keydown.enter="openInventory"
-      @keydown.space.prevent="openInventory"
+    class="hero-hex-tile"
+    data-testid="hero-token"
+    role="button"
+    tabindex="0"
+    aria-label="Open hero inventory"
+    :style="style"
+    @click="openInventory"
+    @keydown.enter="openInventory"
+    @keydown.space.prevent="openInventory"
   ></div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import { hexTranslateStyle } from "@/utils/hex-utils";
-import {useOverlayStore} from "@/stores/overlay-store";
+import { computed } from 'vue';
+import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
+import { hexTranslateStyle } from '@/utils/hex-utils';
+import { useOverlayStore } from '@/stores/overlay-store';
 
 const props = defineProps<{
   coord: IHexCoordinates | null;
@@ -25,7 +25,7 @@ const props = defineProps<{
 
 const style = computed(() => {
   if (!props.coord) {
-    return { display: "none" } as Record<string, string>;
+    return { display: 'none' } as Record<string, string>;
   }
 
   return hexTranslateStyle(props.coord, props.tileWidth);
@@ -33,8 +33,8 @@ const style = computed(() => {
 
 const openInventory = () => {
   const overlayStore = useOverlayStore();
-  overlayStore.openOverlay("hero-inventory");
-}
+  overlayStore.openOverlay('hero-inventory');
+};
 </script>
 
 <style scoped>
@@ -42,7 +42,7 @@ const openInventory = () => {
   position: absolute;
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
-  background-image: url("/hero-asssets/spirit-hex-image.png");
+  background-image: url('/hero-asssets/spirit-hex-image.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

@@ -1,4 +1,4 @@
-import {IHexCoordinates} from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
+import { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
 
 export type Axial = { q: number; r: number };
 
@@ -9,68 +9,60 @@ export type Axial = { q: number; r: number };
  * `as any` casts to a full tile model just to compute a position.
  */
 export interface IHexPositioned {
-    coordinates: IHexCoordinates;
+  coordinates: IHexCoordinates;
 }
 
 // odd-q offset -> axial
 export function oddQToAxial(c: IHexCoordinates): Axial {
-    const q = c.columnIndex;
-    const r = c.rowIndex - ((q - (q & 1)) / 2);
-    return { q, r };
+  const q = c.columnIndex;
+  const r = c.rowIndex - (q - (q & 1)) / 2;
+  return { q, r };
 }
 
 // axial -> odd-q offset
 function axialToOddQ(a: { q: number; r: number }): IHexCoordinates {
-    const columnIndex = a.q;
-    const rowIndex = a.r + ((columnIndex - (columnIndex & 1)) / 2);
-    return { columnIndex, rowIndex };
+  const columnIndex = a.q;
+  const rowIndex = a.r + (columnIndex - (columnIndex & 1)) / 2;
+  return { columnIndex, rowIndex };
 }
 
 const AXIAL_DIRS = [
-    { q: +1, r:  0 },
-    { q: +1, r: -1 },
-    { q:  0, r: -1 },
-    { q: -1, r:  0 },
-    { q: -1, r: +1 },
-    { q:  0, r: +1 },
+  { q: +1, r: 0 },
+  { q: +1, r: -1 },
+  { q: 0, r: -1 },
+  { q: -1, r: 0 },
+  { q: -1, r: +1 },
+  { q: 0, r: +1 },
 ] as const;
 
 export function getOddQNeighbors(center: IHexCoordinates): IHexCoordinates[] {
-    const a = oddQToAxial(center);
-    return AXIAL_DIRS.map(d => axialToOddQ({ q: a.q + d.q, r: a.r + d.r }));
+  const a = oddQToAxial(center);
+  return AXIAL_DIRS.map((d) => axialToOddQ({ q: a.q + d.q, r: a.r + d.r }));
 }
 
 export function coordinateKey(c: IHexCoordinates): string {
-    return `${c.columnIndex}:${c.rowIndex}`;
+  return `${c.columnIndex}:${c.rowIndex}`;
 }
 
 export function hexDistance(from: IHexCoordinates, to: IHexCoordinates): number {
-    const a = oddQToAxial(from);
-    const b = oddQToAxial(to);
+  const a = oddQToAxial(from);
+  const b = oddQToAxial(to);
 
-    const dq = a.q - b.q;
-    const dr = a.r - b.r;
-    const ds = (-a.q - a.r) - (-b.q - b.r);
+  const dq = a.q - b.q;
+  const dr = a.r - b.r;
+  const ds = -a.q - a.r - (-b.q - b.r);
 
-    return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds));
+  return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds));
 }
 
-export function calcHexPixelPosition(
-    tile: IHexPositioned,
-    tileWidth: number,
-    spacing = 0.93
-) {
-    const q = tile.coordinates.columnIndex;
-    const r = tile.coordinates.rowIndex;
+export function calcHexPixelPosition(tile: IHexPositioned, tileWidth: number, spacing = 0.93) {
+  const q = tile.coordinates.columnIndex;
+  const r = tile.coordinates.rowIndex;
 
-    const x = tileWidth * 1.5 * spacing * q;
-    const y =
-        tileWidth *
-        Math.sqrt(3) *
-        spacing *
-        (r + (q % 2 ? 0.5 : 0));
+  const x = tileWidth * 1.5 * spacing * q;
+  const y = tileWidth * Math.sqrt(3) * spacing * (r + (q % 2 ? 0.5 : 0));
 
-    return { x, y };
+  return { x, y };
 }
 
 /**
@@ -80,17 +72,17 @@ export function calcHexPixelPosition(
  * preview markers, camp-heal effect, etc).
  */
 export function hexTranslateStyle(
-    coord: IHexCoordinates,
-    tileWidth: number,
-    options: { round?: boolean } = {}
+  coord: IHexCoordinates,
+  tileWidth: number,
+  options: { round?: boolean } = {},
 ): Record<string, string> {
-    const { x, y } = calcHexPixelPosition({ coordinates: coord }, tileWidth);
-    const px = options.round ? Math.round(x) : x;
-    const py = options.round ? Math.round(y) : y;
+  const { x, y } = calcHexPixelPosition({ coordinates: coord }, tileWidth);
+  const px = options.round ? Math.round(x) : x;
+  const py = options.round ? Math.round(y) : y;
 
-    return {
-        transform: `translate(${px}px, ${py}px)`,
-    };
+  return {
+    transform: `translate(${px}px, ${py}px)`,
+  };
 }
 
 /**
@@ -98,16 +90,16 @@ export function hexTranslateStyle(
  * size = "radius" гекса (від центру до вершини)
  */
 export function axialToPixelPointy({ q, r }: Axial, size: number) {
-    const x = size * Math.sqrt(3) * (q + r / 2);
-    const y = size * (3 / 2) * r;
-    return { x, y };
+  const x = size * Math.sqrt(3) * (q + r / 2);
+  const y = size * (3 / 2) * r;
+  return { x, y };
 }
 
 /**
  * Flat-top axial → pixel.
  */
 export function axialToPixelFlat({ q, r }: Axial, size: number) {
-    const x = size * (3 / 2) * q;
-    const y = size * Math.sqrt(3) * (r + q / 2);
-    return { x, y };
+  const x = size * (3 / 2) * q;
+  const y = size * Math.sqrt(3) * (r + q / 2);
+  return { x, y };
 }

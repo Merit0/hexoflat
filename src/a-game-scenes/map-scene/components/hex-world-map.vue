@@ -1,56 +1,53 @@
 <template>
   <div class="scene-root game-root" data-testid="map-scene-root">
-    <hero-details-top-bar/>
+    <hero-details-top-bar />
     <combat-hud />
     <div class="hex-map" data-testid="hex-map">
       <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
         <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
 
         <div
-            class="hex-map-inner"
-            data-testid="hex-map-inner"
-            :style="{
+          class="hex-map-inner"
+          data-testid="hex-map-inner"
+          :style="{
             width: mapBounds.width + 'px',
             height: mapBounds.height + 'px',
             transform: `translate(${Math.round(-mapBounds.offsetX)}px, ${Math.round(-mapBounds.offsetY)}px)`,
           }"
         >
-          <enemy-vision-overlay
-              :cells="enemyVisionCells"
-              :in-combat="worldStore.combatActive"
-          />
+          <enemy-vision-overlay :cells="enemyVisionCells" :in-combat="worldStore.combatActive" />
 
           <combat-marker-overlay :markers="combatMarkers" />
           <camp-heal-overlay
-              :style="campHealHeartStyle"
-              :active="isCampfireHealActive"
-              :label="campHealInfoLabel"
+            :style="campHealHeartStyle"
+            :active="isCampfireHealActive"
+            :label="campHealInfoLabel"
           />
 
           <move-preview-overlay
-              :segments="movePreviewSegments"
-              :marker-style="movePreviewMarkerStyle"
-              :reachable="movePreviewReachable"
-              :step-cost="movePreviewStepCost"
-              :marker-kind="movePreviewMarkerKind"
+            :segments="movePreviewSegments"
+            :marker-style="movePreviewMarkerStyle"
+            :reachable="movePreviewReachable"
+            :step-cost="movePreviewStepCost"
+            :marker-kind="movePreviewMarkerKind"
           />
 
           <hero-hex-tile :coord="worldStore.heroCoordinates" :tileWidth="tileWidth" />
 
           <tool-hex-tile
-              v-if="heroToolStore.isDragging && activeTool"
-              :tileWidth="tileWidth"
-              :tool="activeTool"
-              @hide="onHide"
+            v-if="heroToolStore.isDragging && activeTool"
+            :tileWidth="tileWidth"
+            :tool="activeTool"
+            @hide="onHide"
           />
 
           <hex-tile
-              v-for="tile in tiles"
-              :key="tile.tileId"
-              :hex-tile="tile"
-              :now-tick="healTickerNow"
-              @tile-click="handleTileClick"
-              @tile-hover="handleTileHover"
+            v-for="tile in tiles"
+            :key="tile.tileId"
+            :hex-tile="tile"
+            :now-tick="healTickerNow"
+            @tile-click="handleTileClick"
+            @tile-hover="handleTileHover"
           />
         </div>
       </div>
@@ -59,36 +56,36 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useWorldMapStore } from "@/stores/world-map-store";
-import HexTile from "@/a-game-scenes/map-scene/components/hex-tile.vue";
-import HeroHexTile from "@/a-game-scenes/map-scene/components/hero-hex-tile.vue";
-import { calcHexPixelPosition, hexTranslateStyle } from "@/utils/hex-utils";
-import { useTileClick } from "@/composables/use-tile-click";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import {resolveActions, ResolvedAction} from "@/game-resolvers/interactions-resolver";
-import HeroDetailsTopBar from "@/a-game-scenes/map-scene/components/hero-details-top-bar.vue";
-import ToolHexTile from "@/a-game-scenes/map-scene/components/tool-hex-tile.vue";
-import MovePreviewOverlay from "@/a-game-scenes/map-scene/components/move-preview-overlay.vue";
-import EnemyVisionOverlay from "@/a-game-scenes/map-scene/components/enemy-vision-overlay.vue";
-import CombatHud from "@/a-game-scenes/map-scene/components/combat-hud.vue";
-import CombatMarkerOverlay from "@/a-game-scenes/map-scene/components/combat-marker-overlay.vue";
-import CampHealOverlay from "@/a-game-scenes/map-scene/components/camp-heal-overlay.vue";
-import {LocationKey} from "@/registry/world-map-registry";
-import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import type { IHexCoordinates } from "@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface";
-import { findShortestPath } from "@/services/hero-movement/pathfinding-service";
-import { getScoutMoveStepsForSteps } from "@/services/hero-movement/scout-progression";
-import { coordinateKey, getOddQNeighbors, hexDistance } from "@/utils/hex-utils";
-import { EHexCollision, EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
-import { useHeroStore } from "@/stores/hero-store";
-import { useUiSettingsStore } from "@/stores/ui-settings-store";
-import { useHeroInventoryStore } from "@/stores/hero-inventory-store";
-import type { TEquipSlot } from "@/abstraction/hexobject-abstraction";
-import type { THeroToolKey } from "@/content/equipment.content";
-import { getToolCapabilities } from "@/game-resolvers/interactions-resolver";
-import { getTileWidth } from "@/a-game-scenes/map-scene/constants/hex-grid-constants";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import HexTile from '@/a-game-scenes/map-scene/components/hex-tile.vue';
+import HeroHexTile from '@/a-game-scenes/map-scene/components/hero-hex-tile.vue';
+import { calcHexPixelPosition, hexTranslateStyle } from '@/utils/hex-utils';
+import { useTileClick } from '@/composables/use-tile-click';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { resolveActions, ResolvedAction } from '@/game-resolvers/interactions-resolver';
+import HeroDetailsTopBar from '@/a-game-scenes/map-scene/components/hero-details-top-bar.vue';
+import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
+import MovePreviewOverlay from '@/a-game-scenes/map-scene/components/move-preview-overlay.vue';
+import EnemyVisionOverlay from '@/a-game-scenes/map-scene/components/enemy-vision-overlay.vue';
+import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
+import CombatMarkerOverlay from '@/a-game-scenes/map-scene/components/combat-marker-overlay.vue';
+import CampHealOverlay from '@/a-game-scenes/map-scene/components/camp-heal-overlay.vue';
+import { LocationKey } from '@/registry/world-map-registry';
+import type { IHexTile } from '@/a-game-scenes/map-scene/models/hex-tile-model';
+import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
+import { findShortestPath } from '@/services/hero-movement/pathfinding-service';
+import { getScoutMoveStepsForSteps } from '@/services/hero-movement/scout-progression';
+import { coordinateKey, getOddQNeighbors, hexDistance } from '@/utils/hex-utils';
+import { EHexCollision, EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
+import { useHeroStore } from '@/stores/hero-store';
+import { useUiSettingsStore } from '@/stores/ui-settings-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import type { TEquipSlot } from '@/abstraction/hexobject-abstraction';
+import type { THeroToolKey } from '@/content/equipment.content';
+import { getToolCapabilities } from '@/game-resolvers/interactions-resolver';
+import { getTileWidth } from '@/a-game-scenes/map-scene/constants/hex-grid-constants';
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -102,18 +99,18 @@ const heroStore = useHeroStore();
 const uiSettingsStore = useUiSettingsStore();
 const heroInventoryStore = useHeroInventoryStore();
 const hoveredTileCoord = ref<IHexCoordinates | null>(null);
-const activeHandSlot = ref<TEquipSlot>("weapon");
+const activeHandSlot = ref<TEquipSlot>('weapon');
 const lastHandScrollAt = ref(0);
 const healTickerNow = ref(Date.now());
 const HAND_SCROLL_COOLDOWN_MS = 180;
 let healTickerTimer: number | null = null;
 
 watch(
-    () => props.locationKey,
-    (locationKey) => {
-      worldStore.goToLocation(locationKey);
-    },
-    { immediate: true }
+  () => props.locationKey,
+  (locationKey) => {
+    worldStore.goToLocation(locationKey);
+  },
+  { immediate: true },
 );
 
 onMounted(() => worldStore.bootstrapWorld());
@@ -145,9 +142,9 @@ function readDomTileSize() {
 
 /* ---------- tool resolver ---------- */
 function getTileByCoord(coord: any) {
-  return worldMapStore.map.tiles.find((t: any) =>
-      t.coordinates.rowIndex === coord.rowIndex &&
-      t.coordinates.columnIndex === coord.columnIndex
+  return worldMapStore.map.tiles.find(
+    (t: any) =>
+      t.coordinates.rowIndex === coord.rowIndex && t.coordinates.columnIndex === coord.columnIndex,
   );
 }
 
@@ -156,50 +153,53 @@ function getTileCenter(coord: IHexCoordinates) {
   const { x, y } = calcHexPixelPosition(pseudoTile, tileWidth);
 
   return {
-    x: x + ((domTileW.value || 0) / 2),
-    y: y + ((domTileH.value || 0) / 2),
+    x: x + (domTileW.value || 0) / 2,
+    y: y + (domTileH.value || 0) / 2,
   };
 }
 
 watch(
-    () => [heroToolStore.isDragging, heroToolStore.activeTool, heroToolStore.hover] as const,
-    ([isDragging, tool, hover]) => {
-      if (!isDragging || !tool || !hover) {
-        heroToolStore.clearResolvedActions();
-        return;
-      }
+  () => [heroToolStore.isDragging, heroToolStore.activeTool, heroToolStore.hover] as const,
+  ([isDragging, tool, hover]) => {
+    if (!isDragging || !tool || !hover) {
+      heroToolStore.clearResolvedActions();
+      return;
+    }
 
-      const tile = getTileByCoord(hover);
-      if (!tile?.hexobject || !tile.hexobject.isInteractable) {
-        heroToolStore.clearResolvedActions();
-        return;
-      }
+    const tile = getTileByCoord(hover);
+    if (!tile?.hexobject || !tile.hexobject.isInteractable) {
+      heroToolStore.clearResolvedActions();
+      return;
+    }
 
-      const actions: ResolvedAction[] = resolveActions(tool, tile.hexobject);
-      heroToolStore.setResolvedActions(actions);
-    },
-    { immediate: true }
+    const actions: ResolvedAction[] = resolveActions(tool, tile.hexobject);
+    heroToolStore.setResolvedActions(actions);
+  },
+  { immediate: true },
 );
 
 const movePreview = computed(() => {
   if (!uiSettingsStore.showHeroMoveTrail) return null;
   if (!worldStore.map || !worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
   if (worldStore.isHeroMoving) return null;
-  if (worldStore.combatActive && worldStore.combatTurnSide !== "hero") return null;
+  if (worldStore.combatActive && worldStore.combatTurnSide !== 'hero') return null;
 
-  const activeToolCapabilities = heroToolStore.activeTool ? getToolCapabilities(heroToolStore.activeTool) : {};
+  const activeToolCapabilities = heroToolStore.activeTool
+    ? getToolCapabilities(heroToolStore.activeTool)
+    : {};
 
   if (
-      worldStore.combatActive &&
-      worldStore.combatTurnSide === "hero" &&
-      heroToolStore.isDragging &&
-      activeToolCapabilities.canBlock &&
-      worldStore.combatAttackUsed &&
-      !worldStore.combatDefendUsed
+    worldStore.combatActive &&
+    worldStore.combatTurnSide === 'hero' &&
+    heroToolStore.isDragging &&
+    activeToolCapabilities.canBlock &&
+    worldStore.combatAttackUsed &&
+    !worldStore.combatDefendUsed
   ) {
-    const isAdjacent = getOddQNeighbors(worldStore.heroCoordinates).some((coord) =>
+    const isAdjacent = getOddQNeighbors(worldStore.heroCoordinates).some(
+      (coord) =>
         coord.columnIndex === hoveredTileCoord.value!.columnIndex &&
-        coord.rowIndex === hoveredTileCoord.value!.rowIndex
+        coord.rowIndex === hoveredTileCoord.value!.rowIndex,
     );
     if (!isAdjacent) return null;
 
@@ -210,16 +210,16 @@ const movePreview = computed(() => {
       reachable,
       markerCoord: hoveredTileCoord.value,
       stepCost: 0,
-      markerKind: "defend" as const,
+      markerKind: 'defend' as const,
     };
   }
 
   const hasMovementSteps = worldStore.combatActive
-      ? worldStore.combatStepsLeft > 0
-      : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
-  const hasNoActiveTool = !heroToolStore.isDragging && (
-      !heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND
-  );
+    ? worldStore.combatStepsLeft > 0
+    : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
+  const hasNoActiveTool =
+    !heroToolStore.isDragging &&
+    (!heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND);
   if (!hasMovementSteps || !hasNoActiveTool) return null;
 
   const heroKey = coordinateKey(worldStore.heroCoordinates);
@@ -230,15 +230,20 @@ const movePreview = computed(() => {
   if (!targetTile) return null;
 
   const moveSteps = worldStore.combatActive
-      ? worldStore.combatStepsLeft
-      : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
-  const path = findShortestPath(worldStore.map, worldStore.heroCoordinates, hoveredTileCoord.value, null);
+    ? worldStore.combatStepsLeft
+    : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
+  const path = findShortestPath(
+    worldStore.map,
+    worldStore.heroCoordinates,
+    hoveredTileCoord.value,
+    null,
+  );
 
   const isTraversableTarget = Boolean(
-      targetTile.isRevealed &&
-      targetTile.hexobject?.groupType !== EHexobjectGroup.CONSTRUCTION &&
-      targetTile.hexobject?.collision !== EHexCollision.SOLID &&
-      targetTile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.CAMPING_ENTRANCE
+    targetTile.isRevealed &&
+    targetTile.hexobject?.groupType !== EHexobjectGroup.CONSTRUCTION &&
+    targetTile.hexobject?.collision !== EHexCollision.SOLID &&
+    targetTile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.CAMPING_ENTRANCE,
   );
 
   const route = path?.slice(1) ?? [];
@@ -249,7 +254,7 @@ const movePreview = computed(() => {
     reachable,
     markerCoord: isTraversableTarget ? hoveredTileCoord.value : null,
     stepCost: route.length,
-    markerKind: "move" as const,
+    markerKind: 'move' as const,
   };
 });
 
@@ -275,7 +280,7 @@ const movePreviewMarkerStyle = computed(() => {
 
 const movePreviewReachable = computed(() => movePreview.value?.reachable ?? false);
 const movePreviewStepCost = computed(() => movePreview.value?.stepCost ?? 0);
-const movePreviewMarkerKind = computed(() => movePreview.value?.markerKind ?? "move");
+const movePreviewMarkerKind = computed(() => movePreview.value?.markerKind ?? 'move');
 
 const enemyVisionCells = computed(() => {
   if (!uiSettingsStore.showEnemyVisionArea) return [];
@@ -286,7 +291,7 @@ const enemyVisionCells = computed(() => {
   for (const enemyTile of worldStore.map.tiles) {
     const hexobject = enemyTile.hexobject;
     if (!hexobject || hexobject.groupType !== EHexobjectGroup.CREATURE) continue;
-    if (hexobject.creature?.faction !== "enemy") continue;
+    if (hexobject.creature?.faction !== 'enemy') continue;
     if (!enemyTile.isRevealed) continue;
 
     const visionRange = hexobject.creature.visionRange ?? 3;
@@ -313,29 +318,32 @@ const isHeroInEnemyVision = computed(() => {
 
 const combatMarkers = computed(() => {
   return worldStore.combatMarkers
-      .filter((marker) => marker.kind !== "defend")
-      .filter((marker) => marker.visible)
-      .map((marker) => {
-    const center = getTileCenter(marker.coord);
-    return {
-      key: `${marker.owner}:${marker.kind}:${coordinateKey(marker.coord)}`,
-      owner: marker.owner,
-      kind: marker.kind,
-      style: {
-        transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
-      } as Record<string, string>,
-    };
-  });
+    .filter((marker) => marker.kind !== 'defend')
+    .filter((marker) => marker.visible)
+    .map((marker) => {
+      const center = getTileCenter(marker.coord);
+      return {
+        key: `${marker.owner}:${marker.kind}:${coordinateKey(marker.coord)}`,
+        owner: marker.owner,
+        kind: marker.kind,
+        style: {
+          transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
+        } as Record<string, string>,
+      };
+    });
 });
 
 const activeCampfireActionTile = computed(() => {
   if (!worldStore.map) return null;
 
-  return worldStore.map.tiles.find((tile) =>
-      tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE &&
-      tile.pendingAction?.type === "USE" &&
-      (tile.pendingAction.endsAt ?? 0) > healTickerNow.value
-  ) ?? null;
+  return (
+    worldStore.map.tiles.find(
+      (tile) =>
+        tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE &&
+        tile.pendingAction?.type === 'USE' &&
+        (tile.pendingAction.endsAt ?? 0) > healTickerNow.value,
+    ) ?? null
+  );
 });
 
 const isCampfireHealActive = computed(() => Boolean(activeCampfireActionTile.value?.pendingAction));
@@ -343,16 +351,20 @@ const isCampfireHealActive = computed(() => Boolean(activeCampfireActionTile.val
 const campHealEffectCoord = computed(() => {
   if (!isCampfireHealActive.value || !worldStore.heroCoordinates) return null;
 
-  const neighborTiles = (getOddQNeighbors(worldStore.heroCoordinates)
+  const neighborTiles = (
+    getOddQNeighbors(worldStore.heroCoordinates)
       .map((coord) => getTileByCoord(coord))
-      .filter(Boolean) as IHexTile[])
-      .filter((tile) => tile.isRevealed)
-      .filter((tile) => tile.hexobject?.collision !== EHexCollision.SOLID);
+      .filter(Boolean) as IHexTile[]
+  )
+    .filter((tile) => tile.isRevealed)
+    .filter((tile) => tile.hexobject?.collision !== EHexCollision.SOLID);
 
   const emptyTile = neighborTiles.find((tile) => !tile.hexobject);
   if (emptyTile) return emptyTile.coordinates;
 
-  const nonFireplaceTile = neighborTiles.find((tile) => tile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.FIREPLACE);
+  const nonFireplaceTile = neighborTiles.find(
+    (tile) => tile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.FIREPLACE,
+  );
   return nonFireplaceTile?.coordinates ?? null;
 });
 
@@ -369,15 +381,14 @@ const campHealInfoLabel = computed(() => {
   return `${percentPerTick}%/10с`;
 });
 
-
 watch(
-    isHeroInEnemyVision,
-    (inVision) => {
-      if (inVision && !worldStore.combatActive) {
-        worldStore.startCombat();
-      }
-    },
-    { immediate: true }
+  isHeroInEnemyVision,
+  (inVision) => {
+    if (inVision && !worldStore.combatActive) {
+      worldStore.startCombat();
+    }
+  },
+  { immediate: true },
 );
 
 /* ---------- bounds ---------- */
@@ -391,8 +402,10 @@ const mapBounds = computed(() => {
     return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
   }
 
-  let minX = Infinity, minY = Infinity;
-  let maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity;
+  let maxX = -Infinity,
+    maxY = -Infinity;
 
   for (const t of tiles.value) {
     const { x, y } = calcHexPixelPosition(t as any, tileWidth);
@@ -408,8 +421,8 @@ const mapBounds = computed(() => {
   }
 
   return {
-    width: (maxX - minX) + bleed * 2,
-    height: (maxY - minY) + bleed * 2,
+    width: maxX - minX + bleed * 2,
+    height: maxY - minY + bleed * 2,
     offsetX: minX - bleed,
     offsetY: minY - bleed,
   };
@@ -432,7 +445,7 @@ function updateScale() {
 
 function onHide() {
   if (heroToolStore.isLocked) {
-    heroToolStore.cancelLockedAction("HIDE");
+    heroToolStore.cancelLockedAction('HIDE');
     worldMapStore.saveToStorage();
   }
   heroToolStore.stopTool();
@@ -444,7 +457,7 @@ function onResize() {
 }
 
 function onKeyDown(event: KeyboardEvent) {
-  if (event.key !== "Escape") return;
+  if (event.key !== 'Escape') return;
   if (!heroToolStore.isDragging && !heroToolStore.activeTool) return;
 
   event.preventDefault();
@@ -477,9 +490,8 @@ function resolvePreferredToolHover(): IHexCoordinates | null {
   const neighbors = getOddQNeighbors(worldStore.heroCoordinates);
   const target = hoveredTileCoord.value;
 
-  const directNeighbor = neighbors.find((coord) =>
-      coord.columnIndex === target.columnIndex &&
-      coord.rowIndex === target.rowIndex
+  const directNeighbor = neighbors.find(
+    (coord) => coord.columnIndex === target.columnIndex && coord.rowIndex === target.rowIndex,
   );
   if (directNeighbor) return directNeighbor;
 
@@ -509,7 +521,10 @@ function equipToolFromHand(slot: TEquipSlot) {
 
 function onWheel(event: WheelEvent) {
   const target = event.target as HTMLElement | null;
-  if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+  if (
+    target &&
+    (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+  ) {
     return;
   }
 
@@ -522,7 +537,7 @@ function onWheel(event: WheelEvent) {
   if (now - lastHandScrollAt.value < HAND_SCROLL_COOLDOWN_MS) return;
   lastHandScrollAt.value = now;
 
-  const handSlots: TEquipSlot[] = ["weapon", "shield"];
+  const handSlots: TEquipSlot[] = ['weapon', 'shield'];
   const currentIndex = handSlots.indexOf(activeHandSlot.value);
   const direction = event.deltaY > 0 ? 1 : -1;
   const nextIndex = (currentIndex + direction + handSlots.length) % handSlots.length;
@@ -539,18 +554,18 @@ onMounted(() => {
     updateScale();
   });
 
-  window.addEventListener("resize", onResize);
-  window.addEventListener("wheel", onWheel, { passive: false });
-  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener('resize', onResize);
+  window.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('keydown', onKeyDown);
   healTickerTimer = window.setInterval(() => {
     healTickerNow.value = Date.now();
   }, 250);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", onResize);
-  window.removeEventListener("wheel", onWheel);
-  window.removeEventListener("keydown", onKeyDown);
+  window.removeEventListener('resize', onResize);
+  window.removeEventListener('wheel', onWheel);
+  window.removeEventListener('keydown', onKeyDown);
   if (healTickerTimer) {
     window.clearInterval(healTickerTimer);
     healTickerTimer = null;
@@ -573,7 +588,7 @@ onBeforeUnmount(() => {
   height: 100vh;
   padding-top: 5%;
 
-  background-image: url("/board-assets/dark-board-stones.png");
+  background-image: url('/board-assets/dark-board-stones.png');
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;

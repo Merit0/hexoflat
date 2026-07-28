@@ -1,50 +1,50 @@
-import {IHexTile} from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {useOverlayStore} from "@/stores/overlay-store";
-import {useWorldMapStore} from "@/stores/world-map-store";
-import {useHeroToolStore} from "@/stores/hero-tool-store";
+import { IHexTile } from '@/a-game-scenes/map-scene/models/hex-tile-model';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
 
 export function useTileClick() {
-    const overlayStore = useOverlayStore();
-    const worldMapStore = useWorldMapStore();
-    const heroToolStore = useHeroToolStore();
+  const overlayStore = useOverlayStore();
+  const worldMapStore = useWorldMapStore();
+  const heroToolStore = useHeroToolStore();
 
-    async function handleTileClick(tile: IHexTile) {
-        // if (tile.isLocked) {
-        //     overlayStore.openOverlay("tile-locked-hint", {coord: tile.coordinates});
-        //     return;
-        // }
+  async function handleTileClick(tile: IHexTile) {
+    // if (tile.isLocked) {
+    //     overlayStore.openOverlay("tile-locked-hint", {coord: tile.coordinates});
+    //     return;
+    // }
 
-        if (
-            worldMapStore.combatActive &&
-            (worldMapStore.combatTurnSide !== "hero" || worldMapStore.isEnemyTurnResolving)
-        ) {
-            return;
-        }
-
-        if (worldMapStore.combatActive && worldMapStore.combatTurnSide === "hero") {
-            const removed = worldMapStore.removeCombatDefendMarker(tile.coordinates);
-            if (removed) return;
-        }
-
-        if (heroToolStore.isDragging) {
-            heroToolStore.updateHover(tile.coordinates);
-
-            return;
-        }
-
-        if (!tile.isRevealed) {
-            worldMapStore.revealTile(tile.coordinates);
-            return;
-        }
-
-        if (tile.hexobject) {
-            overlayStore.openOverlay("hex-tile-details", {coordinates: tile.coordinates});
-            return;
-        }
-
-        const moved = await worldMapStore.moveHeroTo(tile.coordinates);
-        if (moved) return;
+    if (
+      worldMapStore.combatActive &&
+      (worldMapStore.combatTurnSide !== 'hero' || worldMapStore.isEnemyTurnResolving)
+    ) {
+      return;
     }
 
-    return {handleTileClick};
+    if (worldMapStore.combatActive && worldMapStore.combatTurnSide === 'hero') {
+      const removed = worldMapStore.removeCombatDefendMarker(tile.coordinates);
+      if (removed) return;
+    }
+
+    if (heroToolStore.isDragging) {
+      heroToolStore.updateHover(tile.coordinates);
+
+      return;
+    }
+
+    if (!tile.isRevealed) {
+      worldMapStore.revealTile(tile.coordinates);
+      return;
+    }
+
+    if (tile.hexobject) {
+      overlayStore.openOverlay('hex-tile-details', { coordinates: tile.coordinates });
+      return;
+    }
+
+    const moved = await worldMapStore.moveHeroTo(tile.coordinates);
+    if (moved) return;
+  }
+
+  return { handleTileClick };
 }

@@ -1,63 +1,63 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
-import { useUserStore } from "@/stores/user-store";
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { useUserStore } from '@/stores/user-store';
 
-const LoginPage = () => import("@/a-game-scenes/login-scene/components/login-page.vue");
-const HexWorldMap = () => import("@/a-game-scenes/map-scene/components/hex-world-map.vue");
+const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-page.vue');
+const HexWorldMap = () => import('@/a-game-scenes/map-scene/components/hex-world-map.vue');
 // const BattlePage = () => import("@/a-game-scenes/battle-scene/components/battle-page.vue"); // якщо є
 
 export const ROUTES = {
-    LOGIN: "login",
-    WORLD: "world",
-    BATTLE: "battle",
+  LOGIN: 'login',
+  WORLD: 'world',
+  BATTLE: 'battle',
 } as const;
 
 const routes: RouteRecordRaw[] = [
-    {
-        path: "/",
-        redirect: "/login",
-    },
-    {
-        path: "/login",
-        name: ROUTES.LOGIN,
-        component: LoginPage,
-        meta: { requiresAuth: false },
-    },
-    {
-        path: "/world/:locationKey?",
-        name: ROUTES.WORLD,
-        component: HexWorldMap,
-        props: (route) => ({
-            locationKey: (route.params.locationKey as string | undefined) ?? "camping",
-        }),
-        meta: { requiresAuth: true },
-    },
+  {
+    path: '/',
+    redirect: '/login',
+  },
+  {
+    path: '/login',
+    name: ROUTES.LOGIN,
+    component: LoginPage,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/world/:locationKey?',
+    name: ROUTES.WORLD,
+    component: HexWorldMap,
+    props: (route) => ({
+      locationKey: (route.params.locationKey as string | undefined) ?? 'camping',
+    }),
+    meta: { requiresAuth: true },
+  },
 
-    {
-        path: "/battle",
-        name: ROUTES.BATTLE,
-        component: null,
-        meta: { requiresAuth: true },
-    },
+  {
+    path: '/battle',
+    name: ROUTES.BATTLE,
+    component: null,
+    meta: { requiresAuth: true },
+  },
 
-    {
-        path: "/:pathMatch(.*)*",
-        redirect: { name: ROUTES.LOGIN },
-    },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: { name: ROUTES.LOGIN },
+  },
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
+  history: createWebHistory(),
+  routes,
 });
 
 router.beforeEach((to) => {
-    const userStore = useUserStore();
+  const userStore = useUserStore();
 
-    if (to.meta.requiresAuth && !userStore.isUserLoggedIn) {
-        return { name: ROUTES.LOGIN };
-    }
+  if (to.meta.requiresAuth && !userStore.isUserLoggedIn) {
+    return { name: ROUTES.LOGIN };
+  }
 
-    return true;
+  return true;
 });
 
 export default router;

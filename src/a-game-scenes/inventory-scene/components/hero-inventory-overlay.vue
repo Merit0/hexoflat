@@ -1,15 +1,21 @@
 <template>
-  <div class="overlay-backdrop game-root" data-testid="inventory-overlay" @click.self="closeInventory()">
+  <div
+    class="overlay-backdrop game-root"
+    data-testid="inventory-overlay"
+    @click.self="closeInventory()"
+  >
     <div class="board">
       <header class="board-top">
         <div class="tabs">
           <button class="tab is-active" data-testid="inventory-tab-inventory">Inventory</button>
-          <button class="tab is-disabled" data-testid="inventory-tab-skills" disabled>Skills</button>
+          <button class="tab is-disabled" data-testid="inventory-tab-skills" disabled>
+            Skills
+          </button>
         </div>
       </header>
 
       <section class="board-body">
-        <inventory-board-grid/>
+        <inventory-board-grid />
         <div class="center-layer">
           <token-details-panel v-if="selectedItem" :item="selectedItem" />
           <hero-equip-board v-else />
@@ -28,13 +34,13 @@
 </template>
 
 <script setup lang="ts">
-import InventoryBoardGrid from "@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue";
-import HeroEquipBoard from "@/a-game-scenes/inventory-scene/components/hero-equip-board.vue";
-import TokenDetailsPanel from "@/a-game-scenes/inventory-scene/components/token-details-panel.vue";
+import InventoryBoardGrid from '@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue';
+import HeroEquipBoard from '@/a-game-scenes/inventory-scene/components/hero-equip-board.vue';
+import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
 
-import {computed, onMounted} from "vue";
-import {useOverlayStore} from "@/stores/overlay-store";
-import {useHeroInventoryStore} from "@/stores/hero-inventory-store";
+import { computed, onMounted } from 'vue';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 
 const overlayStore = useOverlayStore();
 const heroInventoryStore = useHeroInventoryStore();
@@ -67,10 +73,11 @@ onMounted(() => {
   border-radius: 18px;
   position: relative;
 
-  background: radial-gradient(1200px 600px at 50% 30%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.0)),
-  linear-gradient(180deg, rgba(20, 22, 28, 0.95), rgba(10, 11, 14, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.70);
+  background:
+    radial-gradient(1200px 600px at 50% 30%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0)),
+    linear-gradient(180deg, rgba(20, 22, 28, 0.95), rgba(10, 11, 14, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.7);
 
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -93,7 +100,7 @@ onMounted(() => {
   border-radius: 14px;
 
   background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
 }
 
@@ -102,20 +109,20 @@ onMounted(() => {
   height: 44px;
 
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   background: rgba(255, 0, 120, 0.14);
-  color: rgba(255, 255, 255, 0.90);
+  color: rgba(255, 255, 255, 0.9);
 
   font-weight: 1000;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-size: 13px;
 }
 
 .tab.is-active {
-  background: rgba(255, 0, 120, 0.30);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+  background: rgba(255, 0, 120, 0.3);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
 .tab.is-disabled {
@@ -145,9 +152,9 @@ onMounted(() => {
 .hint {
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.35);
-  color: rgba(255, 255, 255, 0.70);
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 700;
   font-size: 12px;
 }

@@ -1,10 +1,8 @@
-import { onBeforeUnmount } from "vue";
-import { useHeroInventoryStore, type TEquipSlot } from "@/stores/hero-inventory-store";
+import { onBeforeUnmount } from 'vue';
+import { useHeroInventoryStore, type TEquipSlot } from '@/stores/hero-inventory-store';
 
 type InventoryDragTarget =
-    | { kind: "grid"; slotKey: string }
-    | { kind: "equip"; equipSlot: TEquipSlot }
-    | null;
+  { kind: 'grid'; slotKey: string } | { kind: 'equip'; equipSlot: TEquipSlot } | null;
 
 const DRAG_THRESHOLD_PX = 4;
 
@@ -15,28 +13,28 @@ const DRAG_THRESHOLD_PX = 4;
  * equip-token.vue.
  */
 export function getInventoryDragTargetFromPoint(x: number, y: number): InventoryDragTarget {
-    const els = document.elementsFromPoint(x, y) as HTMLElement[];
+  const els = document.elementsFromPoint(x, y) as HTMLElement[];
 
-    const equipHex = els.find(
-        (el) => el instanceof HTMLElement && el.classList.contains("equip-hex")
-    );
-    if (equipHex) {
-        const slot = equipHex.dataset.eqslot as TEquipSlot | undefined;
-        if (slot) return { kind: "equip", equipSlot: slot };
-    }
+  const equipHex = els.find(
+    (el) => el instanceof HTMLElement && el.classList.contains('equip-hex'),
+  );
+  if (equipHex) {
+    const slot = equipHex.dataset.eqslot as TEquipSlot | undefined;
+    if (slot) return { kind: 'equip', equipSlot: slot };
+  }
 
-    const cell = els.find(
-        (el) =>
-            el instanceof HTMLElement &&
-            el.classList.contains("cell") &&
-            !el.classList.contains("blocked")
-    );
-    if (cell) {
-        const slotKey = cell.dataset.slotkey;
-        if (slotKey) return { kind: "grid", slotKey };
-    }
+  const cell = els.find(
+    (el) =>
+      el instanceof HTMLElement &&
+      el.classList.contains('cell') &&
+      !el.classList.contains('blocked'),
+  );
+  if (cell) {
+    const slotKey = cell.dataset.slotkey;
+    if (slotKey) return { kind: 'grid', slotKey };
+  }
 
-    return null;
+  return null;
 }
 
 /**
@@ -50,71 +48,71 @@ export function getInventoryDragTargetFromPoint(x: number, y: number): Inventory
  * item (matches Vue's reactive-prop semantics without extra watchers).
  */
 export function useInventoryDragHandle(itemId: () => string) {
-    const inventoryStore = useHeroInventoryStore();
+  const inventoryStore = useHeroInventoryStore();
 
-    onBeforeUnmount(() => {
-        if (inventoryStore.draggingId === itemId()) {
-            inventoryStore.cancelDrag();
-        }
-    });
-
-    function onPointerDown(e: PointerEvent) {
-        if (e.button !== 0) return;
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const target = e.currentTarget as HTMLElement;
-        const rect = target.getBoundingClientRect();
-
-        let dragStarted = false;
-
-        const onMove = (ev: PointerEvent) => {
-            const dx = ev.clientX - startX;
-            const dy = ev.clientY - startY;
-
-            if (!dragStarted && (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX)) {
-                dragStarted = true;
-                inventoryStore.startDrag(itemId(), startX, startY, rect);
-            }
-
-            if (!dragStarted) return;
-
-            inventoryStore.updateDragPointer(ev.clientX, ev.clientY);
-
-            const dragTarget = getInventoryDragTargetFromPoint(ev.clientX, ev.clientY);
-
-            if (dragTarget?.kind === "grid") {
-                inventoryStore.setDragOver(dragTarget.slotKey);
-                inventoryStore.setDragOverEquip(null);
-            } else if (dragTarget?.kind === "equip") {
-                inventoryStore.setDragOver(null);
-                inventoryStore.setDragOverEquip(dragTarget.equipSlot);
-            } else {
-                inventoryStore.setDragOver(null);
-                inventoryStore.setDragOverEquip(null);
-            }
-        };
-
-        const onUp = (ev: PointerEvent) => {
-            if (dragStarted) {
-                const dragTarget = getInventoryDragTargetFromPoint(ev.clientX, ev.clientY);
-
-                if (dragTarget?.kind === "grid") {
-                    inventoryStore.dropTo(dragTarget.slotKey);
-                } else if (dragTarget?.kind === "equip") {
-                    inventoryStore.dropToEquip(dragTarget.equipSlot);
-                } else {
-                    inventoryStore.cancelDrag();
-                }
-            }
-
-            window.removeEventListener("pointermove", onMove);
-            window.removeEventListener("pointerup", onUp);
-        };
-
-        window.addEventListener("pointermove", onMove);
-        window.addEventListener("pointerup", onUp);
+  onBeforeUnmount(() => {
+    if (inventoryStore.draggingId === itemId()) {
+      inventoryStore.cancelDrag();
     }
+  });
 
-    return { onPointerDown };
+  function onPointerDown(e: PointerEvent) {
+    if (e.button !== 0) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+
+    let dragStarted = false;
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      if (!dragStarted && (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX)) {
+        dragStarted = true;
+        inventoryStore.startDrag(itemId(), startX, startY, rect);
+      }
+
+      if (!dragStarted) return;
+
+      inventoryStore.updateDragPointer(ev.clientX, ev.clientY);
+
+      const dragTarget = getInventoryDragTargetFromPoint(ev.clientX, ev.clientY);
+
+      if (dragTarget?.kind === 'grid') {
+        inventoryStore.setDragOver(dragTarget.slotKey);
+        inventoryStore.setDragOverEquip(null);
+      } else if (dragTarget?.kind === 'equip') {
+        inventoryStore.setDragOver(null);
+        inventoryStore.setDragOverEquip(dragTarget.equipSlot);
+      } else {
+        inventoryStore.setDragOver(null);
+        inventoryStore.setDragOverEquip(null);
+      }
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      if (dragStarted) {
+        const dragTarget = getInventoryDragTargetFromPoint(ev.clientX, ev.clientY);
+
+        if (dragTarget?.kind === 'grid') {
+          inventoryStore.dropTo(dragTarget.slotKey);
+        } else if (dragTarget?.kind === 'equip') {
+          inventoryStore.dropToEquip(dragTarget.equipSlot);
+        } else {
+          inventoryStore.cancelDrag();
+        }
+      }
+
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  return { onPointerDown };
 }

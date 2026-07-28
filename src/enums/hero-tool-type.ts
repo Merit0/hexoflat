@@ -1,5 +1,5 @@
 export enum HeroToolType {
-    HAND = "hand",
-    AXE = "axe",
-    PICKAXE = "pickaxe",
+  HAND = 'hand',
+  AXE = 'axe',
+  PICKAXE = 'pickaxe',
 }

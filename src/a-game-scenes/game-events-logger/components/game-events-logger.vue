@@ -1,11 +1,26 @@
 <template>
-  <div ref="rootEl" class="game-events-logger" :class="{ open: isOpen }" data-testid="events-logger">
-    <button class="logger-compact" data-testid="events-logger-toggle" type="button" @click="toggle" aria-haspopup="true" :aria-expanded="isOpen">
+  <div
+    ref="rootEl"
+    class="game-events-logger"
+    :class="{ open: isOpen }"
+    data-testid="events-logger"
+  >
+    <button
+      class="logger-compact"
+      data-testid="events-logger-toggle"
+      type="button"
+      @click="toggle"
+      aria-haspopup="true"
+      :aria-expanded="isOpen"
+    >
       <div v-if="lastTwo.length" class="compact-lines">
         <div v-for="e in lastTwo" :key="e.id" class="compact-line">
           <span class="hero-name">{{ e.actor ?? '' }}</span>
           <span class="msg">
-            <template v-for="(segment, index) in parseMessageSegments(e.message)" :key="`${e.id}-compact-${index}`">
+            <template
+              v-for="(segment, index) in parseMessageSegments(e.message)"
+              :key="`${e.id}-compact-${index}`"
+            >
               <span v-if="segment.kind === 'damage'" class="number-damage">{{ segment.text }}</span>
               <span v-else>{{ segment.text }}</span>
             </template>
@@ -23,17 +38,35 @@
       <div v-if="isOpen" class="logger-dropdown" data-testid="events-logger-dropdown" role="menu">
         <div class="dropdown-head">
           <div class="title">Events (last 50)</div>
-          <button class="clear" data-testid="events-logger-clear-button" type="button" @click="gameEventsStore.clear">Clear</button>
+          <button
+            class="clear"
+            data-testid="events-logger-clear-button"
+            type="button"
+            @click="gameEventsStore.clear"
+          >
+            Clear
+          </button>
         </div>
 
         <div class="dropdown-list">
           <div v-if="!list.length" class="dropdown-empty">No events yet</div>
 
-          <div v-else class="row" v-for="e in list" :key="e.id" :data-testid="`events-logger-row-${e.id}`">
+          <div
+            v-else
+            class="row"
+            v-for="e in list"
+            :key="e.id"
+            :data-testid="`events-logger-row-${e.id}`"
+          >
             <span class="hero-name">{{ e.actor ?? '' }}</span>
             <span class="row-msg">
-              <template v-for="(segment, index) in parseMessageSegments(e.message)" :key="`${e.id}-row-${index}`">
-                <span v-if="segment.kind === 'damage'" class="number-damage">{{ segment.text }}</span>
+              <template
+                v-for="(segment, index) in parseMessageSegments(e.message)"
+                :key="`${e.id}-row-${index}`"
+              >
+                <span v-if="segment.kind === 'damage'" class="number-damage">{{
+                  segment.text
+                }}</span>
                 <span v-else>{{ segment.text }}</span>
               </template>
             </span>
@@ -46,9 +79,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import {useGameEventsStore} from "@/stores/game-events-store";
-import {useHeroStore} from "@/stores/hero-store";
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useGameEventsStore } from '@/stores/game-events-store';
+import { useHeroStore } from '@/stores/hero-store';
 
 const gameEventsStore = useGameEventsStore();
 
@@ -56,7 +89,7 @@ const isOpen = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
 
 function pad2(n: number) {
-  return String(n).padStart(2, "0");
+  return String(n).padStart(2, '0');
 }
 function formatTime(ts: number) {
   const d = new Date(ts);
@@ -64,17 +97,17 @@ function formatTime(ts: number) {
 }
 
 const lastTwo = computed(() =>
-    gameEventsStore.lastTwo.map(e => ({
-      ...e,
-      time: formatTime(e.createdAt),
-    }))
+  gameEventsStore.lastTwo.map((e) => ({
+    ...e,
+    time: formatTime(e.createdAt),
+  })),
 );
 
 const list = computed(() =>
-    gameEventsStore.events.map(e => ({
-      ...e,
-      time: formatTime(e.createdAt),
-    }))
+  gameEventsStore.events.map((e) => ({
+    ...e,
+    time: formatTime(e.createdAt),
+  })),
 );
 
 function toggle() {
@@ -93,12 +126,10 @@ function onDocClick(ev: MouseEvent) {
 }
 
 function onKeyDown(ev: KeyboardEvent) {
-  if (ev.key === "Escape") close();
+  if (ev.key === 'Escape') close();
 }
 
-type MessageSegment =
-    | { kind: "text"; text: string }
-    | { kind: "damage"; text: string };
+type MessageSegment = { kind: 'text'; text: string } | { kind: 'damage'; text: string };
 
 function parseMessageSegments(message: string): MessageSegment[] {
   const segments: MessageSegment[] = [];
@@ -111,28 +142,28 @@ function parseMessageSegments(message: string): MessageSegment[] {
     const index = match.index;
 
     if (index > lastIndex) {
-      segments.push({ kind: "text", text: message.slice(lastIndex, index) });
+      segments.push({ kind: 'text', text: message.slice(lastIndex, index) });
     }
 
-    segments.push({ kind: "damage", text: damageValue });
+    segments.push({ kind: 'damage', text: damageValue });
     lastIndex = index + fullMatch.length;
   }
 
   if (lastIndex < message.length) {
-    segments.push({ kind: "text", text: message.slice(lastIndex) });
+    segments.push({ kind: 'text', text: message.slice(lastIndex) });
   }
 
-  return segments.length ? segments : [{ kind: "text", text: message }];
+  return segments.length ? segments : [{ kind: 'text', text: message }];
 }
 
 onMounted(() => {
-  document.addEventListener("click", onDocClick, true);
-  document.addEventListener("keydown", onKeyDown);
+  document.addEventListener('click', onDocClick, true);
+  document.addEventListener('keydown', onKeyDown);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", onDocClick, true);
-  document.removeEventListener("keydown", onKeyDown);
+  document.removeEventListener('click', onDocClick, true);
+  document.removeEventListener('keydown', onKeyDown);
 });
 </script>
 
@@ -151,8 +182,8 @@ onBeforeUnmount(() => {
   background: rgba(10, 14, 18, 0.55);
   backdrop-filter: blur(6px);
   box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-      0 8px 22px rgba(0, 0, 0, 0.35);
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 8px 22px rgba(0, 0, 0, 0.35);
   cursor: pointer;
   text-align: left;
   color: rgba(235, 245, 255, 0.92);
@@ -200,8 +231,8 @@ onBeforeUnmount(() => {
   background: rgba(8, 10, 14, 0.78);
   backdrop-filter: blur(10px);
   box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-      0 18px 40px rgba(0, 0, 0, 0.45);
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 18px 40px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   z-index: 999;
 }
@@ -249,7 +280,7 @@ onBeforeUnmount(() => {
   gap: 10px;
   align-items: baseline;
   padding: 6px 2px;
-  border-bottom: 1px dashed rgba(210, 235, 255, 0.10);
+  border-bottom: 1px dashed rgba(210, 235, 255, 0.1);
   font-size: 13px;
 }
 .row:last-child {
@@ -270,7 +301,9 @@ onBeforeUnmount(() => {
 /* transition */
 .logger-fade-enter-active,
 .logger-fade-leave-active {
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
 }
 .logger-fade-enter-from,
 .logger-fade-leave-to {
