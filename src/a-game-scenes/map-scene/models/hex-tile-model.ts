@@ -16,13 +16,13 @@ export interface IHexTile {
 }
 
 export class HexTileModel implements IHexTile {
-  private _tileId: string;
-  private _tileKey?: RouteName | null;
+  private _tileId = '';
+  private _tileKey: RouteName | null = null;
   private _isRevealed = false;
   private _hexBackgroundImagePath: string = '';
   private _hexobject: THexobject | null = null;
   private _coordinates: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
-  private _resourceSpawner: IHexResourceSpawner = null;
+  private _resourceSpawner: IHexResourceSpawner | null = null;
   private _pendingAction: IPendingTileAction | null = null;
 
   get hexobject(): THexobject | null {
@@ -69,19 +69,19 @@ export class HexTileModel implements IHexTile {
     this._hexBackgroundImagePath = imagPath;
   }
 
-  get resourceSpawner(): IHexResourceSpawner {
+  get resourceSpawner(): IHexResourceSpawner | null {
     return this._resourceSpawner;
   }
 
-  set resourceSpawner(resourceSpawner: IHexResourceSpawner) {
+  set resourceSpawner(resourceSpawner: IHexResourceSpawner | null) {
     this._resourceSpawner = resourceSpawner;
   }
 
-  get pendingAction(): IPendingTileAction {
+  get pendingAction(): IPendingTileAction | null {
     return this._pendingAction;
   }
 
-  set pendingAction(pendingAction: IPendingTileAction) {
+  set pendingAction(pendingAction: IPendingTileAction | null) {
     this._pendingAction = pendingAction;
   }
 

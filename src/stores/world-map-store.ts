@@ -4,7 +4,12 @@ import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-t
 import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
 import { coordinateKey, getOddQNeighbors, hexDistance } from '@/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import { EHexCollision, EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import {
+  EHexCollision,
+  EHexobjectGroup,
+  type ICreature,
+  type THexobject,
+} from '@/abstraction/hexobject-abstraction';
 import { WorldTickFeature } from '@/features/resource-features/world-tick-feature';
 import { AddResourceSpawnerFeature } from '@/features/resource-features/add-resource-spawner-feature';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@/registry/hexobjects-registry';
@@ -57,6 +62,10 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
+function getCreatureOf(hexobject: THexobject | null | undefined): ICreature | undefined {
+  return hexobject?.groupType === EHexobjectGroup.CREATURE ? hexobject.creature : undefined;
+}
+
 function readIndex(): Partial<Record<LocationKey, string>> {
   const raw = localStorage.getItem(STORAGE_INDEX);
   return raw ? JSON.parse(raw) : {};
@@ -102,9 +111,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
   actions: {
     getTileAt(coords: IHexCoordinates): HexTileModel | null {
       if (!this.map) return null;
+      const tiles = this.map.tiles as HexTileModel[];
 
       return (
-        this.map.tiles.find(
+        tiles.find(
           (t: HexTileModel) =>
             t.coordinates.columnIndex === coords.columnIndex &&
             t.coordinates.rowIndex === coords.rowIndex,
@@ -118,9 +128,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
       return this.map.tiles
         .filter((tile): tile is HexTileModel => !!tile?.hexobject)
         .filter((tile) => tile.hexobject?.groupType === EHexobjectGroup.CREATURE)
-        .filter((tile) => tile.hexobject?.creature?.faction === 'enemy')
+        .filter((tile) => getCreatureOf(tile.hexobject)?.faction === 'enemy')
         .filter((tile) => {
-          const visionRange = tile.hexobject!.creature!.visionRange ?? 3;
+          const visionRange = getCreatureOf(tile.hexobject)?.visionRange ?? 3;
           return hexDistance(tile.coordinates, this.heroCoordinates!) <= visionRange;
         });
     },
@@ -251,13 +261,15 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     hasGraveMarker() {
       if (!this.map) return false;
-      return this.map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE);
+      const map = this.map as HexMapModel;
+      return map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE);
     },
 
     placeHeroAtCampfire() {
       if (!this.map) return;
+      const map = this.map as HexMapModel;
 
-      const campfireTile = this.map.tiles.find(
+      const campfireTile = map.tiles.find(
         (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE,
       );
 
@@ -267,7 +279,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       const byKey = new Map<string, HexTileModel>();
-      for (const tile of this.map.tiles) {
+      for (const tile of map.tiles) {
         byKey.set(coordinateKey(tile.coordinates), tile);
       }
 
@@ -587,6 +599,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         return;
       if (this.isEnemyTurnResolving || this.isHeroMoving) return;
 
+      const map = this.map as HexMapModel;
       const enemyTile = this.getEnemyCombatActorTile();
       if (!enemyTile?.hexobject) {
         this.advanceCombatTurn();
@@ -614,12 +627,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (!tile.isRevealed) return null;
             if (tile.hexobject?.collision === EHexCollision.SOLID) return null;
 
-            const path = findShortestPath(
-              this.map,
-              enemyTile.coordinates,
-              coord,
-              this.combatStepsLeft,
-            );
+            const path = findShortestPath(map, enemyTile.coordinates, coord, this.combatStepsLeft);
             if (!path || path.length < 2) return null;
 
             return {
@@ -673,20 +681,20 @@ export const useWorldMapStore = defineStore('world-map-store', {
         if (blockingMarker && finalDamage <= 0) {
           events.push(
             'Combat',
-            `${currentEnemyTile.hexobject?.creature?.name ?? 'Enemy'} blocked by shield [dmg:0]`,
+            `${getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy'} blocked by shield [dmg:0]`,
             'BATTLE',
           );
         } else {
           heroStore.takeDamage(finalDamage);
           if (blockingMarker) {
             events.push(
-              currentEnemyTile.hexobject?.creature?.name ?? 'Enemy',
+              getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy',
               `broke through block for [dmg:${finalDamage.toFixed(1)}]`,
               'BATTLE',
             );
           } else {
             events.push(
-              currentEnemyTile.hexobject?.creature?.name ?? 'Enemy',
+              getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy',
               `hit ${heroStore.hero?.name ?? 'Hero'} for [dmg:${finalDamage.toFixed(1)}]`,
               'BATTLE',
             );
@@ -698,7 +706,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
           }
         }
 
-        const retreatCandidates = this.map.tiles
+        const retreatCandidates = map.tiles
           .filter((tile) => tile.isRevealed)
           .filter((tile) => !tile.hexobject || tile === currentEnemyTile)
           .filter((tile) => hexDistance(tile.coordinates, this.heroCoordinates!) > 1)
@@ -709,7 +717,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
             if (isCurrentEnemyTile) return null;
 
             const path = findShortestPath(
-              this.map!,
+              map,
               currentEnemyTile.coordinates,
               tile.coordinates,
               this.combatStepsLeft,
@@ -732,7 +740,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
           currentEnemyTile = await this.moveEnemyAlongRoute(currentEnemyTile, chosenRetreat.route);
           events.push(
             'Combat',
-            `${currentEnemyTile.hexobject?.creature?.name ?? 'Enemy'} retreated`,
+            `${getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy'} retreated`,
             'INFO',
           );
         }
@@ -866,7 +874,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     // NAVIGATION
     // ======================================================
 
-    goToLocation(locationKey: LocationKey) {
+    goToLocation(locationKey: LocationKey, preferredMapId?: string) {
       const heroStore = useHeroStore();
 
       if (locationKey !== this.currentLocationKey && this.isLocationRespawning(locationKey)) {
@@ -888,7 +896,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (this.currentMapId) this.saveToStorage(this.currentMapId);
 
       this.stopWorldLoop();
-      this.openLocation(locationKey);
+      this.openLocation(locationKey, preferredMapId);
 
       if (!this.currentMapId) return;
 
@@ -910,15 +918,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     revealEntryTile() {
       if (!this.map) return;
+      const map = this.map as HexMapModel;
 
-      const entryPlacement: IHexMapPlacement =
-        this.map.config?.find((p: IHexMapPlacement) => p.entry?.type === 'DEFAULT') ??
-        this.map.config?.find((p: IHexMapPlacement) => p.entry?.type === 'SECRET');
+      const entryPlacement: IHexMapPlacement | undefined =
+        map.config?.find((p: IHexMapPlacement) => p.entry?.type === 'DEFAULT') ??
+        map.config?.find((p: IHexMapPlacement) => p.entry?.type === 'SECRET');
 
       const entryPlaceCoordinates: IHexCoordinates | undefined = entryPlacement?.coordinates?.[0];
       if (!entryPlaceCoordinates) return;
 
-      const entryTile = this.map.tiles.find(
+      const entryTile = map.tiles.find(
         (t: HexTileModel) =>
           t.coordinates.columnIndex === entryPlaceCoordinates.columnIndex &&
           t.coordinates.rowIndex === entryPlaceCoordinates.rowIndex,
@@ -974,10 +983,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
         : null;
 
       if (parsedMap && parsedMap.contentVersion === CONTENT_VERSION) {
-        this.map = HexMapModel.fromJSON(parsedMap.map);
+        const hydratedMap = HexMapModel.fromJSON(parsedMap.map);
+        this.map = hydratedMap;
         this.hydrateResourcesFromConfig();
 
-        const changed = new WorldTickFeature(this.map).tick(Date.now());
+        const changed = new WorldTickFeature(hydratedMap).tick(Date.now());
         if (changed) this.saveToStorage(mapId);
       } else {
         if (parsedMap) {
@@ -1031,17 +1041,18 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       if (!this.map) return;
+      const map = this.map as HexMapModel;
 
       if (!this.heroCoordinates) {
         const def = MapRegistry.get(this.currentLocationKey);
 
-        const entryTile = this.map.tiles.find(
+        const entryTile = map.tiles.find(
           (t: HexTileModel) => t.hexobject?.hexobjectKey === def.entryHexobjectKey,
         );
 
         if (entryTile) {
           const byKey = new Map<string, HexTileModel>();
-          for (const t of this.map.tiles) {
+          for (const t of map.tiles) {
             byKey.set(coordinateKey(t.coordinates), t);
           }
 
@@ -1067,12 +1078,13 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
     },
 
-    saveToStorage(mapId = this.currentMapId) {
-      if (!mapId) return;
+    saveToStorage(mapId?: string) {
+      const targetMapId = mapId ?? this.currentMapId;
+      if (!targetMapId) return;
 
       if (this.map) {
         localStorage.setItem(
-          STORAGE_MAP_PREFIX + mapId,
+          STORAGE_MAP_PREFIX + targetMapId,
           JSON.stringify({ contentVersion: CONTENT_VERSION, map: this.map }),
         );
       }
@@ -1097,7 +1109,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         })),
       };
 
-      localStorage.setItem(STORAGE_STATE_PREFIX + mapId, JSON.stringify(state));
+      localStorage.setItem(STORAGE_STATE_PREFIX + targetMapId, JSON.stringify(state));
     },
 
     // ======================================================
@@ -1109,7 +1121,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       worldTimer = window.setInterval(() => {
         if (!this.map || !this.currentMapId) return;
-        const changed = new WorldTickFeature(this.map).tick(Date.now());
+        const changed = new WorldTickFeature(this.map as HexMapModel).tick(Date.now());
         if (changed) this.saveToStorage(this.currentMapId);
       }, 250);
     },
@@ -1127,9 +1139,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     placeHeroAtEntry(locationKey: LocationKey) {
       if (!this.map) return;
+      const map = this.map as HexMapModel;
 
       const def: MapDefinition = MapRegistry.get(locationKey);
-      const entryTile = this.map.tiles.find(
+      const entryTile = map.tiles.find(
         (t: HexTileModel) => t.hexobject?.hexobjectKey === def.entryHexobjectKey,
       );
 
@@ -1139,7 +1152,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       const byKey = new Map<string, HexTileModel>();
-      for (const t of this.map.tiles) {
+      for (const t of map.tiles) {
         byKey.set(coordinateKey(t.coordinates), t);
       }
 
@@ -1164,9 +1177,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     revealAroundHero() {
       if (!this.map || !this.heroCoordinates) return;
+      const map = this.map as HexMapModel;
 
       const byKey = new Map<string, HexTileModel>();
-      for (const t of this.map.tiles) byKey.set(coordinateKey(t.coordinates), t);
+      for (const t of map.tiles) byKey.set(coordinateKey(t.coordinates), t);
 
       const coords = [this.heroCoordinates, ...getOddQNeighbors(this.heroCoordinates)];
 
@@ -1186,7 +1200,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (this.combatActive && this.combatTurnSide !== 'hero') return false;
       if (this.combatActive && this.combatStepsLeft <= 0) return false;
 
-      const tile = this.map.tiles.find(
+      const map = this.map as HexMapModel;
+      const tile = map.tiles.find(
         (t: HexTileModel) =>
           t.coordinates.columnIndex === target.columnIndex &&
           t.coordinates.rowIndex === target.rowIndex,
@@ -1198,11 +1213,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const moveSteps = this.combatActive
         ? this.combatStepsLeft
         : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
-      const reachable = getReachableTileDistances(this.map, this.heroCoordinates, moveSteps);
+      const reachable = getReachableTileDistances(map, this.heroCoordinates, moveSteps);
       const targetKey = coordinateKey(target);
       if (!reachable.has(targetKey)) return false;
 
-      const path = findShortestPath(this.map, this.heroCoordinates, target, moveSteps);
+      const path = findShortestPath(map, this.heroCoordinates, target, moveSteps);
       if (!path || path.length < 2) return false;
 
       const route = path.slice(1);
@@ -1255,8 +1270,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     revealTile(tileCoordinates: IHexCoordinates) {
       if (!this.map || !this.heroCoordinates) return;
+      const map = this.map as HexMapModel;
 
-      const tile = this.map.tiles.find(
+      const tile = map.tiles.find(
         (t: HexTileModel) =>
           t.coordinates.columnIndex === tileCoordinates.columnIndex &&
           t.coordinates.rowIndex === tileCoordinates.rowIndex,
@@ -1290,13 +1306,14 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     hydrateResourcesFromConfig() {
       if (!this.map?.config?.length) return;
+      const map = this.map as HexMapModel;
 
       const tileByKey = new Map<string, HexTileModel>();
-      for (const t of this.map.tiles) {
+      for (const t of map.tiles) {
         tileByKey.set(`${t.coordinates.columnIndex}:${t.coordinates.rowIndex}`, t);
       }
 
-      for (const placement of this.map.config) {
+      for (const placement of map.config) {
         for (const c of placement.coordinates) {
           const tile = tileByKey.get(`${c.columnIndex}:${c.rowIndex}`);
           if (tile && !tile.resourceSpawner) {
@@ -1309,7 +1326,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     initCoins() {
       if (!this.map) return;
 
-      new CoinsGenerator(this.map, {
+      new CoinsGenerator(this.map as HexMapModel, {
         chance: 0.05,
         maxCoinsOnMap: 15,
         minAmount: 1,

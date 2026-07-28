@@ -78,7 +78,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     const gathering = useGatheringStore();
     const meta = getMeta(action.hexobjectKey);
     const stone = meta?.yields?.stone ?? 0;
-    logAction(`Mine the ${stone} ${tile.hexobject.hexobjectKey}`);
+    logAction(`Mine the ${stone} ${tile.hexobject?.hexobjectKey ?? action.hexobjectKey}`);
     gathering.add(action.hexobjectKey, stone);
 
     if (stone > 0 && ctx.heroToolStore.stoneCollected) {

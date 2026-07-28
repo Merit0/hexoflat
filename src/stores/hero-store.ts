@@ -69,7 +69,7 @@ export const useHeroStore = defineStore('hero', {
       }
     },
 
-    setLocation(locationKey: string, mapId: string) {
+    setLocation(locationKey: LocationKey, mapId: string) {
       this.nav.locationKey = locationKey;
       this.nav.locationMapId = mapId;
       this.saveNavToStorage();
@@ -96,7 +96,7 @@ export const useHeroStore = defineStore('hero', {
 
     async getHero(): Promise<boolean> {
       const userStore = useUserStore();
-      const hero: IHero | null = await Request.getHero(userStore.user.getId());
+      const hero: IHero | undefined = await Request.getHero(userStore.user.getId());
 
       if (!hero) {
         console.warn('Hero is not retrieved by API');

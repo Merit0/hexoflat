@@ -32,12 +32,7 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
 
-  {
-    path: '/battle',
-    name: ROUTES.BATTLE,
-    component: null,
-    meta: { requiresAuth: true },
-  },
+  // /battle route not wired up yet — BattlePage doesn't exist.
 
   {
     path: '/:pathMatch(.*)*',

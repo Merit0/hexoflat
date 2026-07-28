@@ -134,7 +134,7 @@ const resolvedActions = computed(() => {
     }
   }
 
-  if (!tile?.hexobject) return [];
+  if (!tile?.hexobject || !activeToolKey.value) return [];
 
   if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
     const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
@@ -160,11 +160,14 @@ const resolvedActions = computed(() => {
   return resolveActions(activeToolKey.value, tile.hexobject);
 });
 
-const bestAction = computed(() => {
+const bestAction = computed<ResolvedAction | null>(() => {
   const actions = resolvedActions.value;
   if (!actions.length) return null;
 
-  return actions.reduce((best, a) => (!best || a.priority > best.priority ? a : best), null as any);
+  return actions.reduce<ResolvedAction | null>(
+    (best, a) => (!best || a.priority > best.priority ? a : best),
+    null,
+  );
 });
 
 const bestActionLabel = computed(() => bestAction.value?.label ?? null);

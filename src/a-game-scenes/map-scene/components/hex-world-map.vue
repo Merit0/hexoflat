@@ -142,7 +142,7 @@ function readDomTileSize() {
 
 /* ---------- tool resolver ---------- */
 function getTileByCoord(coord: any) {
-  return worldMapStore.map.tiles.find(
+  return worldMapStore.map?.tiles.find(
     (t: any) =>
       t.coordinates.rowIndex === coord.rowIndex && t.coordinates.columnIndex === coord.columnIndex,
   );

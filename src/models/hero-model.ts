@@ -3,33 +3,25 @@ import { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-c
 import { normalizeHealthValue, roundToSingleDecimal } from '@/utils/combat/health-format';
 
 export class HeroModel implements IHero {
-  id: number;
-  name: string;
-  currentHealth: number;
+  id = 0;
+  name = '';
+  currentHealth = 0;
   maxHealth: number;
-  attack: number;
-  defense: number;
-  coins: number;
-  kills: number;
-  currentEnergy: number;
+  attack = 0;
+  defense = 0;
+  coins = 0;
+  kills = 0;
+  currentEnergy = 0;
   maxEnergy: number;
   imgPath = '';
-  heroLocation: IHexCoordinates;
+  heroLocation: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
   heroSteps: number;
-  // equipment: EquipmentModel;
-  // heroDices: DiceModel[] = [];
 
   constructor() {
     this.maxHealth = 100;
     this.maxEnergy = 100;
     this.heroSteps = 0;
   }
-
-  // getHeroDices(): DiceModel[] {
-  //     const actionFaces = ['sword', 'shield', 'energy'];
-  //     const diceWeights = [10, 2, 3]
-  //     return Array.from({length: 3}, () => new DiceModel(actionFaces, diceWeights));
-  // }
 
   public getName(): string {
     return this.name;

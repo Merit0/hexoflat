@@ -110,8 +110,11 @@ function useToolToken() {
   const toolType = resolveToolType();
   if (!toolType) return;
 
+  const heroCoords = worldMapStore.heroCoordinates;
+  if (!heroCoords) return;
+
   heroToolStore.activeTool = toolType;
-  heroToolStore.useTool(toolType, worldMapStore.heroCoordinates);
+  heroToolStore.useTool(toolType, heroCoords);
   overlayStore.closeOverlay();
 }
 

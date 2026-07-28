@@ -279,11 +279,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
 
       const targetItem = this.items.find((i) => i.slotKey === targetSlotKey);
 
-      if (
-        targetItem &&
-        targetItem.key === HEXOBJECT_KEYS.HAND &&
-        fromItem.key !== HEXOBJECT_KEYS.HAND
-      ) {
+      if (targetItem && targetItem.key === HEXOBJECT_KEYS.HAND) {
         const idx = this.items.findIndex((i) => i.id === targetItem.id);
         if (idx !== -1) {
           this.items.splice(idx, 1);

@@ -19,11 +19,11 @@ interface IWorldMap {
 }
 
 export default class HexMapModel implements IWorldMap {
-  private _name: string;
-  private _width: number;
-  private _height: number;
-  private _complexity: Complexity;
-  private _mapTilesConfig: IHexMapPlacement[];
+  private _name = '';
+  private _width = 0;
+  private _height = 0;
+  private _complexity: Complexity = Complexity.NORMAL;
+  private _mapTilesConfig: IHexMapPlacement[] = [];
   private _tiles: HexTileModel[] = [];
   private _fogPolicy: TFogPolicy = 'FOG';
 
@@ -111,14 +111,15 @@ export default class HexMapModel implements IWorldMap {
       for (const c of tileConfig.coordinates) {
         const key = `${c.columnIndex}:${c.rowIndex}`;
         const tile = tileByCoordinate.get(key);
-        tile.coordinates = { columnIndex: c.columnIndex, rowIndex: c.rowIndex };
 
         if (!tile) {
           console.warn(
-            `Missing tile with coordinates: [${c.columnIndex},${c.rowIndex}] for place ${tileConfig.hexobject.hexobjectKey}`,
+            `Missing tile with coordinates: [${c.columnIndex},${c.rowIndex}] for place ${tileConfig.hexobject?.hexobjectKey ?? 'unknown'}`,
           );
           continue;
         }
+
+        tile.coordinates = { columnIndex: c.columnIndex, rowIndex: c.rowIndex };
 
         tile.hexBackgroundImagePath = tileConfig.initialTileImage?.length
           ? tileConfig.initialTileImage[
@@ -254,7 +255,7 @@ export default class HexMapModel implements IWorldMap {
       }
 
       case EHexobjectGroup.EQUIPMENT: {
-        if ('weapon' in built && 'weapon' in saved) {
+        if ('weapon' in built && 'weapon' in saved && built.weapon && saved.weapon) {
           built.weapon.damageMin = saved.weapon.damageMin ?? built.weapon.damageMin;
           built.weapon.damageMax = saved.weapon.damageMax ?? built.weapon.damageMax;
         }
