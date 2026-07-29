@@ -21,17 +21,14 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
+    // Content tests moved to packages/engine (Phase 3); apps/web has no unit
+    // tests yet, so allow an empty run instead of failing CI.
+    passWithNoTests: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.{test,spec}.ts', 'src/main.ts', 'src/env.d.ts'],
-      // No thresholds yet: only src/content/** has real tests today, and even
-      // there functions/branches sit at 0%, so a threshold would just fail on
-      // day one. Once src/content/** (or the engine, once it's its own
-      // package) has meaningful coverage, add a per-path threshold here
-      // instead of a repo-wide one, e.g.:
-      // thresholds: { 'src/content/**': { lines: 70, functions: 70, branches: 60, statements: 70 } }
     },
   },
 });

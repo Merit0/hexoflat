@@ -20,13 +20,16 @@
     "dev": "tsc --watch -p tsconfig.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"no tests yet (Phase 3)\" && exit 0"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
-    "typescript": "~5.9.3"
+    "@vitest/coverage-v8": "^4.1.10",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.10"
   }
 }
