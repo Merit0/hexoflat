@@ -15,39 +15,16 @@
             transform: `translate(${Math.round(-mapBounds.offsetX)}px, ${Math.round(-mapBounds.offsetY)}px)`,
           }"
         >
-          <enemy-vision-overlay :cells="enemyVisionCells" :in-combat="worldStore.combatActive" />
+          <div v-if="worldStore.combatActive" class="combat-alert-overlay"></div>
 
-          <combat-marker-overlay :markers="combatMarkers" />
-          <camp-heal-overlay
-            :style="campHealHeartStyle"
-            :active="isCampfireHealActive"
-            :label="campHealInfoLabel"
-          />
-
-          <move-preview-overlay
-            :segments="movePreviewSegments"
-            :marker-style="movePreviewMarkerStyle"
-            :reachable="movePreviewReachable"
-            :step-cost="movePreviewStepCost"
-            :marker-kind="movePreviewMarkerKind"
-          />
-
-          <hero-hex-tile :coord="worldStore.heroCoordinates" :tile-width="tileWidth" />
+          <canvas ref="boardCanvasRef" class="hex-board-canvas" data-testid="hex-board-canvas" />
 
           <tool-hex-tile
             v-if="heroToolStore.isDragging && activeTool"
-            :tile-width="tileWidth"
+            :tile-width="domTileW"
+            :tile-height="domTileH"
             :tool="activeTool"
             @hide="onHide"
-          />
-
-          <hex-tile
-            v-for="tile in tiles"
-            :key="tile.tileId"
-            :hex-tile="tile"
-            :now-tick="healTickerNow"
-            @tile-click="handleTileClick"
-            @tile-hover="handleTileHover"
           />
         </div>
       </div>
@@ -58,13 +35,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import HexTile from '@/a-game-scenes/map-scene/components/hex-tile.vue';
-import HeroHexTile from '@/a-game-scenes/map-scene/components/hero-hex-tile.vue';
-import {
-  calcHexPixelPosition,
-  hexTranslateStyle,
-  type IHexPositioned,
-} from '@hexoflat/engine/utils/hex-utils';
+import { useHexBoard } from '@/render/use-hex-board';
+import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -74,11 +46,7 @@ import {
 } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import HeroDetailsTopBar from '@/a-game-scenes/map-scene/components/hero-details-top-bar.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
-import MovePreviewOverlay from '@/a-game-scenes/map-scene/components/move-preview-overlay.vue';
-import EnemyVisionOverlay from '@/a-game-scenes/map-scene/components/enemy-vision-overlay.vue';
 import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
-import CombatMarkerOverlay from '@/a-game-scenes/map-scene/components/combat-marker-overlay.vue';
-import CampHealOverlay from '@/a-game-scenes/map-scene/components/camp-heal-overlay.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
@@ -91,10 +59,10 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useOverlayStore } from '@/stores/overlay-store';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
-import { getTileWidth } from '@/a-game-scenes/map-scene/constants/hex-grid-constants';
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -130,16 +98,18 @@ onBeforeUnmount(() => worldStore.stopWorldLoop());
 const tiles = computed(() => worldStore.map?.tiles ?? []);
 const activeTool = computed(() => heroToolStore.activeTool);
 
-const tileWidth = getTileWidth();
-
 function handleTileHover(tile: IHexTile) {
   hoveredTileCoord.value = tile.coordinates;
+  if (heroToolStore.isDragging) {
+    heroToolStore.updateHover(tile.coordinates);
+  }
 }
 
 /* ---------- probe for dom tile size ---------- */
 const probeRef = ref<HTMLElement | null>(null);
 const domTileW = ref(0);
 const domTileH = ref(0);
+const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 
 function readDomTileSize() {
   const el = probeRef.value;
@@ -156,16 +126,6 @@ function getTileByCoord(coord: IHexCoordinates) {
     (t: HexTileModel) =>
       t.coordinates.rowIndex === coord.rowIndex && t.coordinates.columnIndex === coord.columnIndex,
   );
-}
-
-function getTileCenter(coord: IHexCoordinates) {
-  const pseudoTile: IHexPositioned = { coordinates: coord };
-  const { x, y } = calcHexPixelPosition(pseudoTile, tileWidth);
-
-  return {
-    x: x + (domTileW.value || 0) / 2,
-    y: y + (domTileH.value || 0) / 2,
-  };
 }
 
 watch(
@@ -272,21 +232,10 @@ const movePreviewSegments = computed(() => {
   const path = movePreview.value?.path;
   if (!path || path.length < 2) return [];
 
-  return path.slice(1).map((coord) => ({
-    style: hexTranslateStyle(coord, tileWidth, { round: true }),
-  }));
+  return path.slice(1);
 });
 
-const movePreviewMarkerStyle = computed(() => {
-  const coord = movePreview.value?.markerCoord;
-  if (!coord) return null;
-
-  const center = getTileCenter(coord);
-
-  return {
-    transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
-  };
-});
+const movePreviewMarkerCoord = computed(() => movePreview.value?.markerCoord ?? null);
 
 const movePreviewReachable = computed(() => movePreview.value?.reachable ?? false);
 const movePreviewStepCost = computed(() => movePreview.value?.stepCost ?? 0);
@@ -296,7 +245,7 @@ const enemyVisionCells = computed(() => {
   if (!uiSettingsStore.showEnemyVisionArea) return [];
   if (!worldStore.map) return [];
 
-  const cells = new Map<string, { key: string; style: Record<string, string> }>();
+  const cells = new Map<string, { key: string; coord: IHexCoordinates }>();
 
   for (const enemyTile of worldStore.map.tiles) {
     const hexobject = enemyTile.hexobject;
@@ -309,12 +258,9 @@ const enemyVisionCells = computed(() => {
       if (!tile.isRevealed) continue;
       if (hexDistance(enemyTile.coordinates, tile.coordinates) > visionRange) continue;
 
-      const { x, y } = calcHexPixelPosition(tile, tileWidth);
       cells.set(coordinateKey(tile.coordinates), {
         key: coordinateKey(tile.coordinates),
-        style: {
-          transform: `translate(${x}px, ${y}px)`,
-        },
+        coord: tile.coordinates,
       });
     }
   }
@@ -330,17 +276,11 @@ const combatMarkers = computed(() => {
   return worldStore.combatMarkers
     .filter((marker) => marker.kind !== 'defend')
     .filter((marker) => marker.visible)
-    .map((marker) => {
-      const center = getTileCenter(marker.coord);
-      return {
-        key: `${marker.owner}:${marker.kind}:${coordinateKey(marker.coord)}`,
-        owner: marker.owner,
-        kind: marker.kind,
-        style: {
-          transform: `translate(${Math.round(center.x)}px, ${Math.round(center.y)}px)`,
-        },
-      };
-    });
+    .map((marker) => ({
+      key: `${marker.owner}:${marker.kind}:${coordinateKey(marker.coord)}`,
+      owner: marker.owner,
+      coord: marker.coord,
+    }));
 });
 
 const activeCampfireActionTile = computed(() => {
@@ -378,13 +318,6 @@ const campHealEffectCoord = computed(() => {
   return nonFireplaceTile?.coordinates ?? null;
 });
 
-const campHealHeartStyle = computed(() => {
-  const coord = campHealEffectCoord.value;
-  if (!coord) return null;
-
-  return hexTranslateStyle(coord, tileWidth, { round: true });
-});
-
 const campHealInfoLabel = computed(() => {
   const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
   const percentPerTick = Math.round((1 / maxHp) * 100);
@@ -418,7 +351,7 @@ const mapBounds = computed(() => {
     maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const { x, y } = calcHexPixelPosition(t, tileWidth);
+    const { x, y } = calcHexPixelPosition(t, w, h);
 
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);
@@ -436,6 +369,37 @@ const mapBounds = computed(() => {
     offsetX: minX - bleed,
     offsetY: minY - bleed,
   };
+});
+
+const domTileSize = computed(() => ({ w: domTileW.value, h: domTileH.value }));
+const heroCoordinatesComputed = computed(() => worldStore.heroCoordinates);
+
+useHexBoard({
+  canvasRef: boardCanvasRef,
+  mapBounds,
+  domTileSize,
+  tiles,
+  heroCoordinates: heroCoordinatesComputed,
+  healTickerNow,
+  movePreview: {
+    segments: movePreviewSegments,
+    markerCoord: movePreviewMarkerCoord,
+    reachable: movePreviewReachable,
+    stepCost: movePreviewStepCost,
+    markerKind: movePreviewMarkerKind,
+  },
+  enemyVisionCells,
+  combatMarkers,
+  campHeal: {
+    coord: campHealEffectCoord,
+    active: isCampfireHealActive,
+    label: campHealInfoLabel,
+  },
+  onTileHover: handleTileHover,
+  onTileClick: (tile) => {
+    void handleTileClick(tile);
+  },
+  onOpenHeroInventory: () => useOverlayStore().openOverlay('hero-inventory'),
 });
 
 /* ---------- scale ---------- */
@@ -558,11 +522,40 @@ function onWheel(event: WheelEvent) {
 
 watch(mapBounds, updateScale, { immediate: true });
 
+let probeResizeObserver: ResizeObserver | null = null;
+let probeSizeFallbackTimer: number | null = null;
+
 onMounted(() => {
-  requestAnimationFrame(() => {
+  // A single requestAnimationFrame read of the probe's box isn't reliable —
+  // if layout (fonts, viewport, scrollbars) hasn't settled on that exact
+  // frame, `readDomTileSize` silently measures 0 once and nothing ever
+  // retries, leaving domTileW/H (and everything downstream: mapBounds, the
+  // Pixi canvas size, every tile's hit-test area) stuck at zero for the rest
+  // of the page's life — tiles render in the wrong place or clicks silently
+  // do nothing until a reload happens to win the race. A ResizeObserver
+  // fires as soon as the probe actually has a size, and again on every
+  // subsequent change, so this self-heals instead of gambling on one frame.
+  if (probeRef.value) {
+    probeResizeObserver = new ResizeObserver(() => {
+      readDomTileSize();
+      updateScale();
+    });
+    probeResizeObserver.observe(probeRef.value);
+  }
+
+  // Bounded fallback: ResizeObserver fires almost immediately in a healthy
+  // tab, but if that very first layout/paint tick is delayed for any reason
+  // (backgrounded tab, heavy load), poll briefly until domTileSize is real
+  // instead of depending entirely on that one callback ever arriving.
+  probeSizeFallbackTimer = window.setInterval(() => {
+    if (domTileW.value > 0 && domTileH.value > 0) {
+      if (probeSizeFallbackTimer) window.clearInterval(probeSizeFallbackTimer);
+      probeSizeFallbackTimer = null;
+      return;
+    }
     readDomTileSize();
     updateScale();
-  });
+  }, 100);
 
   window.addEventListener('resize', onResize);
   window.addEventListener('wheel', onWheel, { passive: false });
@@ -573,6 +566,12 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  probeResizeObserver?.disconnect();
+  if (probeSizeFallbackTimer) {
+    window.clearInterval(probeSizeFallbackTimer);
+    probeSizeFallbackTimer = null;
+  }
+  probeResizeObserver = null;
   window.removeEventListener('resize', onResize);
   window.removeEventListener('wheel', onWheel);
   window.removeEventListener('keydown', onKeyDown);
@@ -623,5 +622,38 @@ onBeforeUnmount(() => {
 
 .hex-map-inner {
   position: relative;
+}
+
+.hex-board-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.combat-alert-overlay {
+  position: absolute;
+  inset: -18px;
+  pointer-events: none;
+  z-index: 120;
+  border: 2px solid rgba(255, 92, 92, 0.82);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 160, 160, 0.35),
+    inset 0 0 64px rgba(120, 0, 0, 0.18),
+    0 0 28px rgba(255, 70, 70, 0.2);
+  background: radial-gradient(circle at center, rgba(255, 0, 0, 0) 54%, rgba(120, 0, 0, 0.1) 100%);
+  animation: combatPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes combatPulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 </style>

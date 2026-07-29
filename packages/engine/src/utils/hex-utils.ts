@@ -55,34 +55,22 @@ export function hexDistance(from: IHexCoordinates, to: IHexCoordinates): number 
   return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds));
 }
 
-export function calcHexPixelPosition(tile: IHexPositioned, tileWidth: number, spacing = 0.93) {
+/**
+ * Odd-q offset flat-top tiling, in terms of the tile's actual rendered box
+ * (`width`/`height`) rather than a separately-tuned "tileWidth" constant.
+ * Passing the real rendered box size — the same value every caller uses to
+ * size the tile itself — is what guarantees adjacent hexes tile with zero
+ * gap/overlap: any mismatch between "how big a tile is drawn" and "how far
+ * apart tiles are placed" shows up as visible seams or overlap.
+ */
+export function calcHexPixelPosition(tile: IHexPositioned, width: number, height: number) {
   const q = tile.coordinates.columnIndex;
   const r = tile.coordinates.rowIndex;
 
-  const x = tileWidth * 1.5 * spacing * q;
-  const y = tileWidth * Math.sqrt(3) * spacing * (r + (q % 2 ? 0.5 : 0));
+  const x = width * 0.75 * q;
+  const y = height * (r + (q % 2 ? 0.5 : 0));
 
   return { x, y };
-}
-
-/**
- * Builds a ready-to-use `{ transform: translate(...) }` style object for a
- * hex-positioned element. Centralizes a pattern that used to be re-typed in
- * every component that places something on the hex grid (hero token, move
- * preview markers, camp-heal effect, etc).
- */
-export function hexTranslateStyle(
-  coord: IHexCoordinates,
-  tileWidth: number,
-  options: { round?: boolean } = {},
-): Record<string, string> {
-  const { x, y } = calcHexPixelPosition({ coordinates: coord }, tileWidth);
-  const px = options.round ? Math.round(x) : x;
-  const py = options.round ? Math.round(y) : y;
-
-  return {
-    transform: `translate(${px}px, ${py}px)`,
-  };
 }
 
 /**
