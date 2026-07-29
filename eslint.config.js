@@ -8,8 +8,10 @@ import prettierConfig from 'eslint-config-prettier';
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 const webTsconfigRootDir = path.join(repoRoot, 'apps/web');
 const engineTsconfigRootDir = path.join(repoRoot, 'packages/engine');
+const apiTsconfigRootDir = path.join(repoRoot, 'apps/api');
 const APP_SRC_FILES = ['apps/web/src/**/*.{ts,vue}'];
 const ENGINE_SRC_FILES = ['packages/engine/src/**/*.ts'];
+const API_SRC_FILES = ['apps/api/src/**/*.ts'];
 
 export default tseslint.config(
   {
@@ -26,7 +28,7 @@ export default tseslint.config(
   // vite.config.ts or commitlint.config.js and crash on missing type info.
   ...tseslint.configs.recommendedTypeChecked.map((config) => ({
     ...config,
-    files: [...APP_SRC_FILES, ...ENGINE_SRC_FILES],
+    files: [...APP_SRC_FILES, ...ENGINE_SRC_FILES, ...API_SRC_FILES],
   })),
 
   // Must come last: the typescript-eslint configs above each set
@@ -65,6 +67,25 @@ export default tseslint.config(
         sourceType: 'module',
         projectService: true,
         tsconfigRootDir: engineTsconfigRootDir,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+    },
+  },
+
+  // apps/api has no .vue files either — same plain parser setup, its own tsconfig.
+  {
+    files: API_SRC_FILES,
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        projectService: true,
+        tsconfigRootDir: apiTsconfigRootDir,
       },
     },
     rules: {
