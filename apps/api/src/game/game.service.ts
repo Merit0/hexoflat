@@ -1,5 +1,7 @@
-import { randomUUID } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { desc } from 'drizzle-orm';
+import { DB, type Db } from '../db/db.module';
+import { saves } from '../db/schema';
 import type { CreateSaveDto } from './game.dto';
 
 export interface SaveRecord {
@@ -8,21 +10,21 @@ export interface SaveRecord {
   createdAt: string;
 }
 
+const SAVE_COLUMNS = { id: saves.id, name: saves.name, createdAt: saves.createdAt };
+
 @Injectable()
 export class GameService {
-  private readonly saves: SaveRecord[] = [];
+  // tsx/esbuild doesn't emit TS `design:paramtypes` metadata, so Nest can't
+  // infer constructor injection by type alone — @Inject() gives it an
+  // explicit token instead.
+  constructor(@Inject(DB) private readonly db: Db) {}
 
-  list(): SaveRecord[] {
-    return this.saves;
+  list(): Promise<SaveRecord[]> {
+    return this.db.select(SAVE_COLUMNS).from(saves).orderBy(desc(saves.createdAt));
   }
 
-  create(dto: CreateSaveDto): SaveRecord {
-    const record: SaveRecord = {
-      id: randomUUID(),
-      name: dto.name,
-      createdAt: new Date().toISOString(),
-    };
-    this.saves.push(record);
+  async create(dto: CreateSaveDto): Promise<SaveRecord> {
+    const [record] = await this.db.insert(saves).values({ name: dto.name }).returning(SAVE_COLUMNS);
     return record;
   }
 }
