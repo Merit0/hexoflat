@@ -58,7 +58,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { getToolCapabilities } from '@/game-resolvers/interactions-resolver';
+import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 
 const worldStore = useWorldMapStore();
 const heroToolStore = useHeroToolStore();

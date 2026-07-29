@@ -31,7 +31,7 @@ import { computed } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { OverlayPayloads } from '@/types/overlay-types';
-import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 
 const props = defineProps<{
   data: OverlayPayloads['hex-tile-details'];

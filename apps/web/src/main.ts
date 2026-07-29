@@ -3,7 +3,7 @@ import App from './App.vue';
 import './assets/global.css';
 import { createPinia } from 'pinia';
 import router from './router';
-import { validateContent } from '@/content/validate-content';
+import { validateContent } from '@hexoflat/engine/content/validate-content';
 
 if (import.meta.env.DEV) {
   validateContent();

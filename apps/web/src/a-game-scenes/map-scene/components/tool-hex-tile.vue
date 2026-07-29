@@ -25,23 +25,22 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { calcHexPixelPosition, type IHexPositioned } from '@/utils/hex-utils';
+import { calcHexPixelPosition, type IHexPositioned } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
   getToolCapabilities,
   resolveActions,
   type ResolvedAction,
-} from '@/game-resolvers/interactions-resolver';
+} from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { ACTION_TYPE_MAP } from '@/registry/action-starters-registry';
-import { ExecuteHexActionFeature } from '@/features/execute-hex-action-feature';
-import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
-import { getPrototype, getMeta } from '@/content';
-import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
+import { ACTION_TYPE_MAP } from '@hexoflat/engine/registry/action-starters-registry';
+import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
+import { getPrototype, getMeta } from '@hexoflat/engine';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
-import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
-import { THeroToolKey } from '@/content/equipment.content';
-import { EHexActionType } from '@/enums/hex-action-type';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 
 const props = defineProps<{
   tileWidth: number;
@@ -247,7 +246,7 @@ function executeAction() {
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
 
-  const res = new ExecuteHexActionFeature(tile).execute(actionType, activeToolKey.value);
+  const res = worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
 
   if (res.ok) {
     if (actionType === EHexActionType.BLOCK) {

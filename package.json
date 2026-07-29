@@ -35,6 +35,7 @@
   },
   "lint-staged": {
     "apps/**/*.{ts,vue}": "eslint --fix",
+    "packages/**/*.{ts,vue}": "eslint --fix",
     "*.{ts,vue,json,md}": "prettier --write"
   }
 }

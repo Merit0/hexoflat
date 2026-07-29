@@ -14,8 +14,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
-import { hexTranslateStyle } from '@/utils/hex-utils';
+import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
+import { hexTranslateStyle } from '@hexoflat/engine/utils/hex-utils';
 import { useOverlayStore } from '@/stores/overlay-store';
 
 const props = defineProps<{

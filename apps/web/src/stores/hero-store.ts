@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia';
-import { HeroModel } from '@/models/hero-model';
+import { HeroModel } from '@hexoflat/engine/models/hero-model';
 import { useUserStore } from './user-store';
 import * as Request from '../api/Requests';
-import type { IHero } from '@/abstraction/hero-abstraction';
-import { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
-import { LocationKey } from '@/registry/world-map-registry';
+import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
+import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 
 type HeroNavState = {
   locationKey: LocationKey;

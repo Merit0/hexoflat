@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { HEXOBJECT_KEYS, type THexobjectKey } from '@/registry/hexobjects-registry';
-import { CONTENT } from './content-map';
-import { ContentDefinitionSchema } from './content-schema';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { CONTENT, ContentDefinitionSchema } from '@hexoflat/engine';
 
 const PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../public');
 const KEYS = Object.values(HEXOBJECT_KEYS) as THexobjectKey[];

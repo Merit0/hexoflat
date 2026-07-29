@@ -1,35 +1,39 @@
 import { defineStore } from 'pinia';
-import HexMapModel, {
-  type ISerializedHexMap,
-} from '@/a-game-scenes/map-scene/models/hex-map-model';
-import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
-import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
-import { coordinateKey, getOddQNeighbors, hexDistance } from '@/utils/hex-utils';
+import HexMapModel, { type ISerializedHexMap } from '@hexoflat/engine/map/models/hex-map-model';
+import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
+import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
+import { coordinateKey, getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
   EHexCollision,
   EHexobjectGroup,
   type ICreature,
   type THexobject,
-} from '@/abstraction/hexobject-abstraction';
-import { WorldTickFeature } from '@/features/resource-features/world-tick-feature';
-import { AddResourceSpawnerFeature } from '@/features/resource-features/add-resource-spawner-feature';
-import { HEXOBJECT_KEYS, type THexobjectKey } from '@/registry/hexobjects-registry';
-import { CoinsGenerator } from '@/generators/coins-generator';
+} from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { CoinsGenerator } from '@hexoflat/engine/generators/coins-generator';
 import { useHeroStore } from '@/stores/hero-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
-import { LocationKey, MapDefinition, MapRegistry } from '@/registry/world-map-registry';
-import { IHexMapPlacement } from '@/abstraction/hex-map-placement';
-import { getScoutMoveStepsForSteps } from '@/services/hero-movement/scout-progression';
-import { getReachableTileDistances } from '@/services/hero-movement/reachable-range-service';
-import { findShortestPath } from '@/services/hero-movement/pathfinding-service';
+import { useGatheringStore } from '@/stores/gathering-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import {
+  LocationKey,
+  MapDefinition,
+  MapRegistry,
+} from '@hexoflat/engine/registry/world-map-registry';
+import { IHexMapPlacement } from '@hexoflat/engine/abstraction/hex-map-placement';
+import { getScoutMoveStepsForSteps } from '@hexoflat/engine/hero-movement/scout-progression';
+import { getReachableTileDistances } from '@hexoflat/engine/hero-movement/reachable-range-service';
+import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import router, { ROUTES } from '@/router';
-import { HexObjectFactory } from '@/factory/hex-object-factory';
-import { THeroToolKey } from '@/content/equipment.content';
-import { getToolCapabilities } from '@/game-resolvers/interactions-resolver';
-import { getPrototype, CONTENT_VERSION } from '@/content';
-import { normalizeHealthValue } from '@/utils/combat/health-format';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
+import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
+import { getPrototype, CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
+import type { HexEngineActionContext } from '@hexoflat/engine';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
+import { normalizeHealthValue } from '@hexoflat/engine/utils/combat/health-format';
 
 type TWorldState = {
   contentVersion: number;
@@ -96,6 +100,14 @@ function writeRespawnSchedule(schedule: Partial<Record<LocationKey, number>>) {
 
 let worldTimer: number | null = null;
 
+function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
+  const { events } = applyCommand({ map }, { type: 'WORLD_TICK', payload: { now } }, ctx);
+  const tickEvent = events.find((e) => e.type === 'WORLD_TICKED') as
+    { type: 'WORLD_TICKED'; payload: { changed: boolean } } | undefined;
+
+  return tickEvent?.payload.changed ?? false;
+}
+
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
     map: null as HexMapModel | null,
@@ -119,6 +131,53 @@ export const useWorldMapStore = defineStore('world-map-store', {
   }),
 
   actions: {
+    /**
+     * Builds the port context @hexoflat/engine's applyCommand needs. Combat/navigation
+     * (worldMap port) still resolve to this store's own methods — tracked follow-up
+     * debt per docs/MIGRATION-PLAN.md Phase 2 (staged scope).
+     */
+    buildEngineContext(): HexEngineActionContext {
+      return {
+        heroToolStore: useHeroToolStore(),
+        hero: useHeroStore(),
+        gathering: useGatheringStore(),
+        inventory: useHeroInventoryStore(),
+        events: useGameEventsStore(),
+        worldMap: this,
+        navigate: (locationKey) => {
+          void router
+            .push({ name: ROUTES.WORLD, params: { locationKey } })
+            .catch((e: unknown) => console.error('Router push failed:', e));
+        },
+      };
+    },
+
+    executeHexAction(
+      tile: HexTileModel,
+      actionType: EHexActionType,
+      toolKey: THeroToolKey,
+    ): { ok: boolean; message?: string } {
+      if (!this.map) return { ok: false, message: 'No active map.' };
+
+      const { events } = applyCommand(
+        { map: this.map as HexMapModel },
+        {
+          type: 'START_HEX_ACTION',
+          payload: { coordinates: tile.coordinates, actionType, toolKey, now: Date.now() },
+        },
+        this.buildEngineContext(),
+      );
+
+      if (events.some((e) => e.type === 'HEX_ACTION_STARTED')) {
+        return { ok: true };
+      }
+
+      const rejected = events.find((e) => e.type === 'HEX_ACTION_START_REJECTED') as
+        { type: 'HEX_ACTION_START_REJECTED'; payload: { message: string } } | undefined;
+
+      return { ok: false, message: rejected?.payload.message };
+    },
+
     getTileAt(coords: IHexCoordinates): HexTileModel | null {
       if (!this.map) return null;
       const tiles = this.map.tiles as HexTileModel[];
@@ -997,7 +1056,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         this.map = hydratedMap;
         this.hydrateResourcesFromConfig();
 
-        const changed = new WorldTickFeature(hydratedMap).tick(Date.now());
+        const changed = runWorldTick(hydratedMap, Date.now(), this.buildEngineContext());
         if (changed) this.saveToStorage(mapId);
       } else {
         if (parsedMap) {
@@ -1131,7 +1190,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       worldTimer = window.setInterval(() => {
         if (!this.map || !this.currentMapId) return;
-        const changed = new WorldTickFeature(this.map as HexMapModel).tick(Date.now());
+        const changed = runWorldTick(
+          this.map as HexMapModel,
+          Date.now(),
+          this.buildEngineContext(),
+        );
         if (changed) this.saveToStorage(this.currentMapId);
       }, 250);
     },
@@ -1327,7 +1390,14 @@ export const useWorldMapStore = defineStore('world-map-store', {
         for (const c of placement.coordinates) {
           const tile = tileByKey.get(`${c.columnIndex}:${c.rowIndex}`);
           if (tile && !tile.resourceSpawner) {
-            new AddResourceSpawnerFeature(tile, placement.hexobject!).add();
+            applyCommand(
+              { map: map },
+              {
+                type: 'ADD_RESOURCE_SPAWNER',
+                payload: { coordinates: tile.coordinates, hexobject: placement.hexobject! },
+              },
+              this.buildEngineContext(),
+            );
           }
         }
       }

@@ -1,4 +1,4 @@
-import { IHero } from '@/abstraction/hero-abstraction';
+import { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
 
 export type User = {
   name: string;

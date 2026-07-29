@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
-import { resolveInventoryView } from '@/utils/inventory/traits-resolver';
+import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { useInventoryDragHandle } from '@/composables/use-inventory-drag';
 
 const props = defineProps<{ item: InventoryItem }>();
