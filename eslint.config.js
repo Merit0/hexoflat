@@ -5,12 +5,13 @@ import tseslint from 'typescript-eslint';
 import vueParser from 'vue-eslint-parser';
 import prettierConfig from 'eslint-config-prettier';
 
-const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
-const APP_SRC_FILES = ['src/**/*.{ts,vue}'];
+const repoRoot = path.dirname(fileURLToPath(import.meta.url));
+const tsconfigRootDir = path.join(repoRoot, 'apps/web');
+const APP_SRC_FILES = ['apps/web/src/**/*.{ts,vue}'];
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'back-up/**', 'tsconfig.tsbuildinfo'],
+    ignores: ['apps/*/dist/**', '**/back-up/**', '**/tsconfig.tsbuildinfo'],
   },
 
   ...tseslint.configs.recommended,

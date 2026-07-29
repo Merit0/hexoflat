@@ -1,5 +1,7 @@
 dist
+apps/*/dist
 back-up
 node_modules
 pnpm-lock.yaml
-tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
+.turbo
