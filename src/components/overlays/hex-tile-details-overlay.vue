@@ -2,69 +2,84 @@
   <div class="overlay-backdrop game-root" @click.self="close">
     <div class="overlay-card">
       <header class="overlay-header">
-        <h2>Hex Tile Details</h2>
-        <button class="close-btn" @click="close">✕</button>
+        <h2 data-testid="tile-details-title">{{ title }}</h2>
+        <button
+          class="close-btn"
+          data-testid="tile-details-close-button"
+          aria-label="Close"
+          @click="close"
+        >
+          ✕
+        </button>
       </header>
 
-      <div v-if="tile" class="content">
-        <div v-if="!tile.hexobject" class="row"><span class="label">Place</span><span>Nothing around here</span></div>
-        <div v-if="tile.hexobject" class="row"><span class="label">image</span><span>{{ tile.hexobject?.spritePath }}</span></div>
-        <div class="row"><span class="label">revealed status</span><span>{{ tile.isRevealed }}</span></div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.RESOURCE" class="row">
-          <span class="label">Resource</span>
-          <span>[{{ tile.hexobject.description }}]</span>
+      <div v-if="tile" class="content" data-testid="tile-details-content">
+        <div v-if="categoryLabel" class="row">
+          <span class="label">{{ categoryLabel }}</span>
+          <span>{{ tile!.hexobject!.description || 'No further details.' }}</span>
         </div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.LOOT" class="row">
-          <span class="label">Loot</span>
-          <span>[{{ tile.hexobject.description }}]</span>
-        </div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CONSTRUCTION" class="row">
-          <span class="label">Construction</span>
-          <span>[{{ tile.hexobject.description }}]</span>
-        </div>
-        <div v-if="tile.hexobject?.groupType === EHexobjectGroup.CREATURE" class="row">
-          <span class="label">Creature</span>
-          <span>[{{ tile.hexobject.description }}]</span>
-        </div>
-        <div class="row">
-          <span class="label">coords</span>
-          <span>[{{ tile.coordinates.columnIndex }}, {{ tile.coordinates.rowIndex }}]</span>
-        </div>
+        <p v-else class="empty-note">Nothing of interest here.</p>
       </div>
 
-      <div v-else class="content empty">
-        Tile not found
-      </div>
+      <div v-else class="content empty">Tile not found</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useWorldMapStore } from "@/stores/world-map-store";
-import { useOverlayStore } from "@/stores/overlay-store";
-import {OverlayPayloads} from "@/types/overlay-types";
-import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
+import { computed } from 'vue';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { OverlayPayloads } from '@/types/overlay-types';
+import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
 
 const props = defineProps<{
-  data: OverlayPayloads["hex-tile-details"];
+  data: OverlayPayloads['hex-tile-details'];
 }>();
 
 const worldMapStore = useWorldMapStore();
 const overlayStore = useOverlayStore();
 
+const CATEGORY_LABELS: Record<EHexobjectGroup, string> = {
+  [EHexobjectGroup.RESOURCE]: 'Resource',
+  [EHexobjectGroup.LOOT]: 'Loot',
+  [EHexobjectGroup.CONSTRUCTION]: 'Construction',
+  [EHexobjectGroup.CREATURE]: 'Creature',
+  [EHexobjectGroup.TOOL]: 'Tool',
+  [EHexobjectGroup.EQUIPMENT]: 'Equipment',
+};
+
 const tile = computed(() => {
   const map = worldMapStore.map;
   if (!map) return null;
 
-  return map.tiles.find(t =>
-      t.coordinates.columnIndex === props.data.coordinates.columnIndex &&
-      t.coordinates.rowIndex === props.data.coordinates.rowIndex
-  ) ?? null;
+  return (
+    map.tiles.find(
+      (t) =>
+        t.coordinates.columnIndex === props.data.coordinates.columnIndex &&
+        t.coordinates.rowIndex === props.data.coordinates.rowIndex,
+    ) ?? null
+  );
+});
+
+const categoryLabel = computed(() => {
+  const hexobject = tile.value?.hexobject;
+  if (!hexobject) return null;
+  return CATEGORY_LABELS[hexobject.groupType] ?? null;
+});
+
+const title = computed(() => {
+  const hexobject = tile.value?.hexobject;
+  if (!hexobject) return 'Empty Tile';
+
+  if (hexobject.groupType === EHexobjectGroup.CREATURE) return hexobject.creature.name;
+  if (hexobject.groupType === EHexobjectGroup.LOOT) return hexobject.loot.name;
+
+  return categoryLabel.value ?? 'Hex Tile';
 });
 
 function close() {
-  overlayStore.closeOverlay("hex-tile-details");
+  overlayStore.closeOverlay('hex-tile-details');
 }
 </script>
 
@@ -72,7 +87,7 @@ function close() {
 .overlay-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   display: grid;
   place-items: center;
   z-index: 2000;
@@ -80,11 +95,11 @@ function close() {
 .overlay-card {
   width: min(520px, 92vw);
   background: #0f1115;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 14px;
   color: #e6e6e6;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 .overlay-header {
   display: flex;
@@ -99,15 +114,28 @@ function close() {
   font-size: 18px;
   cursor: pointer;
 }
-.content { display: grid; gap: 8px; }
+.content {
+  display: grid;
+  gap: 8px;
+}
 .row {
   display: grid;
   grid-template-columns: 140px 1fr;
   gap: 8px;
   padding: 6px 8px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
 }
-.label { opacity: 0.7; }
-.empty { opacity: 0.7; text-align: center; padding: 20px; }
+.label {
+  opacity: 0.7;
+}
+.empty {
+  opacity: 0.7;
+  text-align: center;
+  padding: 20px;
+}
+.empty-note {
+  opacity: 0.7;
+  padding: 6px 8px;
+}
 </style>
