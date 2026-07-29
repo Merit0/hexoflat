@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "noEmit": true,
-    "strict": false,
+    "strict": true,
     "jsx": "preserve",
     "moduleResolution": "bundler",
     "experimentalDecorators": true,
@@ -16,16 +16,9 @@
     "baseUrl": ".",
     "types": ["vite/client"],
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
-    "lib": [
-      "esnext",
-      "dom",
-      "dom.iterable",
-      "scripthost"
-    ]
+    "lib": ["esnext", "dom", "dom.iterable", "scripthost"]
   },
   "include": [
     "src/**/*.ts",
@@ -35,9 +28,5 @@
     "tests/**/*.tsx",
     "vite.config.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "back-up"
-  ]
+  "exclude": ["node_modules", "dist", "back-up"]
 }

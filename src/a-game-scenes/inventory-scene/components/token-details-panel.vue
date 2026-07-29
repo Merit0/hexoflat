@@ -1,38 +1,37 @@
 <template>
-  <div class='panel'>
-    <div class='top'>
-      <div class='thumb' :style='thumbStyle'></div>
+  <div class="panel" data-testid="token-details-panel">
+    <div class="top">
+      <div class="thumb" :style="thumbStyle"></div>
 
-      <div class='meta'>
-        <div class='title'>{{ traits.title }}</div>
-        <div class='sub'>{{ item.key }}</div>
+      <div class="meta">
+        <div class="title" data-testid="token-details-title">{{ traits.title }}</div>
+        <div class="sub">{{ item.key }}</div>
       </div>
     </div>
 
-    <div class='desc'>
+    <div class="desc">
       {{ traits.description || 'No description yet.' }}
     </div>
 
-    <div class='row'>
-      <div class='pill'>Type: {{ item.type }}</div>
-      <div class='pill'>Weight: {{ traits.weightKg }}</div>
-      <div v-if='item.equipSlot' class='pill'>Slot: {{ item.equipSlot }}</div>
-      <div v-if='item.amount > 1' class='pill'>Amount: {{ item.amount }}</div>
+    <div class="row">
+      <div class="pill">Type: {{ item.type }}</div>
+      <div class="pill">Weight: {{ traits.weightKg }}</div>
+      <div v-if="item.equipSlot" class="pill">Slot: {{ item.equipSlot }}</div>
+      <div v-if="item.amount > 1" class="pill">Amount: {{ item.amount }}</div>
     </div>
 
-    <div class='actions'>
-      <button class='btn' disabled>Use</button>
-      <button class='btn' disabled>Equip</button>
-      <button class='btn' disabled>Drop</button>
+    <div class="actions">
+      <button class="btn" data-testid="token-details-use-button" disabled>Use</button>
+      <button class="btn" data-testid="token-details-equip-button" disabled>Equip</button>
+      <button class="btn" data-testid="token-details-drop-button" disabled>Drop</button>
     </div>
   </div>
 </template>
 
-<script setup lang='ts'>
-import {computed} from 'vue';
-import type {InventoryItem} from '@/stores/hero-inventory-store';
-import {resolveInventoryView} from "@/utils/inventory/traits-resolver";
-import {EHexobjectGroup} from "@/abstraction/hexobject-abstraction";
+<script setup lang="ts">
+import { computed } from 'vue';
+import type { InventoryItem } from '@/stores/hero-inventory-store';
+import { resolveInventoryView } from '@/utils/inventory/traits-resolver';
 
 const props = defineProps<{ item: InventoryItem }>();
 
@@ -41,18 +40,6 @@ const traits = computed(() => resolveInventoryView(props.item.key));
 const thumbStyle = computed(() => ({
   backgroundImage: traits.value.iconPath ? `url('${traits.value.iconPath}')` : 'none',
 }));
-
-const actions = computed(() => {
-  if (!props.item) return [];
-  const a: Array<{ key: 'use' | 'equip' | 'drop'; label: string; disabled?: boolean }> = [];
-
-  if (props.item.type === EHexobjectGroup.LOOT) a.push({ key: 'use', label: 'USE' });
-  if (props.item.type === EHexobjectGroup.EQUIPMENT && props.item.equipSlot) a.push({ key: 'equip', label: 'EQUIP' });
-
-  a.push({ key: 'drop', label: 'DROP' });
-  return a;
-});
-
 </script>
 
 <style scoped>
@@ -63,8 +50,9 @@ const actions = computed(() => {
 
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-  0 10px 30px rgba(0, 0, 0, 0.70);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 10px 30px rgba(0, 0, 0, 0.7);
 
   padding: 14px;
   color: rgba(255, 255, 255, 0.86);
@@ -81,7 +69,7 @@ const actions = computed(() => {
   width: 64px;
   height: 64px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.06) no-repeat center;
   background-size: contain;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
@@ -106,7 +94,7 @@ const actions = computed(() => {
   padding: 10px 12px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   min-height: 86px;
   line-height: 1.35;
 }
@@ -122,7 +110,7 @@ const actions = computed(() => {
   padding: 6px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-weight: 900;
   font-size: 11px;
 }

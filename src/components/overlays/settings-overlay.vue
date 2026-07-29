@@ -3,24 +3,28 @@
     <div class="overlay-card">
       <header class="overlay-header">
         <h2>Settings</h2>
-        <button class="close-btn" type="button" @click="close">Close</button>
+        <button class="close-btn" data-testid="settings-close-button" type="button" @click="close">
+          Close
+        </button>
       </header>
 
       <label class="setting-row">
         <input
-            :checked="uiSettings.showHeroMoveTrail"
-            type="checkbox"
-            @change="uiSettings.setHeroMoveTrail(($event.target as HTMLInputElement).checked)"
-        >
+          data-testid="settings-move-trail-checkbox"
+          :checked="uiSettings.showHeroMoveTrail"
+          type="checkbox"
+          @change="uiSettings.setHeroMoveTrail(($event.target as HTMLInputElement).checked)"
+        />
         <span>Show hero move trail</span>
       </label>
 
       <label class="setting-row">
         <input
-            :checked="uiSettings.showEnemyVisionArea"
-            type="checkbox"
-            @change="uiSettings.setEnemyVisionArea(($event.target as HTMLInputElement).checked)"
-        >
+          data-testid="settings-vision-checkbox"
+          :checked="uiSettings.showEnemyVisionArea"
+          type="checkbox"
+          @change="uiSettings.setEnemyVisionArea(($event.target as HTMLInputElement).checked)"
+        />
         <span>Show enemy vision area</span>
       </label>
     </div>
@@ -28,14 +32,14 @@
 </template>
 
 <script setup lang="ts">
-import { useOverlayStore } from "@/stores/overlay-store";
-import { useUiSettingsStore } from "@/stores/ui-settings-store";
+import { useOverlayStore } from '@/stores/overlay-store';
+import { useUiSettingsStore } from '@/stores/ui-settings-store';
 
 const overlayStore = useOverlayStore();
 const uiSettings = useUiSettingsStore();
 
 function close() {
-  overlayStore.closeOverlay("settings");
+  overlayStore.closeOverlay('settings');
 }
 </script>
 

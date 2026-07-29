@@ -9,5 +9,4 @@ CUT
 → HexObjectFactory.create()
 
 todo:
-pnpm
 oxlint

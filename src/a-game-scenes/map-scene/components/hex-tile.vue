@@ -1,32 +1,33 @@
 <template>
   <div
-      class="hex-tile game-root"
-      :style="getHexTileTransformStyle(hexTile)"
-      @click="emit('tile-click', hexTile)"
-      @pointerenter="onEnter"
+    class="hex-tile game-root"
+    :data-testid="`hex-tile-${hexTile.coordinates.columnIndex}-${hexTile.coordinates.rowIndex}`"
+    :style="getHexTileTransformStyle(hexTile)"
+    @click="emit('tile-click', hexTile)"
+    @pointerenter="onEnter"
   >
     <div class="hex-layer hex-tile-bg" :style="getHexTileBackgroundStyle(hexTile)"></div>
     <div
-        v-if="defendMarkerSpritePath"
-        class="hex-layer hex-defend-marker"
-        :style="{ backgroundImage: `url('${defendMarkerSpritePath}')` }"
+      v-if="defendMarkerSpritePath"
+      class="hex-layer hex-defend-marker"
+      :style="{ backgroundImage: `url('${defendMarkerSpritePath}')` }"
     ></div>
     <div class="hex-layer hexobject-sprite" :style="getHexTileImage(hexTile)"></div>
-    <div v-if="constructionLockLabel" class="hex-tile-lock-chip">
+    <div v-if="constructionLockLabel" class="hex-tile-lock-chip" data-testid="hex-tile-lock-chip">
       {{ constructionLockLabel }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { IHexTile } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import {calcHexPixelPosition} from "@/utils/hex-utils";
-import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { useWorldMapStore } from "@/stores/world-map-store";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
-import { HEX_OBJECT_PROTOTYPES } from "@/registry/hexobjects/prototypes";
+import { computed } from 'vue';
+import type { IHexTile } from '@/a-game-scenes/map-scene/models/hex-tile-model';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { calcHexPixelPosition } from '@/utils/hex-utils';
+import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { getMeta, getPrototype } from '@/content';
+import { getTileWidth } from '@/a-game-scenes/map-scene/constants/hex-grid-constants';
 
 const props = defineProps<{
   hexTile: IHexTile;
@@ -34,15 +35,14 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "tile-click", tile: IHexTile): void;
-  (e: "tile-hover", tile: IHexTile): void;
+  (e: 'tile-click', tile: IHexTile): void;
+  (e: 'tile-hover', tile: IHexTile): void;
 }>();
 
-const EMPTY_TILE_URL = "/hex-assets/hex-tiles/empty-tile-image.png";
+const EMPTY_TILE_URL = '/hex-assets/hex-tiles/empty-tile-image.png';
 const heroToolStore = useHeroToolStore();
 const worldStore = useWorldMapStore();
-const GRID_COLUMNS = 42;
-const tileWidth = window.innerWidth / GRID_COLUMNS;
+const tileWidth = getTileWidth();
 
 const constructionLockLabel = computed(() => {
   void props.nowTick;
@@ -52,19 +52,19 @@ const constructionLockLabel = computed(() => {
   if (!tile.isRevealed || !hexobject) return null;
   if (hexobject.groupType !== EHexobjectGroup.CONSTRUCTION) return null;
 
-  const enterCfg = HEXOBJECT_META[hexobject.hexobjectKey]?.enter;
-  if (enterCfg?.type === "WORLD") {
+  const enterCfg = getMeta(hexobject.hexobjectKey)?.enter;
+  if (enterCfg?.type === 'WORLD') {
     const remainingMs = worldStore.getLocationRespawnRemainingMs(enterCfg.locationKey);
     if (remainingMs > 0) {
       const totalSeconds = Math.ceil(remainingMs / 1000);
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
-      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
   }
 
   if (!hexobject.isInteractable && hexobject.construction.isLocked) {
-    return "locked";
+    return 'locked';
   }
 
   return null;
@@ -74,61 +74,59 @@ const defendMarkerSpritePath = computed(() => {
   const tile = props.hexTile;
   if (!tile.isRevealed) return null;
 
-  const marker = worldStore.combatMarkers.find((item) =>
+  const marker = worldStore.combatMarkers.find(
+    (item) =>
       item.visible &&
-      item.kind === "defend" &&
+      item.kind === 'defend' &&
       item.coord.columnIndex === tile.coordinates.columnIndex &&
-      item.coord.rowIndex === tile.coordinates.rowIndex
+      item.coord.rowIndex === tile.coordinates.rowIndex,
   );
   if (!marker?.toolKey) return null;
 
-  return HEX_OBJECT_PROTOTYPES[marker.toolKey]?.spritePath ?? null;
+  return getPrototype(marker.toolKey)?.spritePath ?? null;
 });
 
 function getHexTileTransformStyle(tile: IHexTile) {
   const { x, y } = calcHexPixelPosition(tile, tileWidth);
 
   return {
-    "--tx": `${x}px`,
-    "--ty": `${y}px`,
+    '--tx': `${x}px`,
+    '--ty': `${y}px`,
   } as Record<string, string>;
 }
 
 function onEnter() {
-  emit("tile-hover", props.hexTile);
+  emit('tile-hover', props.hexTile);
   if (!heroToolStore.isDragging) return;
   heroToolStore.updateHover(props.hexTile.coordinates);
 }
 
 function getHexTileImage(tile: IHexTile) {
-  const img = tile.isRevealed
-      ? (tile.hexobject?.spritePath || EMPTY_TILE_URL)
-      : EMPTY_TILE_URL;
+  const img = tile.isRevealed ? tile.hexobject?.spritePath || EMPTY_TILE_URL : EMPTY_TILE_URL;
 
   return {
     backgroundImage: `url("${img}")`,
-    backgroundSize: "cover",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "center",
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
   };
 }
 
 function getHexTileBackgroundStyle(tile: IHexTile) {
   const img = tile.isRevealed
-      ? (tile.hexBackgroundImagePath || "/hex-assets/token-placement-image.png")
-      : "/hex-assets/hex-effects/fog-tile-image.png";
+    ? tile.hexBackgroundImagePath || '/hex-assets/token-placement-image.png'
+    : '/hex-assets/hex-effects/fog-tile-image.png';
 
   return {
     backgroundImage: `url(${img})`,
-    backgroundSize: "cover",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "center",
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
   };
 }
 </script>
 
 <style scoped>
-
 .hex-tile {
   --tx: 0px;
   --ty: 0px;
@@ -137,14 +135,7 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   height: var(--hex-tile-height);
   position: absolute;
 
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
 
   display: flex;
   align-items: center;
@@ -155,18 +146,14 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 }
 
 .hex-tile::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   clip-path: inherit;
   pointer-events: none;
 
   /* “скло” — холодний напівпрозорий шар */
-  background: linear-gradient(
-      145deg,
-      rgba(220, 235, 255, 0.18),
-      rgba(140, 170, 210, 0.10)
-  );
+  background: linear-gradient(145deg, rgba(220, 235, 255, 0.18), rgba(140, 170, 210, 0.1));
 
   opacity: 0.45;
 }
@@ -174,35 +161,35 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 .tool-target-glow {
   position: absolute;
   pointer-events: none;
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
 
   animation: glowPulse 1.25s ease-in-out infinite;
 }
 
 @keyframes glowPulse {
-  0%, 100% { opacity: 0.28; transform: scale(0.985); }
-  50% { opacity: 0.44; transform: scale(1.02); }
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 0.44;
+    transform: scale(1.02);
+  }
 }
 
 .hex-tile.is-tool-target.tool-hand .tool-target-glow {
   background: rgba(230, 193, 90, 0.18);
   box-shadow:
-      0 0 0 1px rgba(230, 193, 90, 0.28),
-      0 10px 28px rgba(230, 193, 90, 0.18);
+    0 0 0 1px rgba(230, 193, 90, 0.28),
+    0 10px 28px rgba(230, 193, 90, 0.18);
 }
 
 .hex-tile.is-tool-target.tool-axe .tool-target-glow {
   background: rgba(203, 48, 48, 0.18);
   box-shadow:
-      0 0 0 1px rgba(90, 163, 230, 0.28),
-      0 10px 28px rgba(90, 163, 230, 0.18);
+    0 0 0 1px rgba(90, 163, 230, 0.28),
+    0 10px 28px rgba(90, 163, 230, 0.18);
 }
 
 .hex-layer {
@@ -212,15 +199,14 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
 
 .hex-tile-bg {
   z-index: 1;
-  transition: filter 0.16s ease, transform 0.16s ease;
+  transition:
+    filter 0.16s ease,
+    transform 0.16s ease;
   will-change: filter, transform;
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  filter:
-      contrast(1.1)
-      saturate(0.95)
-      brightness(1);
+  filter: contrast(1.1) saturate(0.95) brightness(1);
 }
 
 .hexobject-sprite {
@@ -229,7 +215,9 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   top: -2%;
 
   transform: scale(1);
-  transition: transform 120ms ease-out, filter 120ms ease-out;
+  transition:
+    transform 120ms ease-out,
+    filter 120ms ease-out;
 
   image-rendering: crisp-edges;
   will-change: transform;
@@ -272,5 +260,4 @@ function getHexTileBackgroundStyle(tile: IHexTile) {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
   pointer-events: none;
 }
-
 </style>

@@ -1,72 +1,93 @@
 <template>
-  <header class="topbar">
+  <header class="topbar" data-testid="topbar">
     <div class="topbar__left">
       <div class="hero-badge">
         <div class="hero-badge__sub">
-          <div class="hero-badge__name chip">{{ heroName }}</div>
-          <div class="chip chip--with-popover">
+          <div class="hero-badge__name chip" data-testid="topbar-hero-name">{{ heroName }}</div>
+          <div class="chip chip--with-popover" data-testid="topbar-steps-chip">
             Steps: <b>{{ heroSteps }}</b>
             <div class="chip-popover">
               <div class="chip-popover__title">{{ scoutRankLabel }}</div>
-              <div class="chip-popover__line">Move Steps: <b>{{ scoutMoveSteps }}</b></div>
-              <div class="chip-popover__line">Steps Walked: <b>{{ heroSteps }}</b></div>
+              <div class="chip-popover__line">
+                Move Steps: <b>{{ scoutMoveSteps }}</b>
+              </div>
+              <div class="chip-popover__line">
+                Steps Walked: <b>{{ heroSteps }}</b>
+              </div>
               <div class="chip-popover__line">
                 Next Rank:
-                <b>{{ nextScoutRankAt ?? "MAX" }}</b>
+                <b>{{ nextScoutRankAt ?? 'MAX' }}</b>
               </div>
             </div>
           </div>
-          <span class="chip">Scout: <b>{{ scoutRankShort }}</b></span>
-          <span class="chip" v-if="toolLabel">Tool: <b>{{ toolLabel }}</b></span>
-          <span class="chip" v-if="heroToolStore.isLocked">Status: <b>LOCKED</b></span>
-          <span class="chip muted" v-else>Status: <b>READY</b></span>
+          <span class="chip" data-testid="topbar-scout-chip"
+            >Scout: <b>{{ scoutRankShort }}</b></span
+          >
+          <span v-if="toolLabel" class="chip" data-testid="topbar-tool-chip"
+            >Tool: <b>{{ toolLabel }}</b></span
+          >
+          <span v-if="heroToolStore.isLocked" class="chip" data-testid="topbar-status-chip"
+            >Status: <b>LOCKED</b></span
+          >
+          <span v-else class="chip muted" data-testid="topbar-status-chip"
+            >Status: <b>READY</b></span
+          >
         </div>
       </div>
     </div>
 
     <div class="topbar__center chip">
-      <div class="stat">
+      <div class="stat" data-testid="topbar-hp-bar">
         <div class="stat__label">HP</div>
         <div class="stat__bar">
           <div class="stat__fill" :style="{ width: hpPercent + '%' }"></div>
         </div>
-        <div class="stat__value">{{ heroHp }}/{{ heroHpMax }}</div>
+        <div class="stat__value" data-testid="topbar-hp-value">{{ heroHp }}/{{ heroHpMax }}</div>
       </div>
     </div>
 
     <div class="topbar__right">
-      <span class="chip">Map: <b>{{ heroLocation }}</b></span>
-      <button class="settings-btn" type="button" @click="openSettings">⚙</button>
+      <span class="chip" data-testid="topbar-map-chip"
+        >Map: <b>{{ heroLocation }}</b></span
+      >
+      <button
+        class="settings-btn"
+        data-testid="topbar-settings-button"
+        type="button"
+        @click="openSettings"
+      >
+        ⚙
+      </button>
       <div class="topbar__logger">
-        <game-events-logger/>
+        <game-events-logger />
       </div>
 
-      <button @click="userStore.logout()" class="logout">Logout</button>
+      <button class="logout" data-testid="topbar-logout-button" @click="userStore.logout()">
+        Logout
+      </button>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useHeroStore } from "@/stores/hero-store";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import { useWorldMapStore } from "@/stores/world-map-store";
-import { useUserStore } from "@/stores/user-store";
-import { useOverlayStore } from "@/stores/overlay-store";
-import { useHeroInventoryStore } from "@/stores/hero-inventory-store";
-import GameEventsLogger from "@/a-game-scenes/game-events-logger/components/game-events-logger.vue";
-import {MapRegistry} from "@/registry/world-map-registry";
-import { getScoutProgress } from "@/services/hero-movement/scout-progression";
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
+import { computed } from 'vue';
+import { useHeroStore } from '@/stores/hero-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useUserStore } from '@/stores/user-store';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import GameEventsLogger from '@/a-game-scenes/game-events-logger/components/game-events-logger.vue';
+import { MapRegistry } from '@/registry/world-map-registry';
+import { getScoutProgress } from '@/services/hero-movement/scout-progression';
+import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
 
-const worldStore = useWorldMapStore();
 const heroStore = useHeroStore();
 const heroToolStore = useHeroToolStore();
 const heroInventoryStore = useHeroInventoryStore();
 const userStore = useUserStore();
 const overlayStore = useOverlayStore();
 
-const heroName = computed(() => heroStore.hero?.name ?? "Hero");
+const heroName = computed(() => heroStore.hero?.name ?? 'Hero');
 const heroSteps = computed(() => heroStore.hero?.heroSteps ?? 0);
 const scoutProgress = computed(() => getScoutProgress(heroSteps.value));
 const scoutMoveSteps = computed(() => scoutProgress.value.moveSteps);
@@ -89,15 +110,15 @@ const hpPercent = computed(() => {
 
 const heroLocation = computed(() => {
   const key = heroStore.nav.locationKey;
-  if (!key) return "Nowhere";
+  if (!key) return 'Nowhere';
 
   return MapRegistry.get(key)?.title ?? key;
 });
 
 function resolveHandLabel(itemKey: string | undefined) {
-  if (!itemKey || itemKey === HEXOBJECT_KEYS.HAND) return "hand";
-  if (String(itemKey).toLowerCase().includes("shield")) return "shield";
-  return "weapon";
+  if (!itemKey || itemKey === HEXOBJECT_KEYS.HAND) return 'hand';
+  if (String(itemKey).toLowerCase().includes('shield')) return 'shield';
+  return 'weapon';
 }
 
 const toolLabel = computed(() => {
@@ -108,7 +129,7 @@ const toolLabel = computed(() => {
 });
 
 function openSettings() {
-  overlayStore.openOverlay("settings");
+  overlayStore.openOverlay('settings');
 }
 </script>
 
@@ -129,6 +150,61 @@ function openSettings() {
   border-bottom: 1px solid rgba(220, 237, 255, 0.1);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(6px);
+}
+
+/* Tablet: allow the bar to wrap into two rows instead of squeezing chips. */
+@media (max-width: 1024px) {
+  .topbar {
+    height: auto;
+    min-height: 64px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'left right'
+      'center center';
+    row-gap: 8px;
+  }
+
+  .topbar__left {
+    grid-area: left;
+  }
+  .topbar__right {
+    grid-area: right;
+  }
+  .topbar__center {
+    grid-area: center;
+    justify-content: center;
+  }
+
+  .stat {
+    width: min(420px, 90vw);
+  }
+}
+
+/* Phone: stack everything, drop popovers to avoid overflow. */
+@media (max-width: 640px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'left'
+      'center'
+      'right';
+    padding: 8px 10px;
+  }
+
+  .topbar__left,
+  .topbar__right {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .hero-badge__sub {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .chip {
+    font-size: 0.85rem;
+  }
 }
 
 .topbar__left,
@@ -170,7 +246,11 @@ function openSettings() {
   color: rgba(240, 248, 255, 0.95);
   font-size: 18px;
   cursor: pointer;
-  opacity: 0;
+}
+
+.settings-btn:hover {
+  border-color: rgba(230, 245, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* (твоє — лишаю як є) */
@@ -233,7 +313,9 @@ function openSettings() {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
-  transition: opacity 140ms ease, transform 140ms ease;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
   z-index: 30;
 }
 

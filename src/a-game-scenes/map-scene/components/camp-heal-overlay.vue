@@ -1,9 +1,9 @@
 <template>
   <div
-      v-if="style"
-      class="camp-heal-slot"
-      :class="{ 'is-active': active, 'is-idle': !active }"
-      :style="style"
+    v-if="style"
+    class="camp-heal-slot"
+    :class="{ 'is-active': active, 'is-idle': !active }"
+    :style="style"
   >
     <div class="camp-heal-slot__heart">♥</div>
     <div class="camp-heal-slot__label">{{ label }}</div>
@@ -30,21 +30,14 @@ defineProps<{
 }
 
 .camp-heal-slot::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
   background: radial-gradient(circle at 50% 45%, rgba(132, 222, 156, 0.24), rgba(18, 68, 34, 0.82));
   box-shadow:
-      0 0 0 1px rgba(148, 214, 166, 0.34),
-      0 0 20px rgba(96, 168, 118, 0.22);
+    0 0 0 1px rgba(148, 214, 166, 0.34),
+    0 0 20px rgba(96, 168, 118, 0.22);
   animation: pulse-heart-bg 1.15s ease-in-out infinite;
 }
 
@@ -53,8 +46,8 @@ defineProps<{
   opacity: 0.68;
   background: radial-gradient(circle at 50% 45%, rgba(166, 214, 178, 0.14), rgba(24, 38, 28, 0.82));
   box-shadow:
-      0 0 0 1px rgba(148, 214, 166, 0.22),
-      0 0 14px rgba(96, 168, 118, 0.08);
+    0 0 0 1px rgba(148, 214, 166, 0.22),
+    0 0 14px rgba(96, 168, 118, 0.08);
 }
 
 .camp-heal-slot__heart {
@@ -64,8 +57,8 @@ defineProps<{
   line-height: 1;
   color: rgba(255, 96, 118, 0.96);
   text-shadow:
-      0 0 12px rgba(255, 78, 108, 0.45),
-      0 0 24px rgba(255, 78, 108, 0.22);
+    0 0 12px rgba(255, 78, 108, 0.45),
+    0 0 24px rgba(255, 78, 108, 0.22);
   animation: pulse-heart 1.15s ease-in-out infinite;
 }
 

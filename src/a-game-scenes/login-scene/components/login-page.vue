@@ -1,5 +1,5 @@
 <template>
-  <section class="login-page">
+  <section class="login-page" data-testid="login-page">
     <main class="login-container">
       <div class="login-form-image">
         <login-form></login-form>
@@ -9,13 +9,12 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue';
-import LoginForm from "@/a-game-scenes/login-scene/components/login-form.vue";
-
+import { defineComponent } from 'vue';
+import LoginForm from '@/a-game-scenes/login-scene/components/login-form.vue';
 
 export default defineComponent({
-  components: {LoginForm},
-})
+  components: { LoginForm },
+});
 </script>
 <style scoped>
 @import '@/a-game-scenes/login-scene/styles/login-scene-style.css';

@@ -1,10 +1,6 @@
 <template>
   <div ref="hostRef" class="lens-host">
-    <div
-        ref="stageRef"
-        class="lens-stage"
-        :style="stageStyle"
-    >
+    <div ref="stageRef" class="lens-stage" :style="stageStyle">
       <div ref="contentRef" class="lens-content">
         <slot />
       </div>
@@ -13,21 +9,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue';
 
 const props = withDefaults(
-    defineProps<{
-      padding?: number;     // внутрішній padding “лінзи” (px)
-      maxScale?: number;    // верхня межа
-      minScale?: number;    // нижня межа
-      mode?: "contain" | "cover"; // contain = влізти, cover = заповнити
-    }>(),
-    {
-      padding: 0,
-      maxScale: 1,
-      minScale: 0.1,
-      mode: "contain",
-    }
+  defineProps<{
+    padding?: number; // внутрішній padding “лінзи” (px)
+    maxScale?: number; // верхня межа
+    minScale?: number; // нижня межа
+    mode?: 'contain' | 'cover'; // contain = влізти, cover = заповнити
+  }>(),
+  {
+    padding: 0,
+    maxScale: 1,
+    minScale: 0.1,
+    mode: 'contain',
+  },
 );
 
 const hostRef = ref<HTMLElement | null>(null);
@@ -46,7 +42,6 @@ function measureAndScale() {
   if (!host || !content) return;
 
   const hostRect = host.getBoundingClientRect();
-  const contentRect = content.getBoundingClientRect();
 
   const availW = Math.max(0, hostRect.width - props.padding * 2);
   const availH = Math.max(0, hostRect.height - props.padding * 2);
@@ -59,7 +54,7 @@ function measureAndScale() {
   const sx = availW / baseW;
   const sy = availH / baseH;
 
-  const raw = props.mode === "cover" ? Math.max(sx, sy) : Math.min(sx, sy);
+  const raw = props.mode === 'cover' ? Math.max(sx, sy) : Math.min(sx, sy);
   scale.value = clamp(raw, props.minScale, props.maxScale);
 }
 

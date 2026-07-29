@@ -1,42 +1,47 @@
 <template>
-  <div class="tool-hex-pos" :style="posStyle">
-    <div
-        class="tool-hex-tile"
-        :class="{ doing: isWorking }"
-        :style="toolStyle"
-    >
+  <div class="tool-hex-pos" :style="posStyle" data-testid="tool-hex-tile">
+    <div class="tool-hex-tile" :class="{ doing: isWorking }" :style="toolStyle">
       <div v-if="!isWorking" class="tool-actions-row">
         <button
-            v-if="bestActionLabel"
-            class="do-btn"
-            @click.stop="executeAction"
+          v-if="bestActionLabel"
+          class="do-btn"
+          data-testid="tool-action-button"
+          @click.stop="executeAction"
         >
           {{ bestActionLabel }}
         </button>
 
-        <button v-else class="hide-btn" @click.stop="emit('hide')">-</button>
+        <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
+          -
+        </button>
       </div>
 
-      <div v-if="isWorking" class="time-chip label">{{ secondsLeft }}s</div>
+      <div v-if="isWorking" class="time-chip label" data-testid="tool-working-timer">
+        {{ secondsLeft }}s
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { calcHexPixelPosition } from "@/utils/hex-utils";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import { getToolCapabilities, resolveActions, type ResolvedAction } from "@/game-resolvers/interactions-resolver";
-import { useWorldMapStore } from "@/stores/world-map-store";
-import { ACTION_TYPE_MAP } from "@/registry/action-starters-registry";
-import { ExecuteHexActionFeature } from "@/features/execute-hex-action-feature";
-import { HexTileModel } from "@/a-game-scenes/map-scene/models/hex-tile-model";
-import {HEX_OBJECT_PROTOTYPES} from "@/registry/hexobjects/prototypes";
-import {HEXOBJECT_KEYS} from "@/registry/hexobjects-registry";
-import { useHeroStore } from "@/stores/hero-store";
-import { HEXOBJECT_META } from "@/registry/hexobject-meta";
-import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { calcHexPixelPosition, type IHexPositioned } from '@/utils/hex-utils';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
+import {
+  getToolCapabilities,
+  resolveActions,
+  type ResolvedAction,
+} from '@/game-resolvers/interactions-resolver';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { ACTION_TYPE_MAP } from '@/registry/action-starters-registry';
+import { ExecuteHexActionFeature } from '@/features/execute-hex-action-feature';
+import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
+import { getPrototype, getMeta } from '@/content';
+import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
+import { useHeroStore } from '@/stores/hero-store';
+import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import { THeroToolKey } from '@/content/equipment.content';
+import { EHexActionType } from '@/enums/hex-action-type';
 
 const props = defineProps<{
   tileWidth: number;
@@ -44,7 +49,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "hide"): void;
+  (e: 'hide'): void;
 }>();
 
 const heroToolStore = useHeroToolStore();
@@ -61,12 +66,12 @@ const hoveredTile = computed<HexTileModel | null>(() => {
   const map = worldMapStore.map;
   if (!c || !map) return null;
 
+  const tiles = map.tiles as HexTileModel[];
   return (
-      (map.tiles.find(
-          (t: any) =>
-              t.coordinates.columnIndex === c.columnIndex &&
-              t.coordinates.rowIndex === c.rowIndex
-      ) as HexTileModel | undefined) ?? null
+    tiles.find(
+      (t: HexTileModel) =>
+        t.coordinates.columnIndex === c.columnIndex && t.coordinates.rowIndex === c.rowIndex,
+    ) ?? null
   );
 });
 
@@ -74,30 +79,29 @@ const hoveredTile = computed<HexTileModel | null>(() => {
  *  Position style
  *  -------------------------- */
 const posStyle = computed(() => {
-  if (!heroToolStore.hover) return { display: "none" } as Record<string, string>;
+  if (!heroToolStore.hover) return { display: 'none' };
 
-  const pseudoTile = { coordinates: heroToolStore.hover } as any;
+  const pseudoTile: IHexPositioned = { coordinates: heroToolStore.hover };
   const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
 
   return {
     transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
-  } as Record<string, string>;
+  };
 });
 
 /** ---------------------------
  *  Tool class (normalized)
  *  -------------------------- */
 const toolStyle = computed(() => {
-
   const key = activeToolKey.value ?? HEXOBJECT_KEYS.HAND;
-  const toolHexImagePath = HEX_OBJECT_PROTOTYPES[key].spritePath;
+  const toolHexImagePath = getPrototype(key).spritePath;
 
   return {
     backgroundImage: `url(${toolHexImagePath})`,
-    backgroundSize: "cover",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "center",
-  } as Record<string, string>;
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+  };
 });
 
 /** ---------------------------
@@ -107,53 +111,50 @@ const toolStyle = computed(() => {
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
   if (
-      worldMapStore.combatActive &&
-      worldMapStore.combatTurnSide === "hero" &&
-      !worldMapStore.isEnemyTurnResolving &&
-      !worldMapStore.isHeroMoving &&
-      heroToolStore.hover &&
-      activeToolKey.value
+    worldMapStore.combatActive &&
+    worldMapStore.combatTurnSide === 'hero' &&
+    !worldMapStore.isEnemyTurnResolving &&
+    !worldMapStore.isHeroMoving &&
+    heroToolStore.hover &&
+    activeToolKey.value
   ) {
     const capabilities = getToolCapabilities(activeToolKey.value);
 
     if (
-        capabilities.canBlock &&
-        worldMapStore.combatAttackUsed &&
-        !worldMapStore.combatDefendUsed &&
-        worldMapStore.canPlaceCombatDefendMarker(heroToolStore.hover)
+      capabilities.canBlock &&
+      worldMapStore.combatAttackUsed &&
+      !worldMapStore.combatDefendUsed &&
+      worldMapStore.canPlaceCombatDefendMarker(heroToolStore.hover)
     ) {
-      return [{
-        actioType: "BLOCK",
-        label: "Block",
-        priority: 110,
-      } satisfies ResolvedAction];
+      return [
+        {
+          actioType: 'BLOCK',
+          label: 'Block',
+          priority: 110,
+        } satisfies ResolvedAction,
+      ];
     }
   }
 
-  if (!tile?.hexobject) return [];
+  if (!tile?.hexobject || !activeToolKey.value) return [];
 
   if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
-    const enterCfg = HEXOBJECT_META[tile.hexobject.hexobjectKey]?.enter;
+    const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
     if (
-        !tile.hexobject.isInteractable ||
-        (
-            enterCfg?.type === "WORLD" &&
-            worldMapStore.isLocationRespawning(enterCfg.locationKey)
-        )
+      !tile.hexobject.isInteractable ||
+      (enterCfg?.type === 'WORLD' && worldMapStore.isLocationRespawning(enterCfg.locationKey))
     ) {
       return [];
     }
   }
 
   if (
-      worldMapStore.combatActive &&
-      tile.hexobject.groupType === "creature" &&
-      (
-          worldMapStore.combatTurnSide !== "hero" ||
-          worldMapStore.combatAttackUsed ||
-          !activeToolKey.value ||
-          !getToolCapabilities(activeToolKey.value).canAttack
-      )
+    worldMapStore.combatActive &&
+    tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
+    (worldMapStore.combatTurnSide !== 'hero' ||
+      worldMapStore.combatAttackUsed ||
+      !activeToolKey.value ||
+      !getToolCapabilities(activeToolKey.value).canAttack)
   ) {
     return [];
   }
@@ -161,22 +162,25 @@ const resolvedActions = computed(() => {
   return resolveActions(activeToolKey.value, tile.hexobject);
 });
 
-const bestAction = computed(() => {
+const bestAction = computed<ResolvedAction | null>(() => {
   const actions = resolvedActions.value;
   if (!actions.length) return null;
 
-  return actions.reduce((best, a) => (!best || a.priority > best.priority ? a : best), null as any);
+  return actions.reduce<ResolvedAction | null>(
+    (best, a) => (!best || a.priority > best.priority ? a : best),
+    null,
+  );
 });
 
 const bestActionLabel = computed(() => bestAction.value?.label ?? null);
 
 // update store in watch (clean)
 watch(
-    resolvedActions,
-    (actions) => {
-      heroToolStore.setResolvedActions(actions);
-    },
-    { immediate: true }
+  resolvedActions,
+  (actions) => {
+    heroToolStore.setResolvedActions(actions);
+  },
+  { immediate: true },
 );
 
 /** ---------------------------
@@ -188,17 +192,17 @@ const now = ref(Date.now());
 let timer: number | null = null;
 
 watch(
-    () => pendingAction.value?.endsAt ?? null,
-    (endsAt) => {
-      if (timer) {
-        window.clearInterval(timer);
-        timer = null;
-      }
-      if (!endsAt) return;
+  () => pendingAction.value?.endsAt ?? null,
+  (endsAt) => {
+    if (timer) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+    if (!endsAt) return;
 
-      timer = window.setInterval(() => (now.value = Date.now()), 200);
-    },
-    { immediate: true }
+    timer = window.setInterval(() => (now.value = Date.now()), 200);
+  },
+  { immediate: true },
 );
 
 onBeforeUnmount(() => {
@@ -216,7 +220,7 @@ const secondsLeft = computed(() => {
   const a = pendingAction.value;
   if (!a?.endsAt) return 0;
 
-  if (a.type === "USE" && a.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+  if (a.type === EHexActionType.USE && a.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
     const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
     const currentHp = Math.max(0, Math.min(maxHp, Number(heroStore.hero.currentHealth ?? 0)));
     const missingHp = Math.max(0, maxHp - currentHp);
@@ -226,7 +230,7 @@ const secondsLeft = computed(() => {
       return currentCycleSeconds;
     }
 
-    return currentCycleSeconds + ((missingHp - 1) * 10);
+    return currentCycleSeconds + (missingHp - 1) * 10;
   }
 
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
@@ -246,7 +250,7 @@ function executeAction() {
   const res = new ExecuteHexActionFeature(tile).execute(actionType, activeToolKey.value);
 
   if (res.ok) {
-    if (actionType === "BLOCK") {
+    if (actionType === EHexActionType.BLOCK) {
       heroToolStore.stopTool();
     }
     worldMapStore.saveToStorage();
@@ -260,33 +264,27 @@ function executeAction() {
   width: var(--hex-tile-width);
   height: var(--hex-tile-height);
 
-  clip-path: polygon(
-      25% 0%,
-      75% 0%,
-      100% 50%,
-      75% 100%,
-      25% 100%,
-      0% 50%
-  );
+  clip-path: var(--hex-clip-path);
 
   z-index: 120;
   pointer-events: auto;
 
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.20),
-  0 12px 28px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.2),
+    0 12px 28px rgba(0, 0, 0, 0.55);
 }
 
 /* tool skins */
 .tool-hex-tile.hand {
-  background: url("/hex-assets/hex-tools/hand-hex-image.png") center/cover no-repeat;
+  background: url('/hex-assets/hex-tools/hand-hex-image.png') center/cover no-repeat;
 }
 
 .tool-hex-tile.axe {
-  background: url("/hex-assets/hex-tools/axe-hex-image.png") center/cover no-repeat;
+  background: url('/hex-assets/hex-tools/axe-hex-image.png') center/cover no-repeat;
 }
 
 .tool-hex-tile.pickaxe {
-  background: url("/hex-assets/hex-tools/pickaxe-token-image.png") center/cover no-repeat;
+  background: url('/hex-assets/hex-tools/pickaxe-token-image.png') center/cover no-repeat;
 }
 
 /* buttons */
@@ -307,7 +305,10 @@ function executeAction() {
   letter-spacing: 0;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.24);
 
-  transition: transform 120ms ease, background 120ms ease, filter 120ms ease;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    filter 120ms ease;
 }
 
 .hide-btn:hover {
@@ -336,7 +337,6 @@ function executeAction() {
 .do-btn:hover {
   filter: brightness(1.15);
 }
-
 
 .do-btn:active {
   transform: scale(0.98);
@@ -373,13 +373,19 @@ function executeAction() {
 /* working anim */
 .tool-hex-tile.doing {
   animation: tool-chop 220ms ease-in-out infinite;
-  scale: 0.70;
+  scale: 0.7;
 }
 
 @keyframes tool-chop {
-  0% { transform: rotate(-6deg) scale(1.02); }
-  50% { transform: rotate(7deg) scale(1.04); }
-  100% { transform: rotate(-6deg) scale(1.02); }
+  0% {
+    transform: rotate(-6deg) scale(1.02);
+  }
+  50% {
+    transform: rotate(7deg) scale(1.04);
+  }
+  100% {
+    transform: rotate(-6deg) scale(1.02);
+  }
 }
 
 .time-chip {

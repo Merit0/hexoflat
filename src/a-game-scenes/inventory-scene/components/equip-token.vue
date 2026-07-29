@@ -1,56 +1,46 @@
 <template>
   <div
-      v-if="!isDragging"
-      class="equip-slot-token"
-      :class="{
+    v-if="!isDragging"
+    class="equip-slot-token"
+    :data-testid="`equip-token-${item.id}`"
+    :class="{
       'is-usable-tool': isUsableTool,
     }"
-      :style="tokenStyle"
-      @pointerdown="onPointerDown"
+    :style="tokenStyle"
+    @pointerdown="onPointerDown"
   >
     <div class="icon" :style="iconStyle"></div>
 
     <button
-        v-if="isUsableTool"
-        class="hex-use-btn"
-        type="button"
-        @click.stop="useToolToken()"
-        @pointerdown.stop
+      v-if="isUsableTool"
+      class="hex-use-btn"
+      :data-testid="`equip-token-use-button-${item.id}`"
+      type="button"
+      @click.stop="useToolToken()"
+      @pointerdown.stop
     >
       USE
     </button>
   </div>
 
   <Teleport to="body">
-    <div
-        v-if="isDragging"
-        class="equip-slot-token drag-ghost"
-        :style="dragGhostStyle"
-    >
+    <div v-if="isDragging" class="equip-slot-token drag-ghost" :style="dragGhostStyle">
       <div class="icon" :style="iconStyle"></div>
     </div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, Teleport, type CSSProperties } from "vue";
-import {
-  useHeroInventoryStore,
-  type InventoryItem,
-  type TEquipSlot,
-} from "@/stores/hero-inventory-store";
-import { resolveInventoryView } from "@/utils/inventory/traits-resolver";
-import { EHexobjectGroup } from "@/abstraction/hexobject-abstraction";
-import { HEXOBJECT_KEYS } from "@/registry/hexobjects-registry";
-import { useHeroToolStore } from "@/stores/hero-tool-store";
-import { useWorldMapStore } from "@/stores/world-map-store";
-import { useOverlayStore } from "@/stores/overlay-store";
-import { THeroToolKey } from "@/registry/hexobjects/prototypes/equipment.prototypes";
-
-type DragTarget =
-    | { kind: "grid"; slotKey: string }
-    | { kind: "equip"; equipSlot: TEquipSlot }
-    | null;
+import { computed, type CSSProperties } from 'vue';
+import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
+import { resolveInventoryView } from '@/utils/inventory/traits-resolver';
+import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { THeroToolKey } from '@/content/equipment.content';
+import { useInventoryDragHandle } from '@/composables/use-inventory-drag';
 
 const props = defineProps<{
   item: InventoryItem;
@@ -60,37 +50,38 @@ const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const overlayStore = useOverlayStore();
+const dragHandle = useInventoryDragHandle(() => props.item.id);
 
 const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const isUsableTool = computed(() => {
   return (
-      (props.item.type === EHexobjectGroup.TOOL || props.item.type === EHexobjectGroup.EQUIPMENT) &&
-      isHandSlotKey(props.item.slotKey)
+    (props.item.type === EHexobjectGroup.TOOL || props.item.type === EHexobjectGroup.EQUIPMENT) &&
+    isHandSlotKey(props.item.slotKey)
   );
 });
 
 const tokenStyle = computed(() => ({
-  "--rot": `${rotation.value}deg`,
-}) as Record<string, string>);
+  '--rot': `${rotation.value}deg`,
+}));
 
 const isDefaultHandToken = computed(() => props.item.key === HEXOBJECT_KEYS.HAND);
 
 const meta = computed(() => resolveInventoryView(props.item.key));
 
 const iconStyle = computed(() => ({
-  backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : "none",
+  backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : 'none',
 }));
 
 const dragGhostStyle = computed<CSSProperties>(() => ({
-  position: "fixed",
+  position: 'fixed',
   left: `${inventoryStore.dragPointerX - inventoryStore.dragOffsetX}px`,
   top: `${inventoryStore.dragPointerY - inventoryStore.dragOffsetY}px`,
   width: `${inventoryStore.dragWidth}px`,
   height: `${inventoryStore.dragHeight}px`,
-  transform: "translate(0, 0) scale(1.05)",
+  transform: 'translate(0, 0) scale(1.05)',
   zIndex: 9999,
-  pointerEvents: "none",
+  pointerEvents: 'none',
 }));
 
 function resolveToolType(): THeroToolKey | null {
@@ -116,110 +107,24 @@ function useToolToken() {
   const toolType = resolveToolType();
   if (!toolType) return;
 
+  const heroCoords = worldMapStore.heroCoordinates;
+  if (!heroCoords) return;
+
   heroToolStore.activeTool = toolType;
-  heroToolStore.useTool(toolType, worldMapStore.heroCoordinates);
+  heroToolStore.useTool(toolType, heroCoords);
   overlayStore.closeOverlay();
 }
 
-function getDragTargetFromPoint(x: number, y: number): DragTarget {
-  const els = document.elementsFromPoint(x, y) as HTMLElement[];
-
-  const equipHex = els.find(
-      (el) => el instanceof HTMLElement && el.classList.contains("equip-hex")
-  );
-
-  if (equipHex) {
-    const slot = equipHex.dataset.eqslot as TEquipSlot | undefined;
-    if (slot) return { kind: "equip", equipSlot: slot };
-  }
-
-  const cell = els.find(
-      (el) =>
-          el instanceof HTMLElement &&
-          el.classList.contains("cell") &&
-          !el.classList.contains("blocked")
-  );
-
-  if (cell) {
-    const slotKey = cell.dataset.slotkey;
-    if (slotKey) return { kind: "grid", slotKey };
-  }
-
-  return null;
-}
-
 function isHandSlotKey(slotKey: string) {
-  return slotKey === "eq:weapon" || slotKey === "eq:shield";
+  return slotKey === 'eq:weapon' || slotKey === 'eq:shield';
 }
 
 function onPointerDown(e: PointerEvent) {
-  if (e.button !== 0) return;
-
   // дефолтну руку не драгати
-  if (isDefaultHandToken.value) {
-    return;
-  }
+  if (isDefaultHandToken.value) return;
 
-  const target = e.currentTarget as HTMLElement;
-  const rect = target.getBoundingClientRect();
-
-  let dragStarted = false;
-  const startX = e.clientX;
-  const startY = e.clientY;
-
-  const onMove = (ev: PointerEvent) => {
-    const dx = ev.clientX - startX;
-    const dy = ev.clientY - startY;
-
-    if (!dragStarted && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
-      dragStarted = true;
-      inventoryStore.startDrag(props.item.id, startX, startY, rect);
-    }
-
-    if (!dragStarted) return;
-
-    inventoryStore.updateDragPointer(ev.clientX, ev.clientY);
-
-    const dragTarget = getDragTargetFromPoint(ev.clientX, ev.clientY);
-
-    if (dragTarget?.kind === "grid") {
-      inventoryStore.setDragOver(dragTarget.slotKey);
-      inventoryStore.setDragOverEquip(null);
-    } else if (dragTarget?.kind === "equip") {
-      inventoryStore.setDragOver(null);
-      inventoryStore.setDragOverEquip(dragTarget.equipSlot);
-    } else {
-      inventoryStore.setDragOver(null);
-      inventoryStore.setDragOverEquip(null);
-    }
-  };
-
-  const onUp = (ev: PointerEvent) => {
-    if (dragStarted) {
-      const dragTarget = getDragTargetFromPoint(ev.clientX, ev.clientY);
-
-      if (dragTarget?.kind === "grid") {
-        inventoryStore.dropTo(dragTarget.slotKey);
-      } else if (dragTarget?.kind === "equip") {
-        inventoryStore.dropToEquip(dragTarget.equipSlot);
-      } else {
-        inventoryStore.cancelDrag();
-      }
-    }
-
-    window.removeEventListener("pointermove", onMove);
-    window.removeEventListener("pointerup", onUp);
-  };
-
-  window.addEventListener("pointermove", onMove);
-  window.addEventListener("pointerup", onUp);
+  dragHandle.onPointerDown(e);
 }
-
-onBeforeUnmount(() => {
-  if (inventoryStore.draggingId === props.item.id) {
-    inventoryStore.cancelDrag();
-  }
-});
 </script>
 
 <style scoped>
@@ -235,7 +140,9 @@ onBeforeUnmount(() => {
   touch-action: none;
   transform: rotate(var(--rot));
   transform-origin: center center;
-  transition: transform 0.08s linear, filter 0.12s ease;
+  transition:
+    transform 0.08s linear,
+    filter 0.12s ease;
 }
 
 .equip-slot-token:active {
@@ -250,9 +157,7 @@ onBeforeUnmount(() => {
 .drag-ghost {
   inset: auto;
   transition: none !important;
-  filter:
-      brightness(1.12)
-      drop-shadow(0 10px 20px rgba(0, 0, 0, 0.45));
+  filter: brightness(1.12) drop-shadow(0 10px 20px rgba(0, 0, 0, 0.45));
   scale: 0.6;
 }
 
@@ -289,9 +194,12 @@ onBeforeUnmount(() => {
   opacity: 0;
   pointer-events: none;
   box-shadow:
-      0 6px 16px rgba(0, 0, 0, 0.45),
-      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  transition: opacity 0.12s ease, transform 0.12s ease, filter 0.12s ease;
+    0 6px 16px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease,
+    filter 0.12s ease;
 }
 
 .hex-use-btn:hover {

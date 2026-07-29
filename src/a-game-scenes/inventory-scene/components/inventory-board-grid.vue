@@ -1,37 +1,28 @@
 <template>
   <div class="grid-wrap" :style="centerHoleVars">
-    <div
-        class="grid"
-        :style="gridStyle"
-    >
+    <div class="grid" :style="gridStyle">
       <div
-          v-for="cell in cells"
-          :key="cell.key"
-          class="cell"
-          :data-slotkey="cell.key"
-          :class="{
+        v-for="cell in cells"
+        :key="cell.key"
+        class="cell"
+        :data-slotkey="cell.key"
+        :data-testid="`inventory-cell-${cell.key}`"
+        :class="{
           blocked: cell.blocked,
           selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId,
           'is-drop': !cell.blocked && cell.key === inv.dragOverSlot,
           magnet: !cell.blocked && cell.key === inv.dragOverSlot,
         }"
-          @click.self="onCellClick(cell.key)"
+        @click.self="onCellClick(cell.key)"
       >
         <inventory-token
-            v-if="!cell.blocked && itemsBySlot[cell.key]"
-            :item="itemsBySlot[cell.key]"
+          v-if="!cell.blocked && itemsBySlot[cell.key]"
+          :item="itemsBySlot[cell.key]"
         />
 
-        <span
-            v-if="!cell.blocked && itemsBySlot[cell.key]?.isNew"
-            class="badge"
-        >
-        </span>
+        <span v-if="!cell.blocked && itemsBySlot[cell.key]?.isNew" class="badge"> </span>
 
-        <span
-            v-if="!cell.blocked && (itemsBySlot[cell.key]?.amount ?? 1) > 1"
-            class="amount"
-        >
+        <span v-if="!cell.blocked && (itemsBySlot[cell.key]?.amount ?? 1) > 1" class="amount">
           {{ itemsBySlot[cell.key]!.amount }}
         </span>
       </div>
@@ -42,9 +33,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useHeroInventoryStore } from "@/stores/hero-inventory-store";
-import InventoryToken from "@/a-game-scenes/inventory-scene/components/inventory-token.vue";
+import { computed } from 'vue';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import InventoryToken from '@/a-game-scenes/inventory-scene/components/inventory-token.vue';
 
 const inv = useHeroInventoryStore();
 
@@ -97,11 +88,11 @@ const centerHoleVars = computed(() => {
   const { x, y, w, h } = inv.grid.blockedRect;
 
   return {
-    "--hole-left": `calc(${x} * var(--cell) + 12px)`,
-    "--hole-top": `calc(${y} * var(--cell) + 12px)`,
-    "--hole-w": `calc(${w} * var(--cell))`,
-    "--hole-h": `calc(${h} * var(--cell))`,
-  } as Record<string, string>;
+    '--hole-left': `calc(${x} * var(--cell) + 12px)`,
+    '--hole-top': `calc(${y} * var(--cell) + 12px)`,
+    '--hole-w': `calc(${w} * var(--cell))`,
+    '--hole-h': `calc(${h} * var(--cell))`,
+  };
 });
 </script>
 
@@ -126,8 +117,8 @@ const centerHoleVars = computed(() => {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-      0 20px 60px rgba(0, 0, 0, 0.55);
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 20px 60px rgba(0, 0, 0, 0.55);
 }
 
 @media (max-width: 1100px) {
@@ -147,27 +138,25 @@ const centerHoleVars = computed(() => {
 .cell {
   border-radius: 5px;
   background: rgba(120, 160, 170, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.30);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
 
   display: grid;
   place-items: center;
   position: relative;
 
   transition:
-      transform 0.08s ease,
-      box-shadow 0.12s ease,
-      background 0.12s ease,
-      border-color 0.12s ease;
+    transform 0.08s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .grid {
   --cell-active-border: rgba(255, 220, 150, 0.55);
   --cell-active-shadow:
-      0 0 0 2px rgba(255, 200, 120, 0.5) inset,
-      0 0 16px rgba(255, 200, 120, 0.45),
-      0 0 30px rgba(255, 200, 120, 0.25),
-      0 10px 24px rgba(0, 0, 0, 0.30);
+    0 0 0 2px rgba(255, 200, 120, 0.5) inset, 0 0 16px rgba(255, 200, 120, 0.45),
+    0 0 30px rgba(255, 200, 120, 0.25), 0 10px 24px rgba(0, 0, 0, 0.3);
 }
 
 .cell.selected,
