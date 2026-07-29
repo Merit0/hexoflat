@@ -3,6 +3,9 @@ import vue from '@vitejs/plugin-vue';
 import path from 'node:path';
 
 export default defineConfig({
+  // GitHub Pages serves this repo at https://<user>.github.io/hexoflat/,
+  // so assets need that prefix in production. Local dev/build stays at '/'.
+  base: process.env.GITHUB_PAGES ? '/hexoflat/' : '/',
   plugins: [vue()],
   server: {
     open: true,
