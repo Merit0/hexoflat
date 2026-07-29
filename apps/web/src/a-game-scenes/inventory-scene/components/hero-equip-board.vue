@@ -39,10 +39,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { calcHexPixelPosition } from '@/utils/hex-utils';
+import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroInventoryStore, type TEquipSlot } from '@/stores/hero-inventory-store';
 import EquipToken from '@/a-game-scenes/inventory-scene/components/equip-token.vue';
-import { resolveEquipCompatibility } from '@/utils/inventory/equip-compatibility';
+import { resolveEquipCompatibility } from '@hexoflat/engine/utils/inventory/equip-compatibility';
 
 const EQUIP_SLOTS: TEquipSlot[] = ['weapon', 'shield', 'armor', 'gloves', 'helm', 'boots'];
 

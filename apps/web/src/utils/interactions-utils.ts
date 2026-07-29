@@ -1,4 +1,4 @@
-import { ResolvedAction } from '@/game-resolvers/interactions-resolver';
+import { ResolvedAction } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 
 /**
  * Повертає найпріоритетнішу дію для UI-підказки

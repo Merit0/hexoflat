@@ -1,23 +1,14 @@
 import { defineStore } from 'pinia';
-import { HEXOBJECT_KEYS, THexobjectKey } from '@/registry/hexobjects-registry';
-import { EHexobjectGroup, type TEquipSlot } from '@/abstraction/hexobject-abstraction';
-import { getPrototype, getMeta, CONTENT_VERSION } from '@/content';
+import { HEXOBJECT_KEYS, THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import {
+  EHexobjectGroup,
+  type TEquipSlot,
+} from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { getPrototype, getMeta, CONTENT_VERSION } from '@hexoflat/engine';
+import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 
 export type { TEquipSlot };
-
-export interface InventoryItem {
-  id: string;
-  key: THexobjectKey;
-  type: EHexobjectGroup;
-
-  stackKey?: string;
-  amount: number;
-
-  equipSlot?: TEquipSlot;
-
-  slotKey: string;
-  isNew: boolean;
-}
+export type { InventoryItem };
 
 export interface GridConfig {
   cols: number;

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import * as Request from '../api/Requests';
-import UserModel from '@/models/user-model';
+import UserModel from '@hexoflat/engine/models/user-model';
 import router from '../router';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';

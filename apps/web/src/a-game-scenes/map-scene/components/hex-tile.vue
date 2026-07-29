@@ -21,12 +21,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { IHexTile } from '@/a-game-scenes/map-scene/models/hex-tile-model';
+import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import { calcHexPixelPosition } from '@/utils/hex-utils';
-import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
+import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { getMeta, getPrototype } from '@/content';
+import { getMeta, getPrototype } from '@hexoflat/engine';
 import { getTileWidth } from '@/a-game-scenes/map-scene/constants/hex-grid-constants';
 
 const props = defineProps<{

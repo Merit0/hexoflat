@@ -1,10 +1,10 @@
-import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
+import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { defineStore } from 'pinia';
-import { coordinateKey, getOddQNeighbors } from '@/utils/hex-utils';
-import type { ResolvedAction } from '@/game-resolvers/interactions-resolver';
-import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
-import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
-import { THeroToolKey } from '@/content/equipment.content';
+import { coordinateKey, getOddQNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import type { ResolvedAction } from '@hexoflat/engine/game-resolvers/interactions-resolver';
+import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 
 export interface HeroToolState {
   activeTool: THeroToolKey | null;

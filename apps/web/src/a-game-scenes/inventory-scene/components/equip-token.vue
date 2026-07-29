@@ -33,13 +33,13 @@
 <script setup lang="ts">
 import { computed, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
-import { resolveInventoryView } from '@/utils/inventory/traits-resolver';
-import { EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
-import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
+import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useOverlayStore } from '@/stores/overlay-store';
-import { THeroToolKey } from '@/content/equipment.content';
+import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { useInventoryDragHandle } from '@/composables/use-inventory-drag';
 
 const props = defineProps<{

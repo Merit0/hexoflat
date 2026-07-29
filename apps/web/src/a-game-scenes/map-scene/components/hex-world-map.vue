@@ -60,11 +60,18 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import HexTile from '@/a-game-scenes/map-scene/components/hex-tile.vue';
 import HeroHexTile from '@/a-game-scenes/map-scene/components/hero-hex-tile.vue';
-import { calcHexPixelPosition, hexTranslateStyle, type IHexPositioned } from '@/utils/hex-utils';
-import { HexTileModel } from '@/a-game-scenes/map-scene/models/hex-tile-model';
+import {
+  calcHexPixelPosition,
+  hexTranslateStyle,
+  type IHexPositioned,
+} from '@hexoflat/engine/utils/hex-utils';
+import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import { resolveActions, ResolvedAction } from '@/game-resolvers/interactions-resolver';
+import {
+  resolveActions,
+  ResolvedAction,
+} from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import HeroDetailsTopBar from '@/a-game-scenes/map-scene/components/hero-details-top-bar.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import MovePreviewOverlay from '@/a-game-scenes/map-scene/components/move-preview-overlay.vue';
@@ -72,21 +79,21 @@ import EnemyVisionOverlay from '@/a-game-scenes/map-scene/components/enemy-visio
 import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
 import CombatMarkerOverlay from '@/a-game-scenes/map-scene/components/combat-marker-overlay.vue';
 import CampHealOverlay from '@/a-game-scenes/map-scene/components/camp-heal-overlay.vue';
-import { LocationKey } from '@/registry/world-map-registry';
-import type { IHexTile } from '@/a-game-scenes/map-scene/models/hex-tile-model';
-import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
-import { findShortestPath } from '@/services/hero-movement/pathfinding-service';
-import { getScoutMoveStepsForSteps } from '@/services/hero-movement/scout-progression';
-import { coordinateKey, getOddQNeighbors, hexDistance } from '@/utils/hex-utils';
-import { EHexCollision, EHexobjectGroup } from '@/abstraction/hexobject-abstraction';
-import { EHexActionType } from '@/enums/hex-action-type';
-import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
+import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
+import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
+import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
+import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
+import { getScoutMoveStepsForSteps } from '@hexoflat/engine/hero-movement/scout-progression';
+import { coordinateKey, getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
-import type { TEquipSlot } from '@/abstraction/hexobject-abstraction';
-import type { THeroToolKey } from '@/content/equipment.content';
-import { getToolCapabilities } from '@/game-resolvers/interactions-resolver';
+import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
+import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import { getTileWidth } from '@/a-game-scenes/map-scene/constants/hex-grid-constants';
 
 const props = defineProps<{

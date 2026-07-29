@@ -77,9 +77,9 @@ import { useUserStore } from '@/stores/user-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import GameEventsLogger from '@/a-game-scenes/game-events-logger/components/game-events-logger.vue';
-import { MapRegistry } from '@/registry/world-map-registry';
-import { getScoutProgress } from '@/services/hero-movement/scout-progression';
-import { HEXOBJECT_KEYS } from '@/registry/hexobjects-registry';
+import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
+import { getScoutProgress } from '@hexoflat/engine/hero-movement/scout-progression';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 
 const heroStore = useHeroStore();
 const heroToolStore = useHeroToolStore();

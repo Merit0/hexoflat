@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { THexobjectKey } from '@/registry/hexobjects-registry';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 
 export interface GatheringState {
   counts: Partial<Record<THexobjectKey, number>>;

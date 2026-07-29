@@ -1,4 +1,4 @@
-import type { IHexCoordinates } from '@/a-game-scenes/map-scene/interfaces/hex-tile-config-interface';
+import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 
 export const HERO_MOVEMENT_STEP_DELAY_MS = 190;
 

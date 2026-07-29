@@ -1,4 +1,4 @@
-import { IHexTile } from '@/a-game-scenes/map-scene/models/hex-tile-model';
+import { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
