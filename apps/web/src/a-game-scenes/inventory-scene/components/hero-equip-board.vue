@@ -69,7 +69,18 @@ const heroImageStyle = computed(() => ({
   backgroundImage: `url("${heroImagePath.value}")`,
 }));
 
-const tileWidth = computed(() => HEX_SIZE.value);
+// calcHexPixelPosition now expects the tile's true rendered width/height (for
+// exact, gap-free grid tiling — see hex-utils.ts). This board isn't a tiled
+// grid though: it's a fixed 7-hex "flower" whose spacing was hand-tuned
+// (RING_COMPRESS, INSET_PX below) against the old formula's implicit spacing
+// constants (tileWidth*1.5*0.93 horizontally, tileWidth*sqrt(3)*0.93
+// vertically). Passing those same effective values keeps this layout
+// pixel-identical instead of collapsing under the new tighter tiling math.
+// new x-step = width*0.75, so width must be the old step scaled back up by
+// /0.75 to land on the same pixel step; new y-step = height directly (no
+// extra coefficient), so that one carries over as-is.
+const spacingWidth = computed(() => (HEX_SIZE.value * 1.5 * 0.93) / 0.75);
+const spacingHeight = computed(() => HEX_SIZE.value * Math.sqrt(3) * 0.93);
 const center: Coord = { rowIndex: 0, columnIndex: 0 };
 
 const tiles = computed<PseudoTile[]>(() => {
@@ -141,7 +152,11 @@ const RING_COMPRESS = 0.57;
 const INSET_PX = computed(() => Math.round(HEX_SIZE.value * 0.015));
 
 function compressAroundCenter(x: number, y: number) {
-  const heroPos = calcHexPixelPosition({ coordinates: center }, tileWidth.value);
+  const heroPos = calcHexPixelPosition(
+    { coordinates: center },
+    spacingWidth.value,
+    spacingHeight.value,
+  );
   const dx = x - heroPos.x;
   const dy = y - heroPos.y;
 
@@ -175,7 +190,11 @@ const bounds = computed(() => {
   let maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const p = calcHexPixelPosition({ coordinates: t.coordinates }, tileWidth.value);
+    const p = calcHexPixelPosition(
+      { coordinates: t.coordinates },
+      spacingWidth.value,
+      spacingHeight.value,
+    );
     const pos = t.kind === 'slot' ? compressAroundCenter(p.x, p.y) : p;
 
     minX = Math.min(minX, pos.x);
@@ -210,7 +229,11 @@ const innerStyle = computed(() => {
 const scale = ref(1);
 
 function tileStyle(t: PseudoTile) {
-  const p = calcHexPixelPosition({ coordinates: t.coordinates }, tileWidth.value);
+  const p = calcHexPixelPosition(
+    { coordinates: t.coordinates },
+    spacingWidth.value,
+    spacingHeight.value,
+  );
   const pos = t.kind === 'slot' ? compressAroundCenter(p.x, p.y) : p;
 
   return {

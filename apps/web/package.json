@@ -22,7 +22,7 @@
     {
       "name": "Hex world map chunk",
       "path": "dist/assets/hex-world-map-*.js",
-      "limit": "15 KB"
+      "limit": "100 KB"
     },
     {
       "name": "Login chunk",
@@ -33,6 +33,7 @@
   "dependencies": {
     "@hexoflat/engine": "workspace:*",
     "pinia": "^3.0.4",
+    "pixi.js": "^8.19.0",
     "vue": "^3.5.24",
     "vue-router": "^4.6.3",
     "zod": "^4.4.3"

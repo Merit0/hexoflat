@@ -44,7 +44,7 @@ import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 
 const props = defineProps<{
   tileWidth: number;
-  // tool: HeroToolType; removed
+  tileHeight: number;
 }>();
 
 const emit = defineEmits<{
@@ -81,7 +81,7 @@ const posStyle = computed(() => {
   if (!heroToolStore.hover) return { display: 'none' };
 
   const pseudoTile: IHexPositioned = { coordinates: heroToolStore.hover };
-  const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth);
+  const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth, props.tileHeight);
 
   return {
     transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
