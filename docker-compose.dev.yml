@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hexoflat
+      POSTGRES_PASSWORD: hexoflat
+      POSTGRES_DB: hexoflat
+    ports:
+      # Host port 5433, not 5432 — avoids colliding with a locally installed Postgres.
+      - '5433:5432'
+    volumes:
+      - hexoflat-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hexoflat -d hexoflat']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  hexoflat-postgres-data:
