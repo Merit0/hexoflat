@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
 
-const hexCoordinatesSchema = z.object({
+export const hexCoordinatesSchema = z.object({
   columnIndex: z.number(),
   rowIndex: z.number(),
 });
@@ -47,11 +47,21 @@ export const AddResourceSpawnerCommandSchema = z.object({
 });
 export type AddResourceSpawnerCommand = z.infer<typeof AddResourceSpawnerCommandSchema>;
 
+export const MoveHeroCommandSchema = z.object({
+  type: z.literal('MOVE_HERO'),
+  payload: z.object({
+    heroId: z.string(),
+    target: hexCoordinatesSchema,
+  }),
+});
+export type MoveHeroCommand = z.infer<typeof MoveHeroCommandSchema>;
+
 export type HexEngineCommand =
   | StartHexActionCommand
   | FinishPendingActionsCommand
   | WorldTickCommand
-  | AddResourceSpawnerCommand;
+  | AddResourceSpawnerCommand
+  | MoveHeroCommand;
 
 export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   HexEngineCommand['type'],
@@ -61,4 +71,5 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   FINISH_PENDING_ACTIONS: FinishPendingActionsCommandSchema,
   WORLD_TICK: WorldTickCommandSchema,
   ADD_RESOURCE_SPAWNER: AddResourceSpawnerCommandSchema,
+  MOVE_HERO: MoveHeroCommandSchema,
 };

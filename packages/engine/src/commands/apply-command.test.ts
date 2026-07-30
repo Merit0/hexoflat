@@ -4,6 +4,7 @@ import type HexMapModel from '../map/models/hex-map-model';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
+import type { HeroState } from '../hero-movement/hero-state';
 import { applyCommand, type HexEngineActionContext, type HexEngineState } from './apply-command';
 import type { HexEngineCommand } from './hex-engine-commands';
 
@@ -11,8 +12,24 @@ function buildMap(): HexMapModel {
   return new HexMapBuilder().name('test').width(2).height(1).build();
 }
 
-function toState(map: HexMapModel): HexEngineState {
-  return { map };
+function buildMovementMap(): HexMapModel {
+  const map = new HexMapBuilder().name('movement-test').width(3).height(3).build();
+  for (const tile of map.tiles) tile.isRevealed = true;
+  return map;
+}
+
+function toState(map: HexMapModel, heroes: Record<string, HeroState> = {}): HexEngineState {
+  return { map, heroes };
+}
+
+function buildHero(overrides: Partial<HeroState> = {}): HeroState {
+  return {
+    id: 'hero-1',
+    controlledBy: null,
+    coordinates: { columnIndex: 0, rowIndex: 0 },
+    heroSteps: 0,
+    ...overrides,
+  };
 }
 
 function createContext(overrides: Partial<HexEngineActionContext> = {}): HexEngineActionContext {
@@ -308,6 +325,108 @@ describe('applyCommand: ADD_RESOURCE_SPAWNER', () => {
     const command = {
       type: 'ADD_RESOURCE_SPAWNER',
       payload: { coordinates: { columnIndex: 0, rowIndex: 0 } },
+    } as unknown as HexEngineCommand;
+
+    expect(() => applyCommand(toState(map), command, ctx)).toThrow();
+  });
+});
+
+describe('applyCommand: MOVE_HERO', () => {
+  it('moves the hero along the shortest path and emits HERO_MOVED', () => {
+    const map = buildMovementMap();
+    const hero = buildHero();
+    const ctx = createContext();
+    const target = { columnIndex: 1, rowIndex: 0 };
+
+    const command: HexEngineCommand = {
+      type: 'MOVE_HERO',
+      payload: { heroId: hero.id, target },
+    };
+
+    const result = applyCommand(toState(map, { [hero.id]: hero }), command, ctx);
+
+    expect(result.events).toEqual([
+      {
+        type: 'HERO_MOVED',
+        payload: {
+          heroId: hero.id,
+          path: [
+            { columnIndex: 0, rowIndex: 0 },
+            { columnIndex: 1, rowIndex: 0 },
+          ],
+          heroSteps: 1,
+        },
+      },
+    ]);
+    expect(hero.coordinates).toEqual(target);
+    expect(hero.heroSteps).toBe(1);
+  });
+
+  it('rejects with HERO_NOT_FOUND for an unknown hero', () => {
+    const map = buildMovementMap();
+    const ctx = createContext();
+    const target = { columnIndex: 1, rowIndex: 0 };
+
+    const command: HexEngineCommand = {
+      type: 'MOVE_HERO',
+      payload: { heroId: 'ghost', target },
+    };
+
+    const result = applyCommand(toState(map), command, ctx);
+
+    expect(result.events).toEqual([
+      {
+        type: 'HERO_MOVE_REJECTED',
+        payload: { heroId: 'ghost', target, reason: 'HERO_NOT_FOUND' },
+      },
+    ]);
+  });
+
+  it('rejects with TILE_OCCUPIED when another hero already stands on the target tile', () => {
+    const map = buildMovementMap();
+    const hero = buildHero();
+    const other = buildHero({ id: 'hero-2', coordinates: { columnIndex: 1, rowIndex: 0 } });
+    const ctx = createContext();
+    const target = { columnIndex: 1, rowIndex: 0 };
+
+    const command: HexEngineCommand = {
+      type: 'MOVE_HERO',
+      payload: { heroId: hero.id, target },
+    };
+
+    const result = applyCommand(toState(map, { [hero.id]: hero, [other.id]: other }), command, ctx);
+
+    expect(result.events).toEqual([
+      { type: 'HERO_MOVE_REJECTED', payload: { heroId: hero.id, target, reason: 'TILE_OCCUPIED' } },
+    ]);
+    expect(hero.coordinates).toEqual({ columnIndex: 0, rowIndex: 0 });
+  });
+
+  it('rejects with UNREACHABLE when the target is beyond the hero move range', () => {
+    const map = buildMovementMap();
+    const hero = buildHero();
+    const ctx = createContext();
+    const target = { columnIndex: 2, rowIndex: 2 };
+
+    const command: HexEngineCommand = {
+      type: 'MOVE_HERO',
+      payload: { heroId: hero.id, target },
+    };
+
+    const result = applyCommand(toState(map, { [hero.id]: hero }), command, ctx);
+
+    expect(result.events).toEqual([
+      { type: 'HERO_MOVE_REJECTED', payload: { heroId: hero.id, target, reason: 'UNREACHABLE' } },
+    ]);
+    expect(hero.coordinates).toEqual({ columnIndex: 0, rowIndex: 0 });
+  });
+
+  it('throws on an invalid command payload', () => {
+    const map = buildMovementMap();
+    const ctx = createContext();
+    const command = {
+      type: 'MOVE_HERO',
+      payload: { heroId: 'hero-1' },
     } as unknown as HexEngineCommand;
 
     expect(() => applyCommand(toState(map), command, ctx)).toThrow();

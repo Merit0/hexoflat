@@ -6,10 +6,7 @@ import { GameEngineService } from './game-engine.service';
 describe('GameEngineService', () => {
   it('delegates to the real @hexoflat/engine applyCommand', () => {
     const service = new GameEngineService();
-    const state: HexEngineState = { map: new HexMapModel() };
-    // ADD_RESOURCE_SPAWNER against an empty map never reads ctx — no tile is
-    // found, so the port stubs the full IActionContext would require are
-    // never touched at runtime.
+    const state: HexEngineState = { map: new HexMapModel(), heroes: {} };
     const ctx = {} as unknown as HexEngineActionContext;
 
     const result = service.dispatch(
