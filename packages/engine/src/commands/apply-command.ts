@@ -8,11 +8,17 @@ import { AddResourceSpawnerFeature } from '../features/resource-features/add-res
 import type { IActionContext } from '../abstraction/abstract-action';
 import type { HexObjectPlacementRef } from '../abstraction/hex-map-placement';
 import type { THeroToolKey } from '../content/equipment.content';
+import type { HeroState } from '../hero-movement/hero-state';
+import { getReachableTileDistances } from '../hero-movement/reachable-range-service';
+import { findShortestPath } from '../hero-movement/pathfinding-service';
+import { getScoutMoveStepsForSteps } from '../hero-movement/scout-progression';
+import { coordinateKey } from '../utils/hex-utils';
 import { HEX_ENGINE_COMMAND_SCHEMAS, type HexEngineCommand } from './hex-engine-commands';
 import type { ApplyCommandResult, DomainEvent } from './types';
 
 export interface HexEngineState {
   map: HexMapModel;
+  heroes: Record<string, HeroState>;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -102,6 +108,63 @@ export function applyCommand(
 
       new AddResourceSpawnerFeature(tile, hexobject as HexObjectPlacementRef).add();
       events.push({ type: 'RESOURCE_SPAWNER_ADDED', payload: { coordinates } });
+      break;
+    }
+
+    case 'MOVE_HERO': {
+      const { heroId, target } = parsed.payload;
+      const hero = state.heroes[heroId];
+
+      if (!hero) {
+        events.push({
+          type: 'HERO_MOVE_REJECTED',
+          payload: { heroId, target, reason: 'HERO_NOT_FOUND' },
+        });
+        break;
+      }
+
+      const targetKey = coordinateKey(target);
+      const isOccupiedByOtherHero = Object.values(state.heroes).some(
+        (other) => other.id !== heroId && coordinateKey(other.coordinates) === targetKey,
+      );
+
+      if (isOccupiedByOtherHero) {
+        events.push({
+          type: 'HERO_MOVE_REJECTED',
+          payload: { heroId, target, reason: 'TILE_OCCUPIED' },
+        });
+        break;
+      }
+
+      const moveSteps = getScoutMoveStepsForSteps(hero.heroSteps);
+      const reachable = getReachableTileDistances(state.map, hero.coordinates, moveSteps);
+
+      if (!reachable.has(targetKey)) {
+        events.push({
+          type: 'HERO_MOVE_REJECTED',
+          payload: { heroId, target, reason: 'UNREACHABLE' },
+        });
+        break;
+      }
+
+      const path = findShortestPath(state.map, hero.coordinates, target, moveSteps);
+
+      if (!path || path.length < 2) {
+        events.push({
+          type: 'HERO_MOVE_REJECTED',
+          payload: { heroId, target, reason: 'NO_PATH' },
+        });
+        break;
+      }
+
+      const stepsTaken = path.length - 1;
+      hero.coordinates = { ...target };
+      hero.heroSteps += stepsTaken;
+
+      events.push({
+        type: 'HERO_MOVED',
+        payload: { heroId, path, heroSteps: hero.heroSteps },
+      });
       break;
     }
   }

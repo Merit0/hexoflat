@@ -101,7 +101,11 @@ function writeRespawnSchedule(schedule: Partial<Record<LocationKey, number>>) {
 let worldTimer: number | null = null;
 
 function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
-  const { events } = applyCommand({ map }, { type: 'WORLD_TICK', payload: { now } }, ctx);
+  const { events } = applyCommand(
+    { map, heroes: {} },
+    { type: 'WORLD_TICK', payload: { now } },
+    ctx,
+  );
   const tickEvent = events.find((e) => e.type === 'WORLD_TICKED') as
     { type: 'WORLD_TICKED'; payload: { changed: boolean } } | undefined;
 
@@ -160,7 +164,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!this.map) return { ok: false, message: 'No active map.' };
 
       const { events } = applyCommand(
-        { map: this.map as HexMapModel },
+        { map: this.map as HexMapModel, heroes: {} },
         {
           type: 'START_HEX_ACTION',
           payload: { coordinates: tile.coordinates, actionType, toolKey, now: Date.now() },
@@ -1391,7 +1395,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
           const tile = tileByKey.get(`${c.columnIndex}:${c.rowIndex}`);
           if (tile && !tile.resourceSpawner) {
             applyCommand(
-              { map: map },
+              { map, heroes: {} },
               {
                 type: 'ADD_RESOURCE_SPAWNER',
                 payload: { coordinates: tile.coordinates, hexobject: placement.hexobject! },
