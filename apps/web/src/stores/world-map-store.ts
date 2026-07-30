@@ -11,7 +11,6 @@ import {
   type THexobject,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
-import { CoinsGenerator } from '@hexoflat/engine/generators/coins-generator';
 import { useHeroStore } from '@/stores/hero-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useGatheringStore } from '@/stores/gathering-store';
@@ -1037,7 +1036,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
         this.hydrateResourcesFromConfig();
 
-        this.initCoins();
         this.saveToStorage(mapId);
       }
 
@@ -1405,18 +1403,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
           }
         }
       }
-    },
-
-    initCoins() {
-      if (!this.map) return;
-
-      new CoinsGenerator(this.map as HexMapModel, {
-        chance: 0.05,
-        maxCoinsOnMap: 15,
-        minAmount: 1,
-        maxAmount: 5,
-        skipSpawnerTiles: true,
-      }).generate();
     },
 
     // ======================================================

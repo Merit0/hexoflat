@@ -3,14 +3,6 @@ import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
 
 export const homelandMapConfig: IHexMapPlacement[] = [
   {
-    hexobject: { hexobjectKey: HEXOBJECT_KEYS.EMITTER },
-    coordinates: [{ rowIndex: 0, columnIndex: 9 }],
-  },
-  {
-    hexobject: { hexobjectKey: HEXOBJECT_KEYS.INFERNO },
-    coordinates: [{ rowIndex: 7, columnIndex: 22 }],
-  },
-  {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 25000 } },
     coordinates: [
       { rowIndex: 4, columnIndex: 15 },
