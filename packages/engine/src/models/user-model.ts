@@ -2,11 +2,11 @@ export class UserModel {
   private name = '';
   private username = '';
   private password = '';
-  private id: number;
+  private id: string;
   private loggedIn: boolean;
 
   constructor() {
-    this.id = 0;
+    this.id = '';
     this.loggedIn = false;
   }
 
@@ -25,7 +25,7 @@ export class UserModel {
     return this;
   }
 
-  public getId(): number {
+  public getId(): string {
     return this.id;
   }
 
@@ -51,7 +51,7 @@ export class UserModel {
     return this;
   }
 
-  public setId(id: number): UserModel {
+  public setId(id: string): UserModel {
     this.id = id;
     return this;
   }

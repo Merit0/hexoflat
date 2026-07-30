@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import * as Request from '../api/Requests';
+import { login as loginRequest } from '../api/Requests';
+import { ApiError } from '../api/client';
 import UserModel from '@hexoflat/engine/models/user-model';
 import router from '../router';
 import { useHeroStore } from './hero-store';
@@ -31,11 +32,8 @@ export const useUserStore = defineStore('user', {
   actions: {
     async login(username: string, password: string) {
       try {
-        const userFromApi = await Request.login(username, password);
-        if (userFromApi == null) {
-          this.error = `${username} is not found.`;
-          return false;
-        }
+        const userFromApi = await loginRequest({ username, password });
+
         this.user
           .setName(userFromApi.name)
           .setUsername(userFromApi.username)
@@ -51,8 +49,12 @@ export const useUserStore = defineStore('user', {
         this.error = '';
         return true;
       } catch (error) {
-        console.error('Login failed:', error);
-        this.error = 'Login failed. Please check your connection and try again.';
+        if (error instanceof ApiError && error.status === 401) {
+          this.error = `${username} is not found.`;
+        } else {
+          console.error('Login failed:', error);
+          this.error = 'Login failed. Please check your connection and try again.';
+        }
         return false;
       }
     },
