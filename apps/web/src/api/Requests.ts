@@ -1,28 +1,57 @@
-import { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { effectScope } from 'vue';
+import { useMutation, useQuery } from '@tanstack/vue-query';
+import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { apiClient } from './client';
+import { queryClient } from './query-client';
 
 export type User = {
+  id: string;
   name: string;
   username: string;
-  loggedIn: boolean;
-  id: number;
 };
-export type UserList = Array<User & { password: string }>;
-export type HeroList = Array<IHero>;
 
-export async function login(username: string, password: string) {
-  const request = await fetch('/users.json');
-  const usersJson = (await request.json()) as UserList;
-  return usersJson.find((user) => user.password === password && user.username === username);
+export type LoginCredentials = { username: string; password: string };
+export type RegisterPayload = LoginCredentials & { name: string };
+
+export type SaveRecord = { id: string; name: string; createdAt: string };
+
+function runMutation<TVariables, TData>(
+  mutationFn: (variables: TVariables) => Promise<TData>,
+  variables: TVariables,
+): Promise<TData> {
+  const scope = effectScope(true);
+  const { mutateAsync } = scope.run(() => useMutation({ mutationFn }, queryClient))!;
+  return mutateAsync(variables).finally(() => scope.stop());
 }
 
-export async function getUser() {
-  const request = await fetch('/current.json');
-  const user = (await request.json()) as User;
-  return user;
+export function login(credentials: LoginCredentials): Promise<User> {
+  return runMutation((c: LoginCredentials) => apiClient.post<User>('/auth/login', c), credentials);
 }
 
-export async function getHero(id: number) {
-  const request = await fetch('/heroes.json');
-  const heroesJson = (await request.json()) as HeroList;
-  return heroesJson.find((hero) => hero.id === id);
+export function register(payload: RegisterPayload): Promise<User> {
+  return runMutation((p: RegisterPayload) => apiClient.post<User>('/auth/register', p), payload);
+}
+
+export function fetchHero(userId: string): Promise<IHero> {
+  return queryClient.fetchQuery({
+    queryKey: ['hero', userId],
+    queryFn: () => apiClient.get<IHero>(`/heroes/${userId}`),
+  });
+}
+
+export function useSavesQuery() {
+  return useQuery(
+    { queryKey: ['saves'], queryFn: () => apiClient.get<SaveRecord[]>('/saves') },
+    queryClient,
+  );
+}
+
+export function useCreateSaveMutation() {
+  return useMutation(
+    {
+      mutationFn: (name: string) => apiClient.post<SaveRecord>('/saves', { name }),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['saves'] }),
+    },
+    queryClient,
+  );
 }

@@ -2,8 +2,10 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import './assets/global.css';
 import { createPinia } from 'pinia';
+import { VueQueryPlugin } from '@tanstack/vue-query';
 import router from './router';
 import { validateContent } from '@hexoflat/engine/content/validate-content';
+import { queryClient } from './api/query-client';
 
 if (import.meta.env.DEV) {
   validateContent();
@@ -58,4 +60,4 @@ pinia.use((context) => {
   });
 });
 
-createApp(App).use(router).use(pinia).mount('#app');
+createApp(App).use(router).use(pinia).use(VueQueryPlugin, { queryClient }).mount('#app');

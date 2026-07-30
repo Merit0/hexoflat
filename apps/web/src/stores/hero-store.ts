@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { HeroModel } from '@hexoflat/engine/models/hero-model';
 import { useUserStore } from './user-store';
-import * as Request from '../api/Requests';
-import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { fetchHero } from '../api/Requests';
+import { ApiError } from '../api/client';
 import { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 
@@ -96,28 +96,33 @@ export const useHeroStore = defineStore('hero', {
 
     async getHero(): Promise<boolean> {
       const userStore = useUserStore();
-      const hero: IHero | undefined = await Request.getHero(userStore.user.getId());
 
-      if (!hero) {
-        console.warn('Hero is not retrieved by API');
+      try {
+        const hero = await fetchHero(userStore.user.getId());
+
+        this.hero
+          .setName(hero.name)
+          .setMaxHealth(hero.maxHealth)
+          .setHealth(hero.currentHealth)
+          .setAttack(hero.attack)
+          .setDefense(hero.defense)
+          .setCoins(hero.coins)
+          .setKills(hero.kills)
+          .setCurrentEnergy(hero.currentEnergy)
+          .setMaxEnergy(hero.maxEnergy)
+          .setSteps(hero.heroSteps);
+
+        this.hydrateProgressFromStorage();
+
+        return true;
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          console.warn('Hero is not retrieved by API');
+        } else {
+          console.error('Failed to fetch hero:', error);
+        }
         return false;
       }
-
-      this.hero
-        .setName(hero.name)
-        .setMaxHealth(hero.maxHealth)
-        .setHealth(hero.currentHealth)
-        .setAttack(hero.attack)
-        .setDefense(hero.defense)
-        .setCoins(hero.coins)
-        .setKills(hero.kills)
-        .setCurrentEnergy(hero.currentEnergy)
-        .setMaxEnergy(hero.maxEnergy)
-        .setSteps(hero.heroSteps);
-
-      this.hydrateProgressFromStorage();
-
-      return true;
     },
 
     healHero(health: number): void {

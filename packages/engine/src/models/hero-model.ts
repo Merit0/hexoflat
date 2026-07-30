@@ -3,7 +3,7 @@ import { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { normalizeHealthValue, roundToSingleDecimal } from '../utils/combat/health-format';
 
 export class HeroModel implements IHero {
-  id = 0;
+  id = '';
   name = '';
   currentHealth = 0;
   maxHealth: number;

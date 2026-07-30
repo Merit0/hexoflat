@@ -1,7 +1,7 @@
 import { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 
 export interface IHero {
-  id: number;
+  id: string;
   name: string;
   currentHealth: number;
   maxHealth: number;

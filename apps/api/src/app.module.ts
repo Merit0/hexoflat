@@ -4,8 +4,9 @@ import { ContentModule } from './content/content.module';
 import { DbModule } from './db/db.module';
 import { GameModule } from './game/game.module';
 import { HealthModule } from './health/health.module';
+import { HeroesModule } from './heroes/heroes.module';
 
 @Module({
-  imports: [DbModule, AuthModule, ContentModule, GameModule, HealthModule],
+  imports: [DbModule, AuthModule, ContentModule, GameModule, HeroesModule, HealthModule],
 })
 export class AppModule {}
