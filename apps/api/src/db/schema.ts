@@ -52,9 +52,8 @@ export const saves = pgTable('saves', {
 
 export const snapshots = pgTable('snapshots', {
   id: uuid('id').primaryKey().defaultRandom(),
-  saveId: uuid('save_id')
-    .notNull()
-    .references(() => saves.id, { onDelete: 'cascade' }),
+  saveId: uuid('save_id').references(() => saves.id, { onDelete: 'cascade' }),
+  scenariosId: uuid('scenarios_id').references(() => scenarios.id, { onDelete: 'cascade' }),
   state: jsonb('state').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });

@@ -4,3 +4,5 @@ export * from './commands/types';
 export * from './commands/hex-engine-commands';
 export { applyCommand } from './commands/apply-command';
 export type { HexEngineState, HexEngineActionContext } from './commands/apply-command';
+export { serializeState, deserializeState } from './commands/snapshot';
+export type { SnapshotPayload } from './commands/snapshot';
