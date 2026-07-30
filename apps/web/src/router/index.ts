@@ -3,7 +3,6 @@ import { useUserStore } from '@/stores/user-store';
 
 const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-page.vue');
 const HexWorldMap = () => import('@/a-game-scenes/map-scene/components/hex-world-map.vue');
-// const BattlePage = () => import("@/a-game-scenes/battle-scene/components/battle-page.vue"); // якщо є
 
 export const ROUTES = {
   LOGIN: 'login',
@@ -27,13 +26,10 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.WORLD,
     component: HexWorldMap,
     props: (route) => ({
-      locationKey: (route.params.locationKey as string | undefined) ?? 'camping',
+      locationKey: (route.params.locationKey as string | undefined) || 'camping',
     }),
     meta: { requiresAuth: true },
   },
-
-  // /battle route not wired up yet — BattlePage doesn't exist.
-
   {
     path: '/:pathMatch(.*)*',
     redirect: { name: ROUTES.LOGIN },
