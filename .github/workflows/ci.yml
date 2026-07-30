@@ -30,16 +30,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm turbo run lint
 
       - name: Format check
         run: pnpm format:check
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm turbo run typecheck
 
       - name: Test
-        run: pnpm test
+        run: pnpm turbo run test
 
       - name: Build
-        run: pnpm build
+        run: pnpm turbo run build

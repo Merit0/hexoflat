@@ -35,23 +35,23 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm turbo run lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm turbo run typecheck
 
       - name: Test
-        run: pnpm test
+        run: pnpm turbo run test
 
       - name: Build
         env:
           GITHUB_PAGES: 'true'
-        run: pnpm build
+        run: pnpm turbo run build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apps/web/dist
 
   deploy:
     name: Deploy

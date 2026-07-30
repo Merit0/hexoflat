@@ -1,0 +1,17 @@
+import { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
+import { THexobjectKey } from '../registry/hexobjects-registry';
+
+export interface HexObjectPlacementRef {
+  hexobjectKey: THexobjectKey;
+  overrides?: Record<string, any>;
+}
+
+export interface IHexMapPlacement {
+  initialTileImage?: string;
+  description?: string;
+  hexobject?: HexObjectPlacementRef;
+  coordinates: IHexCoordinates[];
+  entry?: {
+    type: 'DEFAULT' | 'SECRET';
+  };
+}
