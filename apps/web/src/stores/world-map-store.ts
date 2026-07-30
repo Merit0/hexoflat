@@ -21,9 +21,9 @@ import {
   MapRegistry,
 } from '@hexoflat/engine/registry/world-map-registry';
 import { IHexMapPlacement } from '@hexoflat/engine/abstraction/hex-map-placement';
-import { getScoutMoveStepsForSteps } from '@hexoflat/engine/hero-movement/scout-progression';
 import { getReachableTileDistances } from '@hexoflat/engine/hero-movement/reachable-range-service';
 import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
+import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import router, { ROUTES } from '@/router';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
@@ -1285,15 +1285,40 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
       if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING_ENTRANCE) return false;
 
-      const moveSteps = this.combatActive
-        ? this.combatStepsLeft
-        : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
-      const reachable = getReachableTileDistances(map, this.heroCoordinates, moveSteps);
-      const targetKey = coordinateKey(target);
-      if (!reachable.has(targetKey)) return false;
+      let path: IHexCoordinates[] | null | undefined;
 
-      const path = findShortestPath(map, this.heroCoordinates, target, moveSteps);
-      if (!path || path.length < 2) return false;
+      if (this.combatActive) {
+        const moveSteps = this.combatStepsLeft;
+        const reachable = getReachableTileDistances(map, this.heroCoordinates, moveSteps);
+        const targetKey = coordinateKey(target);
+        if (!reachable.has(targetKey)) return false;
+
+        path = findShortestPath(map, this.heroCoordinates, target, moveSteps);
+        if (!path || path.length < 2) return false;
+      } else {
+        const heroState: HeroState = {
+          id: heroStore.hero.id,
+          controlledBy: null,
+          coordinates: this.heroCoordinates,
+          heroSteps: heroStore.hero.heroSteps ?? 0,
+        };
+
+        const { events: moveEvents } = applyCommand(
+          { map, heroes: { [heroState.id]: heroState } },
+          { type: 'MOVE_HERO', payload: { heroId: heroState.id, target } },
+          this.buildEngineContext(),
+        );
+
+        const moved = moveEvents.find((e) => e.type === 'HERO_MOVED') as
+          | {
+              type: 'HERO_MOVED';
+              payload: { heroId: string; path: IHexCoordinates[]; heroSteps: number };
+            }
+          | undefined;
+        if (!moved) return false;
+
+        path = moved.payload.path;
+      }
 
       const route = path.slice(1);
       let stepsTaken = 0;
