@@ -7,6 +7,6 @@
     "lib": ["esnext", "dom"],
     "types": ["node", "@playwright/test"]
   },
-  "include": ["playwright.config.ts", "global-setup.ts", "tests/**/*.ts"],
+  "include": ["playwright.config.ts", "global-setup.ts", "e2e/**/*.ts", "support/**/*.ts"],
   "exclude": ["node_modules", "dist", "test-results", "playwright-report", ".tmp"]
 }

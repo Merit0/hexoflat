@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { API_URL, TEST_USER_FILE } from './tests/support/env';
-import type { TestUser } from './tests/support/credentials';
+import { API_URL, TEST_USER_FILE } from './support/env';
+import type { TestUser } from './support/credentials';
 
 const HEALTH_TIMEOUT_MS = 5_000;
 

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTestUser } from './support/login';
-import { getHeroCoordinates, moveHeroOneStep } from './support/hex-board';
+import { loginAsTestUser } from '../support/login';
+import { getHeroCoordinates, moveHeroOneStep } from '../support/hex-board';
 
-test('clicking an adjacent tile moves the hero there', async ({ page }) => {
+test('Verify clicking an adjacent tile moves the hero there', async ({ page }) => {
   await loginAsTestUser(page);
 
   const before = await getHeroCoordinates(page);

@@ -14,7 +14,7 @@ export function readTestUser(): TestUser {
   } catch {
     throw new Error(
       'No test user found — global-setup.ts did not run or failed before writing ' +
-        `${TEST_USER_FILE.pathname}. Run tests via "pnpm --filter @hexoflat/e2e test:e2e".`,
+        `${TEST_USER_FILE.pathname}. Run tests via "pnpm --filter @hexoflat/playwright test:e2e".`,
     );
   }
 

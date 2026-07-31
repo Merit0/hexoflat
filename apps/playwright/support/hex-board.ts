@@ -22,6 +22,7 @@ export interface HexCoordinates {
 
 const STORAGE_INDEX_KEY = 'hexoflat:world:index:v1';
 const STORAGE_STATE_PREFIX = 'hexoflat:world:state:v1:';
+const STORAGE_MAP_PREFIX = 'hexoflat:world:map:v1:';
 
 /** Mirrors calcHexPixelPosition in packages/engine/src/utils/hex-utils.ts. */
 function tilePixel(coord: HexCoordinates, tileW: number, tileH: number) {
@@ -186,6 +187,42 @@ export async function getHeroCoordinates(page: Page): Promise<HexCoordinates> {
 
   if (!coords) throw new Error('Hero has no coordinates yet on the camping map.');
   return coords;
+}
+
+/**
+ * Reads the hexobject key sitting on a given tile directly out of the
+ * persisted map (`hexoflat:world:map:v1:<mapId>` — see world-map-store.ts's
+ * `saveToStorage`), so a test can confirm an object was actually removed
+ * from the map itself, not just added to the inventory. A finished TAKE
+ * action sets `tile.hexobject = null` for non-RESOURCE items (no respawn) —
+ * see `consumeTileHexobject` in action-finishers-registry.ts.
+ */
+export async function getTileHexobjectKey(
+  page: Page,
+  coord: HexCoordinates,
+): Promise<string | null> {
+  const mapId = await readCampingMapId(page);
+  return page.evaluate(
+    ({ mapPrefix, mapId, coord }) => {
+      const raw = localStorage.getItem(mapPrefix + mapId);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as {
+        map?: {
+          tiles?: Array<{
+            coordinates: HexCoordinates;
+            hexobject?: { hexobjectKey: string } | null;
+          }>;
+        };
+      };
+      const tile = parsed.map?.tiles?.find(
+        (t) =>
+          t.coordinates.columnIndex === coord.columnIndex &&
+          t.coordinates.rowIndex === coord.rowIndex,
+      );
+      return tile?.hexobject?.hexobjectKey ?? null;
+    },
+    { mapPrefix: STORAGE_MAP_PREFIX, mapId, coord },
+  );
 }
 
 async function waitForHeroCoordinates(
