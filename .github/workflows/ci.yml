@@ -43,3 +43,72 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build
+
+  e2e:
+    name: Playwright e2e (apps/web + apps/api + Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hexoflat
+          POSTGRES_PASSWORD: hexoflat
+          POSTGRES_DB: hexoflat
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U hexoflat -d hexoflat"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @hexoflat/e2e exec playwright install --with-deps chromium
+
+      - name: Build apps/api and packages/engine
+        run: pnpm turbo run build --filter=@hexoflat/api
+
+      - name: Push DB schema
+        run: pnpm --filter @hexoflat/api db:push
+
+      - name: Start apps/api
+        run: nohup pnpm --filter @hexoflat/api start > /tmp/api.log 2>&1 &
+
+      - name: Wait for apps/api health check
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/health > /dev/null; then
+              echo "apps/api is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "apps/api never became healthy — logs:"
+          cat /tmp/api.log
+          exit 1
+
+      - name: Run Playwright e2e
+        run: pnpm --filter @hexoflat/e2e test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          retention-days: 7
