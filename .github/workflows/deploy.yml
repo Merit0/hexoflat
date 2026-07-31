@@ -15,8 +15,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # e2e failures don't block the game deploy (the suite is still new/settling —
+  # see `continue-on-error` below); its Allure report gets bundled into the
+  # deploy either way so a failure on main is still visible on the live report.
+  e2e:
+    name: Playwright e2e
+    uses: ./.github/workflows/e2e-tests.yml
+    continue-on-error: true
+
   build:
     name: Build
+    needs: e2e
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -48,6 +57,18 @@ jobs:
           GITHUB_PAGES: 'true'
         run: pnpm turbo run build
 
+      # Bundled as a subpath of the same Pages site rather than a separate
+      # Pages source — GitHub Pages only supports one source per repo, and
+      # this one (Actions-deployed) is already spoken for by apps/web.
+      # continue-on-error: the artifact may be missing if the e2e job above
+      # failed before it could even generate/upload the report.
+      - name: Download Allure report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report
+          path: apps/web/dist/e2e-report
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -64,3 +85,9 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Link the Allure report in the job summary
+        run: |
+          echo "### Allure e2e report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.deployment.outputs.page_url }}e2e-report/" >> "$GITHUB_STEP_SUMMARY"

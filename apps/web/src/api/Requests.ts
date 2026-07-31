@@ -10,6 +10,8 @@ export type User = {
   username: string;
 };
 
+export type AuthResponse = { user: User; accessToken: string };
+
 export type LoginCredentials = { username: string; password: string };
 export type RegisterPayload = LoginCredentials & { name: string };
 
@@ -24,18 +26,24 @@ function runMutation<TVariables, TData>(
   return mutateAsync(variables).finally(() => scope.stop());
 }
 
-export function login(credentials: LoginCredentials): Promise<User> {
-  return runMutation((c: LoginCredentials) => apiClient.post<User>('/auth/login', c), credentials);
+export function login(credentials: LoginCredentials): Promise<AuthResponse> {
+  return runMutation(
+    (c: LoginCredentials) => apiClient.post<AuthResponse>('/auth/login', c),
+    credentials,
+  );
 }
 
-export function register(payload: RegisterPayload): Promise<User> {
-  return runMutation((p: RegisterPayload) => apiClient.post<User>('/auth/register', p), payload);
+export function register(payload: RegisterPayload): Promise<AuthResponse> {
+  return runMutation(
+    (p: RegisterPayload) => apiClient.post<AuthResponse>('/auth/register', p),
+    payload,
+  );
 }
 
-export function fetchHero(userId: string): Promise<IHero> {
+export function fetchHero(): Promise<IHero> {
   return queryClient.fetchQuery({
-    queryKey: ['hero', userId],
-    queryFn: () => apiClient.get<IHero>(`/heroes/${userId}`),
+    queryKey: ['hero', 'me'],
+    queryFn: () => apiClient.get<IHero>('/heroes/me'),
   });
 }
 

@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { HeroModel } from '@hexoflat/engine/models/hero-model';
-import { useUserStore } from './user-store';
 import { fetchHero } from '../api/Requests';
 import { ApiError } from '../api/client';
 import { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
@@ -95,10 +94,8 @@ export const useHeroStore = defineStore('hero', {
     },
 
     async getHero(): Promise<boolean> {
-      const userStore = useUserStore();
-
       try {
-        const hero = await fetchHero(userStore.user.getId());
+        const hero = await fetchHero();
 
         this.hero
           .setName(hero.name)
