@@ -43,3 +43,7 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build
+
+  e2e:
+    name: Playwright e2e (apps/web + apps/api + Postgres)
+    uses: ./.github/workflows/e2e-tests.yml

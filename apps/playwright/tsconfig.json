@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmit": true,
+    "lib": ["esnext", "dom"],
+    "types": ["node", "@playwright/test"]
+  },
+  "include": ["playwright.config.ts", "global-setup.ts", "e2e/**/*.ts", "support/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test-results", "playwright-report", ".tmp"]
+}
