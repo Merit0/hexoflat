@@ -1,8 +1,10 @@
 import { Inject } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
   MessageBody,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -14,6 +16,7 @@ import {
   serializeState,
   type HexEngineCommand,
 } from '@hexoflat/engine';
+import { HeroesService } from '../heroes/heroes.service';
 import { createServerActionContext } from './server-action-context';
 import { ScenarioStateService } from './scenario-state.service';
 
@@ -27,8 +30,6 @@ type AppSocket = Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, Pa
 
 const JoinScenarioSchema = z.object({
   scenarioId: z.string().min(1),
-  userId: z.string().min(1),
-  heroId: z.string().min(1),
 });
 
 const CommandEnvelopeSchema = z.object({
@@ -41,29 +42,69 @@ function scenarioRoom(scenarioId: string): string {
 }
 
 @WebSocketGateway({ cors: { origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' } })
-export class GameGateway implements OnGatewayDisconnect {
+export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;
 
   private readonly roomClients = new Map<string, Set<string>>();
 
-  constructor(@Inject(ScenarioStateService) private readonly scenarioState: ScenarioStateService) {}
+  // tsx/esbuild doesn't emit TS `design:paramtypes` metadata, so Nest can't
+  // infer constructor injection by type alone — @Inject() gives it an
+  // explicit token instead.
+  constructor(
+    @Inject(ScenarioStateService) private readonly scenarioState: ScenarioStateService,
+    @Inject(JwtService) private readonly jwtService: JwtService,
+    @Inject(HeroesService) private readonly heroesService: HeroesService,
+  ) {}
+
+  // Auth runs as connection middleware (not a handleConnection lifecycle hook)
+  // so an unauthenticated client gets a proper `connect_error` and never
+  // completes the Socket.IO handshake, instead of racing a connect/disconnect pair.
+  afterInit(server: Server): void {
+    server.use((socket: AppSocket, next) => {
+      const token = socket.handshake.auth?.token as string | undefined;
+      if (!token) {
+        next(new Error('Missing auth token'));
+        return;
+      }
+
+      this.jwtService
+        .verifyAsync<{ sub: string }>(token)
+        .then((payload) => {
+          socket.data.userId = payload.sub;
+          next();
+        })
+        .catch(() => next(new Error('Invalid or expired token')));
+    });
+  }
 
   @SubscribeMessage('join-scenario')
   async handleJoinScenario(
     @ConnectedSocket() client: AppSocket,
     @MessageBody() body: unknown,
   ): Promise<void> {
+    const userId = client.data.userId;
+    if (!userId) {
+      client.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
     const parsed = JoinScenarioSchema.safeParse(body);
     if (!parsed.success) {
       client.emit('error', { message: 'Invalid join-scenario payload' });
       return;
     }
 
-    const { scenarioId, userId, heroId } = parsed.data;
+    const hero = await this.heroesService.findByUserId(userId);
+    if (!hero) {
+      client.emit('error', { message: 'No hero found for this user' });
+      return;
+    }
+
+    const { scenarioId } = parsed.data;
+    const heroId = hero.id;
     await client.join(scenarioRoom(scenarioId));
     client.data.scenarioId = scenarioId;
-    client.data.userId = userId;
     client.data.heroId = heroId;
 
     let clients = this.roomClients.get(scenarioId);
