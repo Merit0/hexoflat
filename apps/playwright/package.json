@@ -6,11 +6,15 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "report:allure:generate": "allure generate allure-results --clean -o allure-report",
+    "report:allure:open": "allure open allure-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
     "@types/node": "^24.10.0",
+    "allure-commandline": "^2.43.0",
+    "allure-playwright": "^3.10.2",
     "typescript": "~5.9.3"
   }
 }

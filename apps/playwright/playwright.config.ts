@@ -7,7 +7,17 @@ export default defineConfig({
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // allure-playwright only writes raw result JSON (allure-results/) — the
+  // browsable HTML report is a separate build step (`report:allure:generate`,
+  // via the `allure-commandline` CLI), run in CI after the test run and
+  // uploaded as a build artifact (see ci.yml's `e2e` job).
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['html', { open: 'never' }],
+        ['allure-playwright', { resultsDir: 'allure-results' }],
+      ]
+    : [['list'], ['allure-playwright', { resultsDir: 'allure-results' }]],
   use: {
     baseURL: WEB_URL,
     trace: 'on-first-retry',
