@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Global, Module } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { IoAdapter } from '@nestjs/platform-socket.io';
@@ -9,6 +10,7 @@ import { serializeState, type HexEngineState, type SnapshotPayload } from '@hexo
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
 import { DB, type Db } from '../db/db.module';
+import { JwtAuthModule } from '../auth/jwt-auth.module';
 import { HeroesService } from '../heroes/heroes.service';
 import { GameModule } from './game.module';
 
@@ -85,6 +87,7 @@ const HERO_B = buildHero({ id: 'hero-b', heroLocation: { columnIndex: 2, rowInde
 describe('GameGateway (socket.io integration)', () => {
   let app: NestFastifyApplication;
   let url: string;
+  let jwtService: JwtService;
   let inserted: Array<{ scenariosId: string; saveId: string | null; state: unknown }>;
   const scenarioId = randomUUID();
 
@@ -104,7 +107,7 @@ describe('GameGateway (socket.io integration)', () => {
     } as unknown as HeroesService;
 
     const moduleRef = await Test.createTestingModule({
-      imports: [createTestDbModule(fakeDb.db), GameModule],
+      imports: [createTestDbModule(fakeDb.db), JwtAuthModule, GameModule],
     })
       .overrideProvider(HeroesService)
       .useValue(fakeHeroesService)
@@ -114,6 +117,7 @@ describe('GameGateway (socket.io integration)', () => {
     app.useWebSocketAdapter(new IoAdapter(app));
     await app.init();
     await app.listen(0);
+    jwtService = moduleRef.get(JwtService);
 
     const address = app.getHttpServer().address();
     const port = typeof address === 'object' && address ? address.port : 0;
@@ -124,17 +128,34 @@ describe('GameGateway (socket.io integration)', () => {
     await app.close();
   });
 
+  it('rejects a connection with no auth token', async () => {
+    const client: ClientSocket = io(url, { transports: ['websocket'], forceNew: true });
+    const connectError = await waitFor<Error>(client, 'connect_error');
+    expect(connectError.message).toMatch(/token/i);
+    client.close();
+  });
+
   it('syncs joins, broadcasts moves to the room, enforces hero ownership, and resumes state on reconnect', async () => {
-    const clientA: ClientSocket = io(url, { transports: ['websocket'], forceNew: true });
-    const clientB: ClientSocket = io(url, { transports: ['websocket'], forceNew: true });
+    const tokenA = await jwtService.signAsync({ sub: 'user-a' });
+    const tokenB = await jwtService.signAsync({ sub: 'user-b' });
+    const clientA: ClientSocket = io(url, {
+      transports: ['websocket'],
+      forceNew: true,
+      auth: { token: tokenA },
+    });
+    const clientB: ClientSocket = io(url, {
+      transports: ['websocket'],
+      forceNew: true,
+      auth: { token: tokenB },
+    });
 
     await Promise.all([waitFor(clientA, 'connect'), waitFor(clientB, 'connect')]);
 
-    clientA.emit('join-scenario', { scenarioId, userId: 'user-a', heroId: HERO_A.id });
+    clientA.emit('join-scenario', { scenarioId });
     const syncA = await waitFor<SnapshotPayload>(clientA, 'state-sync');
     expect(syncA.heroes[HERO_A.id]).toMatchObject({ coordinates: HERO_A.heroLocation });
 
-    clientB.emit('join-scenario', { scenarioId, userId: 'user-b', heroId: HERO_B.id });
+    clientB.emit('join-scenario', { scenarioId });
     const syncB = await waitFor<SnapshotPayload>(clientB, 'state-sync');
     expect(syncB.heroes[HERO_B.id]).toMatchObject({ coordinates: HERO_B.heroLocation });
 
@@ -184,9 +205,13 @@ describe('GameGateway (socket.io integration)', () => {
     expect(inserted).toHaveLength(1);
     expect(inserted[0].scenariosId).toBe(scenarioId);
 
-    const clientC: ClientSocket = io(url, { transports: ['websocket'], forceNew: true });
+    const clientC: ClientSocket = io(url, {
+      transports: ['websocket'],
+      forceNew: true,
+      auth: { token: tokenA },
+    });
     await waitFor(clientC, 'connect');
-    clientC.emit('join-scenario', { scenarioId, userId: 'user-a', heroId: HERO_A.id });
+    clientC.emit('join-scenario', { scenarioId });
     const syncC = await waitFor<SnapshotPayload>(clientC, 'state-sync');
 
     expect(syncC.heroes[HERO_A.id]).toMatchObject({ coordinates: { columnIndex: 1, rowIndex: 0 } });

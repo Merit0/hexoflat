@@ -21,6 +21,7 @@ function clearSessionStorage() {
 export const useUserStore = defineStore('user', {
   state: () => ({
     user: new UserModel().build(),
+    accessToken: null as string | null,
     error: '',
   }),
   getters: {
@@ -32,13 +33,14 @@ export const useUserStore = defineStore('user', {
   actions: {
     async login(username: string, password: string) {
       try {
-        const userFromApi = await loginRequest({ username, password });
+        const { user: userFromApi, accessToken } = await loginRequest({ username, password });
 
         this.user
           .setName(userFromApi.name)
           .setUsername(userFromApi.username)
           .setId(userFromApi.id)
           .setLoggedIn(true);
+        this.accessToken = accessToken;
 
         clearSessionStorage();
         localStorage.setItem('uStatus', 'true');
@@ -66,6 +68,7 @@ export const useUserStore = defineStore('user', {
 
       try {
         this.user.setLoggedIn(false);
+        this.accessToken = null;
       } catch (error) {
         console.error('Error during logout:', error);
       } finally {
