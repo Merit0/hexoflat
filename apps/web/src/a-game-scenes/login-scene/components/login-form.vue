@@ -1,5 +1,20 @@
 <template>
   <form class="login-form game-root" data-testid="login-form" novalidate @submit.prevent="onSubmit">
+    <div v-if="mode === 'register'" class="form-field">
+      <label class="sr-only" for="login-name">Name</label>
+      <input
+        id="login-name"
+        v-model.trim="form.name"
+        class="login-form-input"
+        data-testid="register-name-input"
+        type="text"
+        maxlength="40"
+        autocomplete="name"
+        placeholder="Name"
+        required
+        @input="clearError"
+      />
+    </div>
     <div class="form-field">
       <label class="sr-only" for="login-username">Username</label>
       <input
@@ -24,7 +39,7 @@
         data-testid="login-password-input"
         :type="showPassword ? 'text' : 'password'"
         maxlength="40"
-        autocomplete="current-password"
+        :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
         placeholder="Password"
         required
         @input="clearError"
@@ -44,9 +59,18 @@
       data-testid="login-submit-button"
       type="submit"
       :disabled="isLoading"
-      aria-label="Sign in"
+      :aria-label="mode === 'login' ? 'Sign in' : 'Register'"
     >
-      {{ isLoading ? 'Loading...' : 'PLAY' }}
+      {{ isLoading ? 'Loading...' : mode === 'login' ? 'PLAY' : 'REGISTER' }}
+    </button>
+    <button
+      type="button"
+      class="login-form-toggle-mode"
+      data-testid="login-toggle-mode-button"
+      :disabled="isLoading"
+      @click="toggleMode"
+    >
+      {{ mode === 'login' ? 'Create account' : 'Back to login' }}
     </button>
   </form>
   <transition name="fade">
@@ -77,8 +101,10 @@ export default defineComponent({
     const form = reactive({
       username: '',
       password: '',
+      name: '',
     });
 
+    const mode = ref<'login' | 'register'>('login');
     const showPassword = ref(false);
     const isLoading = ref(false);
 
@@ -86,18 +112,22 @@ export default defineComponent({
       try {
         isLoading.value = true;
 
-        const success = await userStore.login(form.username, form.password);
+        const success =
+          mode.value === 'login'
+            ? await userStore.login(form.username, form.password)
+            : await userStore.register(form.username, form.password, form.name);
         if (!success) return;
 
         form.username = '';
         form.password = '';
+        form.name = '';
 
         await router.replace({
           name: ROUTES.WORLD,
           params: { locationKey: 'camping' },
         });
       } catch (error) {
-        console.error('Login failed:', error);
+        console.error(mode.value === 'login' ? 'Login failed:' : 'Registration failed:', error);
       } finally {
         isLoading.value = false;
       }
@@ -105,6 +135,11 @@ export default defineComponent({
 
     const togglePassword = () => {
       showPassword.value = !showPassword.value;
+    };
+
+    const toggleMode = () => {
+      mode.value = mode.value === 'login' ? 'register' : 'login';
+      userStore.clearErrorMsg();
     };
 
     const clearError = () => {
@@ -119,11 +154,13 @@ export default defineComponent({
 
     return {
       form,
+      mode,
       userStore,
       showPassword,
       isLoading,
       onSubmit,
       togglePassword,
+      toggleMode,
       clearError,
     };
   },

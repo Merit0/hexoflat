@@ -1,3 +1,5 @@
+import { getAuthToken } from './auth-token';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 export class ApiError extends Error {
@@ -10,22 +12,8 @@ export class ApiError extends Error {
   }
 }
 
-// Reads straight from localStorage (not the Pinia store) so this module has
-// no dependency on Pinia being active yet. Matches the key the `user` store
-// is persisted under by the pinia plugin in main.ts.
-function getAccessToken(): string | null {
-  try {
-    const raw = localStorage.getItem('user');
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { accessToken?: string | null };
-    return parsed.accessToken ?? null;
-  } catch {
-    return null;
-  }
-}
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = getAccessToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {

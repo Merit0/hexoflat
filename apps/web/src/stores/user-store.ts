@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
-import { login as loginRequest } from '../api/Requests';
+import { login as loginRequest, register as registerRequest } from '../api/Requests';
 import { ApiError } from '../api/client';
+import { setAuthToken } from '../api/auth-token';
 import UserModel from '@hexoflat/engine/models/user-model';
 import router from '../router';
 import { useHeroStore } from './hero-store';
@@ -41,6 +42,7 @@ export const useUserStore = defineStore('user', {
           .setId(userFromApi.id)
           .setLoggedIn(true);
         this.accessToken = accessToken;
+        setAuthToken(accessToken);
 
         clearSessionStorage();
         localStorage.setItem('uStatus', 'true');
@@ -60,6 +62,40 @@ export const useUserStore = defineStore('user', {
         return false;
       }
     },
+    async register(username: string, password: string, name: string) {
+      try {
+        const { user: userFromApi, accessToken } = await registerRequest({
+          username,
+          password,
+          name,
+        });
+
+        this.user
+          .setName(userFromApi.name)
+          .setUsername(userFromApi.username)
+          .setId(userFromApi.id)
+          .setLoggedIn(true);
+        this.accessToken = accessToken;
+        setAuthToken(accessToken);
+
+        clearSessionStorage();
+        localStorage.setItem('uStatus', 'true');
+
+        const heroStore = useHeroStore();
+        await heroStore.getHero();
+
+        this.error = '';
+        return true;
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 409) {
+          this.error = `Username "${username}" is already taken.`;
+        } else {
+          console.error('Registration failed:', error);
+          this.error = 'Registration failed. Please check your connection and try again.';
+        }
+        return false;
+      }
+    },
     async logout(): Promise<void> {
       const heroStore = useHeroStore();
       const worldMapStore = useWorldMapStore();
@@ -69,6 +105,7 @@ export const useUserStore = defineStore('user', {
       try {
         this.user.setLoggedIn(false);
         this.accessToken = null;
+        setAuthToken(null);
       } catch (error) {
         console.error('Error during logout:', error);
       } finally {

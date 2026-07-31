@@ -6,6 +6,8 @@ import { VueQueryPlugin } from '@tanstack/vue-query';
 import router from './router';
 import { validateContent } from '@hexoflat/engine/content/validate-content';
 import { queryClient } from './api/query-client';
+import { setAuthToken } from './api/auth-token';
+import { useUserStore } from './stores/user-store';
 
 if (import.meta.env.DEV) {
   validateContent();
@@ -60,4 +62,12 @@ pinia.use((context) => {
   });
 });
 
-createApp(App).use(router).use(pinia).use(VueQueryPlugin, { queryClient }).mount('#app');
+const app = createApp(App).use(router).use(pinia).use(VueQueryPlugin, { queryClient });
+
+// Seed the in-memory token holder (api/auth-token.ts) from the just-hydrated
+// user store, synchronously, before mounting — api/client.ts reads from
+// there, not from localStorage directly, to avoid racing the persist plugin's
+// async flush on the very first request after login/register.
+setAuthToken(useUserStore(pinia).accessToken);
+
+app.mount('#app');

@@ -71,6 +71,26 @@
   cursor: not-allowed;
 }
 
+.login-form-toggle-mode {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #d5f3ff;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.login-form-toggle-mode:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.login-form-toggle-mode:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .login-form-error {
   position: absolute;
   bottom: 4rem;
