@@ -15,7 +15,7 @@
     "size-limit": "turbo run size-limit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "audit": "pnpm audit --audit-level=high",
+    "audit": "pnpm audit --audit-level=high --prod",
     "prepare": "husky"
   },
   "devDependencies": {
