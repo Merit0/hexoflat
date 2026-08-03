@@ -146,7 +146,9 @@ Ask before `git commit` at every phase boundary (standing rule).
 
 ---
 
-## Phase 11 — Docker + deploy for `apps/api`
+## Phase 11 — Docker + deploy for `apps/api` (PAUSED)
+
+> **Paused 2026-07-31:** local dev is already fully covered by `docker-compose.dev.yml` (Phase 6). Production hosting only matters once there's an actual reason to expose the backend externally (real players, a demo to show someone). Until then, engineering effort goes to gameplay/content — starting with settling combat design, which is the actual unresolved risk right now, not infra. Revisit this phase when there's a concrete feature/business reason to deploy `apps/api` publicly.
 
 **Goal:** containerize the backend; `apps/web` keeps deploying to GitHub Pages as-is.
 
@@ -156,7 +158,9 @@ Ask before `git commit` at every phase boundary (standing rule).
 
 ---
 
-## Phase 12 — S3 assets, then OpenTelemetry + Sentry
+## Phase 12 — S3 assets, then OpenTelemetry + Sentry (PAUSED)
+
+> **Paused 2026-07-31:** same reasoning as Phase 11 — no external users/assets-at-scale yet to justify this.
 
 **Goal:** externalize assets, add observability.
 

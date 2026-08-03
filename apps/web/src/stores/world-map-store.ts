@@ -2,15 +2,10 @@ import { defineStore } from 'pinia';
 import HexMapModel, { type ISerializedHexMap } from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
-import { coordinateKey, getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { coordinateKey, getOddQNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import {
-  EHexCollision,
-  EHexobjectGroup,
-  type ICreature,
-  type THexobject,
-} from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { EHexCollision } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useGatheringStore } from '@/stores/gathering-store';
@@ -26,80 +21,36 @@ import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-ser
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import router, { ROUTES } from '@/router';
-import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
-import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
-import { getPrototype, CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
+import { CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
 import type { HexEngineActionContext } from '@hexoflat/engine';
+import type { IWorldMapPort } from '@hexoflat/engine/abstraction/abstract-action';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
-import { normalizeHealthValue } from '@hexoflat/engine/utils/combat/health-format';
+import {
+  clearLocationMapIndex,
+  newMapId,
+  readLocationMapIndex,
+  readRespawnSchedule,
+  writeLocationMapIndex,
+  writeRespawnSchedule,
+} from '@/stores/world-persistence';
+import { useCombatStore, type CombatSnapshot } from '@/stores/combat-store';
 
 type TWorldState = {
   contentVersion: number;
   heroCoordinates: IHexCoordinates | null;
-  combatActive: boolean;
-  combatTurnSide: CombatTurnSide;
-  combatStepsLeft: number;
-  combatStoredStepsBeforeDefend: number | null;
-  combatTurnEndsAt: number | null;
-  combatActionMode: CombatActionMode;
-  combatAttackUsed: boolean;
-  combatDefendUsed: boolean;
-  combatMarkers: CombatMarker[];
-};
-
-type CombatTurnSide = 'hero' | 'enemy';
-type CombatActionMode = 'attack' | 'defend' | null;
-type CombatMarker = {
-  owner: CombatTurnSide;
-  coord: IHexCoordinates;
-  kind: 'defend' | 'attack-trace';
-  visible: boolean;
-  toolKey?: THeroToolKey | null;
-};
-
-const STORAGE_MAP_PREFIX = 'hexoflat:world:map:v1:';
-const STORAGE_STATE_PREFIX = 'hexoflat:world:state:v1:';
-const STORAGE_INDEX = 'hexoflat:world:index:v1';
-const STORAGE_RESPAWN_AT = 'hexoflat:world:respawn-at:v1';
-
-function newId(): string {
-  return crypto.randomUUID();
-}
-
-function getCreatureOf(hexobject: THexobject | null | undefined): ICreature | undefined {
-  return hexobject?.groupType === EHexobjectGroup.CREATURE ? hexobject.creature : undefined;
-}
-
-function initialCombatTurnSide(): CombatTurnSide {
-  return 'hero';
-}
+} & CombatSnapshot;
 
 function initialLocationKey(): LocationKey {
   return 'camping';
 }
 
-function readIndex(): Partial<Record<LocationKey, string>> {
-  const raw = localStorage.getItem(STORAGE_INDEX);
-  return raw ? (JSON.parse(raw) as Partial<Record<LocationKey, string>>) : {};
-}
-
-function writeIndex(index: Partial<Record<LocationKey, string>>) {
-  localStorage.setItem(STORAGE_INDEX, JSON.stringify(index));
-}
-
-function readRespawnSchedule(): Partial<Record<LocationKey, number>> {
-  const raw = localStorage.getItem(STORAGE_RESPAWN_AT);
-  return raw ? (JSON.parse(raw) as Partial<Record<LocationKey, number>>) : {};
-}
-
-function writeRespawnSchedule(schedule: Partial<Record<LocationKey, number>>) {
-  localStorage.setItem(STORAGE_RESPAWN_AT, JSON.stringify(schedule));
-}
+const STORAGE_MAP_PREFIX = 'hexoflat:world:map:v1:';
+const STORAGE_STATE_PREFIX = 'hexoflat:world:state:v1:';
 
 let worldTimer: number | null = null;
 
-function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
+export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
   const { events } = applyCommand(
     { map, heroes: {} },
     { type: 'WORLD_TICK', payload: { now } },
@@ -117,17 +68,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     heroCoordinates: null as IHexCoordinates | null,
     woodCollected: 0,
     isHeroMoving: false,
-    isEnemyTurnResolving: false,
     pendingCampingRespawn: false,
-    combatActive: false,
-    combatTurnSide: initialCombatTurnSide(),
-    combatStepsLeft: 0,
-    combatStoredStepsBeforeDefend: null as number | null,
-    combatTurnEndsAt: null as number | null,
-    combatActionMode: null as CombatActionMode,
-    combatAttackUsed: false,
-    combatDefendUsed: false,
-    combatMarkers: [] as CombatMarker[],
 
     currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
@@ -135,18 +76,35 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
   actions: {
     /**
-     * Builds the port context @hexoflat/engine's applyCommand needs. Combat/navigation
-     * (worldMap port) still resolve to this store's own methods — tracked follow-up
-     * debt per docs/MIGRATION-PLAN.md Phase 2 (staged scope).
+     * Builds the port context @hexoflat/engine's applyCommand needs. The
+     * `worldMap` port is an adapter over two stores: combat fields/actions
+     * come from combat-store, navigation (isLocationRespawning/goToLocation)
+     * stays here — tracked follow-up debt per docs/MIGRATION-PLAN.md Phase 2
+     * (staged scope) to move this off Pinia stores entirely.
      */
     buildEngineContext(): HexEngineActionContext {
+      const combatStore = useCombatStore();
+      const worldMap: IWorldMapPort = {
+        get combatActive() {
+          return combatStore.combatActive;
+        },
+        performHeroCombatAttack: (tile, toolKey) =>
+          combatStore.performHeroCombatAttack(tile, toolKey),
+        placeCombatDefendMarker: (target, toolKey) =>
+          combatStore.placeCombatDefendMarker(target, toolKey),
+        isLocationRespawning: (locationKey) => this.isLocationRespawning(locationKey),
+        getLocationRespawnRemainingMs: (locationKey) =>
+          this.getLocationRespawnRemainingMs(locationKey),
+        goToLocation: (locationKey) => this.goToLocation(locationKey),
+      };
+
       return {
         heroToolStore: useHeroToolStore(),
         hero: useHeroStore(),
         gathering: useGatheringStore(),
         inventory: useHeroInventoryStore(),
         events: useGameEventsStore(),
-        worldMap: this,
+        worldMap,
         navigate: (locationKey) => {
           void router
             .push({ name: ROUTES.WORLD, params: { locationKey } })
@@ -194,77 +152,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
       );
     },
 
-    getEnemyTilesSeeingHero(): HexTileModel[] {
-      if (!this.map || !this.heroCoordinates) return [];
-
-      return this.map.tiles
-        .filter((tile): tile is HexTileModel => !!tile?.hexobject)
-        .filter((tile) => tile.hexobject?.groupType === EHexobjectGroup.CREATURE)
-        .filter((tile) => getCreatureOf(tile.hexobject)?.faction === 'enemy')
-        .filter((tile) => {
-          const visionRange = getCreatureOf(tile.hexobject)?.visionRange ?? 3;
-          return hexDistance(tile.coordinates, this.heroCoordinates!) <= visionRange;
-        });
-    },
-
-    revealCombatVision() {
-      if (!this.map) return;
-
-      const enemies = this.getEnemyTilesSeeingHero();
-      if (!enemies.length) return;
-
-      for (const enemyTile of enemies) {
-        const visionRange =
-          enemyTile.hexobject?.groupType === EHexobjectGroup.CREATURE
-            ? (enemyTile.hexobject.creature.visionRange ?? 3)
-            : 3;
-
-        for (const tile of this.map.tiles) {
-          if (hexDistance(enemyTile.coordinates, tile.coordinates) <= visionRange) {
-            tile.isRevealed = true;
-          }
-        }
-      }
-    },
-
-    getCombatMoveBudget(): number {
-      return 10;
-    },
-
-    getEnemyAttackDamage(enemyCoords?: IHexCoordinates | null) {
-      if (!enemyCoords) return 1;
-      const enemyTile = this.getTileAt(enemyCoords);
-      if (enemyTile?.hexobject?.groupType !== EHexobjectGroup.CREATURE) return 1;
-      return enemyTile.hexobject.creature.attack ?? 1;
-    },
-
-    getCombatMarkerDefense(toolKey?: THeroToolKey | null) {
-      if (!toolKey) return 0;
-
-      const proto = getPrototype(toolKey);
-      if (!proto) return 0;
-
-      if (proto.groupType === EHexobjectGroup.EQUIPMENT) {
-        return Math.max(0, Number(proto.equipment.defense ?? 0));
-      }
-
-      if (proto.groupType === EHexobjectGroup.TOOL) {
-        return Math.max(0, Number(proto.tool.defense ?? 0));
-      }
-
-      return 0;
-    },
-
     clearStoredLocation(locationKey: LocationKey, mapId: string) {
       const heroStore = useHeroStore();
-      const index = readIndex();
+      const index = readLocationMapIndex();
 
       localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
       localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
 
       if (index[locationKey] === mapId) {
         delete index[locationKey];
-        writeIndex(index);
+        writeLocationMapIndex(index);
       }
 
       heroStore.forgetPosition(mapId);
@@ -272,7 +169,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     forgetStoredLocationPosition(locationKey: LocationKey) {
       const heroStore = useHeroStore();
-      const index = readIndex();
+      const index = readLocationMapIndex();
       const mapId = index[locationKey];
 
       if (!mapId) return;
@@ -311,7 +208,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!respawnAt) return;
       if (Date.now() < respawnAt) return;
 
-      const index = readIndex();
+      const index = readLocationMapIndex();
       const mapId = index[locationKey];
       if (mapId) {
         this.clearStoredLocation(locationKey, mapId);
@@ -319,16 +216,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       delete schedule[locationKey];
       writeRespawnSchedule(schedule);
-    },
-
-    hasLivingEnemyCreatures() {
-      if (!this.map) return false;
-
-      return this.map.tiles.some(
-        (tile) =>
-          tile.hexobject?.groupType === EHexobjectGroup.CREATURE &&
-          tile.hexobject.creature?.faction === 'enemy',
-      );
     },
 
     hasGraveMarker() {
@@ -367,10 +254,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
     async respawnHeroAtCamping() {
       const heroStore = useHeroStore();
       const events = useGameEventsStore();
+      const combatStore = useCombatStore();
       const defeatedLocationKey = this.currentLocationKey;
       const defeatedMapId = this.currentMapId;
 
-      this.endCombat();
+      combatStore.endCombat();
       if (defeatedMapId) {
         this.clearStoredLocation(defeatedLocationKey, defeatedMapId);
       }
@@ -396,532 +284,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       this.goToLocation('camping');
-    },
-
-    startCombat() {
-      if (this.combatActive) return;
-
-      this.combatActive = true;
-      this.revealCombatVision();
-      this.beginCombatTurn('hero');
-      this.saveToStorage();
-      useGameEventsStore().push('Combat', 'combat mode engaged', 'INFO');
-    },
-
-    endCombat() {
-      this.combatActive = false;
-      this.isEnemyTurnResolving = false;
-      this.combatTurnSide = 'hero';
-      this.combatStepsLeft = 0;
-      this.combatStoredStepsBeforeDefend = null;
-      this.combatTurnEndsAt = null;
-      this.combatActionMode = null;
-      this.combatAttackUsed = false;
-      this.combatDefendUsed = false;
-      this.combatMarkers = [];
-      this.saveToStorage();
-    },
-
-    beginCombatTurn(side: CombatTurnSide) {
-      this.combatTurnSide = side;
-      this.combatStepsLeft = this.getCombatMoveBudget();
-      this.combatStoredStepsBeforeDefend = null;
-      this.combatTurnEndsAt = Date.now() + 30_000;
-      this.combatActionMode = null;
-      this.combatAttackUsed = false;
-      this.combatDefendUsed = false;
-      this.combatMarkers = this.combatMarkers.filter((marker) => marker.owner !== side);
-      this.clearCombatAttackTrace();
-
-      useGameEventsStore().push('Combat', `${side} turn started`, 'INFO');
-
-      if (side === 'hero') {
-        this.syncEnemyAutoDefend();
-      }
-
-      this.saveToStorage();
-
-      if (side === 'enemy') {
-        void this.ensureEnemyTurnResolution();
-      }
-    },
-
-    advanceCombatTurn() {
-      if (!this.combatActive) return;
-      if (this.isEnemyTurnResolving) return;
-
-      const nextSide: CombatTurnSide = this.combatTurnSide === 'hero' ? 'enemy' : 'hero';
-      this.beginCombatTurn(nextSide);
-    },
-
-    beginCombatAction(mode: Exclude<CombatActionMode, null>) {
-      if (!this.combatActive) return;
-      if (this.combatTurnSide !== 'hero') return;
-      if (this.isEnemyTurnResolving || this.isHeroMoving) return;
-      if (mode === 'attack' && this.combatAttackUsed) return;
-      if (mode === 'defend' && this.combatDefendUsed) return;
-      this.combatActionMode = this.combatActionMode === mode ? null : mode;
-      this.saveToStorage();
-    },
-
-    revealCombatMarkers(owner: CombatTurnSide, kind: CombatMarker['kind'] = 'defend') {
-      let changed = false;
-
-      this.combatMarkers = this.combatMarkers.map((marker) => {
-        if (marker.owner !== owner || marker.kind !== kind || marker.visible) {
-          return marker;
-        }
-
-        changed = true;
-        return {
-          ...marker,
-          visible: true,
-        };
-      });
-
-      if (changed) {
-        this.saveToStorage();
-      }
-    },
-
-    clearCombatAttackTrace() {
-      const nextMarkers = this.combatMarkers.filter((marker) => marker.kind !== 'attack-trace');
-      if (nextMarkers.length === this.combatMarkers.length) return;
-
-      this.combatMarkers = nextMarkers;
-      this.saveToStorage();
-    },
-
-    cancelCombatAction() {
-      this.combatActionMode = null;
-      this.saveToStorage();
-    },
-
-    canPlaceCombatDefendMarker(target: IHexCoordinates): boolean {
-      if (!this.combatActive) return false;
-      if (this.combatTurnSide !== 'hero') return false;
-      if (this.isEnemyTurnResolving || this.isHeroMoving) return false;
-      if (!this.heroCoordinates) return false;
-      if (this.combatDefendUsed) return false;
-
-      const isAdjacent = getOddQNeighbors(this.heroCoordinates).some(
-        (n) => n.columnIndex === target.columnIndex && n.rowIndex === target.rowIndex,
-      );
-      if (!isAdjacent) return false;
-
-      const tile = this.getTileAt(target);
-      if (!tile || !tile.isRevealed) return false;
-      if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
-      if (tile.hexobject) return false;
-
-      return true;
-    },
-
-    placeCombatDefendMarker(target: IHexCoordinates, toolKey?: THeroToolKey | null): boolean {
-      if (!this.canPlaceCombatDefendMarker(target)) return false;
-
-      const capabilities = toolKey ? getToolCapabilities(toolKey) : {};
-      if (!capabilities.canBlock) return false;
-
-      this.combatMarkers = this.combatMarkers.filter((marker) => {
-        if (marker.owner !== 'hero') return true;
-
-        return (
-          marker.coord.columnIndex !== target.columnIndex ||
-          marker.coord.rowIndex !== target.rowIndex
-        );
-      });
-
-      this.combatMarkers.push({
-        owner: 'hero',
-        coord: { ...target },
-        kind: 'defend',
-        visible: true,
-        toolKey: toolKey ?? null,
-      });
-
-      this.combatDefendUsed = true;
-      this.combatStoredStepsBeforeDefend = this.combatStepsLeft;
-      this.combatStepsLeft = 0;
-      this.combatActionMode = null;
-      useGameEventsStore().push('Combat', 'hero placed shield', 'INFO');
-      this.saveToStorage();
-      return true;
-    },
-
-    removeCombatDefendMarker(target: IHexCoordinates): boolean {
-      if (!this.combatActive) return false;
-      if (this.combatTurnSide !== 'hero') return false;
-      if (this.isEnemyTurnResolving || this.isHeroMoving) return false;
-
-      const marker = this.combatMarkers.find(
-        (item) =>
-          item.owner === 'hero' &&
-          item.kind === 'defend' &&
-          item.coord.columnIndex === target.columnIndex &&
-          item.coord.rowIndex === target.rowIndex,
-      );
-      if (!marker) return false;
-
-      this.combatMarkers = this.combatMarkers.filter((item) => item !== marker);
-      this.combatDefendUsed = false;
-      this.combatStepsLeft = this.combatStoredStepsBeforeDefend ?? this.combatStepsLeft;
-      this.combatStoredStepsBeforeDefend = null;
-      this.combatActionMode = null;
-      useGameEventsStore().push('Combat', 'hero removed shield', 'INFO');
-      this.saveToStorage();
-      return true;
-    },
-
-    syncEnemyAutoDefend() {
-      if (
-        !this.combatActive ||
-        this.combatTurnSide !== 'hero' ||
-        !this.map ||
-        !this.heroCoordinates
-      )
-        return;
-
-      const adjacentEnemies = getOddQNeighbors(this.heroCoordinates)
-        .map((coord) => this.getTileAt(coord))
-        .filter((tile): tile is HexTileModel => !!tile)
-        .filter((tile) => {
-          const obj = tile.hexobject;
-          return obj?.groupType === EHexobjectGroup.CREATURE && obj.creature.faction === 'enemy';
-        });
-
-      if (!adjacentEnemies.length) return;
-
-      const alreadyHasEnemyShield = this.combatMarkers.some(
-        (marker) => marker.owner === 'enemy' && marker.kind === 'defend',
-      );
-      if (alreadyHasEnemyShield) return;
-
-      const anchorEnemy = adjacentEnemies[0];
-      const candidates = getOddQNeighbors(anchorEnemy.coordinates)
-        .map((coord) => this.getTileAt(coord))
-        .filter((tile): tile is HexTileModel => !!tile);
-
-      if (!candidates.length) return;
-
-      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-
-      this.combatMarkers.push({
-        owner: 'enemy',
-        coord: { ...chosen.coordinates },
-        kind: 'defend',
-        visible: false,
-        toolKey: HEXOBJECT_KEYS.SHIELD,
-      });
-
-      useGameEventsStore().push('Combat', 'enemy auto-raised shield', 'INFO');
-      this.saveToStorage();
-    },
-
-    getEnemyCombatActorTile(): HexTileModel | null {
-      if (!this.map || !this.heroCoordinates) return null;
-
-      const enemyTiles = this.map.tiles
-        .filter((tile): tile is HexTileModel => !!tile.hexobject)
-        .filter((tile) => {
-          const obj = tile.hexobject;
-          return obj?.groupType === EHexobjectGroup.CREATURE && obj.creature.faction === 'enemy';
-        })
-        .sort(
-          (a, b) =>
-            hexDistance(a.coordinates, this.heroCoordinates!) -
-            hexDistance(b.coordinates, this.heroCoordinates!),
-        );
-
-      return enemyTiles[0] ?? null;
-    },
-
-    async moveEnemyAlongRoute(enemyTile: HexTileModel, route: IHexCoordinates[]) {
-      if (!route.length || !enemyTile.hexobject) return enemyTile;
-
-      let currentTile = enemyTile;
-      const enemyObject = enemyTile.hexobject;
-
-      await executeMovementRoute(route, (coord) => {
-        const nextTile = this.getTileAt(coord);
-        if (!nextTile || nextTile === currentTile) return;
-
-        currentTile.hexobject = null;
-        nextTile.hexobject = enemyObject;
-        currentTile = nextTile;
-        this.combatStepsLeft = Math.max(0, this.combatStepsLeft - 1);
-        this.clearCombatAttackTrace();
-        this.revealAroundHero();
-        this.saveToStorage();
-      });
-
-      return currentTile;
-    },
-
-    async ensureEnemyTurnResolution() {
-      const heroStore = useHeroStore();
-      const events = useGameEventsStore();
-
-      if (
-        !this.combatActive ||
-        this.combatTurnSide !== 'enemy' ||
-        !this.map ||
-        !this.heroCoordinates
-      )
-        return;
-      if (this.isEnemyTurnResolving || this.isHeroMoving) return;
-
-      const map = this.map as HexMapModel;
-      const enemyTile = this.getEnemyCombatActorTile();
-      if (!enemyTile?.hexobject) {
-        this.advanceCombatTurn();
-        return;
-      }
-
-      this.isEnemyTurnResolving = true;
-
-      try {
-        const attackCandidates = getOddQNeighbors(this.heroCoordinates)
-          .map((coord) => {
-            const tile = this.getTileAt(coord);
-            if (!tile) return null;
-
-            const isCurrentEnemyTile =
-              coord.columnIndex === enemyTile.coordinates.columnIndex &&
-              coord.rowIndex === enemyTile.coordinates.rowIndex;
-            if (isCurrentEnemyTile) {
-              return {
-                coord: { ...coord },
-                route: [] as IHexCoordinates[],
-              };
-            }
-
-            if (!tile.isRevealed) return null;
-            if (tile.hexobject?.collision === EHexCollision.SOLID) return null;
-
-            const path = findShortestPath(map, enemyTile.coordinates, coord, this.combatStepsLeft);
-            if (!path || path.length < 2) return null;
-
-            return {
-              coord: { ...coord },
-              route: path.slice(1),
-            };
-          })
-          .filter(
-            (candidate): candidate is { coord: IHexCoordinates; route: IHexCoordinates[] } =>
-              !!candidate,
-          );
-
-        if (!attackCandidates.length) {
-          this.combatStepsLeft = 0;
-          this.saveToStorage();
-          return;
-        }
-
-        const chosenAttack = attackCandidates[Math.floor(Math.random() * attackCandidates.length)];
-        let currentEnemyTile = await this.moveEnemyAlongRoute(enemyTile, chosenAttack.route);
-
-        await new Promise((resolve) => window.setTimeout(resolve, 5_000));
-
-        const blockingMarker = this.combatMarkers.find(
-          (marker) =>
-            marker.owner === 'hero' &&
-            marker.kind === 'defend' &&
-            marker.coord.columnIndex === chosenAttack.coord.columnIndex &&
-            marker.coord.rowIndex === chosenAttack.coord.rowIndex,
-        );
-
-        this.combatMarkers = this.combatMarkers.filter(
-          (marker) => !(marker.owner === 'enemy' && marker.kind === 'attack-trace'),
-        );
-        this.combatMarkers.push({
-          owner: 'enemy',
-          coord: { ...currentEnemyTile.coordinates },
-          kind: 'attack-trace',
-          visible: true,
-          toolKey: null,
-        });
-        this.saveToStorage();
-        this.revealCombatMarkers('hero');
-
-        const rawDamage = this.getEnemyAttackDamage(currentEnemyTile.coordinates);
-        const blockDefense = blockingMarker
-          ? this.getCombatMarkerDefense(blockingMarker.toolKey)
-          : 0;
-        const finalDamage = Math.max(0, Number((rawDamage - blockDefense).toFixed(1)));
-
-        if (blockingMarker && finalDamage <= 0) {
-          events.push(
-            'Combat',
-            `${getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy'} blocked by shield [dmg:0]`,
-            'BATTLE',
-          );
-        } else {
-          heroStore.takeDamage(finalDamage);
-          if (blockingMarker) {
-            events.push(
-              getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy',
-              `broke through block for [dmg:${finalDamage.toFixed(1)}]`,
-              'BATTLE',
-            );
-          } else {
-            events.push(
-              getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy',
-              `hit ${heroStore.hero?.name ?? 'Hero'} for [dmg:${finalDamage.toFixed(1)}]`,
-              'BATTLE',
-            );
-          }
-
-          if ((heroStore.hero.currentHealth ?? 0) <= 0) {
-            await this.respawnHeroAtCamping();
-            return;
-          }
-        }
-
-        const retreatCandidates = map.tiles
-          .filter((tile) => tile.isRevealed)
-          .filter((tile) => !tile.hexobject || tile === currentEnemyTile)
-          .filter((tile) => hexDistance(tile.coordinates, this.heroCoordinates!) > 1)
-          .map((tile) => {
-            const isCurrentEnemyTile =
-              tile.coordinates.columnIndex === currentEnemyTile.coordinates.columnIndex &&
-              tile.coordinates.rowIndex === currentEnemyTile.coordinates.rowIndex;
-            if (isCurrentEnemyTile) return null;
-
-            const path = findShortestPath(
-              map,
-              currentEnemyTile.coordinates,
-              tile.coordinates,
-              this.combatStepsLeft,
-            );
-            if (!path || path.length < 2) return null;
-
-            return {
-              coord: { ...tile.coordinates },
-              route: path.slice(1),
-            };
-          })
-          .filter(
-            (candidate): candidate is { coord: IHexCoordinates; route: IHexCoordinates[] } =>
-              !!candidate,
-          );
-
-        if (retreatCandidates.length && this.combatStepsLeft > 0) {
-          const chosenRetreat =
-            retreatCandidates[Math.floor(Math.random() * retreatCandidates.length)];
-          currentEnemyTile = await this.moveEnemyAlongRoute(currentEnemyTile, chosenRetreat.route);
-          events.push(
-            'Combat',
-            `${getCreatureOf(currentEnemyTile.hexobject)?.name ?? 'Enemy'} retreated`,
-            'INFO',
-          );
-        }
-
-        this.combatStepsLeft = 0;
-        this.saveToStorage();
-      } finally {
-        this.isEnemyTurnResolving = false;
-
-        if (this.combatActive && this.combatTurnSide === 'enemy') {
-          this.advanceCombatTurn();
-        }
-      }
-    },
-
-    performHeroCombatAttack(
-      target: HexTileModel,
-      toolKey: string,
-    ): { ok: boolean; message: string } {
-      const heroStore = useHeroStore();
-
-      if (!this.combatActive) return { ok: false, message: 'Combat is not active.' };
-      if (this.combatTurnSide !== 'hero') return { ok: false, message: 'Not hero turn.' };
-      if (this.isEnemyTurnResolving || this.isHeroMoving)
-        return { ok: false, message: 'Wait until enemy turn finishes.' };
-      if (this.combatAttackUsed) return { ok: false, message: 'Attack already used this turn.' };
-      const capabilities = getToolCapabilities(toolKey as THeroToolKey);
-      if (!capabilities.canAttack) return { ok: false, message: 'Need a weapon to attack.' };
-      if (!this.heroCoordinates) return { ok: false, message: 'Hero position is missing.' };
-
-      const isAdjacent = getOddQNeighbors(this.heroCoordinates).some(
-        (n) =>
-          n.columnIndex === target.coordinates.columnIndex &&
-          n.rowIndex === target.coordinates.rowIndex,
-      );
-      if (!isAdjacent) return { ok: false, message: 'Target is not adjacent.' };
-
-      const obj = target.hexobject;
-      if (!obj || obj.groupType !== EHexobjectGroup.CREATURE || obj.creature?.faction !== 'enemy') {
-        return { ok: false, message: 'Target is not an enemy creature.' };
-      }
-      const targetKey = obj.hexobjectKey;
-
-      const blockingMarker = this.combatMarkers.find(
-        (marker) =>
-          marker.owner === 'enemy' &&
-          marker.kind === 'defend' &&
-          marker.coord.columnIndex === this.heroCoordinates!.columnIndex &&
-          marker.coord.rowIndex === this.heroCoordinates!.rowIndex,
-      );
-
-      this.combatAttackUsed = true;
-      this.combatActionMode = null;
-      this.revealCombatMarkers('enemy');
-
-      const attacker = getPrototype(toolKey as THexobjectKey);
-      const attackMultiplier =
-        attacker?.groupType === EHexobjectGroup.EQUIPMENT
-          ? (attacker.weapon?.attackMultiplier ?? 1)
-          : attacker?.groupType === EHexobjectGroup.TOOL
-            ? (attacker.tool.attackMultiplier ?? 1)
-            : 1;
-      const rawDamage = Math.max(
-        0.1,
-        Number(((heroStore.hero?.attack ?? 8) * attackMultiplier).toFixed(1)),
-      );
-      const blockDefense = blockingMarker ? this.getCombatMarkerDefense(blockingMarker.toolKey) : 0;
-      const damage = Math.max(0, Number((rawDamage - blockDefense).toFixed(1)));
-
-      if (blockingMarker && damage <= 0) {
-        useGameEventsStore().push(
-          'Combat',
-          `${obj.creature.name} blocked the hit [dmg:0]`,
-          'BATTLE',
-        );
-        return { ok: true, message: 'Attack was blocked.' };
-      }
-
-      obj.creature.hp = normalizeHealthValue(obj.creature.hp - damage);
-      if (blockingMarker) {
-        useGameEventsStore().push(
-          heroStore.hero?.name ?? 'Hero',
-          `broke through block for [dmg:${damage.toFixed(1)}]`,
-          'BATTLE',
-        );
-      } else {
-        useGameEventsStore().push(
-          heroStore.hero?.name ?? 'Hero',
-          `hit ${obj.creature.name} for [dmg:${damage.toFixed(1)}]`,
-          'BATTLE',
-        );
-      }
-
-      if (obj.creature.hp <= 0) {
-        target.hexobject =
-          this.currentLocationKey === 'cave' && targetKey === HEXOBJECT_KEYS.SKELETOR
-            ? HexObjectFactory.create(HEXOBJECT_KEYS.GRAVE, target.coordinates)
-            : null;
-        heroStore.hero?.addKilled();
-        useGameEventsStore().push('Combat', `${obj.creature.name} was defeated`, 'INFO');
-      }
-
-      if (!this.hasLivingEnemyCreatures()) {
-        this.endCombat();
-        useGameEventsStore().push('Combat', 'area cleared', 'INFO');
-      }
-
-      this.saveToStorage();
-      return { ok: true, message: 'Attack landed.' };
     },
 
     bootstrapWorld() {
@@ -1015,12 +377,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       this.syncLocationRespawn(locationKey);
 
-      const index = readIndex();
-      const mapId = preferredMapId ?? index[locationKey] ?? newId();
+      const index = readLocationMapIndex();
+      const mapId = preferredMapId ?? index[locationKey] ?? newMapId();
 
       if (!index[locationKey]) {
         index[locationKey] = mapId;
-        writeIndex(index);
+        writeLocationMapIndex(index);
       }
 
       this.currentLocationKey = locationKey;
@@ -1048,6 +410,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
     // ======================================================
 
     loadFromStorage(mapId: string) {
+      const combatStore = useCombatStore();
+
       const savedMap = localStorage.getItem(STORAGE_MAP_PREFIX + mapId);
       const parsedMap = savedMap
         ? (JSON.parse(savedMap) as { contentVersion?: number; map?: ISerializedHexMap })
@@ -1075,22 +439,24 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       if (raw && raw.contentVersion === CONTENT_VERSION) {
         this.heroCoordinates = raw.heroCoordinates ?? null;
-        this.combatActive = raw.combatActive ?? false;
-        this.combatTurnSide = raw.combatTurnSide ?? 'hero';
-        this.combatStepsLeft = raw.combatStepsLeft ?? 0;
-        this.combatStoredStepsBeforeDefend = raw.combatStoredStepsBeforeDefend ?? null;
-        this.combatTurnEndsAt = raw.combatTurnEndsAt ?? null;
-        this.combatActionMode = raw.combatActionMode ?? null;
-        this.combatAttackUsed = raw.combatAttackUsed ?? false;
-        this.combatDefendUsed = raw.combatDefendUsed ?? false;
-        this.combatMarkers =
-          raw.combatMarkers?.map((marker) => ({
-            owner: marker.owner,
-            coord: { ...marker.coord },
-            kind: marker.kind,
-            visible: marker.visible ?? true,
-            toolKey: marker.toolKey ?? null,
-          })) ?? [];
+        combatStore.hydrate({
+          combatActive: raw.combatActive ?? false,
+          combatTurnSide: raw.combatTurnSide ?? 'hero',
+          combatStepsLeft: raw.combatStepsLeft ?? 0,
+          combatStoredStepsBeforeDefend: raw.combatStoredStepsBeforeDefend ?? null,
+          combatTurnEndsAt: raw.combatTurnEndsAt ?? null,
+          combatActionMode: raw.combatActionMode ?? null,
+          combatAttackUsed: raw.combatAttackUsed ?? false,
+          combatDefendUsed: raw.combatDefendUsed ?? false,
+          combatMarkers:
+            raw.combatMarkers?.map((marker) => ({
+              owner: marker.owner,
+              coord: { ...marker.coord },
+              kind: marker.kind,
+              visible: marker.visible ?? true,
+              toolKey: marker.toolKey ?? null,
+            })) ?? [],
+        });
       } else {
         if (raw) {
           console.warn(
@@ -1100,15 +466,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         }
         this.heroCoordinates = null;
         this.woodCollected = 0;
-        this.combatActive = false;
-        this.combatTurnSide = 'hero';
-        this.combatStepsLeft = 0;
-        this.combatStoredStepsBeforeDefend = null;
-        this.combatTurnEndsAt = null;
-        this.combatActionMode = null;
-        this.combatAttackUsed = false;
-        this.combatDefendUsed = false;
-        this.combatMarkers = [];
+        combatStore.resetToDefaults();
       }
 
       if (!this.map) return;
@@ -1144,8 +502,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       this.revealAroundHero();
-      if (this.combatActive) {
-        this.revealCombatVision();
+      if (combatStore.combatActive) {
+        combatStore.revealCombatVision();
       }
     },
 
@@ -1163,21 +521,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const state: TWorldState = {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: this.heroCoordinates,
-        combatActive: this.combatActive,
-        combatTurnSide: this.combatTurnSide,
-        combatStepsLeft: this.combatStepsLeft,
-        combatStoredStepsBeforeDefend: this.combatStoredStepsBeforeDefend,
-        combatTurnEndsAt: this.combatTurnEndsAt,
-        combatActionMode: this.combatActionMode,
-        combatAttackUsed: this.combatAttackUsed,
-        combatDefendUsed: this.combatDefendUsed,
-        combatMarkers: this.combatMarkers.map((marker) => ({
-          owner: marker.owner,
-          coord: { ...marker.coord },
-          kind: marker.kind,
-          visible: marker.visible,
-          toolKey: marker.toolKey ?? null,
-        })),
+        ...useCombatStore().toSnapshot(),
       };
 
       localStorage.setItem(STORAGE_STATE_PREFIX + targetMapId, JSON.stringify(state));
@@ -1269,11 +613,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const heroToolStore = useHeroToolStore();
       const heroStore = useHeroStore();
       const events = useGameEventsStore();
+      const combatStore = useCombatStore();
 
       if (!this.map || !this.heroCoordinates) return false;
       if (heroToolStore.isDragging || this.isHeroMoving) return false;
-      if (this.combatActive && this.combatTurnSide !== 'hero') return false;
-      if (this.combatActive && this.combatStepsLeft <= 0) return false;
+      if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return false;
+      if (combatStore.combatActive && combatStore.combatStepsLeft <= 0) return false;
 
       const map = this.map as HexMapModel;
       const tile = map.tiles.find(
@@ -1287,8 +632,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       let path: IHexCoordinates[] | null | undefined;
 
-      if (this.combatActive) {
-        const moveSteps = this.combatStepsLeft;
+      if (combatStore.combatActive) {
+        const moveSteps = combatStore.combatStepsLeft;
         const reachable = getReachableTileDistances(map, this.heroCoordinates, moveSteps);
         const targetKey = coordinateKey(target);
         if (!reachable.has(targetKey)) return false;
@@ -1334,16 +679,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
         await executeMovementRoute(route, (coord) => {
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;
-          if (this.combatActive) {
-            this.combatStepsLeft = Math.max(0, this.combatStepsLeft - 1);
-            this.clearCombatAttackTrace();
+          if (combatStore.combatActive) {
+            combatStore.combatStepsLeft = Math.max(0, combatStore.combatStepsLeft - 1);
+            combatStore.clearCombatAttackTrace();
           }
           heroStore.hero?.makeStep();
           heroStore.saveProgressToStorage();
 
           this.revealAroundHero();
-          if (this.combatActive) {
-            this.syncEnemyAutoDefend();
+          if (combatStore.combatActive) {
+            combatStore.syncEnemyAutoDefend();
           }
           this.saveToStorage();
 
@@ -1351,7 +696,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
             heroStore.rememberPosition(this.currentMapId, this.heroCoordinates);
           }
 
-          if (this.combatActive && this.combatStepsLeft <= 0) {
+          if (combatStore.combatActive && combatStore.combatStepsLeft <= 0) {
             return false;
           }
         });
@@ -1437,19 +782,19 @@ export const useWorldMapStore = defineStore('world-map-store', {
     clearAllWorlds() {
       this.stopWorldLoop();
 
-      const index = readIndex();
+      const index = readLocationMapIndex();
       for (const mapId of Object.values(index)) {
         localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
         localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
       }
 
-      localStorage.removeItem(STORAGE_INDEX);
+      clearLocationMapIndex();
 
       this.map = null;
       this.heroCoordinates = null;
       this.currentMapId = null;
       this.currentLocationKey = 'camping';
-      this.endCombat();
+      useCombatStore().endCombat();
     },
   },
 });

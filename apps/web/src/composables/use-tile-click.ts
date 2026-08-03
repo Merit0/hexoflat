@@ -2,6 +2,7 @@ import { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { EHexobjectGroup, THexobject } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useCombatStore } from '@/stores/combat-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 
 function describeHexobject(hexobject: THexobject): string {
@@ -44,6 +45,7 @@ function logTileClick(tile: IHexTile) {
 export function useTileClick() {
   const overlayStore = useOverlayStore();
   const worldMapStore = useWorldMapStore();
+  const combatStore = useCombatStore();
   const heroToolStore = useHeroToolStore();
 
   async function handleTileClick(tile: IHexTile) {
@@ -55,14 +57,14 @@ export function useTileClick() {
     // }
 
     if (
-      worldMapStore.combatActive &&
-      (worldMapStore.combatTurnSide !== 'hero' || worldMapStore.isEnemyTurnResolving)
+      combatStore.combatActive &&
+      (combatStore.combatTurnSide !== 'hero' || combatStore.isEnemyTurnResolving)
     ) {
       return;
     }
 
-    if (worldMapStore.combatActive && worldMapStore.combatTurnSide === 'hero') {
-      const removed = worldMapStore.removeCombatDefendMarker(tile.coordinates);
+    if (combatStore.combatActive && combatStore.combatTurnSide === 'hero') {
+      const removed = combatStore.removeCombatDefendMarker(tile.coordinates);
       if (removed) return;
     }
 

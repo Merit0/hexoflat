@@ -21,6 +21,7 @@ import {
 } from '@/render/layers/combat-marker-layer';
 import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useCombatStore } from '@/stores/combat-store';
 
 export interface UseHexBoardOptions {
   canvasRef: Ref<HTMLCanvasElement | null>;
@@ -75,6 +76,7 @@ function waitForValidMapBounds(
 
 export function useHexBoard(opts: UseHexBoardOptions) {
   const worldStore = useWorldMapStore();
+  const combatStore = useCombatStore();
 
   let board: HexBoardApp | null = null;
   let tilesLayer: TilesLayer | null = null;
@@ -104,6 +106,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       worldContainer: board.worldContainer,
       getTileSize: () => opts.domTileSize.value,
       worldStore,
+      combatStore,
       onTileHover: opts.onTileHover,
       onTileClick: opts.onTileClick,
     });
@@ -154,7 +157,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
 
     stopWatchers.push(
       watch(
-        () => worldStore.combatMarkers,
+        () => combatStore.combatMarkers,
         () => tilesLayer?.syncDefendMarkers(opts.tiles.value),
         { deep: true },
       ),

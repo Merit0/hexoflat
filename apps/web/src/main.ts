@@ -6,8 +6,6 @@ import { VueQueryPlugin } from '@tanstack/vue-query';
 import router from './router';
 import { validateContent } from '@hexoflat/engine/content/validate-content';
 import { queryClient } from './api/query-client';
-import { setAuthToken } from './api/auth-token';
-import { useUserStore } from './stores/user-store';
 
 if (import.meta.env.DEV) {
   validateContent();
@@ -20,6 +18,11 @@ const pinia = createPinia();
  * - Persist ONLY selected stores (whitelist)
  * - Avoid persisting world-map-store because it has its own storage system (hexoflat:world:*)
  * - Avoid persisting ephemeral UI stores (heroTool, overlays, etc.)
+ * - Never persist the `user` store: it carries the JWT accessToken, and an
+ *   XSS-readable localStorage token is a full session hijack. The token now
+ *   only ever lives in memory (api/auth-token.ts) — a page refresh logs the
+ *   user out, which is the accepted trade-off until a proper httpOnly-cookie
+ *   session exists.
  */
 pinia.use((context) => {
   const serializer = {
@@ -32,7 +35,6 @@ pinia.use((context) => {
   // ✅ Persist only what you really need
   // Add more ids here ONLY if you are sure the store is safe to persist.
   const PERSIST_STORES = new Set<string>([
-    'user',
     'hero',
     // "settings", // example
   ]);
@@ -63,11 +65,5 @@ pinia.use((context) => {
 });
 
 const app = createApp(App).use(router).use(pinia).use(VueQueryPlugin, { queryClient });
-
-// Seed the in-memory token holder (api/auth-token.ts) from the just-hydrated
-// user store, synchronously, before mounting — api/client.ts reads from
-// there, not from localStorage directly, to avoid racing the persist plugin's
-// async flush on the very first request after login/register.
-setAuthToken(useUserStore(pinia).accessToken);
 
 app.mount('#app');

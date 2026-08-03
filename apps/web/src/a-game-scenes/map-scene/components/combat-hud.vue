@@ -1,5 +1,5 @@
 <template>
-  <aside v-if="worldStore.combatActive" class="combat-hud" data-testid="combat-hud">
+  <aside v-if="combatStore.combatActive" class="combat-hud" data-testid="combat-hud">
     <div class="combat-hud__title">Combat Mode</div>
 
     <div class="combat-hud__row">
@@ -7,7 +7,7 @@
         >Turn: <b>{{ actorLabel }}</b></span
       >
       <span class="chip" data-testid="combat-hud-steps-left-chip"
-        >Steps Left: <b>{{ worldStore.combatStepsLeft }}</b></span
+        >Steps Left: <b>{{ combatStore.combatStepsLeft }}</b></span
       >
       <span class="chip"
         >Move Budget: <b>{{ moveBudget }}</b></span
@@ -18,11 +18,11 @@
     </div>
 
     <div class="combat-hud__row">
-      <span v-if="worldStore.combatActionMode" class="chip" data-testid="combat-hud-mode-chip"
-        >Mode: <b>{{ worldStore.combatActionMode.toUpperCase() }}</b></span
+      <span v-if="combatStore.combatActionMode" class="chip" data-testid="combat-hud-mode-chip"
+        >Mode: <b>{{ combatStore.combatActionMode.toUpperCase() }}</b></span
       >
       <span v-else class="chip" data-testid="combat-hud-mode-chip">Mode: <b>NONE</b></span>
-      <span v-if="worldStore.combatTurnSide === 'enemy'" class="chip">Enemy is acting</span>
+      <span v-if="combatStore.combatTurnSide === 'enemy'" class="chip">Enemy is acting</span>
     </div>
 
     <div class="combat-hud__actions">
@@ -46,7 +46,7 @@
         data-testid="combat-hud-next-turn-button"
         type="button"
         :disabled="!heroControlsEnabled"
-        @click="worldStore.advanceCombatTurn()"
+        @click="combatStore.advanceCombatTurn()"
       >
         Next Turn
       </button>
@@ -58,40 +58,42 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useCombatStore } from '@/stores/combat-store';
 import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 
 const worldStore = useWorldMapStore();
+const combatStore = useCombatStore();
 const heroToolStore = useHeroToolStore();
 const now = ref(Date.now());
 let timer: number | null = null;
 let lastAdvancedAt: number | null = null;
 
-const moveBudget = computed(() => worldStore.getCombatMoveBudget());
-const actorLabel = computed(() => (worldStore.combatTurnSide === 'hero' ? 'Hero' : 'Enemy'));
+const moveBudget = computed(() => combatStore.getCombatMoveBudget());
+const actorLabel = computed(() => (combatStore.combatTurnSide === 'hero' ? 'Hero' : 'Enemy'));
 const heroControlsEnabled = computed(() => {
   return (
-    worldStore.combatTurnSide === 'hero' &&
-    !worldStore.isEnemyTurnResolving &&
+    combatStore.combatTurnSide === 'hero' &&
+    !combatStore.isEnemyTurnResolving &&
     !worldStore.isHeroMoving
   );
 });
 const attackReady = computed(() => {
   return (
     heroControlsEnabled.value &&
-    !worldStore.combatAttackUsed &&
+    !combatStore.combatAttackUsed &&
     !!heroToolStore.activeTool &&
     !!getToolCapabilities(heroToolStore.activeTool).canAttack &&
     heroToolStore.isDragging
   );
 });
 const secondsLeft = computed(() => {
-  const endsAt = worldStore.combatTurnEndsAt;
-  if (!worldStore.combatActive || !endsAt) return 0;
+  const endsAt = combatStore.combatTurnEndsAt;
+  if (!combatStore.combatActive || !endsAt) return 0;
   return Math.max(0, Math.ceil((endsAt - now.value) / 1000));
 });
 
 watch(
-  () => worldStore.combatActive,
+  () => combatStore.combatActive,
   (active) => {
     if (timer) {
       window.clearInterval(timer);
@@ -108,22 +110,26 @@ watch(
 );
 
 watch(
-  () => [worldStore.combatActive, secondsLeft.value, worldStore.combatTurnEndsAt] as const,
+  () => [combatStore.combatActive, secondsLeft.value, combatStore.combatTurnEndsAt] as const,
   ([active, seconds, endsAt]) => {
     if (!active || seconds > 0 || !endsAt) return;
     if (lastAdvancedAt === endsAt) return;
 
     lastAdvancedAt = endsAt;
-    worldStore.advanceCombatTurn();
+    combatStore.advanceCombatTurn();
   },
 );
 
 watch(
   () =>
-    [worldStore.combatActive, worldStore.combatTurnSide, worldStore.isEnemyTurnResolving] as const,
+    [
+      combatStore.combatActive,
+      combatStore.combatTurnSide,
+      combatStore.isEnemyTurnResolving,
+    ] as const,
   ([active, side, resolving]) => {
     if (!active || side !== 'enemy' || resolving) return;
-    void worldStore.ensureEnemyTurnResolution();
+    void combatStore.ensureEnemyTurnResolution();
   },
   { immediate: true },
 );

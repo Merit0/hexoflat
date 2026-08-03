@@ -109,16 +109,18 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
   [EHexActionType.USE]: (tile, action, ctx) => {
     if (handleCancelled(action, ctx)) return true;
 
-    if (action.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+    const heal = getMeta(action.hexobjectKey)?.heal;
+
+    if (heal) {
       const heroStore = ctx.hero;
       const healAmount = Math.max(0, Number(action.meta?.healAmount ?? 0));
 
       if (healAmount > 0) {
         heroStore.healHero(healAmount);
-        logAction(ctx, 'Recovered by the fire');
+        logAction(ctx, 'Recovered while resting');
       }
 
-      const heroIsStillUsingFireplace =
+      const heroIsStillResting =
         ctx.heroToolStore.isDragging &&
         ctx.heroToolStore.activeTool === HEXOBJECT_KEYS.HAND &&
         ctx.heroToolStore.hover?.columnIndex === tile.coordinates.columnIndex &&
@@ -127,7 +129,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
       const hasMoreHealthToRecover =
         (heroStore.hero.currentHealth ?? 0) < (heroStore.hero.maxHealth ?? 100);
 
-      if (heroIsStillUsingFireplace && hasMoreHealthToRecover) {
+      if (heroIsStillResting && hasMoreHealthToRecover) {
         const nextEndsAt = ctx.now + 10_000;
 
         tile.pendingAction = {
@@ -136,7 +138,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
           endsAt: nextEndsAt,
           hexobjectKey: action.hexobjectKey,
           cancelled: false,
-          meta: { healAmount: 1 },
+          meta: { healAmount: heal.amountPerTick },
         };
 
         ctx.heroToolStore.unlockTool();

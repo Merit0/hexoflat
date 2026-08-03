@@ -27,6 +27,11 @@ const enterSchema = z.object({
   locationKey: z.string(),
 });
 
+const healSchema = z.object({
+  amountPerTick: z.number(),
+  radius: z.number().optional(),
+});
+
 const baseContentFields = {
   hexobjectKey: hexobjectKeySchema,
   isInteractable: z.boolean(),
@@ -40,6 +45,10 @@ const baseContentFields = {
   yields: z.record(z.string(), z.number()).optional(),
   equip: z.object({ slot: z.enum(EQUIP_SLOTS) }).optional(),
   enter: enterSchema.optional(),
+  // Any object with this field is a valid USE target for the generic
+  // rest-and-heal flow — see action-starters/finishers-registry.ts's USE
+  // handlers. No hexobjectKey check needed to add a new one.
+  heal: healSchema.optional(),
 };
 
 const resourceSchema = z.object({
@@ -194,4 +203,5 @@ export interface IHexobjectMeta {
   equip?: { slot: TEquipSlot };
   yields?: THexYields;
   enter?: { type: 'WORLD'; locationKey: LocationKey };
+  heal?: { amountPerTick: number; radius?: number };
 }

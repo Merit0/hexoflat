@@ -17,6 +17,7 @@ export const HEXOBJECT_KEYS = {
   ENERGY_BOTTLE: 'energy-bottle',
   MANA_BOTTLE: 'mana-bottle',
   FIREPLACE: 'fireplace',
+  HEALING_SPRING: 'healing-spring',
   WOOD_AND_LEAVES: 'wood-and-leaves',
   GRAVE: 'grave',
 } as const;

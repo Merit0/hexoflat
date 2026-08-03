@@ -10,40 +10,76 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: Lint, typecheck, test, build
+  audit:
+    name: Audit
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run audit
+      - name: Audit (dev dependencies, informational)
+        continue-on-error: true
+        run: pnpm audit --audit-level=high
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run lint
+      - run: pnpm format:check
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+  type-checks:
+    name: Type checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run typecheck
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  app-build:
+    name: App build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build
 
-      - name: Lint
-        run: pnpm turbo run lint
+  unit-tests:
+    name: Unit tests (engine + web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run test --filter=@hexoflat/engine --filter=@hexoflat/web
 
-      - name: Format check
-        run: pnpm format:check
+  api-tests:
+    name: API tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run test --filter=@hexoflat/api
 
-      - name: Typecheck
-        run: pnpm turbo run typecheck
-
-      - name: Test
-        run: pnpm turbo run test
-
-      - name: Build
-        run: pnpm turbo run build
-
-  e2e:
-    name: Playwright e2e (apps/web + apps/api + Postgres)
+  e2e-tests:
+    name: E2E tests
     uses: ./.github/workflows/e2e-tests.yml

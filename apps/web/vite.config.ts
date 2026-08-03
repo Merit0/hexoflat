@@ -19,10 +19,15 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
+    // happy-dom, not 'node': store tests need real localStorage/window
+    // timers (Pinia stores here call window.setInterval/setTimeout and
+    // localStorage directly, not through an injectable port yet).
+    environment: 'happy-dom',
+    setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.{test,spec}.ts'],
-    // Content tests moved to packages/engine (Phase 3); apps/web has no unit
-    // tests yet, so allow an empty run instead of failing CI.
+    // Content tests moved to packages/engine (Phase 3); apps/web is only
+    // gaining unit tests now, so allow an empty run instead of failing CI
+    // for any package/dir that still has none.
     passWithNoTests: true,
     coverage: {
       provider: 'v8',
