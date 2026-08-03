@@ -13,6 +13,7 @@ import { getReachableTileDistances } from '../hero-movement/reachable-range-serv
 import { findShortestPath } from '../hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '../hero-movement/scout-progression';
 import { coordinateKey } from '../utils/hex-utils';
+import { assertNever } from '../utils/assert-never';
 import { HEX_ENGINE_COMMAND_SCHEMAS, type HexEngineCommand } from './hex-engine-commands';
 import type { ApplyCommandResult, DomainEvent } from './types';
 
@@ -167,6 +168,9 @@ export function applyCommand(
       });
       break;
     }
+
+    default:
+      return assertNever(parsed);
   }
 
   return { state, events };
