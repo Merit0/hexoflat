@@ -1,9 +1,11 @@
-import { Body, Controller, Inject, Post, UsePipes } from '@nestjs/common';
+import { Body, Controller, Inject, Post, UseGuards, UsePipes } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { AuthService } from './auth.service';
 import { LoginDto, LoginDtoSchema, RegisterDto, RegisterDtoSchema } from './auth.dto';
 
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   // tsx/esbuild doesn't emit TS `design:paramtypes` metadata, so Nest can't
   // infer constructor injection by type alone — @Inject() gives it an
