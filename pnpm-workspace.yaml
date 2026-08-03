@@ -5,3 +5,10 @@ packages:
 allowBuilds:
   esbuild: true
   vue-demi: true
+
+# @nestjs/platform-fastify@11.1.28 hard-pins find-my-way@9.6.0 (vulnerable to
+# GHSA-c96f-x56v-gq3h, DDoS via HTTP/2) with no newer stable release yet —
+# force the already-patched version fastify itself resolves to elsewhere in
+# the same tree.
+overrides:
+  find-my-way: '>=9.6.1'
