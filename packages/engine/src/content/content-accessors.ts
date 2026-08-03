@@ -69,5 +69,6 @@ export function getMeta(key: THexobjectKey): IHexobjectMeta {
     equip: content.equip,
     yields: content.yields,
     enter: content.enter as IHexobjectMeta['enter'],
+    heal: content.heal,
   };
 }

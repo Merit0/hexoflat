@@ -15,7 +15,7 @@
             transform: `translate(${Math.round(-mapBounds.offsetX)}px, ${Math.round(-mapBounds.offsetY)}px)`,
           }"
         >
-          <div v-if="worldStore.combatActive" class="combat-alert-overlay"></div>
+          <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
 
           <canvas ref="boardCanvasRef" class="hex-board-canvas" data-testid="hex-board-canvas" />
 
@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useCombatStore } from '@/stores/combat-store';
 import { useHexBoard } from '@/render/use-hex-board';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
@@ -70,6 +71,7 @@ const props = defineProps<{
 
 const { handleTileClick } = useTileClick();
 const worldStore = useWorldMapStore();
+const combatStore = useCombatStore();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const heroStore = useHeroStore();
@@ -152,19 +154,19 @@ const movePreview = computed(() => {
   if (!uiSettingsStore.showHeroMoveTrail) return null;
   if (!worldStore.map || !worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
   if (worldStore.isHeroMoving) return null;
-  if (worldStore.combatActive && worldStore.combatTurnSide !== 'hero') return null;
+  if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return null;
 
   const activeToolCapabilities = heroToolStore.activeTool
     ? getToolCapabilities(heroToolStore.activeTool)
     : {};
 
   if (
-    worldStore.combatActive &&
-    worldStore.combatTurnSide === 'hero' &&
+    combatStore.combatActive &&
+    combatStore.combatTurnSide === 'hero' &&
     heroToolStore.isDragging &&
     activeToolCapabilities.canBlock &&
-    worldStore.combatAttackUsed &&
-    !worldStore.combatDefendUsed
+    combatStore.combatAttackUsed &&
+    !combatStore.combatDefendUsed
   ) {
     const isAdjacent = getOddQNeighbors(worldStore.heroCoordinates).some(
       (coord) =>
@@ -173,7 +175,7 @@ const movePreview = computed(() => {
     );
     if (!isAdjacent) return null;
 
-    const reachable = worldStore.canPlaceCombatDefendMarker(hoveredTileCoord.value);
+    const reachable = combatStore.canPlaceCombatDefendMarker(hoveredTileCoord.value);
 
     return {
       path: null,
@@ -184,8 +186,8 @@ const movePreview = computed(() => {
     };
   }
 
-  const hasMovementSteps = worldStore.combatActive
-    ? worldStore.combatStepsLeft > 0
+  const hasMovementSteps = combatStore.combatActive
+    ? combatStore.combatStepsLeft > 0
     : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
   const hasNoActiveTool =
     !heroToolStore.isDragging &&
@@ -199,8 +201,8 @@ const movePreview = computed(() => {
   const targetTile = getTileByCoord(hoveredTileCoord.value);
   if (!targetTile) return null;
 
-  const moveSteps = worldStore.combatActive
-    ? worldStore.combatStepsLeft
+  const moveSteps = combatStore.combatActive
+    ? combatStore.combatStepsLeft
     : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
   const path = findShortestPath(
     worldStore.map,
@@ -269,11 +271,11 @@ const enemyVisionCells = computed(() => {
 });
 
 const isHeroInEnemyVision = computed(() => {
-  return worldStore.getEnemyTilesSeeingHero().length > 0;
+  return combatStore.getEnemyTilesSeeingHero().length > 0;
 });
 
 const combatMarkers = computed(() => {
-  return worldStore.combatMarkers
+  return combatStore.combatMarkers
     .filter((marker) => marker.kind !== 'defend')
     .filter((marker) => marker.visible)
     .map((marker) => ({
@@ -327,8 +329,8 @@ const campHealInfoLabel = computed(() => {
 watch(
   isHeroInEnemyVision,
   (inVision) => {
-    if (inVision && !worldStore.combatActive) {
-      worldStore.startCombat();
+    if (inVision && !combatStore.combatActive) {
+      combatStore.startCombat();
     }
   },
   { immediate: true },

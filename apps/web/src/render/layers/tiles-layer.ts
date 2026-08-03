@@ -6,16 +6,19 @@ import { getMeta, getPrototype } from '@hexoflat/engine';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import type { useWorldMapStore } from '@/stores/world-map-store';
+import type { useCombatStore } from '@/stores/combat-store';
 
 const FOG_TILE_URL = '/hex-assets/hex-effects/fog-tile-image.png';
 const DEFAULT_BG_URL = '/hex-assets/token-placement-image.png';
 
 type WorldStore = ReturnType<typeof useWorldMapStore>;
+type CombatStore = ReturnType<typeof useCombatStore>;
 
 export interface TilesLayerDeps {
   worldContainer: Container;
   getTileSize(): { w: number; h: number };
   worldStore: WorldStore;
+  combatStore: CombatStore;
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
 }
@@ -73,10 +76,10 @@ function constructionLockLabel(
   return null;
 }
 
-function defendMarkerSpritePath(tile: IHexTile, worldStore: WorldStore): string | null {
+function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): string | null {
   if (!tile.isRevealed) return null;
 
-  const marker = worldStore.combatMarkers.find(
+  const marker = combatStore.combatMarkers.find(
     (item) =>
       item.visible &&
       item.kind === 'defend' &&
@@ -240,7 +243,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       const node = nodes.get(coordinateKey(tile.coordinates));
       if (!node) continue;
 
-      const path = defendMarkerSpritePath(tile, deps.worldStore);
+      const path = defendMarkerSpritePath(tile, deps.combatStore);
       const { w, h } = deps.getTileSize();
 
       if (!path) {

@@ -33,6 +33,7 @@ import {
   type ResolvedAction,
 } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useCombatStore } from '@/stores/combat-store';
 import { ACTION_TYPE_MAP } from '@hexoflat/engine/registry/action-starters-registry';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { getPrototype, getMeta } from '@hexoflat/engine';
@@ -53,6 +54,7 @@ const emit = defineEmits<{
 
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
+const combatStore = useCombatStore();
 const heroStore = useHeroStore();
 
 const activeToolKey = computed<THeroToolKey | null>(() => heroToolStore.activeTool);
@@ -110,9 +112,9 @@ const toolStyle = computed(() => {
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
   if (
-    worldMapStore.combatActive &&
-    worldMapStore.combatTurnSide === 'hero' &&
-    !worldMapStore.isEnemyTurnResolving &&
+    combatStore.combatActive &&
+    combatStore.combatTurnSide === 'hero' &&
+    !combatStore.isEnemyTurnResolving &&
     !worldMapStore.isHeroMoving &&
     heroToolStore.hover &&
     activeToolKey.value
@@ -121,9 +123,9 @@ const resolvedActions = computed(() => {
 
     if (
       capabilities.canBlock &&
-      worldMapStore.combatAttackUsed &&
-      !worldMapStore.combatDefendUsed &&
-      worldMapStore.canPlaceCombatDefendMarker(heroToolStore.hover)
+      combatStore.combatAttackUsed &&
+      !combatStore.combatDefendUsed &&
+      combatStore.canPlaceCombatDefendMarker(heroToolStore.hover)
     ) {
       return [
         {
@@ -148,10 +150,10 @@ const resolvedActions = computed(() => {
   }
 
   if (
-    worldMapStore.combatActive &&
+    combatStore.combatActive &&
     tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
-    (worldMapStore.combatTurnSide !== 'hero' ||
-      worldMapStore.combatAttackUsed ||
+    (combatStore.combatTurnSide !== 'hero' ||
+      combatStore.combatAttackUsed ||
       !activeToolKey.value ||
       !getToolCapabilities(activeToolKey.value).canAttack)
   ) {
