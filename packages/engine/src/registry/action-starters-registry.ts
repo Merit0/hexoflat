@@ -244,7 +244,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     let durationMs = cfg.durationMs ?? 10_000;
     const pendingMeta: Record<string, any> = {};
 
-    if (obj.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
+    if (meta.heal) {
       const maxHealth = Math.max(1, heroStore.hero.maxHealth ?? 1);
       const currentHealth = Math.max(0, heroStore.hero.currentHealth ?? 0);
       const missingHealth = Math.max(0, maxHealth - currentHealth);
@@ -254,7 +254,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
       }
 
       durationMs = 10_000;
-      pendingMeta.healAmount = 1;
+      pendingMeta.healAmount = meta.heal.amountPerTick;
     }
 
     const endsAt = now + durationMs;
