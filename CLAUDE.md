@@ -33,9 +33,13 @@ Inspired by general tactical dungeon-crawler concepts (including Frosthaven), bu
 
 ## Current status vs. target
 
-The repo is currently a **frontend-only prototype**: Vue 3 + Vite + Pinia + Zod exist and match target. Everything else is a gap — DOM/CSS renders the hex map (no PixiJS), there is no backend/DB/ORM/auth (login checks a plaintext `public/users.json`), no monorepo/Turborepo, almost no tests (`src/content/content.test.ts` is the only one), no Docker, no TanStack Query, no S3, no observability.
+**Phases 1–10 of the migration are done** (monorepo + Turborepo, `packages/engine` extracted with zero Vue/browser/Nest/DB dependencies, engine unit tests, PixiJS renderer, `apps/api` on NestJS + Fastify, PostgreSQL + Drizzle, TanStack Query in `apps/web`, WebSocket multiplayer sync for movement/resource-gathering, custom JWT auth, Playwright e2e). Beyond the original plan, the repo has also been through a security/SOLID hardening pass (JWT fail-fast in production, rate limiting, campaign-scoped ACL on saves/scenarios, periodic scenario autosave, data-driven heal content, split `world-map-store`) and the CI workflow now runs lint/typecheck/build/unit-tests/api-tests/e2e as separate jobs.
 
-The sequenced plan to close this gap lives in [`docs/MIGRATION-PLAN.md`](./docs/MIGRATION-PLAN.md). Follow it in order — later phases assume earlier ones are done (e.g. the PixiJS renderer swap assumes the engine has already been extracted into `packages/engine`, so the render layer isn't rewritten twice).
+**Phases 11–12 are deliberately paused** (containerized production deploy for `apps/api`; S3 assets + OpenTelemetry/Sentry) — local dev is already fully covered by `docker-compose.dev.yml`, and there's no real player/business need yet to justify production hosting or observability. Revisit only when that need shows up.
+
+**One standing exception to architecture Rule #1:** combat still lives entirely in `apps/web/src/stores/combat-store.ts` — state changes there do not go through `packages/engine`'s command/event pipeline. This is a deliberate, tracked gap, not an oversight: combat design itself isn't settled yet, so migrating it into the engine (and scoping multiplayer sync around it) is deferred until the game design is ready, not until there's engineering time.
+
+See [`docs/MIGRATION-PLAN.md`](./docs/MIGRATION-PLAN.md) for the phase-by-phase breakdown, acceptance criteria, and the pause notes on Phases 11–12.
 
 ## Workflow rules
 
