@@ -95,6 +95,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
       return;
     }
 
+    const ownerId = await this.scenarioState.getScenarioOwnerId(parsed.data.scenarioId);
+    if (ownerId !== userId) {
+      client.emit('error', { message: 'Not authorized for this scenario' });
+      return;
+    }
+
     const hero = await this.heroesService.findByUserId(userId);
     if (!hero) {
       client.emit('error', { message: 'No hero found for this user' });

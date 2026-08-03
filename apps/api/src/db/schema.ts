@@ -45,7 +45,9 @@ export const scenarios = pgTable('scenarios', {
 
 export const saves = pgTable('saves', {
   id: uuid('id').primaryKey().defaultRandom(),
-  campaignId: uuid('campaign_id').references(() => campaigns.id, { onDelete: 'cascade' }),
+  campaignId: uuid('campaign_id')
+    .notNull()
+    .references(() => campaigns.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });
