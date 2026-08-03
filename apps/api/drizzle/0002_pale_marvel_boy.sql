@@ -1,0 +1,1 @@
+ALTER TABLE "saves" ALTER COLUMN "campaign_id" SET NOT NULL;

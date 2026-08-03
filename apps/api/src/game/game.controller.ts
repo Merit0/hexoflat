@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Inject, Post, UseGuards, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Req, UseGuards, UsePipes } from '@nestjs/common';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { AuthenticatedRequest } from '../auth/jwt-auth.guard';
 import { GameService } from './game.service';
 import { CreateSaveDto, CreateSaveDtoSchema } from './game.dto';
 
@@ -13,13 +14,13 @@ export class GameController {
   constructor(@Inject(GameService) private readonly gameService: GameService) {}
 
   @Get()
-  list() {
-    return this.gameService.list();
+  list(@Req() request: AuthenticatedRequest) {
+    return this.gameService.list(request.user.sub);
   }
 
   @Post()
   @UsePipes(new ZodValidationPipe(CreateSaveDtoSchema))
-  create(@Body() dto: CreateSaveDto) {
-    return this.gameService.create(dto);
+  create(@Req() request: AuthenticatedRequest, @Body() dto: CreateSaveDto) {
+    return this.gameService.create(request.user.sub, dto);
   }
 }

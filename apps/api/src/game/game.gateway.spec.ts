@@ -9,6 +9,7 @@ import { io, type Socket as ClientSocket } from 'socket.io-client';
 import { serializeState, type HexEngineState, type SnapshotPayload } from '@hexoflat/engine';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { scenarios } from '../db/schema';
 import { DB, type Db } from '../db/db.module';
 import { JwtAuthModule } from '../auth/jwt-auth.module';
 import { HeroesService } from '../heroes/heroes.service';
@@ -19,19 +20,30 @@ interface FakeSnapshotRow {
   createdAt: string;
 }
 
-function createFakeSnapshotsDb(seedRows: FakeSnapshotRow[]) {
+function createFakeDb(seedRows: FakeSnapshotRow[], scenarioOwnerId: string) {
   const rows = [...seedRows];
   const inserted: Array<{ scenariosId: string; saveId: string | null; state: unknown }> = [];
 
   const db = {
     select: () => ({
-      from: () => ({
-        where: () => ({
-          orderBy: () => ({
-            limit: (n: number) => Promise.resolve(rows.slice(0, n)),
+      from: (table: unknown) => {
+        if (table === scenarios) {
+          return {
+            innerJoin: () => ({
+              where: () => ({
+                limit: () => Promise.resolve([{ ownerId: scenarioOwnerId }]),
+              }),
+            }),
+          };
+        }
+        return {
+          where: () => ({
+            orderBy: () => ({
+              limit: (n: number) => Promise.resolve(rows.slice(0, n)),
+            }),
           }),
-        }),
-      }),
+        };
+      },
     }),
     insert: () => ({
       values: (row: { scenariosId: string; saveId: string | null; state: unknown }) => {
@@ -40,6 +52,7 @@ function createFakeSnapshotsDb(seedRows: FakeSnapshotRow[]) {
         return Promise.resolve();
       },
     }),
+    transaction: (fn: (tx: Db) => Promise<void>) => fn(db as unknown as Db),
   };
 
   return { db: db as unknown as Db, inserted };
@@ -89,13 +102,16 @@ describe('GameGateway (socket.io integration)', () => {
   let url: string;
   let jwtService: JwtService;
   let inserted: Array<{ scenariosId: string; saveId: string | null; state: unknown }>;
+  // Owned by user-a's campaign — used to prove both that the owner can join
+  // and that a non-owner (user-b) is rejected from the same scenario.
   const scenarioId = randomUUID();
 
   beforeAll(async () => {
     const seedState: HexEngineState = { map: buildFullyRevealedMap(), heroes: {} };
-    const fakeDb = createFakeSnapshotsDb([
-      { state: serializeState(seedState), createdAt: new Date().toISOString() },
-    ]);
+    const fakeDb = createFakeDb(
+      [{ state: serializeState(seedState), createdAt: new Date().toISOString() }],
+      'user-a',
+    );
     inserted = fakeDb.inserted;
 
     const fakeHeroesService = {
@@ -104,6 +120,7 @@ describe('GameGateway (socket.io integration)', () => {
         if (userId === 'user-b') return Promise.resolve(HERO_B);
         return Promise.resolve(null);
       }),
+      updateLocation: vi.fn(() => Promise.resolve()),
     } as unknown as HeroesService;
 
     const moduleRef = await Test.createTestingModule({
@@ -135,32 +152,38 @@ describe('GameGateway (socket.io integration)', () => {
     client.close();
   });
 
-  it('syncs joins, broadcasts moves to the room, enforces hero ownership, and resumes state on reconnect', async () => {
-    const tokenA = await jwtService.signAsync({ sub: 'user-a' });
+  it('rejects join-scenario from a user who does not own the scenario campaign', async () => {
     const tokenB = await jwtService.signAsync({ sub: 'user-b' });
-    const clientA: ClientSocket = io(url, {
-      transports: ['websocket'],
-      forceNew: true,
-      auth: { token: tokenA },
-    });
     const clientB: ClientSocket = io(url, {
       transports: ['websocket'],
       forceNew: true,
       auth: { token: tokenB },
     });
+    await waitFor(clientB, 'connect');
 
-    await Promise.all([waitFor(clientA, 'connect'), waitFor(clientB, 'connect')]);
+    const error = waitFor<{ message: string }>(clientB, 'error');
+    clientB.emit('join-scenario', { scenarioId });
+    const errorPayload = await error;
+
+    expect(errorPayload.message).toMatch(/not authorized/i);
+    clientB.disconnect();
+  });
+
+  it('syncs the owner joining, broadcasts moves, enforces hero ownership, and resumes state on reconnect', async () => {
+    const tokenA = await jwtService.signAsync({ sub: 'user-a' });
+    const clientA: ClientSocket = io(url, {
+      transports: ['websocket'],
+      forceNew: true,
+      auth: { token: tokenA },
+    });
+
+    await waitFor(clientA, 'connect');
 
     clientA.emit('join-scenario', { scenarioId });
     const syncA = await waitFor<SnapshotPayload>(clientA, 'state-sync');
     expect(syncA.heroes[HERO_A.id]).toMatchObject({ coordinates: HERO_A.heroLocation });
 
-    clientB.emit('join-scenario', { scenarioId });
-    const syncB = await waitFor<SnapshotPayload>(clientB, 'state-sync');
-    expect(syncB.heroes[HERO_B.id]).toMatchObject({ coordinates: HERO_B.heroLocation });
-
     const updateA = waitFor<{ events: unknown; state: SnapshotPayload }>(clientA, 'state-update');
-    const updateB = waitFor<{ events: unknown; state: SnapshotPayload }>(clientB, 'state-update');
     clientA.emit('command', {
       scenarioId,
       command: {
@@ -168,9 +191,8 @@ describe('GameGateway (socket.io integration)', () => {
         payload: { heroId: HERO_A.id, target: { columnIndex: 1, rowIndex: 0 } },
       },
     });
-    const [receivedA, receivedB] = await Promise.all([updateA, updateB]);
+    const receivedA = await updateA;
 
-    expect(receivedA).toEqual(receivedB);
     expect(receivedA.events).toEqual([
       {
         type: 'HERO_MOVED',
@@ -188,19 +210,18 @@ describe('GameGateway (socket.io integration)', () => {
       coordinates: { columnIndex: 1, rowIndex: 0 },
     });
 
-    const ownershipError = waitFor<{ message: string }>(clientB, 'error');
-    clientB.emit('command', {
+    const ownershipError = waitFor<{ message: string }>(clientA, 'error');
+    clientA.emit('command', {
       scenarioId,
       command: {
         type: 'MOVE_HERO',
-        payload: { heroId: HERO_A.id, target: { columnIndex: 2, rowIndex: 0 } },
+        payload: { heroId: HERO_B.id, target: { columnIndex: 2, rowIndex: 0 } },
       },
     });
     const errorPayload = await ownershipError;
     expect(errorPayload.message).toMatch(/do not control/);
 
     clientA.disconnect();
-    clientB.disconnect();
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(inserted).toHaveLength(1);
     expect(inserted[0].scenariosId).toBe(scenarioId);
