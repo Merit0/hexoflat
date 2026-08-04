@@ -47,8 +47,37 @@ function initialLocationKey(): LocationKey {
 
 const STORAGE_MAP_PREFIX = 'hexoflat:world:map:v1:';
 const STORAGE_STATE_PREFIX = 'hexoflat:world:state:v1:';
+const SAVE_DEBOUNCE_MS = 750;
 
 let worldTimer: number | null = null;
+
+interface PendingSave {
+  mapSnapshot: string | null;
+  stateSnapshot: string;
+  timer: number;
+}
+
+// Keyed by mapId so a save for one map (e.g. the map being left on
+// navigation) can never be dropped by a debounced save for another map
+// racing it — only redundant saves to the *same* map collapse together.
+const pendingSaves = new Map<string, PendingSave>();
+
+function flushPendingSave(mapId: string, save: PendingSave) {
+  if (save.mapSnapshot) localStorage.setItem(STORAGE_MAP_PREFIX + mapId, save.mapSnapshot);
+  localStorage.setItem(STORAGE_STATE_PREFIX + mapId, save.stateSnapshot);
+}
+
+// Debounced writes are still pending in memory until their timer fires — flush
+// them immediately so a tab close doesn't silently lose the last ~750ms of state.
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    for (const [mapId, save] of pendingSaves) {
+      window.clearTimeout(save.timer);
+      flushPendingSave(mapId, save);
+    }
+    pendingSaves.clear();
+  });
+}
 
 export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
   const { events } = applyCommand(
@@ -124,7 +153,13 @@ export const useWorldMapStore = defineStore('world-map-store', {
         { map: this.map as HexMapModel, heroes: {} },
         {
           type: 'START_HEX_ACTION',
-          payload: { coordinates: tile.coordinates, actionType, toolKey, now: Date.now() },
+          payload: {
+            heroId: useHeroStore().hero.id,
+            coordinates: tile.coordinates,
+            actionType,
+            toolKey,
+            now: Date.now(),
+          },
         },
         this.buildEngineContext(),
       );
@@ -512,20 +547,29 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const targetMapId = mapId ?? this.currentMapId;
       if (!targetMapId) return;
 
-      if (this.map) {
-        localStorage.setItem(
-          STORAGE_MAP_PREFIX + targetMapId,
-          JSON.stringify({ contentVersion: CONTENT_VERSION, map: this.map }),
-        );
-      }
-
+      // Snapshot now, while `this.map`/`this.heroCoordinates` are still the
+      // values this call was meant to persist — the actual localStorage
+      // write is what gets debounced, not the read of current state.
+      const mapSnapshot = this.map
+        ? JSON.stringify({ contentVersion: CONTENT_VERSION, map: this.map })
+        : null;
       const state: TWorldState = {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: this.heroCoordinates,
         ...useCombatStore().toSnapshot(),
       };
+      const stateSnapshot = JSON.stringify(state);
 
-      localStorage.setItem(STORAGE_STATE_PREFIX + targetMapId, JSON.stringify(state));
+      const existing = pendingSaves.get(targetMapId);
+      if (existing) window.clearTimeout(existing.timer);
+
+      const timer = window.setTimeout(() => {
+        const save = pendingSaves.get(targetMapId);
+        pendingSaves.delete(targetMapId);
+        if (save) flushPendingSave(targetMapId, save);
+      }, SAVE_DEBOUNCE_MS);
+
+      pendingSaves.set(targetMapId, { mapSnapshot, stateSnapshot, timer });
     },
 
     // ======================================================
@@ -767,7 +811,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
               { map, heroes: {} },
               {
                 type: 'ADD_RESOURCE_SPAWNER',
-                payload: { coordinates: tile.coordinates, hexobject: placement.hexobject! },
+                payload: {
+                  heroId: useHeroStore().hero.id,
+                  coordinates: tile.coordinates,
+                  hexobject: placement.hexobject!,
+                },
               },
               this.buildEngineContext(),
             );

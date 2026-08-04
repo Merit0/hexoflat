@@ -67,6 +67,7 @@ describe.each<{ key: THexobjectKey; amountPerTick: number }>([
     const start: HexEngineCommand = {
       type: 'START_HEX_ACTION',
       payload: {
+        heroId: 'hero-1',
         coordinates: tile.coordinates,
         actionType: EHexActionType.USE,
         toolKey: HEXOBJECT_KEYS.HAND,

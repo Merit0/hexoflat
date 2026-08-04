@@ -4,7 +4,14 @@
       <div class="hero-badge">
         <div class="hero-badge__sub">
           <div class="hero-badge__name chip" data-testid="topbar-hero-name">{{ heroName }}</div>
-          <div class="chip chip--with-popover" data-testid="topbar-steps-chip">
+          <div
+            class="chip chip--with-popover"
+            :class="{ 'chip--popover-open': isStepsPopoverOpen }"
+            tabindex="0"
+            data-testid="topbar-steps-chip"
+            @click="isStepsPopoverOpen = !isStepsPopoverOpen"
+            @focusout="isStepsPopoverOpen = false"
+          >
             Steps: <b>{{ heroSteps }}</b>
             <div class="chip-popover">
               <div class="chip-popover__title">{{ scoutRankLabel }}</div>
@@ -70,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useUserStore } from '@/stores/user-store';
@@ -86,6 +93,8 @@ const heroToolStore = useHeroToolStore();
 const heroInventoryStore = useHeroInventoryStore();
 const userStore = useUserStore();
 const overlayStore = useOverlayStore();
+
+const isStepsPopoverOpen = ref(false);
 
 const heroName = computed(() => heroStore.hero?.name ?? 'Hero');
 const heroSteps = computed(() => heroStore.hero?.heroSteps ?? 0);
@@ -319,7 +328,9 @@ function openSettings() {
   z-index: 30;
 }
 
-.chip--with-popover:hover .chip-popover {
+.chip--with-popover:hover .chip-popover,
+.chip--with-popover:focus-within .chip-popover,
+.chip--with-popover.chip--popover-open .chip-popover {
   opacity: 1;
   transform: translateY(0);
 }

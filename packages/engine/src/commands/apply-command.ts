@@ -156,6 +156,12 @@ export function applyCommand(
       }
 
       const stepsTaken = path.length - 1;
+      // Deliberate in-place mutation, not a copy-on-write update: applyCommand
+      // has exactly one writer per HexEngineState (the single-threaded
+      // server/client loop that owns `state`), so there's no concurrent
+      // reader to see a torn intermediate value. Don't "fix" this into
+      // rebuilding `state.heroes` — that would just be extra allocation for
+      // the same guarantee this already has.
       hero.coordinates = { ...target };
       hero.heroSteps += stepsTaken;
 

@@ -254,4 +254,32 @@ describe('GameGateway (socket.io integration)', () => {
     expect(syncC.heroes[HERO_A.id]).toMatchObject({ coordinates: { columnIndex: 1, rowIndex: 0 } });
     clientC.disconnect();
   });
+
+  it('rate-limits a socket that sends too many commands too fast', async () => {
+    const tokenA = await jwtService.signAsync({ sub: 'user-a' });
+    const clientD: ClientSocket = io(url, {
+      transports: ['websocket'],
+      forceNew: true,
+      auth: { token: tokenA },
+    });
+    await waitFor(clientD, 'connect');
+
+    const errors: Array<{ message: string }> = [];
+    clientD.on('error', (payload: { message: string }) => errors.push(payload));
+
+    for (let i = 0; i < 11; i += 1) {
+      clientD.emit('command', {
+        scenarioId: 'not-joined',
+        command: { type: 'WORLD_TICK', payload: { now: Date.now() } },
+      });
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expect(errors).toHaveLength(11);
+    expect(errors.slice(0, 10).every((e) => !/too many commands/i.test(e.message))).toBe(true);
+    expect(errors[10].message).toMatch(/too many commands/i);
+
+    clientD.disconnect();
+  });
 });

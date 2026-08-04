@@ -110,7 +110,6 @@ export default class HexMapModel implements IWorldMap {
   }
 
   public generateTiles(): void {
-    console.log('Generating tiles...');
     this._tiles = [];
 
     for (let q = 0; q < this.width; q++) {
