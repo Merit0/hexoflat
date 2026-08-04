@@ -176,7 +176,7 @@ export default class HexMapModel implements IWorldMap {
     };
   }
 
-  public static fromJSON(raw: ISerializedHexMap): HexMapModel {
+  public static fromJSON(raw: ISerializedHexMap, now: number): HexMapModel {
     const map = new HexMapModel();
     map.name = raw.name;
     map.width = raw.width;
@@ -201,8 +201,6 @@ export default class HexMapModel implements IWorldMap {
 
     // Reconcile after hydration: drop stale in-progress actions and spawn
     // resources whose respawn timer already elapsed while the map was unloaded.
-    const now = Date.now();
-
     for (const tile of map.tiles) {
       const action = tile.pendingAction;
       if (action?.type === EHexActionType.USE) {

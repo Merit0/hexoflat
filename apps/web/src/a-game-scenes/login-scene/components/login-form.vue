@@ -54,6 +54,24 @@
         {{ showPassword ? 'Hide' : 'Show' }}
       </button>
     </div>
+    <div v-if="mode === 'register'" class="form-field">
+      <label class="sr-only" for="login-password-confirm">Confirm password</label>
+      <input
+        id="login-password-confirm"
+        v-model.trim="form.confirmPassword"
+        class="login-form-input"
+        data-testid="register-confirm-password-input"
+        :type="showPassword ? 'text' : 'password'"
+        maxlength="40"
+        autocomplete="new-password"
+        placeholder="Confirm password"
+        required
+        @input="clearError"
+      />
+    </div>
+    <p v-if="mode === 'register'" class="login-form-hint" data-testid="register-password-hint">
+      Password must be at least {{ PASSWORD_MIN_LENGTH }} characters.
+    </p>
     <button
       class="login-form-submit"
       data-testid="login-submit-button"
@@ -92,6 +110,10 @@ import { defineComponent, reactive, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ROUTES } from '@/router';
 
+// Mirrors apps/api/src/auth/auth.dto.ts's RegisterDtoSchema — kept in sync by
+// hand since apps/web and apps/api don't share a validation package.
+const PASSWORD_MIN_LENGTH = 8;
+
 export default defineComponent({
   name: 'LoginForm',
   setup() {
@@ -101,6 +123,7 @@ export default defineComponent({
     const form = reactive({
       username: '',
       password: '',
+      confirmPassword: '',
       name: '',
     });
 
@@ -108,7 +131,32 @@ export default defineComponent({
     const showPassword = ref(false);
     const isLoading = ref(false);
 
+    const resetForm = () => {
+      form.username = '';
+      form.password = '';
+      form.confirmPassword = '';
+      form.name = '';
+    };
+
+    const validateRegistration = (): string | null => {
+      if (form.password.length < PASSWORD_MIN_LENGTH) {
+        return `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
+      }
+      if (form.password !== form.confirmPassword) {
+        return 'Passwords do not match.';
+      }
+      return null;
+    };
+
     const onSubmit = async () => {
+      if (mode.value === 'register') {
+        const validationError = validateRegistration();
+        if (validationError) {
+          userStore.setError(validationError);
+          return;
+        }
+      }
+
       try {
         isLoading.value = true;
 
@@ -118,9 +166,7 @@ export default defineComponent({
             : await userStore.register(form.username, form.password, form.name);
         if (!success) return;
 
-        form.username = '';
-        form.password = '';
-        form.name = '';
+        resetForm();
 
         await router.replace({
           name: ROUTES.WORLD,
@@ -139,6 +185,7 @@ export default defineComponent({
 
     const toggleMode = () => {
       mode.value = mode.value === 'login' ? 'register' : 'login';
+      form.confirmPassword = '';
       userStore.clearErrorMsg();
     };
 
@@ -158,6 +205,7 @@ export default defineComponent({
       userStore,
       showPassword,
       isLoading,
+      PASSWORD_MIN_LENGTH,
       onSubmit,
       togglePassword,
       toggleMode,

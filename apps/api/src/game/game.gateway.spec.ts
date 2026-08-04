@@ -17,12 +17,18 @@ import { GameModule } from './game.module';
 
 interface FakeSnapshotRow {
   state: unknown;
+  checksum: string;
   createdAt: string;
 }
 
 function createFakeDb(seedRows: FakeSnapshotRow[], scenarioOwnerId: string) {
   const rows = [...seedRows];
-  const inserted: Array<{ scenariosId: string; saveId: string | null; state: unknown }> = [];
+  const inserted: Array<{
+    scenariosId: string;
+    saveId: string | null;
+    state: unknown;
+    checksum: string;
+  }> = [];
 
   const db = {
     select: () => ({
@@ -46,9 +52,18 @@ function createFakeDb(seedRows: FakeSnapshotRow[], scenarioOwnerId: string) {
       },
     }),
     insert: () => ({
-      values: (row: { scenariosId: string; saveId: string | null; state: unknown }) => {
+      values: (row: {
+        scenariosId: string;
+        saveId: string | null;
+        state: unknown;
+        checksum: string;
+      }) => {
         inserted.push(row);
-        rows.unshift({ state: row.state, createdAt: new Date().toISOString() });
+        rows.unshift({
+          state: row.state,
+          checksum: row.checksum,
+          createdAt: new Date().toISOString(),
+        });
         return Promise.resolve();
       },
     }),
@@ -108,8 +123,9 @@ describe('GameGateway (socket.io integration)', () => {
 
   beforeAll(async () => {
     const seedState: HexEngineState = { map: buildFullyRevealedMap(), heroes: {} };
+    const seedPayload = serializeState(seedState);
     const fakeDb = createFakeDb(
-      [{ state: serializeState(seedState), createdAt: new Date().toISOString() }],
+      [{ state: seedPayload, checksum: seedPayload.checksum, createdAt: new Date().toISOString() }],
       'user-a',
     );
     inserted = fakeDb.inserted;

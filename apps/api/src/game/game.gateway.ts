@@ -109,6 +109,21 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
 
     const { scenarioId } = parsed.data;
     const heroId = hero.id;
+
+    // Load state before joining the socket.io room: a stale/corrupted
+    // snapshot must reject the join outright, not leave the client sitting
+    // in a room it never got a state-sync for.
+    let state;
+    try {
+      await this.scenarioState.ensureHero(scenarioId, userId, heroId);
+      state = await this.scenarioState.getOrCreate(scenarioId);
+    } catch {
+      client.emit('error', {
+        message: 'Could not load this scenario — its saved state is stale or corrupted.',
+      });
+      return;
+    }
+
     await client.join(scenarioRoom(scenarioId));
     client.data.scenarioId = scenarioId;
     client.data.heroId = heroId;
@@ -120,8 +135,6 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
     }
     clients.add(client.id);
 
-    await this.scenarioState.ensureHero(scenarioId, userId, heroId);
-    const state = await this.scenarioState.getOrCreate(scenarioId);
     client.emit('state-sync', serializeState(state));
   }
 

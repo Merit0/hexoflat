@@ -11,6 +11,7 @@ import { ScenarioStateService } from './scenario-state.service';
 
 interface FakeSnapshotRow {
   state: unknown;
+  checksum: string;
   createdAt: string;
 }
 
@@ -19,7 +20,12 @@ function createFakeDb(
 ) {
   const rows = [...(opts.seedRows ?? [])];
   const scenarioOwnerId = opts.scenarioOwnerId ?? null;
-  const inserted: Array<{ scenariosId: string; saveId: string | null; state: unknown }> = [];
+  const inserted: Array<{
+    scenariosId: string;
+    saveId: string | null;
+    state: unknown;
+    checksum: string;
+  }> = [];
 
   const db = {
     select: () => ({
@@ -43,9 +49,18 @@ function createFakeDb(
       },
     }),
     insert: () => ({
-      values: (row: { scenariosId: string; saveId: string | null; state: unknown }) => {
+      values: (row: {
+        scenariosId: string;
+        saveId: string | null;
+        state: unknown;
+        checksum: string;
+      }) => {
         inserted.push(row);
-        rows.unshift({ state: row.state, createdAt: new Date().toISOString() });
+        rows.unshift({
+          state: row.state,
+          checksum: row.checksum,
+          createdAt: new Date().toISOString(),
+        });
         return Promise.resolve();
       },
     }),
@@ -141,8 +156,15 @@ describe('ScenarioStateService', () => {
           },
         },
       };
+      const seedPayload = serializeState(seedState);
       const { db } = createFakeDb({
-        seedRows: [{ state: serializeState(seedState), createdAt: new Date().toISOString() }],
+        seedRows: [
+          {
+            state: seedPayload,
+            checksum: seedPayload.checksum,
+            createdAt: new Date().toISOString(),
+          },
+        ],
       });
       const service = new ScenarioStateService(
         db,

@@ -17,7 +17,7 @@ export const StartHexActionCommandSchema = z.object({
     coordinates: hexCoordinatesSchema,
     actionType: z.nativeEnum(EHexActionType),
     toolKey: z.string(),
-    now: z.number().optional(),
+    now: z.number(),
   }),
 });
 export type StartHexActionCommand = z.infer<typeof StartHexActionCommandSchema>;
@@ -25,7 +25,7 @@ export type StartHexActionCommand = z.infer<typeof StartHexActionCommandSchema>;
 export const FinishPendingActionsCommandSchema = z.object({
   type: z.literal('FINISH_PENDING_ACTIONS'),
   payload: z.object({
-    now: z.number().optional(),
+    now: z.number(),
   }),
 });
 export type FinishPendingActionsCommand = z.infer<typeof FinishPendingActionsCommandSchema>;
@@ -33,7 +33,7 @@ export type FinishPendingActionsCommand = z.infer<typeof FinishPendingActionsCom
 export const WorldTickCommandSchema = z.object({
   type: z.literal('WORLD_TICK'),
   payload: z.object({
-    now: z.number().optional(),
+    now: z.number(),
   }),
 });
 export type WorldTickCommand = z.infer<typeof WorldTickCommandSchema>;

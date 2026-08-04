@@ -57,5 +57,9 @@ export const snapshots = pgTable('snapshots', {
   saveId: uuid('save_id').references(() => saves.id, { onDelete: 'cascade' }),
   scenariosId: uuid('scenarios_id').references(() => scenarios.id, { onDelete: 'cascade' }),
   state: jsonb('state').notNull(),
+  // Mirrors state.checksum (a SHA-256 over the rest of the payload, set by
+  // packages/engine's serializeState) in a plain column so a truncated/
+  // corrupted JSONB blob can be caught before even attempting to parse it.
+  checksum: text('checksum').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });

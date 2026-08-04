@@ -418,11 +418,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
         : null;
 
       if (parsedMap?.map && parsedMap.contentVersion === CONTENT_VERSION) {
-        const hydratedMap = HexMapModel.fromJSON(parsedMap.map);
+        const loadedAt = Date.now();
+        const hydratedMap = HexMapModel.fromJSON(parsedMap.map, loadedAt);
         this.map = hydratedMap;
         this.hydrateResourcesFromConfig();
 
-        const changed = runWorldTick(hydratedMap, Date.now(), this.buildEngineContext());
+        const changed = runWorldTick(hydratedMap, loadedAt, this.buildEngineContext());
         if (changed) this.saveToStorage(mapId);
       } else {
         if (parsedMap) {

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { desc, eq } from 'drizzle-orm';
 import {
   deserializeState,
@@ -19,6 +19,7 @@ import { GameEngineService } from './game-engine.service';
 export class ScenarioStateService {
   private static readonly AUTOSAVE_INTERVAL_MS = 30_000;
 
+  private readonly logger = new Logger(ScenarioStateService.name);
   private readonly rooms = new Map<string, HexEngineState>();
   private readonly autosaveTimers = new Map<string, NodeJS.Timeout>();
 
@@ -44,6 +45,13 @@ export class ScenarioStateService {
     return row?.ownerId ?? null;
   }
 
+  /**
+   * Loads the latest snapshot for a scenario, or bootstraps a fresh room if
+   * there isn't one. A snapshot that fails its version or checksum check is
+   * never partially deserialized — this rejects outright (no automatic
+   * migration) so a caller (the WS gateway) can turn it into a clear
+   * "can't join" error instead of a corrupted room.
+   */
   async getOrCreate(scenarioId: string): Promise<HexEngineState> {
     const existing = this.rooms.get(scenarioId);
     if (existing) {
@@ -51,15 +59,35 @@ export class ScenarioStateService {
     }
 
     const [row] = await this.db
-      .select({ state: snapshots.state })
+      .select({ state: snapshots.state, checksum: snapshots.checksum })
       .from(snapshots)
       .where(eq(snapshots.scenariosId, scenarioId))
       .orderBy(desc(snapshots.createdAt))
       .limit(1);
 
-    const state = row
-      ? deserializeState(row.state as SnapshotPayload)
-      : { map: HexMapProvider.getHomeLand(), heroes: {} };
+    let state: HexEngineState;
+
+    if (row) {
+      const payload = row.state as SnapshotPayload;
+
+      if (row.checksum !== payload.checksum) {
+        this.logger.error(
+          `Snapshot column/payload checksum mismatch for scenario ${scenarioId} — refusing to load it.`,
+        );
+        throw new Error(`Corrupted snapshot for scenario ${scenarioId}.`);
+      }
+
+      try {
+        state = deserializeState(payload, Date.now());
+      } catch (error) {
+        this.logger.error(
+          `Failed to deserialize snapshot for scenario ${scenarioId}: ${(error as Error).message}`,
+        );
+        throw error;
+      }
+    } else {
+      state = { map: HexMapProvider.getHomeLand(), heroes: {} };
+    }
 
     this.rooms.set(scenarioId, state);
     this.scheduleAutosave(scenarioId);
@@ -90,10 +118,12 @@ export class ScenarioStateService {
       return;
     }
 
+    const payload = serializeState(state);
     await this.db.insert(snapshots).values({
       scenariosId: scenarioId,
       saveId: null,
-      state: serializeState(state),
+      state: payload,
+      checksum: payload.checksum,
     });
   }
 
@@ -141,6 +171,8 @@ export class ScenarioStateService {
       return;
     }
 
+    const payload = serializeState(state);
+
     // Snapshot + the heroes-table write-back happen in one transaction: a
     // hero's canonical position (`heroes.data.heroLocation`) only ever moves
     // on release, and it must not drift from the snapshot that represents
@@ -149,7 +181,8 @@ export class ScenarioStateService {
       await tx.insert(snapshots).values({
         scenariosId: scenarioId,
         saveId: null,
-        state: serializeState(state),
+        state: payload,
+        checksum: payload.checksum,
       });
 
       for (const hero of Object.values(state.heroes)) {
