@@ -156,4 +156,88 @@ describe('useWorldMapStore', () => {
       expect(changed).toBe(false);
     });
   });
+
+  describe('dirty-tile tracking', () => {
+    beforeEach(() => {
+      // dirtyTileIds is module-level state (deliberately, like worldTimer/
+      // pendingSaves elsewhere in this file — it should outlive Pinia store
+      // resets in the real app), so it isn't cleared by setActivePinia(...)
+      // above. Drain any carryover from earlier tests before each one here.
+      useWorldMapStore().consumeDirtyTileIds();
+    });
+
+    it('marking one tile dirty does not mark the rest of the map', () => {
+      const worldStore = useWorldMapStore();
+      const map = new HexMapBuilder().name('dirty-test').width(5).height(5).build();
+      for (const tile of map.tiles) tile.isRevealed = false;
+      worldStore.map = map;
+
+      const target = map.tiles[7].coordinates;
+      worldStore.markTileDirty(target);
+
+      const dirty = worldStore.consumeDirtyTileIds();
+
+      expect(dirty.size).toBe(1);
+      expect(dirty.has(`${target.columnIndex}:${target.rowIndex}`)).toBe(true);
+      expect(dirty.size).toBeLessThan(map.tiles.length);
+    });
+
+    it('consumeDirtyTileIds clears the pending set, so a second read is empty', () => {
+      const worldStore = useWorldMapStore();
+      worldStore.map = new HexMapBuilder().name('dirty-test-2').width(2).height(1).build();
+
+      worldStore.markTileDirty(worldStore.map.tiles[0].coordinates);
+      worldStore.consumeDirtyTileIds();
+
+      expect(worldStore.consumeDirtyTileIds().size).toBe(0);
+    });
+
+    it('markTilesDirty is a no-op (no dirtyTick bump) for an empty list', () => {
+      const worldStore = useWorldMapStore();
+      worldStore.map = new HexMapBuilder().name('dirty-test-3').width(2).height(1).build();
+
+      const before = worldStore.dirtyTick;
+      worldStore.markTilesDirty([]);
+
+      expect(worldStore.dirtyTick).toBe(before);
+      expect(worldStore.consumeDirtyTileIds().size).toBe(0);
+    });
+
+    it('markAllTilesDirty marks every tile on the current map', () => {
+      const worldStore = useWorldMapStore();
+      const map = new HexMapBuilder().name('dirty-test-4').width(3).height(3).build();
+      worldStore.map = map;
+
+      worldStore.markAllTilesDirty();
+      const dirty = worldStore.consumeDirtyTileIds();
+
+      expect(dirty.size).toBe(map.tiles.length);
+    });
+
+    it('revealAroundHero only marks the hero tile and its neighbors dirty, not the whole map', () => {
+      const worldStore = useWorldMapStore();
+      const map = new HexMapBuilder().name('dirty-test-5').width(6).height(6).build();
+      for (const tile of map.tiles) tile.isRevealed = false;
+      worldStore.map = map;
+      worldStore.heroCoordinates = { columnIndex: 2, rowIndex: 2 };
+
+      worldStore.revealAroundHero();
+      const dirty = worldStore.consumeDirtyTileIds();
+
+      expect(dirty.size).toBeGreaterThan(0);
+      expect(dirty.size).toBeLessThan(map.tiles.length);
+    });
+
+    it('initFog marks every tile on the map dirty', () => {
+      const worldStore = useWorldMapStore();
+      const map = new HexMapBuilder().name('dirty-test-6').width(4).height(4).build();
+      worldStore.map = map;
+      worldStore.consumeDirtyTileIds(); // discard whatever the builder/initial state left pending
+
+      worldStore.initFog();
+      const dirty = worldStore.consumeDirtyTileIds();
+
+      expect(dirty.size).toBe(map.tiles.length);
+    });
+  });
 });

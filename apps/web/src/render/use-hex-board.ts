@@ -28,6 +28,12 @@ export interface UseHexBoardOptions {
   mapBounds: ComputedRef<{ width: number; height: number; offsetX: number; offsetY: number }>;
   domTileSize: ComputedRef<{ w: number; h: number }>;
   tiles: ComputedRef<IHexTile[]>;
+  /**
+   * Bumped by world-map-store.ts's markTileDirty/markTilesDirty/markAllTilesDirty
+   * whenever a tile mutates. Watching this instead of deep-watching `tiles`
+   * lets the tiles-layer sync recompute just the tiles that actually changed.
+   */
+  tilesDirtyTick: ComputedRef<number>;
   heroCoordinates: ComputedRef<IHexCoordinates | null>;
   healTickerNow: Ref<number>;
   movePreview: {
@@ -143,15 +149,28 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       }),
     );
 
+    // A tile-size change repositions/redraws every tile (full sync); a
+    // dirtyTick bump only touches the tiles that were actually marked dirty.
+    // Both share one flag rather than two separate watchers so the very
+    // first (immediate) call — which must always be a full sync, since
+    // tilesLayer has no nodes yet — only fires once instead of twice.
+    let previousDomTileSize: { w: number; h: number } | null = null;
+
     stopWatchers.push(
       watch(
-        [opts.tiles, opts.domTileSize],
-        () => {
-          tilesLayer?.syncTiles(opts.tiles.value);
+        [opts.tilesDirtyTick, opts.domTileSize],
+        ([, domTileSize]) => {
+          const previous = previousDomTileSize;
+          const sizeChanged =
+            !previous || previous.w !== domTileSize.w || previous.h !== domTileSize.h;
+          previousDomTileSize = domTileSize;
+
+          const dirtyKeys = worldStore.consumeDirtyTileIds();
+          tilesLayer?.syncTiles(opts.tiles.value, sizeChanged ? undefined : dirtyKeys);
           tilesLayer?.syncDefendMarkers(opts.tiles.value);
           tilesLayer?.syncLockChips(opts.tiles.value, opts.healTickerNow.value);
         },
-        { immediate: true, deep: true },
+        { immediate: true },
       ),
     );
 

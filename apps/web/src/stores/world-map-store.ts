@@ -51,6 +51,13 @@ const SAVE_DEBOUNCE_MS = 750;
 
 let worldTimer: number | null = null;
 
+// Tile ids touched since the renderer last flushed — lets use-hex-board.ts's
+// tiles-layer watcher recompute only the tiles that actually changed instead
+// of deep-walking the whole tiles array on every mutation. Kept module-level
+// (not reactive state) since only the `dirtyTick` counter below needs to be
+// a Vue-tracked signal; the ids themselves are read once per flush.
+const dirtyTileIds = new Set<string>();
+
 interface PendingSave {
   mapSnapshot: string | null;
   stateSnapshot: string;
@@ -101,6 +108,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
+
+    // Bumped whenever dirtyTileIds gains entries — the render layer watches
+    // this (cheap, shallow) instead of deep-watching the tiles array itself.
+    dirtyTick: 0,
   }),
 
   actions: {
@@ -142,6 +153,38 @@ export const useWorldMapStore = defineStore('world-map-store', {
       };
     },
 
+    // ======================================================
+    // DIRTY-TILE TRACKING (render perf)
+    // ======================================================
+
+    markTileDirty(coordinates: IHexCoordinates) {
+      dirtyTileIds.add(coordinateKey(coordinates));
+      this.dirtyTick += 1;
+    },
+
+    markTilesDirty(coordinatesList: IHexCoordinates[]) {
+      if (!coordinatesList.length) return;
+      for (const c of coordinatesList) dirtyTileIds.add(coordinateKey(c));
+      this.dirtyTick += 1;
+    },
+
+    // Safety net for whole-map changes (fresh map creation, loading from
+    // storage, a WORLD_TICK reporting `changed` with no per-tile detail) —
+    // anywhere the exact set of touched tiles isn't cheaply knowable.
+    markAllTilesDirty() {
+      if (!this.map) return;
+      for (const t of this.map.tiles) dirtyTileIds.add(coordinateKey(t.coordinates));
+      this.dirtyTick += 1;
+    },
+
+    // Called once per render flush by the tiles-layer watcher — hands over
+    // the accumulated ids and clears them so the next mutation starts fresh.
+    consumeDirtyTileIds(): Set<string> {
+      const ids = new Set(dirtyTileIds);
+      dirtyTileIds.clear();
+      return ids;
+    },
+
     executeHexAction(
       tile: HexTileModel,
       actionType: EHexActionType,
@@ -163,6 +206,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         },
         this.buildEngineContext(),
       );
+      this.markTileDirty(tile.coordinates);
 
       if (events.some((e) => e.type === 'HEX_ACTION_STARTED')) {
         return { ok: true };
@@ -404,6 +448,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       if (entryTile) {
         entryTile.isRevealed = true;
+        this.markTileDirty(entryTile.coordinates);
       }
     },
 
@@ -436,6 +481,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
         this.saveToStorage(mapId);
       }
 
+      // Safety net for the tiles-layer's dirty-tracking: a location switch
+      // swaps in a wholly different tile set, which per-mutation dirty
+      // marking elsewhere in this file won't necessarily cover on its own.
+      this.markAllTilesDirty();
+
       this.startWorldLoop();
       heroStore.setLocation(locationKey, mapId);
     },
@@ -459,7 +509,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
         this.hydrateResourcesFromConfig();
 
         const changed = runWorldTick(hydratedMap, loadedAt, this.buildEngineContext());
-        if (changed) this.saveToStorage(mapId);
+        if (changed) {
+          this.markAllTilesDirty();
+          this.saveToStorage(mapId);
+        }
       } else {
         if (parsedMap) {
           console.warn(
@@ -586,7 +639,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
           Date.now(),
           this.buildEngineContext(),
         );
-        if (changed) this.saveToStorage(this.currentMapId);
+        if (changed) {
+          this.markAllTilesDirty();
+          this.saveToStorage(this.currentMapId);
+        }
       }, 250);
     },
 
@@ -637,6 +693,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       const all = this.map.fogPolicy === 'ALL_REVEALED';
       for (const t of this.map.tiles) t.isRevealed = all;
+      this.markAllTilesDirty();
     },
 
     revealAroundHero() {
@@ -647,11 +704,17 @@ export const useWorldMapStore = defineStore('world-map-store', {
       for (const t of map.tiles) byKey.set(coordinateKey(t.coordinates), t);
 
       const coords = [this.heroCoordinates, ...getOddQNeighbors(this.heroCoordinates)];
+      const revealedCoords: IHexCoordinates[] = [];
 
       for (const c of coords) {
         const tile = byKey.get(coordinateKey(c));
-        if (tile) tile.isRevealed = true;
+        if (tile) {
+          tile.isRevealed = true;
+          revealedCoords.push(tile.coordinates);
+        }
       }
+
+      this.markTilesDirty(revealedCoords);
     },
 
     async moveHeroTo(target: IHexCoordinates): Promise<boolean> {
@@ -787,6 +850,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!isNeighbor) return;
 
       tile.isRevealed = true;
+      this.markTileDirty(tile.coordinates);
       this.saveToStorage();
     },
 
@@ -819,6 +883,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
               },
               this.buildEngineContext(),
             );
+            this.markTileDirty(tile.coordinates);
           }
         }
       }

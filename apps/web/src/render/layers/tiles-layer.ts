@@ -43,7 +43,15 @@ interface TileNode {
 
 export interface TilesLayer {
   container: Container;
-  syncTiles(tiles: IHexTile[]): void;
+  /**
+   * `dirtyKeys` (from `coordinateKey`) limits mask/hitArea/position/texture
+   * recompute to just those tiles — pass omitted/undefined for a full sync
+   * (initial mount, a tile-size change, or a wholesale tile-array swap).
+   * Node creation for never-seen tiles and pruning of removed ones always
+   * runs over the full `tiles` array regardless, since dirty tracking only
+   * covers *mutated* tiles, not additions/removals.
+   */
+  syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>): void;
   syncLockChips(tiles: IHexTile[], nowTick: number): void;
   syncDefendMarkers(tiles: IHexTile[]): void;
   destroy(): void;
@@ -170,7 +178,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     applyTexture(node.sprite, spritePath, node);
   }
 
-  function syncTiles(tiles: IHexTile[]) {
+  function syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>) {
     const { w, h } = deps.getTileSize();
     const seen = new Set<string>();
 
@@ -179,19 +187,24 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       seen.add(key);
 
       let node = nodes.get(key);
+      const isNewNode = !node;
       if (!node) {
         node = createNode(tile);
         nodes.set(key, node);
       }
       node.tile = tile;
 
-      drawHexMask(node.mask, w, h);
-      applyCoverFit(node.bg, w, h);
-      applyCoverFit(node.sprite, w, h);
-      node.root.hitArea = createHexHitArea(w, h);
+      // A node that was just created has never been positioned/drawn, so it
+      // always needs the full treatment regardless of the dirty set.
+      if (!dirtyKeys || isNewNode || dirtyKeys.has(key)) {
+        drawHexMask(node.mask, w, h);
+        applyCoverFit(node.bg, w, h);
+        applyCoverFit(node.sprite, w, h);
+        node.root.hitArea = createHexHitArea(w, h);
 
-      positionNode(node, tile, w, h);
-      syncTileVisual(node, tile);
+        positionNode(node, tile, w, h);
+        syncTileVisual(node, tile);
+      }
     }
 
     for (const [key, node] of nodes) {
