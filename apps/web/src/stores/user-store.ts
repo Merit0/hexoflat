@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia';
-import { login as loginRequest, register as registerRequest } from '../api/Requests';
+import {
+  fetchSession,
+  login as loginRequest,
+  register as registerRequest,
+  type AuthResponse,
+} from '../api/Requests';
 import { ApiError, type ApiValidationIssue } from '../api/client';
 import { setAuthToken } from '../api/auth-token';
 import UserModel from '@hexoflat/engine/models/user-model';
@@ -43,23 +48,27 @@ export const useUserStore = defineStore('user', {
     },
   },
   actions: {
+    // Applies a login/register/session-restore response to store state —
+    // shared so the three call sites can't drift out of sync.
+    async applyAuthResult({ user: userFromApi, accessToken }: AuthResponse): Promise<void> {
+      this.user
+        .setName(userFromApi.name)
+        .setUsername(userFromApi.username)
+        .setId(userFromApi.id)
+        .setLoggedIn(true);
+      this.accessToken = accessToken;
+      setAuthToken(accessToken);
+
+      clearSessionStorage();
+      localStorage.setItem('uStatus', 'true');
+
+      const heroStore = useHeroStore();
+      await heroStore.getHero();
+    },
     async login(username: string, password: string) {
       try {
-        const { user: userFromApi, accessToken } = await loginRequest({ username, password });
-
-        this.user
-          .setName(userFromApi.name)
-          .setUsername(userFromApi.username)
-          .setId(userFromApi.id)
-          .setLoggedIn(true);
-        this.accessToken = accessToken;
-        setAuthToken(accessToken);
-
-        clearSessionStorage();
-        localStorage.setItem('uStatus', 'true');
-
-        const heroStore = useHeroStore();
-        await heroStore.getHero();
+        const authResult = await loginRequest({ username, password });
+        await this.applyAuthResult(authResult);
 
         this.error = '';
         return true;
@@ -77,25 +86,8 @@ export const useUserStore = defineStore('user', {
     },
     async register(username: string, password: string, name: string) {
       try {
-        const { user: userFromApi, accessToken } = await registerRequest({
-          username,
-          password,
-          name,
-        });
-
-        this.user
-          .setName(userFromApi.name)
-          .setUsername(userFromApi.username)
-          .setId(userFromApi.id)
-          .setLoggedIn(true);
-        this.accessToken = accessToken;
-        setAuthToken(accessToken);
-
-        clearSessionStorage();
-        localStorage.setItem('uStatus', 'true');
-
-        const heroStore = useHeroStore();
-        await heroStore.getHero();
+        const authResult = await registerRequest({ username, password, name });
+        await this.applyAuthResult(authResult);
 
         this.error = '';
         return true;
@@ -108,6 +100,18 @@ export const useUserStore = defineStore('user', {
           console.error('Registration failed:', error);
           this.error = 'Registration failed. Please check your connection and try again.';
         }
+        return false;
+      }
+    },
+    // Silent restore on app boot via the httpOnly session cookie — see
+    // main.ts. A failed restore (logged-out visitor, or a network error) is
+    // expected, not a user-facing error, so it never touches `this.error`.
+    async restoreSession(): Promise<boolean> {
+      try {
+        const authResult = await fetchSession();
+        await this.applyAuthResult(authResult);
+        return true;
+      } catch {
         return false;
       }
     },

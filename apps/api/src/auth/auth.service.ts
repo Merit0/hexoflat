@@ -72,6 +72,19 @@ export class AuthService {
     return { user, accessToken: await this.issueToken(user, record.tokenVersion) };
   }
 
+  // Issues a fresh access token for an already-verified session (see
+  // GET /auth/session) — same response shape as login/register, keyed by id
+  // instead of credentials.
+  async refreshSession(userId: string): Promise<AuthResult> {
+    const [record] = await this.db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!record) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    const user = toPublicUser(record);
+    return { user, accessToken: await this.issueToken(user, record.tokenVersion) };
+  }
+
   // The actual revocation: every token issued before this bump carries the
   // old tokenVersion, so JwtAuthGuard's lookup rejects it from here on.
   async logout(userId: string): Promise<void> {

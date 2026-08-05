@@ -41,6 +41,14 @@ Inspired by general tactical dungeon-crawler concepts (including Frosthaven), bu
 
 See [`docs/MIGRATION-PLAN.md`](./docs/MIGRATION-PLAN.md) for the phase-by-phase breakdown, acceptance criteria, and the pause notes on Phases 11–12.
 
+## Design research
+
+[`docs/design/gloomhaven-frosthaven-scout-report.md`](./docs/design/gloomhaven-frosthaven-scout-report.md) (2026-07-24) is a scout report on Gloomhaven/Frosthaven mechanics, UX, and player/community feedback — what to keep as a principle, what to avoid copying, and concrete UX patterns (intent → preview → confirm → explained result, rule trace, AI intent overlay, complexity budgets, drop-in/drop-out multiplayer model). It's design inspiration, not a spec, and must not be a source of copied names/text/art/balance (see the IP constraint above). Consult it before designing new mechanics, cards, scenarios, or campaign/meta systems — especially before tackling the combat design gap noted above, since that report's "Phase 1 — Combat vertical slice" is exactly that unresolved piece.
+
+[`docs/design/tactical-coop-dungeon-crawler-scout-report.md`](./docs/design/tactical-coop-dungeon-crawler-scout-report.md) (2026-08-05) broadens the research beyond one game family: 15+ top coop/solo tactical dungeon crawlers (Descent, Massive Darkness 2, Kingdom Death: Monster, Too Many Bones, Tainted Grail, Middara, Sword & Sorcery, Mansions of Madness, Zombicide, Imperial Assault, Arkham Horror LCG, Sleeping Gods, D&D Adventure System, and others), broken down by hero movement, combat/initiative/AI, crafting/itemization, dungeon/exploration generation, skill trees/hero progression, and quest/campaign/journey structure. Section 10 synthesizes a proposed original Hexoflat model combining elements from ≥2 independent sources per subsystem — same rule applies: design inspiration only, never copy names/text/art/exact formulas.
+
+Add future scout/research docs to `docs/design/` and reference them here.
+
 ## Workflow rules
 
 - Always ask before `git commit` — not just before `git push`.

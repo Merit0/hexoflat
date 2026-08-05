@@ -30,6 +30,36 @@ function extractBearerToken(header: string | undefined): string | null {
   return scheme === 'Bearer' && token ? token : null;
 }
 
+// Shared by JwtAuthGuard (Bearer header) and the GET /auth/session endpoint
+// (session cookie) so the revocation check only lives in one place.
+export async function verifyAccessToken(
+  jwtService: JwtService,
+  db: Db,
+  token: string,
+): Promise<AuthenticatedUser> {
+  let payload: JwtPayload;
+  try {
+    payload = await jwtService.verifyAsync<JwtPayload>(token);
+  } catch {
+    throw new UnauthorizedException('Invalid or expired token.');
+  }
+
+  // Catches tokens revoked via logout/password-change: a valid signature
+  // alone isn't enough once the user's stored tokenVersion has moved past
+  // the one this token was issued with.
+  const [record] = await db
+    .select({ tokenVersion: users.tokenVersion })
+    .from(users)
+    .where(eq(users.id, payload.sub))
+    .limit(1);
+
+  if (!record || record.tokenVersion !== payload.tokenVersion) {
+    throw new UnauthorizedException('Token has been revoked.');
+  }
+
+  return { sub: payload.sub };
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   // tsx/esbuild doesn't emit TS `design:paramtypes` metadata, so Nest can't
@@ -49,27 +79,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing bearer token.');
     }
 
-    let payload: JwtPayload;
-    try {
-      payload = await this.jwtService.verifyAsync<JwtPayload>(token);
-    } catch {
-      throw new UnauthorizedException('Invalid or expired token.');
-    }
-
-    // Catches tokens revoked via logout/password-change: a valid signature
-    // alone isn't enough once the user's stored tokenVersion has moved past
-    // the one this token was issued with.
-    const [record] = await this.db
-      .select({ tokenVersion: users.tokenVersion })
-      .from(users)
-      .where(eq(users.id, payload.sub))
-      .limit(1);
-
-    if (!record || record.tokenVersion !== payload.tokenVersion) {
-      throw new UnauthorizedException('Token has been revoked.');
-    }
-
-    request.user = { sub: payload.sub };
+    request.user = await verifyAccessToken(this.jwtService, this.db, token);
     return true;
   }
 }
