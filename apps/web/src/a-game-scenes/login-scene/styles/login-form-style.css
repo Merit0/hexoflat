@@ -115,3 +115,10 @@
   font-size: 10px;
   color: #9ca2a6 !important;
 }
+
+.login-form-hint {
+  margin: -1rem 0 0;
+  font-size: 0.75rem;
+  color: #9ca2a6;
+  text-align: center;
+}

@@ -8,6 +8,7 @@
       <component
         :is="registry[entry.name]"
         v-if="registry[entry.name]"
+        :ref="(el: Element | ComponentPublicInstance | null) => setOverlayRef(i, el)"
         :data="entry.data"
         :data-testid="`overlay-${entry.name}`"
         :style="{ zIndex: 2000 + i }"
@@ -18,7 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, type Component } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, watch, type Component } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
 import { useOverlayStore } from '@/stores/overlay-store';
 import type { OverlayType } from '@/types/overlay-types';
 import HeroInventoryOverlay from '@/a-game-scenes/inventory-scene/components/hero-inventory-overlay.vue';
@@ -34,13 +36,91 @@ const registry: Partial<Record<OverlayType, Component>> = {
   settings: SettingsOverlay,
 };
 
-// ✅ Escape закриває верхній оверлей у стеку, як і очікує гравець.
+const overlayEls = new Map<number, HTMLElement>();
+
+function setOverlayRef(index: number, instance: Element | ComponentPublicInstance | null) {
+  if (!instance) {
+    overlayEls.delete(index);
+    return;
+  }
+  const el: unknown = instance instanceof Element ? instance : instance.$el;
+  if (el instanceof HTMLElement) overlayEls.set(index, el);
+}
+
+function topOverlayEl(): HTMLElement | null {
+  const topIndex = overlay.stack.length - 1;
+  return topIndex >= 0 ? (overlayEls.get(topIndex) ?? null) : null;
+}
+
+function focusableElements(root: HTMLElement): HTMLElement[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((el) => el.offsetParent !== null);
+}
+
+// Remembers what had focus before the first overlay opened, so closing the
+// last one in the stack gives focus back instead of dropping it to <body>.
+let previouslyFocused: HTMLElement | null = null;
+
+watch(
+  () => overlay.stack.length,
+  (length, prevLength) => {
+    if (length > 0 && prevLength === 0) {
+      previouslyFocused = document.activeElement as HTMLElement | null;
+    }
+
+    if (length > 0) {
+      void nextTick(() => topOverlayEl()?.focus());
+    } else {
+      previouslyFocused?.focus();
+      previouslyFocused = null;
+    }
+  },
+);
+
+function trapTab(event: KeyboardEvent) {
+  const root = topOverlayEl();
+  if (!root) return;
+
+  const focusable = focusableElements(root);
+  if (focusable.length === 0) {
+    event.preventDefault();
+    root.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+  const activeIsInside = active instanceof Node && root.contains(active);
+
+  if (event.shiftKey) {
+    if (!activeIsInside || active === first) {
+      event.preventDefault();
+      last.focus();
+    }
+  } else if (!activeIsInside || active === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 function onKeyDown(event: KeyboardEvent) {
-  if (event.key !== 'Escape') return;
   if (!overlay.stack.length) return;
 
-  event.preventDefault();
-  overlay.closeTop();
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    overlay.closeTop();
+    return;
+  }
+
+  // ✅ Keeps Tab focus cycling inside the topmost overlay instead of leaking
+  // out to the page behind it, per standard modal-dialog focus-trap behavior.
+  if (event.key === 'Tab') {
+    trapTab(event);
+  }
 }
 
 onMounted(() => document.addEventListener('keydown', onKeyDown));

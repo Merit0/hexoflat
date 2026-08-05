@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { login as loginRequest, register as registerRequest } from '../api/Requests';
-import { ApiError } from '../api/client';
+import { ApiError, type ApiValidationIssue } from '../api/client';
 import { setAuthToken } from '../api/auth-token';
 import UserModel from '@hexoflat/engine/models/user-model';
 import router from '../router';
@@ -17,6 +17,17 @@ function clearSessionStorage() {
   for (const key of SESSION_STORAGE_KEYS) {
     localStorage.removeItem(key);
   }
+}
+
+function describeValidationError(error: ApiError): string | null {
+  const issues = error.body?.message;
+  if (!Array.isArray(issues)) return null;
+
+  const messages = issues
+    .map((issue: ApiValidationIssue) => issue.message)
+    .filter((message): message is string => !!message);
+
+  return messages.length ? messages.join(' ') : null;
 }
 
 export const useUserStore = defineStore('user', {
@@ -55,6 +66,8 @@ export const useUserStore = defineStore('user', {
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
           this.error = `${username} is not found.`;
+        } else if (error instanceof ApiError && error.status === 400) {
+          this.error = describeValidationError(error) ?? 'Invalid username or password.';
         } else {
           console.error('Login failed:', error);
           this.error = 'Login failed. Please check your connection and try again.';
@@ -89,6 +102,8 @@ export const useUserStore = defineStore('user', {
       } catch (error) {
         if (error instanceof ApiError && error.status === 409) {
           this.error = `Username "${username}" is already taken.`;
+        } else if (error instanceof ApiError && error.status === 400) {
+          this.error = describeValidationError(error) ?? 'Invalid registration details.';
         } else {
           console.error('Registration failed:', error);
           this.error = 'Registration failed. Please check your connection and try again.';
@@ -126,6 +141,9 @@ export const useUserStore = defineStore('user', {
     },
     clearErrorMsg() {
       this.error = '';
+    },
+    setError(message: string) {
+      this.error = message;
     },
   },
 });

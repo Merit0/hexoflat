@@ -46,7 +46,18 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;
 
+  private static readonly COMMAND_RATE_LIMIT = 10;
+  private static readonly COMMAND_RATE_WINDOW_MS = 1_000;
+
   private readonly roomClients = new Map<string, Set<string>>();
+  // Per-socket fixed-window counter — unlike AuthController's `@nestjs/throttler`
+  // gate (HTTP-only, IP-keyed), a WS gateway sees a persistent connection with
+  // no per-message IP re-extraction, so a small hand-rolled counter keyed by
+  // socket id is simpler than wiring the HTTP-shaped throttler guard here.
+  private readonly commandRateLimiter = new Map<
+    string,
+    { count: number; windowStartedAt: number }
+  >();
 
   // tsx/esbuild doesn't emit TS `design:paramtypes` metadata, so Nest can't
   // infer constructor injection by type alone — @Inject() gives it an
@@ -109,6 +120,21 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
 
     const { scenarioId } = parsed.data;
     const heroId = hero.id;
+
+    // Load state before joining the socket.io room: a stale/corrupted
+    // snapshot must reject the join outright, not leave the client sitting
+    // in a room it never got a state-sync for.
+    let state;
+    try {
+      await this.scenarioState.ensureHero(scenarioId, userId, heroId);
+      state = await this.scenarioState.getOrCreate(scenarioId);
+    } catch {
+      client.emit('error', {
+        message: 'Could not load this scenario — its saved state is stale or corrupted.',
+      });
+      return;
+    }
+
     await client.join(scenarioRoom(scenarioId));
     client.data.scenarioId = scenarioId;
     client.data.heroId = heroId;
@@ -120,13 +146,16 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
     }
     clients.add(client.id);
 
-    await this.scenarioState.ensureHero(scenarioId, userId, heroId);
-    const state = await this.scenarioState.getOrCreate(scenarioId);
     client.emit('state-sync', serializeState(state));
   }
 
   @SubscribeMessage('command')
   handleCommand(@ConnectedSocket() client: AppSocket, @MessageBody() body: unknown): void {
+    if (this.isRateLimited(client.id)) {
+      client.emit('error', { message: 'Too many commands — slow down.' });
+      return;
+    }
+
     const parsed = CommandEnvelopeSchema.safeParse(body);
     if (!parsed.success) {
       client.emit('error', { message: 'Invalid command payload' });
@@ -152,8 +181,12 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
     }
 
     const hexCommand = parsedCommand.data;
-    if (hexCommand.type === 'MOVE_HERO' && hexCommand.payload.heroId !== client.data.heroId) {
-      client.emit('error', { message: 'Cannot move a hero you do not control' });
+    const isHeroScoped =
+      hexCommand.type === 'MOVE_HERO' ||
+      hexCommand.type === 'START_HEX_ACTION' ||
+      hexCommand.type === 'ADD_RESOURCE_SPAWNER';
+    if (isHeroScoped && hexCommand.payload.heroId !== client.data.heroId) {
+      client.emit('error', { message: 'Cannot act as a hero you do not control' });
       return;
     }
 
@@ -165,6 +198,8 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: AppSocket): Promise<void> {
+    this.commandRateLimiter.delete(client.id);
+
     const { scenarioId } = client.data;
     if (!scenarioId) {
       return;
@@ -180,5 +215,18 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
       this.roomClients.delete(scenarioId);
       await this.scenarioState.release(scenarioId);
     }
+  }
+
+  private isRateLimited(clientId: string): boolean {
+    const now = Date.now();
+    const entry = this.commandRateLimiter.get(clientId);
+
+    if (!entry || now - entry.windowStartedAt >= GameGateway.COMMAND_RATE_WINDOW_MS) {
+      this.commandRateLimiter.set(clientId, { count: 1, windowStartedAt: now });
+      return false;
+    }
+
+    entry.count += 1;
+    return entry.count > GameGateway.COMMAND_RATE_LIMIT;
   }
 }

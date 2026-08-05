@@ -78,10 +78,7 @@ export class WorldGenerator {
     if (radius <= 0) return;
 
     const entryCoord = this.pickEntryCoordFromConfig(map.config);
-    if (!entryCoord) {
-      console.warn('[WorldGenerator] No DEFAULT entry defined in map config. Safe-zone skipped.');
-      return;
-    }
+    if (!entryCoord) return;
 
     const byKey = new Map<string, HexTileModel>();
     for (const t of map.tiles) byKey.set(coordinateKey(t.coordinates), t);

@@ -27,6 +27,10 @@ function logAction(ctx: IActionContext, message: string) {
   ctx.events.push(heroName, message, 'ACTION');
 }
 
+// Deliberate in-place mutation of the tile, same reasoning as
+// apply-command.ts's MOVE_HERO case: applyCommand's single-writer loop is the
+// only thing ever touching `state`, so there's no shared-reference hazard to
+// guard against — don't turn this into a tile-rebuilding update by "mistake".
 function consumeTileHexobject(tile: HexTileModel) {
   tile.hexobject = null;
 }

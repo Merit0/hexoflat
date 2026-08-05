@@ -14,10 +14,11 @@ const hexObjectPlacementRefSchema = z.object({
 export const StartHexActionCommandSchema = z.object({
   type: z.literal('START_HEX_ACTION'),
   payload: z.object({
+    heroId: z.string(),
     coordinates: hexCoordinatesSchema,
     actionType: z.nativeEnum(EHexActionType),
     toolKey: z.string(),
-    now: z.number().optional(),
+    now: z.number(),
   }),
 });
 export type StartHexActionCommand = z.infer<typeof StartHexActionCommandSchema>;
@@ -25,7 +26,7 @@ export type StartHexActionCommand = z.infer<typeof StartHexActionCommandSchema>;
 export const FinishPendingActionsCommandSchema = z.object({
   type: z.literal('FINISH_PENDING_ACTIONS'),
   payload: z.object({
-    now: z.number().optional(),
+    now: z.number(),
   }),
 });
 export type FinishPendingActionsCommand = z.infer<typeof FinishPendingActionsCommandSchema>;
@@ -33,7 +34,7 @@ export type FinishPendingActionsCommand = z.infer<typeof FinishPendingActionsCom
 export const WorldTickCommandSchema = z.object({
   type: z.literal('WORLD_TICK'),
   payload: z.object({
-    now: z.number().optional(),
+    now: z.number(),
   }),
 });
 export type WorldTickCommand = z.infer<typeof WorldTickCommandSchema>;
@@ -41,6 +42,7 @@ export type WorldTickCommand = z.infer<typeof WorldTickCommandSchema>;
 export const AddResourceSpawnerCommandSchema = z.object({
   type: z.literal('ADD_RESOURCE_SPAWNER'),
   payload: z.object({
+    heroId: z.string(),
     coordinates: hexCoordinatesSchema,
     hexobject: hexObjectPlacementRefSchema,
   }),

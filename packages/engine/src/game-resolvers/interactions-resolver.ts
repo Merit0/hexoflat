@@ -2,6 +2,7 @@ import { EHexobjectGroup, IResourceTraits, THexobject } from '../abstraction/hex
 import { EHexActionType } from '../enums/hex-action-type';
 import { getPrototype, getMeta, type IHexobjectMeta } from '../content';
 import { THeroToolKey } from '../content/equipment.content';
+import { assertNever } from '../utils/assert-never';
 
 export interface ToolCapabilities {
   canCut?: boolean;
@@ -164,7 +165,7 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
     }
 
     default:
-      break;
+      return assertNever(obj, `Unhandled groupType in resolveActions: ${String(obj)}`);
   }
 
   resolvedActions.sort((a, b) => b.priority - a.priority);

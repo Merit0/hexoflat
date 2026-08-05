@@ -1,6 +1,6 @@
 <template>
   <div class="close-button-container">
-    <div class="closeInventoryBtn" @click="$emit('heroInventory')">CLOSE</div>
+    <button type="button" class="closeInventoryBtn" @click="$emit('heroInventory')">CLOSE</button>
   </div>
 </template>
 <script lang="ts">

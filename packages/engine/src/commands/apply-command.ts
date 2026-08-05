@@ -47,7 +47,6 @@ export function applyCommand(
   switch (parsed.type) {
     case 'START_HEX_ACTION': {
       const { coordinates, actionType, toolKey, now } = parsed.payload;
-      const resolvedNow = now ?? Date.now();
       const tile = findTile(state.map, coordinates);
 
       if (!tile) {
@@ -58,7 +57,7 @@ export function applyCommand(
         break;
       }
 
-      const fullCtx: IActionContext = { ...ctx, map: state.map, now: resolvedNow };
+      const fullCtx: IActionContext = { ...ctx, map: state.map, now };
       const result = new ExecuteHexActionFeature(tile).execute(
         actionType,
         toolKey as THeroToolKey,
@@ -80,16 +79,14 @@ export function applyCommand(
     }
 
     case 'FINISH_PENDING_ACTIONS': {
-      const resolvedNow = parsed.payload.now ?? Date.now();
-      const fullCtx: IActionContext = { ...ctx, map: state.map, now: resolvedNow };
+      const fullCtx: IActionContext = { ...ctx, map: state.map, now: parsed.payload.now };
       const changed = new FinishPendingActionsFeature(state.map).finish(fullCtx);
       events.push({ type: 'HEX_ACTIONS_FINISHED', payload: { changed } });
       break;
     }
 
     case 'WORLD_TICK': {
-      const resolvedNow = parsed.payload.now ?? Date.now();
-      const fullCtx: IActionContext = { ...ctx, map: state.map, now: resolvedNow };
+      const fullCtx: IActionContext = { ...ctx, map: state.map, now: parsed.payload.now };
       const changed = new WorldTickFeature(state.map).tick(fullCtx);
       events.push({ type: 'WORLD_TICKED', payload: { changed } });
       break;
@@ -159,6 +156,12 @@ export function applyCommand(
       }
 
       const stepsTaken = path.length - 1;
+      // Deliberate in-place mutation, not a copy-on-write update: applyCommand
+      // has exactly one writer per HexEngineState (the single-threaded
+      // server/client loop that owns `state`), so there's no concurrent
+      // reader to see a torn intermediate value. Don't "fix" this into
+      // rebuilding `state.heroes` — that would just be extra allocation for
+      // the same guarantee this already has.
       hero.coordinates = { ...target };
       hero.heroSteps += stepsTaken;
 

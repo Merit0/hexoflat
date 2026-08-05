@@ -2,10 +2,12 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import helmet from '@fastify/helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  await app.register(helmet);
   app.useWebSocketAdapter(new IoAdapter(app));
   app.enableCors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' });
   const port = Number(process.env.PORT ?? 3000);

@@ -1,8 +1,15 @@
 <template>
-  <div class="overlay-backdrop game-root" @click.self="close">
+  <div
+    class="overlay-backdrop game-root"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settings-overlay-title"
+    tabindex="-1"
+    @click.self="close"
+  >
     <div class="overlay-card">
       <header class="overlay-header">
-        <h2>Settings</h2>
+        <h2 id="settings-overlay-title">Settings</h2>
         <button class="close-btn" data-testid="settings-close-button" type="button" @click="close">
           Close
         </button>

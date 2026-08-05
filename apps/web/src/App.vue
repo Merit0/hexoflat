@@ -1,12 +1,12 @@
 <template>
-  <body>
-    <main>
+  <div>
+    <div>
       <div>
         <router-view />
         <base-overlay />
       </div>
-    </main>
-  </body>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
