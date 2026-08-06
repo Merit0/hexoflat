@@ -1,5 +1,6 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
-import { WEB_URL } from './support/env';
+import { STORAGE_STATE_FILE, WEB_URL } from './support/env';
 
 export default defineConfig({
   testDir: './e2e',
@@ -21,6 +22,12 @@ export default defineConfig({
   use: {
     baseURL: WEB_URL,
     trace: 'on-first-retry',
+    // Most specs start pre-authenticated via the cookie global-setup.ts mints
+    // — this is what lets them skip driving the login form (and burning a
+    // slot in /auth/login's throttle bucket) entirely. Specs that test the
+    // auth flow itself opt out per-file with
+    // `test.use({ storageState: { cookies: [], origins: [] } })`.
+    storageState: fileURLToPath(STORAGE_STATE_FILE),
   },
   projects: [
     {

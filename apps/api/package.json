@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.2",
     "@fastify/helmet": "^13.1.0",
     "@hexoflat/engine": "workspace:*",
     "@nestjs/common": "^11.1.28",

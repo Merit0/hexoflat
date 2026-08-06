@@ -15,17 +15,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # e2e failures don't block the game deploy (the suite is still new/settling —
-  # see `continue-on-error` below); its Allure report gets bundled into the
-  # deploy either way so a failure on main is still visible on the live report.
   e2e:
     name: Playwright e2e
     uses: ./.github/workflows/e2e-tests.yml
-    continue-on-error: true
 
   build:
     name: Build
     needs: e2e
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

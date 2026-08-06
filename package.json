@@ -16,11 +16,16 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "audit": "pnpm audit --audit-level=high --prod",
-    "prepare": "husky"
+    "prepare": "husky",
+    "start:server": "docker compose -f docker-compose.dev.yml up -d && pnpm --filter @hexoflat/api run start:dev",
+    "start:client": "pnpm --filter @hexoflat/web run dev",
+    "start:all": "concurrently -n server,client -c blue,green \"pnpm run start:server\" \"pnpm run start:client\"",
+    "stop:all": "docker compose -f docker-compose.dev.yml stop; lsof -ti :3000 | xargs kill 2>/dev/null; lsof -ti :5173 | xargs kill 2>/dev/null; true"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
+    "concurrently": "^9.1.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.5.1",

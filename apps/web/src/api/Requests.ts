@@ -40,6 +40,10 @@ export function register(payload: RegisterPayload): Promise<AuthResponse> {
   );
 }
 
+export function fetchSession(): Promise<AuthResponse> {
+  return apiClient.get<AuthResponse>('/auth/session');
+}
+
 export function fetchHero(): Promise<IHero> {
   return queryClient.fetchQuery({
     queryKey: ['hero', 'me'],
