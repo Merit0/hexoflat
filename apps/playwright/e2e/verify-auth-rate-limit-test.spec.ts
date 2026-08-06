@@ -20,10 +20,6 @@ test('Verify several reloads in a row on the camp map do not 429 the silent sess
     }
   });
 
-  // 6 reloads, one more than the login/register throttle's 5-req/60s limit —
-  // GET /auth/session used to share that same numeric ceiling before it got
-  // @SkipThrottle() (see auth.controller.ts), so this is exactly the repro
-  // that used to 429 a perfectly valid session on ordinary refreshing.
   for (let i = 0; i < 6; i += 1) {
     await page.reload();
     await expect(page).toHaveURL(/\/world\/camping/);
