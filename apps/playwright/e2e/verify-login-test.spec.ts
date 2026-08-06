@@ -13,13 +13,6 @@ test('Verify a freshly logged-in hero starts with base 10 HP, not the 0/100 fall
   page,
 }) => {
   await loginAsTestUser(page);
-
-  // GET /heroes/me auto-creates the hero on first fetch (see
-  // heroes.service.ts's findOrCreateByUserId) — this is that very first
-  // fetch, so it's the real regression check for the "0/100" bug: without
-  // the fix, no heroes row exists yet and the client falls back to
-  // HeroModel's blank-slate defaults (currentHealth 0, maxHealth 100)
-  // instead of the intended starting stats.
   await expect(page.getByTestId('topbar-hp-value')).toHaveText('10/10');
 });
 
