@@ -4,15 +4,16 @@ import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
 import { ApiError } from '../api/client';
 import { useUserStore } from './user-store';
 
-const { fetchSessionMock, fetchHeroMock } = vi.hoisted(() => ({
+const { fetchSessionMock, fetchHeroMock, loginMock } = vi.hoisted(() => ({
   fetchSessionMock: vi.fn(),
   fetchHeroMock: vi.fn(),
+  loginMock: vi.fn(),
 }));
 
 vi.mock('../api/Requests', () => ({
   fetchSession: fetchSessionMock,
   fetchHero: fetchHeroMock,
-  login: vi.fn(),
+  login: loginMock,
   register: vi.fn(),
 }));
 
@@ -38,6 +39,7 @@ describe('useUserStore restoreSession', () => {
     localStorage.clear();
     fetchSessionMock.mockReset();
     fetchHeroMock.mockReset();
+    loginMock.mockReset();
   });
 
   it('succeeds and populates the store when fetchSession resolves', async () => {
@@ -68,5 +70,40 @@ describe('useUserStore restoreSession', () => {
     expect(store.isUserLoggedIn).toBe(false);
     expect(store.error).toBe('');
     expect(fetchHeroMock).not.toHaveBeenCalled();
+  });
+
+  // Regression: restoreSession() used to route through the same
+  // clearSessionStorage() call login()/register() use, which wipes
+  // localStorage['hero'] — the very key world-map-store's hero position
+  // lives under (see main.ts's persist whitelist). Since restoreSession()
+  // runs on every page load/refresh, that meant every refresh silently
+  // reset the hero back to the map entry point, defeating the point of the
+  // httpOnly-cookie session-restore fix.
+  it('does not clear localStorage["hero"] — a refresh must not lose world-map-store state', async () => {
+    localStorage.setItem('hero', JSON.stringify({ nav: { positionByMapId: { m1: { x: 4 } } } }));
+    fetchSessionMock.mockResolvedValue({
+      user: { id: 'user-1', username: 'merito', name: 'Merito' },
+      accessToken: 'fresh-token',
+    });
+    fetchHeroMock.mockResolvedValue(FAKE_HERO);
+
+    const store = useUserStore();
+    await store.restoreSession();
+
+    expect(localStorage.getItem('hero')).not.toBeNull();
+  });
+
+  it('login still clears any previous session leftovers in localStorage["hero"]', async () => {
+    localStorage.setItem('hero', JSON.stringify({ nav: { positionByMapId: { m1: { x: 4 } } } }));
+    loginMock.mockResolvedValue({
+      user: { id: 'user-1', username: 'merito', name: 'Merito' },
+      accessToken: 'fresh-token',
+    });
+    fetchHeroMock.mockResolvedValue(FAKE_HERO);
+
+    const store = useUserStore();
+    await store.login('merito', 'secret');
+
+    expect(localStorage.getItem('hero')).toBeNull();
   });
 });

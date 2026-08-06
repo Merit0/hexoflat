@@ -50,7 +50,20 @@ export const useUserStore = defineStore('user', {
   actions: {
     // Applies a login/register/session-restore response to store state —
     // shared so the three call sites can't drift out of sync.
-    async applyAuthResult({ user: userFromApi, accessToken }: AuthResponse): Promise<void> {
+    //
+    // `clearPriorSession` must be false for restoreSession(): it's the same
+    // person's session continuing (not a new one starting), so wiping
+    // `hero` here would blow away the world-map-store position/inventory
+    // data that lives under that key (see main.ts's persist whitelist) —
+    // i.e. every refresh would silently reset the hero back to the map
+    // entry point, right after the httpOnly-cookie fix that was supposed to
+    // stop refresh from losing anything at all. login()/register() still
+    // want the clear: a genuinely new session starting should not inherit
+    // whatever the previous user (on a shared device) left behind.
+    async applyAuthResult(
+      { user: userFromApi, accessToken }: AuthResponse,
+      { clearPriorSession }: { clearPriorSession: boolean },
+    ): Promise<void> {
       this.user
         .setName(userFromApi.name)
         .setUsername(userFromApi.username)
@@ -59,7 +72,9 @@ export const useUserStore = defineStore('user', {
       this.accessToken = accessToken;
       setAuthToken(accessToken);
 
-      clearSessionStorage();
+      if (clearPriorSession) {
+        clearSessionStorage();
+      }
       localStorage.setItem('uStatus', 'true');
 
       const heroStore = useHeroStore();
@@ -68,7 +83,7 @@ export const useUserStore = defineStore('user', {
     async login(username: string, password: string) {
       try {
         const authResult = await loginRequest({ username, password });
-        await this.applyAuthResult(authResult);
+        await this.applyAuthResult(authResult, { clearPriorSession: true });
 
         this.error = '';
         return true;
@@ -87,7 +102,7 @@ export const useUserStore = defineStore('user', {
     async register(username: string, password: string, name: string) {
       try {
         const authResult = await registerRequest({ username, password, name });
-        await this.applyAuthResult(authResult);
+        await this.applyAuthResult(authResult, { clearPriorSession: true });
 
         this.error = '';
         return true;
@@ -109,7 +124,7 @@ export const useUserStore = defineStore('user', {
     async restoreSession(): Promise<boolean> {
       try {
         const authResult = await fetchSession();
-        await this.applyAuthResult(authResult);
+        await this.applyAuthResult(authResult, { clearPriorSession: false });
         return true;
       } catch {
         return false;

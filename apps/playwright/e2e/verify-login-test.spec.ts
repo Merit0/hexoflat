@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { loginAsTestUser } from '../support/login';
 
+// This file tests the login flow itself, so it opts out of the
+// pre-authenticated storage state playwright.config.ts otherwise applies —
+// it needs to start every test genuinely logged out.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test('Verify login redirects to the camping map', async ({ page }) => {
   await loginAsTestUser(page);
 
