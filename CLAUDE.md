@@ -41,6 +41,8 @@ Inspired by general tactical dungeon-crawler concepts (including Frosthaven), bu
 
 See [`docs/MIGRATION-PLAN.md`](./docs/MIGRATION-PLAN.md) for the phase-by-phase breakdown, acceptance criteria, and the pause notes on Phases 11–12.
 
+**Next up — gameplay content, not infra:** [`docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md`](./docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md) is the execution plan for the next chapter of work (content taxonomy, hero token selection, camp hub, tactical movement/interaction, round/initiative tokens, skill tokens, dice, cards), built on top of the design research below. Each phase in that doc is scoped to be its own standalone chat — start a fresh conversation per phase using that doc's "старт чату" prompt block, don't mix phases in one conversation.
+
 ## Design research
 
 [`docs/design/gloomhaven-frosthaven-scout-report.md`](./docs/design/gloomhaven-frosthaven-scout-report.md) (2026-07-24) is a scout report on Gloomhaven/Frosthaven mechanics, UX, and player/community feedback — what to keep as a principle, what to avoid copying, and concrete UX patterns (intent → preview → confirm → explained result, rule trace, AI intent overlay, complexity budgets, drop-in/drop-out multiplayer model). It's design inspiration, not a spec, and must not be a source of copied names/text/art/balance (see the IP constraint above). Consult it before designing new mechanics, cards, scenarios, or campaign/meta systems — especially before tackling the combat design gap noted above, since that report's "Phase 1 — Combat vertical slice" is exactly that unresolved piece.
