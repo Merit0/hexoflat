@@ -1,13 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/fixtures';
 import { loginAsTestUser } from '../support/login';
 
 // This file tests the login flow itself, so it opts out of the
-// pre-authenticated storage state playwright.config.ts otherwise applies —
-// it needs to start every test genuinely logged out.
+// pre-authenticated storage state the fixtures otherwise apply — it needs to
+// start every test genuinely logged out.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test('Verify login redirects to the camping map', async ({ page }) => {
-  await loginAsTestUser(page);
+test('Verify login redirects to the camping map', async ({ page, workerTestUser }) => {
+  await loginAsTestUser(page, workerTestUser);
 
   await expect(page.getByTestId('hex-map')).toBeVisible();
   await expect(page.getByTestId('topbar')).toBeVisible();
@@ -16,8 +16,9 @@ test('Verify login redirects to the camping map', async ({ page }) => {
 
 test('Verify a freshly logged-in hero starts with base 10 HP, not the 0/100 fallback', async ({
   page,
+  workerTestUser,
 }) => {
-  await loginAsTestUser(page);
+  await loginAsTestUser(page, workerTestUser);
 
   // GET /heroes/me auto-creates the hero on first fetch (see
   // heroes.service.ts's findOrCreateByUserId) — this is that very first

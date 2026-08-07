@@ -11,7 +11,7 @@ import { HeroesModule } from './heroes/heroes.module';
   imports: [
     DbModule,
     JwtAuthModule,
-    AuthModule,
+    AuthModule.forRoot(),
     ContentModule,
     GameModule,
     HeroesModule,
