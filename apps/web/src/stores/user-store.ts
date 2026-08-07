@@ -8,7 +8,7 @@ import {
 import { ApiError, type ApiValidationIssue } from '../api/client';
 import { setAuthToken } from '../api/auth-token';
 import UserModel from '@hexoflat/engine/models/user-model';
-import router from '../router';
+import router, { ROUTES } from '../router';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useOverlayStore } from '@/stores/overlay-store';
@@ -80,9 +80,9 @@ export const useUserStore = defineStore('user', {
       const heroStore = useHeroStore();
       await heroStore.getHero();
     },
-    async login(username: string, password: string) {
+    async login(username: string, password: string, rememberMe = true) {
       try {
-        const authResult = await loginRequest({ username, password });
+        const authResult = await loginRequest({ username, password, rememberMe });
         await this.applyAuthResult(authResult, { clearPriorSession: true });
 
         this.error = '';
@@ -151,10 +151,18 @@ export const useUserStore = defineStore('user', {
         clearSessionStorage();
         localStorage.setItem('uStatus', 'false');
 
-        try {
-          await router.push('/login');
-        } catch (e) {
-          console.error('Router push failed during logout:', e);
+        // Skip the redirect when already on a public auth screen (/login or
+        // /register) — login-form.vue's onMounted calls logout() on every
+        // mount to defensively clear stale session state, and forcing
+        // /login here would stomp a direct visit/reload of /register right
+        // back to /login (both routes render the same component).
+        const currentRouteName = router.currentRoute.value.name;
+        if (currentRouteName !== ROUTES.LOGIN && currentRouteName !== ROUTES.REGISTER) {
+          try {
+            await router.push('/login');
+          } catch (e) {
+            console.error('Router push failed during logout:', e);
+          }
         }
       }
     },

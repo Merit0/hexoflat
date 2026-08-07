@@ -72,6 +72,17 @@
     <p v-if="mode === 'register'" class="login-form-hint" data-testid="register-password-hint">
       Password must be at least {{ PASSWORD_MIN_LENGTH }} characters.
     </p>
+    <div v-if="mode === 'login'" class="form-field form-field-checkbox">
+      <label for="login-remember-me">
+        <input
+          id="login-remember-me"
+          v-model="form.rememberMe"
+          data-testid="login-remember-me-checkbox"
+          type="checkbox"
+        />
+        Remember me
+      </label>
+    </div>
     <button
       class="login-form-submit"
       data-testid="login-submit-button"
@@ -106,8 +117,8 @@
 
 <script lang="ts">
 import { useUserStore } from '@/stores/user-store';
-import { defineComponent, reactive, ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { defineComponent, reactive, ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ROUTES } from '@/router';
 
 // Mirrors apps/api/src/auth/auth.dto.ts's RegisterDtoSchema — kept in sync by
@@ -119,15 +130,19 @@ export default defineComponent({
   setup() {
     const userStore = useUserStore();
     const router = useRouter();
+    const route = useRoute();
 
     const form = reactive({
       username: '',
       password: '',
       confirmPassword: '',
       name: '',
+      rememberMe: true,
     });
 
-    const mode = ref<'login' | 'register'>('login');
+    const mode = computed<'login' | 'register'>(() =>
+      route.name === ROUTES.REGISTER ? 'register' : 'login',
+    );
     const showPassword = ref(false);
     const isLoading = ref(false);
 
@@ -136,6 +151,7 @@ export default defineComponent({
       form.password = '';
       form.confirmPassword = '';
       form.name = '';
+      form.rememberMe = true;
     };
 
     const validateRegistration = (): string | null => {
@@ -162,7 +178,7 @@ export default defineComponent({
 
         const success =
           mode.value === 'login'
-            ? await userStore.login(form.username, form.password)
+            ? await userStore.login(form.username, form.password, form.rememberMe)
             : await userStore.register(form.username, form.password, form.name);
         if (!success) return;
 
@@ -184,7 +200,7 @@ export default defineComponent({
     };
 
     const toggleMode = () => {
-      mode.value = mode.value === 'login' ? 'register' : 'login';
+      void router.push({ name: mode.value === 'login' ? ROUTES.REGISTER : ROUTES.LOGIN });
       form.confirmPassword = '';
       userStore.clearErrorMsg();
     };
