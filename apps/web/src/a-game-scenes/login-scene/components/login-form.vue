@@ -117,8 +117,8 @@
 
 <script lang="ts">
 import { useUserStore } from '@/stores/user-store';
-import { defineComponent, reactive, ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { defineComponent, reactive, ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ROUTES } from '@/router';
 
 // Mirrors apps/api/src/auth/auth.dto.ts's RegisterDtoSchema — kept in sync by
@@ -130,6 +130,7 @@ export default defineComponent({
   setup() {
     const userStore = useUserStore();
     const router = useRouter();
+    const route = useRoute();
 
     const form = reactive({
       username: '',
@@ -139,7 +140,9 @@ export default defineComponent({
       rememberMe: true,
     });
 
-    const mode = ref<'login' | 'register'>('login');
+    const mode = computed<'login' | 'register'>(() =>
+      route.name === ROUTES.REGISTER ? 'register' : 'login',
+    );
     const showPassword = ref(false);
     const isLoading = ref(false);
 
@@ -197,7 +200,7 @@ export default defineComponent({
     };
 
     const toggleMode = () => {
-      mode.value = mode.value === 'login' ? 'register' : 'login';
+      void router.push({ name: mode.value === 'login' ? ROUTES.REGISTER : ROUTES.LOGIN });
       form.confirmPassword = '';
       userStore.clearErrorMsg();
     };
