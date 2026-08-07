@@ -1,0 +1,19 @@
+{
+  "content": {
+    "skeletor": {
+      "title": "Скелетор",
+      "subtitle": "Бос",
+      "description": "Це Скелетор. Король усіх проклятих кісток!"
+    },
+    "emitter": {
+      "title": "Емітер",
+      "subtitle": "Бос",
+      "description": "Це Емітер. Бог технологій!"
+    },
+    "inferno": {
+      "title": "Інферно",
+      "subtitle": "Бос",
+      "description": "Ось Пекло. Я — Інферно."
+    }
+  }
+}

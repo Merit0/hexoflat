@@ -19,6 +19,7 @@ import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interaction
 import { getPrototype } from '@hexoflat/engine';
 import { normalizeHealthValue } from '@hexoflat/engine/utils/combat/health-format';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { i18n } from '@/i18n';
 
 export type CombatTurnSide = 'hero' | 'enemy';
 export type CombatActionMode = 'attack' | 'defend' | null;
@@ -706,12 +707,10 @@ export const useCombatStore = defineStore('combat-store', {
       const blockDefense = blockingMarker ? this.getCombatMarkerDefense(blockingMarker.toolKey) : 0;
       const damage = Math.max(0, Number((rawDamage - blockDefense).toFixed(1)));
 
+      const creatureName = i18n.global.t(obj.creature.name);
+
       if (blockingMarker && damage <= 0) {
-        useGameEventsStore().push(
-          'Combat',
-          `${obj.creature.name} blocked the hit [dmg:0]`,
-          'BATTLE',
-        );
+        useGameEventsStore().push('Combat', `${creatureName} blocked the hit [dmg:0]`, 'BATTLE');
         return { ok: true, message: 'Attack was blocked.' };
       }
 
@@ -725,7 +724,7 @@ export const useCombatStore = defineStore('combat-store', {
       } else {
         useGameEventsStore().push(
           heroStore.hero?.name ?? 'Hero',
-          `hit ${obj.creature.name} for [dmg:${damage.toFixed(1)}]`,
+          `hit ${creatureName} for [dmg:${damage.toFixed(1)}]`,
           'BATTLE',
         );
       }
@@ -736,7 +735,7 @@ export const useCombatStore = defineStore('combat-store', {
             ? HexObjectFactory.create(HEXOBJECT_KEYS.GRAVE, target.coordinates)
             : null;
         heroStore.hero?.addKilled();
-        useGameEventsStore().push('Combat', `${obj.creature.name} was defeated`, 'INFO');
+        useGameEventsStore().push('Combat', `${creatureName} was defeated`, 'INFO');
       }
 
       if (!this.hasLivingEnemyCreatures()) {

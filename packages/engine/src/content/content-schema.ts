@@ -37,6 +37,10 @@ const baseContentFields = {
   isInteractable: z.boolean(),
   collision: z.nativeEnum(EHexCollision),
   spritePath: z.string().optional(),
+  // title/subtitle/description (and creature.name/action labels below) are
+  // i18n keys (e.g. 'content.skeletor.title'), not literal display text —
+  // packages/engine stays language-neutral, apps/web resolves them via
+  // vue-i18n against src/locales/{uk,en}/content.json.
   description: z.string().optional(),
 
   title: z.string(),
@@ -77,7 +81,7 @@ const lootSchema = z.object({
 });
 
 const creatureSchema = z.object({
-  name: z.string(),
+  name: z.string(), // i18n key, same convention as baseContentFields.title above
   hp: z.number(),
   hpMax: z.number(),
   attack: z.number(),

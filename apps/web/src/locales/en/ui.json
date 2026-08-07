@@ -1,0 +1,25 @@
+{
+  "settings": {
+    "title": "Settings",
+    "close": "Close",
+    "showHeroMoveTrail": "Show hero move trail",
+    "showEnemyVisionArea": "Show enemy vision area",
+    "language": "Language"
+  },
+  "hexTileDetails": {
+    "emptyTile": "Empty Tile",
+    "tileNotFound": "Tile not found",
+    "noFurtherDetails": "No further details.",
+    "nothingOfInterest": "Nothing of interest here."
+  },
+  "tokenDetails": {
+    "noDescriptionYet": "No description yet.",
+    "type": "Type",
+    "weight": "Weight",
+    "slot": "Slot",
+    "amount": "Amount",
+    "use": "Use",
+    "equip": "Equip",
+    "drop": "Drop"
+  }
+}
