@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { readTestUser } from './credentials';
+import type { TestUser } from './register-user';
 import { waitForHeroPlaced } from './hex-board';
 
 export async function waitForCampingMapReady(page: Page): Promise<void> {
@@ -16,9 +16,7 @@ export async function waitForCampingMapReady(page: Page): Promise<void> {
   await waitForHeroPlaced(page);
 }
 
-export async function loginAsTestUser(page: Page): Promise<void> {
-  const user = readTestUser();
-
+export async function loginAsTestUser(page: Page, user: TestUser): Promise<void> {
   await page.goto('/');
   await page.getByTestId('login-username-input').fill(user.username);
   await page.getByTestId('login-password-input').fill(user.password);

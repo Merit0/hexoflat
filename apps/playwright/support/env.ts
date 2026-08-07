@@ -15,12 +15,3 @@ export const API_URL = process.env.E2E_API_URL ?? 'http://127.0.0.1:3000';
 // resolution, see the comment above — a concern that's specific to Node's
 // fetch, not the browser).
 export const BROWSER_API_URL = process.env.E2E_BROWSER_API_URL ?? 'http://localhost:3000';
-
-export const TEST_USER_FILE = new URL('../.tmp/test-user.json', import.meta.url);
-
-// Pre-authenticated browser storage state for the test user above — see
-// global-setup.ts. Most specs load this by default (playwright.config.ts)
-// instead of driving the login form, so they don't each burn a slot in
-// /auth/login's throttle bucket; specs that test the auth flow itself opt
-// out via `test.use({ storageState: { cookies: [], origins: [] } })`.
-export const STORAGE_STATE_FILE = new URL('../.tmp/storage-state.json', import.meta.url);
