@@ -16,18 +16,23 @@
       <div v-if="tile" class="content" data-testid="tile-details-content">
         <div v-if="categoryLabel" class="row">
           <span class="label">{{ categoryLabel }}</span>
-          <span>{{ tile!.hexobject!.description || 'No further details.' }}</span>
+          <span>{{
+            tile!.hexobject!.description
+              ? t(tile!.hexobject!.description)
+              : t('hexTileDetails.noFurtherDetails')
+          }}</span>
         </div>
-        <p v-else class="empty-note">Nothing of interest here.</p>
+        <p v-else class="empty-note">{{ t('hexTileDetails.nothingOfInterest') }}</p>
       </div>
 
-      <div v-else class="content empty">Tile not found</div>
+      <div v-else class="content empty">{{ t('hexTileDetails.tileNotFound') }}</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { OverlayPayloads } from '@/types/overlay-types';
@@ -37,6 +42,7 @@ const props = defineProps<{
   data: OverlayPayloads['hex-tile-details'];
 }>();
 
+const { t } = useI18n();
 const worldMapStore = useWorldMapStore();
 const overlayStore = useOverlayStore();
 
@@ -70,9 +76,9 @@ const categoryLabel = computed(() => {
 
 const title = computed(() => {
   const hexobject = tile.value?.hexobject;
-  if (!hexobject) return 'Empty Tile';
+  if (!hexobject) return t('hexTileDetails.emptyTile');
 
-  if (hexobject.groupType === EHexobjectGroup.CREATURE) return hexobject.creature.name;
+  if (hexobject.groupType === EHexobjectGroup.CREATURE) return t(hexobject.creature.name);
   if (hexobject.groupType === EHexobjectGroup.LOOT) return hexobject.loot.name;
 
   return categoryLabel.value ?? 'Hex Tile';

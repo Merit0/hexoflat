@@ -4,37 +4,49 @@
       <div class="thumb" :style="thumbStyle"></div>
 
       <div class="meta">
-        <div class="title" data-testid="token-details-title">{{ traits.title }}</div>
+        <div class="title" data-testid="token-details-title">{{ t(traits.title) }}</div>
         <div class="sub">{{ item.key }}</div>
       </div>
     </div>
 
     <div class="desc">
-      {{ traits.description || 'No description yet.' }}
+      {{ traits.description ? t(traits.description) : t('tokenDetails.noDescriptionYet') }}
     </div>
 
     <div class="row">
-      <div class="pill">Type: {{ item.type }}</div>
-      <div class="pill">Weight: {{ traits.weightKg }}</div>
-      <div v-if="item.equipSlot" class="pill">Slot: {{ item.equipSlot }}</div>
-      <div v-if="item.amount > 1" class="pill">Amount: {{ item.amount }}</div>
+      <div class="pill">{{ t('tokenDetails.type') }}: {{ item.type }}</div>
+      <div class="pill">{{ t('tokenDetails.weight') }}: {{ traits.weightKg }}</div>
+      <div v-if="item.equipSlot" class="pill">
+        {{ t('tokenDetails.slot') }}: {{ item.equipSlot }}
+      </div>
+      <div v-if="item.amount > 1" class="pill">
+        {{ t('tokenDetails.amount') }}: {{ item.amount }}
+      </div>
     </div>
 
     <div class="actions">
-      <button class="btn" data-testid="token-details-use-button" disabled>Use</button>
-      <button class="btn" data-testid="token-details-equip-button" disabled>Equip</button>
-      <button class="btn" data-testid="token-details-drop-button" disabled>Drop</button>
+      <button class="btn" data-testid="token-details-use-button" disabled>
+        {{ t('tokenDetails.use') }}
+      </button>
+      <button class="btn" data-testid="token-details-equip-button" disabled>
+        {{ t('tokenDetails.equip') }}
+      </button>
+      <button class="btn" data-testid="token-details-drop-button" disabled>
+        {{ t('tokenDetails.drop') }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 
 const props = defineProps<{ item: InventoryItem }>();
 
+const { t } = useI18n();
 const traits = computed(() => resolveInventoryView(props.item.key));
 
 const thumbStyle = computed(() => ({

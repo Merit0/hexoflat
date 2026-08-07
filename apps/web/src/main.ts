@@ -7,6 +7,7 @@ import router from './router';
 import { validateContent } from '@hexoflat/engine/content/validate-content';
 import { queryClient } from './api/query-client';
 import { useUserStore } from './stores/user-store';
+import { i18n } from './i18n';
 
 if (import.meta.env.DEV) {
   validateContent();
@@ -69,6 +70,7 @@ pinia.use((context) => {
 const app = createApp(App);
 
 app.use(pinia);
+app.use(i18n);
 
 // vue-router's `install()` kicks off the initial navigation (and its
 // `beforeEach` guard reading `userStore.isUserLoggedIn`) the moment
