@@ -1,15 +1,16 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/fixtures';
 import { loginAsTestUser } from '../support/login';
 
 // This file tests the login/session-restore flow itself, so it opts out of
-// the pre-authenticated storage state playwright.config.ts otherwise applies
-// — it needs to start every test genuinely logged out.
+// the pre-authenticated storage state the fixtures otherwise apply — it
+// needs to start every test genuinely logged out.
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test('Verify a page refresh restores the session instead of forcing a relogin', async ({
   page,
+  workerTestUser,
 }) => {
-  await loginAsTestUser(page);
+  await loginAsTestUser(page, workerTestUser);
 
   await page.reload();
 
@@ -24,8 +25,9 @@ test('Verify a page refresh restores the session instead of forcing a relogin', 
 
 test('Verify logging out clears the session cookie so a refresh does not silently relogin', async ({
   page,
+  workerTestUser,
 }) => {
-  await loginAsTestUser(page);
+  await loginAsTestUser(page, workerTestUser);
 
   // dispatchEvent, not click() — the adjacent topbar__logger/game-events-logger
   // panel visually overlaps the logout button at this viewport size and would

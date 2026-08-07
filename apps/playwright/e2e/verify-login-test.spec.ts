@@ -1,14 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/fixtures';
 import { loginAsTestUser, waitForCampingMapReady } from '../support/login';
-import { readTestUser } from '../support/credentials';
 
 // This file tests the login flow itself, so it opts out of the
-// pre-authenticated storage state playwright.config.ts otherwise applies —
-// it needs to start every test genuinely logged out.
+// pre-authenticated storage state the fixtures otherwise apply — it needs to
+// start every test genuinely logged out.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test('Verify login redirects to the camping map', async ({ page }) => {
-  await loginAsTestUser(page);
+test('Verify login redirects to the camping map', async ({ page, workerTestUser }) => {
+  await loginAsTestUser(page, workerTestUser);
 
   await expect(page.getByTestId('hex-map')).toBeVisible();
   await expect(page.getByTestId('topbar')).toBeVisible();
@@ -17,8 +16,9 @@ test('Verify login redirects to the camping map', async ({ page }) => {
 
 test('Verify a freshly logged-in hero starts with base 10 HP, not the 0/100 fallback', async ({
   page,
+  workerTestUser,
 }) => {
-  await loginAsTestUser(page);
+  await loginAsTestUser(page, workerTestUser);
 
   // GET /heroes/me auto-creates the hero on first fetch (see
   // heroes.service.ts's findOrCreateByUserId) — this is that very first
@@ -39,8 +39,11 @@ test('Verify login rejects an unknown user with an inline error', async ({ page 
   await expect(page).toHaveURL(/\/login/);
 });
 
-test('Verify "remember me" checked sets a persistent session cookie', async ({ page }) => {
-  await loginAsTestUser(page);
+test('Verify "remember me" checked sets a persistent session cookie', async ({
+  page,
+  workerTestUser,
+}) => {
+  await loginAsTestUser(page, workerTestUser);
 
   const cookies = await page.context().cookies();
   const sessionCookie = cookies.find((cookie) => cookie.name === 'session');
@@ -49,12 +52,13 @@ test('Verify "remember me" checked sets a persistent session cookie', async ({ p
   expect(sessionCookie?.expires).toBeGreaterThan(Date.now() / 1000);
 });
 
-test('Verify "remember me" unchecked sets a browser-session cookie', async ({ page }) => {
-  const user = readTestUser();
-
+test('Verify "remember me" unchecked sets a browser-session cookie', async ({
+  page,
+  workerTestUser,
+}) => {
   await page.goto('/');
-  await page.getByTestId('login-username-input').fill(user.username);
-  await page.getByTestId('login-password-input').fill(user.password);
+  await page.getByTestId('login-username-input').fill(workerTestUser.username);
+  await page.getByTestId('login-password-input').fill(workerTestUser.password);
   await page.getByTestId('login-remember-me-checkbox').uncheck();
   await page.getByTestId('login-submit-button').click();
 

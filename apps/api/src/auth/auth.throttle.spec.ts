@@ -6,6 +6,7 @@ import cookie from '@fastify/cookie';
 import { DB, type Db } from '../db/db.module';
 import { JwtAuthModule } from '../auth/jwt-auth.module';
 import { AuthModule } from './auth.module';
+import { PRODUCTION_AUTH_THROTTLE_LIMIT } from './auth-throttle.env';
 
 // Empty result set for every `select().from().where().limit()` call — enough
 // for AuthService.login to see "no such user" (401) without ever reaching
@@ -33,8 +34,16 @@ describe('AuthController rate limiting (real HTTP pipeline)', () => {
   let url: string;
 
   beforeAll(async () => {
+    // Pinned explicitly to the production limit rather than relying on
+    // getAuthThrottleLimit()'s NODE_ENV check — vitest runs with NODE_ENV=test,
+    // so that check alone would silently exercise the much higher
+    // non-production budget here instead of the real production one.
     const moduleRef = await Test.createTestingModule({
-      imports: [createTestDbModule(createEmptyFakeDb()), JwtAuthModule, AuthModule],
+      imports: [
+        createTestDbModule(createEmptyFakeDb()),
+        JwtAuthModule,
+        AuthModule.forRoot(PRODUCTION_AUTH_THROTTLE_LIMIT),
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
