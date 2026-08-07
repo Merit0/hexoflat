@@ -80,9 +80,9 @@ export const useUserStore = defineStore('user', {
       const heroStore = useHeroStore();
       await heroStore.getHero();
     },
-    async login(username: string, password: string) {
+    async login(username: string, password: string, rememberMe = true) {
       try {
-        const authResult = await loginRequest({ username, password });
+        const authResult = await loginRequest({ username, password, rememberMe });
         await this.applyAuthResult(authResult, { clearPriorSession: true });
 
         this.error = '';

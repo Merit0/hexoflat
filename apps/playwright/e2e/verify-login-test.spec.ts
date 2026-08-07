@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTestUser } from '../support/login';
+import { loginAsTestUser, waitForCampingMapReady } from '../support/login';
+import { readTestUser } from '../support/credentials';
 
 // This file tests the login flow itself, so it opts out of the
 // pre-authenticated storage state playwright.config.ts otherwise applies —
@@ -36,4 +37,33 @@ test('Verify login rejects an unknown user with an inline error', async ({ page 
 
   await expect(page.getByTestId('login-error-message')).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
+});
+
+test('Verify "remember me" checked sets a persistent session cookie', async ({ page }) => {
+  await loginAsTestUser(page);
+
+  const cookies = await page.context().cookies();
+  const sessionCookie = cookies.find((cookie) => cookie.name === 'session');
+
+  expect(sessionCookie).toBeDefined();
+  expect(sessionCookie?.expires).toBeGreaterThan(Date.now() / 1000);
+});
+
+test('Verify "remember me" unchecked sets a browser-session cookie', async ({ page }) => {
+  const user = readTestUser();
+
+  await page.goto('/');
+  await page.getByTestId('login-username-input').fill(user.username);
+  await page.getByTestId('login-password-input').fill(user.password);
+  await page.getByTestId('login-remember-me-checkbox').uncheck();
+  await page.getByTestId('login-submit-button').click();
+
+  await waitForCampingMapReady(page);
+
+  const cookies = await page.context().cookies();
+  const sessionCookie = cookies.find((cookie) => cookie.name === 'session');
+
+  expect(sessionCookie).toBeDefined();
+  // Playwright reports -1 for cookies with no Max-Age/Expires (browser-session cookies).
+  expect(sessionCookie?.expires).toBe(-1);
 });

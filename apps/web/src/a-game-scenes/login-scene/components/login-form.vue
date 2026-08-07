@@ -72,6 +72,17 @@
     <p v-if="mode === 'register'" class="login-form-hint" data-testid="register-password-hint">
       Password must be at least {{ PASSWORD_MIN_LENGTH }} characters.
     </p>
+    <div v-if="mode === 'login'" class="form-field form-field-checkbox">
+      <label for="login-remember-me">
+        <input
+          id="login-remember-me"
+          v-model="form.rememberMe"
+          data-testid="login-remember-me-checkbox"
+          type="checkbox"
+        />
+        Remember me
+      </label>
+    </div>
     <button
       class="login-form-submit"
       data-testid="login-submit-button"
@@ -125,6 +136,7 @@ export default defineComponent({
       password: '',
       confirmPassword: '',
       name: '',
+      rememberMe: true,
     });
 
     const mode = ref<'login' | 'register'>('login');
@@ -136,6 +148,7 @@ export default defineComponent({
       form.password = '';
       form.confirmPassword = '';
       form.name = '';
+      form.rememberMe = true;
     };
 
     const validateRegistration = (): string | null => {
@@ -162,7 +175,7 @@ export default defineComponent({
 
         const success =
           mode.value === 'login'
-            ? await userStore.login(form.username, form.password)
+            ? await userStore.login(form.username, form.password, form.rememberMe)
             : await userStore.register(form.username, form.password, form.name);
         if (!success) return;
 

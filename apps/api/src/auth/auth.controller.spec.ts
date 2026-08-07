@@ -17,7 +17,7 @@ vi.mock('drizzle-orm', async (importOriginal) => {
 
 import { users } from '../db/schema';
 import type { Db } from '../db/db.module';
-import { AuthController } from './auth.controller';
+import { AuthController, SESSION_COOKIE_MAX_AGE_SECONDS } from './auth.controller';
 import type { AuthService, AuthResult } from './auth.service';
 import type { AuthenticatedRequest } from './jwt-auth.guard';
 
@@ -92,7 +92,10 @@ describe('AuthController', () => {
     const controller = new AuthController(authService, createFakeJwtService(vi.fn()), {} as Db);
     const { reply, setCookie } = createFakeReply();
 
-    const result = await controller.login({ username: 'merito', password: 'secret' }, reply);
+    const result = await controller.login(
+      { username: 'merito', password: 'secret', rememberMe: false },
+      reply,
+    );
 
     expect(result).toBe(SOME_AUTH_RESULT);
     expect(setCookie).toHaveBeenCalledWith(
@@ -100,6 +103,35 @@ describe('AuthController', () => {
       SOME_AUTH_RESULT.accessToken,
       expect.objectContaining({ httpOnly: true, sameSite: 'lax', path: '/' }),
     );
+  });
+
+  it('login with rememberMe: true sets a persistent cookie with maxAge', async () => {
+    const authService = createFakeAuthService({
+      login: vi.fn().mockResolvedValue(SOME_AUTH_RESULT),
+    });
+    const controller = new AuthController(authService, createFakeJwtService(vi.fn()), {} as Db);
+    const { reply, setCookie } = createFakeReply();
+
+    await controller.login({ username: 'merito', password: 'secret', rememberMe: true }, reply);
+
+    expect(setCookie).toHaveBeenCalledWith(
+      'session',
+      SOME_AUTH_RESULT.accessToken,
+      expect.objectContaining({ maxAge: SESSION_COOKIE_MAX_AGE_SECONDS }),
+    );
+  });
+
+  it('login with rememberMe: false sets a session cookie without maxAge', async () => {
+    const authService = createFakeAuthService({
+      login: vi.fn().mockResolvedValue(SOME_AUTH_RESULT),
+    });
+    const controller = new AuthController(authService, createFakeJwtService(vi.fn()), {} as Db);
+    const { reply, setCookie } = createFakeReply();
+
+    await controller.login({ username: 'merito', password: 'secret', rememberMe: false }, reply);
+
+    const [, , options] = setCookie.mock.calls[0] as [string, string, Record<string, unknown>];
+    expect(options).not.toHaveProperty('maxAge');
   });
 
   it('register sets an httpOnly session cookie carrying the access token', async () => {

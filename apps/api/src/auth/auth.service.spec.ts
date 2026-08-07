@@ -101,7 +101,11 @@ describe('AuthService', () => {
     ]);
     const service = new AuthService(db, createFakeJwtService());
 
-    const result = await service.login({ username: 'merito', password: 'secret' });
+    const result = await service.login({
+      username: 'merito',
+      password: 'secret',
+      rememberMe: false,
+    });
 
     expect(result.user.username).toBe('merito');
     expect(result.accessToken).toBe('fake-jwt-token');
@@ -118,18 +122,18 @@ describe('AuthService', () => {
     ]);
     const service = new AuthService(db, createFakeJwtService());
 
-    await expect(service.login({ username: 'merito', password: 'wrong' })).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(
+      service.login({ username: 'merito', password: 'wrong', rememberMe: false }),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it('rejects login for an unknown username', async () => {
     const { db } = createFilteringFakeDb();
     const service = new AuthService(db, createFakeJwtService());
 
-    await expect(service.login({ username: 'ghost', password: 'whatever' })).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(
+      service.login({ username: 'ghost', password: 'whatever', rememberMe: false }),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it('embeds the current tokenVersion as a claim when issuing a token', async () => {
@@ -144,7 +148,7 @@ describe('AuthService', () => {
     const signAsync = vi.fn().mockResolvedValue('fake-jwt-token');
     const service = new AuthService(db, { signAsync } as unknown as JwtService);
 
-    await service.login({ username: 'merito', password: 'secret' });
+    await service.login({ username: 'merito', password: 'secret', rememberMe: false });
 
     expect(signAsync).toHaveBeenCalledWith(expect.objectContaining({ tokenVersion: 0 }));
   });

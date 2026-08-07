@@ -24,15 +24,15 @@ import { LoginDto, LoginDtoSchema, RegisterDto, RegisterDtoSchema } from './auth
 // Fastify's cookie `maxAge` wants seconds, not the '7d'-style string
 // JWT_EXPIRES_IN uses (see jwt.env.ts) — kept as a plain constant here since
 // there's no existing time-string parser in the repo to reuse.
-const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+export const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
-function setSessionCookie(reply: FastifyReply, accessToken: string): void {
+function setSessionCookie(reply: FastifyReply, accessToken: string, persistent: boolean): void {
   reply.setCookie('session', accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: SESSION_COOKIE_MAX_AGE_SECONDS,
+    ...(persistent ? { maxAge: SESSION_COOKIE_MAX_AGE_SECONDS } : {}),
   });
 }
 
@@ -55,7 +55,7 @@ export class AuthController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<AuthResult> {
     const result = await this.authService.login(dto);
-    setSessionCookie(reply, result.accessToken);
+    setSessionCookie(reply, result.accessToken, dto.rememberMe);
     return result;
   }
 
@@ -66,7 +66,7 @@ export class AuthController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<AuthResult> {
     const result = await this.authService.register(dto);
-    setSessionCookie(reply, result.accessToken);
+    setSessionCookie(reply, result.accessToken, true);
     return result;
   }
 

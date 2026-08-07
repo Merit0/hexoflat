@@ -122,3 +122,16 @@
   color: #9ca2a6;
   text-align: center;
 }
+
+.form-field-checkbox {
+  margin: -0.75rem 0;
+}
+
+.form-field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #d5f3ff;
+  cursor: pointer;
+}
