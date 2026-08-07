@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
+import { i18n } from '@/i18n';
+import { detectBrowserLocale, isSupportedLocale, type TLocale } from '@/i18n/locale';
 
 type UiSettingsState = {
   showHeroMoveTrail: boolean;
   showEnemyVisionArea: boolean;
+  locale: TLocale;
 };
 
 const UI_SETTINGS_KEY = 'hexoflat:ui-settings:v1';
@@ -11,6 +14,7 @@ function defaultState(): UiSettingsState {
   return {
     showHeroMoveTrail: true,
     showEnemyVisionArea: true,
+    locale: detectBrowserLocale(),
   };
 }
 
@@ -25,6 +29,8 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
       const parsed = JSON.parse(raw) as Partial<UiSettingsState>;
       this.showHeroMoveTrail = parsed.showHeroMoveTrail ?? true;
       this.showEnemyVisionArea = parsed.showEnemyVisionArea ?? true;
+      this.locale = isSupportedLocale(parsed.locale) ? parsed.locale : detectBrowserLocale();
+      i18n.global.locale.value = this.locale;
     },
 
     saveToStorage() {
@@ -33,6 +39,7 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
         JSON.stringify({
           showHeroMoveTrail: this.showHeroMoveTrail,
           showEnemyVisionArea: this.showEnemyVisionArea,
+          locale: this.locale,
         } satisfies UiSettingsState),
       );
     },
@@ -54,6 +61,12 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
 
     setEnemyVisionArea(value: boolean) {
       this.showEnemyVisionArea = value;
+      this.saveToStorage();
+    },
+
+    setLocale(value: TLocale) {
+      this.locale = value;
+      i18n.global.locale.value = value;
       this.saveToStorage();
     },
   },

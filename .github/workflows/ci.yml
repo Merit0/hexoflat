@@ -14,9 +14,9 @@ jobs:
     name: Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm run audit
@@ -28,9 +28,9 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint
@@ -40,9 +40,9 @@ jobs:
     name: Type checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run typecheck
@@ -51,9 +51,9 @@ jobs:
     name: App build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run build
@@ -62,23 +62,54 @@ jobs:
     name: Unit tests (engine + web)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo run test --filter=@hexoflat/engine --filter=@hexoflat/web
+      - run: pnpm turbo run test:coverage --filter=@hexoflat/engine
+      - run: pnpm turbo run test --filter=@hexoflat/web
 
   api-tests:
     name: API tests
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run test --filter=@hexoflat/api
+
+  db-migrations:
+    name: DB migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hexoflat
+          POSTGRES_PASSWORD: hexoflat
+          POSTGRES_DB: hexoflat
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hexoflat -d hexoflat"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo run test --filter=@hexoflat/api
+      # Local dev uses db:push for fast iteration, which never touches the
+      # checked-in drizzle/*.sql migration files — this is the only place
+      # that verifies those files actually apply cleanly.
+      - run: pnpm --filter @hexoflat/api db:migrate
+        env:
+          DATABASE_URL: postgresql://hexoflat:hexoflat@localhost:5432/hexoflat
 
   e2e-tests:
     name: E2E tests

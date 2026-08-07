@@ -98,6 +98,7 @@ onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
 
 const tiles = computed(() => worldStore.map?.tiles ?? []);
+const tilesDirtyTick = computed(() => worldStore.dirtyTick);
 const activeTool = computed(() => heroToolStore.activeTool);
 
 function handleTileHover(tile: IHexTile) {
@@ -381,6 +382,7 @@ useHexBoard({
   mapBounds,
   domTileSize,
   tiles,
+  tilesDirtyTick,
   heroCoordinates: heroCoordinatesComputed,
   healTickerNow,
   movePreview: {

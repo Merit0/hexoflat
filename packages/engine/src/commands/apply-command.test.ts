@@ -74,6 +74,7 @@ describe('applyCommand: START_HEX_ACTION', () => {
     const command: HexEngineCommand = {
       type: 'START_HEX_ACTION',
       payload: {
+        heroId: 'hero-1',
         coordinates: tile.coordinates,
         actionType: EHexActionType.CUT,
         toolKey: HEXOBJECT_KEYS.AXE,
@@ -101,7 +102,13 @@ describe('applyCommand: START_HEX_ACTION', () => {
 
     const command: HexEngineCommand = {
       type: 'START_HEX_ACTION',
-      payload: { coordinates, actionType: EHexActionType.CUT, toolKey: HEXOBJECT_KEYS.AXE, now: 0 },
+      payload: {
+        heroId: 'hero-1',
+        coordinates,
+        actionType: EHexActionType.CUT,
+        toolKey: HEXOBJECT_KEYS.AXE,
+        now: 0,
+      },
     };
 
     const result = applyCommand(toState(map), command, ctx);
@@ -127,6 +134,7 @@ describe('applyCommand: START_HEX_ACTION', () => {
     const command: HexEngineCommand = {
       type: 'START_HEX_ACTION',
       payload: {
+        heroId: 'hero-1',
         coordinates: tile.coordinates,
         actionType: EHexActionType.CUT,
         toolKey: HEXOBJECT_KEYS.HAND,
@@ -281,6 +289,7 @@ describe('applyCommand: ADD_RESOURCE_SPAWNER', () => {
     const command: HexEngineCommand = {
       type: 'ADD_RESOURCE_SPAWNER',
       payload: {
+        heroId: 'hero-1',
         coordinates: tile.coordinates,
         hexobject: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 30_000 } },
       },
@@ -306,7 +315,7 @@ describe('applyCommand: ADD_RESOURCE_SPAWNER', () => {
 
     const command: HexEngineCommand = {
       type: 'ADD_RESOURCE_SPAWNER',
-      payload: { coordinates, hexobject: { hexobjectKey: HEXOBJECT_KEYS.TREE } },
+      payload: { heroId: 'hero-1', coordinates, hexobject: { hexobjectKey: HEXOBJECT_KEYS.TREE } },
     };
 
     const result = applyCommand(toState(map), command, ctx);

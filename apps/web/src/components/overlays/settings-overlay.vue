@@ -1,10 +1,17 @@
 <template>
-  <div class="overlay-backdrop game-root" @click.self="close">
+  <div
+    class="overlay-backdrop game-root"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settings-overlay-title"
+    tabindex="-1"
+    @click.self="close"
+  >
     <div class="overlay-card">
       <header class="overlay-header">
-        <h2>Settings</h2>
+        <h2 id="settings-overlay-title">{{ t('settings.title') }}</h2>
         <button class="close-btn" data-testid="settings-close-button" type="button" @click="close">
-          Close
+          {{ t('settings.close') }}
         </button>
       </header>
 
@@ -15,7 +22,7 @@
           type="checkbox"
           @change="uiSettings.setHeroMoveTrail(($event.target as HTMLInputElement).checked)"
         />
-        <span>Show hero move trail</span>
+        <span>{{ t('settings.showHeroMoveTrail') }}</span>
       </label>
 
       <label class="setting-row">
@@ -25,16 +32,37 @@
           type="checkbox"
           @change="uiSettings.setEnemyVisionArea(($event.target as HTMLInputElement).checked)"
         />
-        <span>Show enemy vision area</span>
+        <span>{{ t('settings.showEnemyVisionArea') }}</span>
+      </label>
+
+      <label class="setting-row">
+        <span>{{ t('settings.language') }}</span>
+        <select
+          data-testid="settings-locale-select"
+          :value="uiSettings.locale"
+          @change="uiSettings.setLocale(($event.target as HTMLSelectElement).value as TLocale)"
+        >
+          <option v-for="locale in SUPPORTED_LOCALES" :key="locale" :value="locale">
+            {{ LOCALE_LABELS[locale] }}
+          </option>
+        </select>
       </label>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
+import { SUPPORTED_LOCALES, type TLocale } from '@/i18n/locale';
 
+const LOCALE_LABELS: Record<TLocale, string> = {
+  uk: 'Українська',
+  en: 'English',
+};
+
+const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const uiSettings = useUiSettingsStore();
 
@@ -93,6 +121,15 @@ function close() {
 .setting-row input {
   width: 18px;
   height: 18px;
+}
+
+.setting-row select {
+  margin-left: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(190, 220, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(240, 248, 255, 0.95);
+  padding: 6px 10px;
 }
 
 .close-btn {

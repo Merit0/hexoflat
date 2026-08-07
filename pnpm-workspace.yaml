@@ -12,3 +12,8 @@ allowBuilds:
 # the same tree.
 overrides:
   find-my-way: '>=9.6.1'
+  # @nestjs/platform-fastify@11.1.28 also hard-pins an exact fastify@5.10.0,
+  # separate from apps/api's own ^5.11.0 — two installed copies means two
+  # structurally distinct FastifyInstance types, which broke @fastify/helmet's
+  # plugin typing. Force a single resolved fastify across the tree.
+  fastify: '^5.11.0'

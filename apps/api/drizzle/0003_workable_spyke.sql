@@ -1,0 +1,1 @@
+ALTER TABLE "snapshots" ADD COLUMN "checksum" text NOT NULL;

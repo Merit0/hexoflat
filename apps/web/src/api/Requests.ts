@@ -12,7 +12,7 @@ export type User = {
 
 export type AuthResponse = { user: User; accessToken: string };
 
-export type LoginCredentials = { username: string; password: string };
+export type LoginCredentials = { username: string; password: string; rememberMe?: boolean };
 export type RegisterPayload = LoginCredentials & { name: string };
 
 export type SaveRecord = { id: string; name: string; createdAt: string };
@@ -38,6 +38,10 @@ export function register(payload: RegisterPayload): Promise<AuthResponse> {
     (p: RegisterPayload) => apiClient.post<AuthResponse>('/auth/register', p),
     payload,
   );
+}
+
+export function fetchSession(): Promise<AuthResponse> {
+  return apiClient.get<AuthResponse>('/auth/session');
 }
 
 export function fetchHero(): Promise<IHero> {

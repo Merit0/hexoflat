@@ -1,8 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { API_URL, TEST_USER_FILE } from './support/env';
-import type { TestUser } from './support/credentials';
+import { API_URL } from './support/env';
 
 const HEALTH_TIMEOUT_MS = 5_000;
 
@@ -31,37 +27,9 @@ async function checkApiHealth(): Promise<void> {
   }
 }
 
-function uniqueUsername(): string {
-  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  return `e2e-${suffix}`;
-}
-
-async function registerTestUser(): Promise<TestUser> {
-  const user: TestUser = {
-    username: uniqueUsername(),
-    password: 'E2ePassw0rd!',
-    name: 'E2E Hero',
-  };
-
-  const response = await fetch(`${API_URL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user),
-  });
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(`POST ${API_URL}/auth/register failed with HTTP ${response.status}: ${body}`);
-  }
-
-  return user;
-}
-
+// Test users are now registered per-worker (see support/fixtures.ts /
+// support/register-user.ts), not once globally here — this just confirms
+// the API is up before any worker starts registering.
 export default async function globalSetup(): Promise<void> {
   await checkApiHealth();
-  const user = await registerTestUser();
-
-  const filePath = fileURLToPath(TEST_USER_FILE);
-  mkdirSync(dirname(filePath), { recursive: true });
-  writeFileSync(filePath, JSON.stringify(user, null, 2));
 }

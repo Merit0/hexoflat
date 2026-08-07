@@ -8,7 +8,7 @@ export class SpawnResourceFeature {
     this.map = mapModel;
   }
 
-  public spawn(now = Date.now()): boolean {
+  public spawn(now: number): boolean {
     let changed = false;
 
     for (const tile of this.map.tiles) {

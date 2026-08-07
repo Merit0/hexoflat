@@ -1,0 +1,25 @@
+{
+  "settings": {
+    "title": "Налаштування",
+    "close": "Закрити",
+    "showHeroMoveTrail": "Показувати слід руху героя",
+    "showEnemyVisionArea": "Показувати зону видимості ворогів",
+    "language": "Мова"
+  },
+  "hexTileDetails": {
+    "emptyTile": "Порожній тайл",
+    "tileNotFound": "Тайл не знайдено",
+    "noFurtherDetails": "Немає додаткових деталей.",
+    "nothingOfInterest": "Тут немає нічого цікавого."
+  },
+  "tokenDetails": {
+    "noDescriptionYet": "Опису поки немає.",
+    "type": "Тип",
+    "weight": "Вага",
+    "slot": "Слот",
+    "amount": "Кількість",
+    "use": "Використати",
+    "equip": "Одягти",
+    "drop": "Викинути"
+  }
+}

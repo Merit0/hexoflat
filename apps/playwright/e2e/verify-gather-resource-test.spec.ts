@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { loginAsTestUser } from '../support/login';
+import { test, expect } from '../support/fixtures';
+import { gotoCampingMap } from '../support/login';
 import {
   armHandTool,
   getInventoryItemKeys,
@@ -20,7 +20,7 @@ import {
  * its own test rather than folded into move-hero.spec.ts.
  */
 test('Verify any Tool can be taken on the map', async ({ page }) => {
-  await loginAsTestUser(page);
+  await gotoCampingMap(page);
 
   expect(await getInventoryItemKeys(page)).not.toContain('axe');
   expect(await getTileHexobjectKey(page, CAMPING_AXE)).toBe('axe');

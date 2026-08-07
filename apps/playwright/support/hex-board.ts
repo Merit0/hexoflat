@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * The 'camping' map is generated as a fixed WIDTH x HEIGHT rectangle
@@ -173,9 +173,9 @@ async function readCampingMapId(page: Page): Promise<string> {
   return mapId;
 }
 
-export async function getHeroCoordinates(page: Page): Promise<HexCoordinates> {
+async function readHeroCoordinates(page: Page): Promise<HexCoordinates | null> {
   const mapId = await readCampingMapId(page);
-  const coords = await page.evaluate(
+  return page.evaluate(
     ({ statePrefix, mapId }) => {
       const raw = localStorage.getItem(statePrefix + mapId);
       if (!raw) return null;
@@ -184,9 +184,21 @@ export async function getHeroCoordinates(page: Page): Promise<HexCoordinates> {
     },
     { statePrefix: STORAGE_STATE_PREFIX, mapId },
   );
+}
 
+export async function getHeroCoordinates(page: Page): Promise<HexCoordinates> {
+  const coords = await readHeroCoordinates(page);
   if (!coords) throw new Error('Hero has no coordinates yet on the camping map.');
   return coords;
+}
+
+// world-map-store.ts debounces its localStorage save by SAVE_DEBOUNCE_MS
+// (750ms) — a fast, direct navigation straight to /world/camping (see
+// support/login.ts's gotoCampingMap) can easily get past canvas-ready and
+// try to read hero placement before that debounce has actually flushed.
+// Polling (rather than a blind sleep) waits exactly as long as it needs to.
+export async function waitForHeroPlaced(page: Page): Promise<void> {
+  await expect.poll(() => readHeroCoordinates(page), { timeout: 2_000 }).not.toBeNull();
 }
 
 /**

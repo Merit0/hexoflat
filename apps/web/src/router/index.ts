@@ -6,6 +6,7 @@ const HexWorldMap = () => import('@/a-game-scenes/map-scene/components/hex-world
 
 export const ROUTES = {
   LOGIN: 'login',
+  REGISTER: 'register',
   WORLD: 'world',
   BATTLE: 'battle',
 } as const;
@@ -18,6 +19,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: ROUTES.LOGIN,
+    component: LoginPage,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/register',
+    name: ROUTES.REGISTER,
     component: LoginPage,
     meta: { requiresAuth: false },
   },

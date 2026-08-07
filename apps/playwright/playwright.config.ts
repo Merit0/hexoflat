@@ -4,9 +4,8 @@ import { WEB_URL } from './support/env';
 export default defineConfig({
   testDir: './e2e',
   globalSetup: './global-setup.ts',
-  fullyParallel: false,
+  fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
   // allure-playwright only writes raw result JSON (allure-results/) — the
   // browsable HTML report is a separate build step (`report:allure:generate`,
   // via the `allure-commandline` CLI), run in CI after the test run and

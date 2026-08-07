@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { DB, type Db } from '../db/db.module';
 import { users } from '../db/schema';
@@ -34,8 +34,8 @@ export class AuthService {
     @Inject(JwtService) private readonly jwtService: JwtService,
   ) {}
 
-  private issueToken(user: PublicUser): Promise<string> {
-    return this.jwtService.signAsync({ sub: user.id, username: user.username });
+  private issueToken(user: PublicUser, tokenVersion: number): Promise<string> {
+    return this.jwtService.signAsync({ sub: user.id, username: user.username, tokenVersion });
   }
 
   async register(dto: RegisterDto): Promise<AuthResult> {
@@ -55,7 +55,7 @@ export class AuthService {
       .returning();
 
     const user = toPublicUser(record);
-    return { user, accessToken: await this.issueToken(user) };
+    return { user, accessToken: await this.issueToken(user, record.tokenVersion) };
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {
@@ -69,6 +69,28 @@ export class AuthService {
     }
 
     const user = toPublicUser(record);
-    return { user, accessToken: await this.issueToken(user) };
+    return { user, accessToken: await this.issueToken(user, record.tokenVersion) };
+  }
+
+  // Issues a fresh access token for an already-verified session (see
+  // GET /auth/session) — same response shape as login/register, keyed by id
+  // instead of credentials.
+  async refreshSession(userId: string): Promise<AuthResult> {
+    const [record] = await this.db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!record) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    const user = toPublicUser(record);
+    return { user, accessToken: await this.issueToken(user, record.tokenVersion) };
+  }
+
+  // The actual revocation: every token issued before this bump carries the
+  // old tokenVersion, so JwtAuthGuard's lookup rejects it from here on.
+  async logout(userId: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ tokenVersion: sql`${users.tokenVersion} + 1` })
+      .where(eq(users.id, userId));
   }
 }

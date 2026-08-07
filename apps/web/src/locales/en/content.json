@@ -1,0 +1,19 @@
+{
+  "content": {
+    "skeletor": {
+      "title": "Skeletor",
+      "subtitle": "Boss",
+      "description": "This is the Skeletor. The King of all cursed bones!"
+    },
+    "emitter": {
+      "title": "Emitter",
+      "subtitle": "Boss",
+      "description": "This is the Emitter. The God of technology!"
+    },
+    "inferno": {
+      "title": "Inferno",
+      "subtitle": "Boss",
+      "description": "Here is the Hell. I am, Inferno "
+    }
+  }
+}

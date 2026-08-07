@@ -14,6 +14,7 @@ describe('GameEngineService', () => {
       {
         type: 'ADD_RESOURCE_SPAWNER',
         payload: {
+          heroId: 'hero-1',
           coordinates: { columnIndex: 0, rowIndex: 0 },
           hexobject: { hexobjectKey: 'tree' },
         },
