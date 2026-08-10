@@ -20,7 +20,11 @@ import { getReachableTileDistances } from '@hexoflat/engine/hero-movement/reacha
 import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
-import router, { ROUTES } from '@/router';
+import {
+  isViewingOtherWorldLocation,
+  navigateToLocation,
+  routeToLocation,
+} from '@/services/world/location-navigator';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
 import type { HexEngineActionContext } from '@hexoflat/engine';
@@ -30,14 +34,23 @@ import {
   clearLocationMapIndex,
   newMapId,
   readLocationMapIndex,
-  readRespawnSchedule,
   readSavedMap,
   readSavedWorldState,
   removeSavedWorld,
   scheduleWorldSave,
   writeLocationMapIndex,
-  writeRespawnSchedule,
 } from '@/services/persistence/world-storage';
+import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
+import { worldLoop } from '@/services/world/world-loop';
+// Aliased on purpose: the store keeps same-named actions as its public
+// facade, so unaliased imports would read as recursive calls.
+import {
+  clearLocationRespawn as clearRespawn,
+  consumeDueLocationRespawn,
+  getLocationRespawnRemainingMs as getRespawnRemainingMs,
+  isLocationRespawning as isRespawning,
+  scheduleLocationRespawn as scheduleRespawn,
+} from '@/services/world/respawn-schedule';
 import { useCombatStore, type CombatSnapshot } from '@/stores/combat-store';
 
 type TWorldState = {
@@ -48,8 +61,6 @@ type TWorldState = {
 function initialLocationKey(): LocationKey {
   return 'camping';
 }
-
-let worldTimer: number | null = null;
 
 // Combat state lives in combat-store but is persisted inside *this* store's
 // state blob, so something has to notice combat mutations and save them.
@@ -72,13 +83,6 @@ function withoutCombatAutosave(hydrate: () => void) {
     isHydratingFromStorage = false;
   }
 }
-
-// Tile ids touched since the renderer last flushed — lets use-hex-board.ts's
-// tiles-layer watcher recompute only the tiles that actually changed instead
-// of deep-walking the whole tiles array on every mutation. Kept module-level
-// (not reactive state) since only the `dirtyTick` counter below needs to be
-// a Vue-tracked signal; the ids themselves are read once per flush.
-const dirtyTileIds = new Set<string>();
 
 export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
   const { events } = applyCommand(
@@ -139,22 +143,18 @@ export const useWorldMapStore = defineStore('world-map-store', {
         inventory: useHeroInventoryStore(),
         events: useGameEventsStore(),
         worldMap,
-        navigate: (locationKey) => {
-          void router
-            .push({ name: ROUTES.WORLD, params: { locationKey } })
-            .catch((e: unknown) => console.error('Router push failed:', e));
-        },
+        navigate: (locationKey) => navigateToLocation(locationKey),
       };
     },
 
     markTileDirty(coordinates: IHexCoordinates) {
-      dirtyTileIds.add(coordinateKey(coordinates));
+      tileDirtyTracker.add(coordinates);
       this.dirtyTick += 1;
     },
 
     markTilesDirty(coordinatesList: IHexCoordinates[]) {
       if (!coordinatesList.length) return;
-      for (const c of coordinatesList) dirtyTileIds.add(coordinateKey(c));
+      tileDirtyTracker.addMany(coordinatesList);
       this.dirtyTick += 1;
     },
 
@@ -163,16 +163,14 @@ export const useWorldMapStore = defineStore('world-map-store', {
     // anywhere the exact set of touched tiles isn't cheaply knowable.
     markAllTilesDirty() {
       if (!this.map) return;
-      for (const t of this.map.tiles) dirtyTileIds.add(coordinateKey(t.coordinates));
+      tileDirtyTracker.addMany(this.map.tiles.map((t) => t.coordinates));
       this.dirtyTick += 1;
     },
 
     // Called once per render flush by the tiles-layer watcher — hands over
     // the accumulated ids and clears them so the next mutation starts fresh.
     consumeDirtyTileIds(): Set<string> {
-      const ids = new Set(dirtyTileIds);
-      dirtyTileIds.clear();
-      return ids;
+      return tileDirtyTracker.consume();
     },
 
     executeHexAction(
@@ -246,44 +244,28 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     scheduleLocationRespawn(locationKey: LocationKey, delayMs: number) {
-      const schedule = readRespawnSchedule();
-      schedule[locationKey] = Date.now() + delayMs;
-      writeRespawnSchedule(schedule);
+      scheduleRespawn(locationKey, delayMs);
     },
 
     clearLocationRespawn(locationKey: LocationKey) {
-      const schedule = readRespawnSchedule();
-      if (!(locationKey in schedule)) return;
-      delete schedule[locationKey];
-      writeRespawnSchedule(schedule);
+      clearRespawn(locationKey);
     },
 
     getLocationRespawnRemainingMs(locationKey: LocationKey) {
-      const schedule = readRespawnSchedule();
-      const respawnAt = schedule[locationKey];
-      if (!respawnAt) return 0;
-
-      return Math.max(0, respawnAt - Date.now());
+      return getRespawnRemainingMs(locationKey);
     },
 
     isLocationRespawning(locationKey: LocationKey) {
-      return this.getLocationRespawnRemainingMs(locationKey) > 0;
+      return isRespawning(locationKey);
     },
 
     syncLocationRespawn(locationKey: LocationKey) {
-      const schedule = readRespawnSchedule();
-      const respawnAt = schedule[locationKey];
-      if (!respawnAt) return;
-      if (Date.now() < respawnAt) return;
+      if (!consumeDueLocationRespawn(locationKey)) return;
 
-      const index = readLocationMapIndex();
-      const mapId = index[locationKey];
+      const mapId = readLocationMapIndex()[locationKey];
       if (mapId) {
         this.clearStoredLocation(locationKey, mapId);
       }
-
-      delete schedule[locationKey];
-      writeRespawnSchedule(schedule);
     },
 
     hasGraveMarker() {
@@ -340,14 +322,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
       heroStore.reviveAtOneHp();
       events.push('Combat', 'hero was defeated and returned to camping', 'INFO');
 
-      if (
-        router.currentRoute.value.name === ROUTES.WORLD &&
-        router.currentRoute.value.params.locationKey !== 'camping'
-      ) {
-        await router.push({
-          name: ROUTES.WORLD,
-          params: { locationKey: 'camping' },
-        });
+      if (isViewingOtherWorldLocation('camping')) {
+        await routeToLocation('camping');
         return;
       }
 
@@ -591,9 +567,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     startWorldLoop() {
-      if (worldTimer) return;
-
-      worldTimer = window.setInterval(() => {
+      worldLoop.start(() => {
         if (!this.map || !this.currentMapId) return;
         const changed = runWorldTick(
           this.map as HexMapModel,
@@ -604,14 +578,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
           this.markAllTilesDirty();
           this.saveToStorage(this.currentMapId);
         }
-      }, 250);
+      });
     },
 
     stopWorldLoop() {
-      if (worldTimer) {
-        clearInterval(worldTimer);
-        worldTimer = null;
-      }
+      worldLoop.stop();
     },
 
     placeHeroAtEntry(locationKey: LocationKey) {
