@@ -4,6 +4,7 @@ packages:
 
 allowBuilds:
   esbuild: true
+  unrs-resolver: true
   vue-demi: true
 
 # @nestjs/platform-fastify@11.1.28 hard-pins find-my-way@9.6.0 (vulnerable to

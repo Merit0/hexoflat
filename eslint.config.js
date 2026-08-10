@@ -5,6 +5,8 @@ import tseslint from 'typescript-eslint';
 import vueParser from 'vue-eslint-parser';
 import prettierConfig from 'eslint-config-prettier';
 import vueI18nPlugin from '@intlify/eslint-plugin-vue-i18n';
+import importXPlugin from 'eslint-plugin-import-x';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 const webTsconfigRootDir = path.join(repoRoot, 'apps/web');
@@ -33,6 +35,43 @@ const I18N_MIGRATED_VUE_FILES = [
 export default tseslint.config(
   {
     ignores: ['apps/*/dist/**', 'packages/*/dist/**', '**/back-up/**', '**/tsconfig.tsbuildinfo'],
+  },
+
+  // G0 (docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md): cycles between
+  // modules are invisible until something else breaks — this makes the
+  // world-map-store <-> combat-store cycle (and any future one) show up in
+  // CI instead of being tribal knowledge. `warn`, not `error`, deliberately:
+  // this phase only wants the cycle *visible*, not blocking; G2 removes the
+  // cycle and G6 is where import cycles graduate to a hard failure.
+  {
+    files: [...APP_SRC_FILES, ...ENGINE_SRC_FILES, ...API_SRC_FILES],
+    plugins: { 'import-x': importXPlugin },
+    settings: {
+      // Both settings below are load-bearing, and the failure mode if either
+      // is missing is silent: no-cycle resolves nothing, finds no imports to
+      // walk, and reports zero problems on a repo that definitely has a
+      // cycle. Verified against the real world-map-store <-> combat-store
+      // cycle, not assumed.
+      // - resolver-next: teaches it the `@/*` alias and workspace packages.
+      // - parsers: lets it *parse* the .ts files it resolved. Without this
+      //   every dependency's import list comes back empty.
+      'import-x/parsers': {
+        '@typescript-eslint/parser': ['.ts', '.tsx', '.cts', '.mts'],
+      },
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({
+          alwaysTryTypes: true,
+          project: [
+            path.join(webTsconfigRootDir, 'tsconfig.json'),
+            path.join(engineTsconfigRootDir, 'tsconfig.json'),
+            path.join(apiTsconfigRootDir, 'tsconfig.json'),
+          ],
+        }),
+      ],
+    },
+    rules: {
+      'import-x/no-cycle': 'warn',
+    },
   },
 
   ...tseslint.configs.recommended,
@@ -71,6 +110,15 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
+      // G0 ratchet (docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md): pinned
+      // to the measured 10.08.2026 maximum in apps/web/src, so this starts
+      // green and only blocks growth *past* today's God Class/Component
+      // files (world-map-store.ts, combat-store.ts, hex-world-map.vue).
+      // G6 lowers these once G1-G5 shrink the actual maximums.
+      'max-lines': ['error', { max: 703, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 188, skipBlankLines: true, skipComments: true }],
+      complexity: ['error', { max: 39 }],
+      'max-depth': ['error', { max: 4 }],
     },
   },
 
@@ -106,6 +154,14 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
+      // G0 ratchet, same rationale as the apps/web block above — pinned to
+      // the measured 10.08.2026 maximum in packages/engine/src. Note this
+      // package stays clean (all engine files are already under Part 1's
+      // >400-line red line); the ratchet exists so it stays that way.
+      'max-lines': ['error', { max: 371, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 116, skipBlankLines: true, skipComments: true }],
+      complexity: ['error', { max: 43 }],
+      'max-depth': ['error', { max: 4 }],
     },
   },
 
