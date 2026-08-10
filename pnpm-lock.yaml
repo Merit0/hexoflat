@@ -154,6 +154,9 @@ importers:
       allure-commandline:
         specifier: ^2.43.0
         version: 2.43.0
+      allure-js-commons:
+        specifier: ^3.10.2
+        version: 3.10.2(allure-playwright@3.10.2(@playwright/test@1.62.0))
       allure-playwright:
         specifier: ^3.10.2
         version: 3.10.2(@playwright/test@1.62.0)

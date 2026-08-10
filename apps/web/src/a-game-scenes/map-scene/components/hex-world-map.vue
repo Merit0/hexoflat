@@ -17,7 +17,12 @@
         >
           <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
 
-          <canvas ref="boardCanvasRef" class="hex-board-canvas" data-testid="hex-board-canvas" />
+          <canvas
+            ref="boardCanvasRef"
+            class="hex-board-canvas"
+            data-testid="hex-board-canvas"
+            :data-ready="isBoardReady ? '1' : undefined"
+          />
 
           <tool-hex-tile
             v-if="heroToolStore.isDragging && activeTool"
@@ -64,6 +69,8 @@ import { useOverlayStore } from '@/stores/overlay-store';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
+import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
+import { createTestApi } from '@/e2e/create-test-api';
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -93,6 +100,24 @@ watch(
 );
 
 onMounted(() => worldStore.bootstrapWorld());
+// The condition is inlined (rather than read from a helper) so Vite can
+// statically fold it away: in any build without VITE_E2E_HOOKS=true this
+// whole branch is dead code, both imports go unused, and the e2e hook
+// modules never make it into the bundle at all.
+onMounted(() => {
+  if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+  installTestHooks(
+    createTestApi({
+      getMapBounds: () => mapBounds.value,
+      getTileSize: () => ({ w: domTileW.value, h: domTileH.value }),
+      isBoardReady: () => isBoardReady.value,
+    }),
+  );
+});
+onBeforeUnmount(() => {
+  if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+  uninstallTestHooks();
+});
 onMounted(() => uiSettingsStore.hydrateFromStorage());
 onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
@@ -113,6 +138,7 @@ const probeRef = ref<HTMLElement | null>(null);
 const domTileW = ref(0);
 const domTileH = ref(0);
 const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
+const isBoardReady = ref(false);
 
 function readDomTileSize() {
   const el = probeRef.value;
@@ -404,6 +430,9 @@ useHexBoard({
     void handleTileClick(tile);
   },
   onOpenHeroInventory: () => useOverlayStore().openOverlay('hero-inventory'),
+  onBoardReady: () => {
+    isBoardReady.value = true;
+  },
 });
 
 /* ---------- scale ---------- */

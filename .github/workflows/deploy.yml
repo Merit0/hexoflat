@@ -1,8 +1,18 @@
 name: Deploy to GitHub Pages
 
+# Deliberately deploys the whole Pages site (apps/web/dist + the Allure report
+# at /e2e-report) from every PR as well as from the trunk branches, so a PR
+# always has a live report link rather than a zip artifact.
+#
+# The trade-off was made knowingly: the game published at the Pages root is
+# whatever the most recent successful deploy built, so between a PR deploy and
+# the next trunk deploy the public site shows that PR's build. If that ever
+# stops being acceptable, the fix is to publish only dist/e2e-report from PR
+# runs and restore apps/web/dist from the last trunk deploy.
 on:
   push:
-    branches: [main]
+    branches: [main, game-dev-vite]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -40,15 +50,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm turbo run lint
-
-      - name: Typecheck
-        run: pnpm turbo run typecheck
-
-      - name: Test
-        run: pnpm turbo run test
-
+      # No lint/typecheck/test here: ci.yml already runs all three as their
+      # own jobs on the exact same commit (every PR, every push to a trunk
+      # branch). Repeating them only made every deploy slower.
       - name: Build
         env:
           GITHUB_PAGES: 'true'
@@ -74,6 +78,11 @@ jobs:
   deploy:
     name: Deploy
     needs: build
+    # A pull_request run from a fork gets a read-only GITHUB_TOKEN — no
+    # `pages: write`, no OIDC id-token — so the deploy step below cannot
+    # possibly succeed there. Skipping keeps fork PRs green instead of
+    # failing on something the contributor cannot fix.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment:
       name: github-pages

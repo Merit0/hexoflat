@@ -83,6 +83,25 @@ jobs:
           path: apps/playwright/playwright-report/
           retention-days: 7
 
+      # Allure only draws its trend graphs when the *previous* run's history/
+      # folder is present in allure-results before generation. Without this the
+      # report is rebuilt from scratch every time and every trend chart is
+      # empty. The live Pages deployment is the only durable store we have, so
+      # the previous report's history is pulled straight back out of it.
+      #
+      # continue-on-error + `|| true`: on the very first run (or any run before
+      # Pages has ever been published) these URLs 404, and that must not fail
+      # the job.
+      - name: Fetch previous Allure history (for the trend graphs)
+        if: always()
+        continue-on-error: true
+        run: |
+          BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/e2e-report"
+          mkdir -p apps/playwright/allure-results/history
+          for f in history.json duration-trend.json retry-trend.json categories-trend.json; do
+            curl -sfL "$BASE/history/$f" -o "apps/playwright/allure-results/history/$f" || true
+          done
+
       - name: Generate Allure report
         if: always()
         run: pnpm --filter @hexoflat/playwright run report:allure:generate
@@ -95,15 +114,15 @@ jobs:
           path: apps/playwright/allure-report/
           retention-days: 7
 
-      # On a PR/branch run there's no fresh Pages deploy to link to, but the
-      # previous main-branch report is still live at a fixed, predictable
-      # URL — worth surfacing here so "no live link on PRs" doesn't read as
-      # "no live link at all". deploy.yml overwrites this same path with a
-      # report matching this exact run whenever it runs on main.
-      - name: Link latest deployed Allure report in the job summary
+      # deploy.yml publishes this same run's report to the fixed Pages URL
+      # below (on every PR as well as on the trunk branches — see the note at
+      # the top of deploy.yml), so the link is live a minute or two after this
+      # job finishes. The artifact stays as the offline fallback for runs
+      # where the deploy job was skipped, e.g. fork PRs.
+      - name: Link the deployed Allure report in the job summary
         if: always()
         run: |
           echo "### Allure report" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- This run's full report: see the \`allure-report\` artifact above (download + open \`index.html\`)." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Latest **main**-branch report (live, updated on every push to main): https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/e2e-report/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Live report for this run (published once the Deploy job finishes): https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/e2e-report/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Offline copy: the \`allure-report\` artifact above (download + open \`index.html\`)." >> "$GITHUB_STEP_SUMMARY"

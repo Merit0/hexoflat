@@ -1,9 +1,16 @@
-import { Application, Container } from 'pixi.js';
+import { Application, Container, UPDATE_PRIORITY } from 'pixi.js';
 
 export interface HexBoardApp {
   app: Application;
   worldContainer: Container;
   resize(width: number, height: number): void;
+  /**
+   * Runs `callback` once the renderer has actually presented a frame — not
+   * merely once the scene graph has been populated. Registered at UTILITY
+   * priority, which is below the LOW-priority render step `Application`
+   * installs, so by the time it fires the first frame is genuinely on screen.
+   */
+  onFirstFramePresented(callback: () => void): void;
   destroy(): void;
 }
 
@@ -42,6 +49,9 @@ export async function createHexBoardApp(
     resize(width: number, height: number) {
       if (width <= 0 || height <= 0) return;
       app.renderer.resize(width, height);
+    },
+    onFirstFramePresented(callback: () => void) {
+      app.ticker.addOnce(callback, undefined, UPDATE_PRIORITY.UTILITY);
     },
     destroy() {
       app.destroy(true, { children: true, texture: false });
