@@ -274,7 +274,9 @@ wire them in and delete the inline copies. No behaviour changes. Dedicated branc
 
 ---
 
-### Фаза G2 — Розірвати цикл `world-map-store` ↔ `combat-store`
+### Фаза G2 — Винести persistence у власний шар `[DONE — 10.08.2026]`
+
+> **Назву й ціль фази довелось виправити по факту.** Спочатку фаза називалась «розірвати цикл». Перед початком робіт залежності перевірили поіменно — і виявилось, що діагноз у 2.3 неповний: persistence **не є** причиною циклу, а лише одним із чотирьох зчеплень. Деталі — у блоці «Чому цикл лишився» нижче.
 
 **Мета.** Прибрати 16 викликів `worldStore.saveToStorage()` з `combat-store`. Це блокер для G3 і G4 — доки цикл є, обидва стори не розпилюються незалежно.
 
@@ -300,6 +302,31 @@ map index + respawn schedule) — reconcile with it first, don't build a third p
 persistence module. Keep the on-disk format byte-identical. No behaviour changes. Write
 characterization tests for save/load before moving anything. Dedicated branch. Ask before commit.
 ```
+
+#### Результат G2
+
+Створено `apps/web/src/services/persistence/world-storage.ts` (133 рядки) — єдиний власник усіх ключів світу, `CONTENT_VERSION`-гейту, дебаунсу 750 мс і `beforeunload`-флашу. Модуль **не імпортує жодного стора**: дані приходять і повертаються як прості значення, тому він тестується сам по собі й не може стати новим ребром у циклі. Старий `apps/web/src/stores/world-persistence.ts` поглинуто й видалено (не продубльовано).
+
+- `world-map-store.ts`: 886 → **862**; жодного `localStorage` не лишилось.
+- `combat-store.ts`: 727 → **711**; **16 викликів `saveToStorage()` → 0**, `useWorldMapStore` 19 → **13** (лишились тільки читання мапи + `revealAroundHero`/`respawnHeroAtCamping`).
+- Модулів із прямим `localStorage`: 8 → **7** (усі решта — не світові: hero, ui-settings, user, inventory, i18n, main).
+- Формат на диску не змінився: ключі, конверти й текст warn-повідомлень збережені дослівно.
+
+**Замість 16 ручних збережень — одна підписка.** `world-map-store` тепер робить `useCombatStore().$subscribe(...)` (`enableCombatAutosave()`, вмикається в `bootstrapWorld()`). Це прибирає цілий клас багів «додав combat-екшен, забув зберегти». Гідрація захищена: `withoutCombatAutosave()` глушить підписку на час `loadFromStorage`, інакше читання блоба одразу планувало б запис того, що ще вантажиться.
+
+**Тести.** 14 характеризаційних тестів написані **до** переносу (`world-map-persistence.test.ts`) і фіксують не структуру викликів, а сам контракт на диску: точні ключі, конверт, вікно дебаунсу, ізоляцію по `mapId`, знімок стану на момент виклику. Усі 14 пройшли й до, і після переносу. Тест на автозбереження окремо перевірено мутацією (тимчасово знешкодив підписку — тест впав, як і має), щоб він не проходив вхолосту. Разом: web 146 → **160** unit-тестів, e2e 20/20.
+
+#### Чому цикл лишився (і куди його перенесено)
+
+Розділ 2.3 стверджував, що причина циклу — persistence. Це **неправильний діагноз**, перевірений поіменно перед початком робіт. Цикл тримається на чотирьох незалежних зчепленнях, і persistence — лише одне:
+
+**`world-map-store` → `combat-store`:** `buildEngineContext()` проводить combat-порти в engine (`combatActive`, `performHeroCombatAttack`, `placeCombatDefendMarker`); `moveHeroTo` веде облік `combatStepsLeft` і смикає `clearCombatAttackTrace`/`syncEnemyAutoDefend`; `endCombat()` у двох місцях.
+
+**`combat-store` → `world-map-store`:** читання `map`/`getTileAt`/`heroCoordinates`/`isHeroMoving`; `revealAroundHero()`; `respawnHeroAtCamping()`.
+
+Тобто **навіть ідеальне винесення persistence не могло прибрати жоден із двох імпортів** — критерій «`import/no-cycle` без попереджень» був недосяжний у межах цієї фази. Прибрати цикл можна лише разом із `moveHeroTo` та engine-портами (пункт 7 фази **G3**) і оркестрацією бою (**G4**). Доти три цикли лишаються видимими попередженнями — це свідомо, а не забуто.
+
+Урок той самий, що в 3.1: перед розпилом треба дивитись на граф залежностей, а не на здогад про причину.
 
 ---
 

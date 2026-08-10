@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import HexMapModel, { type ISerializedHexMap } from '@hexoflat/engine/map/models/hex-map-model';
+import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { coordinateKey, getOddQNeighbors } from '@hexoflat/engine/utils/hex-utils';
@@ -31,9 +31,13 @@ import {
   newMapId,
   readLocationMapIndex,
   readRespawnSchedule,
+  readSavedMap,
+  readSavedWorldState,
+  removeSavedWorld,
+  scheduleWorldSave,
   writeLocationMapIndex,
   writeRespawnSchedule,
-} from '@/stores/world-persistence';
+} from '@/services/persistence/world-storage';
 import { useCombatStore, type CombatSnapshot } from '@/stores/combat-store';
 
 type TWorldState = {
@@ -45,11 +49,29 @@ function initialLocationKey(): LocationKey {
   return 'camping';
 }
 
-const STORAGE_MAP_PREFIX = 'hexoflat:world:map:v1:';
-const STORAGE_STATE_PREFIX = 'hexoflat:world:state:v1:';
-const SAVE_DEBOUNCE_MS = 750;
-
 let worldTimer: number | null = null;
+
+// Combat state lives in combat-store but is persisted inside *this* store's
+// state blob, so something has to notice combat mutations and save them.
+// That used to be 16 hand-written `worldStore.saveToStorage()` calls inside
+// combat-store — i.e. every new combat action had to remember to save, and
+// forgetting silently lost state. One subscription replaces all of them:
+// saves are debounced anyway, so the extra granularity costs no extra writes.
+let combatAutosaveStop: (() => void) | null = null;
+
+// loadFromStorage() hydrates combat-store as part of reading the blob back.
+// Without this guard that hydration would immediately schedule a save of the
+// state we are still in the middle of loading.
+let isHydratingFromStorage = false;
+
+function withoutCombatAutosave(hydrate: () => void) {
+  isHydratingFromStorage = true;
+  try {
+    hydrate();
+  } finally {
+    isHydratingFromStorage = false;
+  }
+}
 
 // Tile ids touched since the renderer last flushed — lets use-hex-board.ts's
 // tiles-layer watcher recompute only the tiles that actually changed instead
@@ -57,34 +79,6 @@ let worldTimer: number | null = null;
 // (not reactive state) since only the `dirtyTick` counter below needs to be
 // a Vue-tracked signal; the ids themselves are read once per flush.
 const dirtyTileIds = new Set<string>();
-
-interface PendingSave {
-  mapSnapshot: string | null;
-  stateSnapshot: string;
-  timer: number;
-}
-
-// Keyed by mapId so a save for one map (e.g. the map being left on
-// navigation) can never be dropped by a debounced save for another map
-// racing it — only redundant saves to the *same* map collapse together.
-const pendingSaves = new Map<string, PendingSave>();
-
-function flushPendingSave(mapId: string, save: PendingSave) {
-  if (save.mapSnapshot) localStorage.setItem(STORAGE_MAP_PREFIX + mapId, save.mapSnapshot);
-  localStorage.setItem(STORAGE_STATE_PREFIX + mapId, save.stateSnapshot);
-}
-
-// Debounced writes are still pending in memory until their timer fires — flush
-// them immediately so a tab close doesn't silently lose the last ~750ms of state.
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    for (const [mapId, save] of pendingSaves) {
-      window.clearTimeout(save.timer);
-      flushPendingSave(mapId, save);
-    }
-    pendingSaves.clear();
-  });
-}
 
 export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
   const { events } = applyCommand(
@@ -231,8 +225,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const heroStore = useHeroStore();
       const index = readLocationMapIndex();
 
-      localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
-      localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
+      removeSavedWorld(mapId);
 
       if (index[locationKey] === mapId) {
         delete index[locationKey];
@@ -361,8 +354,17 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.goToLocation('camping');
     },
 
+    enableCombatAutosave() {
+      if (combatAutosaveStop) return;
+      combatAutosaveStop = useCombatStore().$subscribe(() => {
+        if (isHydratingFromStorage) return;
+        this.saveToStorage();
+      });
+    },
+
     bootstrapWorld() {
       const heroStore = useHeroStore();
+      this.enableCombatAutosave();
 
       const locationKey = heroStore.nav.locationKey;
       const mapId = heroStore.nav.locationMapId ?? undefined;
@@ -485,14 +487,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
     loadFromStorage(mapId: string) {
       const combatStore = useCombatStore();
 
-      const savedMap = localStorage.getItem(STORAGE_MAP_PREFIX + mapId);
-      const parsedMap = savedMap
-        ? (JSON.parse(savedMap) as { contentVersion?: number; map?: ISerializedHexMap })
-        : null;
+      const savedMap = readSavedMap(mapId);
 
-      if (parsedMap?.map && parsedMap.contentVersion === CONTENT_VERSION) {
+      if (savedMap) {
         const loadedAt = Date.now();
-        const hydratedMap = HexMapModel.fromJSON(parsedMap.map, loadedAt);
+        const hydratedMap = HexMapModel.fromJSON(savedMap, loadedAt);
         this.map = hydratedMap;
         this.hydrateResourcesFromConfig();
 
@@ -502,48 +501,37 @@ export const useWorldMapStore = defineStore('world-map-store', {
           this.saveToStorage(mapId);
         }
       } else {
-        if (parsedMap) {
-          console.warn(
-            `[world-map-store] Discarding saved map for "${mapId}": content version mismatch.`,
-          );
-          localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
-        }
         this.map = null;
       }
 
-      const savedState = localStorage.getItem(STORAGE_STATE_PREFIX + mapId);
-      const raw = savedState ? (JSON.parse(savedState) as Partial<TWorldState>) : null;
+      const raw = readSavedWorldState<TWorldState>(mapId);
 
-      if (raw && raw.contentVersion === CONTENT_VERSION) {
+      if (raw) {
         this.heroCoordinates = raw.heroCoordinates ?? null;
-        combatStore.hydrate({
-          combatActive: raw.combatActive ?? false,
-          combatTurnSide: raw.combatTurnSide ?? 'hero',
-          combatStepsLeft: raw.combatStepsLeft ?? 0,
-          combatStoredStepsBeforeDefend: raw.combatStoredStepsBeforeDefend ?? null,
-          combatTurnEndsAt: raw.combatTurnEndsAt ?? null,
-          combatActionMode: raw.combatActionMode ?? null,
-          combatAttackUsed: raw.combatAttackUsed ?? false,
-          combatDefendUsed: raw.combatDefendUsed ?? false,
-          combatMarkers:
-            raw.combatMarkers?.map((marker) => ({
-              owner: marker.owner,
-              coord: { ...marker.coord },
-              kind: marker.kind,
-              visible: marker.visible ?? true,
-              toolKey: marker.toolKey ?? null,
-            })) ?? [],
-        });
+        withoutCombatAutosave(() =>
+          combatStore.hydrate({
+            combatActive: raw.combatActive ?? false,
+            combatTurnSide: raw.combatTurnSide ?? 'hero',
+            combatStepsLeft: raw.combatStepsLeft ?? 0,
+            combatStoredStepsBeforeDefend: raw.combatStoredStepsBeforeDefend ?? null,
+            combatTurnEndsAt: raw.combatTurnEndsAt ?? null,
+            combatActionMode: raw.combatActionMode ?? null,
+            combatAttackUsed: raw.combatAttackUsed ?? false,
+            combatDefendUsed: raw.combatDefendUsed ?? false,
+            combatMarkers:
+              raw.combatMarkers?.map((marker) => ({
+                owner: marker.owner,
+                coord: { ...marker.coord },
+                kind: marker.kind,
+                visible: marker.visible ?? true,
+                toolKey: marker.toolKey ?? null,
+              })) ?? [],
+          }),
+        );
       } else {
-        if (raw) {
-          console.warn(
-            `[world-map-store] Discarding saved world state for "${mapId}": content version mismatch.`,
-          );
-          localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
-        }
         this.heroCoordinates = null;
         this.woodCollected = 0;
-        combatStore.resetToDefaults();
+        withoutCombatAutosave(() => combatStore.resetToDefaults());
       }
 
       if (!this.map) return;
@@ -599,18 +587,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         heroCoordinates: this.heroCoordinates,
         ...useCombatStore().toSnapshot(),
       };
-      const stateSnapshot = JSON.stringify(state);
-
-      const existing = pendingSaves.get(targetMapId);
-      if (existing) window.clearTimeout(existing.timer);
-
-      const timer = window.setTimeout(() => {
-        const save = pendingSaves.get(targetMapId);
-        pendingSaves.delete(targetMapId);
-        if (save) flushPendingSave(targetMapId, save);
-      }, SAVE_DEBOUNCE_MS);
-
-      pendingSaves.set(targetMapId, { mapSnapshot, stateSnapshot, timer });
+      scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
     },
 
     startWorldLoop() {
@@ -870,8 +847,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       const index = readLocationMapIndex();
       for (const mapId of Object.values(index)) {
-        localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
-        localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
+        removeSavedWorld(mapId);
       }
 
       clearLocationMapIndex();

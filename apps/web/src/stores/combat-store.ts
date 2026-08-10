@@ -238,7 +238,6 @@ export const useCombatStore = defineStore('combat-store', {
       this.combatActive = true;
       this.revealCombatVision();
       this.beginCombatTurn('hero');
-      useWorldMapStore().saveToStorage();
       useGameEventsStore().push('Combat', 'combat mode engaged', 'INFO');
     },
 
@@ -253,7 +252,6 @@ export const useCombatStore = defineStore('combat-store', {
       this.combatAttackUsed = false;
       this.combatDefendUsed = false;
       this.combatMarkers = [];
-      useWorldMapStore().saveToStorage();
     },
 
     beginCombatTurn(side: CombatTurnSide) {
@@ -272,8 +270,6 @@ export const useCombatStore = defineStore('combat-store', {
       if (side === 'hero') {
         this.syncEnemyAutoDefend();
       }
-
-      useWorldMapStore().saveToStorage();
 
       if (side === 'enemy') {
         void this.ensureEnemyTurnResolution();
@@ -296,12 +292,10 @@ export const useCombatStore = defineStore('combat-store', {
       if (mode === 'attack' && this.combatAttackUsed) return;
       if (mode === 'defend' && this.combatDefendUsed) return;
       this.combatActionMode = this.combatActionMode === mode ? null : mode;
-      worldStore.saveToStorage();
     },
 
     cancelCombatAction() {
       this.combatActionMode = null;
-      useWorldMapStore().saveToStorage();
     },
 
     revealCombatMarkers(owner: CombatTurnSide, kind: CombatMarker['kind'] = 'defend') {
@@ -320,7 +314,6 @@ export const useCombatStore = defineStore('combat-store', {
       });
 
       if (changed) {
-        useWorldMapStore().saveToStorage();
       }
     },
 
@@ -329,7 +322,6 @@ export const useCombatStore = defineStore('combat-store', {
       if (nextMarkers.length === this.combatMarkers.length) return;
 
       this.combatMarkers = nextMarkers;
-      useWorldMapStore().saveToStorage();
     },
 
     placeCombatDefendMarker(target: IHexCoordinates, toolKey?: THeroToolKey | null): boolean {
@@ -360,7 +352,6 @@ export const useCombatStore = defineStore('combat-store', {
       this.combatStepsLeft = 0;
       this.combatActionMode = null;
       useGameEventsStore().push('Combat', 'hero placed shield', 'INFO');
-      useWorldMapStore().saveToStorage();
       return true;
     },
 
@@ -385,7 +376,6 @@ export const useCombatStore = defineStore('combat-store', {
       this.combatStoredStepsBeforeDefend = null;
       this.combatActionMode = null;
       useGameEventsStore().push('Combat', 'hero removed shield', 'INFO');
-      worldStore.saveToStorage();
       return true;
     },
 
@@ -432,7 +422,6 @@ export const useCombatStore = defineStore('combat-store', {
       });
 
       useGameEventsStore().push('Combat', 'enemy auto-raised shield', 'INFO');
-      worldStore.saveToStorage();
     },
 
     async moveEnemyAlongRoute(enemyTile: HexTileModel, route: IHexCoordinates[]) {
@@ -452,7 +441,6 @@ export const useCombatStore = defineStore('combat-store', {
         this.combatStepsLeft = Math.max(0, this.combatStepsLeft - 1);
         this.clearCombatAttackTrace();
         worldStore.revealAroundHero();
-        worldStore.saveToStorage();
       });
 
       return currentTile;
@@ -515,7 +503,6 @@ export const useCombatStore = defineStore('combat-store', {
 
         if (!attackCandidates.length) {
           this.combatStepsLeft = 0;
-          worldStore.saveToStorage();
           return;
         }
 
@@ -542,7 +529,6 @@ export const useCombatStore = defineStore('combat-store', {
           visible: true,
           toolKey: null,
         });
-        worldStore.saveToStorage();
         this.revealCombatMarkers('hero');
 
         const rawDamage = this.getEnemyAttackDamage(currentEnemyTile.coordinates);
@@ -619,7 +605,6 @@ export const useCombatStore = defineStore('combat-store', {
         }
 
         this.combatStepsLeft = 0;
-        worldStore.saveToStorage();
       } finally {
         this.isEnemyTurnResolving = false;
 
@@ -720,7 +705,6 @@ export const useCombatStore = defineStore('combat-store', {
         useGameEventsStore().push('Combat', 'area cleared', 'INFO');
       }
 
-      worldStore.saveToStorage();
       return { ok: true, message: 'Attack landed.' };
     },
   },
