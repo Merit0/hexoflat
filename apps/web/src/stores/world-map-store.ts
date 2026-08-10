@@ -153,10 +153,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       };
     },
 
-    // ======================================================
-    // DIRTY-TILE TRACKING (render perf)
-    // ======================================================
-
     markTileDirty(coordinates: IHexCoordinates) {
       dirtyTileIds.add(coordinateKey(coordinates));
       this.dirtyTick += 1;
@@ -383,10 +379,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
     },
 
-    // ======================================================
-    // NAVIGATION
-    // ======================================================
-
     goToLocation(locationKey: LocationKey, preferredMapId?: string) {
       const heroStore = useHeroStore();
 
@@ -489,10 +481,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.startWorldLoop();
       heroStore.setLocation(locationKey, mapId);
     },
-
-    // ======================================================
-    // MAP LIFECYCLE
-    // ======================================================
 
     loadFromStorage(mapId: string) {
       const combatStore = useCombatStore();
@@ -625,10 +613,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       pendingSaves.set(targetMapId, { mapSnapshot, stateSnapshot, timer });
     },
 
-    // ======================================================
-    // WORLD LOOP
-    // ======================================================
-
     startWorldLoop() {
       if (worldTimer) return;
 
@@ -652,10 +636,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
         worldTimer = null;
       }
     },
-
-    // ======================================================
-    // HERO MOVEMENT & VISIBILITY
-    // ======================================================
 
     placeHeroAtEntry(locationKey: LocationKey) {
       if (!this.map) return;
@@ -854,10 +834,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.saveToStorage();
     },
 
-    // ======================================================
-    // RESOURCES
-    // ======================================================
-
     hydrateResourcesFromConfig() {
       if (!this.map?.config?.length) return;
       const map = this.map as HexMapModel;
@@ -888,10 +864,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
         }
       }
     },
-
-    // ======================================================
-    // RESET
-    // ======================================================
 
     clearAllWorlds() {
       this.stopWorldLoop();

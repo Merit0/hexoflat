@@ -219,7 +219,6 @@ onBeforeUnmount(() => {
   opacity: 0.8;
 }
 
-/* dropdown */
 .logger-dropdown {
   position: absolute;
   right: 0;
@@ -297,7 +296,6 @@ onBeforeUnmount(() => {
   opacity: 0.8;
 }
 
-/* transition */
 .logger-fade-enter-active,
 .logger-fade-leave-active {
   transition:

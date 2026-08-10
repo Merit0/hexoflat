@@ -31,14 +31,14 @@ function starterHeroData(): HeroData {
 export class HeroesService {
   constructor(@Inject(DB) private readonly db: Db) {}
 
-  async findByUserId(userId: string): Promise<IHero | null> {
+  findByUserId = async (userId: string): Promise<IHero | null> => {
     const [record] = await this.db.select().from(heroes).where(eq(heroes.userId, userId)).limit(1);
     if (!record) {
       return null;
     }
     const data = HeroDataSchema.parse(record.data);
     return { id: record.id, name: record.name, ...data };
-  }
+  };
 
   /**
    * Registration never creates a hero row on its own — this is the actual
@@ -70,12 +70,12 @@ export class HeroesService {
    * a transaction-scoped `db` (e.g. from `ScenarioStateService.release()`) so
    * this update lands atomically with whatever else the caller is persisting.
    */
-  async updateLocation(
+  updateLocation = async (
     heroId: string,
     heroLocation: IHexCoordinates,
     heroSteps: number,
     db: Db = this.db,
-  ): Promise<void> {
+  ): Promise<void> => {
     const [record] = await db.select().from(heroes).where(eq(heroes.id, heroId)).limit(1);
     if (!record) {
       return;
@@ -86,5 +86,5 @@ export class HeroesService {
       .update(heroes)
       .set({ data: { ...data, heroLocation, heroSteps }, updatedAt: new Date().toISOString() })
       .where(eq(heroes.id, heroId));
-  }
+  };
 }

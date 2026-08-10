@@ -20,13 +20,13 @@ export interface IHeroToolPort {
   activeTool: THeroToolKey | null;
   hover: IHexCoordinates | null;
   stoneCollected?: number;
-  consumeDurability(costPct: number): boolean;
-  lockTool(tile: HexTileModel, endsAt: number): void;
-  unlockTool(): void;
-  clearResolvedActions(): void;
-  stopTool(): void;
-  addTreeCut?(amount: number): void;
-  collectStones?(amount: number): void;
+  consumeDurability: (costPct: number) => boolean;
+  lockTool: (tile: HexTileModel, endsAt: number) => void;
+  unlockTool: () => void;
+  clearResolvedActions: () => void;
+  stopTool: () => void;
+  addTreeCut?: (amount: number) => void;
+  collectStones?: (amount: number) => void;
 }
 
 export interface IHeroPort {
@@ -35,28 +35,31 @@ export interface IHeroPort {
     maxHealth: number;
     currentHealth: number;
   };
-  healHero(amount: number): void;
+  healHero: (amount: number) => void;
 }
 
 export interface IGatheringPort {
-  add(key: THexobjectKey, amount?: number): void;
+  add: (key: THexobjectKey, amount?: number) => void;
 }
 
 export interface IInventoryPort {
-  putToInventory(key: THexobjectKey, amount?: number): { ok: boolean; message?: string };
+  putToInventory: (key: THexobjectKey, amount?: number) => { ok: boolean; message?: string };
 }
 
 export interface IEventsPort {
-  push(actorName: string, message: string, type?: TGameEventType): void;
+  push: (actorName: string, message: string, type?: TGameEventType) => void;
 }
 
 export interface IWorldMapPort {
   combatActive: boolean;
-  performHeroCombatAttack(tile: HexTileModel, toolKey: string): { ok: boolean; message: string };
-  placeCombatDefendMarker(target: IHexCoordinates, toolKey?: THeroToolKey | null): boolean;
-  isLocationRespawning(locationKey: LocationKey): boolean;
-  getLocationRespawnRemainingMs(locationKey: LocationKey): number;
-  goToLocation(locationKey: LocationKey): void;
+  performHeroCombatAttack: (
+    tile: HexTileModel,
+    toolKey: string,
+  ) => { ok: boolean; message: string };
+  placeCombatDefendMarker: (target: IHexCoordinates, toolKey?: THeroToolKey | null) => boolean;
+  isLocationRespawning: (locationKey: LocationKey) => boolean;
+  getLocationRespawnRemainingMs: (locationKey: LocationKey) => number;
+  goToLocation: (locationKey: LocationKey) => void;
 }
 
 export interface IActionContext {

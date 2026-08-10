@@ -14,8 +14,4 @@ export interface IHero {
   imgPath: string;
   heroLocation: IHexCoordinates;
   heroSteps: number;
-  // equipment: EquipmentModel;
-  // heroDices: DiceModel[]
-  // experienceCollector(): void;
-  // getHeroDices(): DiceModel[];
 }

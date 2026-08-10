@@ -66,9 +66,6 @@ export const useCombatStore = defineStore('combat-store', {
   }),
 
   actions: {
-    // ======================================================
-    // PERSISTENCE BRIDGE
-    // ======================================================
     // world-map-store.ts's saveToStorage()/loadFromStorage() persist combat
     // state in the same localStorage blob as the map (existing on-disk
     // format, not changed by this split) — these two are its read/write seam
@@ -119,10 +116,6 @@ export const useCombatStore = defineStore('combat-store', {
         })),
       };
     },
-
-    // ======================================================
-    // QUERIES
-    // ======================================================
 
     getCombatMoveBudget(): number {
       return 10;
@@ -218,10 +211,6 @@ export const useCombatStore = defineStore('combat-store', {
       return true;
     },
 
-    // ======================================================
-    // VISION
-    // ======================================================
-
     revealCombatVision() {
       const worldStore = useWorldMapStore();
       if (!worldStore.map) return;
@@ -242,10 +231,6 @@ export const useCombatStore = defineStore('combat-store', {
         }
       }
     },
-
-    // ======================================================
-    // TURN FLOW
-    // ======================================================
 
     startCombat() {
       if (this.combatActive) return;
@@ -318,10 +303,6 @@ export const useCombatStore = defineStore('combat-store', {
       this.combatActionMode = null;
       useWorldMapStore().saveToStorage();
     },
-
-    // ======================================================
-    // MARKERS
-    // ======================================================
 
     revealCombatMarkers(owner: CombatTurnSide, kind: CombatMarker['kind'] = 'defend') {
       let changed = false;
@@ -453,10 +434,6 @@ export const useCombatStore = defineStore('combat-store', {
       useGameEventsStore().push('Combat', 'enemy auto-raised shield', 'INFO');
       worldStore.saveToStorage();
     },
-
-    // ======================================================
-    // ENEMY TURN RESOLUTION
-    // ======================================================
 
     async moveEnemyAlongRoute(enemyTile: HexTileModel, route: IHexCoordinates[]) {
       const worldStore = useWorldMapStore();

@@ -147,7 +147,6 @@ function getEquippedItem(slot: TEquipSlot) {
   return equippedItems.value[slot];
 }
 
-/* ---------- HEX RING COMPRESSION ---------- */
 const RING_COMPRESS = 0.57;
 const INSET_PX = computed(() => Math.round(HEX_SIZE.value * 0.015));
 
@@ -177,7 +176,6 @@ function compressAroundCenter(x: number, y: number) {
   return { x: cx, y: cy };
 }
 
-/* ---------- BOUNDS ---------- */
 const bleed = 10;
 
 const bounds = computed(() => {

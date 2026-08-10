@@ -91,7 +91,6 @@ describe('applyCommand: START_HEX_ACTION', () => {
       },
     ]);
     expect(tile.pendingAction).toMatchObject({ type: EHexActionType.CUT, endsAt: 5000 });
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.fn() reference, not `this`-bound
     expect(ctx.heroToolStore.lockTool).toHaveBeenCalledWith(tile, 5000);
   });
 
@@ -196,9 +195,7 @@ describe('applyCommand: FINISH_PENDING_ACTIONS', () => {
     expect(result.events).toEqual([{ type: 'HEX_ACTIONS_FINISHED', payload: { changed: true } }]);
     expect(tile.pendingAction).toBeNull();
     expect(tile.hexobject).toBeNull();
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.fn() reference, not `this`-bound
     expect(ctx.gathering.add).toHaveBeenCalledWith(HEXOBJECT_KEYS.TREE, 1);
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.fn() reference, not `this`-bound
     expect(ctx.heroToolStore.unlockTool).toHaveBeenCalled();
   });
 

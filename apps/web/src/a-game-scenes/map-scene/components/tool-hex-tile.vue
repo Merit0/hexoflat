@@ -59,9 +59,6 @@ const heroStore = useHeroStore();
 
 const activeToolKey = computed<THeroToolKey | null>(() => heroToolStore.activeTool);
 
-/** ---------------------------
- *  Tile lookup
- *  -------------------------- */
 const hoveredTile = computed<HexTileModel | null>(() => {
   const c = heroToolStore.hover;
   const map = worldMapStore.map;
@@ -76,9 +73,6 @@ const hoveredTile = computed<HexTileModel | null>(() => {
   );
 });
 
-/** ---------------------------
- *  Position style
- *  -------------------------- */
 const posStyle = computed(() => {
   if (!heroToolStore.hover) return { display: 'none' };
 
@@ -90,9 +84,6 @@ const posStyle = computed(() => {
   };
 });
 
-/** ---------------------------
- *  Tool class (normalized)
- *  -------------------------- */
 const toolStyle = computed(() => {
   const key = activeToolKey.value ?? HEXOBJECT_KEYS.HAND;
   const toolHexImagePath = getPrototype(key).spritePath;
@@ -104,10 +95,6 @@ const toolStyle = computed(() => {
     backgroundPosition: 'center',
   };
 });
-
-/** ---------------------------
- *  Resolve actions (no side effects in computed)
- *  -------------------------- */
 
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
@@ -175,7 +162,6 @@ const bestAction = computed<ResolvedAction | null>(() => {
 
 const bestActionLabel = computed(() => bestAction.value?.label ?? null);
 
-// update store in watch (clean)
 watch(
   resolvedActions,
   (actions) => {
@@ -184,9 +170,6 @@ watch(
   { immediate: true },
 );
 
-/** ---------------------------
- *  Pending action + working state
- *  -------------------------- */
 const pendingAction = computed(() => hoveredTile.value?.pendingAction ?? null);
 
 const now = ref(Date.now());
@@ -237,9 +220,6 @@ const secondsLeft = computed(() => {
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
 });
 
-/** ---------------------------
- *  Execute action
- *  -------------------------- */
 function executeAction() {
   const tile = hoveredTile.value;
   const best = bestAction.value;
@@ -275,7 +255,6 @@ function executeAction() {
     0 12px 28px rgba(0, 0, 0, 0.55);
 }
 
-/* tool skins */
 .tool-hex-tile.hand {
   background: url('/hex-assets/hex-tools/hand-hex-image.png') center/cover no-repeat;
 }
@@ -288,7 +267,6 @@ function executeAction() {
   background: url('/hex-assets/hex-tools/pickaxe-token-image.png') center/cover no-repeat;
 }
 
-/* buttons */
 .hide-btn {
   width: 18px;
   min-width: 18px;
@@ -343,7 +321,6 @@ function executeAction() {
   transform: scale(0.98);
 }
 
-/* pos wrapper */
 .tool-hex-pos {
   position: absolute;
   z-index: 120;
@@ -371,7 +348,6 @@ function executeAction() {
   pointer-events: auto;
 }
 
-/* working anim */
 .tool-hex-tile.doing {
   animation: tool-chop 220ms ease-in-out infinite;
   scale: 0.7;
