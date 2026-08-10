@@ -1,4 +1,4 @@
-import { API_URL, BROWSER_API_URL } from './env';
+import { API_URL, BROWSER_API_URL } from '@config/env';
 
 export interface TestUser {
   username: string;

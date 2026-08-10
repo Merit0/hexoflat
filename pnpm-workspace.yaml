@@ -17,3 +17,9 @@ overrides:
   # structurally distinct FastifyInstance types, which broke @fastify/helmet's
   # plugin typing. Force a single resolved fastify across the tree.
   fastify: '^5.11.0'
+  # postcss@8.5.25 (pulled in by @vue/compiler-sfc, several levels under
+  # apps/web's vue dependency) hard-pins nanoid@3.3.16, vulnerable to
+  # GHSA-2v37-7h3g-55p8 (custom generators can loop indefinitely when size is
+  # 0). nanoid isn't a direct dependency anywhere in the repo — force the
+  # patched version across the tree.
+  nanoid: '>=3.3.17'

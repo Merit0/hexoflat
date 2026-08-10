@@ -5,3 +5,13 @@ node_modules
 pnpm-lock.yaml
 **/tsconfig.tsbuildinfo
 .turbo
+
+# Playwright run artifacts. Gitignored, but prettier walks the working tree,
+# so without this `pnpm format:check` fails locally on machine-generated JSON
+# the moment anyone runs the e2e suite.
+apps/playwright/allure-results
+apps/playwright/allure-report
+apps/playwright/blob-report
+apps/playwright/playwright-report
+apps/playwright/test-results
+apps/playwright/.tmp

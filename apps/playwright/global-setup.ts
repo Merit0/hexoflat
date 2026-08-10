@@ -1,4 +1,4 @@
-import { API_URL } from './support/env';
+import { API_URL } from './src/config/env';
 
 const HEALTH_TIMEOUT_MS = 5_000;
 
@@ -27,8 +27,8 @@ async function checkApiHealth(): Promise<void> {
   }
 }
 
-// Test users are now registered per-worker (see support/fixtures.ts /
-// support/register-user.ts), not once globally here — this just confirms
+// Test users are registered per-worker (see src/fixtures/test.ts /
+// src/api/register-user.ts), not once globally here — this just confirms
 // the API is up before any worker starts registering.
 export default async function globalSetup(): Promise<void> {
   await checkApiHealth();
