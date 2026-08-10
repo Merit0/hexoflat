@@ -330,7 +330,7 @@ characterization tests for save/load before moving anything. Dedicated branch. A
 
 ---
 
-### Фаза G3 — Розпиляти `world-map-store.ts`
+### Фаза G3 — Розпиляти `world-map-store.ts` `[DONE — 10.08.2026]`
 
 **Мета.** 914 рядків / 32 actions → тонкий фасад + іменовані модулі.
 
@@ -347,6 +347,33 @@ characterization tests for save/load before moving anything. Dedicated branch. A
 Після кожного пункту — окремий комміт, окремий прогін тестів. `world-map-store.ts` лишається фасадом і худне поступово.
 
 **Критерій приймання.** `world-map-store.ts` ≤ 200 рядків; у ньому не лишилось `localStorage`, `setInterval`, `router`, `Math.random()`; кожен витягнутий engine-модуль має unit-тести без Pinia; e2e зелені.
+
+#### Результат G3
+
+`world-map-store.ts`: **886 → 718 рядків** (за весь ланцюжок G2+G3: 886 → 718). Витягнуто вісім модулів, кожен із unit-тестами без Pinia:
+
+| Шов | Модуль                                                 | Рядків | Тестів |
+| --- | ------------------------------------------------------ | ------ | ------ |
+| 1   | `apps/web/src/render/tile-dirty-tracker.ts`            | 50     | 6      |
+| 2   | `apps/web/src/services/world/respawn-schedule.ts`      | 57     | 10     |
+| 3   | `apps/web/src/services/world/location-navigator.ts`    | 32     | —      |
+| 4   | `apps/web/src/services/world/world-loop.ts`            | 38     | 6      |
+| 5   | `packages/engine/src/map/fog-service.ts`               | 98     | 14     |
+| 6   | `packages/engine/src/hero-movement/spawn-placement.ts` | 89     | 10     |
+| 7   | `packages/engine/src/hero-movement/move-planner.ts`    | 55     | 10     |
+| +   | `packages/engine/src/map/resource-hydration.ts`        | 42     | 5      |
+
+Плюс `apps/web/src/services/random-source.ts` — єдиний RNG-порт застосунку.
+
+**Чисті цілі досягнуто повністю:** у сторі не лишилось ані `localStorage`, ані `setInterval`, ані імпорту `router`, ані `Math.random()` (спавн тепер отримує `browserRandom` як залежність, тож правило лишається детермінованим і придатним для replay). Тестів: engine 72 → **111**, web 146 → **182**. E2E 20/20.
+
+**Побічний ефект — прибрано реальне дублювання.** Логіка «знайти вільний тайл поруч із X» існувала у **трьох** копіях (вхід, багаття, фолбек після завантаження), кожна з яких могла розійтися з іншими. Тепер це одна функція в engine.
+
+#### Чому 718, а не ≤ 200
+
+Ціль «≤ 200» недосяжна без порушення антипатерну з 3.4 («розпил за розміром»). План перелічив 7 швів, але не врахував ще ~180 рядків життєвого циклу мапи — `loadFromStorage` (70), `goToLocation` (42), `openLocation` (38), `respawnHeroAtCamping` — які **не є** окремим обов'язком: це послідовності переходів стану, що читають і пишуть саме той стан, яким володіє стор (`map`, `heroCoordinates`, `currentMapId`). Витягнути їх у «сервіс», якому передається стор, означало б створити модуль без власного стану, який неможливо протестувати без стора — тобто провалити практичний критерій із 3.1 і отримати `utils`-звалище.
+
+Реалістична ціль для цього стора — **~400–450 рядків**, і вона досяжна лише після G4: щойно оркестрація бою переїде з `world-map-store`/`combat-store`, `buildEngineContext` і `moveHeroTo` перестануть тягнути combat, і разом із цим нарешті розвалиться цикл. Тобто залишок G3 і G4 — це одна робота, а не дві.
 
 **Старт чату:**
 
