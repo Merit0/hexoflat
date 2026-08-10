@@ -41,7 +41,6 @@ export function throwWeapon(
   const dy = to.y - from.y;
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
 
-  // 🎞️ Запускаємо анімацію на наступному кадрі
   requestAnimationFrame(() => {
     el.style.transform = `translate(${dx}px, ${dy}px) rotate(${angle + 720}deg)`;
   });

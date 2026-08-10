@@ -51,11 +51,6 @@ export function useTileClick() {
   async function handleTileClick(tile: IHexTile) {
     logTileClick(tile);
 
-    // if (tile.isLocked) {
-    //     overlayStore.openOverlay("tile-locked-hint", {coord: tile.coordinates});
-    //     return;
-    // }
-
     if (
       combatStore.combatActive &&
       (combatStore.combatTurnSide !== 'hero' || combatStore.isEnemyTurnResolving)

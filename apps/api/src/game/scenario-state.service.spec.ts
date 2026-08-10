@@ -268,7 +268,6 @@ describe('ScenarioStateService', () => {
       await service.ensureHero(scenarioId, 'user-1', HERO.id);
       await service.ensureHero(scenarioId, 'user-1', HERO.id);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.fn() reference, not `this`-bound
       expect(heroesService.findByUserId).toHaveBeenCalledTimes(1);
     });
   });
@@ -327,7 +326,6 @@ describe('ScenarioStateService', () => {
       await service.ensureHero(scenarioId, 'user-1', HERO.id);
       await service.release(scenarioId);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.fn() reference, not `this`-bound
       expect(heroesService.updateLocation).toHaveBeenCalledWith(
         HERO.id,
         HERO.heroLocation,

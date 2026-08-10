@@ -19,8 +19,8 @@ export interface HeroToolState {
   lockedTile: HexTileModel | null;
   lockedUntil: number | null;
 
-  treesCut: number; //todo:
-  stoneCollected: number; //todo:
+  treesCut: number;
+  stoneCollected: number;
 }
 
 export const useHeroToolStore = defineStore('heroTool', {
@@ -131,11 +131,9 @@ export const useHeroToolStore = defineStore('heroTool', {
       // no tool / hand => no durability system
       if (!this.activeTool || this.activeTool === HEXOBJECT_KEYS.HAND) return true;
 
-      // guard
       if (!Number.isFinite(percent) || percent <= 0) return true;
       if (!Number.isFinite(this.durabilityMax) || this.durabilityMax <= 0) return false;
 
-      // already broken
       if (this.durability <= 0) {
         this.durability = 0;
         return false;
@@ -155,10 +153,6 @@ export const useHeroToolStore = defineStore('heroTool', {
       this.stoneCollected += amount;
     },
 
-    /**
-     * Optional helper: set durability from equipped tool / inventory.
-     * Useful when you switch tools and want correct values.
-     */
     setToolDurability(durability: number, durabilityMax: number) {
       this.durabilityMax = Math.max(0, Math.floor(durabilityMax));
       this.durability = Math.min(Math.max(0, Math.floor(durability)), this.durabilityMax);

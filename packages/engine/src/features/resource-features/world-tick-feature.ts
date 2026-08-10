@@ -10,9 +10,6 @@ export class WorldTickFeature {
     this.map = map;
   }
 
-  /**
-   * Returns true if world state changed and should be saved.
-   */
   public tick(ctx: IActionContext): boolean {
     let changed = false;
 

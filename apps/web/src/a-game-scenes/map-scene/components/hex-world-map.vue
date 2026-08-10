@@ -133,7 +133,6 @@ function handleTileHover(tile: IHexTile) {
   }
 }
 
-/* ---------- probe for dom tile size ---------- */
 const probeRef = ref<HTMLElement | null>(null);
 const domTileW = ref(0);
 const domTileH = ref(0);
@@ -148,7 +147,6 @@ function readDomTileSize() {
   if (r.height > 0) domTileH.value = r.height;
 }
 
-/* ---------- tool resolver ---------- */
 function getTileByCoord(coord: IHexCoordinates) {
   const tiles = worldMapStore.map?.tiles as HexTileModel[] | undefined;
   return tiles?.find(
@@ -363,7 +361,6 @@ watch(
   { immediate: true },
 );
 
-/* ---------- bounds ---------- */
 const bleed = 2;
 
 const mapBounds = computed(() => {
@@ -435,7 +432,6 @@ useHexBoard({
   },
 });
 
-/* ---------- scale ---------- */
 const scale = ref(1);
 
 function updateScale() {

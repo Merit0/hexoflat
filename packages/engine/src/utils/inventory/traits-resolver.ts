@@ -27,7 +27,6 @@ function resolveProtoFields(proto: THexobjectPrototype) {
   const iconPath = proto.spritePath ?? '';
   const descriptionFallback = proto.description ?? '';
 
-  // defaults
   let stackable = false;
   let defaultAmount = 1;
   let weightKg = 0;
@@ -48,10 +47,8 @@ function resolveProtoFields(proto: THexobjectPrototype) {
     }
 
     case EHexobjectGroup.TOOL: {
-      // tools як інвентарні токени (не стак)
       defaultAmount = 1;
       weightKg = proto.tool.traits?.weightKG ?? 0;
-      // якщо вага є в equipment/tool пізніше — додаси
       break;
     }
 
@@ -110,11 +107,9 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
 
   const p = resolveProtoFields(proto);
 
-  // meta overrides (UI + optional traits)
   const title = meta?.title ?? key;
   const description = meta?.subtitle ?? meta?.title ?? p.descriptionFallback;
 
-  // stack rules — якщо ти вирішив тримати stackable/stackKey в meta.traits, просто перезапиши
   const metaStackable = !!meta?.traits?.stackable;
   const stackable = meta?.traits ? metaStackable : p.stackable;
   const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
