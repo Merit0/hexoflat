@@ -30,10 +30,17 @@ Inspired by general tactical dungeon-crawler concepts (including Frosthaven), bu
 3. Content (heroes, ability cards, enemies, items, statuses, maps, scenarios) is data-driven, validated with Zod, versioned, and kept separate from runtime game state.
 4. Architecture must support single-player and drop-in/drop-out co-op: joining an active scenario, transferring control of an existing hero, reconnecting, state sync, snapshots, save/load, replay.
 5. Shared game state and components across desktop/tablet/mobile, with platform-specific layouts/interactions layered on top — not forked implementations.
+6. E2E-тести шарові й селектор-вільні. `apps/playwright/e2e/**` викликає **тільки** Feature-класи:
+   ніяких локаторів, ніякого `page`, ніякого `waitForTimeout` (це enforced ESLint-ом, не
+   домовленістю). Локатори живуть виключно в `src/components/*.component.ts`. Стан гри та
+   геометрію гексів тести питають у застосунку через `window.__HEXOFLAT_TEST__`
+   (`apps/web/src/e2e/`, вмикається `VITE_E2E_HOOKS=true` тільки в e2e-збірці) — жодного
+   дублювання логіки `packages/engine` у тестовому коді. Деталі й «чому» —
+   `apps/playwright/README.md` і коментарі в `src/framework/base-component.ts`.
 
 ## Current status vs. target
 
-**Phases 1–10 of the migration are done** (monorepo + Turborepo, `packages/engine` extracted with zero Vue/browser/Nest/DB dependencies, engine unit tests, PixiJS renderer, `apps/api` on NestJS + Fastify, PostgreSQL + Drizzle, TanStack Query in `apps/web`, WebSocket multiplayer sync for movement/resource-gathering, custom JWT auth, Playwright e2e). Beyond the original plan, the repo has also been through a security/SOLID hardening pass (JWT fail-fast in production, rate limiting, campaign-scoped ACL on saves/scenarios, periodic scenario autosave, data-driven heal content, split `world-map-store`) and the CI workflow now runs lint/typecheck/build/unit-tests/api-tests/e2e as separate jobs.
+**Phases 1–10 of the migration are done** (monorepo + Turborepo, `packages/engine` extracted with zero Vue/browser/Nest/DB dependencies, engine unit tests, PixiJS renderer, `apps/api` on NestJS + Fastify, PostgreSQL + Drizzle, TanStack Query in `apps/web`, WebSocket multiplayer sync for movement/resource-gathering, custom JWT auth, Playwright e2e). Beyond the original plan, the repo has also been through a security/SOLID hardening pass (JWT fail-fast in production, rate limiting, campaign-scoped ACL on saves/scenarios, periodic scenario autosave, data-driven heal content, split `world-map-store`) and the CI workflow now runs lint/typecheck/build/unit-tests/api-tests/e2e as separate jobs. E2E now also publishes an Allure report with trend history to GitHub Pages from every PR and trunk push — this deliberately overwrites the root Pages site each deploy (see the trade-off comment at the top of `.github/workflows/deploy.yml`).
 
 **Phases 11–12 are deliberately paused** (containerized production deploy for `apps/api`; S3 assets + OpenTelemetry/Sentry) — local dev is already fully covered by `docker-compose.dev.yml`, and there's no real player/business need yet to justify production hosting or observability. Revisit only when that need shows up.
 
