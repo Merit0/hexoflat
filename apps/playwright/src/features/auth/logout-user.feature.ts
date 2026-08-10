@@ -12,17 +12,4 @@ export class LogoutUserFeature extends BaseFeature {
       await this.loginPage.verifyStillOnLoginRoute();
     });
   }
-
-  /**
-   * The real assertion of the logout flow: logging out must clear the
-   * httpOnly session cookie, so the silent `GET /auth/session` restore on the
-   * next boot has nothing to restore and the router guard keeps the user on
-   * /login.
-   */
-  async verifyRefreshDoesNotRelogin(): Promise<void> {
-    await this.step('Verify a refresh after logout does not silently relogin', async () => {
-      await this.loginPage.reload();
-      await this.loginPage.verifyStillOnLoginRoute();
-    });
-  }
 }

@@ -1,7 +1,8 @@
 import { test } from '@fixtures';
 import { LoginUserFeature } from '@features/auth/login-user.feature';
 import { LogoutUserFeature } from '@features/auth/logout-user.feature';
-import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
+import { VerifySessionFeature } from '@features/auth/verify-session.feature';
+import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feature';
 import { VerifyCampingBoardFeature } from '@features/world/verify-camping-board.feature';
 
 // This file tests the login/session-restore flow itself, so it opts out of
@@ -18,7 +19,7 @@ test('Verify a page refresh restores the session instead of forcing a relogin', 
   // beforeEach guard bounce this straight back to /login before the reload
   // repaints anything — landing on the camping board is the actual proof the
   // httpOnly session cookie round-tripped, not just that the page loaded.
-  await new OpenCampingMapFeature().reloadAndWaitReady();
+  await new ReloadCampingMapFeature().reload();
   await new VerifyCampingBoardFeature().verifyBoardReady();
 });
 
@@ -27,7 +28,6 @@ test('Verify logging out clears the session cookie so a refresh does not silentl
 }) => {
   await new LoginUserFeature(workerTestUser).login();
 
-  const logout = new LogoutUserFeature();
-  await logout.logout();
-  await logout.verifyRefreshDoesNotRelogin();
+  await new LogoutUserFeature().logout();
+  await new VerifySessionFeature().verifyRefreshDoesNotRelogin();
 });

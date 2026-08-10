@@ -1,6 +1,6 @@
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
-import { BASE_HERO_HEALTH, tokenCoordinates, type MapToken } from '@config/test-data';
+import { BASE_HERO_HEALTH } from '@config/test-data';
 
 export class VerifyCampingBoardFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
@@ -29,15 +29,6 @@ export class VerifyCampingBoardFeature extends BaseFeature {
   async verifyHeroStartsWithBaseHealth(): Promise<void> {
     await this.step(`Verify the hero starts at ${BASE_HERO_HEALTH} HP`, async () => {
       await this.campingMap.topbar.verifyHeroHealth(BASE_HERO_HEALTH);
-    });
-  }
-
-  async verifyTokenHoldsObject(token: MapToken, hexobjectKey: string): Promise<void> {
-    await this.step(`Verify "${token}" still holds a "${hexobjectKey}"`, async () => {
-      await this.campingMap.hexBoard.verifyTileHoldsHexobject(
-        tokenCoordinates(token),
-        hexobjectKey,
-      );
     });
   }
 }

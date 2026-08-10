@@ -2,7 +2,7 @@ import { parameter } from 'allure-js-commons';
 import { BaseFeature } from '@framework/base-feature';
 import { UI_SETTINGS_STORAGE_KEY, type SupportedLocale } from '@config/test-data';
 
-export class LocaleFeature extends BaseFeature {
+export class SetLocaleFeature extends BaseFeature {
   constructor(private readonly locale: SupportedLocale) {
     super();
   }
@@ -15,7 +15,7 @@ export class LocaleFeature extends BaseFeature {
    *
    * Must be called before any navigation in the test.
    */
-  async applyBeforeNavigation(): Promise<void> {
+  async setBeforeNavigation(): Promise<void> {
     await this.step(`Start the app in locale "${this.locale}"`, async () => {
       // Surfaces the locale as a first-class Allure parameter — filterable in
       // the report and visible on the test-case page — instead of being

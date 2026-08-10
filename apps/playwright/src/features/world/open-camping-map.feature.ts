@@ -15,11 +15,4 @@ export class OpenCampingMapFeature extends BaseFeature {
       await this.campingMap.waitUntilReady();
     });
   }
-
-  async reloadAndWaitReady(): Promise<void> {
-    await this.step('Reload the camping map', async () => {
-      await this.campingMap.reload();
-      await this.campingMap.waitUntilReady();
-    });
-  }
 }

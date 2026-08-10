@@ -45,29 +45,4 @@ export class MoveHeroFeature extends BaseFeature {
       this.campingMap.hexBoard.moveAdjacentTo(tokenCoordinates(token)),
     );
   }
-
-  async verifyPositionChanged(previous: TestHexCoordinates): Promise<void> {
-    await this.step('Verify the hero left its previous hex', () =>
-      this.campingMap.hexBoard.verifyHeroMovedAwayFrom(previous),
-    );
-  }
-
-  async verifyStepsChipChanged(previous: string): Promise<void> {
-    await this.step('Verify the steps counter changed', () =>
-      this.campingMap.topbar.verifyStepsTextChangedFrom(previous),
-    );
-  }
-
-  /**
-   * Reloads and re-checks the *settled* position. The point is that the saved
-   * placement genuinely survives a fresh boot, not that beforeunload's
-   * best-effort flush happened to win a race against the new page.
-   */
-  async verifyPositionSurvivesReload(expected: TestHexCoordinates): Promise<void> {
-    await this.step('Verify the hero position survives a reload', async () => {
-      await this.campingMap.reload();
-      await this.campingMap.waitUntilReady();
-      await this.campingMap.hexBoard.verifyHeroSettledAt(expected);
-    });
-  }
 }

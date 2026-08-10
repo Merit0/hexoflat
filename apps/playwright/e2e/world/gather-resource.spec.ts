@@ -1,22 +1,23 @@
 import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
-import { VerifyCampingBoardFeature } from '@features/world/verify-camping-board.feature';
-import { MoveHeroFeature } from '@features/world/move-hero.feature';
-import { GatherResourceFeature } from '@features/world/gather-resource.feature';
+import { TakeTokenFeature } from '@features/world/take-token.feature';
+import { VerifyMapTileFeature } from '@features/world/verify-map-tile.feature';
+import { VerifyInventoryFeature } from '@features/world/verify-inventory.feature';
+import { VerifyToolActionFeature } from '@features/world/verify-tool-action.feature';
 import { HexobjectKeys } from '@config/test-data';
 
 test('Verify any Tool can be taken on the map', async () => {
   await new OpenCampingMapFeature().open();
 
-  const gather = new GatherResourceFeature('starterAxe');
-  await gather.verifyItemNotInInventory(HexobjectKeys.axe);
-  await new VerifyCampingBoardFeature().verifyTokenHoldsObject('starterAxe', HexobjectKeys.axe);
+  const verifyInventory = new VerifyInventoryFeature();
+  const verifyTile = new VerifyMapTileFeature('starterAxe');
 
-  await new MoveHeroFeature().moveAdjacentTo('starterAxe');
-  await gather.armHandTool();
-  await gather.take();
+  await verifyInventory.verifyDoesNotContainItem(HexobjectKeys.axe);
+  await verifyTile.verifyHoldsObject(HexobjectKeys.axe);
 
-  await gather.verifyItemInInventory(HexobjectKeys.axe);
-  await gather.verifyTileCleared();
-  await gather.verifyTakeActionNoLongerOffered();
+  await new TakeTokenFeature('starterAxe').take();
+
+  await verifyInventory.verifyContainsItem(HexobjectKeys.axe);
+  await verifyTile.verifyCleared();
+  await new VerifyToolActionFeature().verifyActionNoLongerOffered();
 });
