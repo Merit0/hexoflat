@@ -5,6 +5,7 @@ import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { CONTENT_VERSION } from '@hexoflat/engine';
 import { useWorldMapStore } from './world-map-store';
 import { useCombatStore } from './combat-store';
+import { useHeroStore } from './hero-store';
 
 /**
  * Characterization tests for the save/load path, written BEFORE the G2
@@ -50,7 +51,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       const worldStore = useWorldMapStore();
       worldStore.map = buildMap('debounce');
       worldStore.currentMapId = 'map-a';
-      worldStore.heroCoordinates = { columnIndex: 1, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 0 };
 
       worldStore.saveToStorage();
 
@@ -67,7 +68,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       const worldStore = useWorldMapStore();
       worldStore.map = buildMap('envelope');
       worldStore.currentMapId = 'map-b';
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
 
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
@@ -86,7 +87,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       const combatStore = useCombatStore();
       worldStore.map = buildMap('combat-blob');
       worldStore.currentMapId = 'map-c';
-      worldStore.heroCoordinates = { columnIndex: 1, rowIndex: 1 };
+      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 1 };
       combatStore.combatActive = true;
       combatStore.combatStepsLeft = 3;
       combatStore.combatTurnSide = 'enemy';
@@ -110,10 +111,10 @@ describe('world persistence: saveToStorage (characterization)', () => {
       const worldStore = useWorldMapStore();
       worldStore.map = buildMap('snapshot-timing');
       worldStore.currentMapId = 'map-d';
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
 
       worldStore.saveToStorage();
-      worldStore.heroCoordinates = { columnIndex: 9, rowIndex: 9 };
+      useHeroStore().heroCoordinates = { columnIndex: 9, rowIndex: 9 };
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
       const state = JSON.parse(localStorage.getItem(STATE_KEY('map-d'))!) as {
@@ -128,9 +129,9 @@ describe('world persistence: saveToStorage (characterization)', () => {
       worldStore.map = buildMap('collapse');
       worldStore.currentMapId = 'map-e';
 
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
       worldStore.saveToStorage();
-      worldStore.heroCoordinates = { columnIndex: 1, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 0 };
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
@@ -145,9 +146,9 @@ describe('world persistence: saveToStorage (characterization)', () => {
       const worldStore = useWorldMapStore();
       worldStore.map = buildMap('two-maps');
 
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
       worldStore.saveToStorage('map-left');
-      worldStore.heroCoordinates = { columnIndex: 1, rowIndex: 1 };
+      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 1 };
       worldStore.saveToStorage('map-right');
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
@@ -177,7 +178,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       const worldStore = useWorldMapStore();
       worldStore.map = null;
       worldStore.currentMapId = 'map-f';
-      worldStore.heroCoordinates = { columnIndex: 2, rowIndex: 2 };
+      useHeroStore().heroCoordinates = { columnIndex: 2, rowIndex: 2 };
 
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
@@ -197,7 +198,7 @@ describe('world persistence: combat autosave (characterization)', () => {
       const combatStore = useCombatStore();
       worldStore.map = buildMap('autosave');
       worldStore.currentMapId = 'map-auto';
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
       worldStore.enableCombatAutosave();
 
       combatStore.combatActive = true;
@@ -218,7 +219,7 @@ describe('world persistence: combat autosave (characterization)', () => {
       const worldStore = useWorldMapStore();
       worldStore.map = buildMap('no-write-on-load');
       worldStore.currentMapId = 'map-load';
-      worldStore.heroCoordinates = { columnIndex: 1, rowIndex: 0 };
+      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 0 };
       useCombatStore().combatActive = true;
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
@@ -249,7 +250,7 @@ describe('world persistence: loadFromStorage (characterization)', () => {
       const combatStore = useCombatStore();
       worldStore.map = buildMap('roundtrip');
       worldStore.currentMapId = 'map-rt';
-      worldStore.heroCoordinates = { columnIndex: 1, rowIndex: 1 };
+      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 1 };
       combatStore.combatActive = true;
       combatStore.combatStepsLeft = 2;
 
@@ -259,10 +260,11 @@ describe('world persistence: loadFromStorage (characterization)', () => {
       setActivePinia(createPinia());
       const reloadedWorld = useWorldMapStore();
       const reloadedCombat = useCombatStore();
+      const reloadedHero = useHeroStore();
       reloadedWorld.currentMapId = 'map-rt';
       reloadedWorld.loadFromStorage('map-rt');
 
-      expect(reloadedWorld.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 1 });
+      expect(reloadedHero.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 1 });
       expect(reloadedWorld.map?.tiles).toHaveLength(4);
       expect(reloadedCombat.combatActive).toBe(true);
       expect(reloadedCombat.combatStepsLeft).toBe(2);
@@ -296,7 +298,7 @@ describe('world persistence: loadFromStorage (characterization)', () => {
       const worldStore = useWorldMapStore();
       worldStore.loadFromStorage('stale-state');
 
-      expect(worldStore.heroCoordinates).toBeNull();
+      expect(useHeroStore().heroCoordinates).toBeNull();
       expect(localStorage.getItem(STATE_KEY('stale-state'))).toBeNull();
       warn.mockRestore();
     });

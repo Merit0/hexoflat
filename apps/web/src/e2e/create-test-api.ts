@@ -4,6 +4,7 @@ import {
   hexDistance,
 } from '@hexoflat/engine/utils/hex-utils';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import type {
   HexoflatTestApi,
@@ -43,6 +44,7 @@ export interface CreateTestApiOptions {
  */
 export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
   const worldStore = useWorldMapStore();
+  const heroStore = useHeroStore();
   const heroInventoryStore = useHeroInventoryStore();
 
   function findTile(coordinates: TestHexCoordinates) {
@@ -59,7 +61,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     getHeroCoordinates(): TestHexCoordinates | null {
-      const coordinates = worldStore.heroCoordinates;
+      const coordinates = heroStore.heroCoordinates;
       return coordinates
         ? { columnIndex: coordinates.columnIndex, rowIndex: coordinates.rowIndex }
         : null;

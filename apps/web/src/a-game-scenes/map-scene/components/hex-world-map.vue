@@ -220,10 +220,10 @@ const activeCampfireActionTile = computed(() => {
 const isCampfireHealActive = computed(() => Boolean(activeCampfireActionTile.value?.pendingAction));
 
 const campHealEffectCoord = computed(() => {
-  if (!isCampfireHealActive.value || !worldStore.heroCoordinates) return null;
+  if (!isCampfireHealActive.value || !heroStore.heroCoordinates) return null;
 
   const neighborTiles = (
-    getOddQNeighbors(worldStore.heroCoordinates)
+    getOddQNeighbors(heroStore.heroCoordinates)
       .map((coord) => getTileByCoord(coord))
       .filter(Boolean) as IHexTile[]
   )
@@ -255,7 +255,7 @@ watch(
   { immediate: true },
 );
 
-const heroCoordinatesComputed = computed(() => worldStore.heroCoordinates);
+const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
 
 useHexBoard({
   canvasRef: boardCanvasRef,

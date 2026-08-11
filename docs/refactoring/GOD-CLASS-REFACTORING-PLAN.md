@@ -341,7 +341,7 @@ characterization tests for save/load before moving anything. Dedicated branch. A
 3. `services/world/location-navigator.ts` — навігація + `router` (шар `apps/web`, у engine не переїжджає).
 4. `services/world/world-loop.ts` — `setInterval`-цикл.
 5. `packages/engine/src/map/fog-service.ts` — туман війни (чиста функція від мапи й координат → перелік розкритих тайлів; **переїжджає в engine**).
-6. `packages/engine/src/hero-movement/spawn-placement.ts` — вибір тайла входу/багаття (чиста функція; `Math.random()` замінити на переданий seed/RNG-порт заради replay).
+6. `packages/engine/src/map/free-hex-finder.ts` — вибір вільного гекса поруч з орієнтиром (чиста функція; `Math.random()` замінено на переданий генератор заради replay). Спершу було створено `hero-movement/spawn-placement.ts` із трьома майже однаковими експортами — переміряно й зведено до двох функцій у `map/`, бо спавн не є переміщенням, а сам запит не стосується конкретно героя.
 7. `moveHeroTo` — останнім і через Strangler Fig: правила → engine-команда, анімація → `apps/web`.
 
 Після кожного пункту — окремий комміт, окремий прогін тестів. `world-map-store.ts` лишається фасадом і худне поступово.
@@ -363,7 +363,7 @@ characterization tests for save/load before moving anything. Dedicated branch. A
 | 7   | `packages/engine/src/hero-movement/move-planner.ts`    | 55     | 10     |
 | +   | `packages/engine/src/map/resource-hydration.ts`        | 42     | 5      |
 
-Плюс `apps/web/src/services/random-source.ts` — єдиний RNG-порт застосунку.
+Генератор випадкових чисел живе в `packages/engine/src/utils/random.ts`; окремого адаптера в `apps/web` немає.
 
 **Чисті цілі досягнуто повністю:** у сторі не лишилось ані `localStorage`, ані `setInterval`, ані імпорту `router`, ані `Math.random()` (спавн тепер отримує `browserRandom` як залежність, тож правило лишається детермінованим і придатним для replay). Тестів: engine 72 → **111**, web 146 → **182**. E2E 20/20.
 
@@ -388,7 +388,7 @@ before each extraction. No behaviour changes. Dedicated branch. Ask before every
 
 ---
 
-### Фаза G4 — `combat-store.ts`: витягти чисту логіку (СТРУКТУРНО, без міграції в pipeline)
+### Фаза G4 — `combat-store.ts`: витягти чисту логіку (СТРУКТУРНО, без міграції в pipeline) `[DONE — 10.08.2026]`
 
 **⚠️ Межа цієї фази задана дизайном, не інженерією.** Згідно з `CLAUDE.md`, combat свідомо не переводиться на command/event-конвеєр engine, поки не усталився дизайн бою. Ця фаза **не порушує це рішення** й не має його порушити.
 
@@ -397,7 +397,7 @@ before each extraction. No behaviour changes. Dedicated branch. Ask before every
 Що **можна** зараз (чисте перенесення, нуль дизайнерських рішень):
 
 - `packages/engine/src/combat/damage-calculator.ts` — підрахунок шкоди з урахуванням блоку (зараз розмазано між `performHeroCombatAttack` і `ensureEnemyTurnResolution`, з дубльованою формулою в обох).
-- `packages/engine/src/combat/enemy-ai.ts` — вибір цілі й відступу як **чиста функція** `(мапа, позиція, бюджет кроків, rng) → рішення`. Виконання рішення (рух, `await`, збереження) лишається в сторі.
+- `packages/engine/src/combat/ai-controller.ts` — вибір цілі й відступу як **чиста функція** `(мапа, позиція, бюджет кроків, генератор випадкових чисел) → рішення`. Виконання рішення (рух, `await`, збереження) лишається в сторі.
 - `packages/engine/src/combat/combat-rules.ts` — предикати `canAttack` / `canPlaceDefendMarker` / `hasLivingEnemies`.
 - `packages/engine/src/combat/health-format.ts` — перенесено з `utils/combat/` заради тієї ж консистентності.
 - `apps/web/src/services/combat/enemy-turn-runner.ts` — оркестрація ходу ворога з анімаціями (те, що лишилось від 170-рядкового методу).
@@ -406,6 +406,35 @@ before each extraction. No behaviour changes. Dedicated branch. Ask before every
 Що **не** робити: не заводити нові combat-команди в `applyCommand`, не змінювати `CombatSnapshot`, не чіпати правила балансу.
 
 **Критерій приймання.** `combat-store.ts` ≤ 250 рядків; жодного `Math.random()` у ньому; формула шкоди існує в рівно одному місці; AI ворога має детерміновані unit-тести з фіксованим seed; поведінка в грі не змінилась.
+
+#### Результат G4
+
+`combat-store.ts`: 711 → **622 рядки**. Дизайнерську межу дотримано: жодної нової combat-команди в `applyCommand`, `CombatSnapshot` не змінено, баланс не чіпано.
+
+| Модуль                                             | Рядків | Тестів |
+| -------------------------------------------------- | ------ | ------ |
+| `packages/engine/src/combat/damage-calculator.ts`  | 71     | 13     |
+| `packages/engine/src/combat/combat-rules.ts`       | 90     | 17     |
+| `packages/engine/src/combat/enemy-ai.ts`           | 111    | 15     |
+| `packages/engine/src/abstraction/random-source.ts` | 11     | —      |
+
+**Три чисті цілі виконано:**
+
+- **Формула шкоди тепер в одному місці.** `max(0, round1(raw − block))` існувала двічі — у `performHeroCombatAttack` і `ensureEnemyTurnResolution`, з окремо виписаним округленням у кожній. Дві копії балансової формули — це прямий шлях до «щит працює по-різному залежно від того, хто б'є».
+- **Жодного `Math.random()`** у сторі: усі три виклики (вибір цілі, відступ, авто-щит) ідуть через `chooseOne(items, random)` з переданим `browserRandom`. AI ворога має детерміновані тести з фіксованим джерелом.
+- **RNG зібрано в один осмислений модуль** — `utils/random.ts` тримає разом тип `RandomNumberGenerator`, `defaultRandom` і `pickRandom()`. Спершу я розклав це на два файли-одинаки (`abstraction/random-source.ts` з одним типом і `services/random-source.ts` з однією функцією) — це було невиправдане дроблення з незрозумілою назвою, і його прибрано. Заразом `pickRandom` переїхав з AI-модуля: generic-вибірка ніколи не була AI-логікою.
+
+Тестів: engine 111 → **151**, web 182. E2E 20/20.
+
+#### Про `enemy-turn-runner.ts` — свідомо не створено
+
+План передбачав винесення оркестрації ходу ворога в `apps/web/src/services/combat/enemy-turn-runner.ts`. Після винесення рішень AI я перевірив, який інтерфейс потрібен тому, що лишилось, і **відмовився від цього кроку свідомо**.
+
+Залишок `ensureEnemyTurnResolution` потребує: читання й запису `combatMarkers`, `combatStepsLeft`, `isEnemyTurnResolving`; викликів `moveEnemyAlongRoute`, `revealCombatMarkers`, `advanceCombatTurn`, `getEnemyAttackDamage`; доступу до `map`, `heroCoordinates`, `respawnHeroAtCamping`, `revealAroundHero`; плюс `takeDamage` й журнал подій. Це ~15-членний порт — модуль, який неможливо протестувати, не піднявши практично весь стор. Тобто він провалив би практичний критерій із **3.1** («чи зможу я написати unit-тест, підсунувши лише прості дані?») і став би перейменуванням, а не розпилом — рівно та помилка, яку 2.3 уже одного разу коштувала проєкту.
+
+Архітектурний виграш фази вже отримано: **рішення** (кого атакувати, куди відступати, скільки шкоди) стали чистими, детермінованими й доступними серверу. Те, що лишилось у сторі, — це послідовність мутацій власного стану плюс анімаційний годинник, тобто саме те, чим стор і має бути.
+
+Тому **≤ 250 рядків недосяжно в межах цієї фази**, як і ≤ 200 в G3, і з тієї ж причини. Реалістична межа — ~600 зараз; далі combat-store худне тоді, коли combat нарешті переїде на command/event-конвеєр, а це заблоковано дизайном бою, а не інженерією (`CLAUDE.md`).
 
 **Старт чату:**
 
@@ -421,6 +450,38 @@ consistently rather than splitting combat logic across both. Do NOT migrate comb
 engine command/event pipeline and do NOT add combat commands to applyCommand — that is
 deliberately deferred until the combat design is settled. No behaviour changes. Dedicated
 branch. Ask before commit.
+```
+
+---
+
+### Фаза G4.5 — `moveHeroTo`/`heroCoordinates` не належать `world-map-store` `[DONE — 10.08.2026]`
+
+**Не було в первісному плані.** Знайдено під час рев'ю G4: `moveHeroTo` (626 рядків на той момент) сидів у `world-map-store`, хоча рух — поведінка героя, яка лише читає мапу для валідації, а не поведінка мапи. Показово, що навіть власний `HeroState` engine (`hero-movement/hero-state.ts`) вважає `coordinates` полем героя, не мапи.
+
+**Мета.** Перенести `heroCoordinates`, `isHeroMoving`, `moveHeroTo` і `planFreeRoamRoute` у `hero-store`, лишивши `world-map-store` власником лише мапи.
+
+**Масштаб виявився більшим за сам метод.** `heroCoordinates`/`isHeroMoving` уже проросли в 10 файлів поза `world-map-store.ts`: `combat-store.ts` (15 звернень), 4 Vue-компоненти, 2 композабли, e2e test-api. Перенести сам метод без перенесення власності на дані означало б, що новий стор ззовні лізе в чуже поле — тож перенесено обидва разом.
+
+**Форма рішення — дзеркало вже наявного патерну.** `heroCoordinates` зберігається в тому самому per-map блобі, що й combat-стан (`TWorldState`). `combat-store` уже має симетричний шов `toSnapshot()`/`hydrate()` для цього — `hero-store` нічого нового не винаходить, `world-map-store.saveToStorage()`/`loadFromStorage()` просто читає `useHeroStore().heroCoordinates` замість `this.heroCoordinates`, так само як уже читає `useCombatStore().toSnapshot()`.
+
+**Свідомий наслідок: другий цикл між сторами.** `hero-store` тепер імпортує `useWorldMapStore()` (потрібна поточна мапа для валідації руху), а `world-map-store` й так уже імпортував `useHeroStore()` для навігації/прогресу героя — тобто `hero-store ↔ world-map-store`, другий цикл після `world-map-store ↔ combat-store` з G2. Це неминучий наслідок того, як у цьому кодовому базисі стори звертаються одне до одного (`use*Store()` на рівні модуля), а не помилка проєктування. `import-x/no-cycle` і далі лише `warn` (G0), попереджень побільшало з 6 до 11 — очікувано й видимо в CI.
+
+**Результат.**
+
+| Файл                 | Було                               | Стало                                                                 |
+| -------------------- | ---------------------------------- | --------------------------------------------------------------------- |
+| `world-map-store.ts` | 718 рядків                         | 612 рядків, більше не володіє позицією героя                          |
+| `hero-store.ts`      | без руху                           | +`heroCoordinates`, `isHeroMoving`, `moveHeroTo`, `planFreeRoamRoute` |
+| `combat-store.ts`    | читав `worldStore.heroCoordinates` | читає `useHeroStore().heroCoordinates`                                |
+
+Формат збереження на диску не змінився (перевірено характеризаційними тестами з G2, усі 14 пройшли без правок очікувань). 4 тести `moveHeroTo` переїхали з `world-map-store.test.ts` у новий `hero-store.test.ts` — без зміни поведінки тесту, лише виклик тепер на `heroStore`. Web-тести: 186 → 186 (нуль-сумарно: 4 переїхали, жодного не втрачено й не додано зайвого). Typecheck, build, lint (0 помилок), e2e 20/20 — включно з тестом «зберегти позицію героя й пережити reload», який прямо перевіряє щойно перенесений шлях збереження.
+
+**Старт чату:**
+
+```
+Working in hexoflat. Read docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md — sections 3.1, 3.2
+and Phase G4.5. Already DONE — this block documents what changed, no action needed unless
+asked to revisit the hero-store <-> world-map-store cycle it introduced.
 ```
 
 ---
@@ -478,16 +539,16 @@ table in the doc plus a short note in CLAUDE.md. Dedicated branch. Ask before co
 
 ## Частина 5 — Цільові цифри
 
-| Файл                                          | Було (10.08.2026, `wc -l`)                       | Ціль                |
-| --------------------------------------------- | ------------------------------------------------ | ------------------- |
-| `world-map-store.ts`                          | 886 рядків, 32 actions                           | ≤ 200, фасад        |
-| `combat-store.ts`                             | 727 рядків, 25 actions, 19× `useWorldMapStore()` | ≤ 250, 0 циклів     |
-| `hex-world-map.vue`                           | 688 рядків (577 script)                          | ≤ 400 — ✅ 394 (G1) |
-| `hero-inventory-store.ts`                     | 589 рядків, 30 actions                           | ≤ 200               |
-| Циклів у `apps/web/src`                       | 3 (виміряно в G0, не 1)                          | 0                   |
-| Модулів із прямим `localStorage` (без тестів) | 8                                                | 1                   |
-| `Math.random()` у сторах                      | 7 місць у 4 сторах                               | 0 в ігрових сторах  |
-| Composables без імпортерів                    | 3 (379 рядків)                                   | 0 — ✅ 0 (G1)       |
+| Файл                                          | Було (10.08.2026, `wc -l`)                       | Ціль                                                                                                               |
+| --------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `world-map-store.ts`                          | 886 рядків, 32 actions                           | ≤ 200 → переглянуто на ~400 — ✅ 612 (G2+G3+G4.5)                                                                  |
+| `combat-store.ts`                             | 727 рядків, 25 actions, 19× `useWorldMapStore()` | ≤ 250 → переглянуто на ~600 — ✅ 624, 13× (G2+G4)                                                                  |
+| `hex-world-map.vue`                           | 688 рядків (577 script)                          | ≤ 400 — ✅ 394 (G1)                                                                                                |
+| `hero-inventory-store.ts`                     | 589 рядків, 30 actions                           | ≤ 200 — заплановано G5                                                                                             |
+| Циклів у `apps/web/src`                       | 3 (виміряно в G0, не 1)                          | 0 → 4 (G4.5 додав hero-store ↔ world-map-store, свідомо, `warn`-only)                                              |
+| Модулів із прямим `localStorage` (без тестів) | 8                                                | 1 — ✅ 7 (G2, світ зведено в 1)                                                                                    |
+| `Math.random()` у сторах                      | 7 місць у 4 сторах                               | 0 в ігрових сторах — ✅ прибрано з world-map-store і combat-store (G3+G4); лишились 2 в inventory, 1 в game-events |
+| Composables без імпортерів                    | 3 (379 рядків)                                   | 0 — ✅ 0 (G1)                                                                                                      |
 
 Уточнення щодо `Math.random()`: 3 виклики в `combat-store.ts` (вибір цілі, відступ, авто-щит), 2 в `hero-inventory-store.ts` (вибір вільного слота, обертання токена), 1 у `world-map-store.ts` (вибір тайла спавну), 1 у `game-events-store.ts` (генерація id події). Критичні для детермінізму — перші чотири (вони впливають на ігровий стан). Обертання токена й id події — косметика й можуть лишитись, але поза сторами.
 

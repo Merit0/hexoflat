@@ -102,7 +102,7 @@ const resolvedActions = computed(() => {
     combatStore.combatActive &&
     combatStore.combatTurnSide === 'hero' &&
     !combatStore.isEnemyTurnResolving &&
-    !worldMapStore.isHeroMoving &&
+    !heroStore.isHeroMoving &&
     heroToolStore.hover &&
     activeToolKey.value
   ) {

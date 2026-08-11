@@ -37,7 +37,7 @@ import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-re
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { useInventoryDragHandle } from '@/composables/use-inventory-drag';
@@ -48,7 +48,7 @@ const props = defineProps<{
 
 const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
-const worldMapStore = useWorldMapStore();
+const heroStore = useHeroStore();
 const overlayStore = useOverlayStore();
 const dragHandle = useInventoryDragHandle(() => props.item.id);
 
@@ -107,7 +107,7 @@ function useToolToken() {
   const toolType = resolveToolType();
   if (!toolType) return;
 
-  const heroCoords = worldMapStore.heroCoordinates;
+  const heroCoords = heroStore.heroCoordinates;
   if (!heroCoords) return;
 
   heroToolStore.activeTool = toolType;

@@ -13,9 +13,6 @@ import {
   MapDefinition,
   MapRegistry,
 } from '@hexoflat/engine/registry/world-map-registry';
-import { isEnterableTile, planCombatRoute } from '@hexoflat/engine/hero-movement/move-planner';
-import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
-import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import {
   isViewingOtherWorldLocation,
   navigateToLocation,
@@ -37,9 +34,8 @@ import {
   writeLocationMapIndex,
 } from '@/services/persistence/world-storage';
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
-import { browserRandom } from '@/services/random-source';
+import { defaultRandom } from '@hexoflat/engine/utils/random';
 import { worldLoop } from '@/services/world/world-loop';
-// Aliased: the store keeps same-named actions as its facade.
 import {
   initFog as initMapFog,
   revealAroundHero as revealFogAroundHero,
@@ -47,13 +43,7 @@ import {
   revealTileNextToHero,
 } from '@hexoflat/engine/map/fog-service';
 import { findTilesMissingSpawners } from '@hexoflat/engine/map/resource-hydration';
-import {
-  pickCampfireSpawn,
-  pickEntrySpawn,
-  pickEntrySpawnDeterministic,
-} from '@hexoflat/engine/hero-movement/spawn-placement';
-// Aliased on purpose: the store keeps same-named actions as its public
-// facade, so unaliased imports would read as recursive calls.
+import { findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
 import {
   clearLocationRespawn as clearRespawn,
   consumeDueLocationRespawn,
@@ -72,12 +62,7 @@ function initialLocationKey(): LocationKey {
   return 'camping';
 }
 
-// Combat state lives in combat-store but is persisted inside *this* store's
-// state blob, so something has to notice combat mutations and save them.
-// That used to be 16 hand-written `worldStore.saveToStorage()` calls inside
-// combat-store — i.e. every new combat action had to remember to save, and
-// forgetting silently lost state. One subscription replaces all of them:
-// saves are debounced anyway, so the extra granularity costs no extra writes.
+const MAP_ORIGIN: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
 let combatAutosaveStop: (() => void) | null = null;
 
 // loadFromStorage() hydrates combat-store as part of reading the blob back.
@@ -109,9 +94,7 @@ export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineAction
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
     map: null as HexMapModel | null,
-    heroCoordinates: null as IHexCoordinates | null,
     woodCollected: 0,
-    isHeroMoving: false,
     pendingCampingRespawn: false,
 
     currentLocationKey: initialLocationKey(),
@@ -168,9 +151,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.dirtyTick += 1;
     },
 
-    // Safety net for whole-map changes (fresh map creation, loading from
-    // storage, a WORLD_TICK reporting `changed` with no per-tile detail) —
-    // anywhere the exact set of touched tiles isn't cheaply knowable.
     markAllTilesDirty() {
       if (!this.map) return;
       tileDirtyTracker.addMany(this.map.tiles.map((t) => t.coordinates));
@@ -287,13 +267,13 @@ export const useWorldMapStore = defineStore('world-map-store', {
     placeHeroAtCampfire() {
       if (!this.map) return;
 
-      const spawn = pickCampfireSpawn(this.map as HexMapModel);
+      const spawn = findFreeHexNearObject(this.map as HexMapModel, HEXOBJECT_KEYS.FIREPLACE);
       if (!spawn) {
         this.placeHeroAtEntry('camping');
         return;
       }
 
-      this.heroCoordinates = spawn;
+      useHeroStore().heroCoordinates = spawn;
     },
 
     async respawnHeroAtCamping() {
@@ -311,7 +291,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       this.stopWorldLoop();
       this.pendingCampingRespawn = true;
-      this.heroCoordinates = null;
+      heroStore.heroCoordinates = null;
       this.currentMapId = null;
       heroStore.setPendingLocation('camping');
       heroStore.reviveAtOneHp();
@@ -345,7 +325,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (this.currentMapId) {
         const remembered = heroStore.nav.positionByMapId[this.currentMapId];
         if (remembered) {
-          this.heroCoordinates = { ...remembered };
+          heroStore.heroCoordinates = { ...remembered };
           this.revealAroundHero();
           this.saveToStorage(this.currentMapId);
         }
@@ -353,8 +333,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     goToLocation(locationKey: LocationKey, preferredMapId?: string) {
-      const heroStore = useHeroStore();
-
       if (locationKey !== this.currentLocationKey && this.isLocationRespawning(locationKey)) {
         useGameEventsStore().push(
           'World',
@@ -364,34 +342,51 @@ export const useWorldMapStore = defineStore('world-map-store', {
         return;
       }
 
-      if (this.currentLocationKey === 'cave' && locationKey !== 'cave' && this.hasGraveMarker()) {
-        this.scheduleLocationRespawn('cave', 60_000);
-      }
-
-      if (this.currentMapId && this.heroCoordinates) {
-        heroStore.rememberPosition(this.currentMapId, this.heroCoordinates);
-      }
-      if (this.currentMapId) this.saveToStorage(this.currentMapId);
-
-      this.stopWorldLoop();
-      this.openLocation(locationKey, preferredMapId);
+      this.leaveCurrentLocation(locationKey);
+      this.loadLocationMap(locationKey, preferredMapId);
 
       if (!this.currentMapId) return;
 
-      const remembered = heroStore.nav.positionByMapId[this.currentMapId];
+      this.placeHeroOnArrival(locationKey);
+      this.revealAroundHero();
+      this.revealEntryTile();
+      this.saveToStorage(this.currentMapId);
+    },
+
+    leaveCurrentLocation(nextLocationKey: LocationKey) {
+      const leavingKey = this.currentLocationKey;
+      const respawnDelayMs = MapRegistry.get(leavingKey).respawnAfterClearedMs;
+
+      if (nextLocationKey !== leavingKey && respawnDelayMs && this.hasGraveMarker()) {
+        this.scheduleLocationRespawn(leavingKey, respawnDelayMs);
+      }
+
+      if (this.currentMapId) {
+        const heroCoordinates = useHeroStore().heroCoordinates;
+        if (heroCoordinates) {
+          useHeroStore().rememberPosition(this.currentMapId, heroCoordinates);
+        }
+        this.saveToStorage(this.currentMapId);
+      }
+
+      this.stopWorldLoop();
+    },
+
+    placeHeroOnArrival(locationKey: LocationKey) {
+      const heroStore = useHeroStore();
+      const remembered = this.currentMapId
+        ? heroStore.nav.positionByMapId[this.currentMapId]
+        : null;
 
       if (this.pendingCampingRespawn && locationKey === 'camping') {
         this.placeHeroAtCampfire();
       } else if (remembered) {
-        this.heroCoordinates = { ...remembered };
+        heroStore.heroCoordinates = { ...remembered };
       } else {
         this.placeHeroAtEntry(locationKey);
       }
 
       this.pendingCampingRespawn = false;
-      this.revealAroundHero();
-      this.revealEntryTile();
-      this.saveToStorage(this.currentMapId);
     },
 
     revealEntryTile() {
@@ -401,7 +396,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (revealed) this.markTileDirty(revealed);
     },
 
-    openLocation(locationKey: LocationKey, preferredMapId?: string) {
+    loadLocationMap(locationKey: LocationKey, preferredMapId?: string) {
       const heroStore = useHeroStore();
 
       this.syncLocationRespawn(locationKey);
@@ -429,10 +424,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
         this.saveToStorage(mapId);
       }
-
-      // Safety net for the tiles-layer's dirty-tracking: a location switch
-      // swaps in a wholly different tile set, which per-mutation dirty
-      // marking elsewhere in this file won't necessarily cover on its own.
       this.markAllTilesDirty();
 
       this.startWorldLoop();
@@ -440,6 +431,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     loadFromStorage(mapId: string) {
+      const heroStore = useHeroStore();
       const combatStore = useCombatStore();
 
       const savedMap = readSavedMap(mapId);
@@ -462,7 +454,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const raw = readSavedWorldState<TWorldState>(mapId);
 
       if (raw) {
-        this.heroCoordinates = raw.heroCoordinates ?? null;
+        heroStore.heroCoordinates = raw.heroCoordinates ?? null;
         withoutCombatAutosave(() =>
           combatStore.hydrate({
             combatActive: raw.combatActive ?? false,
@@ -484,7 +476,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
           }),
         );
       } else {
-        this.heroCoordinates = null;
+        heroStore.heroCoordinates = null;
         this.woodCollected = 0;
         withoutCombatAutosave(() => combatStore.resetToDefaults());
       }
@@ -492,11 +484,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!this.map) return;
       const map = this.map as HexMapModel;
 
-      if (!this.heroCoordinates) {
-        this.heroCoordinates = pickEntrySpawnDeterministic(
-          map,
-          MapRegistry.get(this.currentLocationKey).entryHexobjectKey,
-        );
+      if (!heroStore.heroCoordinates) {
+        heroStore.heroCoordinates =
+          findFreeHexNearObject(map, MapRegistry.get(this.currentLocationKey).entryHexobjectKey) ??
+          MAP_ORIGIN;
 
         this.revealAroundHero();
         this.saveToStorage(mapId);
@@ -512,16 +503,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
     saveToStorage(mapId?: string) {
       const targetMapId = mapId ?? this.currentMapId;
       if (!targetMapId) return;
-
-      // Snapshot now, while `this.map`/`this.heroCoordinates` are still the
-      // values this call was meant to persist — the actual localStorage
-      // write is what gets debounced, not the read of current state.
       const mapSnapshot = this.map
         ? JSON.stringify({ contentVersion: CONTENT_VERSION, map: this.map })
         : null;
       const state: TWorldState = {
         contentVersion: CONTENT_VERSION,
-        heroCoordinates: this.heroCoordinates,
+        heroCoordinates: useHeroStore().heroCoordinates,
         ...useCombatStore().toSnapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
@@ -550,11 +537,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!this.map) return;
 
       const def: MapDefinition = MapRegistry.get(locationKey);
-      this.heroCoordinates = pickEntrySpawn(
-        this.map as HexMapModel,
-        def.entryHexobjectKey,
-        browserRandom,
-      );
+      useHeroStore().heroCoordinates =
+        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, defaultRandom) ??
+        MAP_ORIGIN;
     },
 
     initFog() {
@@ -565,110 +550,19 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     revealAroundHero() {
-      if (!this.map || !this.heroCoordinates) return;
+      const heroCoordinates = useHeroStore().heroCoordinates;
+      if (!this.map || !heroCoordinates) return;
 
-      this.markTilesDirty(revealFogAroundHero(this.map as HexMapModel, this.heroCoordinates));
-    },
-
-    /**
-     * Free-roam movement goes through the engine's MOVE_HERO command, so the
-     * route comes back as a domain event rather than being computed here.
-     * Returns the route without the hero's current tile, matching
-     * planCombatRoute.
-     */
-    planFreeRoamRoute(map: HexMapModel, target: IHexCoordinates): IHexCoordinates[] | null {
-      const heroStore = useHeroStore();
-      const heroState: HeroState = {
-        id: heroStore.hero.id,
-        controlledBy: null,
-        coordinates: this.heroCoordinates!,
-        heroSteps: heroStore.hero.heroSteps ?? 0,
-      };
-
-      const { events } = applyCommand(
-        { map, heroes: { [heroState.id]: heroState } },
-        { type: 'MOVE_HERO', payload: { heroId: heroState.id, target } },
-        this.buildEngineContext(),
-      );
-
-      const moved = events.find((e) => e.type === 'HERO_MOVED') as
-        { type: 'HERO_MOVED'; payload: { heroId: string; path: IHexCoordinates[] } } | undefined;
-
-      return moved ? moved.payload.path.slice(1) : null;
-    },
-
-    async moveHeroTo(target: IHexCoordinates): Promise<boolean> {
-      const heroToolStore = useHeroToolStore();
-      const heroStore = useHeroStore();
-      const events = useGameEventsStore();
-      const combatStore = useCombatStore();
-
-      if (!this.map || !this.heroCoordinates) return false;
-      if (heroToolStore.isDragging || this.isHeroMoving) return false;
-      if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return false;
-      if (combatStore.combatActive && combatStore.combatStepsLeft <= 0) return false;
-
-      const map = this.map as HexMapModel;
-      if (!isEnterableTile(map, target)) return false;
-
-      const route = combatStore.combatActive
-        ? planCombatRoute(map, this.heroCoordinates, target, combatStore.combatStepsLeft)
-        : this.planFreeRoamRoute(map, target);
-      if (!route) return false;
-
-      let stepsTaken = 0;
-
-      if (heroToolStore.isLocked) {
-        heroToolStore.cancelLockedAction('MOVE');
-        this.saveToStorage();
-      }
-
-      this.isHeroMoving = true;
-
-      try {
-        await executeMovementRoute(route, (coord) => {
-          this.heroCoordinates = { ...coord };
-          stepsTaken += 1;
-          if (combatStore.combatActive) {
-            combatStore.combatStepsLeft = Math.max(0, combatStore.combatStepsLeft - 1);
-            combatStore.clearCombatAttackTrace();
-          }
-          heroStore.hero?.makeStep();
-          heroStore.saveProgressToStorage();
-
-          this.revealAroundHero();
-          if (combatStore.combatActive) {
-            combatStore.syncEnemyAutoDefend();
-          }
-          this.saveToStorage();
-
-          if (this.currentMapId && this.heroCoordinates) {
-            heroStore.rememberPosition(this.currentMapId, this.heroCoordinates);
-          }
-
-          if (combatStore.combatActive && combatStore.combatStepsLeft <= 0) {
-            return false;
-          }
-        });
-      } finally {
-        this.isHeroMoving = false;
-      }
-
-      events.push(
-        heroStore.hero?.name ?? 'Hero',
-        `moved to [${this.heroCoordinates.columnIndex}, ${this.heroCoordinates.rowIndex}] by ${stepsTaken} step(s)`,
-        'INFO',
-      );
-
-      return true;
+      this.markTilesDirty(revealFogAroundHero(this.map as HexMapModel, heroCoordinates));
     },
 
     revealTile(tileCoordinates: IHexCoordinates) {
-      if (!this.map || !this.heroCoordinates) return;
+      const heroCoordinates = useHeroStore().heroCoordinates;
+      if (!this.map || !heroCoordinates) return;
 
       const revealed = revealTileNextToHero(
         this.map as HexMapModel,
-        this.heroCoordinates,
+        heroCoordinates,
         tileCoordinates,
       );
       if (!revealed) return;
@@ -709,7 +603,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       clearLocationMapIndex();
 
       this.map = null;
-      this.heroCoordinates = null;
+      useHeroStore().heroCoordinates = null;
       this.currentMapId = null;
       this.currentLocationKey = 'camping';
       useCombatStore().endCombat();
