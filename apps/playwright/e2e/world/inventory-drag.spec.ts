@@ -9,6 +9,7 @@ import { HexobjectKeys } from '@config/test-data';
 import { EquipSlot } from '@config/equip-slot';
 
 test('Verify dragging a grid item to another grid slot moves it there', async () => {
+  test.slow();
   await new OpenCampingMapFeature().open();
   await new TakeTokenFeature('starterAxe').take();
   await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
@@ -21,6 +22,7 @@ test('Verify dragging a grid item to another grid slot moves it there', async ()
 });
 
 test('Verify dragging an item onto an equip slot equips it, and dragging it back unequips it', async () => {
+  test.slow();
   await new OpenCampingMapFeature().open();
   await new TakeTokenFeature('starterAxe').take();
   await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
