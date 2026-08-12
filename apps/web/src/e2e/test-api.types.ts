@@ -59,6 +59,10 @@ export interface HexoflatTestApi {
   /** Item keys currently in the hero's inventory (equipped slots included). */
   getInventoryItemKeys(): string[];
 
+  getInventoryItemIdByKey(key: string): string | null;
+
+  openHeroInventory(): void;
+
   /** Dimensions of the active map. */
   getGridSize(): TestGridSize;
 }

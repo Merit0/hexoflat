@@ -4,7 +4,9 @@ import {
   hexDistance,
 } from '@hexoflat/engine/utils/hex-utils';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useOverlayStore } from '@/stores/overlay-store';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -43,6 +45,7 @@ export interface CreateTestApiOptions {
  */
 export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
   const worldStore = useWorldMapStore();
+  const heroStore = useHeroStore();
   const heroInventoryStore = useHeroInventoryStore();
 
   function findTile(coordinates: TestHexCoordinates) {
@@ -59,7 +62,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     getHeroCoordinates(): TestHexCoordinates | null {
-      const coordinates = worldStore.heroCoordinates;
+      const coordinates = heroStore.heroCoordinates;
       return coordinates
         ? { columnIndex: coordinates.columnIndex, rowIndex: coordinates.rowIndex }
         : null;
@@ -97,6 +100,14 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
     getInventoryItemKeys(): string[] {
       return heroInventoryStore.items.map((item) => item.key);
+    },
+
+    getInventoryItemIdByKey(key: string): string | null {
+      return heroInventoryStore.items.find((item) => item.key === key)?.id ?? null;
+    },
+
+    openHeroInventory(): void {
+      useOverlayStore().openOverlay('hero-inventory');
     },
 
     getGridSize(): TestGridSize {

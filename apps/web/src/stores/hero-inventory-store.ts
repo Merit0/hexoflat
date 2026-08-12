@@ -4,8 +4,21 @@ import {
   EHexobjectGroup,
   type TEquipSlot,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { getPrototype, getMeta, CONTENT_VERSION } from '@hexoflat/engine';
+import { getPrototype, getMeta } from '@hexoflat/engine';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
+import {
+  calculateCarriedWeightKg,
+  canFitAdditionalWeight,
+  getItemUnitWeightKg,
+  mergeItemStacks,
+} from '@hexoflat/engine/utils/inventory/traits-resolver';
+import { defaultRandom, pickRandom } from '@hexoflat/engine/utils/random';
+import { randomTokenRotationDeg } from '@/render/token-utils';
+import {
+  clearSavedInventory,
+  readSavedInventory,
+  writeSavedInventory,
+} from '@/services/persistence/inventory-storage';
 
 export type { TEquipSlot };
 export type { InventoryItem };
@@ -16,21 +29,11 @@ export interface GridConfig {
   blockedRect: { x: number; y: number; w: number; h: number };
 }
 
-interface PersistedHeroInventory {
-  version: 1;
-  contentVersion: number;
-  items: InventoryItem[];
-  rotationsById: Record<string, number>;
-  carryCapacityKg: number;
-}
-
-const INVENTORY_STORAGE_KEY = 'hexoflat.hero.inventory.v1';
-
 function slotKey(r: number, c: number) {
   return `r${r}c${c}`;
 }
 
-function equipSlotKey(slot: TEquipSlot) {
+export function equipSlotKey(slot: TEquipSlot) {
   return `eq:${slot}`;
 }
 
@@ -61,29 +64,6 @@ function isBlocked(r: number, c: number, cfg: GridConfig) {
   return c >= x && c < x + w && r >= y && r < y + h;
 }
 
-function randomRotationDeg() {
-  return Math.floor(Math.random() * 31) - 15;
-}
-
-function isSerializableInventoryItem(value: unknown): value is InventoryItem {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Record<string, unknown>;
-
-  return (
-    typeof v.id === 'string' &&
-    typeof v.key === 'string' &&
-    typeof v.type === 'string' &&
-    typeof v.amount === 'number' &&
-    typeof v.slotKey === 'string' &&
-    typeof v.isNew === 'boolean'
-  );
-}
-
-function getItemUnitWeightKg(key: THexobjectKey) {
-  if (key === HEXOBJECT_KEYS.HAND) return 0;
-  return getMeta(key)?.traits?.weightKG ?? 0;
-}
-
 function emptyRotations(): Record<string, number> {
   return {};
 }
@@ -102,19 +82,6 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     rotationsById: emptyRotations(),
 
     carryCapacityKg: 10,
-
-    draggingId: null as string | null,
-    dragFromSlot: null as string | null,
-    dragOverSlot: null as string | null,
-    isDragging: false,
-    dragPointerX: 0,
-    dragPointerY: 0,
-    dragOffsetX: 0,
-    dragOffsetY: 0,
-    dragWidth: 0,
-    dragHeight: 0,
-
-    dragOverEquipSlot: null as TEquipSlot | null,
 
     isHydrated: false,
   }),
@@ -169,12 +136,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     },
 
     carriedWeightKg(state): number {
-      return state.items.reduce((sum, item) => {
-        if (item.key === HEXOBJECT_KEYS.HAND) return sum;
-
-        const unitWeight = getItemUnitWeightKg(item.key);
-        return sum + unitWeight * item.amount;
-      }, 0);
+      return calculateCarriedWeightKg(state.items);
     },
 
     remainingCapacityKg(): number {
@@ -190,77 +152,32 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     hydrate() {
       if (this.isHydrated) return;
 
-      try {
-        const raw = localStorage.getItem(INVENTORY_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw) as PersistedHeroInventory;
-
-          if (parsed?.version === 1 && parsed?.contentVersion === CONTENT_VERSION) {
-            this.items = Array.isArray(parsed.items)
-              ? parsed.items.filter(isSerializableInventoryItem)
-              : [];
-
-            this.rotationsById =
-              parsed.rotationsById && typeof parsed.rotationsById === 'object'
-                ? parsed.rotationsById
-                : {};
-
-            this.carryCapacityKg =
-              typeof parsed.carryCapacityKg === 'number' ? parsed.carryCapacityKg : 5;
-          }
-        }
-      } catch (error) {
-        console.error('Failed to hydrate hero inventory:', error);
+      const saved = readSavedInventory();
+      if (saved) {
+        this.items = saved.items;
+        this.rotationsById = saved.rotationsById;
+        this.carryCapacityKg = saved.carryCapacityKg;
       }
 
       this.fillEmptySlotsWithHands();
-      this.resetRuntimeState();
+      this.selectedItemId = null;
       this.isHydrated = true;
     },
 
     persist() {
-      try {
-        const payload: PersistedHeroInventory = {
-          version: 1,
-          contentVersion: CONTENT_VERSION,
-          items: this.items,
-          rotationsById: this.rotationsById,
-          carryCapacityKg: this.carryCapacityKg,
-        };
-
-        localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(payload));
-      } catch (error) {
-        console.error('Failed to persist hero inventory:', error);
-      }
+      writeSavedInventory({
+        items: this.items,
+        rotationsById: this.rotationsById,
+        carryCapacityKg: this.carryCapacityKg,
+      });
     },
 
     clearPersistence() {
-      localStorage.removeItem(INVENTORY_STORAGE_KEY);
-    },
-
-    resetRuntimeState() {
-      this.selectedItemId = null;
-
-      this.draggingId = null;
-      this.dragFromSlot = null;
-      this.dragOverSlot = null;
-      this.dragOverEquipSlot = null;
-      this.isDragging = false;
-
-      this.dragPointerX = 0;
-      this.dragPointerY = 0;
-      this.dragOffsetX = 0;
-      this.dragOffsetY = 0;
-      this.dragWidth = 0;
-      this.dragHeight = 0;
-    },
-
-    setDragOverEquip(slot: TEquipSlot | null) {
-      this.dragOverEquipSlot = slot;
+      clearSavedInventory();
     },
 
     rerollRotation(id: string) {
-      this.rotationsById[id] = randomRotationDeg();
+      this.rotationsById[id] = randomTokenRotationDeg();
       return this.rotationsById[id];
     },
 
@@ -303,7 +220,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       const targetEquip = parseEquipSlotKey(targetSlotKey);
 
       if (!targetEquip) {
-        const merged = this.mergeStacks(targetItem, fromItem);
+        const merged = mergeItemStacks(targetItem, fromItem);
 
         if (merged) {
           targetItem.isNew = true;
@@ -334,23 +251,13 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       this.persist();
     },
 
-    dropToEquip(targetEquipSlot: TEquipSlot | null) {
-      if (!this.isDragging || !this.draggingId || !targetEquipSlot) {
-        this.cancelDrag();
-        return;
-      }
-
-      this.moveItemToSlot(this.draggingId, equipSlotKey(targetEquipSlot));
-      this.cancelDrag();
-    },
-
     isCellBlocked(r: number, c: number) {
       return isBlocked(r, c, this.grid);
     },
 
     ensureRotation(id: string) {
       if (this.rotationsById[id] == null) {
-        this.rotationsById[id] = randomRotationDeg();
+        this.rotationsById[id] = randomTokenRotationDeg();
       }
       return this.rotationsById[id];
     },
@@ -370,10 +277,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     },
 
     pickFreeSlot(): string | null {
-      const slots = this.freeSlotKeys;
-      if (!slots.length) return null;
-      const idx = Math.floor(Math.random() * slots.length);
-      return slots[idx];
+      return pickRandom(this.freeSlotKeys, defaultRandom);
     },
 
     putToInventory(key: THexobjectKey, amount = 1) {
@@ -386,9 +290,8 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
         return { ok: false, message: `Unknown hexobject prototype: ${key}` };
       }
 
-      const unitWeightKg = getItemUnitWeightKg(key);
-      const incomingWeightKg = unitWeightKg * amount;
-      if (this.carriedWeightKg + incomingWeightKg > this.carryCapacityKg) {
+      const incomingWeightKg = getItemUnitWeightKg(key) * amount;
+      if (!canFitAdditionalWeight(this.carriedWeightKg, this.carryCapacityKg, incomingWeightKg)) {
         console.warn('Carry limit exceeded:', incomingWeightKg, 'kg');
         return {
           ok: false,
@@ -471,88 +374,6 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
 
       this.fillEmptySlotsWithHands();
       this.persist();
-    },
-
-    startDrag(itemId: string, clientX: number, clientY: number, rect: DOMRect) {
-      const item = this.items.find((i) => i.id === itemId);
-      if (!item) return;
-
-      this.draggingId = itemId;
-      this.dragFromSlot = item.slotKey;
-      this.dragOverSlot = null;
-      this.dragOverEquipSlot = null;
-      this.isDragging = true;
-
-      this.dragOffsetX = clientX - rect.left;
-      this.dragOffsetY = clientY - rect.top;
-
-      this.dragPointerX = clientX;
-      this.dragPointerY = clientY;
-
-      this.dragWidth = rect.width;
-      this.dragHeight = rect.height;
-    },
-
-    updateDragPointer(clientX: number, clientY: number) {
-      this.dragPointerX = clientX;
-      this.dragPointerY = clientY;
-    },
-
-    setDragOver(slotKey: string | null) {
-      this.dragOverSlot = slotKey;
-    },
-
-    cancelDrag() {
-      this.draggingId = null;
-      this.dragFromSlot = null;
-      this.dragOverSlot = null;
-      this.dragOverEquipSlot = null;
-      this.isDragging = false;
-
-      this.dragPointerX = 0;
-      this.dragPointerY = 0;
-      this.dragOffsetX = 0;
-      this.dragOffsetY = 0;
-      this.dragWidth = 0;
-      this.dragHeight = 0;
-    },
-
-    mergeStacks(target: InventoryItem, from: InventoryItem): boolean {
-      if (!target.stackKey || !from.stackKey) return false;
-      if (target.stackKey !== from.stackKey) return false;
-
-      const meta = getMeta(from.key);
-      const maxStack = meta?.traits?.maxStack ?? null;
-
-      if (!maxStack) {
-        target.amount += from.amount;
-        return true;
-      }
-
-      const canAdd = Math.max(0, maxStack - target.amount);
-      if (canAdd <= 0) return false;
-
-      const add = Math.min(canAdd, from.amount);
-
-      target.amount += add;
-      from.amount -= add;
-
-      return true;
-    },
-
-    dropTo(targetSlot: string | null) {
-      if (!this.isDragging || !this.draggingId || !this.dragFromSlot) {
-        this.cancelDrag();
-        return;
-      }
-
-      if (!targetSlot || targetSlot === this.dragFromSlot) {
-        this.cancelDrag();
-        return;
-      }
-
-      this.moveItemToSlot(this.draggingId, targetSlot);
-      this.cancelDrag();
     },
 
     fillEmptySlotsWithHands() {

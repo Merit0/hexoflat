@@ -57,11 +57,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 
-const worldStore = useWorldMapStore();
+const heroStore = useHeroStore();
 const combatStore = useCombatStore();
 const heroToolStore = useHeroToolStore();
 const now = ref(Date.now());
@@ -74,7 +74,7 @@ const heroControlsEnabled = computed(() => {
   return (
     combatStore.combatTurnSide === 'hero' &&
     !combatStore.isEnemyTurnResolving &&
-    !worldStore.isHeroMoving
+    !heroStore.isHeroMoving
   );
 });
 const attackReady = computed(() => {

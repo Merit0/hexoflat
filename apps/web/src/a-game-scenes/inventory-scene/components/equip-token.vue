@@ -37,10 +37,10 @@ import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-re
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
-import { useInventoryDragHandle } from '@/composables/use-inventory-drag';
+import { inventoryDragState, useInventoryDragHandle } from '@/composables/use-inventory-drag';
 
 const props = defineProps<{
   item: InventoryItem;
@@ -48,11 +48,11 @@ const props = defineProps<{
 
 const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
-const worldMapStore = useWorldMapStore();
+const heroStore = useHeroStore();
 const overlayStore = useOverlayStore();
 const dragHandle = useInventoryDragHandle(() => props.item.id);
 
-const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
+const isDragging = computed(() => inventoryDragState.draggingId === props.item.id);
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const isUsableTool = computed(() => {
   return (
@@ -75,10 +75,10 @@ const iconStyle = computed(() => ({
 
 const dragGhostStyle = computed<CSSProperties>(() => ({
   position: 'fixed',
-  left: `${inventoryStore.dragPointerX - inventoryStore.dragOffsetX}px`,
-  top: `${inventoryStore.dragPointerY - inventoryStore.dragOffsetY}px`,
-  width: `${inventoryStore.dragWidth}px`,
-  height: `${inventoryStore.dragHeight}px`,
+  left: `${inventoryDragState.dragPointerX - inventoryDragState.dragOffsetX}px`,
+  top: `${inventoryDragState.dragPointerY - inventoryDragState.dragOffsetY}px`,
+  width: `${inventoryDragState.dragWidth}px`,
+  height: `${inventoryDragState.dragHeight}px`,
   transform: 'translate(0, 0) scale(1.05)',
   zIndex: 9999,
   pointerEvents: 'none',
@@ -107,7 +107,7 @@ function useToolToken() {
   const toolType = resolveToolType();
   if (!toolType) return;
 
-  const heroCoords = worldMapStore.heroCoordinates;
+  const heroCoords = heroStore.heroCoordinates;
   if (!heroCoords) return;
 
   heroToolStore.activeTool = toolType;
