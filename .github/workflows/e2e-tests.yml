@@ -1,9 +1,8 @@
 name: E2E tests (reusable)
 
-# Shared by ci.yml (every PR/push — gate, artifact-only) and deploy.yml
-# (push to main — additionally bundles the Allure report onto GitHub Pages).
-# Kept as a single reusable workflow so both callers run the exact same
-# Postgres+api+Playwright steps instead of two copies drifting apart.
+# Called once, as the last job in ci.yml, after every cheaper check has
+# passed. Kept as its own reusable workflow file (rather than inlined) so the
+# Postgres+api+Playwright steps stay easy to read on their own.
 on:
   workflow_call:
 
@@ -114,11 +113,11 @@ jobs:
           path: apps/playwright/allure-report/
           retention-days: 7
 
-      # deploy.yml publishes this same run's report to the fixed Pages URL
-      # below (on every PR as well as on the trunk branches — see the note at
-      # the top of deploy.yml), so the link is live a minute or two after this
-      # job finishes. The artifact stays as the offline fallback for runs
-      # where the deploy job was skipped, e.g. fork PRs.
+      # ci.yml's `deploy` job publishes this same run's report to the fixed
+      # Pages URL below (on every PR as well as on the trunk branches — see
+      # the note at the top of ci.yml), so the link is live a minute or two
+      # after this job finishes. The artifact stays as the offline fallback
+      # for runs where the deploy job was skipped, e.g. fork PRs.
       - name: Link the deployed Allure report in the job summary
         if: always()
         run: |

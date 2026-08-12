@@ -19,7 +19,7 @@ import { API_URL, WEB_URL } from '@config/env';
 /**
  * Shown in the report's Environment widget.
  *
- * This matters more than it looks: deploy.yml publishes the report to one
+ * This matters more than it looks: ci.yml publishes the report to one
  * fixed Pages URL from every PR as well as from the trunk branches, so the
  * live report is constantly overwritten. Without these fields there is no way
  * to tell, from the report alone, which commit or PR you are looking at.
