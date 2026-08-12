@@ -31,18 +31,33 @@ const I18N_MIGRATED_VUE_FILES = [
   'apps/web/src/components/overlays/hex-tile-details-overlay.vue',
   'apps/web/src/a-game-scenes/inventory-scene/components/token-details-panel.vue',
 ];
+// G6 ratchet: the 11 cycles these 6 files carry today were reviewed and
+// deliberately kept, not missed — mainly Pinia's use*Store()-at-module-scope
+// pattern (world-map-store <-> hero-store from G4.5, router <-> user-store
+// <-> world-map-store). Grandfathered to `warn` so import-x/no-cycle can go
+// to `error` everywhere else without failing CI on architecture that was
+// already reviewed and accepted.
+const KNOWN_CYCLE_FILES = [
+  'apps/web/src/a-game-scenes/map-scene/components/hex-world-map.vue',
+  'apps/web/src/router/index.ts',
+  'apps/web/src/services/world/location-navigator.ts',
+  'apps/web/src/stores/combat-store.ts',
+  'apps/web/src/stores/hero-store.ts',
+  'apps/web/src/stores/user-store.ts',
+  'apps/web/src/stores/world-map-store.ts',
+];
 
 export default tseslint.config(
   {
     ignores: ['apps/*/dist/**', 'packages/*/dist/**', '**/back-up/**', '**/tsconfig.tsbuildinfo'],
   },
 
-  // G0 (docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md): cycles between
-  // modules are invisible until something else breaks — this makes the
-  // world-map-store <-> combat-store cycle (and any future one) show up in
-  // CI instead of being tribal knowledge. `warn`, not `error`, deliberately:
-  // this phase only wants the cycle *visible*, not blocking; G2 removes the
-  // cycle and G6 is where import cycles graduate to a hard failure.
+  // G6 (docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md): cycles between
+  // modules are invisible until something else breaks. G0 introduced this as
+  // `warn` so cycles were visible without blocking; this is where they
+  // graduate to `error` for any *new* cycle. The 11 cycles that already
+  // exist and were reviewed (see KNOWN_CYCLE_FILES above) are grandfathered
+  // back to `warn` by the override block right after this one.
   {
     files: [...APP_SRC_FILES, ...ENGINE_SRC_FILES, ...API_SRC_FILES],
     plugins: { 'import-x': importXPlugin },
@@ -69,6 +84,13 @@ export default tseslint.config(
         }),
       ],
     },
+    rules: {
+      'import-x/no-cycle': 'error',
+    },
+  },
+
+  {
+    files: KNOWN_CYCLE_FILES,
     rules: {
       'import-x/no-cycle': 'warn',
     },
@@ -110,13 +132,15 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
-      // G0 ratchet (docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md): pinned
-      // to the measured 10.08.2026 maximum in apps/web/src, so this starts
-      // green and only blocks growth *past* today's God Class/Component
-      // files (world-map-store.ts, combat-store.ts, hex-world-map.vue).
-      // G6 lowers these once G1-G5 shrink the actual maximums.
-      'max-lines': ['error', { max: 703, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': ['error', { max: 188, skipBlankLines: true, skipComments: true }],
+      // G6 ratchet (docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md): pinned
+      // to the measured 12.08.2026 maximum in apps/web/src after G1-G5.
+      // max-lines dropped 703 -> 528 (combat-store.ts, the new largest
+      // file). The other three are unchanged from G0's baseline: they're
+      // still bottlenecked by files G1-G5 never touched (use-move-preview.ts
+      // at complexity 39, combat-store.test.ts at 186 lines/function,
+      // locale-keys.ts at depth 4) — not room this refactor could close.
+      'max-lines': ['error', { max: 528, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 186, skipBlankLines: true, skipComments: true }],
       complexity: ['error', { max: 39 }],
       'max-depth': ['error', { max: 4 }],
     },
@@ -154,10 +178,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
-      // G0 ratchet, same rationale as the apps/web block above — pinned to
-      // the measured 10.08.2026 maximum in packages/engine/src. Note this
-      // package stays clean (all engine files are already under Part 1's
-      // >400-line red line); the ratchet exists so it stays that way.
+      // G6 ratchet, same rationale as the apps/web block above. Unchanged
+      // from G0's baseline (371/116/43/4) — G1-G5's new engine modules
+      // (move-planner.ts, combat/*, random.ts, the traits-resolver
+      // additions) all landed under apply-command.ts and
+      // hex-map-model.ts's existing maxima, so there was nothing to lower.
       'max-lines': ['error', { max: 371, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 116, skipBlankLines: true, skipComments: true }],
       complexity: ['error', { max: 43 }],
@@ -203,6 +228,37 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
+  // G6: bans the two escape hatches G2/G4/G5 built alternatives for —
+  // localStorage (services/persistence/*-storage.ts) and Math.random()
+  // (packages/engine/utils/random.ts's RNG port) — but only in the three
+  // stores actually migrated off them. hero-store.ts, user-store.ts,
+  // ui-settings-store.ts and game-events-store.ts still call these directly
+  // by design (no persistence layer or RNG-determinism need built for them
+  // yet), so banning repo-wide here would fail on code this refactor never
+  // touched, not on a regression.
+  {
+    files: [
+      'apps/web/src/stores/world-map-store.ts',
+      'apps/web/src/stores/hero-inventory-store.ts',
+      'apps/web/src/stores/combat-store.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='localStorage']",
+          message:
+            'Direct localStorage is not allowed here — use services/persistence/*-storage.ts instead.',
+        },
+        {
+          selector: "CallExpression[callee.object.name='Math'][callee.property.name='random']",
+          message:
+            'Direct Math.random() is not allowed here — use the RNG port from @hexoflat/engine/utils/random instead.',
+        },
+      ],
     },
   },
 

@@ -541,7 +541,7 @@ changes. Dedicated branch. Ask before commit.
 
 ---
 
-### Фаза G6 — Затягнути храповик
+### Фаза G6 — Затягнути храповик `[DONE — 12.08.2026]`
 
 **Мета.** Зафіксувати результат, щоб він не відкотився.
 
@@ -564,20 +564,30 @@ localStorage and Math.random() inside apps/web/src/stores/**, and update the bef
 table in the doc plus a short note in CLAUDE.md. Dedicated branch. Ask before commit.
 ```
 
+#### Результат G6
+
+**Пороги знижено, де було куди.** `apps/web/src`: `max-lines` 703 → **528** (тепер вузьке місце — `combat-store.ts`, а не старий тріо `world-map-store.ts`/`combat-store.ts`/`hero-inventory-store.ts`, які й дали основне падіння в G2-G5). `max-lines-per-function`/`complexity`/`max-depth` лишились без змін (186/39/4) — їхні фактичні максимуми сидять у файлах, яких G1-G5 не торкались (`combat-store.test.ts`, `use-move-preview.ts`, `locale-keys.ts`), тож знижувати не було з чого. `packages/engine/src` лишився повністю без змін (371/116/43/4) — нові engine-модулі з G3-G5 (`move-planner.ts`, `combat/*`, `random.ts`, доповнення `traits-resolver.ts`) усі влізли під наявні максимуми `apply-command.ts`/`hex-map-model.ts`.
+
+**`import-x/no-cycle`: `error`, але з «прощеними» 11 попередженнями.** Буквальне «перевести на error» негайно зламало б CI: ці 11 попереджень (7 файлів — `hex-world-map.vue`, `router/index.ts`, `location-navigator.ts`, `combat-store.ts`, `hero-store.ts`, `user-store.ts`, `world-map-store.ts`) — не пропущені, а свідомо прийнята архітектура (G4.5's `hero-store ↔ world-map-store`, і ширший `router ↔ user-store ↔ world-map-store` ланцюжок від патерну Pinia `use*Store()` на рівні модуля). Замість буквального виконання застосовано той самий храповик-підхід, що й для `max-lines` у G0: базове правило тепер `error` для всього `apps/web/src` + `packages/engine/src` + `apps/api/src`, а список `KNOWN_CYCLE_FILES` в `eslint.config.js` понижує саме ці 7 файлів назад до `warn`. Будь-який **новий** цикл будь-де ще — тепер жорстка помилка в CI; ці 11 — ні, доки хтось свідомо не вирішить їх усунути.
+
+**`no-restricted-syntax` — не на весь `apps/web/src/stores/**`, а на три мігровані стори.** Буквальне правило для всього `stores/**` теж негайно зламало б CI: `hero-store.ts` (5 викликів `localStorage`), `user-store.ts` (4), `ui-settings-store.ts` (2) і `game-events-store.ts` (1 `Math.random()` для id події) досі звертаються до них напряму — цим сторам ніколи не будували persistence-шар чи RNG-порт (це поза межами G0-G5, і поза межами G6 теж). Правило застосовано лише до `world-map-store.ts`, `hero-inventory-store.ts`, `combat-store.ts` — трьох сторів, які G2/G4/G5 фактично довели до нуля прямих викликів; для них новий прямий `localStorage`/`Math.random()` тепер помилка ESLint, а не щось, що доведеться ловити на код-рев'ю.
+
+Typecheck, lint (0 помилок), build, unit-тести (204 web + engine/api), e2e (22/22) — усе перевірено після зміни порогів.
+
 ---
 
 ## Частина 5 — Цільові цифри
 
-| Файл                                          | Було (10.08.2026, `wc -l`)                       | Ціль                                                                                                                    |
-| --------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `world-map-store.ts`                          | 886 рядків, 32 actions                           | ≤ 200 → переглянуто на ~400 — ✅ 612 (G2+G3+G4.5)                                                                       |
-| `combat-store.ts`                             | 727 рядків, 25 actions, 19× `useWorldMapStore()` | ≤ 250 → переглянуто на ~600 — ✅ 624, 13× (G2+G4)                                                                       |
-| `hex-world-map.vue`                           | 688 рядків (577 script)                          | ≤ 400 — ✅ 394 (G1)                                                                                                     |
-| `hero-inventory-store.ts`                     | 589 рядків, 30 actions                           | ≤ 200 → переглянуто на ~400 — ✅ 410 (G5)                                                                               |
-| Циклів у `apps/web/src`                       | 3 (виміряно в G0, не 1)                          | 0 → 4 (G4.5 додав hero-store ↔ world-map-store, свідомо, `warn`-only)                                                   |
-| Модулів із прямим `localStorage` (без тестів) | 8                                                | 1 — ✅ 7 (G2, світ зведено в 1)                                                                                         |
-| `Math.random()` у сторах                      | 7 місць у 4 сторах                               | 0 — ✅ прибрано з world-map-store, combat-store, hero-inventory-store (G3+G4+G5); лишився 1 в game-events (id, не стан) |
-| Composables без імпортерів                    | 3 (379 рядків)                                   | 0 — ✅ 0 (G1)                                                                                                           |
+| Файл                                          | Було (10.08.2026, `wc -l`)                       | Ціль                                                                                                                                                                                  |
+| --------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `world-map-store.ts`                          | 886 рядків, 32 actions                           | ≤ 200 → переглянуто на ~400 — ✅ 612 (G2+G3+G4.5)                                                                                                                                     |
+| `combat-store.ts`                             | 727 рядків, 25 actions, 19× `useWorldMapStore()` | ≤ 250 → переглянуто на ~600 — ✅ 624, 13× (G2+G4)                                                                                                                                     |
+| `hex-world-map.vue`                           | 688 рядків (577 script)                          | ≤ 400 — ✅ 394 (G1)                                                                                                                                                                   |
+| `hero-inventory-store.ts`                     | 589 рядків, 30 actions                           | ≤ 200 → переглянуто на ~400 — ✅ 410 (G5)                                                                                                                                             |
+| Циклів у `apps/web/src`                       | 3 (виміряно в G0, не 1)                          | 0 → 7 файлів / 11 попереджень (G4.5 додав hero-store ↔ world-map-store; G6 перевів `import-x/no-cycle` на `error` для всього іншого, ці 7 — свідомо `warn`, див. `KNOWN_CYCLE_FILES`) |
+| Модулів із прямим `localStorage` (без тестів) | 8                                                | 1 — ✅ 7 (G2, світ зведено в 1)                                                                                                                                                       |
+| `Math.random()` у сторах                      | 7 місць у 4 сторах                               | 0 — ✅ прибрано з world-map-store, combat-store, hero-inventory-store (G3+G4+G5); лишився 1 в game-events (id, не стан)                                                               |
+| Composables без імпортерів                    | 3 (379 рядків)                                   | 0 — ✅ 0 (G1)                                                                                                                                                                         |
 
 Уточнення щодо `Math.random()`: 3 виклики в `combat-store.ts` (вибір цілі, відступ, авто-щит), 2 в `hero-inventory-store.ts` (вибір вільного слота, обертання токена), 1 у `world-map-store.ts` (вибір тайла спавну), 1 у `game-events-store.ts` (генерація id події). Критичні для детермінізму — перші чотири (вони впливають на ігровий стан). Обертання токена й id події — косметика й можуть лишитись, але поза сторами.
 
