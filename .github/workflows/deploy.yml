@@ -78,11 +78,22 @@ jobs:
   deploy:
     name: Deploy
     needs: build
+    # `build` already runs on `if: always()` so the Allure report (complete
+    # with failure videos/screenshots) exists even when `e2e` failed — but a
+    # job's *default* `if` checks success() across the whole transitive
+    # `needs` chain, not just its direct dependency, so without this
+    # `!cancelled()` `deploy` would still be silently skipped on a red e2e
+    # run and the report would never actually reach the live Pages URL.
+    # `!cancelled()`, not bare `always()`: an explicit workflow cancellation
+    # should still skip deploy, just not a failed job.
+    #
     # A pull_request run from a fork gets a read-only GITHUB_TOKEN — no
     # `pages: write`, no OIDC id-token — so the deploy step below cannot
     # possibly succeed there. Skipping keeps fork PRs green instead of
     # failing on something the contributor cannot fix.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: |
+      !cancelled() &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     environment:
       name: github-pages
