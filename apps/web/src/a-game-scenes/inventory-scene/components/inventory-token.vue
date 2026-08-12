@@ -29,14 +29,14 @@
 import { computed, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
-import { useInventoryDragHandle } from '@/composables/use-inventory-drag';
+import { inventoryDragState, useInventoryDragHandle } from '@/composables/use-inventory-drag';
 
 const props = defineProps<{ item: InventoryItem }>();
 
 const inventoryStore = useHeroInventoryStore();
 const { onPointerDown } = useInventoryDragHandle(() => props.item.id);
 
-const isDragging = computed(() => inventoryStore.draggingId === props.item.id);
+const isDragging = computed(() => inventoryDragState.draggingId === props.item.id);
 const isSelected = computed(() => inventoryStore.selectedItemId === props.item.id);
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const meta = computed(() => resolveInventoryView(props.item.key));
@@ -46,14 +46,14 @@ const tokenStyle = computed(() => ({
 }));
 
 const dragGhostStyle = computed<CSSProperties>(() => {
-  const snap = inventoryStore.dragOverSlot ? 1.12 : 1.05;
+  const snap = inventoryDragState.dragOverSlot ? 1.12 : 1.05;
 
   return {
     position: 'fixed',
-    left: `${inventoryStore.dragPointerX - inventoryStore.dragOffsetX}px`,
-    top: `${inventoryStore.dragPointerY - inventoryStore.dragOffsetY}px`,
-    width: `${inventoryStore.dragWidth}px`,
-    height: `${inventoryStore.dragHeight}px`,
+    left: `${inventoryDragState.dragPointerX - inventoryDragState.dragOffsetX}px`,
+    top: `${inventoryDragState.dragPointerY - inventoryDragState.dragOffsetY}px`,
+    width: `${inventoryDragState.dragWidth}px`,
+    height: `${inventoryDragState.dragHeight}px`,
     transform: `translate(0,0) scale(${snap})`,
     zIndex: 9999,
     pointerEvents: 'none',
@@ -65,7 +65,7 @@ const iconStyle = computed(() => ({
 }));
 
 function onClick() {
-  if (inventoryStore.isDragging) return;
+  if (inventoryDragState.isDragging) return;
   inventoryStore.toggleSelect(props.item.id);
 }
 </script>

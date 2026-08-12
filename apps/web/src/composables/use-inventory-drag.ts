@@ -1,10 +1,99 @@
-import { onBeforeUnmount } from 'vue';
-import { useHeroInventoryStore, type TEquipSlot } from '@/stores/hero-inventory-store';
+import { onBeforeUnmount, reactive } from 'vue';
+import {
+  equipSlotKey,
+  useHeroInventoryStore,
+  type TEquipSlot,
+} from '@/stores/hero-inventory-store';
 
 type InventoryDragTarget =
   { kind: 'grid'; slotKey: string } | { kind: 'equip'; equipSlot: TEquipSlot } | null;
 
 const DRAG_THRESHOLD_PX = 4;
+
+export interface InventoryDragState {
+  draggingId: string | null;
+  dragFromSlot: string | null;
+  dragOverSlot: string | null;
+  isDragging: boolean;
+  dragPointerX: number;
+  dragPointerY: number;
+  dragOffsetX: number;
+  dragOffsetY: number;
+  dragWidth: number;
+  dragHeight: number;
+  dragOverEquipSlot: TEquipSlot | null;
+}
+
+function initialInventoryDragState(): InventoryDragState {
+  return {
+    draggingId: null,
+    dragFromSlot: null,
+    dragOverSlot: null,
+    isDragging: false,
+    dragPointerX: 0,
+    dragPointerY: 0,
+    dragOffsetX: 0,
+    dragOffsetY: 0,
+    dragWidth: 0,
+    dragHeight: 0,
+    dragOverEquipSlot: null,
+  };
+}
+
+export const inventoryDragState = reactive<InventoryDragState>(initialInventoryDragState());
+
+export function resetInventoryDragState(): void {
+  Object.assign(inventoryDragState, initialInventoryDragState());
+}
+
+export function startInventoryDrag(
+  itemId: string,
+  fromSlot: string,
+  clientX: number,
+  clientY: number,
+  rect: DOMRect,
+) {
+  inventoryDragState.draggingId = itemId;
+  inventoryDragState.dragFromSlot = fromSlot;
+  inventoryDragState.dragOverSlot = null;
+  inventoryDragState.dragOverEquipSlot = null;
+  inventoryDragState.isDragging = true;
+
+  inventoryDragState.dragOffsetX = clientX - rect.left;
+  inventoryDragState.dragOffsetY = clientY - rect.top;
+
+  inventoryDragState.dragPointerX = clientX;
+  inventoryDragState.dragPointerY = clientY;
+
+  inventoryDragState.dragWidth = rect.width;
+  inventoryDragState.dragHeight = rect.height;
+}
+
+export function dropInventoryDragToSlot(
+  inventoryStore: ReturnType<typeof useHeroInventoryStore>,
+  targetSlot: string | null,
+) {
+  const { isDragging, draggingId, dragFromSlot } = inventoryDragState;
+
+  if (isDragging && draggingId && dragFromSlot && targetSlot && targetSlot !== dragFromSlot) {
+    inventoryStore.moveItemToSlot(draggingId, targetSlot);
+  }
+
+  resetInventoryDragState();
+}
+
+export function dropInventoryDragToEquip(
+  inventoryStore: ReturnType<typeof useHeroInventoryStore>,
+  targetEquipSlot: TEquipSlot | null,
+) {
+  const { isDragging, draggingId } = inventoryDragState;
+
+  if (isDragging && draggingId && targetEquipSlot) {
+    inventoryStore.moveItemToSlot(draggingId, equipSlotKey(targetEquipSlot));
+  }
+
+  resetInventoryDragState();
+}
 
 /**
  * Resolves which inventory drop-target (grid cell or equip slot) sits under
@@ -51,8 +140,8 @@ export function useInventoryDragHandle(itemId: () => string) {
   const inventoryStore = useHeroInventoryStore();
 
   onBeforeUnmount(() => {
-    if (inventoryStore.draggingId === itemId()) {
-      inventoryStore.cancelDrag();
+    if (inventoryDragState.draggingId === itemId()) {
+      resetInventoryDragState();
     }
   });
 
@@ -72,24 +161,27 @@ export function useInventoryDragHandle(itemId: () => string) {
 
       if (!dragStarted && (Math.abs(dx) > DRAG_THRESHOLD_PX || Math.abs(dy) > DRAG_THRESHOLD_PX)) {
         dragStarted = true;
-        inventoryStore.startDrag(itemId(), startX, startY, rect);
+        const item = inventoryStore.items.find((i) => i.id === itemId());
+        if (!item) return;
+        startInventoryDrag(itemId(), item.slotKey, startX, startY, rect);
       }
 
       if (!dragStarted) return;
 
-      inventoryStore.updateDragPointer(ev.clientX, ev.clientY);
+      inventoryDragState.dragPointerX = ev.clientX;
+      inventoryDragState.dragPointerY = ev.clientY;
 
       const dragTarget = getInventoryDragTargetFromPoint(ev.clientX, ev.clientY);
 
       if (dragTarget?.kind === 'grid') {
-        inventoryStore.setDragOver(dragTarget.slotKey);
-        inventoryStore.setDragOverEquip(null);
+        inventoryDragState.dragOverSlot = dragTarget.slotKey;
+        inventoryDragState.dragOverEquipSlot = null;
       } else if (dragTarget?.kind === 'equip') {
-        inventoryStore.setDragOver(null);
-        inventoryStore.setDragOverEquip(dragTarget.equipSlot);
+        inventoryDragState.dragOverSlot = null;
+        inventoryDragState.dragOverEquipSlot = dragTarget.equipSlot;
       } else {
-        inventoryStore.setDragOver(null);
-        inventoryStore.setDragOverEquip(null);
+        inventoryDragState.dragOverSlot = null;
+        inventoryDragState.dragOverEquipSlot = null;
       }
     };
 
@@ -98,11 +190,11 @@ export function useInventoryDragHandle(itemId: () => string) {
         const dragTarget = getInventoryDragTargetFromPoint(ev.clientX, ev.clientY);
 
         if (dragTarget?.kind === 'grid') {
-          inventoryStore.dropTo(dragTarget.slotKey);
+          dropInventoryDragToSlot(inventoryStore, dragTarget.slotKey);
         } else if (dragTarget?.kind === 'equip') {
-          inventoryStore.dropToEquip(dragTarget.equipSlot);
+          dropInventoryDragToEquip(inventoryStore, dragTarget.equipSlot);
         } else {
-          inventoryStore.cancelDrag();
+          resetInventoryDragState();
         }
       }
 

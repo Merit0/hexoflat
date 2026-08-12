@@ -10,8 +10,8 @@
         :class="{
           blocked: cell.blocked,
           selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId,
-          'is-drop': !cell.blocked && cell.key === inv.dragOverSlot,
-          magnet: !cell.blocked && cell.key === inv.dragOverSlot,
+          'is-drop': !cell.blocked && cell.key === dragState.dragOverSlot,
+          magnet: !cell.blocked && cell.key === dragState.dragOverSlot,
         }"
         @click.self="onCellClick(cell.key)"
       >
@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { inventoryDragState as dragState } from '@/composables/use-inventory-drag';
 import InventoryToken from '@/a-game-scenes/inventory-scene/components/inventory-token.vue';
 
 const inv = useHeroInventoryStore();

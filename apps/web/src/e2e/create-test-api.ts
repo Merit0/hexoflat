@@ -6,6 +6,7 @@ import {
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useOverlayStore } from '@/stores/overlay-store';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -99,6 +100,14 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
     getInventoryItemKeys(): string[] {
       return heroInventoryStore.items.map((item) => item.key);
+    },
+
+    getInventoryItemIdByKey(key: string): string | null {
+      return heroInventoryStore.items.find((item) => item.key === key)?.id ?? null;
+    },
+
+    openHeroInventory(): void {
+      useOverlayStore().openOverlay('hero-inventory');
     },
 
     getGridSize(): TestGridSize {
