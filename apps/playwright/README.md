@@ -216,7 +216,7 @@ pnpm --filter @hexoflat/playwright run report:allure:open
 
 Reporting behaviour is configured once in `src/config/allure.ts`, never in a spec:
 
-- **Environment info** (branch, commit, PR trigger, CI run, web/API URLs) — shown in the report's Environment widget. This matters because `deploy.yml` republishes the report to one fixed GitHub Pages URL from every PR as well as from trunk, so the live report is constantly overwritten; without this you can't tell which run you're looking at.
+- **Environment info** (branch, commit, PR trigger, CI run, web/API URLs) — shown in the report's Environment widget. This matters because `ci.yml` republishes the report to one fixed GitHub Pages URL from every PR as well as from trunk, so the live report is constantly overwritten; without this you can't tell which run you're looking at.
 - **Failure categories** — separate "the API wasn't running" / "the board never rendered" / "hero movement got stuck" from genuine product-behaviour failures, so a red run from broken infrastructure doesn't read as a game bug. If you add a new kind of infrastructure failure with a distinctive error message, add a pattern to `SPECIFIC_FAILURE_PATTERNS` in `allure.ts` rather than letting it fall into the catch-all "Product defect" bucket.
 - **`test.step`** — every `BaseFeature.step(...)` call becomes a step in the Allure tree and, with `video.show.test.level: 'step'` (in `playwright.config.ts`), a caption burned onto the failure video. For a canvas game this is often the only way to see what a click was trying to do — which is why wrapping Feature methods in `this.step` isn't optional.
 
@@ -234,8 +234,7 @@ Reporting behaviour is configured once in `src/config/allure.ts`, never in a spe
 
 ## CI
 
-- `ci.yml` calls the reusable `e2e-tests.yml` workflow on every PR and every push to `main` (Postgres via a service container, `apps/api` built and started, then the suite).
-- `deploy.yml` calls the same workflow and additionally publishes the Allure HTML report to GitHub Pages (`/e2e-report/`) — from every PR as well as from `main`/`game-dev-vite`, so a PR always has a live report link. See the comment at the top of `deploy.yml` for the trade-off that implies (the game build on Pages briefly reflects whatever PR deployed last).
+- `ci.yml` is one sequential pipeline: lint/typecheck/build/unit-tests/api-tests/db-migrations run in parallel, then the reusable `e2e-tests.yml` workflow runs once as the last gate (Postgres via a service container, `apps/api` built and started, then the suite), then the Allure HTML report is published to GitHub Pages (`/e2e-report/`) — on every PR as well as `main`/`game-dev-vite`, so a PR always has a live report link, and even when e2e fails (so the failure videos/screenshots are actually reachable). It used to be two separate workflows (`ci.yml` + `deploy.yml`) each triggering their own e2e run; merged 2026-08-12 because that doubled the most expensive job and caused runner queueing on every PR. See the comment at the top of `ci.yml` for the Pages trade-off that publishing on every PR implies (the game build on Pages briefly reflects whatever PR deployed last).
 - `e2e-tests.yml` pulls the previous deployment's `allure-results/history/` before generating the report, which is what makes Allure's trend graphs (duration, retries, categories) non-empty from the second run onward.
 
 ## Troubleshooting
