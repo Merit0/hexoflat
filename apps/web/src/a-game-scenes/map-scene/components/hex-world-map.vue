@@ -17,7 +17,12 @@
         >
           <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
 
-          <canvas ref="boardCanvasRef" class="hex-board-canvas" data-testid="hex-board-canvas" />
+          <canvas
+            ref="boardCanvasRef"
+            class="hex-board-canvas"
+            data-testid="hex-board-canvas"
+            :data-ready="isBoardReady ? '1' : undefined"
+          />
 
           <tool-hex-tile
             v-if="heroToolStore.isDragging && activeTool"
@@ -37,9 +42,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { useHexBoard } from '@/render/use-hex-board';
-import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
+import { useMovePreview } from '@/composables/use-move-preview';
+import { useHexBoardSizing } from '@/composables/use-hex-board-sizing';
+import { useHexBoardInput } from '@/composables/use-hex-board-input';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
   resolveActions,
@@ -51,8 +58,6 @@ import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
-import { getScoutMoveStepsForSteps } from '@hexoflat/engine/hero-movement/scout-progression';
 import { coordinateKey, getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -61,9 +66,8 @@ import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useOverlayStore } from '@/stores/overlay-store';
-import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
-import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
+import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
+import { createTestApi } from '@/e2e/create-test-api';
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -78,10 +82,7 @@ const heroStore = useHeroStore();
 const uiSettingsStore = useUiSettingsStore();
 const heroInventoryStore = useHeroInventoryStore();
 const hoveredTileCoord = ref<IHexCoordinates | null>(null);
-const activeHandSlot = ref<TEquipSlot>('weapon');
-const lastHandScrollAt = ref(0);
 const healTickerNow = ref(Date.now());
-const HAND_SCROLL_COOLDOWN_MS = 180;
 let healTickerTimer: number | null = null;
 
 watch(
@@ -93,6 +94,24 @@ watch(
 );
 
 onMounted(() => worldStore.bootstrapWorld());
+// The condition is inlined (rather than read from a helper) so Vite can
+// statically fold it away: in any build without VITE_E2E_HOOKS=true this
+// whole branch is dead code, both imports go unused, and the e2e hook
+// modules never make it into the bundle at all.
+onMounted(() => {
+  if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+  installTestHooks(
+    createTestApi({
+      getMapBounds: () => mapBounds.value,
+      getTileSize: () => ({ w: domTileW.value, h: domTileH.value }),
+      isBoardReady: () => isBoardReady.value,
+    }),
+  );
+});
+onBeforeUnmount(() => {
+  if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+  uninstallTestHooks();
+});
 onMounted(() => uiSettingsStore.hydrateFromStorage());
 onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
@@ -108,21 +127,11 @@ function handleTileHover(tile: IHexTile) {
   }
 }
 
-/* ---------- probe for dom tile size ---------- */
-const probeRef = ref<HTMLElement | null>(null);
-const domTileW = ref(0);
-const domTileH = ref(0);
 const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
+const isBoardReady = ref(false);
 
-function readDomTileSize() {
-  const el = probeRef.value;
-  if (!el) return;
-  const r = el.getBoundingClientRect();
-  if (r.width > 0) domTileW.value = r.width;
-  if (r.height > 0) domTileH.value = r.height;
-}
+const { probeRef, domTileW, domTileH, domTileSize, mapBounds, scale } = useHexBoardSizing(tiles);
 
-/* ---------- tool resolver ---------- */
 function getTileByCoord(coord: IHexCoordinates) {
   const tiles = worldMapStore.map?.tiles as HexTileModel[] | undefined;
   return tiles?.find(
@@ -151,98 +160,7 @@ watch(
   { immediate: true },
 );
 
-const movePreview = computed(() => {
-  if (!uiSettingsStore.showHeroMoveTrail) return null;
-  if (!worldStore.map || !worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
-  if (worldStore.isHeroMoving) return null;
-  if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return null;
-
-  const activeToolCapabilities = heroToolStore.activeTool
-    ? getToolCapabilities(heroToolStore.activeTool)
-    : {};
-
-  if (
-    combatStore.combatActive &&
-    combatStore.combatTurnSide === 'hero' &&
-    heroToolStore.isDragging &&
-    activeToolCapabilities.canBlock &&
-    combatStore.combatAttackUsed &&
-    !combatStore.combatDefendUsed
-  ) {
-    const isAdjacent = getOddQNeighbors(worldStore.heroCoordinates).some(
-      (coord) =>
-        coord.columnIndex === hoveredTileCoord.value!.columnIndex &&
-        coord.rowIndex === hoveredTileCoord.value!.rowIndex,
-    );
-    if (!isAdjacent) return null;
-
-    const reachable = combatStore.canPlaceCombatDefendMarker(hoveredTileCoord.value);
-
-    return {
-      path: null,
-      reachable,
-      markerCoord: hoveredTileCoord.value,
-      stepCost: 0,
-      markerKind: 'defend' as const,
-    };
-  }
-
-  const hasMovementSteps = combatStore.combatActive
-    ? combatStore.combatStepsLeft > 0
-    : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
-  const hasNoActiveTool =
-    !heroToolStore.isDragging &&
-    (!heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND);
-  if (!hasMovementSteps || !hasNoActiveTool) return null;
-
-  const heroKey = coordinateKey(worldStore.heroCoordinates);
-  const targetKey = coordinateKey(hoveredTileCoord.value);
-  if (heroKey === targetKey) return null;
-
-  const targetTile = getTileByCoord(hoveredTileCoord.value);
-  if (!targetTile) return null;
-
-  const moveSteps = combatStore.combatActive
-    ? combatStore.combatStepsLeft
-    : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
-  const path = findShortestPath(
-    worldStore.map,
-    worldStore.heroCoordinates,
-    hoveredTileCoord.value,
-    null,
-  );
-
-  const isTraversableTarget = Boolean(
-    targetTile.isRevealed &&
-    targetTile.hexobject?.groupType !== EHexobjectGroup.CONSTRUCTION &&
-    targetTile.hexobject?.collision !== EHexCollision.SOLID &&
-    targetTile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.CAMPING_ENTRANCE,
-  );
-
-  const route = path?.slice(1) ?? [];
-  const reachable = isTraversableTarget && route.length > 0 && route.length <= moveSteps;
-
-  return {
-    path,
-    reachable,
-    markerCoord: isTraversableTarget ? hoveredTileCoord.value : null,
-    stepCost: route.length,
-    markerKind: 'move' as const,
-  };
-});
-
-const movePreviewSegments = computed(() => {
-  const path = movePreview.value?.path;
-  if (!path || path.length < 2) return [];
-
-  return path.slice(1);
-});
-
-const movePreviewMarkerCoord = computed(() => movePreview.value?.markerCoord ?? null);
-
-const movePreviewReachable = computed(() => movePreview.value?.reachable ?? false);
-const movePreviewStepCost = computed(() => movePreview.value?.stepCost ?? 0);
-const movePreviewMarkerKind = computed(() => movePreview.value?.markerKind ?? 'move');
+const movePreview = useMovePreview({ hoveredTileCoord, getTileByCoord });
 
 const enemyVisionCells = computed(() => {
   if (!uiSettingsStore.showEnemyVisionArea) return [];
@@ -302,10 +220,10 @@ const activeCampfireActionTile = computed(() => {
 const isCampfireHealActive = computed(() => Boolean(activeCampfireActionTile.value?.pendingAction));
 
 const campHealEffectCoord = computed(() => {
-  if (!isCampfireHealActive.value || !worldStore.heroCoordinates) return null;
+  if (!isCampfireHealActive.value || !heroStore.heroCoordinates) return null;
 
   const neighborTiles = (
-    getOddQNeighbors(worldStore.heroCoordinates)
+    getOddQNeighbors(heroStore.heroCoordinates)
       .map((coord) => getTileByCoord(coord))
       .filter(Boolean) as IHexTile[]
   )
@@ -337,45 +255,7 @@ watch(
   { immediate: true },
 );
 
-/* ---------- bounds ---------- */
-const bleed = 2;
-
-const mapBounds = computed(() => {
-  const w = domTileW.value || 0;
-  const h = domTileH.value || 0;
-
-  if (!w || !h) {
-    return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
-  }
-
-  let minX = Infinity,
-    minY = Infinity;
-  let maxX = -Infinity,
-    maxY = -Infinity;
-
-  for (const t of tiles.value) {
-    const { x, y } = calcHexPixelPosition(t, w, h);
-
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x + w);
-    maxY = Math.max(maxY, y + h);
-  }
-
-  if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
-    return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
-  }
-
-  return {
-    width: maxX - minX + bleed * 2,
-    height: maxY - minY + bleed * 2,
-    offsetX: minX - bleed,
-    offsetY: minY - bleed,
-  };
-});
-
-const domTileSize = computed(() => ({ w: domTileW.value, h: domTileH.value }));
-const heroCoordinatesComputed = computed(() => worldStore.heroCoordinates);
+const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
 
 useHexBoard({
   canvasRef: boardCanvasRef,
@@ -385,13 +265,7 @@ useHexBoard({
   tilesDirtyTick,
   heroCoordinates: heroCoordinatesComputed,
   healTickerNow,
-  movePreview: {
-    segments: movePreviewSegments,
-    markerCoord: movePreviewMarkerCoord,
-    reachable: movePreviewReachable,
-    stepCost: movePreviewStepCost,
-    markerKind: movePreviewMarkerKind,
-  },
+  movePreview,
   enemyVisionCells,
   combatMarkers,
   campHeal: {
@@ -404,22 +278,10 @@ useHexBoard({
     void handleTileClick(tile);
   },
   onOpenHeroInventory: () => useOverlayStore().openOverlay('hero-inventory'),
+  onBoardReady: () => {
+    isBoardReady.value = true;
+  },
 });
-
-/* ---------- scale ---------- */
-const scale = ref(1);
-
-function updateScale() {
-  const b = mapBounds.value;
-  if (!b.width || !b.height) return;
-
-  const padding = 40;
-  const topbar = 64; // keep some space; map container already padded, this just helps scale
-  const sx = (window.innerWidth - padding) / b.width;
-  const sy = (window.innerHeight - padding - topbar) / b.height;
-
-  scale.value = Math.min(sx, sy, 1.1);
-}
 
 function onHide() {
   if (heroToolStore.isLocked) {
@@ -427,11 +289,6 @@ function onHide() {
     worldMapStore.saveToStorage();
   }
   heroToolStore.stopTool();
-}
-
-function onResize() {
-  readDomTileSize();
-  updateScale();
 }
 
 function onKeyDown(event: KeyboardEvent) {
@@ -442,127 +299,9 @@ function onKeyDown(event: KeyboardEvent) {
   onHide();
 }
 
-function resolveEquippedToolKey(slot: TEquipSlot): THeroToolKey | null {
-  const item = heroInventoryStore.equippedItems[slot];
-  if (!item) return null;
-
-  switch (item.key) {
-    case HEXOBJECT_KEYS.HAND:
-      return HEXOBJECT_KEYS.HAND;
-    case HEXOBJECT_KEYS.AXE:
-      return HEXOBJECT_KEYS.AXE;
-    case HEXOBJECT_KEYS.PICKAXE:
-      return HEXOBJECT_KEYS.PICKAXE;
-    case HEXOBJECT_KEYS.SWORD:
-      return HEXOBJECT_KEYS.SWORD;
-    case HEXOBJECT_KEYS.SHIELD:
-      return HEXOBJECT_KEYS.SHIELD;
-    default:
-      return null;
-  }
-}
-
-function resolvePreferredToolHover(): IHexCoordinates | null {
-  if (!worldStore.heroCoordinates || !hoveredTileCoord.value) return null;
-
-  const neighbors = getOddQNeighbors(worldStore.heroCoordinates);
-  const target = hoveredTileCoord.value;
-
-  const directNeighbor = neighbors.find(
-    (coord) => coord.columnIndex === target.columnIndex && coord.rowIndex === target.rowIndex,
-  );
-  if (directNeighbor) return directNeighbor;
-
-  let bestCoord: IHexCoordinates | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (const neighbor of neighbors) {
-    const distance = hexDistance(neighbor, target);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestCoord = neighbor;
-    }
-  }
-
-  return bestCoord;
-}
-
-function equipToolFromHand(slot: TEquipSlot) {
-  if (!worldStore.heroCoordinates) return;
-
-  const toolKey = resolveEquippedToolKey(slot);
-  if (!toolKey) return;
-
-  activeHandSlot.value = slot;
-  heroToolStore.useTool(toolKey, worldStore.heroCoordinates, resolvePreferredToolHover());
-}
-
-function onWheel(event: WheelEvent) {
-  const target = event.target as HTMLElement | null;
-  if (
-    target &&
-    (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
-  ) {
-    return;
-  }
-
-  if (heroToolStore.isLocked || !worldStore.heroCoordinates) return;
-  if (event.deltaY === 0) return;
-
-  event.preventDefault();
-
-  const now = Date.now();
-  if (now - lastHandScrollAt.value < HAND_SCROLL_COOLDOWN_MS) return;
-  lastHandScrollAt.value = now;
-
-  const handSlots: TEquipSlot[] = ['weapon', 'shield'];
-  const currentIndex = handSlots.indexOf(activeHandSlot.value);
-  const direction = event.deltaY > 0 ? 1 : -1;
-  const nextIndex = (currentIndex + direction + handSlots.length) % handSlots.length;
-  const nextSlot = handSlots[nextIndex];
-
-  equipToolFromHand(nextSlot);
-}
-
-watch(mapBounds, updateScale, { immediate: true });
-
-let probeResizeObserver: ResizeObserver | null = null;
-let probeSizeFallbackTimer: number | null = null;
+useHexBoardInput({ hoveredTileCoord });
 
 onMounted(() => {
-  // A single requestAnimationFrame read of the probe's box isn't reliable —
-  // if layout (fonts, viewport, scrollbars) hasn't settled on that exact
-  // frame, `readDomTileSize` silently measures 0 once and nothing ever
-  // retries, leaving domTileW/H (and everything downstream: mapBounds, the
-  // Pixi canvas size, every tile's hit-test area) stuck at zero for the rest
-  // of the page's life — tiles render in the wrong place or clicks silently
-  // do nothing until a reload happens to win the race. A ResizeObserver
-  // fires as soon as the probe actually has a size, and again on every
-  // subsequent change, so this self-heals instead of gambling on one frame.
-  if (probeRef.value) {
-    probeResizeObserver = new ResizeObserver(() => {
-      readDomTileSize();
-      updateScale();
-    });
-    probeResizeObserver.observe(probeRef.value);
-  }
-
-  // Bounded fallback: ResizeObserver fires almost immediately in a healthy
-  // tab, but if that very first layout/paint tick is delayed for any reason
-  // (backgrounded tab, heavy load), poll briefly until domTileSize is real
-  // instead of depending entirely on that one callback ever arriving.
-  probeSizeFallbackTimer = window.setInterval(() => {
-    if (domTileW.value > 0 && domTileH.value > 0) {
-      if (probeSizeFallbackTimer) window.clearInterval(probeSizeFallbackTimer);
-      probeSizeFallbackTimer = null;
-      return;
-    }
-    readDomTileSize();
-    updateScale();
-  }, 100);
-
-  window.addEventListener('resize', onResize);
-  window.addEventListener('wheel', onWheel, { passive: false });
   window.addEventListener('keydown', onKeyDown);
   healTickerTimer = window.setInterval(() => {
     healTickerNow.value = Date.now();
@@ -570,14 +309,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  probeResizeObserver?.disconnect();
-  if (probeSizeFallbackTimer) {
-    window.clearInterval(probeSizeFallbackTimer);
-    probeSizeFallbackTimer = null;
-  }
-  probeResizeObserver = null;
-  window.removeEventListener('resize', onResize);
-  window.removeEventListener('wheel', onWheel);
   window.removeEventListener('keydown', onKeyDown);
   if (healTickerTimer) {
     window.clearInterval(healTickerTimer);

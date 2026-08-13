@@ -13,10 +13,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue';
 
 const props = withDefaults(
   defineProps<{
-    padding?: number; // внутрішній padding “лінзи” (px)
-    maxScale?: number; // верхня межа
-    minScale?: number; // нижня межа
-    mode?: 'contain' | 'cover'; // contain = влізти, cover = заповнити
+    padding?: number;
+    maxScale?: number;
+    minScale?: number;
+    mode?: 'contain' | 'cover';
   }>(),
   {
     padding: 0,
@@ -77,12 +77,10 @@ onBeforeUnmount(() => {
 });
 
 watchEffect(() => {
-  // якщо пропси зміняться
   void props.padding;
   void props.maxScale;
   void props.minScale;
   void props.mode;
-  // легкий reflow
   queueMicrotask(measureAndScale);
 });
 
@@ -100,13 +98,11 @@ const stageStyle = computed(() => ({
   overflow: hidden;
 }
 
-/* stage is what scales */
 .lens-stage {
   transform-origin: center center;
   will-change: transform;
 }
 
-/* content is kept in its native fixed size */
 .lens-content {
   width: max-content;
   height: max-content;

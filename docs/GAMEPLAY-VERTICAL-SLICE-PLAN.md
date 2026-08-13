@@ -89,7 +89,54 @@ from that doc.
 
 ---
 
+### Фаза A0 — Seeded RNG у конвеєрі команд [ДОДАНО 12.08.2026]
+
+**Чому окремо і чому першою.** Під час аналізу God Class (`docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md`) виявилось, що найцінніша частина Фази A — не схеми контенту, а детермінований рандом. Причому він потрібен **уже зараз, наявному коду**, а не майбутнім кубикам.
+
+Стан на 12.08.2026: `packages/engine/src/utils/random.ts` містить порт `RandomNumberGenerator` і `pickRandom`, але єдина реалізація — `defaultRandom = () => Math.random()`. Розетка є, детермінованого джерела немає. При цьому **7 місць уже передають туди `defaultRandom`**:
+
+- `combat-store.ts` — авто-щит ворога, вибір цілі атаки, вибір відступу (3);
+- `world-map-store.ts` — вибір тайла спавну (1);
+- `hero-inventory-store.ts` — вибір вільного слота (1);
+- `map/free-hex-finder.ts` — приймає rng опційно (2 сигнатури).
+
+Наслідок: `snapshot.ts` відновлює `{map, heroes}`, але **наступне випадкове рішення після відновлення розходиться**. Тобто snapshot сьогодні відновлює стан, але не відтворює гру. Replay і авторитетна валідація в co-op (правило #4) на цьому ламаються — незалежно від того, скільки ще контенту додати.
+
+**Мета.** Завести seeded-джерело в стан рушія, протягнути його через `applyCommand`, перевести 7 наявних викликів `defaultRandom` на нього.
+
+**Що робити.**
+
+- Seeded-генератор на базі наявного `utils/hash/sha256.ts`, з тестом «однаковий seed → однакова послідовність».
+- `rngState` (seed + лічильник) у `HexEngineState` — щоб послідовність просувалась детерміновано й переживала snapshot.
+- `snapshot.ts`: `rngState` у payload. **Рішення, яке треба ухвалити явно:** це адитивна зміна, тому `CONTENT_VERSION` бампати **не** треба — старі payload-и без `rngState` отримують свіжий seed при завантаженні. Бамп версії витер би всі збереження задарма. Перевірити обидва шляхи тестом, включно з поведінкою `computeChecksum` на payload без `rngState`.
+- Перевести 7 call site-ів з `defaultRandom` на rng з контексту/стану.
+
+**Чого НЕ робити.** Жодних схем контенту, жодного кубика, жодного UI. Дизайну бою це не торкається — правила AI вже приймають rng ін'єкцією (зроблено у G4), міняється тільки джерело.
+
+**Критерій приймання.** `pnpm --filter @hexoflat/engine test` зелений; тест доводить, що дві прогонки з однаковим seed дають однакову послідовність рішень AI; `defaultRandom` не викликається в жодному сторі; старе збереження без `rngState` завантажується без помилки; `CONTENT_VERSION` лишився 1.
+
+**Що це відмикає.** Детермінізм отримує **вже написаний код** — AI ворога, спавн, вибір слота — без жодного дизайнерського рішення. Кубики (Фаза H) і будь-яка майбутня механіка з рандомом стають просто ще одним споживачем готового джерела.
+
+**Старт чату:**
+
+```
+Working in hexoflat. Read docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md — Phase A0 only. Do Phase A0
+and nothing else: add a seeded RNG (built on packages/engine/src/utils/hash/sha256.ts) into
+HexEngineState, thread it through applyCommand, persist it in snapshot.ts, and switch the 7
+existing defaultRandom call sites (combat-store x3, world-map-store x1, hero-inventory-store
+x1, free-hex-finder) over to it. Keep CONTENT_VERSION at 1 — the snapshot change is additive,
+old payloads without rngState must load with a fresh seed rather than being discarded; cover
+both paths with tests, including computeChecksum on a payload with no rngState. No content
+schemas, no dice, no UI, no other phase. Do not change any game rule or balance — only the
+source of randomness. Prove determinism with a test that runs the same seed twice and gets the
+same enemy AI decisions. Dedicated branch. Ask before commit.
+```
+
+---
+
 ### Фаза A — Контент-таксономія (tokens / cards / dice схеми)
+
+> **Звужено 12.08.2026.** Seeded RNG виділено у Фазу A0 (вище) і робиться першим. З цієї фази **відкладено**: токен ініціативи, ability-картки й clock/round-токен — усі троє визначаються дизайном бою, якого ще немає, тож їхні схеми були б зафіксованим у коді здогадом (та сама причина, з якої відкладена Фаза F). Лишається: hero-токен, status-токен, item/event-картки, схема кубика. Правило на майбутнє: схема пишеться тільки під відомого найближчого споживача.
 
 **Мета.** Формалізувати нові Zod-контент-категорії з розділу 1.1, без UI — лише схеми і content-map, як зараз для resources/creatures.
 

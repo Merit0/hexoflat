@@ -1,8 +1,26 @@
 name: CI
 
+# Single workflow for both gating (lint/typecheck/build/tests) and the Pages
+# deploy — merged from what used to be two separate workflows (`ci.yml` +
+# `deploy.yml`) that both independently triggered on `pull_request` and each
+# ran their own full Postgres+Chromium e2e job. That duplicated the most
+# expensive job in the pipeline on every PR push and doubled the number of
+# jobs racing for runners at once (see docs/refactoring — the queueing this
+# caused is what prompted the merge). Now there is exactly one e2e run per
+# push, gated behind the cheap checks so a broken lint/typecheck/build never
+# gets that far.
+#
+# Deliberately still deploys the whole Pages site (apps/web/dist + the Allure
+# report at /e2e-report) from every PR as well as from the trunk branches, so
+# a PR always has a live report link rather than a zip artifact. The
+# trade-off is knowing: the game published at the Pages root is whatever the
+# most recent successful deploy built, so between a PR deploy and the next
+# trunk deploy the public site shows that PR's build. If that ever stops
+# being acceptable, the fix is to publish only dist/e2e-report from PR runs
+# and restore apps/web/dist from the last trunk deploy.
 on:
   push:
-    branches: [main]
+    branches: [main, game-dev-vite]
   pull_request:
 
 concurrency:
@@ -111,6 +129,104 @@ jobs:
         env:
           DATABASE_URL: postgresql://hexoflat:hexoflat@localhost:5432/hexoflat
 
-  e2e-tests:
+  # The one job that spins up Postgres + apps/api + a real Chromium browser —
+  # by far the most expensive step, so it runs last, only after every cheap
+  # check has already passed. See e2e-tests.yml for the actual steps.
+  e2e:
     name: E2E tests
+    needs: [audit, lint, type-checks, app-build, unit-tests, api-tests, db-migrations]
     uses: ./.github/workflows/e2e-tests.yml
+
+  # Rebuilds apps/web with GITHUB_PAGES=true (a different base path than the
+  # app-build check above, which is why it isn't deduplicated with it) and
+  # bundles the Allure report from the e2e job alongside it as /e2e-report.
+  # `if: always()`: this must run even when e2e failed, or a failing PR would
+  # never get its report published — the whole point of putting videos/
+  # screenshots in Allure is to see *why* it failed.
+  build-pages:
+    name: Build Pages site
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          GITHUB_PAGES: 'true'
+        run: pnpm turbo run build
+
+      # Bundled as a subpath of the same Pages site rather than a separate
+      # Pages source — GitHub Pages only supports one source per repo, and
+      # this one (Actions-deployed) is already spoken for by apps/web.
+      # continue-on-error: the artifact may be missing if the e2e job above
+      # failed before it could even generate/upload the report.
+      - name: Download Allure report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report
+          path: apps/web/dist/e2e-report
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/web/dist
+
+  deploy:
+    name: Deploy
+    needs: build-pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # `build-pages` already runs on `if: always()` so the Allure report
+    # (complete with failure videos/screenshots) exists even when `e2e`
+    # failed — but a job's *default* `if` checks success() across the whole
+    # transitive `needs` chain, not just its direct dependency, so without
+    # this `!cancelled()` `deploy` would still be silently skipped on a red
+    # e2e run and the report would never actually reach the live Pages URL.
+    # `!cancelled()`, not bare `always()`: an explicit workflow cancellation
+    # should still skip deploy, just not a failed job.
+    #
+    # A pull_request run from a fork gets a read-only GITHUB_TOKEN — no
+    # `pages: write`, no OIDC id-token — so the deploy step below cannot
+    # possibly succeed there. Skipping keeps fork PRs green instead of
+    # failing on something the contributor cannot fix.
+    if: |
+      !cancelled() &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    # A fixed group (not the ref-scoped one above): only one Pages deployment
+    # can be live at a time, so a deploy from another branch/PR must queue
+    # behind this one rather than race it. cancel-in-progress: false lets it
+    # wait instead of getting cancelled.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Link the Allure report in the job summary
+        run: |
+          echo "### Allure e2e report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.deployment.outputs.page_url }}e2e-report/" >> "$GITHUB_STEP_SUMMARY"

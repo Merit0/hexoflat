@@ -4,7 +4,7 @@ import { getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils'
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
-import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 
@@ -21,7 +21,7 @@ export interface UseHexBoardInputDeps {
  * unreachable hex.
  */
 export function useHexBoardInput(deps: UseHexBoardInputDeps) {
-  const worldStore = useWorldMapStore();
+  const heroStore = useHeroStore();
   const heroToolStore = useHeroToolStore();
   const heroInventoryStore = useHeroInventoryStore();
 
@@ -50,9 +50,9 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
 
   function resolvePreferredToolHover(): IHexCoordinates | null {
     const hoveredTileCoord = deps.hoveredTileCoord.value;
-    if (!worldStore.heroCoordinates || !hoveredTileCoord) return null;
+    if (!heroStore.heroCoordinates || !hoveredTileCoord) return null;
 
-    const neighbors = getOddQNeighbors(worldStore.heroCoordinates);
+    const neighbors = getOddQNeighbors(heroStore.heroCoordinates);
     const target = hoveredTileCoord;
 
     const directNeighbor = neighbors.find(
@@ -75,13 +75,13 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
   }
 
   function equipToolFromHand(slot: TEquipSlot) {
-    if (!worldStore.heroCoordinates) return;
+    if (!heroStore.heroCoordinates) return;
 
     const toolKey = resolveEquippedToolKey(slot);
     if (!toolKey) return;
 
     activeHandSlot.value = slot;
-    heroToolStore.useTool(toolKey, worldStore.heroCoordinates, resolvePreferredToolHover());
+    heroToolStore.useTool(toolKey, heroStore.heroCoordinates, resolvePreferredToolHover());
   }
 
   function onWheel(event: WheelEvent) {
@@ -93,7 +93,7 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
       return;
     }
 
-    if (heroToolStore.isLocked || !worldStore.heroCoordinates) return;
+    if (heroToolStore.isLocked || !heroStore.heroCoordinates) return;
     if (event.deltaY === 0) return;
 
     event.preventDefault();

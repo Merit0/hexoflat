@@ -41,6 +41,7 @@
 import { computed, ref } from 'vue';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroInventoryStore, type TEquipSlot } from '@/stores/hero-inventory-store';
+import { inventoryDragState } from '@/composables/use-inventory-drag';
 import EquipToken from '@/a-game-scenes/inventory-scene/components/equip-token.vue';
 import { resolveEquipCompatibility } from '@hexoflat/engine/utils/inventory/equip-compatibility';
 
@@ -130,10 +131,10 @@ function isDropSlot(id: string): id is TEquipSlot {
 }
 
 function dragStateClass(id: TEquipSlot) {
-  if (!inventoryStore.isDragging) return '';
-  if (inventoryStore.dragOverEquipSlot !== id) return '';
+  if (!inventoryDragState.isDragging) return '';
+  if (inventoryDragState.dragOverEquipSlot !== id) return '';
 
-  const dragged = inventoryStore.items.find((i) => i.id === inventoryStore.draggingId);
+  const dragged = inventoryStore.items.find((i) => i.id === inventoryDragState.draggingId);
   if (!dragged) return '';
 
   const compatibility = resolveEquipCompatibility(dragged, id);
@@ -147,7 +148,6 @@ function getEquippedItem(slot: TEquipSlot) {
   return equippedItems.value[slot];
 }
 
-/* ---------- HEX RING COMPRESSION ---------- */
 const RING_COMPRESS = 0.57;
 const INSET_PX = computed(() => Math.round(HEX_SIZE.value * 0.015));
 
@@ -177,7 +177,6 @@ function compressAroundCenter(x: number, y: number) {
   return { x: cx, y: cy };
 }
 
-/* ---------- BOUNDS ---------- */
 const bleed = 10;
 
 const bounds = computed(() => {

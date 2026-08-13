@@ -35,8 +35,8 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
     const hoveredTileCoord = deps.hoveredTileCoord.value;
 
     if (!uiSettingsStore.showHeroMoveTrail) return null;
-    if (!worldStore.map || !worldStore.heroCoordinates || !hoveredTileCoord) return null;
-    if (worldStore.isHeroMoving) return null;
+    if (!worldStore.map || !heroStore.heroCoordinates || !hoveredTileCoord) return null;
+    if (heroStore.isHeroMoving) return null;
     if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return null;
 
     const activeToolCapabilities = heroToolStore.activeTool
@@ -51,7 +51,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
       combatStore.combatAttackUsed &&
       !combatStore.combatDefendUsed
     ) {
-      const isAdjacent = getOddQNeighbors(worldStore.heroCoordinates).some(
+      const isAdjacent = getOddQNeighbors(heroStore.heroCoordinates).some(
         (coord) =>
           coord.columnIndex === hoveredTileCoord.columnIndex &&
           coord.rowIndex === hoveredTileCoord.rowIndex,
@@ -77,7 +77,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
       (!heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND);
     if (!hasMovementSteps || !hasNoActiveTool) return null;
 
-    const heroKey = coordinateKey(worldStore.heroCoordinates);
+    const heroKey = coordinateKey(heroStore.heroCoordinates);
     const targetKey = coordinateKey(hoveredTileCoord);
     if (heroKey === targetKey) return null;
 
@@ -89,7 +89,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
       : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0);
     const path = findShortestPath(
       worldStore.map,
-      worldStore.heroCoordinates,
+      heroStore.heroCoordinates,
       hoveredTileCoord,
       null,
     );

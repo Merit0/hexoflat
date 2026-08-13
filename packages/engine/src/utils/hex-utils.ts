@@ -12,14 +12,12 @@ export interface IHexPositioned {
   coordinates: IHexCoordinates;
 }
 
-// odd-q offset -> axial
 export function oddQToAxial(c: IHexCoordinates): Axial {
   const q = c.columnIndex;
   const r = c.rowIndex - (q - (q & 1)) / 2;
   return { q, r };
 }
 
-// axial -> odd-q offset
 function axialToOddQ(a: { q: number; r: number }): IHexCoordinates {
   const columnIndex = a.q;
   const rowIndex = a.r + (columnIndex - (columnIndex & 1)) / 2;
@@ -73,19 +71,13 @@ export function calcHexPixelPosition(tile: IHexPositioned, width: number, height
   return { x, y };
 }
 
-/**
- * Pointy-top axial → pixel.
- * size = "radius" гекса (від центру до вершини)
- */
+/** size = "radius" гекса (від центру до вершини) */
 export function axialToPixelPointy({ q, r }: Axial, size: number) {
   const x = size * Math.sqrt(3) * (q + r / 2);
   const y = size * (3 / 2) * r;
   return { x, y };
 }
 
-/**
- * Flat-top axial → pixel.
- */
 export function axialToPixelFlat({ q, r }: Axial, size: number) {
   const x = size * (3 / 2) * q;
   const y = size * Math.sqrt(3) * (r + q / 2);

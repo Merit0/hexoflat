@@ -13,6 +13,12 @@ export type MapDefinition = {
   entryHexobjectKey: THexobjectKey;
   safeZoneRadius?: number;
   fogPolicy?: TFogPolicy;
+  /**
+   * How long this location stays sealed after the hero clears it and leaves,
+   * before its map is thrown away and regenerated. Omitted means the
+   * location never regenerates — its map persists as the hero left it.
+   */
+  respawnAfterClearedMs?: number;
 };
 
 export class MapRegistry {
@@ -40,6 +46,7 @@ export class MapRegistry {
       entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
       safeZoneRadius: 1,
       fogPolicy: 'FOG',
+      respawnAfterClearedMs: 60_000,
     },
   };
 

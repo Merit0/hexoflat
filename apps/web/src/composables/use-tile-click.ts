@@ -4,6 +4,7 @@ import { useOverlayStore } from '@/stores/overlay-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useHeroStore } from '@/stores/hero-store';
 
 function describeHexobject(hexobject: THexobject): string {
   switch (hexobject.groupType) {
@@ -47,14 +48,10 @@ export function useTileClick() {
   const worldMapStore = useWorldMapStore();
   const combatStore = useCombatStore();
   const heroToolStore = useHeroToolStore();
+  const heroStore = useHeroStore();
 
   async function handleTileClick(tile: IHexTile) {
     logTileClick(tile);
-
-    // if (tile.isLocked) {
-    //     overlayStore.openOverlay("tile-locked-hint", {coord: tile.coordinates});
-    //     return;
-    // }
 
     if (
       combatStore.combatActive &&
@@ -84,7 +81,7 @@ export function useTileClick() {
       return;
     }
 
-    const moved = await worldMapStore.moveHeroTo(tile.coordinates);
+    const moved = await heroStore.moveHeroTo(tile.coordinates);
     if (moved) return;
   }
 

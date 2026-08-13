@@ -1,10 +1,11 @@
-import { THexobjectKey } from '../../registry/hexobjects-registry';
+import { HEXOBJECT_KEYS, THexobjectKey } from '../../registry/hexobjects-registry';
 import { getPrototype, getMeta } from '../../content';
 import {
   EHexobjectGroup,
   THexobjectPrototype,
   type TEquipSlot,
 } from '../../abstraction/hexobject-abstraction';
+import type { InventoryItem } from '../../abstraction/inventory-abstraction';
 import { assertNever } from '../assert-never';
 
 export type ResolvedInventoryView = {
@@ -27,7 +28,6 @@ function resolveProtoFields(proto: THexobjectPrototype) {
   const iconPath = proto.spritePath ?? '';
   const descriptionFallback = proto.description ?? '';
 
-  // defaults
   let stackable = false;
   let defaultAmount = 1;
   let weightKg = 0;
@@ -48,10 +48,8 @@ function resolveProtoFields(proto: THexobjectPrototype) {
     }
 
     case EHexobjectGroup.TOOL: {
-      // tools як інвентарні токени (не стак)
       defaultAmount = 1;
       weightKg = proto.tool.traits?.weightKG ?? 0;
-      // якщо вага є в equipment/tool пізніше — додаси
       break;
     }
 
@@ -88,6 +86,47 @@ function resolveProtoFields(proto: THexobjectPrototype) {
   };
 }
 
+export function getItemUnitWeightKg(key: THexobjectKey): number {
+  if (key === HEXOBJECT_KEYS.HAND) return 0;
+  return getMeta(key)?.traits?.weightKG ?? 0;
+}
+
+export function calculateCarriedWeightKg(items: Pick<InventoryItem, 'key' | 'amount'>[]): number {
+  return items.reduce((sum, item) => {
+    if (item.key === HEXOBJECT_KEYS.HAND) return sum;
+    return sum + getItemUnitWeightKg(item.key) * item.amount;
+  }, 0);
+}
+
+export function canFitAdditionalWeight(
+  carriedKg: number,
+  capacityKg: number,
+  incomingKg: number,
+): boolean {
+  return carriedKg + incomingKg <= capacityKg;
+}
+
+export function mergeItemStacks(target: InventoryItem, from: InventoryItem): boolean {
+  if (!target.stackKey || !from.stackKey) return false;
+  if (target.stackKey !== from.stackKey) return false;
+
+  const maxStack = getMeta(from.key)?.traits?.maxStack ?? null;
+
+  if (!maxStack) {
+    target.amount += from.amount;
+    return true;
+  }
+
+  const canAdd = Math.max(0, maxStack - target.amount);
+  if (canAdd <= 0) return false;
+
+  const add = Math.min(canAdd, from.amount);
+  target.amount += add;
+  from.amount -= add;
+
+  return true;
+}
+
 export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView {
   const proto = getPrototype(key);
   const meta = getMeta(key);
@@ -110,11 +149,9 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
 
   const p = resolveProtoFields(proto);
 
-  // meta overrides (UI + optional traits)
   const title = meta?.title ?? key;
   const description = meta?.subtitle ?? meta?.title ?? p.descriptionFallback;
 
-  // stack rules — якщо ти вирішив тримати stackable/stackKey в meta.traits, просто перезапиши
   const metaStackable = !!meta?.traits?.stackable;
   const stackable = meta?.traits ? metaStackable : p.stackable;
   const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);

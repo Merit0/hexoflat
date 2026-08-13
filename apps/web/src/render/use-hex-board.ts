@@ -53,6 +53,13 @@ export interface UseHexBoardOptions {
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
   onOpenHeroInventory: () => void;
+  /**
+   * Fired once the renderer has presented its first frame with every layer
+   * already synced. "Vue mounted" is a much weaker signal — Pixi's init and
+   * the DOM tile-size probe both resolve asynchronously afterwards — so this
+   * is what "the board is interactive" actually means.
+   */
+  onBoardReady?: () => void;
 }
 
 /**
@@ -247,6 +254,13 @@ export function useHexBoard(opts: UseHexBoardOptions) {
         { immediate: true, deep: true },
       ),
     );
+
+    // Registered after every layer's `immediate: true` watcher has already
+    // run, so the frame this waits on is a fully populated one.
+    board.onFirstFramePresented(() => {
+      if (cancelled) return;
+      opts.onBoardReady?.();
+    });
   });
 
   onBeforeUnmount(() => {

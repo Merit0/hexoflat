@@ -1,12 +1,21 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": ".",
     "noEmit": true,
     "lib": ["esnext", "dom"],
-    "types": ["node", "@playwright/test"]
+    "types": ["node", "@playwright/test"],
+    "baseUrl": ".",
+    "paths": {
+      "@framework/*": ["src/framework/*"],
+      "@components/*": ["src/components/*"],
+      "@pages/*": ["src/pages/*"],
+      "@features/*": ["src/features/*"],
+      "@fixtures": ["src/fixtures/test.ts"],
+      "@config/*": ["src/config/*"],
+      "@api/*": ["src/api/*"],
+      "@web-test-api": ["../web/src/e2e/test-api.types.ts"]
+    }
   },
-  "include": ["playwright.config.ts", "global-setup.ts", "e2e/**/*.ts", "support/**/*.ts"],
+  "include": ["playwright.config.ts", "global-setup.ts", "e2e/**/*.ts", "src/**/*.ts"],
   "exclude": ["node_modules", "dist", "test-results", "playwright-report", ".tmp"]
 }

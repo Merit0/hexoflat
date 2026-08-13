@@ -72,11 +72,6 @@ export class HeroModel implements IHero {
     return this;
   }
 
-  // public setEquipment(equipment: EquipmentModel): HeroModel {
-  //     this.equipment = equipment;
-  //     return this;
-  // }
-
   public setSteps(steps: number): HeroModel {
     this.heroSteps = steps;
     return this;
@@ -97,30 +92,6 @@ export class HeroModel implements IHero {
   public getHeroMyriads(): number {
     return Math.round((this.heroSteps / 10) * 10) / 10;
   }
-
-  // public getMaxEnergy(): number {
-  //     return this.maxEnergy;
-  // }
-
-  // public getAttack(): number {
-  //     return this.attack;
-  // }
-  //
-  // public getDefense(): number {
-  //     return this.defense;
-  // }
-  //
-  // public getCoins(): number {
-  //     return this.coins;
-  // }
-
-  // public getId(): number {
-  //     return this.id;
-  // }
-  //
-  // public getEnemiesKilled(): number {
-  //     return this.kills;
-  // }
 
   public addKilled(): void {
     this.kills += 1;

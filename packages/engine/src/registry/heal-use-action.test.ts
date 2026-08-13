@@ -90,7 +90,6 @@ describe.each<{ key: THexobjectKey; amountPerTick: number }>([
     };
     applyCommand(state, finish, ctx);
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- vi.fn() reference, not `this`-bound
     expect(ctx.hero.healHero).toHaveBeenCalledWith(amountPerTick);
   });
 });

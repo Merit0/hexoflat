@@ -234,10 +234,9 @@ function openSettings() {
 .topbar__right {
   justify-content: flex-end;
   gap: 8px;
-  min-width: 0; /* ✅ щоб елементи могли стискатись без зламу гріду */
+  min-width: 0; /* щоб елементи могли стискатись без зламу гріду */
 }
 
-/* ✅ Обгортка для логера в топбарі */
 .topbar__logger {
   display: flex;
   align-items: center;
@@ -262,7 +261,6 @@ function openSettings() {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* (твоє — лишаю як є) */
 .hero-badge__name {
   font-family: var(--font-main, serif), serif;
   font-weight: 700;
@@ -390,8 +388,6 @@ function openSettings() {
   color: rgba(230, 245, 255, 0.88);
 }
 
-/* ⚠️ Я трохи підправив logout: fixed width/height на vw дає дивні розміри.
-   Якщо хочеш лишити як є — повернеш назад, але так стабільніше. */
 .logout {
   height: 32px;
   padding: 0 14px;

@@ -47,83 +47,69 @@ function createEngineContext(
   };
 }
 
-describe('useWorldMapStore', () => {
+describe('useWorldMapStore: leaveCurrentLocation', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     localStorage.clear();
   });
 
-  describe('moveHeroTo', () => {
-    it('moves the hero to an adjacent revealed tile and records the step', async () => {
-      const worldStore = useWorldMapStore();
-      const heroStore = useHeroStore();
-      heroStore.hero.id = 'hero-1';
-      const map = buildRevealedMap();
-      worldStore.map = map;
-      worldStore.currentMapId = 'move-test-map';
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+  function buildClearedMap(name: string) {
+    const map = buildRevealedMap();
+    const tile = map.tiles[0];
+    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.GRAVE, tile.coordinates);
+    map.name = name;
+    return map;
+  }
 
-      const moved = await worldStore.moveHeroTo({ columnIndex: 1, rowIndex: 0 });
+  it('seals a cleared location that declares a respawn delay', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildClearedMap('cave-map');
+    worldStore.currentLocationKey = 'cave';
+    worldStore.currentMapId = 'cave-map-id';
 
-      expect(moved).toBe(true);
-      expect(worldStore.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 0 });
-      expect(heroStore.hero.heroSteps).toBe(1);
-    });
+    worldStore.leaveCurrentLocation('camping');
 
-    it('rejects moving onto an unrevealed tile', async () => {
-      const worldStore = useWorldMapStore();
-      const heroStore = useHeroStore();
-      heroStore.hero.id = 'hero-1';
-      const map = new HexMapBuilder().name('fog-test').width(3).height(3).build();
-      for (const tile of map.tiles) tile.isRevealed = false;
-      map.tiles[0].isRevealed = true;
-      worldStore.map = map;
-      worldStore.currentMapId = 'fog-test-map';
-      worldStore.heroCoordinates = { ...map.tiles[0].coordinates };
+    expect(worldStore.isLocationRespawning('cave')).toBe(true);
+  });
 
-      const target = map.tiles.find((t) => !t.isRevealed)!.coordinates;
-      const moved = await worldStore.moveHeroTo(target);
+  it('leaves a location alone when its definition declares no respawn delay', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildClearedMap('camping-map');
+    worldStore.currentLocationKey = 'camping';
+    worldStore.currentMapId = 'camping-map-id';
 
-      expect(moved).toBe(false);
-      expect(worldStore.heroCoordinates).toEqual(map.tiles[0].coordinates);
-    });
+    worldStore.leaveCurrentLocation('cave');
 
-    it('rejects moving onto a tile with a solid object', async () => {
-      const worldStore = useWorldMapStore();
-      const heroStore = useHeroStore();
-      heroStore.hero.id = 'hero-1';
-      const map = buildRevealedMap();
-      worldStore.map = map;
-      worldStore.currentMapId = 'blocked-test-map';
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+    expect(worldStore.isLocationRespawning('camping')).toBe(false);
+  });
 
-      const blockedCoord = { columnIndex: 1, rowIndex: 0 };
-      const blockedTile = map.tiles.find(
-        (t) =>
-          t.coordinates.columnIndex === blockedCoord.columnIndex &&
-          t.coordinates.rowIndex === blockedCoord.rowIndex,
-      )!;
-      blockedTile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.HOMELAND_GATE, blockedCoord);
+  it('does not seal the location the hero is staying in', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildClearedMap('cave-map');
+    worldStore.currentLocationKey = 'cave';
+    worldStore.currentMapId = 'cave-map-id';
 
-      const moved = await worldStore.moveHeroTo(blockedCoord);
+    worldStore.leaveCurrentLocation('cave');
 
-      expect(moved).toBe(false);
-      expect(worldStore.heroCoordinates).toEqual({ columnIndex: 0, rowIndex: 0 });
-    });
+    expect(worldStore.isLocationRespawning('cave')).toBe(false);
+  });
 
-    it('rejects moving while a move is already in flight', async () => {
-      const worldStore = useWorldMapStore();
-      const heroStore = useHeroStore();
-      heroStore.hero.id = 'hero-1';
-      worldStore.map = buildRevealedMap();
-      worldStore.currentMapId = 'busy-test-map';
-      worldStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
-      worldStore.isHeroMoving = true;
+  it('does not seal a location that has not been cleared', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildRevealedMap();
+    worldStore.currentLocationKey = 'cave';
+    worldStore.currentMapId = 'cave-map-id';
 
-      const moved = await worldStore.moveHeroTo({ columnIndex: 1, rowIndex: 0 });
+    worldStore.leaveCurrentLocation('camping');
 
-      expect(moved).toBe(false);
-    });
+    expect(worldStore.isLocationRespawning('cave')).toBe(false);
+  });
+});
+
+describe('useWorldMapStore', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
   });
 
   describe('runWorldTick', () => {
@@ -159,10 +145,6 @@ describe('useWorldMapStore', () => {
 
   describe('dirty-tile tracking', () => {
     beforeEach(() => {
-      // dirtyTileIds is module-level state (deliberately, like worldTimer/
-      // pendingSaves elsewhere in this file — it should outlive Pinia store
-      // resets in the real app), so it isn't cleared by setActivePinia(...)
-      // above. Drain any carryover from earlier tests before each one here.
       useWorldMapStore().consumeDirtyTileIds();
     });
 
@@ -219,7 +201,7 @@ describe('useWorldMapStore', () => {
       const map = new HexMapBuilder().name('dirty-test-5').width(6).height(6).build();
       for (const tile of map.tiles) tile.isRevealed = false;
       worldStore.map = map;
-      worldStore.heroCoordinates = { columnIndex: 2, rowIndex: 2 };
+      useHeroStore().heroCoordinates = { columnIndex: 2, rowIndex: 2 };
 
       worldStore.revealAroundHero();
       const dirty = worldStore.consumeDirtyTileIds();

@@ -16,16 +16,14 @@ if (import.meta.env.DEV) {
 const pinia = createPinia();
 
 /**
- * ✅ Safe, minimal Pinia localStorage persistence
- * - Persist ONLY selected stores (whitelist)
- * - Avoid persisting world-map-store because it has its own storage system (hexoflat:world:*)
- * - Avoid persisting ephemeral UI stores (heroTool, overlays, etc.)
- * - Never persist the `user` store: it carries the JWT accessToken, and an
- *   XSS-readable localStorage token is a full session hijack. The token still
- *   only ever lives in memory (api/auth-token.ts). A page refresh instead
- *   survives via a silent `GET /auth/session` call against an httpOnly,
- *   JS-unreadable cookie set at login/register (see user-store.ts's
- *   `restoreSession`) — the raw token never touches localStorage either way.
+ * Persists only the `hero` store to localStorage — world-map-store isn't
+ * included because it has its own storage system (hexoflat:world:*). Never
+ * persist the `user` store: it carries the JWT accessToken, and an
+ * XSS-readable localStorage token is a full session hijack. The token still
+ * only ever lives in memory (api/auth-token.ts). A page refresh instead
+ * survives via a silent `GET /auth/session` call against an httpOnly,
+ * JS-unreadable cookie set at login/register (see user-store.ts's
+ * `restoreSession`) — the raw token never touches localStorage either way.
  */
 pinia.use((context) => {
   const serializer = {
@@ -35,16 +33,10 @@ pinia.use((context) => {
 
   const storeId = context.store.$id;
 
-  // ✅ Persist only what you really need
-  // Add more ids here ONLY if you are sure the store is safe to persist.
-  const PERSIST_STORES = new Set<string>([
-    'hero',
-    // "settings", // example
-  ]);
+  const PERSIST_STORES = new Set<string>(['hero']);
 
   if (!PERSIST_STORES.has(storeId)) return;
 
-  // --- hydrate ---
   try {
     const raw = window.localStorage.getItem(storeId);
     if (raw) {
