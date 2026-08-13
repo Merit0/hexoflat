@@ -176,7 +176,7 @@ jobs:
       # failed before it could even generate/upload the report.
       - name: Download Allure report
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: allure-report
           path: apps/web/dist/e2e-report
