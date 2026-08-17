@@ -14,6 +14,7 @@ declare global {
 
 export type {
   HexoflatTestApi,
+  TestDiscoveryState,
   TestGridSize,
   TestHexCoordinates,
   TestTileFraction,

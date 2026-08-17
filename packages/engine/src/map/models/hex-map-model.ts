@@ -11,6 +11,7 @@ import type { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner
 import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
 import { EHexActionType } from '../../enums/hex-action-type';
 import { coordinateKey } from '../../utils/hex-utils';
+import type { DiscoveryState } from '../discovery-state';
 
 export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
 
@@ -31,6 +32,13 @@ export interface ISerializedHexTile {
   r?: number;
   q?: number;
   isRevealed?: boolean;
+  /**
+   * Added in E1. Absent in every payload written before it, which is why it
+   * is optional and CONTENT_VERSION stayed at 1: the four states are a
+   * refinement of `isRevealed`, not a replacement for it, so an old payload
+   * reads back losslessly as `DISCOVERED`/`UNKNOWN`.
+   */
+  discovery?: DiscoveryState;
   hexobject?: THexobject | null;
   resourceSpawner?: IHexResourceSpawner | null;
   pendingAction?: IPendingTileAction | null;
@@ -223,7 +231,10 @@ export default class HexMapModel implements IWorldMap {
         imagePath: t.hexBackgroundImagePath,
         tileKey: t.tileKey,
         coordinates: t.coordinates,
+        // Both are written: `discovery` is the real value, `isRevealed` keeps
+        // the payload readable by anything still on the boolean.
         isRevealed: t.isRevealed,
+        discovery: t.discovery,
         hexobject: t.hexobject,
         resourceSpawner: t.resourceSpawner,
         pendingAction: t.pendingAction,
@@ -241,7 +252,11 @@ export default class HexMapModel implements IWorldMap {
 
     map.tiles = raw.tiles.map((t) => {
       const tile = new HexTileModel();
+      // A pre-E1 payload has only the boolean; `true` there meant exactly
+      // what `DISCOVERED` means now, so the shim's own translation is the
+      // right one and the fallback needs no special case.
       tile.isRevealed = t.isRevealed ?? false;
+      if (t.discovery) tile.discovery = t.discovery;
       tile.hexBackgroundImagePath = t.imagePath ?? '';
       tile.coordinates = t.coordinates ?? { rowIndex: t.r ?? 0, columnIndex: t.q ?? 0 };
 

@@ -9,6 +9,7 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import type {
   HexoflatTestApi,
+  TestDiscoveryState,
   TestGridSize,
   TestHexCoordinates,
   TestTileFraction,
@@ -33,6 +34,8 @@ export interface CreateTestApiOptions {
   getTileSize(): TileSizeSnapshot;
   /** True once PixiJS has presented its first frame. */
   isBoardReady(): boolean;
+  /** Length of the visible-tiles list the renderer is handed. */
+  getRenderedTileCount(): number;
 }
 
 /**
@@ -113,6 +116,14 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     getGridSize(): TestGridSize {
       const map = worldStore.map;
       return { width: map?.width ?? 0, height: map?.height ?? 0 };
+    },
+
+    getTileDiscovery(coordinates: TestHexCoordinates): TestDiscoveryState {
+      return findTile(coordinates)?.discovery ?? 'UNKNOWN';
+    },
+
+    getRenderedTileCount(): number {
+      return options.getRenderedTileCount();
     },
   };
 }

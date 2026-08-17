@@ -2,6 +2,7 @@ import { getReachableTileDistances } from '../../hero-movement/reachable-range-s
 import { findShortestPath } from '../../hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '../../hero-movement/scout-progression';
 import { coordinateKey } from '../../utils/hex-utils';
+import { applyPathDiscovery } from '../../map/discovery-rules';
 import type { MoveHeroCommand } from '../hex-engine-commands';
 import type { CommandHandler } from './handler-types';
 
@@ -45,5 +46,14 @@ export const moveHeroHandler: CommandHandler<MoveHeroCommand> = (state, command)
   hero.coordinates = { ...target };
   hero.heroSteps += stepsTaken;
 
-  return [{ type: 'HERO_MOVED', payload: { heroId, path, heroSteps: hero.heroSteps } }];
+  // The organic frontier is a slice rule and only a slice rule. With the flag
+  // off — which is every existing world map, and every multiplayer session by
+  // construction — nothing below runs and `fog-service.revealAroundHero`
+  // remains the only thing that touches discovery, exactly as before E1.
+  const discovery = state.features.explorationSlice ? applyPathDiscovery(state.map, path) : [];
+
+  return [
+    { type: 'HERO_MOVED', payload: { heroId, path, heroSteps: hero.heroSteps } },
+    ...discovery,
+  ];
 };

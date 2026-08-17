@@ -5,6 +5,20 @@ import { createRngState, type RngState } from '../utils/seeded-random';
 import type { AppliedCommandLog } from './applied-command-log';
 
 /**
+ * Which slice rules are live for this session.
+ *
+ * Session config, not game state: it is resolved from the build/room by
+ * `features/feature-flags.ts` and deliberately **not** part of the snapshot,
+ * so a save file cannot turn a rule on. `deserializeState` therefore takes it
+ * as an argument rather than reading it back.
+ */
+export interface EngineFeatureSet {
+  explorationSlice: boolean;
+}
+
+export const NO_ENGINE_FEATURES: EngineFeatureSet = { explorationSlice: false };
+
+/**
  * The whole of a scenario's authoritative game state.
  *
  * Lives in its own module rather than next to `applyCommand` so that command
@@ -29,6 +43,8 @@ export interface HexEngineState {
   stateVersion: number;
   /** Recent `commandId`s and what they produced — see `applied-command-log.ts`. */
   appliedCommands: AppliedCommandLog;
+  /** Slice rules that are live. Never serialized — see `EngineFeatureSet`. */
+  features: EngineFeatureSet;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -47,6 +63,12 @@ export interface CreateEngineStateInit {
   rngState?: RngState;
   stateVersion?: number;
   appliedCommands?: AppliedCommandLog;
+  /**
+   * Defaults to everything off. Callers that want a slice rule live must ask
+   * for it explicitly — an omission can only ever make the engine behave the
+   * way it did before the slice existed.
+   */
+  features?: EngineFeatureSet;
 }
 
 export function createEngineState(init: CreateEngineStateInit): HexEngineState {
@@ -56,5 +78,6 @@ export function createEngineState(init: CreateEngineStateInit): HexEngineState {
     rngState: init.rngState ?? createRngState(init.seed),
     stateVersion: init.stateVersion ?? 0,
     appliedCommands: init.appliedCommands ?? [],
+    features: init.features ?? { ...NO_ENGINE_FEATURES },
   };
 }

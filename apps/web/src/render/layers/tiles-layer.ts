@@ -11,6 +11,29 @@ import type { useCombatStore } from '@/stores/combat-store';
 const FOG_TILE_URL = '/hex-assets/hex-effects/fog-tile-image.png';
 const DEFAULT_BG_URL = '/hex-assets/token-placement-image.png';
 
+/**
+ * `OBSERVED` is drawn as a dimmed silhouette: the player can see that
+ * *something* is over there and roughly what kind of thing it is, but not
+ * what it is. Design §36 asks for "fog/partial treatment" — the fog texture
+ * plus a knocked-back alpha is that, and it reads as distinctly less resolved
+ * than a `DISCOVERED` tile next to it.
+ */
+const OBSERVED_TILE_ALPHA = 0.55;
+
+/**
+ * Whether a tile's contents may be drawn at all.
+ *
+ * Note what is *not* here: `UNKNOWN`. An unknown hex never reaches this layer
+ * under the exploration slice — it is filtered out upstream in
+ * `use-hex-board-sizing.ts`, so no node is ever created for it, which is what
+ * invariant I13 (no rectangular player-facing map) actually requires. With
+ * the slice off, `UNKNOWN` is exactly the old `isRevealed === false` and still
+ * gets the fog tile it always did.
+ */
+function isFullyRevealed(tile: IHexTile): boolean {
+  return tile.discovery === 'DISCOVERED' || tile.discovery === 'UNDERSTOOD';
+}
+
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 type CombatStore = ReturnType<typeof useCombatStore>;
 
@@ -63,7 +86,7 @@ function constructionLockLabel(
   worldStore: WorldStore,
 ): string | null {
   const hexobject = tile.hexobject;
-  if (!tile.isRevealed || !hexobject) return null;
+  if (!isFullyRevealed(tile) || !hexobject) return null;
   if (hexobject.groupType !== EHexobjectGroup.CONSTRUCTION) return null;
 
   const enterCfg = getMeta(hexobject.hexobjectKey)?.enter;
@@ -85,7 +108,7 @@ function constructionLockLabel(
 }
 
 function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): string | null {
-  if (!tile.isRevealed) return null;
+  if (!isFullyRevealed(tile)) return null;
 
   const marker = combatStore.combatMarkers.find(
     (item) =>
@@ -162,14 +185,23 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     for (const unsub of node.unsubscribers) unsub();
     node.unsubscribers = [];
 
-    const bgPath = tile.isRevealed ? tile.hexBackgroundImagePath || DEFAULT_BG_URL : FOG_TILE_URL;
+    const revealed = isFullyRevealed(tile);
+
+    // OBSERVED shares the fog texture with UNKNOWN rather than getting one of
+    // its own: what separates them on screen is that UNKNOWN has no tile at
+    // all, so a fogged shape *is* the "there is something there" signal.
+    const bgPath = revealed ? tile.hexBackgroundImagePath || DEFAULT_BG_URL : FOG_TILE_URL;
     applyTexture(node.bg, bgPath, node);
+    node.root.alpha = tile.discovery === 'OBSERVED' ? OBSERVED_TILE_ALPHA : 1;
 
     // No hexobject (fogged, or revealed-but-empty) means no sprite to draw —
     // leave the layer empty so the bg texture (fog pattern, or the
     // token-placement pattern for an empty revealed tile) shows through
-    // instead of being blotted out by a filler image.
-    const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
+    // instead of being blotted out by a filler image. An OBSERVED tile is
+    // treated as unrevealed here on purpose: drawing its hexobject sprite
+    // would hand the player the exact identity that observation is defined
+    // not to give them (invariant I3).
+    const spritePath = revealed ? tile.hexobject?.spritePath : null;
     if (!spritePath) {
       node.sprite.texture = Texture.EMPTY;
       return;

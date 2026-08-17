@@ -4,7 +4,7 @@ import { CONTENT_VERSION } from '../content/content-version';
 import { sha256Hex } from '../utils/hash/sha256';
 import { createRngState, type RngState } from '../utils/seeded-random';
 import type { AppliedCommandLog } from './applied-command-log';
-import type { HexEngineState } from './engine-state';
+import { NO_ENGINE_FEATURES, type EngineFeatureSet, type HexEngineState } from './engine-state';
 
 export interface SnapshotPayload {
   version: number;
@@ -76,7 +76,17 @@ export function serializeState(state: HexEngineState): SnapshotPayload {
   return { ...content, checksum: computeChecksum(content) };
 }
 
-export function deserializeState(payload: SnapshotPayload, now: number): HexEngineState {
+/**
+ * `features` is an argument rather than a payload field on purpose: which
+ * slice rules are live is a property of *this session*, not of the save. A
+ * snapshot that could switch a rule on would let an old file change how the
+ * engine behaves. Omitted means everything off.
+ */
+export function deserializeState(
+  payload: SnapshotPayload,
+  now: number,
+  features: EngineFeatureSet = NO_ENGINE_FEATURES,
+): HexEngineState {
   if (payload.version !== CONTENT_VERSION) {
     throw new StaleSnapshotError(payload.version, CONTENT_VERSION);
   }
@@ -95,5 +105,6 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
     rngState: payload.rngState ?? createRngState(payload.checksum),
     stateVersion: payload.stateVersion ?? 0,
     appliedCommands: payload.appliedCommands ?? [],
+    features: { ...features },
   };
 }

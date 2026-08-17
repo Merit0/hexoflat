@@ -68,6 +68,7 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
 import { createTestApi } from '@/e2e/create-test-api';
+import { explorationSliceEnabled } from '@/services/feature-flags';
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -105,6 +106,10 @@ onMounted(() => {
       getMapBounds: () => mapBounds.value,
       getTileSize: () => ({ w: domTileW.value, h: domTileH.value }),
       isBoardReady: () => isBoardReady.value,
+      // The list the renderer is actually handed, not a re-derivation of it —
+      // so "no UNKNOWN hex is rendered" is a fact the test reads off the app
+      // rather than a rule it re-implements.
+      getRenderedTileCount: () => visibleTiles.value.length,
     }),
   );
 });
@@ -130,7 +135,12 @@ function handleTileHover(tile: IHexTile) {
 const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
 
-const { probeRef, domTileW, domTileH, domTileSize, mapBounds, scale } = useHexBoardSizing(tiles);
+// Resolved once: the flag is a build/session constant, and the engine owns
+// the rule that it is never on in multiplayer.
+const hideUnknownHexes = computed(() => explorationSliceEnabled());
+
+const { probeRef, domTileW, domTileH, domTileSize, visibleTiles, mapBounds, scale } =
+  useHexBoardSizing(tiles, hideUnknownHexes);
 
 function getTileByCoord(coord: IHexCoordinates) {
   const tiles = worldMapStore.map?.tiles as HexTileModel[] | undefined;
@@ -261,7 +271,11 @@ useHexBoard({
   canvasRef: boardCanvasRef,
   mapBounds,
   domTileSize,
-  tiles,
+  // `visibleTiles`, not `tiles`: an UNKNOWN hex must not exist for the
+  // renderer at all — no node, no sprite, no hit area — and it must not be
+  // part of `mapBounds` either. Handing both the same array is what stops
+  // those two from drifting apart (invariant I13).
+  tiles: visibleTiles,
   tilesDirtyTick,
   heroCoordinates: heroCoordinatesComputed,
   healTickerNow,

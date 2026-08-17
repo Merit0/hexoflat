@@ -1,6 +1,10 @@
 import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
-import { MISSING_TEST_HOOKS_MESSAGE, type TestHexCoordinates } from '@framework/test-api';
+import {
+  MISSING_TEST_HOOKS_MESSAGE,
+  type TestDiscoveryState,
+  type TestHexCoordinates,
+} from '@framework/test-api';
 import { TileDetailsOverlayComponent } from '@components/tile-details-overlay.component';
 
 /**
@@ -89,6 +93,49 @@ export class HexBoardComponent extends BaseComponent {
       from,
       to,
     ] as const);
+  }
+
+  async getGridSize(): Promise<{ width: number; height: number }> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getGridSize());
+  }
+
+  async getTileDiscovery(coordinates: TestHexCoordinates): Promise<TestDiscoveryState> {
+    return this.page.evaluate(
+      (coord) => window.__HEXOFLAT_TEST__!.getTileDiscovery(coord),
+      coordinates,
+    );
+  }
+
+  /** How many tiles the app handed the renderer for the current frame. */
+  async getRenderedTileCount(): Promise<number> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getRenderedTileCount());
+  }
+
+  /**
+   * Every hex of the technical grid is on screen.
+   *
+   * Scope note, because it matters: on an `ALL_REVEALED` map (camping) no
+   * tile is `UNKNOWN`, so this cannot by itself catch the organic-frontier
+   * filter escaping its flag — that net is
+   * `apps/web/src/composables/use-hex-board-sizing.test.ts`, which drives
+   * both sides of the flag over a grid that really does contain `UNKNOWN`
+   * hexes. What this proves in the live app is the other half: the
+   * rendered-tile count is a real number wired to the real board, and a
+   * revealed map still puts all of it on screen.
+   */
+  async verifyWholeGridIsRendered(): Promise<void> {
+    const { width, height } = await this.getGridSize();
+    expect(width).toBeGreaterThan(0);
+    expect(await this.getRenderedTileCount()).toBe(width * height);
+  }
+
+  async verifyTileDiscovery(
+    coordinates: TestHexCoordinates,
+    expected: TestDiscoveryState,
+  ): Promise<void> {
+    await expect
+      .poll(() => this.getTileDiscovery(coordinates), { intervals: POLL_INTERVALS_MS })
+      .toBe(expected);
   }
 
   async getTileHexobjectKey(coordinates: TestHexCoordinates): Promise<string | null> {

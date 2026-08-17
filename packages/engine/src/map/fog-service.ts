@@ -3,6 +3,7 @@ import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
 import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
+import { promoteDiscovery } from './discovery-state';
 
 /**
  * Fog of war: which tiles the hero can see.
@@ -50,6 +51,31 @@ export function revealAroundHero(
   }
 
   return revealedCoords;
+}
+
+/**
+ * Raises one tile to `OBSERVED` — the player learns a hex is *there* and
+ * roughly what kind of thing it is, without learning its contents.
+ *
+ * Separate from the reveal functions above rather than folded into them,
+ * because the boolean they are written against cannot express this state at
+ * all: through the shim, `isRevealed = true` always means `DISCOVERED`.
+ * Promotes rather than assigns, so observing a hex the hero has already
+ * walked through does not demote it (invariant I10).
+ *
+ * Returns the coordinates when the tile actually changed, null otherwise —
+ * same contract as `revealTileNextToHero`, so callers can skip a redundant
+ * redraw or save.
+ */
+export function observe(map: HexMapModel, target: IHexCoordinates): IHexCoordinates | null {
+  const tile = map.getTileAt(target);
+  if (!tile) return null;
+
+  const next = promoteDiscovery(tile.discovery, 'OBSERVED');
+  if (next === tile.discovery) return null;
+
+  tile.discovery = next;
+  return tile.coordinates;
 }
 
 /**

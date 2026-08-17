@@ -33,6 +33,9 @@ export interface TestGridSize {
   height: number;
 }
 
+/** Mirrors the engine's `DiscoveryState`. Re-declared, not imported: this file stays import-free. */
+export type TestDiscoveryState = 'UNKNOWN' | 'OBSERVED' | 'DISCOVERED' | 'UNDERSTOOD';
+
 export interface HexoflatTestApi {
   /** True once the board has rendered its first real PixiJS frame. */
   isBoardReady(): boolean;
@@ -65,4 +68,21 @@ export interface HexoflatTestApi {
 
   /** Dimensions of the active map. */
   getGridSize(): TestGridSize;
+
+  /**
+   * How much the player knows about a hex. `UNKNOWN` for any coordinate the
+   * map has no tile for, which is the same thing from the player's side.
+   */
+  getTileDiscovery(coordinates: TestHexCoordinates): TestDiscoveryState;
+
+  /**
+   * How many tiles the renderer was handed for the current frame.
+   *
+   * The point of this is the assertion "no UNKNOWN hex is rendered" (invariant
+   * I13). It reads the app's own visible-tiles list rather than counting
+   * PixiJS nodes, because that list is what both the tile layer and the board
+   * bounds are built from — counting anything else would be measuring a
+   * different thing than the one that can regress.
+   */
+  getRenderedTileCount(): number;
 }
