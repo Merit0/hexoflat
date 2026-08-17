@@ -19,8 +19,8 @@ import {
   routeToLocation,
 } from '@/services/world/location-navigator';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
-import { CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
-import type { HexEngineActionContext } from '@hexoflat/engine';
+import { CONTENT_VERSION, applyCommand, createEngineState } from '@hexoflat/engine';
+import type { HexEngineActionContext, HexEngineState } from '@hexoflat/engine';
 import type { IWorldMapPort } from '@hexoflat/engine/abstraction/abstract-action';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import {
@@ -34,7 +34,14 @@ import {
   writeLocationMapIndex,
 } from '@/services/persistence/world-storage';
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
-import { defaultRandom } from '@hexoflat/engine/utils/random';
+import type { RngState } from '@hexoflat/engine/utils/seeded-random';
+import {
+  engineRandom,
+  getEngineRngState,
+  initEngineRng,
+  resetEngineRng,
+} from '@/services/world/engine-rng';
+import { LOCAL_ACTOR_ID, newCommandId } from '@/services/world/engine-command';
 import { worldLoop } from '@/services/world/world-loop';
 import {
   initFog as initMapFog,
@@ -56,6 +63,12 @@ import { useCombatStore, type CombatSnapshot } from '@/stores/combat-store';
 type TWorldState = {
   contentVersion: number;
   heroCoordinates: IHexCoordinates | null;
+  /**
+   * Added in E0. Absent in saves written before it, which load with a fresh
+   * sequence seeded from the map id — additive, so CONTENT_VERSION stays 1
+   * and no existing save is discarded.
+   */
+  rngState?: RngState;
 } & CombatSnapshot;
 
 function initialLocationKey(): LocationKey {
@@ -81,8 +94,8 @@ function withoutCombatAutosave(hydrate: () => void) {
 
 export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
   const { events } = applyCommand(
-    { map, heroes: {} },
-    { type: 'WORLD_TICK', payload: { now } },
+    createEngineState({ map, seed: map.name, rngState: getEngineRngState() }),
+    { commandId: newCommandId(), actorId: LOCAL_ACTOR_ID, type: 'WORLD_TICK', payload: { now } },
     ctx,
   );
   const tickEvent = events.find((e) => e.type === 'WORLD_TICKED') as
@@ -140,6 +153,28 @@ export const useWorldMapStore = defineStore('world-map-store', {
       };
     },
 
+    /**
+     * The `HexEngineState` applyCommand takes. Built per call because the web
+     * app keeps map and heroes in separate stores, but `rngState` comes from
+     * `engine-rng.ts` so the random sequence survives across these throwaway
+     * objects — see that module for why it is not store state.
+     *
+     * `stateVersion`/`appliedCommands` deliberately start empty each time.
+     * They exist to make a *redelivered* command a no-op, and local dispatch
+     * has no channel that can redeliver — the server room, which does, keeps
+     * one long-lived state and gets the full guarantee there.
+     */
+    buildEngineState(map?: HexMapModel, heroes: HexEngineState['heroes'] = {}): HexEngineState {
+      const target = map ?? (this.map as HexMapModel);
+
+      return createEngineState({
+        map: target,
+        heroes,
+        seed: this.currentMapId ?? target.name,
+        rngState: getEngineRngState(),
+      });
+    },
+
     markTileDirty(coordinates: IHexCoordinates) {
       tileDirtyTracker.add(coordinates);
       this.dirtyTick += 1;
@@ -171,8 +206,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!this.map) return { ok: false, message: 'No active map.' };
 
       const { events } = applyCommand(
-        { map: this.map as HexMapModel, heroes: {} },
+        this.buildEngineState(),
         {
+          commandId: newCommandId(),
+          actorId: LOCAL_ACTOR_ID,
           type: 'START_HEX_ACTION',
           payload: {
             heroId: useHeroStore().hero.id,
@@ -197,16 +234,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     getTileAt(coords: IHexCoordinates): HexTileModel | null {
-      if (!this.map) return null;
-      const tiles = this.map.tiles as HexTileModel[];
-
-      return (
-        tiles.find(
-          (t: HexTileModel) =>
-            t.coordinates.columnIndex === coords.columnIndex &&
-            t.coordinates.rowIndex === coords.rowIndex,
-        ) ?? null
-      );
+      return (this.map as HexMapModel | null)?.getTileAt(coords) ?? null;
     },
 
     clearStoredLocation(locationKey: LocationKey, mapId: string) {
@@ -434,6 +462,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const heroStore = useHeroStore();
       const combatStore = useCombatStore();
 
+      // Resume the world's random sequence before anything can draw from it —
+      // `hydrateResourcesFromConfig`/`runWorldTick` below both dispatch
+      // commands, and a command that rolled against a not-yet-restored cursor
+      // would silently diverge from the run that wrote this save.
+      initEngineRng(mapId, readSavedWorldState<TWorldState>(mapId)?.rngState);
+
       const savedMap = readSavedMap(mapId);
 
       if (savedMap) {
@@ -509,6 +543,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const state: TWorldState = {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: useHeroStore().heroCoordinates,
+        rngState: getEngineRngState(),
         ...useCombatStore().toSnapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
@@ -538,7 +573,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       const def: MapDefinition = MapRegistry.get(locationKey);
       useHeroStore().heroCoordinates =
-        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, defaultRandom) ??
+        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, engineRandom()) ??
         MAP_ORIGIN;
     },
 
@@ -577,8 +612,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       for (const { tile, hexobject } of findTilesMissingSpawners(map)) {
         applyCommand(
-          { map, heroes: {} },
+          this.buildEngineState(map),
           {
+            commandId: newCommandId(),
+            actorId: LOCAL_ACTOR_ID,
             type: 'ADD_RESOURCE_SPAWNER',
             payload: {
               heroId: useHeroStore().hero.id,
@@ -601,6 +638,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       clearLocationMapIndex();
+      resetEngineRng();
 
       this.map = null;
       useHeroStore().heroCoordinates = null;

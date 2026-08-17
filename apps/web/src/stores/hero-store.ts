@@ -7,6 +7,7 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { applyCommand } from '@hexoflat/engine';
 import { isEnterableTile, planCombatRoute } from '@hexoflat/engine/hero-movement/move-planner';
+import { LOCAL_ACTOR_ID, newCommandId } from '@/services/world/engine-command';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -185,8 +186,15 @@ export const useHeroStore = defineStore('hero', {
       };
 
       const { events } = applyCommand(
-        { map, heroes: { [heroState.id]: heroState } },
-        { type: 'MOVE_HERO', payload: { heroId: heroState.id, target } },
+        worldStore.buildEngineState(map, { [heroState.id]: heroState }),
+        {
+          commandId: newCommandId(),
+          // The local session, not `heroState.id` — a fresh HeroModel has an
+          // empty id, and the envelope's `min(1)` would reject the command.
+          actorId: LOCAL_ACTOR_ID,
+          type: 'MOVE_HERO',
+          payload: { heroId: heroState.id, target },
+        },
         worldStore.buildEngineContext(),
       );
 

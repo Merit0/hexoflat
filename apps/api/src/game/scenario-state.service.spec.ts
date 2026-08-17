@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { serializeState, type HexEngineState } from '@hexoflat/engine';
+import { createEngineState, serializeState, type HexEngineState } from '@hexoflat/engine';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
 import { scenarios } from '../db/schema';
@@ -145,7 +145,7 @@ describe('ScenarioStateService', () => {
     it('restores the latest snapshot for the scenario', async () => {
       const seedMap = new HexMapModel();
       seedMap.name = 'seeded-map';
-      const seedState: HexEngineState = {
+      const seedState: HexEngineState = createEngineState({
         map: seedMap,
         heroes: {
           'hero-1': {
@@ -155,7 +155,8 @@ describe('ScenarioStateService', () => {
             heroSteps: HERO.heroSteps,
           },
         },
-      };
+        seed: 'scenario-state-service-spec',
+      });
       const seedPayload = serializeState(seedState);
       const { db } = createFakeDb({
         seedRows: [
@@ -285,6 +286,8 @@ describe('ScenarioStateService', () => {
         service.dispatch(
           randomUUID(),
           {
+            commandId: randomUUID(),
+            actorId: 'user-1',
             type: 'ADD_RESOURCE_SPAWNER',
             payload: {
               heroId: 'hero-1',

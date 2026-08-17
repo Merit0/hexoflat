@@ -10,6 +10,7 @@ import type { RouteName } from '../route-name';
 import type { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner';
 import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
 import { EHexActionType } from '../../enums/hex-action-type';
+import { coordinateKey } from '../../utils/hex-utils';
 
 export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
 
@@ -52,6 +53,15 @@ export default class HexMapModel implements IWorldMap {
   private _mapTilesConfig: IHexMapPlacement[] = [];
   private _tiles: HexTileModel[] = [];
   private _fogPolicy: TFogPolicy = 'FOG';
+
+  // Lazily-built `coordinateKey -> tile` index. Every lookup in the engine
+  // used to be a linear `tiles.find(...)`; the exploration slice does several
+  // of those per hero step (route revalidation, patrol perception, world
+  // pulse), which is quadratic on a real map. See `getTileAt` for the one
+  // assumption this makes.
+  private _tileIndex: Map<string, HexTileModel> | null = null;
+  private _indexedTiles: HexTileModel[] | null = null;
+  private _indexedLength = 0;
 
   set name(mapName: string) {
     this._name = mapName;
@@ -99,6 +109,55 @@ export default class HexMapModel implements IWorldMap {
 
   set tiles(tiles: HexTileModel[]) {
     this._tiles = tiles;
+    this.invalidateTileIndex();
+  }
+
+  /**
+   * The tile at `coordinates`, or null when the map has none there.
+   *
+   * Assumes a tile's coordinates do not change once it is on the map — true
+   * everywhere in the engine today (tiles get their coordinates in
+   * `generateTiles`/`WorldGenerator.buildBaseGrid`/`fromJSON`, all before the
+   * array is installed). Reassigning `tile.coordinates` afterwards is the one
+   * case the index cannot see by itself: call `invalidateTileIndex()` if you
+   * ever do that.
+   *
+   * Replacing the array or pushing onto it *is* detected, so callers that
+   * grow the map keep working without knowing the index exists.
+   */
+  public getTileAt(coordinates: IHexCoordinates): HexTileModel | null {
+    return this.tileIndex().get(coordinateKey(coordinates)) ?? null;
+  }
+
+  /** Drops the cached index; the next `getTileAt` rebuilds it. */
+  public invalidateTileIndex(): void {
+    this._tileIndex = null;
+    this._indexedTiles = null;
+    this._indexedLength = 0;
+  }
+
+  private tileIndex(): Map<string, HexTileModel> {
+    if (
+      this._tileIndex &&
+      this._indexedTiles === this._tiles &&
+      this._indexedLength === this._tiles.length
+    ) {
+      return this._tileIndex;
+    }
+
+    const index = new Map<string, HexTileModel>();
+    // First tile wins on duplicate coordinates, matching the
+    // `Array.prototype.find` semantics every call site had before the index.
+    for (const tile of this._tiles) {
+      const key = coordinateKey(tile.coordinates);
+      if (!index.has(key)) index.set(key, tile);
+    }
+
+    this._tileIndex = index;
+    this._indexedTiles = this._tiles;
+    this._indexedLength = this._tiles.length;
+
+    return index;
   }
 
   get fogPolicy(): TFogPolicy {
@@ -111,6 +170,7 @@ export default class HexMapModel implements IWorldMap {
 
   public generateTiles(): void {
     this._tiles = [];
+    this.invalidateTileIndex();
 
     for (let q = 0; q < this.width; q++) {
       for (let r = 0; r < this.height; r++) {
@@ -125,17 +185,13 @@ export default class HexMapModel implements IWorldMap {
       }
     }
 
-    if (!this.config.length) return;
+    this.invalidateTileIndex();
 
-    const tileByCoordinate = new Map<string, HexTileModel>();
-    for (const t of this._tiles) {
-      tileByCoordinate.set(`${t.coordinates.columnIndex}:${t.coordinates.rowIndex}`, t);
-    }
+    if (!this.config.length) return;
 
     for (const tileConfig of this.config) {
       for (const c of tileConfig.coordinates) {
-        const key = `${c.columnIndex}:${c.rowIndex}`;
-        const tile = tileByCoordinate.get(key);
+        const tile = this.getTileAt(c);
 
         if (!tile) {
           console.warn(

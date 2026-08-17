@@ -2,13 +2,31 @@ import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model
 import type { HeroState } from '../hero-movement/hero-state';
 import { CONTENT_VERSION } from '../content/content-version';
 import { sha256Hex } from '../utils/hash/sha256';
-import type { HexEngineState } from './apply-command';
+import { createRngState, type RngState } from '../utils/seeded-random';
+import type { AppliedCommandLog } from './applied-command-log';
+import type { HexEngineState } from './engine-state';
 
 export interface SnapshotPayload {
   version: number;
   map: ISerializedHexMap;
   heroes: Record<string, HeroState>;
-  /** SHA-256 of `{ version, map, heroes }`, checked in `deserializeState`. */
+  /**
+   * Added in E0. Absent in every payload written before it, which is why
+   * this is optional and CONTENT_VERSION stayed at 1: bumping the version
+   * would have thrown `StaleSnapshotError` and wiped every existing save to
+   * buy nothing. A payload without it is restored with a fresh sequence
+   * seeded from its own checksum — deterministic, and different per save.
+   */
+  rngState?: RngState;
+  /**
+   * Added in E0 alongside `rngState`, and optional for the same reason. A
+   * pre-E0 payload restores at version 0 with an empty log: nothing that was
+   * applied before the snapshot can be retried across it anyway, since the
+   * ids were never recorded.
+   */
+  stateVersion?: number;
+  appliedCommands?: AppliedCommandLog;
+  /** SHA-256 of every content key the payload carries. */
   checksum: string;
 }
 
@@ -32,16 +50,29 @@ export class SnapshotChecksumError extends Error {
   }
 }
 
-function computeChecksum(content: {
-  version: number;
-  map: ISerializedHexMap;
-  heroes: Record<string, HeroState>;
-}): string {
+type SnapshotContent = Omit<SnapshotPayload, 'checksum'>;
+
+/**
+ * Hashes exactly the keys the payload carries. `JSON.stringify` drops an
+ * `undefined` value, so a pre-E0 payload (no `rngState` key at all) and a
+ * payload whose `rngState` is explicitly undefined hash identically — which
+ * is what lets old saves keep verifying against the checksum they were
+ * written with.
+ */
+function computeChecksum(content: SnapshotContent): string {
   return sha256Hex(JSON.stringify(content));
 }
 
 export function serializeState(state: HexEngineState): SnapshotPayload {
-  const content = { version: CONTENT_VERSION, map: state.map.toJSON(), heroes: state.heroes };
+  const content: SnapshotContent = {
+    version: CONTENT_VERSION,
+    map: state.map.toJSON(),
+    heroes: state.heroes,
+    rngState: state.rngState,
+    stateVersion: state.stateVersion,
+    appliedCommands: state.appliedCommands,
+  };
+
   return { ...content, checksum: computeChecksum(content) };
 }
 
@@ -58,5 +89,11 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
   return {
     map: HexMapModel.fromJSON(payload.map, now),
     heroes: payload.heroes,
+    // A payload written before E0 has no sequence to resume. Seeding from its
+    // checksum keeps the restore deterministic (the same old save always
+    // reloads into the same sequence) without colliding across saves.
+    rngState: payload.rngState ?? createRngState(payload.checksum),
+    stateVersion: payload.stateVersion ?? 0,
+    appliedCommands: payload.appliedCommands ?? [],
   };
 }

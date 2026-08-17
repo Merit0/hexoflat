@@ -50,12 +50,9 @@ export class WorldGenerator {
   private applyConfig(map: HexMapModel) {
     if (!map.config?.length) return;
 
-    const byKey = new Map<string, HexTileModel>();
-    for (const t of map.tiles) byKey.set(coordinateKey(t.coordinates), t);
-
     for (const placement of map.config) {
       for (const c of placement.coordinates) {
-        const tile = byKey.get(coordinateKey(c));
+        const tile = map.getTileAt(c);
         if (!tile) continue;
 
         if (placement.initialTileImage) {
@@ -80,10 +77,7 @@ export class WorldGenerator {
     const entryCoord = this.pickEntryCoordFromConfig(map.config);
     if (!entryCoord) return;
 
-    const byKey = new Map<string, HexTileModel>();
-    for (const t of map.tiles) byKey.set(coordinateKey(t.coordinates), t);
-
-    const entryTile = byKey.get(coordinateKey(entryCoord));
+    const entryTile = map.getTileAt(entryCoord);
     if (!entryTile) return;
 
     const visited = new Set<string>();
@@ -100,7 +94,7 @@ export class WorldGenerator {
           if (visited.has(k)) continue;
           visited.add(k);
 
-          const tile = byKey.get(k);
+          const tile = map.getTileAt(n);
           if (!tile) continue;
 
           if (

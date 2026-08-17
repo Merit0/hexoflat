@@ -1,17 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import type { HexEngineActionContext, HexEngineState } from '@hexoflat/engine';
+import {
+  createEngineState,
+  type HexEngineActionContext,
+  type HexEngineState,
+} from '@hexoflat/engine';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { GameEngineService } from './game-engine.service';
 
 describe('GameEngineService', () => {
   it('delegates to the real @hexoflat/engine applyCommand', () => {
     const service = new GameEngineService();
-    const state: HexEngineState = { map: new HexMapModel(), heroes: {} };
+    const state: HexEngineState = createEngineState({
+      map: new HexMapModel(),
+      seed: 'game-engine-service-spec',
+    });
     const ctx = {} as unknown as HexEngineActionContext;
 
     const result = service.dispatch(
       state,
       {
+        commandId: 'spec-1',
+        actorId: 'spec-actor',
         type: 'ADD_RESOURCE_SPAWNER',
         payload: {
           heroId: 'hero-1',

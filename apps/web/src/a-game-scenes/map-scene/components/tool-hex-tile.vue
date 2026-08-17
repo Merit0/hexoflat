@@ -64,13 +64,7 @@ const hoveredTile = computed<HexTileModel | null>(() => {
   const map = worldMapStore.map;
   if (!c || !map) return null;
 
-  const tiles = map.tiles as HexTileModel[];
-  return (
-    tiles.find(
-      (t: HexTileModel) =>
-        t.coordinates.columnIndex === c.columnIndex && t.coordinates.rowIndex === c.rowIndex,
-    ) ?? null
-  );
+  return map.getTileAt(c);
 });
 
 const posStyle = computed(() => {

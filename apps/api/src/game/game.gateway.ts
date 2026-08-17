@@ -180,7 +180,20 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
       return;
     }
 
-    const hexCommand = parsedCommand.data;
+    // The client says who it is; the server decides. `actorId` is overwritten
+    // with the authenticated user rather than trusted from the wire — it is
+    // the field co-op ACL and the audit trail will read.
+    //
+    // Checked rather than asserted: `actorId` is `min(1)` in the schema and
+    // applyCommand re-parses, so a missing userId would throw out of the
+    // dispatch below instead of failing the command cleanly.
+    const { userId } = client.data;
+    if (!userId) {
+      client.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
+    const hexCommand = { ...parsedCommand.data, actorId: userId };
     const isHeroScoped =
       hexCommand.type === 'MOVE_HERO' ||
       hexCommand.type === 'START_HEX_ACTION' ||
