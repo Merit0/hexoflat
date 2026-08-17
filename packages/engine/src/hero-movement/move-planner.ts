@@ -22,8 +22,7 @@ import { findShortestPath } from './pathfinding-service';
  * trigger rather than somewhere to stand).
  */
 export function isEnterableTile(map: HexMapModel, target: IHexCoordinates): boolean {
-  const targetKey = coordinateKey(target);
-  const tile = map.tiles.find((t) => coordinateKey(t.coordinates) === targetKey);
+  const tile = map.getTileAt(target);
 
   if (!tile || !tile.isRevealed) return false;
   if (tile.hexobject?.collision === EHexCollision.SOLID) return false;

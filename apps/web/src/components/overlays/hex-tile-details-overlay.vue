@@ -59,13 +59,7 @@ const tile = computed(() => {
   const map = worldMapStore.map;
   if (!map) return null;
 
-  return (
-    map.tiles.find(
-      (t) =>
-        t.coordinates.columnIndex === props.data.coordinates.columnIndex &&
-        t.coordinates.rowIndex === props.data.coordinates.rowIndex,
-    ) ?? null
-  );
+  return map.getTileAt(props.data.coordinates);
 });
 
 const categoryLabel = computed(() => {

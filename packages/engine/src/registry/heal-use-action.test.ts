@@ -6,10 +6,20 @@ import { HEXOBJECT_KEYS, type THexobjectKey } from './hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import {
   applyCommand,
+  createEngineState,
   type HexEngineActionContext,
   type HexEngineState,
 } from '../commands/apply-command';
 import type { HexEngineCommand } from '../commands/hex-engine-commands';
+
+// Every command now carries an envelope (commandId/actorId). Ids must be
+// unique per dispatch or the applied-command log would treat the second one
+// as a retry and replay the first result instead of running it.
+let commandCounter = 0;
+function nextCommandId(): string {
+  commandCounter += 1;
+  return `cmd-${commandCounter}`;
+}
 
 function buildMap(): HexMapModel {
   return new HexMapBuilder().name('heal-test').width(1).height(1).build();
@@ -62,9 +72,11 @@ describe.each<{ key: THexobjectKey; amountPerTick: number }>([
     const tile = map.tiles[0];
     tile.hexobject = HexObjectFactory.create(key, tile.coordinates);
     const ctx = createContext();
-    const state: HexEngineState = { map, heroes: {} };
+    const state: HexEngineState = createEngineState({ map, seed: 'heal-use-action-test' });
 
     const start: HexEngineCommand = {
+      commandId: nextCommandId(),
+      actorId: 'test-actor',
       type: 'START_HEX_ACTION',
       payload: {
         heroId: 'hero-1',
@@ -85,6 +97,8 @@ describe.each<{ key: THexobjectKey; amountPerTick: number }>([
     expect(tile.pendingAction).toMatchObject({ meta: { healAmount: amountPerTick } });
 
     const finish: HexEngineCommand = {
+      commandId: nextCommandId(),
+      actorId: 'test-actor',
       type: 'FINISH_PENDING_ACTIONS',
       payload: { now: 10_000 },
     };

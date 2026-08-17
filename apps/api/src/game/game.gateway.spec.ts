@@ -6,7 +6,12 @@ import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { io, type Socket as ClientSocket } from 'socket.io-client';
-import { serializeState, type HexEngineState, type SnapshotPayload } from '@hexoflat/engine';
+import {
+  createEngineState,
+  serializeState,
+  type HexEngineState,
+  type SnapshotPayload,
+} from '@hexoflat/engine';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
 import { scenarios } from '../db/schema';
@@ -122,7 +127,10 @@ describe('GameGateway (socket.io integration)', () => {
   const scenarioId = randomUUID();
 
   beforeAll(async () => {
-    const seedState: HexEngineState = { map: buildFullyRevealedMap(), heroes: {} };
+    const seedState: HexEngineState = createEngineState({
+      map: buildFullyRevealedMap(),
+      seed: scenarioId,
+    });
     const seedPayload = serializeState(seedState);
     const fakeDb = createFakeDb(
       [{ state: seedPayload, checksum: seedPayload.checksum, createdAt: new Date().toISOString() }],
@@ -203,6 +211,8 @@ describe('GameGateway (socket.io integration)', () => {
     clientA.emit('command', {
       scenarioId,
       command: {
+        commandId: 'move-a-1',
+        actorId: HERO_A.id,
         type: 'MOVE_HERO',
         payload: { heroId: HERO_A.id, target: { columnIndex: 1, rowIndex: 0 } },
       },
@@ -230,6 +240,8 @@ describe('GameGateway (socket.io integration)', () => {
     clientA.emit('command', {
       scenarioId,
       command: {
+        commandId: 'move-b-1',
+        actorId: HERO_A.id,
         type: 'MOVE_HERO',
         payload: { heroId: HERO_B.id, target: { columnIndex: 2, rowIndex: 0 } },
       },
@@ -270,7 +282,12 @@ describe('GameGateway (socket.io integration)', () => {
     for (let i = 0; i < 11; i += 1) {
       clientD.emit('command', {
         scenarioId: 'not-joined',
-        command: { type: 'WORLD_TICK', payload: { now: Date.now() } },
+        command: {
+          commandId: `tick-${i}`,
+          actorId: 'user-a',
+          type: 'WORLD_TICK',
+          payload: { now: Date.now() },
+        },
       });
     }
 

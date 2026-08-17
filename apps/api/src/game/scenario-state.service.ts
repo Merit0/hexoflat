@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { desc, eq } from 'drizzle-orm';
 import {
+  createEngineState,
   deserializeState,
   serializeState,
   type ApplyCommandResult,
@@ -86,7 +87,10 @@ export class ScenarioStateService {
         throw error;
       }
     } else {
-      state = { map: HexMapProvider.getHomeLand(), heroes: {} };
+      // Seeded from the scenario id: unique per scenario, stable across every
+      // restart of this room, and reproducible by any peer that knows which
+      // scenario it is replaying.
+      state = createEngineState({ map: HexMapProvider.getHomeLand(), seed: scenarioId });
     }
 
     this.rooms.set(scenarioId, state);

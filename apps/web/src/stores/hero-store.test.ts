@@ -39,6 +39,27 @@ describe('useHeroStore', () => {
       expect(heroStore.hero.heroSteps).toBe(1);
     });
 
+    // Regression: the command envelope's `actorId` is `min(1)`, and a freshly
+    // constructed HeroModel has `id === ''`. Sending the hero id as the actor
+    // made applyCommand throw a ZodError on every free-roam move — while the
+    // tests above passed, because they all set `hero.id` by hand. The actor is
+    // the local session, not the hero, so it must not depend on hero identity.
+    it('moves a hero that has no id yet, the way a freshly loaded world does', async () => {
+      const worldStore = useWorldMapStore();
+      const heroStore = useHeroStore();
+      const map = buildRevealedMap();
+      worldStore.map = map;
+      worldStore.currentMapId = 'move-test-map';
+      heroStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+
+      expect(heroStore.hero.id).toBe('');
+
+      const moved = await heroStore.moveHeroTo({ columnIndex: 1, rowIndex: 0 });
+
+      expect(moved).toBe(true);
+      expect(heroStore.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 0 });
+    });
+
     it('rejects moving onto an unrevealed tile', async () => {
       const worldStore = useWorldMapStore();
       const heroStore = useHeroStore();
