@@ -15,6 +15,7 @@ declare global {
 export type {
   HexoflatTestApi,
   TestGridSize,
+  TestHeroHealth,
   TestHexCoordinates,
   TestTileFraction,
 } from '@web-test-api';

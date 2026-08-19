@@ -9,6 +9,7 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import type {
   HexoflatTestApi,
   TestGridSize,
+  TestHeroHealth,
   TestHexCoordinates,
   TestTileFraction,
 } from '@/e2e/test-api.types';
@@ -95,6 +96,13 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
     getTileHexobjectKey(coordinates: TestHexCoordinates): string | null {
       return findTile(coordinates)?.hexobject?.hexobjectKey ?? null;
+    },
+
+    getHeroHealth(): TestHeroHealth {
+      return {
+        current: heroStore.hero.currentHealth ?? 0,
+        max: heroStore.hero.maxHealth ?? 0,
+      };
     },
 
     getInventoryItemKeys(): string[] {

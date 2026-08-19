@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test';
 import { BasePage } from '@framework/base-page';
-import { TopbarComponent } from '@components/topbar.component';
+import { HeroBoardPanelComponent } from '@components/hero-board-panel.component';
+import { MapSessionControlsComponent } from '@components/map-session-controls.component';
+import { EventsLogComponent } from '@components/events-log.component';
 import { HexBoardComponent } from '@components/hex-board.component';
 import { SettingsOverlayComponent } from '@components/settings-overlay.component';
 import { ToolActionOverlayComponent } from '@components/tool-action-overlay.component';
@@ -8,7 +10,9 @@ import { HeroInventoryComponent } from '@components/hero-inventory.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
-  readonly topbar = new TopbarComponent();
+  readonly heroBoardPanel = new HeroBoardPanelComponent();
+  readonly mapSessionControls = new MapSessionControlsComponent();
+  readonly eventsLog = new EventsLogComponent();
   readonly hexBoard = new HexBoardComponent();
   readonly settingsOverlay = new SettingsOverlayComponent();
   readonly toolActionOverlay = new ToolActionOverlayComponent();

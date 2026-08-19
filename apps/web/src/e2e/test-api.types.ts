@@ -33,6 +33,11 @@ export interface TestGridSize {
   height: number;
 }
 
+export interface TestHeroHealth {
+  current: number;
+  max: number;
+}
+
 export interface HexoflatTestApi {
   /** True once the board has rendered its first real PixiJS frame. */
   isBoardReady(): boolean;
@@ -55,6 +60,13 @@ export interface HexoflatTestApi {
 
   /** Hexobject key sitting on a tile, or null if the tile is empty. */
   getTileHexobjectKey(coordinates: TestHexCoordinates): string | null;
+
+  /**
+   * Current/max HP straight from hero-store — the hero-board panel now
+   * renders health as a row of heart icons (SVG clipPath fills) rather than
+   * "current/max" text, so this is the only reliable way to assert on HP.
+   */
+  getHeroHealth(): TestHeroHealth;
 
   /** Item keys currently in the hero's inventory (equipped slots included). */
   getInventoryItemKeys(): string[];
