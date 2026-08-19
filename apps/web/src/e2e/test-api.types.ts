@@ -61,8 +61,6 @@ export interface HexoflatTestApi {
 
   getInventoryItemIdByKey(key: string): string | null;
 
-  openHeroInventory(): void;
-
   /** Dimensions of the active map. */
   getGridSize(): TestGridSize;
 }

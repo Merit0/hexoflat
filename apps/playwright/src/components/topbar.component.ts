@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 
-/** The in-game top bar (apps/web's hero-details-top-bar.vue). */
+/** The full-width hero stats/session-controls header (apps/web's hero-board-header.vue). */
 export class TopbarComponent extends BaseComponent {
   private get root() {
     return this.page.getByTestId('topbar');

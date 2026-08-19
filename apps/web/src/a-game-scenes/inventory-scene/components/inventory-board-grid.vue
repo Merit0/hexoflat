@@ -7,6 +7,7 @@
         class="cell"
         :data-slotkey="cell.key"
         :data-testid="`inventory-cell-${cell.key}`"
+        :style="{ gridColumn: cell.r + 1, gridRow: cell.c + 1 }"
         :class="{
           blocked: cell.blocked,
           selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId,
@@ -69,19 +70,25 @@ const cells = computed(() => {
   return out;
 });
 
+// The store's grid is landscape (12 cols x 7 rows) — built for the old wide
+// modal. The hero-board panel is a tall, narrow column, so this renders the
+// exact same 84 slots transposed (column <-> row) into a portrait shape:
+// the two free side strips end up as free bands above and below the hole
+// instead of beside it. Purely a rendering transform — `cell.r`/`cell.c` and
+// every store lookup (isCellBlocked, itemsBySlot, slot keys) stay untouched.
 const gridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${inv.grid.cols}, var(--cell))`,
-  gridTemplateRows: `repeat(${inv.grid.rows}, var(--cell))`,
+  gridTemplateColumns: `repeat(${inv.grid.rows}, var(--cell))`,
+  gridTemplateRows: `repeat(${inv.grid.cols}, var(--cell))`,
 }));
 
 const centerHoleStyle = computed(() => {
   const { x, y, w, h } = inv.grid.blockedRect;
 
   return {
-    left: `calc(${x} * var(--cell))`,
-    top: `calc(${y} * var(--cell))`,
-    width: `calc(${w} * var(--cell))`,
-    height: `calc(${h} * var(--cell))`,
+    left: `calc(${y} * var(--cell))`,
+    top: `calc(${x} * var(--cell))`,
+    width: `calc(${h} * var(--cell))`,
+    height: `calc(${w} * var(--cell))`,
   };
 });
 
@@ -89,10 +96,10 @@ const centerHoleVars = computed(() => {
   const { x, y, w, h } = inv.grid.blockedRect;
 
   return {
-    '--hole-left': `calc(${x} * var(--cell) + 12px)`,
-    '--hole-top': `calc(${y} * var(--cell) + 12px)`,
-    '--hole-w': `calc(${w} * var(--cell))`,
-    '--hole-h': `calc(${h} * var(--cell))`,
+    '--hole-left': `calc(${y} * var(--cell) + 12px)`,
+    '--hole-top': `calc(${x} * var(--cell) + 12px)`,
+    '--hole-w': `calc(${h} * var(--cell))`,
+    '--hole-h': `calc(${w} * var(--cell))`,
   };
 });
 </script>
@@ -113,13 +120,8 @@ const centerHoleVars = computed(() => {
   gap: 4px;
   padding: 12px;
 
-  border-radius: 10px;
-
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 20px 60px rgba(0, 0, 0, 0.55);
+  border: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
 }
 
 @media (max-width: 1100px) {

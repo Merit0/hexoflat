@@ -23,15 +23,12 @@ import { nextTick, onBeforeUnmount, onMounted, watch, type Component } from 'vue
 import type { ComponentPublicInstance } from 'vue';
 import { useOverlayStore } from '@/stores/overlay-store';
 import type { OverlayType } from '@/types/overlay-types';
-import HeroInventoryOverlay from '@/a-game-scenes/inventory-scene/components/hero-inventory-overlay.vue';
 import HexTileDetailsOverlay from '@/components/overlays/hex-tile-details-overlay.vue';
 import SettingsOverlay from '@/components/overlays/settings-overlay.vue';
 
 const overlay = useOverlayStore();
 
-// Не всі OverlayType ще мають реалізований компонент — рендеримо лише готові.
 const registry: Partial<Record<OverlayType, Component>> = {
-  'hero-inventory': HeroInventoryOverlay,
   'hex-tile-details': HexTileDetailsOverlay,
   settings: SettingsOverlay,
 };
@@ -60,8 +57,6 @@ function focusableElements(root: HTMLElement): HTMLElement[] {
   ).filter((el) => el.offsetParent !== null);
 }
 
-// Remembers what had focus before the first overlay opened, so closing the
-// last one in the stack gives focus back instead of dropping it to <body>.
 let previouslyFocused: HTMLElement | null = null;
 
 watch(
