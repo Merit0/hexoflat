@@ -305,9 +305,6 @@ useHexBoard({
   onTileClick: (tile) => {
     void handleTileClick(tile);
   },
-  // The hero-board panel is always visible now (no overlay to open), so a
-  // click on the hero token has nothing left to trigger.
-  onOpenHeroInventory: () => {},
   onBoardReady: () => {
     isBoardReady.value = true;
   },
