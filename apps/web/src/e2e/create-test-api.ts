@@ -6,6 +6,7 @@ import {
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -47,6 +48,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
   const worldStore = useWorldMapStore();
   const heroStore = useHeroStore();
   const heroInventoryStore = useHeroInventoryStore();
+  const heroToolStore = useHeroToolStore();
 
   function findTile(coordinates: TestHexCoordinates) {
     return worldStore.map?.tiles.find(
@@ -116,6 +118,15 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     getGridSize(): TestGridSize {
       const map = worldStore.map;
       return { width: map?.width ?? 0, height: map?.height ?? 0 };
+    },
+
+    isToolUsed(): boolean {
+      return heroToolStore.isDragging;
+    },
+
+    getToolHoverCoordinates(): TestHexCoordinates | null {
+      const hover = heroToolStore.hover;
+      return hover ? { columnIndex: hover.columnIndex, rowIndex: hover.rowIndex } : null;
     },
   };
 }
