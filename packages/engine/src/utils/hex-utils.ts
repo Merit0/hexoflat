@@ -24,7 +24,7 @@ export function axialToOddQ(a: { q: number; r: number }): IHexCoordinates {
   return { columnIndex, rowIndex };
 }
 
-const AXIAL_DIRS = [
+export const AXIAL_DIRS = [
   { q: +1, r: 0 },
   { q: +1, r: -1 },
   { q: 0, r: -1 },
@@ -33,9 +33,39 @@ const AXIAL_DIRS = [
   { q: 0, r: +1 },
 ] as const;
 
+function wrapDir(dir: number): number {
+  return ((dir % 6) + 6) % 6;
+}
+
+function noNegativeZero(n: number): number {
+  return n === 0 ? 0 : n;
+}
+
 export function getOddQNeighbors(center: IHexCoordinates): IHexCoordinates[] {
   const a = oddQToAxial(center);
   return AXIAL_DIRS.map((d) => axialToOddQ({ q: a.q + d.q, r: a.r + d.r }));
+}
+
+export function axialNeighbor(a: Axial, dir: number): Axial {
+  const d = AXIAL_DIRS[wrapDir(dir)];
+  return { q: a.q + d.q, r: a.r + d.r };
+}
+
+export function oppositeDir(dir: number): number {
+  return wrapDir(dir + 3);
+}
+
+export function rotateAxial(a: Axial, steps: number): Axial {
+  let { q, r } = a;
+  for (let i = wrapDir(steps); i > 0; i -= 1) {
+    [q, r] = [-r, q + r];
+  }
+  return { q: noNegativeZero(q), r: noNegativeZero(r) };
+}
+
+export function rotateDir(dir: number, steps: number): number {
+  const rotated = rotateAxial(AXIAL_DIRS[wrapDir(dir)], steps);
+  return AXIAL_DIRS.findIndex((d) => d.q === rotated.q && d.r === rotated.r);
 }
 
 export function coordinateKey(c: IHexCoordinates): string {

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { axialToOddQ, oddQToAxial } from './hex-utils';
+import {
+  AXIAL_DIRS,
+  axialNeighbor,
+  axialToOddQ,
+  oddQToAxial,
+  oppositeDir,
+  rotateAxial,
+  rotateDir,
+  type Axial,
+} from './hex-utils';
 
 describe('oddQToAxial / axialToOddQ round-trip', () => {
   const coords = [
@@ -29,6 +38,48 @@ describe('oddQToAxial / axialToOddQ round-trip', () => {
 
     for (const axial of axials) {
       expect(oddQToAxial(axialToOddQ(axial))).toEqual(axial);
+    }
+  });
+});
+
+describe('axial direction algebra', () => {
+  const samples: Axial[] = [
+    { q: 0, r: 0 },
+    { q: 3, r: -1 },
+    { q: -2, r: 4 },
+    { q: -5, r: -3 },
+  ];
+
+  it('rotateAxial by 6 steps is the identity', () => {
+    for (const a of samples) {
+      expect(rotateAxial(a, 6)).toEqual(a);
+      expect(rotateAxial(a, -6)).toEqual(a);
+    }
+  });
+
+  it('rotateAxial composes: one step six times returns to start', () => {
+    for (const a of samples) {
+      let cur = a;
+      for (let i = 0; i < 6; i += 1) cur = rotateAxial(cur, 1);
+      expect(cur).toEqual(a);
+    }
+  });
+
+  it('rotateDir agrees with rotating the direction vector', () => {
+    for (let dir = 0; dir < 6; dir += 1) {
+      for (let steps = 0; steps < 6; steps += 1) {
+        const viaVector = rotateAxial(AXIAL_DIRS[dir], steps);
+        const viaDir = AXIAL_DIRS[rotateDir(dir, steps)];
+        expect({ q: viaDir.q, r: viaDir.r }).toEqual(viaVector);
+      }
+    }
+  });
+
+  it('oppositeDir is an involution and points back', () => {
+    for (let dir = 0; dir < 6; dir += 1) {
+      expect(oppositeDir(oppositeDir(dir))).toBe(dir);
+      const there = axialNeighbor({ q: 2, r: -3 }, dir);
+      expect(axialNeighbor(there, oppositeDir(dir))).toEqual({ q: 2, r: -3 });
     }
   });
 });

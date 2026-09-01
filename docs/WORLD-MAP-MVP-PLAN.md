@@ -221,7 +221,7 @@ generator. One commit for this phase. Ask before committing.
 
 ---
 
-### Фаза M2 — Контент секцій і складач графа секцій
+### Фаза M2 — Контент секцій і складач графа секцій [DONE — 2026-09-01]
 
 **Мета.** Детермінований складач: колода секцій → викладена розріджена карта. Без архетипів, без UI, тільки engine + unit-тести.
 
@@ -265,6 +265,16 @@ type WorldSectionDef = {
 **Чого НЕ робити.** Ніяких архетипів, promise, валідатора, інтеграції з `silesia`, UI, debug-панелі.
 
 **Критерій приймання.** Тест «однаковий сид → байт-у-байт однакова викладка»; тест «різні сиди → різні викладки»; тест «жодного перетину гексів»; тест «усі викладені гекси зв'язні»; тест «поворот 6 разів повертає секцію в початковий стан»; контент проходить Zod-валідацію; ESLint зелений.
+
+**Як реалізовано.**
+
+- **Гекс-математика** (`utils/hex-utils.ts`): експортовано `AXIAL_DIRS`, додано `axialNeighbor`, `oppositeDir`, `rotateAxial` (крок = 60° CW `(q,r)→(-r,q+r)`), `rotateDir` (виводиться з обертання вектора напрямку через `AXIAL_DIRS`, а не hardcoded формулою). `dir` — це індекс у `AXIAL_DIRS`, той самий порядок, що й `getOddQNeighbors`.
+- **Контент** (`content/`, окрема категорія — НЕ через `ContentDefinitionSchema`/`CONTENT`, бо секції не keyed by `THexobjectKey`): `world-section-schema.ts` (Zod), `world-terrain.content.ts` (7 теренів → `traversability`; фон тайла — M5), `world-sections.content.ts` (10 секцій: `camp-anchor`, `fork`, `open-field`, `forest-clearing`, `narrow-pass`, `stone-ridge`, `broken-slope`, `side-pocket`, `sheltered-pocket`, `frontier-shelf` — усі 7 тегів і всі 7 теренів покриті), `world-content.test.ts` (схема + інваріанти: суміжність гексів секції, шов на гексі секції, унікальні ключі, покриття тегів/теренів). Експорти додано в `content/index.ts`. `validate-content.ts` і `content.test.ts` (хексобʼєкти) не чіпано.
+- **Складач** — чиста функція `assembleWorld({seed, sections, startSectionKey?, maxSections})` у `generators/world-map-assembler.ts` (не команда, не клас). rng = `deriveStream(seed, 'world-map')` з M0. Стартова секція = перша з тегом `CAMP_ANCHOR` (rotation 0, origin). Цикл: rng-вибір відкритого шва → перебір `невикористана секція × поворот × її шов`, що дає `dir === oppositeDir(worldSeam.dir)`, з перевіркою на перетин → детермінований сорт кандидатів + `pickRandom`. `weight` поки НЕ використовується (uniform pick) — лишений у схемі для M3. Секція одноразова (deck-семантика). Шви, що дивляться в уже викладений гекс, відсікаються.
+- **Нормалізація:** усе внутрішньо в axial, наприкінці `axialToOddQ`. **Зсув колонок мусить бути парним** — суміжність в odd-q залежить від парності колонки, непарний зсув ламає сітку й `calcHexPixelPosition`. Тому min `columnIndex` = 0 **або 1**, min `rowIndex` = 0 (зсув рядків довільний). Тест нормалізації послаблено до `col ∈ {0,1}`. `HexMapModel` збирається з розрідженим `tiles` (сортовані за `coordinateKey` для стабільного `toJSON`), `generateTiles()` не викликається.
+- **Вихід:** `{ seed, map, terrainByCoord, placedSections, openSeams }`. `terrainByCoord` (`coordinateKey → terrain`) — окремий канал, бо `HexTileModel` не має поля terrain і M2 його не додає (як terrain потрапить у тайл/рендер — рішення M3+).
+- **`CONTENT_VERSION` не бампнуто** — нова категорія контенту, у збереження нічого не серіалізується (сид зберігає M3). Обґрунтування тут і в commit-меседжі, не коментарем у коді (правило користувача).
+- **Знайдений баг у процесі:** перша версія нормалізації робила довільний зсув колонок → на частині сидів карта розпадалась на незвʼязні компоненти. Виправлено парним зсувом; тест звʼязності розширено до 27 сидів.
 
 **Старт чату:**
 
