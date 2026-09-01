@@ -1,7 +1,7 @@
 import { Container, Sprite, Ticker } from 'pixi.js';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
-import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
+import { applyCoverFit, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 
 const HERO_SPRITE_URL = '/hero-asssets/spirit-hex-image.png';
@@ -18,7 +18,6 @@ function easeOutCubic(t: number): number {
 export interface HeroLayerDeps {
   worldContainer: Container;
   getTileSize(): { w: number; h: number };
-  onOpenInventory: () => void;
 }
 
 export interface HeroLayer {
@@ -27,16 +26,10 @@ export interface HeroLayer {
 }
 
 export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
-  // `root` stays unscaled — hitArea/mask are defined in the same CSS-pixel
-  // units as `w`/`h`, matching the coordinate space `root`'s hit-testing
-  // operates in. The Sprite itself gets scaled via applyCoverFit, which
-  // would put hitArea in the wrong (texture-pixel) space if set directly
-  // on the sprite instead of this wrapper.
+  // `root` stays unscaled — mask is defined in the same CSS-pixel units as
+  // `w`/`h`. The Sprite itself gets scaled via applyCoverFit.
   const root = new Container();
-  root.eventMode = 'static';
-  root.cursor = 'pointer';
   root.visible = false;
-  root.on('pointertap', () => deps.onOpenInventory());
   deps.worldContainer.addChild(root);
 
   const mask = createHexMask(1, 1);
@@ -88,7 +81,6 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
     const { w, h } = deps.getTileSize();
     applyCoverFit(sprite, w, h);
     drawHexMask(mask, w, h);
-    root.hitArea = createHexHitArea(w, h);
 
     const { x, y } = calcHexPixelPosition({ coordinates: coord }, w, h);
     const key = coordinateKey(coord);

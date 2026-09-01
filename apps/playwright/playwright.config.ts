@@ -7,18 +7,12 @@ export default defineConfig({
   globalSetup: './global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  // The default 30s was tight even for a single canvas-rendering test (PixiJS
-  // + WebGL) and gets tighter under CI's `workers: 2`: two Chromium instances
-  // doing real rendering share one runner's CPU, so a test that takes ~15-20s
-  // solo can cross 30s just from being scheduled alongside another one. Local
-  // runs have no such contention (workers: undefined = all cores), which is
-  // why this only ever showed up on CI.
   timeout: process.env.CI ? 60_000 : 30_000,
   // Two retries on CI is the community standard for a suite that talks to a
   // real API and a real browser; zero locally so flakiness is visible the
   // moment it appears instead of being quietly retried away.
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: process.env.CI ? 1 : undefined,
   maxFailures: process.env.CI ? 10 : undefined,
 
   // allure-playwright only writes raw result JSON (allure-results/) — the

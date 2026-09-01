@@ -8,7 +8,6 @@ export type OverlayType =
   | 'shop'
   | 'mapInfo'
   | 'dialogue'
-  | 'hero-inventory'
   | 'grave-inventory'
   | 'dungeon-preview'
   | 'confirm-escape-battle'
@@ -21,7 +20,6 @@ export type OverlayPayloads = {
   shop: { shopId: string };
   mapInfo: { tileKey: string };
   dialogue: { npcId: string; text?: string };
-  'hero-inventory': undefined;
   'grave-inventory': { graveId: string };
   'dungeon-preview': { dungeonKey: string };
   'confirm-escape-battle': { battleId: string };

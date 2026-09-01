@@ -5,6 +5,12 @@ import type { EquipSlot } from '@config/equip-slot';
 export class VerifyInventoryFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
 
+  async verifyPanelIsVisible(): Promise<void> {
+    await this.step('Verify the hero board panel is visible', () =>
+      this.campingMap.inventory.verifyIsVisible(),
+    );
+  }
+
   async verifyContainsItem(itemKey: string): Promise<void> {
     await this.step(`Verify "${itemKey}" reached the inventory`, () =>
       this.campingMap.inventory.verifyContainsItem(itemKey),

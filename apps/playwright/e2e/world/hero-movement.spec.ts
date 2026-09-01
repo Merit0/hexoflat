@@ -2,7 +2,7 @@ import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
 import { MoveHeroFeature } from '@features/world/move-hero.feature';
 import { VerifyHeroPositionFeature } from '@features/world/verify-hero-position.feature';
-import { VerifyTopbarFeature } from '@features/world/verify-topbar.feature';
+import { VerifyHeroBoardFeature } from '@features/world/verify-hero-board.feature';
 
 const STEPS_BEFORE_RELOAD = 3;
 
@@ -16,7 +16,7 @@ test('Verify clicking an adjacent tile moves the hero there', async () => {
   await moveHero.moveOneStep();
 
   await new VerifyHeroPositionFeature().verifyChanged(positionBefore);
-  await new VerifyTopbarFeature().verifyStepsChanged(stepsBefore);
+  await new VerifyHeroBoardFeature().verifyStepsChanged(stepsBefore);
 });
 
 test('Verify Hero saves map placement after movement on reload page', async () => {

@@ -1,39 +1,61 @@
 <template>
-  <div class="scene-root game-root" data-testid="map-scene-root">
-    <hero-details-top-bar />
-    <combat-hud />
-    <div class="hex-map" data-testid="hex-map">
-      <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
-        <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
-
-        <div
-          class="hex-map-inner"
-          data-testid="hex-map-inner"
-          :style="{
-            width: mapBounds.width + 'px',
-            height: mapBounds.height + 'px',
-            transform: `translate(${Math.round(-mapBounds.offsetX)}px, ${Math.round(-mapBounds.offsetY)}px)`,
-          }"
+  <div class="scene-root game-root" data-testid="map-scene-root" :style="sceneLayoutStyle">
+    <div class="map-pane">
+      <combat-hud />
+      <div class="map-session-controls">
+        <button
+          class="icon-btn"
+          type="button"
+          aria-label="Settings"
+          data-testid="topbar-settings-button"
+          @click="openSettings"
         >
-          <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
+          ⚙
+        </button>
+        <button
+          class="icon-btn icon-btn--logout"
+          type="button"
+          aria-label="Logout"
+          data-testid="topbar-logout-button"
+          @click="userStore.logout()"
+        >
+          ⏻
+        </button>
+      </div>
+      <div ref="containerRef" class="hex-map" data-testid="hex-map">
+        <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
+          <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
 
-          <canvas
-            ref="boardCanvasRef"
-            class="hex-board-canvas"
-            data-testid="hex-board-canvas"
-            :data-ready="isBoardReady ? '1' : undefined"
-          />
+          <div
+            class="hex-map-inner"
+            data-testid="hex-map-inner"
+            :style="{
+              width: mapBounds.width + 'px',
+              height: mapBounds.height + 'px',
+              transform: `translate(${Math.round(-mapBounds.offsetX)}px, ${Math.round(-mapBounds.offsetY)}px)`,
+            }"
+          >
+            <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
 
-          <tool-hex-tile
-            v-if="heroToolStore.isDragging && activeTool"
-            :tile-width="domTileW"
-            :tile-height="domTileH"
-            :tool="activeTool"
-            @hide="onHide"
-          />
+            <canvas
+              ref="boardCanvasRef"
+              class="hex-board-canvas"
+              data-testid="hex-board-canvas"
+              :data-ready="isBoardReady ? '1' : undefined"
+            />
+
+            <tool-hex-tile
+              v-if="heroToolStore.isDragging && activeTool"
+              :tile-width="domTileW"
+              :tile-height="domTileH"
+              :tool="activeTool"
+              @hide="onHide"
+            />
+          </div>
         </div>
       </div>
     </div>
+    <hero-board-panel />
   </div>
 </template>
 
@@ -47,12 +69,13 @@ import { useTileClick } from '@/composables/use-tile-click';
 import { useMovePreview } from '@/composables/use-move-preview';
 import { useHexBoardSizing } from '@/composables/use-hex-board-sizing';
 import { useHexBoardInput } from '@/composables/use-hex-board-input';
+import { useGameLayout } from '@/composables/use-game-layout';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
   resolveActions,
   ResolvedAction,
 } from '@hexoflat/engine/game-resolvers/interactions-resolver';
-import HeroDetailsTopBar from '@/a-game-scenes/map-scene/components/hero-details-top-bar.vue';
+import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
@@ -65,6 +88,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useUserStore } from '@/stores/user-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
 import { createTestApi } from '@/e2e/create-test-api';
@@ -81,6 +105,8 @@ const worldMapStore = useWorldMapStore();
 const heroStore = useHeroStore();
 const uiSettingsStore = useUiSettingsStore();
 const heroInventoryStore = useHeroInventoryStore();
+const userStore = useUserStore();
+const overlayStore = useOverlayStore();
 const hoveredTileCoord = ref<IHexCoordinates | null>(null);
 const healTickerNow = ref(Date.now());
 let healTickerTimer: number | null = null;
@@ -130,7 +156,9 @@ function handleTileHover(tile: IHexTile) {
 const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
 
-const { probeRef, domTileW, domTileH, domTileSize, mapBounds, scale } = useHexBoardSizing(tiles);
+const { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale } =
+  useHexBoardSizing(tiles);
+const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
   const tiles = worldMapStore.map?.tiles as HexTileModel[] | undefined;
@@ -277,11 +305,14 @@ useHexBoard({
   onTileClick: (tile) => {
     void handleTileClick(tile);
   },
-  onOpenHeroInventory: () => useOverlayStore().openOverlay('hero-inventory'),
   onBoardReady: () => {
     isBoardReady.value = true;
   },
 });
+
+function openSettings() {
+  overlayStore.openOverlay('settings');
+}
 
 function onHide() {
   if (heroToolStore.isLocked) {
@@ -323,14 +354,64 @@ onBeforeUnmount(() => {
   height: 100vh;
   overflow: hidden;
   background: #0b0d11;
+  position: relative;
+
+  display: grid;
+  grid-template-columns: var(--map-pane-width) var(--hero-board-panel-width);
+  transition: grid-template-columns 260ms ease;
+}
+
+.map-pane {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.map-session-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 150;
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(190, 220, 255, 0.16);
+  background: rgba(10, 12, 16, 0.75);
+  color: rgba(240, 248, 255, 0.9);
+  font-size: 15px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(4px);
+}
+
+.icon-btn:hover {
+  border-color: rgba(230, 245, 255, 0.4);
+  background: rgba(20, 24, 30, 0.9);
+}
+
+.icon-btn--logout {
+  color: rgb(255, 197, 197);
+  border-color: rgba(255, 197, 197, 0.3);
+}
+
+.icon-btn--logout:hover {
+  border-color: rgba(255, 197, 197, 0.6);
+  background: rgba(255, 197, 197, 0.1);
 }
 
 .hex-map {
   display: grid;
   place-items: center;
-  width: 100vw;
-  height: 100vh;
-  padding-top: 5%;
+  width: 100%;
+  height: 100%;
 
   background-image: url('/board-assets/dark-board-stones.png');
   background-size: 100% 100%;

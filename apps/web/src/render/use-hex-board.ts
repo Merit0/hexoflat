@@ -52,7 +52,6 @@ export interface UseHexBoardOptions {
   };
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
-  onOpenHeroInventory: () => void;
   /**
    * Fired once the renderer has presented its first frame with every layer
    * already synced. "Vue mounted" is a much weaker signal — Pixi's init and
@@ -132,7 +131,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     heroLayer = createHeroLayer({
       worldContainer: board.worldContainer,
       getTileSize: () => opts.domTileSize.value,
-      onOpenInventory: opts.onOpenHeroInventory,
     });
 
     movePreviewLayer = createMovePreviewLayer({

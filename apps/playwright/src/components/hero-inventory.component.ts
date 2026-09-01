@@ -1,15 +1,15 @@
 import { expect, type Locator } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
-import { MISSING_TEST_HOOKS_MESSAGE } from '@framework/test-api';
 import type { EquipSlot } from '@config/equip-slot';
 
 const INVENTORY_POLL_TIMEOUT_MS = 5_000;
 const POLL_INTERVALS_MS = [100];
 const DRAG_MOVE_STEPS = 8;
 
+/** The always-mounted hero board panel (apps/web's hero-board-panel.vue). */
 export class HeroInventoryComponent extends BaseComponent {
-  private get overlay(): Locator {
-    return this.page.getByTestId('overlay-hero-inventory');
+  private get panel(): Locator {
+    return this.page.getByTestId('hero-board-panel');
   }
 
   private gridToken(itemId: string): Locator {
@@ -59,17 +59,8 @@ export class HeroInventoryComponent extends BaseComponent {
     expect(await this.getItemKeys()).not.toContain(itemKey);
   }
 
-  async open(): Promise<void> {
-    const installed = await this.page.evaluate(() => Boolean(window.__HEXOFLAT_TEST__));
-    if (!installed) throw new Error(MISSING_TEST_HOOKS_MESSAGE);
-
-    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.openHeroInventory());
-    await expect(this.overlay).toBeVisible();
-  }
-
-  async close(): Promise<void> {
-    await this.page.keyboard.press('Escape');
-    await expect(this.overlay).toBeHidden();
+  async verifyIsVisible(): Promise<void> {
+    await expect(this.panel).toBeVisible();
   }
 
   async dragTokenToGridSlot(itemId: string, targetSlotKey: string): Promise<void> {

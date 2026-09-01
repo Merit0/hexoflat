@@ -6,7 +6,7 @@ export class OpenSettingsFeature extends BaseFeature {
 
   async open(): Promise<void> {
     await this.step('Open the settings overlay', async () => {
-      await this.campingMap.topbar.openSettings();
+      await this.campingMap.mapSessionControls.clickSettings();
       await this.campingMap.settingsOverlay.verifyIsOpen();
     });
   }
