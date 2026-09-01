@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { HexMapBuilder } from './builders/hex-map-builder';
 import { coordinateKey } from '../utils/hex-utils';
-import { initFog, revealAroundHero, revealEntryTile, revealTileNextToHero } from './fog-service';
+import {
+  getTileVisibility,
+  initFog,
+  revealAroundHero,
+  revealEntryTile,
+  revealTileNextToHero,
+  selectVisibleTiles,
+} from './fog-service';
 
 function buildMap(width = 5, height = 5) {
   const map = new HexMapBuilder().name('fog-test').width(width).height(height).build();
@@ -134,5 +141,64 @@ describe('revealEntryTile', () => {
     map.config = [{ coordinates: [secret], entry: { type: 'SECRET' } }] as typeof map.config;
 
     expect(revealEntryTile(map)).toEqual(secret);
+  });
+});
+
+describe('getTileVisibility', () => {
+  it('is KNOWN for a revealed tile', () => {
+    const map = buildMap();
+    const hero = { columnIndex: 2, rowIndex: 2 };
+    revealAroundHero(map, hero);
+
+    const tile = map.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(hero))!;
+
+    expect(getTileVisibility(map, tile)).toBe('KNOWN');
+  });
+
+  it('is GHOST_FRONTIER for a hidden tile next to a revealed one', () => {
+    const map = buildMap();
+    revealAroundHero(map, { columnIndex: 2, rowIndex: 2 });
+
+    const ghost = map.tiles.find(
+      (t) => !t.isRevealed && getTileVisibility(map, t) === 'GHOST_FRONTIER',
+    );
+
+    expect(ghost).toBeDefined();
+  });
+
+  it('is null (Deep Unknown) for a hidden tile with no revealed neighbour', () => {
+    const map = buildMap(7, 7);
+    revealAroundHero(map, { columnIndex: 0, rowIndex: 0 });
+
+    const farTile = map.tiles.find(
+      (t) => coordinateKey(t.coordinates) === coordinateKey({ columnIndex: 6, rowIndex: 6 }),
+    )!;
+
+    expect(getTileVisibility(map, farTile)).toBeNull();
+  });
+});
+
+describe('selectVisibleTiles', () => {
+  it('returns only KNOWN and GHOST_FRONTIER tiles, never Deep Unknown', () => {
+    const map = buildMap(7, 7);
+    revealAroundHero(map, { columnIndex: 0, rowIndex: 0 });
+
+    const visible = selectVisibleTiles(map);
+
+    expect(visible.length).toBeLessThan(map.tiles.length);
+    for (const tile of visible) {
+      expect(getTileVisibility(map, tile)).not.toBeNull();
+    }
+  });
+
+  it('includes every revealed tile', () => {
+    const map = buildMap();
+    revealAroundHero(map, { columnIndex: 2, rowIndex: 2 });
+
+    const visibleKeys = new Set(selectVisibleTiles(map).map((t) => coordinateKey(t.coordinates)));
+
+    for (const tile of map.tiles.filter((t) => t.isRevealed)) {
+      expect(visibleKeys.has(coordinateKey(tile.coordinates))).toBe(true);
+    }
   });
 });

@@ -65,6 +65,7 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { useHexBoard } from '@/render/use-hex-board';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useTileClick } from '@/composables/use-tile-click';
 import { useMovePreview } from '@/composables/use-move-preview';
 import { useHexBoardSizing } from '@/composables/use-hex-board-sizing';
@@ -82,6 +83,7 @@ import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { coordinateKey, getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { selectVisibleTiles } from '@hexoflat/engine/map/fog-service';
 import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -142,7 +144,10 @@ onMounted(() => uiSettingsStore.hydrateFromStorage());
 onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
 
-const tiles = computed(() => worldStore.map?.tiles ?? []);
+const allTiles = computed(() => worldStore.map?.tiles ?? []);
+const visibleTiles = computed(() =>
+  worldStore.map ? selectVisibleTiles(worldStore.map as HexMapModel) : [],
+);
 const tilesDirtyTick = computed(() => worldStore.dirtyTick);
 const activeTool = computed(() => heroToolStore.activeTool);
 
@@ -157,7 +162,7 @@ const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
 
 const { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale } =
-  useHexBoardSizing(tiles);
+  useHexBoardSizing(allTiles);
 const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
@@ -289,7 +294,7 @@ useHexBoard({
   canvasRef: boardCanvasRef,
   mapBounds,
   domTileSize,
-  tiles,
+  tiles: visibleTiles,
   tilesDirtyTick,
   heroCoordinates: heroCoordinatesComputed,
   healTickerNow,

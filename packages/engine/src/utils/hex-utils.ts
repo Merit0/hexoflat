@@ -18,7 +18,7 @@ export function oddQToAxial(c: IHexCoordinates): Axial {
   return { q, r };
 }
 
-function axialToOddQ(a: { q: number; r: number }): IHexCoordinates {
+export function axialToOddQ(a: { q: number; r: number }): IHexCoordinates {
   const columnIndex = a.q;
   const rowIndex = a.r + (columnIndex - (columnIndex & 1)) / 2;
   return { columnIndex, rowIndex };

@@ -8,8 +8,8 @@ import { getTexture, onTextureReady } from '@/render/texture-cache';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
 
-const FOG_TILE_URL = '/hex-assets/hex-effects/fog-tile-image.png';
 const DEFAULT_BG_URL = '/hex-assets/token-placement-image.png';
+const GHOST_FRONTIER_ALPHA = 0.4;
 
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 type CombatStore = ReturnType<typeof useCombatStore>;
@@ -162,13 +162,10 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     for (const unsub of node.unsubscribers) unsub();
     node.unsubscribers = [];
 
-    const bgPath = tile.isRevealed ? tile.hexBackgroundImagePath || DEFAULT_BG_URL : FOG_TILE_URL;
+    const bgPath = tile.hexBackgroundImagePath || DEFAULT_BG_URL;
     applyTexture(node.bg, bgPath, node);
+    node.root.alpha = tile.isRevealed ? 1 : GHOST_FRONTIER_ALPHA;
 
-    // No hexobject (fogged, or revealed-but-empty) means no sprite to draw —
-    // leave the layer empty so the bg texture (fog pattern, or the
-    // token-placement pattern for an empty revealed tile) shows through
-    // instead of being blotted out by a filler image.
     const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
     if (!spritePath) {
       node.sprite.texture = Texture.EMPTY;

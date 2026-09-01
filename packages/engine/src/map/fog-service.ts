@@ -23,6 +23,27 @@ function indexByCoordinate(map: HexMapModel): Map<string, HexTileModel> {
   return byKey;
 }
 
+function hasRevealedNeighbor(
+  byKey: Map<string, HexTileModel>,
+  coordinates: IHexCoordinates,
+): boolean {
+  return getOddQNeighbors(coordinates).some((coord) => byKey.get(coordinateKey(coord))?.isRevealed);
+}
+
+export type TileVisibility = 'KNOWN' | 'GHOST_FRONTIER';
+
+export function getTileVisibility(map: HexMapModel, tile: HexTileModel): TileVisibility | null {
+  if (tile.isRevealed) return 'KNOWN';
+  return hasRevealedNeighbor(indexByCoordinate(map), tile.coordinates) ? 'GHOST_FRONTIER' : null;
+}
+
+export function selectVisibleTiles(map: HexMapModel): HexTileModel[] {
+  const byKey = indexByCoordinate(map);
+  return map.tiles.filter(
+    (tile) => tile.isRevealed || hasRevealedNeighbor(byKey, tile.coordinates),
+  );
+}
+
 /**
  * Applies the map's fog policy to every tile. `ALL_REVEALED` maps start fully
  * visible; everything else starts fully hidden.

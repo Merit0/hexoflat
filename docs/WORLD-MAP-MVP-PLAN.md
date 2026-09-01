@@ -164,7 +164,7 @@ only the source of randomness. One commit for this phase. Ask before committing.
 
 ---
 
-### Фаза M1 — Розріджена карта і три стани видимості
+### Фаза M1 — Розріджена карта і три стани видимості [DONE — 2026-09-01]
 
 **Мета.** Зробити так, щоб карта могла складатися з довільної множини гексів (не прямокутника), а Deep Unknown не рендерився взагалі. Генератора ще немає — доводиться рукотворною розрідженою тестовою картою.
 
@@ -180,6 +180,16 @@ only the source of randomness. One commit for this phase. Ask before committing.
 **Чого НЕ робити.** Ніяких секцій, архетипів, promise, генератора. Не чіпати `silesia` як ігрову локацію — вона поки лишається рукотворною.
 
 **Критерій приймання.** Unit-тести engine зелені; характеризаційні тести доводять безпечну поведінку на дірках; на розрідженій тестовій карті у Deep Unknown **не створюється жодного PixiJS-вузла** (перевіряється тестом на кількість вузлів, не скріншотом); ghost-шар рівно один гекс завглибшки; ESLint (`max-lines`, `complexity`, `import-x/no-cycle`) зелений.
+
+**Як реалізовано.**
+
+- **Пункти 1 і 5 виявилися вже виконаними в коді.** `hero-movement/movement-grid.ts` (`buildTileIndex` / `getTraversableNeighbors` / `isTraversableTile`) уже трактує відсутній тайл як `undefined` → непрохідний, тож `pathfinding-service`, `reachable-range-service`, `move-planner`, `free-hex-finder` і `applyCommand.findTile` розріджену карту переживають без падінь. `use-hex-board-sizing.ts` рахує `mapBounds` як bounding box зі списку тайлів через `calcHexPixelPosition`, `map.width`/`height` ніде в рендері/pathfinding не читаються. Додано `packages/engine/src/map/sparse-map.characterization.test.ts` (дірка в _середині_ `map.tiles`, не лише за краєм прямокутника) як регресійний замок.
+- `axialToOddQ` уже існувала приватною в `hex-utils.ts` — просто зроблено `export` + `hex-utils.test.ts` з round-trip на від'ємних координатах.
+- `getTileVisibility(map, tile)` і `selectVisibleTiles(map)` — у `map/fog-service.ts` (поряд із reveal-логікою, спільний `indexByCoordinate`). `KNOWN` = `isRevealed`; `GHOST_FRONTIER` = не розкритий, але має розкритого сусіда; решта → `null` (не рендериться).
+- `hex-world-map.vue`: `tiles` розділено на `allTiles` (повний список — годує `useHexBoardSizing`, тож `mapBounds`/камера/e2e-фракції не змінюються) і `visibleTiles` (`selectVisibleTiles` — годує `useHexBoard` → `tilesLayer.syncTiles`). HIDDEN-тайли просто не потрапляють у масив → наявний механізм `seen` у `syncTiles` не створює для них PixiJS-вузла.
+- `tiles-layer.ts`: прибрано `FOG_TILE_URL`; фон тайла завжди його власний терен, `node.root.alpha = tile.isRevealed ? 1 : 0.4` дає приглушений силует для `GHOST_FRONTIER` (спрайт hexobject для нерозкритих і так не малювався).
+- **Камеру навмисно не чіпано** — `mapBounds` лишається по всій карті, кластер видимих тайлів з'являється там, де він географічно є, з порожнім тлом навколо (v0.1 §16). Ре-кадрування камери до кластера — це Фаза M4.
+- Візуально перевірено в dev: вхід у `silesia` показує ~7 `KNOWN` + кільце `GHOST_FRONTIER` в 1 гекс, далі — чиста дошка без сітки й без прямокутника туману.
 
 **Старт чату:**
 
