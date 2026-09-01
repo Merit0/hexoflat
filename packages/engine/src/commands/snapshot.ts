@@ -2,6 +2,7 @@ import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model
 import type { HeroState } from '../hero-movement/hero-state';
 import { CONTENT_VERSION } from '../content/content-version';
 import { sha256Hex } from '../utils/hash/sha256';
+import type { RngState } from '../utils/random-seeded';
 import type { HexEngineState } from './apply-command';
 
 export interface SnapshotPayload {
@@ -10,6 +11,7 @@ export interface SnapshotPayload {
   heroes: Record<string, HeroState>;
   /** SHA-256 of `{ version, map, heroes }`, checked in `deserializeState`. */
   checksum: string;
+  rngState?: RngState;
 }
 
 /** Thrown by `deserializeState` — never partially deserializes a bad payload. */
@@ -40,9 +42,17 @@ function computeChecksum(content: {
   return sha256Hex(JSON.stringify(content));
 }
 
+function freshRngState(): RngState {
+  return { seed: crypto.randomUUID(), counter: 0 };
+}
+
 export function serializeState(state: HexEngineState): SnapshotPayload {
   const content = { version: CONTENT_VERSION, map: state.map.toJSON(), heroes: state.heroes };
-  return { ...content, checksum: computeChecksum(content) };
+  return {
+    ...content,
+    checksum: computeChecksum(content),
+    rngState: state.rngState ?? freshRngState(),
+  };
 }
 
 export function deserializeState(payload: SnapshotPayload, now: number): HexEngineState {
@@ -50,7 +60,7 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
     throw new StaleSnapshotError(payload.version, CONTENT_VERSION);
   }
 
-  const { checksum, ...content } = payload;
+  const { checksum, rngState, ...content } = payload;
   if (computeChecksum(content) !== checksum) {
     throw new SnapshotChecksumError();
   }
@@ -58,5 +68,6 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
   return {
     map: HexMapModel.fromJSON(payload.map, now),
     heroes: payload.heroes,
+    rngState: rngState ?? freshRngState(),
   };
 }

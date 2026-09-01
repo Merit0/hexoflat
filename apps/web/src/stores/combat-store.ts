@@ -34,7 +34,7 @@ import {
   findAutoDefendCoords,
   findRetreatOptions,
 } from '@hexoflat/engine/combat/ai-controller';
-import { defaultRandom, pickRandom } from '@hexoflat/engine/utils/random';
+import { pickRandom } from '@hexoflat/engine/utils/random';
 
 // The hero's base swing when no attack stat is set on the hero model.
 const DEFAULT_HERO_ATTACK = 8;
@@ -376,7 +376,7 @@ export const useCombatStore = defineStore('combat-store', {
 
       const chosen = pickRandom(
         findAutoDefendCoords(worldStore.map as HexMapModel, adjacentEnemies[0].coordinates),
-        defaultRandom,
+        useWorldMapStore().rng('combat'),
       );
       if (!chosen) return;
 
@@ -440,7 +440,7 @@ export const useCombatStore = defineStore('combat-store', {
       try {
         const chosenAttack = pickRandom(
           findAttackOptions(map, enemyTile.coordinates, heroCoordinates, this.combatStepsLeft),
-          defaultRandom,
+          useWorldMapStore().rng('combat'),
         );
 
         if (!chosenAttack) {
@@ -513,7 +513,7 @@ export const useCombatStore = defineStore('combat-store', {
                   heroCoordinates,
                   this.combatStepsLeft,
                 ),
-                defaultRandom,
+                useWorldMapStore().rng('combat'),
               )
             : null;
 

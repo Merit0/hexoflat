@@ -12,7 +12,8 @@ import {
   getItemUnitWeightKg,
   mergeItemStacks,
 } from '@hexoflat/engine/utils/inventory/traits-resolver';
-import { defaultRandom, pickRandom } from '@hexoflat/engine/utils/random';
+import { pickRandom } from '@hexoflat/engine/utils/random';
+import { getStream } from '@/services/rng/world-rng';
 import { randomTokenRotationDeg } from '@/render/token-utils';
 import {
   clearSavedInventory,
@@ -277,7 +278,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     },
 
     pickFreeSlot(): string | null {
-      return pickRandom(this.freeSlotKeys, defaultRandom);
+      return pickRandom(this.freeSlotKeys, getStream('inventory'));
     },
 
     putToInventory(key: THexobjectKey, amount = 1) {

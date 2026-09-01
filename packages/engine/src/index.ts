@@ -6,3 +6,5 @@ export { applyCommand } from './commands/apply-command';
 export type { HexEngineState, HexEngineActionContext } from './commands/apply-command';
 export { serializeState, deserializeState } from './commands/snapshot';
 export type { SnapshotPayload } from './commands/snapshot';
+export { createSeededRandom, deriveStream } from './utils/random-seeded';
+export type { RngState, SeededRandom } from './utils/random-seeded';

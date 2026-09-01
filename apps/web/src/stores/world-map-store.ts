@@ -34,7 +34,7 @@ import {
   writeLocationMapIndex,
 } from '@/services/persistence/world-storage';
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
-import { defaultRandom } from '@hexoflat/engine/utils/random';
+import { getStream, getWorldSeed, reseedWorld } from '@/services/rng/world-rng';
 import { worldLoop } from '@/services/world/world-loop';
 import {
   initFog as initMapFog,
@@ -56,6 +56,7 @@ import { useCombatStore, type CombatSnapshot } from '@/stores/combat-store';
 type TWorldState = {
   contentVersion: number;
   heroCoordinates: IHexCoordinates | null;
+  worldSeed?: string;
 } & CombatSnapshot;
 
 function initialLocationKey(): LocationKey {
@@ -138,6 +139,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
         worldMap,
         navigate: (locationKey) => navigateToLocation(locationKey),
       };
+    },
+
+    rng(label: string) {
+      return getStream(label);
     },
 
     markTileDirty(coordinates: IHexCoordinates) {
@@ -452,6 +457,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       const raw = readSavedWorldState<TWorldState>(mapId);
+      reseedWorld(raw?.worldSeed ?? crypto.randomUUID());
 
       if (raw) {
         heroStore.heroCoordinates = raw.heroCoordinates ?? null;
@@ -509,6 +515,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const state: TWorldState = {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: useHeroStore().heroCoordinates,
+        worldSeed: getWorldSeed() ?? undefined,
         ...useCombatStore().toSnapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
@@ -538,7 +545,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       const def: MapDefinition = MapRegistry.get(locationKey);
       useHeroStore().heroCoordinates =
-        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, defaultRandom) ??
+        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, getStream('world')) ??
         MAP_ORIGIN;
     },
 

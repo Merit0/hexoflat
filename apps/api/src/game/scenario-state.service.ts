@@ -86,7 +86,11 @@ export class ScenarioStateService {
         throw error;
       }
     } else {
-      state = { map: HexMapProvider.getHomeLand(), heroes: {} };
+      state = {
+        map: HexMapProvider.getHomeLand(),
+        heroes: {},
+        rngState: { seed: crypto.randomUUID(), counter: 0 },
+      };
     }
 
     this.rooms.set(scenarioId, state);

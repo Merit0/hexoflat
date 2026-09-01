@@ -69,4 +69,40 @@ describe('snapshot: serializeState / deserializeState', () => {
 
     expect(() => deserializeState(tampered, 0)).toThrow(SnapshotChecksumError);
   });
+
+  it('round-trips rngState', () => {
+    const state: HexEngineState = { ...buildState(), rngState: { seed: 'abc', counter: 7 } };
+
+    const restored = deserializeState(serializeState(state), 0);
+
+    expect(restored.rngState).toEqual({ seed: 'abc', counter: 7 });
+  });
+
+  it('stamps a fresh rngState when the state has none', () => {
+    const payload = serializeState(buildState());
+
+    expect(payload.rngState?.counter).toBe(0);
+    expect(typeof payload.rngState?.seed).toBe('string');
+    expect(payload.rngState?.seed.length).toBeGreaterThan(0);
+  });
+
+  it('deserializes a pre-rngState payload with a fresh seed instead of discarding it', () => {
+    const payload = serializeState(buildState());
+    delete (payload as { rngState?: unknown }).rngState;
+
+    const restored = deserializeState(payload, 0);
+
+    expect(restored.rngState?.counter).toBe(0);
+    expect(typeof restored.rngState?.seed).toBe('string');
+    expect(restored.map.toJSON()).toEqual(buildState().map.toJSON());
+  });
+
+  it('keeps the checksum independent of rngState', () => {
+    const state = buildState();
+
+    const a = serializeState({ ...state, rngState: { seed: 'x', counter: 1 } });
+    const b = serializeState({ ...state, rngState: { seed: 'y', counter: 99 } });
+
+    expect(a.checksum).toBe(b.checksum);
+  });
 });
