@@ -1,6 +1,8 @@
 import type HexMapModel from '../map/models/hex-map-model';
 import type { TFogPolicy } from '../map/models/hex-map-model';
 import { HexMapProvider } from '../map/providers/hex-map-provider';
+import { generateWorldMap, type WorldMapMvpResult } from '../generators/world-map-generator';
+import type { TWorldArchetypeKey } from '../content/world-section-schema';
 import { HEXOBJECT_KEYS, THexobjectKey } from './hexobjects-registry';
 import type { LocationKey } from './location-key';
 
@@ -9,7 +11,8 @@ export type { LocationKey };
 export type MapDefinition = {
   key: LocationKey;
   title: string;
-  create: () => HexMapModel;
+  create: (seed?: string) => HexMapModel;
+  generate?: (seed: string, archetype?: TWorldArchetypeKey) => WorldMapMvpResult;
   entryHexobjectKey: THexobjectKey;
   safeZoneRadius?: number;
   fogPolicy?: TFogPolicy;
@@ -34,7 +37,10 @@ export class MapRegistry {
     silesia: {
       key: 'silesia',
       title: 'Silesia',
-      create: () => HexMapProvider.getHomeLand(),
+      create: (seed?: string) =>
+        generateWorldMap({ seed: seed ?? crypto.randomUUID(), archetype: 'FORKED_FRONTIER' }).map,
+      generate: (seed: string, archetype: TWorldArchetypeKey = 'FORKED_FRONTIER') =>
+        generateWorldMap({ seed, archetype }),
       entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
       safeZoneRadius: 1,
       fogPolicy: 'FOG',

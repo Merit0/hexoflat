@@ -5,7 +5,6 @@ let baseSeed: string | null = null;
 const streams = new Map<string, RandomNumberGenerator>();
 
 export function reseedWorld(seed: string): void {
-  if (seed === baseSeed) return;
   baseSeed = seed;
   streams.clear();
 }

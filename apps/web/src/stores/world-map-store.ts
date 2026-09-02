@@ -21,6 +21,7 @@ import {
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
 import type { HexEngineActionContext } from '@hexoflat/engine';
+import { resolveWorldMap, type WorldDescriptor } from '@/services/world/world-map-generation';
 import type { IWorldMapPort } from '@hexoflat/engine/abstraction/abstract-action';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import {
@@ -57,6 +58,7 @@ type TWorldState = {
   contentVersion: number;
   heroCoordinates: IHexCoordinates | null;
   worldSeed?: string;
+  worldArchetype?: string;
 } & CombatSnapshot;
 
 function initialLocationKey(): LocationKey {
@@ -100,6 +102,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
+    worldDescriptor: null as WorldDescriptor | null,
 
     // Bumped whenever dirtyTileIds gains entries — the render layer watches
     // this (cheap, shallow) instead of deep-watching the tiles array itself.
@@ -420,19 +423,40 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.loadFromStorage(mapId);
 
       if (!this.map) {
-        const def = MapRegistry.get(locationKey);
-        this.map = def.create();
-
-        this.initFog();
-
-        this.hydrateResourcesFromConfig();
-
-        this.saveToStorage(mapId);
+        this.buildFreshMap(locationKey, mapId);
       }
       this.markAllTilesDirty();
 
       this.startWorldLoop();
       heroStore.setLocation(locationKey, mapId);
+    },
+
+    buildFreshMap(locationKey: LocationKey, mapId: string, forcedSeed?: string) {
+      const seed = forcedSeed ?? getWorldSeed() ?? crypto.randomUUID();
+      if (forcedSeed) reseedWorld(forcedSeed);
+
+      const built = resolveWorldMap(MapRegistry.get(locationKey), seed);
+      this.map = built.map;
+      this.worldDescriptor = built.descriptor;
+
+      this.initFog();
+      this.hydrateResourcesFromConfig();
+      this.saveToStorage(mapId);
+    },
+
+    regenerateWorld(seed?: string) {
+      const loc = this.currentLocationKey;
+      const mapId = this.currentMapId;
+      if (!mapId || !MapRegistry.get(loc).generate) return;
+
+      removeSavedWorld(mapId);
+      useHeroStore().forgetPosition(mapId);
+      this.buildFreshMap(loc, mapId, seed ?? crypto.randomUUID());
+      this.placeHeroAtEntry(loc);
+      this.revealAroundHero();
+      this.revealEntryTile();
+      this.markAllTilesDirty();
+      this.saveToStorage(mapId);
     },
 
     loadFromStorage(mapId: string) {
@@ -516,6 +540,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: useHeroStore().heroCoordinates,
         worldSeed: getWorldSeed() ?? undefined,
+        worldArchetype: this.worldDescriptor?.archetype,
         ...useCombatStore().toSnapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
@@ -610,6 +635,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       clearLocationMapIndex();
 
       this.map = null;
+      this.worldDescriptor = null;
       useHeroStore().heroCoordinates = null;
       this.currentMapId = null;
       this.currentLocationKey = 'camping';

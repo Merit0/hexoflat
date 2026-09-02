@@ -310,7 +310,7 @@ One commit for this phase. Ask before committing.
 
 ---
 
-### Фаза M3 — Архетип FORKED_FRONTIER, валідатор і підключення до `silesia`
+### Фаза M3 — Архетип FORKED_FRONTIER, валідатор і підключення до `silesia` [DONE — 2026-09-02]
 
 **Мета.** Перша реально згенерована ігрова карта на екрані.
 
@@ -328,6 +328,22 @@ One commit for this phase. Ask before committing.
 **Чого НЕ робити.** Інші три архетипи, promise-система, debug-панель у UI, камера, e2e — усе це M4/M5.
 
 **Критерій приймання.** Вихід із кемпу відкриває згенеровану карту; той самий сид дає ту саму карту після перезавантаження сторінки; валідатор ніколи не зациклюється (тест зі свідомо неможливим конфігом і `maxSeedAttempts`); Deep Unknown не рендерить вузлів; старе збереження вантажиться без помилки; unit + api тести зелені.
+
+**Як реалізовано.**
+
+- **Рецепт керує складачем** через новий опційний `requiredTags: TWorldSectionTag[]` у `assembleWorld` (без окремого оркестратора). `grow` на кроці `i` обмежує кандидатів секціями з тегом `requiredTags[i]`, шукаючи по **всіх** відкритих швах; якщо тег нікуди не приткнути — крок пропускається (не зациклюється). `PlacedSection` тепер несе `tags`.
+- **Архетипи** — `content/world-archetypes.content.ts` (`WORLD_ARCHETYPES: WorldArchetypeDef[]`, Zod-схема + `WORLD_ARCHETYPE_KEYS` union з усіх 4-х). У M3 визначено лише `FORKED_FRONTIER: ['BRANCH','OPEN_AREA','CHOKEPOINT','POCKET']` (camp-anchor — завжди фіксований старт, не в рецепті).
+- **Конфіг** — `generators/world-map-config.ts` (`DEFAULT_WORLD_MAP_CONFIG`), сирих чисел у генераторі/валідаторі немає.
+- **Валідатор** — `generators/world-map-validator.ts`, **6 інваріантів (5 із §1.8 + перевірка розмірів open-area/pocket замість Promise-перевірки, яка чекає на M4)**: зв'язність по не-BLOCKED тайлах від якоря кемпу, покриття тегів, гілки (≥2 шви, розведені на ≥2 напрямки), розмір open-area/pocket секцій, асиметрія (зсув центроїда), відсутність замикання. `score` = кількість пройдених; `accepted` = всі.
+- **Генератор** — `generators/world-map-generator.ts`: `generateWorldMap({seed, archetype, config?}) → WorldMapMvpResult`. Цикл до `maxSeedAttempts` з під-сидами `sha256Hex(seed:attempt:i)`; кожна спроба `assembleWorld` (з `requiredTags`) → `decorate` → `validateWorld`; повертає прийняту або **найкращу за score** (fallback, не кидає, не зациклюється). `decorate`: `CAMPING_ENTRANCE` на якорі кемпу + `map.config` з `entry.DEFAULT`; SOLID `WOOD_AND_LEAVES` на кожен `STONE_RIDGE`-тайл; детермінований `heroSpawn` через `findFreeHexNear(deriveStream(seed,'hero-spawn'))`. `versionId = world-map-mvp-v0.1:<seed>:<archetype>`.
+- **"Скільки викладати"** — `maxSections = recipe.requiredTags.length + 1` (~5 секцій, ~25–34 гекси). `knownHexMin/Max` стали метриками валідатора, не контролем циклу викладки (невелика реінтерпретація).
+- **Підключення `silesia`** — `MapDefinition.create` тепер `(seed?) => HexMapModel`; додано опційний `generate?: (seed, archetype?) => WorldMapMvpResult`. `silesia` віддає обидва; `camping`/`cave` ігнорують. Дескриптор (seed/archetype/versionId/validation) прокидається через сервіс `world-map-generation.ts` (`resolveWorldMap`) у `world-map-store.worldDescriptor` + `TWorldState.worldArchetype` (адитивно, як M1-`worldSeed`).
+- **`world-map-store`**: блок `if(!this.map)` винесено в `buildFreshMap`; додано `regenerateWorld(seed?)` (dev-triggered). Логіку генерації винесено в `services/world/world-map-generation.ts`, бо `world-map-store` уже на ratchet-ліміті `max-lines`.
+- **Детермінізм-фікс:** `reseedWorld` більше не робить early-return при незмінному сиді — інакше `regenerate()` тим самим сидом не скидав лічильник `getStream('world')` і герой спавнився в іншому гексі → різний `isRevealed` → різний `map.toJSON()`. Перевірено в браузері: `regenerate()` двічі → байт-у-байт однакова карта.
+- **Міграція збережень:** старий `silesia`-save (рукотворний прямокутник) вантажиться через `readSavedMap` → `this.map` встановлено → `def.create` не викликається. Без примусової регенерації. `CONTENT_VERSION` не чіпано (обґрунтування в commit-меседжі, не коментарем).
+- **Debug console API** — `services/world/world-map-debug.ts`, `window.__WORLD_MAP_DEBUG__` (`generate`/`regenerate`/`nextSeed`/`forceArchetype`/`getDescriptor`), gated `import.meta.env.DEV`, встановлюється з `hex-world-map.vue` (як e2e-хуки). `forceArchetype` у M3 = `regenerate()` (один архетип; справжнє перемикання — M4).
+- **`apps/api` не чіпано** — досі `HexMapProvider.getHomeLand()`.
+- **Візуально перевірено в dev:** вхід у `silesia` показує згенерований кластер з якорем `CAMPING_ENTRANCE`, героєм поруч, ghost-кільцем в 1 гекс, порожнім Deep Unknown; `validation.accepted === true` (score 6); `nextSeed()` дає іншу прийняту карту; жодних нових помилок у консолі.
 
 **Старт чату:**
 

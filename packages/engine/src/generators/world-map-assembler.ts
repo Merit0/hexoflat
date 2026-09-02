@@ -13,7 +13,11 @@ import {
 } from '../utils/hex-utils';
 import { deriveStream } from '../utils/random-seeded';
 import { pickRandom, type RandomNumberGenerator } from '../utils/random';
-import type { TWorldTerrainKey, WorldSectionDef } from '../content/world-section-schema';
+import type {
+  TWorldSectionTag,
+  TWorldTerrainKey,
+  WorldSectionDef,
+} from '../content/world-section-schema';
 
 export interface OpenSeam {
   coord: IHexCoordinates;
@@ -22,6 +26,7 @@ export interface OpenSeam {
 
 export interface PlacedSection {
   key: string;
+  tags: TWorldSectionTag[];
   rotation: number;
   anchor: IHexCoordinates;
 }
@@ -39,6 +44,7 @@ export interface AssembleInput {
   sections: WorldSectionDef[];
   startSectionKey?: string;
   maxSections: number;
+  requiredTags?: TWorldSectionTag[];
 }
 
 interface PlacedHex {
@@ -53,11 +59,13 @@ interface WorldSeam {
 
 interface SectionAnchor {
   key: string;
+  tags: TWorldSectionTag[];
   rotation: number;
   anchor: Axial;
 }
 
 interface Candidate {
+  seam: WorldSeam;
   section: WorldSectionDef;
   rotation: number;
   matchedSeamIndex: number;
@@ -126,6 +134,7 @@ function candidatesForSeam(
         if (hexes.some((h) => placed.has(axialKey(h.axial)))) return;
 
         out.push({
+          seam: worldSeam,
           section,
           rotation,
           matchedSeamIndex: seamIndex,
@@ -141,6 +150,8 @@ function candidatesForSeam(
 
 function sortCandidates(candidates: Candidate[]): void {
   candidates.sort((a, b) => {
+    const seamCmp = seamKey(a.seam).localeCompare(seamKey(b.seam));
+    if (seamCmp !== 0) return seamCmp;
     if (a.section.key !== b.section.key) return a.section.key < b.section.key ? -1 : 1;
     if (a.rotation !== b.rotation) return a.rotation - b.rotation;
     return a.matchedSeamIndex - b.matchedSeamIndex;
@@ -159,36 +170,42 @@ function grow(
   used: Set<string>,
   anchors: SectionAnchor[],
   openSeams: WorldSeam[],
+  requiredTags: TWorldSectionTag[],
 ): WorldSeam[] {
   let seams = openSeams;
-  const tried = new Set<string>();
+  let stepIndex = 0;
 
   while (anchors.length < maxSections) {
-    const untried = seams.filter((s) => !tried.has(seamKey(s)));
-    if (untried.length === 0) break;
+    const requiredTag = requiredTags[stepIndex] as TWorldSectionTag | undefined;
+    const candidates = seams
+      .flatMap((s) => candidatesForSeam(s, deck, used, placed))
+      .filter((c) => !requiredTag || c.section.tags.includes(requiredTag));
 
-    const worldSeam = pickRandom(untried, rng)!;
-    const candidates = candidatesForSeam(worldSeam, deck, used, placed);
-    sortCandidates(candidates);
-    const chosen = candidates.length ? pickRandom(candidates, rng)! : null;
-
-    if (!chosen) {
-      tried.add(seamKey(worldSeam));
-      continue;
+    if (candidates.length === 0) {
+      if (requiredTag) {
+        stepIndex += 1;
+        continue;
+      }
+      break;
     }
+
+    sortCandidates(candidates);
+    const chosen = pickRandom(candidates, rng)!;
 
     for (const h of chosen.hexes) placed.set(axialKey(h.axial), h);
     used.add(chosen.section.key);
     anchors.push({
       key: chosen.section.key,
+      tags: chosen.section.tags,
       rotation: chosen.rotation,
       anchor: chosen.offset,
     });
 
     seams = [
-      ...seams.filter((s) => seamKey(s) !== seamKey(worldSeam)),
+      ...seams.filter((s) => seamKey(s) !== seamKey(chosen.seam)),
       ...chosen.otherSeams,
     ].filter((s) => seamFacesEmpty(s, placed));
+    stepIndex += 1;
   }
 
   return seams;
@@ -233,7 +250,7 @@ export function assembleWorld(input: AssembleInput): AssembledWorld {
   const startTransformed = transformSection(start, 0, { q: 0, r: 0 });
   for (const h of startTransformed.hexes) placed.set(axialKey(h.axial), h);
   used.add(start.key);
-  anchors.push({ key: start.key, rotation: 0, anchor: { q: 0, r: 0 } });
+  anchors.push({ key: start.key, tags: start.tags, rotation: 0, anchor: { q: 0, r: 0 } });
 
   const finalSeams = grow(
     sections,
@@ -243,6 +260,7 @@ export function assembleWorld(input: AssembleInput): AssembledWorld {
     used,
     anchors,
     startTransformed.seams.filter((s) => seamFacesEmpty(s, placed)),
+    input.requiredTags ?? [],
   );
 
   let minCol = Infinity;
@@ -272,6 +290,7 @@ export function assembleWorld(input: AssembleInput): AssembledWorld {
 
   const placedSections = anchors.map((p) => ({
     key: p.key,
+    tags: p.tags,
     rotation: p.rotation,
     anchor: shift(axialToOddQ(p.anchor)),
   }));

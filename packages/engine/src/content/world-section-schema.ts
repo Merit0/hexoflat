@@ -22,12 +22,21 @@ export const WORLD_SECTION_TAGS = [
 
 export const WORLD_TRAVERSABILITIES = ['OPEN', 'BLOCKED', 'RESERVED_INTERACTION'] as const;
 
+export const WORLD_ARCHETYPE_KEYS = [
+  'FORKED_FRONTIER',
+  'RIDGE_AND_POCKET',
+  'OPEN_FIELD_NARROW_PASS',
+  'LANDMARK_PULL',
+] as const;
+
 export type TWorldTerrainKey = (typeof WORLD_TERRAIN_KEYS)[number];
 export type TWorldSectionTag = (typeof WORLD_SECTION_TAGS)[number];
 export type TWorldTraversability = (typeof WORLD_TRAVERSABILITIES)[number];
+export type TWorldArchetypeKey = (typeof WORLD_ARCHETYPE_KEYS)[number];
 
 export const WorldTerrainKeySchema = z.enum(WORLD_TERRAIN_KEYS);
 export const WorldSectionTagSchema = z.enum(WORLD_SECTION_TAGS);
+export const WorldArchetypeKeySchema = z.enum(WORLD_ARCHETYPE_KEYS);
 
 export const WorldTerrainDefSchema = z.object({
   traversability: z.enum(WORLD_TRAVERSABILITIES),
@@ -54,7 +63,14 @@ export const WorldSectionDefSchema = z.object({
   weight: z.number().positive(),
 });
 
+export const WorldArchetypeDefSchema = z.object({
+  key: WorldArchetypeKeySchema,
+  requiredTags: z.array(WorldSectionTagSchema).nonempty(),
+  weight: z.number().positive(),
+});
+
 export type WorldTerrainDef = z.infer<typeof WorldTerrainDefSchema>;
 export type WorldSectionHex = z.infer<typeof WorldSectionHexSchema>;
 export type WorldSectionSeam = z.infer<typeof WorldSectionSeamSchema>;
 export type WorldSectionDef = z.infer<typeof WorldSectionDefSchema>;
+export type WorldArchetypeDef = z.infer<typeof WorldArchetypeDefSchema>;

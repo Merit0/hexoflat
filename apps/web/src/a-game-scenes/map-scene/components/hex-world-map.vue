@@ -94,6 +94,11 @@ import { useUserStore } from '@/stores/user-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
 import { createTestApi } from '@/e2e/create-test-api';
+import {
+  createWorldMapDebugApi,
+  installWorldMapDebug,
+  uninstallWorldMapDebug,
+} from '@/services/world/world-map-debug';
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -139,6 +144,18 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
   uninstallTestHooks();
+});
+onMounted(() => {
+  if (!import.meta.env.DEV) return;
+  installWorldMapDebug(
+    createWorldMapDebugApi({
+      regenerate: (seed) => worldStore.regenerateWorld(seed),
+      getDescriptor: () => worldStore.worldDescriptor,
+    }),
+  );
+});
+onBeforeUnmount(() => {
+  if (import.meta.env.DEV) uninstallWorldMapDebug();
 });
 onMounted(() => uiSettingsStore.hydrateFromStorage());
 onMounted(() => heroInventoryStore.hydrate());

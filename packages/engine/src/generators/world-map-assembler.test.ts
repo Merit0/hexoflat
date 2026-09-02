@@ -93,4 +93,32 @@ describe('assembleWorld', () => {
     expect(world.placedSections.length).toBeLessThanOrEqual(WORLD_SECTIONS.length);
     expect(world.map.tiles.length).toBeGreaterThan(0);
   });
+
+  it('places sections carrying the recipe tags when requiredTags is given', () => {
+    const requiredTags = ['BRANCH', 'OPEN_AREA', 'CHOKEPOINT', 'POCKET'] as const;
+    const world = assembleWorld({
+      seed: 'recipe',
+      sections: WORLD_SECTIONS,
+      requiredTags: [...requiredTags],
+      maxSections: requiredTags.length + 1,
+    });
+
+    const tagOf = (key: string) => WORLD_SECTIONS.find((s) => s.key === key)!.tags;
+    const placedTags = new Set(world.placedSections.flatMap((p) => tagOf(p.key)));
+
+    expect(world.placedSections[0].key).toBe('camp-anchor');
+    for (const tag of requiredTags) {
+      expect(placedTags.has(tag), `recipe tag "${tag}" not placed`).toBe(true);
+    }
+  });
+
+  it('is deterministic with a recipe', () => {
+    const input: Parameters<typeof assembleWorld>[0] = {
+      seed: 'recipe-det',
+      sections: WORLD_SECTIONS,
+      requiredTags: ['BRANCH', 'OPEN_AREA', 'CHOKEPOINT', 'POCKET'],
+      maxSections: 5,
+    };
+    expect(serialize(assembleWorld(input))).toEqual(serialize(assembleWorld(input)));
+  });
 });

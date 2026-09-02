@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { axialNeighbor } from '../utils/hex-utils';
 import { WORLD_SECTIONS } from './world-sections.content';
 import { WORLD_TERRAIN } from './world-terrain.content';
+import { WORLD_ARCHETYPES } from './world-archetypes.content';
 import {
   WORLD_SECTION_TAGS,
   WORLD_TERRAIN_KEYS,
+  WorldArchetypeDefSchema,
   WorldSectionDefSchema,
   WorldTerrainDefSchema,
 } from './world-section-schema';
@@ -94,5 +96,32 @@ describe('world section content', () => {
   it('has exactly one CAMP_ANCHOR section', () => {
     const anchors = WORLD_SECTIONS.filter((s) => s.tags.includes('CAMP_ANCHOR'));
     expect(anchors).toHaveLength(1);
+  });
+});
+
+describe('world archetype content', () => {
+  it.each(WORLD_ARCHETYPES.map((a) => [a.key, a] as const))(
+    'archetype "%s" passes schema validation',
+    (_key, archetype) => {
+      const result = WorldArchetypeDefSchema.safeParse(archetype);
+      if (!result.success) throw new Error(result.error.message);
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it('every archetype requires only tags that a section actually carries', () => {
+    const sectionTags = new Set(WORLD_SECTIONS.flatMap((s) => s.tags));
+    for (const archetype of WORLD_ARCHETYPES) {
+      for (const tag of archetype.requiredTags) {
+        expect(sectionTags.has(tag), `${archetype.key} requires unplaceable tag "${tag}"`).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  it('has unique archetype keys', () => {
+    const keys = WORLD_ARCHETYPES.map((a) => a.key);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });
