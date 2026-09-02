@@ -18,10 +18,29 @@ export interface TestHeroHealth {
   max: number;
 }
 
+export interface TestWorldDescriptor {
+  seed: string;
+  archetype: string;
+  versionId: string;
+  accepted: boolean;
+  score: number;
+  rejectedAttempts: number;
+  hexCount: number;
+  branchCount: number;
+  chokepointCount: number;
+  openAreaSize: number;
+  pocketSize: number;
+  promiseCount: number;
+}
+
 export interface HexoflatTestApi {
   isBoardReady(): boolean;
 
   getHeroCoordinates(): TestHexCoordinates | null;
+
+  getWorldDescriptor(): TestWorldDescriptor | null;
+
+  getCampAnchorCoordinates(): TestHexCoordinates | null;
 
   getTileFraction(coordinates: TestHexCoordinates): TestTileFraction;
 

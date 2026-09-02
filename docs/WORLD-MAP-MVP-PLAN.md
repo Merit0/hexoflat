@@ -443,7 +443,7 @@ neighbour; determinism still holds. One commit for this phase. Ask before commit
 
 ---
 
-### Фаза M5 — Debug-панель, e2e і набір із 10 карт
+### Фаза M5 — Debug-панель, e2e і набір із 10 карт [DONE — 2026-09-02]
 
 **Мета.** Зробити генератор придатним для людського огляду й заморозити його.
 
@@ -457,6 +457,19 @@ neighbour; determinism still holds. One commit for this phase. Ask before commit
 **Чого НЕ робити.** Не додавати біоми, погоду, ресурси, ворогів, рух — і взагалі нічого з v0.1 §27.
 
 **Критерій приймання.** Debug-панель працює в dev і відсутня в продакшн-збірці; e2e зелені в CI; 10 зразків згенеровані й закомічені; після цього генератор **заморожується** до завершення дизайну руху героя.
+
+**Як реалізовано.**
+
+- **Debug-панель** — `a-game-scenes/map-scene/components/world-map-debug-panel.vue`, підключена в `hex-world-map.vue` через `defineAsyncComponent` під `v-if="import.meta.env.DEV"` (у прод-збірці — окремий lazy-чанк, який ніколи не запитується; не в головному й не в `hex-world-map` бандлі, `size-limit` не зачеплено). Показує сид (+ копіювання в буфер), вердикт `ACCEPTED/FALLBACK` + score, 4 кнопки форсу архетипу (активний підсвічений), `regenerate`/`next seed`, метрики валідатора (`hexCount/branchCount/chokepointCount/openAreaSize/pocketSize/promiseCount/symmetryOffset`), список `rejectionReasons`, і два перемикачі.
+- **Перемикачі — з рендер-підтримкою.** «technical grid» → новий шар `render/layers/hex-grid-layer.ts` (cyan hex-outline на кожен тайл видимого набору, `zIndex 900`), опція `showTechnicalGrid` в `use-hex-board.ts`, синк складено в наявний tiles-watcher (щоб не роздувати `useHexBoard` понад ліміт `max-lines-per-function`). «ghost layer» → `visibleTiles` у `hex-world-map.vue` під DEV фільтрує до `isRevealed`-тайлів, коли вимкнено (в проді — завжди `selectVisibleTiles`, без змін). Стан перемикачів — два модульні `ref` у `services/world/world-map-debug.ts` (не Pinia, не персиститься).
+- **Форс архетипу протягнуто по-справжньому:** `world-map-debug.ts` `regenerate(seed?, archetype?)`; `world-map-store.regenerateWorld(seed?, arch?)` → `buildFreshMap(..., arch?)` → `resolveWorldMap(def, seed, archetype?)` → `def.generate(seed, archetype)`. `__WORLD_MAP_DEBUG__.forceArchetype` більше не аліас `regenerate` (M3-заглушка знята).
+- **E2E** — `e2e/world/world-map-generation.spec.ts`, два сценарії, тільки Feature-класи: `OpenSilesiaMapFeature`/`VerifyWorldMapFeature`, `SilesiaMapPage` (`/world/silesia`), `WorldMapComponent` (локатори + `page.evaluate` тут). Новий тест-хук: `getWorldDescriptor()` (сид/архетип/versionId/accepted/score/rejectedAttempts + метрики) і `getCampAnchorCoordinates()` (тайл із `CAMPING_ENTRANCE`), додані в `apps/web/src/e2e/*` і `apps/playwright/src/framework/test-api.ts`. Сценарій 1: карта згенерована й `accepted`, герой рівно за 1 гекс від якоря кемпу. Сценарій 2: reload → той самий `seed`/`archetype`/`versionId`/`hexCount`/`branchCount`/`promiseCount`.
+- **Знайдено й виправлено передумовний баг (M3/M4).** На **першому** завантаженні сторінки прямо на `/world/silesia` герой опинявся за 3–7 гексів від кемпу, поза тайлами. Причина: `scheduleWorldSave` — дебаунснутий запис (750 мс), тож `watch(locationKey, immediate)` генерував карту A і зберігав її _у чергу_, а `onMounted(bootstrapWorld)` одразу викликав `goToLocation` вдруге, `readSavedMap` віддавав `null` (черга ще не змита), генерувалась карта B з новим сидом, але позиція героя зі спавну карти A «запам'ятовувалась» і накладалась на карту B. Виправлено в `services/persistence/world-storage.ts`: `readSavedMap`/`readSavedWorldState` тепер спершу дивляться в `pendingSaves` (read-your-writes), а `removeSavedWorld` скасовує ще не змиту чергу. Покрито `world-storage.test.ts`. Це також робить справжнім M4-твердження про переживання reload.
+- **Набір зразків** — `packages/engine/src/generators/world-map-samples.gen.test.ts`, guard `GEN_SAMPLES=1` (у звичайному `pnpm test` — `describe.skip`, тому в CI не пише файлів), запуск: `pnpm --filter @hexoflat/engine samples:worldmap`. Генерує 10 прийнятих карт (3/3/2/2), для кожної — схематичний **SVG** (гекси за `calcHexPixelPosition`, колір = терен; camp anchor, спавн героя, відкриті шви пунктиром, promise-силуети, anchor-слоти) + рядок у `samples.json` (сид, архетип, `accepted/score/rejectedAttempts`, `hexCount/branchCount/chokepointCount/openAreaSize/pocketSize/promiseCount`, типи promise-ів, види anchor-ів, причини відхилень). Вивід у `docs/design/samples/world-map-mvp/` + `README.md` з легендою; SVG/`samples.json` у `.prettierignore` як машинний вивід. Скріншот canvas через Playwright не робимо — у проєкті скріншот-порівняння свідомо відкладені (`playwright.config.ts`), а SVG детермінований і читається в діффах.
+- **Engine:** `WorldMapMvpResult.attempts` (кількість спроб до прийняття; для метрик і панелі). `WorldDescriptor.attempts` відповідно. `CONTENT_VERSION` не чіпано.
+- **Візуально перевірено в dev:** панель рендериться, копіювання сида, форс усіх 4 архетипів (кожен `accepted`), regenerate/next seed, technical grid (cyan-контури), ghost layer (ховає GHOST_FRONTIER-кільце), reload → той самий сид/архетип/карта/позиція героя, герой суміжний з кемпом на першому завантаженні. Прод-збірка (`VITE_E2E_HOOKS=true … build`) — зелена, `size-limit` у межах.
+
+**Після M5 генератор ЗАМОРОЖЕНО** (v0.1 §29): наступний крок — дизайн механіки руху героя проти цих зразків, в окремій гілці.
 
 **Старт чату:**
 

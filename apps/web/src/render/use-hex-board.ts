@@ -20,6 +20,7 @@ import {
   type CombatMarkerLayer,
 } from '@/render/layers/combat-marker-layer';
 import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
+import { createHexGridLayer, type HexGridLayer } from '@/render/layers/hex-grid-layer';
 import {
   createFrontierPromiseLayer,
   type FrontierPromiseEntry,
@@ -56,6 +57,7 @@ export interface UseHexBoardOptions {
     label: ComputedRef<string>;
   };
   frontierPromises: ComputedRef<FrontierPromiseEntry[]>;
+  showTechnicalGrid: ComputedRef<boolean>;
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
   /**
@@ -104,6 +106,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
   let combatMarkerLayer: CombatMarkerLayer | null = null;
   let campHealLayer: CampHealLayer | null = null;
   let frontierPromiseLayer: FrontierPromiseLayer | null = null;
+  let hexGridLayer: HexGridLayer | null = null;
   let stopWatchers: Array<() => void> = [];
   let cancelled = false;
 
@@ -160,6 +163,11 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       getTileSize: () => opts.domTileSize.value,
     });
 
+    hexGridLayer = createHexGridLayer({
+      worldContainer: board.worldContainer,
+      getTileSize: () => opts.domTileSize.value,
+    });
+
     stopWatchers.push(
       watch(opts.mapBounds, (bounds) => board?.resize(bounds.width, bounds.height), {
         immediate: true,
@@ -175,7 +183,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
 
     stopWatchers.push(
       watch(
-        [opts.tilesDirtyTick, opts.domTileSize],
+        [opts.tilesDirtyTick, opts.domTileSize, opts.showTechnicalGrid],
         ([, domTileSize]) => {
           const previous = previousDomTileSize;
           const sizeChanged =
@@ -186,6 +194,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
           tilesLayer?.syncTiles(opts.tiles.value, sizeChanged ? undefined : dirtyKeys);
           tilesLayer?.syncDefendMarkers(opts.tiles.value);
           tilesLayer?.syncLockChips(opts.tiles.value, opts.healTickerNow.value);
+          hexGridLayer?.sync(opts.tiles.value, opts.showTechnicalGrid.value);
         },
         { immediate: true },
       ),
@@ -285,21 +294,19 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     cancelled = true;
     for (const stop of stopWatchers) stop();
     stopWatchers = [];
-    tilesLayer?.destroy();
-    heroLayer?.destroy();
-    movePreviewLayer?.destroy();
-    enemyVisionLayer?.destroy();
-    combatMarkerLayer?.destroy();
-    campHealLayer?.destroy();
-    frontierPromiseLayer?.destroy();
+    for (const layer of [
+      tilesLayer,
+      heroLayer,
+      movePreviewLayer,
+      enemyVisionLayer,
+      combatMarkerLayer,
+      campHealLayer,
+      frontierPromiseLayer,
+      hexGridLayer,
+    ]) {
+      layer?.destroy();
+    }
     board?.destroy();
     board = null;
-    tilesLayer = null;
-    heroLayer = null;
-    movePreviewLayer = null;
-    enemyVisionLayer = null;
-    combatMarkerLayer = null;
-    frontierPromiseLayer = null;
-    campHealLayer = null;
   });
 }

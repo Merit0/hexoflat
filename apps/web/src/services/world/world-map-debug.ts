@@ -1,5 +1,10 @@
+import { ref } from 'vue';
+
+export const debugShowTechnicalGrid = ref(false);
+export const debugShowGhostLayer = ref(true);
+
 export interface WorldMapDebugDeps {
-  regenerate(seed?: string): void;
+  regenerate(seed?: string, archetype?: string): void;
   getDescriptor(): {
     seed: string;
     archetype: string;
@@ -21,7 +26,7 @@ export function createWorldMapDebugApi(deps: WorldMapDebugDeps): WorldMapDebugAp
     generate: (seed?: string) => deps.regenerate(seed),
     regenerate: () => deps.regenerate(deps.getDescriptor()?.seed),
     nextSeed: () => deps.regenerate(),
-    forceArchetype: () => deps.regenerate(),
+    forceArchetype: (archetype: string) => deps.regenerate(undefined, archetype),
     getDescriptor: () => deps.getDescriptor(),
   };
 }

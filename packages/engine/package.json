@@ -21,7 +21,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "samples:worldmap": "GEN_SAMPLES=1 vitest run world-map-samples.gen"
   },
   "dependencies": {
     "zod": "^4.4.3"

@@ -94,7 +94,8 @@ export function scheduleWorldSave(
 }
 
 export function readSavedMap(mapId: string): ISerializedHexMap | null {
-  const saved = localStorage.getItem(STORAGE_MAP_PREFIX + mapId);
+  const saved =
+    pendingSaves.get(mapId)?.mapSnapshot ?? localStorage.getItem(STORAGE_MAP_PREFIX + mapId);
   const parsed = saved
     ? (JSON.parse(saved) as { contentVersion?: number; map?: ISerializedHexMap })
     : null;
@@ -113,7 +114,8 @@ export function readSavedMap(mapId: string): ISerializedHexMap | null {
 export function readSavedWorldState<T extends { contentVersion?: number }>(
   mapId: string,
 ): Partial<T> | null {
-  const saved = localStorage.getItem(STORAGE_STATE_PREFIX + mapId);
+  const saved =
+    pendingSaves.get(mapId)?.stateSnapshot ?? localStorage.getItem(STORAGE_STATE_PREFIX + mapId);
   const raw = saved ? (JSON.parse(saved) as Partial<T>) : null;
 
   if (raw && raw.contentVersion === CONTENT_VERSION) return raw;
@@ -128,6 +130,11 @@ export function readSavedWorldState<T extends { contentVersion?: number }>(
 }
 
 export function removeSavedWorld(mapId: string): void {
+  const pending = pendingSaves.get(mapId);
+  if (pending) {
+    window.clearTimeout(pending.timer);
+    pendingSaves.delete(mapId);
+  }
   localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
   localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
 }

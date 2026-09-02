@@ -54,13 +54,14 @@
           </div>
         </div>
       </div>
+      <world-map-debug-panel v-if="isDev" />
     </div>
     <hero-board-panel />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { useHexBoard } from '@/render/use-hex-board';
@@ -97,9 +98,16 @@ import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
 import { createTestApi } from '@/e2e/create-test-api';
 import {
   createWorldMapDebugApi,
+  debugShowGhostLayer,
+  debugShowTechnicalGrid,
   installWorldMapDebug,
   uninstallWorldMapDebug,
 } from '@/services/world/world-map-debug';
+
+const isDev = import.meta.env.DEV;
+const WorldMapDebugPanel = defineAsyncComponent(
+  () => import('@/a-game-scenes/map-scene/components/world-map-debug-panel.vue'),
+);
 
 const props = defineProps<{
   locationKey: LocationKey;
@@ -163,9 +171,13 @@ onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
 
 const allTiles = computed(() => worldStore.map?.tiles ?? []);
-const visibleTiles = computed(() =>
-  worldStore.map ? selectVisibleTiles(worldStore.map as HexMapModel) : [],
-);
+const visibleTiles = computed(() => {
+  const map = worldStore.map as HexMapModel | null;
+  if (!map) return [];
+  if (isDev && !debugShowGhostLayer.value) return map.tiles.filter((tile) => tile.isRevealed);
+  return selectVisibleTiles(map);
+});
+const showTechnicalGrid = computed(() => isDev && debugShowTechnicalGrid.value);
 const tilesDirtyTick = computed(() => worldStore.dirtyTick);
 const activeTool = computed(() => heroToolStore.activeTool);
 
@@ -334,6 +346,7 @@ useHexBoard({
     label: campHealInfoLabel,
   },
   frontierPromises,
+  showTechnicalGrid,
   onTileHover: handleTileHover,
   onTileClick: (tile) => {
     void handleTileClick(tile);

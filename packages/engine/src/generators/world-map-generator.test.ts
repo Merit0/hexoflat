@@ -99,6 +99,25 @@ describe('generateWorldMap', () => {
     expect(new Set(picks).size).toBeGreaterThan(1);
   });
 
+  it('reports how many attempts it took', () => {
+    const accepted = gen('desc');
+    expect(accepted.attempts).toBeGreaterThanOrEqual(1);
+    expect(accepted.attempts).toBeLessThanOrEqual(DEFAULT_WORLD_MAP_CONFIG.maxSeedAttempts + 1);
+
+    const impossible = {
+      ...DEFAULT_WORLD_MAP_CONFIG,
+      maxSeedAttempts: 2,
+      symmetryRejectThreshold: 999,
+    };
+    const fallback = generateWorldMap({
+      seed: 'x',
+      archetype: 'FORKED_FRONTIER',
+      config: impossible,
+    });
+    expect(fallback.validation.accepted).toBe(false);
+    expect(fallback.attempts).toBe(impossible.maxSeedAttempts + 1);
+  });
+
   it('carries promises and gameplay anchors on the result', () => {
     const world = gen('desc');
     expect(world.promises.length).toBeGreaterThan(0);

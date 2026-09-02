@@ -41,6 +41,7 @@ export interface WorldMapMvpResult {
   promises: FrontierPromise[];
   anchors: GameplayAnchor[];
   validation: WorldValidation;
+  attempts: number;
 }
 
 export interface GenerateWorldMapInput {
@@ -144,14 +145,20 @@ export function generateWorldMap(input: GenerateWorldMapInput): WorldMapMvpResul
     });
 
     if (validation.accepted) {
-      return toResult(input.seed, archetype, attempt, validation);
+      return toResult(input.seed, archetype, attempt, validation, i + 1);
     }
     if (!best || validation.score > best.validation.score) {
       best = { attempt, validation };
     }
   }
 
-  return toResult(input.seed, archetype, best!.attempt, best!.validation);
+  return toResult(
+    input.seed,
+    archetype,
+    best!.attempt,
+    best!.validation,
+    config.maxSeedAttempts + 1,
+  );
 }
 
 function toResult(
@@ -159,6 +166,7 @@ function toResult(
   archetype: TWorldArchetypeKey,
   attempt: Attempt,
   validation: WorldValidation,
+  attempts: number,
 ): WorldMapMvpResult {
   return {
     seed,
@@ -173,5 +181,6 @@ function toResult(
     promises: attempt.promises,
     anchors: attempt.anchors,
     validation,
+    attempts,
   };
 }

@@ -18,6 +18,7 @@ export type {
   TestHeroHealth,
   TestHexCoordinates,
   TestTileFraction,
+  TestWorldDescriptor,
 } from '@web-test-api';
 
 export const MISSING_TEST_HOOKS_MESSAGE =

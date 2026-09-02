@@ -7,12 +7,14 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type {
   HexoflatTestApi,
   TestGridSize,
   TestHeroHealth,
   TestHexCoordinates,
   TestTileFraction,
+  TestWorldDescriptor,
 } from '@/e2e/test-api.types';
 
 export interface MapBoundsSnapshot {
@@ -67,6 +69,36 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       const coordinates = heroStore.heroCoordinates;
       return coordinates
         ? { columnIndex: coordinates.columnIndex, rowIndex: coordinates.rowIndex }
+        : null;
+    },
+
+    getWorldDescriptor(): TestWorldDescriptor | null {
+      const descriptor = worldStore.worldDescriptor;
+      if (!descriptor) return null;
+
+      const metrics = descriptor.validation.metrics;
+      return {
+        seed: descriptor.seed,
+        archetype: descriptor.archetype,
+        versionId: descriptor.versionId,
+        accepted: descriptor.validation.accepted,
+        score: descriptor.validation.score,
+        rejectedAttempts: descriptor.attempts - 1,
+        hexCount: metrics.hexCount,
+        branchCount: metrics.branchCount,
+        chokepointCount: metrics.chokepointCount,
+        openAreaSize: metrics.openAreaSize,
+        pocketSize: metrics.pocketSize,
+        promiseCount: metrics.promiseCount,
+      };
+    },
+
+    getCampAnchorCoordinates(): TestHexCoordinates | null {
+      const tile = worldStore.map?.tiles.find(
+        (candidate) => candidate.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING_ENTRANCE,
+      );
+      return tile
+        ? { columnIndex: tile.coordinates.columnIndex, rowIndex: tile.coordinates.rowIndex }
         : null;
     },
 

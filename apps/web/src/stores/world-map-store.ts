@@ -431,11 +431,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
       heroStore.setLocation(locationKey, mapId);
     },
 
-    buildFreshMap(locationKey: LocationKey, mapId: string, forcedSeed?: string) {
+    buildFreshMap(locationKey: LocationKey, mapId: string, forcedSeed?: string, arch?: string) {
       const seed = forcedSeed ?? getWorldSeed() ?? crypto.randomUUID();
       if (forcedSeed) reseedWorld(forcedSeed);
 
-      const built = resolveWorldMap(MapRegistry.get(locationKey), seed);
+      const built = resolveWorldMap(MapRegistry.get(locationKey), seed, arch);
       this.map = built.map;
       this.worldDescriptor = built.descriptor;
 
@@ -444,14 +444,14 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.saveToStorage(mapId);
     },
 
-    regenerateWorld(seed?: string) {
+    regenerateWorld(seed?: string, archetype?: string) {
       const loc = this.currentLocationKey;
       const mapId = this.currentMapId;
       if (!mapId || !MapRegistry.get(loc).generate) return;
 
       removeSavedWorld(mapId);
       useHeroStore().forgetPosition(mapId);
-      this.buildFreshMap(loc, mapId, seed ?? crypto.randomUUID());
+      this.buildFreshMap(loc, mapId, seed ?? crypto.randomUUID(), archetype);
       this.placeHeroAtEntry(loc);
       this.revealAroundHero();
       this.revealEntryTile();
