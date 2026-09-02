@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { WORLD_ARCHETYPE_KEYS } from '../content/world-section-schema';
 import { DEFAULT_WORLD_MAP_CONFIG } from './world-map-config';
 import { generateWorldMap } from './world-map-generator';
 
@@ -75,5 +76,34 @@ describe('generateWorldMap', () => {
 
   it('carries a stable versionId', () => {
     expect(gen('v').versionId).toBe('world-map-mvp-v0.1:v:FORKED_FRONTIER');
+  });
+
+  it.each(WORLD_ARCHETYPE_KEYS)('archetype "%s" is accepted for most seeds', (archetype) => {
+    const accepted = ['a1', 'a2', 'a3', 'a4', 'a5'].filter(
+      (s) => generateWorldMap({ seed: s, archetype }).validation.accepted,
+    );
+    expect(accepted.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('picks an archetype deterministically by weight and covers more than one', () => {
+    const picks = Array.from(
+      { length: 16 },
+      (_, i) => generateWorldMap({ seed: `w${i}` }).archetype,
+    );
+    const picksAgain = Array.from(
+      { length: 16 },
+      (_, i) => generateWorldMap({ seed: `w${i}` }).archetype,
+    );
+
+    expect(picks).toEqual(picksAgain);
+    expect(new Set(picks).size).toBeGreaterThan(1);
+  });
+
+  it('carries promises and gameplay anchors on the result', () => {
+    const world = gen('desc');
+    expect(world.promises.length).toBeGreaterThan(0);
+    expect(world.promises.some((p) => p.strength !== 'SUBTLE')).toBe(true);
+    expect(world.anchors.length).toBeGreaterThan(0);
+    expect(world.versionId).toContain(world.archetype);
   });
 });

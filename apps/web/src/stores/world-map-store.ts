@@ -58,7 +58,7 @@ type TWorldState = {
   contentVersion: number;
   heroCoordinates: IHexCoordinates | null;
   worldSeed?: string;
-  worldArchetype?: string;
+  worldDescriptor?: WorldDescriptor;
 } & CombatSnapshot;
 
 function initialLocationKey(): LocationKey {
@@ -482,6 +482,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       const raw = readSavedWorldState<TWorldState>(mapId);
       reseedWorld(raw?.worldSeed ?? crypto.randomUUID());
+      this.worldDescriptor = raw?.worldDescriptor ?? this.worldDescriptor;
 
       if (raw) {
         heroStore.heroCoordinates = raw.heroCoordinates ?? null;
@@ -540,7 +541,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: useHeroStore().heroCoordinates,
         worldSeed: getWorldSeed() ?? undefined,
-        worldArchetype: this.worldDescriptor?.archetype,
+        worldDescriptor: this.worldDescriptor ?? undefined,
         ...useCombatStore().toSnapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));

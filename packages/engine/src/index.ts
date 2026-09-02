@@ -15,3 +15,8 @@ export {
 } from './generators/world-map-generator';
 export type { WorldValidation } from './generators/world-map-validator';
 export { DEFAULT_WORLD_MAP_CONFIG, type WorldMapMvpConfig } from './generators/world-map-config';
+export {
+  GAMEPLAY_ANCHOR_KINDS,
+  type GameplayAnchor,
+  type TGameplayAnchorKind,
+} from './generators/world-map-anchors';

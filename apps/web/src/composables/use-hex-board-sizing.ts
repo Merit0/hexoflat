@@ -1,8 +1,10 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef } from 'vue';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
+import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 
 const BLEED = 2;
+const FRAME_PAD = 0.6;
 
 /**
  * DOM-probe tile sizing and scale-to-fit for the hex board: measures a
@@ -13,7 +15,10 @@ const BLEED = 2;
  * map only ever occupies a fraction of the viewport (the desktop 70/30
  * split from use-game-layout.ts).
  */
-export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
+export function useHexBoardSizing(
+  tiles: ComputedRef<IHexTile[]>,
+  extraPoints?: ComputedRef<IHexCoordinates[]>,
+) {
   const probeRef = ref<HTMLElement | null>(null);
   const containerRef = ref<HTMLElement | null>(null);
   const domTileW = ref(0);
@@ -52,8 +57,10 @@ export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
     let maxX = -Infinity,
       maxY = -Infinity;
 
-    for (const t of tiles.value) {
-      const { x, y } = calcHexPixelPosition(t, w, h);
+    const points = [...tiles.value.map((t) => t.coordinates), ...(extraPoints?.value ?? [])];
+
+    for (const coordinates of points) {
+      const { x, y } = calcHexPixelPosition({ coordinates }, w, h);
 
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
@@ -65,11 +72,13 @@ export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
       return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
     }
 
+    const margin = BLEED * 2 + (extraPoints?.value.length ? Math.min(w, h) * FRAME_PAD : 0);
+
     return {
-      width: maxX - minX + BLEED * 2,
-      height: maxY - minY + BLEED * 2,
-      offsetX: minX - BLEED,
-      offsetY: minY - BLEED,
+      width: maxX - minX + margin * 2,
+      height: maxY - minY + margin * 2,
+      offsetX: minX - margin,
+      offsetY: minY - margin,
     };
   });
 

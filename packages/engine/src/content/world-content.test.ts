@@ -7,6 +7,7 @@ import {
   WORLD_SECTION_TAGS,
   WORLD_TERRAIN_KEYS,
   WorldArchetypeDefSchema,
+  WorldPromiseSchema,
   WorldSectionDefSchema,
   WorldTerrainDefSchema,
 } from './world-section-schema';
@@ -123,5 +124,31 @@ describe('world archetype content', () => {
   it('has unique archetype keys', () => {
     const keys = WORLD_ARCHETYPES.map((a) => a.key);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('defines all four archetypes', () => {
+    expect(WORLD_ARCHETYPES).toHaveLength(4);
+  });
+});
+
+describe('world promise content', () => {
+  it('round-trips a promise through its schema', () => {
+    const promise = {
+      id: 'promise-0',
+      type: 'LANDMARK_SILHOUETTE',
+      strength: 'STRONG',
+      seam: { coord: { columnIndex: 3, rowIndex: 2 }, dir: 4 },
+    };
+    expect(WorldPromiseSchema.safeParse(promise).success).toBe(true);
+  });
+
+  it('rejects an unknown promise type or strength', () => {
+    const base = { id: 'p', seam: { coord: { columnIndex: 0, rowIndex: 0 }, dir: 0 } };
+    expect(
+      WorldPromiseSchema.safeParse({ ...base, type: 'NOPE', strength: 'STRONG' }).success,
+    ).toBe(false);
+    expect(WorldPromiseSchema.safeParse({ ...base, type: 'GLOW', strength: 'HUGE' }).success).toBe(
+      false,
+    );
   });
 });

@@ -2,7 +2,7 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import { coordinateKey, getOddQNeighbors, oddQToAxial } from '../utils/hex-utils';
 import { WORLD_SECTIONS } from '../content/world-sections.content';
 import { WORLD_TERRAIN } from '../content/world-terrain.content';
-import type { TWorldSectionTag } from '../content/world-section-schema';
+import type { FrontierPromise, TWorldSectionTag } from '../content/world-section-schema';
 import type { AssembledWorld } from './world-map-assembler';
 import type { WorldMapMvpConfig } from './world-map-config';
 
@@ -13,6 +13,7 @@ export interface WorldValidationMetrics {
   openAreaSize: number;
   pocketSize: number;
   symmetryOffset: number;
+  promiseCount: number;
 }
 
 export interface WorldValidation {
@@ -22,17 +23,22 @@ export interface WorldValidation {
   metrics: WorldValidationMetrics;
 }
 
-const REQUIRED_TAGS: TWorldSectionTag[] = ['BRANCH', 'OPEN_AREA', 'CHOKEPOINT', 'POCKET'];
+export interface ValidateWorldInput {
+  world: AssembledWorld;
+  campAnchor: IHexCoordinates;
+  config: WorldMapMvpConfig;
+  requiredTags: TWorldSectionTag[];
+  promises: FrontierPromise[];
+}
 
 function isPassable(world: AssembledWorld, key: string): boolean {
   const terrain = world.terrainByCoord[key];
   return !terrain || WORLD_TERRAIN[terrain].traversability !== 'BLOCKED';
 }
 
-function passableCount(world: AssembledWorld): { present: Set<string>; passable: Set<string> } {
-  const present = new Set(world.map.tiles.map((t) => coordinateKey(t.coordinates)));
-  const passable = new Set([...present].filter((k) => isPassable(world, k)));
-  return { present, passable };
+function passableSet(world: AssembledWorld): Set<string> {
+  const present = world.map.tiles.map((t) => coordinateKey(t.coordinates));
+  return new Set(present.filter((k) => isPassable(world, k)));
 }
 
 function reachableFrom(start: IHexCoordinates, passable: Set<string>): Set<string> {
@@ -88,43 +94,36 @@ function centroidOffset(world: AssembledWorld, campAnchor: IHexCoordinates): num
   return Math.sqrt(dq * dq + dr * dr);
 }
 
-export function validateWorld(
-  world: AssembledWorld,
-  campAnchor: IHexCoordinates,
-  config: WorldMapMvpConfig,
-): WorldValidation {
+export function validateWorld(input: ValidateWorldInput): WorldValidation {
+  const { world, campAnchor, config, requiredTags, promises } = input;
   const reasons: string[] = [];
-  const { passable } = passableCount(world);
-  const reached = reachableFrom(campAnchor, passable);
 
+  const passable = passableSet(world);
+  const reached = reachableFrom(campAnchor, passable);
   const placedTags = new Set(world.placedSections.flatMap((p) => p.tags));
   const seamDirs = world.openSeams.map((s) => s.dir);
   const branchesSpread = seamDirs.some((a, i) =>
     seamDirs.slice(i + 1).some((b) => circularDirDistance(a, b) >= 2),
   );
-  const openAreaSize = largestSectionSizeWithTag(world, 'OPEN_AREA');
-  const pocketSize = largestSectionSizeWithTag(world, 'POCKET');
   const symmetryOffset = centroidOffset(world, campAnchor);
   const anchorHasPassableNeighbour = getOddQNeighbors(campAnchor).some((n) =>
     passable.has(coordinateKey(n)),
   );
+  const hasStrongPromise = promises.some((p) => p.strength !== 'SUBTLE');
 
   if (reached.size !== passable.size) {
     reasons.push(
       `connectivity: ${reached.size}/${passable.size} passable tiles reachable from camp`,
     );
   }
-  for (const tag of REQUIRED_TAGS) {
+  for (const tag of requiredTags) {
     if (!placedTags.has(tag)) reasons.push(`tag-coverage: no placed section tagged ${tag}`);
   }
   if (world.openSeams.length < 2 || !branchesSpread) {
     reasons.push(`branching: ${world.openSeams.length} open seams, spread=${branchesSpread}`);
   }
-  if (openAreaSize < config.minOpenAreaSize) {
-    reasons.push(`open-area: largest is ${openAreaSize} < ${config.minOpenAreaSize}`);
-  }
-  if (pocketSize < config.minPocketSize) {
-    reasons.push(`pocket: largest is ${pocketSize} < ${config.minPocketSize}`);
+  if (!hasStrongPromise) {
+    reasons.push('promise: no MEDIUM/STRONG promise on an open seam');
   }
   if (symmetryOffset < config.symmetryRejectThreshold) {
     reasons.push(
@@ -139,9 +138,10 @@ export function validateWorld(
     hexCount: world.map.tiles.length,
     branchCount: world.openSeams.length,
     chokepointCount: world.placedSections.filter((p) => p.tags.includes('CHOKEPOINT')).length,
-    openAreaSize,
-    pocketSize,
+    openAreaSize: largestSectionSizeWithTag(world, 'OPEN_AREA'),
+    pocketSize: largestSectionSizeWithTag(world, 'POCKET'),
     symmetryOffset,
+    promiseCount: promises.length,
   };
 
   const checks = 6;

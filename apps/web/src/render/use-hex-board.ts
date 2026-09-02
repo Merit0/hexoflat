@@ -20,6 +20,11 @@ import {
   type CombatMarkerLayer,
 } from '@/render/layers/combat-marker-layer';
 import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
+import {
+  createFrontierPromiseLayer,
+  type FrontierPromiseEntry,
+  type FrontierPromiseLayer,
+} from '@/render/layers/frontier-promise-layer';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 
@@ -50,6 +55,7 @@ export interface UseHexBoardOptions {
     active: ComputedRef<boolean>;
     label: ComputedRef<string>;
   };
+  frontierPromises: ComputedRef<FrontierPromiseEntry[]>;
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
   /**
@@ -97,6 +103,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
   let enemyVisionLayer: EnemyVisionLayer | null = null;
   let combatMarkerLayer: CombatMarkerLayer | null = null;
   let campHealLayer: CampHealLayer | null = null;
+  let frontierPromiseLayer: FrontierPromiseLayer | null = null;
   let stopWatchers: Array<() => void> = [];
   let cancelled = false;
 
@@ -144,6 +151,11 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     });
 
     campHealLayer = createCampHealLayer({
+      worldContainer: board.worldContainer,
+      getTileSize: () => opts.domTileSize.value,
+    });
+
+    frontierPromiseLayer = createFrontierPromiseLayer({
       worldContainer: board.worldContainer,
       getTileSize: () => opts.domTileSize.value,
     });
@@ -253,6 +265,14 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       ),
     );
 
+    stopWatchers.push(
+      watch(
+        [opts.frontierPromises, opts.domTileSize],
+        () => frontierPromiseLayer?.sync(opts.frontierPromises.value),
+        { immediate: true, deep: true },
+      ),
+    );
+
     // Registered after every layer's `immediate: true` watcher has already
     // run, so the frame this waits on is a fully populated one.
     board.onFirstFramePresented(() => {
@@ -271,6 +291,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     enemyVisionLayer?.destroy();
     combatMarkerLayer?.destroy();
     campHealLayer?.destroy();
+    frontierPromiseLayer?.destroy();
     board?.destroy();
     board = null;
     tilesLayer = null;
@@ -278,6 +299,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     movePreviewLayer = null;
     enemyVisionLayer = null;
     combatMarkerLayer = null;
+    frontierPromiseLayer = null;
     campHealLayer = null;
   });
 }

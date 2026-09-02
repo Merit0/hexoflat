@@ -64,6 +64,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { useHexBoard } from '@/render/use-hex-board';
+import type { FrontierPromiseEntry } from '@/render/layers/frontier-promise-layer';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useTileClick } from '@/composables/use-tile-click';
@@ -168,6 +169,15 @@ const visibleTiles = computed(() =>
 const tilesDirtyTick = computed(() => worldStore.dirtyTick);
 const activeTool = computed(() => heroToolStore.activeTool);
 
+const frontierPromises = computed<FrontierPromiseEntry[]>(() =>
+  (worldStore.worldDescriptor?.promises ?? []).map((p) => ({
+    key: p.id,
+    coord: getOddQNeighbors(p.seam.coord)[p.seam.dir],
+    strength: p.strength,
+  })),
+);
+const promiseCoords = computed(() => frontierPromises.value.map((p) => p.coord));
+
 function handleTileHover(tile: IHexTile) {
   hoveredTileCoord.value = tile.coordinates;
   if (heroToolStore.isDragging) {
@@ -179,7 +189,7 @@ const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
 
 const { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale } =
-  useHexBoardSizing(allTiles);
+  useHexBoardSizing(allTiles, promiseCoords);
 const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
@@ -323,6 +333,7 @@ useHexBoard({
     active: isCampfireHealActive,
     label: campHealInfoLabel,
   },
+  frontierPromises,
   onTileHover: handleTileHover,
   onTileClick: (tile) => {
     void handleTileClick(tile);

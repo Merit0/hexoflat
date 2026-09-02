@@ -37,9 +37,8 @@ export class MapRegistry {
     silesia: {
       key: 'silesia',
       title: 'Silesia',
-      create: (seed?: string) =>
-        generateWorldMap({ seed: seed ?? crypto.randomUUID(), archetype: 'FORKED_FRONTIER' }).map,
-      generate: (seed: string, archetype: TWorldArchetypeKey = 'FORKED_FRONTIER') =>
+      create: (seed?: string) => generateWorldMap({ seed: seed ?? crypto.randomUUID() }).map,
+      generate: (seed: string, archetype?: TWorldArchetypeKey) =>
         generateWorldMap({ seed, archetype }),
       entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
       safeZoneRadius: 1,

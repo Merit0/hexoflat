@@ -29,14 +29,32 @@ export const WORLD_ARCHETYPE_KEYS = [
   'LANDMARK_PULL',
 ] as const;
 
+export const WORLD_PROMISE_TYPES = [
+  'LANDMARK_SILHOUETTE',
+  'STONE_FORMATION',
+  'VEGETATION_SIGNAL',
+  'GLOW',
+  'SMOKE',
+  'OLD_PATH',
+  'STREAM',
+  'OBELISK_FRAGMENT',
+  'FRACTURE_SIGNAL',
+] as const;
+
+export const WORLD_PROMISE_STRENGTHS = ['SUBTLE', 'MEDIUM', 'STRONG'] as const;
+
 export type TWorldTerrainKey = (typeof WORLD_TERRAIN_KEYS)[number];
 export type TWorldSectionTag = (typeof WORLD_SECTION_TAGS)[number];
 export type TWorldTraversability = (typeof WORLD_TRAVERSABILITIES)[number];
 export type TWorldArchetypeKey = (typeof WORLD_ARCHETYPE_KEYS)[number];
+export type TWorldPromiseType = (typeof WORLD_PROMISE_TYPES)[number];
+export type TWorldPromiseStrength = (typeof WORLD_PROMISE_STRENGTHS)[number];
 
 export const WorldTerrainKeySchema = z.enum(WORLD_TERRAIN_KEYS);
 export const WorldSectionTagSchema = z.enum(WORLD_SECTION_TAGS);
 export const WorldArchetypeKeySchema = z.enum(WORLD_ARCHETYPE_KEYS);
+export const WorldPromiseTypeSchema = z.enum(WORLD_PROMISE_TYPES);
+export const WorldPromiseStrengthSchema = z.enum(WORLD_PROMISE_STRENGTHS);
 
 export const WorldTerrainDefSchema = z.object({
   traversability: z.enum(WORLD_TRAVERSABILITIES),
@@ -69,8 +87,21 @@ export const WorldArchetypeDefSchema = z.object({
   weight: z.number().positive(),
 });
 
+export const WorldSeamRefSchema = z.object({
+  coord: z.object({ columnIndex: z.number().int(), rowIndex: z.number().int() }),
+  dir: z.number().int().min(0).max(5),
+});
+
+export const WorldPromiseSchema = z.object({
+  id: z.string().min(1),
+  type: WorldPromiseTypeSchema,
+  strength: WorldPromiseStrengthSchema,
+  seam: WorldSeamRefSchema,
+});
+
 export type WorldTerrainDef = z.infer<typeof WorldTerrainDefSchema>;
 export type WorldSectionHex = z.infer<typeof WorldSectionHexSchema>;
 export type WorldSectionSeam = z.infer<typeof WorldSectionSeamSchema>;
 export type WorldSectionDef = z.infer<typeof WorldSectionDefSchema>;
 export type WorldArchetypeDef = z.infer<typeof WorldArchetypeDefSchema>;
+export type FrontierPromise = z.infer<typeof WorldPromiseSchema>;

@@ -382,7 +382,7 @@ framing or e2e tests. One commit for this phase. Ask before committing.
 
 ---
 
-### Фаза M4 — Решта архетипів, Frontier Promises, кадрування камери
+### Фаза M4 — Решта архетипів, Frontier Promises, кадрування камери [DONE — 2026-09-02]
 
 **Мета.** Повний набір v0.1 §9 і те, заради чого все робиться — цікавість до країв карти.
 
@@ -397,6 +397,19 @@ framing or e2e tests. One commit for this phase. Ask before committing.
 **Чого НЕ робити.** Жодної логіки взаємодії, жодного руху, жодного контенту квестів. Anchors — це порожні слоти.
 
 **Критерій приймання.** Усі 4 архетипи дають валідні карти; кожна прийнята карта має ≥1 promise сили `MEDIUM`/`STRONG`; тест «promise завжди на відкритому шві»; тест «у кожного interaction-anchor є прохідний сусід»; детермінізм зберігається; ESLint зелений.
+
+**Як реалізовано.**
+
+- **Архетипи** — 4 записи в `world-archetypes.content.ts` як дані (`requiredTags` + `weight`), нового коду в генераторі нема. `silesia` не форсує архетип: `generateWorldMap` при відсутньому `archetype` робить `pickArchetype(seed, archetypeWeights)` — детермінований зважений вибір через `deriveStream(seed, 'archetype')`. `versionId` містить обраний архетип. Перевірено: усі 4 архетипи accepted для ≥3/5 сидів; 12 `nextSeed()` у браузері покрили всі 4.
+- **Промиси** — enum типів/сили в `content/world-section-schema.ts` (`WorldPromiseSchema`), розміщення в `generators/world-map-promises.ts` (`deriveStream(seed, 'promises')`). Шви сортуються за hex-відстанню від якоря кемпу спадно; найдальший бере найсильніший промис (STRONG/MEDIUM), решта SUBTLE (з максимум одним MEDIUM). Тип — з strength-gated пулів. Кількість у `[requiredPromises, min(maxPromises, seams)]`. Гарантія ≥1 не-SUBTLE.
+- **Валідатор** — сигнатура стала `validateWorld({ world, campAnchor, config, requiredTags, promises })`. 6 інваріантів: зв'язність, покриття `requiredTags` (тепер архетип-залежне, не фіксований набір!), гілки, **promise (≥1 не-SUBTLE)** — повернуто справжню §1.8 #4 замість M3-заглушки, асиметрія, відсутність замикання. `openAreaSize`/`pocketSize` лишились метриками.
+- **Gameplay Anchors** — `generators/world-map-anchors.ts`, `reserveAnchors(world, promises, seed)`, максимум по 1 слоту кожного виду, тільки коли є валідний гекс. Interaction-слоти (`TERRAIN_INTERACTION`/`RESOURCE_HINT`/`SIDE_INTEREST`) — лише на гексах з ≥1 прохідним сусідом (за побудовою + тест `interactionAnchorsHavePassableNeighbour`). Anchors — чисті дані в дескрипторі, нічого не ставиться на карту.
+- **`WorldMapMvpResult`** отримав `promises` і `anchors`. Пайплайн спроби: assemble → decorate → placePromises → reserveAnchors → validate.
+- **Рендер промисів** — новий шар `render/layers/frontier-promise-layer.ts` (за зразком `enemy-vision-layer`), мультимаркер. Позиція = `getOddQNeighbors(seam.coord)[seam.dir]` — гекс у Deep Unknown за ghost-фронтиром. М'який світний диск, alpha за силою (0.28/0.45/0.62). Без тексту/стрілок/знаків оклику. Підключено в `use-hex-board.ts` + `hex-world-map.vue`.
+- **Камера (мінімально)** — `useHexBoardSizing(tiles, extraPoints?)`: promise-позиції вкладаються в bounding box `mapBounds` + `FRAME_PAD` (0.6 тайла) відступу, щоб завжди був темний бордюр. `scale` (cap 1.1) не чіпано. `create-test-api` не зачеплено (e2e — тільки camping, без промисів).
+- **Переживання reload** — весь `WorldDescriptor` (seed/archetype/versionId/validation/promises/anchors) серіалізується в `TWorldState.worldDescriptor` (замість M3-`worldArchetype`); `loadFromStorage` відновлює його одним рядком. Промиси малюються після перезавантаження. Перевірено round-trip у браузері.
+- **`CONTENT_VERSION` не бампнуто** — нова категорія контенту (promise-enum), поля дескриптора адитивні, у карту-блоб нічого нового не серіалізується.
+- **Візуально перевірено в dev:** усі 4 архетипи рендеряться прийнятими; промиси — тьмяні силуети в темряві за фронтиром; ≥1 сильний завжди; камера тримає промис у кадрі з відступом; жодних нових помилок у консолі.
 
 **Старт чату:**
 

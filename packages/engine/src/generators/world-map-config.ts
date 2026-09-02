@@ -7,6 +7,8 @@ export interface WorldMapMvpConfig {
   minPocketSize: number;
   maxSeedAttempts: number;
   symmetryRejectThreshold: number;
+  requiredPromises: number;
+  maxPromises: number;
   archetypeWeights: Partial<Record<TWorldArchetypeKey, number>>;
 }
 
@@ -17,5 +19,12 @@ export const DEFAULT_WORLD_MAP_CONFIG: WorldMapMvpConfig = {
   minPocketSize: 3,
   maxSeedAttempts: 20,
   symmetryRejectThreshold: 1.5,
-  archetypeWeights: { FORKED_FRONTIER: 1 },
+  requiredPromises: 1,
+  maxPromises: 3,
+  archetypeWeights: {
+    FORKED_FRONTIER: 3,
+    RIDGE_AND_POCKET: 2,
+    OPEN_FIELD_NARROW_PASS: 2,
+    LANDMARK_PULL: 1,
+  },
 };
