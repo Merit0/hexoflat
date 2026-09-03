@@ -196,12 +196,12 @@ describe('useWorldMapStore', () => {
       expect(dirty.size).toBe(map.tiles.length);
     });
 
-    it('revealAroundHero only marks the hero tile and its neighbors dirty, not the whole map', () => {
+    it('revealAroundHero marks only the visible area dirty, not the whole map', () => {
       const worldStore = useWorldMapStore();
-      const map = new HexMapBuilder().name('dirty-test-5').width(6).height(6).build();
+      const map = new HexMapBuilder().name('dirty-test-5').width(13).height(13).build();
       for (const tile of map.tiles) tile.isRevealed = false;
       worldStore.map = map;
-      useHeroStore().heroCoordinates = { columnIndex: 2, rowIndex: 2 };
+      useHeroStore().heroCoordinates = { columnIndex: 6, rowIndex: 6 };
 
       worldStore.revealAroundHero();
       const dirty = worldStore.consumeDirtyTileIds();

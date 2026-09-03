@@ -6,14 +6,8 @@ import { getTexture, onTextureReady } from '@/render/texture-cache';
 
 const HERO_SPRITE_URL = '/hero-asssets/spirit-hex-image.png';
 
-// Mirrors the DOM version's `.hero-hex-tile { transition: transform 180ms ease-out }`,
-// which smoothed hero movement between tiles for free via CSS. Pixi has no
-// equivalent, so this replicates it with a small position tween.
-const MOVE_DURATION_MS = 180;
-
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
+const SMOOTH_TAU_MS = 78;
+const SETTLE_PX = 0.15;
 
 export interface HeroLayerDeps {
   worldContainer: Container;
@@ -46,6 +40,9 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
 
   let lastCoordKey: string | null = null;
   let tickerHandler: (() => void) | null = null;
+  let targetX = 0;
+  let targetY = 0;
+  let lastFrameMs = 0;
 
   function stopTween() {
     if (tickerHandler) {
@@ -54,17 +51,23 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
     }
   }
 
-  function tweenTo(targetX: number, targetY: number) {
-    stopTween();
-    const fromX = root.x;
-    const fromY = root.y;
-    const start = performance.now();
+  function easeToward(x: number, y: number) {
+    targetX = x;
+    targetY = y;
+    if (tickerHandler) return;
 
+    lastFrameMs = performance.now();
     tickerHandler = () => {
-      const t = Math.min(1, (performance.now() - start) / MOVE_DURATION_MS);
-      const eased = easeOutCubic(t);
-      root.position.set(fromX + (targetX - fromX) * eased, fromY + (targetY - fromY) * eased);
-      if (t >= 1) stopTween();
+      const now = performance.now();
+      const dt = Math.min(64, now - lastFrameMs);
+      lastFrameMs = now;
+      const k = 1 - Math.exp(-dt / SMOOTH_TAU_MS);
+      root.position.set(root.x + (targetX - root.x) * k, root.y + (targetY - root.y) * k);
+
+      if (Math.abs(targetX - root.x) < SETTLE_PX && Math.abs(targetY - root.y) < SETTLE_PX) {
+        root.position.set(targetX, targetY);
+        stopTween();
+      }
     };
     Ticker.shared.add(tickerHandler);
   }
@@ -88,7 +91,7 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
     lastCoordKey = key;
 
     if (wasVisible && isNewTile) {
-      tweenTo(x, y);
+      easeToward(x, y);
     } else {
       stopTween();
       root.position.set(x, y);

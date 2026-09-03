@@ -4,20 +4,21 @@ import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-c
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 
 const BLEED = 2;
-const FRAME_PAD = 0.6;
+const SMOOTH_TAU_MS = 95;
+const SETTLE_PX = 0.1;
 
 /**
- * DOM-probe tile sizing and scale-to-fit for the hex board: measures a
- * hidden probe element for the actual rendered tile size (CSS drives this,
- * not JS), derives the map's pixel bounds from that, and scales the whole
- * board to fit its own container — the `.hex-map` pane, measured via
- * ResizeObserver rather than `window.innerWidth`/`innerHeight`, since the
- * map only ever occupies a fraction of the viewport (the desktop 70/30
- * split from use-game-layout.ts).
+ * DOM-probe tile sizing and a fixed-zoom hero-follow camera for the hex
+ * board. The tile size comes from a hidden probe element (CSS drives it, not
+ * JS) and never changes with the map — the board renders at scale 1 and the
+ * camera continuously eases toward the hero's centred position with a
+ * frame-rate-independent exponential smooth, so multi-step movement glides
+ * instead of stepping.
  */
 export function useHexBoardSizing(
   tiles: ComputedRef<IHexTile[]>,
   extraPoints?: ComputedRef<IHexCoordinates[]>,
+  heroCoord?: ComputedRef<IHexCoordinates | null>,
 ) {
   const probeRef = ref<HTMLElement | null>(null);
   const containerRef = ref<HTMLElement | null>(null);
@@ -25,6 +26,10 @@ export function useHexBoardSizing(
   const domTileH = ref(0);
   const containerWidth = ref(0);
   const containerHeight = ref(0);
+
+  const reduceMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   function readDomTileSize() {
     const el = probeRef.value;
@@ -52,16 +57,15 @@ export function useHexBoardSizing(
       return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
     }
 
-    let minX = Infinity,
-      minY = Infinity;
-    let maxX = -Infinity,
-      maxY = -Infinity;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
 
     const points = [...tiles.value.map((t) => t.coordinates), ...(extraPoints?.value ?? [])];
 
     for (const coordinates of points) {
       const { x, y } = calcHexPixelPosition({ coordinates }, w, h);
-
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x + w);
@@ -72,50 +76,104 @@ export function useHexBoardSizing(
       return { width: 0, height: 0, offsetX: 0, offsetY: 0 };
     }
 
-    const margin = BLEED * 2 + (extraPoints?.value.length ? Math.min(w, h) * FRAME_PAD : 0);
-
     return {
-      width: maxX - minX + margin * 2,
-      height: maxY - minY + margin * 2,
-      offsetX: minX - margin,
-      offsetY: minY - margin,
+      width: maxX - minX + BLEED * 2,
+      height: maxY - minY + BLEED * 2,
+      offsetX: minX - BLEED,
+      offsetY: minY - BLEED,
     };
   });
 
   const scale = ref(1);
 
-  function updateScale() {
+  const cameraTarget = computed(() => {
     const b = mapBounds.value;
-    if (!b.width || !b.height) return;
-    if (!containerWidth.value || !containerHeight.value) return;
+    const w = domTileW.value || 0;
+    const h = domTileH.value || 0;
+    const cw = containerWidth.value;
+    const ch = containerHeight.value;
+    if (!b.width || !b.height || !cw || !ch) return null;
 
-    const padding = 40;
-    const sx = (containerWidth.value - padding) / b.width;
-    const sy = (containerHeight.value - padding) / b.height;
+    let focusX = b.width / 2;
+    let focusY = b.height / 2;
 
-    scale.value = Math.min(sx, sy, 1.1);
+    const coord = heroCoord?.value;
+    if (coord && w && h) {
+      const { x, y } = calcHexPixelPosition({ coordinates: coord }, w, h);
+      focusX = x + w / 2 - b.offsetX;
+      focusY = y + h / 2 - b.offsetY;
+    }
+
+    return {
+      x: cw / 2 - focusX * scale.value,
+      y: ch / 2 - focusY * scale.value,
+    };
+  });
+
+  const cameraRender = ref({ x: 0, y: 0 });
+  const cameraOffset = computed(() => ({
+    x: cameraRender.value.x,
+    y: cameraRender.value.y,
+  }));
+
+  let started = false;
+  let rafId: number | null = null;
+  let lastFrame = 0;
+
+  function snapCamera() {
+    const target = cameraTarget.value;
+    if (!target) return;
+    cameraRender.value = { x: target.x, y: target.y };
+    started = true;
   }
+
+  function tick(now: number) {
+    rafId = null;
+    const target = cameraTarget.value;
+    if (!target) return;
+
+    if (!started || reduceMotion) {
+      cameraRender.value = { x: target.x, y: target.y };
+      started = true;
+      return;
+    }
+
+    const dt = lastFrame ? Math.min(64, now - lastFrame) : 16;
+    lastFrame = now;
+    const k = 1 - Math.exp(-dt / SMOOTH_TAU_MS);
+    const cur = cameraRender.value;
+    const nx = cur.x + (target.x - cur.x) * k;
+    const ny = cur.y + (target.y - cur.y) * k;
+
+    if (Math.abs(target.x - nx) < SETTLE_PX && Math.abs(target.y - ny) < SETTLE_PX) {
+      cameraRender.value = { x: target.x, y: target.y };
+      return;
+    }
+
+    cameraRender.value = { x: nx, y: ny };
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function wake() {
+    if (rafId != null) return;
+    lastFrame = 0;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  watch(cameraTarget, wake, { deep: true });
 
   let probeResizeObserver: ResizeObserver | null = null;
   let containerResizeObserver: ResizeObserver | null = null;
   let sizeFallbackTimer: number | null = null;
 
-  watch(mapBounds, updateScale, { immediate: true });
-
   onMounted(() => {
     if (probeRef.value) {
-      probeResizeObserver = new ResizeObserver(() => {
-        readDomTileSize();
-        updateScale();
-      });
+      probeResizeObserver = new ResizeObserver(() => readDomTileSize());
       probeResizeObserver.observe(probeRef.value);
     }
 
     if (containerRef.value) {
-      containerResizeObserver = new ResizeObserver(() => {
-        readContainerSize();
-        updateScale();
-      });
+      containerResizeObserver = new ResizeObserver(() => readContainerSize());
       containerResizeObserver.observe(containerRef.value);
     }
 
@@ -129,8 +187,9 @@ export function useHexBoardSizing(
       }
       readDomTileSize();
       readContainerSize();
-      updateScale();
     }, 100);
+
+    wake();
   });
 
   onBeforeUnmount(() => {
@@ -142,7 +201,21 @@ export function useHexBoardSizing(
       window.clearInterval(sizeFallbackTimer);
       sizeFallbackTimer = null;
     }
+    if (rafId != null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
   });
 
-  return { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale };
+  return {
+    probeRef,
+    containerRef,
+    domTileW,
+    domTileH,
+    domTileSize,
+    mapBounds,
+    scale,
+    cameraOffset,
+    snapCamera,
+  };
 }

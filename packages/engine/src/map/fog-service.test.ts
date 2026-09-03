@@ -43,14 +43,15 @@ describe('initFog', () => {
 });
 
 describe('revealAroundHero', () => {
-  it('reveals the hero tile and its neighbours, and nothing else', () => {
-    const map = buildMap();
-    const hero = { columnIndex: 2, rowIndex: 2 };
+  it('reveals a connected area around the hero, not the whole map', () => {
+    const map = buildMap(13, 13);
+    const hero = { columnIndex: 6, rowIndex: 6 };
 
     const revealed = revealAroundHero(map, hero);
 
     const revealedKeys = new Set(revealed.map(coordinateKey));
     expect(revealedKeys.has(coordinateKey(hero))).toBe(true);
+    expect(revealed.length).toBeGreaterThan(7);
     expect(revealed.length).toBeLessThan(map.tiles.length);
     for (const tile of map.tiles) {
       expect(tile.isRevealed).toBe(revealedKeys.has(coordinateKey(tile.coordinates)));
@@ -58,10 +59,10 @@ describe('revealAroundHero', () => {
   });
 
   it('only reports tiles that exist, so a corner hero reveals fewer', () => {
-    const map = buildMap();
+    const map = buildMap(13, 13);
 
     const corner = revealAroundHero(map, { columnIndex: 0, rowIndex: 0 });
-    const middle = revealAroundHero(map, { columnIndex: 2, rowIndex: 2 });
+    const middle = revealAroundHero(map, { columnIndex: 6, rowIndex: 6 });
 
     expect(corner.length).toBeLessThan(middle.length);
   });
@@ -156,8 +157,8 @@ describe('getTileVisibility', () => {
   });
 
   it('is GHOST_FRONTIER for a hidden tile next to a revealed one', () => {
-    const map = buildMap();
-    revealAroundHero(map, { columnIndex: 2, rowIndex: 2 });
+    const map = buildMap(13, 13);
+    revealAroundHero(map, { columnIndex: 6, rowIndex: 6 });
 
     const ghost = map.tiles.find(
       (t) => !t.isRevealed && getTileVisibility(map, t) === 'GHOST_FRONTIER',

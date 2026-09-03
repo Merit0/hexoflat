@@ -12,13 +12,16 @@ export const WORLD_TERRAIN_KEYS = [
 
 export const WORLD_SECTION_TAGS = [
   'CAMP_ANCHOR',
-  'BRANCH',
-  'OPEN_AREA',
-  'CHOKEPOINT',
+  'OPEN_FIELD',
+  'WOODED',
+  'BROKEN',
+  'RIDGE_FIELD',
   'POCKET',
-  'BARRIER',
-  'FRONTIER',
+  'FRONTIER_FIELD',
+  'LINK',
 ] as const;
+
+export const WORLD_SECTION_CLASSES = ['AREA', 'LINK'] as const;
 
 export const WORLD_TRAVERSABILITIES = ['OPEN', 'BLOCKED', 'RESERVED_INTERACTION'] as const;
 
@@ -45,6 +48,7 @@ export const WORLD_PROMISE_STRENGTHS = ['SUBTLE', 'MEDIUM', 'STRONG'] as const;
 
 export type TWorldTerrainKey = (typeof WORLD_TERRAIN_KEYS)[number];
 export type TWorldSectionTag = (typeof WORLD_SECTION_TAGS)[number];
+export type TWorldSectionClass = (typeof WORLD_SECTION_CLASSES)[number];
 export type TWorldTraversability = (typeof WORLD_TRAVERSABILITIES)[number];
 export type TWorldArchetypeKey = (typeof WORLD_ARCHETYPE_KEYS)[number];
 export type TWorldPromiseType = (typeof WORLD_PROMISE_TYPES)[number];
@@ -72,10 +76,13 @@ export const WorldSectionSeamSchema = z.object({
   dir: z.number().int().min(0).max(5),
 });
 
+export const WorldSectionClassSchema = z.enum(WORLD_SECTION_CLASSES);
+
 export const WorldSectionDefSchema = z.object({
   key: z.string().min(1),
+  class: WorldSectionClassSchema,
   tags: z.array(WorldSectionTagSchema).nonempty(),
-  hexes: z.array(WorldSectionHexSchema).min(4).max(9),
+  hexes: z.array(WorldSectionHexSchema).min(1).max(24),
   seams: z.array(WorldSectionSeamSchema).min(1),
   allowRotation: z.boolean(),
   weight: z.number().positive(),
@@ -100,6 +107,7 @@ export const WorldPromiseSchema = z.object({
 });
 
 export type WorldTerrainDef = z.infer<typeof WorldTerrainDefSchema>;
+export type WorldSectionClass = z.infer<typeof WorldSectionClassSchema>;
 export type WorldSectionHex = z.infer<typeof WorldSectionHexSchema>;
 export type WorldSectionSeam = z.infer<typeof WorldSectionSeamSchema>;
 export type WorldSectionDef = z.infer<typeof WorldSectionDefSchema>;

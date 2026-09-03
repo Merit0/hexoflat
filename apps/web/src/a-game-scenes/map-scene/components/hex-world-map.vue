@@ -23,7 +23,12 @@
         </button>
       </div>
       <div ref="containerRef" class="hex-map" data-testid="hex-map">
-        <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
+        <div
+          class="hex-map-wrapper"
+          :style="{
+            transform: `translate(${cameraOffset.x.toFixed(2)}px, ${cameraOffset.y.toFixed(2)}px) scale(${scale})`,
+          }"
+        >
           <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
 
           <div
@@ -199,9 +204,24 @@ function handleTileHover(tile: IHexTile) {
 
 const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
+const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
 
-const { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale } =
-  useHexBoardSizing(allTiles, promiseCoords);
+const {
+  probeRef,
+  containerRef,
+  domTileW,
+  domTileH,
+  domTileSize,
+  mapBounds,
+  scale,
+  cameraOffset,
+  snapCamera,
+} = useHexBoardSizing(allTiles, promiseCoords, heroCoordinatesComputed);
+
+watch(
+  () => worldStore.currentMapId,
+  () => requestAnimationFrame(snapCamera),
+);
 const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
@@ -326,8 +346,6 @@ watch(
   },
   { immediate: true },
 );
-
-const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
 
 useHexBoard({
   canvasRef: boardCanvasRef,
@@ -454,8 +472,7 @@ onBeforeUnmount(() => {
 }
 
 .hex-map {
-  display: grid;
-  place-items: center;
+  position: relative;
   width: 100%;
   height: 100%;
 
@@ -468,10 +485,13 @@ onBeforeUnmount(() => {
 }
 
 .hex-map-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: max-content;
   height: max-content;
-  transform-origin: center center;
-  position: relative;
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
 .hex-probe {

@@ -116,7 +116,11 @@ function buildAttempt(
     seed,
     sections: WORLD_SECTIONS,
     requiredTags,
-    maxSections: requiredTags.length + 1,
+    maxSections: 24,
+    targetHexes: config.growTargetHexes,
+    maxHexes: config.knownHexMax,
+    targetLoops: config.targetLoops,
+    minAreas: 4,
   });
   const campAnchor = decorate(world);
   const heroSpawn =

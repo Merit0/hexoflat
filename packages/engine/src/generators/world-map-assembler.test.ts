@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
 import { WORLD_SECTIONS } from '../content/world-sections.content';
+import type { TWorldSectionTag } from '../content/world-section-schema';
 import { assembleWorld, type AssembledWorld } from './world-map-assembler';
 
-function assemble(seed: string, maxSections = 6): AssembledWorld {
-  return assembleWorld({ seed, sections: WORLD_SECTIONS, maxSections });
+function assemble(seed: string, over: Partial<Parameters<typeof assembleWorld>[0]> = {}) {
+  return assembleWorld({
+    seed,
+    sections: WORLD_SECTIONS,
+    maxSections: 24,
+    targetHexes: 45,
+    maxHexes: 80,
+    targetLoops: 2,
+    ...over,
+  });
 }
 
 function serialize(world: AssembledWorld) {
@@ -13,6 +22,8 @@ function serialize(world: AssembledWorld) {
     placedSections: world.placedSections,
     openSeams: world.openSeams,
     terrainByCoord: world.terrainByCoord,
+    sectionGraph: world.sectionGraph,
+    loopsClosed: world.loopsClosed,
   });
 }
 
@@ -71,15 +82,38 @@ describe('assembleWorld', () => {
     },
   );
 
-  it('starts from the camp anchor section', () => {
+  it('starts from the camp anchor area', () => {
     const world = assemble('anchor');
-    expect(world.placedSections[0].key).toBe('camp-anchor');
+    expect(world.placedSections[0].key).toBe('camp-field');
+    expect(world.placedSections[0].class).toBe('AREA');
     expect(world.placedSections.length).toBeGreaterThan(1);
   });
 
-  it('lays more than just the start section', () => {
-    const world = assemble('growth', 5);
-    expect(world.map.tiles.length).toBeGreaterThan(5);
+  it('reaches a board-sized hex count', () => {
+    const world = assemble('growth');
+    expect(world.map.tiles.length).toBeGreaterThanOrEqual(60);
+    expect(world.map.tiles.length).toBeLessThanOrEqual(130);
+  });
+
+  it('never joins AREA to AREA or LINK to LINK directly', () => {
+    for (const seed of ['g1', 'g2', 'g3', 'g4', 'g5']) {
+      const world = assemble(seed);
+      for (const [a, b] of world.sectionGraph.edges) {
+        const nodeA = world.sectionGraph.nodes.find((n) => n.id === a);
+        const nodeB = world.sectionGraph.nodes.find((n) => n.id === b);
+        if (nodeA && nodeB) {
+          expect(
+            nodeA.class !== nodeB.class,
+            `${seed}: ${nodeA.key}(${nodeA.class}) joined to ${nodeB.key}(${nodeB.class})`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('closes at least two loops on most seeds', () => {
+    const closed = ['l1', 'l2', 'l3', 'l4', 'l5'].map((s) => assemble(s).loopsClosed);
+    expect(closed.filter((c) => c >= 2).length).toBeGreaterThanOrEqual(3);
   });
 
   it('terrainByCoord has an entry for every tile and nothing else', () => {
@@ -88,37 +122,29 @@ describe('assembleWorld', () => {
     expect(Object.keys(terrainByCoord).sort()).toEqual([...tileKeys].sort());
   });
 
-  it('does not loop or throw when maxSections exceeds what the deck can place', () => {
-    const world = assembleWorld({ seed: 'x', sections: WORLD_SECTIONS, maxSections: 999 });
-    expect(world.placedSections.length).toBeLessThanOrEqual(WORLD_SECTIONS.length);
+  it('does not loop or throw when maxSections is very large', () => {
+    const world = assemble('x', { maxSections: 999 });
     expect(world.map.tiles.length).toBeGreaterThan(0);
+    expect(world.map.tiles.length).toBeLessThanOrEqual(150);
   });
 
-  it('places sections carrying the recipe tags when requiredTags is given', () => {
-    const requiredTags = ['BRANCH', 'OPEN_AREA', 'CHOKEPOINT', 'POCKET'] as const;
-    const world = assembleWorld({
-      seed: 'recipe',
-      sections: WORLD_SECTIONS,
-      requiredTags: [...requiredTags],
-      maxSections: requiredTags.length + 1,
-    });
+  it('places areas carrying the recipe tags when requiredTags is given', () => {
+    const requiredTags: TWorldSectionTag[] = ['OPEN_FIELD', 'RIDGE_FIELD', 'FRONTIER_FIELD'];
+    const world = assemble('recipe', { requiredTags: [...requiredTags] });
 
-    const tagOf = (key: string) => WORLD_SECTIONS.find((s) => s.key === key)!.tags;
-    const placedTags = new Set(world.placedSections.flatMap((p) => tagOf(p.key)));
-
-    expect(world.placedSections[0].key).toBe('camp-anchor');
+    const placedTags = new Set(world.placedSections.flatMap((p) => p.tags));
+    expect(world.placedSections[0].key).toBe('camp-field');
     for (const tag of requiredTags) {
       expect(placedTags.has(tag), `recipe tag "${tag}" not placed`).toBe(true);
     }
   });
 
   it('is deterministic with a recipe', () => {
-    const input: Parameters<typeof assembleWorld>[0] = {
-      seed: 'recipe-det',
-      sections: WORLD_SECTIONS,
-      requiredTags: ['BRANCH', 'OPEN_AREA', 'CHOKEPOINT', 'POCKET'],
-      maxSections: 5,
+    const over = {
+      requiredTags: ['OPEN_FIELD', 'RIDGE_FIELD', 'FRONTIER_FIELD'] as TWorldSectionTag[],
     };
-    expect(serialize(assembleWorld(input))).toEqual(serialize(assembleWorld(input)));
+    expect(serialize(assemble('recipe-det', over))).toEqual(
+      serialize(assemble('recipe-det', over)),
+    );
   });
 });

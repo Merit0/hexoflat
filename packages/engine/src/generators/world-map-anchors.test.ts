@@ -13,8 +13,11 @@ function build(seed: string) {
   const world = assembleWorld({
     seed,
     sections: WORLD_SECTIONS,
-    requiredTags: ['BRANCH', 'OPEN_AREA', 'CHOKEPOINT', 'POCKET'],
-    maxSections: 5,
+    requiredTags: ['OPEN_FIELD', 'RIDGE_FIELD', 'FRONTIER_FIELD'],
+    maxSections: 24,
+    targetHexes: DEFAULT_WORLD_MAP_CONFIG.growTargetHexes,
+    maxHexes: DEFAULT_WORLD_MAP_CONFIG.knownHexMax,
+    minAreas: 4,
   });
   const campAnchor = world.placedSections[0].anchor;
   const promises = placePromises(world.openSeams, campAnchor, seed, DEFAULT_WORLD_MAP_CONFIG);

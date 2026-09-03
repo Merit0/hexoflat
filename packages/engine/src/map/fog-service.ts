@@ -2,7 +2,10 @@ import type HexMapModel from './models/hex-map-model';
 import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
+import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
+
+const HERO_SIGHT_RADIUS = 3;
 
 /**
  * Fog of war: which tiles the hero can see.
@@ -55,19 +58,34 @@ export function initFog(map: HexMapModel): IHexCoordinates[] {
   return map.tiles.map((tile) => tile.coordinates);
 }
 
-/** Reveals the hero's own tile plus its six neighbours. */
 export function revealAroundHero(
   map: HexMapModel,
   heroCoordinates: IHexCoordinates,
 ): IHexCoordinates[] {
   const byKey = indexByCoordinate(map);
   const revealedCoords: IHexCoordinates[] = [];
+  const seen = new Set<string>([coordinateKey(heroCoordinates)]);
+  const queue: { coord: IHexCoordinates; dist: number }[] = [{ coord: heroCoordinates, dist: 0 }];
 
-  for (const coord of [heroCoordinates, ...getOddQNeighbors(heroCoordinates)]) {
+  while (queue.length) {
+    const { coord, dist } = queue.shift() as { coord: IHexCoordinates; dist: number };
     const tile = byKey.get(coordinateKey(coord));
     if (!tile) continue;
-    tile.isRevealed = true;
-    revealedCoords.push(tile.coordinates);
+
+    if (!tile.isRevealed) {
+      tile.isRevealed = true;
+      revealedCoords.push(tile.coordinates);
+    }
+
+    const blocked = tile.hexobject?.collision === EHexCollision.SOLID;
+    if (dist >= HERO_SIGHT_RADIUS || (blocked && dist > 0)) continue;
+
+    for (const n of getOddQNeighbors(coord)) {
+      const k = coordinateKey(n);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      queue.push({ coord: n, dist: dist + 1 });
+    }
   }
 
   return revealedCoords;

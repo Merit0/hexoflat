@@ -4,27 +4,30 @@
     "seed": "worldmap-sample:FORKED_FRONTIER:1:0",
     "archetype": "FORKED_FRONTIER",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 0,
-    "hexCount": 26,
-    "branchCount": 4,
-    "chokepointCount": 1,
-    "openAreaSize": 6,
-    "pocketSize": 5,
+    "score": 12,
+    "rejectedAttempts": 1,
+    "hexCount": 113,
+    "branchCount": 8,
+    "chokepointCount": 7,
+    "openAreaSize": 19,
+    "pocketSize": 0,
     "promiseCount": 2,
+    "routeLoops": 2,
+    "meanNeighbours": 4.85,
+    "thinSharePct": 4,
+    "articulationSharePct": 0,
     "promises": [
       {
         "type": "LANDMARK_SILHOUETTE",
         "strength": "STRONG"
       },
       {
-        "type": "FRACTURE_SIGNAL",
+        "type": "VEGETATION_SIGNAL",
         "strength": "SUBTLE"
       }
     ],
     "anchorKinds": [
-      "SIDE_INTEREST_SLOT",
-      "RESOURCE_HINT_SLOT",
+      "TERRAIN_INTERACTION_SLOT",
       "LANDMARK_SLOT",
       "SHORTCUT_SLOT",
       "OBSTACLE_SLOT"
@@ -36,22 +39,31 @@
     "seed": "worldmap-sample:FORKED_FRONTIER:2:0",
     "archetype": "FORKED_FRONTIER",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 0,
-    "hexCount": 27,
-    "branchCount": 5,
-    "chokepointCount": 1,
-    "openAreaSize": 8,
-    "pocketSize": 4,
-    "promiseCount": 1,
+    "score": 12,
+    "rejectedAttempts": 2,
+    "hexCount": 129,
+    "branchCount": 6,
+    "chokepointCount": 8,
+    "openAreaSize": 19,
+    "pocketSize": 0,
+    "promiseCount": 2,
+    "routeLoops": 3,
+    "meanNeighbours": 4.78,
+    "thinSharePct": 2,
+    "articulationSharePct": 0,
     "promises": [
       {
-        "type": "LANDMARK_SILHOUETTE",
-        "strength": "STRONG"
+        "type": "SMOKE",
+        "strength": "MEDIUM"
+      },
+      {
+        "type": "STREAM",
+        "strength": "SUBTLE"
       }
     ],
     "anchorKinds": [
-      "SIDE_INTEREST_SLOT",
+      "TERRAIN_INTERACTION_SLOT",
+      "RESOURCE_HINT_SLOT",
       "LANDMARK_SLOT",
       "SHORTCUT_SLOT",
       "OBSTACLE_SLOT"
@@ -63,22 +75,26 @@
     "seed": "worldmap-sample:FORKED_FRONTIER:3:0",
     "archetype": "FORKED_FRONTIER",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 0,
-    "hexCount": 28,
-    "branchCount": 5,
-    "chokepointCount": 1,
-    "openAreaSize": 8,
-    "pocketSize": 5,
+    "score": 12,
+    "rejectedAttempts": 3,
+    "hexCount": 111,
+    "branchCount": 7,
+    "chokepointCount": 6,
+    "openAreaSize": 17,
+    "pocketSize": 0,
     "promiseCount": 1,
+    "routeLoops": 3,
+    "meanNeighbours": 4.58,
+    "thinSharePct": 4,
+    "articulationSharePct": 0,
     "promises": [
       {
-        "type": "LANDMARK_SILHOUETTE",
+        "type": "OBELISK_FRAGMENT",
         "strength": "STRONG"
       }
     ],
     "anchorKinds": [
-      "SIDE_INTEREST_SLOT",
+      "TERRAIN_INTERACTION_SLOT",
       "LANDMARK_SLOT",
       "SHORTCUT_SLOT",
       "OBSTACLE_SLOT"
@@ -90,21 +106,29 @@
     "seed": "worldmap-sample:RIDGE_AND_POCKET:1:0",
     "archetype": "RIDGE_AND_POCKET",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 0,
-    "hexCount": 20,
-    "branchCount": 2,
-    "chokepointCount": 0,
-    "openAreaSize": 0,
-    "pocketSize": 4,
-    "promiseCount": 2,
+    "score": 12,
+    "rejectedAttempts": 4,
+    "hexCount": 124,
+    "branchCount": 8,
+    "chokepointCount": 7,
+    "openAreaSize": 17,
+    "pocketSize": 8,
+    "promiseCount": 3,
+    "routeLoops": 2,
+    "meanNeighbours": 4.71,
+    "thinSharePct": 8,
+    "articulationSharePct": 7,
     "promises": [
       {
-        "type": "STONE_FORMATION",
+        "type": "LANDMARK_SILHOUETTE",
+        "strength": "STRONG"
+      },
+      {
+        "type": "SMOKE",
         "strength": "MEDIUM"
       },
       {
-        "type": "STREAM",
+        "type": "FRACTURE_SIGNAL",
         "strength": "SUBTLE"
       }
     ],
@@ -119,29 +143,35 @@
   },
   {
     "file": "ridge-and-pocket-02.svg",
-    "seed": "worldmap-sample:RIDGE_AND_POCKET:2:0",
+    "seed": "worldmap-sample:RIDGE_AND_POCKET:2:1",
     "archetype": "RIDGE_AND_POCKET",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 0,
-    "hexCount": 19,
-    "branchCount": 2,
-    "chokepointCount": 1,
-    "openAreaSize": 0,
-    "pocketSize": 5,
+    "score": 12,
+    "rejectedAttempts": 12,
+    "hexCount": 122,
+    "branchCount": 6,
+    "chokepointCount": 8,
+    "openAreaSize": 19,
+    "pocketSize": 8,
     "promiseCount": 2,
+    "routeLoops": 2,
+    "meanNeighbours": 4.5,
+    "thinSharePct": 5,
+    "articulationSharePct": 3,
     "promises": [
       {
-        "type": "OLD_PATH",
-        "strength": "MEDIUM"
+        "type": "OBELISK_FRAGMENT",
+        "strength": "STRONG"
       },
       {
-        "type": "VEGETATION_SIGNAL",
+        "type": "STREAM",
         "strength": "SUBTLE"
       }
     ],
     "anchorKinds": [
+      "TERRAIN_INTERACTION_SLOT",
       "SIDE_INTEREST_SLOT",
+      "RESOURCE_HINT_SLOT",
       "LANDMARK_SLOT",
       "SHORTCUT_SLOT",
       "OBSTACLE_SLOT"
@@ -153,25 +183,26 @@
     "seed": "worldmap-sample:RIDGE_AND_POCKET:3:0",
     "archetype": "RIDGE_AND_POCKET",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 1,
-    "hexCount": 18,
-    "branchCount": 2,
-    "chokepointCount": 1,
-    "openAreaSize": 0,
-    "pocketSize": 4,
-    "promiseCount": 2,
+    "score": 12,
+    "rejectedAttempts": 0,
+    "hexCount": 132,
+    "branchCount": 7,
+    "chokepointCount": 8,
+    "openAreaSize": 19,
+    "pocketSize": 7,
+    "promiseCount": 1,
+    "routeLoops": 3,
+    "meanNeighbours": 5.09,
+    "thinSharePct": 5,
+    "articulationSharePct": 2,
     "promises": [
       {
-        "type": "LANDMARK_SILHOUETTE",
+        "type": "OBELISK_FRAGMENT",
         "strength": "STRONG"
-      },
-      {
-        "type": "STREAM",
-        "strength": "SUBTLE"
       }
     ],
     "anchorKinds": [
+      "TERRAIN_INTERACTION_SLOT",
       "SIDE_INTEREST_SLOT",
       "LANDMARK_SLOT",
       "SHORTCUT_SLOT",
@@ -184,25 +215,34 @@
     "seed": "worldmap-sample:OPEN_FIELD_NARROW_PASS:1:0",
     "archetype": "OPEN_FIELD_NARROW_PASS",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 0,
-    "hexCount": 21,
-    "branchCount": 5,
-    "chokepointCount": 1,
-    "openAreaSize": 8,
+    "score": 12,
+    "rejectedAttempts": 4,
+    "hexCount": 117,
+    "branchCount": 7,
+    "chokepointCount": 7,
+    "openAreaSize": 19,
     "pocketSize": 0,
-    "promiseCount": 2,
+    "promiseCount": 3,
+    "routeLoops": 2,
+    "meanNeighbours": 5.04,
+    "thinSharePct": 3,
+    "articulationSharePct": 0,
     "promises": [
       {
-        "type": "STONE_FORMATION",
+        "type": "OBELISK_FRAGMENT",
+        "strength": "STRONG"
+      },
+      {
+        "type": "GLOW",
         "strength": "MEDIUM"
       },
       {
-        "type": "FRACTURE_SIGNAL",
+        "type": "STREAM",
         "strength": "SUBTLE"
       }
     ],
     "anchorKinds": [
+      "RESOURCE_HINT_SLOT",
       "LANDMARK_SLOT",
       "SHORTCUT_SLOT"
     ],
@@ -213,15 +253,23 @@
     "seed": "worldmap-sample:OPEN_FIELD_NARROW_PASS:2:0",
     "archetype": "OPEN_FIELD_NARROW_PASS",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 0,
-    "hexCount": 21,
-    "branchCount": 5,
-    "chokepointCount": 1,
-    "openAreaSize": 8,
+    "score": 12,
+    "rejectedAttempts": 1,
+    "hexCount": 118,
+    "branchCount": 8,
+    "chokepointCount": 7,
+    "openAreaSize": 19,
     "pocketSize": 0,
-    "promiseCount": 2,
+    "promiseCount": 3,
+    "routeLoops": 2,
+    "meanNeighbours": 4.64,
+    "thinSharePct": 4,
+    "articulationSharePct": 0,
     "promises": [
+      {
+        "type": "OBELISK_FRAGMENT",
+        "strength": "STRONG"
+      },
       {
         "type": "OLD_PATH",
         "strength": "MEDIUM"
@@ -232,8 +280,11 @@
       }
     ],
     "anchorKinds": [
+      "TERRAIN_INTERACTION_SLOT",
+      "RESOURCE_HINT_SLOT",
       "LANDMARK_SLOT",
-      "SHORTCUT_SLOT"
+      "SHORTCUT_SLOT",
+      "OBSTACLE_SLOT"
     ],
     "rejectionReasons": []
   },
@@ -242,14 +293,18 @@
     "seed": "worldmap-sample:LANDMARK_PULL:1:0",
     "archetype": "LANDMARK_PULL",
     "accepted": true,
-    "score": 6,
-    "rejectedAttempts": 1,
-    "hexCount": 18,
+    "score": 12,
+    "rejectedAttempts": 0,
+    "hexCount": 123,
     "branchCount": 4,
-    "chokepointCount": 1,
-    "openAreaSize": 0,
+    "chokepointCount": 9,
+    "openAreaSize": 19,
     "pocketSize": 0,
     "promiseCount": 1,
+    "routeLoops": 2,
+    "meanNeighbours": 4.72,
+    "thinSharePct": 7,
+    "articulationSharePct": 0,
     "promises": [
       {
         "type": "OBELISK_FRAGMENT",
@@ -257,8 +312,11 @@
       }
     ],
     "anchorKinds": [
+      "TERRAIN_INTERACTION_SLOT",
+      "RESOURCE_HINT_SLOT",
       "LANDMARK_SLOT",
-      "SHORTCUT_SLOT"
+      "SHORTCUT_SLOT",
+      "OBSTACLE_SLOT"
     ],
     "rejectionReasons": []
   },
@@ -267,14 +325,18 @@
     "seed": "worldmap-sample:LANDMARK_PULL:2:0",
     "archetype": "LANDMARK_PULL",
     "accepted": true,
-    "score": 6,
+    "score": 12,
     "rejectedAttempts": 0,
-    "hexCount": 19,
-    "branchCount": 4,
-    "chokepointCount": 1,
-    "openAreaSize": 0,
+    "hexCount": 118,
+    "branchCount": 6,
+    "chokepointCount": 9,
+    "openAreaSize": 19,
     "pocketSize": 0,
     "promiseCount": 2,
+    "routeLoops": 2,
+    "meanNeighbours": 4.74,
+    "thinSharePct": 5,
+    "articulationSharePct": 0,
     "promises": [
       {
         "type": "LANDMARK_SILHOUETTE",
@@ -286,6 +348,7 @@
       }
     ],
     "anchorKinds": [
+      "TERRAIN_INTERACTION_SLOT",
       "LANDMARK_SLOT",
       "SHORTCUT_SLOT",
       "OBSTACLE_SLOT"
