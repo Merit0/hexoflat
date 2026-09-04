@@ -4,7 +4,7 @@ import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-
 import { applyCoverFit, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 
-const HERO_SPRITE_URL = '/hero-asssets/spirit-hex-image.png';
+const HERO_SPRITE_URL = '/hero-asssets/frank-hex.png';
 
 // Mirrors the DOM version's `.hero-hex-tile { transition: transform 180ms ease-out }`,
 // which smoothed hero movement between tiles for free via CSS. Pixi has no

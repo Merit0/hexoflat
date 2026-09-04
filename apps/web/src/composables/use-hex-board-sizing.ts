@@ -1,25 +1,26 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, type ComputedRef } from 'vue';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 
 const BLEED = 2;
 
 /**
- * DOM-probe tile sizing and scale-to-fit for the hex board: measures a
- * hidden probe element for the actual rendered tile size (CSS drives this,
- * not JS), derives the map's pixel bounds from that, and scales the whole
- * board to fit its own container — the `.hex-map` pane, measured via
- * ResizeObserver rather than `window.innerWidth`/`innerHeight`, since the
- * map only ever occupies a fraction of the viewport (the desktop 70/30
- * split from use-game-layout.ts).
+ * DOM-probe tile sizing for the hex board: measures a hidden probe element
+ * for the actual rendered tile size (CSS drives this, not JS) and derives
+ * the map's pixel bounds from that.
+ *
+ * There is no per-map scale-to-fit: `scale` is a fixed 1:1, so every hex
+ * cell renders at exactly its CSS size (`--hex-tile-*`) on every map — a
+ * hex is the same size in camping as in Silesia. A map larger than the
+ * `.hex-map` pane overflows and is clipped (centered); pick the map's
+ * row/column count so it fits.
  */
 export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
   const probeRef = ref<HTMLElement | null>(null);
   const containerRef = ref<HTMLElement | null>(null);
   const domTileW = ref(0);
   const domTileH = ref(0);
-  const containerWidth = ref(0);
-  const containerHeight = ref(0);
+  const scale = ref(1);
 
   function readDomTileSize() {
     const el = probeRef.value;
@@ -27,14 +28,6 @@ export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
     const r = el.getBoundingClientRect();
     if (r.width > 0) domTileW.value = r.width;
     if (r.height > 0) domTileH.value = r.height;
-  }
-
-  function readContainerSize() {
-    const el = containerRef.value;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    if (r.width > 0) containerWidth.value = r.width;
-    if (r.height > 0) containerHeight.value = r.height;
   }
 
   const domTileSize = computed(() => ({ w: domTileW.value, h: domTileH.value }));
@@ -73,62 +66,30 @@ export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
     };
   });
 
-  const scale = ref(1);
-
-  function updateScale() {
-    const b = mapBounds.value;
-    if (!b.width || !b.height) return;
-    if (!containerWidth.value || !containerHeight.value) return;
-
-    const padding = 40;
-    const sx = (containerWidth.value - padding) / b.width;
-    const sy = (containerHeight.value - padding) / b.height;
-
-    scale.value = Math.min(sx, sy, 1.1);
-  }
-
   let probeResizeObserver: ResizeObserver | null = null;
-  let containerResizeObserver: ResizeObserver | null = null;
   let sizeFallbackTimer: number | null = null;
 
-  watch(mapBounds, updateScale, { immediate: true });
-
   onMounted(() => {
+    readDomTileSize();
+
     if (probeRef.value) {
-      probeResizeObserver = new ResizeObserver(() => {
-        readDomTileSize();
-        updateScale();
-      });
+      probeResizeObserver = new ResizeObserver(readDomTileSize);
       probeResizeObserver.observe(probeRef.value);
     }
 
-    if (containerRef.value) {
-      containerResizeObserver = new ResizeObserver(() => {
-        readContainerSize();
-        updateScale();
-      });
-      containerResizeObserver.observe(containerRef.value);
-    }
-
     sizeFallbackTimer = window.setInterval(() => {
-      const haveTileSize = domTileW.value > 0 && domTileH.value > 0;
-      const haveContainerSize = containerWidth.value > 0 && containerHeight.value > 0;
-      if (haveTileSize && haveContainerSize) {
+      if (domTileW.value > 0 && domTileH.value > 0) {
         if (sizeFallbackTimer) window.clearInterval(sizeFallbackTimer);
         sizeFallbackTimer = null;
         return;
       }
       readDomTileSize();
-      readContainerSize();
-      updateScale();
     }, 100);
   });
 
   onBeforeUnmount(() => {
     probeResizeObserver?.disconnect();
     probeResizeObserver = null;
-    containerResizeObserver?.disconnect();
-    containerResizeObserver = null;
     if (sizeFallbackTimer) {
       window.clearInterval(sizeFallbackTimer);
       sizeFallbackTimer = null;

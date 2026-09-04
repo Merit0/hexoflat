@@ -11,8 +11,8 @@ export class HexMapProvider {
   static getHomeLand(): HexMapModel {
     return new WorldGenerator({
       worldName: 'Silesia',
-      worldWidth: 27,
-      worldHeight: 11,
+      worldWidth: 17,
+      worldHeight: 15,
       worldComplexity: Complexity.EASY,
       config: homelandMapConfig,
       safeZoneRadius: 1,

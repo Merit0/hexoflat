@@ -10,9 +10,12 @@
   /* Typography */
   --font-main: 'Cinzel', serif;
 
-  /* Hex sizing (твоя база — ок, далі можна підганяти в runtime) */
-  --hex-tile-width: 4.4vw;
-  --hex-tile-height: calc(var(--hex-tile-width) * 0.89);
+  /* Hex sizing (твоя база — ок, далі можна підганяти в runtime).
+     Pointy-top: height (vertex-to-vertex) is the long axis = the old
+     flat-top --hex-tile-width (4.4vw), so the on-screen hex size is
+     unchanged; width (flat-to-flat) = height * sqrt(3)/2. */
+  --hex-tile-height: 4.4vw;
+  --hex-tile-width: calc(var(--hex-tile-height) * 0.866);
 
   /* ===== Core palette (dark creepy base + cold neutrals) ===== */
   --bg-night: #0b0d10; /* основний фон */
@@ -70,10 +73,10 @@
   --radius-lg: 18px;
 
   /* ===== Hex geometry =====
-       Single source of truth for the flat-top hexagon silhouette.
+       Single source of truth for the pointy-top hexagon silhouette.
        Every hex-shaped element (tiles, tokens, overlays, equip slots)
        should reference this instead of repeating the polygon() literal. */
-  --hex-clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  --hex-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
 }
 
 /* === RESET === */

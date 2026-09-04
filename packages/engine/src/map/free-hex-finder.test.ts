@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HexMapBuilder } from './builders/hex-map-builder';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { findFreeHexNear, findFreeHexNearObject } from './free-hex-finder';
 
 const LANDMARK = HEXOBJECT_KEYS.HOMELAND_GATE;
@@ -34,7 +34,7 @@ describe('findFreeHexNear', () => {
     const found = findFreeHexNear(buildMap(), centre)!;
 
     expect(coordinateKey(found)).not.toBe(coordinateKey(centre));
-    expect(getOddQNeighbors(centre).map(coordinateKey)).toContain(coordinateKey(found));
+    expect(getHexNeighbors(centre).map(coordinateKey)).toContain(coordinateKey(found));
   });
 
   it('is stable across calls when no generator is passed', () => {
@@ -53,7 +53,7 @@ describe('findFreeHexNear', () => {
 
   it('skips solid neighbours whatever the generator draws', () => {
     const map = buildMap();
-    const [survivor, ...blocked] = getOddQNeighbors(centre);
+    const [survivor, ...blocked] = getHexNeighbors(centre);
     for (const coord of blocked) placeAt(map, coord, WALL);
 
     expect(findFreeHexNear(map, centre, alwaysFirst)).toEqual(survivor);
@@ -62,7 +62,7 @@ describe('findFreeHexNear', () => {
 
   it('returns null when every neighbour is solid', () => {
     const map = buildMap();
-    for (const coord of getOddQNeighbors(centre)) placeAt(map, coord, WALL);
+    for (const coord of getHexNeighbors(centre)) placeAt(map, coord, WALL);
 
     expect(findFreeHexNear(map, centre)).toBeNull();
   });
@@ -88,14 +88,14 @@ describe('findFreeHexNearObject', () => {
 
     const found = findFreeHexNearObject(map, LANDMARK)!;
 
-    expect(getOddQNeighbors(landmark).map(coordinateKey)).toContain(coordinateKey(found));
+    expect(getHexNeighbors(landmark).map(coordinateKey)).toContain(coordinateKey(found));
   });
 
   it('falls back to the landmark tile when it is walled in', () => {
     const map = buildMap();
     const landmark = { columnIndex: 2, rowIndex: 2 };
     placeAt(map, landmark, LANDMARK);
-    for (const coord of getOddQNeighbors(landmark)) placeAt(map, coord, WALL);
+    for (const coord of getHexNeighbors(landmark)) placeAt(map, coord, WALL);
 
     expect(findFreeHexNearObject(map, LANDMARK)).toEqual(landmark);
   });
