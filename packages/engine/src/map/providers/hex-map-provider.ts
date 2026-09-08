@@ -17,6 +17,7 @@ export class HexMapProvider {
       config: homelandMapConfig,
       safeZoneRadius: 1,
       fogMode: 'FOG',
+      terrainImage: '/hex-assets/board-hexes/grass-hex.png',
     }).generate();
   }
 
@@ -29,6 +30,7 @@ export class HexMapProvider {
       config: campingMapConfig,
       safeZoneRadius: 1,
       fogMode: 'ALL_REVEALED',
+      terrainImage: '/hex-assets/board-hexes/stone-hex.png',
     }).generate();
   }
 

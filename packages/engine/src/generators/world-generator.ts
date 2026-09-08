@@ -40,6 +40,7 @@ export class WorldGenerator {
         t.coordinates = { columnIndex: q, rowIndex: r };
         t.isRevealed = allRevealed;
         t.hexobject = null;
+        t.hexBackgroundImagePath = this.generator.terrainImage ?? '';
         tiles.push(t);
       }
     }

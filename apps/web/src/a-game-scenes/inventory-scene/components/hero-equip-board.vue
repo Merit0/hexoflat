@@ -67,7 +67,7 @@ type PseudoTile = {
   coordinates: Coord;
 };
 
-const heroImagePath = computed(() => '/hero-asssets/frank-hex.png');
+const heroImagePath = computed(() => '/hex-assets/creators-hexes/frank-hex.png');
 
 const heroImageStyle = computed(() => ({
   backgroundImage: `url("${heroImagePath.value}")`,

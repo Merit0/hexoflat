@@ -10,4 +10,5 @@ export interface IWorldGenerator {
   config: IHexMapPlacement[];
   safeZoneRadius?: number;
   fogMode?: TFogMode;
+  terrainImage?: string;
 }
