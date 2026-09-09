@@ -67,15 +67,12 @@ type PseudoTile = {
   coordinates: Coord;
 };
 
-const heroImagePath = computed(() => '/hex-assets/creators-hexes/frank-hex.png');
+const heroImagePath = computed(() => '/hero-asssets/base-hero-hex.png');
 
 const heroImageStyle = computed(() => ({
   backgroundImage: `url("${heroImagePath.value}")`,
 }));
 
-// Positioned exactly like the map: calcHexPixelPosition fed the real hex box
-// (flat-to-flat width, vertex-to-vertex height), so the six slots are the
-// centre hex's six edge-sharing neighbours.
 const spacingWidth = HEX_W;
 const spacingHeight = HEX_H;
 const center: Coord = { rowIndex: 0, columnIndex: 0 };

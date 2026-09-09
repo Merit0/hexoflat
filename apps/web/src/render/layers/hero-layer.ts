@@ -4,11 +4,8 @@ import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-
 import { applyCoverFit, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 
-const HERO_SPRITE_URL = '/hex-assets/creators-hexes/frank-hex.png';
+const HERO_SPRITE_URL = '/hero-asssets/base-hero-hex.png';
 
-// Mirrors the DOM version's `.hero-hex-tile { transition: transform 180ms ease-out }`,
-// which smoothed hero movement between tiles for free via CSS. Pixi has no
-// equivalent, so this replicates it with a small position tween.
 const MOVE_DURATION_MS = 180;
 
 function easeOutCubic(t: number): number {
