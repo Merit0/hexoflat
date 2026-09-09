@@ -4,7 +4,7 @@ import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-
 import { applyCoverFit, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 
-const HERO_SPRITE_URL = '/hero-asssets/base-hero-hex.png';
+const HERO_SPRITE_URL = '/hero-asssets/human-hex.png';
 
 const MOVE_DURATION_MS = 180;
 
