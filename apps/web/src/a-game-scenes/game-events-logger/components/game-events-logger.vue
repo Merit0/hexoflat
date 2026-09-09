@@ -1,91 +1,48 @@
 <template>
-  <div
-    ref="rootEl"
-    class="game-events-logger"
-    :class="{ open: isOpen }"
-    data-testid="events-logger"
-  >
-    <button
-      class="logger-compact"
-      data-testid="events-logger-toggle"
-      type="button"
-      aria-haspopup="true"
-      :aria-expanded="isOpen"
-      @click="toggle"
-    >
-      <div v-if="lastTwo.length" class="compact-lines">
-        <div v-for="e in lastTwo" :key="e.id" class="compact-line">
-          <span class="hero-name">{{ e.actor ?? '' }}</span>
-          <span class="msg">
-            <template
-              v-for="(segment, index) in parseMessageSegments(e.message)"
-              :key="`${e.id}-compact-${index}`"
-            >
-              <span v-if="segment.kind === 'damage'" class="number-damage">{{ segment.text }}</span>
-              <span v-else>{{ segment.text }}</span>
-            </template>
-          </span>
-          <span class="time">- {{ e.time }}</span>
-        </div>
-      </div>
+  <div class="game-events-logger" data-testid="events-logger">
+    <div class="logger-head">
+      <div class="title">Events (last 50)</div>
+      <button
+        class="clear"
+        data-testid="events-logger-clear-button"
+        type="button"
+        @click="gameEventsStore.clear"
+      >
+        Clear
+      </button>
+    </div>
 
-      <div v-else class="compact-empty">
-        <span class="msg">No events</span>
-      </div>
-    </button>
+    <div class="logger-list">
+      <div v-if="!list.length" class="logger-empty">No events yet</div>
 
-    <transition name="logger-fade">
-      <div v-if="isOpen" class="logger-dropdown" data-testid="events-logger-dropdown" role="menu">
-        <div class="dropdown-head">
-          <div class="title">Events (last 50)</div>
-          <button
-            class="clear"
-            data-testid="events-logger-clear-button"
-            type="button"
-            @click="gameEventsStore.clear"
+      <div
+        v-for="e in list"
+        v-else
+        :key="e.id"
+        class="row"
+        :data-testid="`events-logger-row-${e.id}`"
+      >
+        <span class="hero-name">{{ e.actor ?? '' }}</span>
+        <span class="row-msg">
+          <template
+            v-for="(segment, index) in parseMessageSegments(e.message)"
+            :key="`${e.id}-row-${index}`"
           >
-            Clear
-          </button>
-        </div>
-
-        <div class="dropdown-list">
-          <div v-if="!list.length" class="dropdown-empty">No events yet</div>
-
-          <div
-            v-for="e in list"
-            v-else
-            :key="e.id"
-            class="row"
-            :data-testid="`events-logger-row-${e.id}`"
-          >
-            <span class="hero-name">{{ e.actor ?? '' }}</span>
-            <span class="row-msg">
-              <template
-                v-for="(segment, index) in parseMessageSegments(e.message)"
-                :key="`${e.id}-row-${index}`"
-              >
-                <span v-if="segment.kind === 'damage'" class="number-damage">{{
-                  segment.text
-                }}</span>
-                <span v-else>{{ segment.text }}</span>
-              </template>
-            </span>
-            <span class="row-time">{{ e.time }}</span>
-          </div>
-        </div>
+            <span v-if="segment.kind === 'damage'" class="number-damage">{{ segment.text }}</span>
+            <span v-else>{{ segment.text }}</span>
+          </template>
+        </span>
+        <span class="row-time">{{ e.time }}</span>
       </div>
-    </transition>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import { useGameEventsStore } from '@/stores/game-events-store';
 
 const gameEventsStore = useGameEventsStore();
-
-const isOpen = ref(false);
-const rootEl = ref<HTMLElement | null>(null);
 
 function pad2(n: number) {
   return String(n).padStart(2, '0');
@@ -95,38 +52,12 @@ function formatTime(ts: number) {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
-const lastTwo = computed(() =>
-  gameEventsStore.lastTwo.map((e) => ({
-    ...e,
-    time: formatTime(e.createdAt),
-  })),
-);
-
 const list = computed(() =>
   gameEventsStore.events.map((e) => ({
     ...e,
     time: formatTime(e.createdAt),
   })),
 );
-
-function toggle() {
-  isOpen.value = !isOpen.value;
-}
-
-function close() {
-  isOpen.value = false;
-}
-
-function onDocClick(ev: MouseEvent) {
-  if (!isOpen.value) return;
-  const t = ev.target as Node | null;
-  if (!t) return;
-  if (rootEl.value && !rootEl.value.contains(t)) close();
-}
-
-function onKeyDown(ev: KeyboardEvent) {
-  if (ev.key === 'Escape') close();
-}
 
 type MessageSegment = { kind: 'text'; text: string } | { kind: 'damage'; text: string };
 
@@ -154,93 +85,24 @@ function parseMessageSegments(message: string): MessageSegment[] {
 
   return segments.length ? segments : [{ kind: 'text', text: message }];
 }
-
-onMounted(() => {
-  document.addEventListener('click', onDocClick, true);
-  document.addEventListener('keydown', onKeyDown);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocClick, true);
-  document.removeEventListener('keydown', onKeyDown);
-});
 </script>
 
 <style scoped>
 .game-events-logger {
-  position: relative;
-  display: inline-block;
-}
-
-.logger-compact {
-  width: min(360px, 46vw);
-  height: 44px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 2px solid rgba(210, 235, 255, 0.7);
-  background: rgba(10, 14, 18, 0.55);
-  backdrop-filter: blur(6px);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 8px 22px rgba(0, 0, 0, 0.35);
-  cursor: pointer;
-  text-align: left;
-  color: rgba(235, 245, 255, 0.92);
-}
-
-.compact-lines {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 10px;
 }
 
-.compact-line {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  line-height: 1.05;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.msg {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.time {
-  flex: 0 0 auto;
-  font: 12px monospace bold;
-}
-
-.compact-empty {
-  font-size: 13px;
-  opacity: 0.8;
-}
-
-.logger-dropdown {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  width: min(420px, 92vw);
-  border-radius: 12px;
-  border: 1px solid rgba(210, 235, 255, 0.45);
-  background: rgba(8, 10, 14, 0.78);
-  backdrop-filter: blur(10px);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 18px 40px rgba(0, 0, 0, 0.45);
-  overflow: hidden;
-  z-index: 999;
-}
-
-.dropdown-head {
+.logger-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(210, 235, 255, 0.15);
+  border-radius: 12px;
+  border: 1px solid rgba(210, 235, 255, 0.25);
+  background: rgba(10, 14, 18, 0.55);
 }
 
 .title {
@@ -261,13 +123,15 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.dropdown-list {
-  max-height: 360px;
-  overflow: auto;
-  padding: 8px 10px;
+.logger-list {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(210, 235, 255, 0.18);
+  background: rgba(8, 10, 14, 0.55);
+  padding: 8px 12px;
 }
 
-.dropdown-empty {
+.logger-empty {
   padding: 14px 2px;
   opacity: 0.8;
   font-size: 13px;
@@ -277,7 +141,7 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 10px;
   align-items: baseline;
-  padding: 6px 2px;
+  padding: 8px 2px;
   border-bottom: 1px dashed rgba(210, 235, 255, 0.1);
   font-size: 13px;
 }
@@ -294,18 +158,6 @@ onBeforeUnmount(() => {
 .row-time {
   flex: 0 0 auto;
   opacity: 0.8;
-}
-
-.logger-fade-enter-active,
-.logger-fade-leave-active {
-  transition:
-    opacity 0.12s ease,
-    transform 0.12s ease;
-}
-.logger-fade-enter-from,
-.logger-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
 }
 
 .hero-name {

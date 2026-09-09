@@ -334,8 +334,8 @@ const capacity = computed(() => inventoryStore.carryCapacityKg.toFixed(2));
 
 .carry-weight-badge {
   position: absolute;
-  right: -10%;
-  bottom: 1rem;
+  right: 0;
+  bottom: -1rem;
 
   display: flex;
   align-items: center;

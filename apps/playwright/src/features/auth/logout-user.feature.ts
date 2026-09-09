@@ -7,8 +7,8 @@ export class LogoutUserFeature extends BaseFeature {
   private readonly loginPage = new LoginPage();
 
   async logout(): Promise<void> {
-    await this.step('Log out from the top bar', async () => {
-      await this.campingMap.topbar.logout();
+    await this.step('Log out from the map session controls', async () => {
+      await this.campingMap.mapSessionControls.clickLogout();
       await this.loginPage.verifyStillOnLoginRoute();
     });
   }

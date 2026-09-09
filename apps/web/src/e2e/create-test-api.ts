@@ -6,10 +6,11 @@ import {
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
-import { useOverlayStore } from '@/stores/overlay-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type {
   HexoflatTestApi,
   TestGridSize,
+  TestHeroHealth,
   TestHexCoordinates,
   TestTileFraction,
 } from '@/e2e/test-api.types';
@@ -47,6 +48,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
   const worldStore = useWorldMapStore();
   const heroStore = useHeroStore();
   const heroInventoryStore = useHeroInventoryStore();
+  const heroToolStore = useHeroToolStore();
 
   function findTile(coordinates: TestHexCoordinates) {
     return worldStore.map?.tiles.find(
@@ -98,6 +100,13 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return findTile(coordinates)?.hexobject?.hexobjectKey ?? null;
     },
 
+    getHeroHealth(): TestHeroHealth {
+      return {
+        current: heroStore.hero.currentHealth ?? 0,
+        max: heroStore.hero.maxHealth ?? 0,
+      };
+    },
+
     getInventoryItemKeys(): string[] {
       return heroInventoryStore.items.map((item) => item.key);
     },
@@ -106,13 +115,18 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return heroInventoryStore.items.find((item) => item.key === key)?.id ?? null;
     },
 
-    openHeroInventory(): void {
-      useOverlayStore().openOverlay('hero-inventory');
-    },
-
     getGridSize(): TestGridSize {
       const map = worldStore.map;
       return { width: map?.width ?? 0, height: map?.height ?? 0 };
+    },
+
+    isToolUsed(): boolean {
+      return heroToolStore.isDragging;
+    },
+
+    getToolHoverCoordinates(): TestHexCoordinates | null {
+      const hover = heroToolStore.hover;
+      return hover ? { columnIndex: hover.columnIndex, rowIndex: hover.rowIndex } : null;
     },
   };
 }

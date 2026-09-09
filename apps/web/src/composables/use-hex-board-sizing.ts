@@ -8,12 +8,18 @@ const BLEED = 2;
  * DOM-probe tile sizing and scale-to-fit for the hex board: measures a
  * hidden probe element for the actual rendered tile size (CSS drives this,
  * not JS), derives the map's pixel bounds from that, and scales the whole
- * board to fit the viewport.
+ * board to fit its own container — the `.hex-map` pane, measured via
+ * ResizeObserver rather than `window.innerWidth`/`innerHeight`, since the
+ * map only ever occupies a fraction of the viewport (the desktop 70/30
+ * split from use-game-layout.ts).
  */
 export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
   const probeRef = ref<HTMLElement | null>(null);
+  const containerRef = ref<HTMLElement | null>(null);
   const domTileW = ref(0);
   const domTileH = ref(0);
+  const containerWidth = ref(0);
+  const containerHeight = ref(0);
 
   function readDomTileSize() {
     const el = probeRef.value;
@@ -21,6 +27,14 @@ export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
     const r = el.getBoundingClientRect();
     if (r.width > 0) domTileW.value = r.width;
     if (r.height > 0) domTileH.value = r.height;
+  }
+
+  function readContainerSize() {
+    const el = containerRef.value;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.width > 0) containerWidth.value = r.width;
+    if (r.height > 0) containerHeight.value = r.height;
   }
 
   const domTileSize = computed(() => ({ w: domTileW.value, h: domTileH.value }));
@@ -64,35 +78,22 @@ export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
   function updateScale() {
     const b = mapBounds.value;
     if (!b.width || !b.height) return;
+    if (!containerWidth.value || !containerHeight.value) return;
 
     const padding = 40;
-    const topbar = 64; // keep some space; map container already padded, this just helps scale
-    const sx = (window.innerWidth - padding) / b.width;
-    const sy = (window.innerHeight - padding - topbar) / b.height;
+    const sx = (containerWidth.value - padding) / b.width;
+    const sy = (containerHeight.value - padding) / b.height;
 
     scale.value = Math.min(sx, sy, 1.1);
   }
 
-  function onResize() {
-    readDomTileSize();
-    updateScale();
-  }
-
   let probeResizeObserver: ResizeObserver | null = null;
-  let probeSizeFallbackTimer: number | null = null;
+  let containerResizeObserver: ResizeObserver | null = null;
+  let sizeFallbackTimer: number | null = null;
 
   watch(mapBounds, updateScale, { immediate: true });
 
   onMounted(() => {
-    // A single requestAnimationFrame read of the probe's box isn't reliable —
-    // if layout (fonts, viewport, scrollbars) hasn't settled on that exact
-    // frame, `readDomTileSize` silently measures 0 once and nothing ever
-    // retries, leaving domTileW/H (and everything downstream: mapBounds, the
-    // Pixi canvas size, every tile's hit-test area) stuck at zero for the rest
-    // of the page's life — tiles render in the wrong place or clicks silently
-    // do nothing until a reload happens to win the race. A ResizeObserver
-    // fires as soon as the probe actually has a size, and again on every
-    // subsequent change, so this self-heals instead of gambling on one frame.
     if (probeRef.value) {
       probeResizeObserver = new ResizeObserver(() => {
         readDomTileSize();
@@ -101,32 +102,38 @@ export function useHexBoardSizing(tiles: ComputedRef<IHexTile[]>) {
       probeResizeObserver.observe(probeRef.value);
     }
 
-    // Bounded fallback: ResizeObserver fires almost immediately in a healthy
-    // tab, but if that very first layout/paint tick is delayed for any reason
-    // (backgrounded tab, heavy load), poll briefly until domTileSize is real
-    // instead of depending entirely on that one callback ever arriving.
-    probeSizeFallbackTimer = window.setInterval(() => {
-      if (domTileW.value > 0 && domTileH.value > 0) {
-        if (probeSizeFallbackTimer) window.clearInterval(probeSizeFallbackTimer);
-        probeSizeFallbackTimer = null;
+    if (containerRef.value) {
+      containerResizeObserver = new ResizeObserver(() => {
+        readContainerSize();
+        updateScale();
+      });
+      containerResizeObserver.observe(containerRef.value);
+    }
+
+    sizeFallbackTimer = window.setInterval(() => {
+      const haveTileSize = domTileW.value > 0 && domTileH.value > 0;
+      const haveContainerSize = containerWidth.value > 0 && containerHeight.value > 0;
+      if (haveTileSize && haveContainerSize) {
+        if (sizeFallbackTimer) window.clearInterval(sizeFallbackTimer);
+        sizeFallbackTimer = null;
         return;
       }
       readDomTileSize();
+      readContainerSize();
       updateScale();
     }, 100);
-
-    window.addEventListener('resize', onResize);
   });
 
   onBeforeUnmount(() => {
     probeResizeObserver?.disconnect();
     probeResizeObserver = null;
-    if (probeSizeFallbackTimer) {
-      window.clearInterval(probeSizeFallbackTimer);
-      probeSizeFallbackTimer = null;
+    containerResizeObserver?.disconnect();
+    containerResizeObserver = null;
+    if (sizeFallbackTimer) {
+      window.clearInterval(sizeFallbackTimer);
+      sizeFallbackTimer = null;
     }
-    window.removeEventListener('resize', onResize);
   });
 
-  return { probeRef, domTileW, domTileH, domTileSize, mapBounds, scale };
+  return { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale };
 }

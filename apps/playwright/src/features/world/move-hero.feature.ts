@@ -13,7 +13,10 @@ export class MoveHeroFeature extends BaseFeature {
   }
 
   async readStepsChipText(): Promise<string> {
-    return this.step('Read the steps chip', () => this.campingMap.topbar.readStepsText());
+    return this.step('Read the steps chip', async () => {
+      await this.campingMap.heroBoardPanel.clickTab('hero');
+      return this.campingMap.heroBoardPanel.readStepsText();
+    });
   }
 
   async moveOneStep(): Promise<TestHexCoordinates> {
