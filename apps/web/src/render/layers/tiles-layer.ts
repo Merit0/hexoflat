@@ -9,6 +9,7 @@ import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
+const FOG_URL = '/hex-assets/hex-effects/cloud-hex.png';
 
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 type CombatStore = ReturnType<typeof useCombatStore>;
@@ -157,11 +158,18 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     if (tile.isRevealed) {
       applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node);
     } else {
-      node.bg.texture = Texture.EMPTY;
+      applyTexture(node.bg, FOG_URL, node);
     }
 
-    // Hexobject sprites stay off until they're redrawn pointy-top.
-    node.sprite.texture = Texture.EMPTY;
+    // Only pointy-top-native hexobject art is drawn (path ends `-hex.png`);
+    // the old flat-top `-token-image.png` / `-hex-image.png` sprites stay off
+    // until they're redrawn.
+    const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
+    if (spritePath && spritePath.endsWith('-hex.png')) {
+      applyTexture(node.sprite, spritePath, node);
+    } else {
+      node.sprite.texture = Texture.EMPTY;
+    }
   }
 
   function syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>) {

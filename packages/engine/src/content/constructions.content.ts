@@ -21,7 +21,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'Camping',
     description: 'This is the Camping',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-constructs/camping-token-image.png',
+    spritePath: '/hex-assets/hex-constructs/camping-door-hex.png',
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.ENTER]: {
@@ -61,7 +61,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'Silesia',
     description: 'This is the Silesia entrance!',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-constructs/map-token-image.png',
+    spritePath: '/hex-assets/hex-constructs/camping-door-hex.png',
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.ENTER]: {
@@ -122,7 +122,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'Decoration',
     description: 'This is the nature!',
     collision: EHexCollision.SOLID,
-    spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.WOOD_AND_LEAVES}-token-image.png`,
+    spritePath: '/hex-assets/hex-resources/tree-hex.png',
     construction: { integrity: 0, isLocked: false },
   },
 
