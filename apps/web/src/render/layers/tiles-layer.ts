@@ -161,11 +161,8 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       applyTexture(node.bg, FOG_URL, node);
     }
 
-    // Only pointy-top-native hexobject art is drawn (path ends `-hex.png`);
-    // the old flat-top `-token-image.png` / `-hex-image.png` sprites stay off
-    // until they're redrawn.
     const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
-    if (spritePath && spritePath.endsWith('-hex.png')) {
+    if (spritePath) {
       applyTexture(node.sprite, spritePath, node);
     } else {
       node.sprite.texture = Texture.EMPTY;

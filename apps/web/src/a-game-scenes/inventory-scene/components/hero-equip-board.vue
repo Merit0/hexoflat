@@ -73,8 +73,9 @@ const heroImageStyle = computed(() => ({
   backgroundImage: `url("${heroImagePath.value}")`,
 }));
 
-const spacingWidth = HEX_W;
-const spacingHeight = HEX_H;
+const SPREAD = 1.05;
+const spacingWidth = computed(() => HEX_W.value * SPREAD);
+const spacingHeight = computed(() => HEX_H.value * SPREAD);
 const center: Coord = { rowIndex: 0, columnIndex: 0 };
 
 const tiles = computed<PseudoTile[]>(() => {
@@ -266,7 +267,7 @@ const capacity = computed(() => inventoryStore.carryCapacityKg.toFixed(2));
 }
 
 .hex.slot.is-occupied {
-  background: rgba(140, 155, 168, 0.22);
+  filter: brightness(1.08);
 }
 
 .hero-core-token {

@@ -166,7 +166,7 @@ function onPointerDown(e: PointerEvent) {
   height: 100%;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
 }
 
