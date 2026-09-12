@@ -2,7 +2,7 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import type { THexobject } from '../abstraction/hexobject-abstraction';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 
 export type TileLike = {
   coordinates: IHexCoordinates;
@@ -35,7 +35,7 @@ export function isTraversableTile(tile: TileLike | null | undefined): tile is Ti
 }
 
 export function getTraversableNeighbors(index: TileIndex, center: IHexCoordinates): TileLike[] {
-  return getOddQNeighbors(center)
+  return getHexNeighbors(center)
     .map((coord) => index.get(coordinateKey(coord)))
     .filter(isTraversableTile);
 }

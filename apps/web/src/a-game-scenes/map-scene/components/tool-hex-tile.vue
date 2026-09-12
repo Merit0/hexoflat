@@ -89,10 +89,11 @@ const toolStyle = computed(() => {
   const toolHexImagePath = getPrototype(key).spritePath;
 
   return {
-    backgroundImage: `url(${toolHexImagePath})`,
-    backgroundSize: 'cover',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
+    // icon on top, tool-frame-hex behind
+    backgroundImage: `url(${toolHexImagePath}), url('/hex-assets/hex-tools/tool-frame-hex.png')`,
+    backgroundSize: '100%, cover',
+    backgroundRepeat: 'no-repeat, no-repeat',
+    backgroundPosition: 'center, center',
   };
 });
 
@@ -250,21 +251,8 @@ function executeAction() {
   z-index: 120;
   pointer-events: auto;
 
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.2),
-    0 12px 28px rgba(0, 0, 0, 0.55);
-}
-
-.tool-hex-tile.hand {
-  background: url('/hex-assets/hex-tools/hand-hex-image.png') center/cover no-repeat;
-}
-
-.tool-hex-tile.axe {
-  background: url('/hex-assets/hex-tools/axe-hex-image.png') center/cover no-repeat;
-}
-
-.tool-hex-tile.pickaxe {
-  background: url('/hex-assets/hex-tools/pickaxe-token-image.png') center/cover no-repeat;
+  /* Background = tool-frame-hex + the tool icon on top, both set in `toolStyle`. */
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
 }
 
 .hide-btn {

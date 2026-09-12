@@ -5,40 +5,40 @@ export const homelandMapConfig: IHexMapPlacement[] = [
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 25000 } },
     coordinates: [
-      { rowIndex: 4, columnIndex: 15 },
-      { rowIndex: 4, columnIndex: 16 },
-      { rowIndex: 5, columnIndex: 15 },
-      { rowIndex: 5, columnIndex: 16 },
+      { rowIndex: 9, columnIndex: 6 },
+      { rowIndex: 9, columnIndex: 7 },
+      { rowIndex: 10, columnIndex: 6 },
+      { rowIndex: 10, columnIndex: 7 },
     ],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.HEALTH_BOTTLE },
-    coordinates: [{ rowIndex: 0, columnIndex: 10 }],
+    coordinates: [{ rowIndex: 5, columnIndex: 1 }],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.MANA_BOTTLE },
-    coordinates: [{ rowIndex: 0, columnIndex: 15 }],
+    coordinates: [{ rowIndex: 5, columnIndex: 6 }],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAVE_ENTRANCE },
-    coordinates: [{ rowIndex: 0, columnIndex: 25 }],
+    coordinates: [{ rowIndex: 5, columnIndex: 14 }],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.ROCK },
     coordinates: [
-      { rowIndex: 0, columnIndex: 26 },
-      { rowIndex: 1, columnIndex: 26 },
-      { rowIndex: 1, columnIndex: 25 },
-      { rowIndex: 0, columnIndex: 24 },
+      { rowIndex: 5, columnIndex: 15 },
+      { rowIndex: 6, columnIndex: 15 },
+      { rowIndex: 6, columnIndex: 14 },
+      { rowIndex: 5, columnIndex: 13 },
     ],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE },
-    coordinates: [{ rowIndex: 0, columnIndex: 20 }],
+    coordinates: [{ rowIndex: 5, columnIndex: 9 }],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE },
-    coordinates: [{ rowIndex: 5, columnIndex: 13 }],
+    coordinates: [{ rowIndex: 10, columnIndex: 4 }],
   },
 ];
 
@@ -66,6 +66,14 @@ export const campingMapConfig: IHexMapPlacement[] = [
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.FIREPLACE },
     coordinates: [{ rowIndex: 2, columnIndex: 5 }],
+  },
+  {
+    hexobject: { hexobjectKey: HEXOBJECT_KEYS.COINS },
+    coordinates: [{ rowIndex: 3, columnIndex: 3 }],
+  },
+  {
+    hexobject: { hexobjectKey: HEXOBJECT_KEYS.CHEST },
+    coordinates: [{ rowIndex: 1, columnIndex: 3 }],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.WOOD_AND_LEAVES },

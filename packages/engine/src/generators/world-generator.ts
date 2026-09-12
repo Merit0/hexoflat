@@ -2,7 +2,7 @@ import HexMapModel from '../map/models/hex-map-model';
 import { HexTileModel } from '../map/models/hex-tile-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
-import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { IWorldGenerator } from '../abstraction/world-generator-interface';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
@@ -40,6 +40,7 @@ export class WorldGenerator {
         t.coordinates = { columnIndex: q, rowIndex: r };
         t.isRevealed = allRevealed;
         t.hexobject = null;
+        t.hexBackgroundImagePath = this.generator.terrainImage ?? '';
         tiles.push(t);
       }
     }
@@ -93,7 +94,7 @@ export class WorldGenerator {
       const next: IHexCoordinates[] = [];
 
       for (const c of frontier) {
-        const neighbors = getOddQNeighbors(c);
+        const neighbors = getHexNeighbors(c);
 
         for (const n of neighbors) {
           const k = coordinateKey(n);

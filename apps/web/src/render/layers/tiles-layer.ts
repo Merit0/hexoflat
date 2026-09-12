@@ -8,8 +8,8 @@ import { getTexture, onTextureReady } from '@/render/texture-cache';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
 
-const FOG_TILE_URL = '/hex-assets/hex-effects/fog-tile-image.png';
-const DEFAULT_BG_URL = '/hex-assets/token-placement-image.png';
+const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
+const FOG_URL = '/hex-assets/hex-effects/cloud-hex.png';
 
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 type CombatStore = ReturnType<typeof useCombatStore>;
@@ -31,13 +31,6 @@ interface TileNode {
   defendMarker: Sprite | null;
   lockChip: Text | null;
   unsubscribers: Array<() => void>;
-  // The node currently at this coordinate key is reused across `syncTiles`
-  // calls — including across location switches (camping <-> world map),
-  // which hand in a brand-new `IHexTile` object per coordinate. Click/hover
-  // handlers read this mutable field (kept fresh in `syncTiles`) instead of
-  // closing over the `tile` argument `createNode` was first called with,
-  // which would otherwise stay frozen to whichever location's tile happened
-  // to be at this coordinate the first time a node was ever created here.
   tile: IHexTile;
 }
 
@@ -162,20 +155,18 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     for (const unsub of node.unsubscribers) unsub();
     node.unsubscribers = [];
 
-    const bgPath = tile.isRevealed ? tile.hexBackgroundImagePath || DEFAULT_BG_URL : FOG_TILE_URL;
-    applyTexture(node.bg, bgPath, node);
-
-    // No hexobject (fogged, or revealed-but-empty) means no sprite to draw —
-    // leave the layer empty so the bg texture (fog pattern, or the
-    // token-placement pattern for an empty revealed tile) shows through
-    // instead of being blotted out by a filler image.
-    const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
-    if (!spritePath) {
-      node.sprite.texture = Texture.EMPTY;
-      return;
+    if (tile.isRevealed) {
+      applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node);
+    } else {
+      applyTexture(node.bg, FOG_URL, node);
     }
 
-    applyTexture(node.sprite, spritePath, node);
+    const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
+    if (spritePath) {
+      applyTexture(node.sprite, spritePath, node);
+    } else {
+      node.sprite.texture = Texture.EMPTY;
+    }
   }
 
   function syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>) {
@@ -194,8 +185,6 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       }
       node.tile = tile;
 
-      // A node that was just created has never been positioned/drawn, so it
-      // always needs the full treatment regardless of the dirty set.
       if (!dirtyKeys || isNewNode || dirtyKeys.has(key)) {
         drawHexMask(node.mask, w, h);
         applyCoverFit(node.bg, w, h);

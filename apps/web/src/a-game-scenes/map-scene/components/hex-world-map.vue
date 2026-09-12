@@ -81,7 +81,7 @@ import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { coordinateKey, getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { coordinateKey, getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -251,7 +251,7 @@ const campHealEffectCoord = computed(() => {
   if (!isCampfireHealActive.value || !heroStore.heroCoordinates) return null;
 
   const neighborTiles = (
-    getOddQNeighbors(heroStore.heroCoordinates)
+    getHexNeighbors(heroStore.heroCoordinates)
       .map((coord) => getTileByCoord(coord))
       .filter(Boolean) as IHexTile[]
   )

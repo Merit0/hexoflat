@@ -22,7 +22,7 @@
           ]"
           :data-eqslot="t.kind === 'slot' ? t.id : undefined"
           :data-testid="t.kind === 'slot' ? `equip-slot-${t.id}` : 'equip-hero-slot'"
-          :style="[tileStyle(t), { width: HEX_SIZE + 'px', height: HEX_SIZE + 'px' }]"
+          :style="[tileStyle(t), { width: HEX_W + 'px', height: HEX_H + 'px' }]"
         >
           <div v-if="t.kind === 'hero'" class="hero-core-token">
             <div class="hero-core-image" :style="heroImageStyle"></div>
@@ -51,7 +51,10 @@ const inventoryStore = useHeroInventoryStore();
 
 const BASE_HEX_SIZE = 110;
 const HEX_SCALE = 1.3;
-const HEX_SIZE = computed(() => BASE_HEX_SIZE * HEX_SCALE);
+// Same hex box as the map (see --hex-tile-* in global.css): height is the
+// vertex-to-vertex long axis, width the flat-to-flat short axis.
+const HEX_H = computed(() => BASE_HEX_SIZE * HEX_SCALE);
+const HEX_W = computed(() => HEX_H.value * 0.866);
 
 type Coord = {
   rowIndex: number;
@@ -64,24 +67,15 @@ type PseudoTile = {
   coordinates: Coord;
 };
 
-const heroImagePath = computed(() => '/hero-asssets/spirit-hex-image.png');
+const heroImagePath = computed(() => '/hero-asssets/human-hex.png');
 
 const heroImageStyle = computed(() => ({
   backgroundImage: `url("${heroImagePath.value}")`,
 }));
 
-// calcHexPixelPosition now expects the tile's true rendered width/height (for
-// exact, gap-free grid tiling — see hex-utils.ts). This board isn't a tiled
-// grid though: it's a fixed 7-hex "flower" whose spacing was hand-tuned
-// (RING_COMPRESS, INSET_PX below) against the old formula's implicit spacing
-// constants (tileWidth*1.5*0.93 horizontally, tileWidth*sqrt(3)*0.93
-// vertically). Passing those same effective values keeps this layout
-// pixel-identical instead of collapsing under the new tighter tiling math.
-// new x-step = width*0.75, so width must be the old step scaled back up by
-// /0.75 to land on the same pixel step; new y-step = height directly (no
-// extra coefficient), so that one carries over as-is.
-const spacingWidth = computed(() => (HEX_SIZE.value * 1.5 * 0.93) / 0.75);
-const spacingHeight = computed(() => HEX_SIZE.value * Math.sqrt(3) * 0.93);
+const SPREAD = 1.05;
+const spacingWidth = computed(() => HEX_W.value * SPREAD);
+const spacingHeight = computed(() => HEX_H.value * SPREAD);
 const center: Coord = { rowIndex: 0, columnIndex: 0 };
 
 const tiles = computed<PseudoTile[]>(() => {
@@ -101,7 +95,7 @@ const tiles = computed<PseudoTile[]>(() => {
     {
       id: 'armor',
       kind: 'slot',
-      coordinates: { rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex + 1 },
+      coordinates: { rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex - 1 },
     },
     {
       id: 'gloves',
@@ -116,12 +110,12 @@ const tiles = computed<PseudoTile[]>(() => {
     {
       id: 'shield',
       kind: 'slot',
-      coordinates: { rowIndex: c.rowIndex, columnIndex: c.columnIndex - 1 },
+      coordinates: { rowIndex: c.rowIndex + 1, columnIndex: c.columnIndex - 1 },
     },
     {
       id: 'weapon',
       kind: 'slot',
-      coordinates: { rowIndex: c.rowIndex - 1, columnIndex: c.columnIndex - 1 },
+      coordinates: { rowIndex: c.rowIndex, columnIndex: c.columnIndex - 1 },
     },
   ];
 });
@@ -148,40 +142,11 @@ function getEquippedItem(slot: TEquipSlot) {
   return equippedItems.value[slot];
 }
 
-const RING_COMPRESS = 0.57;
-const INSET_PX = computed(() => Math.round(HEX_SIZE.value * 0.015));
-
-function compressAroundCenter(x: number, y: number) {
-  const heroPos = calcHexPixelPosition(
-    { coordinates: center },
-    spacingWidth.value,
-    spacingHeight.value,
-  );
-  const dx = x - heroPos.x;
-  const dy = y - heroPos.y;
-
-  const cx = heroPos.x + dx * RING_COMPRESS;
-  const cy = heroPos.y + dy * RING_COMPRESS;
-
-  if (INSET_PX.value !== 0) {
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const nx = dx / len;
-    const ny = dy / len;
-
-    return {
-      x: cx - nx * INSET_PX.value,
-      y: cy - ny * INSET_PX.value,
-    };
-  }
-
-  return { x: cx, y: cy };
-}
-
 const bleed = 10;
 
 const bounds = computed(() => {
-  const w = HEX_SIZE.value;
-  const h = HEX_SIZE.value;
+  const w = HEX_W.value;
+  const h = HEX_H.value;
 
   let minX = Infinity;
   let minY = Infinity;
@@ -189,12 +154,11 @@ const bounds = computed(() => {
   let maxY = -Infinity;
 
   for (const t of tiles.value) {
-    const p = calcHexPixelPosition(
+    const pos = calcHexPixelPosition(
       { coordinates: t.coordinates },
       spacingWidth.value,
       spacingHeight.value,
     );
-    const pos = t.kind === 'slot' ? compressAroundCenter(p.x, p.y) : p;
 
     minX = Math.min(minX, pos.x);
     minY = Math.min(minY, pos.y);
@@ -228,12 +192,11 @@ const innerStyle = computed(() => {
 const scale = ref(1);
 
 function tileStyle(t: PseudoTile) {
-  const p = calcHexPixelPosition(
+  const pos = calcHexPixelPosition(
     { coordinates: t.coordinates },
     spacingWidth.value,
     spacingHeight.value,
   );
-  const pos = t.kind === 'slot' ? compressAroundCenter(p.x, p.y) : p;
 
   return {
     transform: `translate(${Math.round(pos.x)}px, ${Math.round(pos.y)}px)`,
@@ -265,7 +228,7 @@ const capacity = computed(() => inventoryStore.carryCapacityKg.toFixed(2));
 
 .hex {
   position: absolute;
-  clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%);
+  clip-path: var(--hex-clip-path);
 }
 
 .hex.slot {
@@ -304,7 +267,7 @@ const capacity = computed(() => inventoryStore.carryCapacityKg.toFixed(2));
 }
 
 .hex.slot.is-occupied {
-  background: rgba(140, 155, 168, 0.22);
+  filter: brightness(1.08);
 }
 
 .hero-core-token {

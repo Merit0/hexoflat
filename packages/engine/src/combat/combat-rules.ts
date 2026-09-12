@@ -7,7 +7,7 @@ import {
   type ICreature,
   type THexobject,
 } from '../abstraction/hexobject-abstraction';
-import { coordinateKey, getOddQNeighbors, hexDistance } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, hexDistance } from '../utils/hex-utils';
 
 /**
  * Who can be attacked, where a shield may be planted, and whether the fight
@@ -62,7 +62,7 @@ export function findEnemyTilesSeeingHero(
 
 export function isAdjacentTo(origin: IHexCoordinates, target: IHexCoordinates): boolean {
   const targetKey = coordinateKey(target);
-  return getOddQNeighbors(origin).some((neighbor) => coordinateKey(neighbor) === targetKey);
+  return getHexNeighbors(origin).some((neighbor) => coordinateKey(neighbor) === targetKey);
 }
 
 /**

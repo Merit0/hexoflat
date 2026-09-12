@@ -1,6 +1,6 @@
 import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
@@ -52,7 +52,7 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
     const hoveredTileCoord = deps.hoveredTileCoord.value;
     if (!heroStore.heroCoordinates || !hoveredTileCoord) return null;
 
-    const neighbors = getOddQNeighbors(heroStore.heroCoordinates);
+    const neighbors = getHexNeighbors(heroStore.heroCoordinates);
     const target = hoveredTileCoord;
 
     const directNeighbor = neighbors.find(

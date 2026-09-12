@@ -1,6 +1,6 @@
 import {
   calcHexPixelPosition,
-  getOddQNeighbors,
+  getHexNeighbors,
   hexDistance,
 } from '@hexoflat/engine/utils/hex-utils';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -89,7 +89,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     getNeighbors(coordinates: TestHexCoordinates): TestHexCoordinates[] {
-      return getOddQNeighbors(coordinates);
+      return getHexNeighbors(coordinates);
     },
 
     getDistance(from: TestHexCoordinates, to: TestHexCoordinates): number {

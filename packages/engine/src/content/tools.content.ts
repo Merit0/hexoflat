@@ -51,7 +51,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
     subtitle: 'Tool',
     description: 'This is the Hand! Use it to pick something.',
     collision: EHexCollision.NONE,
-    spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.HAND}-hex-image.png`,
+    spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.HAND}-hex.png`,
     tool: {
       durability: 1000000,
       durabilityMax: 1000000,

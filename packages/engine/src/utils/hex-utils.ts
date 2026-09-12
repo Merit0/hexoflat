@@ -12,15 +12,15 @@ export interface IHexPositioned {
   coordinates: IHexCoordinates;
 }
 
-export function oddQToAxial(c: IHexCoordinates): Axial {
-  const q = c.columnIndex;
-  const r = c.rowIndex - (q - (q & 1)) / 2;
+export function offsetToAxial(c: IHexCoordinates): Axial {
+  const r = c.rowIndex;
+  const q = c.columnIndex - (r - (r & 1)) / 2;
   return { q, r };
 }
 
-function axialToOddQ(a: { q: number; r: number }): IHexCoordinates {
-  const columnIndex = a.q;
-  const rowIndex = a.r + (columnIndex - (columnIndex & 1)) / 2;
+function axialToOffset(a: { q: number; r: number }): IHexCoordinates {
+  const rowIndex = a.r;
+  const columnIndex = a.q + (rowIndex - (rowIndex & 1)) / 2;
   return { columnIndex, rowIndex };
 }
 
@@ -33,9 +33,9 @@ const AXIAL_DIRS = [
   { q: 0, r: +1 },
 ] as const;
 
-export function getOddQNeighbors(center: IHexCoordinates): IHexCoordinates[] {
-  const a = oddQToAxial(center);
-  return AXIAL_DIRS.map((d) => axialToOddQ({ q: a.q + d.q, r: a.r + d.r }));
+export function getHexNeighbors(center: IHexCoordinates): IHexCoordinates[] {
+  const a = offsetToAxial(center);
+  return AXIAL_DIRS.map((d) => axialToOffset({ q: a.q + d.q, r: a.r + d.r }));
 }
 
 export function coordinateKey(c: IHexCoordinates): string {
@@ -43,8 +43,8 @@ export function coordinateKey(c: IHexCoordinates): string {
 }
 
 export function hexDistance(from: IHexCoordinates, to: IHexCoordinates): number {
-  const a = oddQToAxial(from);
-  const b = oddQToAxial(to);
+  const a = offsetToAxial(from);
+  const b = offsetToAxial(to);
 
   const dq = a.q - b.q;
   const dr = a.r - b.r;
@@ -54,19 +54,20 @@ export function hexDistance(from: IHexCoordinates, to: IHexCoordinates): number 
 }
 
 /**
- * Odd-q offset flat-top tiling, in terms of the tile's actual rendered box
- * (`width`/`height`) rather than a separately-tuned "tileWidth" constant.
- * Passing the real rendered box size — the same value every caller uses to
- * size the tile itself — is what guarantees adjacent hexes tile with zero
- * gap/overlap: any mismatch between "how big a tile is drawn" and "how far
- * apart tiles are placed" shows up as visible seams or overlap.
+ * Odd-r offset pointy-top tiling, in terms of the tile's actual rendered box
+ * (`width` = flat-side to flat-side, `height` = vertex to vertex) rather than
+ * a separately-tuned constant. Passing the real rendered box size — the same
+ * value every caller uses to size the tile itself — is what guarantees
+ * adjacent hexes tile with zero gap/overlap: any mismatch between "how big a
+ * tile is drawn" and "how far apart tiles are placed" shows up as visible
+ * seams or overlap.
  */
 export function calcHexPixelPosition(tile: IHexPositioned, width: number, height: number) {
-  const q = tile.coordinates.columnIndex;
-  const r = tile.coordinates.rowIndex;
+  const col = tile.coordinates.columnIndex;
+  const row = tile.coordinates.rowIndex;
 
-  const x = width * 0.75 * q;
-  const y = height * (r + (q % 2 ? 0.5 : 0));
+  const x = width * (col + (row & 1 ? 0.5 : 0));
+  const y = height * 0.75 * row;
 
   return { x, y };
 }
