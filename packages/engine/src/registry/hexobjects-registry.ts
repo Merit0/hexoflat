@@ -20,6 +20,7 @@ export const HEXOBJECT_KEYS = {
   HEALING_SPRING: 'healing-spring',
   WOOD_AND_LEAVES: 'wood-and-leaves',
   GRAVE: 'grave',
+  CHEST: 'chest',
 } as const;
 
 export type THexobjectKey = (typeof HEXOBJECT_KEYS)[keyof typeof HEXOBJECT_KEYS];

@@ -6,7 +6,8 @@ export type TLootKeys =
   | typeof HEXOBJECT_KEYS.COINS
   | typeof HEXOBJECT_KEYS.HEALTH_BOTTLE
   | typeof HEXOBJECT_KEYS.ENERGY_BOTTLE
-  | typeof HEXOBJECT_KEYS.MANA_BOTTLE;
+  | typeof HEXOBJECT_KEYS.MANA_BOTTLE
+  | typeof HEXOBJECT_KEYS.CHEST;
 
 export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.COINS]: {
@@ -88,6 +89,26 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
         stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,
         maxStack: 10,
         weightKG: 0.1,
+      },
+    },
+  },
+
+  [HEXOBJECT_KEYS.CHEST]: {
+    hexobjectKey: HEXOBJECT_KEYS.CHEST,
+    groupType: EHexobjectGroup.LOOT,
+    isInteractable: true,
+    title: 'Chest',
+    subtitle: 'Treasure',
+    description: 'A locked chest. Someone left it here.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/chest-token.png',
+    loot: {
+      name: 'Chest',
+      amount: 1,
+      traits: {
+        stackable: false,
+        stackKey: HEXOBJECT_KEYS.CHEST,
+        weightKG: 3,
       },
     },
   },
