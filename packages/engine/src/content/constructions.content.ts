@@ -10,7 +10,8 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.FIREPLACE
   | typeof HEXOBJECT_KEYS.HEALING_SPRING
   | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
-  | typeof HEXOBJECT_KEYS.GRAVE;
+  | typeof HEXOBJECT_KEYS.GRAVE
+  | typeof HEXOBJECT_KEYS.CHEST;
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
@@ -124,6 +125,18 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-resources/tree-hex.png',
     construction: { integrity: 0, isLocked: false },
+  },
+
+  [HEXOBJECT_KEYS.CHEST]: {
+    hexobjectKey: HEXOBJECT_KEYS.CHEST,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: false,
+    title: 'Chest',
+    subtitle: 'Treasure',
+    description: 'A locked chest. Someone left it here.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/chest-token.png',
+    construction: { integrity: 1000, isLocked: false },
   },
 
   [HEXOBJECT_KEYS.GRAVE]: {

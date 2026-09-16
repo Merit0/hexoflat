@@ -15,7 +15,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
     description:
       'This is the Axe! Use it to cut the trees. This tool can make damage! It is very durable.',
     collision: EHexCollision.SOLID,
-    spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.AXE}-hex-image.png`,
+    spritePath: '/hex-assets/hex-loot/axe-token.png',
     tool: {
       durability: 100,
       durabilityMax: 100,

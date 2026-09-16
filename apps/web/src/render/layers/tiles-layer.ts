@@ -10,6 +10,12 @@ import type { useCombatStore } from '@/stores/combat-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
 const FOG_URL = '/hex-assets/hex-effects/cloud-hex.png';
+const PICKUP_SPRITE_SCALE = 0.7;
+const PICKUP_GROUPS = new Set<EHexobjectGroup>([
+  EHexobjectGroup.LOOT,
+  EHexobjectGroup.TOOL,
+  EHexobjectGroup.EQUIPMENT,
+]);
 
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 type CombatStore = ReturnType<typeof useCombatStore>;
@@ -135,12 +141,20 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     node.root.position.set(x, y);
   }
 
-  function applyTexture(sprite: Sprite, path: string, node: TileNode) {
-    const fit = () => {
-      const { w, h } = deps.getTileSize();
+  function applyObjectFit(sprite: Sprite, w: number, h: number, groupType?: EHexobjectGroup) {
+    if (!groupType || !PICKUP_GROUPS.has(groupType)) {
       applyCoverFit(sprite, w, h);
-    };
+      return;
+    }
 
+    const boxWidth = w * PICKUP_SPRITE_SCALE;
+    const boxHeight = h * PICKUP_SPRITE_SCALE;
+    applyCoverFit(sprite, boxWidth, boxHeight);
+    sprite.position.x += (w - boxWidth) / 2;
+    sprite.position.y += (h - boxHeight) / 2;
+  }
+
+  function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => void) {
     sprite.texture = getTexture(path);
     fit();
 
@@ -155,15 +169,24 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     for (const unsub of node.unsubscribers) unsub();
     node.unsubscribers = [];
 
+    const bgFit = () => {
+      const { w, h } = deps.getTileSize();
+      applyCoverFit(node.bg, w, h);
+    };
+
     if (tile.isRevealed) {
-      applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node);
+      applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node, bgFit);
     } else {
-      applyTexture(node.bg, FOG_URL, node);
+      applyTexture(node.bg, FOG_URL, node, bgFit);
     }
 
     const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
     if (spritePath) {
-      applyTexture(node.sprite, spritePath, node);
+      const spriteFit = () => {
+        const { w, h } = deps.getTileSize();
+        applyObjectFit(node.sprite, w, h, tile.hexobject?.groupType);
+      };
+      applyTexture(node.sprite, spritePath, node, spriteFit);
     } else {
       node.sprite.texture = Texture.EMPTY;
     }
@@ -188,7 +211,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       if (!dirtyKeys || isNewNode || dirtyKeys.has(key)) {
         drawHexMask(node.mask, w, h);
         applyCoverFit(node.bg, w, h);
-        applyCoverFit(node.sprite, w, h);
+        applyObjectFit(node.sprite, w, h, tile.hexobject?.groupType);
         node.root.hitArea = createHexHitArea(w, h);
 
         positionNode(node, tile, w, h);
