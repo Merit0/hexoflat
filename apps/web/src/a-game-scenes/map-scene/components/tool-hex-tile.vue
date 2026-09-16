@@ -1,6 +1,7 @@
 <template>
   <div class="tool-hex-pos" :style="posStyle" data-testid="tool-hex-tile">
-    <div class="tool-hex-tile" :class="{ doing: isWorking }" :style="toolStyle">
+    <div class="tool-hex-tile" :class="{ doing: isWorking }">
+      <div class="tool-icon" :class="{ flipped: isHoverOnLeft }" :style="iconStyle"></div>
       <div v-if="!isWorking" class="tool-actions-row">
         <button
           v-if="bestActionLabel"
@@ -84,16 +85,27 @@ const posStyle = computed(() => {
   };
 });
 
-const toolStyle = computed(() => {
+const isHoverOnLeft = computed(() => {
+  const origin = heroToolStore.origin;
+  const hover = heroToolStore.hover;
+  if (!origin || !hover) return false;
+
+  const originPos = calcHexPixelPosition(
+    { coordinates: origin },
+    props.tileWidth,
+    props.tileHeight,
+  );
+  const hoverPos = calcHexPixelPosition({ coordinates: hover }, props.tileWidth, props.tileHeight);
+
+  return hoverPos.x < originPos.x;
+});
+
+const iconStyle = computed(() => {
   const key = activeToolKey.value ?? HEXOBJECT_KEYS.HAND;
   const toolHexImagePath = getPrototype(key).spritePath;
 
   return {
-    // icon on top, tool-frame-hex behind
-    backgroundImage: `url(${toolHexImagePath}), url('/hex-assets/hex-tools/tool-frame-hex.png')`,
-    backgroundSize: '100%, cover',
-    backgroundRepeat: 'no-repeat, no-repeat',
-    backgroundPosition: 'center, center',
+    backgroundImage: `url(${toolHexImagePath})`,
   };
 });
 
@@ -251,8 +263,27 @@ function executeAction() {
   z-index: 120;
   pointer-events: auto;
 
-  /* Background = tool-frame-hex + the tool icon on top, both set in `toolStyle`. */
+  background-image: url('/hex-assets/hex-tools/tool-frame-hex.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+}
+
+.tool-icon {
+  position: absolute;
+  inset: 0;
+
+  background-size: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  pointer-events: none;
+}
+
+.tool-icon.flipped {
+  transform: scaleX(-1);
 }
 
 .hide-btn {
