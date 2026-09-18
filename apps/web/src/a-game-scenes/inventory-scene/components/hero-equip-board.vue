@@ -22,7 +22,7 @@
           ]"
           :data-eqslot="t.kind === 'slot' ? t.id : undefined"
           :data-testid="t.kind === 'slot' ? `equip-slot-${t.id}` : 'equip-hero-slot'"
-          :style="[tileStyle(t), { width: HEX_W + 'px', height: HEX_H + 'px' }]"
+          :style="[tileStyle(t), slotRarityStyle(t), { width: HEX_W + 'px', height: HEX_H + 'px' }]"
         >
           <div v-if="t.kind === 'hero'" class="hero-core-token">
             <div class="hero-core-image" :style="heroImageStyle"></div>
@@ -40,10 +40,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
+import { getPrototype } from '@hexoflat/engine';
 import { useHeroInventoryStore, type TEquipSlot } from '@/stores/hero-inventory-store';
 import { inventoryDragState } from '@/composables/use-inventory-drag';
 import EquipToken from '@/a-game-scenes/inventory-scene/components/equip-token.vue';
 import { resolveEquipCompatibility } from '@hexoflat/engine/utils/inventory/equip-compatibility';
+import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
 
 const EQUIP_SLOTS: TEquipSlot[] = ['weapon', 'shield', 'armor', 'gloves', 'helm', 'boots'];
 
@@ -122,6 +124,23 @@ const tiles = computed<PseudoTile[]>(() => {
 
 function isDropSlot(id: string): id is TEquipSlot {
   return EQUIP_SLOTS.includes(id as TEquipSlot);
+}
+
+function slotRarityStyle(t: PseudoTile): Record<string, string> {
+  if (t.kind !== 'slot' || !isDropSlot(t.id)) return {};
+
+  const item = getEquippedItem(t.id);
+  if (!item) return {};
+
+  const rarity = getObjectRarity(getPrototype(item.key));
+  if (!rarity) return {};
+
+  return {
+    backgroundImage: `url('${RARITY_FRAME_URLS[rarity]}')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  };
 }
 
 function dragStateClass(id: TEquipSlot) {

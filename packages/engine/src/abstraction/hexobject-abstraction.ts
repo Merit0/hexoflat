@@ -76,6 +76,7 @@ export interface ICreature {
 export interface ITool extends IDurable {
   attackMultiplier?: number;
   defense?: number;
+  rarity?: EEquipmentRarity;
   capabilities: {
     canCut?: boolean;
     canMine?: boolean;
@@ -104,6 +105,7 @@ export interface IWeapon {
 
 export interface IEquipment extends IDurable {
   defense?: number;
+  rarity?: EEquipmentRarity;
   capabilities?: {
     canAttack?: boolean;
     canBlock?: boolean;
@@ -147,6 +149,14 @@ export enum EHexobjectGroup {
   CONSTRUCTION = 'construction',
   LOOT = 'loot',
   EQUIPMENT = 'equipment',
+}
+
+export enum EEquipmentRarity {
+  BASIC = 'basic',
+  COMMON = 'common',
+  RARE = 'rare',
+  LEGEND = 'legend',
+  MYTHIC = 'mythic',
 }
 
 export enum EHexCollision {

@@ -5,6 +5,7 @@ import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstract
 import { getMeta, getPrototype } from '@hexoflat/engine';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
+import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
 
@@ -33,6 +34,7 @@ interface TileNode {
   root: Container;
   mask: Graphics;
   bg: Sprite;
+  frame: Sprite;
   sprite: Sprite;
   defendMarker: Sprite | null;
   lockChip: Text | null;
@@ -83,6 +85,10 @@ function constructionLockLabel(
   return null;
 }
 
+function getGearRarity(tile: IHexTile) {
+  return tile.hexobject ? getObjectRarity(tile.hexobject) : null;
+}
+
 function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): string | null {
   if (!tile.isRevealed) return null;
 
@@ -113,9 +119,10 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
 
     const mask = createHexMask(w, h);
     const bg = new Sprite();
+    const frame = new Sprite();
     const sprite = new Sprite();
 
-    root.addChild(mask, bg, sprite);
+    root.addChild(mask, bg, frame, sprite);
     root.mask = mask;
     container.addChild(root);
 
@@ -123,6 +130,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       root,
       mask,
       bg,
+      frame,
       sprite,
       defendMarker: null,
       lockChip: null,
@@ -180,6 +188,17 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       applyTexture(node.bg, FOG_URL, node, bgFit);
     }
 
+    const gearRarity = tile.isRevealed ? getGearRarity(tile) : null;
+    if (gearRarity) {
+      const frameFit = () => {
+        const { w, h } = deps.getTileSize();
+        applyCoverFit(node.frame, w, h);
+      };
+      applyTexture(node.frame, RARITY_FRAME_URLS[gearRarity], node, frameFit);
+    } else {
+      node.frame.texture = Texture.EMPTY;
+    }
+
     const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
     if (spritePath) {
       const spriteFit = () => {
@@ -211,6 +230,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       if (!dirtyKeys || isNewNode || dirtyKeys.has(key)) {
         drawHexMask(node.mask, w, h);
         applyCoverFit(node.bg, w, h);
+        applyCoverFit(node.frame, w, h);
         applyObjectFit(node.sprite, w, h, tile.hexobject?.groupType);
         node.root.hitArea = createHexHitArea(w, h);
 
@@ -283,7 +303,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
         node.defendMarker = new Sprite();
         node.defendMarker.anchor.set(0.5, 0.6);
         node.defendMarker.position.set(w / 2, h / 2);
-        node.root.addChildAt(node.defendMarker, 2);
+        node.root.addChildAt(node.defendMarker, 3);
       }
 
       node.defendMarker.texture = getTexture(path);

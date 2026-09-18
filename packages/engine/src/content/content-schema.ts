@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  EEquipmentRarity,
   EHexCollision,
   EHexobjectGroup,
   EQUIP_SLOTS,
@@ -35,7 +36,7 @@ const healSchema = z.object({
 const baseContentFields = {
   hexobjectKey: hexobjectKeySchema,
   isInteractable: z.boolean(),
-  collision: z.nativeEnum(EHexCollision),
+  collision: z.enum(EHexCollision),
   spritePath: z.string().optional(),
   // title/subtitle/description (and creature.name/action labels below) are
   // i18n keys (e.g. 'content.skeletor.title'), not literal display text —
@@ -94,6 +95,7 @@ const toolSchema = z.object({
   durabilityMax: z.number(),
   attackMultiplier: z.number().optional(),
   defense: z.number().optional(),
+  rarity: z.enum(EEquipmentRarity).optional(),
   capabilities: z.object({
     canCut: z.boolean().optional(),
     canMine: z.boolean().optional(),
@@ -121,6 +123,7 @@ const equipmentSchema = z.object({
   durability: z.number(),
   durabilityMax: z.number(),
   defense: z.number().optional(),
+  rarity: z.enum(EEquipmentRarity).optional(),
   capabilities: z
     .object({
       canAttack: z.boolean().optional(),

@@ -16,7 +16,7 @@ export const StartHexActionCommandSchema = z.object({
   payload: z.object({
     heroId: z.string(),
     coordinates: hexCoordinatesSchema,
-    actionType: z.nativeEnum(EHexActionType),
+    actionType: z.enum(EHexActionType),
     toolKey: z.string(),
     now: z.number(),
   }),
