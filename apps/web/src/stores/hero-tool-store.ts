@@ -13,6 +13,7 @@ export interface HeroToolState {
   hover: IHexCoordinates | null;
   availableActions: ResolvedAction[] | [];
   hintLabel: string | null;
+  actionMessage: string | null;
   durability: number;
   durabilityMax: number;
   isLocked: boolean;
@@ -32,6 +33,7 @@ export const useHeroToolStore = defineStore('heroTool', {
     allowedKeys: [],
     availableActions: [] as ResolvedAction[],
     hintLabel: null as string | null,
+    actionMessage: null as string | null,
     isLocked: false,
     lockedUntil: null,
     lockedTile: null,
@@ -115,6 +117,14 @@ export const useHeroToolStore = defineStore('heroTool', {
     setResolvedActions(actions: ResolvedAction[]) {
       this.availableActions = actions;
       this.hintLabel = actions.length ? actions[0].label : null;
+    },
+
+    setActionMessage(message: string) {
+      this.actionMessage = message;
+    },
+
+    clearActionMessage() {
+      this.actionMessage = null;
     },
 
     clearResolvedActions() {

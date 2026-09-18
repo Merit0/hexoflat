@@ -1,4 +1,4 @@
-import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
+import { EChestType, EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { TContentDefinition } from './content-schema';
@@ -11,7 +11,8 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.HEALING_SPRING
   | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
   | typeof HEXOBJECT_KEYS.GRAVE
-  | typeof HEXOBJECT_KEYS.CHEST;
+  | typeof HEXOBJECT_KEYS.CHEST
+  | typeof HEXOBJECT_KEYS.STASH_CHEST;
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
@@ -130,13 +131,31 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
   [HEXOBJECT_KEYS.CHEST]: {
     hexobjectKey: HEXOBJECT_KEYS.CHEST,
     groupType: EHexobjectGroup.CONSTRUCTION,
-    isInteractable: false,
+    isInteractable: true,
     title: 'Chest',
     subtitle: 'Treasure',
     description: 'A locked chest. Someone left it here.',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/chest-token.png',
-    construction: { integrity: 1000, isLocked: false },
+    construction: { integrity: 1000, isLocked: false, chestType: EChestType.LOOT },
+    actions: {
+      [EHexActionType.OPEN]: { label: 'Open', requiredTool: HEXOBJECT_KEYS.HAND },
+    },
+  },
+
+  [HEXOBJECT_KEYS.STASH_CHEST]: {
+    hexobjectKey: HEXOBJECT_KEYS.STASH_CHEST,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'Stash Chest',
+    subtitle: 'Storage',
+    description: 'A shared storage crate for the camp.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/stash-chest-token-image.png',
+    construction: { integrity: 1000, isLocked: false, chestType: EChestType.STASH },
+    actions: {
+      [EHexActionType.OPEN]: { label: 'Open', requiredTool: HEXOBJECT_KEYS.HAND },
+    },
   },
 
   [HEXOBJECT_KEYS.GRAVE]: {

@@ -67,6 +67,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
         canPickup: true,
         canEnter: true,
         canUse: true,
+        canOpen: true,
         canAttack: true,
         canBlock: true,
       },

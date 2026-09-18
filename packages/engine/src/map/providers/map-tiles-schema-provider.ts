@@ -72,7 +72,7 @@ export const campingMapConfig: IHexMapPlacement[] = [
     coordinates: [{ rowIndex: 3, columnIndex: 3 }],
   },
   {
-    hexobject: { hexobjectKey: HEXOBJECT_KEYS.CHEST },
+    hexobject: { hexobjectKey: HEXOBJECT_KEYS.STASH_CHEST },
     coordinates: [{ rowIndex: 1, columnIndex: 3 }],
   },
   {

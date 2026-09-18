@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  EChestType,
   EEquipmentRarity,
   EHexCollision,
   EHexobjectGroup,
@@ -102,6 +103,7 @@ const toolSchema = z.object({
     canPickup: z.boolean().optional(),
     canEnter: z.boolean().optional(),
     canUse: z.boolean().optional(),
+    canOpen: z.boolean().optional(),
     canAttack: z.boolean().optional(),
     canBlock: z.boolean().optional(),
   }),
@@ -111,6 +113,7 @@ const toolSchema = z.object({
 const constructionSchema = z.object({
   integrity: z.number(),
   isLocked: z.boolean().optional(),
+  chestType: z.enum(EChestType).optional(),
 });
 
 const weaponSchema = z.object({

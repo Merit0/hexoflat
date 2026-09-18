@@ -21,6 +21,7 @@ export const HEXOBJECT_KEYS = {
   WOOD_AND_LEAVES: 'wood-and-leaves',
   GRAVE: 'grave',
   CHEST: 'chest',
+  STASH_CHEST: 'stash-chest',
 } as const;
 
 export type THexobjectKey = (typeof HEXOBJECT_KEYS)[keyof typeof HEXOBJECT_KEYS];

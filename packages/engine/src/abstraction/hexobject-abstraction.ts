@@ -83,6 +83,7 @@ export interface ITool extends IDurable {
     canPickup?: boolean;
     canEnter?: boolean;
     canUse?: boolean;
+    canOpen?: boolean;
     canAttack?: boolean;
     canBlock?: boolean;
   };
@@ -95,6 +96,7 @@ export interface ITool extends IDurable {
 export interface IConstruction {
   integrity: number;
   isLocked?: boolean;
+  chestType?: EChestType;
 }
 
 export interface IWeapon {
@@ -157,6 +159,11 @@ export enum EEquipmentRarity {
   RARE = 'rare',
   LEGEND = 'legend',
   MYTHIC = 'mythic',
+}
+
+export enum EChestType {
+  LOOT = 'loot',
+  STASH = 'stash',
 }
 
 export enum EHexCollision {

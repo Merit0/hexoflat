@@ -248,6 +248,8 @@ function executeAction() {
       heroToolStore.stopTool();
     }
     worldMapStore.saveToStorage();
+  } else if (res.message) {
+    heroToolStore.setActionMessage(res.message);
   }
 }
 </script>
