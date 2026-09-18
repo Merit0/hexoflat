@@ -5,11 +5,18 @@ import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstract
 import { getMeta, getPrototype } from '@hexoflat/engine';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
+import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
 
-const FOG_TILE_URL = '/hex-assets/hex-effects/fog-tile-image.png';
-const DEFAULT_BG_URL = '/hex-assets/token-placement-image.png';
+const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
+const FOG_URL = '/hex-assets/hex-effects/cloud-hex.png';
+const PICKUP_SPRITE_SCALE = 0.7;
+const PICKUP_GROUPS = new Set<EHexobjectGroup>([
+  EHexobjectGroup.LOOT,
+  EHexobjectGroup.TOOL,
+  EHexobjectGroup.EQUIPMENT,
+]);
 
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 type CombatStore = ReturnType<typeof useCombatStore>;
@@ -27,17 +34,11 @@ interface TileNode {
   root: Container;
   mask: Graphics;
   bg: Sprite;
+  frame: Sprite;
   sprite: Sprite;
   defendMarker: Sprite | null;
   lockChip: Text | null;
   unsubscribers: Array<() => void>;
-  // The node currently at this coordinate key is reused across `syncTiles`
-  // calls — including across location switches (camping <-> world map),
-  // which hand in a brand-new `IHexTile` object per coordinate. Click/hover
-  // handlers read this mutable field (kept fresh in `syncTiles`) instead of
-  // closing over the `tile` argument `createNode` was first called with,
-  // which would otherwise stay frozen to whichever location's tile happened
-  // to be at this coordinate the first time a node was ever created here.
   tile: IHexTile;
 }
 
@@ -84,6 +85,10 @@ function constructionLockLabel(
   return null;
 }
 
+function getGearRarity(tile: IHexTile) {
+  return tile.hexobject ? getObjectRarity(tile.hexobject) : null;
+}
+
 function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): string | null {
   if (!tile.isRevealed) return null;
 
@@ -114,9 +119,10 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
 
     const mask = createHexMask(w, h);
     const bg = new Sprite();
+    const frame = new Sprite();
     const sprite = new Sprite();
 
-    root.addChild(mask, bg, sprite);
+    root.addChild(mask, bg, frame, sprite);
     root.mask = mask;
     container.addChild(root);
 
@@ -124,6 +130,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       root,
       mask,
       bg,
+      frame,
       sprite,
       defendMarker: null,
       lockChip: null,
@@ -142,12 +149,20 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     node.root.position.set(x, y);
   }
 
-  function applyTexture(sprite: Sprite, path: string, node: TileNode) {
-    const fit = () => {
-      const { w, h } = deps.getTileSize();
+  function applyObjectFit(sprite: Sprite, w: number, h: number, groupType?: EHexobjectGroup) {
+    if (!groupType || !PICKUP_GROUPS.has(groupType)) {
       applyCoverFit(sprite, w, h);
-    };
+      return;
+    }
 
+    const boxWidth = w * PICKUP_SPRITE_SCALE;
+    const boxHeight = h * PICKUP_SPRITE_SCALE;
+    applyCoverFit(sprite, boxWidth, boxHeight);
+    sprite.position.x += (w - boxWidth) / 2;
+    sprite.position.y += (h - boxHeight) / 2;
+  }
+
+  function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => void) {
     sprite.texture = getTexture(path);
     fit();
 
@@ -162,20 +177,38 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     for (const unsub of node.unsubscribers) unsub();
     node.unsubscribers = [];
 
-    const bgPath = tile.isRevealed ? tile.hexBackgroundImagePath || DEFAULT_BG_URL : FOG_TILE_URL;
-    applyTexture(node.bg, bgPath, node);
+    const bgFit = () => {
+      const { w, h } = deps.getTileSize();
+      applyCoverFit(node.bg, w, h);
+    };
 
-    // No hexobject (fogged, or revealed-but-empty) means no sprite to draw —
-    // leave the layer empty so the bg texture (fog pattern, or the
-    // token-placement pattern for an empty revealed tile) shows through
-    // instead of being blotted out by a filler image.
-    const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
-    if (!spritePath) {
-      node.sprite.texture = Texture.EMPTY;
-      return;
+    if (tile.isRevealed) {
+      applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node, bgFit);
+    } else {
+      applyTexture(node.bg, FOG_URL, node, bgFit);
     }
 
-    applyTexture(node.sprite, spritePath, node);
+    const gearRarity = tile.isRevealed ? getGearRarity(tile) : null;
+    if (gearRarity) {
+      const frameFit = () => {
+        const { w, h } = deps.getTileSize();
+        applyCoverFit(node.frame, w, h);
+      };
+      applyTexture(node.frame, RARITY_FRAME_URLS[gearRarity], node, frameFit);
+    } else {
+      node.frame.texture = Texture.EMPTY;
+    }
+
+    const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
+    if (spritePath) {
+      const spriteFit = () => {
+        const { w, h } = deps.getTileSize();
+        applyObjectFit(node.sprite, w, h, tile.hexobject?.groupType);
+      };
+      applyTexture(node.sprite, spritePath, node, spriteFit);
+    } else {
+      node.sprite.texture = Texture.EMPTY;
+    }
   }
 
   function syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>) {
@@ -194,12 +227,11 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       }
       node.tile = tile;
 
-      // A node that was just created has never been positioned/drawn, so it
-      // always needs the full treatment regardless of the dirty set.
       if (!dirtyKeys || isNewNode || dirtyKeys.has(key)) {
         drawHexMask(node.mask, w, h);
         applyCoverFit(node.bg, w, h);
-        applyCoverFit(node.sprite, w, h);
+        applyCoverFit(node.frame, w, h);
+        applyObjectFit(node.sprite, w, h, tile.hexobject?.groupType);
         node.root.hitArea = createHexHitArea(w, h);
 
         positionNode(node, tile, w, h);
@@ -271,7 +303,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
         node.defendMarker = new Sprite();
         node.defendMarker.anchor.set(0.5, 0.6);
         node.defendMarker.position.set(w / 2, h / 2);
-        node.root.addChildAt(node.defendMarker, 2);
+        node.root.addChildAt(node.defendMarker, 3);
       }
 
       node.defendMarker.texture = getTexture(path);

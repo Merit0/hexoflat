@@ -2,7 +2,7 @@ import type HexMapModel from './models/hex-map-model';
 import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
-import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 
 /**
  * Fog of war: which tiles the hero can see.
@@ -42,7 +42,7 @@ export function revealAroundHero(
   const byKey = indexByCoordinate(map);
   const revealedCoords: IHexCoordinates[] = [];
 
-  for (const coord of [heroCoordinates, ...getOddQNeighbors(heroCoordinates)]) {
+  for (const coord of [heroCoordinates, ...getHexNeighbors(heroCoordinates)]) {
     const tile = byKey.get(coordinateKey(coord));
     if (!tile) continue;
     tile.isRevealed = true;
@@ -69,7 +69,7 @@ export function revealTileNextToHero(
   const targetKey = coordinateKey(tile.coordinates);
   if (targetKey === coordinateKey(heroCoordinates)) return null;
 
-  const isNeighbor = getOddQNeighbors(heroCoordinates).some(
+  const isNeighbor = getHexNeighbors(heroCoordinates).some(
     (neighbor) => coordinateKey(neighbor) === targetKey,
   );
   if (!isNeighbor) return null;

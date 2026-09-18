@@ -2,6 +2,7 @@
   <div class="scene-root game-root" data-testid="map-scene-root" :style="sceneLayoutStyle">
     <div class="map-pane">
       <combat-hud />
+      <action-alert-banner />
       <div class="map-session-controls">
         <button
           class="icon-btn"
@@ -78,10 +79,11 @@ import {
 import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
+import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { coordinateKey, getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { coordinateKey, getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -251,7 +253,7 @@ const campHealEffectCoord = computed(() => {
   if (!isCampfireHealActive.value || !heroStore.heroCoordinates) return null;
 
   const neighborTiles = (
-    getOddQNeighbors(heroStore.heroCoordinates)
+    getHexNeighbors(heroStore.heroCoordinates)
       .map((coord) => getTileByCoord(coord))
       .filter(Boolean) as IHexTile[]
   )

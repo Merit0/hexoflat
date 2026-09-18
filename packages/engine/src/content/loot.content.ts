@@ -17,7 +17,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     subtitle: 'Lucky find',
     description: 'U are lucky and find the Coins',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-loot/coins-token-image.png',
+    spritePath: '/hex-assets/hex-loot/coins-hex.png',
     loot: {
       name: 'Coins',
       amount: 1,

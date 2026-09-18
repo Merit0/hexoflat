@@ -11,12 +11,13 @@ export class HexMapProvider {
   static getHomeLand(): HexMapModel {
     return new WorldGenerator({
       worldName: 'Silesia',
-      worldWidth: 27,
-      worldHeight: 11,
+      worldWidth: 17,
+      worldHeight: 15,
       worldComplexity: Complexity.EASY,
       config: homelandMapConfig,
       safeZoneRadius: 1,
       fogMode: 'FOG',
+      terrainImage: '/hex-assets/board-hexes/grass-hex.png',
     }).generate();
   }
 
@@ -29,6 +30,7 @@ export class HexMapProvider {
       config: campingMapConfig,
       safeZoneRadius: 1,
       fogMode: 'ALL_REVEALED',
+      terrainImage: '/hex-assets/board-hexes/stone-hex.png',
     }).generate();
   }
 

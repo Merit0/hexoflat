@@ -1,24 +1,24 @@
 import { Graphics, Polygon, Sprite, Texture } from 'pixi.js';
 
 /**
- * Mirrors --hex-clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)
+ * Mirrors --hex-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
  * from apps/web/src/assets/global.css — the single source of truth for the
- * flat-top hex silhouette every hex-shaped DOM element used to clip to.
+ * pointy-top hex silhouette every hex-shaped DOM element clips to.
  */
 export function buildHexPolygon(width: number, height: number): Polygon {
   return new Polygon([
-    width * 0.25,
-    0,
-    width * 0.75,
+    width * 0.5,
     0,
     width,
-    height * 0.5,
-    width * 0.75,
-    height,
-    width * 0.25,
+    height * 0.25,
+    width,
+    height * 0.75,
+    width * 0.5,
     height,
     0,
-    height * 0.5,
+    height * 0.75,
+    0,
+    height * 0.25,
   ]);
 }
 

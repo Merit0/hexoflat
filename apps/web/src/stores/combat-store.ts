@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
-import { getOddQNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
@@ -359,7 +359,7 @@ export const useCombatStore = defineStore('combat-store', {
       )
         return;
 
-      const adjacentEnemies = getOddQNeighbors(heroCoordinates)
+      const adjacentEnemies = getHexNeighbors(heroCoordinates)
         .map((coord) => worldStore.getTileAt(coord))
         .filter((tile): tile is HexTileModel => !!tile)
         .filter((tile) => {

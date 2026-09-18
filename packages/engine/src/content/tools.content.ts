@@ -1,4 +1,8 @@
-import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
+import {
+  EEquipmentRarity,
+  EHexCollision,
+  EHexobjectGroup,
+} from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
 
@@ -15,7 +19,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
     description:
       'This is the Axe! Use it to cut the trees. This tool can make damage! It is very durable.',
     collision: EHexCollision.SOLID,
-    spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.AXE}-hex-image.png`,
+    spritePath: '/hex-assets/hex-loot/axe-token.png',
     tool: {
       durability: 100,
       durabilityMax: 100,
@@ -38,7 +42,8 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
     tool: {
       durability: 100,
       durabilityMax: 100,
-      capabilities: { canMine: true },
+      attackMultiplier: 1,
+      capabilities: { canMine: true, canAttack: true },
       traits: { weightKG: 1.5 },
     },
   },
@@ -51,16 +56,18 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
     subtitle: 'Tool',
     description: 'This is the Hand! Use it to pick something.',
     collision: EHexCollision.NONE,
-    spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.HAND}-hex-image.png`,
+    spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.HAND}-hex.png`,
     tool: {
       durability: 1000000,
       durabilityMax: 1000000,
       attackMultiplier: 0.1,
       defense: 0.1,
+      rarity: EEquipmentRarity.BASIC,
       capabilities: {
         canPickup: true,
         canEnter: true,
         canUse: true,
+        canOpen: true,
         canAttack: true,
         canBlock: true,
       },

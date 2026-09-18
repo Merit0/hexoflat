@@ -14,10 +14,10 @@ allowBuilds:
 overrides:
   find-my-way: '>=9.6.1'
   # @nestjs/platform-fastify@11.1.28 also hard-pins an exact fastify@5.10.0,
-  # separate from apps/api's own ^5.11.0 — two installed copies means two
+  # separate from apps/api's own ^5.12.4 — two installed copies means two
   # structurally distinct FastifyInstance types, which broke @fastify/helmet's
   # plugin typing. Force a single resolved fastify across the tree.
-  fastify: '^5.11.0'
+  fastify: '^5.12.4'
   # postcss@8.5.25 (pulled in by @vue/compiler-sfc, several levels under
   # apps/web's vue dependency) hard-pins nanoid@3.3.16, vulnerable to
   # GHSA-2v37-7h3g-55p8 (custom generators can loop indefinitely when size is

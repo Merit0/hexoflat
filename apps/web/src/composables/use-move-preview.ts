@@ -3,7 +3,7 @@ import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '@hexoflat/engine/hero-movement/scout-progression';
-import { coordinateKey, getOddQNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
@@ -51,7 +51,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
       combatStore.combatAttackUsed &&
       !combatStore.combatDefendUsed
     ) {
-      const isAdjacent = getOddQNeighbors(heroStore.heroCoordinates).some(
+      const isAdjacent = getHexNeighbors(heroStore.heroCoordinates).some(
         (coord) =>
           coord.columnIndex === hoveredTileCoord.columnIndex &&
           coord.rowIndex === hoveredTileCoord.rowIndex,

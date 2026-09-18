@@ -1,7 +1,7 @@
 import type HexMapModel from '../map/models/hex-map-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
-import { coordinateKey, getOddQNeighbors, hexDistance } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, hexDistance } from '../utils/hex-utils';
 import { findShortestPath } from '../hero-movement/pathfinding-service';
 
 /**
@@ -38,7 +38,7 @@ export function findAttackOptions(
 ): EnemyMoveOption[] {
   const enemyKey = coordinateKey(enemyCoordinates);
 
-  return getOddQNeighbors(heroCoordinates)
+  return getHexNeighbors(heroCoordinates)
     .map((coord): EnemyMoveOption | null => {
       const coordKey = coordinateKey(coord);
       const tile = map.tiles.find((t) => coordinateKey(t.coordinates) === coordKey);
@@ -91,7 +91,7 @@ export function findAutoDefendCoords(
   map: HexMapModel,
   enemyCoordinates: IHexCoordinates,
 ): IHexCoordinates[] {
-  return getOddQNeighbors(enemyCoordinates)
+  return getHexNeighbors(enemyCoordinates)
     .filter((coord) => {
       const coordKey = coordinateKey(coord);
       return map.tiles.some((tile) => coordinateKey(tile.coordinates) === coordKey);
