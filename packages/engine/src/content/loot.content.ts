@@ -1,4 +1,8 @@
-import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
+import {
+  EEquipmentRarity,
+  EHexCollision,
+  EHexobjectGroup,
+} from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
 
@@ -41,6 +45,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Health Potion',
       amount: 1,
+      rarity: EEquipmentRarity.BASIC,
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
@@ -62,6 +67,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Energy Potion',
       amount: 10,
+      rarity: EEquipmentRarity.BASIC,
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
@@ -83,6 +89,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Mana Potion',
       amount: 10,
+      rarity: EEquipmentRarity.BASIC,
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,

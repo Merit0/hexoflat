@@ -43,9 +43,9 @@ export class MapRegistry {
       key: 'cave',
       title: 'Skeletor Kingdom',
       create: () => HexMapProvider.getSkeletorsKingdom(),
-      entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
+      entryHexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
       safeZoneRadius: 1,
-      fogPolicy: 'FOG',
+      fogPolicy: 'ALL_REVEALED',
       respawnAfterClearedMs: 60_000,
     },
   };

@@ -113,7 +113,7 @@ export const campingMapConfig: IHexMapPlacement[] = [
 
 export const skeletorsKingdomMapConfig: IHexMapPlacement[] = [
   {
-    hexobject: { hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE },
+    hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT },
     coordinates: [{ rowIndex: 2, columnIndex: 0 }],
     entry: {
       type: 'DEFAULT',

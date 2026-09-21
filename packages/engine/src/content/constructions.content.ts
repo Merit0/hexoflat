@@ -6,6 +6,7 @@ import type { TContentDefinition } from './content-schema';
 export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.CAMPING_ENTRANCE
   | typeof HEXOBJECT_KEYS.CAVE_ENTRANCE
+  | typeof HEXOBJECT_KEYS.CAVE_EXIT
   | typeof HEXOBJECT_KEYS.HOMELAND_GATE
   | typeof HEXOBJECT_KEYS.FIREPLACE
   | typeof HEXOBJECT_KEYS.HEALING_SPRING
@@ -53,6 +54,26 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
       },
     },
     enter: { type: 'WORLD', locationKey: 'cave' },
+  },
+
+  [HEXOBJECT_KEYS.CAVE_EXIT]: {
+    hexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'Cave Exit',
+    subtitle: 'Silesia',
+    description: 'A way back out of the cave',
+    collision: EHexCollision.SOLID,
+    spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.CAVE_EXIT}-token-image.png`,
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.ENTER]: {
+        label: 'Enter',
+        durationMs: 400,
+        requiredTool: HEXOBJECT_KEYS.HAND,
+      },
+    },
+    enter: { type: 'WORLD', locationKey: 'silesia' },
   },
 
   [HEXOBJECT_KEYS.HOMELAND_GATE]: {

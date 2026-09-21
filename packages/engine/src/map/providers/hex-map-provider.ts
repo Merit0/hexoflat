@@ -42,7 +42,8 @@ export class HexMapProvider {
       worldComplexity: Complexity.HARD,
       config: skeletorsKingdomMapConfig,
       safeZoneRadius: 1,
-      fogMode: 'FOG',
+      fogMode: 'ALL_REVEALED',
+      terrainImage: '/hex-assets/board-hexes/stone-hex.png',
     }).generate();
   }
 }

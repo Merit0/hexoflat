@@ -61,6 +61,7 @@ export interface IResource extends ITraitable<IResourceTraits> {
 export interface ILoot extends ITraitable<ILootTraits> {
   name: string;
   amount?: number;
+  rarity?: EEquipmentRarity;
   traits: ILootTraits;
 }
 

@@ -12,6 +12,7 @@ export const HEXOBJECT_KEYS = {
   SHIELD: 'shield',
   CAMPING_ENTRANCE: 'camping-entrance',
   CAVE_ENTRANCE: 'cave-entrance',
+  CAVE_EXIT: 'cave-exit',
   HOMELAND_GATE: 'homeland-gate',
   HEALTH_BOTTLE: 'health-bottle',
   ENERGY_BOTTLE: 'energy-bottle',

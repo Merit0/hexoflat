@@ -74,6 +74,7 @@ const resourceSchema = z.object({
 const lootSchema = z.object({
   name: z.string(),
   amount: z.number().optional(),
+  rarity: z.enum(EEquipmentRarity).optional(),
   traits: z.object({
     stackable: z.boolean().optional(),
     maxStack: z.number().optional(),
