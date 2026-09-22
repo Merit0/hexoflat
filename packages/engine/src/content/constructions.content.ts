@@ -187,7 +187,6 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'A fallen enemy rests here.',
     description: 'A fresh grave marks a fallen enemy.',
     collision: EHexCollision.NONE,
-    spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.GRAVE}-token-image.svg`,
     construction: { integrity: 1000, isLocked: false },
   },
 };
