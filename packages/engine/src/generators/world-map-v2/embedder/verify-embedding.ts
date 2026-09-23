@@ -1,9 +1,10 @@
 import { EHexCollision } from '../../../abstraction/hexobject-abstraction';
 import type { THexobject } from '../../../abstraction/hexobject-abstraction';
+import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-interface';
 import type { TileLike, TileMapLike } from '../../../hero-movement/movement-grid';
 import { findShortestPath } from '../../../hero-movement/pathfinding-service';
-import type { RegionTopologyGraph } from '../region-topology';
 import type { EmbeddedHex } from '../embedded-board';
+import type { AreaLink } from './contract-path-segments';
 
 /**
  * A structural stand-in for "something solid is here" — not real game
@@ -25,36 +26,52 @@ function toTileMap(hexes: EmbeddedHex[]): TileMapLike {
 }
 
 /**
- * Re-verifies, using the engine's own pathfinding, that every OPEN edge of
- * the source graph is actually walkable once laid out in hexes. This is not
- * a formality: hex-line filling and shell construction both run after the
- * coarse layout, so this is the check that would catch either of them
- * accidentally severing a route.
+ * Re-verifies, using the engine's own pathfinding, that every named
+ * from/to pair is actually walkable once laid out in hexes. This is not a
+ * formality: growth, obstruction/landmark carving and link carving all run
+ * after the coarse layout, so this is the check that would catch any of
+ * them accidentally severing a route.
  */
-export function verifyEmbeddingConnectivity(
-  graph: RegionTopologyGraph,
+export function verifyHexPathsExist(
   hexes: EmbeddedHex[],
-  anchorHexByNodeId: Map<string, EmbeddedHex>,
+  pairs: { id: string; from: IHexCoordinates; to: IHexCoordinates }[],
 ): { ok: true } | { ok: false; reason: string } {
   const tileMap = toTileMap(hexes);
 
-  for (const edge of graph.edges) {
-    if (edge.traversal !== 'OPEN') continue;
-
-    const fromHex = anchorHexByNodeId.get(edge.from);
-    const toHex = anchorHexByNodeId.get(edge.to);
-    if (!fromHex || !toHex) {
-      return { ok: false, reason: `edge "${edge.id}" references a node with no placed hex` };
-    }
-
-    const path = findShortestPath(tileMap, fromHex.coordinates, toHex.coordinates);
+  for (const pair of pairs) {
+    const path = findShortestPath(tileMap, pair.from, pair.to);
     if (!path) {
-      return {
-        ok: false,
-        reason: `edge "${edge.id}" (${edge.from} -> ${edge.to}) is not traversable in the embedded hexes`,
-      };
+      return { ok: false, reason: `"${pair.id}" is not traversable in the embedded hexes` };
     }
   }
 
   return { ok: true };
+}
+
+/**
+ * G2b shape: verifies every contracted area-to-area link (PATH_SEGMENT
+ * chains already collapsed into their link — see contract-path-segments.ts)
+ * using each area's first grown hex as its representative anchor.
+ */
+export function verifyAreaLinksConnectivity(
+  links: AreaLink[],
+  hexes: EmbeddedHex[],
+  anchorByAreaId: Map<string, IHexCoordinates>,
+): { ok: true } | { ok: false; reason: string } {
+  const pairs = links.map((link) => {
+    const from = anchorByAreaId.get(link.from);
+    const to = anchorByAreaId.get(link.to);
+    return { id: link.id, from, to };
+  });
+
+  for (const pair of pairs) {
+    if (!pair.from || !pair.to) {
+      return { ok: false, reason: `link "${pair.id}" references an area with no anchor hex` };
+    }
+  }
+
+  return verifyHexPathsExist(
+    hexes,
+    pairs as { id: string; from: IHexCoordinates; to: IHexCoordinates }[],
+  );
 }

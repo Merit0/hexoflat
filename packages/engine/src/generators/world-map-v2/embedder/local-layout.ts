@@ -55,7 +55,18 @@ export function computeOpenNodeLayout(
     depth.set(nodeId, (parentDepths.length ? Math.max(...parentDepths) : 0) + 1);
 
     if (preds.length >= 2) {
-      lane.set(nodeId, 0);
+      // Centre a convergence point (MERGE, or LANDMARK where every APPROACH
+      // meets) between its parents' lanes, not hardcoded to 0. G2 could get
+      // away with 0 — every node was a single hex, so a lane mismatch
+      // between two branches was at most a short filler edge. G2b grows
+      // each node into a large area; anchoring MERGE to whichever branch
+      // happens to already sit at lane 0 (instead of the middle) drags one
+      // branch's whole area out of line with where its own budget wants to
+      // grow, which is exactly the kind of avoidable proximity that makes
+      // two unrelated areas fight for the same space.
+      const parentLanes = preds.map((p) => lane.get(p) ?? 0);
+      const averageLane = parentLanes.reduce((sum, value) => sum + value, 0) / parentLanes.length;
+      lane.set(nodeId, Math.round(averageLane) || 0); // normalize -0 to 0
       continue;
     }
 

@@ -1,4 +1,5 @@
 import type { IHexCoordinates } from '../../map/interfaces/hex-tile-config-interface';
+import type { EntrySide } from './embedder/orientation';
 
 /**
  * Every hex the embedder places is either owned by a graph node/edge or is
@@ -35,6 +36,8 @@ export interface EmbeddedBoard {
    */
   hexes: EmbeddedHex[];
   portals: EmbeddedPortal[];
+  /** Which board side the graph's ENTRY was oriented toward (D19) — diagnostic, not consumed by the linter or growth itself. */
+  entrySide: EntrySide;
 }
 
 export type EmbedResult = { ok: true; board: EmbeddedBoard } | { ok: false; reason: string };
