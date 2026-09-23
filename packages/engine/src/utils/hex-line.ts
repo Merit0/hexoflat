@@ -1,4 +1,4 @@
-import type { Axial } from '../../../utils/hex-utils';
+import type { Axial } from './hex-utils';
 
 interface Cube {
   q: number;
@@ -37,13 +37,7 @@ function toCube(a: Axial): Cube {
   return { q: a.q, r: a.r, s: -a.q - a.r };
 }
 
-/**
- * The straight run of hexes from `a` to `b` inclusive, in axial space —
- * standard cube-lerp-and-round hex line drawing. Used to fill the gap
- * between two graph nodes whose coarse layout positions aren't already
- * hex-adjacent, so every graph edge ends up as an unbroken corridor rather
- * than a coordinate jump.
- */
+/** The straight run of hexes from `a` to `b` inclusive, in axial space — standard cube-lerp-and-round hex line drawing. */
 export function hexLineAxial(a: Axial, b: Axial): Axial[] {
   const cubeA = toCube(a);
   const cubeB = toCube(b);

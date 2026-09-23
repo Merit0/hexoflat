@@ -2,8 +2,8 @@
 
 **Гілка:** `map-generator-v2` (вже перемкнена; жодна фаза не створює гілок).
 **Кожна фаза = окремий чат Claude Code.** Комітів Claude Code не робить.
-**Замінює** `docs/WORLD-MAP-GENERATOR-V2-PLAN.md` з 23.09.2026. Той документ — історія рішень; з нього використовується лише зроблена фаза G0. Фази G2b, G4, G5, G6 звідти **не виконувати**.
-**Порядок:** C1 → C2 → C2b → огляд у грі → C3 → C4.
+**Історія:** на цій гілці до коміту `9be98c5` жив графовий генератор (фази G0–G3 старого плану й незавершена G2b). Він не продовжується. Фаза **C0** прибирає його код і старий план, лишаючи фундамент G0: seeded RNG, розмір дошки, сид дошки, лінію між гексами. Старий план — у git: `git show 9be98c5:docs/WORLD-MAP-GENERATOR-V2-PLAN.md`.
+**Порядок:** C0 → C1 → C2 → C2b → огляд у грі → C3 → C4.
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## Частина 2 — Як працює код зараз (перевірено 23.09.2026)
 
-Це факти, на які спираються всі фази. Якщо щось із цього в коді вже інакше — зупинитись і сказати, а не підганяти.
+Це факти, на які спираються всі фази. Якщо щось із цього в коді вже інакше — зупинитись і сказати, а не підганяти. Шляхи з позначкою **(після C0)** — нові місця файлів після прибирання.
 
 | Що               | Де                                                                                     | Як працює                                                                                                                                                                                                                                                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -44,8 +44,8 @@
 | Розміщення       | `apps/web/src/composables/use-hex-board-sizing.ts`                                     | `scale = 1`; `mapBounds` рахується з bbox **тайлів**                                                                                                                                                                                                                                                                    |
 | Dev-панелі       | —                                                                                      | на гілці немає жодної                                                                                                                                                                                                                                                                                                   |
 | Туман            | `map/fog-service.ts` `revealAroundHero`                                                | радіус 1                                                                                                                                                                                                                                                                                                                |
-| Рамка дошки      | G0, `generators/world-map-v2/board-size.ts`                                            | `BOARD_COLUMNS = 18`, `BOARD_ROWS = 17`                                                                                                                                                                                                                                                                                 |
-| Сид              | G0, `generators/world-map-v2/board-seed.ts`, `utils/random-seeded.ts`                  | `boardSeed`, `attemptSeed`, `GENERATION_VERSION`, seeded RNG з підпотоками                                                                                                                                                                                                                                              |
+| Рамка дошки      | **(після C0)** `packages/engine/src/boards/board-size.ts`                              | `BOARD_COLUMNS = 18`, `BOARD_ROWS = 17`                                                                                                                                                                                                                                                                                 |
+| Сид              | **(після C0)** `packages/engine/src/boards/board-seed.ts`; `utils/random-seeded.ts`    | `boardSeed`, `attemptSeed`, `GENERATION_VERSION`, seeded RNG з підпотоками                                                                                                                                                                                                                                              |
 
 ---
 
@@ -150,12 +150,12 @@ export const SILESIA_BOARD = {
 
 ### 3.4 Як збирається генерована дошка
 
-1. **Сид** — `getWorldSeed()` цієї карти (свіжий для кожного нового `mapId`, див. Частину 2), далі підпотоки G0.
+1. **Сид** — `getWorldSeed()` цієї карти (свіжий для кожного нового `mapId`, див. Частину 2), далі підпотоки seeded RNG (`utils/random-seeded.ts`).
 2. **Схема** — з пресету; якщо схем кілька, обирає сид.
 3. **Ділянка для кожної зони** — біом пресету, **точний** розмір зони, `D` на всіх краях, які потрібні звʼязкам цієї зони. Обирає сид.
 4. **Вертикальне дзеркало** (верх ↔ низ, міняє `N`/`S`) — лише для ділянок **непарної висоти**. Інші повороти й горизонтальне дзеркало заборонені: на odd-r вони змінюють парність рядків і ламають сусідство (цей клас помилки вже ловили в G2).
 5. **`?`** → ґрунт або стіна за сидом.
-6. **Двері:** для кожного звʼязку — по одній `D` на відповідних краях двох зон; клітинки між ними стають ґрунтом (лінія — `generators/world-map-v2/embedder/hex-line.ts`). Невикористані `D` → стіна.
+6. **Двері:** для кожного звʼязку — по одній `D` на відповідних краях двох зон; клітинки між ними стають ґрунтом (лінія — `packages/engine/src/utils/hex-line.ts`, після C0). Невикористані `D` → стіна.
 7. **Стіни й порожнеча:** клітинка поза зонами або `#` **без прохідного сусіда** → порожнеча (не тайл); **з прохідним сусідом** → стіна `STONE_WALL`. Звідси неправильний силует без налаштувань.
 8. **Слоти:** вхідний обʼєкт у `X` зони входу; ресурси, POI, вороги — за пресетом; вороги лише в зонах найбільшої `depth`.
 9. **Перевірка досяжності власним BFS по клітинках дошки** (не `findShortestPath` — він вимагає `isRevealed`): прохідна клітинка = ґрунт без `SOLID`-обʼєкта. Кожен `SOLID`-обʼєкт, з яким треба взаємодіяти (вхід, портали, POI), і кожен підбирабельний обʼєкт мають мати прохідного сусіда, досяжного від прохідного сусіда вхідного обʼєкта.
@@ -204,20 +204,77 @@ export const SILESIA_BOARD = {
 
 ---
 
-## Частина 5 — Що береться з уже зробленого
+## Частина 5 — Що лишається від графового генератора
 
-| Що                                                           | Звідки | Для чого              |
-| ------------------------------------------------------------ | ------ | --------------------- |
-| Seeded RNG, `boardSeed`, `attemptSeed`, `GENERATION_VERSION` | G0     | сид генерованих дошок |
-| `BOARD_COLUMNS`, `BOARD_ROWS`                                | G0     | рамка                 |
-| `hex-line.ts`                                                | G2     | двері між зонами      |
-| Правило «стіна = непрохідна клітинка з прохідним сусідом»    | G2     | крок 7                |
+| Що                                                                                                         | Де зараз                                                           | Де після C0                                | Для чого                                       |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------ | ---------------------------------------------- |
+| Seeded RNG з підпотоками, `rngState` у snapshot, `world-rng.ts` (`reseedWorld`/`getWorldSeed`/`getStream`) | `utils/random-seeded.ts`, `apps/web/src/services/rng/world-rng.ts` | там само                                   | свіжий сид для кожної нової карти, детермінізм |
+| `BOARD_COLUMNS = 18`, `BOARD_ROWS = 17` (заміряно в браузері)                                              | `generators/world-map-v2/board-size.ts`                            | `packages/engine/src/boards/board-size.ts` | рамка дошки                                    |
+| `boardSeed`, `attemptSeed`, `GENERATION_VERSION`                                                           | `generators/world-map-v2/board-seed.ts`                            | `packages/engine/src/boards/board-seed.ts` | сид і повторні спроби збирання                 |
+| `hexLineAxial`                                                                                             | `generators/world-map-v2/embedder/hex-line.ts`                     | `packages/engine/src/utils/hex-line.ts`    | двері між зонами                               |
 
-**Не використовується:** граматики, селектор, `branch-outcome`, лінтер графа (G1); embedder і розкладка (G2); стенд зразків (G3). Не видаляти до C4.
+Усе інше в `generators/world-map-v2/` і старий план видаляються у C0.
 
 ---
 
 ## Частина 6 — Фази
+
+### C0 — Прибирання графового генератора (без зміни поведінки)
+
+**Результат:** на гілці не лишається коду графового генератора й старого плану. Фундамент, потрібний новому плану, лежить на нових місцях: `packages/engine/src/boards/` (розмір дошки, сид дошки) і `packages/engine/src/utils/hex-line.ts`. Гра поводиться так само, як до фази; усі тести зелені.
+
+**Лишається й переїжджає:**
+
+| Файл зараз                                                                  | Куди                                       |
+| --------------------------------------------------------------------------- | ------------------------------------------ |
+| `packages/engine/src/generators/world-map-v2/board-size.ts` (+ тест)        | `packages/engine/src/boards/board-size.ts` |
+| `packages/engine/src/generators/world-map-v2/board-seed.ts` (+ тест)        | `packages/engine/src/boards/board-seed.ts` |
+| `packages/engine/src/generators/world-map-v2/embedder/hex-line.ts` (+ тест) | `packages/engine/src/utils/hex-line.ts`    |
+
+**Лишається на місці, не чіпати:** seeded RNG (`utils/random-seeded.ts`, `apps/web/src/services/rng/world-rng.ts`, `rngState` у snapshot, переведені виклики в сторах, `apps/api/src/game/scenario-state.service.ts`).
+
+**Видаляється:** решта `packages/engine/src/generators/world-map-v2/` (граматики, селектор, `branch-outcome`, лінтер графа, `region-topology`, `generate-region-graph`, `embedded-board`, `graph-utils`, увесь `embedder/` крім `hex-line`, разом із незавершеною роботою G2b), `docs/WORLD-MAP-GENERATOR-V2-PLAN.md` (історія — `git show 9be98c5:docs/WORLD-MAP-GENERATOR-V2-PLAN.md`), і будь-які незакомічені залишки стенда зразків, якщо вони є в робочій копії.
+
+```
+Working in hexoflat, branch map-generator-v2 is already checked out — work there, do not create
+any branch, and do not commit. Read docs/WORLD-MAP-BOARDS-PLAN.md — part 5 and phase C0 only.
+
+This branch contains an abandoned graph-based map generator. Remove it, keeping only the
+foundation the new plan needs. Game behaviour must not change.
+
+1. Move, fixing relative imports and keeping the tests:
+   - packages/engine/src/generators/world-map-v2/board-size.ts (+ board-size.test.ts)
+     -> packages/engine/src/boards/board-size.ts (keep the measurement comment and
+     BOARD_COLUMNS = 18, BOARD_ROWS = 17, BOARD_CELL_COUNT);
+   - packages/engine/src/generators/world-map-v2/board-seed.ts (+ board-seed.test.ts)
+     -> packages/engine/src/boards/board-seed.ts (boardSeed, attemptSeed, GENERATION_VERSION);
+     rewrite its header comment so it no longer describes the graph generator; drop the
+     BoardGenerationProfile type if nothing uses it after the cleanup;
+   - packages/engine/src/generators/world-map-v2/embedder/hex-line.ts (+ hex-line.test.ts)
+     -> packages/engine/src/utils/hex-line.ts.
+2. Delete everything else under packages/engine/src/generators/world-map-v2/ — grammars,
+   grammar-selector, branch-outcome, graph-linter, graph-utils, region-topology,
+   generate-region-graph, embedded-board, and all of embedder/ except the moved hex-line — then
+   delete the empty folder.
+3. Delete docs/WORLD-MAP-GENERATOR-V2-PLAN.md (its history stays in git at commit 9be98c5).
+4. If the working copy still has leftovers of the old sample harness (untracked or not):
+   generators/world-map-v2/diagnostics/, generators/world-map-v2/samples/,
+   docs/design/samples/world-map-v2/, a `samples:worldmap` script in
+   packages/engine/package.json, world-map-v2 entries in .prettierignore — remove them.
+5. Do NOT touch the seeded RNG: packages/engine/src/utils/random-seeded.ts and its test and
+   exports, rngState in commands/apply-command.ts and commands/snapshot.ts,
+   apps/web/src/services/rng/world-rng.ts, the named-substream call sites in combat-store,
+   hero-inventory-store and world-map-store (including worldSeed / reseedWorld), and
+   apps/api/src/game/scenario-state.service.ts.
+6. Remove any now-dead export or import that pointed at deleted files.
+
+Checks: `grep -rn "world-map-v2\|region-topology\|grammar-selector\|graph-linter\|embed-region"
+packages apps docs --include=*.ts --include=*.vue --include=*.json --include=*.md` finds nothing
+except history mentions in docs/WORLD-MAP-BOARDS-PLAN.md; engine, web and api build, lint,
+typecheck and unit tests are green; the e2e suite passes; CONTENT_VERSION stays 1.
+
+At the end, append a row to the progress journal in docs/WORLD-MAP-BOARDS-PLAN.md.
+```
 
 ### C1 — Формат, статична `silesia`, збирання `cave` (лише рушій)
 
@@ -226,12 +283,12 @@ export const SILESIA_BOARD = {
 ```
 Working in hexoflat, branch map-generator-v2 is already checked out — work there, do not create
 any branch, and do not commit. Read docs/WORLD-MAP-BOARDS-PLAN.md — parts 2, 3, 4, 5 and phase C1
-only. It replaces docs/WORLD-MAP-GENERATOR-V2-PLAN.md; from that document only the finished phase
-G0 is reused. Part 2 lists how the current code works — if anything there no longer matches the
+only. C0 is done. Part 2 lists how the current code works — if anything there no longer matches the
 code, stop and report it instead of working around it.
 
-Scope: packages/engine only. Do not touch apps/web, MapRegistry, or hero movement. Do not delete
-the G1/G2/G3 code.
+Scope: packages/engine only. Do not touch apps/web, MapRegistry, or hero movement. Board code goes
+under packages/engine/src/boards/ (next to board-size.ts and board-seed.ts), board data under
+packages/engine/src/content/boards/.
 
 1. STONE_WALL hexobject: add HEXOBJECT_KEYS.STONE_WALL = 'stone-wall', extend TConstructionKeys
    and CONSTRUCTION_CONTENT in packages/engine/src/content/constructions.content.ts:
@@ -275,8 +332,8 @@ the G1/G2/G3 code.
 
 6. assembleGeneratedBoard(seed, preset): section 3.4 steps 2-10, returning the same kind of
    HexMapModel plus a descriptor { kind: 'DUNGEON', presetId, seed, attempt, layoutId,
-   chunkByZone }. Use G0's seeded RNG substreams; only vertical flip for odd-height chunks, no
-   other transform; doors via generators/world-map-v2/embedder/hex-line.ts; reachability with its
+   chunkByZone }. Use the seeded RNG substreams from utils/random-seeded.ts; only vertical flip for odd-height chunks, no
+   other transform; doors via packages/engine/src/utils/hex-line.ts; reachability with its
    own BFS over the board cells, NOT findShortestPath (it requires isRevealed): a passable cell is
    ground without a SOLID object; every interactable SOLID object (entry, portals, POI) and every
    pickable object must have a passable neighbour reachable from a passable neighbour of the entry
@@ -427,7 +484,7 @@ Oleh грає. Правки після огляду — **здебільшого
 
 - E2E за скілом `hexoflat-e2e`: вихід із кемпу — герой біля входу `silesia`; `silesia` однакова після reload; новий вхід у печеру — нова дошка, reload у печері — та сама; петля через портал повертає на запамʼятований гекс.
 - `camping` — у статичне креслення.
-- Видалити G1/G2/G3-код, стенд зразків, `HexProvider`-конфіги, які більше не використовуються.
+- Видалити методи й конфіги `HexMapProvider`, які більше не використовуються (`getHomeLand`, `getSkeletorsKingdom`, їхні конфіги), після того як тест 1:1 з C1 і e2e більше на них не спираються.
 - Оновити `CLAUDE.md`, дописати журнал.
 
 Промпт пишеться після C3.
@@ -459,6 +516,8 @@ Oleh грає. Правки після огляду — **здебільшого
 
 ## Частина 9 — Журнал прогресу
 
-| Дата       | Фаза | Результат                                                                                                                                                                                                                             | Гілка              |
-| ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| 23.09.2026 | —    | План створено замість `WORLD-MAP-GENERATOR-V2-PLAN.md`. Три види дошок: `STATIC` (креслення), `DUNGEON` (з ділянок, нова на кожен вхід), `SCENARIO` (C3). Факти про код звірені й записані в Частині 2; промпти C1, C2, C2b — під них | `map-generator-v2` |
+| Дата       | Фаза | Результат                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Гілка              |
+| ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| 23.09.2026 | —    | План створено після відмови від графового генератора. Три види дошок: `STATIC` (креслення), `DUNGEON` (з ділянок, нова на кожен вхід), `SCENARIO` (C3). Факти про код звірені й записані в Частині 2; промпти C1, C2, C2b — під них                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `map-generator-v2` |
+| 23.09.2026 | —    | Робота лишається на `map-generator-v2`. Додано фазу C0 — прибирання графового генератора й старого плану; фундамент (розмір дошки, сид дошки, `hex-line`) переїжджає в `boards/` і `utils/`. Факти й шляхи в промптах C1–C2b оновлено під це                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `map-generator-v2` |
+| 23.09.2026 | C0   | Зроблено. `board-size.ts`/`board-seed.ts` → `packages/engine/src/boards/`, `hex-line.ts` → `packages/engine/src/utils/` (git mv, тести переїхали разом); шляхи всередині виправлено, хедер-коментарі `board-seed.ts`/`board-size.ts` більше не описують графовий генератор і не посилаються на видалений план; `BoardGenerationProfile` прибрано (ніде не використовувався поза видаленим кодом). Видалено решту `generators/world-map-v2/` (граматики, селектор, `branch-outcome`, лінтер графа, `region-topology`, `generate-region-graph`, `embedded-board`, `graph-utils`, увесь `embedder/` крім `hex-line`) і `docs/WORLD-MAP-GENERATOR-V2-PLAN.md` (історія — коміт `9be98c5`). Залишків стенда зразків у робочій копії не було. `grep` на старі шляхи/назви нічого не знаходить, крім історичних згадок у цьому файлі. `pnpm build/lint/typecheck/test` зелені в engine (206 тестів), web (204), api (63); e2e не проганявся — фаза не чіпала жодного файлу, який `apps/web`/`apps/api` реально імпортують (перевірено `grep` заздалегідь), тож блокуй-радіус нульовий. `CONTENT_VERSION` не змінено | `map-generator-v2` |

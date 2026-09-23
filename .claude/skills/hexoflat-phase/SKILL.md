@@ -11,7 +11,7 @@ description: How work is executed in this repo — one planned phase per chat, d
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
 | `docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md`           | Gameplay content and tactical mechanics — the active track                                  |
 | `docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md` | God Class diagnosis, phases G0–G6, and the target store contract in Part 6                  |
-| `docs/WORLD-MAP-BOARDS-PLAN.md`                  | Location maps: static drawings, dungeon assembly from chunks, in-game editor — phases C1–C4 |
+| `docs/WORLD-MAP-BOARDS-PLAN.md`                  | Location maps: static drawings, dungeon assembly from chunks, in-game editor — phases C0–C4 |
 | `docs/MIGRATION-PLAN.md`                         | Infrastructure phases (1–10 done; 11–12 deliberately paused)                                |
 | `docs/design/*.md`                               | Scout reports — design inspiration only, never a source of copied names/text/art/balance    |
 

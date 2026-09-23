@@ -1,9 +1,8 @@
 /**
- * Fixed board size for the map-generator-v2 model (see
- * docs/WORLD-MAP-GENERATOR-V2-PLAN.md §2.3, D10, D11). The board is a single
- * screen-sized rectangle that must fit the `.hex-map` pane at every panel
- * state without clipping or scaling — there is no camera and no scale-to-fit
- * in this model, so the constant has to be measured against the narrowest
+ * Fixed board size for location maps (docs/WORLD-MAP-BOARDS-PLAN.md). The
+ * board is a single screen-sized rectangle that must fit the `.hex-map` pane
+ * at every panel state without clipping or scaling — there is no camera and
+ * no scale-to-fit, so the constant has to be measured against the narrowest
  * case (hero board panel OPEN, 70% pane width) rather than derived from
  * silesia's current hand-authored size.
  *
