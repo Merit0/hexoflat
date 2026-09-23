@@ -1,0 +1,9 @@
+export const GROUND_SYMBOL = '.';
+export const WALL_SYMBOL = '#';
+export const VOID_SYMBOL = '~';
+export const RANDOM_SYMBOL = '?';
+export const DOOR_SYMBOL = 'D';
+export const ENTRY_SYMBOL = 'X';
+export const RESOURCE_SLOT_SYMBOL = 'T';
+export const POI_SLOT_SYMBOL = 'P';
+export const ENEMY_SLOT_SYMBOL = 'E';

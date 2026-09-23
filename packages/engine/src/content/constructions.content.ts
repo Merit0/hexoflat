@@ -13,7 +13,8 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
   | typeof HEXOBJECT_KEYS.GRAVE
   | typeof HEXOBJECT_KEYS.CHEST
-  | typeof HEXOBJECT_KEYS.STASH_CHEST;
+  | typeof HEXOBJECT_KEYS.STASH_CHEST
+  | typeof HEXOBJECT_KEYS.STONE_WALL;
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
@@ -177,6 +178,18 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     actions: {
       [EHexActionType.OPEN]: { label: 'Open', requiredTool: HEXOBJECT_KEYS.HAND },
     },
+  },
+
+  [HEXOBJECT_KEYS.STONE_WALL]: {
+    hexobjectKey: HEXOBJECT_KEYS.STONE_WALL,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: false,
+    title: 'Stone Wall',
+    subtitle: 'Impassable',
+    description: 'A wall of solid stone.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-resources/rock-token-image.png',
+    construction: { integrity: 1000, isLocked: false },
   },
 
   [HEXOBJECT_KEYS.GRAVE]: {
