@@ -45,6 +45,27 @@ describe('RegionTopologyGraphSchema', () => {
 
     expect(RegionTopologyGraphSchema.safeParse(graph).success).toBe(false);
   });
+
+  it('rejects duplicate node ids', () => {
+    const graph = validGraph();
+    graph.nodes.push({ id: 'entry', role: 'TRANSIT' });
+
+    expect(RegionTopologyGraphSchema.safeParse(graph).success).toBe(false);
+  });
+
+  it('rejects an edge referencing a node id that does not exist', () => {
+    const graph = validGraph();
+    graph.edges.push({
+      id: 'e3',
+      from: 'fork',
+      to: 'ghost-node',
+      traversal: 'OPEN',
+      semanticRole: 'MAIN',
+      weight: 1,
+    });
+
+    expect(RegionTopologyGraphSchema.safeParse(graph).success).toBe(false);
+  });
 });
 
 describe('RegionPropositionSchema', () => {

@@ -44,10 +44,34 @@ export const RegionGraphEdgeSchema = z.object({
 });
 export type RegionGraphEdge = z.infer<typeof RegionGraphEdgeSchema>;
 
-export const RegionTopologyGraphSchema = z.object({
-  nodes: z.array(RegionGraphNodeSchema).min(1),
-  edges: z.array(RegionGraphEdgeSchema),
-});
+export const RegionTopologyGraphSchema = z
+  .object({
+    nodes: z.array(RegionGraphNodeSchema).min(1),
+    edges: z.array(RegionGraphEdgeSchema),
+  })
+  .superRefine((graph, ctx) => {
+    const ids = new Set<string>();
+    for (const node of graph.nodes) {
+      if (ids.has(node.id)) {
+        ctx.addIssue({ code: 'custom', message: `duplicate node id "${node.id}"` });
+      }
+      ids.add(node.id);
+    }
+    for (const edge of graph.edges) {
+      if (!ids.has(edge.from)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `edge "${edge.id}" references unknown node "${edge.from}"`,
+        });
+      }
+      if (!ids.has(edge.to)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `edge "${edge.id}" references unknown node "${edge.to}"`,
+        });
+      }
+    }
+  });
 export type RegionTopologyGraph = z.infer<typeof RegionTopologyGraphSchema>;
 
 /**
