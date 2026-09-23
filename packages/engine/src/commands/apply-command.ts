@@ -13,6 +13,7 @@ import { getReachableTileDistances } from '../hero-movement/reachable-range-serv
 import { findShortestPath } from '../hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '../hero-movement/scout-progression';
 import { coordinateKey } from '../utils/hex-utils';
+import type { RngState } from '../utils/random-seeded';
 import { assertNever } from '../utils/assert-never';
 import { HEX_ENGINE_COMMAND_SCHEMAS, type HexEngineCommand } from './hex-engine-commands';
 import type { ApplyCommandResult, DomainEvent } from './types';
@@ -20,6 +21,7 @@ import type { ApplyCommandResult, DomainEvent } from './types';
 export interface HexEngineState {
   map: HexMapModel;
   heroes: Record<string, HeroState>;
+  rngState?: RngState;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */

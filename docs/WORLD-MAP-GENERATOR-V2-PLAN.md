@@ -50,17 +50,25 @@ v1 (фази M0–M6, шість раундів огляду) закінчивс
 
 ### 2.3 Фіксований формат дошки
 
-Сьогодні `HexMapProvider.getHomeLand()` генерує `silesia` як `27×11` (`packages/engine/src/map/providers/hex-map-provider.ts`), а `use-hex-board-sizing.ts` вписує це в контейнер через `scale = min(sx, sy, 1.1)` — тому гекси зменшуються, коли відкривається права панель (30% ширини екрана йде під інвентар/героя, `use-game-layout.ts`).
+**23.09.2026 — оновлено: сайзинг уже фіксований у репо, не тільки в плані.** Коли писалася ця частина (04.09.2026), `use-hex-board-sizing.ts` справді робив `scale = min(sx, sy, 1.1)` і `silesia` була `27×11`. Того ж дня, окремим комітом (`7c57280`, `hex-pointy-top-orientation`, злитий у `game-dev-vite`), сталося дві речі, не повʼязані з цим планом:
 
-**Рішення Oleh-а (04.09.2026): розмір гекса — завжди такий, як при згорнутій панелі. Немає ані камери, ані скейлу — сітка одного сталого розміру клітинок, частина з яких заблокована й невидима.**
+1. **Сайзинг уже переписано на фіксований.** `use-hex-board-sizing.ts` тепер: `scale` — жорстко `ref(1)`, розмір гекса читається DOM-пробою з CSS (`--hex-tile-width/height`), ніякого підганяння під контейнер. Мапа, більша за pane, обрізається по центру. Камери в коді немає взагалі (`hero-follow`, `cameraOffset` — не існують). Тобто **D11 і частина сайзингового шматка G5 вже виконані** — не цим планом, а побічно.
+2. **`silesia` вже змінена вручну під pointy-top**: `hex-map-provider.ts` тепер `worldWidth: 17, worldHeight: 15` (було `27×11`), координати обʼєктів у `homelandMapConfig` перенесені під новий розмір.
 
-З цього прямо випливає розмір дошки: якщо гекс має пиксельний розмір, який він має сьогодні при `scale ≈ 1.05–1.1` (майже нативний `--hex-tile-width: 4.4vw`), то у **70%**-ширини панелі (стан «панель відкрита») вміщається не 27, а приблизно **20 колонок**; висота лишається **11 рядків**, бо панель звужує тільки ширину.
+Це не скасовує §2.3 — воно спрощує G0. **Розмір дошки лишається треба заміряти**, бо готового фіксованого сайзингу недостатньо: зараз мапа просто **обрізається**, коли не влазить у вужчу (панель відкрита) pane — а v2 вимагає дошку, що **завжди повністю влазить, без обрізання**, у обидва стани панелі. Отже G0 має заміряти реальну ширину `.hex-map` pane при відкритій панелі й реальний `--hex-tile-width` (обидва вже готові величини, зняти `getBoundingClientRect()`), і з них вивести `BOARD_COLUMNS`; висота — скільки рядків влазить по вертикалі за тим самим принципом (raw viewport, без обрізання).
 
-**Робоча константа: дошка = 20 × 11 = 220 клітинок.** Це число — **робоче**, не остаточне: точний розмір гекса в px при обох станах панелі (відкрита/згорнута) треба зняти `getBoundingClientRect()` у реальному браузері у фазі G0, а не з математики на скріншоті. Формула: `columns = floor(paneWidthPx_whenPanelOpen / hexTileWidthPx_whenPanelCollapsed)`, `rows` лишається поточним (11). Якщо заміряний результат відрізняється від 20 — константа коригується в G0 без зміни решти плану.
+**23.09.2026 — заміряно в G0, більше не оцінка.** Реальний браузер, dev-збірка, `.hex-probe`/`.map-pane` `getBoundingClientRect()`, панель героя відкрита (70% ширини):
 
-З 220 клітинок дошки **прохідними/видимими стають ~120–150** (D-таблиця, §2.5); решта — заблокована оболонка й неприлягла до неї «глибока невідомість», яка взагалі не рендериться. Це і дає природну, не-прямокутну форму на статичній сітці — без жодної зміни розміру сітки.
+| Вюпорт    | Аспект | тайл px (ш×в) | pane px (ш×в) | колонок | рядків |
+| --------- | ------ | ------------- | ------------- | ------- | ------ |
+| 1440×900  | 16:10  | 54.87 × 63.36 | 1008 × 900    | 18      | 18     |
+| 1920×1080 | 16:9   | 73.16 × 84.48 | 1344 × 1080   | 18      | 17     |
 
-**Малі екрани (планшет/мобільний) — поза цим зрізом.** `CLAUDE.md` вимагає спільний стан і компоненти на всіх платформах з platform-specific layout зверху; фіксована дошка 20×11 спроєктована під desktop-розкладку. Для менших вікон правильний підхід — не змінювати розмір гекса чи дошки, а дати менший вюпорт із прокруткою/панорамуванням (як дивитись на стіл упритул), за аналогією з тим, як людина не бачить весь фізичний стіл одразу, якщо сидить близько. Це окреме рішення адаптивного шару, не генератора — генератор завжди виробляє один і той самий фіксований 20×11 обʼєкт незалежно від екрана.
+Колонки не залежать від роздільності за побудовою: і ширина тайла, і ширина pane — чисті `vw`-величини (pane завжди рівно 70vw, тайл — `4.4vw * 0.866`), тому відношення не залежить від ширини вікна — `floor(70 / (4.4*0.866))` = 18 завжди. Рядки залежності **не позбавлені**: `--hex-tile-height` заданий у `vw`, а не `vh`, тоді як pane по висоті — рівно `100vh`; тому к-сть рядків залежить від співвідношення сторін вікна. Береться менше з двох замірів, щоб дошка не впиралась в обрізання на жодному з поширених аспектів.
+
+**Константа: `BOARD_COLUMNS = 18`, `BOARD_ROWS = 17`, разом 306 клітинок** (`packages/engine/src/generators/world-map-v2/board-size.ts`). Це замінює робочу оцінку 20×11=220 — і колонки, і особливо рядки виявились суттєво більшими, ніж дала стара оцінка на основі застарілого розміру Silesia. Наслідок для G1/G2: діапазон прохідних клітинок «~120–150 з 220» більше не застосовний як число — пропорція (приблизно 55–68% дошки прохідні) орієнтовна, точний діапазон із 306 клітинок визначає сам embedder у G2, тут не фіксується заново.
+
+**Малі екрани (планшет/мобільний) — поза цим зрізом.** `CLAUDE.md` вимагає спільний стан і компоненти на всіх платформах з platform-specific layout зверху; фіксована дошка 18×17 спроєктована під desktop-розкладку. Для менших вікон правильний підхід — не змінювати розмір гекса чи дошки, а дати менший вюпорт із прокруткою/панорамуванням (як дивитись на стіл упритул), за аналогією з тим, як людина не бачить весь фізичний стіл одразу, якщо сидить близько. Це окреме рішення адаптивного шару, не генератора — генератор завжди виробляє один і той самий фіксований 18×17 обʼєкт незалежно від екрана.
 
 ### 2.4 Дошка будується з частин, а не зі стежок
 
@@ -69,7 +77,7 @@ v1 (фази M0–M6, шість раундів огляду) закінчивс
 Пайплайн лишається той, що вже описаний нижче (§2.6): граф → лінтер графа → вкладення в один фіксований прямокутник → терен з ролей. Але тепер це один виклик на **одну повну дошку**, а не на регіон, що приліплюється до сокета зростаючого світу.
 
 ```text
-boardSeed  →  вибір граматики(й)  →  граф пропозиції  →  ЛІНТЕР ГРАФА  →  вкладення в 20×11
+boardSeed  →  вибір граматики(й)  →  граф пропозиції  →  ЛІНТЕР ГРАФА  →  вкладення в 18×17
                                       (nodes+edges)      (тут відхиляємо)   (частина клітинок
                                                                               лишається заблокованою
                                                                               оболонкою)
@@ -140,23 +148,23 @@ Oleh (04.09.2026): «світові локації мають бути один�
 
 ## Частина 3 — Ухвалені рішення
 
-| #   | Рішення                                                                                                                                                               | Чому                                                                                                                   |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| D1  | Топологія — перша, гекси — другі. Відхилення на графі.                                                                                                                | Мандат №5; провал v1                                                                                                   |
-| D2  | Три граматики, критерій — «рішення читається наявними механіками»                                                                                                     | Мандат №12, урізаний; не будувати під кайло, якого нема                                                                |
-| D3  | Кемп — рукотворна дошка, не генерована                                                                                                                                | стабільний якір огляду; сумісно з фікстурою E1                                                                         |
-| D4  | Координати — odd-q репо. Жодної другої системи координат у моделі.                                                                                                    | воркфлов §3.1                                                                                                          |
-| D5  | Відкриття лишається `isRevealed: boolean`; стани рендера — похідні (KNOWN / GHOST / HIDDEN)                                                                           | чотиристанове відкриття — робота фази E1, не цієї гілки                                                                |
-| D6  | Генерація однієї дошки — чиста детермінована функція `(worldSeed, generationVersion, locationKey, profile)`, не команда                                               | правило №1 CLAUDE.md регулює зміни стану **під час гри**, не створення локації                                         |
-| D7  | Метрики форми v1 (meanNeighbours, thinShare, articulationShare, cycles) лишаються — але **як діагностика у звіті, не як гейт**                                        | вони зелені на неприйнятній карті; гейт мусить бути про рішення                                                        |
-| D8  | Перший огляд Oleh-а — **до** інтеграції в apps/web. Фаза G3 = STOP.                                                                                                   | організаційна причина провалу v1                                                                                       |
-| D9  | `CONTENT_VERSION` не бампається; `generationVersion` — окреме поле дескриптора локації                                                                                | STEP 1 spec-у; зміни збереження адитивні                                                                               |
-| D10 | **Дошка — фіксований прямокутник 20×11 = 220 клітинок** (число уточнюється вимірюванням у G0), з яких прохідні/видимі ~120–150, решта — постійно заблокована оболонка | 04.09.2026, Oleh: «стала гекс сітка, частина гексів блокована й невидима»                                              |
-| D11 | Розмір гекса фіксований завжди (розмір при згорнутій панелі). Жодної камери, жодного скейлу.                                                                          | 04.09.2026, Oleh: гекси не мають зменшуватись при відкритій панелі; камера не потрібна, бо дошка завжди ціла у вюпорті |
-| D12 | Світ = набір фіксованих дошок, зʼєднаних порталами (гекс-обʼєктами), не одна зростаюча площина                                                                        | 04.09.2026, Oleh: «карта будується частинами не стежками», флоу з дверима кемпінгу                                     |
-| D13 | Портали використовують наявний транспорт локацій (`LocationKey`, `MapRegistry`, `location-navigator.ts`) — нового рушія переходів не пишемо                           | ця інфраструктура вже існує й уже робить точно це для `camping ↔ silesia ↔ cave`                                       |
-| D14 | Два профілі генерації — `WORLD` (стабільний, персистентний) і `DUNGEON` (більш рандомний, перегенерується) — той самий пайплайн, різні ваги й персистенція            | 04.09.2026, Oleh: світові локації одинакові й зрозумілі, підземелля — розумно рендомні                                 |
-| D15 | Стежка (`PATH_SEGMENT`) — законна роль вузла графа, але граматика забороняє дошку, де вона домінує                                                                    | 04.09.2026, Oleh: «на карті може бути стежка як частина локації але не більше»                                         |
+| #   | Рішення                                                                                                                                                                                                                        | Чому                                                                                                                   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| D1  | Топологія — перша, гекси — другі. Відхилення на графі.                                                                                                                                                                         | Мандат №5; провал v1                                                                                                   |
+| D2  | Три граматики, критерій — «рішення читається наявними механіками»                                                                                                                                                              | Мандат №12, урізаний; не будувати під кайло, якого нема                                                                |
+| D3  | Кемп — рукотворна дошка, не генерована                                                                                                                                                                                         | стабільний якір огляду; сумісно з фікстурою E1                                                                         |
+| D4  | Координати — odd-r (pointy-top) репо. Жодної другої системи координат у моделі.                                                                                                                                                | воркфлов §3.1; змінено з odd-q на odd-r комітом `7c57280` (04.09.2026, `hex-pointy-top-orientation`), до старту G0     |
+| D5  | Відкриття лишається `isRevealed: boolean`; стани рендера — похідні (KNOWN / GHOST / HIDDEN)                                                                                                                                    | чотиристанове відкриття — робота фази E1, не цієї гілки                                                                |
+| D6  | Генерація однієї дошки — чиста детермінована функція `(worldSeed, generationVersion, locationKey, profile)`, не команда                                                                                                        | правило №1 CLAUDE.md регулює зміни стану **під час гри**, не створення локації                                         |
+| D7  | Метрики форми v1 (meanNeighbours, thinShare, articulationShare, cycles) лишаються — але **як діагностика у звіті, не як гейт**                                                                                                 | вони зелені на неприйнятній карті; гейт мусить бути про рішення                                                        |
+| D8  | Перший огляд Oleh-а — **до** інтеграції в apps/web. Фаза G3 = STOP.                                                                                                                                                            | організаційна причина провалу v1                                                                                       |
+| D9  | `CONTENT_VERSION` не бампається; `generationVersion` — окреме поле дескриптора локації                                                                                                                                         | STEP 1 spec-у; зміни збереження адитивні                                                                               |
+| D10 | **Дошка — фіксований прямокутник 18×17 = 306 клітинок** (заміряно в G0, `board-size.ts`; було 20×11=220 як робоча оцінка), точна частка прохідних/видимих визначається embedder-ом у G2, решта — постійно заблокована оболонка | 04.09.2026, Oleh: «стала гекс сітка, частина гексів блокована й невидима»; уточнено 23.09.2026 в G0                    |
+| D11 | Розмір гекса фіксований завжди (розмір при згорнутій панелі). Жодної камери, жодного скейлу.                                                                                                                                   | 04.09.2026, Oleh: гекси не мають зменшуватись при відкритій панелі; камера не потрібна, бо дошка завжди ціла у вюпорті |
+| D12 | Світ = набір фіксованих дошок, зʼєднаних порталами (гекс-обʼєктами), не одна зростаюча площина                                                                                                                                 | 04.09.2026, Oleh: «карта будується частинами не стежками», флоу з дверима кемпінгу                                     |
+| D13 | Портали використовують наявний транспорт локацій (`LocationKey`, `MapRegistry`, `location-navigator.ts`) — нового рушія переходів не пишемо                                                                                    | ця інфраструктура вже існує й уже робить точно це для `camping ↔ silesia ↔ cave`                                       |
+| D14 | Два профілі генерації — `WORLD` (стабільний, персистентний) і `DUNGEON` (більш рандомний, перегенерується) — той самий пайплайн, різні ваги й персистенція                                                                     | 04.09.2026, Oleh: світові локації одинакові й зрозумілі, підземелля — розумно рендомні                                 |
+| D15 | Стежка (`PATH_SEGMENT`) — законна роль вузла графа, але граматика забороняє дошку, де вона домінує                                                                                                                             | 04.09.2026, Oleh: «на карті може бути стежка як частина локації але не більше»                                         |
 
 ---
 
@@ -190,11 +198,42 @@ v1 — не суцільна втрата: частина інфраструкт
 
 Загальні правила: гілка `map-generator-v2` вже перемкнена, гілок не створювати, комітів не робити, характеризаційні тести — **до** будь-якої зміни успадкованого коду (скіл `hexoflat-phase`). Правила гри — в `packages/engine`; `apps/web` — тільки презентація й адаптери (`hexoflat-web-state`). E2E — тільки Feature-класи (`hexoflat-e2e`).
 
-### G0 — Фундамент: розмір дошки, сид, контракти
+### G0 — Фундамент: розмір дошки, сид, контракти [DONE — 23.09.2026]
 
 **Обсяг.** Перенести seeded RNG з v1 (`5ee903f`). Заміряти в реальному браузері (dev-збірка, обидва стани панелі) фактичний піксельний розмір гекса й ширину лівої області, вивести з цього точний `BOARD_COLUMNS × BOARD_ROWS` (робоча оцінка — 20×11, §2.3) і зафіксувати як константу в `packages/engine`. Додати `generationVersion` і `boardSeed = hash(worldSeed, generationVersion, locationKey, profile)`, `attemptSeed = hash(boardSeed, attemptIndex)`. Оголосити типи `RegionProposition`, `RegionTopologyGraph`, `RegionGraphNode/Edge` (STEP 2–3 spec-у, скорочені; ролі — `ENTRY | TRANSIT | FORK | MERGE | LANDMARK | POI | OBSTRUCTION | PATH_SEGMENT | PORTAL`). Жодного гекса, жодного рендера.
 
 **Приймання.** Той самий сид → та сама послідовність; виміряна константа розміру дошки задокументована з фактичними числами (не оцінкою зі скріншота); старе збереження без `rngState` вантажиться; `CONTENT_VERSION` = 1.
+
+**Як реалізовано (23.09.2026).**
+
+1. **Seeded RNG** — перенесено файл-у-файл із `map-generator-v1@5ee903f` без змін по суті:
+   `packages/engine/src/utils/random-seeded.ts` (+тест), `rngState?` у `HexEngineState`
+   (`apply-command.ts`), серіалізація в `snapshot.ts` (checksum лишається над
+   `{version, map, heroes}`, без `rngState` — старий payload без нього отримує свіжий сид, не
+   відкидається), `apps/web/src/services/rng/world-rng.ts` (`reseedWorld`/`getWorldSeed`/
+   `getStream`), `apps/api/src/game/scenario-state.service.ts` мінтить `rngState` для нової
+   кімнати. Виклики `defaultRandom` переведені на іменовані підпотоки в `combat-store.ts` (×3,
+   `worldStore.rng('combat')`), `hero-inventory-store.ts` (`getStream('inventory')`),
+   `world-map-store.ts` (`getStream('world')` + новий екшн `rng(label)`); `worldSeed` додано в
+   `TWorldState` і крутиться через `reseedWorld`/`getWorldSeed` при завантаженні/збереженні.
+2. **Розмір дошки заміряно в реальному браузері** (dev-збірка, `.hex-probe`/`.map-pane`
+   `getBoundingClientRect()`, панель героя відкрита) на двох поширених desktop-аспектах — див.
+   §2.3. Константа `BOARD_COLUMNS = 18`, `BOARD_ROWS = 17` (менше з двох замірів, щоб дошка
+   ніколи не впиралась в обрізання) — `packages/engine/src/generators/world-map-v2/board-size.ts`.
+3. **Сид дошки** — `packages/engine/src/generators/world-map-v2/board-seed.ts`:
+   `GENERATION_VERSION = 1` (окремо від `CONTENT_VERSION`, D9), `boardSeed(...)` і
+   `attemptSeed(...)` на `sha256Hex`, тип `BoardGenerationProfile = 'WORLD' | 'DUNGEON'`.
+4. **Контракти топології** — `packages/engine/src/generators/world-map-v2/region-topology.ts`:
+   Zod-схеми + `z.infer`-типи `RegionGraphNodeRoleSchema` (9 ролей із плану),
+   `RegionGraphEdgeTraversalSchema`/`RegionGraphEdgeSemanticRoleSchema`, `RegionGraphNodeSchema`,
+   `RegionGraphEdgeSchema`, `RegionTopologyGraphSchema`, `RegionPropositionSchema` (граф +
+   `boardSeed`/`attemptIndex`/`profile`/`grammarIds` — метадані, потрібні і лінтеру G1, і
+   embedder-у G2).
+
+Жодного гекса, жодного рендера, жодної камери, бій не займали. Перевірено: `pnpm --filter
+@hexoflat/engine build/test/lint`, `pnpm --filter @hexoflat/api typecheck/test`, `pnpm --filter
+@hexoflat/web typecheck/test/lint` — усі зелені (engine 209, web 204, api 63 тестів; 0 lint
+errors, наявні `import-x/no-cycle` warnings — доперевірені pre-existing, не з цієї фази).
 
 ```
 Working in hexoflat, branch map-generator-v2 is already checked out — work there, do not create
@@ -205,14 +244,19 @@ any branch, and do not commit. Read docs/WORLD-MAP-GENERATOR-V2-PLAN.md — phas
    snapshot, apps/web/src/services/rng/world-rng.ts, and the converted defaultRandom call
    sites). CONTENT_VERSION stays 1 and old saves without rngState must still load — test both
    paths.
-2. Measure the fixed board size for real. In a dev build, read the actual computed hex tile
-   size (--hex-tile-width/height) and the actual .hex-map pane width with the hero board panel
-   OPEN (apps/web/src/composables/use-game-layout.ts gives 70%). Compute
-   BOARD_COLUMNS = floor(paneWidthPx / hexTileWidthPx) using the hex size as rendered with the
-   panel COLLAPSED (that is the fixed size per Oleh's 04.09.2026 decision — the panel must never
-   change hex size). BOARD_ROWS stays whatever the current viewport height supports at that same
-   fixed hex height. Document the measured numbers (not the 20x11 estimate in the plan) and
-   define them as named constants in packages/engine.
+2. Measure the fixed board size for real. Hex sizing is already fixed and camera-free in this
+   repo (apps/web/src/composables/use-hex-board-sizing.ts: scale is hardcoded to 1, tile size
+   comes from a DOM probe reading --hex-tile-width/height, and an oversized map is simply
+   center-clipped) — do not touch that file's sizing behaviour, it already matches Oleh's
+   04.09.2026 decision. What's still missing is the board-size constant itself: in a dev build,
+   read the actual computed --hex-tile-width/height and the actual .hex-map pane width with the
+   hero board panel OPEN (apps/web/src/composables/use-game-layout.ts gives 70%). Compute
+   BOARD_COLUMNS = floor(paneWidthPx_whenPanelOpen / hexTileWidthPx) and BOARD_ROWS from however
+   many rows the viewport height supports at that same hex height — both with the panel OPEN,
+   since that is the narrower, binding case (today's board just gets clipped in that state; v2
+   must never produce a board that needs clipping). Document the measured numbers (not the
+   20x11 estimate in the plan, and not silesia's current 17x15 — that's a hand-authored size
+   from before this measurement) and define them as named constants in packages/engine.
 3. Add generation versioning and per-board seed derivation:
    boardSeed = hash(worldSeed, generationVersion, locationKey, profile);
    attemptSeed = hash(boardSeed, attemptIndex). No global unseeded random anywhere in
@@ -269,7 +313,7 @@ Do not add hexes, terrain, rendering, stores, or persistence in this phase.
 
 ### G2 — Вкладення графа у фіксовану дошку (embedder)
 
-**Обсяг.** `embed(seed, graph, boardColumns, boardRows)` за §2.5 spec-у, але ціль — **один фіксований прямокутник**, не безмежна площина: грубе розкладання вузлів у локальних осях → snap в odd-q, з обовʼязковим вписуванням у `[0, boardColumns) × [0, boardRows)` → зʼєднання вузлів наявними гекс-примітивами → «надування» вузлів за роллю (BASIN широкий, NECK вузький, TRANSIT/PATH_SEGMENT 1–2 гекси) → **оболонка з `STONE_MASS` за побудовою** на межі використаної площі → вставка обовʼязкових перешкод усередині площ → перевірка pathfinding-ом, що всі ребра графа реально прохідні → розміщення `PORTAL`-гексів на клітинках дошки, кожен позначений цільовим `locationKey` (або «генерувати за потреби» для ще не створеної сусідньої дошки) → клітинки поза використаним слідом лишаються постійно заблокованими й невидимими (D10).
+**Обсяг.** `embed(seed, graph, boardColumns, boardRows)` за §2.5 spec-у, але ціль — **один фіксований прямокутник**, не безмежна площина: грубе розкладання вузлів у локальних осях → snap в odd-r (pointy-top, поточна геометрія репо — див. D4), з обовʼязковим вписуванням у `[0, boardColumns) × [0, boardRows)` → зʼєднання вузлів наявними гекс-примітивами → «надування» вузлів за роллю (BASIN широкий, NECK вузький, TRANSIT/PATH_SEGMENT 1–2 гекси) → **оболонка з `STONE_MASS` за побудовою** на межі використаної площі → вставка обовʼязкових перешкод усередині площ → перевірка pathfinding-ом, що всі ребра графа реально прохідні → розміщення `PORTAL`-гексів на клітинках дошки, кожен позначений цільовим `locationKey` (або «генерувати за потреби» для ще не створеної сусідньої дошки) → клітинки поза використаним слідом лишаються постійно заблокованими й невидимими (D10).
 
 **Жорсткі правила.** Кожен прохідний гекс має `nodeId` або `edgeId` — інакше він не існує. Дір усередині оболонки немає **за побудовою**. Якщо граф не вміщається в `boardColumns × boardRows` навіть з урахуванням стиснення вузлів — це відхилення графа (назад у G1 на новий `attemptIndex`), а не привід розсунути дошку: розмір дошки — сталий (D10, D11).
 
@@ -286,8 +330,10 @@ instead of an unbounded frontier.
 
 embed(seed, topology, boardColumns, boardRows):
 1. lay node positions out in coarse local coordinates;
-2. snap to the repo's odd-q coordinates, constrained to fit within
-   [0, boardColumns) x [0, boardRows) — the board size measured in phase G0;
+2. snap to the repo's odd-r coordinates (pointy-top, offsetToAxial/axialToOffset in
+   packages/engine/src/utils/hex-utils.ts — this repo moved off odd-q on 04.09.2026, before this
+   phase starts), constrained to fit within [0, boardColumns) x [0, boardRows) — the board size
+   measured in phase G0;
 3. connect nodes with the existing hex path primitives on a temporary local grid;
 4. inflate each node by its role: BASIN wide, NECK narrow, TRANSIT/PATH_SEGMENT 1-2 hexes,
    LANDMARK a blocked mass with walkable hexes around it;
@@ -397,19 +443,19 @@ Wire the generator into apps/web and connect the first portal loop.
 
 - The silesia location is generated by the v2 generator instead of the hand-authored map, with
   profile WORLD.
-- Sizing rule (this REPLACES the current fit-to-container behaviour in
-  apps/web/src/composables/use-hex-board-sizing.ts, where scale = min(sx, sy, 1.1) makes hexes
-  shrink whenever the right panel opens, and REMOVES the hero-follow camera entirely — there is
-  no camera in this model, the board always fits its viewport by construction):
-  - hex size is fixed: scale is always 1, tile size comes from CSS as it does today, matching
-    the size measured with the panel collapsed in phase G0;
-  - the viewport is the .hex-map pane (container minus the panel), measured with
-    ResizeObserver;
-  - the board's pixel bbox is centred in the viewport — panel closed means screen centre, panel
-    open means the board shifts left to stay centred in the narrower pane, at the same hex
-    size;
-  - toggling the panel animates only the centring offset, with the existing rAF lerp. Never
-    change scale, never resize or regenerate the board when the panel toggles.
+- Sizing/camera groundwork is already in place (commit 7c57280, unrelated to this plan): scale is
+  hardcoded to 1 in use-hex-board-sizing.ts, tile size comes from the CSS/DOM probe, and there is
+  no hero-follow camera anywhere. Do not rebuild any of that. What's still open is the ONE
+  behaviour that conflicts with this model: today an oversized map is silently center-clipped;
+  since G0 measured BOARD_COLUMNS/BOARD_ROWS specifically so a generated board never exceeds the
+  open-panel pane, verify that clip path is simply never exercised in practice (add a test
+  asserting the generated silesia board's pixel bbox fits inside the open-panel pane at the
+  measured hex size) rather than changing the sizing composable itself.
+  - the board's pixel bbox should already centre in the viewport via the existing behaviour —
+    panel closed means screen centre, panel open means the pane (and therefore the centred
+    board) shifts, at the same fixed hex size;
+  - toggling the panel must not change scale or regenerate the board — confirm the existing rAF
+    lerp only animates the centring offset, it does not touch tile size.
 - Port the hero token lerp in hero-layer.ts (commit ad42e64) and the read-your-writes fix in
   services/persistence/world-storage.ts and its test (commit 90d9618).
 - Portals reuse the existing location-navigator.ts / MapRegistry transport unchanged. A portal
@@ -490,7 +536,7 @@ docs/WORLD-MAP-GENERATOR-V2-PLAN.md.
 
 ## Частина 8 — Ризики
 
-1. **Виміряна константа дошки (G0) може виявитись іншою за робочу оцінку 20×11.** Це нормально — G0 існує саме для цього. Ризик — якщо число вийде надто малим для трьох граматик одночасно; тоді лишається одна домінантна граматика на дошку замість композиції кількох.
+1. ~~Виміряна константа дошки (G0) може виявитись іншою за робочу оцінку 20×11.~~ **Заміряно 23.09.2026: 18×17 = 306**, суттєво більше за оцінку — ризик «замало місця на три граматики одночасно» знято. 306 клітинок — це й новий ризик у протилежний бік: з таким запасом площі G2 має явно відхиляти граф, що не заповнює дошку достатньо (тонкий одинокий шлях у порожній рамці читається так само погано, як і затісна кімната) — пункт для критеріїв приймання G2, а не для цього плану.
 2. **Три граматики дадуть впізнавані повтори.** Свідомо: спершу перевіряємо, що граматика взагалі читається; додавати граматики дешево — це чистий контент.
 3. **Вкладення графа у фіксовану дошку — найскладніший код у плані**, ускладнений тим, що граф, який не влазить, треба відхиляти, а не розтягувати дошку. Тому G2 стоїть окремою фазою з тестами на 200 сидів і без жодного UI.
 4. **Портал на ще не згенеровану дошку** — перший реальний тест генерації «на вимогу» під час гри, а не тільки в тестовому стенді. Обмежено одним порталом в G5 навмисно, щоб побачити цей шлях раніше, ніж він розмножиться.
@@ -501,7 +547,9 @@ docs/WORLD-MAP-GENERATOR-V2-PLAN.md.
 
 ## Частина 9 — Журнал прогресу
 
-| Дата       | Фаза | Результат                                                                                                                                                                                        | Гілка              |
-| ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
-| 03.09.2026 | —    | План v2 створено після відмови v1 (розріджений світ + hero-follow камера)                                                                                                                        | `map-generator-v2` |
-| 04.09.2026 | —    | Модель перегорнута до фіксованої одноекранної дошки з порталами, до старту G0. Камера й розріджений зростаючий світ прибрані з плану; портали використовують наявний `MapRegistry`/`LocationKey` | `map-generator-v2` |
+| Дата       | Фаза | Результат                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Гілка              |
+| ---------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| 03.09.2026 | —    | План v2 створено після відмови v1 (розріджений світ + hero-follow камера)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `map-generator-v2` |
+| 04.09.2026 | —    | Модель перегорнута до фіксованої одноекранної дошки з порталами, до старту G0. Камера й розріджений зростаючий світ прибрані з плану; портали використовують наявний `MapRegistry`/`LocationKey`                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `map-generator-v2` |
+| 23.09.2026 | —    | Гілку `map-generator-v2` перестворено з `game-dev-vite` (стара стояла на коміті до pointy-top-рефакторингу). Виявлено й виправлено розбіжність плану з репо: координати odd-q→odd-r (комміт `7c57280`, той самий день що й перегляд моделі, у план не потрапило) — оновлено D4, G2; фіксований сайзинг гекса й відсутність камери (D11, частина G5) уже реалізовані тим самим комітом, не цим планом — G0/G5 звужено, щоб не переробляти готове; `silesia` вже `17×15` замість `27×11` у §2.3 — історична база розрахунку позначена застарілою, G0 і далі вимірює наживо. Жодна фаза G0–G6 ще не стартувала                                      | `map-generator-v2` |
+| 23.09.2026 | G0   | **Фундамент готовий.** Seeded RNG перенесено з v1 `5ee903f` (двигун + `apps/api` + 3 web-стори); `packages/engine/src/generators/world-map-v2/`: `board-size.ts` (`BOARD_COLUMNS=18`, `BOARD_ROWS=17` — заміряно в браузері на 1440×900 і 1920×1080, замінює оцінку 20×11), `board-seed.ts` (`GENERATION_VERSION`, `boardSeed`/`attemptSeed`), `region-topology.ts` (Zod-контракти `RegionProposition`/`RegionTopologyGraph`/`RegionGraphNode`/`RegionGraphEdge`). Жодного гекса, жодного рендера, жодної камери. `engine build/test/lint`, `api typecheck/test`, `web typecheck/test/lint` — усі зелені (209/63/204 тестів). Наступна фаза — G1 | `map-generator-v2` |
