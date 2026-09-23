@@ -2,7 +2,7 @@ import type HexMapModel from './models/hex-map-model';
 import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
-import { coordinateKey, getOddQNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { pickRandom, type RandomNumberGenerator } from '../utils/random';
 
 /**
@@ -33,7 +33,7 @@ export function findFreeHexNear(
   const byKey = new Map<string, HexTileModel>();
   for (const tile of map.tiles) byKey.set(coordinateKey(tile.coordinates), tile);
 
-  const free = getOddQNeighbors(coordinates)
+  const free = getHexNeighbors(coordinates)
     .map((coord) => byKey.get(coordinateKey(coord)))
     .filter((tile): tile is HexTileModel => !!tile)
     .filter((tile) => tile.hexobject?.collision !== EHexCollision.SOLID);

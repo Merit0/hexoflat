@@ -13,6 +13,8 @@ import type { TestHexCoordinates } from '@web-test-api';
 export const MapTokens = {
   /** A starter AXE (TOOL, pickable by hand) sitting in the safe camping zone. */
   starterAxe: { columnIndex: 7, rowIndex: 2 },
+  /** The camp's STASH_CHEST (CONSTRUCTION), OPEN-able by hand but always rejected for now. */
+  stashChest: { columnIndex: 3, rowIndex: 1 },
 } as const satisfies Record<string, TestHexCoordinates>;
 
 export type MapToken = keyof typeof MapTokens;
@@ -24,6 +26,7 @@ export function tokenCoordinates(token: MapToken): TestHexCoordinates {
 /** Hexobject keys the tests assert on. Mirrors packages/engine's HEXOBJECT_KEYS. */
 export const HexobjectKeys = {
   axe: 'axe',
+  stashChest: 'stash-chest',
 } as const;
 
 /** Written by apps/web's ui-settings-store (`hexoflat:ui-settings:v1`). */

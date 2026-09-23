@@ -10,6 +10,7 @@ export interface ToolCapabilities {
   canMine?: boolean;
   canEnter?: boolean;
   canUse?: boolean;
+  canOpen?: boolean;
   canAttack?: boolean;
   canBlock?: boolean;
 }
@@ -135,6 +136,7 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
 
       const meta = getMeta(key);
       const useCfg = meta?.actions?.[EHexActionType.USE];
+      const openCfg = meta?.actions?.[EHexActionType.OPEN];
       const enterCfg = meta?.actions?.[EHexActionType.ENTER];
 
       if (useCfg) {
@@ -143,6 +145,18 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
             resolvedActions.push({
               actioType: EHexActionType.USE,
               label: useCfg.label ?? 'Use',
+              priority: 95,
+            });
+          }
+        }
+      }
+
+      if (openCfg) {
+        if (!openCfg.requiredTool || openCfg.requiredTool === toolKey) {
+          if (cap.canOpen) {
+            resolvedActions.push({
+              actioType: EHexActionType.OPEN,
+              label: openCfg.label ?? 'Open',
               priority: 95,
             });
           }

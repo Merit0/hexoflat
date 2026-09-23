@@ -95,8 +95,20 @@ export class HexBoardComponent extends BaseComponent {
     return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getToolHoverCoordinates());
   }
 
+  /**
+   * When a tool arms right next to its target, the interactions resolver's
+   * default hover pick (the hero's first neighbour) can already land on
+   * that same tile — the tool-hex-tile overlay's action button then sits
+   * exactly on the pixel this method needs to move the mouse to, and a real
+   * `.hover()` there gets stuck retrying against its own button forever.
+   * Skip the physical move when the target is already hovered; the poll
+   * below still confirms it.
+   */
   async hoverTile(coordinates: TestHexCoordinates): Promise<void> {
-    await this.canvas.hover({ position: await this.tilePosition(coordinates) });
+    const current = await this.getToolHoverCoordinates();
+    if (!current || coordinateKey(current) !== coordinateKey(coordinates)) {
+      await this.canvas.hover({ position: await this.tilePosition(coordinates) });
+    }
 
     await expect
       .poll(() => this.getToolHoverCoordinates(), {
@@ -162,19 +174,24 @@ export class HexBoardComponent extends BaseComponent {
       if (distanceToTarget <= 1) return;
 
       const neighbors = await this.getNeighbors(from);
-      const ranked = (
-        await Promise.all(
-          neighbors.map(async (candidate) => ({
-            candidate,
-            distance: await this.getDistance(candidate, target),
-          })),
-        )
-      )
+      const scored = await Promise.all(
+        neighbors.map(async (candidate) => ({
+          candidate,
+          distance: await this.getDistance(candidate, target),
+        })),
+      );
+
+      // Prefer a step that strictly closes the distance; only fall back to a
+      // same-distance "lateral" step (detouring around a solid obstacle —
+      // e.g. the camping map's fireplace sitting on the one direct approach)
+      // once none of those land. Ties are tried in getNeighbors' own order.
+      const closer = scored
         .filter((entry) => entry.distance < distanceToTarget)
         .sort((a, b) => a.distance - b.distance);
+      const lateral = scored.filter((entry) => entry.distance === distanceToTarget);
 
       let moved = false;
-      for (const { candidate } of ranked) {
+      for (const { candidate } of [...closer, ...lateral]) {
         const candidateKey = coordinateKey(candidate);
         await this.clickTile(candidate);
         await this.tileDetails.closeIfOpen();
@@ -189,8 +206,8 @@ export class HexBoardComponent extends BaseComponent {
 
       if (!moved) {
         throw new Error(
-          `Stuck at (${from.columnIndex}, ${from.rowIndex}) — no forward neighbour toward ` +
-            `(${target.columnIndex}, ${target.rowIndex}) was walkable.`,
+          `Stuck at (${from.columnIndex}, ${from.rowIndex}) — no forward or lateral neighbour ` +
+            `toward (${target.columnIndex}, ${target.rowIndex}) was walkable.`,
         );
       }
     }

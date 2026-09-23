@@ -20,7 +20,7 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
     subtitle: 'Weapon',
     description: 'Guard Sword. A balanced melee weapon for close combat.',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-equipment/hex-weapons/hex-sword/guard-sword-token.png',
+    spritePath: '/hex-assets/hex-loot/sword-hex.png',
     equipment: {
       durability: 100,
       durabilityMax: 100,

@@ -1,4 +1,4 @@
-import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
+import { EChestType, EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { TContentDefinition } from './content-schema';
@@ -6,11 +6,14 @@ import type { TContentDefinition } from './content-schema';
 export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.CAMPING_ENTRANCE
   | typeof HEXOBJECT_KEYS.CAVE_ENTRANCE
+  | typeof HEXOBJECT_KEYS.CAVE_EXIT
   | typeof HEXOBJECT_KEYS.HOMELAND_GATE
   | typeof HEXOBJECT_KEYS.FIREPLACE
   | typeof HEXOBJECT_KEYS.HEALING_SPRING
   | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
-  | typeof HEXOBJECT_KEYS.GRAVE;
+  | typeof HEXOBJECT_KEYS.GRAVE
+  | typeof HEXOBJECT_KEYS.CHEST
+  | typeof HEXOBJECT_KEYS.STASH_CHEST;
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
@@ -21,7 +24,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'Camping',
     description: 'This is the Camping',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-constructs/camping-token-image.png',
+    spritePath: '/hex-assets/hex-constructs/camping-door-hex.png',
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.ENTER]: {
@@ -53,6 +56,26 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     enter: { type: 'WORLD', locationKey: 'cave' },
   },
 
+  [HEXOBJECT_KEYS.CAVE_EXIT]: {
+    hexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'Cave Exit',
+    subtitle: 'Silesia',
+    description: 'A way back out of the cave',
+    collision: EHexCollision.SOLID,
+    spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.CAVE_EXIT}-token-image.png`,
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.ENTER]: {
+        label: 'Enter',
+        durationMs: 400,
+        requiredTool: HEXOBJECT_KEYS.HAND,
+      },
+    },
+    enter: { type: 'WORLD', locationKey: 'silesia' },
+  },
+
   [HEXOBJECT_KEYS.HOMELAND_GATE]: {
     hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
     groupType: EHexobjectGroup.CONSTRUCTION,
@@ -61,7 +84,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'Silesia',
     description: 'This is the Silesia entrance!',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-constructs/map-token-image.png',
+    spritePath: '/hex-assets/hex-constructs/camping-door-hex.png',
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.ENTER]: {
@@ -122,8 +145,38 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'Decoration',
     description: 'This is the nature!',
     collision: EHexCollision.SOLID,
-    spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.WOOD_AND_LEAVES}-token-image.png`,
+    spritePath: '/hex-assets/hex-resources/tree-hex.png',
     construction: { integrity: 0, isLocked: false },
+  },
+
+  [HEXOBJECT_KEYS.CHEST]: {
+    hexobjectKey: HEXOBJECT_KEYS.CHEST,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'Chest',
+    subtitle: 'Treasure',
+    description: 'A locked chest. Someone left it here.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/chest-token.png',
+    construction: { integrity: 1000, isLocked: false, chestType: EChestType.LOOT },
+    actions: {
+      [EHexActionType.OPEN]: { label: 'Open', requiredTool: HEXOBJECT_KEYS.HAND },
+    },
+  },
+
+  [HEXOBJECT_KEYS.STASH_CHEST]: {
+    hexobjectKey: HEXOBJECT_KEYS.STASH_CHEST,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'Stash Chest',
+    subtitle: 'Storage',
+    description: 'A shared storage crate for the camp.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/stash-chest-token-image.png',
+    construction: { integrity: 1000, isLocked: false, chestType: EChestType.STASH },
+    actions: {
+      [EHexActionType.OPEN]: { label: 'Open', requiredTool: HEXOBJECT_KEYS.HAND },
+    },
   },
 
   [HEXOBJECT_KEYS.GRAVE]: {
@@ -134,7 +187,6 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'A fallen enemy rests here.',
     description: 'A fresh grave marks a fallen enemy.',
     collision: EHexCollision.NONE,
-    spritePath: `/hex-assets/hex-constructs/${HEXOBJECT_KEYS.GRAVE}-token-image.svg`,
     construction: { integrity: 1000, isLocked: false },
   },
 };

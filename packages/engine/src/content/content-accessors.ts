@@ -1,4 +1,8 @@
-import { EHexobjectGroup, type THexobjectPrototype } from '../abstraction/hexobject-abstraction';
+import {
+  EEquipmentRarity,
+  EHexobjectGroup,
+  type THexobjectPrototype,
+} from '../abstraction/hexobject-abstraction';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { assertNever } from '../utils/assert-never';
 import { CONTENT } from './content-map';
@@ -24,14 +28,21 @@ export function getPrototype(key: THexobjectKey): THexobjectPrototype {
     case EHexobjectGroup.CREATURE:
       return { ...base, groupType: content.groupType, creature: content.creature };
     case EHexobjectGroup.TOOL:
-      return { ...base, groupType: content.groupType, tool: content.tool };
+      return {
+        ...base,
+        groupType: content.groupType,
+        tool: { ...content.tool, rarity: content.tool.rarity ?? EEquipmentRarity.COMMON },
+      };
     case EHexobjectGroup.CONSTRUCTION:
       return { ...base, groupType: content.groupType, construction: content.construction };
     case EHexobjectGroup.EQUIPMENT:
       return {
         ...base,
         groupType: content.groupType,
-        equipment: content.equipment,
+        equipment: {
+          ...content.equipment,
+          rarity: content.equipment.rarity ?? EEquipmentRarity.COMMON,
+        },
         weapon: content.weapon,
       };
     default:

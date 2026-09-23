@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { getOddQNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { useWorldMapStore } from './world-map-store';
@@ -66,7 +66,7 @@ describe('useCombatStore', () => {
       // hold — with none, ensureEnemyTurnResolution() synchronously advances
       // straight back to 'hero' (no one to act), which is its own behavior
       // covered separately and not what this test is checking.
-      const enemyCoord = getOddQNeighbors(heroStore.heroCoordinates!)[0];
+      const enemyCoord = getHexNeighbors(heroStore.heroCoordinates!)[0];
       getTile(map, enemyCoord).hexobject = HexObjectFactory.create(
         HEXOBJECT_KEYS.EMITTER,
         enemyCoord,
@@ -106,7 +106,7 @@ describe('useCombatStore', () => {
       const { heroStore } = setupMapWithHeroAt({ columnIndex: 1, rowIndex: 1 });
       const combatStore = useCombatStore();
       combatStore.startCombat();
-      const target = getOddQNeighbors(heroStore.heroCoordinates!)[0];
+      const target = getHexNeighbors(heroStore.heroCoordinates!)[0];
 
       const placed = combatStore.placeCombatDefendMarker(target, HEXOBJECT_KEYS.SHIELD);
 
@@ -130,7 +130,7 @@ describe('useCombatStore', () => {
       combatStore.startCombat();
 
       const farTarget = { columnIndex: 0, rowIndex: 0 };
-      const isAdjacent = getOddQNeighbors(heroStore.heroCoordinates!).some(
+      const isAdjacent = getHexNeighbors(heroStore.heroCoordinates!).some(
         (n) => n.columnIndex === farTarget.columnIndex && n.rowIndex === farTarget.rowIndex,
       );
       expect(isAdjacent).toBe(false);
@@ -145,7 +145,7 @@ describe('useCombatStore', () => {
       const { heroStore, map } = setupMapWithHeroAt({ columnIndex: 1, rowIndex: 1 });
       const combatStore = useCombatStore();
       combatStore.startCombat();
-      const [first, second] = getOddQNeighbors(heroStore.heroCoordinates!);
+      const [first, second] = getHexNeighbors(heroStore.heroCoordinates!);
       // second target must stay a plain walkable tile for the assertion to be meaningful
       expect(getTile(map, second).hexobject).toBeNull();
 
@@ -160,7 +160,7 @@ describe('useCombatStore', () => {
       const { heroStore } = setupMapWithHeroAt({ columnIndex: 1, rowIndex: 1 });
       const combatStore = useCombatStore();
       combatStore.startCombat();
-      const target = getOddQNeighbors(heroStore.heroCoordinates!)[0];
+      const target = getHexNeighbors(heroStore.heroCoordinates!)[0];
       combatStore.placeCombatDefendMarker(target, HEXOBJECT_KEYS.SHIELD);
       const budgetBeforeDefend = combatStore.getCombatMoveBudget();
 
@@ -180,7 +180,7 @@ describe('useCombatStore', () => {
       const combatStore = useCombatStore();
       combatStore.startCombat();
 
-      const enemyCoord = getOddQNeighbors(heroStore.heroCoordinates!)[0];
+      const enemyCoord = getHexNeighbors(heroStore.heroCoordinates!)[0];
       const enemyTile = getTile(map, enemyCoord);
       enemyTile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.EMITTER, enemyCoord); // hp 30, survives a weak hit
 
@@ -202,7 +202,7 @@ describe('useCombatStore', () => {
       const combatStore = useCombatStore();
       combatStore.startCombat();
 
-      const enemyCoord = getOddQNeighbors(heroStore.heroCoordinates!)[0];
+      const enemyCoord = getHexNeighbors(heroStore.heroCoordinates!)[0];
       const enemyTile = getTile(map, enemyCoord);
       enemyTile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETOR, enemyCoord); // hp 2, one-shot with attack 10
 
@@ -220,7 +220,7 @@ describe('useCombatStore', () => {
       combatStore.startCombat();
       combatStore.combatTurnSide = 'enemy';
 
-      const enemyCoord = getOddQNeighbors(heroStore.heroCoordinates!)[0];
+      const enemyCoord = getHexNeighbors(heroStore.heroCoordinates!)[0];
       const enemyTile = getTile(map, enemyCoord);
       enemyTile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETOR, enemyCoord);
 

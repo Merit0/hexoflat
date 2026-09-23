@@ -15,7 +15,7 @@ export const RESOURCE_CONTENT: Record<TResourceKeys, TContentDefinition> = {
     subtitle: 'Can be chopped',
     description: 'This is the Tree',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-resources/tree-hex-image.png',
+    spritePath: '/hex-assets/hex-resources/tree-hex.png',
     resource: makeResource({ cuttable: true }),
     actions: {
       [EHexActionType.CUT]: {

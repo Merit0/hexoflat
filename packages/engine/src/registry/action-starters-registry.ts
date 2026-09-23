@@ -287,8 +287,11 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
   },
 
   [EHexActionType.OPEN]: (tile, _tool, now) => {
+    const obj = tile.hexobject;
+    if (!obj) return { ok: false, message: 'Hex has no object!' };
     if (isBusy(tile, now)) return { ok: false, message: 'Hex is busy!' };
-    return { ok: false, message: 'OPEN is not implemented yet!' };
+
+    return { ok: false, message: 'The chest is broken and cannot be opened.' };
   },
 
   [EHexActionType.ENTER]: (tile, tool, now, ctx) => {
