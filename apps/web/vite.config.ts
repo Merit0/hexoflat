@@ -1,12 +1,56 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type Plugin } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import path from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { STATIC_BOARD_SAVE_ENDPOINT } from './src/services/dev/static-board-save-endpoint';
+import type { StaticBoardSaveHandlerResult } from './src/services/dev/static-board-save-handler';
+
+const staticBoardsDir = path.resolve(__dirname, '../../packages/engine/src/content/boards/static');
+
+function devStaticBoardSavePlugin(): Plugin {
+  return {
+    name: 'hexoflat-dev-static-board-save',
+    configureServer(server) {
+      server.middlewares.use(STATIC_BOARD_SAVE_ENDPOINT, (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end();
+          return;
+        }
+
+        let rawBody = '';
+        req.on('data', (chunk) => {
+          rawBody += chunk;
+        });
+        req.on('end', () => {
+          void (async () => {
+            const handlerModule = await server.ssrLoadModule(
+              '/src/services/dev/static-board-save-handler.ts',
+            );
+            const handle = handlerModule.handleStaticBoardSaveRequest as (
+              rawBody: string,
+            ) => StaticBoardSaveHandlerResult;
+            const result = handle(rawBody);
+
+            if (result.fileName && result.fileContent) {
+              writeFileSync(path.join(staticBoardsDir, result.fileName), result.fileContent);
+            }
+
+            res.statusCode = result.status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(result.body));
+          })();
+        });
+      });
+    },
+  };
+}
 
 export default defineConfig({
   // GitHub Pages serves this repo at https://<user>.github.io/hexoflat/,
   // so assets need that prefix in production. Local dev/build stays at '/'.
   base: process.env.GITHUB_PAGES ? '/hexoflat/' : '/',
-  plugins: [vue()],
+  plugins: [vue(), devStaticBoardSavePlugin()],
   server: {
     open: true,
   },

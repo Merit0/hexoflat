@@ -53,9 +53,21 @@
               :tool="activeTool"
               @hide="onHide"
             />
+
+            <component
+              :is="StaticBoardCoordinatesOverlay"
+              v-if="StaticBoardCoordinatesOverlay && staticBoardEditorStore?.isEditing"
+              :tiles="tiles"
+              :tile-width="domTileW"
+              :tile-height="domTileH"
+            />
           </div>
         </div>
       </div>
+      <component
+        :is="StaticBoardEditorPanel"
+        v-if="StaticBoardEditorPanel && staticBoardEditorStore?.isEditing"
+      />
     </div>
     <hero-board-panel />
   </div>
@@ -79,6 +91,7 @@ import {
 } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
+import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
 import { computeZoneTints } from '@/services/world/zone-tint';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
@@ -119,10 +132,19 @@ let healTickerTimer: number | null = null;
 const DevBoardPanel = import.meta.env.DEV
   ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
   : null;
+const StaticBoardEditorPanel = import.meta.env.DEV
+  ? defineAsyncComponent(() => import('./static-board-editor-panel.vue'))
+  : null;
+const StaticBoardCoordinatesOverlay = import.meta.env.DEV
+  ? defineAsyncComponent(() => import('./static-board-coordinates-overlay.vue'))
+  : null;
 const devBoardPanelStore = import.meta.env.DEV ? useDevBoardPanelStore() : null;
+const staticBoardEditorStore = import.meta.env.DEV ? useStaticBoardEditorStore() : null;
 const devPanelOptions = import.meta.env.DEV
   ? {
-      showWholeBoard: computed(() => devBoardPanelStore?.showWholeBoard ?? false),
+      showWholeBoard: computed(
+        () => staticBoardEditorStore?.isEditing || (devBoardPanelStore?.showWholeBoard ?? false),
+      ),
       zoneTintByCoordinateKey: computed(() =>
         devBoardPanelStore?.showZoneOutlines
           ? computeZoneTints(worldStore.descriptor)
@@ -162,7 +184,12 @@ onMounted(() => uiSettingsStore.hydrateFromStorage());
 onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
 
-const tiles = computed(() => worldStore.map?.tiles ?? []);
+const tiles = computed(() => {
+  if (staticBoardEditorStore?.isEditing && staticBoardEditorStore.draftMap) {
+    return staticBoardEditorStore.draftMap.tiles;
+  }
+  return worldStore.map?.tiles ?? [];
+});
 const boardFrame = computed(() =>
   worldStore.map ? { width: worldStore.map.width, height: worldStore.map.height } : null,
 );
@@ -326,6 +353,10 @@ useHexBoard({
   },
   onTileHover: handleTileHover,
   onTileClick: (tile) => {
+    if (staticBoardEditorStore?.isEditing) {
+      staticBoardEditorStore.selectHex(tile.coordinates);
+      return;
+    }
     void handleTileClick(tile);
   },
   onBoardReady: () => {

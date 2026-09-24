@@ -8,6 +8,7 @@ import { buildStaticBoard } from '../boards/build-static-board';
 import { assembleGeneratedBoard } from '../boards/assemble-generated-board';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
 import { CAVE_PRESET } from '../content/boards/presets/cave';
+import type { StaticBoardDrawing } from '../content/boards/schemas';
 
 export type { LocationKey };
 
@@ -29,6 +30,8 @@ export type MapDefinition = {
   createWithLayout?: (ctx: CreateBoardContext & { layoutId: string }) => CreatedBoard;
   /** DUNGEON only — every layout id this location's preset can pick from. */
   availableLayouts?: string[];
+  /** STATIC only — the drawing this location's board is built from, editable in the dev in-game editor. Absent for a STATIC board with no drawing (camping's WorldGenerator config). */
+  staticDrawing?: StaticBoardDrawing;
   entryHexobjectKey: THexobjectKey;
   safeZoneRadius?: number;
   fogPolicy?: TFogPolicy;
@@ -59,6 +62,7 @@ export class MapRegistry {
       title: 'Silesia',
       boardKind: 'STATIC',
       create: () => buildStaticBoard(SILESIA_BOARD),
+      staticDrawing: SILESIA_BOARD,
       entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
       safeZoneRadius: 1,
       fogPolicy: 'FOG',

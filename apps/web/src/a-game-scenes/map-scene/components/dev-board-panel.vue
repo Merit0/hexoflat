@@ -36,6 +36,11 @@
       </div>
     </div>
 
+    <label v-if="canEditBoard" class="dev-board-panel__toggle">
+      <input type="checkbox" :checked="editorStore.isEditing" @change="onToggleEditBoard" />
+      Edit board
+    </label>
+
     <label class="dev-board-panel__toggle">
       <input
         type="checkbox"
@@ -71,16 +76,29 @@ import { computed, ref, watch } from 'vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
+import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
 import { computeZoneLegend } from '@/services/world/zone-tint';
 
 const worldStore = useWorldMapStore();
 const panelStore = useDevBoardPanelStore();
+const editorStore = useStaticBoardEditorStore();
 
 const descriptor = computed(() => worldStore.descriptor);
 const zoneLegend = computed(() => computeZoneLegend(descriptor.value));
 const availableLayouts = computed(
   () => MapRegistry.get(worldStore.currentLocationKey).availableLayouts ?? [],
 );
+const canEditBoard = computed(
+  () => descriptor.value?.kind === 'STATIC' && descriptor.value.drawingHash !== undefined,
+);
+
+function onToggleEditBoard() {
+  if (editorStore.isEditing) {
+    editorStore.cancelEditing();
+  } else {
+    editorStore.startEditing(worldStore.currentLocationKey);
+  }
+}
 
 const selectedLayoutId = ref(availableLayouts.value[0] ?? '');
 watch(availableLayouts, (layouts) => {

@@ -204,6 +204,8 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       );
     }
 
+    stopWatchers.push(watch(opts.tiles, (tiles) => tilesLayer?.syncTiles(tiles)));
+
     stopWatchers.push(
       watch(opts.healTickerNow, (now) => tilesLayer?.syncLockChips(opts.tiles.value, now)),
     );
