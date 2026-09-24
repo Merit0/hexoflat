@@ -104,6 +104,48 @@ describe('useWorldMapStore: leaveCurrentLocation', () => {
 
     expect(worldStore.isLocationRespawning('cave')).toBe(false);
   });
+
+  it('discards a DUNGEON board on the way to a different location, instead of saving it', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildRevealedMap();
+    worldStore.currentLocationKey = 'cave';
+    worldStore.currentMapId = 'cave-map-id';
+    const clearSpy = vi.spyOn(worldStore, 'clearStoredLocation');
+    const saveSpy = vi.spyOn(worldStore, 'saveToStorage');
+
+    worldStore.leaveCurrentLocation('silesia');
+
+    expect(clearSpy).toHaveBeenCalledWith('cave', 'cave-map-id');
+    expect(saveSpy).not.toHaveBeenCalled();
+  });
+
+  it('saves a DUNGEON board instead of discarding it when staying on the same location', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildRevealedMap();
+    worldStore.currentLocationKey = 'cave';
+    worldStore.currentMapId = 'cave-map-id';
+    const clearSpy = vi.spyOn(worldStore, 'clearStoredLocation');
+    const saveSpy = vi.spyOn(worldStore, 'saveToStorage');
+
+    worldStore.leaveCurrentLocation('cave');
+
+    expect(clearSpy).not.toHaveBeenCalled();
+    expect(saveSpy).toHaveBeenCalledWith('cave-map-id');
+  });
+
+  it('saves a STATIC board rather than discarding it on the way to a different location', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildRevealedMap();
+    worldStore.currentLocationKey = 'silesia';
+    worldStore.currentMapId = 'silesia-map-id';
+    const clearSpy = vi.spyOn(worldStore, 'clearStoredLocation');
+    const saveSpy = vi.spyOn(worldStore, 'saveToStorage');
+
+    worldStore.leaveCurrentLocation('cave');
+
+    expect(clearSpy).not.toHaveBeenCalled();
+    expect(saveSpy).toHaveBeenCalledWith('silesia-map-id');
+  });
 });
 
 describe('useWorldMapStore', () => {
@@ -221,5 +263,135 @@ describe('useWorldMapStore', () => {
 
       expect(dirty.size).toBe(map.tiles.length);
     });
+  });
+});
+
+describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
+  });
+
+  it('builds silesia as a STATIC board via MapRegistry', () => {
+    const worldStore = useWorldMapStore();
+
+    worldStore.loadLocationMap('silesia');
+
+    expect(worldStore.descriptor).toMatchObject({ kind: 'STATIC', id: 'silesia' });
+    expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
+  });
+
+  it('builds cave as a DUNGEON board via MapRegistry', () => {
+    const worldStore = useWorldMapStore();
+
+    worldStore.loadLocationMap('cave');
+
+    expect(worldStore.descriptor?.kind).toBe('DUNGEON');
+    expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
+  });
+
+  it('rebuilds a saved STATIC board once its drawing hash no longer matches', () => {
+    const staleMapId = 'stale-silesia-id';
+    const staleTile = {
+      coordinates: { columnIndex: 0, rowIndex: 0 },
+      isRevealed: true,
+      hexobject: null,
+      resourceSpawner: null,
+      pendingAction: null,
+    };
+    localStorage.setItem('hexoflat:world:index:v1', JSON.stringify({ silesia: staleMapId }));
+    localStorage.setItem(
+      'hexoflat:world:map:v1:' + staleMapId,
+      JSON.stringify({
+        contentVersion: 1,
+        map: { name: 'stale', width: 1, height: 1, complexity: 0, config: [], tiles: [staleTile] },
+      }),
+    );
+    localStorage.setItem(
+      'hexoflat:world:state:v1:' + staleMapId,
+      JSON.stringify({
+        contentVersion: 1,
+        heroCoordinates: null,
+        descriptor: { kind: 'STATIC', id: 'silesia', drawingHash: 'stale-hash' },
+      }),
+    );
+
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('silesia', staleMapId);
+
+    expect(worldStore.descriptor).toMatchObject({ kind: 'STATIC', id: 'silesia' });
+    expect((worldStore.descriptor as { drawingHash?: string })?.drawingHash).not.toBe('stale-hash');
+    expect(worldStore.map?.tiles.length).toBeGreaterThan(1);
+  });
+
+  it('a reload inside the cave (bootstrapWorld with the saved mapId) gives the same board back', () => {
+    const worldStore = useWorldMapStore();
+
+    worldStore.loadLocationMap('cave');
+    const mapId = worldStore.currentMapId as string;
+    const descriptorAfterFirstLoad = worldStore.descriptor;
+
+    worldStore.map = null;
+    worldStore.descriptor = null;
+    worldStore.loadLocationMap('cave', mapId);
+
+    expect(worldStore.descriptor).toEqual(descriptorAfterFirstLoad);
+  });
+});
+
+describe('useWorldMapStore: dev board panel actions', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
+  });
+
+  it('devRegenerateDungeon discards the old mapId and builds a different board under a new one', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('cave');
+    const oldMapId = worldStore.currentMapId;
+    const oldDescriptor = worldStore.descriptor;
+
+    worldStore.devRegenerateDungeon();
+
+    expect(worldStore.currentMapId).not.toBe(oldMapId);
+    expect(worldStore.descriptor).not.toEqual(oldDescriptor);
+    expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
+  });
+
+  it('devNextSeed rebuilds under the same mapId with a different board', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('cave');
+    const mapId = worldStore.currentMapId;
+    const oldDescriptor = worldStore.descriptor;
+
+    worldStore.devNextSeed();
+
+    expect(worldStore.currentMapId).toBe(mapId);
+    expect(worldStore.descriptor).not.toEqual(oldDescriptor);
+  });
+
+  it('devForceLayout rebuilds using exactly the requested layout', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('cave');
+    const layoutId = 'basin-01';
+
+    worldStore.devForceLayout(layoutId);
+
+    expect(worldStore.descriptor?.kind === 'DUNGEON' && worldStore.descriptor.layoutId).toBe(
+      layoutId,
+    );
+  });
+
+  it('dev actions are no-ops on a STATIC location', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('silesia');
+    const mapId = worldStore.currentMapId;
+    const descriptor = worldStore.descriptor;
+
+    worldStore.devRegenerateDungeon();
+    worldStore.devNextSeed();
+
+    expect(worldStore.currentMapId).toBe(mapId);
+    expect(worldStore.descriptor).toEqual(descriptor);
   });
 });

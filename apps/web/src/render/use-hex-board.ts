@@ -1,6 +1,7 @@
 import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
+import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
 import { createTilesLayer, type TilesLayer } from '@/render/layers/tiles-layer';
 import { createHeroLayer, type HeroLayer } from '@/render/layers/hero-layer';
@@ -52,6 +53,11 @@ export interface UseHexBoardOptions {
   };
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
+  /** Dev-only board panel toggles (see dev-board-panel.vue) — both default away in production. */
+  devPanel?: {
+    showWholeBoard: ComputedRef<boolean>;
+    zoneTintByCoordinateKey: ComputedRef<Map<string, number>>;
+  };
   /**
    * Fired once the renderer has presented its first frame with every layer
    * already synced. "Vue mounted" is a much weaker signal — Pixi's init and
@@ -121,6 +127,9 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       combatStore,
       onTileHover: opts.onTileHover,
       onTileClick: opts.onTileClick,
+      isForceRevealed: () => opts.devPanel?.showWholeBoard.value ?? false,
+      getZoneTint: (tile) =>
+        opts.devPanel?.zoneTintByCoordinateKey.value.get(coordinateKey(tile.coordinates)) ?? null,
     });
 
     enemyVisionLayer = createEnemyVisionLayer({
@@ -186,6 +195,14 @@ export function useHexBoard(opts: UseHexBoardOptions) {
         { deep: true },
       ),
     );
+
+    if (opts.devPanel) {
+      stopWatchers.push(
+        watch([opts.devPanel.showWholeBoard, opts.devPanel.zoneTintByCoordinateKey], () =>
+          tilesLayer?.syncTiles(opts.tiles.value),
+        ),
+      );
+    }
 
     stopWatchers.push(
       watch(opts.healTickerNow, (now) => tilesLayer?.syncLockChips(opts.tiles.value, now)),

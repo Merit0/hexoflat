@@ -1,6 +1,7 @@
 <template>
   <div class="scene-root game-root" data-testid="map-scene-root" :style="sceneLayoutStyle">
     <div class="map-pane">
+      <component :is="DevBoardPanel" v-if="DevBoardPanel" />
       <combat-hud />
       <action-alert-banner />
       <div class="map-session-controls">
@@ -61,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { useHexBoard } from '@/render/use-hex-board';
@@ -77,6 +78,8 @@ import {
   ResolvedAction,
 } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
+import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
+import { computeZoneTints } from '@/services/world/zone-tint';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
 import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
@@ -113,6 +116,21 @@ const hoveredTileCoord = ref<IHexCoordinates | null>(null);
 const healTickerNow = ref(Date.now());
 let healTickerTimer: number | null = null;
 
+const DevBoardPanel = import.meta.env.DEV
+  ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
+  : null;
+const devBoardPanelStore = import.meta.env.DEV ? useDevBoardPanelStore() : null;
+const devPanelOptions = import.meta.env.DEV
+  ? {
+      showWholeBoard: computed(() => devBoardPanelStore?.showWholeBoard ?? false),
+      zoneTintByCoordinateKey: computed(() =>
+        devBoardPanelStore?.showZoneOutlines
+          ? computeZoneTints(worldStore.descriptor)
+          : new Map<string, number>(),
+      ),
+    }
+  : undefined;
+
 watch(
   () => props.locationKey,
   (locationKey) => {
@@ -145,6 +163,9 @@ onMounted(() => heroInventoryStore.hydrate());
 onBeforeUnmount(() => worldStore.stopWorldLoop());
 
 const tiles = computed(() => worldStore.map?.tiles ?? []);
+const boardFrame = computed(() =>
+  worldStore.map ? { width: worldStore.map.width, height: worldStore.map.height } : null,
+);
 const tilesDirtyTick = computed(() => worldStore.dirtyTick);
 const activeTool = computed(() => heroToolStore.activeTool);
 
@@ -159,7 +180,7 @@ const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
 
 const { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale } =
-  useHexBoardSizing(tiles);
+  useHexBoardSizing(boardFrame);
 const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
@@ -310,6 +331,7 @@ useHexBoard({
   onBoardReady: () => {
     isBoardReady.value = true;
   },
+  devPanel: devPanelOptions,
 });
 
 function openSettings() {

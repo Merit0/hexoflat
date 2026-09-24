@@ -3,13 +3,32 @@ import type { TFogPolicy } from '../map/models/hex-map-model';
 import { HexMapProvider } from '../map/providers/hex-map-provider';
 import { HEXOBJECT_KEYS, THexobjectKey } from './hexobjects-registry';
 import type { LocationKey } from './location-key';
+import type { BoardDescriptor } from '../boards/board-descriptors';
+import { buildStaticBoard } from '../boards/build-static-board';
+import { assembleGeneratedBoard } from '../boards/assemble-generated-board';
+import { SILESIA_BOARD } from '../content/boards/static/silesia';
+import { CAVE_PRESET } from '../content/boards/presets/cave';
 
 export type { LocationKey };
+
+export interface CreateBoardContext {
+  seed: string;
+}
+
+export interface CreatedBoard {
+  map: HexMapModel;
+  descriptor: BoardDescriptor;
+}
 
 export type MapDefinition = {
   key: LocationKey;
   title: string;
-  create: () => HexMapModel;
+  boardKind: 'STATIC' | 'DUNGEON';
+  create: (ctx: CreateBoardContext) => CreatedBoard;
+  /** DUNGEON only — rebuild forcing one specific layout, for the dev board panel. */
+  createWithLayout?: (ctx: CreateBoardContext & { layoutId: string }) => CreatedBoard;
+  /** DUNGEON only — every layout id this location's preset can pick from. */
+  availableLayouts?: string[];
   entryHexobjectKey: THexobjectKey;
   safeZoneRadius?: number;
   fogPolicy?: TFogPolicy;
@@ -26,7 +45,11 @@ export class MapRegistry {
     camping: {
       key: 'camping',
       title: 'Camping',
-      create: () => HexMapProvider.getCamping(),
+      boardKind: 'STATIC',
+      create: () => ({
+        map: HexMapProvider.getCamping(),
+        descriptor: { kind: 'STATIC', id: 'camping' },
+      }),
       entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
       safeZoneRadius: 1,
       fogPolicy: 'ALL_REVEALED',
@@ -34,7 +57,8 @@ export class MapRegistry {
     silesia: {
       key: 'silesia',
       title: 'Silesia',
-      create: () => HexMapProvider.getHomeLand(),
+      boardKind: 'STATIC',
+      create: () => buildStaticBoard(SILESIA_BOARD),
       entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
       safeZoneRadius: 1,
       fogPolicy: 'FOG',
@@ -42,7 +66,11 @@ export class MapRegistry {
     cave: {
       key: 'cave',
       title: 'Skeletor Kingdom',
-      create: () => HexMapProvider.getSkeletorsKingdom(),
+      boardKind: 'DUNGEON',
+      create: (ctx) => assembleGeneratedBoard(ctx.seed, CAVE_PRESET),
+      createWithLayout: (ctx) =>
+        assembleGeneratedBoard(ctx.seed, { ...CAVE_PRESET, layouts: [ctx.layoutId] }),
+      availableLayouts: CAVE_PRESET.layouts,
       entryHexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
       safeZoneRadius: 1,
       fogPolicy: 'FOG',
