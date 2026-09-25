@@ -27,7 +27,7 @@ import { useCombatStore } from '@/stores/combat-store';
 
 export interface UseHexBoardOptions {
   canvasRef: Ref<HTMLCanvasElement | null>;
-  paneSize: ComputedRef<PaneSize>;
+  canvasSize: ComputedRef<PaneSize>;
   camera: ComputedRef<BoardCamera>;
   tiles: ComputedRef<IHexTile[]>;
   /**
@@ -70,17 +70,17 @@ export interface UseHexBoardOptions {
 
 const getTileSize = () => HEX_WORLD_SIZE;
 
-function waitForValidPaneSize(paneSize: ComputedRef<PaneSize>): Promise<PaneSize> {
+function waitForValidSize(size: ComputedRef<PaneSize>): Promise<PaneSize> {
   return new Promise((resolve) => {
-    if (paneSize.value.width > 0 && paneSize.value.height > 0) {
-      resolve(paneSize.value);
+    if (size.value.width > 0 && size.value.height > 0) {
+      resolve(size.value);
       return;
     }
 
-    const stop = watch(paneSize, (size) => {
-      if (size.width <= 0 || size.height <= 0) return;
+    const stop = watch(size, (next) => {
+      if (next.width <= 0 || next.height <= 0) return;
       stop();
-      resolve(size);
+      resolve(next);
     });
   });
 }
@@ -103,10 +103,10 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     const canvas = opts.canvasRef.value;
     if (!canvas) return;
 
-    const initialPane = await waitForValidPaneSize(opts.paneSize);
+    const initialSize = await waitForValidSize(opts.canvasSize);
     if (cancelled) return;
 
-    board = await createHexBoardApp(canvas, initialPane.width, initialPane.height);
+    board = await createHexBoardApp(canvas, initialSize.width, initialSize.height);
     if (cancelled) {
       board.destroy();
       board = null;
@@ -152,7 +152,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
 
     stopWatchers.push(
       watch(
-        [opts.paneSize, opts.camera],
+        [opts.canvasSize, opts.camera],
         ([size, camera]) => {
           board?.resize(size.width, size.height);
           board?.setCamera(camera);

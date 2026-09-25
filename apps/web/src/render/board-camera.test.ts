@@ -5,6 +5,7 @@ import {
   HEX_WORLD_HEIGHT,
   HEX_WORLD_WIDTH,
   IDENTITY_CAMERA,
+  snapCameraToPixels,
   tileScreenSize,
   tileWorldCenter,
   worldToScreen,
@@ -84,6 +85,15 @@ describe('fitBoardCamera', () => {
     expect(clamped.top).toBeCloseTo(0, 5);
     expect(clamped.right).toBeGreaterThan(pane.width);
     expect(clamped.bottom).toBeGreaterThan(pane.height);
+  });
+
+  it('snaps the camera offset to whole device pixels without touching the zoom', () => {
+    expect(snapCameraToPixels({ zoom: 0.72, x: 10.3, y: 7.76 }, 2)).toEqual({
+      zoom: 0.72,
+      x: 10.5,
+      y: 8,
+    });
+    expect(snapCameraToPixels({ zoom: 1, x: 10.3, y: 7.76 }, 0)).toEqual({ zoom: 1, x: 10, y: 8 });
   });
 
   it('scales the on-screen tile with the camera zoom only', () => {

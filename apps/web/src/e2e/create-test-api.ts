@@ -19,7 +19,7 @@ import type {
 
 export interface CreateTestApiOptions {
   getCamera(): BoardCamera;
-  getPaneSize(): PaneSize;
+  getCanvasSize(): PaneSize;
   isBoardReady(): boolean;
 }
 
@@ -58,9 +58,9 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     getTileFraction(coordinates: TestHexCoordinates): TestTileFraction {
-      const pane = options.getPaneSize();
+      const canvas = options.getCanvasSize();
 
-      if (!pane.width || !pane.height) {
+      if (!canvas.width || !canvas.height) {
         throw new Error(
           'getTileFraction() called before the board had a real size — wait for isBoardReady().',
         );
@@ -68,7 +68,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
       const center = worldToScreen(options.getCamera(), tileWorldCenter(coordinates));
 
-      return { fx: center.x / pane.width, fy: center.y / pane.height };
+      return { fx: center.x / canvas.width, fy: center.y / canvas.height };
     },
 
     getNeighbors(coordinates: TestHexCoordinates): TestHexCoordinates[] {

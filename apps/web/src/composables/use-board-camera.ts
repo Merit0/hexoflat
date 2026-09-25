@@ -4,6 +4,7 @@ import {
   fitBoardCamera,
   frameWorldRect,
   IDENTITY_CAMERA,
+  snapCameraToPixels,
   tileScreenSize,
   tileWorldCenter,
   type BoardFrame,
@@ -16,17 +17,28 @@ export function useBoardCamera(
   focus: ComputedRef<IHexCoordinates | null>,
 ) {
   const containerRef = ref<HTMLElement | null>(null);
+  const stageRef = ref<HTMLElement | null>(null);
   const paneWidth = ref(0);
   const paneHeight = ref(0);
+  const stageWidth = ref(0);
+  const pixelRatio = ref(1);
 
-  function readPaneSize() {
-    const el = containerRef.value;
-    if (!el) return;
-    paneWidth.value = el.clientWidth;
-    paneHeight.value = el.clientHeight;
+  function readSizes() {
+    const pane = containerRef.value;
+    if (pane) {
+      paneWidth.value = pane.clientWidth;
+      paneHeight.value = pane.clientHeight;
+    }
+    if (stageRef.value) stageWidth.value = stageRef.value.clientWidth;
+    pixelRatio.value = window.devicePixelRatio || 1;
   }
 
   const paneSize = computed(() => ({ width: paneWidth.value, height: paneHeight.value }));
+
+  const canvasSize = computed(() => ({
+    width: Math.max(stageWidth.value, paneWidth.value),
+    height: paneHeight.value,
+  }));
 
   const frameRect = computed(() => {
     const current = frame.value;
@@ -37,45 +49,56 @@ export function useBoardCamera(
   const camera = computed(() => {
     const rect = frameRect.value;
     if (!rect) return IDENTITY_CAMERA;
-    return fitBoardCamera({
+    const fitted = fitBoardCamera({
       frameRect: rect,
       pane: paneSize.value,
       focus: focus.value ? tileWorldCenter(focus.value) : null,
     });
+    return snapCameraToPixels(fitted, pixelRatio.value);
   });
 
   const screenTileSize = computed(() => tileScreenSize(camera.value));
 
-  let paneResizeObserver: ResizeObserver | null = null;
-  let panePollTimer: number | null = null;
+  let sizeObserver: ResizeObserver | null = null;
+  let sizePollTimer: number | null = null;
 
   function stopPolling() {
-    if (panePollTimer) window.clearInterval(panePollTimer);
-    panePollTimer = null;
+    if (sizePollTimer) window.clearInterval(sizePollTimer);
+    sizePollTimer = null;
   }
 
   onMounted(() => {
-    readPaneSize();
+    readSizes();
 
-    if (containerRef.value) {
-      paneResizeObserver = new ResizeObserver(readPaneSize);
-      paneResizeObserver.observe(containerRef.value);
-    }
+    sizeObserver = new ResizeObserver(readSizes);
+    if (containerRef.value) sizeObserver.observe(containerRef.value);
+    if (stageRef.value) sizeObserver.observe(stageRef.value);
 
-    panePollTimer = window.setInterval(() => {
+    sizePollTimer = window.setInterval(() => {
       if (paneWidth.value > 0 && paneHeight.value > 0) {
         stopPolling();
         return;
       }
-      readPaneSize();
+      readSizes();
     }, PANE_POLL_INTERVAL_MS);
   });
 
   onBeforeUnmount(() => {
-    paneResizeObserver?.disconnect();
-    paneResizeObserver = null;
+    sizeObserver?.disconnect();
+    sizeObserver = null;
     stopPolling();
   });
 
-  return { containerRef, paneWidth, paneHeight, paneSize, frameRect, camera, screenTileSize };
+  return {
+    containerRef,
+    stageRef,
+    paneWidth,
+    paneHeight,
+    stageWidth,
+    paneSize,
+    canvasSize,
+    frameRect,
+    camera,
+    screenTileSize,
+  };
 }

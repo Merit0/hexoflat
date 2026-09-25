@@ -41,6 +41,23 @@ describe('useBoardCamera', () => {
     );
   });
 
+  it('keeps the canvas size fixed while the pane grows or shrinks inside the stage', () => {
+    const board = setup({ width: 18, height: 17 });
+    board.stageWidth.value = 1600;
+    board.paneHeight.value = 900;
+
+    board.paneWidth.value = 1120;
+    const panelOpen = { ...board.canvasSize.value };
+    const openCameraX = board.camera.value.x;
+
+    board.paneWidth.value = 1568;
+    const panelCollapsed = { ...board.canvasSize.value };
+
+    expect(panelOpen).toEqual({ width: 1600, height: 900 });
+    expect(panelCollapsed).toEqual(panelOpen);
+    expect(board.camera.value.x).toBeGreaterThan(openCameraX);
+  });
+
   it('gives every board sharing a frame the same camera, whatever its tile content', () => {
     const a = setup({ width: 18, height: 17 });
     const b = setup({ width: 18, height: 17 });

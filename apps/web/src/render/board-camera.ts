@@ -115,6 +115,15 @@ export function fitBoardCamera(input: FitBoardCameraInput): BoardCamera {
   };
 }
 
+export function snapCameraToPixels(camera: BoardCamera, pixelRatio: number): BoardCamera {
+  const ratio = pixelRatio > 0 ? pixelRatio : 1;
+  return {
+    zoom: camera.zoom,
+    x: Math.round(camera.x * ratio) / ratio,
+    y: Math.round(camera.y * ratio) / ratio,
+  };
+}
+
 export function worldToScreen(camera: BoardCamera, point: WorldPoint): WorldPoint {
   return { x: camera.x + point.x * camera.zoom, y: camera.y + point.y * camera.zoom };
 }

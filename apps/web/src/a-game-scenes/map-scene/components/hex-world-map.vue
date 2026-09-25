@@ -1,5 +1,10 @@
 <template>
-  <div class="scene-root game-root" data-testid="map-scene-root" :style="sceneLayoutStyle">
+  <div
+    ref="stageRef"
+    class="scene-root game-root"
+    data-testid="map-scene-root"
+    :style="sceneLayoutStyle"
+  >
     <div class="map-pane">
       <component :is="DevBoardPanel" v-if="DevBoardPanel" />
       <combat-hud />
@@ -159,7 +164,7 @@ onMounted(() => {
   installTestHooks(
     createTestApi({
       getCamera: () => camera.value,
-      getPaneSize: () => paneSize.value,
+      getCanvasSize: () => canvasSize.value,
       isBoardReady: () => isBoardReady.value,
     }),
   );
@@ -195,7 +200,7 @@ const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
 
 const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
-const { containerRef, paneSize, frameRect, camera, screenTileSize } = useBoardCamera(
+const { containerRef, stageRef, canvasSize, frameRect, camera, screenTileSize } = useBoardCamera(
   boardFrame,
   heroCoordinatesComputed,
 );
@@ -333,7 +338,7 @@ watch(
 
 useHexBoard({
   canvasRef: boardCanvasRef,
-  paneSize,
+  canvasSize,
   camera,
   tiles,
   tilesDirtyTick,
@@ -464,9 +469,10 @@ onBeforeUnmount(() => {
   height: 100%;
 
   background-image: url('/board-assets/dark-board-stones.png');
-  background-size: 100% 100%;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
 
   overflow: hidden;
 }
@@ -480,9 +486,8 @@ onBeforeUnmount(() => {
 
 .hex-board-canvas {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
   display: block;
 }
 
