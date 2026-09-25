@@ -1,20 +1,8 @@
 import type { TestHexCoordinates } from '@web-test-api';
 
-/**
- * Named landmarks on the 'camping' map, so specs and Features talk about
- * `'starterAxe'` instead of `{ columnIndex: 7, rowIndex: 2 }`. When the map
- * layout moves, exactly one line here changes.
- *
- * Coordinates come from packages/engine's `campingMapConfig`
- * (map-tiles-schema-provider.ts). That map is generated as a fixed rectangle
- * with a deterministic layout — no RNG, no fog (fogPolicy: 'ALL_REVEALED') —
- * which is what makes fixed landmarks safe to rely on at all.
- */
 export const MapTokens = {
-  /** A starter AXE (TOOL, pickable by hand) sitting in the safe camping zone. */
-  starterAxe: { columnIndex: 7, rowIndex: 2 },
-  /** The camp's STASH_CHEST (CONSTRUCTION), OPEN-able by hand but always rejected for now. */
-  stashChest: { columnIndex: 3, rowIndex: 1 },
+  starterAxe: { columnIndex: 11, rowIndex: 7 },
+  stashChest: { columnIndex: 8, rowIndex: 9 },
 } as const satisfies Record<string, TestHexCoordinates>;
 
 export type MapToken = keyof typeof MapTokens;

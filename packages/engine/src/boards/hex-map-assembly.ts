@@ -1,4 +1,4 @@
-import HexMapModel from '../map/models/hex-map-model';
+import HexMapModel, { type TFogPolicy } from '../map/models/hex-map-model';
 import { HexTileModel } from '../map/models/hex-tile-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
@@ -10,16 +10,16 @@ export interface AssembleHexMapInput {
   boardColumns: number;
   boardRows: number;
   background: string;
+  fogPolicy?: TFogPolicy;
   cellAt: (coord: IHexCoordinates) => ResolvedCell;
 }
 
-/** Shared final step (docs/WORLD-MAP-BOARDS-PLAN.md §3.5) for both buildStaticBoard and assembleGeneratedBoard: tiles only for existing cells, objects via HexObjectFactory, map.config grouped by (hexobjectKey + overrides) for resource-hydration.ts. */
 export function assembleHexMapModel(input: AssembleHexMapInput): HexMapModel {
   const map = new HexMapModel();
   map.width = input.boardColumns;
   map.height = input.boardRows;
   map.complexity = Complexity.NORMAL;
-  map.fogPolicy = 'FOG';
+  map.fogPolicy = input.fogPolicy ?? 'FOG';
 
   const tiles: HexTileModel[] = [];
   const placementGroups = new Map<string, IHexMapPlacement>();

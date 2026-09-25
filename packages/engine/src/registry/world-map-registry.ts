@@ -1,11 +1,11 @@
 import type HexMapModel from '../map/models/hex-map-model';
 import type { TFogPolicy } from '../map/models/hex-map-model';
-import { HexMapProvider } from '../map/providers/hex-map-provider';
 import { HEXOBJECT_KEYS, THexobjectKey } from './hexobjects-registry';
 import type { LocationKey } from './location-key';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { buildStaticBoard } from '../boards/build-static-board';
 import { assembleGeneratedBoard } from '../boards/assemble-generated-board';
+import { CAMPING_BOARD } from '../content/boards/static/camping';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
 import { CAVE_PRESET } from '../content/boards/presets/cave';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
@@ -30,7 +30,6 @@ export type MapDefinition = {
   createWithLayout?: (ctx: CreateBoardContext & { layoutId: string }) => CreatedBoard;
   /** DUNGEON only — every layout id this location's preset can pick from. */
   availableLayouts?: string[];
-  /** STATIC only — the drawing this location's board is built from, editable in the dev in-game editor. Absent for a STATIC board with no drawing (camping's WorldGenerator config). */
   staticDrawing?: StaticBoardDrawing;
   entryHexobjectKey: THexobjectKey;
   safeZoneRadius?: number;
@@ -49,10 +48,8 @@ export class MapRegistry {
       key: 'camping',
       title: 'Camping',
       boardKind: 'STATIC',
-      create: () => ({
-        map: HexMapProvider.getCamping(),
-        descriptor: { kind: 'STATIC', id: 'camping' },
-      }),
+      create: () => buildStaticBoard(CAMPING_BOARD, 'ALL_REVEALED'),
+      staticDrawing: CAMPING_BOARD,
       entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
       safeZoneRadius: 1,
       fogPolicy: 'ALL_REVEALED',

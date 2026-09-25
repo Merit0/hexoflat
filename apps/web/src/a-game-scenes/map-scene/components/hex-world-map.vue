@@ -25,43 +25,31 @@
         </button>
       </div>
       <div ref="containerRef" class="hex-map" data-testid="hex-map">
-        <div class="hex-map-wrapper" :style="{ transform: `scale(${scale})` }">
-          <div ref="probeRef" class="hex-probe" aria-hidden="true"></div>
+        <canvas
+          ref="boardCanvasRef"
+          class="hex-board-canvas"
+          data-testid="hex-board-canvas"
+          :data-ready="isBoardReady ? '1' : undefined"
+        />
 
-          <div
-            class="hex-map-inner"
-            data-testid="hex-map-inner"
-            :style="{
-              width: mapBounds.width + 'px',
-              height: mapBounds.height + 'px',
-              transform: `translate(${Math.round(-mapBounds.offsetX)}px, ${Math.round(-mapBounds.offsetY)}px)`,
-            }"
-          >
-            <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
+        <div class="hex-board-overlays" data-testid="hex-map-inner" :style="overlayStyle">
+          <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
 
-            <canvas
-              ref="boardCanvasRef"
-              class="hex-board-canvas"
-              data-testid="hex-board-canvas"
-              :data-ready="isBoardReady ? '1' : undefined"
-            />
+          <tool-hex-tile
+            v-if="heroToolStore.isDragging && activeTool"
+            :tile-width="screenTileSize.w"
+            :tile-height="screenTileSize.h"
+            :tool="activeTool"
+            @hide="onHide"
+          />
 
-            <tool-hex-tile
-              v-if="heroToolStore.isDragging && activeTool"
-              :tile-width="domTileW"
-              :tile-height="domTileH"
-              :tool="activeTool"
-              @hide="onHide"
-            />
-
-            <component
-              :is="StaticBoardCoordinatesOverlay"
-              v-if="StaticBoardCoordinatesOverlay && staticBoardEditorStore?.isEditing"
-              :tiles="tiles"
-              :tile-width="domTileW"
-              :tile-height="domTileH"
-            />
-          </div>
+          <component
+            :is="StaticBoardCoordinatesOverlay"
+            v-if="StaticBoardCoordinatesOverlay && staticBoardEditorStore?.isEditing"
+            :tiles="tiles"
+            :tile-width="screenTileSize.w"
+            :tile-height="screenTileSize.h"
+          />
         </div>
       </div>
       <component
@@ -81,7 +69,7 @@ import { useHexBoard } from '@/render/use-hex-board';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
 import { useMovePreview } from '@/composables/use-move-preview';
-import { useHexBoardSizing } from '@/composables/use-hex-board-sizing';
+import { useBoardCamera } from '@/composables/use-board-camera';
 import { useHexBoardInput } from '@/composables/use-hex-board-input';
 import { useGameLayout } from '@/composables/use-game-layout';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -170,8 +158,8 @@ onMounted(() => {
   if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
   installTestHooks(
     createTestApi({
-      getMapBounds: () => mapBounds.value,
-      getTileSize: () => ({ w: domTileW.value, h: domTileH.value }),
+      getCamera: () => camera.value,
+      getPaneSize: () => paneSize.value,
       isBoardReady: () => isBoardReady.value,
     }),
   );
@@ -206,8 +194,18 @@ function handleTileHover(tile: IHexTile) {
 const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
 const isBoardReady = ref(false);
 
-const { probeRef, containerRef, domTileW, domTileH, domTileSize, mapBounds, scale } =
-  useHexBoardSizing(boardFrame);
+const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
+const { containerRef, paneSize, frameRect, camera, screenTileSize } = useBoardCamera(
+  boardFrame,
+  heroCoordinatesComputed,
+);
+const overlayStyle = computed(() => ({
+  width: `${(frameRect.value?.width ?? 0) * camera.value.zoom}px`,
+  height: `${(frameRect.value?.height ?? 0) * camera.value.zoom}px`,
+  transform: `translate(${camera.value.x}px, ${camera.value.y}px)`,
+  '--hex-tile-width': `${screenTileSize.value.w}px`,
+  '--hex-tile-height': `${screenTileSize.value.h}px`,
+}));
 const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
@@ -333,12 +331,10 @@ watch(
   { immediate: true },
 );
 
-const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
-
 useHexBoard({
   canvasRef: boardCanvasRef,
-  mapBounds,
-  domTileSize,
+  paneSize,
+  camera,
   tiles,
   tilesDirtyTick,
   heroCoordinates: heroCoordinatesComputed,
@@ -463,8 +459,7 @@ onBeforeUnmount(() => {
 }
 
 .hex-map {
-  display: grid;
-  place-items: center;
+  position: relative;
   width: 100%;
   height: 100%;
 
@@ -476,23 +471,11 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.hex-map-wrapper {
-  width: max-content;
-  height: max-content;
-  transform-origin: center center;
-  position: relative;
-}
-
-.hex-probe {
+.hex-board-overlays {
   position: absolute;
-  width: var(--hex-tile-width);
-  height: var(--hex-tile-height);
-  visibility: hidden;
+  top: 0;
+  left: 0;
   pointer-events: none;
-}
-
-.hex-map-inner {
-  position: relative;
 }
 
 .hex-board-canvas {

@@ -1,6 +1,6 @@
 ---
 name: hexoflat-render
-description: How the PixiJS hex-board renderer is wired in apps/web/src/render — layers, the dirty-tile flush, DOM size probing, and the board-ready signal. Use when a task touches apps/web/src/render/**, adds or changes a visual layer on the hex board, deals with tile sprites, hex pixel geometry, canvas sizing or scaling, or when something renders in the wrong place or not at all.
+description: How the PixiJS hex-board renderer is wired in apps/web/src/render — layers, the dirty-tile flush, world-unit hex sizing with the board camera, and the board-ready signal. Use when a task touches apps/web/src/render/**, adds or changes a visual layer on the hex board, deals with tile sprites, hex pixel geometry, canvas sizing or scaling, or when something renders in the wrong place or not at all.
 ---
 
 # The hex-board renderer
@@ -12,6 +12,7 @@ PixiJS renders the board. Vue owns the surrounding DOM and feeds the renderer re
 ```
 pixi-app.ts          bootstrap of the Pixi Application
 use-hex-board.ts     the Vue<->Pixi seam; owns all layer lifecycles
+board-camera.ts      world hex size, fit/follow camera, world->screen mapping
 hex-geometry.ts      hex pixel math
 texture-cache.ts     texture reuse
 token-utils.ts       token drawing helpers
@@ -49,20 +50,26 @@ Use `markAllTilesDirty()` as the safety net whenever the exact changed set is no
 
 > Direction of travel: `dirtyTick` is a lossy re-derivation of information the engine already emits as domain events, and the plan is to drive the renderer from the event stream instead. Until that happens, keep marking tiles.
 
-## Sizing: the DOM probe
+## Sizing: world units + a camera
 
-Tile size is measured from a hidden DOM probe element, not hardcoded. A single `requestAnimationFrame` read is **not** reliable — if layout has not settled on that exact frame, the probe measures 0 once and nothing retries, leaving `domTileW/H` (and therefore `mapBounds`, canvas size, and every tile's hit area) stuck at zero for the life of the page. Tiles then render in the wrong place or clicks silently do nothing until a reload happens to win the race.
+There is exactly one source of truth for hex size: `HEX_WORLD_WIDTH`/`HEX_WORLD_HEIGHT` in `render/board-camera.ts`. Every layer draws in these fixed world units (`getTileSize()` returns the constant); nothing reads a CSS variable or measures a DOM element to learn the tile size.
 
-The existing fix is a `ResizeObserver` on the probe plus a bounded polling fallback. **Do not replace it with a one-shot measurement.**
+- **Canvas = the pane.** `useBoardCamera` (`composables/use-board-camera.ts`) measures only the `.hex-map` pane; the Pixi renderer is resized to exactly that size. The canvas buffer never grows with the board.
+- **Resizing clears the WebGL buffer.** `renderer.resize()` resets the canvas, and the pane `ResizeObserver` fires after the ticker has already rendered that frame — so without an immediate render the frame is painted blank (visible as the board flickering out while the hero panel's 260 ms collapse transition resizes the pane every frame). `use-hex-board.ts` therefore applies resize + camera and calls `renderNow()` in the same watcher, and `resize()` skips no-op sizes. Keep them together.
+- **Camera = `worldContainer` transform.** `fitBoardCamera()` is a pure function: zoom fits the whole board frame into the pane, clamped to `[MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM]`. When the board fits, it is centered; when `MIN_CAMERA_ZOOM` keeps it bigger than the pane, the camera follows the hero and is clamped so no gap opens past the frame edge. `setCamera()` applies it to `worldContainer`.
+- **DOM overlays** (`tool-hex-tile`, dev coordinate labels, combat outline) live in `.hex-board-overlays`, translated by the camera offset. That container sets `--hex-tile-width/height` to the **on-screen** tile size (world × zoom), and children position themselves with `calcHexPixelPosition(coord, screenTileW, screenTileH)`. Never size an overlay from a global CSS variable or scale it with a CSS `transform: scale()` — that is what made overlays drift from the board before.
+- **e2e** reaches tiles through `getTileFraction()` in `e2e/create-test-api.ts`, which maps a tile center through the same camera (`worldToScreen`). Any new geometry the tests need must go through the camera too.
+
+Pane measurement has the same race the old tile probe had: a single read can land before layout settles and return 0. Keep the `ResizeObserver` plus the bounded polling fallback in `useBoardCamera`. **Do not replace it with a one-shot measurement.**
 
 ## `onBoardReady`
 
-"Vue mounted" is a much weaker signal than "the board is interactive" — Pixi init and the DOM probe both resolve asynchronously afterwards. `onBoardReady` fires once the renderer has presented its first frame with every layer synced, and drives the `data-ready` attribute the e2e suite waits on. Anything that needs a usable board must wait for this, not for `onMounted`.
+"Vue mounted" is a much weaker signal than "the board is interactive" — Pixi init and the pane measurement both resolve asynchronously afterwards. `onBoardReady` fires once the renderer has presented its first frame with every layer synced, and drives the `data-ready` attribute the e2e suite waits on. Anything that needs a usable board must wait for this, not for `onMounted`.
 
 ## Checklist before finishing
 
 - [ ] New visual = new layer file + `UseHexBoardOptions` entry + lifecycle wiring
 - [ ] Layers receive data; they do not read Pinia
 - [ ] Every new tile mutation path marks tiles dirty
-- [ ] Probe/`ResizeObserver` sizing logic left intact
+- [ ] Hex size comes only from `board-camera.ts`; overlays position through the camera; pane `ResizeObserver` left intact
 - [ ] Anything gating on board readiness uses `onBoardReady`, not `onMounted`

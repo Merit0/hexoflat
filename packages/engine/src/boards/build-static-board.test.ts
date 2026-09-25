@@ -6,8 +6,10 @@ import { BOARD_COLUMNS, BOARD_ROWS } from './board-size';
 import { coordinateKey } from '../utils/hex-utils';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 
+const ROW_SHIFT = 1;
+
 describe('buildStaticBoard', () => {
-  it('reproduces HexMapProvider.getHomeLand() 1:1 inside the 18x17 frame', () => {
+  it('reproduces HexMapProvider.getHomeLand() 1:1, shifted down one row to center it in the 18x17 frame', () => {
     const legacy = HexMapProvider.getHomeLand();
     const { map } = buildStaticBoard(SILESIA_BOARD);
 
@@ -15,7 +17,13 @@ describe('buildStaticBoard', () => {
     expect(map.height).toBe(BOARD_ROWS);
 
     const legacyByKey = new Map(
-      legacy.tiles.map((tile) => [coordinateKey(tile.coordinates), tile]),
+      legacy.tiles.map((tile) => [
+        coordinateKey({
+          columnIndex: tile.coordinates.columnIndex,
+          rowIndex: tile.coordinates.rowIndex + ROW_SHIFT,
+        }),
+        tile,
+      ]),
     );
     const builtByKey = new Map(map.tiles.map((tile) => [coordinateKey(tile.coordinates), tile]));
 
@@ -31,7 +39,7 @@ describe('buildStaticBoard', () => {
     }
 
     for (let col = 0; col < 17; col += 1) {
-      for (let row = 0; row < 15; row += 1) {
+      for (let row = ROW_SHIFT; row < 15 + ROW_SHIFT; row += 1) {
         expect(
           builtByKey.has(coordinateKey({ columnIndex: col, rowIndex: row })),
           `${col},${row} should exist`,
@@ -41,7 +49,7 @@ describe('buildStaticBoard', () => {
 
     for (let col = 0; col < BOARD_COLUMNS; col += 1) {
       for (let row = 0; row < BOARD_ROWS; row += 1) {
-        if (col < 17 && row < 15) continue;
+        if (col < 17 && row >= ROW_SHIFT && row < 15 + ROW_SHIFT) continue;
         expect(
           builtByKey.has(coordinateKey({ columnIndex: col, rowIndex: row })),
           `${col},${row} should be void`,
@@ -65,5 +73,10 @@ describe('buildStaticBoard', () => {
 
     expect(first.descriptor.drawingHash).toBe(second.descriptor.drawingHash);
     expect(first.map.tiles.length).toBe(second.map.tiles.length);
+  });
+
+  it('defaults to FOG but honors an explicit fogPolicy', () => {
+    expect(buildStaticBoard(SILESIA_BOARD).map.fogPolicy).toBe('FOG');
+    expect(buildStaticBoard(SILESIA_BOARD, 'ALL_REVEALED').map.fogPolicy).toBe('ALL_REVEALED');
   });
 });

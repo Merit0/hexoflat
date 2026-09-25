@@ -1,4 +1,5 @@
 import type HexMapModel from '../map/models/hex-map-model';
+import type { TFogPolicy } from '../map/models/hex-map-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
@@ -37,14 +38,17 @@ export interface BuiltStaticBoard {
   descriptor: StaticBoardDescriptor;
 }
 
-/** Docs/WORLD-MAP-BOARDS-PLAN.md §3.2/§3.5 — no randomness, no seed: the drawing alone determines the board. */
-export function buildStaticBoard(drawing: StaticBoardDrawing): BuiltStaticBoard {
+export function buildStaticBoard(
+  drawing: StaticBoardDrawing,
+  fogPolicy?: TFogPolicy,
+): BuiltStaticBoard {
   const grid = parseBoardRows(drawing.rows);
 
   const map = assembleHexMapModel({
     boardColumns: BOARD_COLUMNS,
     boardRows: BOARD_ROWS,
     background: drawing.background,
+    fogPolicy,
     cellAt: (coordinates) => resolveStaticDrawingCell(drawing, grid, coordinates),
   });
 

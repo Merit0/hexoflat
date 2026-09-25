@@ -1,8 +1,10 @@
+import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import {
-  calcHexPixelPosition,
-  getHexNeighbors,
-  hexDistance,
-} from '@hexoflat/engine/utils/hex-utils';
+  tileWorldCenter,
+  worldToScreen,
+  type BoardCamera,
+  type PaneSize,
+} from '@/render/board-camera';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -15,24 +17,9 @@ import type {
   TestTileFraction,
 } from '@/e2e/test-api.types';
 
-export interface MapBoundsSnapshot {
-  width: number;
-  height: number;
-  offsetX: number;
-  offsetY: number;
-}
-
-export interface TileSizeSnapshot {
-  w: number;
-  h: number;
-}
-
 export interface CreateTestApiOptions {
-  /** Live `mapBounds` of hex-world-map.vue — the box the canvas fills. */
-  getMapBounds(): MapBoundsSnapshot;
-  /** Live rendered tile box, the same value the renderer positions tiles with. */
-  getTileSize(): TileSizeSnapshot;
-  /** True once PixiJS has presented its first frame. */
+  getCamera(): BoardCamera;
+  getPaneSize(): PaneSize;
   isBoardReady(): boolean;
 }
 
@@ -71,21 +58,17 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     getTileFraction(coordinates: TestHexCoordinates): TestTileFraction {
-      const bounds = options.getMapBounds();
-      const { w, h } = options.getTileSize();
+      const pane = options.getPaneSize();
 
-      if (!bounds.width || !bounds.height || !w || !h) {
+      if (!pane.width || !pane.height) {
         throw new Error(
           'getTileFraction() called before the board had a real size — wait for isBoardReady().',
         );
       }
 
-      const { x, y } = calcHexPixelPosition({ coordinates }, w, h);
+      const center = worldToScreen(options.getCamera(), tileWorldCenter(coordinates));
 
-      return {
-        fx: (x + w / 2 - bounds.offsetX) / bounds.width,
-        fy: (y + h / 2 - bounds.offsetY) / bounds.height,
-      };
+      return { fx: center.x / pane.width, fy: center.y / pane.height };
     },
 
     getNeighbors(coordinates: TestHexCoordinates): TestHexCoordinates[] {

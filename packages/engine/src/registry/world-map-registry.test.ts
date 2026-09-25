@@ -1,13 +1,29 @@
 import { describe, expect, it } from 'vitest';
+import { initFog } from '../map/fog-service';
 import { MapRegistry } from './world-map-registry';
 
 describe('MapRegistry', () => {
-  it('camping creates a STATIC board with no drawingHash', () => {
+  it('camping creates a STATIC board with a stable drawingHash', () => {
     const { map, descriptor } = MapRegistry.get('camping').create({ seed: 'unused' });
 
-    expect(descriptor.kind).toBe('STATIC');
-    expect(descriptor).not.toHaveProperty('drawingHash');
+    expect(descriptor).toMatchObject({ kind: 'STATIC', id: 'camping' });
+    expect(descriptor.kind === 'STATIC' && descriptor.drawingHash).toBeTruthy();
     expect(map.tiles.length).toBeGreaterThan(0);
+  });
+
+  it('every built board matches its registered fogPolicy', () => {
+    for (const key of ['camping', 'silesia', 'cave'] as const) {
+      const def = MapRegistry.get(key);
+      const { map } = def.create({ seed: 'seed' });
+      expect(map.fogPolicy).toBe(def.fogPolicy);
+    }
+  });
+
+  it('camping is ALL_REVEALED, so every tile starts revealed', () => {
+    const { map } = MapRegistry.get('camping').create({ seed: 'unused' });
+
+    initFog(map);
+    expect(map.tiles.every((tile) => tile.isRevealed)).toBe(true);
   });
 
   it('silesia creates a STATIC board with a stable drawingHash', () => {

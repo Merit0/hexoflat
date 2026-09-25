@@ -10,13 +10,6 @@
   /* Typography */
   --font-main: 'Cinzel', serif;
 
-  /* Hex sizing (твоя база — ок, далі можна підганяти в runtime).
-     Pointy-top: height (vertex-to-vertex) is the long axis = the old
-     flat-top --hex-tile-width (4.4vw), so the on-screen hex size is
-     unchanged; width (flat-to-flat) = height * sqrt(3)/2. */
-  --hex-tile-height: 4.4vw;
-  --hex-tile-width: calc(var(--hex-tile-height) * 0.866);
-
   /* ===== Core palette (dark creepy base + cold neutrals) ===== */
   --bg-night: #0b0d10; /* основний фон */
   --bg-abyss: #07090c; /* ще темніше для depth */

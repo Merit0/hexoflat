@@ -28,7 +28,7 @@ describe('static-board-editor-store', () => {
   it('starts editing only for a location with a static drawing', () => {
     const store = useStaticBoardEditorStore();
 
-    store.startEditing('camping');
+    store.startEditing('cave');
     expect(store.isEditing).toBe(false);
 
     store.startEditing('silesia');

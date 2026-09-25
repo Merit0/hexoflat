@@ -6,8 +6,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
  * boxes. Used to fit components that size themselves for a spacious layout
  * (hero-equip-board.vue's fixed hex flower, inventory-board-grid.vue's fixed
  * cell grid) into the narrower/shorter hero-board panel without touching
- * their own sizing logic — mirrors the scale-to-fit approach
- * use-hex-board-sizing.ts already uses for the map itself.
+ * their own sizing logic.
  */
 export function useFitToWidth() {
   const wrapperRef = ref<HTMLElement | null>(null);
