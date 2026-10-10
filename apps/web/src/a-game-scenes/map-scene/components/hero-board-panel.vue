@@ -343,7 +343,10 @@ onMounted(() => {
 
 .board-body-content {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: max-content;
+  height: max-content;
   transform-origin: top left;
 }
 

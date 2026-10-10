@@ -1,5 +1,5 @@
 <template>
-  <div class="grid-wrap" :style="centerHoleVars">
+  <div class="grid-wrap">
     <div class="grid" :style="gridStyle">
       <div
         v-for="cell in cells"
@@ -85,27 +85,18 @@ const centerHoleStyle = computed(() => {
   const { x, y, w, h } = inv.grid.blockedRect;
 
   return {
-    left: `calc(${y} * var(--cell))`,
-    top: `calc(${x} * var(--cell))`,
-    width: `calc(${h} * var(--cell))`,
-    height: `calc(${w} * var(--cell))`,
-  };
-});
-
-const centerHoleVars = computed(() => {
-  const { x, y, w, h } = inv.grid.blockedRect;
-
-  return {
-    '--hole-left': `calc(${y} * var(--cell) + 12px)`,
-    '--hole-top': `calc(${x} * var(--cell) + 12px)`,
-    '--hole-w': `calc(${h} * var(--cell))`,
-    '--hole-h': `calc(${w} * var(--cell))`,
+    left: `calc(12px + ${y} * (var(--cell) + var(--gap)))`,
+    top: `calc(12px + ${x} * (var(--cell) + var(--gap)))`,
+    width: `calc(${h} * var(--cell) + ${h - 1} * var(--gap))`,
+    height: `calc(${w} * var(--cell) + ${w - 1} * var(--gap))`,
   };
 });
 </script>
 
 <style scoped>
 .grid-wrap {
+  --cell: 76px;
+  --gap: 4px;
   position: relative;
   width: 100%;
   height: 100%;
@@ -116,8 +107,7 @@ const centerHoleVars = computed(() => {
 .grid {
   display: grid;
 
-  --cell: 76px;
-  gap: 4px;
+  gap: var(--gap);
   padding: 12px;
 
   border: none;
@@ -125,16 +115,16 @@ const centerHoleVars = computed(() => {
 }
 
 @media (max-width: 1100px) {
-  .grid {
+  .grid-wrap {
     --cell: 64px;
-    gap: 5px;
+    --gap: 5px;
   }
 }
 
 @media (max-width: 900px) {
-  .grid {
+  .grid-wrap {
     --cell: 56px;
-    gap: 4px;
+    --gap: 4px;
   }
 }
 
