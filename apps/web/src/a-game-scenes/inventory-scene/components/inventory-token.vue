@@ -10,6 +10,7 @@
     @pointerdown.prevent="onPointerDown"
     @click="onClick"
   >
+    <div v-if="frameStyle" class="rarity-glow" :style="frameStyle" aria-hidden="true"></div>
     <div class="icon" :style="iconStyle"></div>
   </div>
 
@@ -20,6 +21,7 @@
       :data-testid="`inventory-token-${item.id}-drag-ghost`"
       :style="dragGhostStyle"
     >
+      <div v-if="frameStyle" class="rarity-glow" :style="frameStyle" aria-hidden="true"></div>
       <div class="icon" :style="iconStyle"></div>
     </div>
   </Teleport>
@@ -30,6 +32,7 @@ import { computed, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { inventoryDragState, useInventoryDragHandle } from '@/composables/use-inventory-drag';
+import { rarityFrameUrlForKey } from '@/render/rarity';
 
 const props = defineProps<{ item: InventoryItem }>();
 
@@ -64,6 +67,11 @@ const iconStyle = computed(() => ({
   backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : 'none',
 }));
 
+const frameStyle = computed(() => {
+  const url = rarityFrameUrlForKey(props.item.key);
+  return url ? { backgroundImage: `url("${url}")` } : null;
+});
+
 function onClick() {
   if (inventoryDragState.isDragging) return;
   inventoryStore.toggleSelect(props.item.id);
@@ -75,9 +83,9 @@ function onClick() {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 110%;
-  height: 110%;
-  transform: translate(-50%, -50%) rotate(var(--rot)) scale(1);
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%);
   transform-origin: center center;
   cursor: grab;
   user-select: none;
@@ -94,7 +102,6 @@ function onClick() {
 
 .token:hover,
 .token.is-selected {
-  transform: translate(-50%, -50%) rotate(0deg) scale(1.06);
   z-index: 5;
   filter: brightness(1.08);
 }
@@ -104,12 +111,29 @@ function onClick() {
   filter: brightness(1.15);
 }
 
-.icon {
+/* Crop the round light sprite to the square slot, including its corners. */
+.rarity-glow {
   position: absolute;
   inset: 0;
+  border-radius: 4px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 145% 145%;
+  pointer-events: none;
+}
+
+.icon {
+  position: absolute;
+  inset: 4%;
+  transform: rotate(var(--rot, 0deg));
+  transition: transform 0.08s linear;
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
   filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.55));
+}
+.token:hover .icon,
+.token.is-selected .icon {
+  transform: rotate(0deg) scale(1.06);
 }
 </style>

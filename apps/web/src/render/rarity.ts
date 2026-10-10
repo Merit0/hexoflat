@@ -1,7 +1,9 @@
+import { getPrototype } from '@hexoflat/engine';
 import {
   EEquipmentRarity,
   EHexobjectGroup,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 
 export const RARITY_FRAME_URLS: Record<EEquipmentRarity, string> = {
   [EEquipmentRarity.BASIC]: '/hex-assets/hex-frames/gray-light.png',
@@ -23,9 +25,12 @@ export function getObjectRarity(obj: IRaritySource): EEquipmentRarity | null {
   if (obj.groupType === EHexobjectGroup.EQUIPMENT) {
     return obj.equipment?.rarity ?? EEquipmentRarity.COMMON;
   }
-  // LOOT has no rarity by default (e.g. COINS) — only show a frame for the
-  // pieces content explicitly gives one (the potions, for now).
   if (obj.groupType === EHexobjectGroup.LOOT) return obj.loot?.rarity ?? null;
 
   return null;
+}
+
+export function rarityFrameUrlForKey(key: THexobjectKey): string | null {
+  const rarity = getObjectRarity(getPrototype(key));
+  return rarity ? RARITY_FRAME_URLS[rarity] : null;
 }
