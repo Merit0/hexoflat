@@ -104,6 +104,18 @@ pnpm --filter @hexoflat/web test      # frontend unit tests, no services needed
 
 ### End-to-end (Playwright)
 
+Every `git push` runs the Husky pre-push hook: typechecking, an engine build,
+then the full local Playwright suite. Git sends the commits to the requested
+remote only if every check passes. CI checks still run independently.
+CI runs E2E only for pull requests from `game-dev-vite` into `main`;
+other pull requests and branch pushes skip CI E2E.
+
+Before pushing, start PostgreSQL and the API as described above, and stop any
+frontend server on port 5173. The hook builds and serves a fresh frontend with
+E2E hooks enabled; it deliberately refuses to reuse an existing dev server.
+Missing services, an occupied frontend port, focused tests (`test.only`), or
+failing tests block the push. Local E2E runs have no retries.
+
 Needs Postgres + `apps/api` running (steps 2.1–2.4) — it registers a throwaway test user against the real API. `apps/web` itself is built and served automatically by Playwright.
 
 ```bash

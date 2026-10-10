@@ -6,7 +6,7 @@ export default defineConfig({
   testDir: './e2e',
   globalSetup: './global-setup.ts',
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
+  forbidOnly: !!process.env.CI || process.env.E2E_PRE_PUSH === '1',
   timeout: process.env.CI ? 60_000 : 30_000,
   // Two retries on CI is the community standard for a suite that talks to a
   // real API and a real browser; zero locally so flakiness is visible the
@@ -86,7 +86,7 @@ export default defineConfig({
       'VITE_E2E_HOOKS=true pnpm --filter @hexoflat/web run build && ' +
       'pnpm --filter @hexoflat/web exec vite preview --port 5173 --strictPort',
     url: WEB_URL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env.CI && process.env.E2E_PRE_PUSH !== '1',
     timeout: 120_000,
   },
 });
