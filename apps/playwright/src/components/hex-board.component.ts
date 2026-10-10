@@ -173,12 +173,18 @@ export class HexBoardComponent extends BaseComponent {
       const distanceToTarget = await this.getDistance(from, target);
       if (distanceToTarget <= 1) return;
 
-      const neighbors = await this.getNeighbors(from);
-      const scored = await Promise.all(
-        neighbors.map(async (candidate) => ({
-          candidate,
-          distance: await this.getDistance(candidate, target),
-        })),
+      // Clicking an occupied tile opens details rather than moving. Read
+      // candidates together from the app instead of probing each object
+      // with a click followed by a guaranteed movement timeout.
+      const scored = await this.page.evaluate(
+        ({ from, target }) => {
+          const api = window.__HEXOFLAT_TEST__!;
+          return api
+            .getNeighbors(from)
+            .filter((candidate) => api.getTileHexobjectKey(candidate) === null)
+            .map((candidate) => ({ candidate, distance: api.getDistance(candidate, target) }));
+        },
+        { from, target },
       );
 
       // Prefer a step that strictly closes the distance; only fall back to a

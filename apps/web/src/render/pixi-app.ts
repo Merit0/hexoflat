@@ -1,9 +1,12 @@
 import { Application, Container, UPDATE_PRIORITY } from 'pixi.js';
+import type { BoardCamera } from '@/render/board-camera';
 
 export interface HexBoardApp {
   app: Application;
   worldContainer: Container;
   resize(width: number, height: number): void;
+  setCamera(camera: BoardCamera): void;
+  renderNow(): void;
   /**
    * Runs `callback` once the renderer has actually presented a frame — not
    * merely once the scene graph has been populated. Registered at UTILITY
@@ -21,7 +24,7 @@ export async function createHexBoardApp(
 ): Promise<HexBoardApp> {
   const app = new Application();
 
-  // `width`/`height` must already be the real map pixel size (not a 0/1px
+  // `width`/`height` must already be the real pane pixel size (not a 0/1px
   // placeholder): Pixi's `autoDensity` stamps an inline style width/height
   // on the canvas from whatever size it's given here, which overrides the
   // CSS `width:100%` rule the canvas otherwise relies on — so initializing
@@ -48,7 +51,15 @@ export async function createHexBoardApp(
     worldContainer,
     resize(width: number, height: number) {
       if (width <= 0 || height <= 0) return;
+      if (app.screen.width === width && app.screen.height === height) return;
       app.renderer.resize(width, height);
+    },
+    setCamera(camera: BoardCamera) {
+      worldContainer.position.set(camera.x, camera.y);
+      worldContainer.scale.set(camera.zoom);
+    },
+    renderNow() {
+      app.render();
     },
     onFirstFramePresented(callback: () => void) {
       app.ticker.addOnce(callback, undefined, UPDATE_PRIORITY.UTILITY);

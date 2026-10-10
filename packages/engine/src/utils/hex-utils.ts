@@ -18,13 +18,14 @@ export function offsetToAxial(c: IHexCoordinates): Axial {
   return { q, r };
 }
 
-function axialToOffset(a: { q: number; r: number }): IHexCoordinates {
+export function axialToOffset(a: { q: number; r: number }): IHexCoordinates {
   const rowIndex = a.r;
   const columnIndex = a.q + (rowIndex - (rowIndex & 1)) / 2;
   return { columnIndex, rowIndex };
 }
 
-const AXIAL_DIRS = [
+/** The six axial neighbour steps — orientation-independent, same for odd-q or odd-r offset. */
+export const AXIAL_DIRS = [
   { q: +1, r: 0 },
   { q: +1, r: -1 },
   { q: 0, r: -1 },

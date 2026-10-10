@@ -130,7 +130,7 @@ function slotRarityStyle(t: PseudoTile): Record<string, string> {
   if (t.kind !== 'slot' || !isDropSlot(t.id)) return {};
 
   const item = getEquippedItem(t.id);
-  if (!item) return {};
+  if (!item || inventoryDragState.draggingId === item.id) return {};
 
   const rarity = getObjectRarity(getPrototype(item.key));
   if (!rarity) return {};

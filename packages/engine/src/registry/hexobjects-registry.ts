@@ -23,6 +23,7 @@ export const HEXOBJECT_KEYS = {
   GRAVE: 'grave',
   CHEST: 'chest',
   STASH_CHEST: 'stash-chest',
+  STONE_WALL: 'stone-wall',
 } as const;
 
 export type THexobjectKey = (typeof HEXOBJECT_KEYS)[keyof typeof HEXOBJECT_KEYS];

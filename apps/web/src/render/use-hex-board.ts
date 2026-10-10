@@ -1,6 +1,7 @@
 import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
+import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
 import { createTilesLayer, type TilesLayer } from '@/render/layers/tiles-layer';
 import { createHeroLayer, type HeroLayer } from '@/render/layers/hero-layer';
@@ -20,13 +21,14 @@ import {
   type CombatMarkerLayer,
 } from '@/render/layers/combat-marker-layer';
 import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
+import { HEX_WORLD_SIZE, type BoardCamera, type PaneSize } from '@/render/board-camera';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 
 export interface UseHexBoardOptions {
   canvasRef: Ref<HTMLCanvasElement | null>;
-  mapBounds: ComputedRef<{ width: number; height: number; offsetX: number; offsetY: number }>;
-  domTileSize: ComputedRef<{ w: number; h: number }>;
+  canvasSize: ComputedRef<PaneSize>;
+  camera: ComputedRef<BoardCamera>;
   tiles: ComputedRef<IHexTile[]>;
   /**
    * Bumped by world-map-store.ts's markTileDirty/markTilesDirty/markAllTilesDirty
@@ -52,36 +54,33 @@ export interface UseHexBoardOptions {
   };
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
+  /** Dev-only board panel toggles (see dev-board-panel.vue) — both default away in production. */
+  devPanel?: {
+    showWholeBoard: ComputedRef<boolean>;
+    zoneTintByCoordinateKey: ComputedRef<Map<string, number>>;
+  };
   /**
    * Fired once the renderer has presented its first frame with every layer
    * already synced. "Vue mounted" is a much weaker signal — Pixi's init and
-   * the DOM tile-size probe both resolve asynchronously afterwards — so this
+   * the pane measurement both resolve asynchronously afterwards — so this
    * is what "the board is interactive" actually means.
    */
   onBoardReady?: () => void;
 }
 
-/**
- * Resolves once `mapBounds` has a real, non-zero size. The DOM tile-size
- * probe and Pixi's own async init race independently, with no ordering
- * guarantee — waiting here (rather than seeding Pixi with a 0/1px
- * placeholder) means the canvas is only ever created at its real size, so
- * it's never briefly too small to receive clicks at their intended screen
- * position.
- */
-function waitForValidMapBounds(
-  mapBounds: ComputedRef<{ width: number; height: number }>,
-): Promise<{ width: number; height: number }> {
+const getTileSize = () => HEX_WORLD_SIZE;
+
+function waitForValidSize(size: ComputedRef<PaneSize>): Promise<PaneSize> {
   return new Promise((resolve) => {
-    if (mapBounds.value.width > 0 && mapBounds.value.height > 0) {
-      resolve(mapBounds.value);
+    if (size.value.width > 0 && size.value.height > 0) {
+      resolve(size.value);
       return;
     }
 
-    const stop = watch(mapBounds, (bounds) => {
-      if (bounds.width <= 0 || bounds.height <= 0) return;
+    const stop = watch(size, (next) => {
+      if (next.width <= 0 || next.height <= 0) return;
       stop();
-      resolve(bounds);
+      resolve(next);
     });
   });
 }
@@ -104,10 +103,10 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     const canvas = opts.canvasRef.value;
     if (!canvas) return;
 
-    const initialBounds = await waitForValidMapBounds(opts.mapBounds);
+    const initialSize = await waitForValidSize(opts.canvasSize);
     if (cancelled) return;
 
-    board = await createHexBoardApp(canvas, initialBounds.width, initialBounds.height);
+    board = await createHexBoardApp(canvas, initialSize.width, initialSize.height);
     if (cancelled) {
       board.destroy();
       board = null;
@@ -116,62 +115,62 @@ export function useHexBoard(opts: UseHexBoardOptions) {
 
     tilesLayer = createTilesLayer({
       worldContainer: board.worldContainer,
-      getTileSize: () => opts.domTileSize.value,
+      getTileSize,
       worldStore,
       combatStore,
       onTileHover: opts.onTileHover,
       onTileClick: opts.onTileClick,
+      isForceRevealed: () => opts.devPanel?.showWholeBoard.value ?? false,
+      getZoneTint: (tile) =>
+        opts.devPanel?.zoneTintByCoordinateKey.value.get(coordinateKey(tile.coordinates)) ?? null,
     });
 
     enemyVisionLayer = createEnemyVisionLayer({
       worldContainer: board.worldContainer,
-      getTileSize: () => opts.domTileSize.value,
+      getTileSize,
     });
 
     heroLayer = createHeroLayer({
       worldContainer: board.worldContainer,
-      getTileSize: () => opts.domTileSize.value,
+      getTileSize,
     });
 
     movePreviewLayer = createMovePreviewLayer({
       worldContainer: board.worldContainer,
-      getTileSize: () => opts.domTileSize.value,
+      getTileSize,
     });
 
     combatMarkerLayer = createCombatMarkerLayer({
       worldContainer: board.worldContainer,
-      getTileSize: () => opts.domTileSize.value,
+      getTileSize,
     });
 
     campHealLayer = createCampHealLayer({
       worldContainer: board.worldContainer,
-      getTileSize: () => opts.domTileSize.value,
+      getTileSize,
     });
 
     stopWatchers.push(
-      watch(opts.mapBounds, (bounds) => board?.resize(bounds.width, bounds.height), {
-        immediate: true,
-      }),
+      watch(
+        [opts.canvasSize, opts.camera],
+        ([size, camera]) => {
+          board?.resize(size.width, size.height);
+          board?.setCamera(camera);
+          board?.renderNow();
+        },
+        { immediate: true },
+      ),
     );
 
-    // A tile-size change repositions/redraws every tile (full sync); a
-    // dirtyTick bump only touches the tiles that were actually marked dirty.
-    // Both share one flag rather than two separate watchers so the very
-    // first (immediate) call — which must always be a full sync, since
-    // tilesLayer has no nodes yet — only fires once instead of twice.
-    let previousDomTileSize: { w: number; h: number } | null = null;
+    let hasFullySynced = false;
 
     stopWatchers.push(
       watch(
-        [opts.tilesDirtyTick, opts.domTileSize],
-        ([, domTileSize]) => {
-          const previous = previousDomTileSize;
-          const sizeChanged =
-            !previous || previous.w !== domTileSize.w || previous.h !== domTileSize.h;
-          previousDomTileSize = domTileSize;
-
+        opts.tilesDirtyTick,
+        () => {
           const dirtyKeys = worldStore.consumeDirtyTileIds();
-          tilesLayer?.syncTiles(opts.tiles.value, sizeChanged ? undefined : dirtyKeys);
+          tilesLayer?.syncTiles(opts.tiles.value, hasFullySynced ? dirtyKeys : undefined);
+          hasFullySynced = true;
           tilesLayer?.syncDefendMarkers(opts.tiles.value);
           tilesLayer?.syncLockChips(opts.tiles.value, opts.healTickerNow.value);
         },
@@ -187,16 +186,24 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       ),
     );
 
+    if (opts.devPanel) {
+      stopWatchers.push(
+        watch([opts.devPanel.showWholeBoard, opts.devPanel.zoneTintByCoordinateKey], () =>
+          tilesLayer?.syncTiles(opts.tiles.value),
+        ),
+      );
+    }
+
+    stopWatchers.push(watch(opts.tiles, (tiles) => tilesLayer?.syncTiles(tiles)));
+
     stopWatchers.push(
       watch(opts.healTickerNow, (now) => tilesLayer?.syncLockChips(opts.tiles.value, now)),
     );
 
     stopWatchers.push(
-      watch(
-        [opts.heroCoordinates, opts.domTileSize],
-        () => heroLayer?.syncHero(opts.heroCoordinates.value),
-        { immediate: true },
-      ),
+      watch(opts.heroCoordinates, () => heroLayer?.syncHero(opts.heroCoordinates.value), {
+        immediate: true,
+      }),
     );
 
     stopWatchers.push(
@@ -207,7 +214,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
           opts.movePreview.reachable,
           opts.movePreview.stepCost,
           opts.movePreview.markerKind,
-          opts.domTileSize,
         ],
         () => {
           const params: MovePreviewSyncParams = {
@@ -224,24 +230,22 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     );
 
     stopWatchers.push(
-      watch(
-        [opts.enemyVisionCells, opts.domTileSize],
-        () => enemyVisionLayer?.syncCells(opts.enemyVisionCells.value),
-        { immediate: true, deep: true },
-      ),
+      watch(opts.enemyVisionCells, () => enemyVisionLayer?.syncCells(opts.enemyVisionCells.value), {
+        immediate: true,
+        deep: true,
+      }),
+    );
+
+    stopWatchers.push(
+      watch(opts.combatMarkers, () => combatMarkerLayer?.syncMarkers(opts.combatMarkers.value), {
+        immediate: true,
+        deep: true,
+      }),
     );
 
     stopWatchers.push(
       watch(
-        [opts.combatMarkers, opts.domTileSize],
-        () => combatMarkerLayer?.syncMarkers(opts.combatMarkers.value),
-        { immediate: true, deep: true },
-      ),
-    );
-
-    stopWatchers.push(
-      watch(
-        [opts.campHeal.coord, opts.campHeal.active, opts.campHeal.label, opts.domTileSize],
+        [opts.campHeal.coord, opts.campHeal.active, opts.campHeal.label],
         () => {
           campHealLayer?.sync({
             coord: opts.campHeal.coord.value,

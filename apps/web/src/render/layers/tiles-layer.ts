@@ -28,6 +28,10 @@ export interface TilesLayerDeps {
   combatStore: CombatStore;
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
+  /** Dev board panel's "show whole board" toggle — render only, never changes tile.isRevealed. */
+  isForceRevealed?(): boolean;
+  /** Dev board panel's zone-outline toggle — a Pixi tint per tile, or null for no tint. */
+  getZoneTint?(tile: IHexTile): number | null;
 }
 
 interface TileNode {
@@ -104,6 +108,71 @@ function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): strin
   return getPrototype(marker.toolKey)?.spritePath ?? null;
 }
 
+function applyObjectFit(sprite: Sprite, w: number, h: number, groupType?: EHexobjectGroup) {
+  if (!groupType || !PICKUP_GROUPS.has(groupType)) {
+    applyCoverFit(sprite, w, h);
+    return;
+  }
+
+  const boxWidth = w * PICKUP_SPRITE_SCALE;
+  const boxHeight = h * PICKUP_SPRITE_SCALE;
+  applyCoverFit(sprite, boxWidth, boxHeight);
+  sprite.position.x += (w - boxWidth) / 2;
+  sprite.position.y += (h - boxHeight) / 2;
+}
+
+function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => void) {
+  sprite.texture = getTexture(path);
+  fit();
+
+  const unsubscribe = onTextureReady(path, () => {
+    sprite.texture = getTexture(path);
+    fit();
+  });
+  node.unsubscribers.push(unsubscribe);
+}
+
+function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
+  for (const unsub of node.unsubscribers) unsub();
+  node.unsubscribers = [];
+
+  const displayRevealed = tile.isRevealed || (deps.isForceRevealed?.() ?? false);
+
+  const bgFit = () => {
+    const { w, h } = deps.getTileSize();
+    applyCoverFit(node.bg, w, h);
+  };
+
+  if (displayRevealed) {
+    applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node, bgFit);
+  } else {
+    applyTexture(node.bg, FOG_URL, node, bgFit);
+  }
+  node.bg.tint = deps.getZoneTint?.(tile) ?? 0xffffff;
+
+  const gearRarity = displayRevealed ? getGearRarity(tile) : null;
+  if (gearRarity) {
+    const frameFit = () => {
+      const { w, h } = deps.getTileSize();
+      applyCoverFit(node.frame, w, h);
+    };
+    applyTexture(node.frame, RARITY_FRAME_URLS[gearRarity], node, frameFit);
+  } else {
+    node.frame.texture = Texture.EMPTY;
+  }
+
+  const spritePath = displayRevealed ? tile.hexobject?.spritePath : null;
+  if (spritePath) {
+    const spriteFit = () => {
+      const { w, h } = deps.getTileSize();
+      applyObjectFit(node.sprite, w, h, tile.hexobject?.groupType);
+    };
+    applyTexture(node.sprite, spritePath, node, spriteFit);
+  } else {
+    node.sprite.texture = Texture.EMPTY;
+  }
+}
+
 export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
   const container = new Container();
   deps.worldContainer.addChild(container);
@@ -149,68 +218,6 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     node.root.position.set(x, y);
   }
 
-  function applyObjectFit(sprite: Sprite, w: number, h: number, groupType?: EHexobjectGroup) {
-    if (!groupType || !PICKUP_GROUPS.has(groupType)) {
-      applyCoverFit(sprite, w, h);
-      return;
-    }
-
-    const boxWidth = w * PICKUP_SPRITE_SCALE;
-    const boxHeight = h * PICKUP_SPRITE_SCALE;
-    applyCoverFit(sprite, boxWidth, boxHeight);
-    sprite.position.x += (w - boxWidth) / 2;
-    sprite.position.y += (h - boxHeight) / 2;
-  }
-
-  function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => void) {
-    sprite.texture = getTexture(path);
-    fit();
-
-    const unsubscribe = onTextureReady(path, () => {
-      sprite.texture = getTexture(path);
-      fit();
-    });
-    node.unsubscribers.push(unsubscribe);
-  }
-
-  function syncTileVisual(node: TileNode, tile: IHexTile) {
-    for (const unsub of node.unsubscribers) unsub();
-    node.unsubscribers = [];
-
-    const bgFit = () => {
-      const { w, h } = deps.getTileSize();
-      applyCoverFit(node.bg, w, h);
-    };
-
-    if (tile.isRevealed) {
-      applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node, bgFit);
-    } else {
-      applyTexture(node.bg, FOG_URL, node, bgFit);
-    }
-
-    const gearRarity = tile.isRevealed ? getGearRarity(tile) : null;
-    if (gearRarity) {
-      const frameFit = () => {
-        const { w, h } = deps.getTileSize();
-        applyCoverFit(node.frame, w, h);
-      };
-      applyTexture(node.frame, RARITY_FRAME_URLS[gearRarity], node, frameFit);
-    } else {
-      node.frame.texture = Texture.EMPTY;
-    }
-
-    const spritePath = tile.isRevealed ? tile.hexobject?.spritePath : null;
-    if (spritePath) {
-      const spriteFit = () => {
-        const { w, h } = deps.getTileSize();
-        applyObjectFit(node.sprite, w, h, tile.hexobject?.groupType);
-      };
-      applyTexture(node.sprite, spritePath, node, spriteFit);
-    } else {
-      node.sprite.texture = Texture.EMPTY;
-    }
-  }
-
   function syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>) {
     const { w, h } = deps.getTileSize();
     const seen = new Set<string>();
@@ -235,7 +242,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
         node.root.hitArea = createHexHitArea(w, h);
 
         positionNode(node, tile, w, h);
-        syncTileVisual(node, tile);
+        syncTileVisual(node, tile, deps);
       }
     }
 

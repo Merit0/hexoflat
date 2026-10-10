@@ -12,7 +12,9 @@ import {
   LocationKey,
   MapDefinition,
   MapRegistry,
+  type CreatedBoard,
 } from '@hexoflat/engine/registry/world-map-registry';
+import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
 import {
   isViewingOtherWorldLocation,
   navigateToLocation,
@@ -34,7 +36,7 @@ import {
   writeLocationMapIndex,
 } from '@/services/persistence/world-storage';
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
-import { defaultRandom } from '@hexoflat/engine/utils/random';
+import { getStream, getWorldSeed, reseedWorld } from '@/services/rng/world-rng';
 import { worldLoop } from '@/services/world/world-loop';
 import {
   initFog as initMapFog,
@@ -51,49 +53,32 @@ import {
   isLocationRespawning as isRespawning,
   scheduleLocationRespawn as scheduleRespawn,
 } from '@/services/world/respawn-schedule';
-import { useCombatStore, type CombatSnapshot } from '@/stores/combat-store';
+import { useCombatStore } from '@/stores/combat-store';
+import {
+  isCurrentlyHydratingFromStorage,
+  initialLocationKey,
+  MAP_ORIGIN,
+  requireWorldSeed,
+  runWorldTick,
+  withoutCombatAutosave,
+  type TWorldState,
+} from '@/stores/world-map-store-helpers';
 
-type TWorldState = {
-  contentVersion: number;
-  heroCoordinates: IHexCoordinates | null;
-} & CombatSnapshot;
+import {
+  devForceLayout as devForceLayoutAction,
+  devNextSeed as devNextSeedAction,
+  devRegenerateDungeon as devRegenerateDungeonAction,
+} from '@/stores/dev-board-panel-actions';
+import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
 
-function initialLocationKey(): LocationKey {
-  return 'camping';
-}
+export { runWorldTick };
 
-const MAP_ORIGIN: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
 let combatAutosaveStop: (() => void) | null = null;
-
-// loadFromStorage() hydrates combat-store as part of reading the blob back.
-// Without this guard that hydration would immediately schedule a save of the
-// state we are still in the middle of loading.
-let isHydratingFromStorage = false;
-
-function withoutCombatAutosave(hydrate: () => void) {
-  isHydratingFromStorage = true;
-  try {
-    hydrate();
-  } finally {
-    isHydratingFromStorage = false;
-  }
-}
-
-export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
-  const { events } = applyCommand(
-    { map, heroes: {} },
-    { type: 'WORLD_TICK', payload: { now } },
-    ctx,
-  );
-  const tickEvent = events.find((e) => e.type === 'WORLD_TICKED') as
-    { type: 'WORLD_TICKED'; payload: { changed: boolean } } | undefined;
-
-  return tickEvent?.payload.changed ?? false;
-}
 
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
     map: null as HexMapModel | null,
+    descriptor: null as BoardDescriptor | null,
     woodCollected: 0,
     pendingCampingRespawn: false,
 
@@ -138,6 +123,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
         worldMap,
         navigate: (locationKey) => navigateToLocation(locationKey),
       };
+    },
+
+    rng(label: string) {
+      return getStream(label);
     },
 
     markTileDirty(coordinates: IHexCoordinates) {
@@ -308,7 +297,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     enableCombatAutosave() {
       if (combatAutosaveStop) return;
       combatAutosaveStop = useCombatStore().$subscribe(() => {
-        if (isHydratingFromStorage) return;
+        if (isCurrentlyHydratingFromStorage()) return;
         this.saveToStorage();
       });
     },
@@ -355,9 +344,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     leaveCurrentLocation(nextLocationKey: LocationKey) {
       const leavingKey = this.currentLocationKey;
-      const respawnDelayMs = MapRegistry.get(leavingKey).respawnAfterClearedMs;
+      const leavingDef = MapRegistry.get(leavingKey);
+      const respawnDelayMs = leavingDef.respawnAfterClearedMs;
+      const isLeavingToElsewhere = nextLocationKey !== leavingKey;
 
-      if (nextLocationKey !== leavingKey && respawnDelayMs && this.hasGraveMarker()) {
+      if (isLeavingToElsewhere && respawnDelayMs && this.hasGraveMarker()) {
         this.scheduleLocationRespawn(leavingKey, respawnDelayMs);
       }
 
@@ -366,7 +357,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
         if (heroCoordinates) {
           useHeroStore().rememberPosition(this.currentMapId, heroCoordinates);
         }
-        this.saveToStorage(this.currentMapId);
+
+        if (isLeavingToElsewhere && leavingDef.boardKind === 'DUNGEON') {
+          this.clearStoredLocation(leavingKey, this.currentMapId);
+        } else {
+          this.saveToStorage(this.currentMapId);
+        }
       }
 
       this.stopWorldLoop();
@@ -413,21 +409,44 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.currentMapId = mapId;
 
       this.loadFromStorage(mapId);
+      this.rebuildStaticIfDrawingChanged(locationKey, mapId);
 
       if (!this.map) {
         const def = MapRegistry.get(locationKey);
-        this.map = def.create();
-
-        this.initFog();
-
-        this.hydrateResourcesFromConfig();
-
-        this.saveToStorage(mapId);
+        this.applyFreshBoard(def.create({ seed: requireWorldSeed() }), mapId);
       }
       this.markAllTilesDirty();
 
       this.startWorldLoop();
       heroStore.setLocation(locationKey, mapId);
+    },
+
+    rebuildStaticIfDrawingChanged(locationKey: LocationKey, mapId: string) {
+      rebuildStaticIfDrawingChangedAction(this, locationKey, mapId, !!this.map, this.descriptor);
+    },
+
+    applyFreshBoard(created: CreatedBoard, mapId: string) {
+      this.map = created.map;
+      this.descriptor = created.descriptor;
+      this.initFog();
+      this.hydrateResourcesFromConfig();
+      this.saveToStorage(mapId);
+    },
+
+    setHeroLocation(locationKey: LocationKey, mapId: string) {
+      useHeroStore().setLocation(locationKey, mapId);
+    },
+
+    devRegenerateDungeon() {
+      devRegenerateDungeonAction(this);
+    },
+
+    devNextSeed() {
+      devNextSeedAction(this);
+    },
+
+    devForceLayout(layoutId: string) {
+      devForceLayoutAction(this, layoutId);
     },
 
     loadFromStorage(mapId: string) {
@@ -452,9 +471,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       const raw = readSavedWorldState<TWorldState>(mapId);
+      reseedWorld(raw?.worldSeed ?? crypto.randomUUID());
 
       if (raw) {
         heroStore.heroCoordinates = raw.heroCoordinates ?? null;
+        this.descriptor = raw.descriptor ?? null;
         withoutCombatAutosave(() =>
           combatStore.hydrate({
             combatActive: raw.combatActive ?? false,
@@ -478,6 +499,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       } else {
         heroStore.heroCoordinates = null;
         this.woodCollected = 0;
+        this.descriptor = null;
         withoutCombatAutosave(() => combatStore.resetToDefaults());
       }
 
@@ -509,6 +531,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const state: TWorldState = {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: useHeroStore().heroCoordinates,
+        worldSeed: getWorldSeed() ?? undefined,
+        descriptor: this.descriptor,
         ...useCombatStore().toSnapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
@@ -538,7 +562,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       const def: MapDefinition = MapRegistry.get(locationKey);
       useHeroStore().heroCoordinates =
-        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, defaultRandom) ??
+        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, getStream('world')) ??
         MAP_ORIGIN;
     },
 
@@ -603,6 +627,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       clearLocationMapIndex();
 
       this.map = null;
+      this.descriptor = null;
       useHeroStore().heroCoordinates = null;
       this.currentMapId = null;
       this.currentLocationKey = 'camping';

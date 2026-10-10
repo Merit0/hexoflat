@@ -1,13 +1,12 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 
 /**
- * Shrinks (never grows) a content box to fit inside its wrapper's box — both
+ * Scales a content box to fill as much of its wrapper as possible — both
  * width and height — via a CSS transform, driven by ResizeObserver on both
  * boxes. Used to fit components that size themselves for a spacious layout
  * (hero-equip-board.vue's fixed hex flower, inventory-board-grid.vue's fixed
  * cell grid) into the narrower/shorter hero-board panel without touching
- * their own sizing logic — mirrors the scale-to-fit approach
- * use-hex-board-sizing.ts already uses for the map itself.
+ * their own sizing logic.
  */
 export function useFitToWidth() {
   const wrapperRef = ref<HTMLElement | null>(null);
@@ -41,7 +40,6 @@ export function useFitToWidth() {
     contentHeight.value = nextContentHeight;
 
     const nextScale = Math.min(
-      1,
       wrapperBox.width / nextContentWidth,
       wrapperBox.height / nextContentHeight,
     );
@@ -53,17 +51,23 @@ export function useFitToWidth() {
   let wrapperObserver: ResizeObserver | null = null;
   let contentObserver: ResizeObserver | null = null;
 
-  onMounted(() => {
-    if (wrapperRef.value) {
-      wrapperObserver = new ResizeObserver(updateScale);
-      wrapperObserver.observe(wrapperRef.value);
-    }
-    if (contentRef.value) {
-      contentObserver = new ResizeObserver(updateScale);
-      contentObserver.observe(contentRef.value);
-    }
-    updateScale();
-  });
+  watch(
+    [wrapperRef, contentRef],
+    ([wrapper, content]) => {
+      wrapperObserver?.disconnect();
+      contentObserver?.disconnect();
+      if (wrapper) {
+        wrapperObserver = new ResizeObserver(updateScale);
+        wrapperObserver.observe(wrapper);
+      }
+      if (content) {
+        contentObserver = new ResizeObserver(updateScale);
+        contentObserver.observe(content);
+      }
+      updateScale();
+    },
+    { flush: 'post' },
+  );
 
   onBeforeUnmount(() => {
     wrapperObserver?.disconnect();

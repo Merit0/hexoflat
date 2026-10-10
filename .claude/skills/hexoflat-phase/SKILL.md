@@ -1,18 +1,19 @@
 ---
 name: hexoflat-phase
-description: How work is executed in this repo — one planned phase per chat, dedicated branch, characterization tests before refactoring, ask before every commit, and record progress back into the plan doc. Use at the start of any task that references a phase from docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md, docs/MIGRATION-PLAN.md or docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md, or any multi-step refactoring or feature task in this repo.
+description: How work is executed in this repo — one planned phase per chat, dedicated branch, characterization tests before refactoring, ask before every commit, and record progress back into the plan doc. Use at the start of any task that references a phase from docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md, docs/MIGRATION-PLAN.md, docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md or docs/WORLD-MAP-BOARDS-PLAN.md, or any multi-step refactoring or feature task in this repo.
 ---
 
 # How work is run in hexoflat
 
 ## Planning docs
 
-| Doc                                              | What it covers                                                                           |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md`           | Gameplay content and tactical mechanics — the active track                               |
-| `docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md` | God Class diagnosis, phases G0–G6, and the target store contract in Part 6               |
-| `docs/MIGRATION-PLAN.md`                         | Infrastructure phases (1–10 done; 11–12 deliberately paused)                             |
-| `docs/design/*.md`                               | Scout reports — design inspiration only, never a source of copied names/text/art/balance |
+| Doc                                              | What it covers                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md`           | Gameplay content and tactical mechanics — the active track                                  |
+| `docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md` | God Class diagnosis, phases G0–G6, and the target store contract in Part 6                  |
+| `docs/WORLD-MAP-BOARDS-PLAN.md`                  | Location maps: static drawings, dungeon assembly from chunks, in-game editor — phases C0–C4 |
+| `docs/MIGRATION-PLAN.md`                         | Infrastructure phases (1–10 done; 11–12 deliberately paused)                                |
+| `docs/design/*.md`                               | Scout reports — design inspiration only, never a source of copied names/text/art/balance    |
 
 ## The rules
 
