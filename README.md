@@ -110,11 +110,16 @@ remote only if every check passes. CI checks still run independently.
 CI runs E2E only for pull requests from `game-dev-vite` into `main`;
 other pull requests and branch pushes skip CI E2E.
 
-Before pushing, start PostgreSQL and the API as described above, and stop any
-frontend server on port 5173. The hook builds and serves a fresh frontend with
-E2E hooks enabled; it deliberately refuses to reuse an existing dev server.
-Missing services, an occupied frontend port, focused tests (`test.only`), or
-failing tests block the push. Local E2E runs have no retries.
+Before pushing, make sure Docker is running. The hook stops the local game
+servers and compose database, runs typechecking and an engine build, starts
+PostgreSQL, syncs the local schema with `db:push`, and starts a fresh API. Playwright builds and
+serves a fresh frontend with E2E hooks enabled. Afterward, the test servers
+and compose database are stopped, including on failure. Database data is kept.
+Run `pnpm start:all` to resume development after pushing.
+
+You can run the same lifecycle manually with `pnpm test:e2e:push`.
+Startup errors, focused tests (`test.only`), or failing tests block the push.
+Local E2E runs have no retries.
 
 Needs Postgres + `apps/api` running (steps 2.1–2.4) — it registers a throwaway test user against the real API. `apps/web` itself is built and served automatically by Playwright.
 

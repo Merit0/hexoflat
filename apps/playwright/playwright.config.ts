@@ -7,12 +7,14 @@ export default defineConfig({
   globalSetup: './global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI || process.env.E2E_PRE_PUSH === '1',
-  timeout: process.env.CI ? 60_000 : 30_000,
+  timeout: process.env.CI ? 60_000 : 45_000,
   // Two retries on CI is the community standard for a suite that talks to a
   // real API and a real browser; zero locally so flakiness is visible the
   // moment it appears instead of being quietly retried away.
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Each worker renders a Pixi board and records video. CPU-based defaults
+  // oversubscribe local machines and can consume the entire test timeout.
+  workers: process.env.CI ? 1 : 2,
   maxFailures: process.env.CI ? 10 : undefined,
 
   // allure-playwright only writes raw result JSON (allure-results/) — the
