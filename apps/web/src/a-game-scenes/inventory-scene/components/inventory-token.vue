@@ -21,7 +21,6 @@
       :data-testid="`inventory-token-${item.id}-drag-ghost`"
       :style="dragGhostStyle"
     >
-      <div v-if="frameStyle" class="rarity-glow" :style="frameStyle" aria-hidden="true"></div>
       <div class="icon" :style="iconStyle"></div>
     </div>
   </Teleport>

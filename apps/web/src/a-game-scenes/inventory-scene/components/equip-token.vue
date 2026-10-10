@@ -24,7 +24,12 @@
   </div>
 
   <Teleport to="body">
-    <div v-if="isDragging" class="equip-slot-token drag-ghost" :style="dragGhostStyle">
+    <div
+      v-if="isDragging"
+      class="equip-slot-token drag-ghost"
+      :data-testid="`equip-token-${item.id}-drag-ghost`"
+      :style="dragGhostStyle"
+    >
       <div class="icon" :style="iconStyle"></div>
     </div>
   </Teleport>
@@ -158,10 +163,10 @@ function onPointerDown(e: PointerEvent) {
   inset: auto;
   transition: none !important;
   filter: brightness(1.12) drop-shadow(0 10px 20px rgba(0, 0, 0, 0.45));
-  scale: 0.6;
 }
 
 .icon {
+  position: relative;
   width: 100%;
   height: 100%;
   background-position: center;
