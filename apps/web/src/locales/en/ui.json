@@ -48,6 +48,7 @@
     "earned": "Will earned: {will}",
     "gain": "+{will} Will",
     "fastBonus": "quick answer!",
+    "willLabel": "Will:",
     "mixed": "Mixed tables",
     "description": "Multiplication and division from 2 to 9. One question is one Will, a quick answer is two. Stop whenever you like.",
     "start": "Focus",
