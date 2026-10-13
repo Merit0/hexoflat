@@ -3,26 +3,22 @@
     <div class="tool-hex-tile" :class="{ doing: isWorking }">
       <div class="tool-icon" :class="{ flipped: isHoverOnLeft }" :style="iconStyle"></div>
       <div v-if="!isWorking" class="tool-actions-row">
-        <button
-          v-if="bestActionLabel"
-          class="do-btn"
-          data-testid="tool-action-button"
-          :disabled="!canAffordBest"
-          @click.stop="executeAction"
-        >
-          {{ bestActionLabel }}
-          <span v-if="bestActionCost > 0" class="will-chip" data-testid="tool-action-cost">
-            {{ t('knowledge.actionCost', { cost: bestActionCost }) }}
-          </span>
-        </button>
-        <span
-          v-if="bestActionLabel && !canAffordBest"
-          class="will-reason"
-          role="alert"
-          data-testid="tool-action-insufficient-will"
-        >
-          {{ t('knowledge.insufficientWill') }}
-        </span>
+        <template v-if="bestActionLabel">
+          <button
+            class="do-btn"
+            :class="{ 'is-denied': denied }"
+            data-testid="tool-action-button"
+            :aria-disabled="!canAffordBest"
+            @click.stop="executeAction"
+          >
+            {{ bestActionLabel }}
+          </button>
+          <div v-if="bestActionCost > 0" class="will-meta">
+            <span class="will-chip" data-testid="tool-action-cost">
+              {{ t('knowledge.actionCost', { cost: bestActionCost }) }}
+            </span>
+          </div>
+        </template>
 
         <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
           -
@@ -190,11 +186,15 @@ const bestAction = computed<ResolvedAction | null>(() => {
   );
 });
 
-const bestActionLabel = computed(() =>
-  bestAction.value?.label === 'knowledge.open'
-    ? t('knowledge.open')
-    : (bestAction.value?.label ?? null),
-);
+const bestActionLabel = computed(() => {
+  if (!bestAction.value) return null;
+  const object = hoveredTile.value?.hexobject;
+  const isHandOnBuilding =
+    activeToolKey.value === HEXOBJECT_KEYS.HAND &&
+    object?.groupType === EHexobjectGroup.CONSTRUCTION &&
+    !getMeta(object.hexobjectKey)?.heal;
+  return isHandOnBuilding ? t('tool.open') : bestAction.value.label;
+});
 
 const bestActionCost = computed(() =>
   pricing.costOf(
@@ -232,6 +232,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  if (deniedTimer) window.clearTimeout(deniedTimer);
   if (timer) window.clearInterval(timer);
 });
 
@@ -262,10 +263,23 @@ const secondsLeft = computed(() => {
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
 });
 
+const denied = ref(false);
+let deniedTimer: number | null = null;
+function flashDenied() {
+  denied.value = true;
+  if (deniedTimer) window.clearTimeout(deniedTimer);
+  deniedTimer = window.setTimeout(() => (denied.value = false), 200);
+}
+
 async function executeAction() {
   const tile = hoveredTile.value;
   const best = bestAction.value;
-  if (!tile || !best || !activeToolKey.value || !canAffordBest.value) return;
+  if (!tile || !best || !activeToolKey.value) return;
+  if (!canAffordBest.value) {
+    flashDenied();
+    heroToolStore.setActionMessage(t('knowledge.insufficientWill'));
+    return;
+  }
 
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
@@ -275,6 +289,7 @@ async function executeAction() {
       heroToolStore.stopTool();
       openKnowledgePanel('hall');
     } else {
+      flashDenied();
       heroToolStore.setActionMessage(t('moveBlocked.hallUnavailable'));
     }
     return;
@@ -288,6 +303,7 @@ async function executeAction() {
     }
     worldMapStore.saveToStorage();
   } else if (res.message) {
+    flashDenied();
     heroToolStore.setActionMessage(res.message);
   }
 }
@@ -360,47 +376,55 @@ async function executeAction() {
 }
 
 .do-btn {
+  position: relative;
   min-height: 30px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.55);
-  color: #f2e9d3;
+  color: #e9f7ff;
   font-weight: 900;
   font-size: 12px;
   line-height: 1;
   letter-spacing: 0.12em;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
+  transition:
+    background 90ms ease,
+    border-color 90ms ease;
 }
 
-.do-btn:disabled {
-  opacity: 0.55;
-  filter: grayscale(0.6);
-  cursor: not-allowed;
+.do-btn.is-denied {
+  border-color: rgba(255, 150, 150, 0.45);
+  background: rgba(190, 70, 70, 0.5);
 }
 
+.tool-actions-row:has(.will-meta) {
+  top: 42%;
+}
+
+.will-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
 .will-chip {
-  margin-left: 4px;
-  padding: 0 4px;
+  padding: 0 7px;
   border-radius: 999px;
-  background: rgba(120, 190, 255, 0.28);
+  border: 1px solid rgba(120, 190, 255, 0.7);
+  background: rgba(14, 22, 36, 0.95);
+  color: #dff0ff;
+  font-size: 9px;
   font-weight: 800;
-}
-
-.will-reason {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  line-height: 13px;
   white-space: nowrap;
-  font-size: 10px;
-  font-weight: 800;
-  color: #ffb3b3;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .do-btn:hover {
-  filter: brightness(1.15);
+  color: #e9f7ff;
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
 }
 
 .do-btn:active {
@@ -425,9 +449,10 @@ async function executeAction() {
   top: 50%;
   transform: translate(-50%, -50%);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 3px;
   width: calc(var(--hex-tile-width) * 0.72);
   max-width: calc(var(--hex-tile-width) * 0.72);
   z-index: 2;

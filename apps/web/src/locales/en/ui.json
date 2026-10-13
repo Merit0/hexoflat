@@ -23,7 +23,7 @@
     "drop": "Drop"
   },
   "moveBlocked": {
-    "panel": "Close the Knowledge Hall to move",
+    "panel": "Close the Knowledge Hall or use Escape to move",
     "returning": "Finish returning to camp first",
     "moving": "The hero is already on the move",
     "notYourTurn": "It's not your turn",
@@ -32,6 +32,9 @@
     "tooFar": "Too far, or the way is blocked",
     "hallUnavailable": "Stand next to the Knowledge book, standing still, to open the Hall",
     "noWill": "Not enough Will"
+  },
+  "tool": {
+    "open": "Open"
   },
   "knowledge": {
     "title": "Knowledge Hall",
@@ -68,7 +71,6 @@
     "assistanceRule": "After two failed challenges and reviewing 10 facts, assisted return is available.",
     "saveError": "Could not read or save the challenge. Saved data has not been overwritten. Try reloading.",
     "rejected": "Action not completed. Check your answer and the current challenge state.",
-    "open": "Open Knowledge Hall",
     "grades": {
       "practice": "Let’s practice together",
       "repeat": "Review needed",

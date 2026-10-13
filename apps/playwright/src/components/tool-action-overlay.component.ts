@@ -33,12 +33,14 @@ export class ToolActionOverlayComponent extends BaseComponent {
   }
 
   async verifyActionIsAffordable(): Promise<void> {
-    await expect(this.actionButton).toBeEnabled();
-    await expect(this.page.getByTestId('tool-action-insufficient-will')).toBeHidden();
+    await expect(this.actionButton).toHaveAttribute('aria-disabled', 'false');
   }
 
   async verifyInsufficientWill(): Promise<void> {
-    await expect(this.actionButton).toBeDisabled();
-    await expect(this.page.getByTestId('tool-action-insufficient-will')).toBeVisible();
+    await expect(this.actionButton).toHaveAttribute('aria-disabled', 'true');
+    await this.actionButton.click();
+    await expect(this.page.getByTestId('action-alert-banner')).toContainText(
+      /Недостатньо Волі|Not enough Will/,
+    );
   }
 }
