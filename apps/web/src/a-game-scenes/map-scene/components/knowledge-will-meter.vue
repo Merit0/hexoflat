@@ -88,7 +88,7 @@ p {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   box-sizing: border-box;
   height: 68px;
   padding: 4px 12px;
@@ -163,8 +163,8 @@ p {
 .will-hint {
   white-space: pre-line;
   text-align: center;
-  font-size: 0.72rem;
-  line-height: 1.25;
+  font-size: 0.8rem;
+  line-height: 1.15;
   font-weight: 600;
   text-wrap: balance;
   color: rgba(243, 232, 210, 0.82);

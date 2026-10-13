@@ -2,11 +2,13 @@
   <section
     ref="panel"
     class="knowledge-board"
+    :class="{ 'is-start': !active }"
     tabindex="-1"
     data-testid="knowledge-board"
     :aria-label="mode === 'hall' ? t('knowledge.title') : t('knowledge.returnTitle')"
   >
     <img
+      v-if="active"
       class="board-emblem"
       src="/hex-assets/hex-constructs/open-book-table-token-image.png"
       alt=""
@@ -31,17 +33,24 @@
       <knowledge-will-meter :current="hero.knowledge.current" :capacity="hero.knowledge.capacity" />
       <hr class="rule" />
       <template v-if="!active">
-        <img class="hero-emblem" :src="heroImage" :alt="hero.hero.name" />
+        <div class="start-stack">
+          <div class="start-book">
+            <img class="start-hex" :src="bookImage" alt="" aria-hidden="true" />
+            <button
+              type="button"
+              class="eye-start"
+              data-testid="knowledge-start"
+              :aria-label="t('tool.read')"
+              :title="t('tool.read')"
+              :disabled="busy || hero.knowledgeError || (mode === 'hall' && full)"
+              :aria-describedby="mode === 'hall' && full ? 'knowledge-entry-message' : undefined"
+              @click="start"
+            >
+              <eye-icon />
+            </button>
+          </div>
+        </div>
         <p v-if="mode === 'return'">{{ t('knowledge.target') }}</p>
-        <button
-          type="button"
-          data-testid="knowledge-start"
-          :disabled="busy || hero.knowledgeError || (mode === 'hall' && full)"
-          :aria-describedby="mode === 'hall' && full ? 'knowledge-entry-message' : undefined"
-          @click="start"
-        >
-          {{ t('knowledge.start') }}
-        </button>
         <p v-if="mode === 'hall' && full" id="knowledge-entry-message">
           {{ t('knowledge.full') }}
         </p>
@@ -167,6 +176,7 @@ import { useI18n } from 'vue-i18n';
 import { knowledgePanelMode as mode, closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import KnowledgeWillMeter from './knowledge-will-meter.vue';
 import KnowledgeHelp from './knowledge-help.vue';
+import EyeIcon from '@/components/gui/icons/eye-icon.vue';
 import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
 import type { MathQuestion } from '@hexoflat/engine/knowledge/math';
 
@@ -201,7 +211,7 @@ const gradeText = computed(
     })[gradeKey.value],
 );
 const panel = ref<HTMLElement | null>(null);
-const heroImage = computed(() => `${import.meta.env.BASE_URL}hero-asssets/base-hero-hex.png`);
+const bookImage = '/hex-assets/hex-constructs/open-book-table-token-image.png';
 const full = computed(() => !!hero.knowledge && hero.knowledge.current >= hero.knowledge.capacity);
 const missed = computed(
   () => ret.value?.questions.filter((q, i) => q.answer !== ret.value?.answers[i]).slice(0, 4) ?? [],

@@ -12,20 +12,7 @@
             :aria-disabled="!canAffordBest"
             @click.stop="executeAction"
           >
-            <svg
-              v-if="isReadAction"
-              class="eye-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z" />
-              <circle cx="12" cy="12" r="3.2" />
-            </svg>
+            <eye-icon v-if="isReadAction" class="eye-icon" />
             <template v-else>{{ bestActionLabel }}</template>
           </button>
           <div v-if="bestActionCost > 0" class="will-meta">
@@ -49,6 +36,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import EyeIcon from '@/components/gui/icons/eye-icon.vue';
 import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useWillPricing } from '@/composables/use-will-pricing';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
