@@ -52,7 +52,14 @@ pinia.use((context) => {
 
   context.store.$subscribe((_, state) => {
     try {
-      window.localStorage.setItem(storeId, serializer.serialize(state));
+      window.localStorage.setItem(
+        storeId,
+        serializer.serialize(
+          Object.fromEntries(
+            Object.entries(state).filter(([key]) => !['knowledge', 'knowledgeError'].includes(key)),
+          ),
+        ),
+      );
     } catch (e) {
       console.warn(`[pinia-persist] failed to persist "${storeId}"`, e);
     }

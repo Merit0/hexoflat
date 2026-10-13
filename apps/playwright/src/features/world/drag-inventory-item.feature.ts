@@ -12,6 +12,13 @@ export class DragInventoryItemFeature extends BaseFeature {
     });
   }
 
+  async dragToWillCell(itemKey: string): Promise<void> {
+    await this.step(`Try dragging "${itemKey}" onto the Will cell`, async () => {
+      const itemId = await this.campingMap.inventory.getItemIdByKey(itemKey);
+      await this.campingMap.inventory.dragTokenToWillCell(itemId);
+    });
+  }
+
   async dragToEquipSlot(itemKey: string, slot: EquipSlot): Promise<void> {
     await this.step(`Drag "${itemKey}" to the "${slot}" equip slot`, async () => {
       const itemId = await this.campingMap.inventory.getItemIdByKey(itemKey);

@@ -2,6 +2,7 @@
   <div
     ref="stageRef"
     class="scene-root game-root"
+    :class="{ 'is-knowledge': !!knowledgePanelMode }"
     data-testid="map-scene-root"
     :style="sceneLayoutStyle"
   >
@@ -67,6 +68,8 @@
 </template>
 
 <script setup lang="ts">
+import { closeKnowledgePanel, knowledgePanelMode } from '@/composables/use-knowledge-panel';
+import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
@@ -154,6 +157,7 @@ watch(
   { immediate: true },
 );
 
+useKnowledgeChallenge(true);
 onMounted(() => worldStore.bootstrapWorld());
 // The condition is inlined (rather than read from a helper) so Vite can
 // statically fold it away: in any build without VITE_E2E_HOOKS=true this
@@ -380,6 +384,11 @@ function onHide() {
 
 function onKeyDown(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
+  if (knowledgePanelMode.value) {
+    event.preventDefault();
+    void closeKnowledgePanel(false);
+    return;
+  }
   if (!heroToolStore.isDragging && !heroToolStore.activeTool) return;
 
   event.preventDefault();
@@ -405,6 +414,11 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+@media (max-width: 760px) {
+  .scene-root.is-knowledge .map-pane {
+    pointer-events: none;
+  }
+}
 .scene-root {
   width: 100vw;
   height: 100vh;

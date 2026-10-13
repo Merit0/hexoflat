@@ -1,3 +1,9 @@
 set -e
 
-pnpm run test:e2e:push
+refs=$(cat)
+
+if printf '%s\n' "$refs" | sh scripts/pre-push-needs-e2e.sh; then
+  pnpm run test:e2e:push
+else
+  echo "pre-push: only tests, docs or tooling changed — skipping e2e."
+fi

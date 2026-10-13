@@ -167,6 +167,40 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async hoverNeighborWithKey(hexobjectKey: string): Promise<void> {
+    const from = await this.requireHeroCoordinates();
+    for (const candidate of await this.getNeighbors(from)) {
+      if ((await this.getTileHexobjectKey(candidate)) === hexobjectKey) {
+        await this.hoverTile(candidate);
+        return;
+      }
+    }
+    throw new Error(`No neighbouring hex holds "${hexobjectKey}".`);
+  }
+
+  async getFreeNeighbors(): Promise<TestHexCoordinates[]> {
+    const from = await this.requireHeroCoordinates();
+    const free: TestHexCoordinates[] = [];
+    for (const candidate of await this.getNeighbors(from)) {
+      if ((await this.getTileHexobjectKey(candidate)) === null) free.push(candidate);
+    }
+    return free;
+  }
+
+  async clickTileAndDismissDetails(coordinates: TestHexCoordinates): Promise<void> {
+    await this.clickTile(coordinates);
+    await this.tileDetails.closeIfOpen();
+  }
+
+  async tryStepAndVerifyBlocked(): Promise<void> {
+    const from = await this.requireHeroCoordinates();
+    for (const candidate of await this.getNeighbors(from)) {
+      await this.clickTile(candidate);
+      await this.tileDetails.closeIfOpen();
+    }
+    expect(coordinateKey(await this.getHeroCoordinates())).toBe(coordinateKey(from));
+  }
+
   async moveAdjacentTo(target: TestHexCoordinates, maxSteps = 20): Promise<void> {
     for (let step = 0; step < maxSteps; step += 1) {
       const from = await this.requireHeroCoordinates();

@@ -33,13 +33,23 @@
 
       <ul class="static-board-editor-panel__hexobject-list">
         <li v-for="entry in filteredHexobjects" :key="entry.key">
-          <button type="button" @click="editorStore.placeHexobject(entry.key)">
+          <button
+            type="button"
+            :data-testid="`editor-palette-${entry.key}`"
+            @click="editorStore.placeHexobject(entry.key)"
+          >
             {{ entry.label }}
           </button>
         </li>
       </ul>
 
-      <button type="button" @click="editorStore.closePalette()">Close</button>
+      <button
+        type="button"
+        data-testid="editor-palette-close-button"
+        @click="editorStore.closePalette()"
+      >
+        Close
+      </button>
     </div>
 
     <div class="static-board-editor-panel__actions">

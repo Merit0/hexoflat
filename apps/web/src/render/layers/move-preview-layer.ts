@@ -13,6 +13,7 @@ export interface MovePreviewSyncParams {
   reachable: boolean;
   markerCoord: IHexCoordinates | null;
   stepCost: number;
+  chargesWill: boolean;
   markerKind: 'move' | 'defend';
 }
 
@@ -85,7 +86,11 @@ export function createMovePreviewLayer(deps: MovePreviewLayerDeps): MovePreviewL
       .fill({ color: circleFill, alpha: isDefend ? 0.18 : params.reachable ? 0.16 : 0.14 })
       .stroke({ color: strokeColor, width: 2 });
 
-    markerText.text = isDefend ? '🛡' : String(params.stepCost);
+    markerText.text = isDefend
+      ? '🛡'
+      : params.chargesWill
+        ? `−${params.stepCost}`
+        : String(params.stepCost);
     markerText.style.fontSize = isDefend ? 16 : 12;
   }
 

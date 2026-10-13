@@ -1,4 +1,18 @@
+import { travelStepBudget } from '@hexoflat/engine/knowledge/math';
+import { willZoneCharges, type WillZoneContext } from '@hexoflat/engine/knowledge/will-zone';
+import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
+import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
+import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
+import type { KnowledgeAction } from '@hexoflat/engine/knowledge/commands';
+import { readKnowledge } from '@/services/persistence/knowledge-storage';
+import {
+  dispatchHexAction,
+  dispatchKnowledge,
+  isAtKnowledgeBook,
+  locationWillZone,
+} from '@/services/knowledge/knowledge-controller';
 import { defineStore } from 'pinia';
+import { i18n } from '@/i18n';
 import { HeroModel } from '@hexoflat/engine/models/hero-model';
 import { fetchHero } from '../api/Requests';
 import { ApiError } from '../api/client';
@@ -41,6 +55,8 @@ const HERO_PROGRESS_KEY = 'hexoflat:heroProgress:v1';
 export const useHeroStore = defineStore('hero', {
   state: () => ({
     hero: new HeroModel(),
+    knowledge: null as KnowledgeState | null,
+    knowledgeError: false,
     nav: defaultNav(),
     // Where the hero stands on the currently loaded map, and whether it is
     // mid-step. Persisted inside world-map-store's per-map state blob (the
@@ -55,9 +71,81 @@ export const useHeroStore = defineStore('hero', {
     isAlive: (s) => s.hero.getHealth() > 0,
     heroHp: (s) => s.hero.currentHealth,
     heroHpMax: (s) => s.hero.maxHealth,
+    willZoneContext(): WillZoneContext {
+      return {
+        willZone: locationWillZone(useWorldMapStore().currentLocationKey),
+        combatActive: useCombatStore().combatActive,
+      };
+    },
   },
 
   actions: {
+    loadKnowledge() {
+      try {
+        this.knowledge = readKnowledge(this.hero.id);
+        this.knowledgeError = false;
+      } catch {
+        this.knowledge = null;
+        this.knowledgeError = true;
+      }
+    },
+
+    knowledgeHost(world: ReturnType<typeof useWorldMapStore>) {
+      const heroId = this.hero.id;
+      const mapId = world.currentMapId;
+      const combatActive = useCombatStore().combatActive;
+      return {
+        heroId,
+        map: world.map as HexMapModel,
+        context: {
+          locationKey: world.currentLocationKey,
+          willZone: locationWillZone(world.currentLocationKey),
+          mapId: world.currentMapId ?? '',
+          combatActive,
+          moving: this.isHeroMoving,
+          coordinates: this.heroCoordinates ?? undefined,
+          atBook: isAtKnowledgeBook(world.map as HexMapModel, this.heroCoordinates),
+        },
+        engineContext: world.buildEngineContext(),
+        isCurrent: () =>
+          this.hero.id === heroId &&
+          world.currentMapId === mapId &&
+          useCombatStore().combatActive === combatActive,
+      };
+    },
+
+    async knowledgeAction(action: KnowledgeAction): Promise<boolean> {
+      const world = useWorldMapStore();
+      if (!world.map || !this.knowledge || this.knowledgeError) return false;
+      const heroId = this.hero.id;
+      try {
+        const result = await dispatchKnowledge(
+          { ...this.knowledgeHost(world), state: this.knowledge },
+          action,
+        );
+        if (heroId !== this.hero.id) return false;
+        this.knowledge = result.state;
+        return result.accepted;
+      } catch {
+        this.knowledgeError = true;
+        return false;
+      }
+    },
+
+    async startHexAction(command: StartHexActionCommand) {
+      const world = useWorldMapStore();
+      if (!world.map || this.knowledgeError) return null;
+      const heroId = this.hero.id;
+      try {
+        const result = await dispatchHexAction(this.knowledgeHost(world), command);
+        if (heroId === this.hero.id) this.knowledge = result.state;
+        return result.events;
+      } catch {
+        this.knowledgeError = true;
+        return null;
+      }
+    },
+
     saveNavToStorage() {
       localStorage.setItem(HERO_NAV_KEY, JSON.stringify(this.nav));
     },
@@ -112,6 +200,9 @@ export const useHeroStore = defineStore('hero', {
       try {
         const hero = await fetchHero();
 
+        this.hero.id = hero.id;
+        this.loadKnowledge();
+
         this.hero
           .setName(hero.name)
           .setMaxHealth(hero.maxHealth)
@@ -164,6 +255,8 @@ export const useHeroStore = defineStore('hero', {
     resetHero(): void {
       console.log('Resetting hero state');
       this.hero = new HeroModel();
+      this.knowledge = null;
+      this.knowledgeError = false;
       this.nav = defaultNav();
       localStorage.removeItem(HERO_NAV_KEY);
       localStorage.removeItem(HERO_PROGRESS_KEY);
@@ -175,7 +268,10 @@ export const useHeroStore = defineStore('hero', {
      * Returns the route without the hero's current tile, matching
      * planCombatRoute.
      */
-    planFreeRoamRoute(map: HexMapModel, target: IHexCoordinates): IHexCoordinates[] | null {
+    planFreeRoamRoute(
+      map: HexMapModel,
+      target: IHexCoordinates,
+    ): { route: IHexCoordinates[] | null; affordable: boolean } {
       const worldStore = useWorldMapStore();
       const heroState: HeroState = {
         id: this.hero.id,
@@ -193,7 +289,14 @@ export const useHeroStore = defineStore('hero', {
       const moved = events.find((e) => e.type === 'HERO_MOVED') as
         { type: 'HERO_MOVED'; payload: { heroId: string; path: IHexCoordinates[] } } | undefined;
 
-      return moved ? moved.payload.path.slice(1) : null;
+      const route = moved?.payload.path.slice(1) ?? null;
+      const budget = travelStepBudget(
+        route?.length ?? 0,
+        this.knowledge?.current ?? 0,
+        this.willZoneContext,
+      );
+      const affordable = !route || route.length <= budget;
+      return { route: affordable ? route : null, affordable };
     },
 
     /**
@@ -210,17 +313,33 @@ export const useHeroStore = defineStore('hero', {
       const combatStore = useCombatStore();
 
       if (!worldStore.map || !this.heroCoordinates) return false;
-      if (heroToolStore.isDragging || this.isHeroMoving) return false;
-      if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return false;
-      if (combatStore.combatActive && combatStore.combatStepsLeft <= 0) return false;
+      const warn = (message: string) => {
+        heroToolStore.setActionMessage(message);
+        return false;
+      };
+      if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
+      if (this.knowledge?.session?.status === 'returning')
+        return warn(i18n.global.t('moveBlocked.returning'));
+      if (heroToolStore.isDragging) return false;
+      if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));
+      if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero')
+        return warn(i18n.global.t('moveBlocked.notYourTurn'));
+      if (combatStore.combatActive && combatStore.combatStepsLeft <= 0)
+        return warn(i18n.global.t('moveBlocked.noSteps'));
 
       const map = worldStore.map as HexMapModel;
-      if (!isEnterableTile(map, target)) return false;
+      if (!isEnterableTile(map, target)) return warn(i18n.global.t('moveBlocked.blockedTile'));
 
-      const route = combatStore.combatActive
-        ? planCombatRoute(map, this.heroCoordinates, target, combatStore.combatStepsLeft)
-        : this.planFreeRoamRoute(map, target);
-      if (!route) return false;
+      let route: IHexCoordinates[] | null;
+      if (combatStore.combatActive) {
+        route = planCombatRoute(map, this.heroCoordinates, target, combatStore.combatStepsLeft);
+        if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
+      } else {
+        const plan = this.planFreeRoamRoute(map, target);
+        route = plan.route;
+        if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'));
+        if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
+      }
 
       let stepsTaken = 0;
 
@@ -232,7 +351,13 @@ export const useHeroStore = defineStore('hero', {
       this.isHeroMoving = true;
 
       try {
-        await executeMovementRoute(route, (coord) => {
+        await executeMovementRoute(route, async (coord) => {
+          if (willZoneCharges(this.willZoneContext)) {
+            if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
+              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'));
+              return false;
+            }
+          }
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;
           if (combatStore.combatActive) {
@@ -266,7 +391,7 @@ export const useHeroStore = defineStore('hero', {
         'INFO',
       );
 
-      return true;
+      return stepsTaken > 0;
     },
   },
 });

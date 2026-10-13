@@ -20,6 +20,7 @@ const actionConfigSchema = z.object({
   durationMs: z.number().optional(),
   requiredTool: hexobjectKeySchema.optional(),
   durabilityCostPct: z.number().optional(),
+  willCost: z.number().int().min(0).max(3).optional(),
 });
 
 const enterSchema = z.object({
@@ -202,6 +203,7 @@ export interface IHexobjectMeta {
         durationMs?: number;
         requiredTool?: TToolKeys;
         durabilityCostPct?: number;
+        willCost?: number;
       }
     >
   >;

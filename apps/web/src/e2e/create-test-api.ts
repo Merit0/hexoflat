@@ -1,3 +1,5 @@
+import { KNOWLEDGE_RULES } from '@hexoflat/engine/knowledge/math';
+import { writeKnowledge } from '@/services/persistence/knowledge-storage';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import {
   tileWorldCenter,
@@ -7,7 +9,7 @@ import {
 } from '@/render/board-camera';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type {
   HexoflatTestApi,
@@ -46,6 +48,48 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
   }
 
   return {
+    getKnowledge() {
+      const state = heroStore.knowledge;
+      if (!state) return null;
+      const session = state.session;
+      const question =
+        session?.mode === 'hall' ? session.question : session?.questions[session.index];
+      return {
+        current: state.current,
+        status: session?.status ?? null,
+        index: session?.index ?? 0,
+        options: question?.options ?? [],
+        answer: question?.answer ?? null,
+        lastAward: session?.mode === 'hall' ? session.lastAward : 0,
+      };
+    },
+    prepareKnowledgeWorld(current: number) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      if (
+        !heroStore.knowledge ||
+        !Number.isInteger(current) ||
+        current < 0 ||
+        current > KNOWLEDGE_RULES.capacity
+      )
+        throw new Error('Invalid fixture');
+      const state = { ...heroStore.knowledge, current, session: null };
+      writeKnowledge(state);
+      heroStore.loadKnowledge();
+      worldStore.goToLocation('silesia');
+    },
+    setWill(current: number) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      if (!heroStore.knowledge || !Number.isInteger(current) || current < 0)
+        throw new Error('Invalid fixture');
+      writeKnowledge({ ...heroStore.knowledge, current });
+      heroStore.loadKnowledge();
+    },
+    getWillSlotKey() {
+      return WILL_SLOT_KEY;
+    },
+    getKnowledgeRules() {
+      return { startingWill: KNOWLEDGE_RULES.startingWill, capacity: KNOWLEDGE_RULES.capacity };
+    },
     isBoardReady(): boolean {
       return options.isBoardReady();
     },

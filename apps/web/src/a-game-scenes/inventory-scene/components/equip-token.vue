@@ -178,13 +178,13 @@ function onPointerDown(e: PointerEvent) {
 .equip-slot-token.is-usable-tool:hover .hex-use-btn {
   opacity: 1;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateX(-50%) rotate(calc(var(--rot) * -1)) translateY(-2px);
 }
 
 .hex-use-btn {
   position: absolute;
-  inset: auto auto 2px 50%;
-  transform: translateX(-50%);
+  inset: auto auto 24% 50%;
+  transform: translateX(-50%) rotate(calc(var(--rot) * -1));
   min-width: 52px;
   height: 22px;
   padding: 0 10px;

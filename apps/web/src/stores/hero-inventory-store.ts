@@ -60,6 +60,8 @@ function parseEquipSlotKey(value: string | null | undefined): TEquipSlot | null 
   return null;
 }
 
+export const WILL_SLOT_KEY = slotKey(0, 0);
+
 function isBlocked(r: number, c: number, cfg: GridConfig) {
   const { x, y, w, h } = cfg.blockedRect;
   return c >= x && c < x + w && r >= y && r < y + h;
@@ -129,7 +131,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
         for (let c = 0; c < state.grid.cols; c++) {
           if (isBlocked(r, c, state.grid)) continue;
           const key = slotKey(r, c);
-          if (!occ.has(key)) out.push(key);
+          if (key !== WILL_SLOT_KEY && !occ.has(key)) out.push(key);
         }
       }
 
@@ -160,6 +162,10 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
         this.carryCapacityKg = saved.carryCapacityKg;
       }
 
+      const squatter = this.items.find((i) => i.slotKey === WILL_SLOT_KEY);
+      const relocated = squatter ? this.freeSlotKeys[0] : undefined;
+      if (squatter && relocated) squatter.slotKey = relocated;
+
       this.fillEmptySlotsWithHands();
       this.selectedItemId = null;
       this.isHydrated = true;
@@ -186,7 +192,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       const fromItem = this.items.find((i) => i.id === itemId);
       if (!fromItem) return;
 
-      if (fromItem.slotKey === targetSlotKey) return;
+      if (fromItem.slotKey === targetSlotKey || targetSlotKey === WILL_SLOT_KEY) return;
 
       if (fromItem.key === HEXOBJECT_KEYS.HAND) {
         return;

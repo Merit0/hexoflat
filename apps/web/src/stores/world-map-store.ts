@@ -1,3 +1,5 @@
+import { recoverStepPosition } from '@/services/persistence/knowledge-storage';
+import { installCampBook } from '@hexoflat/engine/knowledge/camp-book';
 import { defineStore } from 'pinia';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
@@ -152,29 +154,26 @@ export const useWorldMapStore = defineStore('world-map-store', {
       return tileDirtyTracker.consume();
     },
 
-    executeHexAction(
+    async executeHexAction(
       tile: HexTileModel,
       actionType: EHexActionType,
       toolKey: THeroToolKey,
-    ): { ok: boolean; message?: string } {
+    ): Promise<{ ok: boolean; message?: string }> {
       if (!this.map) return { ok: false, message: 'No active map.' };
 
-      const { events } = applyCommand(
-        { map: this.map as HexMapModel, heroes: {} },
-        {
-          type: 'START_HEX_ACTION',
-          payload: {
-            heroId: useHeroStore().hero.id,
-            coordinates: tile.coordinates,
-            actionType,
-            toolKey,
-            now: Date.now(),
-          },
+      const events = await useHeroStore().startHexAction({
+        type: 'START_HEX_ACTION',
+        payload: {
+          heroId: useHeroStore().hero.id,
+          coordinates: tile.coordinates,
+          actionType,
+          toolKey,
+          now: Date.now(),
         },
-        this.buildEngineContext(),
-      );
+      });
       this.markTileDirty(tile.coordinates);
 
+      if (!events) return { ok: false, message: 'Will is unavailable.' };
       if (events.some((e) => e.type === 'HEX_ACTION_STARTED')) {
         return { ok: true };
       }
@@ -186,14 +185,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     getTileAt(coords: IHexCoordinates): HexTileModel | null {
-      if (!this.map) return null;
-      const tiles = this.map.tiles as HexTileModel[];
-
       return (
-        tiles.find(
-          (t: HexTileModel) =>
-            t.coordinates.columnIndex === coords.columnIndex &&
-            t.coordinates.rowIndex === coords.rowIndex,
+        (this.map as HexMapModel | null)?.tiles.find(
+          (tile) =>
+            tile.coordinates.columnIndex === coords.columnIndex &&
+            tile.coordinates.rowIndex === coords.rowIndex,
         ) ?? null
       );
     },
@@ -415,6 +411,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
         const def = MapRegistry.get(locationKey);
         this.applyFreshBoard(def.create({ seed: requireWorldSeed() }), mapId);
       }
+      if (locationKey === 'camping' && this.map)
+        installCampBook(this.map as HexMapModel, heroStore.heroCoordinates);
       this.markAllTilesDirty();
 
       this.startWorldLoop();
@@ -475,6 +473,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       if (raw) {
         heroStore.heroCoordinates = raw.heroCoordinates ?? null;
+        const recovered = recoverStepPosition(heroStore.knowledge, mapId, raw.knowledgeRevision);
+        if (recovered) heroStore.rememberPosition(mapId, (heroStore.heroCoordinates = recovered));
         this.descriptor = raw.descriptor ?? null;
         withoutCombatAutosave(() =>
           combatStore.hydrate({
@@ -531,6 +531,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const state: TWorldState = {
         contentVersion: CONTENT_VERSION,
         heroCoordinates: useHeroStore().heroCoordinates,
+        knowledgeRevision: useHeroStore().knowledge?.revision,
         worldSeed: getWorldSeed() ?? undefined,
         descriptor: this.descriptor,
         ...useCombatStore().toSnapshot(),

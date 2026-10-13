@@ -36,4 +36,17 @@ export class VerifyInventoryFeature extends BaseFeature {
       await this.campingMap.inventory.verifyItemEquipped(itemId, slot);
     });
   }
+
+  async verifyWillTokenPresent(): Promise<void> {
+    await this.step('Verify the Will token sits in its reserved inventory cell', async () => {
+      await this.campingMap.inventory.verifyWillTokenInItsCell();
+      await this.campingMap.inventory.verifyWillTooltipOnHover();
+    });
+  }
+
+  async verifyWillCellStaysFree(): Promise<void> {
+    await this.step('Verify no item occupies the Will cell', () =>
+      this.campingMap.inventory.verifyWillCellHoldsNoItem(),
+    );
+  }
 }

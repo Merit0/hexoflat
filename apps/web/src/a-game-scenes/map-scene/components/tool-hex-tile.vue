@@ -3,21 +3,31 @@
     <div class="tool-hex-tile" :class="{ doing: isWorking }">
       <div class="tool-icon" :class="{ flipped: isHoverOnLeft }" :style="iconStyle"></div>
       <div v-if="!isWorking" class="tool-actions-row">
-        <button
-          v-if="bestActionLabel"
-          class="do-btn"
-          data-testid="tool-action-button"
-          @click.stop="executeAction"
-        >
-          {{ bestActionLabel }}
-        </button>
+        <template v-if="bestActionLabel">
+          <button
+            class="do-btn"
+            :class="{ 'is-denied': denied }"
+            data-testid="tool-action-button"
+            :aria-label="bestActionLabel"
+            :aria-disabled="!canAffordBest"
+            @click.stop="executeAction"
+          >
+            <eye-icon v-if="isReadAction" class="eye-icon" />
+            <template v-else>{{ bestActionLabel }}</template>
+          </button>
+          <div v-if="bestActionCost > 0" class="will-meta">
+            <span class="will-chip" data-testid="tool-action-cost">
+              {{ t('knowledge.actionCost', { cost: bestActionCost }) }}
+            </span>
+          </div>
+        </template>
 
         <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
           -
         </button>
       </div>
 
-      <div v-if="isWorking" class="time-chip label" data-testid="tool-working-timer">
+      <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
         {{ secondsLeft }}s
       </div>
     </div>
@@ -25,6 +35,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import EyeIcon from '@/components/gui/icons/eye-icon.vue';
+import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
+import { useWillPricing } from '@/composables/use-will-pricing';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { calcHexPixelPosition, type IHexPositioned } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -40,6 +54,7 @@ import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { getPrototype, getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
+import { useBookReading } from '@/composables/use-book-reading';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -53,10 +68,12 @@ const emit = defineEmits<{
   (e: 'hide'): void;
 }>();
 
+const { t } = useI18n();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const combatStore = useCombatStore();
 const heroStore = useHeroStore();
+const pricing = useWillPricing();
 
 const activeToolKey = computed<THeroToolKey | null>(() => heroToolStore.activeTool);
 
@@ -74,10 +91,12 @@ const hoveredTile = computed<HexTileModel | null>(() => {
   );
 });
 
-const posStyle = computed(() => {
-  if (!heroToolStore.hover) return { display: 'none' };
+const { isReading, anchor } = useBookReading(activeToolKey);
 
-  const pseudoTile: IHexPositioned = { coordinates: heroToolStore.hover };
+const posStyle = computed(() => {
+  if (!anchor.value) return { display: 'none' };
+
+  const pseudoTile: IHexPositioned = { coordinates: anchor.value };
   const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth, props.tileHeight);
 
   return {
@@ -87,7 +106,7 @@ const posStyle = computed(() => {
 
 const isHoverOnLeft = computed(() => {
   const origin = heroToolStore.origin;
-  const hover = heroToolStore.hover;
+  const hover = anchor.value;
   if (!origin || !hover) return false;
 
   const originPos = calcHexPixelPosition(
@@ -173,7 +192,29 @@ const bestAction = computed<ResolvedAction | null>(() => {
   );
 });
 
-const bestActionLabel = computed(() => bestAction.value?.label ?? null);
+const isReadAction = computed(
+  () =>
+    hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.KNOWLEDGE_BOOK &&
+    activeToolKey.value === HEXOBJECT_KEYS.HAND,
+);
+const bestActionLabel = computed(() => {
+  if (!bestAction.value) return null;
+  const object = hoveredTile.value?.hexobject;
+  if (isReadAction.value) return t('tool.read');
+  const isHandOnBuilding =
+    activeToolKey.value === HEXOBJECT_KEYS.HAND &&
+    object?.groupType === EHexobjectGroup.CONSTRUCTION &&
+    !getMeta(object.hexobjectKey)?.heal;
+  return isHandOnBuilding ? t('tool.open') : bestAction.value.label;
+});
+
+const bestActionCost = computed(() =>
+  pricing.costOf(
+    hoveredTile.value,
+    bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
+  ),
+);
+const canAffordBest = computed(() => pricing.canAfford(bestActionCost.value));
 
 watch(
   resolvedActions,
@@ -203,10 +244,12 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  if (deniedTimer) window.clearTimeout(deniedTimer);
   if (timer) window.clearInterval(timer);
 });
 
 const isWorking = computed(() => {
+  if (isReading.value) return true;
   const a = pendingAction.value;
   if (!a?.endsAt) return false;
 
@@ -233,15 +276,38 @@ const secondsLeft = computed(() => {
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
 });
 
-function executeAction() {
+const denied = ref(false);
+let deniedTimer: number | null = null;
+function flashDenied() {
+  denied.value = true;
+  if (deniedTimer) window.clearTimeout(deniedTimer);
+  deniedTimer = window.setTimeout(() => (denied.value = false), 200);
+}
+
+async function executeAction() {
   const tile = hoveredTile.value;
   const best = bestAction.value;
   if (!tile || !best || !activeToolKey.value) return;
+  if (!canAffordBest.value) {
+    flashDenied();
+    heroToolStore.setActionMessage(t('knowledge.insufficientWill'));
+    return;
+  }
 
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
 
-  const res = worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
+  if (tile.hexobject?.hexobjectKey === 'knowledge-book') {
+    if (await heroStore.knowledgeAction({ kind: 'open' })) {
+      openKnowledgePanel('hall');
+    } else {
+      flashDenied();
+      heroToolStore.setActionMessage(t('moveBlocked.hallUnavailable'));
+    }
+    return;
+  }
+
+  const res = await worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
 
   if (res.ok) {
     if (actionType === EHexActionType.BLOCK) {
@@ -249,6 +315,7 @@ function executeAction() {
     }
     worldMapStore.saveToStorage();
   } else if (res.message) {
+    flashDenied();
     heroToolStore.setActionMessage(res.message);
   }
 }
@@ -321,21 +388,61 @@ function executeAction() {
 }
 
 .do-btn {
+  position: relative;
   min-height: 30px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.55);
-  color: #f2e9d3;
+  color: #e9f7ff;
   font-weight: 900;
   font-size: 12px;
   line-height: 1;
   letter-spacing: 0.12em;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
+  transition:
+    background 90ms ease,
+    border-color 90ms ease;
+}
+
+.do-btn.is-denied {
+  border-color: rgba(255, 150, 150, 0.45);
+  background: rgba(190, 70, 70, 0.5);
+}
+
+.tool-actions-row:has(.will-meta) {
+  top: 42%;
+}
+
+.will-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+.will-chip {
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 190, 255, 0.7);
+  background: rgba(14, 22, 36, 0.95);
+  color: #dff0ff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 13px;
+  white-space: nowrap;
+}
+
+.eye-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 
 .do-btn:hover {
-  filter: brightness(1.15);
+  color: #e9f7ff;
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
 }
 
 .do-btn:active {
@@ -360,9 +467,10 @@ function executeAction() {
   top: 50%;
   transform: translate(-50%, -50%);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 3px;
   width: calc(var(--hex-tile-width) * 0.72);
   max-width: calc(var(--hex-tile-width) * 0.72);
   z-index: 2;
@@ -370,6 +478,7 @@ function executeAction() {
 }
 
 .tool-hex-tile.doing {
+  background-image: none;
   animation: tool-chop 220ms ease-in-out infinite;
   scale: 0.7;
 }

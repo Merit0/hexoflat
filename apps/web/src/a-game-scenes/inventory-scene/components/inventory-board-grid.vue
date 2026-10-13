@@ -5,7 +5,7 @@
         v-for="cell in cells"
         :key="cell.key"
         class="cell"
-        :data-slotkey="cell.key"
+        :data-slotkey="cell.key === willSlotKey ? undefined : cell.key"
         :data-testid="`inventory-cell-${cell.key}`"
         :style="{ gridColumn: cell.r + 1, gridRow: cell.c + 1 }"
         :class="{
@@ -13,13 +13,54 @@
           selected: !cell.blocked && itemsBySlot[cell.key]?.id === selectedId,
           'is-drop': !cell.blocked && cell.key === dragState.dragOverSlot,
           magnet: !cell.blocked && cell.key === dragState.dragOverSlot,
+          'is-will': cell.key === willSlotKey,
         }"
+        :tabindex="cell.key === willSlotKey ? 0 : undefined"
         @click.self="onCellClick(cell.key)"
       >
         <inventory-token
           v-if="!cell.blocked && itemsBySlot[cell.key]"
           :item="itemsBySlot[cell.key]"
         />
+
+        <div
+          v-if="cell.key === willSlotKey && hero.knowledge"
+          class="will-token"
+          data-testid="inventory-will-token"
+          role="img"
+          :aria-label="t('knowledge.will', hero.knowledge)"
+        >
+          <img src="/board-assets/will-icon-image.png" alt="" draggable="false" />
+          <span class="amount" data-testid="inventory-will-amount">{{
+            hero.knowledge.current
+          }}</span>
+          <span
+            v-if="willDelta !== 0"
+            :key="willDeltaKey"
+            class="will-delta"
+            :class="{ gain: willDelta > 0 }"
+          >
+            {{ willDelta > 0 ? `+${willDelta}` : `−${-willDelta}` }}
+          </span>
+        </div>
+
+        <div
+          v-if="cell.key === willSlotKey && hero.knowledge"
+          class="will-tip"
+          role="tooltip"
+          data-testid="inventory-will-tooltip"
+        >
+          <b
+            >{{ t('knowledge.tooltipTitle') }}: {{ hero.knowledge.current }}/{{
+              hero.knowledge.capacity
+            }}</b
+          >
+          <span>
+            {{ t('knowledge.tooltipBody') }} {{ t('knowledge.tooltipRefillPre') }}
+            <span class="legend-text">{{ t('knowledge.title') }}</span>
+            {{ t('knowledge.tooltipRefillPost') }}
+          </span>
+        </div>
 
         <span v-if="!cell.blocked && itemsBySlot[cell.key]?.isNew" class="badge"> </span>
 
@@ -34,12 +75,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useHeroInventoryStore, WILL_SLOT_KEY as willSlotKey } from '@/stores/hero-inventory-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { inventoryDragState as dragState } from '@/composables/use-inventory-drag';
 import InventoryToken from '@/a-game-scenes/inventory-scene/components/inventory-token.vue';
 
 const inv = useHeroInventoryStore();
+const hero = useHeroStore();
+const { t } = useI18n();
+const willDelta = ref(0);
+const willDeltaKey = ref(0);
+
+watch(
+  () => hero.knowledge?.current,
+  (next, previous) => {
+    if (next === undefined || previous === undefined || next === previous) return;
+    willDelta.value = next - previous;
+    willDeltaKey.value += 1;
+  },
+);
 
 const itemsBySlot = computed(() => inv.itemsBySlot);
 const selectedId = computed(() => inv.selectedItemId);
@@ -177,6 +233,97 @@ const centerHoleStyle = computed(() => {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.will-token {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.will-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.legend-text {
+  font-weight: 900;
+  color: #e8720c;
+  text-shadow:
+    0 0 6px rgba(232, 114, 12, 0.55),
+    0 1px 1px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.02em;
+}
+
+.will-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: 230px;
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 196, 255, 0.5);
+  background: rgba(10, 16, 28, 0.96);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s ease;
+}
+
+.cell.is-will:hover .will-tip,
+.cell.is-will:focus-visible .will-tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.will-delta {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  font-weight: 900;
+  font-size: 12px;
+  color: #ff9d9d;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  animation: will-delta-float 900ms ease-out forwards;
+}
+
+.will-delta.gain {
+  color: #8dffb0;
+}
+
+@keyframes will-delta-float {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .will-delta {
+    animation: none;
+    opacity: 0.9;
+    transform: translate(-50%, -8px);
+  }
 }
 
 .badge,

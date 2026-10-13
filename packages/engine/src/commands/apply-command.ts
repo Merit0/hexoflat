@@ -1,3 +1,11 @@
+import { isEnterableTile } from '../hero-movement/move-planner';
+import { coordinateKey, hexDistance } from '../utils/hex-utils';
+import { applyKnowledgeCommand } from '../knowledge/reducer';
+import type { KnowledgeState } from '../knowledge/state';
+import type { KnowledgeCommand, KnowledgeContext } from '../knowledge/commands';
+import { willZoneCharges } from '../knowledge/will-zone';
+import { actionWillCost, spendWill, willRejected } from '../knowledge/will';
+import { EHexActionType } from '../enums/hex-action-type';
 import HexMapModel from '../map/models/hex-map-model';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
@@ -12,16 +20,21 @@ import type { HeroState } from '../hero-movement/hero-state';
 import { getReachableTileDistances } from '../hero-movement/reachable-range-service';
 import { findShortestPath } from '../hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '../hero-movement/scout-progression';
-import { coordinateKey } from '../utils/hex-utils';
 import type { RngState } from '../utils/random-seeded';
 import { assertNever } from '../utils/assert-never';
-import { HEX_ENGINE_COMMAND_SCHEMAS, type HexEngineCommand } from './hex-engine-commands';
+import {
+  HEX_ENGINE_COMMAND_SCHEMAS,
+  type HexEngineCommand,
+  type MoveHeroCommand,
+} from './hex-engine-commands';
 import type { ApplyCommandResult, DomainEvent } from './types';
 
 export interface HexEngineState {
   map: HexMapModel;
   heroes: Record<string, HeroState>;
   rngState?: RngState;
+  knowledge?: KnowledgeState;
+  knowledgeContext?: KnowledgeContext;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -47,6 +60,9 @@ export function applyCommand(
   const events: DomainEvent[] = [];
 
   switch (parsed.type) {
+    case 'KNOWLEDGE':
+      events.push(...applyKnowledgeState(state, parsed));
+      break;
     case 'START_HEX_ACTION': {
       const { coordinates, actionType, toolKey, now } = parsed.payload;
       const tile = findTile(state.map, coordinates);
@@ -59,12 +75,45 @@ export function applyCommand(
         break;
       }
 
+      const cost = actionCharge(state, tile, actionType);
+      if (cost > 0) {
+        const { knowledge } = state;
+        const ref = `${actionType}:${coordinateKey(coordinates)}`;
+        if (!knowledge || knowledge.heroId !== parsed.payload.heroId) {
+          events.push(
+            willRejected(parsed.payload.heroId, 'NO_WILL_STATE', ref),
+            rejectedStart(coordinates, actionType, 'Will is unavailable.'),
+          );
+          break;
+        }
+        if (knowledge.current < cost) {
+          events.push(
+            willRejected(knowledge.heroId, 'INSUFFICIENT_WILL', ref),
+            rejectedStart(coordinates, actionType, 'Not enough Will.'),
+          );
+          break;
+        }
+      }
+
       const fullCtx: IActionContext = { ...ctx, map: state.map, now };
       const result = new ExecuteHexActionFeature(tile).execute(
         actionType,
         toolKey as THeroToolKey,
         fullCtx,
       );
+
+      if (result.ok && cost > 0) {
+        const knowledge = state.knowledge!;
+        const reason = actionType === EHexActionType.ENTER ? 'entry' : 'action';
+        const spent = spendWill(
+          knowledge,
+          cost,
+          reason,
+          `${actionType}:${coordinateKey(coordinates)}`,
+        );
+        knowledge.revision++;
+        events.push(...spent.events);
+      }
 
       events.push(
         result.ok
@@ -111,72 +160,113 @@ export function applyCommand(
       break;
     }
 
-    case 'MOVE_HERO': {
-      const { heroId, target } = parsed.payload;
-      const hero = state.heroes[heroId];
-
-      if (!hero) {
-        events.push({
-          type: 'HERO_MOVE_REJECTED',
-          payload: { heroId, target, reason: 'HERO_NOT_FOUND' },
-        });
-        break;
-      }
-
-      const targetKey = coordinateKey(target);
-      const isOccupiedByOtherHero = Object.values(state.heroes).some(
-        (other) => other.id !== heroId && coordinateKey(other.coordinates) === targetKey,
-      );
-
-      if (isOccupiedByOtherHero) {
-        events.push({
-          type: 'HERO_MOVE_REJECTED',
-          payload: { heroId, target, reason: 'TILE_OCCUPIED' },
-        });
-        break;
-      }
-
-      const moveSteps = getScoutMoveStepsForSteps(hero.heroSteps);
-      const reachable = getReachableTileDistances(state.map, hero.coordinates, moveSteps);
-
-      if (!reachable.has(targetKey)) {
-        events.push({
-          type: 'HERO_MOVE_REJECTED',
-          payload: { heroId, target, reason: 'UNREACHABLE' },
-        });
-        break;
-      }
-
-      const path = findShortestPath(state.map, hero.coordinates, target, moveSteps);
-
-      if (!path || path.length < 2) {
-        events.push({
-          type: 'HERO_MOVE_REJECTED',
-          payload: { heroId, target, reason: 'NO_PATH' },
-        });
-        break;
-      }
-
-      const stepsTaken = path.length - 1;
-      // Deliberate in-place mutation, not a copy-on-write update: applyCommand
-      // has exactly one writer per HexEngineState (the single-threaded
-      // server/client loop that owns `state`), so there's no concurrent
-      // reader to see a torn intermediate value. Don't "fix" this into
-      // rebuilding `state.heroes` — that would just be extra allocation for
-      // the same guarantee this already has.
-      hero.coordinates = { ...target };
-      hero.heroSteps += stepsTaken;
-
-      events.push({
-        type: 'HERO_MOVED',
-        payload: { heroId, path, heroSteps: hero.heroSteps },
-      });
+    case 'MOVE_HERO':
+      applyMoveHero(state, parsed.payload, events);
       break;
-    }
 
     default:
       return assertNever(parsed);
   }
 
   return { state, events };
+}
+
+function rejectedStart(
+  coordinates: IHexCoordinates,
+  actionType: EHexActionType,
+  message: string,
+): DomainEvent {
+  return { type: 'HEX_ACTION_START_REJECTED', payload: { coordinates, actionType, message } };
+}
+
+function actionCharge(state: HexEngineState, tile: HexTileModel, actionType: EHexActionType) {
+  const cost = actionWillCost(tile, actionType);
+  if (cost <= 0) return 0;
+  if (!state.knowledgeContext) return 0;
+  return willZoneCharges(state.knowledgeContext) ? cost : 0;
+}
+
+function applyKnowledgeState(state: HexEngineState, command: KnowledgeCommand): DomainEvent[] {
+  if (!state.knowledge || !state.knowledgeContext) {
+    return [{ type: 'KNOWLEDGE_REJECTED', payload: { reason: 'Missing authoritative context' } }];
+  }
+  const { action } = command.payload;
+  if (action.kind === 'step') {
+    const origin = state.knowledgeContext.coordinates;
+    if (
+      !origin ||
+      !action.target ||
+      hexDistance(origin, action.target) !== 1 ||
+      !isEnterableTile(state.map, action.target)
+    ) {
+      return [{ type: 'KNOWLEDGE_REJECTED', payload: { reason: 'Invalid movement step' } }];
+    }
+  }
+  return applyKnowledgeCommand(state.knowledge, command, state.knowledgeContext);
+}
+
+function applyMoveHero(
+  state: HexEngineState,
+  payload: MoveHeroCommand['payload'],
+  events: DomainEvent[],
+): void {
+  const { heroId, target } = payload;
+  const hero = state.heroes[heroId];
+
+  if (!hero) {
+    events.push({
+      type: 'HERO_MOVE_REJECTED',
+      payload: { heroId, target, reason: 'HERO_NOT_FOUND' },
+    });
+    return;
+  }
+
+  const targetKey = coordinateKey(target);
+  const isOccupiedByOtherHero = Object.values(state.heroes).some(
+    (other) => other.id !== heroId && coordinateKey(other.coordinates) === targetKey,
+  );
+
+  if (isOccupiedByOtherHero) {
+    events.push({
+      type: 'HERO_MOVE_REJECTED',
+      payload: { heroId, target, reason: 'TILE_OCCUPIED' },
+    });
+    return;
+  }
+
+  const moveSteps = getScoutMoveStepsForSteps(hero.heroSteps);
+  const reachable = getReachableTileDistances(state.map, hero.coordinates, moveSteps);
+
+  if (!reachable.has(targetKey)) {
+    events.push({
+      type: 'HERO_MOVE_REJECTED',
+      payload: { heroId, target, reason: 'UNREACHABLE' },
+    });
+    return;
+  }
+
+  const path = findShortestPath(state.map, hero.coordinates, target, moveSteps);
+
+  if (!path || path.length < 2) {
+    events.push({
+      type: 'HERO_MOVE_REJECTED',
+      payload: { heroId, target, reason: 'NO_PATH' },
+    });
+    return;
+  }
+
+  const stepsTaken = path.length - 1;
+  // Deliberate in-place mutation, not a copy-on-write update: applyCommand
+  // has exactly one writer per HexEngineState (the single-threaded
+  // server/client loop that owns `state`), so there's no concurrent
+  // reader to see a torn intermediate value. Don't "fix" this into
+  // rebuilding `state.heroes` — that would just be extra allocation for
+  // the same guarantee this already has.
+  hero.coordinates = { ...target };
+  hero.heroSteps += stepsTaken;
+
+  events.push({
+    type: 'HERO_MOVED',
+    payload: { heroId, path, heroSteps: hero.heroSteps },
+  });
 }

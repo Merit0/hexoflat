@@ -33,3 +33,6 @@ coverage
 
 # Claude Code local settings (machine-specific, not shared)
 .claude/settings.local.json
+
+# Local Codex instructions and feature specifications
+/.codex/

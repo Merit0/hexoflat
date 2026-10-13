@@ -9,6 +9,7 @@ import { CAMPING_BOARD } from '../content/boards/static/camping';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
 import { CAVE_PRESET } from '../content/boards/presets/cave';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
+import type { WillZone } from '../knowledge/will-zone';
 
 export type { LocationKey };
 
@@ -32,6 +33,7 @@ export type MapDefinition = {
   availableLayouts?: string[];
   staticDrawing?: StaticBoardDrawing;
   entryHexobjectKey: THexobjectKey;
+  willZone?: WillZone;
   safeZoneRadius?: number;
   fogPolicy?: TFogPolicy;
   /**
@@ -53,6 +55,7 @@ export class MapRegistry {
       entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
       safeZoneRadius: 1,
       fogPolicy: 'ALL_REVEALED',
+      willZone: 'free',
     },
     silesia: {
       key: 'silesia',

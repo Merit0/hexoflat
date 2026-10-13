@@ -463,6 +463,8 @@ Significant reveal types:
 
 # 10. Path of Will — Exploration Turn Model
 
+> **SUPERSEDED (2026-10-13):** the `GATHERED / COMMITTED / DISPERSED / GATHERING` Will state machine and Gather Will are replaced by the Will-as-token-stock economy ("Path of Will") — see `CLAUDE.md` (Current status) and `packages/engine/src/knowledge/`. Kept as decision history.
+
 This slice uses the newer Will state model:
 
 ```ts
@@ -1546,6 +1548,8 @@ Committed world topology must survive generator version changes.
 
 ## 30.3 Hero exploration state
 
+> **SUPERSEDED (2026-10-13):** the `WillState` below (`GATHERED / COMMITTED / DISPERSED / GATHERING` Will state machine and Gather Will are replaced by the Will-as-token-stock economy ("Path of Will") — see `CLAUDE.md` (Current status) and `packages/engine/src/knowledge/`. Kept as decision history.
+
 ```ts
 type WillState = 'GATHERED' | 'COMMITTED' | 'DISPERSED' | 'GATHERING';
 
@@ -2479,6 +2483,8 @@ Only silhouette/bearing.
 ## Phase 2 — Will / Burst / route interruption
 
 ### STEP 9 — Add Will state machine
+
+> **SUPERSEDED (2026-10-13):** the `GATHERED / COMMITTED / DISPERSED / GATHERING` Will state machine and Gather Will are replaced by the Will-as-token-stock economy ("Path of Will") — see `CLAUDE.md` (Current status) and `packages/engine/src/knowledge/`. Kept as decision history.
 
 `GATHERED / COMMITTED / DISPERSED / GATHERING`.
 

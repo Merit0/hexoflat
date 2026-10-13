@@ -22,28 +22,46 @@
     </dl>
 
     <div v-if="descriptor?.kind === 'DUNGEON'" class="dev-board-panel__actions">
-      <button type="button" @click="worldStore.devRegenerateDungeon()">Regenerate</button>
-      <button type="button" @click="worldStore.devNextSeed()">Next seed</button>
+      <button
+        type="button"
+        data-testid="dev-regenerate-button"
+        @click="worldStore.devRegenerateDungeon()"
+      >
+        Regenerate
+      </button>
+      <button type="button" data-testid="dev-next-seed-button" @click="worldStore.devNextSeed()">
+        Next seed
+      </button>
       <div class="dev-board-panel__force-layout">
-        <select v-model="selectedLayoutId">
+        <select v-model="selectedLayoutId" data-testid="dev-layout-select">
           <option v-for="layoutId in availableLayouts" :key="layoutId" :value="layoutId">
             {{ layoutId }}
           </option>
         </select>
-        <button type="button" @click="worldStore.devForceLayout(selectedLayoutId)">
+        <button
+          type="button"
+          data-testid="dev-force-layout-button"
+          @click="worldStore.devForceLayout(selectedLayoutId)"
+        >
           Force layout
         </button>
       </div>
     </div>
 
     <label v-if="canEditBoard" class="dev-board-panel__toggle">
-      <input type="checkbox" :checked="editorStore.isEditing" @change="onToggleEditBoard" />
+      <input
+        type="checkbox"
+        data-testid="dev-edit-board-toggle"
+        :checked="editorStore.isEditing"
+        @change="onToggleEditBoard"
+      />
       Edit board
     </label>
 
     <label class="dev-board-panel__toggle">
       <input
         type="checkbox"
+        data-testid="dev-show-whole-board-toggle"
         :checked="panelStore.showWholeBoard"
         @change="panelStore.toggleShowWholeBoard()"
       />
@@ -53,6 +71,7 @@
     <label class="dev-board-panel__toggle">
       <input
         type="checkbox"
+        data-testid="dev-show-zone-outlines-toggle"
         :checked="panelStore.showZoneOutlines"
         @change="panelStore.toggleShowZoneOutlines()"
       />

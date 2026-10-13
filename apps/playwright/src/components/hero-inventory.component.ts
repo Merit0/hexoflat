@@ -109,4 +109,43 @@ export class HeroInventoryComponent extends BaseComponent {
   async verifyItemEquipped(itemId: string, slot: EquipSlot): Promise<void> {
     await expect(this.equipSlot(slot).getByTestId(`equip-token-${itemId}`)).toBeVisible();
   }
+
+  private async getWillSlotKey(): Promise<string> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getWillSlotKey());
+  }
+
+  async verifyWillTokenInItsCell(): Promise<void> {
+    const cell = this.gridCell(await this.getWillSlotKey());
+    const token = cell.getByTestId('inventory-will-token');
+    await expect(token).toBeVisible();
+    await expect
+      .poll(async () => {
+        const current = await this.page.evaluate(
+          () => window.__HEXOFLAT_TEST__!.getKnowledge()?.current,
+        );
+        return (
+          (await cell.getByTestId('inventory-will-amount').textContent())?.trim() ===
+          String(current)
+        );
+      })
+      .toBe(true);
+  }
+
+  async verifyWillCellHoldsNoItem(): Promise<void> {
+    const cell = this.gridCell(await this.getWillSlotKey());
+    await expect(cell.locator('[data-testid^="inventory-token-"]')).toHaveCount(0);
+  }
+
+  async dragTokenToWillCell(itemId: string): Promise<void> {
+    await this.dragBetween(this.gridToken(itemId), this.gridCell(await this.getWillSlotKey()));
+  }
+
+  async verifyWillTooltipOnHover(): Promise<void> {
+    await this.gridCell(await this.getWillSlotKey()).hover();
+    await expect(this.page.getByTestId('inventory-will-tooltip')).toBeVisible();
+  }
+
+  async verifyItemStaysInGridSlot(itemId: string, slotKey: string): Promise<void> {
+    await this.verifyItemInGridSlot(itemId, slotKey);
+  }
 }
