@@ -129,6 +129,14 @@ export default tseslint.config(
     },
     rules: {
       'vue/multi-word-component-names': 'off',
+      'vue/no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "VElement[name=/^(button|input|select|textarea)$/] > VStartTag:not(:has(VAttribute[directive=false][key.name='data-testid'], VAttribute[directive=true][key.argument.name='data-testid']))",
+          message: 'Every button, input, select and textarea must have a data-testid attribute.',
+        },
+      ],
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',

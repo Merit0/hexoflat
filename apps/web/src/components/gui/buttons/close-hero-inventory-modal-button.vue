@@ -1,6 +1,13 @@
 <template>
   <div class="close-button-container">
-    <button type="button" class="closeInventoryBtn" @click="$emit('heroInventory')">CLOSE</button>
+    <button
+      type="button"
+      class="closeInventoryBtn"
+      data-testid="close-hero-inventory-button"
+      @click="$emit('heroInventory')"
+    >
+      CLOSE
+    </button>
   </div>
 </template>
 <script lang="ts">

@@ -42,6 +42,7 @@ const { t } = useI18n();
   font-family: inherit;
   font-size: 1.7rem;
   font-weight: 700;
+  line-height: 1;
   cursor: help;
   background: linear-gradient(180deg, #7a8da0, #1b2630 60%, #46586a);
   clip-path: polygon(
@@ -72,6 +73,9 @@ const { t } = useI18n();
     0 8px
   );
 }
+.help-btn:hover {
+  --face: linear-gradient(180deg, #4a5d6e, #34444f);
+}
 .help-btn:focus-visible {
   outline: 3px solid #f5c26b;
   outline-offset: 3px;
@@ -100,9 +104,12 @@ const { t } = useI18n();
     visibility 0.12s ease;
 }
 .help-tip b {
-  color: #e8720c;
+  color: #ffe98a;
   font-variant: small-caps;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 0 8px rgba(255, 233, 138, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.8);
 }
 .help:hover .help-tip,
 .help-btn:focus-visible + .help-tip {

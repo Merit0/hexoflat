@@ -18,6 +18,7 @@
       <button
         type="button"
         class="close-btn"
+        data-testid="knowledge-close"
         :aria-label="t('knowledge.close')"
         @click="closeKnowledgePanel()"
       >
@@ -32,15 +33,6 @@
       <template v-if="!active">
         <img class="hero-emblem" :src="heroImage" :alt="hero.hero.name" />
         <h3>{{ t('knowledge.mixed') }}</h3>
-        <p>
-          {{ t('knowledge.mastery') }}:
-          {{
-            masteryLevel === null
-              ? '—'
-              : `${'◆'.repeat(masteryLevel)}${'◇'.repeat(5 - masteryLevel)}`
-          }}
-        </p>
-        <p>{{ t('knowledge.description') }}</p>
         <p v-if="mode === 'return'">{{ t('knowledge.target') }}</p>
         <button
           type="button"
@@ -124,16 +116,19 @@
         </template>
         <template v-else>
           <p>{{ t('knowledge.target') }}</p>
-          <button type="button" :disabled="busy" @click="start">{{ t('knowledge.retry') }}</button>
+          <button type="button" data-testid="knowledge-retry" :disabled="busy" @click="start">
+            {{ t('knowledge.retry') }}
+          </button>
           <h3>{{ t('knowledge.review') }}</h3>
           <p>{{ t('knowledge.assistanceRule') }}</p>
           <template v-if="review">
             <p>{{ ret.reviewIndex + 1 }}/10 · {{ expression(review) }} = {{ review.answer }}</p>
             <div class="answers">
               <button
-                v-for="option in review.options"
+                v-for="(option, i) in review.options"
                 :key="option"
                 type="button"
+                :data-testid="`knowledge-review-answer-${i}`"
                 :disabled="busy"
                 @click="
                   send({
@@ -151,6 +146,7 @@
           <button
             v-if="canAssist"
             type="button"
+            data-testid="knowledge-assisted-return"
             :disabled="busy"
             @click="send({ kind: 'return', sessionId: ret.id, assisted: true })"
           >
@@ -173,7 +169,6 @@ import { knowledgePanelMode as mode, closeKnowledgePanel } from '@/composables/u
 import KnowledgeWillMeter from './knowledge-will-meter.vue';
 import KnowledgeHelp from './knowledge-help.vue';
 import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
-import { mastery } from '@hexoflat/engine/knowledge/math';
 import type { MathQuestion } from '@hexoflat/engine/knowledge/math';
 
 const { t } = useI18n();
@@ -208,14 +203,6 @@ const gradeText = computed(
 );
 const panel = ref<HTMLElement | null>(null);
 const heroImage = computed(() => `${import.meta.env.BASE_URL}hero-asssets/base-hero-hex.png`);
-const masteryLevel = computed(() => {
-  const levels = Object.values(hero.knowledge?.history ?? {})
-    .map(mastery)
-    .filter((value): value is number => value !== null);
-  return levels.length
-    ? Math.floor(levels.reduce((sum, level) => sum + level, 0) / levels.length)
-    : null;
-});
 const full = computed(() => !!hero.knowledge && hero.knowledge.current >= hero.knowledge.capacity);
 const missed = computed(
   () => ret.value?.questions.filter((q, i) => q.answer !== ret.value?.answers[i]).slice(0, 4) ?? [],

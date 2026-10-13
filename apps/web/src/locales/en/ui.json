@@ -52,7 +52,6 @@
     "returnLore": "When your Will runs dry, only a clear mind can lead you home. Answer with certainty — at least 17 of 20 — and the road back to camp will open.",
     "help": "About the Knowledge Hall",
     "mixed": "Mixed tables",
-    "description": "Multiplication and division from 2 to 9. One question is one Will, a quick answer is two. Stop whenever you like.",
     "start": "Focus",
     "full": "Your Will is stronger than ever! Time to set out on an adventure.",
     "noTimer": "No timer. Close and resume whenever you need.",
@@ -78,7 +77,6 @@
       "veryGood": "Very good",
       "excellent": "Excellent",
       "perfect": "Perfect"
-    },
-    "mastery": "Mastery"
+    }
   }
 }

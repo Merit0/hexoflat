@@ -69,10 +69,12 @@ p {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: 1fr 11px 1fr;
+  grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  box-sizing: border-box;
+  height: 68px;
+  padding: 4px 12px;
   background: linear-gradient(180deg, #5a6d7e, #202b36);
   clip-path: polygon(
     12px 0,
@@ -106,7 +108,8 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  align-self: stretch;
+  gap: 8px;
 }
 .will-figures {
   display: grid;
@@ -119,7 +122,7 @@ p {
   color: #f3e8d2;
 }
 .will-figures__value {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #f3e8d2;
 }
@@ -134,12 +137,14 @@ p {
   white-space: pre-line;
   text-align: center;
   font-size: 0.72rem;
-  line-height: 1.3;
+  line-height: 1.25;
+  font-weight: 600;
+  text-wrap: balance;
   color: rgba(243, 232, 210, 0.82);
 }
 .will-icon {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.6));
