@@ -12,6 +12,7 @@ import {
   locationWillZone,
 } from '@/services/knowledge/knowledge-controller';
 import { defineStore } from 'pinia';
+import { i18n } from '@/i18n';
 import { HeroModel } from '@hexoflat/engine/models/hero-model';
 import { fetchHero } from '../api/Requests';
 import { ApiError } from '../api/client';
@@ -267,7 +268,10 @@ export const useHeroStore = defineStore('hero', {
      * Returns the route without the hero's current tile, matching
      * planCombatRoute.
      */
-    planFreeRoamRoute(map: HexMapModel, target: IHexCoordinates): IHexCoordinates[] | null {
+    planFreeRoamRoute(
+      map: HexMapModel,
+      target: IHexCoordinates,
+    ): { route: IHexCoordinates[] | null; affordable: boolean } {
       const worldStore = useWorldMapStore();
       const heroState: HeroState = {
         id: this.hero.id,
@@ -291,7 +295,8 @@ export const useHeroStore = defineStore('hero', {
         this.knowledge?.current ?? 0,
         this.willZoneContext,
       );
-      return route && route.length <= budget ? route : null;
+      const affordable = !route || route.length <= budget;
+      return { route: affordable ? route : null, affordable };
     },
 
     /**
@@ -307,24 +312,34 @@ export const useHeroStore = defineStore('hero', {
       const events = useGameEventsStore();
       const combatStore = useCombatStore();
 
-      if (
-        !worldStore.map ||
-        !this.heroCoordinates ||
-        knowledgePanelMode.value ||
-        this.knowledge?.session?.status === 'returning'
-      )
+      if (!worldStore.map || !this.heroCoordinates) return false;
+      const warn = (message: string) => {
+        heroToolStore.setActionMessage(message);
         return false;
-      if (heroToolStore.isDragging || this.isHeroMoving) return false;
-      if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return false;
-      if (combatStore.combatActive && combatStore.combatStepsLeft <= 0) return false;
+      };
+      if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
+      if (this.knowledge?.session?.status === 'returning')
+        return warn(i18n.global.t('moveBlocked.returning'));
+      if (heroToolStore.isDragging) return false;
+      if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));
+      if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero')
+        return warn(i18n.global.t('moveBlocked.notYourTurn'));
+      if (combatStore.combatActive && combatStore.combatStepsLeft <= 0)
+        return warn(i18n.global.t('moveBlocked.noSteps'));
 
       const map = worldStore.map as HexMapModel;
-      if (!isEnterableTile(map, target)) return false;
+      if (!isEnterableTile(map, target)) return warn(i18n.global.t('moveBlocked.blockedTile'));
 
-      const route = combatStore.combatActive
-        ? planCombatRoute(map, this.heroCoordinates, target, combatStore.combatStepsLeft)
-        : this.planFreeRoamRoute(map, target);
-      if (!route) return false;
+      let route: IHexCoordinates[] | null;
+      if (combatStore.combatActive) {
+        route = planCombatRoute(map, this.heroCoordinates, target, combatStore.combatStepsLeft);
+        if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
+      } else {
+        const plan = this.planFreeRoamRoute(map, target);
+        route = plan.route;
+        if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'));
+        if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
+      }
 
       let stepsTaken = 0;
 
@@ -338,7 +353,10 @@ export const useHeroStore = defineStore('hero', {
       try {
         await executeMovementRoute(route, async (coord) => {
           if (willZoneCharges(this.willZoneContext)) {
-            if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) return false;
+            if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
+              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'));
+              return false;
+            }
           }
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;

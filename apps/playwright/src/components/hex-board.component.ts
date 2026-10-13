@@ -167,6 +167,20 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async getFreeNeighbors(): Promise<TestHexCoordinates[]> {
+    const from = await this.requireHeroCoordinates();
+    const free: TestHexCoordinates[] = [];
+    for (const candidate of await this.getNeighbors(from)) {
+      if ((await this.getTileHexobjectKey(candidate)) === null) free.push(candidate);
+    }
+    return free;
+  }
+
+  async clickTileAndDismissDetails(coordinates: TestHexCoordinates): Promise<void> {
+    await this.clickTile(coordinates);
+    await this.tileDetails.closeIfOpen();
+  }
+
   async tryStepAndVerifyBlocked(): Promise<void> {
     const from = await this.requireHeroCoordinates();
     for (const candidate of await this.getNeighbors(from)) {

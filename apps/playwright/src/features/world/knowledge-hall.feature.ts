@@ -64,4 +64,49 @@ export class KnowledgeHallFeature extends BaseFeature {
       await this.camp.knowledge.captureDesktop();
     });
   }
+  async startHall(): Promise<void> {
+    await this.step('Start a Hall challenge', () => this.camp.knowledge.start());
+  }
+  async answerQuestions(count: number, correct = true): Promise<void> {
+    await this.step(`Answer ${count} Hall question(s)`, async () => {
+      for (let i = 0; i < count; i++) await this.camp.knowledge.answer(correct);
+    });
+  }
+  async answerWithoutRejection(): Promise<void> {
+    await this.step('Pick the correct answer and see it accepted', () =>
+      this.camp.knowledge.pickCorrectAnswerAndVerifyAccepted(),
+    );
+  }
+  async interruptWithEscape(): Promise<void> {
+    await this.step('Interrupt the Hall with Escape and resume it', async () => {
+      const before = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+      await this.camp.knowledge.pressEscape();
+      await this.camp.knowledge.verifyClosed();
+      await this.openHall();
+      await this.camp.knowledge.verifyOpen();
+      await this.camp.knowledge.verifyQuestionIndex(before!.index);
+    });
+  }
+  async verifyHeroCannotMoveWhileOpen(): Promise<void> {
+    await this.step(
+      'Clicking a hex while the Hall is open explains why the hero stays',
+      async () => {
+        const from = await this.camp.hexBoard.requireHeroCoordinates();
+        const pattern = /Закрий Зал Знань|Close the Knowledge Hall/;
+        let told = false;
+        for (const candidate of await this.camp.hexBoard.getFreeNeighbors()) {
+          await this.camp.hexBoard.clickTileAndDismissDetails(candidate);
+          told = await this.camp.actionAlertBanner.appearsMatching(pattern);
+          if (told) break;
+        }
+        if (!told) await this.camp.actionAlertBanner.verifyIsVisibleMatching(pattern);
+        await this.camp.hexBoard.verifyHeroSettledAt(from);
+      },
+    );
+  }
+  async verifyMistakeShowsCorrectAnswerThenAdvances(): Promise<void> {
+    await this.step('A wrong answer pauses on the correct one, then moves on by itself', () =>
+      this.camp.knowledge.verifyCorrectAnswerShownAfterMistake(),
+    );
+  }
 }

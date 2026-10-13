@@ -28,6 +28,7 @@ export interface HexoflatTestApi {
   } | null;
   prepareKnowledgeWorld(current: number): void;
   setWill(current: number): void;
+  getWillSlotKey(): string;
   getKnowledgeRules(): { startingWill: number; capacity: number };
   isBoardReady(): boolean;
 

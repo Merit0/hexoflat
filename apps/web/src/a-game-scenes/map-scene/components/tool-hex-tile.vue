@@ -274,6 +274,8 @@ async function executeAction() {
     if (await heroStore.knowledgeAction({ kind: 'open' })) {
       heroToolStore.stopTool();
       openKnowledgePanel('hall');
+    } else {
+      heroToolStore.setActionMessage(t('moveBlocked.hallUnavailable'));
     }
     return;
   }

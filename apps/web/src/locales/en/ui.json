@@ -22,6 +22,17 @@
     "equip": "Equip",
     "drop": "Drop"
   },
+  "moveBlocked": {
+    "panel": "Close the Knowledge Hall to move",
+    "returning": "Finish returning to camp first",
+    "moving": "The hero is already on the move",
+    "notYourTurn": "It's not your turn",
+    "noSteps": "No movement left this turn",
+    "blockedTile": "You can't walk there",
+    "tooFar": "Too far, or the way is blocked",
+    "hallUnavailable": "Stand next to the Knowledge book, standing still, to open the Hall",
+    "noWill": "Not enough Will"
+  },
   "knowledge": {
     "title": "Knowledge Hall",
     "returnTitle": "Return challenge",
@@ -35,13 +46,12 @@
     "tooltipRefillPost": "refills it, so do not waste it.",
     "mixed": "Mixed tables",
     "description": "Multiplication and division from 2 to 9 · 20 questions",
-    "start": "Start challenge",
+    "start": "Focus",
     "full": "Your Will is stronger than ever! Time to set out on an adventure.",
     "noTimer": "No timer. Close and resume whenever you need.",
     "progress": "Question {index} of 20",
     "correct": "Correct!",
     "wrong": "Incorrect. Try to remember the correct answer.",
-    "next": "Continue",
     "reward": "You will receive {will} Will",
     "awarded": "You gained {will} Will",
     "claim": "Claim Will",

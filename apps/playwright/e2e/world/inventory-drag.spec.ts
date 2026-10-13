@@ -12,9 +12,27 @@ test('Verify dragging a grid item to another grid slot moves it there', async ()
   await new TakeTokenFeature('starterAxe').take();
   await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
 
-  await new DragInventoryItemFeature().dragToGridSlot(HexobjectKeys.axe, 'r0c0');
+  await new DragInventoryItemFeature().dragToGridSlot(HexobjectKeys.axe, 'r0c1');
 
-  await new VerifyInventoryFeature().verifyItemInGridSlot(HexobjectKeys.axe, 'r0c0');
+  await new VerifyInventoryFeature().verifyItemInGridSlot(HexobjectKeys.axe, 'r0c1');
+});
+
+test('Verify the Will token sits in the inventory grid and no item can be dropped onto its cell', async () => {
+  await new OpenCampingMapFeature().open();
+  const verifyInventory = new VerifyInventoryFeature();
+  await verifyInventory.verifyPanelIsVisible();
+  await verifyInventory.verifyWillTokenPresent();
+  await new TakeTokenFeature('starterAxe').take();
+  await verifyInventory.verifyContainsItem(HexobjectKeys.axe);
+
+  const dragItem = new DragInventoryItemFeature();
+  await dragItem.dragToWillCell(HexobjectKeys.axe);
+  await verifyInventory.verifyWillCellStaysFree();
+  await verifyInventory.verifyWillTokenPresent();
+
+  await dragItem.dragToGridSlot(HexobjectKeys.axe, 'r0c1');
+  await verifyInventory.verifyItemInGridSlot(HexobjectKeys.axe, 'r0c1');
+  await verifyInventory.verifyWillTokenPresent();
 });
 
 test('Verify dragging an item onto an equip slot equips it, and dragging it back unequips it', async () => {

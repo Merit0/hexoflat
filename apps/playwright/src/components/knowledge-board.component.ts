@@ -58,7 +58,6 @@ export class KnowledgeBoardComponent extends BaseComponent {
       await option.focus();
       await option.press('Enter');
     } else await option.click();
-    await this.page.getByTestId('knowledge-next').click();
     await expect
       .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.status))
       .toBe(state.index === 19 ? 'result' : 'question');
@@ -89,5 +88,34 @@ export class KnowledgeBoardComponent extends BaseComponent {
     await expect
       .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.index))
       .toBe(index);
+  }
+  async pressEscape(): Promise<void> {
+    await this.page.keyboard.press('Escape');
+  }
+  async verifyClosed(): Promise<void> {
+    await expect(this.page.getByTestId('knowledge-board')).toBeHidden();
+  }
+  async verifyOpen(): Promise<void> {
+    await expect(this.page.getByTestId('knowledge-board')).toBeVisible();
+  }
+  async pickCorrectAnswerAndVerifyAccepted(): Promise<void> {
+    const state = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+    if (!state) throw new Error('No challenge');
+    await this.page.getByTestId(`knowledge-answer-${state.options.indexOf(state.answer!)}`).click();
+    await this.verifyQuestionIndex(state.index + 1);
+    await this.verifyAnswerAccepted();
+  }
+  async verifyAnswerAccepted(): Promise<void> {
+    await expect(this.page.getByText(/Action not completed|Дію не виконано/)).toBeHidden();
+  }
+  async verifyCorrectAnswerShownAfterMistake(): Promise<void> {
+    const state = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+    if (!state) throw new Error('No challenge');
+    const wrong = state.options.findIndex((answer) => answer !== state.answer);
+    await this.page.getByTestId(`knowledge-answer-${wrong}`).click();
+    const right = this.page.getByTestId(`knowledge-answer-${state.options.indexOf(state.answer!)}`);
+    await expect(right).toHaveClass(/is-correct/);
+    await expect(this.page.getByTestId('knowledge-next')).toHaveCount(0);
+    await this.verifyQuestionIndex(state.index + 1);
   }
 }

@@ -77,6 +77,8 @@ function transition(
 ): boolean {
   if (action.kind === 'open') {
     if (!available('hall', state, ctx)) return false;
+    if (state.session?.mode === 'hall' && state.session.originMapId !== ctx.mapId)
+      state.session = null;
     if (state.session?.mode === 'return' && state.session.status !== 'returning') {
       state.session = state.pausedHall;
       state.pausedHall = null;

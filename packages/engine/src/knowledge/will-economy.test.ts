@@ -236,3 +236,32 @@ describe('Will-priced actions', () => {
     }
   });
 });
+
+describe('stale Hall lessons', () => {
+  it('drops a Hall lesson bound to a rebuilt camp map when the book is opened again', () => {
+    const state = createKnowledgeState('hero');
+    const camp: KnowledgeContext = {
+      ...paid,
+      locationKey: 'camping',
+      willZone: 'free',
+      mapId: 'camp-1',
+      atBook: true,
+    };
+    const send = (context: KnowledgeContext, kind: 'start' | 'open') =>
+      applyKnowledgeCommand(
+        state,
+        {
+          type: 'KNOWLEDGE',
+          payload: {
+            heroId: 'hero',
+            revision: state.revision,
+            action: kind === 'start' ? { kind, mode: 'hall', seed: 's' } : { kind },
+          },
+        },
+        context,
+      )[0].type;
+    expect(send(camp, 'start')).toBe('KNOWLEDGE_CHANGED');
+    expect(send({ ...camp, mapId: 'camp-2' }, 'open')).toBe('KNOWLEDGE_CHANGED');
+    expect(state.session).toBeNull();
+  });
+});

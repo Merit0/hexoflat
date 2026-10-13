@@ -9,7 +9,7 @@ import {
 } from '@/render/board-camera';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type {
   HexoflatTestApi,
@@ -81,6 +81,9 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
         throw new Error('Invalid fixture');
       writeKnowledge({ ...heroStore.knowledge, current });
       heroStore.loadKnowledge();
+    },
+    getWillSlotKey() {
+      return WILL_SLOT_KEY;
     },
     getKnowledgeRules() {
       return { startingWill: KNOWLEDGE_RULES.startingWill, capacity: KNOWLEDGE_RULES.capacity };

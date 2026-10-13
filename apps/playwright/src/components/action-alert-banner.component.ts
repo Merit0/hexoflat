@@ -17,6 +17,20 @@ export class ActionAlertBannerComponent extends BaseComponent {
     await expect(this.banner).toContainText(expected);
   }
 
+  async appearsMatching(pattern: RegExp): Promise<boolean> {
+    try {
+      await expect(this.banner).toContainText(pattern, { timeout: 1_500 });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async verifyIsVisibleMatching(pattern: RegExp): Promise<void> {
+    await expect(this.banner).toBeVisible();
+    await expect(this.banner).toContainText(pattern);
+  }
+
   /** The banner clears itself a few seconds after showing — no manual dismiss exists. */
   async verifyAutoHides(): Promise<void> {
     await expect(this.banner).toBeHidden({ timeout: AUTO_HIDE_TIMEOUT_MS });

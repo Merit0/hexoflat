@@ -63,6 +63,13 @@
             :key="option"
             type="button"
             :data-testid="`knowledge-answer-${i}`"
+            :class="{
+              'is-correct': active.status === 'feedback' && option === question.answer,
+              'is-wrong':
+                active.status === 'feedback' &&
+                option === active.answers[active.index] &&
+                option !== question.answer,
+            }"
             :disabled="busy || active.status === 'feedback'"
             @click="
               send({
@@ -74,7 +81,13 @@
             "
           >
             {{ option
-            }}<span v-if="active.status === 'feedback' && option === question.answer"> ✓</span>
+            }}<span
+              v-if="active.status === 'feedback' && option === question.answer"
+              class="check"
+              aria-hidden="true"
+            >
+              ✓</span
+            >
           </button>
         </div>
         <div v-if="active.status === 'feedback'" role="status" aria-live="polite">
@@ -85,15 +98,6 @@
                 : t('knowledge.wrong')
             }}
           </p>
-          <p>{{ expression(question) }} = {{ question.answer }}</p>
-          <button
-            type="button"
-            data-testid="knowledge-next"
-            :disabled="busy"
-            @click="send({ kind: 'next', sessionId: active.id, questionId: question.id })"
-          >
-            {{ t('knowledge.next') }}
-          </button>
         </div>
       </template>
       <template v-else-if="active.status === 'result'">
@@ -166,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { knowledgePanelMode as mode, closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
@@ -222,6 +226,38 @@ const expression = (q: MathQuestion) =>
 function start() {
   if (mode.value) void send({ kind: 'start', mode: mode.value, seed: crypto.randomUUID() });
 }
+const FEEDBACK_PAUSE_MS = { correct: 700, wrong: 2400 };
+let nextTimer: number | null = null;
+function clearNextTimer() {
+  if (nextTimer !== null) window.clearTimeout(nextTimer);
+  nextTimer = null;
+}
+function scheduleNext(sessionId: string, questionId: string, delay: number) {
+  nextTimer = window.setTimeout(() => {
+    nextTimer = null;
+    const current = active.value;
+    if (current?.id !== sessionId || current.status !== 'feedback') return;
+    if (busy.value) return scheduleNext(sessionId, questionId, 100);
+    void send({ kind: 'next', sessionId, questionId });
+  }, delay);
+}
+watch(
+  () => [active.value?.id, active.value?.index, active.value?.status],
+  () => {
+    clearNextTimer();
+    const current = active.value;
+    const asked = question.value;
+    if (current?.status !== 'feedback' || !asked) return;
+    const wasCorrect = current.answers[current.index] === asked.answer;
+    scheduleNext(
+      current.id,
+      asked.id,
+      wasCorrect ? FEEDBACK_PAUSE_MS.correct : FEEDBACK_PAUSE_MS.wrong,
+    );
+  },
+  { immediate: true },
+);
+onBeforeUnmount(clearNextTimer);
 watch(
   () => [mode.value, active.value?.index, active.value?.status],
   async () => {
@@ -286,8 +322,31 @@ button {
   cursor: pointer;
 }
 .answers button {
-  font-size: 1.35rem;
+  font-size: 1.5rem;
+  font-weight: 800;
   min-height: 54px;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.answers button:disabled {
+  opacity: 0.85;
+}
+.answers button:disabled:not(.is-correct):not(.is-wrong) {
+  opacity: 0.6;
+}
+.answers button.is-correct {
+  background: #1f6b3a;
+  border-color: #5be28a;
+  box-shadow: 0 0 0 2px rgba(91, 226, 138, 0.35);
+}
+.answers button.is-wrong {
+  background: #7a2530;
+  border-color: #ff7a8a;
+}
+.check {
+  color: #5dff93;
+  font-weight: 900;
+  text-shadow: 0 0 6px rgba(93, 255, 147, 0.6);
 }
 button:disabled {
   opacity: 0.5;
