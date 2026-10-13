@@ -23,7 +23,7 @@
     "drop": "Drop"
   },
   "moveBlocked": {
-    "panel": "Close the Knowledge Hall or use Escape to move",
+    "panel": "Close the Book of Will or use Escape to move",
     "returning": "Finish returning to camp first",
     "moving": "The hero is already on the move",
     "notYourTurn": "It's not your turn",
@@ -34,10 +34,11 @@
     "noWill": "Not enough Will"
   },
   "tool": {
-    "open": "Open"
+    "open": "Open",
+    "read": "Read"
   },
   "knowledge": {
-    "title": "Knowledge Hall",
+    "title": "Book of Will",
     "returnTitle": "Return challenge",
     "close": "Close and save challenge",
     "will": "Will: {current}/{capacity}",
@@ -53,7 +54,7 @@
     "meterHint": "Answer questions correctly to\ngain Will and reach milestones.",
     "hallLore": "Knowledge is the wellspring of Will. Here you earn the Will that lets you travel the whole world — every step beyond camp and every deed draws on it. Answer true and swift: the sharper the mind, the stronger the Will.",
     "returnLore": "When your Will runs dry, only a clear mind can lead you home. Answer with certainty — at least 17 of 20 — and the road back to camp will open.",
-    "help": "About the Knowledge Hall",
+    "help": "About the Book of Will",
     "start": "Focus",
     "full": "Your Will is stronger than ever! Time to set out on an adventure.",
     "progress": "Question {index} of 20",

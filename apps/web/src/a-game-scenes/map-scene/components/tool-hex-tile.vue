@@ -8,10 +8,25 @@
             class="do-btn"
             :class="{ 'is-denied': denied }"
             data-testid="tool-action-button"
+            :aria-label="bestActionLabel"
             :aria-disabled="!canAffordBest"
             @click.stop="executeAction"
           >
-            {{ bestActionLabel }}
+            <svg
+              v-if="isReadAction"
+              class="eye-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z" />
+              <circle cx="12" cy="12" r="3.2" />
+            </svg>
+            <template v-else>{{ bestActionLabel }}</template>
           </button>
           <div v-if="bestActionCost > 0" class="will-meta">
             <span class="will-chip" data-testid="tool-action-cost">
@@ -186,9 +201,15 @@ const bestAction = computed<ResolvedAction | null>(() => {
   );
 });
 
+const isReadAction = computed(
+  () =>
+    hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.KNOWLEDGE_BOOK &&
+    activeToolKey.value === HEXOBJECT_KEYS.HAND,
+);
 const bestActionLabel = computed(() => {
   if (!bestAction.value) return null;
   const object = hoveredTile.value?.hexobject;
+  if (isReadAction.value) return t('tool.read');
   const isHandOnBuilding =
     activeToolKey.value === HEXOBJECT_KEYS.HAND &&
     object?.groupType === EHexobjectGroup.CONSTRUCTION &&
@@ -419,6 +440,12 @@ async function executeAction() {
   font-weight: 800;
   line-height: 13px;
   white-space: nowrap;
+}
+
+.eye-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
 }
 
 .do-btn:hover {

@@ -158,7 +158,7 @@ export class KnowledgeBoardComponent extends BaseComponent {
     await this.page.getByTestId('knowledge-help').hover();
     const tip = this.page.getByTestId('knowledge-help-tip');
     await expect(tip).toBeVisible();
-    await expect(tip).toContainText(/Зал Знань|Knowledge Hall/);
+    await expect(tip).toContainText(/Книга Волі|Book of Will/);
   }
   async verifyFreshStart(): Promise<void> {
     await expect(this.page.getByTestId('knowledge-start')).toBeEnabled();

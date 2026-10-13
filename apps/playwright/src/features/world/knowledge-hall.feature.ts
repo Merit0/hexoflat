@@ -108,7 +108,7 @@ export class KnowledgeHallFeature extends BaseFeature {
       'Clicking a hex while the Hall is open explains why the hero stays',
       async () => {
         const from = await this.camp.hexBoard.requireHeroCoordinates();
-        const pattern = /Закрий Зал Знань|Close the Knowledge Hall/;
+        const pattern = /Закрий Книгу Волі|Close the Book of Will/;
         let told = false;
         for (const candidate of await this.camp.hexBoard.getFreeNeighbors()) {
           await this.camp.hexBoard.clickTileAndDismissDetails(candidate);
@@ -126,7 +126,7 @@ export class KnowledgeHallFeature extends BaseFeature {
     );
   }
   async verifyHelpTooltip(): Promise<void> {
-    await this.step('Hovering the question mark explains the Knowledge Hall', () =>
+    await this.step('Hovering the question mark explains the Book of Will', () =>
       this.camp.knowledge.verifyHelpTooltipOnHover(),
     );
   }
