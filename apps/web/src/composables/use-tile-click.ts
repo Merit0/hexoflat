@@ -1,3 +1,4 @@
+import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { i18n } from '@/i18n';
 import { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { EHexobjectGroup, THexobject } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -65,6 +66,11 @@ export function useTileClick() {
     if (combatStore.combatActive && combatStore.combatTurnSide === 'hero') {
       const removed = combatStore.removeCombatDefendMarker(tile.coordinates);
       if (removed) return;
+    }
+
+    if (knowledgePanelMode.value) {
+      await heroStore.moveHeroTo(tile.coordinates);
+      return;
     }
 
     if (heroToolStore.isDragging) {

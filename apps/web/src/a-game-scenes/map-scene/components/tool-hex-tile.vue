@@ -27,7 +27,7 @@
         </button>
       </div>
 
-      <div v-if="isWorking" class="time-chip label" data-testid="tool-working-timer">
+      <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
         {{ secondsLeft }}s
       </div>
     </div>
@@ -54,6 +54,7 @@ import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { getPrototype, getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
+import { useBookReading } from '@/composables/use-book-reading';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -90,10 +91,12 @@ const hoveredTile = computed<HexTileModel | null>(() => {
   );
 });
 
-const posStyle = computed(() => {
-  if (!heroToolStore.hover) return { display: 'none' };
+const { isReading, anchor } = useBookReading(activeToolKey);
 
-  const pseudoTile: IHexPositioned = { coordinates: heroToolStore.hover };
+const posStyle = computed(() => {
+  if (!anchor.value) return { display: 'none' };
+
+  const pseudoTile: IHexPositioned = { coordinates: anchor.value };
   const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth, props.tileHeight);
 
   return {
@@ -103,7 +106,7 @@ const posStyle = computed(() => {
 
 const isHoverOnLeft = computed(() => {
   const origin = heroToolStore.origin;
-  const hover = heroToolStore.hover;
+  const hover = anchor.value;
   if (!origin || !hover) return false;
 
   const originPos = calcHexPixelPosition(
@@ -246,6 +249,7 @@ onBeforeUnmount(() => {
 });
 
 const isWorking = computed(() => {
+  if (isReading.value) return true;
   const a = pendingAction.value;
   if (!a?.endsAt) return false;
 
@@ -295,7 +299,6 @@ async function executeAction() {
 
   if (tile.hexobject?.hexobjectKey === 'knowledge-book') {
     if (await heroStore.knowledgeAction({ kind: 'open' })) {
-      heroToolStore.stopTool();
       openKnowledgePanel('hall');
     } else {
       flashDenied();
@@ -475,6 +478,7 @@ async function executeAction() {
 }
 
 .tool-hex-tile.doing {
+  background-image: none;
   animation: tool-chop 220ms ease-in-out infinite;
   scale: 0.7;
 }

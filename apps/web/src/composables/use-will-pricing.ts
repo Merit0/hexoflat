@@ -19,5 +19,5 @@ export function useWillPricing() {
     return cost <= will.value;
   }
 
-  return { will, charges, costOf, canAfford };
+  return { costOf, canAfford };
 }

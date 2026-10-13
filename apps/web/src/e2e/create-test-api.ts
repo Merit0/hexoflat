@@ -72,7 +72,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
         current > KNOWLEDGE_RULES.capacity
       )
         throw new Error('Invalid fixture');
-      const state = { ...heroStore.knowledge, current, session: null, pausedHall: null };
+      const state = { ...heroStore.knowledge, current, session: null };
       writeKnowledge(state);
       heroStore.loadKnowledge();
       worldStore.goToLocation('silesia');

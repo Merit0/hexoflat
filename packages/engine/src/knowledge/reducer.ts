@@ -43,8 +43,6 @@ function start(
     )
   )
     return false;
-  if (action.mode === 'return' && previous?.mode === 'hall' && previous.status !== 'done')
-    state.pausedHall = previous;
   state.sequence++;
   const id = `${state.heroId}:${state.sequence}`;
   state.session =
@@ -161,7 +159,6 @@ function transition(
   if (action.kind === 'open') {
     if (!available('hall', state, ctx)) return false;
     if (state.session?.status !== 'returning') state.session = null;
-    state.pausedHall = null;
     return true;
   }
   if (action.kind === 'step') {

@@ -35,6 +35,10 @@ export class CampingMapPage extends BasePage {
     await this.hexBoard.waitForReady();
   }
 
+  async verifyUrlMatches(pattern: RegExp): Promise<void> {
+    await expect(this.page).toHaveURL(pattern);
+  }
+
   async verifyUrlIsCamping(): Promise<void> {
     await expect(this.page).toHaveURL(/\/world\/camping/);
   }

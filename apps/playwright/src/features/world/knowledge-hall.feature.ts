@@ -52,8 +52,12 @@ export class KnowledgeHallFeature extends BaseFeature {
       await this.camp.knowledge.verifyMobileQuestion();
       for (let i = 0; i < correct; i++) {
         if (reload && i === Math.floor(correct / 2)) {
+          const saved = await this.page.evaluate(
+            () => window.__HEXOFLAT_TEST__!.getKnowledge()!.current,
+          );
           await this.camp.reload();
           await this.camp.waitUntilReady();
+          await this.camp.knowledge.verifyWill(saved);
           await this.openHall();
           await this.camp.knowledge.verifyFreshStart();
           await this.camp.knowledge.start();

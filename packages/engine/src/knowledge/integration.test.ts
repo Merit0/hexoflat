@@ -7,7 +7,7 @@ import {
 import { serializeState, deserializeState, SnapshotChecksumError } from '../commands/snapshot';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
 import { createKnowledgeState } from './state';
-import { KNOWLEDGE_RULES, effectiveWillCapacity, mastery, travelStepBudget } from './math';
+import { KNOWLEDGE_RULES, effectiveWillCapacity, travelStepBudget } from './math';
 
 function stateFixture(): HexEngineState {
   const map = new HexMapBuilder().name('world').width(3).height(3).build();
@@ -67,9 +67,7 @@ describe('knowledge engine integration', () => {
     snapshot.knowledge = { ...snapshot.knowledge!, current: 10 };
     expect(() => deserializeState(snapshot, 0)).toThrow(SnapshotChecksumError);
   });
-  it('keeps mastery separate and uses capacity and actual Will for travel', () => {
-    expect(mastery([])).toBeNull();
-    expect(mastery([true, true, true])).toBe(5);
+  it('uses capacity and actual Will for travel', () => {
     expect(effectiveWillCapacity(50, [{ source: 'future-item', additionalCapacity: 10 }])).toBe(60);
     expect(travelStepBudget(5, 2, paid)).toBe(2);
     expect(travelStepBudget(5, 0, free)).toBe(5);

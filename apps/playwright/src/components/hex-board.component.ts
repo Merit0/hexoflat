@@ -167,6 +167,17 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async hoverNeighborWithKey(hexobjectKey: string): Promise<void> {
+    const from = await this.requireHeroCoordinates();
+    for (const candidate of await this.getNeighbors(from)) {
+      if ((await this.getTileHexobjectKey(candidate)) === hexobjectKey) {
+        await this.hoverTile(candidate);
+        return;
+      }
+    }
+    throw new Error(`No neighbouring hex holds "${hexobjectKey}".`);
+  }
+
   async getFreeNeighbors(): Promise<TestHexCoordinates[]> {
     const from = await this.requireHeroCoordinates();
     const free: TestHexCoordinates[] = [];

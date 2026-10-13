@@ -83,7 +83,6 @@ describe('challenge recovery and isolation', () => {
     expect(h.state.session).not.toBeNull();
     expect(h.send({ kind: 'open' })).toBe('KNOWLEDGE_CHANGED');
     expect(h.state.session).toBeNull();
-    expect(h.state.pausedHall).toBeNull();
     expect(h.send({ kind: 'start', mode: 'hall', seed: 'fresh' })).toBe('KNOWLEDGE_CHANGED');
     expect((h.state.session as HallSession).index).toBe(0);
   });

@@ -134,12 +134,6 @@ export function grade(correct: number): string {
   ];
 }
 
-/** Candidate learning display, distinct from session accuracy and earned Will. */
-export function mastery(results: boolean[]): number | null {
-  if (results.length < 3) return null;
-  return Math.floor((5 * results.filter(Boolean).length) / results.length);
-}
-
 export interface WillCapacityModifier {
   source: string;
   additionalCapacity: number;

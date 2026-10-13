@@ -66,18 +66,11 @@ export const sessionSchema = z.discriminatedUnion('mode', [returnSessionSchema, 
 
 function dropLegacyHallSessions(value: unknown): unknown {
   if (!value || typeof value !== 'object') return value;
-  const record: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-  for (const key of ['session', 'pausedHall']) {
-    const session = record[key];
-    if (
-      session &&
-      typeof session === 'object' &&
-      'questions' in session &&
-      (session as { mode?: unknown }).mode === 'hall'
-    )
-      record[key] = null;
-  }
-  return record;
+  const record = value as Record<string, unknown>;
+  const session = record.session as { mode?: unknown } | null | undefined;
+  const isLegacyHall =
+    !!session && typeof session === 'object' && 'questions' in session && session.mode === 'hall';
+  return isLegacyHall ? { ...record, session: null } : record;
 }
 
 const knowledgeStateObjectSchema = z
@@ -90,7 +83,6 @@ const knowledgeStateObjectSchema = z
     sequence: z.number().int().nonnegative(),
     failedReturns: z.number().int().nonnegative(),
     session: sessionSchema.nullable(),
-    pausedHall: hallSessionSchema.nullable().default(null),
     lastStep: z
       .object({
         mapId: z.string(),
@@ -108,7 +100,6 @@ export const knowledgeStateSchema = z.preprocess(
   knowledgeStateObjectSchema,
 );
 export type KnowledgeState = z.infer<typeof knowledgeStateObjectSchema>;
-export type KnowledgeSession = z.infer<typeof sessionSchema>;
 export type ReturnSession = z.infer<typeof returnSessionSchema>;
 export type HallSession = z.infer<typeof hallSessionSchema>;
 
@@ -122,7 +113,6 @@ export function createKnowledgeState(heroId: string): KnowledgeState {
     sequence: 0,
     failedReturns: 0,
     session: null,
-    pausedHall: null,
     lastStep: null,
     history: {},
   };
