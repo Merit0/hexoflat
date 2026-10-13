@@ -15,7 +15,7 @@ test('Will depletion, emergency return, endless Hall questions and capped refill
   await knowledge.fillToCapacity();
 });
 
-test('Escape interrupts the Hall, the lesson resumes and correct answers are still accepted', async () => {
+test('Escape interrupts the Hall, reopening starts fresh and correct answers are accepted', async () => {
   test.setTimeout(120_000);
   await new OpenCampingMapFeature().open();
   const knowledge = new KnowledgeHallFeature();
@@ -23,6 +23,7 @@ test('Escape interrupts the Hall, the lesson resumes and correct answers are sti
   await knowledge.startHall();
   await knowledge.answerQuestions(3);
   await knowledge.interruptWithEscape();
+  await knowledge.startHall();
   await knowledge.answerWithoutRejection();
   await knowledge.verifyMistakeShowsCorrectAnswerThenAdvances();
 });

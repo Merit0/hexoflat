@@ -32,19 +32,18 @@
       <hr class="rule" />
       <template v-if="!active">
         <img class="hero-emblem" :src="heroImage" :alt="hero.hero.name" />
-        <h3>{{ t('knowledge.mixed') }}</h3>
         <p v-if="mode === 'return'">{{ t('knowledge.target') }}</p>
         <button
           type="button"
           data-testid="knowledge-start"
           :disabled="busy || hero.knowledgeError || (mode === 'hall' && full)"
-          aria-describedby="knowledge-entry-message"
+          :aria-describedby="mode === 'hall' && full ? 'knowledge-entry-message' : undefined"
           @click="start"
         >
           {{ t('knowledge.start') }}
         </button>
-        <p id="knowledge-entry-message">
-          {{ mode === 'hall' && full ? t('knowledge.full') : t('knowledge.noTimer') }}
+        <p v-if="mode === 'hall' && full" id="knowledge-entry-message">
+          {{ t('knowledge.full') }}
         </p>
       </template>
       <template v-else-if="question && ['question', 'feedback'].includes(active.status)">

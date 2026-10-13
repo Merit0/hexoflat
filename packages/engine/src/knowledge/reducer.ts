@@ -160,12 +160,8 @@ function transition(
 ): boolean {
   if (action.kind === 'open') {
     if (!available('hall', state, ctx)) return false;
-    if (state.session?.mode === 'hall' && state.session.originMapId !== ctx.mapId)
-      state.session = null;
-    if (state.session?.mode === 'return' && state.session.status !== 'returning') {
-      state.session = state.pausedHall;
-      state.pausedHall = null;
-    }
+    if (state.session?.status !== 'returning') state.session = null;
+    state.pausedHall = null;
     return true;
   }
   if (action.kind === 'step') {

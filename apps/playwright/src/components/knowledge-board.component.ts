@@ -160,4 +160,13 @@ export class KnowledgeBoardComponent extends BaseComponent {
     await expect(tip).toBeVisible();
     await expect(tip).toContainText(/Зал Знань|Knowledge Hall/);
   }
+  async verifyFreshStart(): Promise<void> {
+    await expect(this.page.getByTestId('knowledge-start')).toBeEnabled();
+    await expect(this.page.getByTestId('knowledge-question')).toBeHidden();
+    await expect
+      .poll(() =>
+        this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.status ?? null),
+      )
+      .toBeNull();
+  }
 }

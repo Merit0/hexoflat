@@ -52,13 +52,11 @@ export class KnowledgeHallFeature extends BaseFeature {
       await this.camp.knowledge.verifyMobileQuestion();
       for (let i = 0; i < correct; i++) {
         if (reload && i === Math.floor(correct / 2)) {
-          const index = await this.page.evaluate(
-            () => window.__HEXOFLAT_TEST__!.getKnowledge()!.index,
-          );
           await this.camp.reload();
           await this.camp.waitUntilReady();
           await this.openHall();
-          await this.camp.knowledge.verifyQuestionIndex(index);
+          await this.camp.knowledge.verifyFreshStart();
+          await this.camp.knowledge.start();
         }
         await this.camp.knowledge.answerCorrectlyAndVerifyAward();
       }
@@ -94,14 +92,16 @@ export class KnowledgeHallFeature extends BaseFeature {
     );
   }
   async interruptWithEscape(): Promise<void> {
-    await this.step('Interrupt the Hall with Escape and resume it', async () => {
-      const before = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
-      await this.camp.knowledge.pressEscape();
-      await this.camp.knowledge.verifyClosed();
-      await this.openHall();
-      await this.camp.knowledge.verifyOpen();
-      await this.camp.knowledge.verifyQuestionIndex(before!.index);
-    });
+    await this.step(
+      'Interrupt the Hall with Escape; reopening starts from the initial state',
+      async () => {
+        await this.camp.knowledge.pressEscape();
+        await this.camp.knowledge.verifyClosed();
+        await this.openHall();
+        await this.camp.knowledge.verifyOpen();
+        await this.camp.knowledge.verifyFreshStart();
+      },
+    );
   }
   async verifyHeroCannotMoveWhileOpen(): Promise<void> {
     await this.step(

@@ -9,7 +9,10 @@
           :aria-label="t('knowledge.will', { current, capacity })"
         >
           <span class="will-figures__label">{{ t('knowledge.willName') }}</span>
-          <span class="will-figures__value">{{ current }} / {{ capacity }}</span>
+          <span class="will-figures__value" data-testid="knowledge-will-value">
+            <span class="will-current" :class="{ 'is-gain': gained }">{{ current }}</span>
+            / {{ capacity }}
+          </span>
         </p>
       </div>
       <i class="will-divider" aria-hidden="true"></i>
@@ -38,11 +41,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{ current: number; capacity: number }>();
 const { t } = useI18n();
+const gained = ref(false);
+let gainTimer: number | null = null;
+watch(
+  () => props.current,
+  (next, previous) => {
+    if (next <= previous) return;
+    gained.value = true;
+    if (gainTimer) window.clearTimeout(gainTimer);
+    gainTimer = window.setTimeout(() => (gained.value = false), 700);
+  },
+);
+onBeforeUnmount(() => {
+  if (gainTimer) window.clearTimeout(gainTimer);
+});
 const percent = computed(() => Math.min(100, (props.current / props.capacity) * 100));
 const ticks = computed(() =>
   [0.2, 0.5, 0.8, 1].map((share) => {
@@ -125,6 +142,16 @@ p {
   font-size: 1.2rem;
   font-weight: 700;
   color: #f3e8d2;
+}
+.will-current {
+  transition:
+    color 0.35s ease,
+    text-shadow 0.35s ease;
+}
+.will-current.is-gain {
+  color: #6dff9c;
+  text-shadow: 0 0 8px rgba(109, 255, 156, 0.55);
+  transition-duration: 0.08s;
 }
 .will-divider {
   align-self: stretch;

@@ -76,11 +76,21 @@ describe('challenge recovery and isolation', () => {
     legacy.session = { id: 'hero:1', mode: 'hall', questions: [], answers: [] };
     expect(knowledgeStateSchema.parse(legacy).session).toBeNull();
   });
-  it('keeps a suspended Hall while returning and restores it at the book', () => {
+  it('always starts the Hall from the initial state when the book is opened again', () => {
     const h = harness();
     h.send({ kind: 'start', mode: 'hall', seed: 'hall' });
     h.answer(true);
-    const hallId = h.state.session!.id;
+    expect(h.state.session).not.toBeNull();
+    expect(h.send({ kind: 'open' })).toBe('KNOWLEDGE_CHANGED');
+    expect(h.state.session).toBeNull();
+    expect(h.state.pausedHall).toBeNull();
+    expect(h.send({ kind: 'start', mode: 'hall', seed: 'fresh' })).toBe('KNOWLEDGE_CHANGED');
+    expect((h.state.session as HallSession).index).toBe(0);
+  });
+  it('does not resume a Hall lesson after a return trip', () => {
+    const h = harness();
+    h.send({ kind: 'start', mode: 'hall', seed: 'hall' });
+    h.answer(true);
     h.state.current = 0;
     h.context.locationKey = 'silesia';
     h.context.willZone = 'paid';
@@ -95,8 +105,7 @@ describe('challenge recovery and isolation', () => {
     h.context.atBook = true;
     h.send({ kind: 'returned', sessionId: h.state.session!.id });
     h.send({ kind: 'open' });
-    expect(h.state.session!.id).toBe(hallId);
-    expect(h.state.session!.index).toBe(1);
+    expect(h.state.session).toBeNull();
   });
   it('unlocks labelled assistance only after two failures and ten guided answers', () => {
     const h = harness();
