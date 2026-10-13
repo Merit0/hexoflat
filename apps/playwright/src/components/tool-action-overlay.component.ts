@@ -38,7 +38,7 @@ export class ToolActionOverlayComponent extends BaseComponent {
 
   async verifyInsufficientWill(): Promise<void> {
     await expect(this.actionButton).toHaveAttribute('aria-disabled', 'true');
-    await this.actionButton.click();
+    await this.actionButton.click({ force: true });
     await expect(this.page.getByTestId('action-alert-banner')).toContainText(
       /Недостатньо Волі|Not enough Will/,
     );
