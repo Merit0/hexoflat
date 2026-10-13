@@ -1,6 +1,18 @@
 import type { KnowledgeAction, KnowledgeCommand, KnowledgeContext } from './commands';
-import { correctCount, reviewQuestions, type KnowledgeState } from './state';
-import { generateQuestions, KNOWLEDGE_RULES, reward, stepCost } from './math';
+import {
+  correctCount,
+  reviewQuestions,
+  type HallSession,
+  type KnowledgeState,
+  type ReturnSession,
+} from './state';
+import {
+  generateHallQuestion,
+  generateQuestions,
+  hallAward,
+  KNOWLEDGE_RULES,
+  stepCost,
+} from './math';
 import { willZoneCharges } from './will-zone';
 import { grantWill, spendWill } from './will';
 import type { DomainEvent } from '../commands/types';
@@ -23,7 +35,7 @@ function start(
   if (
     previous &&
     !(action.mode === 'return' && previous.mode === 'hall') &&
-    !['claimed', 'returned'].includes(previous.status) &&
+    !['done', 'returned'].includes(previous.status) &&
     !(
       previous.mode === 'return' &&
       previous.status === 'result' &&
@@ -31,42 +43,113 @@ function start(
     )
   )
     return false;
-  if (action.mode === 'return' && previous?.mode === 'hall' && previous.status !== 'claimed')
+  if (action.mode === 'return' && previous?.mode === 'hall' && previous.status !== 'done')
     state.pausedHall = previous;
   state.sequence++;
   const id = `${state.heroId}:${state.sequence}`;
-  state.session = {
-    id,
-    mode: action.mode,
-    seed: action.seed,
-    questions: generateQuestions(action.seed, action.mode === 'hall' ? state.history : {}),
-    answers: [],
-    index: 0,
-    status: 'question',
-    originMapId: ctx.mapId,
-    awarded: 0,
-    reviewIndex: 0,
-    assisted: false,
-  };
+  state.session =
+    action.mode === 'hall'
+      ? {
+          id,
+          mode: 'hall',
+          seed: action.seed,
+          originMapId: ctx.mapId,
+          status: 'question',
+          index: 0,
+          question: generateHallQuestion(action.seed, 0, state.history, []),
+          answer: null,
+          correct: 0,
+          earned: 0,
+          lastAward: 0,
+          recent: [],
+        }
+      : {
+          id,
+          mode: 'return',
+          seed: action.seed,
+          questions: generateQuestions(action.seed),
+          answers: [],
+          index: 0,
+          status: 'question',
+          originMapId: ctx.mapId,
+          reviewIndex: 0,
+          assisted: false,
+        };
   return true;
 }
 
-function finishAnswer(state: KnowledgeState): void {
-  const session = state.session!;
+function recordFact(state: KnowledgeState, factKey: string, correct: boolean): void {
+  state.history[factKey] = [...(state.history[factKey] ?? []), correct].slice(-10);
+}
+
+function answerHall(
+  state: KnowledgeState,
+  session: HallSession,
+  action: Extract<KnowledgeAction, { kind: 'answer' }>,
+  willEvents: DomainEvent[],
+): boolean {
+  const { question } = session;
+  if (
+    session.status !== 'question' ||
+    question.id !== action.questionId ||
+    !question.options.includes(action.answer)
+  )
+    return false;
+  const correct = action.answer === question.answer;
+  const granted = correct
+    ? grantWill(state, hallAward(action.elapsedMs), {
+        kind: 'hall',
+        ref: `${session.id}:${session.index}`,
+      })
+    : [];
+  willEvents.push(...granted);
+  const awarded = granted.reduce(
+    (sum, event) => sum + (event.payload as { amount: number }).amount,
+    0,
+  );
+  recordFact(state, question.factKey, correct);
+  session.answer = action.answer;
+  session.correct += correct ? 1 : 0;
+  session.lastAward = awarded;
+  session.earned += awarded;
+  session.status = 'feedback';
+  return true;
+}
+
+function nextHall(
+  state: KnowledgeState,
+  session: HallSession,
+  action: Extract<KnowledgeAction, { kind: 'next' }>,
+): boolean {
+  if (session.status !== 'feedback' || session.question.id !== action.questionId) return false;
+  if (state.current >= state.capacity) {
+    session.status = 'done';
+    return true;
+  }
+  session.recent = [...session.recent, session.question.factKey].slice(
+    -KNOWLEDGE_RULES.hallRecentFacts,
+  );
+  session.index++;
+  session.question = generateHallQuestion(
+    session.seed,
+    session.index,
+    state.history,
+    session.recent,
+  );
+  session.answer = null;
+  session.lastAward = 0;
+  session.status = 'question';
+  return true;
+}
+
+function finishAnswer(state: KnowledgeState, session: ReturnSession): void {
   if (session.index < 19) {
     session.index++;
     session.status = 'question';
     return;
   }
   session.status = 'result';
-  for (const [i, q] of session.questions.entries()) {
-    state.history[q.factKey] = [
-      ...(state.history[q.factKey] ?? []),
-      q.answer === session.answers[i],
-    ].slice(-10);
-  }
-  if (session.mode === 'return' && correctCount(session) < KNOWLEDGE_RULES.returnMinCorrect)
-    state.failedReturns++;
+  if (correctCount(session) < KNOWLEDGE_RULES.returnMinCorrect) state.failedReturns++;
 }
 
 function transition(
@@ -101,12 +184,29 @@ function transition(
   const session = state.session;
   if (!session || session.id !== action.sessionId) return false;
   if (action.kind === 'returned') {
-    if (session.status !== 'returning' || ctx.locationKey !== 'camping') return false;
+    if (
+      session.mode !== 'return' ||
+      session.status !== 'returning' ||
+      ctx.locationKey !== 'camping'
+    )
+      return false;
     session.status = 'returned';
     state.failedReturns = 0;
     return true;
   }
   if (!available(session.mode, state, ctx) || ctx.mapId !== session.originMapId) return false;
+  if (session.mode === 'hall') {
+    if (action.kind === 'answer') return answerHall(state, session, action, willEvents);
+    return action.kind === 'next' ? nextHall(state, session, action) : false;
+  }
+  return transitionReturn(state, session, action);
+}
+
+function transitionReturn(
+  state: KnowledgeState,
+  session: ReturnSession,
+  action: KnowledgeAction,
+): boolean {
   const question = session.questions[session.index];
   switch (action.kind) {
     case 'answer':
@@ -122,18 +222,10 @@ function transition(
       return true;
     case 'next':
       if (session.status !== 'feedback' || question.id !== action.questionId) return false;
-      finishAnswer(state);
-      return true;
-    case 'claim':
-      if (session.mode !== 'hall' || session.status !== 'result' || session.answers.length !== 20)
-        return false;
-      session.awarded = reward(correctCount(session), state.current, state.capacity);
-      willEvents.push(...grantWill(state, session.awarded, { kind: 'hall', ref: session.id }));
-      session.status = 'claimed';
+      finishAnswer(state, session);
       return true;
     case 'review': {
       if (
-        session.mode !== 'return' ||
         session.status !== 'result' ||
         correctCount(session) >= 17 ||
         action.index !== session.reviewIndex ||
@@ -146,6 +238,8 @@ function transition(
     }
     case 'return':
       return prepareReturn(state, action.assisted);
+    default:
+      return false;
   }
 }
 
@@ -177,8 +271,8 @@ export function applyKnowledgeCommand(
 }
 
 function prepareReturn(state: KnowledgeState, assisted: boolean): boolean {
-  const session = state.session!;
-  if (session.mode !== 'return' || session.status !== 'result' || session.answers.length !== 20)
+  const session = state.session;
+  if (session?.mode !== 'return' || session.status !== 'result' || session.answers.length !== 20)
     return false;
   const passed = correctCount(session) >= KNOWLEDGE_RULES.returnMinCorrect;
   const assistanceUnlocked =

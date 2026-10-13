@@ -9,8 +9,10 @@ export const KNOWLEDGE_RULES = {
   capacity: 50,
   questionCount: 20,
   returnMinCorrect: 17,
-  correctReward: 2,
-  completionReward: 5,
+  hallAnswerReward: 1,
+  hallFastReward: 2,
+  hallFastAnswerMs: 4000,
+  hallRecentFacts: 8,
   worldStepCost: 1,
   assistedFailures: 2,
   reviewCount: 10,
@@ -98,12 +100,31 @@ export function accuracy(correct: number): number {
   return correct * 5;
 }
 
-export function reward(correct: number, current: number, capacity: number): number {
-  accuracy(correct);
-  return Math.min(
-    KNOWLEDGE_RULES.correctReward * correct + KNOWLEDGE_RULES.completionReward,
-    Math.max(0, capacity - current),
+export function hallAward(elapsedMs: number | undefined): number {
+  return elapsedMs !== undefined && elapsedMs <= KNOWLEDGE_RULES.hallFastAnswerMs
+    ? KNOWLEDGE_RULES.hallFastReward
+    : KNOWLEDGE_RULES.hallAnswerReward;
+}
+
+export function generateHallQuestion(
+  seed: string,
+  index: number,
+  history: Record<string, boolean[]>,
+  recent: readonly string[],
+): MathQuestion {
+  const rng = createSeededRandom({ seed: `${seed}:${index}`, counter: 0 });
+  const pool = [...factPool('multiply'), ...factPool('divide')].filter(
+    (fact) => !recent.includes(fact.factKey),
   );
+  const fact = pool
+    .map((candidate) => {
+      const previous = history[candidate.factKey] ?? [];
+      const weight =
+        1 + (previous.length ? previous.filter((correct) => !correct).length / previous.length : 0);
+      return { candidate, priority: -Math.log(Math.max(Number.EPSILON, rng())) / weight };
+    })
+    .sort((a, b) => a.priority - b.priority)[0].candidate;
+  return { ...fact, id: `${seed}:${index}`, options: choices(fact.answer, fact.rhs, rng) };
 }
 
 export function grade(correct: number): string {

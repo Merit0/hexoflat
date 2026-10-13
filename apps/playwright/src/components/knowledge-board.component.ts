@@ -58,19 +58,55 @@ export class KnowledgeBoardComponent extends BaseComponent {
       await option.focus();
       await option.press('Enter');
     } else await option.click();
+    await this.verifyAdvancedFrom(state.index);
+  }
+  private async verifyAdvancedFrom(index: number): Promise<void> {
+    await expect
+      .poll(async () => {
+        const next = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+        return (
+          !!next &&
+          (['result', 'done'].includes(next.status ?? '') ||
+            (next.status === 'question' && next.index > index))
+        );
+      })
+      .toBe(true);
+  }
+  async answerCorrectlyAndVerifyAward(): Promise<void> {
+    const before = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+    if (!before) throw new Error('No challenge');
+    await this.page
+      .getByTestId(`knowledge-answer-${before.options.indexOf(before.answer!)}`)
+      .click();
     await expect
       .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.status))
-      .toBe(state.index === 19 ? 'result' : 'question');
-    if (state.index < 19) await this.verifyQuestionIndex(state.index + 1);
+      .toBe('feedback');
+    const after = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+    expect([1, 2]).toContain(after!.lastAward);
+    expect(after!.current).toBe(before.current + after!.lastAward);
+    await expect(this.page.getByTestId('knowledge-gain')).toContainText(`+${after!.lastAward}`);
+    await this.verifyAdvancedFrom(before.index);
+  }
+  async answerWrongAndVerifyNoAward(): Promise<void> {
+    const before = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+    if (!before) throw new Error('No challenge');
+    const wrong = before.options.findIndex((answer) => answer !== before.answer);
+    await this.page.getByTestId(`knowledge-answer-${wrong}`).click();
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.status))
+      .toBe('feedback');
+    const after = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
+    expect(after!.lastAward).toBe(0);
+    expect(after!.current).toBe(before.current);
+    await this.verifyAdvancedFrom(before.index);
+  }
+  async verifyHallIsDone(): Promise<void> {
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.status))
+      .toBe('done');
   }
   async verifyResult(percent: number): Promise<void> {
     await expect(this.page.getByTestId('knowledge-result')).toContainText(`${percent}%`);
-  }
-  async claim(current: number): Promise<void> {
-    await this.page.getByTestId('knowledge-claim').click();
-    await expect(this.page.getByTestId('knowledge-will')).toContainText(
-      `${current}/${await this.capacity()}`,
-    );
   }
   async returnHome(): Promise<void> {
     await this.page.getByTestId('knowledge-return').click();

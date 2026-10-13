@@ -25,6 +25,7 @@ export interface HexoflatTestApi {
     index: number;
     options: number[];
     answer: number | null;
+    lastAward: number;
   } | null;
   prepareKnowledgeWorld(current: number): void;
   setWill(current: number): void;

@@ -17,9 +17,9 @@ export const KnowledgeCommandSchema = z.object({
         sessionId: z.string(),
         questionId: z.string(),
         answer: z.number().int(),
+        elapsedMs: z.number().int().min(0).max(3_600_000).optional(),
       }),
       z.object({ kind: z.literal('next'), sessionId: z.string(), questionId: z.string() }),
-      z.object({ kind: z.literal('claim'), sessionId: z.string() }),
       z.object({ kind: z.literal('return'), sessionId: z.string(), assisted: z.boolean() }),
       z.object({ kind: z.literal('returned'), sessionId: z.string() }),
       z.object({

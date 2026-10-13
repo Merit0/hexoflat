@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { applyKnowledgeCommand } from './reducer';
-import { createKnowledgeState, reviewQuestions, type KnowledgeState } from './state';
+import {
+  createKnowledgeState,
+  knowledgeStateSchema,
+  reviewQuestions,
+  type HallSession,
+  type KnowledgeState,
+  type ReturnSession,
+} from './state';
 import type { KnowledgeAction, KnowledgeContext } from './commands';
 import { installCampBook } from './camp-book';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
@@ -23,8 +30,8 @@ function harness() {
       context,
     )[0].type;
   const answer = (correct: boolean) => {
-    const session = state.session!;
-    const q = session.questions[session.index];
+    const session = state.session as HallSession | ReturnSession;
+    const q = session.mode === 'hall' ? session.question : session.questions[session.index];
     send({
       kind: 'answer',
       sessionId: session.id,
@@ -47,32 +54,34 @@ function harness() {
 }
 
 describe('challenge recovery and isolation', () => {
-  it('preserves Q11 exactly on reload and records the first answer only', () => {
+  it('preserves the current Hall question on reload and records the first answer only', () => {
     const h = harness();
     h.send({ kind: 'start', mode: 'hall', seed: 'resume' });
     for (let i = 0; i < 10; i++) h.answer(true);
     const before = JSON.stringify(h.state.session);
     h.reload();
     expect(JSON.stringify(h.state.session)).toBe(before);
-    expect(h.state.session!.index).toBe(10);
-    const s = h.state.session!;
-    const q = s.questions[10];
-    h.send({
-      kind: 'answer',
-      sessionId: s.id,
-      questionId: q.id,
-      answer: q.options.find((n) => n !== q.answer)!,
-    });
+    const s = h.state.session as HallSession;
+    expect(s.index).toBe(10);
+    const q = s.question;
+    const wrong = q.options.find((n) => n !== q.answer)!;
+    h.send({ kind: 'answer', sessionId: s.id, questionId: q.id, answer: wrong });
     expect(h.send({ kind: 'answer', sessionId: s.id, questionId: q.id, answer: q.answer })).toBe(
       'KNOWLEDGE_REJECTED',
     );
-    expect(s.answers[10]).not.toBe(q.answer);
+    expect(s.answer).toBe(wrong);
+  });
+  it('drops an unfinished 20-question Hall saved by the previous version', () => {
+    const legacy: Record<string, unknown> = { ...createKnowledgeState('hero') };
+    legacy.session = { id: 'hero:1', mode: 'hall', questions: [], answers: [] };
+    expect(knowledgeStateSchema.parse(legacy).session).toBeNull();
   });
   it('keeps a suspended Hall while returning and restores it at the book', () => {
     const h = harness();
     h.send({ kind: 'start', mode: 'hall', seed: 'hall' });
     h.answer(true);
     const hallId = h.state.session!.id;
+    h.state.current = 0;
     h.context.locationKey = 'silesia';
     h.context.willZone = 'paid';
     h.context.mapId = 'world';
@@ -100,7 +109,7 @@ describe('challenge recovery and isolation', () => {
         'KNOWLEDGE_REJECTED',
       );
     }
-    const s = h.state.session!;
+    const s = h.state.session as ReturnSession;
     const review = reviewQuestions(s);
     for (let i = 0; i < 10; i++)
       h.send({ kind: 'review', sessionId: s.id, index: i, answer: review[i].answer });
@@ -119,9 +128,8 @@ describe('challenge recovery and isolation', () => {
     expect(h.send({ kind: 'start', mode: 'hall', seed: 'bad' })).toBe('KNOWLEDGE_REJECTED');
     h.context.combatActive = false;
     h.send({ kind: 'start', mode: 'hall', seed: 'good' });
-    expect(h.send({ kind: 'claim', sessionId: h.state.session!.id })).toBe('KNOWLEDGE_REJECTED');
     h.context.mapId = 'another-map';
-    const q = h.state.session!.questions[0];
+    const q = (h.state.session as HallSession).question;
     expect(
       h.send({
         kind: 'answer',

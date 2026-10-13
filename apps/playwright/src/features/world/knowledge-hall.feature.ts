@@ -46,23 +46,39 @@ export class KnowledgeHallFeature extends BaseFeature {
       await this.camp.knowledge.verifyWill(0);
     });
   }
-  async completeHall(correct: number, expectedWill: number, reload = false): Promise<void> {
-    await this.step('Complete Hall and claim a capped reward', async () => {
+  async earnWillInHall(correct: number, wrong: number, reload = false): Promise<void> {
+    await this.step('Earn Will one answered question at a time', async () => {
       await this.camp.knowledge.start();
-      for (let i = 0; i < 20; i++) {
-        if (reload && i === 10) {
+      await this.camp.knowledge.verifyMobileQuestion();
+      for (let i = 0; i < correct; i++) {
+        if (reload && i === Math.floor(correct / 2)) {
+          const index = await this.page.evaluate(
+            () => window.__HEXOFLAT_TEST__!.getKnowledge()!.index,
+          );
           await this.camp.reload();
           await this.camp.waitUntilReady();
           await this.openHall();
-          await this.camp.knowledge.verifyQuestionIndex(10);
+          await this.camp.knowledge.verifyQuestionIndex(index);
         }
-        if (reload && i === 0) await this.camp.knowledge.verifyMobileQuestion();
-        else await this.camp.knowledge.answer(i < correct);
+        await this.camp.knowledge.answerCorrectlyAndVerifyAward();
       }
-      await this.camp.knowledge.verifyResult(correct * 5);
-      await this.camp.knowledge.claim(expectedWill);
+      for (let i = 0; i < wrong; i++) await this.camp.knowledge.answerWrongAndVerifyNoAward();
       await this.camp.knowledge.captureDesktop();
     });
+  }
+  async fillToCapacity(): Promise<void> {
+    await this.step(
+      'Answer the last needed question, reach capacity and end the lesson',
+      async () => {
+        await this.page.evaluate(() => {
+          const api = window.__HEXOFLAT_TEST__!;
+          api.setWill(api.getKnowledgeRules().capacity - 1);
+        });
+        await this.camp.knowledge.answerCorrectlyAndVerifyAward();
+        await this.camp.knowledge.verifyHallIsDone();
+        await this.camp.knowledge.verifyFull();
+      },
+    );
   }
   async startHall(): Promise<void> {
     await this.step('Start a Hall challenge', () => this.camp.knowledge.start());

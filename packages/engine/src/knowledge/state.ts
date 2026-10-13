@@ -21,17 +21,16 @@ const questionSchema = z
       q.answer === (q.operation === 'multiply' ? q.lhs * q.rhs : q.lhs / q.rhs)
     );
   });
-export const sessionSchema = z
+export const returnSessionSchema = z
   .object({
     id: z.string(),
-    mode: z.enum(['hall', 'return']),
+    mode: z.literal('return'),
     seed: z.string(),
     questions: z.array(questionSchema).length(20),
     answers: z.array(z.number().int()).max(20),
     index: z.number().int().min(0).max(19),
-    status: z.enum(['question', 'feedback', 'result', 'claimed', 'returning', 'returned']),
+    status: z.enum(['question', 'feedback', 'result', 'returning', 'returned']),
     originMapId: z.string(),
-    awarded: z.number().int().nonnegative().default(0),
     reviewIndex: z.number().int().min(0).max(10).default(0),
     assisted: z.boolean().default(false),
   })
@@ -45,7 +44,43 @@ export const sessionSchema = z
       s.answers.every((answer, i) => s.questions[i].options.includes(answer))
     );
   });
-export const knowledgeStateSchema = z
+export const hallSessionSchema = z
+  .object({
+    id: z.string(),
+    mode: z.literal('hall'),
+    seed: z.string(),
+    originMapId: z.string(),
+    status: z.enum(['question', 'feedback', 'done']),
+    index: z.number().int().nonnegative(),
+    question: questionSchema,
+    answer: z.number().int().nullable(),
+    correct: z.number().int().nonnegative(),
+    earned: z.number().int().nonnegative(),
+    lastAward: z.number().int().nonnegative(),
+    recent: z.array(z.string()).max(16),
+  })
+  .refine(
+    (s) => s.status !== 'feedback' || (s.answer !== null && s.question.options.includes(s.answer)),
+  );
+export const sessionSchema = z.discriminatedUnion('mode', [returnSessionSchema, hallSessionSchema]);
+
+function dropLegacyHallSessions(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const record: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+  for (const key of ['session', 'pausedHall']) {
+    const session = record[key];
+    if (
+      session &&
+      typeof session === 'object' &&
+      'questions' in session &&
+      (session as { mode?: unknown }).mode === 'hall'
+    )
+      record[key] = null;
+  }
+  return record;
+}
+
+const knowledgeStateObjectSchema = z
   .object({
     version: z.literal(1),
     heroId: z.string(),
@@ -55,7 +90,7 @@ export const knowledgeStateSchema = z
     sequence: z.number().int().nonnegative(),
     failedReturns: z.number().int().nonnegative(),
     session: sessionSchema.nullable(),
-    pausedHall: sessionSchema.nullable().default(null),
+    pausedHall: hallSessionSchema.nullable().default(null),
     lastStep: z
       .object({
         mapId: z.string(),
@@ -68,8 +103,14 @@ export const knowledgeStateSchema = z
     history: z.record(z.string(), z.array(z.boolean()).max(10)),
   })
   .refine((s) => s.current <= s.capacity);
-export type KnowledgeState = z.infer<typeof knowledgeStateSchema>;
+export const knowledgeStateSchema = z.preprocess(
+  dropLegacyHallSessions,
+  knowledgeStateObjectSchema,
+);
+export type KnowledgeState = z.infer<typeof knowledgeStateObjectSchema>;
 export type KnowledgeSession = z.infer<typeof sessionSchema>;
+export type ReturnSession = z.infer<typeof returnSessionSchema>;
+export type HallSession = z.infer<typeof hallSessionSchema>;
 
 export function createKnowledgeState(heroId: string): KnowledgeState {
   return {
@@ -87,12 +128,12 @@ export function createKnowledgeState(heroId: string): KnowledgeState {
   };
 }
 
-export function correctCount(session: KnowledgeSession): number {
+export function correctCount(session: ReturnSession): number {
   return session.answers.filter((answer, index) => answer === session.questions[index].answer)
     .length;
 }
 
-export function reviewQuestions(session: KnowledgeSession) {
+export function reviewQuestions(session: ReturnSession) {
   const missed = session.questions.filter((q, i) => q.answer !== session.answers[i]);
   return Array.from({ length: KNOWLEDGE_RULES.reviewCount }, (_, i) => missed[i % missed.length]);
 }

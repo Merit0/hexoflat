@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { generateQuestions, accuracy, reward, KNOWLEDGE_RULES } from './math';
-import { createKnowledgeState, correctCount } from './state';
+import {
+  generateHallQuestion,
+  generateQuestions,
+  accuracy,
+  hallAward,
+  KNOWLEDGE_RULES,
+} from './math';
+import { createKnowledgeState, correctCount, type HallSession, type ReturnSession } from './state';
 import { applyKnowledgeCommand } from './reducer';
 import type { KnowledgeAction, KnowledgeContext } from './commands';
 
@@ -29,7 +35,7 @@ function fixture(current = 0, context = hall) {
       context,
     );
   const finish = (correct: number) => {
-    const session = state.session!;
+    const session = state.session as ReturnSession;
     for (const [i, q] of session.questions.entries()) {
       send({
         kind: 'answer',
@@ -75,8 +81,23 @@ describe('seeded knowledge questions', () => {
     expect(generateQuestions('same')).toEqual(generateQuestions('same'));
     expect(() => accuracy(15.6)).toThrow();
     expect(accuracy(17)).toBe(85);
-    expect(reward(18, 0, 50)).toBe(41);
-    expect(reward(20, 41, 50)).toBe(9);
+  });
+  it('rewards one Will per correct answer and two for a fast one', () => {
+    expect(hallAward(undefined)).toBe(KNOWLEDGE_RULES.hallAnswerReward);
+    expect(hallAward(KNOWLEDGE_RULES.hallFastAnswerMs)).toBe(KNOWLEDGE_RULES.hallFastReward);
+    expect(hallAward(KNOWLEDGE_RULES.hallFastAnswerMs + 1)).toBe(KNOWLEDGE_RULES.hallAnswerReward);
+  });
+  it('draws endless Hall questions that avoid recent facts and are reproducible', () => {
+    const recent: string[] = [];
+    for (let i = 0; i < 40; i++) {
+      const q = generateHallQuestion('hall', i, {}, recent);
+      expect(recent).not.toContain(q.factKey);
+      expect(q).toEqual(generateHallQuestion('hall', i, {}, recent));
+      expect(new Set(q.options).size).toBe(4);
+      expect(q.options).toContain(q.answer);
+      recent.push(q.factKey);
+      if (recent.length > KNOWLEDGE_RULES.hallRecentFacts) recent.shift();
+    }
   });
 });
 
@@ -93,34 +114,67 @@ describe('knowledge command guards', () => {
       )[0].type,
     ).toBe('KNOWLEDGE_REJECTED');
   });
-  it('locks first answers, requires feedback and claims capped reward once after reload', () => {
-    const { state, send, finish } = fixture(18);
+  it('awards Will per answer: +2 fast, +1 slow, 0 wrong, with no 20-question limit', () => {
+    const { state, send } = fixture(0);
     send({ kind: 'start', mode: 'hall', seed: 'test' });
-    const s = state.session!;
-    const q = s.questions[0];
-    expect(send({ kind: 'next', sessionId: s.id, questionId: q.id })[0].type).toBe(
+    const session = () => state.session as HallSession;
+    const answer = (correct: boolean, elapsedMs?: number) => {
+      const q = session().question;
+      send({
+        kind: 'answer',
+        sessionId: session().id,
+        questionId: q.id,
+        answer: correct ? q.answer : q.options.find((a) => a !== q.answer)!,
+        elapsedMs,
+      });
+      return q;
+    };
+    const q = session().question;
+    expect(send({ kind: 'next', sessionId: session().id, questionId: q.id })[0].type).toBe(
       'KNOWLEDGE_REJECTED',
     );
-    finish(20);
-    expect(correctCount(s)).toBe(20);
-    send({ kind: 'claim', sessionId: s.id });
-    expect(state.current).toBe(KNOWLEDGE_RULES.capacity);
-    expect(s.awarded).toBe(KNOWLEDGE_RULES.capacity - 18);
+    answer(true, 500);
+    expect(state.current).toBe(KNOWLEDGE_RULES.hallFastReward);
+    expect(session().lastAward).toBe(KNOWLEDGE_RULES.hallFastReward);
+    expect(answer(true, 500).id).toBe(q.id);
+    expect(state.current).toBe(KNOWLEDGE_RULES.hallFastReward);
+    send({ kind: 'next', sessionId: session().id, questionId: q.id });
+    answer(true, KNOWLEDGE_RULES.hallFastAnswerMs + 1);
+    expect(state.current).toBe(KNOWLEDGE_RULES.hallFastReward + KNOWLEDGE_RULES.hallAnswerReward);
+    send({ kind: 'next', sessionId: session().id, questionId: session().question.id });
+    const before = state.current;
+    answer(false, 100);
+    expect(state.current).toBe(before);
+    expect(session().lastAward).toBe(0);
+    for (let i = 0; i < 25; i++) {
+      send({ kind: 'next', sessionId: session().id, questionId: session().question.id });
+      answer(true, 100);
+    }
+    expect(session().index).toBeGreaterThan(20);
+    expect(state.current).toBeLessThanOrEqual(KNOWLEDGE_RULES.capacity);
+  });
+  it('lets the player stop at any time and keeps the question after reload', () => {
+    const { state, send } = fixture(0);
+    send({ kind: 'start', mode: 'hall', seed: 'stop' });
     const restored = JSON.parse(JSON.stringify(state)) as typeof state;
-    const events = applyKnowledgeCommand(
-      restored,
-      {
-        type: 'KNOWLEDGE',
-        payload: {
-          heroId: 'hero',
-          revision: restored.revision,
-          action: { kind: 'claim', sessionId: s.id },
-        },
-      },
-      hall,
-    );
-    expect(events[0].type).toBe('KNOWLEDGE_REJECTED');
-    expect(restored.current).toBe(KNOWLEDGE_RULES.capacity);
+    expect(restored.session).toEqual(state.session);
+  });
+  it('ends the Hall session exactly at capacity and never over-grants', () => {
+    const { state, send } = fixture(KNOWLEDGE_RULES.capacity - 1);
+    send({ kind: 'start', mode: 'hall', seed: 'cap' });
+    const session = state.session as HallSession;
+    send({
+      kind: 'answer',
+      sessionId: session.id,
+      questionId: session.question.id,
+      answer: session.question.answer,
+      elapsedMs: 1,
+    });
+    expect(state.current).toBe(KNOWLEDGE_RULES.capacity);
+    expect(session.lastAward).toBe(1);
+    send({ kind: 'next', sessionId: session.id, questionId: session.question.id });
+    expect(session.status).toBe('done');
+    expect(send({ kind: 'start', mode: 'hall', seed: 'again' })[0].type).toBe('KNOWLEDGE_REJECTED');
   });
   it.each([16, 17])('return threshold for %i correct and no Will reward', (score) => {
     const { state, send, finish, context } = fixture(0, { ...world });

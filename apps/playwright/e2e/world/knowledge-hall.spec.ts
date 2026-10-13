@@ -2,7 +2,7 @@ import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
 import { KnowledgeHallFeature } from '@features/world/knowledge-hall.feature';
 
-test('Will depletion, emergency return, resumed Hall and capped refill', async () => {
+test('Will depletion, emergency return, endless Hall questions and capped refill', async () => {
   test.setTimeout(240_000);
   await new OpenCampingMapFeature().open();
   const knowledge = new KnowledgeHallFeature();
@@ -11,9 +11,8 @@ test('Will depletion, emergency return, resumed Hall and capped refill', async (
   await knowledge.exhaustWorldWill();
   await knowledge.completeReturn(17);
   await knowledge.openHall();
-  await knowledge.completeHall(18, 41, true);
-  await knowledge.completeHall(20, 50);
-  await knowledge.verifyFull();
+  await knowledge.earnWillInHall(6, 1, true);
+  await knowledge.fillToCapacity();
 });
 
 test('Escape interrupts the Hall, the lesson resumes and correct answers are still accepted', async () => {

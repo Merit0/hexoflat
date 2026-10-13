@@ -33,9 +33,6 @@
         </p>
         <p>{{ t('knowledge.description') }}</p>
         <p v-if="mode === 'return'">{{ t('knowledge.target') }}</p>
-        <p v-if="session?.status === 'claimed'" role="status">
-          {{ t('knowledge.awarded', { will: session.awarded }) }}
-        </p>
         <button
           type="button"
           data-testid="knowledge-start"
@@ -50,12 +47,18 @@
         </p>
       </template>
       <template v-else-if="question && ['question', 'feedback'].includes(active.status)">
-        <p>{{ t('knowledge.progress', { index: active.index + 1 }) }}</p>
-        <progress
-          :value="active.answers.length"
-          :max="20"
-          :aria-label="t('knowledge.progress', { index: active.index + 1 })"
-        />
+        <p v-if="hall" data-testid="knowledge-earned">
+          {{ t('knowledge.progressOpen', { index: hall.index + 1 }) }} ·
+          {{ t('knowledge.earned', { will: hall.earned }) }}
+        </p>
+        <template v-else-if="ret">
+          <p>{{ t('knowledge.progress', { index: ret.index + 1 }) }}</p>
+          <progress
+            :value="ret.answers.length"
+            :max="20"
+            :aria-label="t('knowledge.progress', { index: ret.index + 1 })"
+          />
+        </template>
         <h3 class="question" data-testid="knowledge-question">{{ expression(question) }} = ?</h3>
         <div class="answers">
           <button
@@ -67,7 +70,7 @@
               'is-correct': active.status === 'feedback' && option === question.answer,
               'is-wrong':
                 active.status === 'feedback' &&
-                option === active.answers[active.index] &&
+                option === selectedAnswer &&
                 option !== question.answer,
             }"
             :disabled="busy || active.status === 'feedback'"
@@ -77,6 +80,7 @@
                 sessionId: active.id,
                 questionId: question.id,
                 answer: option,
+                elapsedMs: hall ? Date.now() - shownAt : undefined,
               })
             "
           >
@@ -91,36 +95,24 @@
           </button>
         </div>
         <div v-if="active.status === 'feedback'" role="status" aria-live="polite">
-          <p>
-            {{
-              active.answers[active.index] === question.answer
-                ? t('knowledge.correct')
-                : t('knowledge.wrong')
-            }}
+          <p v-if="hall && hall.lastAward > 0" class="gain" data-testid="knowledge-gain">
+            {{ t('knowledge.gain', { will: hall.lastAward }) }}
+            <span v-if="hall.lastAward > 1">· {{ t('knowledge.fastBonus') }}</span>
           </p>
+          <p v-else-if="selectedAnswer === question.answer">{{ t('knowledge.correct') }}</p>
+          <p v-else>{{ t('knowledge.wrong') }}</p>
         </div>
       </template>
-      <template v-else-if="active.status === 'result'">
+      <template v-else-if="ret && ret.status === 'result'">
         <h3 data-testid="knowledge-result">{{ correct }}/20 · {{ percent }}%</h3>
         <p>{{ gradeText }}</p>
-        <template v-if="active.mode === 'hall'">
-          <p>{{ t('knowledge.reward', { will: award }) }}</p>
-          <button
-            type="button"
-            data-testid="knowledge-claim"
-            :disabled="busy"
-            @click="send({ kind: 'claim', sessionId: active.id })"
-          >
-            {{ t('knowledge.claim') }}
-          </button>
-        </template>
-        <template v-else-if="correct >= 17">
+        <template v-if="correct >= 17">
           <p>{{ t('knowledge.returnPassed') }}</p>
           <button
             type="button"
             data-testid="knowledge-return"
             :disabled="busy"
-            @click="send({ kind: 'return', sessionId: active.id, assisted: false })"
+            @click="send({ kind: 'return', sessionId: ret.id, assisted: false })"
           >
             {{ t('knowledge.returnConfirm') }}
           </button>
@@ -131,7 +123,7 @@
           <h3>{{ t('knowledge.review') }}</h3>
           <p>{{ t('knowledge.assistanceRule') }}</p>
           <template v-if="review">
-            <p>{{ active.reviewIndex + 1 }}/10 · {{ expression(review) }} = {{ review.answer }}</p>
+            <p>{{ ret.reviewIndex + 1 }}/10 · {{ expression(review) }} = {{ review.answer }}</p>
             <div class="answers">
               <button
                 v-for="option in review.options"
@@ -141,8 +133,8 @@
                 @click="
                   send({
                     kind: 'review',
-                    sessionId: active.id,
-                    index: active.reviewIndex,
+                    sessionId: ret.id,
+                    index: ret.reviewIndex,
                     answer: option,
                   })
                 "
@@ -155,7 +147,7 @@
             v-if="canAssist"
             type="button"
             :disabled="busy"
-            @click="send({ kind: 'return', sessionId: active.id, assisted: true })"
+            @click="send({ kind: 'return', sessionId: ret.id, assisted: true })"
           >
             {{ t('knowledge.assisted') }}
           </button>
@@ -184,11 +176,13 @@ const {
   rejected,
   session,
   active,
+  hall,
+  ret,
   question,
+  selectedAnswer,
   correct,
   percent,
   gradeKey,
-  award,
   review,
   canAssist,
   send,
@@ -217,10 +211,9 @@ const masteryLevel = computed(() => {
 });
 const full = computed(() => !!hero.knowledge && hero.knowledge.current >= hero.knowledge.capacity);
 const missed = computed(
-  () =>
-    active.value?.questions.filter((q, i) => q.answer !== active.value?.answers[i]).slice(0, 4) ??
-    [],
+  () => ret.value?.questions.filter((q, i) => q.answer !== ret.value?.answers[i]).slice(0, 4) ?? [],
 );
+const shownAt = ref(Date.now());
 const expression = (q: MathQuestion) =>
   `${q.lhs} ${q.operation === 'multiply' ? '×' : '÷'} ${q.rhs}`;
 function start() {
@@ -248,7 +241,7 @@ watch(
     const current = active.value;
     const asked = question.value;
     if (current?.status !== 'feedback' || !asked) return;
-    const wasCorrect = current.answers[current.index] === asked.answer;
+    const wasCorrect = selectedAnswer.value === asked.answer;
     scheduleNext(
       current.id,
       asked.id,
@@ -258,6 +251,13 @@ watch(
   { immediate: true },
 );
 onBeforeUnmount(clearNextTimer);
+watch(
+  () => [active.value?.id, active.value?.index, active.value?.status],
+  () => {
+    if (active.value?.status === 'question') shownAt.value = Date.now();
+  },
+  { immediate: true },
+);
 watch(
   () => [mode.value, active.value?.index, active.value?.status],
   async () => {
@@ -342,6 +342,11 @@ button {
 .answers button.is-wrong {
   background: #7a2530;
   border-color: #ff7a8a;
+}
+.gain {
+  color: #7dffa8;
+  font-weight: 800;
+  font-size: 1.1rem;
 }
 .check {
   color: #5dff93;
