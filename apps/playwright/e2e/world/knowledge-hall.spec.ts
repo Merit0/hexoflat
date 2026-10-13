@@ -33,3 +33,10 @@ test('A hero cannot walk away while the Hall is open and is told why', async () 
   await knowledge.openHall();
   await knowledge.verifyHeroCannotMoveWhileOpen();
 });
+
+test('The question mark in the Hall explains what the Hall is for', async () => {
+  await new OpenCampingMapFeature().open();
+  const knowledge = new KnowledgeHallFeature();
+  await knowledge.openHall();
+  await knowledge.verifyHelpTooltip();
+});

@@ -125,4 +125,9 @@ export class KnowledgeHallFeature extends BaseFeature {
       this.camp.knowledge.verifyCorrectAnswerShownAfterMistake(),
     );
   }
+  async verifyHelpTooltip(): Promise<void> {
+    await this.step('Hovering the question mark explains the Knowledge Hall', () =>
+      this.camp.knowledge.verifyHelpTooltipOnHover(),
+    );
+  }
 }

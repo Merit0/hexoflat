@@ -1,13 +1,19 @@
 <template>
   <div class="will-meter">
-    <div class="will-row">
-      <span class="will-emblem"
-        ><img src="/board-assets/will-icon-image.png" alt="" aria-hidden="true"
-      /></span>
-      <p data-testid="knowledge-will" :aria-label="t('knowledge.will', { current, capacity })">
-        {{ t('knowledge.willLabel') }} <b>{{ current }}</b
-        >/{{ capacity }}
-      </p>
+    <div class="will-strip">
+      <div class="will-left">
+        <img class="will-icon" src="/board-assets/will-icon-image.png" alt="" aria-hidden="true" />
+        <p
+          class="will-figures"
+          data-testid="knowledge-will"
+          :aria-label="t('knowledge.will', { current, capacity })"
+        >
+          <span class="will-figures__label">{{ t('knowledge.willName') }}</span>
+          <span class="will-figures__value">{{ current }} / {{ capacity }}</span>
+        </p>
+      </div>
+      <i class="will-divider" aria-hidden="true"></i>
+      <p class="will-hint">{{ t('knowledge.meterHint') }}</p>
     </div>
     <div
       class="will-bar"
@@ -48,8 +54,8 @@ const ticks = computed(() =>
 
 <style scoped>
 .will-meter {
-  --copper: #c98a41;
-  --copper-dim: #7b4a1e;
+  --copper: #7a8da0;
+  --copper-dim: #3a4a58;
   --ember: #f5a524;
   display: grid;
   gap: 14px;
@@ -58,29 +64,85 @@ const ticks = computed(() =>
 p {
   margin: 0;
 }
-.will-row {
-  display: flex;
+.will-strip {
+  --diamond: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5 0L10 5L5 10L0 5Z' fill='%23b8864a'/></svg>");
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 1fr 11px 1fr;
   align-items: center;
   gap: 12px;
-  font-size: 1.15rem;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #5a6d7e, #202b36);
+  clip-path: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
 }
-.will-row b {
-  color: var(--ember);
-  font-weight: 700;
+.will-strip::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: linear-gradient(180deg, #1a2029, #10151c);
+  clip-path: polygon(
+    10px 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0 calc(100% - 10px),
+    0 10px
+  );
 }
-.will-emblem {
+.will-left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.will-figures {
   display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  clip-path: polygon(25% 3%, 75% 3%, 98% 50%, 75% 97%, 25% 97%, 2% 50%);
-  background: linear-gradient(180deg, #d89a4a, #7b4a1e);
+  gap: 2px;
+  white-space: nowrap;
 }
-.will-emblem img {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  clip-path: polygon(25% 3%, 75% 3%, 98% 50%, 75% 97%, 25% 97%, 2% 50%);
+.will-figures__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f3e8d2;
+}
+.will-figures__value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f3e8d2;
+}
+.will-divider {
+  align-self: stretch;
+  background:
+    var(--diamond) center / 11px 11px no-repeat,
+    linear-gradient(180deg, transparent, #b8864a 20%, #b8864a 80%, transparent) center / 1px 100%
+      no-repeat;
+}
+.will-hint {
+  white-space: pre-line;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: rgba(243, 232, 210, 0.82);
+}
+.will-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.6));
 }
 .will-bar {
   position: relative;
@@ -103,20 +165,22 @@ p {
 }
 .will-bar__tick {
   position: absolute;
-  top: 24px;
+  top: 26px;
   transform: translateX(-50%);
-  font-size: 0.8rem;
-  color: rgba(241, 228, 204, 0.75);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f3e8d2;
   white-space: nowrap;
 }
 .will-bar__tick i {
   position: absolute;
   left: 50%;
-  top: -14px;
-  width: 7px;
-  height: 7px;
-  border: 1px solid var(--copper);
-  background: #261c12;
+  top: -16px;
+  box-sizing: border-box;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #c3cfda;
+  background: #10151c;
   transform: translateX(-50%) rotate(45deg);
 }
 </style>

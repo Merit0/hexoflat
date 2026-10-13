@@ -28,7 +28,7 @@ export class KnowledgeBoardComponent extends BaseComponent {
   async verifyFull(): Promise<void> {
     await expect(this.page.getByTestId('knowledge-start')).toBeDisabled();
     await expect(this.page.getByTestId('knowledge-will')).toContainText(
-      `${await this.capacity()}/`,
+      new RegExp(`/\\s*${await this.capacity()}`),
     );
     await expect(this.page.locator('#knowledge-entry-message')).toContainText(
       /Твоя воля|Your Will/,
@@ -153,5 +153,11 @@ export class KnowledgeBoardComponent extends BaseComponent {
     await expect(right).toHaveClass(/is-correct/);
     await expect(this.page.getByTestId('knowledge-next')).toHaveCount(0);
     await this.verifyQuestionIndex(state.index + 1);
+  }
+  async verifyHelpTooltipOnHover(): Promise<void> {
+    await this.page.getByTestId('knowledge-help').hover();
+    const tip = this.page.getByTestId('knowledge-help-tip');
+    await expect(tip).toBeVisible();
+    await expect(tip).toContainText(/Зал Знань|Knowledge Hall/);
   }
 }
