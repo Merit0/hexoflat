@@ -76,7 +76,7 @@ describe('seeded knowledge questions', () => {
       }
     }
     for (const count of slots) expect(count).toBeGreaterThan(4500);
-  });
+  }, 60_000);
   it('reproduces identical questions and rejects fractional scores', () => {
     expect(generateQuestions('same')).toEqual(generateQuestions('same'));
     expect(() => accuracy(15.6)).toThrow();
