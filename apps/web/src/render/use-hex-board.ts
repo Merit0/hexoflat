@@ -43,6 +43,7 @@ export interface UseHexBoardOptions {
     markerCoord: ComputedRef<IHexCoordinates | null>;
     reachable: ComputedRef<boolean>;
     stepCost: ComputedRef<number>;
+    chargesWill: ComputedRef<boolean>;
     markerKind: ComputedRef<'move' | 'defend'>;
   };
   enemyVisionCells: ComputedRef<EnemyVisionCell[]>;
@@ -213,6 +214,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
           opts.movePreview.markerCoord,
           opts.movePreview.reachable,
           opts.movePreview.stepCost,
+          opts.movePreview.chargesWill,
           opts.movePreview.markerKind,
         ],
         () => {
@@ -221,6 +223,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
             reachable: opts.movePreview.reachable.value,
             markerCoord: opts.movePreview.markerCoord.value,
             stepCost: opts.movePreview.stepCost.value,
+            chargesWill: opts.movePreview.chargesWill.value,
             markerKind: opts.movePreview.markerKind.value,
           };
           movePreviewLayer?.sync(params);

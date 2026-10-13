@@ -8,6 +8,7 @@ import { getWorldSeed } from '@/services/rng/world-rng';
 import type { CombatSnapshot } from '@/stores/combat-store';
 
 export type TWorldState = {
+  knowledgeRevision?: number;
   contentVersion: number;
   heroCoordinates: IHexCoordinates | null;
   worldSeed?: string;

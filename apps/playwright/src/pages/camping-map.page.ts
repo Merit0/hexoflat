@@ -1,3 +1,4 @@
+import { KnowledgeBoardComponent } from '@components/knowledge-board.component';
 import { expect } from '@playwright/test';
 import { BasePage } from '@framework/base-page';
 import { HeroBoardPanelComponent } from '@components/hero-board-panel.component';
@@ -11,6 +12,7 @@ import { ActionAlertBannerComponent } from '@components/action-alert-banner.comp
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
+  readonly knowledge = new KnowledgeBoardComponent();
   readonly heroBoardPanel = new HeroBoardPanelComponent();
   readonly mapSessionControls = new MapSessionControlsComponent();
   readonly eventsLog = new EventsLogComponent();

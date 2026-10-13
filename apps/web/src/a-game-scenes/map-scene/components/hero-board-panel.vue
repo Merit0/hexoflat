@@ -1,7 +1,7 @@
 <template>
   <aside
     class="hero-board-panel"
-    :class="{ 'is-collapsed': !isHeroBoardOpen }"
+    :class="{ 'is-collapsed': !isHeroBoardOpen, 'is-knowledge': !!knowledgePanelMode }"
     data-testid="hero-board-panel"
   >
     <button
@@ -16,7 +16,8 @@
     </button>
 
     <div v-show="isHeroBoardOpen" class="hero-board-content">
-      <div class="hero-board-body">
+      <knowledge-board v-if="knowledgePanelMode" />
+      <div v-else class="hero-board-body">
         <header class="board-top">
           <div class="tabs">
             <button
@@ -107,6 +108,19 @@
 
         <section v-else-if="activeTab === 'inventory'" class="tab-panel board-body">
           <div ref="boardFitWrapperRef" class="board-body-frame">
+            <div v-if="heroStore.knowledgeError || canReturn" class="will-summary">
+              <span v-if="heroStore.knowledgeError" role="alert">{{
+                t('knowledge.saveError')
+              }}</span>
+              <button
+                v-if="canReturn"
+                type="button"
+                data-testid="knowledge-return-offer"
+                @click="openKnowledgePanel('return')"
+              >
+                {{ t('knowledge.returnAction') }}
+              </button>
+            </div>
             <div
               ref="boardFitContentRef"
               class="board-body-content"
@@ -149,6 +163,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import KnowledgeBoard from './knowledge-board.vue';
+import { stepCost } from '@hexoflat/engine/knowledge/math';
+import { willZoneCharges } from '@hexoflat/engine/knowledge/will-zone';
+import { knowledgePanelMode, openKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { computed, onMounted, ref } from 'vue';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -174,7 +193,14 @@ const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
 
 const activeTab = ref<HeroBoardTab>('inventory');
 
+const { t } = useI18n();
 const heroStore = useHeroStore();
+const canReturn = computed(
+  () =>
+    willZoneCharges(heroStore.willZoneContext) &&
+    (heroStore.knowledge?.current ?? Infinity) < stepCost(heroStore.willZoneContext) &&
+    !heroStore.isHeroMoving,
+);
 const heroInventoryStore = useHeroInventoryStore();
 
 const selectedItem = computed(() => heroInventoryStore.selectedItem);
@@ -222,6 +248,28 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@media (max-width: 760px) {
+  .hero-board-panel.is-knowledge {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(100%, 420px);
+    z-index: 300;
+  }
+  .is-knowledge .hero-board-rail {
+    display: none;
+  }
+}
+.will-summary {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  color: #e6e6e6;
+}
 .hero-board-panel {
   height: 100%;
   display: flex;

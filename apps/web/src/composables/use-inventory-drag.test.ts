@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import {
   dropInventoryDragToEquip,
@@ -67,9 +67,22 @@ describe('dropInventoryDragToSlot', () => {
     const item = inventoryStore.items.find((i) => i.key === HEXOBJECT_KEYS.SWORD)!;
     startInventoryDrag(item.id, item.slotKey, 0, 0, RECT);
 
-    dropInventoryDragToSlot(inventoryStore, 'r0c0');
+    dropInventoryDragToSlot(inventoryStore, 'r0c1');
 
-    expect(inventoryStore.items.find((i) => i.id === item.id)?.slotKey).toBe('r0c0');
+    expect(inventoryStore.items.find((i) => i.id === item.id)?.slotKey).toBe('r0c1');
+  });
+
+  it('refuses to drop an item onto the cell reserved for Will', () => {
+    const inventoryStore = useHeroInventoryStore();
+    inventoryStore.putToInventory(HEXOBJECT_KEYS.SWORD);
+    const item = inventoryStore.items.find((i) => i.key === HEXOBJECT_KEYS.SWORD)!;
+    const before = item.slotKey;
+    startInventoryDrag(item.id, before, 0, 0, RECT);
+
+    dropInventoryDragToSlot(inventoryStore, WILL_SLOT_KEY);
+
+    expect(inventoryStore.items.find((i) => i.id === item.id)?.slotKey).toBe(before);
+    expect(inventoryStore.freeSlotKeys).not.toContain(WILL_SLOT_KEY);
   });
 
   it('resets drag state even when nothing was being dragged', () => {

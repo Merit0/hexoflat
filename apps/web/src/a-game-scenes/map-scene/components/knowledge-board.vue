@@ -1,0 +1,307 @@
+<template>
+  <section
+    ref="panel"
+    class="knowledge-board"
+    tabindex="-1"
+    data-testid="knowledge-board"
+    :aria-label="mode === 'hall' ? t('knowledge.title') : t('knowledge.returnTitle')"
+  >
+    <header>
+      <h2>{{ mode === 'hall' ? t('knowledge.title') : t('knowledge.returnTitle') }}</h2>
+      <button type="button" :aria-label="t('knowledge.close')" @click="closeKnowledgePanel()">
+        ×
+      </button>
+    </header>
+    <p v-if="hero.knowledgeError" role="alert">{{ t('knowledge.saveError') }}</p>
+    <template v-if="hero.knowledge">
+      <p data-testid="knowledge-will">{{ t('knowledge.will', hero.knowledge) }}</p>
+      <progress
+        :value="hero.knowledge.current"
+        :max="hero.knowledge.capacity"
+        :aria-label="t('knowledge.will', hero.knowledge)"
+      />
+      <template v-if="!active">
+        <img class="hero-emblem" :src="heroImage" :alt="hero.hero.name" />
+        <h3>{{ t('knowledge.mixed') }}</h3>
+        <p>
+          {{ t('knowledge.mastery') }}:
+          {{
+            masteryLevel === null
+              ? '—'
+              : `${'◆'.repeat(masteryLevel)}${'◇'.repeat(5 - masteryLevel)}`
+          }}
+        </p>
+        <p>{{ t('knowledge.description') }}</p>
+        <p v-if="mode === 'return'">{{ t('knowledge.target') }}</p>
+        <p v-if="session?.status === 'claimed'" role="status">
+          {{ t('knowledge.awarded', { will: session.awarded }) }}
+        </p>
+        <button
+          type="button"
+          data-testid="knowledge-start"
+          :disabled="busy || hero.knowledgeError || (mode === 'hall' && full)"
+          aria-describedby="knowledge-entry-message"
+          @click="start"
+        >
+          {{ t('knowledge.start') }}
+        </button>
+        <p id="knowledge-entry-message">
+          {{ mode === 'hall' && full ? t('knowledge.full') : t('knowledge.noTimer') }}
+        </p>
+      </template>
+      <template v-else-if="question && ['question', 'feedback'].includes(active.status)">
+        <p>{{ t('knowledge.progress', { index: active.index + 1 }) }}</p>
+        <progress
+          :value="active.answers.length"
+          :max="20"
+          :aria-label="t('knowledge.progress', { index: active.index + 1 })"
+        />
+        <h3 class="question" data-testid="knowledge-question">{{ expression(question) }} = ?</h3>
+        <div class="answers">
+          <button
+            v-for="(option, i) in question.options"
+            :key="option"
+            type="button"
+            :data-testid="`knowledge-answer-${i}`"
+            :disabled="busy || active.status === 'feedback'"
+            @click="
+              send({
+                kind: 'answer',
+                sessionId: active.id,
+                questionId: question.id,
+                answer: option,
+              })
+            "
+          >
+            {{ option
+            }}<span v-if="active.status === 'feedback' && option === question.answer"> ✓</span>
+          </button>
+        </div>
+        <div v-if="active.status === 'feedback'" role="status" aria-live="polite">
+          <p>
+            {{
+              active.answers[active.index] === question.answer
+                ? t('knowledge.correct')
+                : t('knowledge.wrong')
+            }}
+          </p>
+          <p>{{ expression(question) }} = {{ question.answer }}</p>
+          <button
+            type="button"
+            data-testid="knowledge-next"
+            :disabled="busy"
+            @click="send({ kind: 'next', sessionId: active.id, questionId: question.id })"
+          >
+            {{ t('knowledge.next') }}
+          </button>
+        </div>
+      </template>
+      <template v-else-if="active.status === 'result'">
+        <h3 data-testid="knowledge-result">{{ correct }}/20 · {{ percent }}%</h3>
+        <p>{{ gradeText }}</p>
+        <template v-if="active.mode === 'hall'">
+          <p>{{ t('knowledge.reward', { will: award }) }}</p>
+          <button
+            type="button"
+            data-testid="knowledge-claim"
+            :disabled="busy"
+            @click="send({ kind: 'claim', sessionId: active.id })"
+          >
+            {{ t('knowledge.claim') }}
+          </button>
+        </template>
+        <template v-else-if="correct >= 17">
+          <p>{{ t('knowledge.returnPassed') }}</p>
+          <button
+            type="button"
+            data-testid="knowledge-return"
+            :disabled="busy"
+            @click="send({ kind: 'return', sessionId: active.id, assisted: false })"
+          >
+            {{ t('knowledge.returnConfirm') }}
+          </button>
+        </template>
+        <template v-else>
+          <p>{{ t('knowledge.target') }}</p>
+          <button type="button" :disabled="busy" @click="start">{{ t('knowledge.retry') }}</button>
+          <h3>{{ t('knowledge.review') }}</h3>
+          <p>{{ t('knowledge.assistanceRule') }}</p>
+          <template v-if="review">
+            <p>{{ active.reviewIndex + 1 }}/10 · {{ expression(review) }} = {{ review.answer }}</p>
+            <div class="answers">
+              <button
+                v-for="option in review.options"
+                :key="option"
+                type="button"
+                :disabled="busy"
+                @click="
+                  send({
+                    kind: 'review',
+                    sessionId: active.id,
+                    index: active.reviewIndex,
+                    answer: option,
+                  })
+                "
+              >
+                {{ option }}
+              </button>
+            </div>
+          </template>
+          <button
+            v-if="canAssist"
+            type="button"
+            :disabled="busy"
+            @click="send({ kind: 'return', sessionId: active.id, assisted: true })"
+          >
+            {{ t('knowledge.assisted') }}
+          </button>
+        </template>
+        <ul v-if="missed.length">
+          <li v-for="q in missed" :key="q.id">{{ expression(q) }} = {{ q.answer }}</li>
+        </ul>
+      </template>
+    </template>
+    <p v-if="rejected" role="alert">{{ t('knowledge.rejected') }}</p>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { computed, nextTick, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { knowledgePanelMode as mode, closeKnowledgePanel } from '@/composables/use-knowledge-panel';
+import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
+import { mastery } from '@hexoflat/engine/knowledge/math';
+import type { MathQuestion } from '@hexoflat/engine/knowledge/math';
+
+const { t } = useI18n();
+const {
+  hero,
+  busy,
+  rejected,
+  session,
+  active,
+  question,
+  correct,
+  percent,
+  gradeKey,
+  award,
+  review,
+  canAssist,
+  send,
+} = useKnowledgeChallenge();
+const gradeText = computed(
+  () =>
+    ({
+      'knowledge.grades.practice': t('knowledge.grades.practice'),
+      'knowledge.grades.repeat': t('knowledge.grades.repeat'),
+      'knowledge.grades.almost': t('knowledge.grades.almost'),
+      'knowledge.grades.passed': t('knowledge.grades.passed'),
+      'knowledge.grades.veryGood': t('knowledge.grades.veryGood'),
+      'knowledge.grades.excellent': t('knowledge.grades.excellent'),
+      'knowledge.grades.perfect': t('knowledge.grades.perfect'),
+    })[gradeKey.value],
+);
+const panel = ref<HTMLElement | null>(null);
+const heroImage = computed(() => `${import.meta.env.BASE_URL}hero-asssets/base-hero-hex.png`);
+const masteryLevel = computed(() => {
+  const levels = Object.values(hero.knowledge?.history ?? {})
+    .map(mastery)
+    .filter((value): value is number => value !== null);
+  return levels.length
+    ? Math.floor(levels.reduce((sum, level) => sum + level, 0) / levels.length)
+    : null;
+});
+const full = computed(() => !!hero.knowledge && hero.knowledge.current >= hero.knowledge.capacity);
+const missed = computed(
+  () =>
+    active.value?.questions.filter((q, i) => q.answer !== active.value?.answers[i]).slice(0, 4) ??
+    [],
+);
+const expression = (q: MathQuestion) =>
+  `${q.lhs} ${q.operation === 'multiply' ? '×' : '÷'} ${q.rhs}`;
+function start() {
+  if (mode.value) void send({ kind: 'start', mode: mode.value, seed: crypto.randomUUID() });
+}
+watch(
+  () => [mode.value, active.value?.index, active.value?.status],
+  async () => {
+    await nextTick();
+    panel.value?.focus();
+  },
+  { immediate: true },
+);
+</script>
+
+<style scoped>
+.knowledge-board {
+  padding: 18px;
+  overflow: auto;
+  min-height: 0;
+  color: #e6e6e6;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+h2,
+h3,
+p {
+  margin: 0;
+}
+h2 {
+  font-size: 1.3rem;
+}
+.hero-emblem {
+  width: 100px;
+  height: 110px;
+  object-fit: contain;
+  align-self: center;
+}
+progress {
+  width: 100%;
+  accent-color: #bba7d2;
+}
+.question {
+  font-size: 1.8rem;
+  text-align: center;
+  padding: 18px 0;
+}
+.answers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+button {
+  min-height: 44px;
+  color: #eef0f5;
+  background: #343043;
+  border: 1px solid #797084;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+}
+.answers button {
+  font-size: 1.35rem;
+  min-height: 54px;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+button:focus-visible {
+  outline: 3px solid #cbb9ee;
+  outline-offset: 2px;
+}
+[role='status'] {
+  display: grid;
+  gap: 12px;
+}
+ul {
+  padding-left: 20px;
+}
+</style>

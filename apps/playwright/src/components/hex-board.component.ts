@@ -167,6 +167,15 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async tryStepAndVerifyBlocked(): Promise<void> {
+    const from = await this.requireHeroCoordinates();
+    for (const candidate of await this.getNeighbors(from)) {
+      await this.clickTile(candidate);
+      await this.tileDetails.closeIfOpen();
+    }
+    expect(coordinateKey(await this.getHeroCoordinates())).toBe(coordinateKey(from));
+  }
+
   async moveAdjacentTo(target: TestHexCoordinates, maxSteps = 20): Promise<void> {
     for (let step = 0; step < maxSteps; step += 1) {
       const from = await this.requireHeroCoordinates();

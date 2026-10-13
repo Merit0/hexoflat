@@ -27,4 +27,18 @@ export class ToolActionOverlayComponent extends BaseComponent {
   async verifyActionIsNoLongerOffered(): Promise<void> {
     await expect(this.actionButton).toBeHidden();
   }
+
+  async verifyCostChip(cost: number): Promise<void> {
+    await expect(this.page.getByTestId('tool-action-cost')).toContainText(String(cost));
+  }
+
+  async verifyActionIsAffordable(): Promise<void> {
+    await expect(this.actionButton).toBeEnabled();
+    await expect(this.page.getByTestId('tool-action-insufficient-will')).toBeHidden();
+  }
+
+  async verifyInsufficientWill(): Promise<void> {
+    await expect(this.actionButton).toBeDisabled();
+    await expect(this.page.getByTestId('tool-action-insufficient-will')).toBeVisible();
+  }
 }

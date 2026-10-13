@@ -4,6 +4,7 @@ import { EHexActionType } from '../enums/hex-action-type';
 import type { TContentDefinition } from './content-schema';
 
 export type TConstructionKeys =
+  | typeof HEXOBJECT_KEYS.KNOWLEDGE_BOOK
   | typeof HEXOBJECT_KEYS.CAMPING_ENTRANCE
   | typeof HEXOBJECT_KEYS.CAVE_ENTRANCE
   | typeof HEXOBJECT_KEYS.CAVE_EXIT
@@ -17,6 +18,24 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.STONE_WALL;
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
+  [HEXOBJECT_KEYS.KNOWLEDGE_BOOK]: {
+    hexobjectKey: HEXOBJECT_KEYS.KNOWLEDGE_BOOK,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'content.knowledgeBook.title',
+    subtitle: 'content.knowledgeBook.subtitle',
+    description: 'content.knowledgeBook.description',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-constructs/open-book-table-token-image.png',
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.USE]: {
+        label: 'knowledge.open',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
+    },
+  },
   [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
     hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
     groupType: EHexobjectGroup.CONSTRUCTION,
@@ -32,6 +51,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         label: 'Enter',
         durationMs: 400,
         requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
       },
     },
     enter: { type: 'WORLD', locationKey: 'camping' },
@@ -52,6 +72,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         label: 'Enter',
         durationMs: 400,
         requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 2,
       },
     },
     enter: { type: 'WORLD', locationKey: 'cave' },
@@ -72,6 +93,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         label: 'Enter',
         durationMs: 400,
         requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
       },
     },
     enter: { type: 'WORLD', locationKey: 'silesia' },
@@ -92,6 +114,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         label: 'Enter',
         durationMs: 400,
         requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
       },
     },
     enter: { type: 'WORLD', locationKey: 'silesia' },
@@ -112,6 +135,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         label: 'Use',
         durationMs: 10_000,
         requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 1,
       },
     },
     heal: { amountPerTick: 1 },
@@ -133,6 +157,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         label: 'Use',
         durationMs: 10_000,
         requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 1,
       },
     },
     heal: { amountPerTick: 2 },
@@ -161,7 +186,11 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     spritePath: '/hex-assets/hex-loot/chest-token.png',
     construction: { integrity: 1000, isLocked: false, chestType: EChestType.LOOT },
     actions: {
-      [EHexActionType.OPEN]: { label: 'Open', requiredTool: HEXOBJECT_KEYS.HAND },
+      [EHexActionType.OPEN]: {
+        label: 'Open',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 2,
+      },
     },
   },
 
@@ -176,7 +205,11 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     spritePath: '/hex-assets/hex-loot/stash-chest-token-image.png',
     construction: { integrity: 1000, isLocked: false, chestType: EChestType.STASH },
     actions: {
-      [EHexActionType.OPEN]: { label: 'Open', requiredTool: HEXOBJECT_KEYS.HAND },
+      [EHexActionType.OPEN]: {
+        label: 'Open',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
     },
   },
 

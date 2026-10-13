@@ -1,3 +1,4 @@
+import { knowledgeStateSchema, type KnowledgeState } from '../knowledge/state';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
 import type { HeroState } from '../hero-movement/hero-state';
 import { CONTENT_VERSION } from '../content/content-version';
@@ -12,6 +13,7 @@ export interface SnapshotPayload {
   /** SHA-256 of `{ version, map, heroes }`, checked in `deserializeState`. */
   checksum: string;
   rngState?: RngState;
+  knowledge?: KnowledgeState;
 }
 
 /** Thrown by `deserializeState` — never partially deserializes a bad payload. */
@@ -47,7 +49,12 @@ function freshRngState(): RngState {
 }
 
 export function serializeState(state: HexEngineState): SnapshotPayload {
-  const content = { version: CONTENT_VERSION, map: state.map.toJSON(), heroes: state.heroes };
+  const content = {
+    version: CONTENT_VERSION,
+    map: state.map.toJSON(),
+    heroes: state.heroes,
+    ...(state.knowledge ? { knowledge: state.knowledge } : {}),
+  };
   return {
     ...content,
     checksum: computeChecksum(content),
@@ -68,6 +75,7 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
   return {
     map: HexMapModel.fromJSON(payload.map, now),
     heroes: payload.heroes,
+    ...(payload.knowledge ? { knowledge: knowledgeStateSchema.parse(payload.knowledge) } : {}),
     rngState: rngState ?? freshRngState(),
   };
 }

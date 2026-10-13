@@ -7,10 +7,22 @@
           v-if="bestActionLabel"
           class="do-btn"
           data-testid="tool-action-button"
+          :disabled="!canAffordBest"
           @click.stop="executeAction"
         >
           {{ bestActionLabel }}
+          <span v-if="bestActionCost > 0" class="will-chip" data-testid="tool-action-cost">
+            {{ t('knowledge.actionCost', { cost: bestActionCost }) }}
+          </span>
         </button>
+        <span
+          v-if="bestActionLabel && !canAffordBest"
+          class="will-reason"
+          role="alert"
+          data-testid="tool-action-insufficient-will"
+        >
+          {{ t('knowledge.insufficientWill') }}
+        </span>
 
         <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
           -
@@ -25,6 +37,9 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
+import { useWillPricing } from '@/composables/use-will-pricing';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { calcHexPixelPosition, type IHexPositioned } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -53,10 +68,12 @@ const emit = defineEmits<{
   (e: 'hide'): void;
 }>();
 
+const { t } = useI18n();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const combatStore = useCombatStore();
 const heroStore = useHeroStore();
+const pricing = useWillPricing();
 
 const activeToolKey = computed<THeroToolKey | null>(() => heroToolStore.activeTool);
 
@@ -173,7 +190,19 @@ const bestAction = computed<ResolvedAction | null>(() => {
   );
 });
 
-const bestActionLabel = computed(() => bestAction.value?.label ?? null);
+const bestActionLabel = computed(() =>
+  bestAction.value?.label === 'knowledge.open'
+    ? t('knowledge.open')
+    : (bestAction.value?.label ?? null),
+);
+
+const bestActionCost = computed(() =>
+  pricing.costOf(
+    hoveredTile.value,
+    bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
+  ),
+);
+const canAffordBest = computed(() => pricing.canAfford(bestActionCost.value));
 
 watch(
   resolvedActions,
@@ -233,15 +262,23 @@ const secondsLeft = computed(() => {
   return Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
 });
 
-function executeAction() {
+async function executeAction() {
   const tile = hoveredTile.value;
   const best = bestAction.value;
-  if (!tile || !best || !activeToolKey.value) return;
+  if (!tile || !best || !activeToolKey.value || !canAffordBest.value) return;
 
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
 
-  const res = worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
+  if (tile.hexobject?.hexobjectKey === 'knowledge-book') {
+    if (await heroStore.knowledgeAction({ kind: 'open' })) {
+      heroToolStore.stopTool();
+      openKnowledgePanel('hall');
+    }
+    return;
+  }
+
+  const res = await worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
 
   if (res.ok) {
     if (actionType === EHexActionType.BLOCK) {
@@ -332,6 +369,32 @@ function executeAction() {
   line-height: 1;
   letter-spacing: 0.12em;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
+}
+
+.do-btn:disabled {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+
+.will-chip {
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(120, 190, 255, 0.28);
+  font-weight: 800;
+}
+
+.will-reason {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ffb3b3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .do-btn:hover {

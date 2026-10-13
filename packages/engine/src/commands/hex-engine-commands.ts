@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
+import { KnowledgeCommandSchema, type KnowledgeCommand } from '../knowledge/commands';
 
 export const hexCoordinatesSchema = z.object({
   columnIndex: z.number(),
@@ -63,7 +64,8 @@ export type HexEngineCommand =
   | FinishPendingActionsCommand
   | WorldTickCommand
   | AddResourceSpawnerCommand
-  | MoveHeroCommand;
+  | MoveHeroCommand
+  | KnowledgeCommand;
 
 export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   HexEngineCommand['type'],
@@ -74,4 +76,5 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   WORLD_TICK: WorldTickCommandSchema,
   ADD_RESOURCE_SPAWNER: AddResourceSpawnerCommandSchema,
   MOVE_HERO: MoveHeroCommandSchema,
+  KNOWLEDGE: KnowledgeCommandSchema,
 };

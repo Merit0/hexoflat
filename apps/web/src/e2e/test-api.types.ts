@@ -19,6 +19,16 @@ export interface TestHeroHealth {
 }
 
 export interface HexoflatTestApi {
+  getKnowledge(): {
+    current: number;
+    status: string | null;
+    index: number;
+    options: number[];
+    answer: number | null;
+  } | null;
+  prepareKnowledgeWorld(current: number): void;
+  setWill(current: number): void;
+  getKnowledgeRules(): { startingWill: number; capacity: number };
   isBoardReady(): boolean;
 
   getHeroCoordinates(): TestHexCoordinates | null;

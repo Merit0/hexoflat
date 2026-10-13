@@ -1,5 +1,6 @@
 export const HEXOBJECT_KEYS = {
   TREE: 'tree',
+  KNOWLEDGE_BOOK: 'knowledge-book',
   COINS: 'coins',
   ROCK: 'rock',
   SKELETOR: 'skeletor',
