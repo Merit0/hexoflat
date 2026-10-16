@@ -140,7 +140,7 @@
                   height: `${boardFitContentHeight}px`,
                 }"
               >
-                <hero-equip-board />
+                <hero-equip-board @open-hero="activeTab = 'hero'" />
               </div>
             </div>
           </div>
@@ -181,6 +181,7 @@ import HpHearts from '@/a-game-scenes/map-scene/components/hp-hearts.vue';
 import DefenceShields from '@/a-game-scenes/map-scene/components/defence-shields.vue';
 import InventoryBoardGrid from '@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue';
 import HeroEquipBoard from '@/a-game-scenes/inventory-scene/components/hero-equip-board.vue';
+import { useEscapeClearsItemSelection } from '@/composables/use-escape-clears-item-selection';
 import ItemTooltipLayer from '@/components/gui/item-tooltip/item-tooltip-layer.vue';
 import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
@@ -249,6 +250,8 @@ const {
 onMounted(() => {
   heroInventoryStore.hydrate();
 });
+
+useEscapeClearsItemSelection();
 </script>
 
 <style scoped>

@@ -21,8 +21,12 @@
             t.kind === 'slot' && isDropSlot(t.id) && getEquippedItem(t.id) ? 'is-occupied' : '',
           ]"
           :data-eqslot="t.kind === 'slot' ? t.id : undefined"
+          :role="t.kind === 'hero' ? 'button' : undefined"
+          :tabindex="t.kind === 'hero' ? 0 : undefined"
           :data-testid="t.kind === 'slot' ? `equip-slot-${t.id}` : 'equip-hero-slot'"
           :style="[tileStyle(t), slotRarityStyle(t), { width: HEX_W + 'px', height: HEX_H + 'px' }]"
+          @click="t.kind === 'hero' && emit('open-hero')"
+          @keydown.enter="t.kind === 'hero' && emit('open-hero')"
         >
           <div v-if="t.kind === 'hero'" class="hero-core-token">
             <div class="hero-core-image" :style="heroImageStyle"></div>
@@ -48,6 +52,8 @@ import { resolveEquipCompatibility } from '@hexoflat/engine/utils/inventory/equi
 import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
 
 const EQUIP_SLOTS: TEquipSlot[] = ['weapon', 'shield', 'armor', 'gloves', 'helm', 'boots'];
+
+const emit = defineEmits<{ 'open-hero': [] }>();
 
 const inventoryStore = useHeroInventoryStore();
 
@@ -304,20 +310,52 @@ const capacity = computed(() => inventoryStore.carryCapacityKg.toFixed(2));
   background-repeat: no-repeat;
   background-size: contain;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.42));
+  transition:
+    transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.3s ease;
 }
 
 .hex.hero {
+  z-index: 2;
+  cursor: pointer;
   border: 2px solid rgba(20, 20, 20, 0.65);
   box-shadow:
     0 0 0 2px rgba(0, 0, 0, 0.25) inset,
     0 22px 60px rgba(0, 0, 0, 0.55),
     0 0 24px rgba(120, 255, 140, 0.18);
+  transition:
+    scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease;
+}
+
+.hex.hero:hover {
+  scale: 1.02;
+  z-index: 3;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.25) inset,
+    0 26px 70px rgba(0, 0, 0, 0.6),
+    0 0 36px rgba(120, 255, 140, 0.38);
+}
+
+.hex.hero:hover .hero-core-image {
+  transform: scale(1.02) translateY(-1%);
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.5)) brightness(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hex.hero,
+  .hero-core-image {
+    transition: none;
+  }
 }
 
 .carry-weight-badge {
   position: absolute;
-  right: 0;
-  bottom: -1rem;
+  left: 50%;
+  top: 100%;
+  margin-top: 0.75rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
 
   display: flex;
   align-items: center;
@@ -360,6 +398,6 @@ const capacity = computed(() => inventoryStore.carryCapacityKg.toFixed(2));
 }
 
 .carry-weight-badge:hover {
-  transform: scale(1.05);
+  transform: translateX(-50%) scale(1.05);
 }
 </style>
