@@ -12,16 +12,6 @@
     "noFurtherDetails": "No further details.",
     "nothingOfInterest": "Nothing of interest here."
   },
-  "tokenDetails": {
-    "noDescriptionYet": "No description yet.",
-    "type": "Type",
-    "weight": "Weight",
-    "slot": "Slot",
-    "amount": "Amount",
-    "use": "Use",
-    "equip": "Equip",
-    "drop": "Drop"
-  },
   "moveBlocked": {
     "panel": "Close the Book of Will or use Escape to move",
     "returning": "Finish returning to camp first",
