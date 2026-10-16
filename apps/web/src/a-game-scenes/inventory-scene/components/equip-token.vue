@@ -184,7 +184,7 @@ function onPointerDown(e: PointerEvent) {
 }
 
 .equip-slot-token.is-usable-tool:hover .hex-use-btn {
-  opacity: 1;
+  opacity: 0.7;
   pointer-events: auto;
   transform: translateX(-50%) scale(calc(1 / 1.05));
 }
