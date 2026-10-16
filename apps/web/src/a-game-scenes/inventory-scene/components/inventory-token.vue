@@ -81,6 +81,7 @@ const frameStyle = computed(() => {
 
 function onClick() {
   if (inventoryDragState.isDragging) return;
+  hideItemTooltip();
   inventoryStore.toggleSelect(props.item.id);
 }
 </script>

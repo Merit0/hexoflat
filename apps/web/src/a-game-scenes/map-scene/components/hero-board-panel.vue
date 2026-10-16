@@ -129,16 +129,18 @@
                 transform: `translate(${boardFitOffsetX}px, ${boardFitOffsetY}px) scale(${boardFitScale})`,
               }"
             >
-              <inventory-board-grid />
+              <inventory-board-grid>
+                <token-details-panel v-if="selectedItem" :item="selectedItem" />
+              </inventory-board-grid>
               <div
+                v-if="!selectedItem"
                 class="center-layer"
                 :style="{
                   width: `${boardFitContentWidth}px`,
                   height: `${boardFitContentHeight}px`,
                 }"
               >
-                <token-details-panel v-if="selectedItem" :item="selectedItem" />
-                <hero-equip-board v-else />
+                <hero-equip-board />
               </div>
             </div>
           </div>

@@ -13,6 +13,14 @@ export const RARITY_FRAME_URLS: Record<EEquipmentRarity, string> = {
   [EEquipmentRarity.MYTHIC]: '/hex-assets/hex-frames/violet-light.png',
 };
 
+export const RARITY_COLOR: Record<EEquipmentRarity, string> = {
+  [EEquipmentRarity.BASIC]: '#B8BCC0',
+  [EEquipmentRarity.COMMON]: '#4A9BE8',
+  [EEquipmentRarity.RARE]: '#F5DD2E',
+  [EEquipmentRarity.LEGEND]: '#FF7A1A',
+  [EEquipmentRarity.MYTHIC]: '#A35CFF',
+};
+
 interface IRaritySource {
   groupType: EHexobjectGroup;
   tool?: { rarity?: EEquipmentRarity };

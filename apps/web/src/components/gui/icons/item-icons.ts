@@ -1,6 +1,5 @@
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { EEquipmentRarity } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 
 const BOTTLE = 'M10 3 H14 M10.5 3 V8 L6 15 A5.5 5.5 0 0 0 18 15 L13.5 8 V3';
 
@@ -59,12 +58,4 @@ export const EQUIP_SLOT_ICON: Record<TEquipSlot, TIconName> = {
   boots: 'boots',
   ring: 'ring',
   amulet: 'amulet',
-};
-
-export const RARITY_COLOR: Record<EEquipmentRarity, string> = {
-  [EEquipmentRarity.BASIC]: '#A8A39A',
-  [EEquipmentRarity.COMMON]: '#EDE6D6',
-  [EEquipmentRarity.RARE]: '#6AAEF5',
-  [EEquipmentRarity.LEGEND]: '#F2A93B',
-  [EEquipmentRarity.MYTHIC]: '#D08CFF',
 };

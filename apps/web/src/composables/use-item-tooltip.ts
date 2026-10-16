@@ -4,7 +4,7 @@ import {
   resolveItemTooltip,
   type ItemTooltipView,
 } from '@hexoflat/engine/utils/inventory/item-tooltip';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { inventoryDragState } from '@/composables/use-inventory-drag';
 
 const SHOW_DELAY_MS = 120;
@@ -64,18 +64,24 @@ export function showItemTooltip(itemId: string, element: HTMLElement) {
   }, SHOW_DELAY_MS);
 }
 
+export function resolveInventoryItemTooltip(
+  inventory: ReturnType<typeof useHeroInventoryStore>,
+  item: InventoryItem,
+): ItemTooltipView {
+  const equippedItems = inventory.equippedItems;
+  const equipSlot = resolveInventoryView(item.key).equipSlot;
+  const equipped = Object.values(equippedItems).some((entry) => entry?.id === item.id);
+  const compareWith = !equipped && equipSlot ? equippedItems[equipSlot]?.key : undefined;
+  return resolveItemTooltip(item.key, { equipped, compareWith, amount: item.amount });
+}
+
 export function useItemTooltip() {
   const inventory = useHeroInventoryStore();
 
   const view = computed<ItemTooltipView | null>(() => {
     if (!target.value) return null;
     const item = inventory.items.find((entry) => entry.id === target.value?.itemId);
-    if (!item) return null;
-    const equippedItems = inventory.equippedItems;
-    const equipSlot = resolveInventoryView(item.key).equipSlot;
-    const equipped = Object.values(equippedItems).some((entry) => entry?.id === item.id);
-    const compareWith = !equipped && equipSlot ? equippedItems[equipSlot]?.key : undefined;
-    return resolveItemTooltip(item.key, { equipped, compareWith, amount: item.amount });
+    return item ? resolveInventoryItemTooltip(inventory, item) : null;
   });
 
   watch(

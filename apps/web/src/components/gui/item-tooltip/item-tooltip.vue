@@ -1,5 +1,10 @@
 <template>
-  <div class="tip" :style="{ '--rarity': rarityColor }" data-testid="item-tooltip">
+  <div
+    class="tip"
+    :class="{ 'tip--square': square }"
+    :style="{ '--rarity': rarityColor }"
+    data-testid="item-tooltip"
+  >
     <div class="tip__frame">
       <div class="tip__body">
         <header class="tip__head">
@@ -68,12 +73,12 @@ import {
   EQUIP_SLOT_ICON,
   ICON_PATHS,
   ITEM_ICON_BY_KEY,
-  RARITY_COLOR,
   type TIconName,
 } from '@/components/gui/icons/item-icons';
+import { RARITY_COLOR } from '@/render/rarity';
 import { useItemTooltipLabels } from './use-item-tooltip-labels';
 
-const props = defineProps<{ view: ItemTooltipView }>();
+const props = defineProps<{ view: ItemTooltipView; square?: boolean }>();
 const { t } = useI18n();
 const labels = useItemTooltipLabels();
 
@@ -304,6 +309,29 @@ const stackText = computed(() => {
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.tip--square {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+}
+.tip--square .tip__frame,
+.tip--square .tip__body {
+  clip-path: none;
+  box-sizing: border-box;
+  height: 100%;
+}
+.tip--square .tip__frame {
+  border-radius: 6px;
+}
+.tip--square .tip__body {
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tip--square .tip__foot {
+  margin-top: auto;
 }
 .tip__medal {
   position: absolute;

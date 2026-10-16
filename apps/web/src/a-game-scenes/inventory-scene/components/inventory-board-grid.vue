@@ -70,7 +70,7 @@
       </div>
     </div>
 
-    <div class="center-hole" :style="centerHoleStyle"></div>
+    <div class="center-hole" :style="centerHoleStyle"><slot /></div>
   </div>
 </template>
 
@@ -233,6 +233,10 @@ const centerHoleStyle = computed(() => {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.center-hole > * {
+  pointer-events: auto;
 }
 
 .will-token {
