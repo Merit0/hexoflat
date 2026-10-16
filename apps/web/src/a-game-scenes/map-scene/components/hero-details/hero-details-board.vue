@@ -3,12 +3,11 @@
     <div
       ref="contentRef"
       class="hero-details__content"
-      :style="{ transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale})` }"
+      :style="{ transform: `translate(${offsetX}px, 0) scale(${scale})` }"
     >
       <hero-details-header :view="view" />
       <hero-health-section :view="view" />
       <hero-defence-section :view="view" />
-      <hero-will-section :view="view" />
       <hero-stat-grid :view="view" />
       <hero-details-tabs v-model="tab" />
 
@@ -53,7 +52,6 @@ import { useHeroDetails, type HeroDetailsTab } from '@/composables/use-hero-deta
 import HeroDetailsHeader from './hero-details-header.vue';
 import HeroHealthSection from './hero-health-section.vue';
 import HeroDefenceSection from './hero-defence-section.vue';
-import HeroWillSection from './hero-will-section.vue';
 import HeroStatGrid from './hero-stat-grid.vue';
 import HeroDetailsTabs from './hero-details-tabs.vue';
 import HeroDetailsCard from './hero-details-card.vue';
@@ -62,7 +60,7 @@ import HeroHandsSection from './hero-hands-section.vue';
 const { t } = useI18n();
 const view = useHeroDetails();
 const tab = ref<HeroDetailsTab>('state');
-const { wrapperRef, contentRef, scale, offsetX, offsetY } = useFitToWidth();
+const { wrapperRef, contentRef, scale, offsetX } = useFitToWidth();
 </script>
 
 <style scoped>
