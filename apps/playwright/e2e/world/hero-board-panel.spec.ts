@@ -57,3 +57,14 @@ test('Verify collapsing and expanding the hero board panel via the rail', async 
   await toggleBoard.expand();
   await verifyBoard.verifyPanelOpen();
 });
+
+test('Verify clicking the hero hex opens the Hero tab and its Path view', async () => {
+  await new OpenCampingMapFeature().open();
+
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.openHeroTabFromHeroHex();
+  await verifyBoard.verifyHeroTabContentVisible();
+
+  await verifyBoard.switchDetailsTab('path');
+  await verifyBoard.verifyScoutPathCardVisible();
+});

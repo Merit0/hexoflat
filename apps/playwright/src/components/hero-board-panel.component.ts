@@ -3,6 +3,7 @@ import { BaseComponent } from '@framework/base-component';
 import type { TestHeroHealth } from '@framework/test-api';
 
 export type HeroBoardTab = 'hero' | 'inventory' | 'skills' | 'events';
+export type HeroDetailsTab = 'state' | 'path';
 
 /**
  * The persistent right-side panel — collapse rail, the Hero/Inventory/
@@ -27,20 +28,32 @@ export class HeroBoardPanelComponent extends BaseComponent {
     return this.page.getByTestId('topbar-hero-name');
   }
 
-  private get faithBar(): Locator {
-    return this.page.getByTestId('hero-faith-bar');
+  private get handsSection(): Locator {
+    return this.page.getByTestId('hero-details-state');
+  }
+
+  private detailsTab(tab: HeroDetailsTab): Locator {
+    return this.page.getByTestId(`hero-details-tab-${tab}`);
+  }
+
+  private get shieldsVitals(): Locator {
+    return this.page.getByTestId('hero-vitals-shields');
+  }
+
+  private get willVitals(): Locator {
+    return this.page.getByTestId('hero-vitals-will');
+  }
+
+  private get scoutPathCard(): Locator {
+    return this.page.getByTestId('hero-path-scout');
   }
 
   private get healthBar(): Locator {
     return this.page.getByTestId('topbar-hp-bar');
   }
 
-  private get defenceBar(): Locator {
-    return this.page.getByTestId('hero-defence-bar');
-  }
-
-  private get stepsChip(): Locator {
-    return this.page.getByTestId('topbar-steps-chip');
+  private get stepsText(): Locator {
+    return this.page.getByTestId('hero-path-steps');
   }
 
   private get scoutChip(): Locator {
@@ -85,12 +98,26 @@ export class HeroBoardPanelComponent extends BaseComponent {
 
   async verifyHeroTabContentVisible(): Promise<void> {
     await expect(this.heroName).toBeVisible();
-    await expect(this.faithBar).toBeVisible();
+    await expect(this.handsSection).toBeVisible();
     await expect(this.healthBar).toBeVisible();
-    await expect(this.defenceBar).toBeVisible();
-    await expect(this.stepsChip).toBeVisible();
+    await expect(this.shieldsVitals).toBeVisible();
+    await expect(this.willVitals).toBeVisible();
     await expect(this.scoutChip).toBeVisible();
     await expect(this.mapChip).toBeVisible();
+  }
+
+  async clickDetailsTab(tab: HeroDetailsTab): Promise<void> {
+    await this.detailsTab(tab).click();
+  }
+
+  async verifyDetailsTabPressed(tab: HeroDetailsTab): Promise<void> {
+    await expect(this.detailsTab(tab)).toHaveAttribute('aria-pressed', 'true');
+  }
+
+  async verifyScoutPathCardVisible(): Promise<void> {
+    await expect(this.scoutPathCard).toBeVisible();
+    await expect(this.handsSection).toBeHidden();
+    await expect(this.stepsText).toBeVisible();
   }
 
   async verifyHeroTabContentHidden(): Promise<void> {
@@ -98,11 +125,13 @@ export class HeroBoardPanelComponent extends BaseComponent {
   }
 
   async readStepsText(): Promise<string> {
-    return this.stepsChip.innerText();
+    await this.detailsTab('path').click();
+    return this.stepsText.innerText();
   }
 
   async verifyStepsTextChangedFrom(previous: string): Promise<void> {
-    await expect(this.stepsChip).not.toHaveText(previous);
+    await this.detailsTab('path').click();
+    await expect(this.stepsText).not.toHaveText(previous);
   }
 
   async verifyMapChipContains(text: string): Promise<void> {

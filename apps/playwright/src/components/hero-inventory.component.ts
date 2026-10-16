@@ -149,6 +149,10 @@ export class HeroInventoryComponent extends BaseComponent {
     await this.verifyItemInGridSlot(itemId, slotKey);
   }
 
+  async clickHeroHex(): Promise<void> {
+    await this.page.getByTestId('equip-hero-slot').click();
+  }
+
   private get tooltip(): Locator {
     return this.page.getByTestId('item-tooltip');
   }

@@ -117,5 +117,34 @@
       "durability": "Durability",
       "stack": "Stack"
     }
+  },
+  "heroDetails": {
+    "hint": "Hover a stat to see where it comes from",
+    "vitals": {
+      "hearts": "Hearts",
+      "shields": "Shields",
+      "will": "Will"
+    },
+    "stat": {
+      "attack": "Attack",
+      "defense": "Defence",
+      "load": "Load",
+      "victories": "Victories"
+    },
+    "tab": {
+      "state": "State",
+      "path": "Path"
+    },
+    "path": {
+      "scout": "Scout",
+      "nextRank": "Next rank at {steps} steps",
+      "maxRank": "Top rank reached",
+      "steps": "Steps"
+    },
+    "hands": {
+      "right": "Right hand",
+      "left": "Left hand",
+      "empty": "Empty"
+    }
   }
 }

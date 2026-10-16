@@ -1,6 +1,6 @@
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
-import type { HeroBoardTab } from '@components/hero-board-panel.component';
+import type { HeroBoardTab, HeroDetailsTab } from '@components/hero-board-panel.component';
 
 export class VerifyHeroBoardFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
@@ -56,6 +56,26 @@ export class VerifyHeroBoardFeature extends BaseFeature {
   async verifyPanelCollapsed(): Promise<void> {
     await this.step('Verify the hero board panel is collapsed', () =>
       this.campingMap.heroBoardPanel.verifyPanelCollapsed(),
+    );
+  }
+
+  async openHeroTabFromHeroHex(): Promise<void> {
+    await this.step('Click the hero hex in the equipment board to open the Hero tab', async () => {
+      await this.campingMap.inventory.clickHeroHex();
+      await this.campingMap.heroBoardPanel.verifyTabActive('hero');
+    });
+  }
+
+  async switchDetailsTab(tab: HeroDetailsTab): Promise<void> {
+    await this.step(`Switch the hero details to "${tab}"`, async () => {
+      await this.campingMap.heroBoardPanel.clickDetailsTab(tab);
+      await this.campingMap.heroBoardPanel.verifyDetailsTabPressed(tab);
+    });
+  }
+
+  async verifyScoutPathCardVisible(): Promise<void> {
+    await this.step('Verify the Scout path card is shown instead of the state list', () =>
+      this.campingMap.heroBoardPanel.verifyScoutPathCardVisible(),
     );
   }
 }
