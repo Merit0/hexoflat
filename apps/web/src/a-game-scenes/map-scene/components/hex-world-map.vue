@@ -78,6 +78,7 @@ import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
 import { useMovePreview } from '@/composables/use-move-preview';
 import { useBoardCamera } from '@/composables/use-board-camera';
+import { useStopToolWhenUnequipped } from '@/composables/use-stop-tool-when-unequipped';
 import { useHexBoardInput } from '@/composables/use-hex-board-input';
 import { useGameLayout } from '@/composables/use-game-layout';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -396,6 +397,7 @@ function onKeyDown(event: KeyboardEvent) {
 }
 
 useHexBoardInput({ hoveredTileCoord });
+useStopToolWhenUnequipped(onHide);
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown);
