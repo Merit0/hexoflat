@@ -49,4 +49,23 @@ export class VerifyInventoryFeature extends BaseFeature {
       this.campingMap.inventory.verifyWillCellHoldsNoItem(),
     );
   }
+
+  async verifyBagItemTooltip(itemKey: string, title: RegExp): Promise<void> {
+    await this.step(`Hovering "${itemKey}" in the bag explains it, leaving hides it`, async () => {
+      const itemId = await this.campingMap.inventory.getItemIdByKey(itemKey);
+      await this.campingMap.inventory.hoverGridItem(itemId);
+      await this.campingMap.inventory.verifyTooltipTitle(title);
+      await this.campingMap.inventory.moveMouseAway();
+      await this.campingMap.inventory.verifyTooltipHidden();
+    });
+  }
+
+  async verifyEquippedItemTooltip(itemKey: string, title: RegExp): Promise<void> {
+    await this.step(`Hovering equipped "${itemKey}" explains it as equipped`, async () => {
+      const itemId = await this.campingMap.inventory.getItemIdByKey(itemKey);
+      await this.campingMap.inventory.hoverEquippedItem(itemId);
+      await this.campingMap.inventory.verifyTooltipTitle(title);
+      await this.campingMap.inventory.verifyTooltipMarkedEquipped();
+    });
+  }
 }

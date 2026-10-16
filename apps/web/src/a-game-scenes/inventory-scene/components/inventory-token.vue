@@ -7,8 +7,13 @@
       'is-selected': isSelected,
     }"
     :style="tokenStyle"
+    tabindex="0"
     @pointerdown.prevent="onPointerDown"
     @click="onClick"
+    @mouseenter="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
+    @mouseleave="hideItemTooltip()"
+    @focus="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
+    @blur="hideItemTooltip()"
   >
     <div v-if="frameStyle" class="rarity-glow" :style="frameStyle" aria-hidden="true"></div>
     <div class="icon" :style="iconStyle"></div>
@@ -27,13 +32,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from 'vue';
+import { computed, onBeforeUnmount, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { inventoryDragState, useInventoryDragHandle } from '@/composables/use-inventory-drag';
 import { rarityFrameUrlForKey } from '@/render/rarity';
+import { hideItemTooltip, showItemTooltip } from '@/composables/use-item-tooltip';
 
 const props = defineProps<{ item: InventoryItem }>();
+
+onBeforeUnmount(hideItemTooltip);
 
 const inventoryStore = useHeroInventoryStore();
 const { onPointerDown } = useInventoryDragHandle(() => props.item.id);
@@ -73,6 +81,7 @@ const frameStyle = computed(() => {
 
 function onClick() {
   if (inventoryDragState.isDragging) return;
+  hideItemTooltip();
   inventoryStore.toggleSelect(props.item.id);
 }
 </script>

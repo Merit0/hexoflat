@@ -15,6 +15,7 @@
       <span class="hero-board-rail__chevron">{{ isHeroBoardOpen ? '›' : '‹' }}</span>
     </button>
 
+    <item-tooltip-layer />
     <div v-show="isHeroBoardOpen" class="hero-board-content">
       <knowledge-board v-if="knowledgePanelMode" />
       <div v-else class="hero-board-body">
@@ -128,16 +129,18 @@
                 transform: `translate(${boardFitOffsetX}px, ${boardFitOffsetY}px) scale(${boardFitScale})`,
               }"
             >
-              <inventory-board-grid />
+              <inventory-board-grid>
+                <token-details-panel v-if="selectedItem" :item="selectedItem" />
+              </inventory-board-grid>
               <div
+                v-if="!selectedItem"
                 class="center-layer"
                 :style="{
                   width: `${boardFitContentWidth}px`,
                   height: `${boardFitContentHeight}px`,
                 }"
               >
-                <token-details-panel v-if="selectedItem" :item="selectedItem" />
-                <hero-equip-board v-else />
+                <hero-equip-board />
               </div>
             </div>
           </div>
@@ -178,6 +181,7 @@ import HpHearts from '@/a-game-scenes/map-scene/components/hp-hearts.vue';
 import DefenceShields from '@/a-game-scenes/map-scene/components/defence-shields.vue';
 import InventoryBoardGrid from '@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue';
 import HeroEquipBoard from '@/a-game-scenes/inventory-scene/components/hero-equip-board.vue';
+import ItemTooltipLayer from '@/components/gui/item-tooltip/item-tooltip-layer.vue';
 import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { getScoutProgress } from '@hexoflat/engine/hero-movement/scout-progression';

@@ -12,16 +12,6 @@
     "noFurtherDetails": "Немає додаткових деталей.",
     "nothingOfInterest": "Тут немає нічого цікавого."
   },
-  "tokenDetails": {
-    "noDescriptionYet": "Опису поки немає.",
-    "type": "Тип",
-    "weight": "Вага",
-    "slot": "Слот",
-    "amount": "Кількість",
-    "use": "Використати",
-    "equip": "Одягти",
-    "drop": "Викинути"
-  },
   "moveBlocked": {
     "panel": "Закрий Книгу Волі або натисни Escape, щоб рухатися",
     "returning": "Спершу заверши повернення в кемпінг",
@@ -77,6 +67,55 @@
       "veryGood": "Дуже добре",
       "excellent": "Відмінно",
       "perfect": "Бездоганно"
+    }
+  },
+  "itemTooltip": {
+    "rarity": {
+      "basic": "Базовий",
+      "common": "Звичайний",
+      "rare": "Рідкісний",
+      "legend": "Легендарний",
+      "mythic": "Міфічний"
+    },
+    "equipped": "Надіто",
+    "group": {
+      "resource": "Ресурс",
+      "creature": "Істота",
+      "tool": "Інструмент",
+      "construction": "Споруда",
+      "loot": "Здобич",
+      "equipment": "Спорядження"
+    },
+    "slot": {
+      "weapon": "Зброя",
+      "shield": "Щит",
+      "armor": "Броня",
+      "gloves": "Рукавиці",
+      "helm": "Шолом",
+      "boots": "Чоботи",
+      "ring": "Перстень",
+      "amulet": "Амулет"
+    },
+    "headline": {
+      "damage": "Шкода",
+      "defense": "Захист",
+      "multiplier": "Множник атаки"
+    },
+    "capability": {
+      "cut": "Рубати",
+      "mine": "Копати",
+      "pickup": "Брати",
+      "enter": "Входити",
+      "use": "Використовувати",
+      "open": "Відкривати",
+      "attack": "Атака",
+      "block": "Блок"
+    },
+    "footer": {
+      "weight": "Вага",
+      "weightUnit": "кг",
+      "durability": "Міцність",
+      "stack": "Стос"
     }
   }
 }
