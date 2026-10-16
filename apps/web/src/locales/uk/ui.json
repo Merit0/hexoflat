@@ -78,5 +78,54 @@
       "excellent": "Відмінно",
       "perfect": "Бездоганно"
     }
+  },
+  "itemTooltip": {
+    "rarity": {
+      "basic": "Базовий",
+      "common": "Звичайний",
+      "rare": "Рідкісний",
+      "legend": "Легендарний",
+      "mythic": "Міфічний"
+    },
+    "equipped": "Надіто",
+    "group": {
+      "resource": "Ресурс",
+      "creature": "Істота",
+      "tool": "Інструмент",
+      "construction": "Споруда",
+      "loot": "Здобич",
+      "equipment": "Спорядження"
+    },
+    "slot": {
+      "weapon": "Зброя",
+      "shield": "Щит",
+      "armor": "Броня",
+      "gloves": "Рукавиці",
+      "helm": "Шолом",
+      "boots": "Чоботи",
+      "ring": "Перстень",
+      "amulet": "Амулет"
+    },
+    "headline": {
+      "damage": "Шкода",
+      "defense": "Захист",
+      "multiplier": "Множник атаки"
+    },
+    "capability": {
+      "cut": "Рубати",
+      "mine": "Копати",
+      "pickup": "Брати",
+      "enter": "Входити",
+      "use": "Використовувати",
+      "open": "Відкривати",
+      "attack": "Атака",
+      "block": "Блок"
+    },
+    "footer": {
+      "weight": "Вага",
+      "weightUnit": "кг",
+      "durability": "Міцність",
+      "stack": "Стос"
+    }
   }
 }

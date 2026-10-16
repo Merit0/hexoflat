@@ -4,20 +4,20 @@
       <div class="thumb" :style="thumbStyle"></div>
 
       <div class="meta">
-        <div class="title" data-testid="token-details-title">{{ t(traits.title) }}</div>
+        <div class="title" data-testid="token-details-title">{{ t(view.title) }}</div>
         <div class="sub">{{ item.key }}</div>
       </div>
     </div>
 
     <div class="desc">
-      {{ traits.description ? t(traits.description) : t('tokenDetails.noDescriptionYet') }}
+      {{ view.description ? t(view.description) : t('tokenDetails.noDescriptionYet') }}
     </div>
 
     <div class="row">
       <div class="pill">{{ t('tokenDetails.type') }}: {{ item.type }}</div>
-      <div class="pill">{{ t('tokenDetails.weight') }}: {{ traits.weightKg }}</div>
-      <div v-if="item.equipSlot" class="pill">
-        {{ t('tokenDetails.slot') }}: {{ item.equipSlot }}
+      <div class="pill">{{ t('tokenDetails.weight') }}: {{ view.footer.weightKg }}</div>
+      <div v-if="view.equipSlot" class="pill">
+        {{ t('tokenDetails.slot') }}: {{ view.equipSlot }}
       </div>
       <div v-if="item.amount > 1" class="pill">
         {{ t('tokenDetails.amount') }}: {{ item.amount }}
@@ -43,11 +43,13 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
+import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-tooltip';
 
 const props = defineProps<{ item: InventoryItem }>();
 
 const { t } = useI18n();
 const traits = computed(() => resolveInventoryView(props.item.key));
+const view = computed(() => resolveItemTooltip(props.item.key, { amount: props.item.amount }));
 
 const thumbStyle = computed(() => ({
   backgroundImage: traits.value.iconPath ? `url('${traits.value.iconPath}')` : 'none',

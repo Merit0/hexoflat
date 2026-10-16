@@ -7,7 +7,12 @@
       'is-usable-tool': isUsableTool,
     }"
     :style="tokenStyle"
+    tabindex="0"
     @pointerdown="onPointerDown"
+    @mouseenter="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
+    @mouseleave="hideItemTooltip()"
+    @focus="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
+    @blur="hideItemTooltip()"
   >
     <div class="icon" :style="iconStyle"></div>
 
@@ -36,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type CSSProperties } from 'vue';
+import { computed, onBeforeUnmount, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -46,10 +51,13 @@ import { useHeroStore } from '@/stores/hero-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { inventoryDragState, useInventoryDragHandle } from '@/composables/use-inventory-drag';
+import { hideItemTooltip, showItemTooltip } from '@/composables/use-item-tooltip';
 
 const props = defineProps<{
   item: InventoryItem;
 }>();
+
+onBeforeUnmount(hideItemTooltip);
 
 const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
@@ -178,7 +186,7 @@ function onPointerDown(e: PointerEvent) {
 .equip-slot-token.is-usable-tool:hover .hex-use-btn {
   opacity: 1;
   pointer-events: auto;
-  transform: translateX(-50%) rotate(calc(var(--rot) * -1)) translateY(-2px);
+  transform: translateX(-50%) scale(calc(1 / 1.05));
 }
 
 .hex-use-btn {
@@ -203,7 +211,7 @@ function onPointerDown(e: PointerEvent) {
     0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   transition:
     opacity 0.12s ease,
-    transform 0.12s ease,
+    transform 0.08s linear,
     filter 0.12s ease;
 }
 

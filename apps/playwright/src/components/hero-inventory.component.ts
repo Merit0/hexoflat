@@ -148,4 +148,35 @@ export class HeroInventoryComponent extends BaseComponent {
   async verifyItemStaysInGridSlot(itemId: string, slotKey: string): Promise<void> {
     await this.verifyItemInGridSlot(itemId, slotKey);
   }
+
+  private get tooltip(): Locator {
+    return this.page.getByTestId('item-tooltip');
+  }
+
+  async hoverGridItem(itemId: string): Promise<void> {
+    await this.moveMouseAway();
+    await this.gridToken(itemId).hover();
+  }
+
+  async hoverEquippedItem(itemId: string): Promise<void> {
+    await this.moveMouseAway();
+    await this.equipToken(itemId).hover();
+  }
+
+  async moveMouseAway(): Promise<void> {
+    await this.page.mouse.move(4, 4);
+  }
+
+  async verifyTooltipTitle(title: RegExp): Promise<void> {
+    await expect(this.tooltip).toBeVisible();
+    await expect(this.page.getByTestId('item-tooltip-title')).toHaveText(title);
+  }
+
+  async verifyTooltipMarkedEquipped(): Promise<void> {
+    await expect(this.page.getByTestId('item-tooltip-equipped')).toBeVisible();
+  }
+
+  async verifyTooltipHidden(): Promise<void> {
+    await expect(this.tooltip).toBeHidden();
+  }
 }

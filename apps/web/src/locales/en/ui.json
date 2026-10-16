@@ -78,5 +78,54 @@
       "excellent": "Excellent",
       "perfect": "Perfect"
     }
+  },
+  "itemTooltip": {
+    "rarity": {
+      "basic": "Basic",
+      "common": "Common",
+      "rare": "Rare",
+      "legend": "Legendary",
+      "mythic": "Mythic"
+    },
+    "equipped": "Equipped",
+    "group": {
+      "resource": "Resource",
+      "creature": "Creature",
+      "tool": "Tool",
+      "construction": "Structure",
+      "loot": "Loot",
+      "equipment": "Equipment"
+    },
+    "slot": {
+      "weapon": "Weapon",
+      "shield": "Shield",
+      "armor": "Armor",
+      "gloves": "Gloves",
+      "helm": "Helm",
+      "boots": "Boots",
+      "ring": "Ring",
+      "amulet": "Amulet"
+    },
+    "headline": {
+      "damage": "Damage",
+      "defense": "Defense",
+      "multiplier": "Attack multiplier"
+    },
+    "capability": {
+      "cut": "Chop",
+      "mine": "Mine",
+      "pickup": "Pick up",
+      "enter": "Enter",
+      "use": "Use",
+      "open": "Open",
+      "attack": "Attack",
+      "block": "Block"
+    },
+    "footer": {
+      "weight": "Weight",
+      "weightUnit": "kg",
+      "durability": "Durability",
+      "stack": "Stack"
+    }
   }
 }

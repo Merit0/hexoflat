@@ -15,6 +15,7 @@
       <span class="hero-board-rail__chevron">{{ isHeroBoardOpen ? '›' : '‹' }}</span>
     </button>
 
+    <item-tooltip-layer />
     <div v-show="isHeroBoardOpen" class="hero-board-content">
       <knowledge-board v-if="knowledgePanelMode" />
       <div v-else class="hero-board-body">
@@ -178,6 +179,7 @@ import HpHearts from '@/a-game-scenes/map-scene/components/hp-hearts.vue';
 import DefenceShields from '@/a-game-scenes/map-scene/components/defence-shields.vue';
 import InventoryBoardGrid from '@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue';
 import HeroEquipBoard from '@/a-game-scenes/inventory-scene/components/hero-equip-board.vue';
+import ItemTooltipLayer from '@/components/gui/item-tooltip/item-tooltip-layer.vue';
 import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { getScoutProgress } from '@hexoflat/engine/hero-movement/scout-progression';
