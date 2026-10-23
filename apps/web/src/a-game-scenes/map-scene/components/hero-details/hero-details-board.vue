@@ -6,8 +6,24 @@
       :style="{ transform: `translate(${offsetX}px, 0) scale(${scale})` }"
     >
       <hero-details-header :view="view" />
-      <hero-health-section :view="view" />
-      <hero-defence-section :view="view" />
+      <hero-vital-section
+        kind="heart"
+        :label="labels.vitals.hearts"
+        :current="view.hearts.current"
+        :max="view.hearts.max"
+        :slot-count="view.hearts.count"
+        test-prefix="hero-vitals-hearts"
+        data-testid="topbar-hp-bar"
+      />
+      <hero-vital-section
+        kind="shield"
+        :label="labels.vitals.shields"
+        :current="view.shields.filled"
+        :max="view.shields.total"
+        :slot-count="view.shields.total"
+        test-prefix="hero-vitals-shields"
+        data-testid="hero-vitals-shields"
+      />
       <hero-stat-grid :view="view" />
       <hero-details-tabs v-model="tab" />
 
@@ -50,8 +66,8 @@ import { useFitToWidth } from '@/composables/use-fit-to-width';
 import { useI18n } from 'vue-i18n';
 import { useHeroDetails, type HeroDetailsTab } from '@/composables/use-hero-details';
 import HeroDetailsHeader from './hero-details-header.vue';
-import HeroHealthSection from './hero-health-section.vue';
-import HeroDefenceSection from './hero-defence-section.vue';
+import HeroVitalSection from './hero-vital-section.vue';
+import { useHeroDetailsLabels } from './use-hero-details-labels';
 import HeroStatGrid from './hero-stat-grid.vue';
 import HeroDetailsTabs from './hero-details-tabs.vue';
 import HeroDetailsCard from './hero-details-card.vue';
@@ -60,6 +76,7 @@ import HeroHandsSection from './hero-hands-section.vue';
 const { t } = useI18n();
 const view = useHeroDetails();
 const tab = ref<HeroDetailsTab>('state');
+const labels = useHeroDetailsLabels();
 const { wrapperRef, contentRef, scale, offsetX } = useFitToWidth();
 </script>
 

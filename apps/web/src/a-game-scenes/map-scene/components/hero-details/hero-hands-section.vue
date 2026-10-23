@@ -87,7 +87,7 @@ const dividerBackground = computed(
   flex: none;
   display: grid;
   place-items: center;
-  color: var(--rarity);
+  color: #cbbfa6;
 }
 .hand__icon svg {
   width: 30px;
