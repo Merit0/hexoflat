@@ -8,6 +8,7 @@
   padding: 196px 20px 22px;
   margin-top: 8px;
   overflow: auto;
+  scrollbar-width: none;
   min-height: 0;
   color: var(--parchment);
   font-family: var(--font-main, serif), serif;
@@ -299,4 +300,8 @@ button:focus-visible {
 }
 ul {
   padding-left: 20px;
+}
+
+.knowledge-board::-webkit-scrollbar {
+  display: none;
 }

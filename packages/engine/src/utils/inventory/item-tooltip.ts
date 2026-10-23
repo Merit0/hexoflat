@@ -5,6 +5,8 @@ import {
   type TEquipSlot,
 } from '../../abstraction/hexobject-abstraction';
 import { getMeta, getPrototype } from '../../content';
+import { getShieldPoints } from '../../combat/shield-points';
+import { getHeartPoints } from '../../combat/heart-points';
 import {
   getToolCapabilities,
   type ToolCapabilities,
@@ -47,6 +49,8 @@ export interface ItemTooltipView {
   equipped: boolean;
   headline?: TooltipHeadline;
   capabilities: TooltipCapability[];
+  shields: number;
+  hearts: number;
   footer: TooltipFooter;
 }
 
@@ -147,6 +151,8 @@ export function resolveItemTooltip(
     equipped: options.equipped ?? false,
     headline,
     capabilities: capabilitiesOf(key, view.group),
+    shields: getShieldPoints(key),
+    hearts: getHeartPoints(key),
     footer: {
       weightKg: view.weightKg,
       durabilityMax: durabilityMaxOf(proto),

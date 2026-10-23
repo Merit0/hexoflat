@@ -54,12 +54,16 @@ export function hideItemTooltip() {
   target.value = null;
 }
 
+function isTooltipSuppressed(): boolean {
+  return inventoryDragState.isDragging || useHeroInventoryStore().selectedItemId !== null;
+}
+
 export function showItemTooltip(itemId: string, element: HTMLElement) {
   clearShowTimer();
-  if (inventoryDragState.isDragging) return;
+  if (isTooltipSuppressed()) return;
   showTimer = window.setTimeout(() => {
     showTimer = null;
-    if (inventoryDragState.isDragging) return;
+    if (isTooltipSuppressed()) return;
     target.value = { itemId, rect: element.getBoundingClientRect() };
   }, SHOW_DELAY_MS);
 }

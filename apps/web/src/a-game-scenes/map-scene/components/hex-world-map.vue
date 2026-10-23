@@ -78,6 +78,7 @@ import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
 import { useMovePreview } from '@/composables/use-move-preview';
 import { useBoardCamera } from '@/composables/use-board-camera';
+import { useStopToolWhenUnequipped } from '@/composables/use-stop-tool-when-unequipped';
 import { useHexBoardInput } from '@/composables/use-hex-board-input';
 import { useGameLayout } from '@/composables/use-game-layout';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -125,18 +126,19 @@ const hoveredTileCoord = ref<IHexCoordinates | null>(null);
 const healTickerNow = ref(Date.now());
 let healTickerTimer: number | null = null;
 
-const DevBoardPanel = import.meta.env.DEV
+const SHOW_DEV_TOOLS = import.meta.env.DEV && import.meta.env.VITE_E2E_HOOKS !== 'true';
+const DevBoardPanel = SHOW_DEV_TOOLS
   ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
   : null;
-const StaticBoardEditorPanel = import.meta.env.DEV
+const StaticBoardEditorPanel = SHOW_DEV_TOOLS
   ? defineAsyncComponent(() => import('./static-board-editor-panel.vue'))
   : null;
-const StaticBoardCoordinatesOverlay = import.meta.env.DEV
+const StaticBoardCoordinatesOverlay = SHOW_DEV_TOOLS
   ? defineAsyncComponent(() => import('./static-board-coordinates-overlay.vue'))
   : null;
-const devBoardPanelStore = import.meta.env.DEV ? useDevBoardPanelStore() : null;
-const staticBoardEditorStore = import.meta.env.DEV ? useStaticBoardEditorStore() : null;
-const devPanelOptions = import.meta.env.DEV
+const devBoardPanelStore = SHOW_DEV_TOOLS ? useDevBoardPanelStore() : null;
+const staticBoardEditorStore = SHOW_DEV_TOOLS ? useStaticBoardEditorStore() : null;
+const devPanelOptions = SHOW_DEV_TOOLS
   ? {
       showWholeBoard: computed(
         () => staticBoardEditorStore?.isEditing || (devBoardPanelStore?.showWholeBoard ?? false),
@@ -396,6 +398,7 @@ function onKeyDown(event: KeyboardEvent) {
 }
 
 useHexBoardInput({ hoveredTileCoord });
+useStopToolWhenUnequipped(onHide);
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown);

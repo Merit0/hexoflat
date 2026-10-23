@@ -47,6 +47,36 @@
           </option>
         </select>
       </label>
+
+      <button
+        v-if="isDev"
+        class="dev-btn"
+        data-testid="settings-dev-add-will-button"
+        type="button"
+        @click="heroStore.devGrantWill(DEV_WILL_GRANT)"
+      >
+        {{ t('settings.devAddWill') }}
+      </button>
+
+      <button
+        v-if="isDev"
+        class="dev-btn"
+        data-testid="settings-dev-add-shield-button"
+        type="button"
+        @click="heroStore.devAddShield()"
+      >
+        {{ t('settings.devAddShield') }}
+      </button>
+
+      <button
+        v-if="isDev"
+        class="dev-btn"
+        data-testid="settings-dev-cut-health-button"
+        type="button"
+        @click="heroStore.takeDamage(DEV_HEALTH_CUT)"
+      >
+        {{ t('settings.devCutHealth') }}
+      </button>
     </div>
   </div>
 </template>
@@ -55,6 +85,7 @@
 import { useI18n } from 'vue-i18n';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { SUPPORTED_LOCALES, type TLocale } from '@/i18n/locale';
 
 const LOCALE_LABELS: Record<TLocale, string> = {
@@ -65,6 +96,11 @@ const LOCALE_LABELS: Record<TLocale, string> = {
 const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const uiSettings = useUiSettingsStore();
+const heroStore = useHeroStore();
+
+const isDev = import.meta.env.DEV;
+const DEV_WILL_GRANT = 50;
+const DEV_HEALTH_CUT = 0.5;
 
 function close() {
   overlayStore.closeOverlay('settings');
@@ -72,6 +108,17 @@ function close() {
 </script>
 
 <style scoped>
+.dev-btn {
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 200, 120, 0.5);
+  background: rgba(255, 200, 120, 0.08);
+  color: rgba(255, 226, 170, 0.95);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
 .overlay-backdrop {
   position: fixed;
   inset: 0;

@@ -48,6 +48,8 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
       durability: 120,
       durabilityMax: 120,
       defense: 2.4,
+      shields: 1,
+      hearts: 1,
       capabilities: { canBlock: true },
       traits: { weightKG: 2.6 },
     },

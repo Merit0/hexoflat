@@ -70,4 +70,15 @@ describe('resolveItemTooltip', () => {
     expect(coins.capabilities).toEqual([]);
     expect(coins.footer.durabilityMax).toBeUndefined();
   });
+
+  it('reports the shields an item gives', () => {
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.SHIELD).shields).toBe(1);
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.SWORD).shields).toBe(0);
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.COINS).shields).toBe(0);
+  });
+
+  it('reports the hearts an item gives', () => {
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.SHIELD).hearts).toBe(1);
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.SWORD).hearts).toBe(0);
+  });
 });

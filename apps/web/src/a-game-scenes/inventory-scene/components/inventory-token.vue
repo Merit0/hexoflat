@@ -8,7 +8,7 @@
     }"
     :style="tokenStyle"
     tabindex="0"
-    @pointerdown.prevent="onPointerDown"
+    @pointerdown.prevent="onTokenPointerDown"
     @click="onClick"
     @mouseenter="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
     @mouseleave="hideItemTooltip()"
@@ -45,6 +45,11 @@ onBeforeUnmount(hideItemTooltip);
 
 const inventoryStore = useHeroInventoryStore();
 const { onPointerDown } = useInventoryDragHandle(() => props.item.id);
+
+function onTokenPointerDown(e: PointerEvent) {
+  if (inventoryStore.selectedItemId) return;
+  onPointerDown(e);
+}
 
 const isDragging = computed(() => inventoryDragState.draggingId === props.item.id);
 const isSelected = computed(() => inventoryStore.selectedItemId === props.item.id);

@@ -9,6 +9,8 @@ import {
 } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
+import { HERO_SHIELD_SLOTS } from '../combat/shield-slots';
+import { MAX_EQUIPMENT_HEARTS } from '../combat/heart-slots';
 import type { LocationKey } from '../registry/location-key';
 import type { TToolKeys } from './tools.content';
 
@@ -128,6 +130,8 @@ const equipmentSchema = z.object({
   durability: z.number(),
   durabilityMax: z.number(),
   defense: z.number().optional(),
+  shields: z.number().int().min(0).max(HERO_SHIELD_SLOTS).optional(),
+  hearts: z.number().int().min(0).max(MAX_EQUIPMENT_HEARTS).optional(),
   rarity: z.enum(EEquipmentRarity).optional(),
   capabilities: z
     .object({

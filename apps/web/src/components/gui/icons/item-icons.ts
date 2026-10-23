@@ -28,6 +28,7 @@ export const ICON_PATHS = {
   durability: 'M3 7 H16 C16 9 18 10 21 10 V11 H15.5 L14.5 14 H17.5 V18 H6.5 V14 H9.5 L8.5 11 H3 Z',
   stack: 'M12 3 L21 8 L12 13 L3 8 Z M3 12 L12 17 L21 12 M3 16 L12 21 L21 16',
   chest: 'M4 11 V20 H20 V11 M4 11 C4 6 6 4 12 4 C18 4 20 6 20 11 Z M10 11 V14 H14 V11',
+  victory: 'M5 5 L19 19 M19 5 L5 19',
   better: 'M6 15 L12 9 L18 15',
   worse: 'M6 9 L12 15 L18 9',
 } as const;

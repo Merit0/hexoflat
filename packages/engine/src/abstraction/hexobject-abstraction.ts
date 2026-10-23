@@ -108,6 +108,8 @@ export interface IWeapon {
 
 export interface IEquipment extends IDurable {
   defense?: number;
+  shields?: number;
+  hearts?: number;
   rarity?: EEquipmentRarity;
   capabilities?: {
     canAttack?: boolean;

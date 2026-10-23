@@ -26,7 +26,7 @@ export const SCOUT_RANKS: ScoutRank[] = [
   { minSteps: 1700, rank: 10, title: 'Legendary Scout' },
 ];
 
-function toRoman(rank: number): string {
+export function toRoman(rank: number): string {
   const numerals: Array<[number, string]> = [
     [10, 'X'],
     [9, 'IX'],

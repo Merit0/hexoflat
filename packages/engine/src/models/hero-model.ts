@@ -2,11 +2,14 @@ import { IHero } from '../abstraction/hero-abstraction';
 import { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { normalizeHealthValue, roundToSingleDecimal } from '../utils/combat/health-format';
 
+export const MAX_HERO_HEALTH = 10;
+
 export class HeroModel implements IHero {
   id = '';
   name = '';
   currentHealth = 0;
   maxHealth: number;
+  maxHealthBonus = 0;
   attack = 0;
   defense = 0;
   coins = 0;
@@ -34,6 +37,19 @@ export class HeroModel implements IHero {
 
   public setMaxHealth(amount: number): HeroModel {
     this.maxHealth = normalizeHealthValue(amount, 0.1);
+    return this;
+  }
+
+  public getEffectiveMaxHealth(): number {
+    return Math.min(
+      MAX_HERO_HEALTH,
+      normalizeHealthValue(this.maxHealth + this.maxHealthBonus, 0.1),
+    );
+  }
+
+  public setMaxHealthBonus(bonus: number): HeroModel {
+    this.maxHealthBonus = Math.max(0, bonus);
+    this.adjustHealthOnStatChange();
     return this;
   }
 
@@ -124,8 +140,9 @@ export class HeroModel implements IHero {
   }
 
   public adjustHealthOnStatChange(): void {
-    if (this.currentHealth > this.maxHealth) {
-      this.currentHealth = this.maxHealth;
+    const cap = this.getEffectiveMaxHealth();
+    if (this.currentHealth > cap) {
+      this.currentHealth = cap;
     }
     this.currentHealth = roundToSingleDecimal(this.currentHealth);
   }

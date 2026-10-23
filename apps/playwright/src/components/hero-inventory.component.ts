@@ -149,8 +149,18 @@ export class HeroInventoryComponent extends BaseComponent {
     await this.verifyItemInGridSlot(itemId, slotKey);
   }
 
+  async clickHeroHex(): Promise<void> {
+    await this.page.getByTestId('equip-hero-slot').click();
+  }
+
   private get tooltip(): Locator {
     return this.page.getByTestId('item-tooltip');
+  }
+
+  async useEquippedItem(itemId: string): Promise<void> {
+    await this.moveMouseAway();
+    await this.equipToken(itemId).hover();
+    await this.page.getByTestId(`equip-token-use-button-${itemId}`).click();
   }
 
   async hoverGridItem(itemId: string): Promise<void> {

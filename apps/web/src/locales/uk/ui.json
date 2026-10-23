@@ -4,7 +4,10 @@
     "close": "Закрити",
     "showHeroMoveTrail": "Показувати слід руху героя",
     "showEnemyVisionArea": "Показувати зону видимості ворогів",
-    "language": "Мова"
+    "language": "Мова",
+    "devAddWill": "Dev: +50 Волі",
+    "devCutHealth": "Dev: −0.5 здоров’я",
+    "devAddShield": "Dev: +1 щит"
   },
   "hexTileDetails": {
     "emptyTile": "Порожній тайл",
@@ -116,6 +119,52 @@
       "weightUnit": "кг",
       "durability": "Міцність",
       "stack": "Стос"
+    },
+    "shields": "{count, plural, one {+# щит} few {+# щити} many {+# щитів} other {+# щитів}}",
+    "hearts": "{count, plural, one {+# серце} few {+# серця} many {+# сердець} other {+# сердець}}"
+  },
+  "heroDetails": {
+    "vitals": {
+      "hearts": "Серця",
+      "shields": "Щити",
+      "will": "Воля"
+    },
+    "stat": {
+      "attack": "Атака",
+      "defense": "Захист",
+      "load": "Вантаж",
+      "victories": "Перемоги"
+    },
+    "tab": {
+      "state": "Стан",
+      "skills": "Скіли"
+    },
+    "path": {
+      "scout": "Розвідник",
+      "nextRank": "Наступний ранг на {steps} кроках",
+      "maxRank": "Найвищий ранг досягнуто",
+      "steps": "Кроки"
+    },
+    "hands": {
+      "right": "Права рука",
+      "left": "Ліва рука",
+      "empty": "Порожньо"
+    },
+    "skill": {
+      "title": {
+        "attack": "Атака",
+        "defense": "Захист"
+      },
+      "rank": "Ранг",
+      "bonus": {
+        "attack": "бонус до атаки",
+        "defense": "бонус до захисту"
+      },
+      "unlock": "Розблокувати",
+      "max": "Максимальний ранг",
+      "needWill": "Не вистачає Волі",
+      "locked": "Зараз недоступно",
+      "will": "Волі"
     }
   }
 }

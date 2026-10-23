@@ -122,17 +122,17 @@ describe('HeroesService', () => {
       expect(inserted).toHaveLength(0);
     });
 
-    it('creates a hero with 10 base HP when none exists yet, named after the account', async () => {
+    it('creates a hero with 3 base HP when none exists yet, named after the account', async () => {
       const userId = randomUUID();
       const { db, inserted } = createFakeDb([], [{ id: userId, name: 'Oleh' }]);
       const service = new HeroesService(db);
 
       const hero = await service.findOrCreateByUserId(userId);
 
-      expect(hero).toMatchObject({ name: 'Oleh', currentHealth: 10, maxHealth: 10 });
+      expect(hero).toMatchObject({ name: 'Oleh', currentHealth: 3, maxHealth: 3 });
       expect(inserted).toHaveLength(1);
       expect(inserted[0]).toMatchObject({ userId, name: 'Oleh' });
-      expect(inserted[0].data).toMatchObject({ currentHealth: 10, maxHealth: 10 });
+      expect(inserted[0].data).toMatchObject({ currentHealth: 3, maxHealth: 3 });
     });
 
     it('falls back to a generic name when the user record is missing', async () => {

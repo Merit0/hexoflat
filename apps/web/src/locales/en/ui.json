@@ -4,7 +4,10 @@
     "close": "Close",
     "showHeroMoveTrail": "Show hero move trail",
     "showEnemyVisionArea": "Show enemy vision area",
-    "language": "Language"
+    "language": "Language",
+    "devAddWill": "Dev: +50 Will",
+    "devCutHealth": "Dev: −0.5 health",
+    "devAddShield": "Dev: +1 shield"
   },
   "hexTileDetails": {
     "emptyTile": "Empty Tile",
@@ -116,6 +119,52 @@
       "weightUnit": "kg",
       "durability": "Durability",
       "stack": "Stack"
+    },
+    "shields": "{count, plural, one {+# shield} other {+# shields}}",
+    "hearts": "{count, plural, one {+# heart} other {+# hearts}}"
+  },
+  "heroDetails": {
+    "vitals": {
+      "hearts": "Hearts",
+      "shields": "Shields",
+      "will": "Will"
+    },
+    "stat": {
+      "attack": "Attack",
+      "defense": "Defence",
+      "load": "Load",
+      "victories": "Victories"
+    },
+    "tab": {
+      "state": "State",
+      "skills": "Skills"
+    },
+    "path": {
+      "scout": "Scout",
+      "nextRank": "Next rank at {steps} steps",
+      "maxRank": "Top rank reached",
+      "steps": "Steps"
+    },
+    "hands": {
+      "right": "Right hand",
+      "left": "Left hand",
+      "empty": "Empty"
+    },
+    "skill": {
+      "title": {
+        "attack": "Attack",
+        "defense": "Defence"
+      },
+      "rank": "Rank",
+      "bonus": {
+        "attack": "attack bonus",
+        "defense": "defence bonus"
+      },
+      "unlock": "Unlock",
+      "max": "Max rank",
+      "needWill": "Not enough Will",
+      "locked": "Unavailable now",
+      "will": "Will"
     }
   }
 }
