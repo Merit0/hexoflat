@@ -6,7 +6,8 @@
     "showEnemyVisionArea": "Показувати зону видимості ворогів",
     "language": "Мова",
     "devAddWill": "Dev: +50 Волі",
-    "devCutHealth": "Dev: −0.5 здоров’я"
+    "devCutHealth": "Dev: −0.5 здоров’я",
+    "devAddShield": "Dev: +1 щит"
   },
   "hexTileDetails": {
     "emptyTile": "Порожній тайл",
@@ -118,7 +119,9 @@
       "weightUnit": "кг",
       "durability": "Міцність",
       "stack": "Стос"
-    }
+    },
+    "shields": "{count, plural, one {+# щит} few {+# щити} many {+# щитів} other {+# щитів}}",
+    "hearts": "{count, plural, one {+# серце} few {+# серця} many {+# сердець} other {+# сердець}}"
   },
   "heroDetails": {
     "vitals": {

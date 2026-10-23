@@ -38,4 +38,4 @@ export const SETTINGS_CLOSE_LABEL: Record<SupportedLocale, string> = {
 };
 
 /** A fresh hero's starting HP — the regression guard against the 0/100 fallback. */
-export const BASE_HERO_HEALTH = { current: 10, max: 10 };
+export const BASE_HERO_HEALTH = { current: 3, max: 3 };

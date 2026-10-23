@@ -38,6 +38,17 @@
           <li v-for="label in capabilityLabels" :key="label" class="tip__chip">{{ label }}</li>
         </ul>
 
+        <ul v-if="view.shields > 0 || view.hearts > 0" class="tip__bonuses">
+          <li v-if="view.shields > 0" class="tip__bonus" data-testid="item-tooltip-shields">
+            <img class="tip__bonus-icon" :src="SHIELD_ICON_URL" alt="" />
+            {{ t('itemTooltip.shields', { count: view.shields }) }}
+          </li>
+          <li v-if="view.hearts > 0" class="tip__bonus" data-testid="item-tooltip-hearts">
+            <img class="tip__bonus-icon" :src="HEART_ICON_URL" alt="" />
+            {{ t('itemTooltip.hearts', { count: view.hearts }) }}
+          </li>
+        </ul>
+
         <p v-if="view.description" class="tip__flavor">{{ t(view.description) }}</p>
 
         <footer class="tip__foot">
@@ -77,6 +88,9 @@ import {
 } from '@/components/gui/icons/item-icons';
 import { RARITY_COLOR } from '@/render/rarity';
 import { useItemTooltipLabels } from './use-item-tooltip-labels';
+
+const SHIELD_ICON_URL = '/board-assets/hero-board/shield-icon.png';
+const HEART_ICON_URL = '/board-assets/hero-board/heart-icon.png';
 
 const props = defineProps<{ view: ItemTooltipView; square?: boolean }>();
 const { t } = useI18n();
@@ -276,6 +290,27 @@ const stackText = computed(() => {
   background: #1b1812;
   color: #cfc5b2;
   font-size: 0.78rem;
+}
+.tip__bonuses {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tip__bonus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--rarity);
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-align: left;
+}
+.tip__bonus-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 .tip__flavor {
   margin: 0;

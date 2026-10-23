@@ -2,6 +2,7 @@ import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
 import { TakeTokenFeature } from '@features/world/take-token.feature';
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
+import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { VerifyInventoryFeature } from '@features/world/verify-inventory.feature';
 import { UseEquippedToolFeature } from '@features/world/use-equipped-tool.feature';
 import { VerifyToolActionFeature } from '@features/world/verify-tool-action.feature';
@@ -21,6 +22,7 @@ test('Verify dragging a grid item to another grid slot moves it there', async ()
 
 test('Verify the Will token sits in the inventory grid and no item can be dropped onto its cell', async () => {
   await new OpenCampingMapFeature().open();
+  await new SwitchHeroBoardTabFeature().switchTo('inventory');
   const verifyInventory = new VerifyInventoryFeature();
   await verifyInventory.verifyPanelIsVisible();
   await verifyInventory.verifyWillTokenPresent();

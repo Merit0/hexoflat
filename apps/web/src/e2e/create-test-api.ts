@@ -130,7 +130,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     getHeroHealth(): TestHeroHealth {
       return {
         current: heroStore.hero.currentHealth ?? 0,
-        max: heroStore.hero.maxHealth ?? 0,
+        max: heroStore.hero.getEffectiveMaxHealth(),
       };
     },
 

@@ -6,15 +6,15 @@ import { DB, type Db } from '../db/db.module';
 import { heroes, users } from '../db/schema';
 import { HeroDataSchema, type HeroData } from './heroes.dto';
 
-// A fresh hero's base stats. HP starts small (10, not the 100 a hero can
+// A fresh hero's base stats. HP starts small (3 hearts, not the 100 a hero can
 // eventually grow into) — see the "0/100" bug this was chasing: nothing ever
 // created a heroes row for a new user, so the frontend fell back to
 // HeroModel's blank-slate defaults (0 current / 100 max) instead of a real,
 // intentional starting value.
 function starterHeroData(): HeroData {
   return {
-    currentHealth: 10,
-    maxHealth: 10,
+    currentHealth: 3,
+    maxHealth: 3,
     attack: 1,
     defense: 1,
     coins: 0,

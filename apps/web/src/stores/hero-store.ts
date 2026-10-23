@@ -14,6 +14,7 @@ import {
   locationWillZone,
 } from '@/services/knowledge/knowledge-controller';
 import { defineStore } from 'pinia';
+import { SHIELD_SLOTS } from '@/constants/shield-slots';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import { getSkillBonuses } from '@hexoflat/engine/skills/skill-rules';
 import { i18n } from '@/i18n';
@@ -42,6 +43,8 @@ type HeroNavState = {
 type HeroProgressState = {
   heroSteps: number;
   currentHealth: number;
+  healthBonus: number;
+  extraShields: number;
 };
 
 function defaultNav(): HeroNavState {
@@ -68,13 +71,14 @@ export const useHeroStore = defineStore('hero', {
     // world-map-store.ts's saveToStorage()/loadFromStorage().
     heroCoordinates: null as IHexCoordinates | null,
     isHeroMoving: false,
+    extraShields: 0,
   }),
 
   getters: {
     coins: (s) => s.hero.coins,
     isAlive: (s) => s.hero.getHealth() > 0,
     heroHp: (s) => s.hero.currentHealth,
-    heroHpMax: (s) => s.hero.maxHealth,
+    heroHpMax: (s) => s.hero.getEffectiveMaxHealth(),
     skillBonuses: (s) => getSkillBonuses(s.knowledge?.skills ?? {}),
     willZoneContext(): WillZoneContext {
       return {
@@ -137,6 +141,17 @@ export const useHeroStore = defineStore('hero', {
       }
     },
 
+    setMaxHealthBonus(bonus: number): void {
+      this.hero.setMaxHealthBonus(bonus);
+      this.saveProgressToStorage();
+    },
+
+    devAddShield(): void {
+      if (!import.meta.env.DEV) return;
+      this.extraShields = Math.min(SHIELD_SLOTS, this.extraShields + 1);
+      this.saveProgressToStorage();
+    },
+
     async devGrantWill(amount: number): Promise<void> {
       if (!import.meta.env.DEV || !this.knowledge) return;
       const heroId = this.hero.id;
@@ -184,6 +199,8 @@ export const useHeroStore = defineStore('hero', {
       const progress: HeroProgressState = {
         heroSteps: this.hero.heroSteps ?? 0,
         currentHealth: this.hero.currentHealth ?? this.hero.maxHealth ?? 100,
+        healthBonus: this.hero.maxHealthBonus,
+        extraShields: this.extraShields,
       };
       localStorage.setItem(HERO_PROGRESS_KEY, JSON.stringify(progress));
     },
@@ -198,6 +215,12 @@ export const useHeroStore = defineStore('hero', {
       }
       if (typeof progress.currentHealth === 'number') {
         this.hero.setHealth(progress.currentHealth);
+      }
+      if (typeof progress.healthBonus === 'number') {
+        this.hero.maxHealthBonus = progress.healthBonus;
+      }
+      if (typeof progress.extraShields === 'number') {
+        this.extraShields = progress.extraShields;
       }
     },
 
@@ -287,6 +310,7 @@ export const useHeroStore = defineStore('hero', {
       this.hero = new HeroModel();
       this.knowledge = null;
       this.knowledgeError = false;
+      this.extraShields = 0;
       this.nav = defaultNav();
       localStorage.removeItem(HERO_NAV_KEY);
       localStorage.removeItem(HERO_PROGRESS_KEY);

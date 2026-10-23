@@ -1,6 +1,7 @@
 import { computed } from 'vue';
 import { getScoutProgress, toRoman } from '@hexoflat/engine/hero-movement/scout-progression';
 import { getAttackMultiplier, getMarkerDefense } from '@hexoflat/engine/combat/damage-calculator';
+import { sumShieldPoints } from '@hexoflat/engine/combat/shield-points';
 import { SKILL_IDS, SKILLS, type SkillId } from '@hexoflat/engine/skills/skill-content';
 import {
   getMaxRank,
@@ -18,10 +19,11 @@ import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { getObjectRarity } from '@/render/rarity';
+import { SHIELD_SLOTS } from '@/constants/shield-slots';
 
 export const HERO_PORTRAIT_URL = '/hero-asssets/human-hex.png';
 export const WILL_ICON_URL = '/board-assets/will-icon-image.png';
-export const SHIELD_SLOTS = 6;
+export { SHIELD_SLOTS };
 
 export type HeroDetailsTab = 'state' | 'skills';
 export type HeroStatId = 'attack' | 'defense' | 'load' | 'victories';
@@ -53,6 +55,8 @@ export interface HeroDetailsInput {
   carriedKg: number;
   capacityKg: number;
   attackBase: number;
+  shieldPoints: number;
+  extraShields: number;
   skills: SkillRanks;
   skillsLocked: boolean;
   will: { current: number; capacity: number } | null;
@@ -81,6 +85,11 @@ function round1(value: number): number {
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+function shieldsFilled(input: HeroDetailsInput): number {
+  if (input.shieldPoints <= 0) return 0;
+  return Math.min(SHIELD_SLOTS, input.shieldPoints + Math.max(0, input.extraShields));
 }
 
 function skillStatus(nextCost: number | null, input: HeroDetailsInput): SkillStatus {
@@ -139,7 +148,7 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
     steps: scout.steps,
     rank: { roman: scout.roman, title: scout.title },
     hearts: { current: round1(current), max: round1(max), count: Math.ceil(max) },
-    shields: { filled: Math.min(SHIELD_SLOTS, Math.floor(defense)), total: SHIELD_SLOTS },
+    shields: { filled: shieldsFilled(input), total: SHIELD_SLOTS },
     will: input.will,
     tiles: [
       { id: 'attack', value: `×${attack}` },
@@ -191,12 +200,14 @@ export function useHeroDetails() {
       locationTitle: key ? (MapRegistry.get(key)?.title ?? key) : 'Nowhere',
       steps: hero.heroSteps,
       currentHealth: hero.currentHealth,
-      maxHealth: hero.maxHealth,
+      maxHealth: hero.getEffectiveMaxHealth(),
       coins: hero.coins,
       kills: hero.kills,
       carriedKg: inventory.carriedWeightKg,
       capacityKg: inventory.carryCapacityKg,
       attackBase: hero.attack,
+      shieldPoints: sumShieldPoints(Object.values(equipped).map((item) => item?.key)),
+      extraShields: heroStore.extraShields,
       skills: knowledge?.skills ?? {},
       skillsLocked: heroStore.isHeroMoving || combat.combatActive,
       will: knowledge ? { current: knowledge.current, capacity: knowledge.capacity } : null,

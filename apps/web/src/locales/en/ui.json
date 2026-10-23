@@ -6,7 +6,8 @@
     "showEnemyVisionArea": "Show enemy vision area",
     "language": "Language",
     "devAddWill": "Dev: +50 Will",
-    "devCutHealth": "Dev: −0.5 health"
+    "devCutHealth": "Dev: −0.5 health",
+    "devAddShield": "Dev: +1 shield"
   },
   "hexTileDetails": {
     "emptyTile": "Empty Tile",
@@ -118,7 +119,9 @@
       "weightUnit": "kg",
       "durability": "Durability",
       "stack": "Stack"
-    }
+    },
+    "shields": "{count, plural, one {+# shield} other {+# shields}}",
+    "hearts": "{count, plural, one {+# heart} other {+# hearts}}"
   },
   "heroDetails": {
     "vitals": {

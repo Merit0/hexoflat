@@ -9,14 +9,25 @@ import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.fe
 import { HexobjectKeys } from '@config/test-data';
 import { EquipSlot } from '@config/equip-slot';
 
-test('Verify the hero board panel opens on the Inventory tab by default', async () => {
+test('Verify the hero board panel opens on the Hero tab by default', async () => {
   await new OpenCampingMapFeature().open();
 
   const verifyBoard = new VerifyHeroBoardFeature();
   await verifyBoard.verifyPanelVisible();
-  await verifyBoard.verifyTabActive('inventory');
+  await verifyBoard.verifyTabActive('hero');
   await verifyBoard.verifyPanelOpen();
-  await new VerifyInventoryFeature().verifyPanelIsVisible();
+  await verifyBoard.verifyHeroTabContentVisible();
+});
+
+test('Verify picking up an item switches the hero board to the Inventory tab', async () => {
+  await new OpenCampingMapFeature().open();
+
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.verifyTabActive('hero');
+
+  await new TakeTokenFeature('starterAxe').take();
+  await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
+  await verifyBoard.verifyTabActive('inventory');
 });
 
 test('Verify switching tabs shows the right content and marks the tab active', async () => {

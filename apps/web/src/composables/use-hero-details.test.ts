@@ -12,6 +12,8 @@ const base: HeroDetailsInput = {
   carriedKg: 1.8,
   capacityKg: 10,
   attackBase: 1,
+  shieldPoints: 0,
+  extraShields: 0,
   skills: {},
   skillsLocked: false,
   will: { current: 20, capacity: 50 },
@@ -65,14 +67,29 @@ describe('buildHeroDetails', () => {
     expect(buildHeroDetails(base).hands).toEqual({ right: null, left: null });
   });
 
-  it('fills one shield nest per whole point of defence, capped at the slot count', () => {
+  it('shows no shields without a source of shield points, whatever the defence', () => {
     expect(buildHeroDetails({ ...base, defense: 2.4 }).shields).toEqual({
-      filled: 2,
+      filled: 0,
       total: SHIELD_SLOTS,
     });
-    const heavy = buildHeroDetails({ ...base, defense: 40 });
-    expect(heavy.shields.filled).toBe(SHIELD_SLOTS);
-    expect(buildHeroDetails(base).shields.filled).toBe(0);
+    expect(buildHeroDetails({ ...base, defense: 2.4, extraShields: 3 }).shields.filled).toBe(0);
+  });
+
+  it('fills one shield nest per shield point of what is worn, not per defence point', () => {
+    expect(buildHeroDetails({ ...base, shieldPoints: 1, defense: 2.4 }).shields).toEqual({
+      filled: 1,
+      total: SHIELD_SLOTS,
+    });
+    expect(buildHeroDetails({ ...base, shieldPoints: 6, defense: 0 }).shields.filled).toBe(
+      SHIELD_SLOTS,
+    );
+  });
+
+  it('adds extra shields on top, capped at the slot count', () => {
+    expect(buildHeroDetails({ ...base, shieldPoints: 1, extraShields: 2 }).shields.filled).toBe(3);
+    expect(buildHeroDetails({ ...base, shieldPoints: 1, extraShields: 40 }).shields.filled).toBe(
+      SHIELD_SLOTS,
+    );
   });
 
   it('passes Will through, or null when the hero has none', () => {
@@ -112,7 +129,7 @@ describe('buildHeroDetails', () => {
     });
     expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('×1.44');
     expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2.7');
-    expect(view.shields.filled).toBe(2);
+    expect(view.shields.filled).toBe(0);
   });
 
   it('describes each skill with rank, bonus, price and unlock status', () => {

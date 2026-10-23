@@ -61,6 +61,16 @@
       <button
         v-if="isDev"
         class="dev-btn"
+        data-testid="settings-dev-add-shield-button"
+        type="button"
+        @click="heroStore.devAddShield()"
+      >
+        {{ t('settings.devAddShield') }}
+      </button>
+
+      <button
+        v-if="isDev"
+        class="dev-btn"
         data-testid="settings-dev-cut-health-button"
         type="button"
         @click="heroStore.takeDamage(DEV_HEALTH_CUT)"
