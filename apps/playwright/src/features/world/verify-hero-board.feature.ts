@@ -60,6 +60,7 @@ export class VerifyHeroBoardFeature extends BaseFeature {
 
   async openHeroTabFromHeroHex(): Promise<void> {
     await this.step('Click the hero hex in the equipment board to open the Hero tab', async () => {
+      await this.campingMap.heroBoardPanel.clickTab('inventory');
       await this.campingMap.inventory.clickHeroHex();
       await this.campingMap.heroBoardPanel.verifyTabActive('hero');
     });

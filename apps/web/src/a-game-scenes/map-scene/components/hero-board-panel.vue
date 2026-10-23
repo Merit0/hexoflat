@@ -104,7 +104,7 @@ import KnowledgeBoard from './knowledge-board.vue';
 import { stepCost } from '@hexoflat/engine/knowledge/math';
 import { willZoneCharges } from '@hexoflat/engine/knowledge/will-zone';
 import { knowledgePanelMode, openKnowledgePanel } from '@/composables/use-knowledge-panel';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useFitToWidth } from '@/composables/use-fit-to-width';
@@ -162,6 +162,13 @@ useEquipmentHealthSync();
 useOpenInventoryOnPickup(() => {
   activeTab.value = 'inventory';
 });
+watch(
+  () => canReturn.value || heroStore.knowledgeError,
+  (needsAttention) => {
+    if (needsAttention) activeTab.value = 'inventory';
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
