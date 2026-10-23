@@ -1,6 +1,7 @@
 import { isEnterableTile } from '../hero-movement/move-planner';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { applyKnowledgeCommand } from '../knowledge/reducer';
+import { applyUnlockSkill } from '../skills/unlock-skill';
 import type { KnowledgeState } from '../knowledge/state';
 import type { KnowledgeCommand, KnowledgeContext } from '../knowledge/commands';
 import { willZoneCharges } from '../knowledge/will-zone';
@@ -26,6 +27,7 @@ import {
   HEX_ENGINE_COMMAND_SCHEMAS,
   type HexEngineCommand,
   type MoveHeroCommand,
+  type UnlockSkillCommand,
 } from './hex-engine-commands';
 import type { ApplyCommandResult, DomainEvent } from './types';
 
@@ -62,6 +64,9 @@ export function applyCommand(
   switch (parsed.type) {
     case 'KNOWLEDGE':
       events.push(...applyKnowledgeState(state, parsed));
+      break;
+    case 'UNLOCK_SKILL':
+      events.push(...applyUnlockSkillState(state, parsed));
       break;
     case 'START_HEX_ACTION': {
       const { coordinates, actionType, toolKey, now } = parsed.payload;
@@ -184,6 +189,13 @@ function actionCharge(state: HexEngineState, tile: HexTileModel, actionType: EHe
   if (cost <= 0) return 0;
   if (!state.knowledgeContext) return 0;
   return willZoneCharges(state.knowledgeContext) ? cost : 0;
+}
+
+function applyUnlockSkillState(state: HexEngineState, command: UnlockSkillCommand): DomainEvent[] {
+  if (!state.knowledge || !state.knowledgeContext) {
+    return [{ type: 'SKILL_REJECTED', payload: { reason: 'Missing authoritative context' } }];
+  }
+  return applyUnlockSkill(state.knowledge, state.knowledgeContext, command.payload);
 }
 
 function applyKnowledgeState(state: HexEngineState, command: KnowledgeCommand): DomainEvent[] {

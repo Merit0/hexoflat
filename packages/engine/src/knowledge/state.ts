@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { KNOWLEDGE_RULES, effectiveWillCapacity } from './math';
+import { skillIdSchema } from '../skills/skill-content';
 
 const questionSchema = z
   .object({
@@ -93,6 +94,7 @@ const knowledgeStateObjectSchema = z
       .nullable()
       .default(null),
     history: z.record(z.string(), z.array(z.boolean()).max(10)),
+    skills: z.partialRecord(skillIdSchema, z.number().int().min(0)).default({}),
   })
   .refine((s) => s.current <= s.capacity);
 export const knowledgeStateSchema = z.preprocess(
@@ -115,6 +117,7 @@ export function createKnowledgeState(heroId: string): KnowledgeState {
     session: null,
     lastStep: null,
     history: {},
+    skills: {},
   };
 }
 

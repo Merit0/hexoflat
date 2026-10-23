@@ -4,7 +4,9 @@
     "close": "Close",
     "showHeroMoveTrail": "Show hero move trail",
     "showEnemyVisionArea": "Show enemy vision area",
-    "language": "Language"
+    "language": "Language",
+    "devAddWill": "Dev: +50 Will",
+    "devCutHealth": "Dev: −0.5 health"
   },
   "hexTileDetails": {
     "emptyTile": "Empty Tile",
@@ -119,7 +121,6 @@
     }
   },
   "heroDetails": {
-    "hint": "Hover a stat to see where it comes from",
     "vitals": {
       "hearts": "Hearts",
       "shields": "Shields",
@@ -133,7 +134,7 @@
     },
     "tab": {
       "state": "State",
-      "path": "Path"
+      "skills": "Skills"
     },
     "path": {
       "scout": "Scout",
@@ -145,6 +146,22 @@
       "right": "Right hand",
       "left": "Left hand",
       "empty": "Empty"
+    },
+    "skill": {
+      "title": {
+        "attack": "Attack",
+        "defense": "Defence"
+      },
+      "rank": "Rank",
+      "bonus": {
+        "attack": "attack bonus",
+        "defense": "defence bonus"
+      },
+      "unlock": "Unlock",
+      "max": "Max rank",
+      "needWill": "Not enough Will",
+      "locked": "Unavailable now",
+      "will": "Will"
     }
   }
 }

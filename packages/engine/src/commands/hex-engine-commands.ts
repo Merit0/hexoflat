@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
 import { KnowledgeCommandSchema, type KnowledgeCommand } from '../knowledge/commands';
+import { skillIdSchema } from '../skills/skill-content';
 
 export const hexCoordinatesSchema = z.object({
   columnIndex: z.number(),
@@ -59,13 +60,24 @@ export const MoveHeroCommandSchema = z.object({
 });
 export type MoveHeroCommand = z.infer<typeof MoveHeroCommandSchema>;
 
+export const UnlockSkillCommandSchema = z.object({
+  type: z.literal('UNLOCK_SKILL'),
+  payload: z.object({
+    heroId: z.string(),
+    revision: z.number().int().nonnegative(),
+    skillId: skillIdSchema,
+  }),
+});
+export type UnlockSkillCommand = z.infer<typeof UnlockSkillCommandSchema>;
+
 export type HexEngineCommand =
   | StartHexActionCommand
   | FinishPendingActionsCommand
   | WorldTickCommand
   | AddResourceSpawnerCommand
   | MoveHeroCommand
-  | KnowledgeCommand;
+  | KnowledgeCommand
+  | UnlockSkillCommand;
 
 export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   HexEngineCommand['type'],
@@ -77,4 +89,5 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   ADD_RESOURCE_SPAWNER: AddResourceSpawnerCommandSchema,
   MOVE_HERO: MoveHeroCommandSchema,
   KNOWLEDGE: KnowledgeCommandSchema,
+  UNLOCK_SKILL: UnlockSkillCommandSchema,
 };

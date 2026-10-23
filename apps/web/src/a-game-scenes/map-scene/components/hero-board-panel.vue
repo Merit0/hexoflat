@@ -38,6 +38,8 @@
 
         <hero-details-board v-if="activeTab === 'hero'" />
 
+        <hero-path-board v-else-if="activeTab === 'path'" />
+
         <section v-else-if="activeTab === 'inventory'" class="tab-panel board-body">
           <div ref="boardFitWrapperRef" class="board-body-frame">
             <div v-if="heroStore.knowledgeError || canReturn" class="will-summary">
@@ -111,16 +113,17 @@ import GameEventsLogger from '@/a-game-scenes/game-events-logger/components/game
 import InventoryBoardGrid from '@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue';
 import HeroEquipBoard from '@/a-game-scenes/inventory-scene/components/hero-equip-board.vue';
 import { useEscapeClearsItemSelection } from '@/composables/use-escape-clears-item-selection';
+import HeroPathBoard from '@/a-game-scenes/map-scene/components/hero-details/hero-path-board.vue';
 import HeroDetailsBoard from '@/a-game-scenes/map-scene/components/hero-details/hero-details-board.vue';
 import ItemTooltipLayer from '@/components/gui/item-tooltip/item-tooltip-layer.vue';
 import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
 
-type HeroBoardTab = 'hero' | 'inventory' | 'skills' | 'events';
+type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
 
 const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
   { id: 'hero', label: 'Hero' },
   { id: 'inventory', label: 'Inventory' },
-  { id: 'skills', label: 'Skills', disabled: true },
+  { id: 'path', label: 'Path' },
   { id: 'events', label: 'Events' },
 ];
 

@@ -11,6 +11,9 @@ const base: HeroDetailsInput = {
   kills: 4,
   carriedKg: 1.8,
   capacityKg: 10,
+  attackBase: 1,
+  skills: {},
+  skillsLocked: false,
   will: { current: 20, capacity: 50 },
   weapon: null,
   shield: null,
@@ -98,5 +101,53 @@ describe('buildHeroDetails', () => {
     expect(top.rank.roman).toBe('X');
     expect(top.scout.nextAt).toBeNull();
     expect(top.scout.percent).toBe(100);
+  });
+
+  it('adds skill bonuses on top of the hero base attack and the defence total', () => {
+    const view = buildHeroDetails({
+      ...base,
+      weapon: sword,
+      defense: 2.4,
+      skills: { attack: 4, defense: 6 },
+    });
+    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('×1.44');
+    expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2.7');
+    expect(view.shields.filled).toBe(2);
+  });
+
+  it('describes each skill with rank, bonus, price and unlock status', () => {
+    const view = buildHeroDetails({
+      ...base,
+      skills: { attack: 2 },
+      will: { current: 30, capacity: 50 },
+    });
+    const attack = view.skills.find((skill) => skill.id === 'attack');
+    expect(attack).toEqual({
+      id: 'attack',
+      rank: 2,
+      maxRank: 10,
+      bonus: 0.1,
+      nextCost: 25,
+      status: 'ready',
+    });
+    expect(view.skills.find((skill) => skill.id === 'defense')).toMatchObject({
+      rank: 0,
+      nextCost: 20,
+      status: 'ready',
+    });
+  });
+
+  it('marks a skill that cannot be bought and says why', () => {
+    const poor = buildHeroDetails({ ...base, will: { current: 19, capacity: 50 } });
+    expect(poor.skills[0].status).toBe('need-will');
+
+    const noWill = buildHeroDetails({ ...base, will: null });
+    expect(noWill.skills[0].status).toBe('need-will');
+
+    const busy = buildHeroDetails({ ...base, skillsLocked: true });
+    expect(busy.skills[0].status).toBe('locked');
+
+    const maxed = buildHeroDetails({ ...base, skills: { attack: 10 } });
+    expect(maxed.skills[0]).toMatchObject({ status: 'max', nextCost: null, bonus: 0.5 });
   });
 });

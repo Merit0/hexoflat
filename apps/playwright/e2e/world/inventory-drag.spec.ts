@@ -3,6 +3,8 @@ import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature'
 import { TakeTokenFeature } from '@features/world/take-token.feature';
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
 import { VerifyInventoryFeature } from '@features/world/verify-inventory.feature';
+import { UseEquippedToolFeature } from '@features/world/use-equipped-tool.feature';
+import { VerifyToolActionFeature } from '@features/world/verify-tool-action.feature';
 import { HexobjectKeys } from '@config/test-data';
 import { EquipSlot } from '@config/equip-slot';
 
@@ -48,4 +50,22 @@ test('Verify dragging an item onto an equip slot equips it, and dragging it back
 
   await dragItem.dragEquippedToGridSlot(HexobjectKeys.axe, 'r0c1');
   await verifyInventory.verifyItemInGridSlot(HexobjectKeys.axe, 'r0c1');
+});
+
+test('Verify unequipping the tool in use removes the tool hex from the map', async () => {
+  await new OpenCampingMapFeature().open();
+  await new TakeTokenFeature('starterAxe').take();
+  const verifyInventory = new VerifyInventoryFeature();
+  await verifyInventory.verifyContainsItem(HexobjectKeys.axe);
+
+  const dragItem = new DragInventoryItemFeature();
+  await dragItem.dragToEquipSlot(HexobjectKeys.axe, EquipSlot.WEAPON);
+  await verifyInventory.verifyItemEquipped(HexobjectKeys.axe, EquipSlot.WEAPON);
+
+  const verifyTool = new VerifyToolActionFeature();
+  await new UseEquippedToolFeature().use(HexobjectKeys.axe);
+  await verifyTool.verifyToolHexVisible();
+
+  await dragItem.dragEquippedToGridSlot(HexobjectKeys.axe, 'r0c1');
+  await verifyTool.verifyToolHexHidden();
 });

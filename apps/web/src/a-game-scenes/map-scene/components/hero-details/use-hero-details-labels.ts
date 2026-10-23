@@ -15,6 +15,22 @@ export function useHeroDetailsLabels() {
       load: t('heroDetails.stat.load'),
       victories: t('heroDetails.stat.victories'),
     },
+    skill: {
+      title: {
+        attack: t('heroDetails.skill.title.attack'),
+        defense: t('heroDetails.skill.title.defense'),
+      },
+      bonus: {
+        attack: t('heroDetails.skill.bonus.attack'),
+        defense: t('heroDetails.skill.bonus.defense'),
+      },
+      rank: t('heroDetails.skill.rank'),
+      unlock: t('heroDetails.skill.unlock'),
+      will: t('heroDetails.skill.will'),
+      max: t('heroDetails.skill.max'),
+      needWill: t('heroDetails.skill.needWill'),
+      locked: t('heroDetails.skill.locked'),
+    },
     hands: {
       right: t('heroDetails.hands.right'),
       left: t('heroDetails.hands.left'),

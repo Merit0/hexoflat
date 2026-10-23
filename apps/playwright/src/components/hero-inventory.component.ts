@@ -157,6 +157,12 @@ export class HeroInventoryComponent extends BaseComponent {
     return this.page.getByTestId('item-tooltip');
   }
 
+  async useEquippedItem(itemId: string): Promise<void> {
+    await this.moveMouseAway();
+    await this.equipToken(itemId).hover();
+    await this.page.getByTestId(`equip-token-use-button-${itemId}`).click();
+  }
+
   async hoverGridItem(itemId: string): Promise<void> {
     await this.moveMouseAway();
     await this.gridToken(itemId).hover();

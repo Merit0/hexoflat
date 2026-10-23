@@ -15,6 +15,14 @@ export class ToolActionOverlayComponent extends BaseComponent {
     await this.actionButton.click();
   }
 
+  async verifyToolHexVisible(): Promise<void> {
+    await expect(this.page.getByTestId('tool-hex-tile')).toBeVisible();
+  }
+
+  async verifyToolHexHidden(): Promise<void> {
+    await expect(this.page.getByTestId('tool-hex-tile')).toBeHidden();
+  }
+
   async verifyActionIsOffered(): Promise<void> {
     await expect(this.actionButton).toBeVisible();
   }

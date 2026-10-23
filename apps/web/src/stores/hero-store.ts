@@ -7,11 +7,15 @@ import type { KnowledgeAction } from '@hexoflat/engine/knowledge/commands';
 import { readKnowledge } from '@/services/persistence/knowledge-storage';
 import {
   dispatchHexAction,
+  dispatchDevWillGrant,
   dispatchKnowledge,
+  dispatchSkillUnlock,
   isAtKnowledgeBook,
   locationWillZone,
 } from '@/services/knowledge/knowledge-controller';
 import { defineStore } from 'pinia';
+import type { SkillId } from '@hexoflat/engine/skills/skill-content';
+import { getSkillBonuses } from '@hexoflat/engine/skills/skill-rules';
 import { i18n } from '@/i18n';
 import { HeroModel } from '@hexoflat/engine/models/hero-model';
 import { fetchHero } from '../api/Requests';
@@ -71,6 +75,7 @@ export const useHeroStore = defineStore('hero', {
     isAlive: (s) => s.hero.getHealth() > 0,
     heroHp: (s) => s.hero.currentHealth,
     heroHpMax: (s) => s.hero.maxHealth,
+    skillBonuses: (s) => getSkillBonuses(s.knowledge?.skills ?? {}),
     willZoneContext(): WillZoneContext {
       return {
         willZone: locationWillZone(useWorldMapStore().currentLocationKey),
@@ -122,6 +127,31 @@ export const useHeroStore = defineStore('hero', {
         const result = await dispatchKnowledge(
           { ...this.knowledgeHost(world), state: this.knowledge },
           action,
+        );
+        if (heroId !== this.hero.id) return false;
+        this.knowledge = result.state;
+        return result.accepted;
+      } catch {
+        this.knowledgeError = true;
+        return false;
+      }
+    },
+
+    async devGrantWill(amount: number): Promise<void> {
+      if (!import.meta.env.DEV || !this.knowledge) return;
+      const heroId = this.hero.id;
+      const state = await dispatchDevWillGrant(heroId, amount);
+      if (heroId === this.hero.id) this.knowledge = state;
+    },
+
+    async unlockSkill(skillId: SkillId): Promise<boolean> {
+      const world = useWorldMapStore();
+      if (!world.map || !this.knowledge || this.knowledgeError) return false;
+      const heroId = this.hero.id;
+      try {
+        const result = await dispatchSkillUnlock(
+          { ...this.knowledgeHost(world), state: this.knowledge },
+          skillId,
         );
         if (heroId !== this.hero.id) return false;
         this.knowledge = result.state;

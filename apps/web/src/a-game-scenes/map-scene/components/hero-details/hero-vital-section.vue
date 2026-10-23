@@ -8,63 +8,76 @@
       </span>
     </div>
 
-    <div class="nests" :data-testid="`${testPrefix}-nests`">
-      <svg class="defs" width="0" height="0" aria-hidden="true">
-        <defs>
-          <linearGradient :id="`vital-outer-${kind}`" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" :stop-color="palette.outerFrom" />
-            <stop offset="1" :stop-color="palette.outerTo" />
-          </linearGradient>
-          <linearGradient :id="`vital-inner-${kind}`" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" :stop-color="palette.innerFrom" />
-            <stop offset="1" :stop-color="palette.innerTo" />
-          </linearGradient>
-          <clipPath
-            v-for="slot in slots"
-            :id="`vital-clip-${kind}-${slot.index}`"
-            :key="slot.index"
-          >
-            <rect x="0" y="0" :width="48 * slot.fill" height="48" />
-          </clipPath>
-        </defs>
-      </svg>
+    <div
+      class="nests"
+      :class="`nests--${kind}`"
+      :style="{ '--slots': slotCount }"
+      :data-testid="`${testPrefix}-nests`"
+    >
+      <template v-if="kind === 'heart'">
+        <hero-heart-slot
+          v-for="slot in slots"
+          :key="slot.index"
+          :fill="slot.fill"
+          :data-testid="`${testPrefix}-nest-${slot.index}`"
+        />
+      </template>
 
-      <svg
-        v-for="slot in slots"
-        :key="slot.index"
-        class="nest"
-        viewBox="0 0 48 48"
-        aria-hidden="true"
-        :data-testid="`${testPrefix}-nest-${slot.index}`"
-      >
-        <circle class="nest__well" cx="24" cy="24" r="23" />
-        <path class="nest__empty" :d="glyph.path" :transform="glyph.outer" />
-        <path class="nest__empty nest__empty--dashed" :d="glyph.path" :transform="glyph.inner" />
-        <g v-if="slot.fill > 0" :clip-path="`url(#vital-clip-${kind}-${slot.index})`">
+      <template v-else>
+        <svg class="defs" width="0" height="0" aria-hidden="true">
+          <defs>
+            <linearGradient id="vital-outer" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#7fb0ff" />
+              <stop offset="1" stop-color="#2c55c4" />
+            </linearGradient>
+            <linearGradient id="vital-inner" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3f7be8" />
+              <stop offset="1" stop-color="#2748b0" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <svg
+          v-for="slot in slots"
+          :key="slot.index"
+          class="nest"
+          viewBox="0 0 48 48"
+          aria-hidden="true"
+          :data-testid="`${testPrefix}-nest-${slot.index}`"
+        >
+          <circle class="nest__well" cx="24" cy="24" r="23" />
+          <path class="nest__empty" :d="SHIELD_PATH" :transform="OUTER_TRANSFORM" />
           <path
-            class="nest__outer"
-            :d="glyph.path"
-            :transform="glyph.outer"
-            :fill="`url(#vital-outer-${kind})`"
-            :stroke="palette.edge"
+            class="nest__empty nest__empty--dashed"
+            :d="SHIELD_PATH"
+            :transform="INNER_TRANSFORM"
           />
-          <path
-            class="nest__inner"
-            :d="glyph.path"
-            :transform="glyph.inner"
-            :fill="`url(#vital-inner-${kind})`"
-          />
-          <circle class="nest__dot-ring" :cx="glyph.dot.x" :cy="glyph.dot.y" r="5" />
-          <circle class="nest__dot" :cx="glyph.dot.x" :cy="glyph.dot.y" r="3.4" />
-        </g>
-      </svg>
+          <g v-if="slot.fill > 0">
+            <path
+              class="nest__outer"
+              :d="SHIELD_PATH"
+              :transform="OUTER_TRANSFORM"
+              fill="url(#vital-outer)"
+              stroke="#9cc2ff"
+            />
+            <path
+              class="nest__inner"
+              :d="SHIELD_PATH"
+              :transform="INNER_TRANSFORM"
+              fill="url(#vital-inner)"
+            />
+            <circle class="nest__dot-ring" cx="24" cy="23" r="5" />
+            <circle class="nest__dot" cx="24" cy="23" r="3.4" />
+          </g>
+        </svg>
+      </template>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { HEART_PATH } from '@/a-game-scenes/map-scene/icon-paths';
+import HeroHeartSlot from './hero-heart-slot.vue';
 
 export type VitalKind = 'heart' | 'shield';
 
@@ -78,41 +91,8 @@ const props = defineProps<{
 }>();
 
 const SHIELD_PATH = 'M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z';
-
-const GLYPHS = {
-  shield: {
-    path: SHIELD_PATH,
-    outer: 'translate(8.4 8.4) scale(1.3)',
-    inner: 'translate(10.8 10.9) scale(0.9)',
-    dot: { x: 24, y: 23 },
-  },
-  heart: {
-    path: HEART_PATH,
-    outer: 'translate(9.6 9.4) scale(1.2)',
-    inner: 'translate(12 11.8) scale(0.8)',
-    dot: { x: 24, y: 22.5 },
-  },
-} as const;
-
-const PALETTES = {
-  shield: {
-    outerFrom: '#7fb0ff',
-    outerTo: '#2c55c4',
-    innerFrom: '#3f7be8',
-    innerTo: '#2748b0',
-    edge: '#9cc2ff',
-  },
-  heart: {
-    outerFrom: '#ff9a8a',
-    outerTo: '#c23a3a',
-    innerFrom: '#f0604f',
-    innerTo: '#a82f2f',
-    edge: '#ffb8ac',
-  },
-} as const;
-
-const glyph = computed(() => GLYPHS[props.kind]);
-const palette = computed(() => PALETTES[props.kind]);
+const OUTER_TRANSFORM = 'translate(8.4 8.4) scale(1.3)';
+const INNER_TRANSFORM = 'translate(10.8 10.9) scale(0.9)';
 
 const slots = computed(() =>
   Array.from({ length: props.slotCount }, (_, index) => ({
@@ -160,6 +140,11 @@ const slots = computed(() =>
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
+}
+.nests--heart {
+  display: grid;
+  grid-template-columns: repeat(var(--slots), minmax(0, 64px));
+  gap: 0;
 }
 .defs {
   position: absolute;

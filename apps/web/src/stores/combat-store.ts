@@ -474,7 +474,7 @@ export const useCombatStore = defineStore('combat-store', {
 
         const rawDamage = this.getEnemyAttackDamage(currentEnemyTile.coordinates);
         const blockDefense = blockingMarker ? getMarkerDefense(blockingMarker.toolKey) : 0;
-        const finalDamage = applyBlock(rawDamage, blockDefense);
+        const finalDamage = applyBlock(rawDamage, blockDefense + heroStore.skillBonuses.defense);
 
         if (blockingMarker && finalDamage <= 0) {
           events.push(
@@ -576,7 +576,7 @@ export const useCombatStore = defineStore('combat-store', {
       this.revealCombatMarkers('enemy');
 
       const rawDamage = calculateHeroRawDamage(
-        heroStore.hero?.attack ?? DEFAULT_HERO_ATTACK,
+        (heroStore.hero?.attack ?? DEFAULT_HERO_ATTACK) + heroStore.skillBonuses.attack,
         toolKey as THexobjectKey,
       );
       const blockDefense = blockingMarker ? getMarkerDefense(blockingMarker.toolKey) : 0;

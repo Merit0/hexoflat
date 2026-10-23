@@ -1,6 +1,11 @@
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
-import type { HeroBoardTab, HeroDetailsTab } from '@components/hero-board-panel.component';
+import type {
+  HeroBoardTab,
+  HeroDetailsTab,
+  HeroHand,
+  HeroSkillId,
+} from '@components/hero-board-panel.component';
 
 export class VerifyHeroBoardFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
@@ -26,12 +31,6 @@ export class VerifyHeroBoardFeature extends BaseFeature {
   async verifyTabNotActive(tab: HeroBoardTab): Promise<void> {
     await this.step(`Verify the "${tab}" tab is not active`, () =>
       this.campingMap.heroBoardPanel.verifyTabNotActive(tab),
-    );
-  }
-
-  async verifySkillsTabIsDisabled(): Promise<void> {
-    await this.step('Verify the Skills tab is disabled', () =>
-      this.campingMap.heroBoardPanel.verifySkillsTabIsDisabled(),
     );
   }
 
@@ -76,6 +75,55 @@ export class VerifyHeroBoardFeature extends BaseFeature {
   async verifyScoutPathCardVisible(): Promise<void> {
     await this.step('Verify the Scout path card is shown instead of the state list', () =>
       this.campingMap.heroBoardPanel.verifyScoutPathCardVisible(),
+    );
+  }
+
+  async unlockSkill(id: HeroSkillId, expectedRank: number): Promise<void> {
+    await this.step(`Unlock the "${id}" skill with Will up to rank ${expectedRank}`, async () => {
+      await this.campingMap.heroBoardPanel.unlockSkill(id);
+      await this.campingMap.heroBoardPanel.verifySkillRank(id, expectedRank, 10);
+    });
+  }
+
+  async verifySkillCannotBeUnlocked(id: HeroSkillId): Promise<void> {
+    await this.step(`Verify the "${id}" skill cannot be unlocked with the Will left`, () =>
+      this.campingMap.heroBoardPanel.verifySkillCannotBeUnlocked(id),
+    );
+  }
+
+  async verifySkillTreeVisible(): Promise<void> {
+    await this.step('Verify the skill tree is shown on the Path tab', () =>
+      this.campingMap.heroBoardPanel.verifySkillTreeVisible(),
+    );
+  }
+
+  async verifyHeartsMatchHealth(): Promise<void> {
+    await this.step('Verify the hearts show the hero health', () =>
+      this.campingMap.heroBoardPanel.verifyHeartsMatchHealth(),
+    );
+  }
+
+  async verifyHandEmpty(hand: HeroHand): Promise<void> {
+    await this.step(`Verify the ${hand} hand is empty`, () =>
+      this.campingMap.heroBoardPanel.verifyHandEmpty(hand),
+    );
+  }
+
+  async verifyHandHolds(hand: HeroHand, name: RegExp): Promise<void> {
+    await this.step(`Verify the ${hand} hand holds ${name}`, () =>
+      this.campingMap.heroBoardPanel.verifyHandHolds(hand, name),
+    );
+  }
+
+  async readAttackTileText(): Promise<string> {
+    return this.step('Read the attack tile', () =>
+      this.campingMap.heroBoardPanel.readAttackTileText(),
+    );
+  }
+
+  async verifyAttackTileChangedFrom(previous: string): Promise<void> {
+    await this.step('Verify the attack tile changed', () =>
+      this.campingMap.heroBoardPanel.verifyAttackTileChangedFrom(previous),
     );
   }
 }

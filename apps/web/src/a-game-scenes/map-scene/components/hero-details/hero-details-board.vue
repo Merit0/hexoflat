@@ -29,7 +29,7 @@
 
       <hero-hands-section v-if="tab === 'state'" :view="view" />
 
-      <div v-else class="cards" data-testid="hero-details-path">
+      <div v-else class="cards" data-testid="hero-details-skills">
         <hero-details-card class="card" data-testid="hero-path-scout">
           <div class="card__title" data-testid="hero-path-scout-title">
             {{ t('heroDetails.path.scout') }} {{ view.scout.roman }} · {{ view.scout.title }}
@@ -54,8 +54,6 @@
           </div>
         </hero-details-card>
       </div>
-
-      <footer class="hint" data-testid="hero-details-hint">{{ t('heroDetails.hint') }}</footer>
     </div>
   </section>
 </template>
@@ -129,15 +127,5 @@ const { wrapperRef, contentRef, scale, offsetX } = useFitToWidth();
   border-radius: 999px;
   background: linear-gradient(90deg, #5a0f2c, #8c1c47);
   transition: width 0.3s ease;
-}
-.hint {
-  padding: 12px;
-  border-radius: 12px;
-  background: #0f1113;
-  color: #cbbfa6;
-  font-family: 'Alegreya SC', serif;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-  text-align: center;
 }
 </style>

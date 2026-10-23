@@ -10,7 +10,7 @@
       :data-testid="`hero-details-tab-${tab}`"
       @click="emit('update:modelValue', tab)"
     >
-      {{ tab === 'state' ? t('heroDetails.tab.state') : t('heroDetails.tab.path') }}
+      {{ tab === 'state' ? t('heroDetails.tab.state') : t('heroDetails.tab.skills') }}
     </button>
   </div>
 </template>
@@ -22,7 +22,7 @@ import type { HeroDetailsTab } from '@/composables/use-hero-details';
 defineProps<{ modelValue: HeroDetailsTab }>();
 const emit = defineEmits<{ 'update:modelValue': [HeroDetailsTab] }>();
 
-const TABS: HeroDetailsTab[] = ['state', 'path'];
+const TABS: HeroDetailsTab[] = ['state', 'skills'];
 const { t } = useI18n();
 </script>
 
