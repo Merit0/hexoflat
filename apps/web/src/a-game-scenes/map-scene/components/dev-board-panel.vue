@@ -77,26 +77,6 @@
       />
       Show whole board
     </label>
-
-    <label class="dev-board-panel__toggle">
-      <input
-        type="checkbox"
-        data-testid="dev-show-zone-outlines-toggle"
-        :checked="panelStore.showZoneOutlines"
-        @change="panelStore.toggleShowZoneOutlines()"
-      />
-      Show zone outlines
-    </label>
-
-    <ul v-if="panelStore.showZoneOutlines && zoneLegend.length" class="dev-board-panel__legend">
-      <li v-for="entry in zoneLegend" :key="entry.zoneId">
-        <span
-          class="dev-board-panel__swatch"
-          :style="{ backgroundColor: cssColor(entry.color) }"
-        ></span>
-        {{ entry.zoneId }} — {{ entry.chunkId }}
-      </li>
-    </ul>
   </aside>
 </template>
 
@@ -108,14 +88,12 @@ import { measureBoard } from '@hexoflat/engine/boards/measure-board';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
-import { computeZoneLegend } from '@/services/world/zone-tint';
 
 const worldStore = useWorldMapStore();
 const panelStore = useDevBoardPanelStore();
 const editorStore = useStaticBoardEditorStore();
 
 const descriptor = computed(() => worldStore.descriptor);
-const zoneLegend = computed(() => computeZoneLegend(descriptor.value));
 const measurements = computed(() => {
   const map = worldStore.map as HexMapModel | null;
   if (!map) return null;
@@ -131,10 +109,6 @@ function onToggleEditBoard() {
   } else {
     editorStore.startEditing(worldStore.currentLocationKey);
   }
-}
-
-function cssColor(color: number): string {
-  return '#' + color.toString(16).padStart(6, '0');
 }
 </script>
 
@@ -194,22 +168,5 @@ function cssColor(color: number): string {
   align-items: center;
   gap: 4px;
   cursor: pointer;
-}
-
-.dev-board-panel__legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dev-board-panel__swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  margin-right: 4px;
 }
 </style>

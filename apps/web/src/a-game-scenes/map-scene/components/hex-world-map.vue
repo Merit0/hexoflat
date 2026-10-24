@@ -89,7 +89,6 @@ import {
 import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
-import { computeZoneTints } from '@/services/world/zone-tint';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
 import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
@@ -143,11 +142,7 @@ const devPanelOptions = SHOW_DEV_TOOLS
       showWholeBoard: computed(
         () => staticBoardEditorStore?.isEditing || (devBoardPanelStore?.showWholeBoard ?? false),
       ),
-      zoneTintByCoordinateKey: computed(() =>
-        devBoardPanelStore?.showZoneOutlines
-          ? computeZoneTints(worldStore.descriptor)
-          : new Map<string, number>(),
-      ),
+      zoneTintByCoordinateKey: computed(() => new Map<string, number>()),
     }
   : undefined;
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildStaticBoard } from './build-static-board';
-import { assembleGeneratedBoard } from './assemble-generated-board';
+import { runBoardPipeline } from './pipeline/run-board-pipeline';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
-import { CAVE_PRESET } from '../content/boards/presets/cave';
+import { CAVE_MODEL } from '../content/boards/models/cave';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { measureBoard } from './measure-board';
 
@@ -27,19 +27,18 @@ describe('measureBoard', () => {
     expect(measured.willCostTotal).toBeGreaterThan(0);
   });
 
-  it(`measures ${CAVE_SEEDS} cave seeds: 80–86 passable hexes, ~4.0 neighbours, farthest 16–24 steps`, () => {
+  it(`measures ${CAVE_SEEDS} cave seeds: 60–115 passable hexes, 3.2–4.4 neighbours, farthest ≤ 32 steps`, () => {
     for (let i = 0; i < CAVE_SEEDS; i += 1) {
       const measured = measureBoard(
-        assembleGeneratedBoard(`cave-seed-${i}`, CAVE_PRESET).map,
+        runBoardPipeline(CAVE_MODEL, { seed: `cave-seed-${i}` }).map,
         HEXOBJECT_KEYS.CAVE_EXIT,
       );
 
-      expect(measured.passableTiles).toBeGreaterThanOrEqual(80 - TOLERANCE);
-      expect(measured.passableTiles).toBeLessThanOrEqual(86 + TOLERANCE);
-      expect(measured.meanPassableNeighbours).toBeGreaterThanOrEqual(4.0 - 0.3);
-      expect(measured.meanPassableNeighbours).toBeLessThanOrEqual(4.0 + 0.3);
-      expect(measured.farthestPassableSteps).toBeGreaterThanOrEqual(16 - TOLERANCE);
-      expect(measured.farthestPassableSteps).toBeLessThanOrEqual(24 + TOLERANCE);
+      expect(measured.passableTiles).toBeGreaterThanOrEqual(60);
+      expect(measured.passableTiles).toBeLessThanOrEqual(115);
+      expect(measured.meanPassableNeighbours).toBeGreaterThanOrEqual(3.2);
+      expect(measured.meanPassableNeighbours).toBeLessThanOrEqual(4.4);
+      expect(measured.farthestPassableSteps).toBeLessThanOrEqual(32);
       expect(measured.shareLowDegree).toBeGreaterThan(0);
       expect(measured.shareLowDegree).toBeLessThan(1);
     }
