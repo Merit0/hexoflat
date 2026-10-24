@@ -6,6 +6,7 @@ import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { CONTENT } from '../content';
 import { getMeta } from '../content/content-accessors';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { isTerrainPassable } from './terrain';
 
 export interface BoardMeasurements {
   totalTiles: number;
@@ -54,7 +55,8 @@ export function measureBoard(
   const passable = new Set<string>();
   for (const tile of tiles) {
     const key = tile.hexobject?.hexobjectKey;
-    if (!key || CONTENT[key]?.collision !== EHexCollision.SOLID) {
+    const solid = !!key && CONTENT[key]?.collision === EHexCollision.SOLID;
+    if (!solid && isTerrainPassable(tile.terrain)) {
       passable.add(coordinateKey(tile.coordinates));
     }
   }

@@ -9,6 +9,7 @@ import { HEXOBJECT_KEYS, type THexobjectKey } from '../../../registry/hexobjects
 import { coordinateKey, getHexNeighbors, hexDistance } from '../../../utils/hex-utils';
 import { deriveStream, type SeededRandom } from '../../../utils/random-seeded';
 import { parseCoordinateKey } from '../../board-cell-map';
+import { isWalkableFloor } from '../../resolved-cell';
 import { checkGeneratedBoardReachable } from '../../board-reachability';
 import type { BoardDraft, Piece } from '../types';
 
@@ -84,8 +85,7 @@ function chanceHolds(chance: string, rng: SeededRandom): boolean {
 }
 
 function isFloor(draft: BoardDraft, coord: IHexCoordinates): boolean {
-  const cell = draft.cellMap.get(coord);
-  return !!cell?.exists && cell.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.STONE_WALL;
+  return isWalkableFloor(draft.cellMap.get(coord));
 }
 
 function findEntryCoord(draft: BoardDraft): IHexCoordinates | undefined {

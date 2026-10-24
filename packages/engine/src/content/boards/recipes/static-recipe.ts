@@ -17,6 +17,7 @@ export function staticRecipe(
     entryObject: options.entryObject,
     stages: {
       form: [{ kind: 'drawing', drawing }],
+      relief: [{ kind: 'drawing' }],
       gates: [{ kind: 'drawing' }],
       objects: [{ kind: 'drawing' }],
       bounds: [{ kind: 'void' }],

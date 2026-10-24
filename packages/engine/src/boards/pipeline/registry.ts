@@ -1,6 +1,6 @@
 import type { ZodType } from 'zod';
 import type { StageName } from '../../content/boards/recipe-schema';
-import { formDrawing, gatesDrawing, objectsDrawing } from './pieces/drawing';
+import { formDrawing, gatesDrawing, objectsDrawing, reliefDrawing } from './pieces/drawing';
 import { boundsVoid, boundsWall } from './pieces/bounds';
 import { checkReachable, checkShape } from './pieces/checks';
 import { formBlobs } from './pieces/blobs';
@@ -11,7 +11,7 @@ import type { CheckResult, Piece } from './types';
 export type PieceRegistry<TResult = void> = Record<string, Piece<unknown, TResult>>;
 
 export const FORM: PieceRegistry = { drawing: formDrawing, blobs: formBlobs };
-export const RELIEF: PieceRegistry = {};
+export const RELIEF: PieceRegistry = { drawing: reliefDrawing };
 export const BOUNDS: PieceRegistry = { void: boundsVoid, wall: boundsWall };
 export const GATES: PieceRegistry = { drawing: gatesDrawing, entry: gatesEntry };
 export const OBJECTS: PieceRegistry = { drawing: objectsDrawing, rules: objectsRules };

@@ -3,10 +3,12 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { CONTENT } from '../content';
 import type { BoardCellMap } from './board-cell-map';
+import { isTerrainPassable } from './terrain';
 
 function isPassable(cellMap: BoardCellMap, coord: IHexCoordinates): boolean {
   const cell = cellMap.get(coord);
   if (!cell?.exists) return false;
+  if (!isTerrainPassable(cell.terrain)) return false;
   if (!cell.hexobject) return true;
   return CONTENT[cell.hexobject.hexobjectKey]?.collision !== EHexCollision.SOLID;
 }

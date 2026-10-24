@@ -1,10 +1,17 @@
 import type { LegendEntry, StaticBoardDrawing } from '../content/boards/schemas';
 import { parseBoardRows } from './board-rows';
+import { MOUNTAIN_SYMBOL, WATER_SYMBOL } from './board-symbols';
 
 const GROUND_SYMBOL = '.';
 const WALL_SYMBOL = '#';
 const VOID_SYMBOL = '~';
-const STRUCTURAL_SYMBOLS = new Set([GROUND_SYMBOL, WALL_SYMBOL, VOID_SYMBOL]);
+const STRUCTURAL_SYMBOLS = new Set([
+  GROUND_SYMBOL,
+  WALL_SYMBOL,
+  VOID_SYMBOL,
+  MOUNTAIN_SYMBOL,
+  WATER_SYMBOL,
+]);
 
 function constNameFor(id: string): string {
   return `${id.toUpperCase().replace(/[^A-Z0-9]+/g, '_')}_BOARD`;

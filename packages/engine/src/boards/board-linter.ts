@@ -1,8 +1,20 @@
 import type { StaticBoardDrawing } from '../content/boards/schemas';
 import { parseBoardRows, boardRowsAreRectangular } from './board-rows';
-import { GROUND_SYMBOL, VOID_SYMBOL, WALL_SYMBOL } from './board-symbols';
+import {
+  GROUND_SYMBOL,
+  MOUNTAIN_SYMBOL,
+  VOID_SYMBOL,
+  WALL_SYMBOL,
+  WATER_SYMBOL,
+} from './board-symbols';
 
-const STATIC_SYMBOLS = new Set([GROUND_SYMBOL, WALL_SYMBOL, VOID_SYMBOL]);
+const STATIC_SYMBOLS = new Set([
+  GROUND_SYMBOL,
+  WALL_SYMBOL,
+  VOID_SYMBOL,
+  MOUNTAIN_SYMBOL,
+  WATER_SYMBOL,
+]);
 
 export function lintStaticDrawing(
   drawing: StaticBoardDrawing,

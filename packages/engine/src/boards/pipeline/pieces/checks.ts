@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-interface';
 import { parseCoordinateKey } from '../../board-cell-map';
 import { checkGeneratedBoardReachable } from '../../board-reachability';
-import { HEXOBJECT_KEYS } from '../../../registry/hexobjects-registry';
+import { isWalkableFloor } from '../../resolved-cell';
 import { coordinateKey, getHexNeighbors } from '../../../utils/hex-utils';
 import type { BoardDraft, BoardRegion, CheckResult, Piece } from '../types';
 
@@ -36,8 +36,7 @@ const ShapeParams = z.object({
 });
 
 function isFloor(draft: BoardDraft, coord: IHexCoordinates): boolean {
-  const cell = draft.cellMap.get(coord);
-  return !!cell?.exists && cell.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.STONE_WALL;
+  return isWalkableFloor(draft.cellMap.get(coord));
 }
 
 function floorComponentCount(draft: BoardDraft): number {

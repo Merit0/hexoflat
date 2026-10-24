@@ -10,6 +10,7 @@ import type { RouteName } from '../route-name';
 import type { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner';
 import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
 import { EHexActionType } from '../../enums/hex-action-type';
+import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
 
 export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
 
@@ -33,6 +34,7 @@ export interface ISerializedHexTile {
   hexobject?: THexobject | null;
   resourceSpawner?: IHexResourceSpawner | null;
   pendingAction?: IPendingTileAction | null;
+  terrain?: TerrainId;
 }
 
 export interface ISerializedHexMap {
@@ -171,6 +173,7 @@ export default class HexMapModel implements IWorldMap {
         hexobject: t.hexobject,
         resourceSpawner: t.resourceSpawner,
         pendingAction: t.pendingAction,
+        ...(t.terrain === DEFAULT_TERRAIN ? {} : { terrain: t.terrain }),
       })),
     };
   }
@@ -194,6 +197,7 @@ export default class HexMapModel implements IWorldMap {
 
       tile.resourceSpawner = t.resourceSpawner ?? null;
       tile.pendingAction = t.pendingAction ?? null;
+      tile.terrain = t.terrain ?? DEFAULT_TERRAIN;
 
       return tile;
     });

@@ -5,6 +5,7 @@ import { HEXOBJECT_KEYS } from '../../../registry/hexobjects-registry';
 import { parseBoardRows } from '../../board-rows';
 import { resolveStaticDrawingCell } from '../../build-static-board';
 import { GROUND_CELL, VOID_CELL, type ResolvedCell } from '../../resolved-cell';
+import { terrainFromSymbol } from '../../terrain';
 import type { BoardDraft, Piece } from '../types';
 
 const NO_PARAMS = z.object({ kind: z.string() });
@@ -15,6 +16,7 @@ const FormDrawingParams = z.object({
 });
 
 const FORM_DRAWING_ID = 'drawing';
+const NO_PARAMS_SCHEMA = NO_PARAMS;
 
 function forEachFrameCell(
   draft: BoardDraft,
@@ -93,5 +95,26 @@ export const objectsDrawing: Piece<z.infer<typeof NO_PARAMS>> = {
   tableRule: 'Put every other token marked on the sheet in its cell.',
   run(draft) {
     placeLegendObjects(draft, 'objects', 'drawing', false);
+  },
+};
+
+export const reliefDrawing: Piece<z.infer<typeof NO_PARAMS>> = {
+  id: 'drawing',
+  schema: NO_PARAMS_SCHEMA,
+  tableRule:
+    'Colour the sheet as drawn: mountain and water marks are cells nobody can walk through, everything else stays open ground.',
+  run(draft) {
+    const { drawing } = draft;
+    if (!drawing) throw new Error('relief:drawing needs a drawing from the form stage');
+    const grid = parseBoardRows(drawing.rows);
+
+    forEachFrameCell(draft, (coordinates) => {
+      const symbol = grid[coordinates.rowIndex]?.[coordinates.columnIndex];
+      const terrain = symbol === undefined ? null : terrainFromSymbol(symbol);
+      if (!terrain || !draft.cellMap.has(coordinates)) return;
+
+      draft.cellMap.set(coordinates, { exists: true, terrain });
+      draft.trace.record(coordinates, { stage: 'relief', pieceId: 'drawing', note: terrain });
+    });
   },
 };
