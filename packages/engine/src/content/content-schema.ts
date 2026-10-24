@@ -37,8 +37,22 @@ const healSchema = z.object({
   radius: z.number().optional(),
 });
 
+export const OBJECT_TAGS = [
+  'resource',
+  'treasure',
+  'rare',
+  'rest',
+  'enemy',
+  'portal',
+  'blocker',
+  'challenge',
+] as const;
+export const objectTagSchema = z.enum(OBJECT_TAGS);
+export type ObjectTag = z.infer<typeof objectTagSchema>;
+
 const baseContentFields = {
   hexobjectKey: hexobjectKeySchema,
+  tags: z.array(objectTagSchema).optional(),
   isInteractable: z.boolean(),
   collision: z.enum(EHexCollision),
   spritePath: z.string().optional(),

@@ -16,9 +16,16 @@ export interface RuleShortfall {
   reason: string;
 }
 
+export interface RuleOutcome {
+  ruleId: string;
+  outcome: 'placed' | 'skipped' | 'short';
+  note: string;
+}
+
 export class BoardTrace {
   private readonly byCell = new Map<string, TraceEntry[]>();
   readonly shortfalls: RuleShortfall[] = [];
+  readonly ruleOutcomes: RuleOutcome[] = [];
 
   record(coord: IHexCoordinates, entry: TraceEntry): void {
     const key = coordinateKey(coord);
@@ -29,6 +36,10 @@ export class BoardTrace {
 
   recordShortfall(shortfall: RuleShortfall): void {
     this.shortfalls.push(shortfall);
+  }
+
+  recordRule(outcome: RuleOutcome): void {
+    this.ruleOutcomes.push(outcome);
   }
 
   entriesAt(coord: IHexCoordinates): readonly TraceEntry[] {

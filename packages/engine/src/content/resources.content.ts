@@ -9,6 +9,7 @@ export type TResourceKeys = typeof HEXOBJECT_KEYS.TREE | typeof HEXOBJECT_KEYS.R
 export const RESOURCE_CONTENT: Record<TResourceKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.TREE]: {
     hexobjectKey: HEXOBJECT_KEYS.TREE,
+    tags: ['resource'],
     groupType: EHexobjectGroup.RESOURCE,
     isInteractable: true,
     title: 'Tree',
@@ -31,6 +32,7 @@ export const RESOURCE_CONTENT: Record<TResourceKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.ROCK]: {
     hexobjectKey: HEXOBJECT_KEYS.ROCK,
+    tags: ['resource'],
     groupType: EHexobjectGroup.RESOURCE,
     isInteractable: true,
     title: 'Rock',

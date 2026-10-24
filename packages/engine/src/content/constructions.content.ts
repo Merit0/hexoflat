@@ -20,6 +20,7 @@ export type TConstructionKeys =
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.KNOWLEDGE_BOOK]: {
     hexobjectKey: HEXOBJECT_KEYS.KNOWLEDGE_BOOK,
+    tags: ['challenge'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'content.knowledgeBook.title',
@@ -38,6 +39,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
   },
   [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
     hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
+    tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Camping Gate',
@@ -59,6 +61,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
     hexobjectKey: HEXOBJECT_KEYS.CAVE_ENTRANCE,
+    tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Cave Entrance',
@@ -80,6 +83,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.CAVE_EXIT]: {
     hexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
+    tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Cave Exit',
@@ -101,6 +105,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.HOMELAND_GATE]: {
     hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
+    tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Homeland Gate',
@@ -122,6 +127,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.FIREPLACE]: {
     hexobjectKey: HEXOBJECT_KEYS.FIREPLACE,
+    tags: ['rest'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Fireplace',
@@ -143,6 +149,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.HEALING_SPRING]: {
     hexobjectKey: HEXOBJECT_KEYS.HEALING_SPRING,
+    tags: ['rest'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Healing Spring',
@@ -177,6 +184,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.CHEST]: {
     hexobjectKey: HEXOBJECT_KEYS.CHEST,
+    tags: ['treasure'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Chest',
@@ -215,6 +223,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.STONE_WALL]: {
     hexobjectKey: HEXOBJECT_KEYS.STONE_WALL,
+    tags: ['blocker'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: false,
     title: 'Stone Wall',
