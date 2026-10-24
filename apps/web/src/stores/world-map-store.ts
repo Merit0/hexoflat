@@ -17,6 +17,7 @@ import {
   type CreatedBoard,
 } from '@hexoflat/engine/registry/world-map-registry';
 import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
+import type { BoardRecipeInput } from '@hexoflat/engine/content/boards/recipe-schema';
 import {
   isViewingOtherWorldLocation,
   navigateToLocation,
@@ -68,6 +69,7 @@ import {
 
 import {
   devNextSeed as devNextSeedAction,
+  devRebuildFromRecipe as devRebuildFromRecipeAction,
   devRegenerateDungeon as devRegenerateDungeonAction,
 } from '@/stores/dev-board-panel-actions';
 import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
@@ -440,6 +442,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     devNextSeed() {
       devNextSeedAction(this);
+    },
+
+    devRebuildFromRecipe(recipe: BoardRecipeInput) {
+      devRebuildFromRecipeAction(this, recipe);
     },
 
     loadFromStorage(mapId: string) {

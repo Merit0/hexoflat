@@ -1,10 +1,10 @@
 import { StaticBoardDrawingSchema } from './schemas';
 import { RecipeSchema } from './recipe-schema';
 import { STATIC_DRAWINGS } from './index';
-import { CAVE_MODEL } from './models/cave';
+import { BOARD_MODELS } from './models';
 import { CAMPING_RECIPE, SILESIA_RECIPE } from './recipes';
 
-const RECIPES = [CAMPING_RECIPE, SILESIA_RECIPE, CAVE_MODEL];
+const RECIPES = [CAMPING_RECIPE, SILESIA_RECIPE, ...Object.values(BOARD_MODELS)];
 
 export function validateBoardContent(): void {
   for (const drawing of STATIC_DRAWINGS) {

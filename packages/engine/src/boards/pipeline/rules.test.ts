@@ -5,6 +5,7 @@ import type { BoardRecipeInput } from '../../content/boards/recipe-schema';
 import { BOARD_COLUMNS, BOARD_ROWS } from '../board-size';
 import { coordinateKey } from '../../utils/hex-utils';
 import { runBoardPipeline, type PipelineBoard } from './run-board-pipeline';
+import { summarizeRules } from './trace';
 
 type RuleInput = Record<string, unknown>;
 
@@ -206,5 +207,25 @@ describe('OBJECTS:rules independence (REQ-BOARD-010)', () => {
       }
     }
     expect(kept / total).toBeGreaterThanOrEqual(0.85);
+  });
+});
+
+describe('summarizeRules', () => {
+  it('summarizeRules reports wanted, placed and a note for every rule', () => {
+    const crowd: RuleInput = {
+      id: 'crowd',
+      pick: HEXOBJECT_KEYS.ROCK,
+      count: 400,
+      where: { region: 'deep' },
+    };
+    const built = runBoardPipeline(caveWith([ROCKS, crowd]), { seed: 'summary' });
+    const [rocks, crowded] = summarizeRules(built.trace);
+
+    expect(rocks.outcome).toBe('placed');
+    expect(rocks.placed).toBe(rocks.wanted);
+    expect(crowded.outcome).toBe('short');
+    expect(crowded.wanted).toBe(400);
+    expect(crowded.placed).toBeLessThan(400);
+    expect(crowded.note).toMatch(/region "deep"/);
   });
 });

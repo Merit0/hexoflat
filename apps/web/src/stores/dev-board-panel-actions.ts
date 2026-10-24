@@ -9,13 +9,22 @@ import {
   type LocationKey,
   type CreatedBoard,
 } from '@hexoflat/engine/registry/world-map-registry';
+import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
+import type { BoardRecipeInput } from '@hexoflat/engine/content/boards/recipe-schema';
+import { runBoardPipeline } from '@hexoflat/engine/boards/pipeline/run-board-pipeline';
 import { requireWorldSeed } from '@/stores/world-map-store-helpers';
+import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 
 let nextSeedCounter = 0;
+
+function devEncounterParams(): Record<string, unknown> {
+  return { ...useDevBoardPanelStore().params };
+}
 
 export interface DevBoardPanelHost {
   currentLocationKey: LocationKey;
   currentMapId: string | null;
+  descriptor: BoardDescriptor | null;
   clearStoredLocation(locationKey: LocationKey, mapId: string): void;
   applyFreshBoard(created: CreatedBoard, mapId: string): void;
   placeHeroAtEntry(locationKey: LocationKey): void;
@@ -46,7 +55,10 @@ export function devRegenerateDungeon(host: DevBoardPanelHost): void {
   host.currentMapId = mapId;
 
   reseedWorld(crypto.randomUUID());
-  host.applyFreshBoard(def.create({ seed: requireWorldSeed() }), mapId);
+  host.applyFreshBoard(
+    def.create({ seed: requireWorldSeed(), params: devEncounterParams() }),
+    mapId,
+  );
   finishRebuild(host, locationKey, mapId);
 }
 
@@ -58,6 +70,15 @@ export function devNextSeed(host: DevBoardPanelHost): void {
 
   nextSeedCounter += 1;
   const seed = `${requireWorldSeed()}:panel:next:${nextSeedCounter}`;
-  host.applyFreshBoard(def.create({ seed }), host.currentMapId);
+  host.applyFreshBoard(def.create({ seed, params: devEncounterParams() }), host.currentMapId);
   finishRebuild(host, locationKey, host.currentMapId);
+}
+
+export function devRebuildFromRecipe(host: DevBoardPanelHost, recipe: BoardRecipeInput): void {
+  const descriptor = host.descriptor;
+  if (descriptor?.kind !== 'RECIPE' || !host.currentMapId) return;
+
+  const created = runBoardPipeline(recipe, { seed: descriptor.seed, params: devEncounterParams() });
+  host.applyFreshBoard(created, host.currentMapId);
+  finishRebuild(host, host.currentLocationKey, host.currentMapId);
 }

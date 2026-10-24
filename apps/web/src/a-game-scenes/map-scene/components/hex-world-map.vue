@@ -125,6 +125,7 @@ const hoveredTileCoord = ref<IHexCoordinates | null>(null);
 const healTickerNow = ref(Date.now());
 let healTickerTimer: number | null = null;
 
+const RULE_HIGHLIGHT_TINT = 0xffe66d;
 const SHOW_DEV_TOOLS = import.meta.env.DEV && import.meta.env.VITE_E2E_HOOKS !== 'true';
 const DevBoardPanel = SHOW_DEV_TOOLS
   ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
@@ -142,7 +143,15 @@ const devPanelOptions = SHOW_DEV_TOOLS
       showWholeBoard: computed(
         () => staticBoardEditorStore?.isEditing || (devBoardPanelStore?.showWholeBoard ?? false),
       ),
-      zoneTintByCoordinateKey: computed(() => new Map<string, number>()),
+      zoneTintByCoordinateKey: computed(
+        () =>
+          new Map<string, number>(
+            (devBoardPanelStore?.highlightedCellKeys ?? []).map((key) => [
+              key,
+              RULE_HIGHLIGHT_TINT,
+            ]),
+          ),
+      ),
     }
   : undefined;
 

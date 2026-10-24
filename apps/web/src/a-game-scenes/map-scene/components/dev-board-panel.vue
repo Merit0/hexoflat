@@ -45,6 +45,8 @@
       </dl>
     </section>
 
+    <DevBoardModelTab v-if="descriptor?.kind === 'RECIPE'" />
+
     <div v-if="descriptor?.kind === 'RECIPE'" class="dev-board-panel__actions">
       <button
         type="button"
@@ -85,6 +87,7 @@ import { computed } from 'vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { measureBoard } from '@hexoflat/engine/boards/measure-board';
+import DevBoardModelTab from '@/a-game-scenes/map-scene/components/dev-board-model-tab.vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';

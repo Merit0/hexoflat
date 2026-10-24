@@ -4,6 +4,8 @@ import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { HexEngineActionContext } from '@hexoflat/engine';
+import { BOARD_MODELS } from '@hexoflat/engine/content/boards/models/index';
+import { adjustRuleCount } from '@hexoflat/engine/boards/board-model-edit';
 import { useWorldMapStore, runWorldTick } from './world-map-store';
 import { useHeroStore } from './hero-store';
 
@@ -368,6 +370,31 @@ describe('useWorldMapStore: dev board panel actions', () => {
 
     expect(worldStore.currentMapId).toBe(mapId);
     expect(worldStore.descriptor).not.toEqual(oldDescriptor);
+  });
+
+  it('devRebuildFromRecipe rebuilds the same seed with an edited model', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('cave');
+    const countRocks = () =>
+      worldStore.map?.tiles.filter((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.ROCK)
+        .length ?? 0;
+    const before = countRocks();
+    const seedBefore = worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.seed;
+
+    worldStore.devRebuildFromRecipe(adjustRuleCount(BOARD_MODELS.cave, 'rocks', 4));
+
+    expect(countRocks()).toBeGreaterThan(before);
+    expect(worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.seed).toBe(seedBefore);
+  });
+
+  it('devRebuildFromRecipe is a no-op on a STATIC location', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('silesia');
+    const descriptor = worldStore.descriptor;
+
+    worldStore.devRebuildFromRecipe(BOARD_MODELS.cave);
+
+    expect(worldStore.descriptor).toEqual(descriptor);
   });
 
   it('dev actions are no-ops on a STATIC location', () => {
