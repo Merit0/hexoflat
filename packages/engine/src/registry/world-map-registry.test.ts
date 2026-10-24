@@ -43,22 +43,17 @@ describe('MapRegistry', () => {
     expect(first.map.tiles.length).toBeGreaterThan(0);
   });
 
-  it('every registered boardKind matches the descriptor kind it produces', () => {
+  it('every registered boardKind produces the matching descriptor kind', () => {
+    const expectedKind = { STATIC: 'STATIC', DUNGEON: 'RECIPE' } as const;
     for (const key of ['camping', 'silesia', 'cave'] as const) {
       const def = MapRegistry.get(key);
       const { descriptor } = def.create({ seed: 'seed' });
-      expect(descriptor.kind).toBe(def.boardKind);
+      expect(descriptor.kind).toBe(expectedKind[def.boardKind]);
     }
   });
 
-  it('cave exposes its available layouts and can be forced onto one of them', () => {
-    const def = MapRegistry.get('cave');
-
-    expect(def.availableLayouts?.length).toBeGreaterThan(1);
-
-    for (const layoutId of def.availableLayouts ?? []) {
-      const { descriptor } = def.createWithLayout?.({ seed: 'forced-seed', layoutId }) ?? {};
-      expect(descriptor?.kind === 'DUNGEON' && descriptor.layoutId).toBe(layoutId);
-    }
+  it('cave passes encounter params to the recipe descriptor', () => {
+    const { descriptor } = MapRegistry.get('cave').create({ seed: 'seed', params: { tier: 3 } });
+    expect(descriptor.kind === 'RECIPE' && descriptor.params).toEqual({ tier: 3 });
   });
 });

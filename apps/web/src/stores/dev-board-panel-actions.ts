@@ -61,16 +61,3 @@ export function devNextSeed(host: DevBoardPanelHost): void {
   host.applyFreshBoard(def.create({ seed }), host.currentMapId);
   finishRebuild(host, locationKey, host.currentMapId);
 }
-
-/** Dev board panel's "Force layout": rebuilds using exactly the requested layout id. */
-export function devForceLayout(host: DevBoardPanelHost, layoutId: string): void {
-  const locationKey = host.currentLocationKey;
-  const def = MapRegistry.get(locationKey);
-  if (!def.createWithLayout || !host.currentMapId) return;
-
-  host.applyFreshBoard(
-    def.createWithLayout({ seed: `${requireWorldSeed()}:panel:${layoutId}`, layoutId }),
-    host.currentMapId,
-  );
-  finishRebuild(host, locationKey, host.currentMapId);
-}

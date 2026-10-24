@@ -11,11 +11,11 @@
         <dt>Drawing hash</dt>
         <dd>{{ descriptor.drawingHash?.slice(0, 8) ?? '—' }}</dd>
       </template>
-      <template v-if="descriptor?.kind === 'DUNGEON'">
+      <template v-if="descriptor?.kind === 'RECIPE'">
+        <dt>Recipe</dt>
+        <dd>{{ descriptor.recipeId }} v{{ descriptor.version }}</dd>
         <dt>Seed</dt>
         <dd>{{ descriptor.seed }}</dd>
-        <dt>Layout</dt>
-        <dd>{{ descriptor.layoutId }}</dd>
         <dt>Attempt</dt>
         <dd>{{ descriptor.attempt }}</dd>
       </template>
@@ -45,7 +45,7 @@
       </dl>
     </section>
 
-    <div v-if="descriptor?.kind === 'DUNGEON'" class="dev-board-panel__actions">
+    <div v-if="descriptor?.kind === 'RECIPE'" class="dev-board-panel__actions">
       <button
         type="button"
         data-testid="dev-regenerate-button"
@@ -56,20 +56,6 @@
       <button type="button" data-testid="dev-next-seed-button" @click="worldStore.devNextSeed()">
         Next seed
       </button>
-      <div class="dev-board-panel__force-layout">
-        <select v-model="selectedLayoutId" data-testid="dev-layout-select">
-          <option v-for="layoutId in availableLayouts" :key="layoutId" :value="layoutId">
-            {{ layoutId }}
-          </option>
-        </select>
-        <button
-          type="button"
-          data-testid="dev-force-layout-button"
-          @click="worldStore.devForceLayout(selectedLayoutId)"
-        >
-          Force layout
-        </button>
-      </div>
     </div>
 
     <label v-if="canEditBoard" class="dev-board-panel__toggle">
@@ -115,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { measureBoard } from '@hexoflat/engine/boards/measure-board';
@@ -130,9 +116,6 @@ const editorStore = useStaticBoardEditorStore();
 
 const descriptor = computed(() => worldStore.descriptor);
 const zoneLegend = computed(() => computeZoneLegend(descriptor.value));
-const availableLayouts = computed(
-  () => MapRegistry.get(worldStore.currentLocationKey).availableLayouts ?? [],
-);
 const measurements = computed(() => {
   const map = worldStore.map as HexMapModel | null;
   if (!map) return null;
@@ -149,11 +132,6 @@ function onToggleEditBoard() {
     editorStore.startEditing(worldStore.currentLocationKey);
   }
 }
-
-const selectedLayoutId = ref(availableLayouts.value[0] ?? '');
-watch(availableLayouts, (layouts) => {
-  if (!layouts.includes(selectedLayoutId.value)) selectedLayoutId.value = layouts[0] ?? '';
-});
 
 function cssColor(color: number): string {
   return '#' + color.toString(16).padStart(6, '0');
@@ -208,11 +186,6 @@ function cssColor(color: number): string {
 .dev-board-panel__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-}
-
-.dev-board-panel__force-layout {
-  display: flex;
   gap: 4px;
 }
 

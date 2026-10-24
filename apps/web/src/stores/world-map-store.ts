@@ -67,7 +67,6 @@ import {
 } from '@/stores/world-map-store-helpers';
 
 import {
-  devForceLayout as devForceLayoutAction,
   devNextSeed as devNextSeedAction,
   devRegenerateDungeon as devRegenerateDungeonAction,
 } from '@/stores/dev-board-panel-actions';
@@ -441,10 +440,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     devNextSeed() {
       devNextSeedAction(this);
-    },
-
-    devForceLayout(layoutId: string) {
-      devForceLayoutAction(this, layoutId);
     },
 
     loadFromStorage(mapId: string) {

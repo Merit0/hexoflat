@@ -281,12 +281,12 @@ describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
     expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
   });
 
-  it('builds cave as a DUNGEON board via MapRegistry', () => {
+  it('builds cave as a RECIPE board via MapRegistry', () => {
     const worldStore = useWorldMapStore();
 
     worldStore.loadLocationMap('cave');
 
-    expect(worldStore.descriptor?.kind).toBe('DUNGEON');
+    expect(worldStore.descriptor).toMatchObject({ kind: 'RECIPE', recipeId: 'cave' });
     expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
   });
 
@@ -368,18 +368,6 @@ describe('useWorldMapStore: dev board panel actions', () => {
 
     expect(worldStore.currentMapId).toBe(mapId);
     expect(worldStore.descriptor).not.toEqual(oldDescriptor);
-  });
-
-  it('devForceLayout rebuilds using exactly the requested layout', () => {
-    const worldStore = useWorldMapStore();
-    worldStore.loadLocationMap('cave');
-    const layoutId = 'basin-01';
-
-    worldStore.devForceLayout(layoutId);
-
-    expect(worldStore.descriptor?.kind === 'DUNGEON' && worldStore.descriptor.layoutId).toBe(
-      layoutId,
-    );
   });
 
   it('dev actions are no-ops on a STATIC location', () => {
