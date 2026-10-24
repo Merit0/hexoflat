@@ -10,6 +10,7 @@ import { coordinateKey, getHexNeighbors, hexDistance } from '../../../utils/hex-
 import { deriveStream, type SeededRandom } from '../../../utils/random-seeded';
 import { parseCoordinateKey } from '../../board-cell-map';
 import { isWalkableFloor } from '../../resolved-cell';
+import type { TerrainId } from '../../terrain';
 import { checkGeneratedBoardReachable } from '../../board-reachability';
 import type { BoardDraft, Piece } from '../types';
 
@@ -34,6 +35,7 @@ const RuleSchema = z.object({
       region: z.string().optional(),
       steps: z.tuple([z.number().int().min(0), z.number().int().min(0)]).optional(),
       spacing: z.number().int().min(0).optional(),
+      next: z.enum(['mountain', 'water']).optional(),
     })
     .default({}),
   chance: z.string().regex(CHANCE).optional(),
@@ -125,6 +127,10 @@ function shuffled<T>(items: T[], rng: SeededRandom): T[] {
   return copy;
 }
 
+function touchesTerrain(draft: BoardDraft, cell: IHexCoordinates, terrain: TerrainId): boolean {
+  return getHexNeighbors(cell).some((neighbor) => draft.cellMap.get(neighbor)?.terrain === terrain);
+}
+
 function eligibleCells(
   draft: BoardDraft,
   rule: Rule,
@@ -137,6 +143,7 @@ function eligibleCells(
 
   return source
     .filter((cell) => isFloor(draft, cell) && !occupiedAtStart.has(coordinateKey(cell)))
+    .filter((cell) => !rule.where.next || touchesTerrain(draft, cell, rule.where.next))
     .filter((cell) => {
       if (!rule.where.steps) return true;
       const distance = steps?.get(coordinateKey(cell));
