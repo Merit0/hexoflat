@@ -5,6 +5,7 @@ import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstract
 import { getMeta, getPrototype } from '@hexoflat/engine';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
+import { terrainFillColor } from '@/render/terrain-fill';
 import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
@@ -38,6 +39,7 @@ interface TileNode {
   root: Container;
   mask: Graphics;
   bg: Sprite;
+  terrainFill: Graphics;
   frame: Sprite;
   sprite: Sprite;
   defendMarker: Sprite | null;
@@ -143,7 +145,14 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
     applyCoverFit(node.bg, w, h);
   };
 
-  if (displayRevealed) {
+  const fillColor = displayRevealed ? terrainFillColor(tile.terrain) : null;
+  node.terrainFill.visible = fillColor !== null;
+  if (fillColor !== null) {
+    const { w, h } = deps.getTileSize();
+    drawHexMask(node.terrainFill, w, h);
+    node.terrainFill.tint = fillColor;
+    node.bg.texture = Texture.EMPTY;
+  } else if (displayRevealed) {
     applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node, bgFit);
   } else {
     applyTexture(node.bg, FOG_URL, node, bgFit);
@@ -188,10 +197,12 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
 
     const mask = createHexMask(w, h);
     const bg = new Sprite();
+    const terrainFill = new Graphics();
+    terrainFill.visible = false;
     const frame = new Sprite();
     const sprite = new Sprite();
 
-    root.addChild(mask, bg, frame, sprite);
+    root.addChild(mask, bg, terrainFill, frame, sprite);
     root.mask = mask;
     container.addChild(root);
 
@@ -199,6 +210,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       root,
       mask,
       bg,
+      terrainFill,
       frame,
       sprite,
       defendMarker: null,

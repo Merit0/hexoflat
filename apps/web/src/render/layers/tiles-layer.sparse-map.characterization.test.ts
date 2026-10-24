@@ -44,3 +44,36 @@ describe('tiles-layer sparse map characterization', () => {
     layer.destroy();
   });
 });
+
+describe('tiles-layer terrain fills', () => {
+  function layerWith(tiles: IHexTile[]) {
+    const deps: TilesLayerDeps = {
+      worldContainer: new Container(),
+      getTileSize: () => ({ w: 60, h: 60 }),
+      worldStore: {} as TilesLayerDeps['worldStore'],
+      combatStore: {} as TilesLayerDeps['combatStore'],
+      onTileHover: () => {},
+      onTileClick: () => {},
+    };
+    const layer = createTilesLayer(deps);
+    layer.syncTiles(tiles);
+    return layer;
+  }
+
+  const fillVisibility = (layer: ReturnType<typeof layerWith>) =>
+    layer.container.children.map((root) => root.children[2].visible);
+
+  it('draws a flat fill only for revealed mountain and water tiles', () => {
+    const ground = makeTile(0, 0);
+    const water = { ...makeTile(1, 0), terrain: 'water' as const };
+    const mountain = { ...makeTile(2, 0), terrain: 'mountain' as const };
+
+    expect(fillVisibility(layerWith([ground, water, mountain]))).toEqual([false, true, true]);
+  });
+
+  it('keeps unrevealed water under fog without a fill', () => {
+    const hidden = { ...makeTile(0, 0), terrain: 'water' as const, isRevealed: false };
+
+    expect(fillVisibility(layerWith([hidden]))).toEqual([false]);
+  });
+});
