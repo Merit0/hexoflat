@@ -136,10 +136,10 @@
 ```ts
 mountain: { symbol: '^', passable: false, fill: 'mountain' },
 water:    { symbol: '=', passable: false, fill: 'water' },
-ground:   { symbol: '.', passable: true,  fill: 'ground', stepCost: 1 },
+ground:   { symbol: '.', passable: true,  fill: 'ground' },
 ```
 
-`stepCost` — точка розширення на майбутнє. `stepCost(ctx, tile)` у `knowledge/math.ts` уже приймає гекс, тож, наприклад, «болото = 2 Волі за крок» — це один запис, без зміни правил руху.
+Вартість кроку за рельєфом **не змодельована** (рішення після рев'ю 24.10.2026): єдиний прохідний рельєф — земля, тож поле `stepCost` у реєстрі нічого б не робило і мовчки ігнорувалося б. Коли з'явиться прохідний рельєф з іншою ціною (болото), його треба провести одночасно в списання кроку (`KNOWLEDGE` step в `apply-command.ts`, яке знає `state.map`) і в прев'ю/бюджет маршруту (`travelStepBudget`, `use-move-preview.ts`) — інакше прев'ю показуватиме не ту ціну.
 
 Деталі етапу:
 

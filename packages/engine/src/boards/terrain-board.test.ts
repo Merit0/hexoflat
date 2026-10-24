@@ -4,7 +4,6 @@ import { findShortestPath } from '../hero-movement/pathfinding-service';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
 import { staticRecipe } from '../content/boards/recipes/static-recipe';
-import { KNOWLEDGE_RULES, stepCost } from '../knowledge/math';
 import { buildStaticBoard } from './build-static-board';
 import { lintStaticDrawing } from './board-linter';
 import { measureBoard } from './measure-board';
@@ -123,13 +122,6 @@ describe('terrain on boards', () => {
 
     expect(measured.stepsToObject[HEXOBJECT_KEYS.ROCK]).toBeNull();
     expect(measured.passableTiles).toBe(10);
-  });
-
-  it('stepCost stays flat on every terrain until a terrain gets its own cost', () => {
-    const ctx = { willZone: 'paid', combatActive: false } as const;
-    for (const terrain of ['ground', 'mountain', 'water'] as const) {
-      expect(stepCost(ctx, { terrain })).toBe(KNOWLEDGE_RULES.worldStepCost);
-    }
   });
 
   it('the static drawing linter and serializer keep ^ and = without legend entries', () => {

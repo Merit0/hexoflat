@@ -21,7 +21,7 @@ function available(mode: 'hall' | 'return', state: KnowledgeState, ctx: Knowledg
   if (ctx.combatActive || ctx.moving) return false;
   return mode === 'hall'
     ? !willZoneCharges(ctx) && ctx.atBook
-    : willZoneCharges(ctx) && state.current < stepCost(ctx, ctx.coordinates);
+    : willZoneCharges(ctx) && state.current < stepCost(ctx);
 }
 
 function start(
@@ -166,7 +166,7 @@ function transition(
     const ref = action.target
       ? `${action.target.columnIndex}:${action.target.rowIndex}`
       : ctx.mapId;
-    const spent = spendWill(state, stepCost(ctx, action.target), 'step', ref);
+    const spent = spendWill(state, stepCost(ctx), 'step', ref);
     willEvents.push(...spent.events);
     if (!spent.ok) return false;
     if (action.target)
