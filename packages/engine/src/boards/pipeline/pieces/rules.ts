@@ -11,7 +11,7 @@ import { deriveStream, type SeededRandom } from '../../../utils/random-seeded';
 import { parseCoordinateKey } from '../../board-cell-map';
 import { intOrRange, intRange } from '../piece-schemas';
 import type { TerrainId } from '../../terrain';
-import { checkGeneratedBoardReachable } from '../../board-reachability';
+import { checkGeneratedBoardReachable, mustBeReachable } from '../../board-reachability';
 import type { BoardDraft, Piece } from '../types';
 import { intBetween, isFloor, shuffled } from '../piece-utils';
 
@@ -143,7 +143,7 @@ function keepsBoardReachable(draft: BoardDraft, entry: IHexCoordinates | undefin
   if (!entry) return true;
   const targets: { coord: IHexCoordinates; label: string }[] = [];
   for (const [key, cell] of draft.cellMap.entries()) {
-    if (cell.hexobject) {
+    if (cell.hexobject && mustBeReachable(cell.hexobject.hexobjectKey)) {
       targets.push({ coord: parseCoordinateKey(key), label: cell.hexobject.hexobjectKey });
     }
   }

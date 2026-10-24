@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import HexMapModel, { type ISerializedHexMap } from './models/hex-map-model';
 import { initFog, revealAroundHero } from './fog-service';
+import { buildStaticBoard } from '../boards/build-static-board';
+import { SILESIA_BOARD } from '../content/boards/static/silesia';
+import { isTerrainAlwaysVisible } from '../boards/terrain';
 import { runBoardPipeline } from '../boards/pipeline/run-board-pipeline';
 import { CAVE_MODEL } from '../content/boards/models/cave';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
@@ -114,5 +117,35 @@ describe('fog by region (the cave)', () => {
       }
     }
     expect(withObjects).toBeGreaterThan(0);
+  });
+});
+
+describe('mountains stay in view', () => {
+  it('initFog reveals impassable mountain tiles on a fogged map and hides the rest', () => {
+    const { map } = buildStaticBoard(SILESIA_BOARD);
+    initFog(map);
+
+    const mountains = map.tiles.filter((tile) => tile.terrain === 'mountain');
+    const ground = map.tiles.filter(
+      (tile) => tile.terrain === 'ground' && !tile.hexobject?.alwaysVisible,
+    );
+    expect(mountains.length).toBeGreaterThan(0);
+    expect(mountains.every((tile) => tile.isRevealed)).toBe(true);
+    expect(ground.every((tile) => !tile.isRevealed)).toBe(true);
+  });
+
+  it('water is not always visible, only mountains are', () => {
+    expect(isTerrainAlwaysVisible('mountain')).toBe(true);
+    expect(isTerrainAlwaysVisible('water')).toBe(false);
+    expect(isTerrainAlwaysVisible(undefined)).toBe(false);
+  });
+
+  it('the silesia exit stays on the north edge and the pass is reachable through the mountains', () => {
+    const { map } = buildStaticBoard(SILESIA_BOARD);
+    const exit = map.tiles.find((tile) => tile.exit);
+
+    expect(exit?.exit).toBe('N');
+    expect(exit?.terrain).toBe('ground');
+    expect(exit?.coordinates.rowIndex).toBe(0);
   });
 });

@@ -7,6 +7,7 @@ import { CONTENT } from '../content';
 import { getMeta } from '../content/content-accessors';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { isTerrainPassable } from './terrain';
+import { mustBeReachable } from './board-reachability';
 
 export interface BoardMeasurements {
   totalTiles: number;
@@ -83,7 +84,7 @@ export function measureBoard(
     const key = tile.hexobject?.hexobjectKey;
     if (!key) continue;
     willCostTotal += objectWillCost(key);
-    if (key === HEXOBJECT_KEYS.STONE_WALL) continue;
+    if (key === HEXOBJECT_KEYS.STONE_WALL || !mustBeReachable(key)) continue;
     const reached = getHexNeighbors(tile.coordinates)
       .map((n) => steps.get(coordinateKey(n)))
       .filter((value): value is number => value !== undefined);

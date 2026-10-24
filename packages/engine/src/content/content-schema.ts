@@ -45,6 +45,7 @@ export const OBJECT_TAGS = [
   'enemy',
   'portal',
   'blocker',
+  'barrier',
   'challenge',
 ] as const;
 export const objectTagSchema = z.enum(OBJECT_TAGS);
@@ -56,6 +57,8 @@ const baseContentFields = {
   isInteractable: z.boolean(),
   collision: z.enum(EHexCollision),
   spritePath: z.string().optional(),
+  alwaysVisible: z.boolean().optional(),
+  tileBackground: z.string().optional(),
   // title/subtitle/description (and creature.name/action labels below) are
   // i18n keys (e.g. 'content.skeletor.title'), not literal display text —
   // packages/engine stays language-neutral, apps/web resolves them via

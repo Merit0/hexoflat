@@ -3,6 +3,7 @@ import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { isTerrainAlwaysVisible } from '../boards/terrain';
 
 /**
  * Fog of war: which tiles the hero can see.
@@ -25,11 +26,14 @@ function indexByCoordinate(map: HexMapModel): Map<string, HexTileModel> {
 
 /**
  * Applies the map's fog policy to every tile. `ALL_REVEALED` maps start fully
- * visible; everything else starts fully hidden.
+ * visible; everything else starts hidden, except terrain that is always in
+ * view (mountains frame the map and are never covered by fog).
  */
 export function initFog(map: HexMapModel): IHexCoordinates[] {
   const revealed = map.fogPolicy === 'ALL_REVEALED';
-  for (const tile of map.tiles) tile.isRevealed = revealed;
+  for (const tile of map.tiles)
+    tile.isRevealed =
+      revealed || isTerrainAlwaysVisible(tile.terrain) || !!tile.hexobject?.alwaysVisible;
 
   return map.tiles.map((tile) => tile.coordinates);
 }

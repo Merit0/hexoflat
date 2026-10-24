@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-interface';
 import { parseCoordinateKey } from '../../board-cell-map';
-import { checkGeneratedBoardReachable } from '../../board-reachability';
+import { checkGeneratedBoardReachable, mustBeReachable } from '../../board-reachability';
 import { coordinateKey, getHexNeighbors } from '../../../utils/hex-utils';
 import type { BoardDraft, BoardRegion, CheckResult, Piece } from '../types';
 import { isFloor } from '../piece-utils';
@@ -20,7 +20,9 @@ export const checkReachable: Piece<z.infer<typeof ReachableParams>, CheckResult>
     for (const [key, cell] of draft.cellMap.entries()) {
       if (!cell.hexobject) continue;
       const coord = parseCoordinateKey(key);
-      targets.push({ coord, label: cell.hexobject.hexobjectKey });
+      if (mustBeReachable(cell.hexobject.hexobjectKey)) {
+        targets.push({ coord, label: cell.hexobject.hexobjectKey });
+      }
       if (!entryCoord && cell.hexobject.hexobjectKey === draft.entryObject) entryCoord = coord;
     }
 

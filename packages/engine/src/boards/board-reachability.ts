@@ -4,6 +4,8 @@ import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { CONTENT } from '../content';
 import type { BoardCellMap } from './board-cell-map';
 import { isTerrainPassable } from './terrain';
+import { getTags } from '../content/content-accessors';
+import type { THexobjectKey } from '../registry/hexobjects-registry';
 
 function isPassable(cellMap: BoardCellMap, coord: IHexCoordinates): boolean {
   const cell = cellMap.get(coord);
@@ -55,4 +57,8 @@ export function checkGeneratedBoardReachable(
   }
 
   return { ok: true };
+}
+
+export function mustBeReachable(key: THexobjectKey): boolean {
+  return !getTags(key).includes('barrier');
 }

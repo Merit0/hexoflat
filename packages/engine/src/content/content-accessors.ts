@@ -18,6 +18,8 @@ export function getPrototype(key: THexobjectKey): THexobjectPrototype {
     collision: content.collision,
     spritePath: content.spritePath,
     description: content.description,
+    alwaysVisible: content.alwaysVisible,
+    tileBackground: content.tileBackground,
   };
 
   switch (content.groupType) {

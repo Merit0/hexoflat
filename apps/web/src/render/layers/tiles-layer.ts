@@ -5,7 +5,7 @@ import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstract
 import { getMeta, getPrototype } from '@hexoflat/engine';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
-import { terrainFillColor } from '@/render/terrain-fill';
+import { terrainLook } from '@/render/terrain-look';
 import { hiddenTileLook, type FogLook } from '@/render/fog-look';
 import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
@@ -41,7 +41,7 @@ interface TileNode {
   root: Container;
   mask: Graphics;
   bg: Sprite;
-  terrainFill: Graphics;
+  fogFill: Graphics;
   frame: Sprite;
   sprite: Sprite;
   defendMarker: Sprite | null;
@@ -148,19 +148,23 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
   };
 
   const hidden = hiddenTileLook(deps.getFogLook?.() ?? 'clouds');
-  const fillColor = displayRevealed
-    ? terrainFillColor(tile.terrain)
-    : hidden.kind === 'fill'
-      ? hidden.color
-      : null;
-  node.terrainFill.visible = fillColor !== null;
-  if (fillColor !== null) {
+  const look = displayRevealed ? terrainLook(tile.terrain) : null;
+  const fogFill = !displayRevealed && hidden.kind === 'fill' ? hidden.color : null;
+  node.fogFill.visible = fogFill !== null;
+  if (fogFill !== null) {
     const { w, h } = deps.getTileSize();
-    drawHexMask(node.terrainFill, w, h);
-    node.terrainFill.tint = fillColor;
+    drawHexMask(node.fogFill, w, h);
+    node.fogFill.tint = fogFill;
     node.bg.texture = Texture.EMPTY;
   } else if (displayRevealed) {
-    applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node, bgFit);
+    applyTexture(
+      node.bg,
+      look?.background ??
+        tile.hexobject?.tileBackground ??
+        (tile.hexBackgroundImagePath || DEFAULT_BG_URL),
+      node,
+      bgFit,
+    );
   } else if (hidden.kind === 'texture') {
     applyTexture(node.bg, hidden.url, node, bgFit);
   }
@@ -177,7 +181,7 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
     node.frame.texture = Texture.EMPTY;
   }
 
-  const spritePath = displayRevealed ? tile.hexobject?.spritePath : null;
+  const spritePath = displayRevealed ? (tile.hexobject?.spritePath ?? look?.sprite) : null;
   if (spritePath) {
     const spriteFit = () => {
       const { w, h } = deps.getTileSize();
@@ -204,12 +208,12 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
 
     const mask = createHexMask(w, h);
     const bg = new Sprite();
-    const terrainFill = new Graphics();
-    terrainFill.visible = false;
+    const fogFill = new Graphics();
+    fogFill.visible = false;
     const frame = new Sprite();
     const sprite = new Sprite();
 
-    root.addChild(mask, bg, terrainFill, frame, sprite);
+    root.addChild(mask, bg, fogFill, frame, sprite);
     root.mask = mask;
     container.addChild(root);
 
@@ -217,7 +221,7 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       root,
       mask,
       bg,
-      terrainFill,
+      fogFill,
       frame,
       sprite,
       defendMarker: null,

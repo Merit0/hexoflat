@@ -6,21 +6,24 @@ import { coordinateKey } from '../utils/hex-utils';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 
 describe('buildStaticBoard', () => {
-  it('builds silesia inside the 18x17 frame with void corners and a natural, non-rectangular outline', () => {
+  it('frames silesia with impassable mountains: almost the whole 18x17 frame is tiles and the corners are empty', () => {
     const { map } = buildStaticBoard(SILESIA_BOARD);
-    const keys = new Set(map.tiles.map((tile) => coordinateKey(tile.coordinates)));
+    const byKey = new Map(map.tiles.map((tile) => [coordinateKey(tile.coordinates), tile]));
 
     expect(map.width).toBe(BOARD_COLUMNS);
     expect(map.height).toBe(BOARD_ROWS);
+    expect(map.tiles.length).toBeGreaterThan(BOARD_COLUMNS * BOARD_ROWS * 0.9);
+    expect(map.tiles.length).toBeLessThan(BOARD_COLUMNS * BOARD_ROWS);
     for (const corner of [
       { columnIndex: 0, rowIndex: 0 },
       { columnIndex: BOARD_COLUMNS - 1, rowIndex: 0 },
       { columnIndex: 0, rowIndex: BOARD_ROWS - 1 },
       { columnIndex: BOARD_COLUMNS - 1, rowIndex: BOARD_ROWS - 1 },
     ]) {
-      expect(keys.has(coordinateKey(corner)), 'corner should be void').toBe(false);
+      expect(byKey.has(coordinateKey(corner)), 'corner should be empty').toBe(false);
     }
-    expect(map.tiles.length).toBeLessThan(BOARD_COLUMNS * BOARD_ROWS * 0.8);
+    const openGround = map.tiles.filter((tile) => tile.terrain === 'ground' && !tile.hexobject);
+    expect(openGround.length).toBeLessThan(BOARD_COLUMNS * BOARD_ROWS * 0.6);
   });
 
   it('keeps every object kind of the old silesia and puts a mountain ridge, a lake and the cave in it', () => {
