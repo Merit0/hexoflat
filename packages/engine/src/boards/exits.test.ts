@@ -15,6 +15,7 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { buildStaticBoard } from './build-static-board';
 import { classifyExits } from './exits';
 import { parseBoardRows } from './board-rows';
+import { findFreeHexNear, findFreeHexNearExit } from '../map/free-hex-finder';
 import { runBoardPipeline } from './pipeline/run-board-pipeline';
 
 function drawing(rows: string[]): StaticBoardDrawing {
@@ -119,5 +120,32 @@ describe('atlas', () => {
         expect(findShortestPath(map, neighbour.coordinates, exit.coordinates)).not.toBeNull();
       }
     }
+  });
+});
+
+describe('placing a hero by an exit', () => {
+  const board = buildStaticBoard(drawing(['~ > ~ ~', ' ~ = . ~', '~ . . > ~', ' ~ . . . ~'])).map;
+
+  it('findFreeHexNearExit stands next to the exit on the requested side, never on water', () => {
+    const north = findFreeHexNearExit(board, 'N');
+    const tile = board.tiles.find(
+      (candidate) =>
+        candidate.coordinates.columnIndex === north?.columnIndex &&
+        candidate.coordinates.rowIndex === north?.rowIndex,
+    );
+
+    expect(north).not.toBeNull();
+    expect(tile?.terrain).toBe('ground');
+  });
+
+  it('findFreeHexNearExit returns null when the board has no exit on that side', () => {
+    expect(findFreeHexNearExit(board, 'W')).toBeNull();
+    expect(findFreeHexNearExit(buildStaticBoard(drawing(['. .'])).map)).toBeNull();
+  });
+
+  it('findFreeHexNear skips water and mountain neighbours', () => {
+    const map = buildStaticBoard(drawing(['= . ^'])).map;
+    const spot = findFreeHexNear(map, { columnIndex: 1, rowIndex: 0 });
+    expect(spot).toBeNull();
   });
 });

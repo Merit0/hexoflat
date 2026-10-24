@@ -99,8 +99,9 @@ const editorStore = useStaticBoardEditorStore();
 const descriptor = computed(() => worldStore.descriptor);
 const measurements = computed(() => {
   const map = worldStore.map as HexMapModel | null;
-  if (!map) return null;
-  return measureBoard(map, MapRegistry.get(worldStore.currentLocationKey).entryHexobjectKey);
+  const entryKey = MapRegistry.get(worldStore.currentLocationKey).entryHexobjectKey;
+  if (!map || !entryKey) return null;
+  return measureBoard(map, entryKey);
 });
 const canEditBoard = computed(
   () => descriptor.value?.kind === 'STATIC' && descriptor.value.drawingHash !== undefined,

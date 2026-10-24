@@ -1,14 +1,16 @@
 import type HexMapModel from '../map/models/hex-map-model';
 import type { TFogPolicy } from '../map/models/hex-map-model';
-import { HEXOBJECT_KEYS, THexobjectKey } from './hexobjects-registry';
+import type { THexobjectKey } from './hexobjects-registry';
 import type { LocationKey } from './location-key';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { runBoardPipeline } from '../boards/pipeline/run-board-pipeline';
 import { CAMPING_BOARD } from '../content/boards/static/camping';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
-import { CAMPING_RECIPE, SILESIA_RECIPE } from '../content/boards/recipes';
+import { SILESIA_NORTH_BOARD } from '../content/boards/static/silesia-north';
+import { CAMPING_RECIPE, SILESIA_NORTH_RECIPE, SILESIA_RECIPE } from '../content/boards/recipes';
 import { CAVE_MODEL } from '../content/boards/models/cave';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
+import type { BoardRecipeInput } from '../content/boards/recipe-schema';
 import type { WillZone } from '../knowledge/will-zone';
 
 export type { LocationKey };
@@ -29,7 +31,7 @@ export type MapDefinition = {
   boardKind: 'STATIC' | 'DUNGEON';
   create: (ctx: CreateBoardContext) => CreatedBoard;
   staticDrawing?: StaticBoardDrawing;
-  entryHexobjectKey: THexobjectKey;
+  entryHexobjectKey?: THexobjectKey;
   willZone?: WillZone;
   safeZoneRadius?: number;
   fogPolicy?: TFogPolicy;
@@ -41,35 +43,44 @@ export type MapDefinition = {
   respawnAfterClearedMs?: number;
 };
 
+function staticLocation(
+  key: LocationKey,
+  title: string,
+  recipe: BoardRecipeInput,
+  drawing: StaticBoardDrawing,
+  extra: Partial<MapDefinition> = {},
+): MapDefinition {
+  return {
+    key,
+    title,
+    boardKind: 'STATIC',
+    create: () => runBoardPipeline(recipe, { seed: '' }),
+    staticDrawing: drawing,
+    entryHexobjectKey: recipe.entryObject,
+    safeZoneRadius: 1,
+    fogPolicy: recipe.fog === 'ALL_REVEALED' ? 'ALL_REVEALED' : 'FOG',
+    ...extra,
+  };
+}
+
 export class MapRegistry {
   private static defs: Record<LocationKey, MapDefinition> = {
-    camping: {
-      key: 'camping',
-      title: 'Camping',
-      boardKind: 'STATIC',
-      create: () => runBoardPipeline(CAMPING_RECIPE, { seed: '' }),
-      staticDrawing: CAMPING_BOARD,
-      entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
-      safeZoneRadius: 1,
-      fogPolicy: 'ALL_REVEALED',
+    camping: staticLocation('camping', 'Camping', CAMPING_RECIPE, CAMPING_BOARD, {
       willZone: 'free',
-    },
-    silesia: {
-      key: 'silesia',
-      title: 'Silesia',
-      boardKind: 'STATIC',
-      create: () => runBoardPipeline(SILESIA_RECIPE, { seed: '' }),
-      staticDrawing: SILESIA_BOARD,
-      entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
-      safeZoneRadius: 1,
-      fogPolicy: 'FOG',
-    },
+    }),
+    silesia: staticLocation('silesia', 'Silesia', SILESIA_RECIPE, SILESIA_BOARD),
+    'silesia-north': staticLocation(
+      'silesia-north',
+      'Silesia North',
+      SILESIA_NORTH_RECIPE,
+      SILESIA_NORTH_BOARD,
+    ),
     cave: {
       key: 'cave',
       title: 'Skeletor Kingdom',
       boardKind: 'DUNGEON',
       create: (ctx) => runBoardPipeline(CAVE_MODEL, { seed: ctx.seed, params: ctx.params }),
-      entryHexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
+      entryHexobjectKey: CAVE_MODEL.entryObject,
       safeZoneRadius: 1,
       fogPolicy: 'FOG',
       respawnAfterClearedMs: 60_000,

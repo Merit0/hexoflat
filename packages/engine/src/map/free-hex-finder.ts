@@ -3,6 +3,8 @@ import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { isTerrainPassable } from '../boards/terrain';
+import type { ExitSide } from '../boards/exits';
 import { pickRandom, type RandomNumberGenerator } from '../utils/random';
 
 /**
@@ -36,7 +38,8 @@ export function findFreeHexNear(
   const free = getHexNeighbors(coordinates)
     .map((coord) => byKey.get(coordinateKey(coord)))
     .filter((tile): tile is HexTileModel => !!tile)
-    .filter((tile) => tile.hexobject?.collision !== EHexCollision.SOLID);
+    .filter((tile) => tile.hexobject?.collision !== EHexCollision.SOLID)
+    .filter((tile) => isTerrainPassable(tile.terrain));
 
   const chosen = random ? pickRandom(free, random) : (free[0] ?? null);
   return chosen ? { ...chosen.coordinates } : null;
@@ -59,4 +62,20 @@ export function findFreeHexNearObject(
   if (!landmark) return null;
 
   return findFreeHexNear(map, landmark.coordinates, random) ?? { ...landmark.coordinates };
+}
+
+/**
+ * A walkable hex next to the exit tile on `side` (any exit when no side is
+ * given) — where a hero who just crossed a board edge is put down. Returns
+ * null when the board has no such exit.
+ */
+export function findFreeHexNearExit(
+  map: HexMapModel,
+  side?: ExitSide,
+  random?: RandomNumberGenerator,
+): IHexCoordinates | null {
+  const exit = map.tiles.find((tile) => tile.exit && (!side || tile.exit === side));
+  if (!exit) return null;
+
+  return findFreeHexNear(map, exit.coordinates, random) ?? { ...exit.coordinates };
 }

@@ -12,7 +12,6 @@ import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
   LocationKey,
-  MapDefinition,
   MapRegistry,
   type CreatedBoard,
 } from '@hexoflat/engine/registry/world-map-registry';
@@ -48,7 +47,7 @@ import {
   revealTileNextToHero,
 } from '@hexoflat/engine/map/fog-service';
 import { findTilesMissingSpawners } from '@hexoflat/engine/map/resource-hydration';
-import { findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
+import { findFreeHexNearExit, findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
 import {
   clearLocationRespawn as clearRespawn,
   consumeDueLocationRespawn,
@@ -505,12 +504,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       if (!this.map) return;
-      const map = this.map as HexMapModel;
 
       if (!heroStore.heroCoordinates) {
-        heroStore.heroCoordinates =
-          findFreeHexNearObject(map, MapRegistry.get(this.currentLocationKey).entryHexobjectKey) ??
-          MAP_ORIGIN;
+        heroStore.heroCoordinates = this.findEntryHex(this.currentLocationKey) ?? MAP_ORIGIN;
 
         this.revealAroundHero();
         this.saveToStorage(mapId);
@@ -562,10 +558,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
     placeHeroAtEntry(locationKey: LocationKey) {
       if (!this.map) return;
 
-      const def: MapDefinition = MapRegistry.get(locationKey);
-      useHeroStore().heroCoordinates =
-        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, getStream('world')) ??
-        MAP_ORIGIN;
+      useHeroStore().heroCoordinates = this.findEntryHex(locationKey) ?? MAP_ORIGIN;
+    },
+
+    findEntryHex(locationKey: LocationKey): IHexCoordinates | null {
+      const map = this.map as HexMapModel | null;
+      if (!map) return null;
+
+      const entryKey = MapRegistry.get(locationKey).entryHexobjectKey;
+      const byEntry = entryKey ? findFreeHexNearObject(map, entryKey, getStream('world')) : null;
+      return byEntry ?? findFreeHexNearExit(map, undefined, getStream('world'));
     },
 
     initFog() {
