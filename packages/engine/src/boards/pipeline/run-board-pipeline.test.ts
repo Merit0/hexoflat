@@ -5,27 +5,16 @@ import { CAMPING_BOARD } from '../../content/boards/static/camping';
 import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
 import type { BoardRecipeInput } from '../../content/boards/recipe-schema';
 import type { StaticBoardDrawing } from '../../content/boards/schemas';
-import { BOARD_COLUMNS, BOARD_ROWS } from '../board-size';
+import { staticRecipe } from '../../content/boards/recipes/static-recipe';
 import { hashStaticDrawing } from '../drawing-hash';
 import { runBoardPipeline } from './run-board-pipeline';
 
-function staticRecipe(
+function recipeFor(
   drawing: StaticBoardDrawing,
   extra: Partial<BoardRecipeInput> = {},
 ): BoardRecipeInput {
   return {
-    id: drawing.id,
-    version: 1,
-    kind: 'static',
-    frame: { columns: BOARD_COLUMNS, rows: BOARD_ROWS },
-    background: drawing.background,
-    fog: 'FOG',
-    stages: {
-      form: [{ kind: 'drawing', drawing }],
-      gates: [{ kind: 'drawing' }],
-      objects: [{ kind: 'drawing' }],
-      bounds: [{ kind: 'void' }],
-    },
+    ...staticRecipe(drawing, { fog: 'FOG', entryObject: HEXOBJECT_KEYS.CAMPING_ENTRANCE }),
     ...extra,
   };
 }
@@ -38,7 +27,7 @@ describe('runBoardPipeline', () => {
     'FORM:drawing + GATES:drawing + OBJECTS:drawing rebuild %s exactly like buildStaticBoard',
     (_name, drawing, fog) => {
       const legacy = buildStaticBoard(drawing, fog);
-      const built = runBoardPipeline(staticRecipe(drawing, { fog }), { seed: '' });
+      const built = runBoardPipeline(recipeFor(drawing, { fog }), { seed: '' });
 
       expect(built.map.toJSON()).toEqual(legacy.map.toJSON());
       expect(built.map.fogPolicy).toBe(legacy.map.fogPolicy);
@@ -51,7 +40,7 @@ describe('runBoardPipeline', () => {
   );
 
   it('records a trace entry for every placed cell', () => {
-    const built = runBoardPipeline(staticRecipe(SILESIA_BOARD), { seed: '' });
+    const built = runBoardPipeline(recipeFor(SILESIA_BOARD), { seed: '' });
 
     expect(built.trace.cellCount).toBe(built.map.tiles.length);
     const gate = built.map.tiles.find(
@@ -63,7 +52,7 @@ describe('runBoardPipeline', () => {
 
   it('CHECKS:reachable passes for silesia from its entrance and reports measures', () => {
     const built = runBoardPipeline(
-      staticRecipe(SILESIA_BOARD, {
+      recipeFor(SILESIA_BOARD, {
         entryObject: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
         stages: {
           form: [{ kind: 'drawing', drawing: SILESIA_BOARD }],
@@ -81,7 +70,8 @@ describe('runBoardPipeline', () => {
   it('CHECKS:reachable fails the build when the recipe has no entry object', () => {
     expect(() =>
       runBoardPipeline(
-        staticRecipe(SILESIA_BOARD, {
+        recipeFor(SILESIA_BOARD, {
+          entryObject: undefined,
           stages: {
             form: [{ kind: 'drawing', drawing: SILESIA_BOARD }],
             checks: [{ kind: 'reachable' }],
@@ -101,7 +91,7 @@ describe('runBoardPipeline', () => {
     };
     const wallKey = HEXOBJECT_KEYS.STONE_WALL;
     const built = runBoardPipeline(
-      staticRecipe(drawing, {
+      recipeFor(drawing, {
         stages: { form: [{ kind: 'drawing', drawing }], bounds: [{ kind: 'wall' }] },
       }),
       { seed: '' },
@@ -114,7 +104,7 @@ describe('runBoardPipeline', () => {
   it('rejects an unknown piece kind', () => {
     expect(() =>
       runBoardPipeline(
-        staticRecipe(SILESIA_BOARD, {
+        recipeFor(SILESIA_BOARD, {
           stages: { form: [{ kind: 'nope' }] },
         }),
         { seed: '' },
@@ -124,7 +114,7 @@ describe('runBoardPipeline', () => {
 
   it('keeps a frame inside the 18x17 limit', () => {
     expect(() =>
-      runBoardPipeline(staticRecipe(SILESIA_BOARD, { frame: { columns: 19, rows: 17 } }), {
+      runBoardPipeline(recipeFor(SILESIA_BOARD, { frame: { columns: 19, rows: 17 } }), {
         seed: '',
       }),
     ).toThrow();

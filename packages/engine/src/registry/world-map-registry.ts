@@ -3,10 +3,11 @@ import type { TFogPolicy } from '../map/models/hex-map-model';
 import { HEXOBJECT_KEYS, THexobjectKey } from './hexobjects-registry';
 import type { LocationKey } from './location-key';
 import type { BoardDescriptor } from '../boards/board-descriptors';
-import { buildStaticBoard } from '../boards/build-static-board';
+import { runBoardPipeline } from '../boards/pipeline/run-board-pipeline';
 import { assembleGeneratedBoard } from '../boards/assemble-generated-board';
 import { CAMPING_BOARD } from '../content/boards/static/camping';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
+import { CAMPING_RECIPE, SILESIA_RECIPE } from '../content/boards/recipes';
 import { CAVE_PRESET } from '../content/boards/presets/cave';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
 import type { WillZone } from '../knowledge/will-zone';
@@ -50,7 +51,7 @@ export class MapRegistry {
       key: 'camping',
       title: 'Camping',
       boardKind: 'STATIC',
-      create: () => buildStaticBoard(CAMPING_BOARD, 'ALL_REVEALED'),
+      create: () => runBoardPipeline(CAMPING_RECIPE, { seed: '' }),
       staticDrawing: CAMPING_BOARD,
       entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
       safeZoneRadius: 1,
@@ -61,7 +62,7 @@ export class MapRegistry {
       key: 'silesia',
       title: 'Silesia',
       boardKind: 'STATIC',
-      create: () => buildStaticBoard(SILESIA_BOARD),
+      create: () => runBoardPipeline(SILESIA_RECIPE, { seed: '' }),
       staticDrawing: SILESIA_BOARD,
       entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
       safeZoneRadius: 1,
