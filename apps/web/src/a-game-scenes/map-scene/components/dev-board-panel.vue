@@ -1,88 +1,103 @@
 <template>
-  <aside class="dev-board-panel" data-testid="dev-board-panel">
-    <header class="dev-board-panel__header">Board (dev)</header>
-
-    <dl class="dev-board-panel__facts">
-      <dt>Location</dt>
-      <dd>{{ worldStore.currentLocationKey }}</dd>
-      <dt>Kind</dt>
-      <dd>{{ descriptor?.kind ?? '—' }}</dd>
-      <template v-if="descriptor?.kind === 'STATIC'">
-        <dt>Drawing hash</dt>
-        <dd>{{ descriptor.drawingHash?.slice(0, 8) ?? '—' }}</dd>
-      </template>
-      <template v-if="descriptor?.kind === 'RECIPE'">
-        <dt>Recipe</dt>
-        <dd>{{ descriptor.recipeId }} v{{ descriptor.version }}</dd>
-        <dt>Seed</dt>
-        <dd>{{ descriptor.seed }}</dd>
-        <dt>Attempt</dt>
-        <dd>{{ descriptor.attempt }}</dd>
-      </template>
-    </dl>
-
-    <section
-      v-if="measurements"
-      class="dev-board-panel__measurements"
-      data-testid="dev-measurements"
+  <aside
+    class="dev-board-panel"
+    :class="{ 'dev-board-panel--collapsed': panelStore.isCollapsed }"
+    data-testid="dev-board-panel"
+  >
+    <button
+      type="button"
+      class="dev-board-panel__header"
+      data-testid="dev-board-panel-collapse-toggle"
+      :aria-expanded="!panelStore.isCollapsed"
+      @click="panelStore.toggleCollapsed()"
     >
-      <header class="dev-board-panel__header">Заміри</header>
+      <span class="dev-board-panel__chevron">{{ panelStore.isCollapsed ? '▸' : '▾' }}</span>
+      Board (dev)
+    </button>
+
+    <template v-if="!panelStore.isCollapsed">
       <dl class="dev-board-panel__facts">
-        <dt>Гексів / прохідних</dt>
-        <dd>{{ measurements.totalTiles }} / {{ measurements.passableTiles }}</dd>
-        <dt>Сусідів (сер.)</dt>
-        <dd>{{ measurements.meanPassableNeighbours.toFixed(2) }}</dd>
-        <dt>≤2 сусідів</dt>
-        <dd>{{ (measurements.shareLowDegree * 100).toFixed(0) }}%</dd>
-        <dt>Найдальший</dt>
-        <dd>{{ measurements.farthestPassableSteps }}</dd>
-        <dt>Воля (сума)</dt>
-        <dd>{{ measurements.willCostTotal }}</dd>
-        <template v-for="(steps, key) in measurements.stepsToObject" :key="key">
-          <dt>→ {{ key }}</dt>
-          <dd>{{ steps ?? '—' }}</dd>
+        <dt>Location</dt>
+        <dd>{{ worldStore.currentLocationKey }}</dd>
+        <dt>Kind</dt>
+        <dd>{{ descriptor?.kind ?? '—' }}</dd>
+        <template v-if="descriptor?.kind === 'STATIC'">
+          <dt>Drawing hash</dt>
+          <dd>{{ descriptor.drawingHash?.slice(0, 8) ?? '—' }}</dd>
+        </template>
+        <template v-if="descriptor?.kind === 'RECIPE'">
+          <dt>Recipe</dt>
+          <dd>{{ descriptor.recipeId }} v{{ descriptor.version }}</dd>
+          <dt>Seed</dt>
+          <dd>{{ descriptor.seed }}</dd>
+          <dt>Attempt</dt>
+          <dd>{{ descriptor.attempt }}</dd>
         </template>
       </dl>
-    </section>
 
-    <DevBoardModelTab v-if="descriptor?.kind === 'RECIPE'" />
-
-    <div v-if="descriptor?.kind === 'RECIPE'" class="dev-board-panel__actions">
-      <button
-        type="button"
-        data-testid="dev-regenerate-button"
-        @click="worldStore.devRegenerateDungeon(panelStore.params)"
+      <section
+        v-if="measurements"
+        class="dev-board-panel__measurements"
+        data-testid="dev-measurements"
       >
-        Regenerate
-      </button>
-      <button
-        type="button"
-        data-testid="dev-next-seed-button"
-        @click="worldStore.devNextSeed(panelStore.params)"
-      >
-        Next seed
-      </button>
-    </div>
+        <header class="dev-board-panel__header">Заміри</header>
+        <dl class="dev-board-panel__facts">
+          <dt>Гексів / прохідних</dt>
+          <dd>{{ measurements.totalTiles }} / {{ measurements.passableTiles }}</dd>
+          <dt>Сусідів (сер.)</dt>
+          <dd>{{ measurements.meanPassableNeighbours.toFixed(2) }}</dd>
+          <dt>≤2 сусідів</dt>
+          <dd>{{ (measurements.shareLowDegree * 100).toFixed(0) }}%</dd>
+          <dt>Найдальший</dt>
+          <dd>{{ measurements.farthestPassableSteps }}</dd>
+          <dt>Воля (сума)</dt>
+          <dd>{{ measurements.willCostTotal }}</dd>
+          <template v-for="(steps, key) in measurements.stepsToObject" :key="key">
+            <dt>→ {{ key }}</dt>
+            <dd>{{ steps ?? '—' }}</dd>
+          </template>
+        </dl>
+      </section>
 
-    <label v-if="canEditBoard" class="dev-board-panel__toggle">
-      <input
-        type="checkbox"
-        data-testid="dev-edit-board-toggle"
-        :checked="editorStore.isEditing"
-        @change="onToggleEditBoard"
-      />
-      Edit board
-    </label>
+      <DevBoardModelTab v-if="descriptor?.kind === 'RECIPE'" />
 
-    <label class="dev-board-panel__toggle">
-      <input
-        type="checkbox"
-        data-testid="dev-show-whole-board-toggle"
-        :checked="panelStore.showWholeBoard"
-        @change="panelStore.toggleShowWholeBoard()"
-      />
-      Show whole board
-    </label>
+      <div v-if="descriptor?.kind === 'RECIPE'" class="dev-board-panel__actions">
+        <button
+          type="button"
+          data-testid="dev-regenerate-button"
+          @click="worldStore.devRegenerateDungeon(panelStore.params)"
+        >
+          Regenerate
+        </button>
+        <button
+          type="button"
+          data-testid="dev-next-seed-button"
+          @click="worldStore.devNextSeed(panelStore.params)"
+        >
+          Next seed
+        </button>
+      </div>
+
+      <label v-if="canEditBoard" class="dev-board-panel__toggle">
+        <input
+          type="checkbox"
+          data-testid="dev-edit-board-toggle"
+          :checked="editorStore.isEditing"
+          @change="onToggleEditBoard"
+        />
+        Edit board
+      </label>
+
+      <label class="dev-board-panel__toggle">
+        <input
+          type="checkbox"
+          data-testid="dev-show-whole-board-toggle"
+          :checked="panelStore.showWholeBoard"
+          @change="panelStore.toggleShowWholeBoard()"
+        />
+        Show whole board
+      </label>
+    </template>
   </aside>
 </template>
 
@@ -138,9 +153,27 @@ function onToggleEditBoard() {
   max-width: 220px;
 }
 
+.dev-board-panel--collapsed {
+  padding: 4px 8px;
+}
+
 .dev-board-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-weight: bold;
   opacity: 0.8;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dev-board-panel__chevron {
+  width: 1em;
 }
 
 .dev-board-panel__facts {
