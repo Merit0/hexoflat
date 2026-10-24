@@ -261,6 +261,22 @@ export class HexBoardComponent extends BaseComponent {
     throw new Error(`Did not reach a tile adjacent to the target within ${maxSteps} steps.`);
   }
 
+  async walkTo(target: TestHexCoordinates): Promise<void> {
+    const route = await this.page.evaluate(
+      (to) => window.__HEXOFLAT_TEST__!.getWalkRoute(to),
+      target,
+    );
+    if (!route?.length)
+      throw new Error(`No walkable route to (${target.columnIndex}, ${target.rowIndex}).`);
+
+    for (const [index, step] of route.entries()) {
+      await this.clickTile(step);
+      if (index === route.length - 1) return;
+      const stepKey = coordinateKey(step);
+      await this.waitForHeroCoordinates((coordinates) => coordinateKey(coordinates) === stepKey);
+    }
+  }
+
   async requireExitTile(side: ExitSide): Promise<TestHexCoordinates> {
     const exit = await this.page.evaluate(
       (wanted) => window.__HEXOFLAT_TEST__!.getExitTile(wanted),

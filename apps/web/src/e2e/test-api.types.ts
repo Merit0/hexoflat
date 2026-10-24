@@ -29,7 +29,7 @@ export interface HexoflatTestApi {
   } | null;
   prepareKnowledgeWorld(current: number): void;
   setWill(current: number): void;
-  placeHeroBesideExit(side: 'N' | 'S' | 'W' | 'E'): void;
+  getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null;
   getWillSlotKey(): string;
   getKnowledgeRules(): { startingWill: number; capacity: number };
   isBoardReady(): boolean;

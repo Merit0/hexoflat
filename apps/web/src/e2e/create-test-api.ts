@@ -1,5 +1,4 @@
-import { findFreeHexNearExit } from '@hexoflat/engine/map/free-hex-finder';
-import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
 import { KNOWLEDGE_RULES } from '@hexoflat/engine/knowledge/math';
 import { writeKnowledge } from '@/services/persistence/knowledge-storage';
@@ -87,13 +86,19 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       writeKnowledge({ ...heroStore.knowledge, current });
       heroStore.loadKnowledge();
     },
-    placeHeroBesideExit(side) {
-      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      const map = worldStore.map as HexMapModel | null;
-      const spot = map ? findFreeHexNearExit(map, side) : null;
-      if (!spot) throw new Error(`No ${side} exit to stand beside`);
-      heroStore.heroCoordinates = spot;
-      worldStore.revealAroundHero();
+    getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null {
+      const from = heroStore.heroCoordinates;
+      const map = worldStore.map;
+      if (!from || !map) return null;
+      const clickable = {
+        tiles: map.tiles.map((tile) => ({
+          coordinates: tile.coordinates,
+          hexobject: tile.hexobject,
+          terrain: tile.terrain,
+          isRevealed: !tile.hexobject,
+        })),
+      };
+      return findShortestPath(clickable, from, to)?.slice(1) ?? null;
     },
     getWillSlotKey() {
       return WILL_SLOT_KEY;

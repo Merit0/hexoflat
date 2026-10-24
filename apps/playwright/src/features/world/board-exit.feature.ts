@@ -19,13 +19,8 @@ export class BoardExitFeature extends BaseFeature {
   }
 
   private async walkOntoExit(side: 'N' | 'S'): Promise<void> {
-    await this.page.evaluate(
-      (exitSide) => window.__HEXOFLAT_TEST__!.placeHeroBesideExit(exitSide),
-      side,
-    );
-    await this.map.hexBoard.verifyHeroBesideExit(side);
     const exit = await this.map.hexBoard.requireExitTile(side);
-    await this.map.hexBoard.clickTile(exit);
+    await this.map.hexBoard.walkTo(exit);
   }
 
   private async reloadBoard(): Promise<void> {
@@ -42,8 +37,7 @@ export class BoardExitFeature extends BaseFeature {
       await this.map.hexBoard.waitForReady();
       await this.map.hexBoard.verifyHeroBesideExit('S');
 
-      const exit = await this.map.hexBoard.requireExitTile('S');
-      await this.map.hexBoard.clickTile(exit);
+      await this.walkOntoExit('S');
       await this.map.verifyUrlMatches(/\/world\/silesia(?!-)/);
       await this.map.hexBoard.waitForReady();
       await this.map.hexBoard.verifyHeroBesideExit('N');
