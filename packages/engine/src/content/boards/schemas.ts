@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content-schema';
+import { BOARD_COLUMNS, BOARD_ROWS } from '../../boards/board-size';
+import { parseBoardRow } from '../../boards/board-rows';
 
 const LEGEND_LETTER = /^[A-Z0-9]$/;
 const RESERVED_CHUNK_SYMBOLS = new Set(['T', 'P', 'E', 'D', 'X']);
@@ -10,13 +12,20 @@ export const LegendEntrySchema = z.object({
 });
 export type LegendEntry = z.infer<typeof LegendEntrySchema>;
 
+const rowsSchema = z
+  .array(z.string())
+  .max(BOARD_ROWS)
+  .refine((rows) => rows.every((row) => parseBoardRow(row).length <= BOARD_COLUMNS), {
+    message: `a row has more than ${BOARD_COLUMNS} cells`,
+  });
+
 const legendSchema = z.record(z.string().regex(LEGEND_LETTER), LegendEntrySchema);
 
 export const StaticBoardDrawingSchema = z.object({
   id: z.string().min(1),
   background: z.string(),
   legend: legendSchema,
-  rows: z.array(z.string()),
+  rows: rowsSchema,
 });
 export type StaticBoardDrawing = z.infer<typeof StaticBoardDrawingSchema>;
 
@@ -28,7 +37,7 @@ export const BoardChunkSchema = z
   .object({
     id: z.string().min(1),
     biome: BiomeSchema,
-    rows: z.array(z.string()),
+    rows: rowsSchema,
     legend: legendSchema.optional(),
   })
   .superRefine((chunk, ctx) => {

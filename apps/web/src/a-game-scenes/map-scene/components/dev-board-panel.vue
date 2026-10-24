@@ -21,6 +21,30 @@
       </template>
     </dl>
 
+    <section
+      v-if="measurements"
+      class="dev-board-panel__measurements"
+      data-testid="dev-measurements"
+    >
+      <header class="dev-board-panel__header">Заміри</header>
+      <dl class="dev-board-panel__facts">
+        <dt>Гексів / прохідних</dt>
+        <dd>{{ measurements.totalTiles }} / {{ measurements.passableTiles }}</dd>
+        <dt>Сусідів (сер.)</dt>
+        <dd>{{ measurements.meanPassableNeighbours.toFixed(2) }}</dd>
+        <dt>≤2 сусідів</dt>
+        <dd>{{ (measurements.shareLowDegree * 100).toFixed(0) }}%</dd>
+        <dt>Найдальший</dt>
+        <dd>{{ measurements.farthestPassableSteps }}</dd>
+        <dt>Воля (сума)</dt>
+        <dd>{{ measurements.willCostTotal }}</dd>
+        <template v-for="(steps, key) in measurements.stepsToObject" :key="key">
+          <dt>→ {{ key }}</dt>
+          <dd>{{ steps ?? '—' }}</dd>
+        </template>
+      </dl>
+    </section>
+
     <div v-if="descriptor?.kind === 'DUNGEON'" class="dev-board-panel__actions">
       <button
         type="button"
@@ -93,6 +117,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { measureBoard } from '@hexoflat/engine/boards/measure-board';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
@@ -107,6 +133,11 @@ const zoneLegend = computed(() => computeZoneLegend(descriptor.value));
 const availableLayouts = computed(
   () => MapRegistry.get(worldStore.currentLocationKey).availableLayouts ?? [],
 );
+const measurements = computed(() => {
+  const map = worldStore.map as HexMapModel | null;
+  if (!map) return null;
+  return measureBoard(map, MapRegistry.get(worldStore.currentLocationKey).entryHexobjectKey);
+});
 const canEditBoard = computed(
   () => descriptor.value?.kind === 'STATIC' && descriptor.value.drawingHash !== undefined,
 );
@@ -166,6 +197,12 @@ function cssColor(color: number): string {
 .dev-board-panel__facts dd {
   margin: 0;
   word-break: break-all;
+}
+
+.dev-board-panel__measurements {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .dev-board-panel__actions {
