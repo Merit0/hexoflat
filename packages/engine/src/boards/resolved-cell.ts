@@ -7,6 +7,7 @@ export interface ResolvedCell {
   exists: boolean;
   terrain?: TerrainId;
   exit?: ExitSide;
+  regionId?: string;
   hexobject?: { hexobjectKey: THexobjectKey; overrides?: Record<string, unknown> };
 }
 

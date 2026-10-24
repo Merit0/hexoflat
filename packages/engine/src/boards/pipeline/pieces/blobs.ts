@@ -199,7 +199,7 @@ function carveNeck(
   ][sideDirection];
 
   for (const cell of edge.line) {
-    draft.cellMap.set(cell, GROUND_CELL);
+    if (!draft.cellMap.has(cell)) draft.cellMap.set(cell, GROUND_CELL);
     draft.trace.record(cell, { stage: 'form', pieceId: 'blobs', note: 'neck' });
     if (width < 2) continue;
 
@@ -209,7 +209,9 @@ function carveNeck(
       (other, index) =>
         index !== edge.a && index !== edge.b && hexDistance(side, other.center) <= radius + 1,
     );
-    if (inFrame(draft, side) && !intrudes) draft.cellMap.set(side, GROUND_CELL);
+    if (inFrame(draft, side) && !intrudes && !draft.cellMap.has(side)) {
+      draft.cellMap.set(side, GROUND_CELL);
+    }
   }
 }
 
@@ -235,7 +237,7 @@ export const formBlobs: Piece<BlobsParams> = {
     blobs.forEach((blob, index) => {
       const cells = hexDisc(blob.center, params.radius);
       for (const cell of cells) {
-        draft.cellMap.set(cell, GROUND_CELL);
+        draft.cellMap.set(cell, { ...GROUND_CELL, regionId: blob.id });
         draft.trace.record(cell, { stage: 'form', pieceId: 'blobs', note: blob.id });
       }
       draft.regions.push({

@@ -71,7 +71,7 @@ function paint(
   const existing = draft.cellMap.get(coord);
   if (existing?.hexobject) return false;
 
-  draft.cellMap.set(coord, { ...GROUND_CELL, terrain });
+  draft.cellMap.set(coord, { ...GROUND_CELL, terrain, regionId: existing?.regionId });
   draft.trace.record(coord, { stage: 'relief', pieceId, note: terrain });
   return true;
 }

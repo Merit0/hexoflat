@@ -104,7 +104,7 @@ function finalize(
     boardColumns: recipe.frame.columns,
     boardRows: recipe.frame.rows,
     background: recipe.background,
-    fogPolicy: recipe.fog === 'ALL_REVEALED' ? 'ALL_REVEALED' : 'FOG',
+    fogPolicy: recipe.fog,
     cellAt: (coord) => draft.cellMap.get(coord) ?? VOID_CELL,
   });
 

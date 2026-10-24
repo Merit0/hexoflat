@@ -76,4 +76,24 @@ describe('tiles-layer terrain fills', () => {
 
     expect(fillVisibility(layerWith([hidden]))).toEqual([false]);
   });
+
+  it('hides unrevealed tiles in the cave under a flat dark fill, and in the world under clouds', () => {
+    const hidden = { ...makeTile(0, 0), isRevealed: false };
+    const build = (look: 'clouds' | 'dark') => {
+      const layer = createTilesLayer({
+        worldContainer: new Container(),
+        getTileSize: () => ({ w: 60, h: 60 }),
+        worldStore: {} as TilesLayerDeps['worldStore'],
+        combatStore: {} as TilesLayerDeps['combatStore'],
+        onTileHover: () => {},
+        onTileClick: () => {},
+        getFogLook: () => look,
+      });
+      layer.syncTiles([hidden]);
+      return layer.container.children[0].children[2].visible;
+    };
+
+    expect(build('dark')).toBe(true);
+    expect(build('clouds')).toBe(false);
+  });
 });

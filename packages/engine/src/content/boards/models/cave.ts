@@ -7,7 +7,7 @@ export const CAVE_MODEL = {
   frame: { columns: 18, rows: 17 },
   biome: 'CAVE',
   background: '/hex-assets/board-hexes/stone-hex.png',
-  fog: 'FOG',
+  fog: 'BY_REGION',
   willZone: 'paid',
   entryObject: 'cave-exit',
   fallbackSeed: 'cave-fallback',

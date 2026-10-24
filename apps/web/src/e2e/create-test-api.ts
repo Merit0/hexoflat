@@ -1,3 +1,6 @@
+import { findFreeHexNearExit } from '@hexoflat/engine/map/free-hex-finder';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
 import { KNOWLEDGE_RULES } from '@hexoflat/engine/knowledge/math';
 import { writeKnowledge } from '@/services/persistence/knowledge-storage';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
@@ -84,6 +87,14 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       writeKnowledge({ ...heroStore.knowledge, current });
       heroStore.loadKnowledge();
     },
+    placeHeroBesideExit(side) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      const map = worldStore.map as HexMapModel | null;
+      const spot = map ? findFreeHexNearExit(map, side) : null;
+      if (!spot) throw new Error(`No ${side} exit to stand beside`);
+      heroStore.heroCoordinates = spot;
+      worldStore.revealAroundHero();
+    },
     getWillSlotKey() {
       return WILL_SLOT_KEY;
     },
@@ -125,6 +136,18 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
     getTileHexobjectKey(coordinates: TestHexCoordinates): string | null {
       return findTile(coordinates)?.hexobject?.hexobjectKey ?? null;
+    },
+
+    getExitTile(side): TestHexCoordinates | null {
+      const exit = worldStore.map?.tiles.find((tile) => tile.exit === side);
+      return exit
+        ? { columnIndex: exit.coordinates.columnIndex, rowIndex: exit.coordinates.rowIndex }
+        : null;
+    },
+
+    isTileImpassableTerrain(coordinates: TestHexCoordinates): boolean {
+      const tile = findTile(coordinates);
+      return !!tile && !isTerrainPassable(tile.terrain);
     },
 
     getHeroHealth(): TestHeroHealth {

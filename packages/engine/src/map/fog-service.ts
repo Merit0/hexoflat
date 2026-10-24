@@ -34,7 +34,32 @@ export function initFog(map: HexMapModel): IHexCoordinates[] {
   return map.tiles.map((tile) => tile.coordinates);
 }
 
-/** Reveals the hero's own tile plus its six neighbours. */
+function revealWholeRegion(
+  map: HexMapModel,
+  byKey: Map<string, HexTileModel>,
+  regionId: string,
+): IHexCoordinates[] {
+  const revealedCoords: IHexCoordinates[] = [];
+  const reveal = (tile: HexTileModel | undefined) => {
+    if (!tile) return;
+    tile.isRevealed = true;
+    revealedCoords.push(tile.coordinates);
+  };
+
+  for (const tile of map.tiles) {
+    if (tile.regionId !== regionId) continue;
+    reveal(tile);
+    for (const neighbor of getHexNeighbors(tile.coordinates)) {
+      reveal(byKey.get(coordinateKey(neighbor)));
+    }
+  }
+  return revealedCoords;
+}
+
+/**
+ * Reveals the hero's own tile plus its six neighbours. On a `BY_REGION` map,
+ * standing in a region also reveals the whole region and the walls around it.
+ */
 export function revealAroundHero(
   map: HexMapModel,
   heroCoordinates: IHexCoordinates,
@@ -47,6 +72,11 @@ export function revealAroundHero(
     if (!tile) continue;
     tile.isRevealed = true;
     revealedCoords.push(tile.coordinates);
+  }
+
+  const regionId = byKey.get(coordinateKey(heroCoordinates))?.regionId;
+  if (map.fogPolicy === 'BY_REGION' && regionId) {
+    revealedCoords.push(...revealWholeRegion(map, byKey, regionId));
   }
 
   return revealedCoords;

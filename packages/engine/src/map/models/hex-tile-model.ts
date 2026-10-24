@@ -17,6 +17,7 @@ export interface IHexTile {
   pendingAction: IPendingTileAction | null;
   terrain?: TerrainId;
   exit?: ExitSide;
+  regionId?: string;
 }
 
 export class HexTileModel implements IHexTile {
@@ -30,6 +31,7 @@ export class HexTileModel implements IHexTile {
   private _pendingAction: IPendingTileAction | null = null;
   private _terrain: TerrainId = DEFAULT_TERRAIN;
   private _exit: ExitSide | undefined = undefined;
+  private _regionId: string | undefined = undefined;
 
   get hexobject(): THexobject | null {
     return this._hexobject;
@@ -105,6 +107,14 @@ export class HexTileModel implements IHexTile {
 
   set exit(exit: ExitSide | undefined) {
     this._exit = exit;
+  }
+
+  get regionId(): string | undefined {
+    return this._regionId;
+  }
+
+  set regionId(regionId: string | undefined) {
+    this._regionId = regionId;
   }
 
   coordinatesToString(): string {

@@ -58,7 +58,7 @@ function staticLocation(
     staticDrawing: drawing,
     entryHexobjectKey: recipe.entryObject,
     safeZoneRadius: 1,
-    fogPolicy: recipe.fog === 'ALL_REVEALED' ? 'ALL_REVEALED' : 'FOG',
+    fogPolicy: recipe.fog,
     ...extra,
   };
 }
@@ -82,7 +82,7 @@ export class MapRegistry {
       create: (ctx) => runBoardPipeline(CAVE_MODEL, { seed: ctx.seed, params: ctx.params }),
       entryHexobjectKey: CAVE_MODEL.entryObject,
       safeZoneRadius: 1,
-      fogPolicy: 'FOG',
+      fogPolicy: CAVE_MODEL.fog,
       respawnAfterClearedMs: 60_000,
     },
   };

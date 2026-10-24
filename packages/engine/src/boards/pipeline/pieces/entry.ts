@@ -22,7 +22,11 @@ export const gatesEntry: Piece<z.infer<typeof EntryParams>> = {
     const cell = inner[Math.floor(ctx.rng() * inner.length)];
     if (!cell) throw new Error(`entry region "${region.id}" has no inner tile`);
 
-    draft.cellMap.set(cell, { exists: true, hexobject: { hexobjectKey: objectKey } });
+    draft.cellMap.set(cell, {
+      ...draft.cellMap.get(cell),
+      exists: true,
+      hexobject: { hexobjectKey: objectKey },
+    });
     draft.trace.record(cell, { stage: 'gates', pieceId: 'entry', note: objectKey });
   },
 };

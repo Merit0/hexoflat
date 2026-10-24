@@ -6,12 +6,12 @@ import { getMeta, getPrototype } from '@hexoflat/engine';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { terrainFillColor } from '@/render/terrain-fill';
+import { hiddenTileLook, type FogLook } from '@/render/fog-look';
 import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
-const FOG_URL = '/hex-assets/hex-effects/cloud-hex.png';
 const PICKUP_SPRITE_SCALE = 0.7;
 const PICKUP_GROUPS = new Set<EHexobjectGroup>([
   EHexobjectGroup.LOOT,
@@ -33,6 +33,8 @@ export interface TilesLayerDeps {
   isForceRevealed?(): boolean;
   /** Dev board panel's zone-outline toggle — a Pixi tint per tile, or null for no tint. */
   getZoneTint?(tile: IHexTile): number | null;
+  /** How hidden tiles look on the current board: clouds on the world, darkness in the cave. */
+  getFogLook?(): FogLook;
 }
 
 interface TileNode {
@@ -145,7 +147,12 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
     applyCoverFit(node.bg, w, h);
   };
 
-  const fillColor = displayRevealed ? terrainFillColor(tile.terrain) : null;
+  const hidden = hiddenTileLook(deps.getFogLook?.() ?? 'clouds');
+  const fillColor = displayRevealed
+    ? terrainFillColor(tile.terrain)
+    : hidden.kind === 'fill'
+      ? hidden.color
+      : null;
   node.terrainFill.visible = fillColor !== null;
   if (fillColor !== null) {
     const { w, h } = deps.getTileSize();
@@ -154,8 +161,8 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
     node.bg.texture = Texture.EMPTY;
   } else if (displayRevealed) {
     applyTexture(node.bg, tile.hexBackgroundImagePath || DEFAULT_BG_URL, node, bgFit);
-  } else {
-    applyTexture(node.bg, FOG_URL, node, bgFit);
+  } else if (hidden.kind === 'texture') {
+    applyTexture(node.bg, hidden.url, node, bgFit);
   }
   node.bg.tint = deps.getZoneTint?.(tile) ?? 0xffffff;
 

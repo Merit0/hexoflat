@@ -37,6 +37,7 @@ export function assembleHexMapModel(input: AssembleHexMapInput): HexMapModel {
       tile.isRevealed = false;
       tile.terrain = cell.terrain ?? DEFAULT_TERRAIN;
       tile.exit = cell.exit;
+      tile.regionId = cell.regionId;
       tile.hexBackgroundImagePath = input.background;
 
       if (cell.hexobject) {

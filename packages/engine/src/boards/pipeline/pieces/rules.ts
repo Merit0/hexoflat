@@ -5,7 +5,7 @@ import { objectTagSchema } from '../../../content/content-schema';
 import { hexobjectKeySchema } from '../../../content/content-schema';
 import { EHexCollision } from '../../../abstraction/hexobject-abstraction';
 import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-interface';
-import { HEXOBJECT_KEYS, type THexobjectKey } from '../../../registry/hexobjects-registry';
+import type { THexobjectKey } from '../../../registry/hexobjects-registry';
 import { coordinateKey, getHexNeighbors, hexDistance } from '../../../utils/hex-utils';
 import { deriveStream, type SeededRandom } from '../../../utils/random-seeded';
 import { parseCoordinateKey } from '../../board-cell-map';
@@ -234,7 +234,7 @@ function placeRule(
 
     const key = keys[placedHere.length];
     const previous = draft.cellMap.get(cell);
-    draft.cellMap.set(cell, { exists: true, hexobject: { hexobjectKey: key } });
+    draft.cellMap.set(cell, { ...previous, exists: true, hexobject: { hexobjectKey: key } });
     const solid = CONTENT[key]?.collision === EHexCollision.SOLID;
     if (solid && !keepsBoardReachable(draft, entry)) {
       if (previous) draft.cellMap.set(cell, previous);

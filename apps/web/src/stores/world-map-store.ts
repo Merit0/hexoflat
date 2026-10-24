@@ -47,7 +47,9 @@ import {
   revealTileNextToHero,
 } from '@hexoflat/engine/map/fog-service';
 import { findTilesMissingSpawners } from '@hexoflat/engine/map/resource-hydration';
-import { findFreeHexNearExit, findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
+import type { ExitSide } from '@hexoflat/engine/boards/exits';
+import { findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
+import { findArrivalHex, findEntryHex } from '@/services/world/hero-placement';
 import {
   clearLocationRespawn as clearRespawn,
   consumeDueLocationRespawn,
@@ -86,6 +88,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
+    pendingArrivalSide: null as ExitSide | null,
 
     // Bumped whenever dirtyTileIds gains entries — the render layer watches
     // this (cheap, shallow) instead of deep-watching the tiles array itself.
@@ -372,13 +375,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       if (this.pendingCampingRespawn && locationKey === 'camping') {
         this.placeHeroAtCampfire();
-      } else if (remembered) {
-        heroStore.heroCoordinates = { ...remembered };
       } else {
-        this.placeHeroAtEntry(locationKey);
+        const spot =
+          findArrivalHex(this.map as HexMapModel, this.pendingArrivalSide, getStream('world')) ??
+          (remembered ? { ...remembered } : null);
+        if (spot) heroStore.heroCoordinates = spot;
+        else this.placeHeroAtEntry(locationKey);
       }
 
       this.pendingCampingRespawn = false;
+      this.pendingArrivalSide = null;
     },
 
     revealEntryTile() {
@@ -506,7 +512,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!this.map) return;
 
       if (!heroStore.heroCoordinates) {
-        heroStore.heroCoordinates = this.findEntryHex(this.currentLocationKey) ?? MAP_ORIGIN;
+        this.placeHeroAtEntry(this.currentLocationKey);
 
         this.revealAroundHero();
         this.saveToStorage(mapId);
@@ -558,16 +564,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
     placeHeroAtEntry(locationKey: LocationKey) {
       if (!this.map) return;
 
-      useHeroStore().heroCoordinates = this.findEntryHex(locationKey) ?? MAP_ORIGIN;
-    },
-
-    findEntryHex(locationKey: LocationKey): IHexCoordinates | null {
-      const map = this.map as HexMapModel | null;
-      if (!map) return null;
-
-      const entryKey = MapRegistry.get(locationKey).entryHexobjectKey;
-      const byEntry = entryKey ? findFreeHexNearObject(map, entryKey, getStream('world')) : null;
-      return byEntry ?? findFreeHexNearExit(map, undefined, getStream('world'));
+      useHeroStore().heroCoordinates =
+        findEntryHex(this.map as HexMapModel, locationKey, getStream('world')) ?? MAP_ORIGIN;
     },
 
     initFog() {

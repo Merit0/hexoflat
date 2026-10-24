@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { initFog } from '../map/fog-service';
 import { MapRegistry } from './world-map-registry';
-import { LOCATION_KEYS } from './location-key';
+import { LOCATION_KEYS, isLocationKey } from './location-key';
 
 describe('MapRegistry', () => {
   it('camping creates a STATIC board with a stable drawingHash', () => {
@@ -76,5 +76,11 @@ describe('MapRegistry covers every location key', () => {
 
   it('silesia-north has no entry object, so heroes are placed by its exit', () => {
     expect(MapRegistry.get('silesia-north').entryHexobjectKey).toBeUndefined();
+  });
+
+  it('isLocationKey accepts only registered keys', () => {
+    expect(isLocationKey('silesia-north')).toBe(true);
+    expect(isLocationKey('nowhere')).toBe(false);
+    expect(isLocationKey(null)).toBe(false);
   });
 });
