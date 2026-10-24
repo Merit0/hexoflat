@@ -397,6 +397,22 @@ describe('useWorldMapStore: dev board panel actions', () => {
     expect(worldStore.descriptor).toEqual(descriptor);
   });
 
+  it('dev rebuild actions use the encounter params they are given', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('cave');
+
+    worldStore.devNextSeed({ tier: 3 });
+    expect(worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.params).toEqual({
+      tier: 3,
+    });
+
+    worldStore.devRebuildFromRecipe(BOARD_MODELS.cave, { tier: 2, partySize: 2 });
+    expect(worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.params).toEqual({
+      tier: 2,
+      partySize: 2,
+    });
+  });
+
   it('dev actions are no-ops on a STATIC location', () => {
     const worldStore = useWorldMapStore();
     worldStore.loadLocationMap('silesia');

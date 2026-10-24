@@ -96,7 +96,11 @@
     </div>
 
     <div class="model-tab__actions">
-      <button type="button" data-testid="dev-model-other-seed" @click="worldStore.devNextSeed()">
+      <button
+        type="button"
+        data-testid="dev-model-other-seed"
+        @click="worldStore.devNextSeed(panelStore.params)"
+      >
         Інший сід
       </button>
       <button

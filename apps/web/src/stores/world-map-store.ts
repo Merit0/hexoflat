@@ -72,6 +72,7 @@ import {
   devNextSeed as devNextSeedAction,
   devRebuildFromRecipe as devRebuildFromRecipeAction,
   devRegenerateDungeon as devRegenerateDungeonAction,
+  type DevEncounterParams,
 } from '@/stores/dev-board-panel-actions';
 import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
 
@@ -441,16 +442,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
       useHeroStore().setLocation(locationKey, mapId);
     },
 
-    devRegenerateDungeon() {
-      devRegenerateDungeonAction(this);
+    devRegenerateDungeon(params: DevEncounterParams = {}) {
+      devRegenerateDungeonAction(this, params);
     },
 
-    devNextSeed() {
-      devNextSeedAction(this);
+    devNextSeed(params: DevEncounterParams = {}) {
+      devNextSeedAction(this, params);
     },
 
-    devRebuildFromRecipe(recipe: BoardRecipeInput) {
-      devRebuildFromRecipeAction(this, recipe);
+    devRebuildFromRecipe(recipe: BoardRecipeInput, params: DevEncounterParams = {}) {
+      devRebuildFromRecipeAction(this, recipe, params);
     },
 
     loadFromStorage(mapId: string) {

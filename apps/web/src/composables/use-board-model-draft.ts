@@ -76,7 +76,7 @@ export function useBoardModelDraft() {
   }
 
   function applyToBoard(): void {
-    if (activeRecipe.value) worldStore.devRebuildFromRecipe(activeRecipe.value);
+    if (activeRecipe.value) worldStore.devRebuildFromRecipe(activeRecipe.value, panelStore.params);
   }
 
   async function save(): Promise<void> {

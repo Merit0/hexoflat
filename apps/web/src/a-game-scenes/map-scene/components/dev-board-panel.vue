@@ -51,11 +51,15 @@
       <button
         type="button"
         data-testid="dev-regenerate-button"
-        @click="worldStore.devRegenerateDungeon()"
+        @click="worldStore.devRegenerateDungeon(panelStore.params)"
       >
         Regenerate
       </button>
-      <button type="button" data-testid="dev-next-seed-button" @click="worldStore.devNextSeed()">
+      <button
+        type="button"
+        data-testid="dev-next-seed-button"
+        @click="worldStore.devNextSeed(panelStore.params)"
+      >
         Next seed
       </button>
     </div>
