@@ -13,12 +13,18 @@ export interface BoardRegion {
   cells: IHexCoordinates[];
 }
 
+export interface RegionLink {
+  from: string;
+  to: string;
+}
+
 export interface BoardDraft {
   frame: { columns: number; rows: number };
   background: string;
   entryObject?: THexobjectKey;
   cellMap: BoardCellMap;
   regions: BoardRegion[];
+  links: RegionLink[];
   trace: BoardTrace;
   drawing?: StaticBoardDrawing;
 }

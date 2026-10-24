@@ -16,7 +16,7 @@ import { measureBoard, type BoardMeasurements } from '../measure-board';
 import { VOID_CELL } from '../resolved-cell';
 import { STAGE_REGISTRIES } from './registry';
 import { BoardTrace } from './trace';
-import type { BoardDraft, CheckResult } from './types';
+import type { BoardDraft, BoardRegion, CheckResult, RegionLink } from './types';
 
 const MAX_ATTEMPTS = 12;
 
@@ -29,6 +29,8 @@ export interface PipelineBoard {
   map: HexMapModel;
   descriptor: BoardDescriptor;
   trace: BoardTrace;
+  regions: BoardRegion[];
+  links: RegionLink[];
   measures: BoardMeasurements | null;
 }
 
@@ -63,6 +65,7 @@ function runAttempt(
     entryObject: recipe.entryObject,
     cellMap: new BoardCellMap(),
     regions: [],
+    links: [],
     trace: new BoardTrace(),
   };
 
@@ -109,6 +112,8 @@ function finalize(
     map,
     descriptor: describeBoard(recipe, draft, seed, attempt, params),
     trace: draft.trace,
+    regions: draft.regions,
+    links: draft.links,
     measures: recipe.entryObject ? measureBoard(map, recipe.entryObject) : null,
   };
 }
