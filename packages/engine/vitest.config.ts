@@ -3,6 +3,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
+    // Board-generation contracts replay hundreds of seeds (REQ-BOARD-*); with v8
+    // coverage on a CI runner they exceed vitest's 5s default by a wide margin.
+    testTimeout: 120_000,
     include: ['src/**/*.{test,spec}.ts'],
     coverage: {
       provider: 'v8',
