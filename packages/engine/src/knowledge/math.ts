@@ -1,6 +1,5 @@
 import { createSeededRandom } from '../utils/random-seeded';
 import type { RandomNumberGenerator } from '../utils/random';
-import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { willZoneCharges, type WillZoneContext } from './will-zone';
 
 /** Candidate balance; deliberately separate from progression and equipment. */
@@ -153,7 +152,7 @@ export function effectiveWillCapacity(
   return base + modifiers.reduce((sum, modifier) => sum + modifier.additionalCapacity, 0);
 }
 
-export function stepCost(ctx: WillZoneContext, _tile?: IHexCoordinates): number {
+export function stepCost(ctx: WillZoneContext): number {
   return willZoneCharges(ctx) ? KNOWLEDGE_RULES.worldStepCost : 0;
 }
 

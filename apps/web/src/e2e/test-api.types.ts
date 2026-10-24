@@ -29,6 +29,7 @@ export interface HexoflatTestApi {
   } | null;
   prepareKnowledgeWorld(current: number): void;
   setWill(current: number): void;
+  getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null;
   getWillSlotKey(): string;
   getKnowledgeRules(): { startingWill: number; capacity: number };
   isBoardReady(): boolean;
@@ -42,6 +43,10 @@ export interface HexoflatTestApi {
   getDistance(from: TestHexCoordinates, to: TestHexCoordinates): number;
 
   getTileHexobjectKey(coordinates: TestHexCoordinates): string | null;
+
+  getExitTile(side: 'N' | 'S' | 'W' | 'E'): TestHexCoordinates | null;
+
+  isTileImpassableTerrain(coordinates: TestHexCoordinates): boolean;
 
   getHeroHealth(): TestHeroHealth;
 

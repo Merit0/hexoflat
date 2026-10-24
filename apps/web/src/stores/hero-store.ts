@@ -322,17 +322,21 @@ export const useHeroStore = defineStore('hero', {
      * Returns the route without the hero's current tile, matching
      * planCombatRoute.
      */
+    engineHeroState(coordinates: IHexCoordinates): HeroState {
+      return {
+        id: this.hero.id,
+        controlledBy: null,
+        coordinates: { ...coordinates },
+        heroSteps: this.hero.heroSteps ?? 0,
+      };
+    },
+
     planFreeRoamRoute(
       map: HexMapModel,
       target: IHexCoordinates,
     ): { route: IHexCoordinates[] | null; affordable: boolean } {
       const worldStore = useWorldMapStore();
-      const heroState: HeroState = {
-        id: this.hero.id,
-        controlledBy: null,
-        coordinates: this.heroCoordinates!,
-        heroSteps: this.hero.heroSteps ?? 0,
-      };
+      const heroState = this.engineHeroState(this.heroCoordinates!);
 
       const { events } = applyCommand(
         { map, heroes: { [heroState.id]: heroState } },

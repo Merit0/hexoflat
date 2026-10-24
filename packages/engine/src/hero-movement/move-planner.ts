@@ -3,6 +3,7 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { coordinateKey } from '../utils/hex-utils';
+import { isTerrainPassable } from '../boards/terrain';
 import { getReachableTileDistances } from './reachable-range-service';
 import { findShortestPath } from './pathfinding-service';
 
@@ -26,6 +27,7 @@ export function isEnterableTile(map: HexMapModel, target: IHexCoordinates): bool
   const tile = map.tiles.find((t) => coordinateKey(t.coordinates) === targetKey);
 
   if (!tile || !tile.isRevealed) return false;
+  if (!isTerrainPassable(tile.terrain)) return false;
   if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
 
   return tile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.CAMPING_ENTRANCE;

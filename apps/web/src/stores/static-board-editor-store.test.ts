@@ -95,4 +95,74 @@ describe('static-board-editor-store', () => {
     expect(store.isSaving).toBe(false);
     expect(reloadMock).not.toHaveBeenCalled();
   });
+
+  describe('terrain brushes, series and board objects', () => {
+    const cellAt = (
+      store: ReturnType<typeof useStaticBoardEditorStore>,
+      column: number,
+      row: number,
+    ) => store.draft?.rows[row].trim().split(/\s+/)[column];
+
+    it('placeMountain and placeWater write ^ and = to the selected hex', () => {
+      const store = useStaticBoardEditorStore();
+      store.startEditing('silesia');
+
+      store.selectHex({ columnIndex: 1, rowIndex: 2 });
+      store.placeMountain();
+      store.selectHex({ columnIndex: 2, rowIndex: 2 });
+      store.placeWater();
+
+      expect(cellAt(store, 1, 2)).toBe('^');
+      expect(cellAt(store, 2, 2)).toBe('=');
+      expect(store.isPaletteOpen).toBe(false);
+    });
+
+    it('series mode keeps the chosen object for consecutive clicks until stopped', () => {
+      const store = useStaticBoardEditorStore();
+      store.startEditing('silesia');
+      store.toggleSeries();
+
+      store.selectHex({ columnIndex: 1, rowIndex: 2 });
+      store.placeHexobject(HEXOBJECT_KEYS.TREE);
+      expect(store.seriesKey).toBe(HEXOBJECT_KEYS.TREE);
+
+      store.selectHex({ columnIndex: 3, rowIndex: 2 });
+      store.selectHex({ columnIndex: 5, rowIndex: 2 });
+      expect(store.isPaletteOpen).toBe(false);
+      const trees = store.boardObjects.find((item) => item.hexobjectKey === HEXOBJECT_KEYS.TREE);
+      expect(trees?.cellKeys).toEqual(expect.arrayContaining(['1:2', '3:2', '5:2']));
+
+      store.stopSeries();
+      store.selectHex({ columnIndex: 7, rowIndex: 2 });
+      expect(store.isPaletteOpen).toBe(true);
+    });
+
+    it('without series mode a placed object does not stick to the cursor', () => {
+      const store = useStaticBoardEditorStore();
+      store.startEditing('silesia');
+
+      store.selectHex({ columnIndex: 1, rowIndex: 2 });
+      store.placeHexobject(HEXOBJECT_KEYS.TREE);
+
+      expect(store.seriesKey).toBeNull();
+    });
+
+    it('removeAllOfKind clears a whole kind and cancelEditing resets series state', () => {
+      const store = useStaticBoardEditorStore();
+      store.startEditing('silesia');
+      expect(store.boardObjects.some((item) => item.hexobjectKey === HEXOBJECT_KEYS.ROCK)).toBe(
+        true,
+      );
+
+      store.removeAllOfKind(HEXOBJECT_KEYS.ROCK);
+      expect(store.boardObjects.some((item) => item.hexobjectKey === HEXOBJECT_KEYS.ROCK)).toBe(
+        false,
+      );
+
+      store.toggleSeries();
+      store.cancelEditing();
+      expect(store.isSeriesEnabled).toBe(false);
+      expect(store.seriesKey).toBeNull();
+    });
+  });
 });

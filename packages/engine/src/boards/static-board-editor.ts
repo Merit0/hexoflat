@@ -2,7 +2,14 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import type { LegendEntry, StaticBoardDrawing } from '../content/boards/schemas';
 import { parseBoardRows, formatBoardRow } from './board-rows';
-import { GROUND_SYMBOL, WALL_SYMBOL, VOID_SYMBOL } from './board-symbols';
+import {
+  GROUND_SYMBOL,
+  MOUNTAIN_SYMBOL,
+  VOID_SYMBOL,
+  WALL_SYMBOL,
+  WATER_SYMBOL,
+} from './board-symbols';
+import { coordinateKey } from '../utils/hex-utils';
 
 const LETTER_ALPHABET = [
   ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)),
@@ -82,4 +89,66 @@ export function placeHexobjectAt(
   const letter = findOrAllocateLegendLetter(drawing.legend, entry);
   const legend = { ...drawing.legend, [letter]: entry };
   return withCell({ ...drawing, legend }, coord, letter);
+}
+
+export function placeMountainAt(
+  drawing: StaticBoardDrawing,
+  coord: IHexCoordinates,
+): StaticBoardDrawing {
+  return withCell(drawing, coord, MOUNTAIN_SYMBOL);
+}
+
+export function placeWaterAt(
+  drawing: StaticBoardDrawing,
+  coord: IHexCoordinates,
+): StaticBoardDrawing {
+  return withCell(drawing, coord, WATER_SYMBOL);
+}
+
+export interface BoardObjectSummary {
+  hexobjectKey: THexobjectKey;
+  count: number;
+  cellKeys: string[];
+}
+
+export function listBoardObjects(drawing: StaticBoardDrawing): BoardObjectSummary[] {
+  const byKey = new Map<THexobjectKey, BoardObjectSummary>();
+
+  parseBoardRows(drawing.rows).forEach((cells, rowIndex) => {
+    cells.forEach((symbol, columnIndex) => {
+      const entry = drawing.legend[symbol];
+      if (!entry) return;
+      const summary = byKey.get(entry.hexobjectKey) ?? {
+        hexobjectKey: entry.hexobjectKey,
+        count: 0,
+        cellKeys: [],
+      };
+      summary.count += 1;
+      summary.cellKeys.push(coordinateKey({ columnIndex, rowIndex }));
+      byKey.set(entry.hexobjectKey, summary);
+    });
+  });
+
+  return [...byKey.values()].sort((a, b) => a.hexobjectKey.localeCompare(b.hexobjectKey));
+}
+
+export function removeAllOfKind(
+  drawing: StaticBoardDrawing,
+  hexobjectKey: THexobjectKey,
+): StaticBoardDrawing {
+  const doomed = new Set(
+    Object.entries(drawing.legend)
+      .filter(([, entry]) => entry.hexobjectKey === hexobjectKey)
+      .map(([letter]) => letter),
+  );
+  const rows = parseBoardRows(drawing.rows).map((cells, rowIndex) =>
+    formatBoardRow(
+      cells.map((symbol) => (doomed.has(symbol) ? GROUND_SYMBOL : symbol)),
+      rowIndex,
+    ),
+  );
+  const legend = Object.fromEntries(
+    Object.entries(drawing.legend).filter(([letter]) => !doomed.has(letter)),
+  );
+  return { ...drawing, legend, rows };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { initFog } from '../map/fog-service';
 import { MapRegistry } from './world-map-registry';
+import { LOCATION_KEYS } from './location-key';
 
 describe('MapRegistry', () => {
   it('camping creates a STATIC board with a stable drawingHash', () => {
@@ -43,22 +44,37 @@ describe('MapRegistry', () => {
     expect(first.map.tiles.length).toBeGreaterThan(0);
   });
 
-  it('every registered boardKind matches the descriptor kind it produces', () => {
+  it('every registered boardKind produces the matching descriptor kind', () => {
+    const expectedKind = { STATIC: 'STATIC', DUNGEON: 'RECIPE' } as const;
     for (const key of ['camping', 'silesia', 'cave'] as const) {
       const def = MapRegistry.get(key);
       const { descriptor } = def.create({ seed: 'seed' });
-      expect(descriptor.kind).toBe(def.boardKind);
+      expect(descriptor.kind).toBe(expectedKind[def.boardKind]);
     }
   });
 
-  it('cave exposes its available layouts and can be forced onto one of them', () => {
-    const def = MapRegistry.get('cave');
+  it('cave passes encounter params to the recipe descriptor', () => {
+    const { descriptor } = MapRegistry.get('cave').create({ seed: 'seed', params: { tier: 3 } });
+    expect(descriptor.kind === 'RECIPE' && descriptor.params).toEqual({ tier: 3 });
+  });
+});
 
-    expect(def.availableLayouts?.length).toBeGreaterThan(1);
+describe('MapRegistry covers every location key', () => {
+  it('has a definition whose key matches, for each key in LOCATION_KEYS', () => {
+    for (const key of LOCATION_KEYS) expect(MapRegistry.get(key).key).toBe(key);
+  });
 
-    for (const layoutId of def.availableLayouts ?? []) {
-      const { descriptor } = def.createWithLayout?.({ seed: 'forced-seed', layoutId }) ?? {};
-      expect(descriptor?.kind === 'DUNGEON' && descriptor.layoutId).toBe(layoutId);
+  it('builds each static location from a recipe whose id is the location key', () => {
+    for (const key of LOCATION_KEYS) {
+      const def = MapRegistry.get(key);
+      if (def.boardKind !== 'STATIC') continue;
+      expect(def.staticDrawing?.id).toBe(key);
+      const { descriptor } = def.create({ seed: 'any' });
+      expect(descriptor).toMatchObject({ kind: 'STATIC', id: key });
     }
+  });
+
+  it('silesia-north has no entry object, so heroes are placed by its exit', () => {
+    expect(MapRegistry.get('silesia-north').entryHexobjectKey).toBeUndefined();
   });
 });

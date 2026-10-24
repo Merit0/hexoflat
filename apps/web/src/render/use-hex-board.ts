@@ -1,3 +1,4 @@
+import { fogLookForPolicy } from '@/render/fog-look';
 import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
@@ -122,6 +123,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       onTileHover: opts.onTileHover,
       onTileClick: opts.onTileClick,
       isForceRevealed: () => opts.devPanel?.showWholeBoard.value ?? false,
+      getFogLook: () => fogLookForPolicy(worldStore.map?.fogPolicy),
       getZoneTint: (tile) =>
         opts.devPanel?.zoneTintByCoordinateKey.value.get(coordinateKey(tile.coordinates)) ?? null,
     });

@@ -37,11 +37,28 @@ const healSchema = z.object({
   radius: z.number().optional(),
 });
 
+export const OBJECT_TAGS = [
+  'resource',
+  'treasure',
+  'rare',
+  'rest',
+  'enemy',
+  'portal',
+  'blocker',
+  'barrier',
+  'challenge',
+] as const;
+export const objectTagSchema = z.enum(OBJECT_TAGS);
+export type ObjectTag = z.infer<typeof objectTagSchema>;
+
 const baseContentFields = {
   hexobjectKey: hexobjectKeySchema,
+  tags: z.array(objectTagSchema).optional(),
   isInteractable: z.boolean(),
   collision: z.enum(EHexCollision),
   spritePath: z.string().optional(),
+  alwaysVisible: z.boolean().optional(),
+  tileBackground: z.string().optional(),
   // title/subtitle/description (and creature.name/action labels below) are
   // i18n keys (e.g. 'content.skeletor.title'), not literal display text —
   // packages/engine stays language-neutral, apps/web resolves them via

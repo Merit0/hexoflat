@@ -1,63 +1,48 @@
 import { describe, expect, it } from 'vitest';
-import { HexMapProvider } from '../map/providers/hex-map-provider';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
 import { buildStaticBoard } from './build-static-board';
 import { BOARD_COLUMNS, BOARD_ROWS } from './board-size';
 import { coordinateKey } from '../utils/hex-utils';
-import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
-
-const ROW_SHIFT = 1;
+import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 
 describe('buildStaticBoard', () => {
-  it('reproduces HexMapProvider.getHomeLand() 1:1, shifted down one row to center it in the 18x17 frame', () => {
-    const legacy = HexMapProvider.getHomeLand();
+  it('frames silesia with impassable mountains: almost the whole 18x17 frame is tiles and the corners are empty', () => {
     const { map } = buildStaticBoard(SILESIA_BOARD);
+    const byKey = new Map(map.tiles.map((tile) => [coordinateKey(tile.coordinates), tile]));
 
     expect(map.width).toBe(BOARD_COLUMNS);
     expect(map.height).toBe(BOARD_ROWS);
-
-    const legacyByKey = new Map(
-      legacy.tiles.map((tile) => [
-        coordinateKey({
-          columnIndex: tile.coordinates.columnIndex,
-          rowIndex: tile.coordinates.rowIndex + ROW_SHIFT,
-        }),
-        tile,
-      ]),
-    );
-    const builtByKey = new Map(map.tiles.map((tile) => [coordinateKey(tile.coordinates), tile]));
-
-    for (const [key, legacyTile] of legacyByKey) {
-      const builtTile = builtByKey.get(key);
-      expect(builtTile, `missing tile at ${key}`).toBeDefined();
-      expect(builtTile?.hexobject?.hexobjectKey).toBe(legacyTile.hexobject?.hexobjectKey);
-      if (legacyTile.hexobject?.groupType === EHexobjectGroup.RESOURCE) {
-        expect((builtTile?.hexobject as typeof legacyTile.hexobject)?.resource?.regrowMs).toBe(
-          legacyTile.hexobject.resource.regrowMs,
-        );
-      }
+    expect(map.tiles.length).toBeGreaterThan(BOARD_COLUMNS * BOARD_ROWS * 0.9);
+    expect(map.tiles.length).toBeLessThan(BOARD_COLUMNS * BOARD_ROWS);
+    for (const corner of [
+      { columnIndex: 0, rowIndex: 0 },
+      { columnIndex: BOARD_COLUMNS - 1, rowIndex: 0 },
+      { columnIndex: 0, rowIndex: BOARD_ROWS - 1 },
+      { columnIndex: BOARD_COLUMNS - 1, rowIndex: BOARD_ROWS - 1 },
+    ]) {
+      expect(byKey.has(coordinateKey(corner)), 'corner should be empty').toBe(false);
     }
+    const openGround = map.tiles.filter((tile) => tile.terrain === 'ground' && !tile.hexobject);
+    expect(openGround.length).toBeLessThan(BOARD_COLUMNS * BOARD_ROWS * 0.6);
+  });
 
-    for (let col = 0; col < 17; col += 1) {
-      for (let row = ROW_SHIFT; row < 15 + ROW_SHIFT; row += 1) {
-        expect(
-          builtByKey.has(coordinateKey({ columnIndex: col, rowIndex: row })),
-          `${col},${row} should exist`,
-        ).toBe(true);
-      }
+  it('keeps every object kind of the old silesia and puts a mountain ridge, a lake and the cave in it', () => {
+    const { map } = buildStaticBoard(SILESIA_BOARD);
+    const kinds = new Set(map.tiles.map((tile) => tile.hexobject?.hexobjectKey));
+
+    for (const key of [
+      HEXOBJECT_KEYS.TREE,
+      HEXOBJECT_KEYS.ROCK,
+      HEXOBJECT_KEYS.HEALTH_BOTTLE,
+      HEXOBJECT_KEYS.MANA_BOTTLE,
+      HEXOBJECT_KEYS.ENERGY_BOTTLE,
+      HEXOBJECT_KEYS.CAMPING_ENTRANCE,
+      HEXOBJECT_KEYS.CAVE_ENTRANCE,
+    ]) {
+      expect(kinds.has(key), key).toBe(true);
     }
-
-    for (let col = 0; col < BOARD_COLUMNS; col += 1) {
-      for (let row = 0; row < BOARD_ROWS; row += 1) {
-        if (col < 17 && row >= ROW_SHIFT && row < 15 + ROW_SHIFT) continue;
-        expect(
-          builtByKey.has(coordinateKey({ columnIndex: col, rowIndex: row })),
-          `${col},${row} should be void`,
-        ).toBe(false);
-      }
-    }
-
-    expect(map.tiles.length).toBe(legacy.tiles.length);
+    expect(map.tiles.some((tile) => tile.terrain === 'mountain')).toBe(true);
+    expect(map.tiles.some((tile) => tile.terrain === 'water')).toBe(true);
 
     const placedObjectCount = map.tiles.filter((tile) => tile.hexobject).length;
     const configObjectCount = map.config.reduce(

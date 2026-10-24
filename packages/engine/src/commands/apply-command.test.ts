@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
 import type HexMapModel from '../map/models/hex-map-model';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
-import type { HeroState } from '../hero-movement/hero-state';
-import { applyCommand, type HexEngineActionContext, type HexEngineState } from './apply-command';
+import { applyCommand } from './apply-command';
+import { buildHero, createContext, toState } from './command-test-context';
 import type { HexEngineCommand } from './hex-engine-commands';
 
 function buildMap(): HexMapModel {
@@ -16,52 +16,6 @@ function buildMovementMap(): HexMapModel {
   const map = new HexMapBuilder().name('movement-test').width(3).height(3).build();
   for (const tile of map.tiles) tile.isRevealed = true;
   return map;
-}
-
-function toState(map: HexMapModel, heroes: Record<string, HeroState> = {}): HexEngineState {
-  return { map, heroes };
-}
-
-function buildHero(overrides: Partial<HeroState> = {}): HeroState {
-  return {
-    id: 'hero-1',
-    controlledBy: null,
-    coordinates: { columnIndex: 0, rowIndex: 0 },
-    heroSteps: 0,
-    ...overrides,
-  };
-}
-
-function createContext(overrides: Partial<HexEngineActionContext> = {}): HexEngineActionContext {
-  return {
-    heroToolStore: {
-      isLocked: false,
-      isDragging: false,
-      activeTool: null,
-      hover: null,
-      consumeDurability: vi.fn(() => true),
-      lockTool: vi.fn(),
-      unlockTool: vi.fn(),
-      clearResolvedActions: vi.fn(),
-      stopTool: vi.fn(),
-    },
-    hero: {
-      hero: { name: 'Hero', maxHealth: 100, currentHealth: 100 },
-      healHero: vi.fn(),
-    },
-    gathering: { add: vi.fn() },
-    inventory: { putToInventory: vi.fn(() => ({ ok: true })) },
-    events: { push: vi.fn() },
-    worldMap: {
-      combatActive: false,
-      performHeroCombatAttack: vi.fn(() => ({ ok: true, message: '' })),
-      placeCombatDefendMarker: vi.fn(() => true),
-      isLocationRespawning: vi.fn(() => false),
-      getLocationRespawnRemainingMs: vi.fn(() => 0),
-      goToLocation: vi.fn(),
-    },
-    ...overrides,
-  };
 }
 
 describe('applyCommand: START_HEX_ACTION', () => {

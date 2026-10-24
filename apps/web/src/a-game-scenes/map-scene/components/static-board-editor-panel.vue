@@ -4,6 +4,26 @@
       Editing board: {{ editorStore.locationKey }}
     </header>
 
+    <label class="static-board-editor-panel__series">
+      <input
+        type="checkbox"
+        data-testid="editor-series-toggle"
+        :checked="editorStore.isSeriesEnabled"
+        @change="editorStore.toggleSeries()"
+      />
+      Серія
+    </label>
+    <div
+      v-if="editorStore.seriesKey"
+      class="static-board-editor-panel__series-active"
+      data-testid="editor-series-active"
+    >
+      Серія: {{ editorStore.seriesKey }}
+      <button type="button" data-testid="editor-series-stop" @click="editorStore.stopSeries()">
+        ✕
+      </button>
+    </div>
+
     <div v-if="editorStore.isPaletteOpen" class="static-board-editor-panel__palette">
       <div class="static-board-editor-panel__palette-title" data-testid="editor-palette-hex">
         Hex ({{ editorStore.selectedCoordinates?.columnIndex }},
@@ -19,6 +39,16 @@
         </button>
         <button type="button" data-testid="editor-place-void" @click="editorStore.placeVoid()">
           Void
+        </button>
+        <button
+          type="button"
+          data-testid="editor-place-mountain"
+          @click="editorStore.placeMountain()"
+        >
+          Mountain
+        </button>
+        <button type="button" data-testid="editor-place-water" @click="editorStore.placeWater()">
+          Water
         </button>
       </div>
 
@@ -52,6 +82,25 @@
       </button>
     </div>
 
+    <ul class="static-board-editor-panel__objects" data-testid="editor-board-objects">
+      <li
+        v-for="item in editorStore.boardObjects"
+        :key="item.hexobjectKey"
+        :data-testid="`editor-object-${item.hexobjectKey}`"
+        @mouseenter="devPanelStore.setHighlightedCellKeys(item.cellKeys)"
+        @mouseleave="devPanelStore.setHighlightedCellKeys([])"
+      >
+        <span>{{ item.hexobjectKey }} × {{ item.count }}</span>
+        <button
+          type="button"
+          :data-testid="`editor-object-remove-${item.hexobjectKey}`"
+          @click="removeKind(item.hexobjectKey)"
+        >
+          ✕
+        </button>
+      </li>
+    </ul>
+
     <div class="static-board-editor-panel__actions">
       <button
         type="button"
@@ -76,8 +125,15 @@
 import { computed } from 'vue';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
+import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 
 const editorStore = useStaticBoardEditorStore();
+const devPanelStore = useDevBoardPanelStore();
+
+function removeKind(key: THexobjectKey) {
+  devPanelStore.setHighlightedCellKeys([]);
+  editorStore.removeAllOfKind(key);
+}
 
 function humanizeHexobjectLabel(key: THexobjectKey): string {
   return key
@@ -161,6 +217,25 @@ function onSearchInput(event: Event) {
 .static-board-editor-panel__hexobject-list button {
   width: 100%;
   text-align: left;
+}
+
+.static-board-editor-panel__objects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.static-board-editor-panel__objects li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1px 2px;
+}
+
+.static-board-editor-panel__objects li:hover {
+  background: rgb(255 255 255 / 15%);
 }
 
 .static-board-editor-panel__actions {

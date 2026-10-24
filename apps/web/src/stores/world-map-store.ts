@@ -12,11 +12,11 @@ import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
   LocationKey,
-  MapDefinition,
   MapRegistry,
   type CreatedBoard,
 } from '@hexoflat/engine/registry/world-map-registry';
 import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
+import type { BoardRecipeInput } from '@hexoflat/engine/content/boards/recipe-schema';
 import {
   isViewingOtherWorldLocation,
   navigateToLocation,
@@ -47,7 +47,9 @@ import {
   revealTileNextToHero,
 } from '@hexoflat/engine/map/fog-service';
 import { findTilesMissingSpawners } from '@hexoflat/engine/map/resource-hydration';
+import type { ExitSide } from '@hexoflat/engine/boards/exits';
 import { findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
+import { findArrivalHex, findEntryHex } from '@/services/world/hero-placement';
 import {
   clearLocationRespawn as clearRespawn,
   consumeDueLocationRespawn,
@@ -67,9 +69,10 @@ import {
 } from '@/stores/world-map-store-helpers';
 
 import {
-  devForceLayout as devForceLayoutAction,
   devNextSeed as devNextSeedAction,
+  devRebuildFromRecipe as devRebuildFromRecipeAction,
   devRegenerateDungeon as devRegenerateDungeonAction,
+  type DevEncounterParams,
 } from '@/stores/dev-board-panel-actions';
 import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
 
@@ -86,6 +89,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
+    pendingArrivalSide: null as ExitSide | null,
 
     // Bumped whenever dirtyTileIds gains entries — the render layer watches
     // this (cheap, shallow) instead of deep-watching the tiles array itself.
@@ -372,13 +376,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       if (this.pendingCampingRespawn && locationKey === 'camping') {
         this.placeHeroAtCampfire();
-      } else if (remembered) {
-        heroStore.heroCoordinates = { ...remembered };
       } else {
-        this.placeHeroAtEntry(locationKey);
+        const spot =
+          findArrivalHex(this.map as HexMapModel, this.pendingArrivalSide, getStream('world')) ??
+          (remembered ? { ...remembered } : null);
+        if (spot) heroStore.heroCoordinates = spot;
+        else this.placeHeroAtEntry(locationKey);
       }
 
       this.pendingCampingRespawn = false;
+      this.pendingArrivalSide = null;
     },
 
     revealEntryTile() {
@@ -435,16 +442,16 @@ export const useWorldMapStore = defineStore('world-map-store', {
       useHeroStore().setLocation(locationKey, mapId);
     },
 
-    devRegenerateDungeon() {
-      devRegenerateDungeonAction(this);
+    devRegenerateDungeon(params: DevEncounterParams = {}) {
+      devRegenerateDungeonAction(this, params);
     },
 
-    devNextSeed() {
-      devNextSeedAction(this);
+    devNextSeed(params: DevEncounterParams = {}) {
+      devNextSeedAction(this, params);
     },
 
-    devForceLayout(layoutId: string) {
-      devForceLayoutAction(this, layoutId);
+    devRebuildFromRecipe(recipe: BoardRecipeInput, params: DevEncounterParams = {}) {
+      devRebuildFromRecipeAction(this, recipe, params);
     },
 
     loadFromStorage(mapId: string) {
@@ -504,12 +511,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       if (!this.map) return;
-      const map = this.map as HexMapModel;
 
       if (!heroStore.heroCoordinates) {
-        heroStore.heroCoordinates =
-          findFreeHexNearObject(map, MapRegistry.get(this.currentLocationKey).entryHexobjectKey) ??
-          MAP_ORIGIN;
+        this.placeHeroAtEntry(this.currentLocationKey);
 
         this.revealAroundHero();
         this.saveToStorage(mapId);
@@ -561,10 +565,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
     placeHeroAtEntry(locationKey: LocationKey) {
       if (!this.map) return;
 
-      const def: MapDefinition = MapRegistry.get(locationKey);
       useHeroStore().heroCoordinates =
-        findFreeHexNearObject(this.map as HexMapModel, def.entryHexobjectKey, getStream('world')) ??
-        MAP_ORIGIN;
+        findEntryHex(this.map as HexMapModel, locationKey, getStream('world')) ?? MAP_ORIGIN;
     },
 
     initFog() {

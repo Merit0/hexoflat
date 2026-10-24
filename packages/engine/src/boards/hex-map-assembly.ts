@@ -5,6 +5,7 @@ import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { Complexity } from '../enums/complexity';
 import type { ResolvedCell } from './resolved-cell';
+import { DEFAULT_TERRAIN } from './terrain';
 
 export interface AssembleHexMapInput {
   boardColumns: number;
@@ -34,6 +35,9 @@ export function assembleHexMapModel(input: AssembleHexMapInput): HexMapModel {
       tile.tileId = `${columnIndex}:${rowIndex}`;
       tile.coordinates = coordinates;
       tile.isRevealed = false;
+      tile.terrain = cell.terrain ?? DEFAULT_TERRAIN;
+      tile.exit = cell.exit;
+      tile.regionId = cell.regionId;
       tile.hexBackgroundImagePath = input.background;
 
       if (cell.hexobject) {

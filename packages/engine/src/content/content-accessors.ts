@@ -6,7 +6,7 @@ import {
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { assertNever } from '../utils/assert-never';
 import { CONTENT } from './content-map';
-import type { IHexobjectMeta, TContentDefinition } from './content-schema';
+import type { IHexobjectMeta, ObjectTag, TContentDefinition } from './content-schema';
 
 export function getPrototype(key: THexobjectKey): THexobjectPrototype {
   const content = CONTENT[key];
@@ -18,6 +18,8 @@ export function getPrototype(key: THexobjectKey): THexobjectPrototype {
     collision: content.collision,
     spritePath: content.spritePath,
     description: content.description,
+    alwaysVisible: content.alwaysVisible,
+    tileBackground: content.tileBackground,
   };
 
   switch (content.groupType) {
@@ -82,4 +84,14 @@ export function getMeta(key: THexobjectKey): IHexobjectMeta {
     enter: content.enter as IHexobjectMeta['enter'],
     heal: content.heal,
   };
+}
+
+export function getTags(key: THexobjectKey): readonly ObjectTag[] {
+  return CONTENT[key]?.tags ?? [];
+}
+
+export function objectKeysWithTag(tag: ObjectTag): THexobjectKey[] {
+  return (Object.keys(CONTENT) as THexobjectKey[])
+    .filter((key) => getTags(key).includes(tag))
+    .sort();
 }

@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .combat-hud {
-  position: fixed;
+  position: absolute;
   left: 18px;
   right: 18px;
   bottom: 18px;
@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
   padding: 14px 16px;
   border: 1px solid rgba(255, 110, 110, 0.35);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(28, 8, 10, 0.96), rgba(18, 7, 9, 0.9));
+  background: linear-gradient(180deg, rgba(28, 8, 10, 0.76), rgba(18, 7, 9, 0.7));
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(8px);
 }

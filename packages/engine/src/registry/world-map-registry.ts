@@ -1,20 +1,23 @@
 import type HexMapModel from '../map/models/hex-map-model';
 import type { TFogPolicy } from '../map/models/hex-map-model';
-import { HEXOBJECT_KEYS, THexobjectKey } from './hexobjects-registry';
+import type { THexobjectKey } from './hexobjects-registry';
 import type { LocationKey } from './location-key';
 import type { BoardDescriptor } from '../boards/board-descriptors';
-import { buildStaticBoard } from '../boards/build-static-board';
-import { assembleGeneratedBoard } from '../boards/assemble-generated-board';
+import { runBoardPipeline } from '../boards/pipeline/run-board-pipeline';
 import { CAMPING_BOARD } from '../content/boards/static/camping';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
-import { CAVE_PRESET } from '../content/boards/presets/cave';
+import { SILESIA_NORTH_BOARD } from '../content/boards/static/silesia-north';
+import { CAMPING_RECIPE, SILESIA_NORTH_RECIPE, SILESIA_RECIPE } from '../content/boards/recipes';
+import { CAVE_MODEL } from '../content/boards/models/cave';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
+import type { BoardRecipeInput } from '../content/boards/recipe-schema';
 import type { WillZone } from '../knowledge/will-zone';
 
 export type { LocationKey };
 
 export interface CreateBoardContext {
   seed: string;
+  params?: Record<string, unknown>;
 }
 
 export interface CreatedBoard {
@@ -27,12 +30,8 @@ export type MapDefinition = {
   title: string;
   boardKind: 'STATIC' | 'DUNGEON';
   create: (ctx: CreateBoardContext) => CreatedBoard;
-  /** DUNGEON only — rebuild forcing one specific layout, for the dev board panel. */
-  createWithLayout?: (ctx: CreateBoardContext & { layoutId: string }) => CreatedBoard;
-  /** DUNGEON only — every layout id this location's preset can pick from. */
-  availableLayouts?: string[];
   staticDrawing?: StaticBoardDrawing;
-  entryHexobjectKey: THexobjectKey;
+  entryHexobjectKey?: THexobjectKey;
   willZone?: WillZone;
   safeZoneRadius?: number;
   fogPolicy?: TFogPolicy;
@@ -44,40 +43,46 @@ export type MapDefinition = {
   respawnAfterClearedMs?: number;
 };
 
+function staticLocation(
+  key: LocationKey,
+  title: string,
+  recipe: BoardRecipeInput,
+  drawing: StaticBoardDrawing,
+  extra: Partial<MapDefinition> = {},
+): MapDefinition {
+  return {
+    key,
+    title,
+    boardKind: 'STATIC',
+    create: () => runBoardPipeline(recipe, { seed: '' }),
+    staticDrawing: drawing,
+    entryHexobjectKey: recipe.entryObject,
+    safeZoneRadius: 1,
+    fogPolicy: recipe.fog,
+    ...extra,
+  };
+}
+
 export class MapRegistry {
   private static defs: Record<LocationKey, MapDefinition> = {
-    camping: {
-      key: 'camping',
-      title: 'Camping',
-      boardKind: 'STATIC',
-      create: () => buildStaticBoard(CAMPING_BOARD, 'ALL_REVEALED'),
-      staticDrawing: CAMPING_BOARD,
-      entryHexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
-      safeZoneRadius: 1,
-      fogPolicy: 'ALL_REVEALED',
+    camping: staticLocation('camping', 'Camping', CAMPING_RECIPE, CAMPING_BOARD, {
       willZone: 'free',
-    },
-    silesia: {
-      key: 'silesia',
-      title: 'Silesia',
-      boardKind: 'STATIC',
-      create: () => buildStaticBoard(SILESIA_BOARD),
-      staticDrawing: SILESIA_BOARD,
-      entryHexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
-      safeZoneRadius: 1,
-      fogPolicy: 'FOG',
-    },
+    }),
+    silesia: staticLocation('silesia', 'Silesia', SILESIA_RECIPE, SILESIA_BOARD),
+    'silesia-north': staticLocation(
+      'silesia-north',
+      'Silesia North',
+      SILESIA_NORTH_RECIPE,
+      SILESIA_NORTH_BOARD,
+    ),
     cave: {
       key: 'cave',
       title: 'Skeletor Kingdom',
       boardKind: 'DUNGEON',
-      create: (ctx) => assembleGeneratedBoard(ctx.seed, CAVE_PRESET),
-      createWithLayout: (ctx) =>
-        assembleGeneratedBoard(ctx.seed, { ...CAVE_PRESET, layouts: [ctx.layoutId] }),
-      availableLayouts: CAVE_PRESET.layouts,
-      entryHexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
+      create: (ctx) => runBoardPipeline(CAVE_MODEL, { seed: ctx.seed, params: ctx.params }),
+      entryHexobjectKey: CAVE_MODEL.entryObject,
       safeZoneRadius: 1,
-      fogPolicy: 'FOG',
+      fogPolicy: CAVE_MODEL.fog,
       respawnAfterClearedMs: 60_000,
     },
   };

@@ -1,3 +1,5 @@
+import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
+import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
 import { KNOWLEDGE_RULES } from '@hexoflat/engine/knowledge/math';
 import { writeKnowledge } from '@/services/persistence/knowledge-storage';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
@@ -84,6 +86,20 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       writeKnowledge({ ...heroStore.knowledge, current });
       heroStore.loadKnowledge();
     },
+    getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null {
+      const from = heroStore.heroCoordinates;
+      const map = worldStore.map;
+      if (!from || !map) return null;
+      const clickable = {
+        tiles: map.tiles.map((tile) => ({
+          coordinates: tile.coordinates,
+          hexobject: tile.hexobject,
+          terrain: tile.terrain,
+          isRevealed: !tile.hexobject,
+        })),
+      };
+      return findShortestPath(clickable, from, to)?.slice(1) ?? null;
+    },
     getWillSlotKey() {
       return WILL_SLOT_KEY;
     },
@@ -125,6 +141,18 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
     getTileHexobjectKey(coordinates: TestHexCoordinates): string | null {
       return findTile(coordinates)?.hexobject?.hexobjectKey ?? null;
+    },
+
+    getExitTile(side): TestHexCoordinates | null {
+      const exit = worldStore.map?.tiles.find((tile) => tile.exit === side);
+      return exit
+        ? { columnIndex: exit.coordinates.columnIndex, rowIndex: exit.coordinates.rowIndex }
+        : null;
+    },
+
+    isTileImpassableTerrain(coordinates: TestHexCoordinates): boolean {
+      const tile = findTile(coordinates);
+      return !!tile && !isTerrainPassable(tile.terrain);
     },
 
     getHeroHealth(): TestHeroHealth {

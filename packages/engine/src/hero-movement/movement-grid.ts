@@ -3,11 +3,13 @@ import type { THexobject } from '../abstraction/hexobject-abstraction';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { isTerrainPassable, type TerrainId } from '../boards/terrain';
 
 export type TileLike = {
   coordinates: IHexCoordinates;
   isRevealed: boolean;
   hexobject: THexobject | null;
+  terrain?: TerrainId;
 };
 
 export type TileIndex = Map<string, TileLike>;
@@ -28,6 +30,7 @@ export function buildTileIndex(map: TileMapLike): TileIndex {
 export function isTraversableTile(tile: TileLike | null | undefined): tile is TileLike {
   if (!tile) return false;
   if (!tile.isRevealed) return false;
+  if (!isTerrainPassable(tile.terrain)) return false;
   if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
   if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING_ENTRANCE) return false;
 

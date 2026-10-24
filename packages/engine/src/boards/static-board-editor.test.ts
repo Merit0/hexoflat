@@ -3,8 +3,12 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
 import {
   findOrAllocateLegendLetter,
+  listBoardObjects,
   placeGroundAt,
   placeHexobjectAt,
+  placeMountainAt,
+  placeWaterAt,
+  removeAllOfKind,
   placeVoidAt,
   placeWallAt,
 } from './static-board-editor';
@@ -83,5 +87,52 @@ describe('cell placement', () => {
     placeGroundAt(drawing, { columnIndex: 1, rowIndex: 1 });
 
     expect(drawing.rows).toEqual(originalRows);
+  });
+});
+
+describe('terrain brushes', () => {
+  it('placeMountainAt and placeWaterAt write ^ and = and keep the board shape', () => {
+    const withMountain = placeMountainAt(tinyDrawing(), { columnIndex: 0, rowIndex: 0 });
+    const withBoth = placeWaterAt(withMountain, { columnIndex: 2, rowIndex: 2 });
+
+    expect(withBoth.rows).toEqual(['^ . .', ' . A .', '. . =']);
+    expect(withBoth.rows.map((row) => row.trim().split(/\s+/).length)).toEqual([3, 3, 3]);
+  });
+});
+
+describe('listBoardObjects / removeAllOfKind', () => {
+  const field: StaticBoardDrawing = {
+    id: 'field',
+    background: '',
+    legend: {
+      A: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 25000 } },
+      B: { hexobjectKey: HEXOBJECT_KEYS.TREE },
+      R: { hexobjectKey: HEXOBJECT_KEYS.ROCK },
+    },
+    rows: ['A . B', ' . R .', 'R . A'],
+  };
+
+  it('listBoardObjects groups cells per kind across legend variants, sorted by key', () => {
+    const objects = listBoardObjects(field);
+
+    expect(objects.map((item) => [item.hexobjectKey, item.count])).toEqual([
+      [HEXOBJECT_KEYS.ROCK, 2],
+      [HEXOBJECT_KEYS.TREE, 3],
+    ]);
+    expect(objects[1].cellKeys).toEqual(['0:0', '2:0', '2:2']);
+  });
+
+  it('removeAllOfKind turns every cell of that kind into ground and drops its legend entries', () => {
+    const cleaned = removeAllOfKind(field, HEXOBJECT_KEYS.TREE);
+
+    expect(cleaned.rows).toEqual(['. . .', ' . R .', 'R . .']);
+    expect(Object.keys(cleaned.legend)).toEqual(['R']);
+    expect(listBoardObjects(cleaned).map((item) => item.hexobjectKey)).toEqual([
+      HEXOBJECT_KEYS.ROCK,
+    ]);
+  });
+
+  it('removeAllOfKind leaves a drawing without that kind untouched', () => {
+    expect(removeAllOfKind(field, HEXOBJECT_KEYS.CHEST)).toEqual(field);
   });
 });
