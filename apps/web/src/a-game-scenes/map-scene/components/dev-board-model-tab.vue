@@ -52,6 +52,34 @@
       <li v-for="rule in notedRules" :key="rule.ruleId">{{ rule.ruleId }}: {{ rule.note }}</li>
     </ul>
 
+    <label class="model-tab__inspect">
+      <input
+        type="checkbox"
+        data-testid="dev-model-inspect-toggle"
+        :checked="panelStore.inspectMode"
+        @change="panelStore.toggleInspectMode()"
+      />
+      Слід по кліку
+    </label>
+
+    <div
+      v-if="panelStore.inspectMode && panelStore.inspectedCoordinates"
+      class="model-tab__trace"
+      data-testid="dev-model-trace"
+    >
+      <div>
+        {{ panelStore.inspectedCoordinates.columnIndex }}:{{
+          panelStore.inspectedCoordinates.rowIndex
+        }}
+      </div>
+      <div v-if="!model.inspectedEntries.value.length">— нічого не створило цей гекс</div>
+      <div v-for="(entry, index) in model.inspectedEntries.value" :key="index">
+        {{ entry.stage }} / {{ entry.pieceId }}
+        <template v-if="entry.ruleId"> / {{ entry.ruleId }}</template>
+        <template v-if="entry.note"> — {{ entry.note }}</template>
+      </div>
+    </div>
+
     <div class="model-tab__params">
       <label>
         tier
@@ -165,6 +193,11 @@ const notedRules = computed(() => model.rules.value.filter((rule) => rule.outcom
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.model-tab__trace {
+  padding: 2px 4px;
+  background: rgb(255 255 255 / 10%);
 }
 
 .model-tab__error {

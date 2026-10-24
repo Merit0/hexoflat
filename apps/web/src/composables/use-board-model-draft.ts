@@ -46,6 +46,11 @@ export function useBoardModelDraft() {
     preview.value && 'measures' in preview.value ? preview.value.measures : null,
   );
   const isDirty = computed(() => draft.value !== null);
+  const inspectedEntries = computed(() => {
+    const coordinates = panelStore.inspectedCoordinates;
+    const board = preview.value && 'trace' in preview.value ? preview.value : null;
+    return coordinates && board ? [...board.trace.entriesAt(coordinates)] : [];
+  });
 
   watch([hoveredRuleId, preview], () => {
     const board = preview.value && 'trace' in preview.value ? preview.value : null;
@@ -94,6 +99,7 @@ export function useBoardModelDraft() {
     measures,
     previewError,
     isDirty,
+    inspectedEntries,
     hoveredRuleId,
     status,
     isSaving,

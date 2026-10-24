@@ -364,6 +364,10 @@ useHexBoard({
   },
   onTileHover: handleTileHover,
   onTileClick: (tile) => {
+    if (devBoardPanelStore?.inspectMode) {
+      devBoardPanelStore.inspect(tile.coordinates);
+      return;
+    }
     if (staticBoardEditorStore?.isEditing) {
       staticBoardEditorStore.selectHex(tile.coordinates);
       return;

@@ -62,4 +62,30 @@ describe('useBoardModelDraft', () => {
     expect(model.previewError.value).toBeNull();
     expect(model.rules.value.length).toBeGreaterThan(0);
   });
+
+  it('inspecting a cell returns the trace entries that created it', () => {
+    const model = useBoardModelDraft();
+    const panelStore = useDevBoardPanelStore();
+    const rockKey = model.rules.value.find((rule) => rule.ruleId === 'rocks');
+    expect(rockKey?.placed).toBeGreaterThan(0);
+
+    const hovered = useWorldMapStore().map?.tiles.find(
+      (tile) => tile.hexobject?.hexobjectKey === 'rock',
+    );
+    panelStore.inspect(hovered!.coordinates);
+
+    const stages = model.inspectedEntries.value.map((entry) => entry.stage);
+    expect(stages).toContain('objects');
+    expect(model.inspectedEntries.value.some((entry) => entry.ruleId === 'rocks')).toBe(true);
+  });
+
+  it('toggling inspect mode clears the inspected cell', () => {
+    const panelStore = useDevBoardPanelStore();
+    panelStore.inspect({ columnIndex: 3, rowIndex: 3 });
+
+    panelStore.toggleInspectMode();
+
+    expect(panelStore.inspectMode).toBe(true);
+    expect(panelStore.inspectedCoordinates).toBeNull();
+  });
 });
