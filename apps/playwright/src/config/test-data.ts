@@ -4,7 +4,7 @@ export const MapTokens = {
   knowledgeBook: { columnIndex: 10, rowIndex: 10 },
   starterAxe: { columnIndex: 11, rowIndex: 7 },
   stashChest: { columnIndex: 8, rowIndex: 9 },
-  caveEntrance: { columnIndex: 6, rowIndex: 2 },
+  caveEntrance: { columnIndex: 10, rowIndex: 3 },
 } as const satisfies Record<string, TestHexCoordinates>;
 
 export type MapToken = keyof typeof MapTokens;

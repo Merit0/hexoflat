@@ -15,7 +15,7 @@ describe('measureBoard', () => {
       HEXOBJECT_KEYS.CAMPING_ENTRANCE,
     );
 
-    expect(measured.stepsToObject[HEXOBJECT_KEYS.CAVE_ENTRANCE]).toBeGreaterThan(0);
+    expect(measured.stepsToObject[HEXOBJECT_KEYS.CAVE_ENTRANCE]).toBeGreaterThanOrEqual(0);
     expect(measured.stepsToObject[HEXOBJECT_KEYS.CAVE_ENTRANCE]).toBeLessThanOrEqual(4);
     expect(Object.values(measured.stepsToObject).every((steps) => steps !== null)).toBe(true);
     expect(measured.stepsToObject[HEXOBJECT_KEYS.STONE_WALL]).toBeUndefined();

@@ -23,8 +23,8 @@ export type {
 export const MISSING_TEST_HOOKS_MESSAGE =
   'window.__HEXOFLAT_TEST__ is missing — the app under test was not built with ' +
   'VITE_E2E_HOOKS=true.\n' +
-  'Most likely cause locally: something else is already serving port 5173 (e.g. `pnpm ' +
-  'start:client`). playwright.config.ts sets `reuseExistingServer: !process.env.CI`, so ' +
-  'Playwright silently adopts that server instead of building its own — and a plain dev server ' +
-  'has no hooks. Stop it (`pnpm stop:all`) and re-run.\n' +
+  'Most likely cause locally: Playwright was run directly while a plain dev server holds the ' +
+  'e2e web port, and `reuseExistingServer` adopted it — a plain dev server has no hooks. ' +
+  'Run the suite through `sh scripts/pre-push-e2e.sh [spec files]`, which uses its own ports ' +
+  '(API 3101, web 5273) and leaves the dev stack alone.\n' +
   'See playwright.config.ts webServer and apps/web/src/e2e/test-hooks.ts.';

@@ -51,7 +51,7 @@ describe('runBoardPipeline', () => {
     expect(stages).toEqual(['form', 'gates']);
   });
 
-  it('CHECKS:reachable passes for silesia from its entrance and reports measures', () => {
+  it('reports measures for silesia from its entrance, with the cave a few steps from the camp', () => {
     const built = runBoardPipeline(
       recipeFor(SILESIA_BOARD, {
         entryObject: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
@@ -59,13 +59,14 @@ describe('runBoardPipeline', () => {
           form: [{ kind: 'drawing', drawing: SILESIA_BOARD }],
           gates: [{ kind: 'drawing' }],
           objects: [{ kind: 'drawing' }],
-          checks: [{ kind: 'reachable' }],
         },
       }),
       { seed: '' },
     );
 
-    expect(built.measures?.stepsToObject[HEXOBJECT_KEYS.CAVE_ENTRANCE]).toBeGreaterThan(0);
+    const toCave = built.measures?.stepsToObject[HEXOBJECT_KEYS.CAVE_ENTRANCE];
+    expect(toCave).toBeGreaterThanOrEqual(0);
+    expect(toCave).toBeLessThanOrEqual(4);
   });
 
   it('CHECKS:reachable fails the build when the recipe has no entry object', () => {

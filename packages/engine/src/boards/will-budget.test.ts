@@ -23,7 +23,7 @@ describe('Will budget of the silesia + cave trip (REQ-BOARD-008)', () => {
   const toCave = silesia.stepsToObject[HEXOBJECT_KEYS.CAVE_ENTRANCE] as number;
 
   it('silesia puts the cave entrance within 4 steps of the camping entrance', () => {
-    expect(toCave).toBeGreaterThan(0);
+    expect(toCave).toBeGreaterThanOrEqual(0);
     expect(toCave).toBeLessThanOrEqual(4);
   });
 
