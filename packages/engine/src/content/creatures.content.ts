@@ -8,6 +8,7 @@ export type TCreatureKeys =
 export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.SKELETOR]: {
     hexobjectKey: HEXOBJECT_KEYS.SKELETOR,
+    tags: ['enemy'],
     groupType: EHexobjectGroup.CREATURE,
     isInteractable: true,
     title: 'content.skeletor.title',
@@ -27,6 +28,7 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.EMITTER]: {
     hexobjectKey: HEXOBJECT_KEYS.EMITTER,
+    tags: ['enemy'],
     groupType: EHexobjectGroup.CREATURE,
     isInteractable: true,
     title: 'content.emitter.title',
@@ -46,6 +48,7 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.INFERNO]: {
     hexobjectKey: HEXOBJECT_KEYS.INFERNO,
+    tags: ['enemy'],
     groupType: EHexobjectGroup.CREATURE,
     isInteractable: true,
     title: 'content.inferno.title',

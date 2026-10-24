@@ -3,6 +3,7 @@ import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { isTerrainAlwaysVisible } from '../boards/terrain';
 
 /**
  * Fog of war: which tiles the hero can see.
@@ -25,16 +26,44 @@ function indexByCoordinate(map: HexMapModel): Map<string, HexTileModel> {
 
 /**
  * Applies the map's fog policy to every tile. `ALL_REVEALED` maps start fully
- * visible; everything else starts fully hidden.
+ * visible; everything else starts hidden, except terrain that is always in
+ * view (mountains frame the map and are never covered by fog).
  */
 export function initFog(map: HexMapModel): IHexCoordinates[] {
   const revealed = map.fogPolicy === 'ALL_REVEALED';
-  for (const tile of map.tiles) tile.isRevealed = revealed;
+  for (const tile of map.tiles)
+    tile.isRevealed =
+      revealed || isTerrainAlwaysVisible(tile.terrain) || !!tile.hexobject?.alwaysVisible;
 
   return map.tiles.map((tile) => tile.coordinates);
 }
 
-/** Reveals the hero's own tile plus its six neighbours. */
+function revealWholeRegion(
+  map: HexMapModel,
+  byKey: Map<string, HexTileModel>,
+  regionId: string,
+): IHexCoordinates[] {
+  const revealedCoords: IHexCoordinates[] = [];
+  const reveal = (tile: HexTileModel | undefined) => {
+    if (!tile) return;
+    tile.isRevealed = true;
+    revealedCoords.push(tile.coordinates);
+  };
+
+  for (const tile of map.tiles) {
+    if (tile.regionId !== regionId) continue;
+    reveal(tile);
+    for (const neighbor of getHexNeighbors(tile.coordinates)) {
+      reveal(byKey.get(coordinateKey(neighbor)));
+    }
+  }
+  return revealedCoords;
+}
+
+/**
+ * Reveals the hero's own tile plus its six neighbours. On a `BY_REGION` map,
+ * standing in a region also reveals the whole region and the walls around it.
+ */
 export function revealAroundHero(
   map: HexMapModel,
   heroCoordinates: IHexCoordinates,
@@ -47,6 +76,11 @@ export function revealAroundHero(
     if (!tile) continue;
     tile.isRevealed = true;
     revealedCoords.push(tile.coordinates);
+  }
+
+  const regionId = byKey.get(coordinateKey(heroCoordinates))?.regionId;
+  if (map.fogPolicy === 'BY_REGION' && regionId) {
+    revealedCoords.push(...revealWholeRegion(map, byKey, regionId));
   }
 
   return revealedCoords;

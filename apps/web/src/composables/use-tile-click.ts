@@ -7,6 +7,7 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStore } from '@/stores/hero-store';
+import { crossExitIfStanding } from '@/composables/use-board-crossing';
 
 function describeHexobject(hexobject: THexobject): string {
   switch (hexobject.groupType) {
@@ -90,7 +91,7 @@ export function useTileClick() {
     }
 
     const moved = await heroStore.moveHeroTo(tile.coordinates);
-    if (moved) return;
+    if (moved) await crossExitIfStanding();
   }
 
   return { handleTileClick };

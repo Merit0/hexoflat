@@ -46,6 +46,8 @@ export interface IBaseHexobject {
   spritePath?: string;
   description?: string;
   collision: THexCollision;
+  alwaysVisible?: boolean;
+  tileBackground?: string;
 }
 
 export interface IResource extends ITraitable<IResourceTraits> {

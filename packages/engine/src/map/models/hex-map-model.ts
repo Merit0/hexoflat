@@ -10,8 +10,10 @@ import type { RouteName } from '../route-name';
 import type { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner';
 import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
 import { EHexActionType } from '../../enums/hex-action-type';
+import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
+import type { ExitSide } from '../../boards/exits';
 
-export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
+export type TFogPolicy = 'FOG' | 'ALL_REVEALED' | 'BY_REGION';
 
 interface IWorldMap {
   name: string;
@@ -33,6 +35,9 @@ export interface ISerializedHexTile {
   hexobject?: THexobject | null;
   resourceSpawner?: IHexResourceSpawner | null;
   pendingAction?: IPendingTileAction | null;
+  terrain?: TerrainId;
+  exit?: ExitSide;
+  regionId?: string;
 }
 
 export interface ISerializedHexMap {
@@ -42,6 +47,7 @@ export interface ISerializedHexMap {
   complexity: Complexity;
   config: IHexMapPlacement[];
   tiles: ISerializedHexTile[];
+  fogPolicy?: TFogPolicy;
 }
 
 export default class HexMapModel implements IWorldMap {
@@ -171,6 +177,9 @@ export default class HexMapModel implements IWorldMap {
         hexobject: t.hexobject,
         resourceSpawner: t.resourceSpawner,
         pendingAction: t.pendingAction,
+        ...(t.terrain === DEFAULT_TERRAIN ? {} : { terrain: t.terrain }),
+        ...(t.exit ? { exit: t.exit } : {}),
+        ...(t.regionId ? { regionId: t.regionId } : {}),
       })),
     };
   }
@@ -182,6 +191,7 @@ export default class HexMapModel implements IWorldMap {
     map.height = raw.height;
     map.complexity = raw.complexity;
     map.config = raw.config;
+    map.fogPolicy = raw.fogPolicy ?? 'FOG';
 
     map.tiles = raw.tiles.map((t) => {
       const tile = new HexTileModel();
@@ -194,6 +204,9 @@ export default class HexMapModel implements IWorldMap {
 
       tile.resourceSpawner = t.resourceSpawner ?? null;
       tile.pendingAction = t.pendingAction ?? null;
+      tile.terrain = t.terrain ?? DEFAULT_TERRAIN;
+      tile.exit = t.exit;
+      tile.regionId = t.regionId;
 
       return tile;
     });

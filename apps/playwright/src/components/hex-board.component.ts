@@ -8,6 +8,8 @@ const POLL_INTERVALS_MS = [100];
 const TOOL_STATE_TIMEOUT_MS = 2_000;
 const HERO_POSITION_SETTLE_MS = 1_000;
 
+export type ExitSide = 'N' | 'S' | 'W' | 'E';
+
 function coordinateKey(coordinates: TestHexCoordinates | null): string {
   return coordinates ? `${coordinates.columnIndex}:${coordinates.rowIndex}` : 'none';
 }
@@ -215,7 +217,11 @@ export class HexBoardComponent extends BaseComponent {
           const api = window.__HEXOFLAT_TEST__!;
           return api
             .getNeighbors(from)
-            .filter((candidate) => api.getTileHexobjectKey(candidate) === null)
+            .filter(
+              (candidate) =>
+                api.getTileHexobjectKey(candidate) === null &&
+                !api.isTileImpassableTerrain(candidate),
+            )
             .map((candidate) => ({ candidate, distance: api.getDistance(candidate, target) }));
         },
         { from, target },
@@ -253,6 +259,44 @@ export class HexBoardComponent extends BaseComponent {
     }
 
     throw new Error(`Did not reach a tile adjacent to the target within ${maxSteps} steps.`);
+  }
+
+  async walkTo(target: TestHexCoordinates): Promise<void> {
+    const route = await this.page.evaluate(
+      (to) => window.__HEXOFLAT_TEST__!.getWalkRoute(to),
+      target,
+    );
+    if (!route?.length)
+      throw new Error(`No walkable route to (${target.columnIndex}, ${target.rowIndex}).`);
+
+    for (const [index, step] of route.entries()) {
+      await this.clickTile(step);
+      if (index === route.length - 1) return;
+      const stepKey = coordinateKey(step);
+      await this.waitForHeroCoordinates((coordinates) => coordinateKey(coordinates) === stepKey);
+    }
+  }
+
+  async requireExitTile(side: ExitSide): Promise<TestHexCoordinates> {
+    const exit = await this.page.evaluate(
+      (wanted) => window.__HEXOFLAT_TEST__!.getExitTile(wanted),
+      side,
+    );
+    if (!exit) throw new Error(`The board has no ${side} exit.`);
+    return exit;
+  }
+
+  async verifyHeroBesideExit(side: ExitSide): Promise<void> {
+    const exit = await this.requireExitTile(side);
+    await expect
+      .poll(
+        async () => {
+          const hero = await this.getHeroCoordinates();
+          return hero ? this.getDistance(hero, exit) : null;
+        },
+        { timeout: HERO_POSITION_SETTLE_MS * 3, intervals: POLL_INTERVALS_MS },
+      )
+      .toBe(1);
   }
 
   async verifyHeroMovedAwayFrom(previous: TestHexCoordinates): Promise<void> {

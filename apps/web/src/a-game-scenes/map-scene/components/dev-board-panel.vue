@@ -1,112 +1,127 @@
 <template>
-  <aside class="dev-board-panel" data-testid="dev-board-panel">
-    <header class="dev-board-panel__header">Board (dev)</header>
+  <aside
+    class="dev-board-panel"
+    :class="{ 'dev-board-panel--collapsed': panelStore.isCollapsed }"
+    data-testid="dev-board-panel"
+  >
+    <button
+      type="button"
+      class="dev-board-panel__header"
+      data-testid="dev-board-panel-collapse-toggle"
+      :aria-expanded="!panelStore.isCollapsed"
+      @click="panelStore.toggleCollapsed()"
+    >
+      <span class="dev-board-panel__chevron">{{ panelStore.isCollapsed ? '▸' : '▾' }}</span>
+      Board (dev)
+    </button>
 
-    <dl class="dev-board-panel__facts">
-      <dt>Location</dt>
-      <dd>{{ worldStore.currentLocationKey }}</dd>
-      <dt>Kind</dt>
-      <dd>{{ descriptor?.kind ?? '—' }}</dd>
-      <template v-if="descriptor?.kind === 'STATIC'">
-        <dt>Drawing hash</dt>
-        <dd>{{ descriptor.drawingHash?.slice(0, 8) ?? '—' }}</dd>
-      </template>
-      <template v-if="descriptor?.kind === 'DUNGEON'">
-        <dt>Seed</dt>
-        <dd>{{ descriptor.seed }}</dd>
-        <dt>Layout</dt>
-        <dd>{{ descriptor.layoutId }}</dd>
-        <dt>Attempt</dt>
-        <dd>{{ descriptor.attempt }}</dd>
-      </template>
-    </dl>
+    <template v-if="!panelStore.isCollapsed">
+      <dl class="dev-board-panel__facts">
+        <dt>Location</dt>
+        <dd>{{ worldStore.currentLocationKey }}</dd>
+        <dt>Kind</dt>
+        <dd>{{ descriptor?.kind ?? '—' }}</dd>
+        <template v-if="descriptor?.kind === 'STATIC'">
+          <dt>Drawing hash</dt>
+          <dd>{{ descriptor.drawingHash?.slice(0, 8) ?? '—' }}</dd>
+        </template>
+        <template v-if="descriptor?.kind === 'RECIPE'">
+          <dt>Recipe</dt>
+          <dd>{{ descriptor.recipeId }} v{{ descriptor.version }}</dd>
+          <dt>Seed</dt>
+          <dd>{{ descriptor.seed }}</dd>
+          <dt>Attempt</dt>
+          <dd>{{ descriptor.attempt }}</dd>
+        </template>
+      </dl>
 
-    <div v-if="descriptor?.kind === 'DUNGEON'" class="dev-board-panel__actions">
-      <button
-        type="button"
-        data-testid="dev-regenerate-button"
-        @click="worldStore.devRegenerateDungeon()"
+      <section
+        v-if="measurements"
+        class="dev-board-panel__measurements"
+        data-testid="dev-measurements"
       >
-        Regenerate
-      </button>
-      <button type="button" data-testid="dev-next-seed-button" @click="worldStore.devNextSeed()">
-        Next seed
-      </button>
-      <div class="dev-board-panel__force-layout">
-        <select v-model="selectedLayoutId" data-testid="dev-layout-select">
-          <option v-for="layoutId in availableLayouts" :key="layoutId" :value="layoutId">
-            {{ layoutId }}
-          </option>
-        </select>
+        <header class="dev-board-panel__header">Заміри</header>
+        <dl class="dev-board-panel__facts">
+          <dt>Гексів / прохідних</dt>
+          <dd>{{ measurements.totalTiles }} / {{ measurements.passableTiles }}</dd>
+          <dt>Сусідів (сер.)</dt>
+          <dd>{{ measurements.meanPassableNeighbours.toFixed(2) }}</dd>
+          <dt>≤2 сусідів</dt>
+          <dd>{{ (measurements.shareLowDegree * 100).toFixed(0) }}%</dd>
+          <dt>Найдальший</dt>
+          <dd>{{ measurements.farthestPassableSteps }}</dd>
+          <dt>Воля (сума)</dt>
+          <dd>{{ measurements.willCostTotal }}</dd>
+          <template v-for="(steps, key) in measurements.stepsToObject" :key="key">
+            <dt>→ {{ key }}</dt>
+            <dd>{{ steps ?? '—' }}</dd>
+          </template>
+        </dl>
+      </section>
+
+      <DevBoardModelTab v-if="descriptor?.kind === 'RECIPE'" />
+
+      <div v-if="descriptor?.kind === 'RECIPE'" class="dev-board-panel__actions">
         <button
           type="button"
-          data-testid="dev-force-layout-button"
-          @click="worldStore.devForceLayout(selectedLayoutId)"
+          data-testid="dev-regenerate-button"
+          @click="worldStore.devRegenerateDungeon(panelStore.params)"
         >
-          Force layout
+          Regenerate
+        </button>
+        <button
+          type="button"
+          data-testid="dev-next-seed-button"
+          @click="worldStore.devNextSeed(panelStore.params)"
+        >
+          Next seed
         </button>
       </div>
-    </div>
 
-    <label v-if="canEditBoard" class="dev-board-panel__toggle">
-      <input
-        type="checkbox"
-        data-testid="dev-edit-board-toggle"
-        :checked="editorStore.isEditing"
-        @change="onToggleEditBoard"
-      />
-      Edit board
-    </label>
+      <label v-if="canEditBoard" class="dev-board-panel__toggle">
+        <input
+          type="checkbox"
+          data-testid="dev-edit-board-toggle"
+          :checked="editorStore.isEditing"
+          @change="onToggleEditBoard"
+        />
+        Edit board
+      </label>
 
-    <label class="dev-board-panel__toggle">
-      <input
-        type="checkbox"
-        data-testid="dev-show-whole-board-toggle"
-        :checked="panelStore.showWholeBoard"
-        @change="panelStore.toggleShowWholeBoard()"
-      />
-      Show whole board
-    </label>
-
-    <label class="dev-board-panel__toggle">
-      <input
-        type="checkbox"
-        data-testid="dev-show-zone-outlines-toggle"
-        :checked="panelStore.showZoneOutlines"
-        @change="panelStore.toggleShowZoneOutlines()"
-      />
-      Show zone outlines
-    </label>
-
-    <ul v-if="panelStore.showZoneOutlines && zoneLegend.length" class="dev-board-panel__legend">
-      <li v-for="entry in zoneLegend" :key="entry.zoneId">
-        <span
-          class="dev-board-panel__swatch"
-          :style="{ backgroundColor: cssColor(entry.color) }"
-        ></span>
-        {{ entry.zoneId }} — {{ entry.chunkId }}
-      </li>
-    </ul>
+      <label class="dev-board-panel__toggle">
+        <input
+          type="checkbox"
+          data-testid="dev-show-whole-board-toggle"
+          :checked="panelStore.showWholeBoard"
+          @change="panelStore.toggleShowWholeBoard()"
+        />
+        Show whole board
+      </label>
+    </template>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { measureBoard } from '@hexoflat/engine/boards/measure-board';
+import DevBoardModelTab from '@/a-game-scenes/map-scene/components/dev-board-model-tab.vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
-import { computeZoneLegend } from '@/services/world/zone-tint';
 
 const worldStore = useWorldMapStore();
 const panelStore = useDevBoardPanelStore();
 const editorStore = useStaticBoardEditorStore();
 
 const descriptor = computed(() => worldStore.descriptor);
-const zoneLegend = computed(() => computeZoneLegend(descriptor.value));
-const availableLayouts = computed(
-  () => MapRegistry.get(worldStore.currentLocationKey).availableLayouts ?? [],
-);
+const measurements = computed(() => {
+  const map = worldStore.map as HexMapModel | null;
+  const entryKey = MapRegistry.get(worldStore.currentLocationKey).entryHexobjectKey;
+  if (!map || !entryKey) return null;
+  return measureBoard(map, entryKey);
+});
 const canEditBoard = computed(
   () => descriptor.value?.kind === 'STATIC' && descriptor.value.drawingHash !== undefined,
 );
@@ -117,15 +132,6 @@ function onToggleEditBoard() {
   } else {
     editorStore.startEditing(worldStore.currentLocationKey);
   }
-}
-
-const selectedLayoutId = ref(availableLayouts.value[0] ?? '');
-watch(availableLayouts, (layouts) => {
-  if (!layouts.includes(selectedLayoutId.value)) selectedLayoutId.value = layouts[0] ?? '';
-});
-
-function cssColor(color: number): string {
-  return '#' + color.toString(16).padStart(6, '0');
 }
 </script>
 
@@ -147,9 +153,27 @@ function cssColor(color: number): string {
   max-width: 220px;
 }
 
+.dev-board-panel--collapsed {
+  padding: 4px 8px;
+}
+
 .dev-board-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-weight: bold;
   opacity: 0.8;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dev-board-panel__chevron {
+  width: 1em;
 }
 
 .dev-board-panel__facts {
@@ -168,14 +192,15 @@ function cssColor(color: number): string {
   word-break: break-all;
 }
 
-.dev-board-panel__actions {
+.dev-board-panel__measurements {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
 }
 
-.dev-board-panel__force-layout {
+.dev-board-panel__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
@@ -184,22 +209,5 @@ function cssColor(color: number): string {
   align-items: center;
   gap: 4px;
   cursor: pointer;
-}
-
-.dev-board-panel__legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dev-board-panel__swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  margin-right: 4px;
 }
 </style>

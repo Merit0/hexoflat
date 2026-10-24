@@ -3,6 +3,8 @@ import { RouteName } from '../route-name';
 import { THexobject } from '../../abstraction/hexobject-abstraction';
 import { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner';
 import { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
+import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
+import type { ExitSide } from '../../boards/exits';
 
 export interface IHexTile {
   tileId: string;
@@ -13,6 +15,9 @@ export interface IHexTile {
   hexobject: THexobject | null;
   resourceSpawner: IHexResourceSpawner | null;
   pendingAction: IPendingTileAction | null;
+  terrain?: TerrainId;
+  exit?: ExitSide;
+  regionId?: string;
 }
 
 export class HexTileModel implements IHexTile {
@@ -24,6 +29,9 @@ export class HexTileModel implements IHexTile {
   private _coordinates: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
   private _resourceSpawner: IHexResourceSpawner | null = null;
   private _pendingAction: IPendingTileAction | null = null;
+  private _terrain: TerrainId = DEFAULT_TERRAIN;
+  private _exit: ExitSide | undefined = undefined;
+  private _regionId: string | undefined = undefined;
 
   get hexobject(): THexobject | null {
     return this._hexobject;
@@ -83,6 +91,30 @@ export class HexTileModel implements IHexTile {
 
   set pendingAction(pendingAction: IPendingTileAction | null) {
     this._pendingAction = pendingAction;
+  }
+
+  get terrain(): TerrainId {
+    return this._terrain;
+  }
+
+  set terrain(terrain: TerrainId) {
+    this._terrain = terrain;
+  }
+
+  get exit(): ExitSide | undefined {
+    return this._exit;
+  }
+
+  set exit(exit: ExitSide | undefined) {
+    this._exit = exit;
+  }
+
+  get regionId(): string | undefined {
+    return this._regionId;
+  }
+
+  set regionId(regionId: string | undefined) {
+    this._regionId = regionId;
   }
 
   coordinatesToString(): string {

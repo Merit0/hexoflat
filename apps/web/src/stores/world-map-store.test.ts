@@ -4,6 +4,8 @@ import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { HexEngineActionContext } from '@hexoflat/engine';
+import { BOARD_MODELS } from '@hexoflat/engine/content/boards/models/index';
+import { adjustRuleCount } from '@hexoflat/engine/boards/board-model-edit';
 import { useWorldMapStore, runWorldTick } from './world-map-store';
 import { useHeroStore } from './hero-store';
 
@@ -281,12 +283,12 @@ describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
     expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
   });
 
-  it('builds cave as a DUNGEON board via MapRegistry', () => {
+  it('builds cave as a RECIPE board via MapRegistry', () => {
     const worldStore = useWorldMapStore();
 
     worldStore.loadLocationMap('cave');
 
-    expect(worldStore.descriptor?.kind).toBe('DUNGEON');
+    expect(worldStore.descriptor).toMatchObject({ kind: 'RECIPE', recipeId: 'cave' });
     expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
   });
 
@@ -370,16 +372,45 @@ describe('useWorldMapStore: dev board panel actions', () => {
     expect(worldStore.descriptor).not.toEqual(oldDescriptor);
   });
 
-  it('devForceLayout rebuilds using exactly the requested layout', () => {
+  it('devRebuildFromRecipe rebuilds the same seed with an edited model', () => {
     const worldStore = useWorldMapStore();
     worldStore.loadLocationMap('cave');
-    const layoutId = 'basin-01';
+    const countRocks = () =>
+      worldStore.map?.tiles.filter((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.ROCK)
+        .length ?? 0;
+    const before = countRocks();
+    const seedBefore = worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.seed;
 
-    worldStore.devForceLayout(layoutId);
+    worldStore.devRebuildFromRecipe(adjustRuleCount(BOARD_MODELS.cave, 'rocks', 4));
 
-    expect(worldStore.descriptor?.kind === 'DUNGEON' && worldStore.descriptor.layoutId).toBe(
-      layoutId,
-    );
+    expect(countRocks()).toBeGreaterThan(before);
+    expect(worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.seed).toBe(seedBefore);
+  });
+
+  it('devRebuildFromRecipe is a no-op on a STATIC location', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('silesia');
+    const descriptor = worldStore.descriptor;
+
+    worldStore.devRebuildFromRecipe(BOARD_MODELS.cave);
+
+    expect(worldStore.descriptor).toEqual(descriptor);
+  });
+
+  it('dev rebuild actions use the encounter params they are given', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.loadLocationMap('cave');
+
+    worldStore.devNextSeed({ tier: 3 });
+    expect(worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.params).toEqual({
+      tier: 3,
+    });
+
+    worldStore.devRebuildFromRecipe(BOARD_MODELS.cave, { tier: 2, partySize: 2 });
+    expect(worldStore.descriptor?.kind === 'RECIPE' && worldStore.descriptor.params).toEqual({
+      tier: 2,
+      partySize: 2,
+    });
   });
 
   it('dev actions are no-ops on a STATIC location', () => {

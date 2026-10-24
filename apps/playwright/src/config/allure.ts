@@ -85,7 +85,7 @@ const categories: Category[] = [
     name: 'Environment: e2e hooks missing',
     description:
       'The app under test was served without VITE_E2E_HOOKS=true — usually a stray dev server ' +
-      'already holding port 5173. Not a product defect.',
+      'already holding the e2e web port. Not a product defect.',
     messageRegex: containing(SPECIFIC_FAILURE_PATTERNS.missingHooks),
     matchedStatuses: [Status.FAILED, Status.BROKEN],
   },

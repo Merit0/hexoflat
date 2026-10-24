@@ -29,7 +29,7 @@ describe('validateStaticBoardForSave', () => {
   it('rejects a drawing using a symbol with no legend entry', () => {
     const withStrayLetter = {
       ...SILESIA_BOARD,
-      rows: SILESIA_BOARD.rows.map((row, index) => (index === 1 ? row.replace('.', 'Z') : row)),
+      rows: SILESIA_BOARD.rows.map((row, index) => (index === 4 ? row.replace('.', 'Z') : row)),
     };
     const result = validateStaticBoardForSave(withStrayLetter);
     expect(result.ok).toBe(false);

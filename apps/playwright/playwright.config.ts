@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { WEB_URL } from './src/config/env';
+import { WEB_PORT, WEB_URL } from './src/config/env';
 import { allureReporterOptions } from './src/config/allure';
 
 export default defineConfig({
@@ -86,7 +86,7 @@ export default defineConfig({
     // directly, no script-argument indirection involved.
     command:
       'VITE_E2E_HOOKS=true pnpm --filter @hexoflat/web run build && ' +
-      'pnpm --filter @hexoflat/web exec vite preview --port 5173 --strictPort',
+      `pnpm --filter @hexoflat/web exec vite preview --port ${WEB_PORT} --strictPort`,
     url: WEB_URL,
     reuseExistingServer: !process.env.CI && process.env.E2E_PRE_PUSH !== '1',
     timeout: 120_000,

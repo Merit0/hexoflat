@@ -1,51 +1,36 @@
-import {
-  StaticBoardDrawingSchema,
-  BoardChunkSchema,
-  BoardLayoutSchema,
-  GeneratedBoardPresetSchema,
-} from './schemas';
-import { STATIC_DRAWINGS, BOARD_CHUNKS, BOARD_LAYOUTS, BOARD_PRESETS } from './index';
+import { StaticBoardDrawingSchema } from './schemas';
+import { RecipeSchema } from './recipe-schema';
+import { BOARD_ATLAS, BoardAtlasSchema } from './atlas';
+import { STATIC_DRAWINGS } from './index';
+import { BOARD_MODELS } from './models';
+import { CAMPING_RECIPE, SILESIA_NORTH_RECIPE, SILESIA_RECIPE } from './recipes';
 
-function assertAll<T>(
-  items: T[],
-  parse: (item: T) => { success: boolean; error?: { message: string } },
-  idOf: (item: T) => string,
-  kind: string,
-): void {
-  for (const item of items) {
-    const result = parse(item);
+const RECIPES = [
+  CAMPING_RECIPE,
+  SILESIA_RECIPE,
+  SILESIA_NORTH_RECIPE,
+  ...Object.values(BOARD_MODELS),
+];
+
+export function validateBoardContent(): void {
+  for (const drawing of STATIC_DRAWINGS) {
+    const result = StaticBoardDrawingSchema.safeParse(drawing);
     if (!result.success) {
       throw new Error(
-        `${kind} "${idOf(item)}" failed content schema validation:\n${result.error?.message}`,
+        `static drawing "${drawing.id}" failed content schema validation:\n${result.error.message}`,
       );
     }
   }
-}
-
-/** Runtime Zod validation for the board content catalog, parallel to content/validate-content.ts's hexobject catalog check. Not wired into app bootstrap yet — a later phase decides where this runs. */
-export function validateBoardContent(): void {
-  assertAll(
-    STATIC_DRAWINGS,
-    (d) => StaticBoardDrawingSchema.safeParse(d),
-    (d) => d.id,
-    'static drawing',
-  );
-  assertAll(
-    BOARD_CHUNKS,
-    (c) => BoardChunkSchema.safeParse(c),
-    (c) => c.id,
-    'chunk',
-  );
-  assertAll(
-    BOARD_LAYOUTS,
-    (l) => BoardLayoutSchema.safeParse(l),
-    (l) => l.id,
-    'layout',
-  );
-  assertAll(
-    BOARD_PRESETS,
-    (p) => GeneratedBoardPresetSchema.safeParse(p),
-    (p) => p.id,
-    'preset',
-  );
+  const atlas = BoardAtlasSchema.safeParse(BOARD_ATLAS);
+  if (!atlas.success) {
+    throw new Error(`board atlas failed content schema validation:\n${atlas.error.message}`);
+  }
+  for (const recipe of RECIPES) {
+    const result = RecipeSchema.safeParse(recipe);
+    if (!result.success) {
+      throw new Error(
+        `recipe "${recipe.id}" failed content schema validation:\n${result.error.message}`,
+      );
+    }
+  }
 }

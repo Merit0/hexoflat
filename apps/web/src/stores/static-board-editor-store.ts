@@ -9,6 +9,10 @@ import {
   placeWallAt,
   placeVoidAt,
   placeHexobjectAt,
+  placeMountainAt,
+  placeWaterAt,
+  listBoardObjects,
+  removeAllOfKind,
 } from '@hexoflat/engine/boards/static-board-editor';
 import { saveStaticBoardDrawing } from '@/services/dev/static-board-save-client';
 
@@ -21,11 +25,14 @@ export const useStaticBoardEditorStore = defineStore('static-board-editor-store'
     paletteSearch: '',
     isSaving: false,
     saveError: null as string | null,
+    isSeriesEnabled: false,
+    seriesKey: null as THexobjectKey | null,
   }),
 
   getters: {
     draftMap: (state) => (state.draft ? buildStaticBoard(state.draft).map : null),
     isPaletteOpen: (state) => state.selectedCoordinates !== null,
+    boardObjects: (state) => (state.draft ? listBoardObjects(state.draft) : []),
   },
 
   actions: {
@@ -39,9 +46,13 @@ export const useStaticBoardEditorStore = defineStore('static-board-editor-store'
       this.selectedCoordinates = null;
       this.paletteSearch = '';
       this.saveError = null;
+      this.isSeriesEnabled = false;
+      this.seriesKey = null;
     },
 
     cancelEditing() {
+      this.isSeriesEnabled = false;
+      this.seriesKey = null;
       this.isEditing = false;
       this.locationKey = null;
       this.draft = null;
@@ -51,7 +62,20 @@ export const useStaticBoardEditorStore = defineStore('static-board-editor-store'
     },
 
     selectHex(coordinates: IHexCoordinates) {
+      if (this.draft && this.seriesKey) {
+        this.draft = placeHexobjectAt(this.draft, coordinates, this.seriesKey);
+        return;
+      }
       this.selectedCoordinates = coordinates;
+    },
+
+    toggleSeries() {
+      this.isSeriesEnabled = !this.isSeriesEnabled;
+      if (!this.isSeriesEnabled) this.seriesKey = null;
+    },
+
+    stopSeries() {
+      this.seriesKey = null;
     },
 
     closePalette() {
@@ -81,10 +105,29 @@ export const useStaticBoardEditorStore = defineStore('static-board-editor-store'
       this.closePalette();
     },
 
+    placeMountain() {
+      if (!this.draft || !this.selectedCoordinates) return;
+      this.draft = placeMountainAt(this.draft, this.selectedCoordinates);
+      this.closePalette();
+    },
+
+    placeWater() {
+      if (!this.draft || !this.selectedCoordinates) return;
+      this.draft = placeWaterAt(this.draft, this.selectedCoordinates);
+      this.closePalette();
+    },
+
     placeHexobject(hexobjectKey: THexobjectKey) {
       if (!this.draft || !this.selectedCoordinates) return;
       this.draft = placeHexobjectAt(this.draft, this.selectedCoordinates, hexobjectKey);
+      if (this.isSeriesEnabled) this.seriesKey = hexobjectKey;
       this.closePalette();
+    },
+
+    removeAllOfKind(hexobjectKey: THexobjectKey) {
+      if (!this.draft) return;
+      this.draft = removeAllOfKind(this.draft, hexobjectKey);
+      if (this.seriesKey === hexobjectKey) this.seriesKey = null;
     },
 
     async save() {
