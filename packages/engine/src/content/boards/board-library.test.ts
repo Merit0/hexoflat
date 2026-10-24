@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { STATIC_DRAWINGS } from './index';
 import { validateBoardContent } from './validate-board-content';
 import { lintExits, lintStaticDrawing } from '../../boards/board-linter';
-import { BOARD_ATLAS, expectedExitSides } from './atlas';
+import { BOARD_ATLAS, BoardAtlasSchema, expectedExitSides } from './atlas';
 import { BOARD_COLUMNS, BOARD_ROWS } from '../../boards/board-size';
 import { StaticBoardDrawingSchema } from './schemas';
 import { RecipeSchema } from './recipe-schema';
@@ -33,6 +33,15 @@ describe('board content library', () => {
     const silesia = STATIC_DRAWINGS.find((drawing) => drawing.id === 'silesia')!;
     expect(lintExits(silesia, ['N', 'E']).join('\n')).toMatch(/neighbour on E/);
     expect(lintExits(silesia, []).join('\n')).toMatch(/exit on N has no atlas neighbour/);
+  });
+
+  it('the atlas schema rejects unknown board ids and two boards on one position', () => {
+    expect(BoardAtlasSchema.safeParse(BOARD_ATLAS).success).toBe(true);
+    expect(BoardAtlasSchema.safeParse({ atlantis: { x: 5, y: 5 } }).success).toBe(false);
+    const clash = BoardAtlasSchema.safeParse({ silesia: { x: 0, y: 0 }, cave: { x: 0, y: 0 } });
+    expect(clash.success).toBe(false);
+    expect(clash.error?.message).toMatch(/share position 0:0/);
+    expect(BoardAtlasSchema.safeParse({ silesia: { x: 0.5, y: 0 } }).success).toBe(false);
   });
 
   it('every atlas board is a known static drawing', () => {

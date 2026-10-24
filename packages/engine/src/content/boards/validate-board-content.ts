@@ -1,5 +1,6 @@
 import { StaticBoardDrawingSchema } from './schemas';
 import { RecipeSchema } from './recipe-schema';
+import { BOARD_ATLAS, BoardAtlasSchema } from './atlas';
 import { STATIC_DRAWINGS } from './index';
 import { BOARD_MODELS } from './models';
 import { CAMPING_RECIPE, SILESIA_NORTH_RECIPE, SILESIA_RECIPE } from './recipes';
@@ -19,6 +20,10 @@ export function validateBoardContent(): void {
         `static drawing "${drawing.id}" failed content schema validation:\n${result.error.message}`,
       );
     }
+  }
+  const atlas = BoardAtlasSchema.safeParse(BOARD_ATLAS);
+  if (!atlas.success) {
+    throw new Error(`board atlas failed content schema validation:\n${atlas.error.message}`);
   }
   for (const recipe of RECIPES) {
     const result = RecipeSchema.safeParse(recipe);

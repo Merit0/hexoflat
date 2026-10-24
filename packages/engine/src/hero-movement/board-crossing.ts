@@ -3,7 +3,7 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import type { ExitSide } from '../boards/exits';
 import { arrivalSideFor, atlasNeighbour } from '../content/boards/atlas';
 import { findFreeHexNearExit } from '../map/free-hex-finder';
-import { isLocationKey, type LocationKey } from '../registry/location-key';
+import type { LocationKey } from '../registry/location-key';
 import { coordinateKey } from '../utils/hex-utils';
 
 export type BoardCrossingRejection = 'NOT_ON_EXIT' | 'NO_NEIGHBOUR' | 'SEALED' | 'IN_COMBAT';
@@ -34,7 +34,7 @@ export function planBoardCrossing(
   if (!exitSide) return { ok: false, reason: 'NOT_ON_EXIT' };
 
   const to = atlasNeighbour(from, exitSide);
-  if (!isLocationKey(to)) return { ok: false, reason: 'NO_NEIGHBOUR' };
+  if (!to) return { ok: false, reason: 'NO_NEIGHBOUR' };
   if (rules.isLocationSealed(to)) return { ok: false, reason: 'SEALED' };
 
   return {
