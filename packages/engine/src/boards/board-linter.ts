@@ -1,4 +1,5 @@
 import type { StaticBoardDrawing } from '../content/boards/schemas';
+import { classifyExits, type ExitSide } from './exits';
 import { parseBoardRows, boardRowsAreRectangular } from './board-rows';
 import {
   GROUND_SYMBOL,
@@ -6,6 +7,7 @@ import {
   VOID_SYMBOL,
   WALL_SYMBOL,
   WATER_SYMBOL,
+  EXIT_SYMBOL,
 } from './board-symbols';
 
 const STATIC_SYMBOLS = new Set([
@@ -14,6 +16,7 @@ const STATIC_SYMBOLS = new Set([
   VOID_SYMBOL,
   MOUNTAIN_SYMBOL,
   WATER_SYMBOL,
+  EXIT_SYMBOL,
 ]);
 
 export function lintStaticDrawing(
@@ -40,5 +43,25 @@ export function lintStaticDrawing(
     }
   }
 
+  return issues;
+}
+
+export function lintExits(drawing: StaticBoardDrawing, expectedSides: ExitSide[]): string[] {
+  const found = new Set(classifyExits(parseBoardRows(drawing.rows)).values());
+  const expected = new Set(expectedSides);
+  const issues: string[] = [];
+
+  for (const side of expected) {
+    if (!found.has(side)) {
+      issues.push(
+        `drawing "${drawing.id}": atlas has a neighbour on ${side} but no '>' exit there`,
+      );
+    }
+  }
+  for (const side of found) {
+    if (!expected.has(side)) {
+      issues.push(`drawing "${drawing.id}": '>' exit on ${side} has no atlas neighbour`);
+    }
+  }
   return issues;
 }

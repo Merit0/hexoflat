@@ -5,7 +5,7 @@ import type { StaticBoardDrawing } from '../schemas';
 
 export function staticRecipe(
   drawing: StaticBoardDrawing,
-  options: { fog: 'FOG' | 'ALL_REVEALED'; entryObject: THexobjectKey },
+  options: { fog: 'FOG' | 'ALL_REVEALED'; entryObject?: THexobjectKey },
 ): BoardRecipeInput {
   return {
     id: drawing.id,
@@ -18,7 +18,7 @@ export function staticRecipe(
     stages: {
       form: [{ kind: 'drawing', drawing }],
       relief: [{ kind: 'drawing' }],
-      gates: [{ kind: 'drawing' }],
+      gates: [{ kind: 'drawing' }, { kind: 'exits' }],
       objects: [{ kind: 'drawing' }],
       bounds: [{ kind: 'void' }],
     },

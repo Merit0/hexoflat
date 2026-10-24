@@ -1,6 +1,6 @@
 import type { LegendEntry, StaticBoardDrawing } from '../content/boards/schemas';
 import { parseBoardRows } from './board-rows';
-import { MOUNTAIN_SYMBOL, WATER_SYMBOL } from './board-symbols';
+import { EXIT_SYMBOL, MOUNTAIN_SYMBOL, WATER_SYMBOL } from './board-symbols';
 
 const GROUND_SYMBOL = '.';
 const WALL_SYMBOL = '#';
@@ -11,6 +11,7 @@ const STRUCTURAL_SYMBOLS = new Set([
   VOID_SYMBOL,
   MOUNTAIN_SYMBOL,
   WATER_SYMBOL,
+  EXIT_SYMBOL,
 ]);
 
 function constNameFor(id: string): string {

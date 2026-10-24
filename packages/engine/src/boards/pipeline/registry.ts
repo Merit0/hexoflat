@@ -1,6 +1,12 @@
 import type { ZodType } from 'zod';
 import type { StageName } from '../../content/boards/recipe-schema';
-import { formDrawing, gatesDrawing, objectsDrawing, reliefDrawing } from './pieces/drawing';
+import {
+  formDrawing,
+  gatesDrawing,
+  gatesExits,
+  objectsDrawing,
+  reliefDrawing,
+} from './pieces/drawing';
 import { boundsVoid, boundsWall } from './pieces/bounds';
 import { reliefLake, reliefRidge, reliefSea } from './pieces/relief';
 import { checkReachable, checkRequired, checkShape } from './pieces/checks';
@@ -19,7 +25,7 @@ export const RELIEF: PieceRegistry = {
   sea: reliefSea,
 };
 export const BOUNDS: PieceRegistry = { void: boundsVoid, wall: boundsWall };
-export const GATES: PieceRegistry = { drawing: gatesDrawing, entry: gatesEntry };
+export const GATES: PieceRegistry = { drawing: gatesDrawing, entry: gatesEntry, exits: gatesExits };
 export const OBJECTS: PieceRegistry = { drawing: objectsDrawing, rules: objectsRules };
 export const CHECKS: PieceRegistry<CheckResult> = {
   reachable: checkReachable,

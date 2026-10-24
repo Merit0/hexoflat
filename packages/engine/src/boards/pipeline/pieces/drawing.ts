@@ -6,6 +6,8 @@ import { parseBoardRows } from '../../board-rows';
 import { resolveStaticDrawingCell } from '../../build-static-board';
 import { GROUND_CELL, VOID_CELL, type ResolvedCell } from '../../resolved-cell';
 import { terrainFromSymbol } from '../../terrain';
+import { classifyExits } from '../../exits';
+import { parseCoordinateKey } from '../../board-cell-map';
 import type { BoardDraft, Piece } from '../types';
 
 const NO_PARAMS = z.object({ kind: z.string() });
@@ -116,5 +118,23 @@ export const reliefDrawing: Piece<z.infer<typeof NO_PARAMS>> = {
       draft.cellMap.set(coordinates, { exists: true, terrain });
       draft.trace.record(coordinates, { stage: 'relief', pieceId: 'drawing', note: terrain });
     });
+  },
+};
+
+export const gatesExits: Piece<z.infer<typeof NO_PARAMS>> = {
+  id: 'exits',
+  schema: NO_PARAMS,
+  tableRule:
+    'Every arrow on the sheet is a path off the edge of the board; its side is the edge of the shape it sits nearest to. Standing on one at the end of a move carries you to the neighbouring board.',
+  run(draft) {
+    const { drawing } = draft;
+    if (!drawing) throw new Error('gates:exits needs a drawing from the form stage');
+
+    for (const [key, side] of classifyExits(parseBoardRows(drawing.rows))) {
+      const coordinates = parseCoordinateKey(key);
+      const existing = draft.cellMap.get(coordinates);
+      draft.cellMap.set(coordinates, { ...(existing ?? GROUND_CELL), exit: side });
+      draft.trace.record(coordinates, { stage: 'gates', pieceId: 'exits', note: `exit ${side}` });
+    }
   },
 };

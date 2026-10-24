@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { STATIC_DRAWINGS } from './index';
 import { validateBoardContent } from './validate-board-content';
-import { lintStaticDrawing } from '../../boards/board-linter';
+import { lintExits, lintStaticDrawing } from '../../boards/board-linter';
+import { BOARD_ATLAS, expectedExitSides } from './atlas';
 import { BOARD_COLUMNS, BOARD_ROWS } from '../../boards/board-size';
 import { StaticBoardDrawingSchema } from './schemas';
 import { RecipeSchema } from './recipe-schema';
@@ -19,6 +20,24 @@ describe('board content library', () => {
 
   it.each(STATIC_DRAWINGS)('static drawing "$id" passes the library linter', (drawing) => {
     expect(lintStaticDrawing(drawing, BOARD_COLUMNS, BOARD_ROWS)).toEqual([]);
+  });
+
+  it.each(STATIC_DRAWINGS)(
+    'static drawing "$id" has an exit exactly on the sides where the atlas has a neighbour (REQ-BOARD-009)',
+    (drawing) => {
+      expect(lintExits(drawing, expectedExitSides(drawing.id))).toEqual([]);
+    },
+  );
+
+  it('REQ-BOARD-009 flags a missing and a surplus exit', () => {
+    const silesia = STATIC_DRAWINGS.find((drawing) => drawing.id === 'silesia')!;
+    expect(lintExits(silesia, ['N', 'E']).join('\n')).toMatch(/neighbour on E/);
+    expect(lintExits(silesia, []).join('\n')).toMatch(/exit on N has no atlas neighbour/);
+  });
+
+  it('every atlas board is a known static drawing', () => {
+    const ids = new Set(STATIC_DRAWINGS.map((drawing) => drawing.id));
+    for (const id of Object.keys(BOARD_ATLAS)) expect(ids.has(id), id).toBe(true);
   });
 
   describe('REQ-BOARD-001: frame is at most BOARD_COLUMNS x BOARD_ROWS', () => {

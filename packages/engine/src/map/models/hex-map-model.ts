@@ -11,6 +11,7 @@ import type { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner
 import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
 import { EHexActionType } from '../../enums/hex-action-type';
 import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
+import type { ExitSide } from '../../boards/exits';
 
 export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
 
@@ -35,6 +36,7 @@ export interface ISerializedHexTile {
   resourceSpawner?: IHexResourceSpawner | null;
   pendingAction?: IPendingTileAction | null;
   terrain?: TerrainId;
+  exit?: ExitSide;
 }
 
 export interface ISerializedHexMap {
@@ -174,6 +176,7 @@ export default class HexMapModel implements IWorldMap {
         resourceSpawner: t.resourceSpawner,
         pendingAction: t.pendingAction,
         ...(t.terrain === DEFAULT_TERRAIN ? {} : { terrain: t.terrain }),
+        ...(t.exit ? { exit: t.exit } : {}),
       })),
     };
   }
@@ -198,6 +201,7 @@ export default class HexMapModel implements IWorldMap {
       tile.resourceSpawner = t.resourceSpawner ?? null;
       tile.pendingAction = t.pendingAction ?? null;
       tile.terrain = t.terrain ?? DEFAULT_TERRAIN;
+      tile.exit = t.exit;
 
       return tile;
     });

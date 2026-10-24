@@ -2,9 +2,14 @@ import { StaticBoardDrawingSchema } from './schemas';
 import { RecipeSchema } from './recipe-schema';
 import { STATIC_DRAWINGS } from './index';
 import { BOARD_MODELS } from './models';
-import { CAMPING_RECIPE, SILESIA_RECIPE } from './recipes';
+import { CAMPING_RECIPE, SILESIA_NORTH_RECIPE, SILESIA_RECIPE } from './recipes';
 
-const RECIPES = [CAMPING_RECIPE, SILESIA_RECIPE, ...Object.values(BOARD_MODELS)];
+const RECIPES = [
+  CAMPING_RECIPE,
+  SILESIA_RECIPE,
+  SILESIA_NORTH_RECIPE,
+  ...Object.values(BOARD_MODELS),
+];
 
 export function validateBoardContent(): void {
   for (const drawing of STATIC_DRAWINGS) {
