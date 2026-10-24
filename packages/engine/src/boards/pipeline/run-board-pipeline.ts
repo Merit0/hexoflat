@@ -36,6 +36,17 @@ export interface PipelineBoard {
 
 type AttemptResult = { ok: true; draft: BoardDraft } | { ok: false; reason: string };
 
+export function pieceStreamLabel(stage: StageName, kind: string, occurrence: number): string {
+  const base = `${stage}:${kind}`;
+  return occurrence === 1 ? base : `${base}#${occurrence}`;
+}
+
+function findPiece(stage: StageName, kind: string, recipeId: string) {
+  const piece = STAGE_REGISTRIES[stage][kind];
+  if (!piece) throw new Error(`recipe "${recipeId}": no ${stage} piece "${kind}"`);
+  return piece;
+}
+
 function runStage(
   stage: StageName,
   recipe: BoardRecipe,
@@ -43,11 +54,16 @@ function runStage(
   attemptSeedValue: string,
   params: Record<string, unknown>,
 ): CheckResult {
+  const seenKinds = new Map<string, number>();
   for (const pieceParams of recipe.stages[stage]) {
-    const piece = STAGE_REGISTRIES[stage][pieceParams.kind];
-    if (!piece) throw new Error(`recipe "${recipe.id}": no ${stage} piece "${pieceParams.kind}"`);
+    const piece = findPiece(stage, pieceParams.kind, recipe.id);
     const parsed = piece.schema.parse(pieceParams);
-    const rng = deriveStream(attemptSeedValue, `${stage}:${pieceParams.kind}`);
+    const occurrence = (seenKinds.get(pieceParams.kind) ?? 0) + 1;
+    seenKinds.set(pieceParams.kind, occurrence);
+    const rng = deriveStream(
+      attemptSeedValue,
+      pieceStreamLabel(stage, pieceParams.kind, occurrence),
+    );
     const result = piece.run(draft, parsed, { recipe, seed: attemptSeedValue, params, rng });
     if (stage === 'checks' && !(result as CheckResult).ok) return result as CheckResult;
   }

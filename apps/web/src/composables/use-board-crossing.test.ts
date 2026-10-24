@@ -72,6 +72,21 @@ describe('crossExitIfStanding', () => {
     expect(world.currentLocationKey).toBe('silesia');
   });
 
+  it('a sealed neighbour changes nothing: hero stays on the exit, no arrival side, no routing', async () => {
+    const world = useWorldMapStore();
+    const hero = useHeroStore();
+    const onExit = { ...exitTile('N').coordinates };
+    hero.heroCoordinates = { ...onExit };
+    vi.spyOn(world, 'isLocationRespawning').mockReturnValue(true);
+
+    expect(await crossExitIfStanding()).toBe(false);
+
+    expect(hero.heroCoordinates).toEqual(onExit);
+    expect(world.pendingArrivalSide).toBeNull();
+    expect(world.currentLocationKey).toBe('silesia');
+    expect(routeToLocationMock).not.toHaveBeenCalled();
+  });
+
   it('does not cross from a board whose exit has no atlas neighbour', async () => {
     const world = useWorldMapStore();
     world.loadLocationMap('camping');

@@ -9,6 +9,7 @@ import type { THexobjectKey } from '../../../registry/hexobjects-registry';
 import { coordinateKey, getHexNeighbors, hexDistance } from '../../../utils/hex-utils';
 import { deriveStream, type SeededRandom } from '../../../utils/random-seeded';
 import { parseCoordinateKey } from '../../board-cell-map';
+import { intOrRange, intRange } from '../piece-schemas';
 import { isWalkableFloor } from '../../resolved-cell';
 import type { TerrainId } from '../../terrain';
 import { checkGeneratedBoardReachable } from '../../board-reachability';
@@ -17,11 +18,6 @@ import type { BoardDraft, Piece } from '../types';
 const CHANCE = /^(\d+)\/(\d+)$/;
 const CONDITION = /^(>=|<=|>|<|=)?\s*(-?\d+)$/;
 
-const intOrRange = z.union([
-  z.number().int().min(0),
-  z.tuple([z.number().int().min(0), z.number().int().min(0)]),
-]);
-
 const RuleSchema = z.object({
   id: z.string().min(1),
   pick: z.union([
@@ -29,11 +25,11 @@ const RuleSchema = z.object({
     z.array(hexobjectKeySchema).min(1),
     z.object({ tag: objectTagSchema }),
   ]),
-  count: intOrRange,
+  count: intOrRange(0),
   where: z
     .object({
       region: z.string().optional(),
-      steps: z.tuple([z.number().int().min(0), z.number().int().min(0)]).optional(),
+      steps: intRange(0).optional(),
       spacing: z.number().int().min(0).optional(),
       next: z.enum(['mountain', 'water']).optional(),
     })
@@ -46,7 +42,12 @@ type Rule = z.infer<typeof RuleSchema>;
 
 const RulesParams = z.object({
   kind: z.literal('rules'),
-  rules: z.array(RuleSchema).min(1),
+  rules: z
+    .array(RuleSchema)
+    .min(1)
+    .refine((rules) => new Set(rules.map((rule) => rule.id)).size === rules.length, {
+      message: 'rule ids must be unique within a rules piece',
+    }),
 });
 
 function intBetween(min: number, max: number, rng: SeededRandom): number {

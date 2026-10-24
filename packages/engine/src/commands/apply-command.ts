@@ -23,9 +23,11 @@ import { findShortestPath } from '../hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '../hero-movement/scout-progression';
 import type { RngState } from '../utils/random-seeded';
 import { assertNever } from '../utils/assert-never';
+import { planBoardCrossing } from '../hero-movement/board-crossing';
 import {
   HEX_ENGINE_COMMAND_SCHEMAS,
   type HexEngineCommand,
+  type CrossExitCommand,
   type MoveHeroCommand,
   type UnlockSkillCommand,
 } from './hex-engine-commands';
@@ -169,6 +171,10 @@ export function applyCommand(
       applyMoveHero(state, parsed.payload, events);
       break;
 
+    case 'CROSS_EXIT':
+      events.push(applyCrossExit(state, parsed.payload, ctx));
+      break;
+
     default:
       return assertNever(parsed);
   }
@@ -281,4 +287,23 @@ function applyMoveHero(
     type: 'HERO_MOVED',
     payload: { heroId, path, heroSteps: hero.heroSteps },
   });
+}
+
+function applyCrossExit(
+  state: HexEngineState,
+  payload: CrossExitCommand['payload'],
+  ctx: HexEngineActionContext,
+): DomainEvent {
+  const { heroId, from } = payload;
+  const hero = state.heroes[heroId];
+  if (!hero) return { type: 'BOARD_EXIT_REJECTED', payload: { heroId, reason: 'HERO_NOT_FOUND' } };
+
+  const plan = planBoardCrossing(state.map, hero.coordinates, from, {
+    combatActive: ctx.worldMap.combatActive,
+    isLocationSealed: (locationKey) => ctx.worldMap.isLocationRespawning(locationKey),
+  });
+  if (!plan.ok) return { type: 'BOARD_EXIT_REJECTED', payload: { heroId, reason: plan.reason } };
+
+  if (plan.crossing.restingSpot) hero.coordinates = { ...plan.crossing.restingSpot };
+  return { type: 'BOARD_EXITED', payload: { heroId, ...plan.crossing } };
 }

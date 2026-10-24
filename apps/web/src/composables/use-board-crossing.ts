@@ -1,10 +1,7 @@
-import { atlasNeighbour, arrivalSideFor } from '@hexoflat/engine/content/boards/atlas';
-import { isLocationKey } from '@hexoflat/engine/registry/location-key';
-import { findFreeHexNearExit } from '@hexoflat/engine/map/free-hex-finder';
+import { applyCommand } from '@hexoflat/engine';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
-import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
+import type { BoardCrossing } from '@hexoflat/engine/hero-movement/board-crossing';
 import { routeToLocation } from '@/services/world/location-navigator';
-import { useCombatStore } from '@/stores/combat-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 
@@ -13,22 +10,21 @@ export async function crossExitIfStanding(): Promise<boolean> {
   const heroStore = useHeroStore();
   const map = worldStore.map as HexMapModel | null;
   const position = heroStore.heroCoordinates;
+  if (!map || !position) return false;
 
-  if (!map || !position || useCombatStore().combatActive) return false;
-
-  const standingOn = map.tiles.find(
-    (tile) => coordinateKey(tile.coordinates) === coordinateKey(position),
+  const hero = heroStore.engineHeroState(position);
+  const { events } = applyCommand(
+    { map, heroes: { [hero.id]: hero } },
+    { type: 'CROSS_EXIT', payload: { heroId: hero.id, from: worldStore.currentLocationKey } },
+    worldStore.buildEngineContext(),
   );
-  if (!standingOn?.exit) return false;
+  const exited = events.find((event) => event.type === 'BOARD_EXITED');
+  if (!exited) return false;
 
-  const nextLocation = atlasNeighbour(worldStore.currentLocationKey, standingOn.exit);
-  if (!isLocationKey(nextLocation)) return false;
-
-  const restingSpot = findFreeHexNearExit(map, standingOn.exit);
-  if (restingSpot) heroStore.heroCoordinates = restingSpot;
-
-  worldStore.pendingArrivalSide = arrivalSideFor(standingOn.exit);
-  worldStore.goToLocation(nextLocation);
-  await routeToLocation(nextLocation);
+  const crossing = exited.payload as BoardCrossing;
+  heroStore.heroCoordinates = { ...hero.coordinates };
+  worldStore.pendingArrivalSide = crossing.arrivalSide;
+  worldStore.goToLocation(crossing.to);
+  await routeToLocation(crossing.to);
   return true;
 }

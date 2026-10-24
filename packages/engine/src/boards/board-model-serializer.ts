@@ -4,12 +4,22 @@ const PRINT_WIDTH = 100;
 const INDENT = '  ';
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f\u2028\u2029]/g;
+const SHORT_ESCAPES: Record<string, string> = { '\n': '\\n', '\r': '\\r', '\t': '\\t' };
+
+function escapeControl(character: string): string {
+  return SHORT_ESCAPES[character] ?? `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`;
+}
+
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
 function quote(text: string): string {
   const useDouble = text.includes("'") && !text.includes('"');
   const quoteChar = useDouble ? '"' : "'";
-  const escaped = text.replace(/\\/g, '\\\\').replaceAll(quoteChar, `\\${quoteChar}`);
+  const escaped = text
+    .replace(/\\/g, '\\\\')
+    .replaceAll(quoteChar, `\\${quoteChar}`)
+    .replace(CONTROL_CHARACTERS, escapeControl);
   return `${quoteChar}${escaped}${quoteChar}`;
 }
 

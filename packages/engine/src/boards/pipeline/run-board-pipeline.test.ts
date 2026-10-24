@@ -6,8 +6,9 @@ import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
 import type { BoardRecipeInput } from '../../content/boards/recipe-schema';
 import type { StaticBoardDrawing } from '../../content/boards/schemas';
 import { staticRecipe } from '../../content/boards/recipes/static-recipe';
+import { BOARD_COLUMNS, BOARD_ROWS } from '../board-size';
 import { hashStaticDrawing } from '../drawing-hash';
-import { runBoardPipeline } from './run-board-pipeline';
+import { pieceStreamLabel, runBoardPipeline } from './run-board-pipeline';
 
 function recipeFor(
   drawing: StaticBoardDrawing,
@@ -118,5 +119,60 @@ describe('runBoardPipeline', () => {
         seed: '',
       }),
     ).toThrow();
+  });
+});
+
+describe('piece RNG streams', () => {
+  it('keeps the first occurrence on the historic label and gives repeats their own stream', () => {
+    expect(pieceStreamLabel('relief', 'lake', 1)).toBe('relief:lake');
+    expect(pieceStreamLabel('relief', 'lake', 2)).toBe('relief:lake#2');
+  });
+
+  it('two lake pieces in one recipe both place a separate lake', () => {
+    const rows = Array.from(
+      { length: BOARD_ROWS },
+      (_, row) =>
+        (row % 2 === 1 ? ' ' : '') + Array.from({ length: BOARD_COLUMNS }, () => '.').join(' '),
+    );
+    const field: StaticBoardDrawing = { id: 'field', background: '', legend: {}, rows };
+    const twoLakes = (seed: string) =>
+      runBoardPipeline(
+        {
+          ...recipeFor(field, { entryObject: undefined }),
+          stages: {
+            form: [{ kind: 'drawing', drawing: field }],
+            relief: [
+              { kind: 'lake', radius: 1, margin: 1 },
+              { kind: 'lake', radius: 1, margin: 1 },
+            ],
+          },
+        },
+        { seed },
+      ).map.tiles.filter((tile) => tile.terrain === 'water').length;
+
+    for (let i = 0; i < 20; i += 1) expect(twoLakes(`lakes-${i}`)).toBe(14);
+  });
+
+  it('rejects duplicate rule ids inside one rules piece', () => {
+    expect(() =>
+      runBoardPipeline(
+        {
+          ...recipeFor(SILESIA_BOARD),
+          stages: {
+            form: [{ kind: 'drawing', drawing: SILESIA_BOARD }],
+            objects: [
+              {
+                kind: 'rules',
+                rules: [
+                  { id: 'twin', pick: 'rock', count: 1 },
+                  { id: 'twin', pick: 'tree', count: 1 },
+                ],
+              },
+            ],
+          },
+        },
+        { seed: '' },
+      ),
+    ).toThrow(/unique/);
   });
 });

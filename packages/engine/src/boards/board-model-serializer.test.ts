@@ -43,4 +43,23 @@ describe('serializeBoardModel', () => {
     expect(source).toContain("'odd-key': 1");
     expect(source).toContain('rules: [\n');
   });
+
+  it('escapes control characters so the written file parses back to the same strings', () => {
+    const tricky = {
+      ...BOARD_MODELS.cave,
+      background: 'line\nbreak\r\ttab \u2028 sep \u0001 back\\slash \'q\' "dq"',
+    };
+    const source = serializeBoardModel(tricky);
+    const line = source
+      .split('\n')
+      .find((candidate) => candidate.trimStart().startsWith('background:'));
+    const literal = line!
+      .trim()
+      .replace(/^background: '/, '')
+      .replace(/',$/, '');
+    const decoded = JSON.parse(`"${literal.replace(/\\'/g, "'").replace(/"/g, '\\"')}"`) as string;
+
+    expect(source).not.toMatch(/[\r\u2028\u0001\t]/);
+    expect(decoded).toBe(tricky.background);
+  });
 });

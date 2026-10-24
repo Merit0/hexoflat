@@ -3,18 +3,16 @@ import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-in
 import { axialToOffset, hexDistance, offsetToAxial } from '../../../utils/hex-utils';
 import { hexLineAxial } from '../../../utils/hex-line';
 import type { SeededRandom } from '../../../utils/random-seeded';
+import { intOrRange, intRange } from '../piece-schemas';
 import { GROUND_CELL } from '../../resolved-cell';
 import type { BoardDraft, Piece } from '../types';
 
 const BlobsParams = z.object({
   kind: z.literal('blobs'),
-  count: z.union([
-    z.number().int().min(1),
-    z.tuple([z.number().int().min(1), z.number().int().min(1)]),
-  ]),
+  count: intOrRange(1),
   radius: z.number().int().min(1).max(4),
   link: z.enum(['chain', 'branch', 'loop']),
-  neck: z.tuple([z.number().int().min(1).max(2), z.number().int().min(1).max(2)]).default([1, 2]),
+  neck: intRange(1, 2).default([1, 2]),
 });
 type BlobsParams = z.infer<typeof BlobsParams>;
 

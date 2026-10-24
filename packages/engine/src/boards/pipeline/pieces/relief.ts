@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-interface';
 import type { SeededRandom } from '../../../utils/random-seeded';
 import { parseCoordinateKey } from '../../board-cell-map';
+import { intOrRange, intRange } from '../piece-schemas';
 import { GROUND_CELL } from '../../resolved-cell';
 import type { TerrainId } from '../../terrain';
 import type { BoardDraft, Piece } from '../types';
@@ -10,12 +11,10 @@ import { hexDisc } from './blobs';
 const EDGES = ['N', 'S', 'E', 'W'] as const;
 type Edge = (typeof EDGES)[number];
 
-const range = z.tuple([z.number().int().min(1), z.number().int().min(1)]);
-
 const LakeParams = z.object({
   kind: z.literal('lake'),
   count: z.number().int().min(1).default(1),
-  radius: z.union([z.number().int().min(1).max(2), range]).default([1, 2]),
+  radius: intOrRange(1, 2).default([1, 2]),
   margin: z.number().int().min(1).default(2),
 });
 
@@ -31,7 +30,7 @@ const SeaParams = z.object({
   kind: z.literal('sea'),
   edges: z.array(z.enum(EDGES)).min(1).max(2).optional(),
   count: z.number().int().min(1).max(2).default(1),
-  depth: range.default([2, 3]),
+  depth: intRange(1).default([2, 3]),
 });
 
 function intBetween(min: number, max: number, rng: SeededRandom): number {

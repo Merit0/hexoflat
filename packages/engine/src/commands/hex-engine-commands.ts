@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
 import { KnowledgeCommandSchema, type KnowledgeCommand } from '../knowledge/commands';
 import { skillIdSchema } from '../skills/skill-content';
+import { LOCATION_KEYS } from '../registry/location-key';
 
 export const hexCoordinatesSchema = z.object({
   columnIndex: z.number(),
@@ -60,6 +61,15 @@ export const MoveHeroCommandSchema = z.object({
 });
 export type MoveHeroCommand = z.infer<typeof MoveHeroCommandSchema>;
 
+export const CrossExitCommandSchema = z.object({
+  type: z.literal('CROSS_EXIT'),
+  payload: z.object({
+    heroId: z.string(),
+    from: z.enum(LOCATION_KEYS),
+  }),
+});
+export type CrossExitCommand = z.infer<typeof CrossExitCommandSchema>;
+
 export const UnlockSkillCommandSchema = z.object({
   type: z.literal('UNLOCK_SKILL'),
   payload: z.object({
@@ -76,6 +86,7 @@ export type HexEngineCommand =
   | WorldTickCommand
   | AddResourceSpawnerCommand
   | MoveHeroCommand
+  | CrossExitCommand
   | KnowledgeCommand
   | UnlockSkillCommand;
 
@@ -88,6 +99,7 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   WORLD_TICK: WorldTickCommandSchema,
   ADD_RESOURCE_SPAWNER: AddResourceSpawnerCommandSchema,
   MOVE_HERO: MoveHeroCommandSchema,
+  CROSS_EXIT: CrossExitCommandSchema,
   KNOWLEDGE: KnowledgeCommandSchema,
   UNLOCK_SKILL: UnlockSkillCommandSchema,
 };
