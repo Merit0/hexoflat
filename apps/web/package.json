@@ -46,7 +46,7 @@
     "@pinia/testing": "^1.0.3",
     "@size-limit/file": "^13.0.1",
     "@types/node": "^24.10.0",
-    "@types/uuid": "^9.0.1",
+    "@types/uuid": "^11.0.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/tsconfig": "^0.8.1",
