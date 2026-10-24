@@ -14,4 +14,14 @@ export interface DungeonBoardDescriptor {
   chunkByZone: Record<string, string>;
 }
 
-export type BoardDescriptor = StaticBoardDescriptor | DungeonBoardDescriptor;
+export interface RecipeBoardDescriptor {
+  kind: 'RECIPE';
+  recipeId: string;
+  version: number;
+  seed: string;
+  params: Record<string, unknown>;
+  attempt: number;
+}
+
+export type BoardDescriptor =
+  StaticBoardDescriptor | DungeonBoardDescriptor | RecipeBoardDescriptor;
