@@ -10,10 +10,10 @@ import { coordinateKey, getHexNeighbors, hexDistance } from '../../../utils/hex-
 import { deriveStream, type SeededRandom } from '../../../utils/random-seeded';
 import { parseCoordinateKey } from '../../board-cell-map';
 import { intOrRange, intRange } from '../piece-schemas';
-import { isWalkableFloor } from '../../resolved-cell';
 import type { TerrainId } from '../../terrain';
 import { checkGeneratedBoardReachable } from '../../board-reachability';
 import type { BoardDraft, Piece } from '../types';
+import { intBetween, isFloor, shuffled } from '../piece-utils';
 
 const CHANCE = /^(\d+)\/(\d+)$/;
 const CONDITION = /^(>=|<=|>|<|=)?\s*(-?\d+)$/;
@@ -50,10 +50,6 @@ const RulesParams = z.object({
     }),
 });
 
-function intBetween(min: number, max: number, rng: SeededRandom): number {
-  return min + Math.floor(rng() * (max - min + 1));
-}
-
 function conditionHolds(expression: string, actual: number): boolean {
   const match = CONDITION.exec(expression) as RegExpExecArray;
   const operator = match[1] ?? '=';
@@ -88,10 +84,6 @@ function chanceHolds(chance: string, rng: SeededRandom): boolean {
   return Math.floor(rng() * denominator) < numerator;
 }
 
-function isFloor(draft: BoardDraft, coord: IHexCoordinates): boolean {
-  return isWalkableFloor(draft.cellMap.get(coord));
-}
-
 function findEntryCoord(draft: BoardDraft): IHexCoordinates | undefined {
   for (const [key, cell] of draft.cellMap.entries()) {
     if (cell.hexobject && cell.hexobject.hexobjectKey === draft.entryObject) {
@@ -118,15 +110,6 @@ function floorStepsFrom(draft: BoardDraft, start: IHexCoordinates): Map<string, 
     frontier = next;
   }
   return steps;
-}
-
-function shuffled<T>(items: T[], rng: SeededRandom): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
 }
 
 function touchesTerrain(draft: BoardDraft, cell: IHexCoordinates, terrain: TerrainId): boolean {

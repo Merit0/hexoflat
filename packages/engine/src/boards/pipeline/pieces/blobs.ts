@@ -6,6 +6,7 @@ import type { SeededRandom } from '../../../utils/random-seeded';
 import { intOrRange, intRange } from '../piece-schemas';
 import { GROUND_CELL } from '../../resolved-cell';
 import type { BoardDraft, Piece } from '../types';
+import { inFrame, intBetween, shuffled } from '../piece-utils';
 
 const BlobsParams = z.object({
   kind: z.literal('blobs'),
@@ -30,19 +31,6 @@ interface Edge {
   length: number;
 }
 
-function intBetween(min: number, max: number, rng: SeededRandom): number {
-  return min + Math.floor(rng() * (max - min + 1));
-}
-
-function inFrame(draft: BoardDraft, coord: IHexCoordinates): boolean {
-  return (
-    coord.columnIndex >= 0 &&
-    coord.rowIndex >= 0 &&
-    coord.columnIndex < draft.frame.columns &&
-    coord.rowIndex < draft.frame.rows
-  );
-}
-
 export function hexDisc(center: IHexCoordinates, radius: number): IHexCoordinates[] {
   const { q: cq, r: cr } = offsetToAxial(center);
   const cells: IHexCoordinates[] = [];
@@ -56,15 +44,6 @@ export function hexDisc(center: IHexCoordinates, radius: number): IHexCoordinate
 
 function fitsWithWallRing(draft: BoardDraft, center: IHexCoordinates, radius: number): boolean {
   return hexDisc(center, radius + 1).every((cell) => inFrame(draft, cell));
-}
-
-function shuffled<T>(items: T[], rng: SeededRandom): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
 }
 
 function placeBlobCenters(

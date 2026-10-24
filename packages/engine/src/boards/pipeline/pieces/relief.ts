@@ -7,6 +7,7 @@ import { GROUND_CELL } from '../../resolved-cell';
 import type { TerrainId } from '../../terrain';
 import type { BoardDraft, Piece } from '../types';
 import { hexDisc } from './blobs';
+import { inFrame, intBetween, shuffled } from '../piece-utils';
 
 const EDGES = ['N', 'S', 'E', 'W'] as const;
 type Edge = (typeof EDGES)[number];
@@ -32,28 +33,6 @@ const SeaParams = z.object({
   count: z.number().int().min(1).max(2).default(1),
   depth: intRange(1).default([2, 3]),
 });
-
-function intBetween(min: number, max: number, rng: SeededRandom): number {
-  return min + Math.floor(rng() * (max - min + 1));
-}
-
-function shuffled<T>(items: T[], rng: SeededRandom): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-function inFrame(draft: BoardDraft, coord: IHexCoordinates): boolean {
-  return (
-    coord.columnIndex >= 0 &&
-    coord.rowIndex >= 0 &&
-    coord.columnIndex < draft.frame.columns &&
-    coord.rowIndex < draft.frame.rows
-  );
-}
 
 function isOpenGround(draft: BoardDraft, coord: IHexCoordinates): boolean {
   const cell = draft.cellMap.get(coord);

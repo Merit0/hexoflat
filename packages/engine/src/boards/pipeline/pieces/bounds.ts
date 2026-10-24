@@ -5,6 +5,7 @@ import { getHexNeighbors } from '../../../utils/hex-utils';
 import { parseCoordinateKey } from '../../board-cell-map';
 import { resolveDeepWallsToVoid } from '../../wall-void-resolution';
 import type { BoardDraft, Piece } from '../types';
+import { inFrame } from '../piece-utils';
 
 const VoidParams = z.object({ kind: z.literal('void') });
 const WallParams = z.object({ kind: z.literal('wall'), enclose: z.boolean().default(false) });
@@ -21,12 +22,7 @@ function encloseGroundWithWalls(draft: BoardDraft): void {
   for (const [key, cell] of draft.cellMap.entries()) {
     if (!cell.exists || cell.hexobject?.hexobjectKey === HEXOBJECT_KEYS.STONE_WALL) continue;
     for (const neighbor of getHexNeighbors(parseCoordinateKey(key))) {
-      const inFrame =
-        neighbor.columnIndex >= 0 &&
-        neighbor.rowIndex >= 0 &&
-        neighbor.columnIndex < draft.frame.columns &&
-        neighbor.rowIndex < draft.frame.rows;
-      if (inFrame && !draft.cellMap.has(neighbor)) toWall.push(neighbor);
+      if (inFrame(draft, neighbor) && !draft.cellMap.has(neighbor)) toWall.push(neighbor);
     }
   }
   for (const coord of toWall) {

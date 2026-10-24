@@ -2,9 +2,9 @@ import { z } from 'zod';
 import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-interface';
 import { parseCoordinateKey } from '../../board-cell-map';
 import { checkGeneratedBoardReachable } from '../../board-reachability';
-import { isWalkableFloor } from '../../resolved-cell';
 import { coordinateKey, getHexNeighbors } from '../../../utils/hex-utils';
 import type { BoardDraft, BoardRegion, CheckResult, Piece } from '../types';
+import { isFloor } from '../piece-utils';
 
 const ReachableParams = z.object({ kind: z.literal('reachable') });
 
@@ -34,10 +34,6 @@ const ShapeParams = z.object({
   minRegions: z.number().int().min(1).default(1),
   minRegionHexes: z.number().int().min(1).default(19),
 });
-
-function isFloor(draft: BoardDraft, coord: IHexCoordinates): boolean {
-  return isWalkableFloor(draft.cellMap.get(coord));
-}
 
 function floorComponentCount(draft: BoardDraft): number {
   const seen = new Set<string>();
