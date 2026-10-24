@@ -229,3 +229,37 @@ describe('summarizeRules', () => {
     expect(crowded.note).toMatch(/region "deep"/);
   });
 });
+
+describe('CHECKS:required', () => {
+  const impossible: RuleInput = {
+    id: 'impossible',
+    pick: HEXOBJECT_KEYS.ROCK,
+    count: 400,
+    where: { region: 'deep' },
+    required: true,
+  };
+
+  function withRequiredCheck(rules: RuleInput[]): BoardRecipeInput {
+    const recipe = caveWith(rules);
+    return { ...recipe, stages: { ...recipe.stages, checks: [{ kind: 'required' }] } };
+  }
+
+  it('CHECKS:required rejects every attempt when a required rule always falls short', () => {
+    expect(() => runBoardPipeline(withRequiredCheck([impossible]), { seed: 'req' })).toThrow(
+      /required rule "impossible"/,
+    );
+  });
+
+  it('CHECKS:required ignores shortfalls of rules that are not required', () => {
+    const optional = { ...impossible, required: false };
+    const built = runBoardPipeline(withRequiredCheck([optional]), { seed: 'req' });
+    expect(built.trace.shortfalls).toHaveLength(1);
+  });
+
+  it('CHECKS:required lets a satisfied required rule through on the first attempt', () => {
+    const built = runBoardPipeline(withRequiredCheck([{ ...TREASURE, required: true }]), {
+      seed: 'req',
+    });
+    expect(built.trace.shortfalls).toHaveLength(0);
+  });
+});

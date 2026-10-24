@@ -110,3 +110,18 @@ export const checkShape: Piece<z.infer<typeof ShapeParams>, CheckResult> = {
     return { ok: true };
   },
 };
+
+const RequiredParams = z.object({ kind: z.literal('required') });
+
+export const checkRequired: Piece<z.infer<typeof RequiredParams>, CheckResult> = {
+  id: 'required',
+  schema: RequiredParams,
+  tableRule:
+    'If a rule marked as essential could not set out everything it was meant to, throw the board away and set it up again.',
+  run(draft) {
+    const missed = draft.trace.shortfalls.find((shortfall) => shortfall.required);
+    return missed
+      ? { ok: false, reason: `required rule "${missed.ruleId}" fell short: ${missed.reason}` }
+      : { ok: true };
+  },
+};

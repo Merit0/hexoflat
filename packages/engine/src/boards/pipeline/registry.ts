@@ -3,7 +3,7 @@ import type { StageName } from '../../content/boards/recipe-schema';
 import { formDrawing, gatesDrawing, objectsDrawing, reliefDrawing } from './pieces/drawing';
 import { boundsVoid, boundsWall } from './pieces/bounds';
 import { reliefLake, reliefRidge, reliefSea } from './pieces/relief';
-import { checkReachable, checkShape } from './pieces/checks';
+import { checkReachable, checkRequired, checkShape } from './pieces/checks';
 import { formBlobs } from './pieces/blobs';
 import { objectsRules } from './pieces/rules';
 import { gatesEntry } from './pieces/entry';
@@ -24,6 +24,7 @@ export const OBJECTS: PieceRegistry = { drawing: objectsDrawing, rules: objectsR
 export const CHECKS: PieceRegistry<CheckResult> = {
   reachable: checkReachable,
   shape: checkShape,
+  required: checkRequired,
 };
 
 export const STAGE_REGISTRIES: Record<StageName, PieceRegistry<unknown>> = {

@@ -14,6 +14,7 @@ export interface RuleShortfall {
   wanted: number;
   placed: number;
   reason: string;
+  required?: boolean;
 }
 
 export interface RuleOutcome {

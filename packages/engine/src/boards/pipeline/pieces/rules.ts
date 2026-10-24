@@ -39,6 +39,7 @@ const RuleSchema = z.object({
     })
     .default({}),
   chance: z.string().regex(CHANCE).optional(),
+  required: z.boolean().optional(),
   when: z.record(z.string(), z.string().regex(CONDITION)).optional(),
 });
 type Rule = z.infer<typeof RuleSchema>;
@@ -210,6 +211,7 @@ function placeRule(
       wanted,
       placed: 0,
       reason: 'no object carries the requested tag',
+      required: rule.required,
     });
     trace.recordRule({
       ruleId: rule.id,
@@ -246,7 +248,13 @@ function placeRule(
     const reason = `placed ${placedHere.length} of ${wanted}: not enough free cells${
       rule.where.region ? ` in region "${rule.where.region}"` : ''
     } that keep the board reachable`;
-    trace.recordShortfall({ ruleId: rule.id, wanted, placed: placedHere.length, reason });
+    trace.recordShortfall({
+      ruleId: rule.id,
+      wanted,
+      placed: placedHere.length,
+      reason,
+      required: rule.required,
+    });
     trace.recordRule({ ruleId: rule.id, outcome: 'short', note: reason });
     return;
   }
