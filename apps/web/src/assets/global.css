@@ -84,7 +84,9 @@
 
 .game-root,
 .game-root * {
-  cursor: url('/cursors/cursor-default.svg') 2 2, auto !important;
+  cursor:
+    url('/cursors/cursor-default.svg') 2 2,
+    auto !important;
 }
 
 /* === BASE DOCUMENT === */
@@ -108,7 +110,9 @@ body {
 
 body {
   overflow: hidden;
-  cursor: url('/cursors/cursor-default.svg') 2 2, auto !important;
+  cursor:
+    url('/cursors/cursor-default.svg') 2 2,
+    auto !important;
 }
 
 /* === PAGE LAYOUT UTILITY === */
