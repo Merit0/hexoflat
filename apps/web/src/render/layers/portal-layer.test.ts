@@ -49,7 +49,7 @@ describe('portal layer', () => {
     const roots = world.children[0].children as Container[];
     expect(roots).toHaveLength(2);
     for (const root of roots) {
-      expect(root.children).toHaveLength(2);
+      expect(root.children).toHaveLength(3);
       expect(root.children[0]).toBeInstanceOf(Container);
       expect(root.children[0].children[0]).toBeInstanceOf(Sprite);
       expect(root.children[1]).toBeInstanceOf(Sprite);

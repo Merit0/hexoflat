@@ -1,6 +1,7 @@
 import { Container, Sprite, Ticker } from 'pixi.js';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
+import { createHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { easeOutCubic } from '@/render/tween';
 import { holdPortalFxFor } from '@/render/portal-fx';
@@ -26,22 +27,22 @@ interface PortalNode {
   phaseStart: number;
 }
 
-function fitToWidth(sprite: Sprite, width: number) {
+function fitToTile(sprite: Sprite, tile: { w: number; h: number }) {
   const textureWidth = sprite.texture.width;
-  if (textureWidth > 1) sprite.scale.set(width / textureWidth);
+  if (textureWidth > 1) sprite.scale.set(Math.max(tile.w, tile.h) / textureWidth);
 }
 
 function createSprite(
   url: string,
-  getWidth: () => number,
+  getTile: () => { w: number; h: number },
 ): { sprite: Sprite; unsubscribe: () => void } {
   const sprite = new Sprite(getTexture(url));
   sprite.anchor.set(0.5);
   sprite.eventMode = 'none';
-  fitToWidth(sprite, getWidth());
+  fitToTile(sprite, getTile());
   const unsubscribe = onTextureReady(url, () => {
     sprite.texture = getTexture(url);
-    fitToWidth(sprite, getWidth());
+    fitToTile(sprite, getTile());
   });
   return { sprite, unsubscribe };
 }
@@ -95,9 +96,8 @@ export function createPortalLayer(deps: PortalLayerDeps): PortalLayer {
   function addNode(coord: IHexCoordinates, animate: boolean) {
     const { w, h } = deps.getTileSize();
     const { x, y } = calcHexPixelPosition({ coordinates: coord }, w, h);
-    const getWidth = () => deps.getTileSize().w;
-    const vortex = createSprite(PORTAL_VORTEX_URL, getWidth);
-    const frame = createSprite(PORTAL_FRAME_URL, getWidth);
+    const vortex = createSprite(PORTAL_VORTEX_URL, () => deps.getTileSize());
+    const frame = createSprite(PORTAL_FRAME_URL, () => deps.getTileSize());
     unsubscribes.push(vortex.unsubscribe, frame.unsubscribe);
 
     const root = new Container();
@@ -105,7 +105,10 @@ export function createPortalLayer(deps: PortalLayerDeps): PortalLayer {
     root.position.set(x + w / 2, y + h / 2);
     const vortexHolder = new Container();
     vortexHolder.addChild(vortex.sprite);
-    root.addChild(vortexHolder, frame.sprite);
+    const mask = createHexMask(w, h);
+    mask.position.set(-w / 2, -h / 2);
+    root.addChild(vortexHolder, frame.sprite, mask);
+    root.mask = mask;
     container.addChild(root);
 
     nodes.set(coordinateKey(coord), {
