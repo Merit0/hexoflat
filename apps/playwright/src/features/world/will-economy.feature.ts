@@ -31,14 +31,13 @@ export class WillEconomyFeature extends BaseFeature {
     });
   }
 
-  async verifyPaidEntrancePrice(cost: number): Promise<void> {
-    await this.step('A paid entrance shows its price and locks when Will is short', async () => {
+  async verifyPaidEntranceLocksWhenWillIsShort(): Promise<void> {
+    await this.step('A paid entrance is locked with a warning when Will is short', async () => {
       const entrance = tokenCoordinates('caveEntrance');
       await this.enterSilesia(40);
       await this.map.hexBoard.moveAdjacentTo(entrance);
       await new UseHeroToolFeature(Tool.HAND).use();
       await this.map.hexBoard.hoverTile(entrance);
-      await this.map.toolActionOverlay.verifyCostChip(cost);
       await this.map.toolActionOverlay.verifyActionIsAffordable();
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.setWill(1));
       await this.map.toolActionOverlay.verifyInsufficientWill();

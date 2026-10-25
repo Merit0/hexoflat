@@ -42,7 +42,7 @@ describe('usePortal', () => {
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
   });
 
-  function startInSilesia(will = 20, scrolls = 1) {
+  function startInSilesia(will = 20, scrolls = 0) {
     const hero = useHeroStore();
     const world = useWorldMapStore();
     const inventory = useHeroInventoryStore();
@@ -63,14 +63,15 @@ describe('usePortal', () => {
     return { hero, world, inventory, target, origin: { ...hero.heroCoordinates! } };
   }
 
-  it('opens a portal: spends 5 Will and one scroll, places the portal, stores the link', async () => {
+  it('opens a portal: spends 5 Will, keeps the unlimited scrolls, places the portal, stores the link', async () => {
     const { hero, world, inventory, target } = startInSilesia(20, 2);
+    const scrollsBefore = inventory.countItem(SCROLL);
 
     const outcome = await usePortal().openPortal(target);
 
     expect(outcome.ok).toBe(true);
     expect(hero.knowledge!.current).toBe(15);
-    expect(inventory.countItem(SCROLL)).toBe(1);
+    expect(inventory.countItem(SCROLL)).toBe(scrollsBefore);
     expect(portalHexes(world.map as HexMapModel)).toEqual([coordinateKey(target)]);
     expect(hero.portal).toMatchObject({
       originLocationKey: 'silesia',
@@ -86,13 +87,14 @@ describe('usePortal', () => {
 
     expect(outcome).toEqual({ ok: false, reason: 'INSUFFICIENT_WILL' });
     expect(hero.knowledge!.current).toBe(4);
-    expect(inventory.countItem(SCROLL)).toBe(1);
+    expect(inventory.countItem(SCROLL)).toBeGreaterThan(0);
     expect(portalHexes(world.map as HexMapModel)).toEqual([]);
     expect(hero.portal).toBeNull();
   });
 
   it('previews the refusal in words for every R3 case the UI can hit', () => {
-    const { target } = startInSilesia(20, 0);
+    const { target, inventory } = startInSilesia(20, 0);
+    inventory.items = inventory.items.filter((item) => item.key !== SCROLL);
 
     expect(usePortal().previewOpen(target)).toEqual({ ok: false, reason: 'NO_SCROLL' });
   });

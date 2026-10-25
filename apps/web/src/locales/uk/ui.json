@@ -28,7 +28,8 @@
   },
   "tool": {
     "open": "Відкрити",
-    "read": "Читати"
+    "read": "Читати",
+    "use": "Використати"
   },
   "knowledge": {
     "title": "Книга Волі",
@@ -36,7 +37,6 @@
     "close": "Закрити та зберегти випробування",
     "will": "Воля: {current}/{capacity}",
     "insufficientWill": "Недостатньо Волі",
-    "actionCost": "−{cost} Волі",
     "tooltipTitle": "Воля Сили",
     "tooltipBody": "Воля — твій запас Сили. Дії коштують Волі.",
     "tooltipRefillPre": "Нову Волю дає",
@@ -168,7 +168,6 @@
     }
   },
   "portal": {
-    "open": "Відкрити портал",
     "oneWay": "В один бік — печера зникне",
     "refusal": {
       "HERO_NOT_FOUND": "Героя не знайдено",

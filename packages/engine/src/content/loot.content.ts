@@ -110,10 +110,10 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     subtitle: 'Opens a portal home',
     description: 'A one-use scroll that opens a portal to the camp.',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-constructs/map-token-image.png',
+    spritePath: '/hex-assets/hex-loot/teleport-scroll-token.png',
     actions: {
       [EHexActionType.USE]: {
-        label: 'Open portal',
+        label: 'Use',
         requiredTool: HEXOBJECT_KEYS.RETURN_SCROLL,
         willCost: 5,
       },

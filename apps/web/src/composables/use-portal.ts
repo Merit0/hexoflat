@@ -116,7 +116,7 @@ export function usePortal() {
     worldStore.markTileDirty(target);
     worldStore.saveToStorage();
     useGameEventsStore().push(heroStore.hero.name, 'opened a portal', 'MAP');
-    if (inventoryStore.countItem(SCROLL) < 1) heroToolStore.stopTool();
+    heroToolStore.stopTool();
     return { ok: true };
   }
 

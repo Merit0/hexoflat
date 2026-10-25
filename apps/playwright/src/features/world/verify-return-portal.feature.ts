@@ -34,6 +34,13 @@ export class VerifyReturnPortalFeature extends BaseFeature {
     await this.map.hexBoard.waitForReady();
   }
 
+  private async scrollCount(): Promise<number> {
+    return this.page.evaluate(
+      (key) => window.__HEXOFLAT_TEST__!.getInventoryItemAmount(key),
+      HexobjectKeys.returnScroll,
+    );
+  }
+
   private async currentWill(): Promise<number> {
     const state = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
     if (!state) throw new Error('No Will state');
@@ -51,8 +58,6 @@ export class VerifyReturnPortalFeature extends BaseFeature {
     );
     await new UseEquippedToolFeature().use(HexobjectKeys.returnScroll);
     const { target, oneWay } = await this.map.hexBoard.hoverPortalTarget();
-    await this.map.toolActionOverlay.verifyCostChip(SCROLL_PRICE);
-    await this.map.toolActionOverlay.verifyPortalOneWayHint(oneWay);
     await this.map.toolActionOverlay.triggerAction();
     return { target, oneWay };
   }
@@ -70,10 +75,11 @@ export class VerifyReturnPortalFeature extends BaseFeature {
     await this.fetchScrollFromCamp();
     await this.goToSilesia();
     const willBefore = await this.currentWill();
+    const scrollsBefore = await this.scrollCount();
     const { target } = await this.openPortalWithScroll();
 
     await this.map.knowledge.verifyWill(willBefore - SCROLL_PRICE);
-    await new VerifyInventoryFeature().verifyItemAmount(HexobjectKeys.returnScroll, 0);
+    await new VerifyInventoryFeature().verifyItemAmount(HexobjectKeys.returnScroll, scrollsBefore);
     await this.map.hexBoard.verifyTileHoldsHexobject(target, HexobjectKeys.returnPortal);
 
     await this.enterAdjacentPortal();

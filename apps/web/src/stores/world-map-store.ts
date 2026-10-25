@@ -460,6 +460,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const combatStore = useCombatStore();
 
       const savedMap = readSavedMap(mapId);
+      this.descriptor = readSavedWorldState<TWorldState>(mapId)?.descriptor ?? null;
 
       if (savedMap) {
         const loadedAt = Date.now();
@@ -468,10 +469,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         this.hydrateResourcesFromConfig();
 
         const changed = runWorldTick(hydratedMap, loadedAt, this.buildEngineContext());
-        if (changed) {
-          this.markAllTilesDirty();
-          this.saveToStorage(mapId);
-        }
+        if (changed) this.markAllTilesDirty();
       } else {
         this.map = null;
       }
@@ -483,7 +481,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
         heroStore.heroCoordinates = raw.heroCoordinates ?? null;
         const recovered = recoverStepPosition(heroStore.knowledge, mapId, raw.knowledgeRevision);
         if (recovered) heroStore.rememberPosition(mapId, (heroStore.heroCoordinates = recovered));
-        this.descriptor = raw.descriptor ?? null;
         withoutCombatAutosave(() =>
           combatStore.hydrate({
             combatActive: raw.combatActive ?? false,
@@ -507,7 +504,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       } else {
         heroStore.heroCoordinates = null;
         this.woodCollected = 0;
-        this.descriptor = null;
         withoutCombatAutosave(() => combatStore.resetToDefaults());
       }
 
@@ -522,6 +518,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
 
       this.revealAroundHero();
+      this.saveToStorage(mapId);
       if (combatStore.combatActive) {
         combatStore.revealCombatVision();
       }

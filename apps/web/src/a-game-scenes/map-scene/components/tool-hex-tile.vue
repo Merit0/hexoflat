@@ -15,23 +15,6 @@
             <eye-icon v-if="isReadAction" class="eye-icon" />
             <template v-else>{{ bestActionLabel }}</template>
           </button>
-          <div v-if="bestActionCost > 0" class="will-meta">
-            <span class="will-chip" data-testid="tool-action-cost">
-              {{ t('knowledge.actionCost', { cost: bestActionCost }) }}
-            </span>
-            <span v-if="portalOneWay" class="will-chip" data-testid="portal-one-way-hint">
-              {{ t('portal.oneWay') }}
-            </span>
-          </div>
-        </template>
-
-        <template v-else-if="portalRefusalReason">
-          <button class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
-            -
-          </button>
-          <span class="will-chip portal-refusal" data-testid="portal-refusal-hint">
-            {{ portalRefusalText(portalRefusalReason) }}
-          </span>
         </template>
 
         <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
@@ -152,21 +135,13 @@ const portalPreview = computed(() => {
   return portal.previewOpen(tile.coordinates);
 });
 
-const portalOneWay = computed(() => {
-  const preview = portalPreview.value;
-  return !!preview?.ok && preview.oneWay;
-});
-
-const portalRefusalReason = computed(() => {
-  const preview = portalPreview.value;
-  return preview && !preview.ok ? preview.reason : null;
-});
-
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
   if (isScrollTool.value) {
-    return portalPreview.value?.ok
-      ? [{ actioType: 'USE', label: t('portal.open'), priority: 100 } satisfies ResolvedAction]
+    const preview = portalPreview.value;
+    const offersUse = !!preview && (preview.ok || preview.reason === 'INSUFFICIENT_WILL');
+    return offersUse
+      ? [{ actioType: 'USE', label: t('tool.use'), priority: 100 } satisfies ResolvedAction]
       : [];
   }
   if (
@@ -337,10 +312,14 @@ async function executeAction() {
   }
 
   if (isScrollTool.value) {
+    const preview = portalPreview.value;
+    const oneWay = !!preview?.ok && preview.oneWay;
     const opened = await portal.openPortal(tile.coordinates);
     if (!opened.ok && opened.reason) {
       flashDenied();
       heroToolStore.setActionMessage(portalRefusalText(opened.reason));
+    } else if (opened.ok && oneWay) {
+      heroToolStore.setActionMessage(t('portal.oneWay'));
     }
     return;
   }
@@ -468,29 +447,6 @@ async function executeAction() {
 .do-btn.is-denied {
   border-color: rgba(255, 150, 150, 0.45);
   background: rgba(190, 70, 70, 0.5);
-}
-
-.tool-actions-row:has(.will-meta) {
-  top: 42%;
-}
-
-.will-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  pointer-events: none;
-}
-.will-chip {
-  padding: 0 7px;
-  border-radius: 999px;
-  border: 1px solid rgba(120, 190, 255, 0.7);
-  background: rgba(14, 22, 36, 0.95);
-  color: #dff0ff;
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 13px;
-  white-space: nowrap;
 }
 
 .eye-icon {

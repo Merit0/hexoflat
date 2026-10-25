@@ -36,10 +36,6 @@ export class ToolActionOverlayComponent extends BaseComponent {
     await expect(this.actionButton).toBeHidden();
   }
 
-  async verifyCostChip(cost: number): Promise<void> {
-    await expect(this.page.getByTestId('tool-action-cost')).toContainText(String(cost));
-  }
-
   async verifyActionIsAffordable(): Promise<void> {
     await expect(this.actionButton).toHaveAttribute('aria-disabled', 'false');
   }
@@ -50,11 +46,5 @@ export class ToolActionOverlayComponent extends BaseComponent {
     await expect(this.page.getByTestId('action-alert-banner')).toContainText(
       /Недостатньо Волі|Not enough Will/,
     );
-  }
-
-  async verifyPortalOneWayHint(shown: boolean): Promise<void> {
-    const hint = this.page.getByTestId('portal-one-way-hint');
-    if (shown) await expect(hint).toBeVisible();
-    else await expect(hint).toBeHidden();
   }
 }

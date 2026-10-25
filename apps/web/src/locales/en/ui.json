@@ -28,7 +28,8 @@
   },
   "tool": {
     "open": "Open",
-    "read": "Read"
+    "read": "Read",
+    "use": "Use"
   },
   "knowledge": {
     "title": "Book of Will",
@@ -36,7 +37,6 @@
     "close": "Close and save challenge",
     "will": "Will: {current}/{capacity}",
     "insufficientWill": "Not enough Will",
-    "actionCost": "−{cost} Will",
     "tooltipTitle": "Will of Power",
     "tooltipBody": "Will is your stock of Power. Actions cost Will.",
     "tooltipRefillPre": "The",
@@ -168,7 +168,6 @@
     }
   },
   "portal": {
-    "open": "Open portal",
     "oneWay": "One-way — the cave will be lost",
     "refusal": {
       "HERO_NOT_FOUND": "No hero",

@@ -259,9 +259,8 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     spritePath: '/hex-assets/hex-constructs/hero-portal/portal-runes-frame.png',
     construction: { integrity: 1000, isLocked: false },
     actions: {
-      [EHexActionType.ENTER]: {
-        label: 'Enter',
-        durationMs: 400,
+      [EHexActionType.OPEN]: {
+        label: 'Open',
         requiredTool: HEXOBJECT_KEYS.HAND,
         willCost: 0,
       },
