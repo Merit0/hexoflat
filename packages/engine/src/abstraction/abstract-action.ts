@@ -44,6 +44,8 @@ export interface IGatheringPort {
 
 export interface IInventoryPort {
   putToInventory: (key: THexobjectKey, amount?: number) => { ok: boolean; message?: string };
+  countItem?: (key: THexobjectKey) => number;
+  takeFromInventory?: (key: THexobjectKey, amount: number) => { ok: boolean };
 }
 
 export interface IEventsPort {

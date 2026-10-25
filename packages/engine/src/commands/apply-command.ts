@@ -28,9 +28,13 @@ import {
   HEX_ENGINE_COMMAND_SCHEMAS,
   type HexEngineCommand,
   type CrossExitCommand,
+  type StartHexActionCommand,
   type MoveHeroCommand,
   type UnlockSkillCommand,
 } from './hex-engine-commands';
+import { applyEnterPortal, applyOpenPortal, closePortalIfOpen } from '../portal/apply-portal';
+import type { PortalLocation } from '../portal/portal-rules';
+import { getMeta } from '../content/content-accessors';
 import type { ApplyCommandResult, DomainEvent } from './types';
 
 export interface HexEngineState {
@@ -39,6 +43,7 @@ export interface HexEngineState {
   rngState?: RngState;
   knowledge?: KnowledgeState;
   knowledgeContext?: KnowledgeContext;
+  location?: PortalLocation;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -70,71 +75,9 @@ export function applyCommand(
     case 'UNLOCK_SKILL':
       events.push(...applyUnlockSkillState(state, parsed));
       break;
-    case 'START_HEX_ACTION': {
-      const { coordinates, actionType, toolKey, now } = parsed.payload;
-      const tile = findTile(state.map, coordinates);
-
-      if (!tile) {
-        events.push({
-          type: 'HEX_ACTION_START_REJECTED',
-          payload: { coordinates, actionType, message: 'No tile at coordinates.' },
-        });
-        break;
-      }
-
-      const cost = actionCharge(state, tile, actionType);
-      if (cost > 0) {
-        const { knowledge } = state;
-        const ref = `${actionType}:${coordinateKey(coordinates)}`;
-        if (!knowledge || knowledge.heroId !== parsed.payload.heroId) {
-          events.push(
-            willRejected(parsed.payload.heroId, 'NO_WILL_STATE', ref),
-            rejectedStart(coordinates, actionType, 'Will is unavailable.'),
-          );
-          break;
-        }
-        if (knowledge.current < cost) {
-          events.push(
-            willRejected(knowledge.heroId, 'INSUFFICIENT_WILL', ref),
-            rejectedStart(coordinates, actionType, 'Not enough Will.'),
-          );
-          break;
-        }
-      }
-
-      const fullCtx: IActionContext = { ...ctx, map: state.map, now };
-      const result = new ExecuteHexActionFeature(tile).execute(
-        actionType,
-        toolKey as THeroToolKey,
-        fullCtx,
-      );
-
-      if (result.ok && cost > 0) {
-        const knowledge = state.knowledge!;
-        const reason = actionType === EHexActionType.ENTER ? 'entry' : 'action';
-        const spent = spendWill(
-          knowledge,
-          cost,
-          reason,
-          `${actionType}:${coordinateKey(coordinates)}`,
-        );
-        knowledge.revision++;
-        events.push(...spent.events);
-      }
-
-      events.push(
-        result.ok
-          ? {
-              type: 'HEX_ACTION_STARTED',
-              payload: { coordinates, actionType, endsAt: result.endsAt },
-            }
-          : {
-              type: 'HEX_ACTION_START_REJECTED',
-              payload: { coordinates, actionType, message: result.message },
-            },
-      );
+    case 'START_HEX_ACTION':
+      events.push(...applyStartHexAction(state, parsed, ctx));
       break;
-    }
 
     case 'FINISH_PENDING_ACTIONS': {
       const fullCtx: IActionContext = { ...ctx, map: state.map, now: parsed.payload.now };
@@ -171,8 +114,21 @@ export function applyCommand(
       applyMoveHero(state, parsed.payload, events);
       break;
 
-    case 'CROSS_EXIT':
-      events.push(applyCrossExit(state, parsed.payload, ctx));
+    case 'CROSS_EXIT': {
+      const crossed = applyCrossExit(state, parsed.payload, ctx);
+      events.push(crossed);
+      if (crossed.type === 'BOARD_EXITED') {
+        events.push(...closePortalIfOpen(state, parsed.payload.heroId, { kind: 'GATE' }));
+      }
+      break;
+    }
+
+    case 'OPEN_PORTAL':
+      events.push(...applyOpenPortal(state, parsed.payload, ctx));
+      break;
+
+    case 'ENTER_PORTAL':
+      events.push(...applyEnterPortal(state, parsed.payload, ctx));
       break;
 
     default:
@@ -180,6 +136,81 @@ export function applyCommand(
   }
 
   return { state, events };
+}
+
+function isWorldGate(tile: HexTileModel, actionType: EHexActionType): boolean {
+  const key = tile.hexobject?.hexobjectKey;
+  return actionType === EHexActionType.ENTER && !!key && getMeta(key).enter?.type === 'WORLD';
+}
+
+function applyStartHexAction(
+  state: HexEngineState,
+  parsed: StartHexActionCommand,
+  ctx: HexEngineActionContext,
+): DomainEvent[] {
+  const out: DomainEvent[] = [];
+  const { coordinates, actionType, toolKey, now } = parsed.payload;
+  const tile = findTile(state.map, coordinates);
+
+  if (!tile) {
+    out.push({
+      type: 'HEX_ACTION_START_REJECTED',
+      payload: { coordinates, actionType, message: 'No tile at coordinates.' },
+    });
+    return out;
+  }
+
+  const cost = actionCharge(state, tile, actionType);
+  if (cost > 0) {
+    const { knowledge } = state;
+    const ref = `${actionType}:${coordinateKey(coordinates)}`;
+    if (!knowledge || knowledge.heroId !== parsed.payload.heroId) {
+      out.push(
+        willRejected(parsed.payload.heroId, 'NO_WILL_STATE', ref),
+        rejectedStart(coordinates, actionType, 'Will is unavailable.'),
+      );
+      return out;
+    }
+    if (knowledge.current < cost) {
+      out.push(
+        willRejected(knowledge.heroId, 'INSUFFICIENT_WILL', ref),
+        rejectedStart(coordinates, actionType, 'Not enough Will.'),
+      );
+      return out;
+    }
+  }
+
+  const fullCtx: IActionContext = { ...ctx, map: state.map, now };
+  const result = new ExecuteHexActionFeature(tile).execute(
+    actionType,
+    toolKey as THeroToolKey,
+    fullCtx,
+  );
+
+  if (result.ok && cost > 0) {
+    const knowledge = state.knowledge!;
+    const reason = actionType === EHexActionType.ENTER ? 'entry' : 'action';
+    const spent = spendWill(knowledge, cost, reason, `${actionType}:${coordinateKey(coordinates)}`);
+    knowledge.revision++;
+    out.push(...spent.events);
+  }
+
+  if (result.ok && isWorldGate(tile, actionType)) {
+    out.push(...closePortalIfOpen(state, parsed.payload.heroId, { kind: 'GATE' }));
+  }
+
+  out.push(
+    result.ok
+      ? {
+          type: 'HEX_ACTION_STARTED',
+          payload: { coordinates, actionType, endsAt: result.endsAt },
+        }
+      : {
+          type: 'HEX_ACTION_START_REJECTED',
+          payload: { coordinates, actionType, message: result.message },
+        },
+  );
+  return out;
 }
 
 function rejectedStart(

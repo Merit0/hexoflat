@@ -230,7 +230,7 @@ describe('Will-priced actions', () => {
     const payload = serializeState({ map, heroes: {} });
     expect(deserializeState(payload, 0).knowledge).toBeUndefined();
     const cave = CONTENT[HEXOBJECT_KEYS.CAVE_ENTRANCE];
-    for (const bad of [-1, 4, 1.5]) {
+    for (const bad of [-1, 6, 1.5]) {
       const actions = { ENTER: { ...cave.actions!.ENTER, willCost: bad } };
       expect(ContentDefinitionSchema.safeParse({ ...cave, actions }).success).toBe(false);
     }

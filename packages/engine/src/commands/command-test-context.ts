@@ -13,6 +13,7 @@ export function buildHero(overrides: Partial<HeroState> = {}): HeroState {
     controlledBy: null,
     coordinates: { columnIndex: 0, rowIndex: 0 },
     heroSteps: 0,
+    portal: null,
     ...overrides,
   };
 }
