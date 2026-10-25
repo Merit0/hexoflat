@@ -21,10 +21,9 @@
           -
         </button>
       </div>
-
-      <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
-        {{ secondsLeft }}s
-      </div>
+    </div>
+    <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
+      {{ secondsLeft }}s
     </div>
   </div>
 </template>
@@ -49,6 +48,8 @@ import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { getPrototype, getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useBookReading } from '@/composables/use-book-reading';
 import { usePortal } from '@/composables/use-portal';
 import { portalRefusalText } from '@/composables/use-portal-messages';
@@ -129,6 +130,74 @@ const iconStyle = computed(() => {
 
 const isScrollTool = computed(() => activeToolKey.value === HEXOBJECT_KEYS.RETURN_SCROLL);
 
+function actionsForTool(tool: THeroToolKey, tile: HexTileModel | null): ResolvedAction[] {
+  if (tool === HEXOBJECT_KEYS.RETURN_SCROLL) {
+    const preview = tile ? portal.previewOpen(tile.coordinates) : null;
+    const offersUse = !!preview && (preview.ok || preview.reason === 'INSUFFICIENT_WILL');
+    return offersUse
+      ? [{ actioType: 'USE', label: t('tool.use'), priority: 100 } satisfies ResolvedAction]
+      : [];
+  }
+
+  if (!tile?.hexobject) return [];
+
+  if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
+    const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
+    if (
+      !tile.hexobject.isInteractable ||
+      (enterCfg?.type === 'WORLD' && worldMapStore.isLocationRespawning(enterCfg.locationKey))
+    ) {
+      return [];
+    }
+  }
+
+  if (
+    combatStore.combatActive &&
+    tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
+    (combatStore.combatTurnSide !== 'hero' ||
+      combatStore.combatAttackUsed ||
+      !getToolCapabilities(tool).canAttack)
+  ) {
+    return [];
+  }
+
+  return resolveActions(tool, tile.hexobject);
+}
+
+const inventoryStore = useHeroInventoryStore();
+
+const handTools = computed(() => {
+  const keys = (['weapon', 'shield'] as const)
+    .map((slot) => toolKeyOfItem(inventoryStore.equippedItems[slot]?.key))
+    .filter((key): key is THeroToolKey => key !== null);
+  return [...new Set(keys)];
+});
+
+function topPriority(tool: THeroToolKey, tile: HexTileModel | null): number {
+  return actionsForTool(tool, tile).reduce((best, action) => Math.max(best, action.priority), -1);
+}
+
+watch(
+  () => [hoveredTile.value, handTools.value, heroToolStore.isDragging] as const,
+  ([tile, tools, dragging]) => {
+    const current = activeToolKey.value;
+    if (!dragging || !tile || !current || combatStore.combatActive || heroToolStore.isLocked)
+      return;
+
+    let best = current;
+    let bestPriority = topPriority(current, tile);
+    for (const tool of tools) {
+      const priority = topPriority(tool, tile);
+      if (priority > bestPriority) {
+        best = tool;
+        bestPriority = priority;
+      }
+    }
+    if (best !== current) heroToolStore.activeTool = best;
+  },
+  { immediate: true },
+);
+
 const portalPreview = computed(() => {
   const tile = hoveredTile.value;
   if (!isScrollTool.value || !tile) return null;
@@ -136,14 +205,6 @@ const portalPreview = computed(() => {
 });
 
 const resolvedActions = computed(() => {
-  const tile = hoveredTile.value;
-  if (isScrollTool.value) {
-    const preview = portalPreview.value;
-    const offersUse = !!preview && (preview.ok || preview.reason === 'INSUFFICIENT_WILL');
-    return offersUse
-      ? [{ actioType: 'USE', label: t('tool.use'), priority: 100 } satisfies ResolvedAction]
-      : [];
-  }
   if (
     combatStore.combatActive &&
     combatStore.combatTurnSide === 'hero' &&
@@ -170,30 +231,7 @@ const resolvedActions = computed(() => {
     }
   }
 
-  if (!tile?.hexobject || !activeToolKey.value) return [];
-
-  if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
-    const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
-    if (
-      !tile.hexobject.isInteractable ||
-      (enterCfg?.type === 'WORLD' && worldMapStore.isLocationRespawning(enterCfg.locationKey))
-    ) {
-      return [];
-    }
-  }
-
-  if (
-    combatStore.combatActive &&
-    tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
-    (combatStore.combatTurnSide !== 'hero' ||
-      combatStore.combatAttackUsed ||
-      !activeToolKey.value ||
-      !getToolCapabilities(activeToolKey.value).canAttack)
-  ) {
-    return [];
-  }
-
-  return resolveActions(activeToolKey.value, tile.hexobject);
+  return activeToolKey.value ? actionsForTool(activeToolKey.value, hoveredTile.value) : [];
 });
 
 const bestAction = computed<ResolvedAction | null>(() => {
@@ -307,7 +345,7 @@ async function executeAction() {
   if (!tile || !best || !activeToolKey.value) return;
   if (!canAffordBest.value) {
     flashDenied();
-    heroToolStore.setActionMessage(t('knowledge.insufficientWill'));
+    heroToolStore.setActionMessage(t('knowledge.insufficientWill'), 'will', bestActionCost.value);
     return;
   }
 
@@ -317,7 +355,11 @@ async function executeAction() {
     const opened = await portal.openPortal(tile.coordinates);
     if (!opened.ok && opened.reason) {
       flashDenied();
-      heroToolStore.setActionMessage(portalRefusalText(opened.reason));
+      heroToolStore.setActionMessage(
+        portalRefusalText(opened.reason),
+        opened.reason === 'INSUFFICIENT_WILL' ? 'will' : null,
+        opened.reason === 'INSUFFICIENT_WILL' ? returnScrollWillCost() : null,
+      );
     } else if (opened.ok && oneWay) {
       heroToolStore.setActionMessage(t('portal.oneWay'));
     }
@@ -515,8 +557,10 @@ async function executeAction() {
   position: absolute;
   bottom: 10px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.9);
+  transform-origin: center bottom;
 
+  z-index: 121;
   min-width: 38px;
   text-align: center;
 

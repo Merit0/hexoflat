@@ -409,8 +409,8 @@ export const useHeroStore = defineStore('hero', {
       const combatStore = useCombatStore();
 
       if (!worldStore.map || !this.heroCoordinates) return false;
-      const warn = (message: string) => {
-        heroToolStore.setActionMessage(message);
+      const warn = (message: string, icon: 'will' | null = null) => {
+        heroToolStore.setActionMessage(message, icon);
         return false;
       };
       if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
@@ -434,7 +434,7 @@ export const useHeroStore = defineStore('hero', {
       } else {
         const plan = this.planFreeRoamRoute(map, target);
         route = plan.route;
-        if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'));
+        if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'), 'will');
         if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
       }
 
@@ -451,7 +451,7 @@ export const useHeroStore = defineStore('hero', {
         await executeMovementRoute(route, async (coord) => {
           if (willZoneCharges(this.willZoneContext)) {
             if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
-              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'));
+              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'), 'will');
               return false;
             }
           }

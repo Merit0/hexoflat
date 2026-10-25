@@ -1,7 +1,21 @@
 <template>
   <Transition name="action-alert">
     <div v-if="displayMessage" class="action-alert-banner" data-testid="action-alert-banner">
-      {{ displayMessage }}<span class="action-alert-mark" aria-hidden="true">!</span>
+      {{ displayMessage
+      }}<template v-if="heroToolStore.actionMessageWillCost !== null">
+        (<span class="action-alert-cost" data-testid="action-alert-will-cost">{{
+          heroToolStore.actionMessageWillCost
+        }}</span
+        >)</template
+      ><span class="action-alert-mark" aria-hidden="true">!</span>
+      <img
+        v-if="heroToolStore.actionMessageIcon === 'will'"
+        class="action-alert-icon"
+        src="/board-assets/will-icon-image.png"
+        alt=""
+        aria-hidden="true"
+        data-testid="action-alert-will-icon"
+      />
     </div>
   </Transition>
 </template>
@@ -70,6 +84,18 @@ onBeforeUnmount(() => {
   font-weight: 900;
   text-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
   vertical-align: -0.1em;
+}
+
+.action-alert-cost {
+  color: #ffd84d;
+  font-weight: 900;
+}
+
+.action-alert-icon {
+  width: 1.5em;
+  height: 1.5em;
+  margin-left: 6px;
+  vertical-align: -0.35em;
 }
 
 .action-alert-enter-active,
