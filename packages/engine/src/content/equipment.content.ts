@@ -9,6 +9,7 @@ export type THeroToolKey =
   | typeof HEXOBJECT_KEYS.HAND
   | typeof HEXOBJECT_KEYS.AXE
   | typeof HEXOBJECT_KEYS.PICKAXE
+  | typeof HEXOBJECT_KEYS.RETURN_SCROLL
   | THandEquipmentKeys;
 
 export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {

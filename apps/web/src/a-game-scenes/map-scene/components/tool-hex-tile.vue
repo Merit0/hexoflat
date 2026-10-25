@@ -19,7 +19,19 @@
             <span class="will-chip" data-testid="tool-action-cost">
               {{ t('knowledge.actionCost', { cost: bestActionCost }) }}
             </span>
+            <span v-if="portalOneWay" class="will-chip" data-testid="portal-one-way-hint">
+              {{ t('portal.oneWay') }}
+            </span>
           </div>
+        </template>
+
+        <template v-else-if="portalRefusalReason">
+          <button class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
+            -
+          </button>
+          <span class="will-chip portal-refusal" data-testid="portal-refusal-hint">
+            {{ portalRefusalText(portalRefusalReason) }}
+          </span>
         </template>
 
         <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
@@ -55,6 +67,9 @@ import { getPrototype, getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useBookReading } from '@/composables/use-book-reading';
+import { usePortal } from '@/composables/use-portal';
+import { portalRefusalText } from '@/composables/use-portal-messages';
+import { returnScrollWillCost } from '@hexoflat/engine/portal/portal-rules';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -74,6 +89,7 @@ const worldMapStore = useWorldMapStore();
 const combatStore = useCombatStore();
 const heroStore = useHeroStore();
 const pricing = useWillPricing();
+const portal = usePortal();
 
 const activeToolKey = computed<THeroToolKey | null>(() => heroToolStore.activeTool);
 
@@ -128,8 +144,31 @@ const iconStyle = computed(() => {
   };
 });
 
+const isScrollTool = computed(() => activeToolKey.value === HEXOBJECT_KEYS.RETURN_SCROLL);
+
+const portalPreview = computed(() => {
+  const tile = hoveredTile.value;
+  if (!isScrollTool.value || !tile) return null;
+  return portal.previewOpen(tile.coordinates);
+});
+
+const portalOneWay = computed(() => {
+  const preview = portalPreview.value;
+  return !!preview?.ok && preview.oneWay;
+});
+
+const portalRefusalReason = computed(() => {
+  const preview = portalPreview.value;
+  return preview && !preview.ok ? preview.reason : null;
+});
+
 const resolvedActions = computed(() => {
   const tile = hoveredTile.value;
+  if (isScrollTool.value) {
+    return portalPreview.value?.ok
+      ? [{ actioType: 'USE', label: t('portal.open'), priority: 100 } satisfies ResolvedAction]
+      : [];
+  }
   if (
     combatStore.combatActive &&
     combatStore.combatTurnSide === 'hero' &&
@@ -199,6 +238,7 @@ const isReadAction = computed(
 );
 const bestActionLabel = computed(() => {
   if (!bestAction.value) return null;
+  if (isScrollTool.value) return bestAction.value.label;
   const object = hoveredTile.value?.hexobject;
   if (isReadAction.value) return t('tool.read');
   const isHandOnBuilding =
@@ -209,10 +249,12 @@ const bestActionLabel = computed(() => {
 });
 
 const bestActionCost = computed(() =>
-  pricing.costOf(
-    hoveredTile.value,
-    bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
-  ),
+  isScrollTool.value
+    ? returnScrollWillCost()
+    : pricing.costOf(
+        hoveredTile.value,
+        bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
+      ),
 );
 const canAffordBest = computed(() => pricing.canAfford(bestActionCost.value));
 
@@ -294,8 +336,26 @@ async function executeAction() {
     return;
   }
 
+  if (isScrollTool.value) {
+    const opened = await portal.openPortal(tile.coordinates);
+    if (!opened.ok && opened.reason) {
+      flashDenied();
+      heroToolStore.setActionMessage(portalRefusalText(opened.reason));
+    }
+    return;
+  }
+
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
+
+  if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.RETURN_PORTAL) {
+    const entered = await portal.enterPortal();
+    if (!entered.ok && entered.reason) {
+      flashDenied();
+      heroToolStore.setActionMessage(portalRefusalText(entered.reason));
+    }
+    return;
+  }
 
   if (tile.hexobject?.hexobjectKey === 'knowledge-book') {
     if (await heroStore.knowledgeAction({ kind: 'open' })) {

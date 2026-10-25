@@ -273,6 +273,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const defeatedMapId = this.currentMapId;
 
       combatStore.endCombat();
+      heroStore.closePortalOnDeath();
       if (defeatedMapId) {
         this.clearStoredLocation(defeatedLocationKey, defeatedMapId);
       }

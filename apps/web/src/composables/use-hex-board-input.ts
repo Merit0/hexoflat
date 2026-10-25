@@ -43,6 +43,8 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
         return HEXOBJECT_KEYS.SWORD;
       case HEXOBJECT_KEYS.SHIELD:
         return HEXOBJECT_KEYS.SHIELD;
+      case HEXOBJECT_KEYS.RETURN_SCROLL:
+        return HEXOBJECT_KEYS.RETURN_SCROLL;
       default:
         return null;
     }

@@ -19,12 +19,11 @@ export function setup(
   const locationKey = options.location ?? 'silesia';
   const { map } = MapRegistry.get(locationKey).create({ seed: '' });
   const free = map.tiles.filter((t) => t.terrain === 'ground' && !t.hexobject && !t.exit);
-  const heroTile = free.find((t) =>
-    getHexNeighbors(t.coordinates).every((c) => {
-      const n = map.tiles.find((x) => coordinateKey(x.coordinates) === coordinateKey(c));
-      return n && n.terrain === 'ground' && !n.hexobject && !n.exit;
-    }),
-  )!;
+  const isFree = (c: IHexCoordinates) => {
+    const n = map.tiles.find((x) => coordinateKey(x.coordinates) === coordinateKey(c));
+    return !!n && n.terrain === 'ground' && !n.hexobject && !n.exit;
+  };
+  const heroTile = free.find((t) => getHexNeighbors(t.coordinates).some(isFree))!;
   const hero = buildHero({ coordinates: { ...heroTile.coordinates } });
   const knowledge = createKnowledgeState(hero.id);
   knowledge.current = 0;
@@ -48,7 +47,7 @@ export function setup(
     },
     worldMap: { ...base.worldMap, combatActive: options.combat ?? false },
   });
-  const target = getHexNeighbors(hero.coordinates)[0];
+  const target = getHexNeighbors(hero.coordinates).find(isFree)!;
   return { state, hero, ctx, target, scrolls: () => scrolls };
 }
 

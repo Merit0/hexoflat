@@ -69,7 +69,9 @@ const isDragging = computed(() => inventoryDragState.draggingId === props.item.i
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const isUsableTool = computed(() => {
   return (
-    (props.item.type === EHexobjectGroup.TOOL || props.item.type === EHexobjectGroup.EQUIPMENT) &&
+    (props.item.type === EHexobjectGroup.TOOL ||
+      props.item.type === EHexobjectGroup.EQUIPMENT ||
+      props.item.key === HEXOBJECT_KEYS.RETURN_SCROLL) &&
     isHandSlotKey(props.item.slotKey)
   );
 });
@@ -109,6 +111,8 @@ function resolveToolType(): THeroToolKey | null {
       return HEXOBJECT_KEYS.SWORD;
     case HEXOBJECT_KEYS.SHIELD:
       return HEXOBJECT_KEYS.SHIELD;
+    case HEXOBJECT_KEYS.RETURN_SCROLL:
+      return HEXOBJECT_KEYS.RETURN_SCROLL;
     default:
       return null;
   }

@@ -373,6 +373,25 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       return { ok: true };
     },
 
+    countItem(key: THexobjectKey): number {
+      return this.items.reduce((sum, item) => (item.key === key ? sum + item.amount : sum), 0);
+    },
+
+    takeFromInventory(key: THexobjectKey, amount: number) {
+      if (this.countItem(key) < amount) return { ok: false };
+
+      let left = amount;
+      for (const item of this.items.filter((candidate) => candidate.key === key)) {
+        const taken = Math.min(item.amount, left);
+        item.amount -= taken;
+        left -= taken;
+        if (item.amount <= 0) this.removeItem(item.id);
+        if (left <= 0) break;
+      }
+      this.persist();
+      return { ok: true };
+    },
+
     removeItem(id: string) {
       const idx = this.items.findIndex((i) => i.id === id);
       if (idx !== -1) this.items.splice(idx, 1);

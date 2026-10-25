@@ -166,5 +166,26 @@
       "locked": "Unavailable now",
       "will": "Will"
     }
+  },
+  "portal": {
+    "open": "Open portal",
+    "oneWay": "One-way — the cave will be lost",
+    "refusal": {
+      "HERO_NOT_FOUND": "No hero",
+      "NO_LOCATION": "Portal unavailable here",
+      "IN_CAMPING": "Portals can't be opened in the camp",
+      "IN_COMBAT": "Not during combat",
+      "PORTAL_ALREADY_OPEN": "You already have an open portal",
+      "NOT_ADJACENT": "Only on a neighbouring hex",
+      "NO_TILE": "No hex there",
+      "NOT_GROUND": "Needs solid ground",
+      "TILE_OCCUPIED": "The hex is occupied",
+      "EXIT_HEX": "Not on an exit hex",
+      "NO_SCROLL": "No Return Scroll",
+      "INSUFFICIENT_WILL": "Not enough Will",
+      "NO_WILL_STATE": "Will is unavailable",
+      "NO_PORTAL": "No portal here",
+      "NOT_YOUR_PORTAL": "This portal belongs to another hero"
+    }
   }
 }
