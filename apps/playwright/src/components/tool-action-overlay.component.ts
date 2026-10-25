@@ -51,4 +51,10 @@ export class ToolActionOverlayComponent extends BaseComponent {
       /Недостатньо Волі|Not enough Will/,
     );
   }
+
+  async verifyPortalOneWayHint(shown: boolean): Promise<void> {
+    const hint = this.page.getByTestId('portal-one-way-hint');
+    if (shown) await expect(hint).toBeVisible();
+    else await expect(hint).toBeHidden();
+  }
 }

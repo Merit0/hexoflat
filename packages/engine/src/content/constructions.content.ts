@@ -256,7 +256,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     subtitle: 'A way home',
     description: 'A shimmering gate that links this place with the camp.',
     collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-constructs/camping-door-hex.png',
+    spritePath: '/hex-assets/hex-constructs/hero-portal/portal-runes-frame.png',
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.ENTER]: {

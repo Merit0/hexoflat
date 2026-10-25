@@ -55,6 +55,19 @@ export class HeroInventoryComponent extends BaseComponent {
       .toContain(itemKey);
   }
 
+  async verifyItemAmount(itemKey: string, amount: number): Promise<void> {
+    await expect
+      .poll(
+        () =>
+          this.page.evaluate(
+            (key) => window.__HEXOFLAT_TEST__!.getInventoryItemAmount(key),
+            itemKey,
+          ),
+        { timeout: INVENTORY_POLL_TIMEOUT_MS, intervals: POLL_INTERVALS_MS },
+      )
+      .toBe(amount);
+  }
+
   async verifyDoesNotContainItem(itemKey: string): Promise<void> {
     expect(await this.getItemKeys()).not.toContain(itemKey);
   }

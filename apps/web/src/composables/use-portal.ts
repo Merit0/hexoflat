@@ -9,6 +9,7 @@ import {
   type OpenPortalRejection,
 } from '@hexoflat/engine/portal/portal-rules';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import {
   findPortalSpot,
@@ -16,6 +17,7 @@ import {
   portalClosedEvents,
   portalLocation,
 } from '@/services/world/portal-service';
+import { playPortalEnter, playPortalExit, portalFxBusy, releasePortalFx } from '@/render/portal-fx';
 import { routeToLocation } from '@/services/world/location-navigator';
 import { transactKnowledge } from '@/services/persistence/knowledge-storage';
 import { useGameEventsStore } from '@/stores/game-events-store';
@@ -84,6 +86,7 @@ export function usePortal() {
   }
 
   async function openPortal(target: IHexCoordinates): Promise<PortalOutcome> {
+    if (portalFxBusy.value) return { ok: false };
     const state = engineState();
     if (!state || heroStore.knowledgeError) {
       return { ok: false, reason: 'NO_LOCATION' };
@@ -140,6 +143,7 @@ export function usePortal() {
   }
 
   async function enterPortal(): Promise<PortalOutcome> {
+    if (portalFxBusy.value) return { ok: false };
     const state = engineState();
     if (!state) return { ok: false, reason: 'NO_LOCATION' };
     const hero = Object.values(state.heroes)[0];
@@ -156,9 +160,24 @@ export function usePortal() {
       return { ok: false, reason };
     }
 
+    heroToolStore.stopTool();
     const destination = entered.payload as PortalEnteredPayload;
     const closures = portalClosedEvents(events);
-    heroStore.setPortal(hero.portal ?? null);
+    const portalHex = (entered.payload as { portalHex: IHexCoordinates }).portalHex;
+    try {
+      await playPortalEnter(portalHex);
+      return await travel(destination, closures, hero.portal ?? null);
+    } finally {
+      releasePortalFx();
+    }
+  }
+
+  async function travel(
+    destination: PortalEnteredPayload,
+    closures: ReturnType<typeof portalClosedEvents>,
+    nextPortal: PortalLink | null,
+  ): Promise<PortalOutcome> {
+    heroStore.setPortal(nextPortal);
     heroStore.applyPortalClosures(closures);
     worldStore.goToLocation(destination.to, destination.toMapId ?? undefined);
 
@@ -176,6 +195,7 @@ export function usePortal() {
     worldStore.markAllTilesDirty();
     worldStore.saveToStorage();
     await routeToLocation(destination.to);
+    if (anchor) await playPortalExit(anchor);
     return { ok: true };
   }
 

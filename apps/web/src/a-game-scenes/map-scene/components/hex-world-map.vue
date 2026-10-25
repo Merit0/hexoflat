@@ -197,6 +197,9 @@ const boardFrame = computed(() =>
   worldStore.map ? { width: worldStore.map.width, height: worldStore.map.height } : null,
 );
 const tilesDirtyTick = computed(() => worldStore.dirtyTick);
+const boardKey = computed(() =>
+  worldStore.currentMapId ? `${worldStore.currentLocationKey}:${worldStore.currentMapId}` : null,
+);
 const activeTool = computed(() => heroToolStore.activeTool);
 
 function handleTileHover(tile: IHexTile) {
@@ -352,6 +355,7 @@ useHexBoard({
   camera,
   tiles,
   tilesDirtyTick,
+  boardKey,
   heroCoordinates: heroCoordinatesComputed,
   healTickerNow,
   movePreview,

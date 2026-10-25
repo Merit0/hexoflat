@@ -35,6 +35,7 @@ import {
   portalLocation,
   type PortalClosedPayload,
 } from '@/services/world/portal-service';
+import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
@@ -415,6 +416,7 @@ export const useHeroStore = defineStore('hero', {
       if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
       if (this.knowledge?.session?.status === 'returning')
         return warn(i18n.global.t('moveBlocked.returning'));
+      if (portalFxBusy.value) return false;
       if (heroToolStore.isDragging) return false;
       if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));
       if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero')
