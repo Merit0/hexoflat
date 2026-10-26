@@ -12,7 +12,7 @@ import {
   closePortalOnTransition,
   planPortalEntry,
   planPortalOpening,
-  returnScrollWillCost,
+  resolvePortalSource,
   type LocationTransition,
   type OpenPortalRejection,
 } from './portal-rules';
@@ -53,13 +53,14 @@ export function applyOpenPortal(
 
   const { inventory } = ctx;
   const scrollKey = HEXOBJECT_KEYS.RETURN_SCROLL;
-  if (!inventory.countItem || !inventory.takeFromInventory || inventory.countItem(scrollKey) < 1) {
-    return [openRejected(heroId, target, 'NO_SCROLL')];
-  }
-
-  const cost = returnScrollWillCost();
-  const ref = `${EHexActionType.USE}:${coordinateKey(target)}`;
   const { knowledge } = state;
+  const sourcePlan = resolvePortalSource(
+    knowledge?.heroId === heroId ? knowledge.skills : undefined,
+    inventory.countItem?.(scrollKey) ?? 0,
+  );
+  if (!sourcePlan.ok) return [openRejected(heroId, target, sourcePlan.reason)];
+  const { source, cost } = sourcePlan;
+  const ref = `${EHexActionType.USE}:${coordinateKey(target)}`;
   if (cost > 0) {
     if (!knowledge || knowledge.heroId !== heroId) {
       return [
@@ -74,7 +75,7 @@ export function applyOpenPortal(
       ];
     }
   }
-  if (!inventory.takeFromInventory(scrollKey, 1).ok) {
+  if (source === 'scroll' && !inventory.takeFromInventory?.(scrollKey, 1).ok) {
     return [openRejected(heroId, target, 'NO_SCROLL')];
   }
 
@@ -96,6 +97,7 @@ export function applyOpenPortal(
       link: plan.link,
       oneWay: plan.link.campHex === null,
       willSpent: cost,
+      source,
     },
   });
   return events;

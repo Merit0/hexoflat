@@ -7,6 +7,7 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import type HexMapModel from '../map/models/hex-map-model';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { LocationKey } from '../registry/location-key';
+import { getPortalAbility, type SkillRanks } from '../skills/skill-rules';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { heroPortal, type PortalCloseReason, type PortalLink } from './portal-state';
 
@@ -38,6 +39,18 @@ export type EnterPortalRejection =
 
 export function returnScrollWillCost(): number {
   return getMeta(HEXOBJECT_KEYS.RETURN_SCROLL).actions?.[EHexActionType.USE]?.willCost ?? 0;
+}
+
+export type PortalSource = 'skill' | 'scroll';
+
+export function resolvePortalSource(
+  skills: SkillRanks | undefined,
+  scrollCount: number,
+): { ok: true; source: PortalSource; cost: number } | { ok: false; reason: 'NO_SCROLL' } {
+  const ability = getPortalAbility(skills ?? {});
+  if (ability.unlocked) return { ok: true, source: 'skill', cost: ability.willCost };
+  if (scrollCount >= 1) return { ok: true, source: 'scroll', cost: returnScrollWillCost() };
+  return { ok: false, reason: 'NO_SCROLL' };
 }
 
 export function planPortalOpening(

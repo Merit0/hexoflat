@@ -3,10 +3,18 @@ import type { KnowledgeContext } from '../knowledge/commands';
 import type { KnowledgeState } from '../knowledge/state';
 import { spendWill } from '../knowledge/will';
 import type { SkillId } from './skill-content';
-import { getNextRankCost, getSkillRank } from './skill-rules';
+import { SKILLS } from './skill-content';
+import { getNextRankCost, getSkillRank, requirementsMet } from './skill-rules';
 
 export type SkillRejectReason =
-  'WRONG_HERO' | 'STALE_REVISION' | 'IN_COMBAT' | 'MOVING' | 'MAX_RANK' | 'INSUFFICIENT_WILL';
+  | 'WRONG_HERO'
+  | 'STALE_REVISION'
+  | 'IN_COMBAT'
+  | 'MOVING'
+  | 'MAX_RANK'
+  | 'NOT_AVAILABLE_YET'
+  | 'REQUIREMENTS_NOT_MET'
+  | 'INSUFFICIENT_WILL';
 
 export interface UnlockSkillPayload {
   heroId: string;
@@ -43,6 +51,11 @@ export function applyUnlockSkill(
 
   const cost = getNextRankCost(state.skills, payload.skillId);
   if (cost === null) return [rejected(payload, 'MAX_RANK')];
+
+  if (!SKILLS[payload.skillId].implemented) return [rejected(payload, 'NOT_AVAILABLE_YET')];
+  if (!requirementsMet(state.skills, payload.skillId)) {
+    return [rejected(payload, 'REQUIREMENTS_NOT_MET')];
+  }
 
   const spent = spendWill(state, cost, 'skill', payload.skillId);
   if (!spent.ok) return [rejected(payload, 'INSUFFICIENT_WILL'), ...spent.events];
