@@ -93,3 +93,76 @@ describe.each<{ key: THexobjectKey; amountPerTick: number }>([
     expect(ctx.hero.healHero).toHaveBeenCalledWith(amountPerTick);
   });
 });
+
+describe('healing respects the gear-raised maximum', () => {
+  function heroWith(current: number, base: number, effective: number): HexEngineActionContext {
+    const ctx = createContext();
+    ctx.hero.hero = {
+      name: 'Hero',
+      maxHealth: base,
+      currentHealth: current,
+      getEffectiveMaxHealth: () => effective,
+    };
+    return ctx;
+  }
+
+  function startAtFireplace(ctx: HexEngineActionContext) {
+    const map = buildMap();
+    const tile = map.tiles[0];
+    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.FIREPLACE, tile.coordinates);
+    return applyCommand(
+      { map, heroes: {} },
+      {
+        type: 'START_HEX_ACTION',
+        payload: {
+          heroId: 'hero-1',
+          coordinates: tile.coordinates,
+          actionType: EHexActionType.USE,
+          toolKey: HEXOBJECT_KEYS.HAND,
+          now: 0,
+        },
+      },
+      ctx,
+    ).events;
+  }
+
+  it('still heals a hero at the base maximum when a shield raised the cap', () => {
+    const events = startAtFireplace(heroWith(3, 3, 4));
+    expect(events[0]).toMatchObject({ type: 'HEX_ACTION_STARTED' });
+  });
+
+  it('reports full health only at the raised maximum', () => {
+    const events = startAtFireplace(heroWith(4, 3, 4));
+    expect(events[0]).toMatchObject({
+      type: 'HEX_ACTION_START_REJECTED',
+      payload: { message: 'Health is already full.' },
+    });
+  });
+
+  it('keeps resting while health is below the raised maximum', () => {
+    const map = buildMap();
+    const tile = map.tiles[0];
+    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.FIREPLACE, tile.coordinates);
+    const ctx = heroWith(3, 3, 4);
+    ctx.heroToolStore.isDragging = true;
+    ctx.heroToolStore.activeTool = HEXOBJECT_KEYS.HAND;
+    ctx.heroToolStore.hover = tile.coordinates;
+    const state: HexEngineState = { map, heroes: {} };
+    applyCommand(
+      state,
+      {
+        type: 'START_HEX_ACTION',
+        payload: {
+          heroId: 'hero-1',
+          coordinates: tile.coordinates,
+          actionType: EHexActionType.USE,
+          toolKey: HEXOBJECT_KEYS.HAND,
+          now: 0,
+        },
+      },
+      ctx,
+    );
+    applyCommand(state, { type: 'FINISH_PENDING_ACTIONS', payload: { now: 10_000 } }, ctx);
+    expect(tile.pendingAction).toMatchObject({ startedAt: 10_000 });
+  });
+});

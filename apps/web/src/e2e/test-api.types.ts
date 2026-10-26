@@ -35,6 +35,7 @@ export interface HexoflatTestApi {
   } | null;
   prepareKnowledgeWorld(current: number): void;
   setWill(current: number): void;
+  setSkillRank(skillId: string, rank: number): void;
   getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null;
   getWillSlotKey(): string;
   getKnowledgeRules(): { startingWill: number; capacity: number };
@@ -71,6 +72,8 @@ export interface HexoflatTestApi {
   findTilesWithKey(key: string): TestHexCoordinates[];
 
   getInventoryItemAmount(key: string): number;
+  grantInventoryItem(key: string, amount: number): void;
+  setHeroHealth(current: number): void;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 }

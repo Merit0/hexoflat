@@ -195,6 +195,13 @@ export class HeroInventoryComponent extends BaseComponent {
     await expect(this.page.getByTestId('item-tooltip-title')).toHaveText(title);
   }
 
+  async verifyTooltipWillCost(will: number, locked: boolean): Promise<void> {
+    await expect(this.page.getByTestId('item-tooltip-will-price')).toHaveText(String(will));
+    const note = this.page.getByTestId('item-tooltip-will-locked');
+    if (locked) await expect(note).toBeVisible();
+    else await expect(note).toBeHidden();
+  }
+
   async verifyTooltipMarkedEquipped(): Promise<void> {
     await expect(this.page.getByTestId('item-tooltip-equipped')).toBeVisible();
   }

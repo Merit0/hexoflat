@@ -13,6 +13,15 @@ import {
 } from '../../game-resolvers/interactions-resolver';
 import type { THeroToolKey } from '../../content/equipment.content';
 import type { THexobjectKey } from '../../registry/hexobjects-registry';
+import { EHexActionType } from '../../enums/hex-action-type';
+import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
+import type { SkillId } from '../../skills/skill-content';
+import {
+  getPortalAbility,
+  getPortalBaseCost,
+  getPortalSkillId,
+  type SkillRanks,
+} from '../../skills/skill-rules';
 import { resolveInventoryView } from './traits-resolver';
 
 export type TooltipCapability =
@@ -38,6 +47,8 @@ export interface TooltipFooter {
   stack?: { amount: number; max?: number };
 }
 
+export type TooltipWillUse = { kind: 'cost' | 'locked'; will: number; skillId?: SkillId };
+
 export interface ItemTooltipView {
   key: THexobjectKey;
   title: string;
@@ -49,6 +60,7 @@ export interface ItemTooltipView {
   equipped: boolean;
   headline?: TooltipHeadline;
   capabilities: TooltipCapability[];
+  use?: TooltipWillUse;
   shields: number;
   hearts: number;
   footer: TooltipFooter;
@@ -58,6 +70,7 @@ export interface ItemTooltipOptions {
   equipped?: boolean;
   compareWith?: THexobjectKey;
   amount?: number;
+  skills?: SkillRanks;
 }
 
 const CAPABILITY_BY_FLAG: Array<[keyof ToolCapabilities, TooltipCapability]> = [
@@ -127,6 +140,17 @@ function capabilitiesOf(key: THexobjectKey, group: EHexobjectGroup): TooltipCapa
   return CAPABILITY_BY_FLAG.filter(([flag]) => flags[flag]).map(([, name]) => name);
 }
 
+function useWillOf(key: THexobjectKey, skills: SkillRanks = {}): TooltipWillUse | undefined {
+  if (key === HEXOBJECT_KEYS.RETURN_SCROLL) {
+    const portal = getPortalAbility(skills);
+    const skillId = getPortalSkillId() ?? undefined;
+    if (portal.unlocked) return { kind: 'cost', will: portal.willCost, skillId };
+    return { kind: 'locked', will: getPortalBaseCost() ?? 0, skillId };
+  }
+  const cost = getMeta(key)?.actions?.[EHexActionType.USE]?.willCost ?? 0;
+  return cost > 0 ? { kind: 'cost', will: cost } : undefined;
+}
+
 export function resolveItemTooltip(
   key: THexobjectKey,
   options: ItemTooltipOptions = {},
@@ -151,6 +175,7 @@ export function resolveItemTooltip(
     equipped: options.equipped ?? false,
     headline,
     capabilities: capabilitiesOf(key, view.group),
+    use: useWillOf(key, options.skills),
     shields: getShieldPoints(key),
     hearts: getHeartPoints(key),
     footer: {

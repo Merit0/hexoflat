@@ -3,6 +3,7 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import { grantWill } from '@hexoflat/engine/knowledge/will';
+import type { SacrificeOptionId } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import type { KnowledgeAction, KnowledgeContext } from '@hexoflat/engine/knowledge/commands';
 import type { WillZone } from '@hexoflat/engine/knowledge/will-zone';
@@ -43,19 +44,38 @@ export async function dispatchKnowledge(host: KnowledgeHost, action: KnowledgeAc
   return { state, accepted };
 }
 
-export async function dispatchSkillUnlock(host: KnowledgeHost, skillId: SkillId) {
+export async function dispatchSkillSacrifice(
+  host: KnowledgeHost,
+  skillId: SkillId,
+  option: SacrificeOptionId,
+) {
   let accepted = false;
   const state = await transactKnowledge(host.heroId, (knowledge) => {
     if (!host.isCurrent()) return false;
     const { events } = applyCommand(
       { map: host.map, heroes: {}, knowledge, knowledgeContext: host.context },
       {
-        type: 'UNLOCK_SKILL',
-        payload: { heroId: host.heroId, revision: host.state.revision, skillId },
+        type: 'SACRIFICE_TO_SKILL',
+        payload: { heroId: host.heroId, revision: host.state.revision, skillId, option },
       },
       host.engineContext,
     );
-    accepted = events.some((event) => event.type === 'SKILL_UNLOCKED');
+    accepted = events.some((event) => event.type === 'SKILL_SACRIFICED');
+    return accepted;
+  });
+  return { state, accepted };
+}
+
+export async function dispatchSkillsReset(host: KnowledgeHost) {
+  let accepted = false;
+  const state = await transactKnowledge(host.heroId, (knowledge) => {
+    if (!host.isCurrent()) return false;
+    const { events } = applyCommand(
+      { map: host.map, heroes: {}, knowledge, knowledgeContext: host.context },
+      { type: 'RESET_SKILLS', payload: { heroId: host.heroId, revision: host.state.revision } },
+      host.engineContext,
+    );
+    accepted = events.some((event) => event.type === 'SKILLS_RESET');
     return accepted;
   });
   return { state, accepted };

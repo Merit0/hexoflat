@@ -1,12 +1,11 @@
 import { CAMP_PORTAL_SPOT } from '../content/boards/camp-portal-spot';
 import { isTerrainPassable } from '../boards/terrain';
-import { getMeta } from '../content/content-accessors';
-import { EHexActionType } from '../enums/hex-action-type';
 import type { HeroState } from '../hero-movement/hero-state';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type HexMapModel from '../map/models/hex-map-model';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { LocationKey } from '../registry/location-key';
+import { getPortalAbility, type SkillRanks } from '../skills/skill-rules';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { heroPortal, type PortalCloseReason, type PortalLink } from './portal-state';
 
@@ -30,14 +29,25 @@ export type OpenPortalRejection =
   | 'TILE_OCCUPIED'
   | 'EXIT_HEX'
   | 'NO_SCROLL'
+  | 'NOT_AN_ANGEL'
   | 'INSUFFICIENT_WILL'
   | 'NO_WILL_STATE';
 
 export type EnterPortalRejection =
   'HERO_NOT_FOUND' | 'NO_LOCATION' | 'IN_COMBAT' | 'NO_PORTAL' | 'NOT_ADJACENT' | 'NOT_YOUR_PORTAL';
 
-export function returnScrollWillCost(): number {
-  return getMeta(HEXOBJECT_KEYS.RETURN_SCROLL).actions?.[EHexActionType.USE]?.willCost ?? 0;
+export type PortalCostResult =
+  { ok: true; cost: number } | { ok: false; reason: 'NO_SCROLL' | 'NOT_AN_ANGEL' };
+
+export function resolvePortalCost(
+  skills: SkillRanks | undefined,
+  scrollCount: number,
+): PortalCostResult {
+  if (scrollCount < 1) return { ok: false, reason: 'NO_SCROLL' };
+  const ability = getPortalAbility(skills ?? {});
+  return ability.unlocked
+    ? { ok: true, cost: ability.willCost }
+    : { ok: false, reason: 'NOT_AN_ANGEL' };
 }
 
 export function planPortalOpening(

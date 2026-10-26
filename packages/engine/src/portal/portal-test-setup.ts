@@ -14,6 +14,7 @@ export function setup(
     will?: number;
     scrolls?: number;
     combat?: boolean;
+    teleportRank?: number;
   } = {},
 ) {
   const locationKey = options.location ?? 'silesia';
@@ -27,6 +28,7 @@ export function setup(
   const hero = buildHero({ coordinates: { ...heroTile.coordinates } });
   const knowledge = createKnowledgeState(hero.id);
   knowledge.current = 0;
+  knowledge.skills = { a_crest: 1, a_teleport: options.teleportRank ?? 6 };
   grantWill(knowledge, options.will ?? 20, { kind: 'dev', ref: 'test' });
   const state: HexEngineState = {
     map,

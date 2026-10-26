@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
 import { KnowledgeCommandSchema, type KnowledgeCommand } from '../knowledge/commands';
+import { SACRIFICE_OPTION_IDS } from '../skills/sacrifice-rules';
 import { skillIdSchema } from '../skills/skill-content';
 import { LOCATION_KEYS } from '../registry/location-key';
 
@@ -70,15 +71,25 @@ export const CrossExitCommandSchema = z.object({
 });
 export type CrossExitCommand = z.infer<typeof CrossExitCommandSchema>;
 
-export const UnlockSkillCommandSchema = z.object({
-  type: z.literal('UNLOCK_SKILL'),
+export const SacrificeToSkillCommandSchema = z.object({
+  type: z.literal('SACRIFICE_TO_SKILL'),
   payload: z.object({
     heroId: z.string(),
     revision: z.number().int().nonnegative(),
     skillId: skillIdSchema,
+    option: z.enum(SACRIFICE_OPTION_IDS),
   }),
 });
-export type UnlockSkillCommand = z.infer<typeof UnlockSkillCommandSchema>;
+export type SacrificeToSkillCommand = z.infer<typeof SacrificeToSkillCommandSchema>;
+
+export const ResetSkillsCommandSchema = z.object({
+  type: z.literal('RESET_SKILLS'),
+  payload: z.object({
+    heroId: z.string(),
+    revision: z.number().int().nonnegative(),
+  }),
+});
+export type ResetSkillsCommand = z.infer<typeof ResetSkillsCommandSchema>;
 
 export const OpenPortalCommandSchema = z.object({
   type: z.literal('OPEN_PORTAL'),
@@ -105,7 +116,8 @@ export type HexEngineCommand =
   | MoveHeroCommand
   | CrossExitCommand
   | KnowledgeCommand
-  | UnlockSkillCommand
+  | SacrificeToSkillCommand
+  | ResetSkillsCommand
   | OpenPortalCommand
   | EnterPortalCommand;
 
@@ -120,7 +132,8 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   MOVE_HERO: MoveHeroCommandSchema,
   CROSS_EXIT: CrossExitCommandSchema,
   KNOWLEDGE: KnowledgeCommandSchema,
-  UNLOCK_SKILL: UnlockSkillCommandSchema,
+  SACRIFICE_TO_SKILL: SacrificeToSkillCommandSchema,
+  RESET_SKILLS: ResetSkillsCommandSchema,
   OPEN_PORTAL: OpenPortalCommandSchema,
   ENTER_PORTAL: EnterPortalCommandSchema,
 };

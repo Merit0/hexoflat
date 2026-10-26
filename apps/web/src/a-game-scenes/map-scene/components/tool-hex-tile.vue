@@ -53,7 +53,6 @@ import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useBookReading } from '@/composables/use-book-reading';
 import { usePortal } from '@/composables/use-portal';
 import { portalRefusalText } from '@/composables/use-portal-messages';
-import { returnScrollWillCost } from '@hexoflat/engine/portal/portal-rules';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -133,7 +132,9 @@ const isScrollTool = computed(() => activeToolKey.value === HEXOBJECT_KEYS.RETUR
 function actionsForTool(tool: THeroToolKey, tile: HexTileModel | null): ResolvedAction[] {
   if (tool === HEXOBJECT_KEYS.RETURN_SCROLL) {
     const preview = tile ? portal.previewOpen(tile.coordinates) : null;
-    const offersUse = !!preview && (preview.ok || preview.reason === 'INSUFFICIENT_WILL');
+    const offersUse =
+      !!preview &&
+      (preview.ok || preview.reason === 'INSUFFICIENT_WILL' || preview.reason === 'NOT_AN_ANGEL');
     return offersUse
       ? [{ actioType: 'USE', label: t('tool.use'), priority: 100 } satisfies ResolvedAction]
       : [];
@@ -258,12 +259,13 @@ const bestActionLabel = computed(() => {
     activeToolKey.value === HEXOBJECT_KEYS.HAND &&
     object?.groupType === EHexobjectGroup.CONSTRUCTION &&
     !getMeta(object.hexobjectKey)?.heal;
+  if (bestAction.value.actioType === 'ENTER') return t('tool.enter');
   return isHandOnBuilding ? t('tool.open') : bestAction.value.label;
 });
 
 const bestActionCost = computed(() =>
   isScrollTool.value
-    ? returnScrollWillCost()
+    ? (portalPreview.value?.cost ?? 0)
     : pricing.costOf(
         hoveredTile.value,
         bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
@@ -316,7 +318,7 @@ const secondsLeft = computed(() => {
   if (!a?.endsAt) return 0;
 
   if (a.type === EHexActionType.USE && a.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
-    const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
+    const maxHp = Math.max(1, heroStore.heroHpMax);
     const currentHp = Math.max(0, Math.min(maxHp, Number(heroStore.hero.currentHealth ?? 0)));
     const missingHp = Math.max(0, maxHp - currentHp);
     const currentCycleSeconds = Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);
@@ -351,6 +353,7 @@ async function executeAction() {
 
   if (isScrollTool.value) {
     const preview = portalPreview.value;
+    const previewCost = preview?.cost ?? null;
     const oneWay = !!preview?.ok && preview.oneWay;
     const opened = await portal.openPortal(tile.coordinates);
     if (!opened.ok && opened.reason) {
@@ -358,7 +361,7 @@ async function executeAction() {
       heroToolStore.setActionMessage(
         portalRefusalText(opened.reason),
         opened.reason === 'INSUFFICIENT_WILL' ? 'will' : null,
-        opened.reason === 'INSUFFICIENT_WILL' ? returnScrollWillCost() : null,
+        opened.reason === 'INSUFFICIENT_WILL' ? previewCost : null,
       );
     } else if (opened.ok && oneWay) {
       heroToolStore.setActionMessage(t('portal.oneWay'));

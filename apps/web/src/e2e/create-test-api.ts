@@ -13,6 +13,7 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { skillIdSchema } from '@hexoflat/engine/skills/skill-content';
 import { usePortal } from '@/composables/use-portal';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type {
@@ -87,6 +88,15 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       if (!heroStore.knowledge || !Number.isInteger(current) || current < 0)
         throw new Error('Invalid fixture');
       writeKnowledge({ ...heroStore.knowledge, current });
+      heroStore.loadKnowledge();
+    },
+    setSkillRank(skillId: string, rank: number) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      const parsed = skillIdSchema.safeParse(skillId);
+      if (!heroStore.knowledge || !parsed.success || !Number.isInteger(rank) || rank < 0)
+        throw new Error('Invalid fixture');
+      const skills = { ...heroStore.knowledge.skills, [parsed.data]: rank };
+      writeKnowledge({ ...heroStore.knowledge, skills });
       heroStore.loadKnowledge();
     },
     getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null {
@@ -202,6 +212,19 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
     getInventoryItemAmount(key: string): number {
       return heroInventoryStore.countItem(key as THexobjectKey);
+    },
+
+    grantInventoryItem(key: string, amount: number) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      const result = heroInventoryStore.putToInventory(key as THexobjectKey, amount);
+      if (!result.ok) throw new Error(`Cannot grant ${amount} x ${key}`);
+    },
+    setHeroHealth(current: number) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      if (!Number.isFinite(current) || current < 0) throw new Error('Invalid fixture');
+      heroStore.hero.setHealth(current);
+      heroStore.hero.adjustHealthOnStatChange();
+      heroStore.saveProgressToStorage();
     },
 
     previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview {

@@ -214,6 +214,15 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       return this.rotationsById[id];
     },
 
+    unequipHand(slot: 'weapon' | 'shield'): boolean {
+      const item = this.equippedItems[slot];
+      if (!item || item.key === HEXOBJECT_KEYS.HAND) return false;
+      const target = this.freeSlotKeys[0];
+      if (!target) return false;
+      this.moveItemToSlot(item.id, target);
+      return true;
+    },
+
     moveItemToSlot(itemId: string, targetSlotKey: string) {
       const fromItem = this.items.find((i) => i.id === itemId);
       if (!fromItem) return;

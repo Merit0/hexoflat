@@ -1,5 +1,6 @@
 import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
+import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feature';
 import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { ToggleHeroBoardFeature } from '@features/world/toggle-hero-board.feature';
 import { VerifyHeroBoardFeature } from '@features/world/verify-hero-board.feature';
@@ -84,15 +85,65 @@ test('Verify clicking the hero hex opens the Hero tab and its Skills view', asyn
   await verifyBoard.verifyScoutPathCardVisible();
 });
 
-test('Verify spending Will unlocks a skill rank and the starting Will cannot buy a second one', async () => {
+test('Verify the Path tab opens with the bionic crest selected', async () => {
+  await new OpenCampingMapFeature().open();
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+
+  await new VerifyHeroBoardFeature().verifySelectedSkill(/Human Form|Людська форма/, 1, 1);
+});
+
+test('Verify sacrificing Will raises skill ranks until the Will runs out', async () => {
   await new OpenCampingMapFeature().open();
 
   await new SwitchHeroBoardTabFeature().switchTo('path');
 
   const verifyBoard = new VerifyHeroBoardFeature();
-  await verifyBoard.unlockSkill('attack', 1);
-  await verifyBoard.verifySkillCannotBeUnlocked('attack');
-  await verifyBoard.verifySkillCannotBeUnlocked('defense');
+  await verifyBoard.sacrificeToSkill('b_strike', 'all', 3);
+  await verifyBoard.verifySkillTreeWill(0);
+  await verifyBoard.verifySacrificeUnavailable('b_strike');
+  await verifyBoard.verifySacrificeUnavailable('b_guard');
+});
+
+test('Verify an expensive skill keeps its progress bar across a reload', async () => {
+  await new OpenCampingMapFeature().open();
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.grantSkillRank('a_crest', 1);
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+  await verifyBoard.selectSkill('a_teleport');
+  await verifyBoard.sacrificeToSkill('a_teleport', 'small', 0);
+  await verifyBoard.verifySelectedSkillProgress(15, 500);
+
+  await new ReloadCampingMapFeature().reload();
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+  await verifyBoard.verifySkillProgress('a_teleport', 15, 500);
+});
+
+test('Verify resetting all skills clears ranks and bars without refunding Will', async () => {
+  await new OpenCampingMapFeature().open();
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.verifyResetUnavailable();
+  await verifyBoard.sacrificeToSkill('b_strike', 'all', 3);
+  await verifyBoard.resetAllSkills();
+  await verifyBoard.verifySkillNodeRankIs('b_strike', 0);
+  await verifyBoard.verifySkillTreeWill(0);
+  await verifyBoard.verifyResetUnavailable();
+});
+
+test('Verify a skill that is not ready yet cannot be sacrificed into and says why', async () => {
+  await new OpenCampingMapFeature().open();
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.verifySkillIsComingSoon('b_heavy');
+  await verifyBoard.verifySkillWaitsForParents('a_teleport', /Blessing|Благословення/);
+  await verifyBoard.selectSkill('a_teleport');
+  await verifyBoard.verifySelectedSkill(/Teleport|Телепорт/, 0, 10);
 });
 
 test('Verify the Hero tab hearts match the hero health', async () => {
@@ -137,8 +188,50 @@ test('Verify unlocking an attack skill rank raises the attack shown on the Hero 
   const before = await verifyBoard.readAttackTileText();
 
   await switchTab.switchTo('path');
-  await verifyBoard.unlockSkill('attack', 1);
+  await verifyBoard.sacrificeToSkill('b_strike', 'small', 2);
 
   await switchTab.switchTo('hero');
   await verifyBoard.verifyAttackTileChangedFrom(before);
+});
+
+test('Verify a hand holding the Return Scroll shows its Will cost on the Hero tab', async () => {
+  await new OpenCampingMapFeature().open();
+  await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
+
+  const switchTab = new SwitchHeroBoardTabFeature();
+  const verifyBoard = new VerifyHeroBoardFeature();
+
+  await switchTab.switchTo('inventory');
+  await new DragInventoryItemFeature().dragToEquipSlot(
+    HexobjectKeys.returnScroll,
+    EquipSlot.WEAPON,
+  );
+  await switchTab.switchTo('hero');
+  await verifyBoard.verifyHandWillCost('right', 10);
+  await verifyBoard.verifyHandWillCost('left', null);
+
+  await verifyBoard.grantSkillRank('a_crest', 1);
+  await verifyBoard.grantSkillRank('a_teleport', 4);
+  await verifyBoard.verifyHandWillCost('right', 7);
+});
+
+test('Verify clicking a hand icon puts the held item back into the bag', async () => {
+  await new OpenCampingMapFeature().open();
+  await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
+
+  const switchTab = new SwitchHeroBoardTabFeature();
+  const verifyBoard = new VerifyHeroBoardFeature();
+
+  await switchTab.switchTo('inventory');
+  await new DragInventoryItemFeature().dragToEquipSlot(
+    HexobjectKeys.returnScroll,
+    EquipSlot.WEAPON,
+  );
+  await switchTab.switchTo('hero');
+  await verifyBoard.verifyHandHolds('right', /scroll/i);
+
+  await verifyBoard.emptyHandByIcon('right');
+
+  await switchTab.switchTo('inventory');
+  await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
 });

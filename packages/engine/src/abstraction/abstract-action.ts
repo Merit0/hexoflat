@@ -34,6 +34,7 @@ export interface IHeroPort {
     name: string;
     maxHealth: number;
     currentHealth: number;
+    getEffectiveMaxHealth?: () => number;
   };
   healHero: (amount: number) => void;
 }

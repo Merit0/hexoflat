@@ -121,9 +121,66 @@ describe('R3: OPEN_PORTAL refusals', () => {
   });
 });
 
+describe('Teleport skill', () => {
+  it.each([
+    [1, 10],
+    [2, 9],
+    [6, 5],
+    [10, 1],
+  ])('rank %i opens the portal for %i Will and consumes the scroll', (teleportRank, cost) => {
+    const s = setup({ will: 20, teleportRank });
+    const { events } = applyCommand(s.state, open(s.hero.id, s.target), s.ctx);
+
+    expect(s.state.knowledge!.current).toBe(20 - cost);
+    expect(s.scrolls()).toBe(0);
+    expect(events.map((e) => e.type)).toEqual(['WILL_SPENT', 'PORTAL_OPENED']);
+    expect(events[1]).toMatchObject({ payload: { willSpent: cost } });
+  });
+
+  it('without the skill the scroll is refused: nothing is spent, scroll stays', () => {
+    const s = setup({ will: 20, teleportRank: 0 });
+    const { events } = applyCommand(s.state, open(s.hero.id, s.target), s.ctx);
+
+    expect(events).toEqual([
+      {
+        type: 'PORTAL_OPEN_REJECTED',
+        payload: { heroId: s.hero.id, target: s.target, reason: 'NOT_AN_ANGEL' },
+      },
+    ]);
+    expect(s.state.knowledge!.current).toBe(20);
+    expect(s.scrolls()).toBe(1);
+    expect(s.hero.portal).toBeNull();
+    expect(tileAt(s.state, s.target).hexobject).toBeNull();
+  });
+
+  it('the skill alone is not enough: no scroll still means NO_SCROLL', () => {
+    const s = setup({ will: 20, scrolls: 0, teleportRank: 10 });
+    const { events } = applyCommand(s.state, open(s.hero.id, s.target), s.ctx);
+    expect(events[0]).toMatchObject({ payload: { reason: 'NO_SCROLL' } });
+    expect(s.state.knowledge!.current).toBe(20);
+  });
+
+  it('rejects for lack of Will and keeps the scroll', () => {
+    const s = setup({ will: 3, teleportRank: 1 });
+    const { events } = applyCommand(s.state, open(s.hero.id, s.target), s.ctx);
+
+    expect(events.map((e) => e.type)).toEqual(['WILL_REJECTED', 'PORTAL_OPEN_REJECTED']);
+    expect(s.state.knowledge!.current).toBe(3);
+    expect(s.scrolls()).toBe(1);
+  });
+
+  it("ignores another hero's skills", () => {
+    const s = setup({ will: 20 });
+    s.state.knowledge!.heroId = 'someone-else';
+    const { events } = applyCommand(s.state, open(s.hero.id, s.target), s.ctx);
+    expect(events[events.length - 1]).toMatchObject({ payload: { reason: 'NO_WILL_STATE' } });
+    expect(s.scrolls()).toBe(1);
+  });
+});
+
 describe('R2: portal cost', () => {
-  it('R2 prices opening at 5 Will from content and entering at 0', () => {
-    expect(getMeta(SCROLL).actions?.USE?.willCost).toBe(5);
+  it('R2 prices opening by the Teleport skill, not by content, and entering at 0', () => {
+    expect(getMeta(SCROLL).actions?.USE?.willCost).toBeUndefined();
     expect(getMeta(HEXOBJECT_KEYS.RETURN_PORTAL).actions?.ENTER?.willCost).toBe(0);
   });
 

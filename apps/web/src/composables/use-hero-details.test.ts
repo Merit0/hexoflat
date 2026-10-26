@@ -15,6 +15,7 @@ const base: HeroDetailsInput = {
   shieldPoints: 0,
   extraShields: 0,
   skills: {},
+  skillProgress: {},
   skillsLocked: false,
   will: { current: 20, capacity: 50 },
   weapon: null,
@@ -22,8 +23,8 @@ const base: HeroDetailsInput = {
   defense: 0,
 };
 
-const swordItem = { titleKey: 'content.sword.title', rarity: null };
-const shieldItem = { titleKey: 'content.shield.title', rarity: null };
+const swordItem = { titleKey: 'content.sword.title', rarity: null, willCost: null };
+const shieldItem = { titleKey: 'content.shield.title', rarity: null, willCost: null };
 const sword = { item: swordItem, multiplier: 1.2 };
 const shield = { item: shieldItem, defense: 2.4 };
 
@@ -125,46 +126,10 @@ describe('buildHeroDetails', () => {
       ...base,
       weapon: sword,
       defense: 2.4,
-      skills: { attack: 4, defense: 6 },
+      skills: { b_strike: 4, b_guard: 6 },
     });
     expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('×1.44');
     expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2.7');
     expect(view.shields.filled).toBe(0);
-  });
-
-  it('describes each skill with rank, bonus, price and unlock status', () => {
-    const view = buildHeroDetails({
-      ...base,
-      skills: { attack: 2 },
-      will: { current: 30, capacity: 50 },
-    });
-    const attack = view.skills.find((skill) => skill.id === 'attack');
-    expect(attack).toEqual({
-      id: 'attack',
-      rank: 2,
-      maxRank: 10,
-      bonus: 0.1,
-      nextCost: 25,
-      status: 'ready',
-    });
-    expect(view.skills.find((skill) => skill.id === 'defense')).toMatchObject({
-      rank: 0,
-      nextCost: 20,
-      status: 'ready',
-    });
-  });
-
-  it('marks a skill that cannot be bought and says why', () => {
-    const poor = buildHeroDetails({ ...base, will: { current: 19, capacity: 50 } });
-    expect(poor.skills[0].status).toBe('need-will');
-
-    const noWill = buildHeroDetails({ ...base, will: null });
-    expect(noWill.skills[0].status).toBe('need-will');
-
-    const busy = buildHeroDetails({ ...base, skillsLocked: true });
-    expect(busy.skills[0].status).toBe('locked');
-
-    const maxed = buildHeroDetails({ ...base, skills: { attack: 10 } });
-    expect(maxed.skills[0]).toMatchObject({ status: 'max', nextCost: null, bonus: 0.5 });
   });
 });

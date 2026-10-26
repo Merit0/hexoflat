@@ -27,7 +27,7 @@
       <hero-stat-grid :view="view" />
       <hero-details-tabs v-model="tab" />
 
-      <hero-hands-section v-if="tab === 'state'" :view="view" />
+      <hero-hands-section v-if="tab === 'state'" :view="view" @unequip="unequipHand" />
 
       <div v-else class="cards" data-testid="hero-details-skills">
         <hero-details-card class="card" data-testid="hero-path-scout">
@@ -69,12 +69,18 @@ import { useHeroDetailsLabels } from './use-hero-details-labels';
 import HeroStatGrid from './hero-stat-grid.vue';
 import HeroDetailsTabs from './hero-details-tabs.vue';
 import HeroDetailsCard from './hero-details-card.vue';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import HeroHandsSection from './hero-hands-section.vue';
 
 const { t } = useI18n();
 const view = useHeroDetails();
 const tab = ref<HeroDetailsTab>('state');
 const labels = useHeroDetailsLabels();
+const inventory = useHeroInventoryStore();
+
+function unequipHand(hand: 'right' | 'left') {
+  inventory.unequipHand(hand === 'right' ? 'weapon' : 'shield');
+}
 const { wrapperRef, contentRef, scale, offsetX } = useFitToWidth();
 </script>
 

@@ -4,7 +4,9 @@ import type { TestHeroHealth } from '@framework/test-api';
 
 export type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
 export type HeroDetailsTab = 'state' | 'skills';
-export type HeroSkillId = 'attack' | 'defense';
+export type SacrificeOption = 'small' | 'medium' | 'all';
+export type HeroSkillId =
+  'b_crest' | 'b_strike' | 'b_guard' | 'b_heavy' | 'd_crest' | 'a_crest' | 'a_teleport';
 export type HeroHand = 'right' | 'left';
 
 /**
@@ -46,12 +48,44 @@ export class HeroBoardPanelComponent extends BaseComponent {
     return this.page.getByTestId('hero-vitals-will');
   }
 
-  private skillUnlockButton(id: HeroSkillId): Locator {
-    return this.page.getByTestId(`hero-skill-${id}-unlock`);
+  private skillNode(id: HeroSkillId): Locator {
+    return this.page.getByTestId(`hero-skill-node-${id}`);
   }
 
-  private skillRank(id: HeroSkillId): Locator {
-    return this.page.getByTestId(`hero-skill-${id}-rank`);
+  private skillNodeRank(id: HeroSkillId): Locator {
+    return this.page.getByTestId(`hero-skill-node-${id}-rank`);
+  }
+
+  private get skillDetailName(): Locator {
+    return this.page.getByTestId('hero-skill-detail-name');
+  }
+
+  private get skillDetailRank(): Locator {
+    return this.page.getByTestId('hero-skill-detail-rank');
+  }
+
+  private get skillDetailRequires(): Locator {
+    return this.page.getByTestId('hero-skill-detail-requires');
+  }
+
+  private sacrificeButton(option: SacrificeOption): Locator {
+    return this.page.getByTestId(`hero-skill-sacrifice-${option}`);
+  }
+
+  private get skillProgressValue(): Locator {
+    return this.page.getByTestId('hero-skill-detail').getByTestId('hero-skill-progress-value');
+  }
+
+  private get skillTreeWill(): Locator {
+    return this.page.getByTestId('hero-skill-will');
+  }
+
+  private get resetButton(): Locator {
+    return this.page.getByTestId('hero-skill-reset');
+  }
+
+  private get resetConfirmButton(): Locator {
+    return this.page.getByTestId('hero-skill-reset-confirm');
   }
 
   private heartNests(): Locator {
@@ -68,6 +102,10 @@ export class HeroBoardPanelComponent extends BaseComponent {
 
   private handName(hand: HeroHand): Locator {
     return this.page.getByTestId(`hero-hand-${hand}-name`);
+  }
+
+  private handWill(hand: HeroHand): Locator {
+    return this.page.getByTestId(`hero-hand-${hand}-will`);
   }
 
   private handEmpty(hand: HeroHand): Locator {
@@ -168,6 +206,19 @@ export class HeroBoardPanelComponent extends BaseComponent {
     await expect(this.handEmpty(hand)).toBeHidden();
   }
 
+  async clickHandIcon(hand: HeroHand): Promise<void> {
+    await this.page.getByTestId(`hero-hand-${hand}-label`).click();
+  }
+
+  async verifyHandIconDisabled(hand: HeroHand): Promise<void> {
+    await expect(this.page.getByTestId(`hero-hand-${hand}-label`)).toBeDisabled();
+  }
+
+  async verifyHandWillCost(hand: HeroHand, will: number | null): Promise<void> {
+    if (will === null) await expect(this.handWill(hand)).toBeHidden();
+    else await expect(this.handWill(hand)).toContainText(String(will));
+  }
+
   async readAttackTileText(): Promise<string> {
     return this.attackTileValue.innerText();
   }
@@ -180,16 +231,64 @@ export class HeroBoardPanelComponent extends BaseComponent {
     await expect(this.skillTree).toBeVisible();
   }
 
-  async unlockSkill(id: HeroSkillId): Promise<void> {
-    await this.skillUnlockButton(id).click();
+  async selectSkill(id: HeroSkillId): Promise<void> {
+    await this.skillNode(id).click();
   }
 
-  async verifySkillRank(id: HeroSkillId, rank: number, maxRank: number): Promise<void> {
-    await expect(this.skillRank(id)).toContainText(new RegExp(`\\b${rank}\\s*/\\s*${maxRank}\\b`));
+  async sacrifice(option: SacrificeOption): Promise<void> {
+    await this.sacrificeButton(option).click();
   }
 
-  async verifySkillCannotBeUnlocked(id: HeroSkillId): Promise<void> {
-    await expect(this.skillUnlockButton(id)).toBeDisabled();
+  async verifySacrificeDisabled(option: SacrificeOption): Promise<void> {
+    await expect(this.sacrificeButton(option)).toBeDisabled();
+  }
+
+  async verifySacrificeEnabled(option: SacrificeOption): Promise<void> {
+    await expect(this.sacrificeButton(option)).toBeEnabled();
+  }
+
+  async verifySacrificeHidden(): Promise<void> {
+    await expect(this.sacrificeButton('small')).toBeHidden();
+  }
+
+  async verifySelectedSkillProgress(progress: number, cost: number): Promise<void> {
+    await expect(this.skillProgressValue).toHaveText(`${progress}/${cost}`);
+  }
+
+  async verifySkillTreeWill(will: number): Promise<void> {
+    await expect(this.skillTreeWill).toContainText(new RegExp(`^\\s*${will}\\b`));
+  }
+
+  async resetAllSkills(): Promise<void> {
+    await this.resetButton.click();
+    await this.resetConfirmButton.click();
+  }
+
+  async verifyResetDisabled(): Promise<void> {
+    await expect(this.resetButton).toBeDisabled();
+  }
+
+  async verifySelectedSkillName(name: RegExp): Promise<void> {
+    await expect(this.skillDetailName).toHaveText(name);
+  }
+
+  async verifySelectedSkillRank(rank: number, maxRank: number): Promise<void> {
+    await expect(this.skillDetailRank).toContainText(
+      new RegExp(`\\b${rank}\\s*/\\s*${maxRank}\\b`),
+    );
+  }
+
+  async verifySkillNodeRank(id: HeroSkillId, rank: number): Promise<void> {
+    await expect(this.skillNodeRank(id)).toHaveText(String(rank));
+  }
+
+  async verifySelectedSkillRequirementsShown(names: RegExp): Promise<void> {
+    await expect(this.skillDetailRequires).toBeVisible();
+    await expect(this.skillDetailRequires).toContainText(names);
+  }
+
+  async verifySelectedSkillRequirementsHidden(): Promise<void> {
+    await expect(this.skillDetailRequires).toBeHidden();
   }
 
   async verifyHeroTabContentHidden(): Promise<void> {
@@ -216,5 +315,9 @@ export class HeroBoardPanelComponent extends BaseComponent {
 
   async verifyHeroHealth(expected: TestHeroHealth): Promise<void> {
     await expect.poll(() => this.getHeroHealth()).toEqual(expected);
+  }
+
+  async verifyHeroHealthWithin(expected: TestHeroHealth, timeoutMs: number): Promise<void> {
+    await expect.poll(() => this.getHeroHealth(), { timeout: timeoutMs }).toEqual(expected);
   }
 }

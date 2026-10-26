@@ -1,3 +1,4 @@
+import { healthCapOf } from '../utils/combat/health-format';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import type { IPendingTileAction } from '../abstraction/hex-tile-abstraction';
@@ -131,7 +132,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         ctx.heroToolStore.hover?.rowIndex === tile.coordinates.rowIndex;
 
       const hasMoreHealthToRecover =
-        (heroStore.hero.currentHealth ?? 0) < (heroStore.hero.maxHealth ?? 100);
+        (heroStore.hero.currentHealth ?? 0) < healthCapOf(heroStore.hero);
 
       if (heroIsStillResting && hasMoreHealthToRecover) {
         const nextEndsAt = ctx.now + 10_000;

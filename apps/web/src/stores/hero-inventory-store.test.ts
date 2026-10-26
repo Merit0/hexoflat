@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroInventoryStore } from './hero-inventory-store';
 
@@ -95,5 +96,54 @@ describe('useHeroInventoryStore: starter Return Scrolls', () => {
     second.hydrate();
 
     expect(second.countItem(SCROLL)).toBe(50);
+  });
+});
+
+describe('useHeroInventoryStore: unequipHand', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
+  });
+
+  it('moves the held item into the bag and leaves the default hand', () => {
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    const scroll = inventory.items.find((item) => item.key === SCROLL)!;
+    inventory.moveItemToSlot(scroll.id, 'eq:weapon');
+    expect(inventory.equippedItems.weapon?.key).toBe(SCROLL);
+
+    expect(inventory.unequipHand('weapon')).toBe(true);
+    expect(inventory.equippedItems.weapon?.key).toBe(HEXOBJECT_KEYS.HAND);
+    expect(inventory.items.find((item) => item.id === scroll.id)?.slotKey).not.toBe('eq:weapon');
+    expect(inventory.countItem(SCROLL)).toBeGreaterThan(0);
+  });
+
+  it('does nothing for an empty hand', () => {
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    expect(inventory.unequipHand('shield')).toBe(false);
+  });
+
+  it('keeps the item in the hand when the bag is full', () => {
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    const scroll = inventory.items.find((item) => item.key === SCROLL)!;
+    inventory.moveItemToSlot(scroll.id, 'eq:weapon');
+    for (const slotKey of [...inventory.freeSlotKeys]) {
+      const id = crypto.randomUUID();
+      inventory.items.push({
+        id,
+        key: POTION,
+        type: EHexobjectGroup.LOOT,
+        stackKey: id,
+        amount: 1,
+        slotKey,
+        isNew: false,
+      });
+    }
+    expect(inventory.freeSlotKeys).toHaveLength(0);
+
+    expect(inventory.unequipHand('weapon')).toBe(false);
+    expect(inventory.equippedItems.weapon?.key).toBe(SCROLL);
   });
 });

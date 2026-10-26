@@ -4,6 +4,8 @@ import {
   resolveItemTooltip,
   type ItemTooltipView,
 } from '@hexoflat/engine/utils/inventory/item-tooltip';
+import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
+import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { inventoryDragState } from '@/composables/use-inventory-drag';
 
@@ -71,21 +73,23 @@ export function showItemTooltip(itemId: string, element: HTMLElement) {
 export function resolveInventoryItemTooltip(
   inventory: ReturnType<typeof useHeroInventoryStore>,
   item: InventoryItem,
+  skills?: SkillRanks,
 ): ItemTooltipView {
   const equippedItems = inventory.equippedItems;
   const equipSlot = resolveInventoryView(item.key).equipSlot;
   const equipped = Object.values(equippedItems).some((entry) => entry?.id === item.id);
   const compareWith = !equipped && equipSlot ? equippedItems[equipSlot]?.key : undefined;
-  return resolveItemTooltip(item.key, { equipped, compareWith, amount: item.amount });
+  return resolveItemTooltip(item.key, { equipped, compareWith, amount: item.amount, skills });
 }
 
 export function useItemTooltip() {
   const inventory = useHeroInventoryStore();
+  const heroStore = useHeroStore();
 
   const view = computed<ItemTooltipView | null>(() => {
     if (!target.value) return null;
     const item = inventory.items.find((entry) => entry.id === target.value?.itemId);
-    return item ? resolveInventoryItemTooltip(inventory, item) : null;
+    return item ? resolveInventoryItemTooltip(inventory, item, heroStore.knowledge?.skills) : null;
   });
 
   watch(

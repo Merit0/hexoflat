@@ -1,3 +1,4 @@
+import { healthCapOf } from '../utils/combat/health-format';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import { EHexActionType } from '../enums/hex-action-type';
 import { EHexobjectGroup, IResourceTraits } from '../abstraction/hexobject-abstraction';
@@ -245,7 +246,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     const pendingMeta: Record<string, any> = {};
 
     if (meta.heal) {
-      const maxHealth = Math.max(1, heroStore.hero.maxHealth ?? 1);
+      const maxHealth = Math.max(1, healthCapOf(heroStore.hero) ?? 1);
       const currentHealth = Math.max(0, heroStore.hero.currentHealth ?? 0);
       const missingHealth = Math.max(0, maxHealth - currentHealth);
 

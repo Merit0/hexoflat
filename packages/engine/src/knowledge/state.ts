@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { KNOWLEDGE_RULES, effectiveWillCapacity } from './math';
-import { skillIdSchema } from '../skills/skill-content';
+import { skillIdSchema, type SkillId } from '../skills/skill-content';
+import { getNextRankCost } from '../skills/skill-rules';
 
 const questionSchema = z
   .object({
@@ -53,6 +54,22 @@ function dropRetiredSessions(value: unknown): unknown {
   return isRetired ? { ...record, session: null } : record;
 }
 
+const LEGACY_SKILL_IDS: Record<string, string> = { attack: 'b_strike', defense: 'b_guard' };
+
+function migrateLegacySkills(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const record = value as Record<string, unknown>;
+  const skills = record.skills;
+  if (!skills || typeof skills !== 'object') return record;
+  const migrated: Record<string, number> = {};
+  for (const [key, rank] of Object.entries(skills as Record<string, unknown>)) {
+    const id = LEGACY_SKILL_IDS[key] ?? key;
+    if (!skillIdSchema.safeParse(id).success || typeof rank !== 'number') continue;
+    migrated[id] = Math.max(migrated[id] ?? 0, rank);
+  }
+  return { ...record, skills: migrated };
+}
+
 const knowledgeStateObjectSchema = z
   .object({
     version: z.literal(1),
@@ -73,9 +90,19 @@ const knowledgeStateObjectSchema = z
       .default(null),
     history: z.record(z.string(), z.array(z.boolean()).max(10)),
     skills: z.partialRecord(skillIdSchema, z.number().int().min(0)).default({}),
+    skillProgress: z.partialRecord(skillIdSchema, z.number().int().min(0)).default({}),
   })
-  .refine((s) => s.current <= s.capacity);
-export const knowledgeStateSchema = z.preprocess(dropRetiredSessions, knowledgeStateObjectSchema);
+  .refine((s) => s.current <= s.capacity)
+  .refine((s) =>
+    Object.entries(s.skillProgress).every(([id, progress]) => {
+      const cost = getNextRankCost(s.skills, id as SkillId);
+      return cost === null ? progress === 0 : progress < cost;
+    }),
+  );
+export const knowledgeStateSchema = z.preprocess(
+  (value) => migrateLegacySkills(dropRetiredSessions(value)),
+  knowledgeStateObjectSchema,
+);
 export type KnowledgeState = z.infer<typeof knowledgeStateObjectSchema>;
 export type HallSession = z.infer<typeof hallSessionSchema>;
 
@@ -91,5 +118,6 @@ export function createKnowledgeState(heroId: string): KnowledgeState {
     lastStep: null,
     history: {},
     skills: {},
+    skillProgress: {},
   };
 }

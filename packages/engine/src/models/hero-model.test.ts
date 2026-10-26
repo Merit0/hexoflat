@@ -6,11 +6,17 @@ function hero(max: number, current: number): HeroModel {
 }
 
 describe('HeroModel max health bonus', () => {
-  it('raises only the allowed maximum and never heals', () => {
+  it('keeps a full hero full when the maximum grows', () => {
     const model = hero(3, 3).setMaxHealthBonus(1);
     expect(model.maxHealth).toBe(3);
     expect(model.getEffectiveMaxHealth()).toBe(4);
-    expect(model.currentHealth).toBe(3);
+    expect(model.currentHealth).toBe(4);
+  });
+
+  it('does not heal a hurt hero when the maximum grows', () => {
+    const model = hero(3, 2).setMaxHealthBonus(1);
+    expect(model.getEffectiveMaxHealth()).toBe(4);
+    expect(model.currentHealth).toBe(2);
   });
 
   it('keeps the current health when the bonus goes away below it', () => {
@@ -35,8 +41,36 @@ describe('HeroModel max health bonus', () => {
     expect(model.currentHealth).toBe(1.5);
   });
 
-  it('lets healing reach the raised maximum', () => {
+  it('cannot heal a damaged shielded hero by taking the shield off and putting it on', () => {
     const model = hero(3, 3).setMaxHealthBonus(1);
+    model.setHealth(3);
+    model.setMaxHealthBonus(0);
+    expect(model.currentHealth).toBe(3);
+    model.setMaxHealthBonus(1);
+    expect(model.getEffectiveMaxHealth()).toBe(4);
+    expect(model.currentHealth).toBe(3);
+  });
+
+  it('refills the new heart once the hero really healed to full in between', () => {
+    const model = hero(3, 3).setMaxHealthBonus(1);
+    model.setHealth(3);
+    model.setMaxHealthBonus(0);
+    model.setHealth(2);
+    model.setHealth(3);
+    model.setMaxHealthBonus(1);
+    expect(model.currentHealth).toBe(4);
+  });
+
+  it('a full shielded hero can swap the shield off and on without losing the heart', () => {
+    const model = hero(3, 3).setMaxHealthBonus(1);
+    model.setMaxHealthBonus(0);
+    expect(model.currentHealth).toBe(3);
+    model.setMaxHealthBonus(1);
+    expect(model.currentHealth).toBe(4);
+  });
+
+  it('lets healing reach the raised maximum', () => {
+    const model = hero(3, 2.5).setMaxHealthBonus(1);
     model.setHealth(model.currentHealth + 5);
     model.adjustHealthOnStatChange();
     expect(model.currentHealth).toBe(4);
@@ -46,6 +80,7 @@ describe('HeroModel max health bonus', () => {
     const model = hero(10, 9.5).setMaxHealthBonus(5);
     expect(model.getEffectiveMaxHealth()).toBe(MAX_HERO_HEALTH);
     expect(model.currentHealth).toBe(9.5);
+    expect(hero(10, 10).setMaxHealthBonus(5).currentHealth).toBe(MAX_HERO_HEALTH);
     expect(hero(100, 100).getEffectiveMaxHealth()).toBe(MAX_HERO_HEALTH);
   });
 
