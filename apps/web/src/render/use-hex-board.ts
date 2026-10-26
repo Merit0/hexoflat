@@ -22,6 +22,9 @@ import {
   type CombatMarkerLayer,
 } from '@/render/layers/combat-marker-layer';
 import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
+import { createPortalLayer, type PortalLayer } from '@/render/layers/portal-layer';
+import { registerPortalFx } from '@/render/portal-fx';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HEX_WORLD_SIZE, type BoardCamera, type PaneSize } from '@/render/board-camera';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useCombatStore } from '@/stores/combat-store';
@@ -37,6 +40,7 @@ export interface UseHexBoardOptions {
    * lets the tiles-layer sync recompute just the tiles that actually changed.
    */
   tilesDirtyTick: ComputedRef<number>;
+  boardKey: ComputedRef<string | null>;
   heroCoordinates: ComputedRef<IHexCoordinates | null>;
   healTickerNow: Ref<number>;
   movePreview: {
@@ -72,6 +76,12 @@ export interface UseHexBoardOptions {
 
 const getTileSize = () => HEX_WORLD_SIZE;
 
+function portalCoordinates(tiles: IHexTile[]): IHexCoordinates[] {
+  return tiles
+    .filter((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.RETURN_PORTAL)
+    .map((tile) => tile.coordinates);
+}
+
 function waitForValidSize(size: ComputedRef<PaneSize>): Promise<PaneSize> {
   return new Promise((resolve) => {
     if (size.value.width > 0 && size.value.height > 0) {
@@ -93,7 +103,9 @@ export function useHexBoard(opts: UseHexBoardOptions) {
 
   let board: HexBoardApp | null = null;
   let tilesLayer: TilesLayer | null = null;
+  let portalLayer: PortalLayer | null = null;
   let heroLayer: HeroLayer | null = null;
+  let unregisterPortalFx: (() => void) | null = null;
   let movePreviewLayer: MovePreviewLayer | null = null;
   let enemyVisionLayer: EnemyVisionLayer | null = null;
   let combatMarkerLayer: CombatMarkerLayer | null = null;
@@ -128,6 +140,11 @@ export function useHexBoard(opts: UseHexBoardOptions) {
         opts.devPanel?.zoneTintByCoordinateKey.value.get(coordinateKey(tile.coordinates)) ?? null,
     });
 
+    portalLayer = createPortalLayer({
+      worldContainer: board.worldContainer,
+      getTileSize,
+    });
+
     enemyVisionLayer = createEnemyVisionLayer({
       worldContainer: board.worldContainer,
       getTileSize,
@@ -136,6 +153,12 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     heroLayer = createHeroLayer({
       worldContainer: board.worldContainer,
       getTileSize,
+    });
+
+    unregisterPortalFx = registerPortalFx({
+      enter: (portal) => heroLayer?.playPortalEnter(portal) ?? Promise.resolve(),
+      exit: (portal) => heroLayer?.playPortalExit(portal) ?? Promise.resolve(),
+      release: () => heroLayer?.releasePortal(),
     });
 
     movePreviewLayer = createMovePreviewLayer({
@@ -173,6 +196,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
         () => {
           const dirtyKeys = worldStore.consumeDirtyTileIds();
           tilesLayer?.syncTiles(opts.tiles.value, hasFullySynced ? dirtyKeys : undefined);
+          portalLayer?.sync(portalCoordinates(opts.tiles.value), opts.boardKey.value);
           hasFullySynced = true;
           tilesLayer?.syncDefendMarkers(opts.tiles.value);
           tilesLayer?.syncLockChips(opts.tiles.value, opts.healTickerNow.value);
@@ -197,7 +221,12 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       );
     }
 
-    stopWatchers.push(watch(opts.tiles, (tiles) => tilesLayer?.syncTiles(tiles)));
+    stopWatchers.push(
+      watch(opts.tiles, (tiles) => {
+        tilesLayer?.syncTiles(tiles);
+        portalLayer?.sync(portalCoordinates(tiles), opts.boardKey.value);
+      }),
+    );
 
     stopWatchers.push(
       watch(opts.healTickerNow, (now) => tilesLayer?.syncLockChips(opts.tiles.value, now)),
@@ -274,7 +303,9 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     cancelled = true;
     for (const stop of stopWatchers) stop();
     stopWatchers = [];
+    unregisterPortalFx?.();
     tilesLayer?.destroy();
+    portalLayer?.destroy();
     heroLayer?.destroy();
     movePreviewLayer?.destroy();
     enemyVisionLayer?.destroy();
@@ -283,6 +314,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     board?.destroy();
     board = null;
     tilesLayer = null;
+    portalLayer = null;
     heroLayer = null;
     movePreviewLayer = null;
     enemyVisionLayer = null;

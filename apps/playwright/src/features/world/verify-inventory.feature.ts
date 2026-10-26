@@ -17,6 +17,12 @@ export class VerifyInventoryFeature extends BaseFeature {
     );
   }
 
+  async verifyItemAmount(itemKey: string, amount: number): Promise<void> {
+    await this.step(`Verify the inventory holds ${amount} x "${itemKey}"`, () =>
+      this.campingMap.inventory.verifyItemAmount(itemKey, amount),
+    );
+  }
+
   async verifyDoesNotContainItem(itemKey: string): Promise<void> {
     await this.step(`Verify "${itemKey}" is not in the inventory yet`, () =>
       this.campingMap.inventory.verifyDoesNotContainItem(itemKey),

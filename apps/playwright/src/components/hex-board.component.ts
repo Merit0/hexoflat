@@ -317,6 +317,62 @@ export class HexBoardComponent extends BaseComponent {
       .toBe(hexobjectKey);
   }
 
+  async getTilesWithKey(hexobjectKey: string): Promise<TestHexCoordinates[]> {
+    return this.page.evaluate(
+      (key) => window.__HEXOFLAT_TEST__!.findTilesWithKey(key),
+      hexobjectKey,
+    );
+  }
+
+  async requireSingleTileWithKey(hexobjectKey: string): Promise<TestHexCoordinates> {
+    await this.verifyTileCountWithKey(hexobjectKey, 1);
+    return (await this.getTilesWithKey(hexobjectKey))[0];
+  }
+
+  async verifyTileCountWithKey(hexobjectKey: string, count: number): Promise<void> {
+    await expect
+      .poll(async () => (await this.getTilesWithKey(hexobjectKey)).length, {
+        timeout: 5_000,
+        intervals: POLL_INTERVALS_MS,
+      })
+      .toBe(count);
+  }
+
+  async verifyLocation(locationKey: string): Promise<void> {
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getCurrentLocationKey()), {
+        timeout: 10_000,
+        intervals: POLL_INTERVALS_MS,
+      })
+      .toBe(locationKey);
+  }
+
+  async verifyHeroBesideTile(coordinates: TestHexCoordinates): Promise<void> {
+    await expect
+      .poll(
+        async () => {
+          const hero = await this.getHeroCoordinates();
+          return hero ? this.getDistance(hero, coordinates) : null;
+        },
+        { timeout: 5_000, intervals: POLL_INTERVALS_MS },
+      )
+      .toBe(1);
+  }
+
+  async hoverPortalTarget(): Promise<{ target: TestHexCoordinates; oneWay: boolean }> {
+    const from = await this.requireHeroCoordinates();
+    for (const candidate of await this.getNeighbors(from)) {
+      const preview = await this.page.evaluate(
+        (coord) => window.__HEXOFLAT_TEST__!.previewPortalOpening(coord),
+        candidate,
+      );
+      if (!preview.ok) continue;
+      await this.hoverTile(candidate);
+      return { target: candidate, oneWay: preview.oneWay };
+    }
+    throw new Error('No neighbouring hex accepts a portal.');
+  }
+
   async verifyTileIsCleared(coordinates: TestHexCoordinates): Promise<void> {
     await expect
       .poll(() => this.getTileHexobjectKey(coordinates), {

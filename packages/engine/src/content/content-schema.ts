@@ -22,15 +22,18 @@ const actionConfigSchema = z.object({
   durationMs: z.number().optional(),
   requiredTool: hexobjectKeySchema.optional(),
   durabilityCostPct: z.number().optional(),
-  willCost: z.number().int().min(0).max(3).optional(),
+  willCost: z.number().int().min(0).max(5).optional(),
 });
 
-const enterSchema = z.object({
-  type: z.literal('WORLD'),
-  // Loose on purpose: LocationKey lives in world-map-registry.ts, which pulls in
-  // rendering code, and content must stay framework-agnostic.
-  locationKey: z.string(),
-});
+const enterSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('WORLD'),
+    // Loose on purpose: LocationKey lives in world-map-registry.ts, which pulls in
+    // rendering code, and content must stay framework-agnostic.
+    locationKey: z.string(),
+  }),
+  z.object({ type: z.literal('PORTAL') }),
+]);
 
 const healSchema = z.object({
   amountPerTick: z.number(),
@@ -236,6 +239,6 @@ export interface IHexobjectMeta {
   };
   equip?: { slot: TEquipSlot };
   yields?: THexYields;
-  enter?: { type: 'WORLD'; locationKey: LocationKey };
+  enter?: { type: 'WORLD'; locationKey: LocationKey } | { type: 'PORTAL' };
   heal?: { amountPerTick: number; radius?: number };
 }

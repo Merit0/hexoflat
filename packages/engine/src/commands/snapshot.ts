@@ -2,6 +2,7 @@ import { knowledgeStateSchema, type KnowledgeState } from '../knowledge/state';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
 import type { HeroState } from '../hero-movement/hero-state';
 import { CONTENT_VERSION } from '../content/content-version';
+import { normalizeHeroPortal } from '../portal/portal-state';
 import { sha256Hex } from '../utils/hash/sha256';
 import type { RngState } from '../utils/random-seeded';
 import type { HexEngineState } from './apply-command';
@@ -74,7 +75,9 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
 
   return {
     map: HexMapModel.fromJSON(payload.map, now),
-    heroes: payload.heroes,
+    heroes: Object.fromEntries(
+      Object.entries(payload.heroes).map(([id, hero]) => [id, normalizeHeroPortal(hero)]),
+    ),
     ...(payload.knowledge ? { knowledge: knowledgeStateSchema.parse(payload.knowledge) } : {}),
     rngState: rngState ?? freshRngState(),
   };

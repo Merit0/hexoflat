@@ -15,7 +15,8 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.GRAVE
   | typeof HEXOBJECT_KEYS.CHEST
   | typeof HEXOBJECT_KEYS.STASH_CHEST
-  | typeof HEXOBJECT_KEYS.STONE_WALL;
+  | typeof HEXOBJECT_KEYS.STONE_WALL
+  | typeof HEXOBJECT_KEYS.RETURN_PORTAL;
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.KNOWLEDGE_BOOK]: {
@@ -243,5 +244,28 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     description: 'A fresh grave marks a fallen enemy.',
     collision: EHexCollision.NONE,
     construction: { integrity: 1000, isLocked: false },
+  },
+
+  [HEXOBJECT_KEYS.RETURN_PORTAL]: {
+    hexobjectKey: HEXOBJECT_KEYS.RETURN_PORTAL,
+    tags: ['portal'],
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    alwaysVisible: true,
+    title: 'Return Portal',
+    subtitle: 'A way home',
+    description: 'A shimmering gate that links this place with the camp.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-constructs/hero-portal/portal-runes-frame.png',
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.ENTER]: {
+        label: 'Open',
+        durationMs: 400,
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
+    },
+    enter: { type: 'PORTAL' },
   },
 };

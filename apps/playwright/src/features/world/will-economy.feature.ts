@@ -21,24 +21,22 @@ export class WillEconomyFeature extends BaseFeature {
   }
 
   async verifyStuckWithoutWill(): Promise<void> {
-    await this.step('A hero with no Will cannot walk and is offered the way home', async () => {
+    await this.step('A hero with no Will cannot walk away', async () => {
       await this.enterSilesia(0);
       const before = await this.map.hexBoard.requireHeroCoordinates();
       await this.map.hexBoard.tryStepAndVerifyBlocked();
       await this.map.hexBoard.verifyHeroSettledAt(before);
       await this.map.knowledge.verifyWill(0);
-      await this.map.knowledge.verifyReturnOffered();
     });
   }
 
-  async verifyPaidEntrancePrice(cost: number): Promise<void> {
-    await this.step('A paid entrance shows its price and locks when Will is short', async () => {
+  async verifyPaidEntranceLocksWhenWillIsShort(): Promise<void> {
+    await this.step('A paid entrance is locked with a warning when Will is short', async () => {
       const entrance = tokenCoordinates('caveEntrance');
       await this.enterSilesia(40);
       await this.map.hexBoard.moveAdjacentTo(entrance);
       await new UseHeroToolFeature(Tool.HAND).use();
       await this.map.hexBoard.hoverTile(entrance);
-      await this.map.toolActionOverlay.verifyCostChip(cost);
       await this.map.toolActionOverlay.verifyActionIsAffordable();
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.setWill(1));
       await this.map.toolActionOverlay.verifyInsufficientWill();

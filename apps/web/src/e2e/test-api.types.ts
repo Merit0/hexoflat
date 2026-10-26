@@ -18,6 +18,12 @@ export interface TestHeroHealth {
   max: number;
 }
 
+export interface TestPortalPreview {
+  ok: boolean;
+  oneWay: boolean;
+  reason: string | null;
+}
+
 export interface HexoflatTestApi {
   getKnowledge(): {
     current: number;
@@ -59,4 +65,12 @@ export interface HexoflatTestApi {
   isToolUsed(): boolean;
 
   getToolHoverCoordinates(): TestHexCoordinates | null;
+
+  getCurrentLocationKey(): string;
+
+  findTilesWithKey(key: string): TestHexCoordinates[];
+
+  getInventoryItemAmount(key: string): number;
+
+  previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 }

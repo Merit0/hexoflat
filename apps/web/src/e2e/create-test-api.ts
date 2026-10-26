@@ -13,11 +13,14 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { usePortal } from '@/composables/use-portal';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type {
   HexoflatTestApi,
   TestGridSize,
   TestHeroHealth,
   TestHexCoordinates,
+  TestPortalPreview,
   TestTileFraction,
 } from '@/e2e/test-api.types';
 
@@ -40,6 +43,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
   const heroStore = useHeroStore();
   const heroInventoryStore = useHeroInventoryStore();
   const heroToolStore = useHeroToolStore();
+  const portal = usePortal();
 
   function findTile(coordinates: TestHexCoordinates) {
     return worldStore.map?.tiles.find(
@@ -54,15 +58,14 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       const state = heroStore.knowledge;
       if (!state) return null;
       const session = state.session;
-      const question =
-        session?.mode === 'hall' ? session.question : session?.questions[session.index];
+      const question = session?.question;
       return {
         current: state.current,
         status: session?.status ?? null,
         index: session?.index ?? 0,
         options: question?.options ?? [],
         answer: question?.answer ?? null,
-        lastAward: session?.mode === 'hall' ? session.lastAward : 0,
+        lastAward: session?.lastAward ?? 0,
       };
     },
     prepareKnowledgeWorld(current: number) {
@@ -182,6 +185,30 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     getToolHoverCoordinates(): TestHexCoordinates | null {
       const hover = heroToolStore.hover;
       return hover ? { columnIndex: hover.columnIndex, rowIndex: hover.rowIndex } : null;
+    },
+
+    getCurrentLocationKey(): string {
+      return worldStore.currentLocationKey;
+    },
+
+    findTilesWithKey(key: string): TestHexCoordinates[] {
+      return (worldStore.map?.tiles ?? [])
+        .filter((tile) => tile.hexobject?.hexobjectKey === key)
+        .map((tile) => ({
+          columnIndex: tile.coordinates.columnIndex,
+          rowIndex: tile.coordinates.rowIndex,
+        }));
+    },
+
+    getInventoryItemAmount(key: string): number {
+      return heroInventoryStore.countItem(key as THexobjectKey);
+    },
+
+    previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview {
+      const preview = portal.previewOpen(coordinates);
+      return preview.ok
+        ? { ok: true, oneWay: preview.oneWay, reason: null }
+        : { ok: false, oneWay: false, reason: preview.reason };
     },
   };
 }

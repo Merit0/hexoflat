@@ -1,9 +1,9 @@
 import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
-import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
+import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -29,23 +29,7 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
   const lastHandScrollAt = ref(0);
 
   function resolveEquippedToolKey(slot: TEquipSlot): THeroToolKey | null {
-    const item = heroInventoryStore.equippedItems[slot];
-    if (!item) return null;
-
-    switch (item.key) {
-      case HEXOBJECT_KEYS.HAND:
-        return HEXOBJECT_KEYS.HAND;
-      case HEXOBJECT_KEYS.AXE:
-        return HEXOBJECT_KEYS.AXE;
-      case HEXOBJECT_KEYS.PICKAXE:
-        return HEXOBJECT_KEYS.PICKAXE;
-      case HEXOBJECT_KEYS.SWORD:
-        return HEXOBJECT_KEYS.SWORD;
-      case HEXOBJECT_KEYS.SHIELD:
-        return HEXOBJECT_KEYS.SHIELD;
-      default:
-        return null;
-    }
+    return toolKeyOfItem(heroInventoryStore.equippedItems[slot]?.key);
   }
 
   function resolvePreferredToolHover(): IHexCoordinates | null {

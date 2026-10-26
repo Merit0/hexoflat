@@ -3,6 +3,7 @@ import {
   EHexCollision,
   EHexobjectGroup,
 } from '../abstraction/hexobject-abstraction';
+import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
 
@@ -10,7 +11,8 @@ export type TLootKeys =
   | typeof HEXOBJECT_KEYS.COINS
   | typeof HEXOBJECT_KEYS.HEALTH_BOTTLE
   | typeof HEXOBJECT_KEYS.ENERGY_BOTTLE
-  | typeof HEXOBJECT_KEYS.MANA_BOTTLE;
+  | typeof HEXOBJECT_KEYS.MANA_BOTTLE
+  | typeof HEXOBJECT_KEYS.RETURN_SCROLL;
 
 export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.COINS]: {
@@ -95,6 +97,36 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
         stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,
         maxStack: 10,
         weightKG: 0.1,
+      },
+    },
+  },
+
+  [HEXOBJECT_KEYS.RETURN_SCROLL]: {
+    hexobjectKey: HEXOBJECT_KEYS.RETURN_SCROLL,
+    tags: ['portal', 'rare'],
+    groupType: EHexobjectGroup.LOOT,
+    isInteractable: true,
+    title: 'Return Scroll',
+    subtitle: 'Opens a portal home',
+    description: 'A one-use scroll that opens a portal to the camp.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/teleport-scroll-token.png',
+    actions: {
+      [EHexActionType.USE]: {
+        label: 'Use',
+        requiredTool: HEXOBJECT_KEYS.RETURN_SCROLL,
+        willCost: 5,
+      },
+    },
+    loot: {
+      name: 'Return Scroll',
+      amount: 1,
+      rarity: EEquipmentRarity.RARE,
+      traits: {
+        stackable: true,
+        stackKey: HEXOBJECT_KEYS.RETURN_SCROLL,
+        maxStack: 50,
+        weightKG: 0.05,
       },
     },
   },

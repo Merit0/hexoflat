@@ -17,6 +17,7 @@ export type {
   TestGridSize,
   TestHeroHealth,
   TestHexCoordinates,
+  TestPortalPreview,
   TestTileFraction,
 } from '@web-test-api';
 

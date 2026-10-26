@@ -26,6 +26,8 @@ export const HEXOBJECT_KEYS = {
   CHEST: 'chest',
   STASH_CHEST: 'stash-chest',
   STONE_WALL: 'stone-wall',
+  RETURN_SCROLL: 'return-scroll',
+  RETURN_PORTAL: 'return-portal',
 } as const;
 
 export type THexobjectKey = (typeof HEXOBJECT_KEYS)[keyof typeof HEXOBJECT_KEYS];

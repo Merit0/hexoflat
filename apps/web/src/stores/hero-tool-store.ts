@@ -14,6 +14,8 @@ export interface HeroToolState {
   availableActions: ResolvedAction[] | [];
   hintLabel: string | null;
   actionMessage: string | null;
+  actionMessageIcon: 'will' | null;
+  actionMessageWillCost: number | null;
   durability: number;
   durabilityMax: number;
   isLocked: boolean;
@@ -34,6 +36,8 @@ export const useHeroToolStore = defineStore('heroTool', {
     availableActions: [] as ResolvedAction[],
     hintLabel: null as string | null,
     actionMessage: null as string | null,
+    actionMessageIcon: null as 'will' | null,
+    actionMessageWillCost: null as number | null,
     isLocked: false,
     lockedUntil: null,
     lockedTile: null,
@@ -119,12 +123,16 @@ export const useHeroToolStore = defineStore('heroTool', {
       this.hintLabel = actions.length ? actions[0].label : null;
     },
 
-    setActionMessage(message: string) {
+    setActionMessage(message: string, icon: 'will' | null = null, willCost: number | null = null) {
       this.actionMessage = message;
+      this.actionMessageIcon = icon;
+      this.actionMessageWillCost = willCost;
     },
 
     clearActionMessage() {
       this.actionMessage = null;
+      this.actionMessageIcon = null;
+      this.actionMessageWillCost = null;
     },
 
     clearResolvedActions() {

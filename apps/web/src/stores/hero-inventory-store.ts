@@ -62,6 +62,8 @@ function parseEquipSlotKey(value: string | null | undefined): TEquipSlot | null 
 
 export const WILL_SLOT_KEY = slotKey(0, 0);
 
+const STARTER_SCROLL_COUNT = 50;
+
 function isBlocked(r: number, c: number, cfg: GridConfig) {
   const { x, y, w, h } = cfg.blockedRect;
   return c >= x && c < x + w && r >= y && r < y + h;
@@ -167,8 +169,32 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       if (squatter && relocated) squatter.slotKey = relocated;
 
       this.fillEmptySlotsWithHands();
+      if (!saved) this.grantStarterScrolls();
       this.selectedItemId = null;
       this.isHydrated = true;
+    },
+
+    grantStarterScrolls() {
+      const key = HEXOBJECT_KEYS.RETURN_SCROLL;
+      const stackSize = getMeta(key).traits?.maxStack ?? STARTER_SCROLL_COUNT;
+      const stacks = Math.ceil(STARTER_SCROLL_COUNT / stackSize);
+      const slots = this.freeSlotKeys.slice(-stacks);
+
+      slots.forEach((slot, index) => {
+        const amount = Math.min(stackSize, STARTER_SCROLL_COUNT - index * stackSize);
+        const id = crypto.randomUUID();
+        this.items.push({
+          id,
+          key,
+          type: EHexobjectGroup.LOOT,
+          stackKey: key,
+          amount,
+          slotKey: slot,
+          isNew: false,
+        });
+        this.ensureRotation(id);
+      });
+      this.persist();
     },
 
     persist() {
@@ -369,6 +395,25 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
         if (!stackable) break;
       }
 
+      this.persist();
+      return { ok: true };
+    },
+
+    countItem(key: THexobjectKey): number {
+      return this.items.reduce((sum, item) => (item.key === key ? sum + item.amount : sum), 0);
+    },
+
+    takeFromInventory(key: THexobjectKey, amount: number) {
+      if (this.countItem(key) < amount) return { ok: false };
+
+      let left = amount;
+      for (const item of this.items.filter((candidate) => candidate.key === key)) {
+        const taken = Math.min(item.amount, left);
+        item.amount -= taken;
+        left -= taken;
+        if (item.amount <= 0) this.removeItem(item.id);
+        if (left <= 0) break;
+      }
       this.persist();
       return { ok: true };
     },

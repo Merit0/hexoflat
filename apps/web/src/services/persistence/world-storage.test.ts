@@ -6,6 +6,7 @@ import {
   readSavedWorldState,
   removeSavedWorld,
   scheduleWorldSave,
+  updateSavedMap,
 } from './world-storage';
 
 function mapEnvelope(overrides: Partial<ISerializedHexMap> = {}): string {
@@ -87,5 +88,29 @@ describe('world-storage (characterization)', () => {
     expect(restored?.tiles).toHaveLength(1);
     expect(restored?.width).toBe(18);
     expect(restored?.height).toBe(17);
+  });
+
+  it('updateSavedMap edits the saved map in place and keeps the saved world state', () => {
+    const mapId = 'map-update';
+    scheduleWorldSave(mapId, mapEnvelope(), stateEnvelope({ worldSeed: 'seed-1' }));
+
+    const changed = updateSavedMap(mapId, (map) => {
+      map.name = 'edited';
+      return true;
+    });
+
+    expect(changed).toBe(true);
+    expect(readSavedMap(mapId)?.name).toBe('edited');
+    expect(
+      readSavedWorldState<{ contentVersion?: number; worldSeed?: string }>(mapId)?.worldSeed,
+    ).toBe('seed-1');
+  });
+
+  it('updateSavedMap does nothing when the map is missing or the edit declines', () => {
+    expect(updateSavedMap('map-missing', () => true)).toBe(false);
+
+    scheduleWorldSave('map-declined', mapEnvelope(), stateEnvelope());
+    expect(updateSavedMap('map-declined', () => false)).toBe(false);
+    expect(readSavedMap('map-declined')?.name).toBe('test');
   });
 });

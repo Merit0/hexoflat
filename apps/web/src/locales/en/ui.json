@@ -17,7 +17,6 @@
   },
   "moveBlocked": {
     "panel": "Close the Book of Will or use Escape to move",
-    "returning": "Finish returning to camp first",
     "moving": "The hero is already on the move",
     "notYourTurn": "It's not your turn",
     "noSteps": "No movement left this turn",
@@ -28,15 +27,14 @@
   },
   "tool": {
     "open": "Open",
-    "read": "Read"
+    "read": "Read",
+    "use": "Use"
   },
   "knowledge": {
     "title": "Book of Will",
-    "returnTitle": "Return challenge",
     "close": "Close and save challenge",
     "will": "Will: {current}/{capacity}",
     "insufficientWill": "Not enough Will",
-    "actionCost": "−{cost} Will",
     "tooltipTitle": "Will of Power",
     "tooltipBody": "Will is your stock of Power. Actions cost Will.",
     "tooltipRefillPre": "The",
@@ -46,31 +44,12 @@
     "willName": "Will",
     "meterHint": "Answer questions correctly to\ngain Will and reach milestones.",
     "hallLore": "Knowledge is the wellspring of Will. Here you earn the Will that lets you travel the whole world — every step beyond camp and every deed draws on it. Answer true and swift: the sharper the mind, the stronger the Will.",
-    "returnLore": "When your Will runs dry, only a clear mind can lead you home. Answer with certainty — at least 17 of 20 — and the road back to camp will open.",
     "help": "About the Book of Will",
     "full": "Your Will is stronger than ever! Time to set out on an adventure.",
-    "progress": "Question {index} of 20",
     "correct": "Correct!",
     "wrong": "Incorrect. Try to remember the correct answer.",
-    "returnAction": "Teleport to Camp",
-    "target": "Answer at least 17 of 20 questions correctly (85%) to return.",
-    "returnPassed": "The way home is open! Returning grants no Will.",
-    "returnConfirm": "Return to Camp",
-    "retry": "Try again",
-    "review": "Practice missed facts",
-    "assisted": "Return with assistance",
-    "assistanceRule": "After two failed challenges and reviewing 10 facts, assisted return is available.",
     "saveError": "Could not read or save the challenge. Saved data has not been overwritten. Try reloading.",
-    "rejected": "Action not completed. Check your answer and the current challenge state.",
-    "grades": {
-      "practice": "Let’s practice together",
-      "repeat": "Review needed",
-      "almost": "A little more practice",
-      "passed": "Successful",
-      "veryGood": "Very good",
-      "excellent": "Excellent",
-      "perfect": "Perfect"
-    }
+    "rejected": "Action not completed. Check your answer and the current challenge state."
   },
   "itemTooltip": {
     "rarity": {
@@ -165,6 +144,26 @@
       "needWill": "Not enough Will",
       "locked": "Unavailable now",
       "will": "Will"
+    }
+  },
+  "portal": {
+    "oneWay": "One-way — the cave will be lost",
+    "refusal": {
+      "HERO_NOT_FOUND": "No hero",
+      "NO_LOCATION": "Portal unavailable here",
+      "IN_CAMPING": "Portals can't be opened in the camp",
+      "IN_COMBAT": "Not during combat",
+      "PORTAL_ALREADY_OPEN": "You already have an open portal",
+      "NOT_ADJACENT": "Only on a neighbouring hex",
+      "NO_TILE": "No hex there",
+      "NOT_GROUND": "Needs solid ground",
+      "TILE_OCCUPIED": "The hex is occupied",
+      "EXIT_HEX": "Not on an exit hex",
+      "NO_SCROLL": "No Return Scroll",
+      "INSUFFICIENT_WILL": "Not enough Will",
+      "NO_WILL_STATE": "Will is unavailable",
+      "NO_PORTAL": "No portal here",
+      "NOT_YOUR_PORTAL": "This portal belongs to another hero"
     }
   }
 }

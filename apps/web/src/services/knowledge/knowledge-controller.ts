@@ -8,6 +8,8 @@ import type { KnowledgeAction, KnowledgeContext } from '@hexoflat/engine/knowled
 import type { WillZone } from '@hexoflat/engine/knowledge/will-zone';
 import { MapRegistry, type LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
+import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
+import type { PortalLocation } from '@hexoflat/engine/portal/portal-rules';
 import { transactKnowledge } from '@/services/persistence/knowledge-storage';
 
 export { canReachBook as isAtKnowledgeBook } from '@hexoflat/engine/knowledge/camp-book';
@@ -18,6 +20,8 @@ export interface KnowledgeHost {
   map: HexMapModel;
   context: KnowledgeContext;
   engineContext: HexEngineActionContext;
+  hero: HeroState;
+  location: PortalLocation;
   isCurrent(): boolean;
 }
 
@@ -78,11 +82,17 @@ export async function dispatchHexAction(
   const state = await transactKnowledge(host.heroId, (knowledge) => {
     if (!host.isCurrent()) return false;
     events = applyCommand(
-      { map: host.map, heroes: {}, knowledge, knowledgeContext: host.context },
+      {
+        map: host.map,
+        heroes: { [host.hero.id]: host.hero },
+        knowledge,
+        knowledgeContext: host.context,
+        location: host.location,
+      },
       command,
       host.engineContext,
     ).events;
     return events.some((event) => event.type === 'WILL_SPENT');
   });
-  return { state, events };
+  return { state, events, hero: host.hero };
 }

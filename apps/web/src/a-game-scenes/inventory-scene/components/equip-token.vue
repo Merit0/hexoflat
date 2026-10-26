@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, type CSSProperties } from 'vue';
+import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -69,7 +70,9 @@ const isDragging = computed(() => inventoryDragState.draggingId === props.item.i
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
 const isUsableTool = computed(() => {
   return (
-    (props.item.type === EHexobjectGroup.TOOL || props.item.type === EHexobjectGroup.EQUIPMENT) &&
+    (props.item.type === EHexobjectGroup.TOOL ||
+      props.item.type === EHexobjectGroup.EQUIPMENT ||
+      props.item.key === HEXOBJECT_KEYS.RETURN_SCROLL) &&
     isHandSlotKey(props.item.slotKey)
   );
 });
@@ -98,20 +101,7 @@ const dragGhostStyle = computed<CSSProperties>(() => ({
 }));
 
 function resolveToolType(): THeroToolKey | null {
-  switch (props.item.key) {
-    case HEXOBJECT_KEYS.HAND:
-      return HEXOBJECT_KEYS.HAND;
-    case HEXOBJECT_KEYS.AXE:
-      return HEXOBJECT_KEYS.AXE;
-    case HEXOBJECT_KEYS.PICKAXE:
-      return HEXOBJECT_KEYS.PICKAXE;
-    case HEXOBJECT_KEYS.SWORD:
-      return HEXOBJECT_KEYS.SWORD;
-    case HEXOBJECT_KEYS.SHIELD:
-      return HEXOBJECT_KEYS.SHIELD;
-    default:
-      return null;
-  }
+  return toolKeyOfItem(props.item.key);
 }
 
 function useToolToken() {

@@ -27,6 +27,15 @@ import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { applyCommand } from '@hexoflat/engine';
 import { isEnterableTile, planCombatRoute } from '@hexoflat/engine/hero-movement/move-planner';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
+import { portalLinkSchema, type PortalLink } from '@hexoflat/engine/portal/portal-state';
+import {
+  applyPortalClosedOnHost,
+  closePortalForDeath,
+  portalClosedEvents,
+  portalLocation,
+  type PortalClosedPayload,
+} from '@/services/world/portal-service';
+import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
@@ -45,6 +54,7 @@ type HeroProgressState = {
   currentHealth: number;
   healthBonus: number;
   extraShields: number;
+  portal?: PortalLink | null;
 };
 
 function defaultNav(): HeroNavState {
@@ -72,6 +82,7 @@ export const useHeroStore = defineStore('hero', {
     heroCoordinates: null as IHexCoordinates | null,
     isHeroMoving: false,
     extraShields: 0,
+    portal: null as PortalLink | null,
   }),
 
   getters: {
@@ -116,6 +127,8 @@ export const useHeroStore = defineStore('hero', {
           atBook: isAtKnowledgeBook(world.map as HexMapModel, this.heroCoordinates),
         },
         engineContext: world.buildEngineContext(),
+        hero: this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }),
+        location: portalLocation(world.currentLocationKey, world.currentMapId),
         isCurrent: () =>
           this.hero.id === heroId &&
           world.currentMapId === mapId &&
@@ -183,7 +196,11 @@ export const useHeroStore = defineStore('hero', {
       const heroId = this.hero.id;
       try {
         const result = await dispatchHexAction(this.knowledgeHost(world), command);
-        if (heroId === this.hero.id) this.knowledge = result.state;
+        if (heroId === this.hero.id) {
+          this.knowledge = result.state;
+          this.setPortal(result.hero.portal ?? null);
+        }
+        this.applyPortalClosures(portalClosedEvents(result.events));
         return result.events;
       } catch {
         this.knowledgeError = true;
@@ -195,12 +212,29 @@ export const useHeroStore = defineStore('hero', {
       localStorage.setItem(HERO_NAV_KEY, JSON.stringify(this.nav));
     },
 
+    applyPortalClosures(closures: PortalClosedPayload[]) {
+      const world = useWorldMapStore();
+      applyPortalClosedOnHost(world, world.map as HexMapModel | null, closures);
+    },
+
+    closePortalOnDeath() {
+      const world = useWorldMapStore();
+      const hero = this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 });
+      if (closePortalForDeath(world, world.map as HexMapModel | null, hero)) this.setPortal(null);
+    },
+
+    setPortal(portal: PortalLink | null) {
+      this.portal = portal;
+      this.saveProgressToStorage();
+    },
+
     saveProgressToStorage() {
       const progress: HeroProgressState = {
         heroSteps: this.hero.heroSteps ?? 0,
         currentHealth: this.hero.currentHealth ?? this.hero.maxHealth ?? 100,
         healthBonus: this.hero.maxHealthBonus,
         extraShields: this.extraShields,
+        portal: this.portal,
       };
       localStorage.setItem(HERO_PROGRESS_KEY, JSON.stringify(progress));
     },
@@ -222,6 +256,8 @@ export const useHeroStore = defineStore('hero', {
       if (typeof progress.extraShields === 'number') {
         this.extraShields = progress.extraShields;
       }
+      const portal = portalLinkSchema.safeParse(progress.portal);
+      this.portal = portal.success ? portal.data : null;
     },
 
     setLocation(locationKey: LocationKey, mapId: string) {
@@ -311,6 +347,7 @@ export const useHeroStore = defineStore('hero', {
       this.knowledge = null;
       this.knowledgeError = false;
       this.extraShields = 0;
+      this.portal = null;
       this.nav = defaultNav();
       localStorage.removeItem(HERO_NAV_KEY);
       localStorage.removeItem(HERO_PROGRESS_KEY);
@@ -328,6 +365,7 @@ export const useHeroStore = defineStore('hero', {
         controlledBy: null,
         coordinates: { ...coordinates },
         heroSteps: this.hero.heroSteps ?? 0,
+        portal: this.portal,
       };
     },
 
@@ -371,13 +409,12 @@ export const useHeroStore = defineStore('hero', {
       const combatStore = useCombatStore();
 
       if (!worldStore.map || !this.heroCoordinates) return false;
-      const warn = (message: string) => {
-        heroToolStore.setActionMessage(message);
+      const warn = (message: string, icon: 'will' | null = null) => {
+        heroToolStore.setActionMessage(message, icon);
         return false;
       };
       if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
-      if (this.knowledge?.session?.status === 'returning')
-        return warn(i18n.global.t('moveBlocked.returning'));
+      if (portalFxBusy.value) return false;
       if (heroToolStore.isDragging) return false;
       if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));
       if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero')
@@ -395,7 +432,7 @@ export const useHeroStore = defineStore('hero', {
       } else {
         const plan = this.planFreeRoamRoute(map, target);
         route = plan.route;
-        if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'));
+        if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'), 'will');
         if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
       }
 
@@ -412,7 +449,7 @@ export const useHeroStore = defineStore('hero', {
         await executeMovementRoute(route, async (coord) => {
           if (willZoneCharges(this.willZoneContext)) {
             if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
-              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'));
+              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'), 'will');
               return false;
             }
           }

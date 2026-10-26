@@ -3,10 +3,8 @@ import { applyKnowledgeCommand } from './reducer';
 import {
   createKnowledgeState,
   knowledgeStateSchema,
-  reviewQuestions,
   type HallSession,
   type KnowledgeState,
-  type ReturnSession,
 } from './state';
 import type { KnowledgeAction, KnowledgeContext } from './commands';
 import { installCampBook } from './camp-book';
@@ -30,8 +28,8 @@ function harness() {
       context,
     )[0].type;
   const answer = (correct: boolean) => {
-    const session = state.session as HallSession | ReturnSession;
-    const q = session.mode === 'hall' ? session.question : session.questions[session.index];
+    const session = state.session as HallSession;
+    const q = session.question;
     send({
       kind: 'answer',
       sessionId: session.id,
@@ -85,47 +83,6 @@ describe('challenge recovery and isolation', () => {
     expect(h.state.session).toBeNull();
     expect(h.send({ kind: 'start', mode: 'hall', seed: 'fresh' })).toBe('KNOWLEDGE_CHANGED');
     expect((h.state.session as HallSession).index).toBe(0);
-  });
-  it('does not resume a Hall lesson after a return trip', () => {
-    const h = harness();
-    h.send({ kind: 'start', mode: 'hall', seed: 'hall' });
-    h.answer(true);
-    h.state.current = 0;
-    h.context.locationKey = 'silesia';
-    h.context.willZone = 'paid';
-    h.context.mapId = 'world';
-    h.context.atBook = false;
-    expect(h.send({ kind: 'start', mode: 'return', seed: 'return' })).toBe('KNOWLEDGE_CHANGED');
-    for (let i = 0; i < 20; i++) h.answer(true);
-    h.send({ kind: 'return', sessionId: h.state.session!.id, assisted: false });
-    h.context.locationKey = 'camping';
-    h.context.willZone = 'free';
-    h.context.mapId = 'camp';
-    h.context.atBook = true;
-    h.send({ kind: 'returned', sessionId: h.state.session!.id });
-    h.send({ kind: 'open' });
-    expect(h.state.session).toBeNull();
-  });
-  it('unlocks labelled assistance only after two failures and ten guided answers', () => {
-    const h = harness();
-    h.context.locationKey = 'silesia';
-    h.context.willZone = 'paid';
-    for (let run = 0; run < 2; run++) {
-      h.send({ kind: 'start', mode: 'return', seed: `fail-${run}` });
-      for (let i = 0; i < 20; i++) h.answer(false);
-      expect(h.send({ kind: 'return', sessionId: h.state.session!.id, assisted: true })).toBe(
-        'KNOWLEDGE_REJECTED',
-      );
-    }
-    const s = h.state.session as ReturnSession;
-    const review = reviewQuestions(s);
-    for (let i = 0; i < 10; i++)
-      h.send({ kind: 'review', sessionId: s.id, index: i, answer: review[i].answer });
-    h.send({ kind: 'return', sessionId: s.id, assisted: true });
-    expect(s.status).toBe('returning');
-    expect(s.assisted).toBe(true);
-    expect(h.state.current).toBe(0);
-    expect(s.answers.every((a, i) => a !== s.questions[i].answer)).toBe(true);
   });
   it('rejects combat, remote book access, stale location and early rewards', () => {
     const h = harness();

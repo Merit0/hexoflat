@@ -191,46 +191,12 @@ describe('Will-priced actions', () => {
     expect(grantWill(state, 5, { kind: 'item', ref: 'x' })).toEqual([]);
   });
 
-  it('opens the return path when Will is below the step price', () => {
-    const state = createKnowledgeState('hero');
-    state.current = stepCost(paid) - 1;
-    const events = applyKnowledgeCommand(
-      state,
-      {
-        type: 'KNOWLEDGE',
-        payload: {
-          heroId: 'hero',
-          revision: 0,
-          action: { kind: 'start', mode: 'return', seed: 'r' },
-        },
-      },
-      paid,
-    );
-    expect(events[0].type).toBe('KNOWLEDGE_CHANGED');
-    state.current = stepCost(paid);
-    state.session = null;
-    expect(
-      applyKnowledgeCommand(
-        state,
-        {
-          type: 'KNOWLEDGE',
-          payload: {
-            heroId: 'hero',
-            revision: state.revision,
-            action: { kind: 'start', mode: 'return', seed: 'r2' },
-          },
-        },
-        paid,
-      )[0].type,
-    ).toBe('KNOWLEDGE_REJECTED');
-  });
-
   it('loads an old snapshot payload and keeps priced content valid', () => {
     const map = new HexMapBuilder().name('old').width(1).height(1).build();
     const payload = serializeState({ map, heroes: {} });
     expect(deserializeState(payload, 0).knowledge).toBeUndefined();
     const cave = CONTENT[HEXOBJECT_KEYS.CAVE_ENTRANCE];
-    for (const bad of [-1, 4, 1.5]) {
+    for (const bad of [-1, 6, 1.5]) {
       const actions = { ENTER: { ...cave.actions!.ENTER, willCost: bad } };
       expect(ContentDefinitionSchema.safeParse({ ...cave, actions }).success).toBe(false);
     }

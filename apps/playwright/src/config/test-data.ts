@@ -5,6 +5,7 @@ export const MapTokens = {
   starterAxe: { columnIndex: 11, rowIndex: 7 },
   stashChest: { columnIndex: 8, rowIndex: 9 },
   caveEntrance: { columnIndex: 10, rowIndex: 3 },
+  homelandGate: { columnIndex: 7, rowIndex: 4 },
 } as const satisfies Record<string, TestHexCoordinates>;
 
 export type MapToken = keyof typeof MapTokens;
@@ -17,6 +18,8 @@ export function tokenCoordinates(token: MapToken): TestHexCoordinates {
 export const HexobjectKeys = {
   axe: 'axe',
   stashChest: 'stash-chest',
+  returnScroll: 'return-scroll',
+  returnPortal: 'return-portal',
 } as const;
 
 /** Written by apps/web's ui-settings-store (`hexoflat:ui-settings:v1`). */

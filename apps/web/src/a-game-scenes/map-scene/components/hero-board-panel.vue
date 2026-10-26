@@ -42,18 +42,8 @@
 
         <section v-else-if="activeTab === 'inventory'" class="tab-panel board-body">
           <div ref="boardFitWrapperRef" class="board-body-frame">
-            <div v-if="heroStore.knowledgeError || canReturn" class="will-summary">
-              <span v-if="heroStore.knowledgeError" role="alert">{{
-                t('knowledge.saveError')
-              }}</span>
-              <button
-                v-if="canReturn"
-                type="button"
-                data-testid="knowledge-return-offer"
-                @click="openKnowledgePanel('return')"
-              >
-                {{ t('knowledge.returnAction') }}
-              </button>
+            <div v-if="heroStore.knowledgeError" class="will-summary">
+              <span role="alert">{{ t('knowledge.saveError') }}</span>
             </div>
             <div
               ref="boardFitContentRef"
@@ -101,9 +91,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import KnowledgeBoard from './knowledge-board.vue';
-import { stepCost } from '@hexoflat/engine/knowledge/math';
-import { willZoneCharges } from '@hexoflat/engine/knowledge/will-zone';
-import { knowledgePanelMode, openKnowledgePanel } from '@/composables/use-knowledge-panel';
+import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -133,12 +121,6 @@ const activeTab = ref<HeroBoardTab>('hero');
 
 const { t } = useI18n();
 const heroStore = useHeroStore();
-const canReturn = computed(
-  () =>
-    willZoneCharges(heroStore.willZoneContext) &&
-    (heroStore.knowledge?.current ?? Infinity) < stepCost(heroStore.willZoneContext) &&
-    !heroStore.isHeroMoving,
-);
 const heroInventoryStore = useHeroInventoryStore();
 
 const selectedItem = computed(() => heroInventoryStore.selectedItem);
@@ -163,7 +145,7 @@ useOpenInventoryOnPickup(() => {
   activeTab.value = 'inventory';
 });
 watch(
-  () => canReturn.value || heroStore.knowledgeError,
+  () => heroStore.knowledgeError,
   (needsAttention) => {
     if (needsAttention) activeTab.value = 'inventory';
   },

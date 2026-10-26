@@ -3,6 +3,7 @@ import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { getMeta, getPrototype } from '@hexoflat/engine';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { terrainLook } from '@/render/terrain-look';
@@ -181,7 +182,9 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
     node.frame.texture = Texture.EMPTY;
   }
 
-  const spritePath = displayRevealed ? (tile.hexobject?.spritePath ?? look?.sprite) : null;
+  const drawnByPortalLayer = tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.RETURN_PORTAL;
+  const spritePath =
+    displayRevealed && !drawnByPortalLayer ? (tile.hexobject?.spritePath ?? look?.sprite) : null;
   if (spritePath) {
     const spriteFit = () => {
       const { w, h } = deps.getTileSize();

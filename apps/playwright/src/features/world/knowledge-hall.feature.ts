@@ -26,26 +26,6 @@ export class KnowledgeHallFeature extends BaseFeature {
       this.camp.knowledge.verifyFull(),
     );
   }
-  async exhaustWorldWill(): Promise<void> {
-    await this.step('Spend the last Will on an actual world step', async () => {
-      await this.camp.knowledge.close();
-      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(1));
-      await this.page.goto('/world/silesia');
-      await this.camp.hexBoard.waitForReady();
-      await this.camp.hexBoard.moveOneStep();
-      await this.camp.knowledge.verifyWill(0);
-    });
-  }
-  async completeReturn(correct: number): Promise<void> {
-    await this.step('Complete the emergency return challenge', async () => {
-      await this.camp.knowledge.offerReturn();
-      await this.camp.knowledge.start();
-      for (let i = 0; i < 20; i++) await this.camp.knowledge.answer(i < correct);
-      await this.camp.knowledge.verifyResult(correct * 5);
-      await this.camp.knowledge.returnHome();
-      await this.camp.knowledge.verifyWill(0);
-    });
-  }
   async earnWillInHall(correct: number, wrong: number, reload = false): Promise<void> {
     await this.step('Earn Will one answered question at a time', async () => {
       await this.camp.knowledge.start();

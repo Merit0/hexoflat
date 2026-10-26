@@ -80,6 +80,23 @@ export const UnlockSkillCommandSchema = z.object({
 });
 export type UnlockSkillCommand = z.infer<typeof UnlockSkillCommandSchema>;
 
+export const OpenPortalCommandSchema = z.object({
+  type: z.literal('OPEN_PORTAL'),
+  payload: z.object({
+    heroId: z.string(),
+    target: hexCoordinatesSchema,
+  }),
+});
+export type OpenPortalCommand = z.infer<typeof OpenPortalCommandSchema>;
+
+export const EnterPortalCommandSchema = z.object({
+  type: z.literal('ENTER_PORTAL'),
+  payload: z.object({
+    heroId: z.string(),
+  }),
+});
+export type EnterPortalCommand = z.infer<typeof EnterPortalCommandSchema>;
+
 export type HexEngineCommand =
   | StartHexActionCommand
   | FinishPendingActionsCommand
@@ -88,7 +105,9 @@ export type HexEngineCommand =
   | MoveHeroCommand
   | CrossExitCommand
   | KnowledgeCommand
-  | UnlockSkillCommand;
+  | UnlockSkillCommand
+  | OpenPortalCommand
+  | EnterPortalCommand;
 
 export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   HexEngineCommand['type'],
@@ -102,4 +121,6 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   CROSS_EXIT: CrossExitCommandSchema,
   KNOWLEDGE: KnowledgeCommandSchema,
   UNLOCK_SKILL: UnlockSkillCommandSchema,
+  OPEN_PORTAL: OpenPortalCommandSchema,
+  ENTER_PORTAL: EnterPortalCommandSchema,
 };

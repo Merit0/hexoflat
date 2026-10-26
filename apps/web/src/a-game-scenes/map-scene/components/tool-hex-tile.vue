@@ -15,21 +15,15 @@
             <eye-icon v-if="isReadAction" class="eye-icon" />
             <template v-else>{{ bestActionLabel }}</template>
           </button>
-          <div v-if="bestActionCost > 0" class="will-meta">
-            <span class="will-chip" data-testid="tool-action-cost">
-              {{ t('knowledge.actionCost', { cost: bestActionCost }) }}
-            </span>
-          </div>
         </template>
 
         <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
           -
         </button>
       </div>
-
-      <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
-        {{ secondsLeft }}s
-      </div>
+    </div>
+    <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
+      {{ secondsLeft }}s
     </div>
   </div>
 </template>
@@ -54,7 +48,12 @@ import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { getPrototype, getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useBookReading } from '@/composables/use-book-reading';
+import { usePortal } from '@/composables/use-portal';
+import { portalRefusalText } from '@/composables/use-portal-messages';
+import { returnScrollWillCost } from '@hexoflat/engine/portal/portal-rules';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -74,6 +73,7 @@ const worldMapStore = useWorldMapStore();
 const combatStore = useCombatStore();
 const heroStore = useHeroStore();
 const pricing = useWillPricing();
+const portal = usePortal();
 
 const activeToolKey = computed<THeroToolKey | null>(() => heroToolStore.activeTool);
 
@@ -128,8 +128,83 @@ const iconStyle = computed(() => {
   };
 });
 
-const resolvedActions = computed(() => {
+const isScrollTool = computed(() => activeToolKey.value === HEXOBJECT_KEYS.RETURN_SCROLL);
+
+function actionsForTool(tool: THeroToolKey, tile: HexTileModel | null): ResolvedAction[] {
+  if (tool === HEXOBJECT_KEYS.RETURN_SCROLL) {
+    const preview = tile ? portal.previewOpen(tile.coordinates) : null;
+    const offersUse = !!preview && (preview.ok || preview.reason === 'INSUFFICIENT_WILL');
+    return offersUse
+      ? [{ actioType: 'USE', label: t('tool.use'), priority: 100 } satisfies ResolvedAction]
+      : [];
+  }
+
+  if (!tile?.hexobject) return [];
+
+  if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
+    const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
+    if (
+      !tile.hexobject.isInteractable ||
+      (enterCfg?.type === 'WORLD' && worldMapStore.isLocationRespawning(enterCfg.locationKey))
+    ) {
+      return [];
+    }
+  }
+
+  if (
+    combatStore.combatActive &&
+    tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
+    (combatStore.combatTurnSide !== 'hero' ||
+      combatStore.combatAttackUsed ||
+      !getToolCapabilities(tool).canAttack)
+  ) {
+    return [];
+  }
+
+  return resolveActions(tool, tile.hexobject);
+}
+
+const inventoryStore = useHeroInventoryStore();
+
+const handTools = computed(() => {
+  const keys = (['weapon', 'shield'] as const)
+    .map((slot) => toolKeyOfItem(inventoryStore.equippedItems[slot]?.key))
+    .filter((key): key is THeroToolKey => key !== null);
+  return [...new Set(keys)];
+});
+
+function topPriority(tool: THeroToolKey, tile: HexTileModel | null): number {
+  return actionsForTool(tool, tile).reduce((best, action) => Math.max(best, action.priority), -1);
+}
+
+watch(
+  () => [hoveredTile.value, handTools.value, heroToolStore.isDragging] as const,
+  ([tile, tools, dragging]) => {
+    const current = activeToolKey.value;
+    if (!dragging || !tile || !current || combatStore.combatActive || heroToolStore.isLocked)
+      return;
+
+    let best = current;
+    let bestPriority = topPriority(current, tile);
+    for (const tool of tools) {
+      const priority = topPriority(tool, tile);
+      if (priority > bestPriority) {
+        best = tool;
+        bestPriority = priority;
+      }
+    }
+    if (best !== current) heroToolStore.activeTool = best;
+  },
+  { immediate: true },
+);
+
+const portalPreview = computed(() => {
   const tile = hoveredTile.value;
+  if (!isScrollTool.value || !tile) return null;
+  return portal.previewOpen(tile.coordinates);
+});
+
+const resolvedActions = computed(() => {
   if (
     combatStore.combatActive &&
     combatStore.combatTurnSide === 'hero' &&
@@ -156,30 +231,7 @@ const resolvedActions = computed(() => {
     }
   }
 
-  if (!tile?.hexobject || !activeToolKey.value) return [];
-
-  if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
-    const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
-    if (
-      !tile.hexobject.isInteractable ||
-      (enterCfg?.type === 'WORLD' && worldMapStore.isLocationRespawning(enterCfg.locationKey))
-    ) {
-      return [];
-    }
-  }
-
-  if (
-    combatStore.combatActive &&
-    tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
-    (combatStore.combatTurnSide !== 'hero' ||
-      combatStore.combatAttackUsed ||
-      !activeToolKey.value ||
-      !getToolCapabilities(activeToolKey.value).canAttack)
-  ) {
-    return [];
-  }
-
-  return resolveActions(activeToolKey.value, tile.hexobject);
+  return activeToolKey.value ? actionsForTool(activeToolKey.value, hoveredTile.value) : [];
 });
 
 const bestAction = computed<ResolvedAction | null>(() => {
@@ -199,6 +251,7 @@ const isReadAction = computed(
 );
 const bestActionLabel = computed(() => {
   if (!bestAction.value) return null;
+  if (isScrollTool.value) return bestAction.value.label;
   const object = hoveredTile.value?.hexobject;
   if (isReadAction.value) return t('tool.read');
   const isHandOnBuilding =
@@ -209,10 +262,12 @@ const bestActionLabel = computed(() => {
 });
 
 const bestActionCost = computed(() =>
-  pricing.costOf(
-    hoveredTile.value,
-    bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
-  ),
+  isScrollTool.value
+    ? returnScrollWillCost()
+    : pricing.costOf(
+        hoveredTile.value,
+        bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
+      ),
 );
 const canAffordBest = computed(() => pricing.canAfford(bestActionCost.value));
 
@@ -290,12 +345,38 @@ async function executeAction() {
   if (!tile || !best || !activeToolKey.value) return;
   if (!canAffordBest.value) {
     flashDenied();
-    heroToolStore.setActionMessage(t('knowledge.insufficientWill'));
+    heroToolStore.setActionMessage(t('knowledge.insufficientWill'), 'will', bestActionCost.value);
+    return;
+  }
+
+  if (isScrollTool.value) {
+    const preview = portalPreview.value;
+    const oneWay = !!preview?.ok && preview.oneWay;
+    const opened = await portal.openPortal(tile.coordinates);
+    if (!opened.ok && opened.reason) {
+      flashDenied();
+      heroToolStore.setActionMessage(
+        portalRefusalText(opened.reason),
+        opened.reason === 'INSUFFICIENT_WILL' ? 'will' : null,
+        opened.reason === 'INSUFFICIENT_WILL' ? returnScrollWillCost() : null,
+      );
+    } else if (opened.ok && oneWay) {
+      heroToolStore.setActionMessage(t('portal.oneWay'));
+    }
     return;
   }
 
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
+
+  if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.RETURN_PORTAL) {
+    const entered = await portal.enterPortal();
+    if (!entered.ok && entered.reason) {
+      flashDenied();
+      heroToolStore.setActionMessage(portalRefusalText(entered.reason));
+    }
+    return;
+  }
 
   if (tile.hexobject?.hexobjectKey === 'knowledge-book') {
     if (await heroStore.knowledgeAction({ kind: 'open' })) {
@@ -410,29 +491,6 @@ async function executeAction() {
   background: rgba(190, 70, 70, 0.5);
 }
 
-.tool-actions-row:has(.will-meta) {
-  top: 42%;
-}
-
-.will-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  pointer-events: none;
-}
-.will-chip {
-  padding: 0 7px;
-  border-radius: 999px;
-  border: 1px solid rgba(120, 190, 255, 0.7);
-  background: rgba(14, 22, 36, 0.95);
-  color: #dff0ff;
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 13px;
-  white-space: nowrap;
-}
-
 .eye-icon {
   display: block;
   width: 20px;
@@ -499,8 +557,10 @@ async function executeAction() {
   position: absolute;
   bottom: 10px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.9);
+  transform-origin: center bottom;
 
+  z-index: 121;
   min-width: 38px;
   text-align: center;
 

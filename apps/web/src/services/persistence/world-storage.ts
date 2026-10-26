@@ -138,3 +138,18 @@ export function removeSavedWorld(mapId: string): void {
   localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
   localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
 }
+
+export function updateSavedMap(
+  mapId: string,
+  mutate: (map: ISerializedHexMap) => boolean,
+): boolean {
+  const map = readSavedMap(mapId);
+  if (!map || !mutate(map)) return false;
+
+  const stateSnapshot =
+    pendingSaves.get(mapId)?.stateSnapshot ??
+    localStorage.getItem(STORAGE_STATE_PREFIX + mapId) ??
+    JSON.stringify({ contentVersion: CONTENT_VERSION });
+  scheduleWorldSave(mapId, JSON.stringify({ contentVersion: CONTENT_VERSION, map }), stateSnapshot);
+  return true;
+}

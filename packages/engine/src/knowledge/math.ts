@@ -6,15 +6,11 @@ import { willZoneCharges, type WillZoneContext } from './will-zone';
 export const KNOWLEDGE_RULES = {
   startingWill: 20,
   capacity: 50,
-  questionCount: 20,
-  returnMinCorrect: 17,
   hallAnswerReward: 1,
   hallFastReward: 2,
   hallFastAnswerMs: 4000,
   hallRecentFacts: 8,
   worldStepCost: 1,
-  assistedFailures: 2,
-  reviewCount: 10,
 } as const;
 
 export interface MathQuestion {
@@ -64,41 +60,6 @@ function choices(answer: number, rhs: number, rng: RandomNumberGenerator): numbe
   return shuffle([answer, ...candidates.slice(0, 3)], rng);
 }
 
-export function generateQuestions(
-  seed: string,
-  history: Record<string, boolean[]> = {},
-): MathQuestion[] {
-  const rng = createSeededRandom({ seed, counter: 0 });
-  const pools = {
-    multiply: selectFacts('multiply', rng, history),
-    divide: selectFacts('divide', rng, history),
-  };
-  // Choose randomly among feasible prefixes, so neither operation runs over two.
-  const result: MathQuestion[] = [];
-  while (result.length < KNOWLEDGE_RULES.questionCount) {
-    const last = result.at(-1)?.operation;
-    const repeated = last && result.at(-2)?.operation === last;
-    const available = (['multiply', 'divide'] as const).filter((op) => {
-      if (!pools[op].length || (repeated && op === last)) return false;
-      const other = op === 'multiply' ? 'divide' : 'multiply';
-      return pools[other].length <= 2 * pools[op].length;
-    });
-    const operation = available[Math.floor(rng() * available.length)];
-    const fact = pools[operation].pop()!;
-    result.push({
-      ...fact,
-      id: `${seed}:${result.length}`,
-      options: choices(fact.answer, fact.rhs, rng),
-    });
-  }
-  return result;
-}
-
-export function accuracy(correct: number): number {
-  if (!Number.isInteger(correct) || correct < 0 || correct > 20) throw new Error('Invalid score');
-  return correct * 5;
-}
-
 export function hallAward(elapsedMs: number | undefined): number {
   return elapsedMs !== undefined && elapsedMs <= KNOWLEDGE_RULES.hallFastAnswerMs
     ? KNOWLEDGE_RULES.hallFastReward
@@ -126,13 +87,6 @@ export function generateHallQuestion(
   return { ...fact, id: `${seed}:${index}`, options: choices(fact.answer, fact.rhs, rng) };
 }
 
-export function grade(correct: number): string {
-  accuracy(correct);
-  return ['practice', 'repeat', 'almost', 'passed', 'veryGood', 'excellent', 'perfect'][
-    Math.max(0, correct - 14)
-  ];
-}
-
 export interface WillCapacityModifier {
   source: string;
   additionalCapacity: number;
@@ -158,21 +112,4 @@ export function stepCost(ctx: WillZoneContext): number {
 
 export function travelStepBudget(steps: number, currentWill: number, ctx: WillZoneContext): number {
   return willZoneCharges(ctx) ? Math.min(steps, Math.floor(currentWill / stepCost(ctx))) : steps;
-}
-
-function selectFacts(
-  operation: MathQuestion['operation'],
-  rng: RandomNumberGenerator,
-  history: Record<string, boolean[]>,
-) {
-  return factPool(operation)
-    .map((fact) => {
-      const previous = history[fact.factKey] ?? [];
-      const weight =
-        1 + (previous.length ? previous.filter((correct) => !correct).length / previous.length : 0);
-      return { fact, priority: -Math.log(Math.max(Number.EPSILON, rng())) / weight };
-    })
-    .sort((a, b) => a.priority - b.priority)
-    .slice(0, 10)
-    .map(({ fact }) => fact);
 }
