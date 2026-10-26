@@ -19,9 +19,16 @@
           <path :d="ICON_PATHS.hand" />
         </svg>
       </span>
-      <span v-if="hand.title" class="hand__name" :data-testid="`hero-hand-${hand.id}-name`">{{
-        hand.title
-      }}</span>
+      <span v-if="hand.title" class="hand__text">
+        <span class="hand__name" :data-testid="`hero-hand-${hand.id}-name`">{{ hand.title }}</span>
+        <span
+          v-if="hand.willCost !== null"
+          class="hand__will"
+          :data-testid="`hero-hand-${hand.id}-will`"
+        >
+          {{ t('itemTooltip.footer.will') }}: {{ hand.willCost }}
+        </span>
+      </span>
       <span v-else class="hand__empty" :data-testid="`hero-hand-${hand.id}-empty`">{{
         labels.hands.empty
       }}</span>
@@ -57,6 +64,7 @@ const hands = computed(() =>
       id,
       label: labels.value.hands[id],
       title: item ? t(item.titleKey) : null,
+      willCost: item?.willCost ?? null,
       color: item?.rarity ? RARITY_COLOR[item.rarity] : EMPTY_COLOR,
     };
   }),
@@ -100,6 +108,15 @@ const dividerBackground = computed(
 }
 .hand__icon.is-mirrored svg {
   transform: scaleX(-1);
+}
+.hand__text {
+  display: grid;
+  min-width: 0;
+}
+.hand__will {
+  color: #a39886;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 .hand__name {
   min-width: 0;

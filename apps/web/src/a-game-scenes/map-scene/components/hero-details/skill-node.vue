@@ -34,7 +34,7 @@ import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import { ICON_PATHS } from '@/components/gui/icons/item-icons';
 import type { SkillNodeView } from '@/composables/skill-tree-view';
 import SkillProgressBar from './skill-progress-bar.vue';
-import { BRANCH_COLOR, SKILL_ICON } from './skill-presentation';
+import { BRANCH_COLOR, SKILL_ICON } from '@/components/gui/icons/skill-presentation';
 
 const props = defineProps<{
   node: SkillNodeView;

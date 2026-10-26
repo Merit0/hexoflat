@@ -206,6 +206,12 @@ export class VerifyHeroBoardFeature extends BaseFeature {
     );
   }
 
+  async verifyHandWillCost(hand: HeroHand, will: number | null): Promise<void> {
+    await this.step(`Verify the ${hand} hand shows ${will ?? 'no'} Will cost`, () =>
+      this.campingMap.heroBoardPanel.verifyHandWillCost(hand, will),
+    );
+  }
+
   async readAttackTileText(): Promise<string> {
     return this.step('Read the attack tile', () =>
       this.campingMap.heroBoardPanel.readAttackTileText(),

@@ -51,6 +51,17 @@ export function getSkillBonuses(skills: SkillRanks): SkillBonuses {
 
 export type PortalAbility = { unlocked: false } | { unlocked: true; willCost: number };
 
+export function getPortalSkillId(): SkillId | null {
+  return SKILL_IDS.find((id) => SKILLS[id].effect.kind === 'portal') ?? null;
+}
+
+/** Portal price at the first rank: what a hero without the skill would pay once it is learned. */
+export function getPortalBaseCost(): number | null {
+  const id = getPortalSkillId();
+  const effect = id ? SKILLS[id].effect : null;
+  return effect?.kind === 'portal' ? effect.willCostByRank[0] : null;
+}
+
 export function getPortalAbility(skills: SkillRanks): PortalAbility {
   for (const id of SKILL_IDS) {
     const { effect } = SKILLS[id];

@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { SkillNodeView } from '@/composables/skill-tree-view';
-import { BRANCH_COLOR } from './skill-presentation';
+import { BRANCH_COLOR } from '@/components/gui/icons/skill-presentation';
 
 const props = defineProps<{
   node: SkillNodeView;

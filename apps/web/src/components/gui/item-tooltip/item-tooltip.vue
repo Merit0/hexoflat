@@ -38,6 +38,14 @@
           <li v-for="label in capabilityLabels" :key="label" class="tip__chip">{{ label }}</li>
         </ul>
 
+        <p
+          v-if="view.use?.kind === 'locked'"
+          class="tip__will-note"
+          data-testid="item-tooltip-will-locked"
+        >
+          {{ t('itemTooltip.willLocked') }}
+        </p>
+
         <ul v-if="view.shields > 0 || view.hearts > 0" class="tip__bonuses">
           <li v-if="view.shields > 0" class="tip__bonus" data-testid="item-tooltip-shields">
             <img class="tip__bonus-icon" :src="SHIELD_ICON_URL" alt="" />
@@ -59,6 +67,18 @@
           <span v-if="view.footer.durabilityMax !== undefined" class="tip__stat">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path :d="ICON_PATHS.durability" /></svg>
             {{ durabilityText }}
+          </span>
+          <span
+            v-if="view.use"
+            class="tip__stat"
+            :title="t('itemTooltip.willUse', { will: view.use.will })"
+            data-testid="item-tooltip-will"
+          >
+            <svg v-if="useIcon" viewBox="0 0 24 24" aria-hidden="true"><path :d="useIcon" /></svg>
+            <span>
+              {{ t('itemTooltip.footer.will') }}:
+              <span data-testid="item-tooltip-will-price">{{ view.use.will }}</span>
+            </span>
           </span>
           <span v-if="view.footer.stack" class="tip__stat" :title="t('itemTooltip.footer.stack')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path :d="ICON_PATHS.stack" /></svg>
@@ -86,6 +106,7 @@ import {
   ITEM_ICON_BY_KEY,
   type TIconName,
 } from '@/components/gui/icons/item-icons';
+import { SKILL_ICON } from '@/components/gui/icons/skill-presentation';
 import { RARITY_COLOR } from '@/render/rarity';
 import { useItemTooltipLabels } from './use-item-tooltip-labels';
 
@@ -118,6 +139,10 @@ const headlineValue = computed(() => {
   if (headline.kind === 'multiplier') return `×${headline.max}`;
   return headline.min === headline.max ? `${headline.max}` : `${headline.min}–${headline.max}`;
 });
+const useSkillId = computed(() => props.view.use?.skillId ?? null);
+const useIcon = computed(() =>
+  useSkillId.value ? ICON_PATHS[SKILL_ICON[useSkillId.value]] : null,
+);
 const comparison = computed(() => {
   const result = props.view.headline?.comparison;
   if (!result || result.direction === 'same') return null;
@@ -306,6 +331,13 @@ const stackText = computed(() => {
   font-size: 1.05rem;
   font-weight: 800;
   text-align: left;
+}
+.tip__will-note {
+  margin: 0;
+  color: #d9a066;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
 }
 .tip__bonus-icon {
   width: 22px;

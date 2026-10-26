@@ -61,6 +61,8 @@
       "mythic": "Міфічний"
     },
     "equipped": "Надіто",
+    "willUse": "Використання: {will} Волі",
+    "willLocked": "Потрібна навичка «Телепорт»",
     "group": {
       "resource": "Ресурс",
       "creature": "Істота",
@@ -98,7 +100,8 @@
       "weight": "Вага",
       "weightUnit": "кг",
       "durability": "Міцність",
-      "stack": "Стос"
+      "stack": "Стос",
+      "will": "Воля"
     },
     "shields": "{count, plural, one {+# щит} few {+# щити} many {+# щитів} other {+# щитів}}",
     "hearts": "{count, plural, one {+# серце} few {+# серця} many {+# сердець} other {+# сердець}}"

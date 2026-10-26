@@ -40,7 +40,7 @@
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import type { BranchView } from '@/composables/skill-tree-view';
 import SkillNode from './skill-node.vue';
-import { BRANCH_COLOR } from './skill-presentation';
+import { BRANCH_COLOR } from '@/components/gui/icons/skill-presentation';
 import { useSkillTexts } from './use-skill-texts';
 
 defineProps<{ branch: BranchView; selectedId: SkillId; active: boolean }>();

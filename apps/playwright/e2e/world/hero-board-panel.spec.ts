@@ -193,3 +193,24 @@ test('Verify unlocking an attack skill rank raises the attack shown on the Hero 
   await switchTab.switchTo('hero');
   await verifyBoard.verifyAttackTileChangedFrom(before);
 });
+
+test('Verify a hand holding the Return Scroll shows its Will cost on the Hero tab', async () => {
+  await new OpenCampingMapFeature().open();
+  await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
+
+  const switchTab = new SwitchHeroBoardTabFeature();
+  const verifyBoard = new VerifyHeroBoardFeature();
+
+  await switchTab.switchTo('inventory');
+  await new DragInventoryItemFeature().dragToEquipSlot(
+    HexobjectKeys.returnScroll,
+    EquipSlot.WEAPON,
+  );
+  await switchTab.switchTo('hero');
+  await verifyBoard.verifyHandWillCost('right', 10);
+  await verifyBoard.verifyHandWillCost('left', null);
+
+  await verifyBoard.grantSkillRank('a_crest', 1);
+  await verifyBoard.grantSkillRank('a_teleport', 4);
+  await verifyBoard.verifyHandWillCost('right', 7);
+});

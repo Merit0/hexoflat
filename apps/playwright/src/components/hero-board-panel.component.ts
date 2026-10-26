@@ -104,6 +104,10 @@ export class HeroBoardPanelComponent extends BaseComponent {
     return this.page.getByTestId(`hero-hand-${hand}-name`);
   }
 
+  private handWill(hand: HeroHand): Locator {
+    return this.page.getByTestId(`hero-hand-${hand}-will`);
+  }
+
   private handEmpty(hand: HeroHand): Locator {
     return this.page.getByTestId(`hero-hand-${hand}-empty`);
   }
@@ -200,6 +204,11 @@ export class HeroBoardPanelComponent extends BaseComponent {
   async verifyHandHolds(hand: HeroHand, name: RegExp): Promise<void> {
     await expect(this.handName(hand)).toHaveText(name);
     await expect(this.handEmpty(hand)).toBeHidden();
+  }
+
+  async verifyHandWillCost(hand: HeroHand, will: number | null): Promise<void> {
+    if (will === null) await expect(this.handWill(hand)).toBeHidden();
+    else await expect(this.handWill(hand)).toContainText(String(will));
   }
 
   async readAttackTileText(): Promise<string> {

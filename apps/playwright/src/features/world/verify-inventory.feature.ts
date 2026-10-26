@@ -66,6 +66,19 @@ export class VerifyInventoryFeature extends BaseFeature {
     });
   }
 
+  async verifyBagItemTooltipWillCost(
+    itemKey: string,
+    will: number,
+    locked: boolean,
+  ): Promise<void> {
+    await this.step(`Hovering "${itemKey}" in the bag shows its Will price of use`, async () => {
+      const itemId = await this.campingMap.inventory.getItemIdByKey(itemKey);
+      await this.campingMap.inventory.hoverGridItem(itemId);
+      await this.campingMap.inventory.verifyTooltipWillCost(will, locked);
+      await this.campingMap.inventory.moveMouseAway();
+    });
+  }
+
   async verifyEquippedItemTooltip(itemKey: string, title: RegExp): Promise<void> {
     await this.step(`Hovering equipped "${itemKey}" explains it as equipped`, async () => {
       const itemId = await this.campingMap.inventory.getItemIdByKey(itemKey);

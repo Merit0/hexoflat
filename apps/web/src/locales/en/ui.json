@@ -61,6 +61,8 @@
       "mythic": "Mythic"
     },
     "equipped": "Equipped",
+    "willUse": "Use: {will} Will",
+    "willLocked": "Needs the Teleport skill",
     "group": {
       "resource": "Resource",
       "creature": "Creature",
@@ -98,7 +100,8 @@
       "weight": "Weight",
       "weightUnit": "kg",
       "durability": "Durability",
-      "stack": "Stack"
+      "stack": "Stack",
+      "will": "Will"
     },
     "shields": "{count, plural, one {+# shield} other {+# shields}}",
     "hearts": "{count, plural, one {+# heart} other {+# hearts}}"

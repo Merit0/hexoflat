@@ -108,7 +108,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     isInteractable: true,
     title: 'Return Scroll',
     subtitle: 'Opens a portal home',
-    description: 'A one-use scroll that opens a portal to the camp.',
+    description: 'A one-use scroll. Use it next to you to open a portal to the camp.',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/teleport-scroll-token.png',
     actions: {

@@ -8,6 +8,7 @@ import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { getPrototype } from '@hexoflat/engine';
 import type { EEquipmentRarity } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -26,6 +27,7 @@ export type HeroStatId = 'attack' | 'defense' | 'load' | 'victories';
 export interface HandItem {
   titleKey: string;
   rarity: EEquipmentRarity | null;
+  willCost: number | null;
 }
 
 export interface HeroDetailsInput {
@@ -131,11 +133,12 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
   };
 }
 
-function toHandItem(key: THexobjectKey): HandItem {
+function toHandItem(key: THexobjectKey, skills: SkillRanks): HandItem {
   const view = resolveInventoryView(key);
   return {
     titleKey: view.title,
     rarity: getObjectRarity(getPrototype(key)),
+    willCost: resolveItemTooltip(key, { skills }).use?.will ?? null,
   };
 }
 
@@ -148,16 +151,20 @@ export function useHeroDetails() {
     const hero = heroStore.hero;
     const key = heroStore.nav.locationKey;
     const knowledge = heroStore.knowledge;
+    const skills = knowledge?.skills ?? {};
     const equipped = inventory.equippedItems;
     const weaponItem = equipped.weapon;
     const shieldItem = equipped.shield;
     const weapon =
       weaponItem && weaponItem.key !== HEXOBJECT_KEYS.HAND
-        ? { item: toHandItem(weaponItem.key), multiplier: getAttackMultiplier(weaponItem.key) }
+        ? {
+            item: toHandItem(weaponItem.key, skills),
+            multiplier: getAttackMultiplier(weaponItem.key),
+          }
         : null;
     const shield =
       shieldItem && shieldItem.key !== HEXOBJECT_KEYS.HAND
-        ? { item: toHandItem(shieldItem.key), defense: getMarkerDefense(shieldItem.key) }
+        ? { item: toHandItem(shieldItem.key, skills), defense: getMarkerDefense(shieldItem.key) }
         : null;
     const defense = Object.values(equipped).reduce(
       (sum, item) => sum + (item ? getMarkerDefense(item.key) : 0),

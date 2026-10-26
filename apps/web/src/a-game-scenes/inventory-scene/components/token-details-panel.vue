@@ -7,13 +7,17 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
+import { useHeroStore } from '@/stores/hero-store';
 import { resolveInventoryItemTooltip } from '@/composables/use-item-tooltip';
 import ItemTooltip from '@/components/gui/item-tooltip/item-tooltip.vue';
 
 const props = defineProps<{ item: InventoryItem }>();
 
 const inventory = useHeroInventoryStore();
-const view = computed(() => resolveInventoryItemTooltip(inventory, props.item));
+const heroStore = useHeroStore();
+const view = computed(() =>
+  resolveInventoryItemTooltip(inventory, props.item, heroStore.knowledge?.skills),
+);
 </script>
 
 <style scoped>

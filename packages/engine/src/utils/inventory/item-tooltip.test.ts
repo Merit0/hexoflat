@@ -82,3 +82,34 @@ describe('resolveItemTooltip', () => {
     expect(resolveItemTooltip(HEXOBJECT_KEYS.SWORD).hearts).toBe(0);
   });
 });
+
+describe('resolveItemTooltip Will price of use', () => {
+  it('prices the Return Scroll by the Teleport skill rank', () => {
+    expect(
+      resolveItemTooltip(HEXOBJECT_KEYS.RETURN_SCROLL, { skills: { a_teleport: 1 } }).use,
+    ).toEqual({
+      kind: 'cost',
+      will: 10,
+      skillId: 'a_teleport',
+    });
+    expect(
+      resolveItemTooltip(HEXOBJECT_KEYS.RETURN_SCROLL, { skills: { a_teleport: 10 } }).use,
+    ).toEqual({
+      kind: 'cost',
+      will: 1,
+      skillId: 'a_teleport',
+    });
+  });
+
+  it('marks the Return Scroll as locked and shows the first-rank price without the Teleport skill', () => {
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.RETURN_SCROLL).use).toEqual({
+      kind: 'locked',
+      will: 10,
+      skillId: 'a_teleport',
+    });
+  });
+
+  it('shows nothing for items that cost no Will to use', () => {
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.SWORD).use).toBeUndefined();
+  });
+});

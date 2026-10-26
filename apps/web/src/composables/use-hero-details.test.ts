@@ -23,8 +23,8 @@ const base: HeroDetailsInput = {
   defense: 0,
 };
 
-const swordItem = { titleKey: 'content.sword.title', rarity: null };
-const shieldItem = { titleKey: 'content.shield.title', rarity: null };
+const swordItem = { titleKey: 'content.sword.title', rarity: null, willCost: null };
+const shieldItem = { titleKey: 'content.shield.title', rarity: null, willCost: null };
 const sword = { item: swordItem, multiplier: 1.2 };
 const shield = { item: shieldItem, defense: 2.4 };
 
