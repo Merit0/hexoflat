@@ -5,11 +5,10 @@ export function useItemTooltipLabels() {
   const { t } = useI18n();
   return computed(() => ({
     rarity: {
-      basic: t('itemTooltip.rarity.basic'),
-      common: t('itemTooltip.rarity.common'),
-      rare: t('itemTooltip.rarity.rare'),
-      legend: t('itemTooltip.rarity.legend'),
-      mythic: t('itemTooltip.rarity.mythic'),
+      gloom: t('itemTooltip.rarity.gloom'),
+      idol: t('itemTooltip.rarity.idol'),
+      spark: t('itemTooltip.rarity.spark'),
+      'god-executor': t('itemTooltip.rarity.god-executor'),
     },
     group: {
       resource: t('itemTooltip.group.resource'),

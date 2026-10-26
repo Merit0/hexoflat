@@ -54,11 +54,10 @@
   },
   "itemTooltip": {
     "rarity": {
-      "basic": "Базовий",
-      "common": "Звичайний",
-      "rare": "Рідкісний",
-      "legend": "Легендарний",
-      "mythic": "Міфічний"
+      "gloom": "Морок",
+      "idol": "Кумир",
+      "spark": "Іскра",
+      "god-executor": "Кат Богів"
     },
     "equipped": "Надіто",
     "willUse": "Використання: {will} Волі",

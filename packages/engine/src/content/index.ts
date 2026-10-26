@@ -6,3 +6,4 @@ export {
   type TContentDefinition,
   type IHexobjectMeta,
 } from './content-schema';
+export { DEFAULT_RARITY, RARITY_TONES, rarityTone, type TRarityTone } from './rarity-rules';

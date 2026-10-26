@@ -54,11 +54,10 @@
   },
   "itemTooltip": {
     "rarity": {
-      "basic": "Basic",
-      "common": "Common",
-      "rare": "Rare",
-      "legend": "Legendary",
-      "mythic": "Mythic"
+      "gloom": "Gloom",
+      "idol": "Idol",
+      "spark": "Spark",
+      "god-executor": "God Executor"
     },
     "equipped": "Equipped",
     "willUse": "Use: {will} Will",

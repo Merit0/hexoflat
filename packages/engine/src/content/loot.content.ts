@@ -1,8 +1,4 @@
-import {
-  EEquipmentRarity,
-  EHexCollision,
-  EHexobjectGroup,
-} from '../abstraction/hexobject-abstraction';
+import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
@@ -47,7 +43,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Health Potion',
       amount: 1,
-      rarity: EEquipmentRarity.BASIC,
+      rarity: { kind: ERarityKind.IDOL, boss: false },
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
@@ -69,7 +65,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Energy Potion',
       amount: 10,
-      rarity: EEquipmentRarity.BASIC,
+      rarity: { kind: ERarityKind.IDOL, boss: false },
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
@@ -91,7 +87,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Mana Potion',
       amount: 10,
-      rarity: EEquipmentRarity.BASIC,
+      rarity: { kind: ERarityKind.IDOL, boss: false },
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,
@@ -120,7 +116,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Return Scroll',
       amount: 1,
-      rarity: EEquipmentRarity.RARE,
+      rarity: { kind: ERarityKind.SPARK, boss: false },
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.RETURN_SCROLL,
