@@ -1,7 +1,7 @@
 import { test } from '@fixtures';
 import { WillEconomyFeature } from '@features/world/will-economy.feature';
 
-test('A hero without Will cannot walk away from the Camp and is offered the way home', async () => {
+test('A hero without Will cannot walk away from the Camp', async () => {
   await new WillEconomyFeature().verifyStuckWithoutWill();
 });
 

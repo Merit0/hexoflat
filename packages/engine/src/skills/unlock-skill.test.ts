@@ -131,7 +131,6 @@ describe('knowledge state skills field', () => {
       current: 12,
       capacity: 50,
       sequence: 0,
-      failedReturns: 0,
       session: null,
       lastStep: null,
       history: {},

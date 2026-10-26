@@ -414,8 +414,6 @@ export const useHeroStore = defineStore('hero', {
         return false;
       };
       if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
-      if (this.knowledge?.session?.status === 'returning')
-        return warn(i18n.global.t('moveBlocked.returning'));
       if (portalFxBusy.value) return false;
       if (heroToolStore.isDragging) return false;
       if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));

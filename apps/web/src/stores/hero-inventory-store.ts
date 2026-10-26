@@ -62,7 +62,7 @@ function parseEquipSlotKey(value: string | null | undefined): TEquipSlot | null 
 
 export const WILL_SLOT_KEY = slotKey(0, 0);
 
-const UNLIMITED_ITEM_KEYS: readonly THexobjectKey[] = [HEXOBJECT_KEYS.RETURN_SCROLL];
+const STARTER_SCROLL_COUNT = 50;
 
 function isBlocked(r: number, c: number, cfg: GridConfig) {
   const { x, y, w, h } = cfg.blockedRect;
@@ -169,22 +169,32 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       if (squatter && relocated) squatter.slotKey = relocated;
 
       this.fillEmptySlotsWithHands();
-      this.ensureUnlimitedItems();
+      if (!saved) this.grantStarterScrolls();
       this.selectedItemId = null;
       this.isHydrated = true;
     },
 
-    ensureUnlimitedItems() {
-      for (const key of UNLIMITED_ITEM_KEYS) {
-        if (this.countItem(key) > 0) continue;
-        const preferredSlot = this.freeSlotKeys.at(-1);
-        if (!this.putToInventory(key, 1).ok) continue;
-        const item = this.items.find((candidate) => candidate.key === key);
-        if (item && preferredSlot && item.slotKey !== preferredSlot) {
-          const occupied = this.items.some((other) => other.slotKey === preferredSlot);
-          if (!occupied) this.moveItemToSlot(item.id, preferredSlot);
-        }
-      }
+    grantStarterScrolls() {
+      const key = HEXOBJECT_KEYS.RETURN_SCROLL;
+      const stackSize = getMeta(key).traits?.maxStack ?? STARTER_SCROLL_COUNT;
+      const stacks = Math.ceil(STARTER_SCROLL_COUNT / stackSize);
+      const slots = this.freeSlotKeys.slice(-stacks);
+
+      slots.forEach((slot, index) => {
+        const amount = Math.min(stackSize, STARTER_SCROLL_COUNT - index * stackSize);
+        const id = crypto.randomUUID();
+        this.items.push({
+          id,
+          key,
+          type: EHexobjectGroup.LOOT,
+          stackKey: key,
+          amount,
+          slotKey: slot,
+          isNew: false,
+        });
+        this.ensureRotation(id);
+      });
+      this.persist();
     },
 
     persist() {
@@ -395,7 +405,6 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
 
     takeFromInventory(key: THexobjectKey, amount: number) {
       if (this.countItem(key) < amount) return { ok: false };
-      if (UNLIMITED_ITEM_KEYS.includes(key)) return { ok: true };
 
       let left = amount;
       for (const item of this.items.filter((candidate) => candidate.key === key)) {

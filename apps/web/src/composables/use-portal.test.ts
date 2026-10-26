@@ -63,7 +63,7 @@ describe('usePortal', () => {
     return { hero, world, inventory, target, origin: { ...hero.heroCoordinates! } };
   }
 
-  it('opens a portal: spends 5 Will, keeps the unlimited scrolls, places the portal, stores the link', async () => {
+  it('opens a portal: spends 5 Will and one scroll, places the portal, stores the link', async () => {
     const { hero, world, inventory, target } = startInSilesia(20, 2);
     const scrollsBefore = inventory.countItem(SCROLL);
 
@@ -71,7 +71,7 @@ describe('usePortal', () => {
 
     expect(outcome.ok).toBe(true);
     expect(hero.knowledge!.current).toBe(15);
-    expect(inventory.countItem(SCROLL)).toBe(scrollsBefore);
+    expect(inventory.countItem(SCROLL)).toBe(scrollsBefore - 1);
     expect(portalHexes(world.map as HexMapModel)).toEqual([coordinateKey(target)]);
     expect(hero.portal).toMatchObject({
       originLocationKey: 'silesia',

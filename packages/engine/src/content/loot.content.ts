@@ -125,7 +125,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.RETURN_SCROLL,
-        maxStack: 5,
+        maxStack: 50,
         weightKG: 0.05,
       },
     },

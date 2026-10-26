@@ -21,13 +21,12 @@ export class WillEconomyFeature extends BaseFeature {
   }
 
   async verifyStuckWithoutWill(): Promise<void> {
-    await this.step('A hero with no Will cannot walk and is offered the way home', async () => {
+    await this.step('A hero with no Will cannot walk away', async () => {
       await this.enterSilesia(0);
       const before = await this.map.hexBoard.requireHeroCoordinates();
       await this.map.hexBoard.tryStepAndVerifyBlocked();
       await this.map.hexBoard.verifyHeroSettledAt(before);
       await this.map.knowledge.verifyWill(0);
-      await this.map.knowledge.verifyReturnOffered();
     });
   }
 

@@ -10,7 +10,6 @@ export const CAMPING_BOARD = {
     F: { hexobjectKey: 'fireplace' },
     G: { hexobjectKey: 'homeland-gate' },
     K: { hexobjectKey: 'pickaxe' },
-    R: { hexobjectKey: 'return-scroll' },
     S: { hexobjectKey: 'sword' },
     T: { hexobjectKey: 'stash-chest' },
     W: { hexobjectKey: 'wood-and-leaves' },
@@ -24,7 +23,7 @@ export const CAMPING_BOARD = {
     '~ ~ ~ ~ ~ ~ ~ G W W W W ~ ~ ~ ~ ~ ~', // r04
     ' ~ ~ ~ ~ ~ ~ W . . . . W ~ ~ ~ ~ ~ ~', // r05
     '~ ~ ~ ~ ~ ~ W . . . . S W ~ ~ ~ ~ ~', // r06
-    ' ~ ~ ~ ~ ~ W . R C . . A W ~ ~ ~ ~ ~', // r07
+    ' ~ ~ ~ ~ ~ W . . C . . A W ~ ~ ~ ~ ~', // r07
     '~ ~ ~ ~ ~ W . . . F . D . W ~ ~ ~ ~', // r08
     ' ~ ~ ~ ~ ~ W . . T . K . W ~ ~ ~ ~ ~', // r09
     '~ ~ ~ ~ ~ ~ W . . . . . W ~ ~ ~ ~ ~', // r10

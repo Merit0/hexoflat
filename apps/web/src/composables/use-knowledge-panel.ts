@@ -1,8 +1,8 @@
 import { nextTick, ref } from 'vue';
 import { isHeroBoardOpen } from './use-hero-board-collapse';
 
-export const knowledgePanelMode = ref<'hall' | 'return' | null>(null);
-export function openKnowledgePanel(mode: 'hall' | 'return') {
+export const knowledgePanelMode = ref<'hall' | null>(null);
+export function openKnowledgePanel(mode: 'hall') {
   knowledgePanelMode.value = mode;
   isHeroBoardOpen.value = true;
 }

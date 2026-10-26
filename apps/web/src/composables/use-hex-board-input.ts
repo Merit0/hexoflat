@@ -1,7 +1,6 @@
 import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
-import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { toolKeyOfItem } from '@/composables/hand-tools';

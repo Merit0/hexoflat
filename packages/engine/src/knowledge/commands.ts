@@ -9,7 +9,7 @@ export const KnowledgeCommandSchema = z.object({
     action: z.discriminatedUnion('kind', [
       z.object({
         kind: z.literal('start'),
-        mode: z.enum(['hall', 'return']),
+        mode: z.literal('hall'),
         seed: z.string().min(1),
       }),
       z.object({
@@ -20,14 +20,6 @@ export const KnowledgeCommandSchema = z.object({
         elapsedMs: z.number().int().min(0).max(3_600_000).optional(),
       }),
       z.object({ kind: z.literal('next'), sessionId: z.string(), questionId: z.string() }),
-      z.object({ kind: z.literal('return'), sessionId: z.string(), assisted: z.boolean() }),
-      z.object({ kind: z.literal('returned'), sessionId: z.string() }),
-      z.object({
-        kind: z.literal('review'),
-        sessionId: z.string(),
-        index: z.number().int(),
-        answer: z.number().int(),
-      }),
       z.object({
         kind: z.literal('step'),
         target: z.object({ columnIndex: z.number().int(), rowIndex: z.number().int() }).optional(),

@@ -46,42 +46,54 @@ describe('useHeroInventoryStore: countItem / takeFromInventory', () => {
   });
 });
 
-describe('useHeroInventoryStore: unlimited Return Scrolls', () => {
+describe('useHeroInventoryStore: starter Return Scrolls', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     localStorage.clear();
   });
 
-  it('a fresh hero starts with a scroll, away from the first grid slots', () => {
+  it('a fresh hero starts with one stack of 50 scrolls, kept away from the first grid slots', () => {
     const inventory = useHeroInventoryStore();
     inventory.hydrate();
 
-    const scroll = inventory.items.find((item) => item.key === SCROLL);
-    expect(scroll).toBeDefined();
-    expect(scroll!.slotKey).not.toBe('r0c1');
+    expect(inventory.countItem(SCROLL)).toBe(50);
+    expect(inventory.items.filter((item) => item.key === SCROLL)).toHaveLength(1);
+    const slots = inventory.items.filter((item) => item.key === SCROLL).map((item) => item.slotKey);
+    expect(slots).not.toContain('r0c1');
+    expect(new Set(slots).size).toBe(slots.length);
   });
 
-  it('taking scrolls never uses them up', () => {
+  it('scrolls are used up one by one', () => {
     const inventory = useHeroInventoryStore();
     inventory.hydrate();
-    const before = inventory.countItem(SCROLL);
 
     expect(inventory.takeFromInventory(SCROLL, 1)).toEqual({ ok: true });
     expect(inventory.takeFromInventory(SCROLL, 1)).toEqual({ ok: true });
 
-    expect(inventory.countItem(SCROLL)).toBe(before);
+    expect(inventory.countItem(SCROLL)).toBe(48);
   });
 
-  it('a scroll lost from a saved bag comes back on the next hydrate', () => {
+  it('is granted once: a spent bag is not refilled on the next load', () => {
     const first = useHeroInventoryStore();
     first.hydrate();
-    first.items = first.items.filter((item) => item.key !== SCROLL);
-    first.persist();
+    first.takeFromInventory(SCROLL, 50);
+    expect(first.countItem(SCROLL)).toBe(0);
 
     setActivePinia(createPinia());
     const second = useHeroInventoryStore();
     second.hydrate();
 
-    expect(second.countItem(SCROLL)).toBeGreaterThan(0);
+    expect(second.countItem(SCROLL)).toBe(0);
+  });
+
+  it('a reload before any action does not grant the scrolls twice', () => {
+    const first = useHeroInventoryStore();
+    first.hydrate();
+
+    setActivePinia(createPinia());
+    const second = useHeroInventoryStore();
+    second.hydrate();
+
+    expect(second.countItem(SCROLL)).toBe(50);
   });
 });

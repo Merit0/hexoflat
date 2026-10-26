@@ -3,11 +3,7 @@ import type { HexEngineState } from '@hexoflat/engine';
 import { findFreeHexNear } from '@hexoflat/engine/map/free-hex-finder';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
-import {
-  planPortalOpening,
-  returnScrollWillCost,
-  type OpenPortalRejection,
-} from '@hexoflat/engine/portal/portal-rules';
+import { planPortalOpening, returnScrollWillCost } from '@hexoflat/engine/portal/portal-rules';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';

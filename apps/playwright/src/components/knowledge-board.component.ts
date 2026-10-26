@@ -22,9 +22,6 @@ export class KnowledgeBoardComponent extends BaseComponent {
     await this.verifyWill(rules.startingWill);
     await expect(this.page.getByTestId('knowledge-start')).toBeEnabled();
   }
-  async verifyReturnOffered(): Promise<void> {
-    await expect(this.page.getByTestId('knowledge-return-offer')).toBeVisible();
-  }
   async verifyFull(): Promise<void> {
     await expect(this.page.getByTestId('knowledge-start')).toBeDisabled();
     await expect(this.page.getByTestId('knowledge-will')).toContainText(
@@ -44,9 +41,6 @@ export class KnowledgeBoardComponent extends BaseComponent {
     await this.page.getByTestId('knowledge-start').click();
     await expect(this.page.getByTestId('knowledge-question')).toBeVisible();
   }
-  async offerReturn(): Promise<void> {
-    await this.page.getByTestId('knowledge-return-offer').click();
-  }
   async answer(correct: boolean, keyboard = false): Promise<void> {
     const state = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
     if (!state) throw new Error('No challenge');
@@ -65,9 +59,7 @@ export class KnowledgeBoardComponent extends BaseComponent {
       .poll(async () => {
         const next = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
         return (
-          !!next &&
-          (['result', 'done'].includes(next.status ?? '') ||
-            (next.status === 'question' && next.index > index))
+          !!next && (next.status === 'done' || (next.status === 'question' && next.index > index))
         );
       })
       .toBe(true);
@@ -104,16 +96,6 @@ export class KnowledgeBoardComponent extends BaseComponent {
     await expect
       .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.status))
       .toBe('done');
-  }
-  async verifyResult(percent: number): Promise<void> {
-    await expect(this.page.getByTestId('knowledge-result')).toContainText(`${percent}%`);
-  }
-  async returnHome(): Promise<void> {
-    await this.page.getByTestId('knowledge-return').click();
-    await expect(this.page).toHaveURL(/\/world\/camping/);
-    await expect
-      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.status))
-      .toBe('returned');
   }
   async verifyWill(current: number): Promise<void> {
     await expect

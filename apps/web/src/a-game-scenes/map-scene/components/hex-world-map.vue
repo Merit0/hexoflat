@@ -163,7 +163,7 @@ watch(
   { immediate: true },
 );
 
-useKnowledgeChallenge(true);
+useKnowledgeChallenge();
 onMounted(() => worldStore.bootstrapWorld());
 // The condition is inlined (rather than read from a helper) so Vite can
 // statically fold it away: in any build without VITE_E2E_HOOKS=true this

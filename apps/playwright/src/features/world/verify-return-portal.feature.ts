@@ -1,7 +1,6 @@
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { OpenCampingMapFeature } from './open-camping-map.feature';
-import { TakeTokenFeature } from './take-token.feature';
 import { DragInventoryItemFeature } from './drag-inventory-item.feature';
 import { SwitchHeroBoardTabFeature } from './switch-hero-board-tab.feature';
 import { UseEquippedToolFeature } from './use-equipped-tool.feature';
@@ -19,9 +18,8 @@ const CAVE_PRICE = 2;
 export class VerifyReturnPortalFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
 
-  private async fetchScrollFromCamp(): Promise<void> {
+  private async startInCamp(): Promise<void> {
     await new OpenCampingMapFeature().open();
-    await new TakeTokenFeature('returnScroll').take();
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
   }
 
@@ -72,14 +70,17 @@ export class VerifyReturnPortalFeature extends BaseFeature {
     target: { columnIndex: number; rowIndex: number };
     willBefore: number;
   }> {
-    await this.fetchScrollFromCamp();
+    await this.startInCamp();
     await this.goToSilesia();
     const willBefore = await this.currentWill();
     const scrollsBefore = await this.scrollCount();
     const { target } = await this.openPortalWithScroll();
 
     await this.map.knowledge.verifyWill(willBefore - SCROLL_PRICE);
-    await new VerifyInventoryFeature().verifyItemAmount(HexobjectKeys.returnScroll, scrollsBefore);
+    await new VerifyInventoryFeature().verifyItemAmount(
+      HexobjectKeys.returnScroll,
+      scrollsBefore - 1,
+    );
     await this.map.hexBoard.verifyTileHoldsHexobject(target, HexobjectKeys.returnPortal);
 
     await this.enterAdjacentPortal();
@@ -136,7 +137,7 @@ export class VerifyReturnPortalFeature extends BaseFeature {
 
   async verifyCavePortalLeadsOneWay(): Promise<void> {
     await this.step('A portal opened in the cave is one-way: the camp gets no portal', async () => {
-      await this.fetchScrollFromCamp();
+      await this.startInCamp();
       await this.goToSilesia();
 
       const entrance = tokenCoordinates('caveEntrance');

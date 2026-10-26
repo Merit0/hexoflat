@@ -58,15 +58,14 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       const state = heroStore.knowledge;
       if (!state) return null;
       const session = state.session;
-      const question =
-        session?.mode === 'hall' ? session.question : session?.questions[session.index];
+      const question = session?.question;
       return {
         current: state.current,
         status: session?.status ?? null,
         index: session?.index ?? 0,
         options: question?.options ?? [],
         answer: question?.answer ?? null,
-        lastAward: session?.mode === 'hall' ? session.lastAward : 0,
+        lastAward: session?.lastAward ?? 0,
       };
     },
     prepareKnowledgeWorld(current: number) {
