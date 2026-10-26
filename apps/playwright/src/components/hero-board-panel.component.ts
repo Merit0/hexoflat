@@ -206,6 +206,14 @@ export class HeroBoardPanelComponent extends BaseComponent {
     await expect(this.handEmpty(hand)).toBeHidden();
   }
 
+  async clickHandIcon(hand: HeroHand): Promise<void> {
+    await this.page.getByTestId(`hero-hand-${hand}-label`).click();
+  }
+
+  async verifyHandIconDisabled(hand: HeroHand): Promise<void> {
+    await expect(this.page.getByTestId(`hero-hand-${hand}-label`)).toBeDisabled();
+  }
+
   async verifyHandWillCost(hand: HeroHand, will: number | null): Promise<void> {
     if (will === null) await expect(this.handWill(hand)).toBeHidden();
     else await expect(this.handWill(hand)).toContainText(String(will));

@@ -131,7 +131,8 @@
     "hands": {
       "right": "Права рука",
       "left": "Ліва рука",
-      "empty": "Порожньо"
+      "empty": "Порожньо",
+      "emptyAction": "Звільнити руку: {hand}"
     },
     "tree": {
       "branch": {

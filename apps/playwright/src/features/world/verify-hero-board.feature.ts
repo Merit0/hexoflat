@@ -206,6 +206,14 @@ export class VerifyHeroBoardFeature extends BaseFeature {
     );
   }
 
+  async emptyHandByIcon(hand: HeroHand): Promise<void> {
+    await this.step(`Click the ${hand} hand icon to empty the hand`, async () => {
+      await this.campingMap.heroBoardPanel.clickHandIcon(hand);
+      await this.campingMap.heroBoardPanel.verifyHandEmpty(hand);
+      await this.campingMap.heroBoardPanel.verifyHandIconDisabled(hand);
+    });
+  }
+
   async verifyHandWillCost(hand: HeroHand, will: number | null): Promise<void> {
     await this.step(`Verify the ${hand} hand shows ${will ?? 'no'} Will cost`, () =>
       this.campingMap.heroBoardPanel.verifyHandWillCost(hand, will),

@@ -214,3 +214,24 @@ test('Verify a hand holding the Return Scroll shows its Will cost on the Hero ta
   await verifyBoard.grantSkillRank('a_teleport', 4);
   await verifyBoard.verifyHandWillCost('right', 7);
 });
+
+test('Verify clicking a hand icon puts the held item back into the bag', async () => {
+  await new OpenCampingMapFeature().open();
+  await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
+
+  const switchTab = new SwitchHeroBoardTabFeature();
+  const verifyBoard = new VerifyHeroBoardFeature();
+
+  await switchTab.switchTo('inventory');
+  await new DragInventoryItemFeature().dragToEquipSlot(
+    HexobjectKeys.returnScroll,
+    EquipSlot.WEAPON,
+  );
+  await switchTab.switchTo('hero');
+  await verifyBoard.verifyHandHolds('right', /scroll/i);
+
+  await verifyBoard.emptyHandByIcon('right');
+
+  await switchTab.switchTo('inventory');
+  await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
+});

@@ -131,7 +131,8 @@
     "hands": {
       "right": "Right hand",
       "left": "Left hand",
-      "empty": "Empty"
+      "empty": "Empty",
+      "emptyAction": "Empty hand: {hand}"
     },
     "tree": {
       "branch": {

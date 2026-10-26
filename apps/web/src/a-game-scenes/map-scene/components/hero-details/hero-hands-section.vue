@@ -7,18 +7,22 @@
       :style="{ '--rarity': hand.color }"
       :data-testid="`hero-hand-${hand.id}`"
     >
-      <span
+      <button
         class="hand__icon"
-        :class="{ 'is-mirrored': hand.id === 'left' }"
-        role="img"
-        :aria-label="hand.label"
-        :title="hand.label"
+        :class="{ 'is-mirrored': hand.id === 'left', 'is-clickable': !!hand.title }"
+        type="button"
+        :disabled="!hand.title"
+        :aria-label="
+          hand.title ? t('heroDetails.hands.emptyAction', { hand: hand.label }) : hand.label
+        "
+        :title="hand.title ? t('heroDetails.hands.emptyAction', { hand: hand.label }) : hand.label"
         :data-testid="`hero-hand-${hand.id}-label`"
+        @click="emit('unequip', hand.id)"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" :data-testid="`hero-hand-${hand.id}-icon`">
           <path :d="ICON_PATHS.hand" />
         </svg>
-      </span>
+      </button>
       <span v-if="hand.title" class="hand__text">
         <span class="hand__name" :data-testid="`hero-hand-${hand.id}-name`">{{ hand.title }}</span>
         <span
@@ -52,6 +56,7 @@ import HeroDetailsCard from './hero-details-card.vue';
 import { useHeroDetailsLabels } from './use-hero-details-labels';
 
 const props = defineProps<{ view: HeroDetailsView }>();
+const emit = defineEmits<{ unequip: ['right' | 'left'] }>();
 const { t } = useI18n();
 const labels = useHeroDetailsLabels();
 
@@ -95,7 +100,49 @@ const dividerBackground = computed(
   flex: none;
   display: grid;
   place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
   color: #cbbfa6;
+  cursor: default;
+}
+.hand__icon.is-clickable {
+  cursor: pointer;
+}
+.hand__icon.is-clickable {
+  animation: hand-shake 5s ease-in-out infinite;
+}
+@keyframes hand-shake {
+  0%,
+  86%,
+  100% {
+    transform: rotate(0);
+  }
+  88% {
+    transform: rotate(-14deg);
+  }
+  90% {
+    transform: rotate(12deg);
+  }
+  92% {
+    transform: rotate(-10deg);
+  }
+  94% {
+    transform: rotate(8deg);
+  }
+  96% {
+    transform: rotate(-4deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hand__icon.is-clickable {
+    animation: none;
+  }
+}
+.hand__icon.is-clickable:hover {
+  animation: none;
+  color: var(--rarity);
+  filter: drop-shadow(0 0 6px var(--rarity));
 }
 .hand__icon svg {
   width: 30px;
