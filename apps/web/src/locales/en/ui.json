@@ -129,21 +129,170 @@
       "left": "Left hand",
       "empty": "Empty"
     },
-    "skill": {
-      "title": {
-        "attack": "Attack",
-        "defense": "Defence"
+    "tree": {
+      "branch": {
+        "demonic": {
+          "name": "Demonic",
+          "tag": "dark magic"
+        },
+        "bionic": {
+          "name": "Bionic",
+          "tag": "human form"
+        },
+        "angelic": {
+          "name": "Angelic",
+          "tag": "holy magic"
+        }
       },
-      "rank": "Rank",
-      "bonus": {
-        "attack": "attack bonus",
-        "defense": "defence bonus"
+      "ui": {
+        "level": "Lv.",
+        "next": "Next level",
+        "notOpened": "Not unlocked yet.",
+        "maxed": "Fully developed.",
+        "requires": "Unlock first: {list}",
+        "cost": "{cost} Will · you have {will}",
+        "soon": "Soon",
+        "new": "NEW",
+        "action": {
+          "awaken": "Awaken",
+          "open": "Unlock",
+          "upgrade": "Upgrade",
+          "max": "Maximum",
+          "soon": "Soon",
+          "locked": "Locked",
+          "needWill": "Not enough Will"
+        }
       },
-      "unlock": "Unlock",
-      "max": "Max rank",
-      "needWill": "Not enough Will",
-      "locked": "Unavailable now",
-      "will": "Will"
+      "node": {
+        "b_crest": {
+          "name": "Human Form",
+          "fx": ["The body path is open: strikes, guard, movement and endurance."]
+        },
+        "b_strike": {
+          "name": "Power Strike",
+          "fx": "+{bonus} melee attack."
+        },
+        "b_guard": {
+          "name": "Resilience",
+          "fx": "+{bonus} defense."
+        },
+        "b_heavy": {
+          "name": "Heavy Blow",
+          "fx": [
+            "Knockback +1: a light enemy flies back 1 hex.",
+            "Knockback +2: flies back 2 hexes.",
+            "Knockback +3: even a heavy enemy flies back."
+          ]
+        },
+        "b_endure": {
+          "name": "Endurance",
+          "fx": ["+1 heart in every fight.", "+2 hearts in every fight."]
+        },
+        "b_dash": {
+          "name": "Dash",
+          "fx": [
+            "1 step per location without spending Will.",
+            "2 steps per location without spending Will.",
+            "3 steps per location without spending Will."
+          ]
+        },
+        "b_aim": {
+          "name": "Keen Eye",
+          "fx": "Shoot across 2 hexes, power +{bonus}."
+        },
+        "b_cap": {
+          "name": "Iron Body",
+          "fx": ["The first enemy hit in each fight deals no damage."]
+        },
+        "d_crest": {
+          "name": "Dark Mark",
+          "fx": ["Awakens dark magic: curses, fear and the price of blood."]
+        },
+        "d_curse": {
+          "name": "Curse",
+          "fx": "An enemy in combat loses {bonus} defense."
+        },
+        "d_blood": {
+          "name": "Blood Price",
+          "fx": [
+            "Once per location: pay 1 heart instead of 3 Will.",
+            "Twice per location: pay 1 heart instead of 3 Will.",
+            "3 times per location: pay 1 heart instead of 3 Will."
+          ]
+        },
+        "d_fear": {
+          "name": "Fear",
+          "fx": [
+            "Drives an enemy back 1 hex without a strike.",
+            "Drives an enemy back 2 hexes.",
+            "Drives all adjacent enemies back 1 hex."
+          ]
+        },
+        "d_shadow": {
+          "name": "Shadow Step",
+          "fx": ["Pass through 1 occupied hex.", "Pass through 2 occupied hexes."]
+        },
+        "d_devour": {
+          "name": "Devourer",
+          "fx": [
+            "+1 Will for every won fight.",
+            "+2 Will for every won fight.",
+            "+3 Will for every won fight."
+          ]
+        },
+        "d_sight": {
+          "name": "Dark Sight",
+          "fx": ["See enemies in fog 1 hex further.", "See enemies in fog 2 hexes further."]
+        },
+        "d_cap": {
+          "name": "Demonic Form",
+          "fx": ["Once per fight: double attack at the cost of 1 heart."]
+        },
+        "a_crest": {
+          "name": "Blessing",
+          "fx": ["Awakens holy magic: the gate, light and healing."]
+        },
+        "a_gate": {
+          "name": "Gate of Return",
+          "fx": [
+            "Opens a portal to camp without a scroll. Portal cost: {cost} Will.",
+            "The portal to camp costs {cost} Will.",
+            "The portal to camp costs {cost} Will."
+          ]
+        },
+        "a_heal": {
+          "name": "Healing",
+          "fx": [
+            "Once per location restore 1 heart.",
+            "Twice per location restore 1 heart.",
+            "3 times per location restore 1 heart."
+          ]
+        },
+        "a_gate2": {
+          "name": "Two-way Gate",
+          "fx": ["A portal from a dungeon no longer destroys it: return to where you stopped."]
+        },
+        "a_ward": {
+          "name": "Light Ward",
+          "fx": [
+            "+1 block against the first hit in a fight.",
+            "+2 blocks against the first hit in a fight.",
+            "+3 blocks against the first hit in a fight."
+          ]
+        },
+        "a_wings": {
+          "name": "Wings",
+          "fx": ["Fly over 1 obstacle per turn.", "Fly over 2 obstacles per turn."]
+        },
+        "a_light": {
+          "name": "Light",
+          "fx": ["Fog lifts 1 hex further.", "Fog lifts 2 hexes further."]
+        },
+        "a_cap": {
+          "name": "Angelic Form",
+          "fx": ["Once per location the Gate of Return opens for free."]
+        }
+      }
     }
   },
   "portal": {

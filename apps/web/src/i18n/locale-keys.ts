@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { CONTENT } from '@hexoflat/engine';
+import { SKILL_BRANCHES, SKILL_IDS } from '@hexoflat/engine/skills/skill-content';
+import ukUi from '@/locales/uk/ui.json';
 
 const CONTENT_KEY_PREFIX = 'content.';
 
@@ -60,6 +62,22 @@ export function flattenLocaleKeys(source: unknown, prefix = ''): string[] {
   return keys;
 }
 
+// Skill-tree texts are looked up by skill/branch id (see use-skill-texts.ts), so
+// no literal t('...') call names them; the engine's skill content is the source.
+export function collectSkillTreeLocaleKeys(): string[] {
+  const keys: string[] = [];
+  for (const branch of SKILL_BRANCHES) {
+    keys.push(`heroDetails.tree.branch.${branch}.name`, `heroDetails.tree.branch.${branch}.tag`);
+  }
+  const nodes = ukUi.heroDetails.tree.node as Record<string, { fx: unknown }>;
+  for (const id of SKILL_IDS) {
+    keys.push(`heroDetails.tree.node.${id}.name`);
+    keys.push(...flattenLocaleKeys(nodes[id]?.fx, `heroDetails.tree.node.${id}.fx`));
+    if (typeof nodes[id]?.fx === 'string') keys.push(`heroDetails.tree.node.${id}.fx`);
+  }
+  return keys;
+}
+
 const SCAN_EXTENSIONS = new Set(['.vue', '.ts']);
 const SCAN_IGNORE_DIRS = new Set(['node_modules', 'dist']);
 // t('literal.key') / $t('literal.key') — single/double-quoted literal only;
@@ -104,5 +122,6 @@ export function collectUiTemplateKeys(): string[] {
     }
   }
 
+  for (const key of collectSkillTreeLocaleKeys()) keys.add(key);
   return [...keys].sort();
 }
