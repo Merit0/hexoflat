@@ -48,6 +48,8 @@ Inspired by general tactical dungeon-crawler concepts (including Frosthaven), bu
 
 **Return Scroll / portal home (branch `implement-hero-teleport`):** a one-use scroll opens a portal to the camp and back; see [`docs/RETURN-SCROLL-PLAN.md`](./docs/RETURN-SCROLL-PLAN.md) (phases T1–T4).
 
+**Skill Tree v2 (branch `new-skills-tree-view`):** three schools (Demonic / Bionic / Angelic) of 8 nodes each with `requires` dependencies, content in `packages/engine/src/skills/skill-content.ts`. Only 6 nodes are implemented; the rest show as "Soon". The Angelic `a_teleport` skill gates Return Scroll portals: the scroll is still required and consumed, the Will price is 10 at rank 1 down to 1 at rank 10, and without the skill the Use action only says "Only Angels can fly!" (`NOT_AN_ANGEL`). Legacy `attack`/`defense` saves migrate to `b_strike`/`b_guard`. Plan and status: [`docs/SKILL-TREE-V2-PLAN.md`](./docs/SKILL-TREE-V2-PLAN.md).
+
 **Phases 11–12 are deliberately paused** (containerized production deploy for `apps/api`; S3 assets + OpenTelemetry/Sentry) — local dev is already fully covered by `docker-compose.dev.yml`, and there's no real player/business need yet to justify production hosting or observability. Revisit only when that need shows up.
 
 **One standing exception to architecture Rule #1:** combat still lives entirely in `apps/web/src/stores/combat-store.ts` — state changes there do not go through `packages/engine`'s command/event pipeline. This is a deliberate, tracked gap, not an oversight: combat design itself isn't settled yet, so migrating it into the engine (and scoping multiplayer sync around it) is deferred until the game design is ready, not until there's engineering time.

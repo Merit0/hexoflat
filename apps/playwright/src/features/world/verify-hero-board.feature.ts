@@ -79,17 +79,48 @@ export class VerifyHeroBoardFeature extends BaseFeature {
     );
   }
 
+  async selectSkill(id: HeroSkillId): Promise<void> {
+    await this.step(`Select the "${id}" skill node`, () =>
+      this.campingMap.heroBoardPanel.selectSkill(id),
+    );
+  }
+
   async unlockSkill(id: HeroSkillId, expectedRank: number): Promise<void> {
     await this.step(`Unlock the "${id}" skill with Will up to rank ${expectedRank}`, async () => {
-      await this.campingMap.heroBoardPanel.unlockSkill(id);
-      await this.campingMap.heroBoardPanel.verifySkillRank(id, expectedRank, 10);
+      await this.campingMap.heroBoardPanel.selectSkill(id);
+      await this.campingMap.heroBoardPanel.unlockSelectedSkill();
+      await this.campingMap.heroBoardPanel.verifySkillNodeRank(id, expectedRank);
     });
   }
 
   async verifySkillCannotBeUnlocked(id: HeroSkillId): Promise<void> {
-    await this.step(`Verify the "${id}" skill cannot be unlocked with the Will left`, () =>
-      this.campingMap.heroBoardPanel.verifySkillCannotBeUnlocked(id),
-    );
+    await this.step(`Verify the "${id}" skill cannot be unlocked`, async () => {
+      await this.campingMap.heroBoardPanel.selectSkill(id);
+      await this.campingMap.heroBoardPanel.verifySelectedSkillActionDisabled();
+    });
+  }
+
+  async verifySelectedSkill(name: RegExp, rank: number, maxRank: number): Promise<void> {
+    await this.step(`Verify the selected skill is ${name} at rank ${rank}/${maxRank}`, async () => {
+      await this.campingMap.heroBoardPanel.verifySelectedSkillName(name);
+      await this.campingMap.heroBoardPanel.verifySelectedSkillRank(rank, maxRank);
+    });
+  }
+
+  async verifySkillWaitsForParents(id: HeroSkillId, parents: RegExp): Promise<void> {
+    await this.step(`Verify "${id}" is locked behind ${parents}`, async () => {
+      await this.campingMap.heroBoardPanel.selectSkill(id);
+      await this.campingMap.heroBoardPanel.verifySelectedSkillRequirementsShown(parents);
+      await this.campingMap.heroBoardPanel.verifySelectedSkillActionDisabled();
+    });
+  }
+
+  async verifySkillIsComingSoon(id: HeroSkillId): Promise<void> {
+    await this.step(`Verify "${id}" is shown but not available yet`, async () => {
+      await this.campingMap.heroBoardPanel.selectSkill(id);
+      await this.campingMap.heroBoardPanel.verifySelectedSkillRequirementsHidden();
+      await this.campingMap.heroBoardPanel.verifySelectedSkillActionDisabled();
+    });
   }
 
   async verifySkillTreeVisible(): Promise<void> {

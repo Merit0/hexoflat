@@ -84,15 +84,38 @@ test('Verify clicking the hero hex opens the Hero tab and its Skills view', asyn
   await verifyBoard.verifyScoutPathCardVisible();
 });
 
-test('Verify spending Will unlocks a skill rank and the starting Will cannot buy a second one', async () => {
+test('Verify the Path tab opens with the bionic crest selected', async () => {
+  await new OpenCampingMapFeature().open();
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+
+  await new VerifyHeroBoardFeature().verifySelectedSkill(/Human Form|Людська форма/, 1, 1);
+});
+
+test('Verify spending Will unlocks skill ranks until the starting Will runs out', async () => {
   await new OpenCampingMapFeature().open();
 
   await new SwitchHeroBoardTabFeature().switchTo('path');
 
   const verifyBoard = new VerifyHeroBoardFeature();
-  await verifyBoard.unlockSkill('attack', 1);
-  await verifyBoard.verifySkillCannotBeUnlocked('attack');
-  await verifyBoard.verifySkillCannotBeUnlocked('defense');
+  await verifyBoard.unlockSkill('b_strike', 1);
+  await verifyBoard.unlockSkill('b_strike', 2);
+  await verifyBoard.unlockSkill('b_strike', 3);
+  await verifyBoard.verifySkillCannotBeUnlocked('b_strike');
+  await verifyBoard.verifySkillCannotBeUnlocked('b_guard');
+});
+
+test('Verify a skill that is not ready yet cannot be bought and says why', async () => {
+  await new OpenCampingMapFeature().open();
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.verifySkillIsComingSoon('b_heavy');
+  await verifyBoard.verifySkillWaitsForParents('a_teleport', /Blessing|Благословення/);
+  await verifyBoard.unlockSkill('a_crest', 1);
+  await verifyBoard.selectSkill('a_teleport');
+  await verifyBoard.verifySelectedSkill(/Teleport|Телепорт/, 0, 10);
 });
 
 test('Verify the Hero tab hearts match the hero health', async () => {
@@ -137,7 +160,7 @@ test('Verify unlocking an attack skill rank raises the attack shown on the Hero 
   const before = await verifyBoard.readAttackTileText();
 
   await switchTab.switchTo('path');
-  await verifyBoard.unlockSkill('attack', 1);
+  await verifyBoard.unlockSkill('b_strike', 1);
 
   await switchTab.switchTo('hero');
   await verifyBoard.verifyAttackTileChangedFrom(before);

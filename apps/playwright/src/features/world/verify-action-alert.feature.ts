@@ -10,6 +10,12 @@ export class VerifyActionAlertFeature extends BaseFeature {
     );
   }
 
+  async verifyIsShownMatching(pattern: RegExp): Promise<void> {
+    await this.step(`Verify the action alert matches ${pattern}`, () =>
+      this.campingMap.actionAlertBanner.verifyIsVisibleMatching(pattern),
+    );
+  }
+
   async verifyAutoHides(): Promise<void> {
     await this.step('Verify the action alert auto-hides', () =>
       this.campingMap.actionAlertBanner.verifyAutoHides(),

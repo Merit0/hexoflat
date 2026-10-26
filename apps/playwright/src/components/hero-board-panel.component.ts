@@ -4,7 +4,8 @@ import type { TestHeroHealth } from '@framework/test-api';
 
 export type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
 export type HeroDetailsTab = 'state' | 'skills';
-export type HeroSkillId = 'attack' | 'defense';
+export type HeroSkillId =
+  'b_crest' | 'b_strike' | 'b_guard' | 'b_heavy' | 'd_crest' | 'a_crest' | 'a_teleport';
 export type HeroHand = 'right' | 'left';
 
 /**
@@ -46,12 +47,28 @@ export class HeroBoardPanelComponent extends BaseComponent {
     return this.page.getByTestId('hero-vitals-will');
   }
 
-  private skillUnlockButton(id: HeroSkillId): Locator {
-    return this.page.getByTestId(`hero-skill-${id}-unlock`);
+  private skillNode(id: HeroSkillId): Locator {
+    return this.page.getByTestId(`hero-skill-node-${id}`);
   }
 
-  private skillRank(id: HeroSkillId): Locator {
-    return this.page.getByTestId(`hero-skill-${id}-rank`);
+  private skillNodeRank(id: HeroSkillId): Locator {
+    return this.page.getByTestId(`hero-skill-node-${id}-rank`);
+  }
+
+  private get skillDetailName(): Locator {
+    return this.page.getByTestId('hero-skill-detail-name');
+  }
+
+  private get skillDetailRank(): Locator {
+    return this.page.getByTestId('hero-skill-detail-rank');
+  }
+
+  private get skillDetailRequires(): Locator {
+    return this.page.getByTestId('hero-skill-detail-requires');
+  }
+
+  private get skillDetailAction(): Locator {
+    return this.page.getByTestId('hero-skill-detail-action');
   }
 
   private heartNests(): Locator {
@@ -180,16 +197,43 @@ export class HeroBoardPanelComponent extends BaseComponent {
     await expect(this.skillTree).toBeVisible();
   }
 
-  async unlockSkill(id: HeroSkillId): Promise<void> {
-    await this.skillUnlockButton(id).click();
+  async selectSkill(id: HeroSkillId): Promise<void> {
+    await this.skillNode(id).click();
   }
 
-  async verifySkillRank(id: HeroSkillId, rank: number, maxRank: number): Promise<void> {
-    await expect(this.skillRank(id)).toContainText(new RegExp(`\\b${rank}\\s*/\\s*${maxRank}\\b`));
+  async unlockSelectedSkill(): Promise<void> {
+    await this.skillDetailAction.click();
   }
 
-  async verifySkillCannotBeUnlocked(id: HeroSkillId): Promise<void> {
-    await expect(this.skillUnlockButton(id)).toBeDisabled();
+  async verifySelectedSkillName(name: RegExp): Promise<void> {
+    await expect(this.skillDetailName).toHaveText(name);
+  }
+
+  async verifySelectedSkillRank(rank: number, maxRank: number): Promise<void> {
+    await expect(this.skillDetailRank).toContainText(
+      new RegExp(`\\b${rank}\\s*/\\s*${maxRank}\\b`),
+    );
+  }
+
+  async verifySkillNodeRank(id: HeroSkillId, rank: number): Promise<void> {
+    await expect(this.skillNodeRank(id)).toHaveText(String(rank));
+  }
+
+  async verifySelectedSkillActionDisabled(): Promise<void> {
+    await expect(this.skillDetailAction).toBeDisabled();
+  }
+
+  async verifySelectedSkillActionEnabled(): Promise<void> {
+    await expect(this.skillDetailAction).toBeEnabled();
+  }
+
+  async verifySelectedSkillRequirementsShown(names: RegExp): Promise<void> {
+    await expect(this.skillDetailRequires).toBeVisible();
+    await expect(this.skillDetailRequires).toContainText(names);
+  }
+
+  async verifySelectedSkillRequirementsHidden(): Promise<void> {
+    await expect(this.skillDetailRequires).toBeHidden();
   }
 
   async verifyHeroTabContentHidden(): Promise<void> {

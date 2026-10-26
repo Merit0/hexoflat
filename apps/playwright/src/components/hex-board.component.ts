@@ -373,6 +373,20 @@ export class HexBoardComponent extends BaseComponent {
     throw new Error('No neighbouring hex accepts a portal.');
   }
 
+  async hoverPortalTargetRefusedAs(reason: string): Promise<void> {
+    const from = await this.requireHeroCoordinates();
+    for (const candidate of await this.getNeighbors(from)) {
+      const preview = await this.page.evaluate(
+        (coord) => window.__HEXOFLAT_TEST__!.previewPortalOpening(coord),
+        candidate,
+      );
+      if (preview.reason !== reason) continue;
+      await this.hoverTile(candidate);
+      return;
+    }
+    throw new Error(`No neighbouring hex is refused as ${reason}.`);
+  }
+
   async verifyTileIsCleared(coordinates: TestHexCoordinates): Promise<void> {
     await expect
       .poll(() => this.getTileHexobjectKey(coordinates), {
