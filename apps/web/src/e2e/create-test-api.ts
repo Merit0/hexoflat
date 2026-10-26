@@ -214,6 +214,19 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return heroInventoryStore.countItem(key as THexobjectKey);
     },
 
+    grantInventoryItem(key: string, amount: number) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      const result = heroInventoryStore.putToInventory(key as THexobjectKey, amount);
+      if (!result.ok) throw new Error(`Cannot grant ${amount} x ${key}`);
+    },
+    setHeroHealth(current: number) {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      if (!Number.isFinite(current) || current < 0) throw new Error('Invalid fixture');
+      heroStore.hero.setHealth(current);
+      heroStore.hero.adjustHealthOnStatChange();
+      heroStore.saveProgressToStorage();
+    },
+
     previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview {
       const preview = portal.previewOpen(coordinates);
       return preview.ok

@@ -316,4 +316,8 @@ export class HeroBoardPanelComponent extends BaseComponent {
   async verifyHeroHealth(expected: TestHeroHealth): Promise<void> {
     await expect.poll(() => this.getHeroHealth()).toEqual(expected);
   }
+
+  async verifyHeroHealthWithin(expected: TestHeroHealth, timeoutMs: number): Promise<void> {
+    await expect.poll(() => this.getHeroHealth(), { timeout: timeoutMs }).toEqual(expected);
+  }
 }

@@ -334,7 +334,7 @@ const campHealEffectCoord = computed(() => {
 });
 
 const campHealInfoLabel = computed(() => {
-  const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
+  const maxHp = Math.max(1, heroStore.heroHpMax);
   const percentPerTick = Math.round((1 / maxHp) * 100);
   return `${percentPerTick}%/10с`;
 });

@@ -10,6 +10,7 @@ export class HeroModel implements IHero {
   currentHealth = 0;
   maxHealth: number;
   maxHealthBonus = 0;
+  private bonusHealthDebt = 0;
   attack = 0;
   defense = 0;
   coins = 0;
@@ -47,14 +48,35 @@ export class HeroModel implements IHero {
     );
   }
 
+  /**
+   * A full hero who gains maximum health stays full; a hurt hero keeps the health he has. Losing the
+   * bonus remembers how many hearts were missing, so unequipping and re-equipping cannot heal.
+   */
   public setMaxHealthBonus(bonus: number): HeroModel {
+    const before = this.getEffectiveMaxHealth();
+    const wasFull = this.currentHealth >= before;
+    const missing = roundToSingleDecimal(Math.max(0, before - this.currentHealth));
+
     this.maxHealthBonus = Math.max(0, bonus);
+    const after = this.getEffectiveMaxHealth();
+
+    if (after > before) {
+      if (wasFull) {
+        const regained = roundToSingleDecimal(after - this.bonusHealthDebt);
+        this.currentHealth = Math.max(this.currentHealth, regained);
+      }
+      this.bonusHealthDebt = 0;
+    } else if (after < before) {
+      this.bonusHealthDebt = Math.min(missing, roundToSingleDecimal(before - after));
+    }
     this.adjustHealthOnStatChange();
     return this;
   }
 
   public setHealth(health: number): HeroModel {
-    this.currentHealth = normalizeHealthValue(health);
+    const next = normalizeHealthValue(health);
+    if (next !== this.currentHealth) this.bonusHealthDebt = 0;
+    this.currentHealth = next;
     return this;
   }
 

@@ -318,7 +318,7 @@ const secondsLeft = computed(() => {
   if (!a?.endsAt) return 0;
 
   if (a.type === EHexActionType.USE && a.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE) {
-    const maxHp = Math.max(1, Number(heroStore.hero.maxHealth ?? 1));
+    const maxHp = Math.max(1, heroStore.heroHpMax);
     const currentHp = Math.max(0, Math.min(maxHp, Number(heroStore.hero.currentHealth ?? 0)));
     const missingHp = Math.max(0, maxHp - currentHp);
     const currentCycleSeconds = Math.ceil(Math.max(0, a.endsAt - now.value) / 1000);

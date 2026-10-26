@@ -55,6 +55,13 @@ Three composables (`use-move-preview`, `use-hex-board-sizing`, `use-hex-board-in
 
 After extracting anything, verify the old call site actually imports it and the inline copy is deleted.
 
+## Worked example: the skill tree
+
+- Rules and numbers live in the engine (`packages/engine/src/skills/`: statuses, sacrifice options, previews' maths). The web view-model `composables/skill-tree-view.ts` only shapes them for the UI — `buildSkillTreeView`, `findSkillNode`, `previewSacrifice` call engine functions and never recompute a price, status or option amount.
+- User intent goes `component → emit → store action → knowledge-controller → applyCommand`: `hero-store.sacrificeToSkill` / `resetSkills` are the only funnel (`SACRIFICE_TO_SKILL`, `RESET_SKILLS`). Hovered option, selected node and "confirm reset" are component-local refs, not store state.
+- Shared presentation data used by both the tree and the item tooltip (icons, school colors) sits in `components/gui/icons/skill-presentation.ts`, not inside a scene folder, so `components/gui` never imports from `a-game-scenes`.
+- Texts looked up by id (`heroDetails.tree.node.<id>.*`) are invisible to the literal-`t('…')` scan; they are registered for the orphan-key test in `i18n/locale-keys.ts` (`collectSkillTreeLocaleKeys`). New id-driven keys need the same treatment.
+
 ## Other conventions
 
 - Scenes live in `apps/web/src/a-game-scenes/<scene>/components/`. Shared UI in `apps/web/src/components/`.

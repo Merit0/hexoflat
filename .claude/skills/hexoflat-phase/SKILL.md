@@ -13,6 +13,7 @@ description: How work is executed in this repo — one planned phase per chat, d
 | `docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md` | God Class diagnosis, phases G0–G6, and the target store contract in Part 6                  |
 | `docs/WORLD-MAP-BOARDS-PLAN.md`                  | Location maps: static drawings, dungeon assembly from chunks, in-game editor — phases C0–C4 |
 | `docs/BOARD-GENERATOR-PLAN.md`                   | Board generator: 6-stage pipeline, part registries, measurer, atlas — phases V0–V7          |
+| `docs/SKILL-TREE-V2-PLAN.md`                     | Skill tree v2: three schools, Will sacrifice into skill bars, Teleport skill — S1–S5 done   |
 | `docs/MIGRATION-PLAN.md`                         | Infrastructure phases (1–10 done; 11–12 deliberately paused)                                |
 | `docs/design/*.md`                               | Scout reports — design inspiration only, never a source of copied names/text/art/balance    |
 
@@ -48,6 +49,7 @@ These are the failure modes that have actually cost this project time:
 - [ ] No new import cycle
 - [ ] Behaviour unchanged, unless the task was explicitly to change it
 - [ ] Plan doc updated with `[DONE — date]` and refreshed numbers
+- [ ] Project skills (`.claude/skills/*/SKILL.md`) and `CLAUDE.md` updated with what this feature added or changed
 - [ ] Commit permission asked for, not assumed
 
 ## Originality constraint (applies to all content work)

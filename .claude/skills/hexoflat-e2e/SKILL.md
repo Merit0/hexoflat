@@ -39,6 +39,8 @@ Game state and hex geometry are asked of the running app through `window.__HEXOF
 
 This exists so tests never re-implement `packages/engine` logic. If a test needs to know where a hex is, whether a tile is revealed, or what the hero's position is — ask the app, do not recompute it. Extend the test API in `apps/web/src/e2e/create-test-api.ts` rather than duplicating a rule.
 
+State that the real game cannot reach cheaply is granted through hooks, not by clicking: `setWill(n)`, `prepareKnowledgeWorld(n)`, `setSkillRank(skillId, rank)` (skills priced above Will capacity, e.g. the Teleport skill). Add a hook in `create-test-api.ts` + `test-api.types.ts` instead of writing helper logic in a test.
+
 Keep the `import.meta.env.VITE_E2E_HOOKS !== 'true'` guard **inline** at its call sites so Vite statically drops the hooks from production bundles.
 
 ## Flakiness: the trap that already bit this project
@@ -52,6 +54,8 @@ Prefer web-first assertions and real conditions (`toHaveAttribute`, `expect.poll
 Waiting for the board specifically: the canvas exposes `data-ready` once `onBoardReady` has fired. Use that, not `onMounted` timing or a fixed wait.
 
 ## Running
+
+Run a subset with `sh scripts/pre-push-e2e.sh e2e/world/<spec>.spec.ts` (own ports 3101/5273; it starts Postgres only if it was not running and stops only what it started). Rebuild `packages/engine` first if engine code changed.
 
 E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allure report with trend history to GitHub Pages on every PR and trunk push.
 

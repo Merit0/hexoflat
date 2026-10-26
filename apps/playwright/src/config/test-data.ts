@@ -19,6 +19,8 @@ export const HexobjectKeys = {
   axe: 'axe',
   stashChest: 'stash-chest',
   returnScroll: 'return-scroll',
+  shield: 'shield',
+  fireplace: 'fireplace',
   returnPortal: 'return-portal',
 } as const;
 

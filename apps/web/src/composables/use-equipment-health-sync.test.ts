@@ -16,7 +16,7 @@ describe('useEquipmentHealthSync', () => {
     localStorage.clear();
   });
 
-  it('raises the allowed maximum without healing when a shield is equipped and drops it when removed', async () => {
+  it('keeps a full hero full when a shield is equipped and drops the heart when it is removed', async () => {
     const inventory = useHeroInventoryStore();
     const heroStore = useHeroStore();
     heroStore.hero.setMaxHealth(3).setHealth(3);
@@ -31,12 +31,25 @@ describe('useEquipmentHealthSync', () => {
     inventory.items[0].slotKey = 'eq:shield';
     await nextTick();
     expect(heroStore.hero.getEffectiveMaxHealth()).toBe(4);
-    expect(heroStore.hero.currentHealth).toBe(3);
+    expect(heroStore.hero.currentHealth).toBe(4);
 
     inventory.items[0].slotKey = 'bag:0';
     await nextTick();
     expect(heroStore.hero.getEffectiveMaxHealth()).toBe(3);
     expect(heroStore.hero.currentHealth).toBe(3);
+  });
+
+  it('raises only the maximum for a hurt hero', async () => {
+    const inventory = useHeroInventoryStore();
+    const heroStore = useHeroStore();
+    heroStore.hero.setMaxHealth(3).setHealth(2);
+    effectScope().run(() => useEquipmentHealthSync());
+
+    inventory.items.push(shieldItem('eq:shield'));
+    await nextTick();
+
+    expect(heroStore.hero.getEffectiveMaxHealth()).toBe(4);
+    expect(heroStore.hero.currentHealth).toBe(2);
   });
 
   it('does not grant the heart again when the saved bonus is restored on load', async () => {
