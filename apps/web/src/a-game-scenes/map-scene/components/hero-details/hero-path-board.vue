@@ -5,7 +5,7 @@
       class="path__content"
       :style="{ transform: `translate(${offsetX}px, 0) scale(${scale})` }"
     >
-      <hero-skill-tree :view="view" @sacrifice="sacrifice" />
+      <hero-skill-tree :view="view" @sacrifice="sacrifice" @reset="heroStore.resetSkills()" />
     </div>
   </section>
 </template>

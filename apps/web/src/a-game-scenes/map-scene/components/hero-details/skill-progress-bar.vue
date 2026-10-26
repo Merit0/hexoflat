@@ -5,11 +5,6 @@
     :style="{ '--c': BRANCH_COLOR[node.branch] }"
     data-testid="hero-skill-progress"
   >
-    <span class="medal">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path :d="ICON_PATHS[SKILL_ICON[node.id]]" />
-      </svg>
-    </span>
     <span class="track">
       <span class="fill" :style="{ width: `${percent}%` }"></span>
       <span
@@ -17,16 +12,17 @@
         class="ghost"
         :style="{ left: `${percent}%`, width: `${previewExtra}%` }"
       ></span>
-      <span class="value" data-testid="hero-skill-progress-value">{{ valueText }}</span>
+      <span v-if="!compact" class="value" data-testid="hero-skill-progress-value">{{
+        valueText
+      }}</span>
     </span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ICON_PATHS } from '@/components/gui/icons/item-icons';
 import type { SkillNodeView } from '@/composables/skill-tree-view';
-import { BRANCH_COLOR, SKILL_ICON } from './skill-presentation';
+import { BRANCH_COLOR } from './skill-presentation';
 
 const props = defineProps<{
   node: SkillNodeView;
@@ -57,37 +53,12 @@ const valueText = computed(() => (maxed.value ? 'MAX' : `${props.node.progress}/
   align-items: center;
   width: 100%;
 }
-.medal {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 60%, #fff), var(--c));
-  border: 3px solid color-mix(in srgb, var(--c) 70%, #1a1408);
-  color: #14110a;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--c) 45%, transparent);
-}
-.medal svg {
-  width: 58%;
-  height: 58%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
 .track {
   position: relative;
   flex: 1;
   height: 24px;
-  margin-left: -10px;
-  padding-left: 10px;
   overflow: hidden;
-  border-radius: 0 999px 999px 0;
+  border-radius: 999px;
   background: #0b0d0e;
   border: 2px solid color-mix(in srgb, var(--c) 55%, #1a1408);
 }
@@ -117,15 +88,8 @@ const valueText = computed(() => (maxed.value ? 'MAX' : `${props.node.progress}/
   font-weight: 800;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
-.is-compact .medal {
-  width: 22px;
-  height: 22px;
-  border-width: 2px;
-}
 .is-compact .track {
-  height: 12px;
-  margin-left: -6px;
-  padding-left: 6px;
+  height: 10px;
 }
 .is-compact .value {
   display: none;

@@ -82,6 +82,15 @@ export const SacrificeToSkillCommandSchema = z.object({
 });
 export type SacrificeToSkillCommand = z.infer<typeof SacrificeToSkillCommandSchema>;
 
+export const ResetSkillsCommandSchema = z.object({
+  type: z.literal('RESET_SKILLS'),
+  payload: z.object({
+    heroId: z.string(),
+    revision: z.number().int().nonnegative(),
+  }),
+});
+export type ResetSkillsCommand = z.infer<typeof ResetSkillsCommandSchema>;
+
 export const OpenPortalCommandSchema = z.object({
   type: z.literal('OPEN_PORTAL'),
   payload: z.object({
@@ -108,6 +117,7 @@ export type HexEngineCommand =
   | CrossExitCommand
   | KnowledgeCommand
   | SacrificeToSkillCommand
+  | ResetSkillsCommand
   | OpenPortalCommand
   | EnterPortalCommand;
 
@@ -123,6 +133,7 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   CROSS_EXIT: CrossExitCommandSchema,
   KNOWLEDGE: KnowledgeCommandSchema,
   SACRIFICE_TO_SKILL: SacrificeToSkillCommandSchema,
+  RESET_SKILLS: ResetSkillsCommandSchema,
   OPEN_PORTAL: OpenPortalCommandSchema,
   ENTER_PORTAL: EnterPortalCommandSchema,
 };

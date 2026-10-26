@@ -29,7 +29,7 @@ export const SKILL_ICON: Record<SkillId, TIconName> = {
 };
 
 export const BRANCH_COLOR: Record<SkillBranch, string> = {
-  demonic: '#d0588c',
-  bionic: '#e2a24f',
-  angelic: '#8dcdef',
+  demonic: '#a66bf2',
+  bionic: '#3fd0a0',
+  angelic: '#f2c14e',
 };

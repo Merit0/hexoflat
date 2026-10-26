@@ -160,6 +160,11 @@
           "all": "All",
           "after": "After: Lv. {rank}, {progress}/{cost}",
           "afterMax": "After: maximum level"
+        },
+        "reset": {
+          "button": "Reset all",
+          "confirm": "Yes, reset (Will is not refunded)",
+          "cancel": "Cancel"
         }
       },
       "node": {

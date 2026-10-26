@@ -10,6 +10,7 @@ import {
   dispatchDevWillGrant,
   dispatchKnowledge,
   dispatchSkillSacrifice,
+  dispatchSkillsReset,
   isAtKnowledgeBook,
   locationWillZone,
 } from '@/services/knowledge/knowledge-controller';
@@ -183,6 +184,24 @@ export const useHeroStore = defineStore('hero', {
           skillId,
           option,
         );
+        if (heroId !== this.hero.id) return false;
+        this.knowledge = result.state;
+        return result.accepted;
+      } catch {
+        this.knowledgeError = true;
+        return false;
+      }
+    },
+
+    async resetSkills(): Promise<boolean> {
+      const world = useWorldMapStore();
+      if (!world.map || !this.knowledge || this.knowledgeError) return false;
+      const heroId = this.hero.id;
+      try {
+        const result = await dispatchSkillsReset({
+          ...this.knowledgeHost(world),
+          state: this.knowledge,
+        });
         if (heroId !== this.hero.id) return false;
         this.knowledge = result.state;
         return result.accepted;

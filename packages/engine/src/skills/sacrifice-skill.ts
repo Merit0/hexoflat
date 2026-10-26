@@ -31,10 +31,10 @@ function rejected(payload: SacrificeSkillPayload, reason: SkillRejectReason): Do
   };
 }
 
-function preconditionFailure(
+export function preconditionFailure(
   state: KnowledgeState,
   ctx: KnowledgeContext,
-  payload: SacrificeSkillPayload,
+  payload: { heroId: string; revision: number },
 ): SkillRejectReason | null {
   if (payload.heroId !== state.heroId) return 'WRONG_HERO';
   if (payload.revision !== state.revision) return 'STALE_REVISION';

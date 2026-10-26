@@ -1,5 +1,6 @@
 import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
+import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feature';
 import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { ToggleHeroBoardFeature } from '@features/world/toggle-hero-board.feature';
 import { VerifyHeroBoardFeature } from '@features/world/verify-hero-board.feature';
@@ -92,20 +93,48 @@ test('Verify the Path tab opens with the bionic crest selected', async () => {
   await new VerifyHeroBoardFeature().verifySelectedSkill(/Human Form|Людська форма/, 1, 1);
 });
 
-test('Verify spending Will unlocks skill ranks until the starting Will runs out', async () => {
+test('Verify sacrificing Will raises skill ranks until the Will runs out', async () => {
   await new OpenCampingMapFeature().open();
 
   await new SwitchHeroBoardTabFeature().switchTo('path');
 
   const verifyBoard = new VerifyHeroBoardFeature();
-  await verifyBoard.unlockSkill('b_strike', 1);
-  await verifyBoard.unlockSkill('b_strike', 2);
-  await verifyBoard.unlockSkill('b_strike', 3);
-  await verifyBoard.verifySkillCannotBeUnlocked('b_strike');
-  await verifyBoard.verifySkillCannotBeUnlocked('b_guard');
+  await verifyBoard.sacrificeToSkill('b_strike', 'all', 3);
+  await verifyBoard.verifySkillTreeWill(0);
+  await verifyBoard.verifySacrificeUnavailable('b_strike');
+  await verifyBoard.verifySacrificeUnavailable('b_guard');
 });
 
-test('Verify a skill that is not ready yet cannot be bought and says why', async () => {
+test('Verify an expensive skill keeps its progress bar across a reload', async () => {
+  await new OpenCampingMapFeature().open();
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.grantSkillRank('a_crest', 1);
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+  await verifyBoard.selectSkill('a_teleport');
+  await verifyBoard.sacrificeToSkill('a_teleport', 'small', 0);
+  await verifyBoard.verifySelectedSkillProgress(15, 500);
+
+  await new ReloadCampingMapFeature().reload();
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+  await verifyBoard.verifySkillProgress('a_teleport', 15, 500);
+});
+
+test('Verify resetting all skills clears ranks and bars without refunding Will', async () => {
+  await new OpenCampingMapFeature().open();
+
+  await new SwitchHeroBoardTabFeature().switchTo('path');
+
+  const verifyBoard = new VerifyHeroBoardFeature();
+  await verifyBoard.verifyResetUnavailable();
+  await verifyBoard.sacrificeToSkill('b_strike', 'all', 3);
+  await verifyBoard.resetAllSkills();
+  await verifyBoard.verifySkillNodeRankIs('b_strike', 0);
+  await verifyBoard.verifySkillTreeWill(0);
+  await verifyBoard.verifyResetUnavailable();
+});
+
+test('Verify a skill that is not ready yet cannot be sacrificed into and says why', async () => {
   await new OpenCampingMapFeature().open();
 
   await new SwitchHeroBoardTabFeature().switchTo('path');
@@ -113,8 +142,6 @@ test('Verify a skill that is not ready yet cannot be bought and says why', async
   const verifyBoard = new VerifyHeroBoardFeature();
   await verifyBoard.verifySkillIsComingSoon('b_heavy');
   await verifyBoard.verifySkillWaitsForParents('a_teleport', /Blessing|Благословення/);
-  await verifyBoard.verifySkillCannotBeUnlocked('a_crest');
-  await verifyBoard.verifySkillCannotBeUnlocked('d_crest');
   await verifyBoard.selectSkill('a_teleport');
   await verifyBoard.verifySelectedSkill(/Teleport|Телепорт/, 0, 10);
 });
@@ -161,7 +188,7 @@ test('Verify unlocking an attack skill rank raises the attack shown on the Hero 
   const before = await verifyBoard.readAttackTileText();
 
   await switchTab.switchTo('path');
-  await verifyBoard.unlockSkill('b_strike', 1);
+  await verifyBoard.sacrificeToSkill('b_strike', 'small', 2);
 
   await switchTab.switchTo('hero');
   await verifyBoard.verifyAttackTileChangedFrom(before);

@@ -237,3 +237,42 @@ describe('knowledge state skill progress', () => {
     expect(knowledgeStateSchema.parse(legacy).skills).toEqual({ b_strike: 5 });
   });
 });
+
+describe('RESET_SKILLS', () => {
+  const reset = (state: HexEngineState, revision = state.knowledge!.revision) =>
+    applyCommand(
+      state,
+      { type: 'RESET_SKILLS', payload: { heroId: 'hero', revision } },
+      {} as HexEngineActionContext,
+    );
+
+  it('clears every rank and bar, keeps the free crest and does not refund Will', () => {
+    const state = stateFixture(20);
+    state.knowledge!.skills = { b_strike: 4, b_guard: 2, a_crest: 1 };
+    state.knowledge!.skillProgress = { a_teleport: 120 };
+    const { events } = reset(state);
+
+    expect(state.knowledge!.skills).toEqual({});
+    expect(state.knowledge!.skillProgress).toEqual({});
+    expect(state.knowledge!.current).toBe(20);
+    expect(state.knowledge!.revision).toBe(1);
+    expect(events.map((event) => event.type)).toEqual(['SKILLS_RESET']);
+  });
+
+  it('refuses when there is nothing to reset', () => {
+    const state = stateFixture(20);
+    expect(reset(state).events[0].payload).toMatchObject({ reason: 'NOTHING_TO_RESET' });
+    expect(state.knowledge!.revision).toBe(0);
+  });
+
+  it('refuses a stale revision, combat and movement without changing anything', () => {
+    const state = stateFixture(20);
+    state.knowledge!.skills = { b_strike: 1 };
+    expect(reset(state, 9).events[0].payload).toMatchObject({ reason: 'STALE_REVISION' });
+    const busy = stateFixture(20, { combatActive: true });
+    busy.knowledge!.skills = { b_strike: 1 };
+    expect(reset(busy).events[0].payload).toMatchObject({ reason: 'IN_COMBAT' });
+    expect(busy.knowledge!.skills).toEqual({ b_strike: 1 });
+    expect(state.knowledge!.skills).toEqual({ b_strike: 1 });
+  });
+});

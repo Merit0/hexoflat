@@ -1,4 +1,5 @@
 import { SKILLS, type SkillBranch, type SkillId } from '@hexoflat/engine/skills/skill-content';
+import { hasSkillsToReset } from '@hexoflat/engine/skills/reset-skills';
 import {
   applySacrifice,
   getSacrificeOptions,
@@ -43,6 +44,7 @@ export interface BranchView {
 export interface SkillTreeView {
   branches: BranchView[];
   options: SacrificeOption[];
+  canReset: boolean;
 }
 
 export interface SkillTreeInput {
@@ -107,7 +109,11 @@ export function buildSkillTreeView(input: SkillTreeInput): SkillTreeView {
       capLit: cap.parentLit,
     };
   });
-  return { branches, options: getSacrificeOptions(will.capacity, will.current) };
+  return {
+    branches,
+    options: getSacrificeOptions(will.capacity, will.current),
+    canReset: hasSkillsToReset({ skills: ranks, skillProgress: progress }),
+  };
 }
 
 export function findSkillNode(view: SkillTreeView, id: SkillId): SkillNodeView | null {

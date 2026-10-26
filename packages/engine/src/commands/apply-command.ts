@@ -1,6 +1,7 @@
 import { isEnterableTile } from '../hero-movement/move-planner';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { applyKnowledgeCommand } from '../knowledge/reducer';
+import { applyResetSkills } from '../skills/reset-skills';
 import { applySacrificeToSkill } from '../skills/sacrifice-skill';
 import type { KnowledgeState } from '../knowledge/state';
 import type { KnowledgeCommand, KnowledgeContext } from '../knowledge/commands';
@@ -30,6 +31,7 @@ import {
   type CrossExitCommand,
   type StartHexActionCommand,
   type MoveHeroCommand,
+  type ResetSkillsCommand,
   type SacrificeToSkillCommand,
 } from './hex-engine-commands';
 import { applyEnterPortal, applyOpenPortal, closePortalIfOpen } from '../portal/apply-portal';
@@ -71,6 +73,9 @@ export function applyCommand(
   switch (parsed.type) {
     case 'KNOWLEDGE':
       events.push(...applyKnowledgeState(state, parsed));
+      break;
+    case 'RESET_SKILLS':
+      events.push(...applyResetState(state, parsed));
       break;
     case 'SACRIFICE_TO_SKILL':
       events.push(...applySacrificeState(state, parsed));
@@ -226,6 +231,13 @@ function actionCharge(state: HexEngineState, tile: HexTileModel, actionType: EHe
   if (cost <= 0) return 0;
   if (!state.knowledgeContext) return 0;
   return willZoneCharges(state.knowledgeContext) ? cost : 0;
+}
+
+function applyResetState(state: HexEngineState, command: ResetSkillsCommand): DomainEvent[] {
+  if (!state.knowledge || !state.knowledgeContext) {
+    return [{ type: 'SKILL_REJECTED', payload: { reason: 'Missing authoritative context' } }];
+  }
+  return applyResetSkills(state.knowledge, state.knowledgeContext, command.payload);
 }
 
 function applySacrificeState(

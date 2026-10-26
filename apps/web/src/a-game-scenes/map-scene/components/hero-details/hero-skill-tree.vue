@@ -18,6 +18,36 @@
         @select="selectedId = $event"
       />
     </div>
+    <div class="reset">
+      <template v-if="confirming">
+        <button
+          class="reset__btn reset__btn--danger"
+          type="button"
+          data-testid="hero-skill-reset-confirm"
+          @click="confirmReset"
+        >
+          {{ t('heroDetails.tree.ui.reset.confirm') }}
+        </button>
+        <button
+          class="reset__btn"
+          type="button"
+          data-testid="hero-skill-reset-cancel"
+          @click="confirming = false"
+        >
+          {{ t('heroDetails.tree.ui.reset.cancel') }}
+        </button>
+      </template>
+      <button
+        v-else
+        class="reset__btn"
+        type="button"
+        :disabled="!view.skillTree.canReset"
+        data-testid="hero-skill-reset"
+        @click="confirming = true"
+      >
+        {{ t('heroDetails.tree.ui.reset.button') }}
+      </button>
+    </div>
     <skill-detail-panel
       v-if="selected"
       :node="selected"
@@ -29,6 +59,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { SacrificeOptionId } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import { findSkillNode } from '@/composables/skill-tree-view';
@@ -37,7 +68,14 @@ import SkillBranchColumn from './skill-branch-column.vue';
 import SkillDetailPanel from './skill-detail-panel.vue';
 
 const props = defineProps<{ view: HeroDetailsView }>();
-const emit = defineEmits<{ sacrifice: [SkillId, SacrificeOptionId] }>();
+const emit = defineEmits<{ sacrifice: [SkillId, SacrificeOptionId]; reset: [] }>();
+const { t } = useI18n();
+const confirming = ref(false);
+
+function confirmReset() {
+  confirming.value = false;
+  emit('reset');
+}
 
 const selectedId = ref<SkillId>('b_crest');
 const selected = computed(() => findSkillNode(props.view.skillTree, selectedId.value));
@@ -81,5 +119,29 @@ const selected = computed(() => findSkillNode(props.view.skillTree, selectedId.v
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+.reset {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.reset__btn {
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid #3a474e;
+  background: #121518;
+  color: #cbbfa6;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.reset__btn--danger {
+  border-color: #c9345f;
+  color: #ffb8c8;
+}
+.reset__btn:disabled {
+  color: #56636a;
+  cursor: not-allowed;
 }
 </style>

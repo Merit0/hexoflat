@@ -5,7 +5,10 @@ import type {
   HeroDetailsTab,
   HeroHand,
   HeroSkillId,
+  SacrificeOption,
 } from '@components/hero-board-panel.component';
+
+import '@framework/test-api';
 
 export class VerifyHeroBoardFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
@@ -85,19 +88,75 @@ export class VerifyHeroBoardFeature extends BaseFeature {
     );
   }
 
-  async unlockSkill(id: HeroSkillId, expectedRank: number): Promise<void> {
-    await this.step(`Unlock the "${id}" skill with Will up to rank ${expectedRank}`, async () => {
+  async sacrificeToSkill(
+    id: HeroSkillId,
+    option: SacrificeOption,
+    expectedRank: number,
+  ): Promise<void> {
+    await this.step(
+      `Sacrifice Will (${option}) into "${id}" up to rank ${expectedRank}`,
+      async () => {
+        await this.campingMap.heroBoardPanel.selectSkill(id);
+        await this.campingMap.heroBoardPanel.sacrifice(option);
+        await this.campingMap.heroBoardPanel.verifySkillNodeRank(id, expectedRank);
+      },
+    );
+  }
+
+  async verifySacrificeUnavailable(id: HeroSkillId): Promise<void> {
+    await this.step(`Verify no sacrifice into "${id}" is possible`, async () => {
       await this.campingMap.heroBoardPanel.selectSkill(id);
-      await this.campingMap.heroBoardPanel.unlockSelectedSkill();
-      await this.campingMap.heroBoardPanel.verifySkillNodeRank(id, expectedRank);
+      for (const option of ['small', 'medium', 'all'] as const) {
+        await this.campingMap.heroBoardPanel.verifySacrificeDisabled(option);
+      }
     });
   }
 
-  async verifySkillCannotBeUnlocked(id: HeroSkillId): Promise<void> {
-    await this.step(`Verify the "${id}" skill cannot be unlocked`, async () => {
+  async verifySelectedSkillProgress(progress: number, cost: number): Promise<void> {
+    await this.step(`Verify the selected skill bar shows ${progress}/${cost}`, () =>
+      this.campingMap.heroBoardPanel.verifySelectedSkillProgress(progress, cost),
+    );
+  }
+
+  async verifySkillProgress(id: HeroSkillId, progress: number, cost: number): Promise<void> {
+    await this.step(`Verify "${id}" keeps ${progress}/${cost}`, async () => {
       await this.campingMap.heroBoardPanel.selectSkill(id);
-      await this.campingMap.heroBoardPanel.verifySelectedSkillActionDisabled();
+      await this.campingMap.heroBoardPanel.verifySelectedSkillProgress(progress, cost);
     });
+  }
+
+  async verifySkillNodeRankIs(id: HeroSkillId, rank: number): Promise<void> {
+    await this.step(`Verify "${id}" is at rank ${rank}`, () =>
+      this.campingMap.heroBoardPanel.verifySkillNodeRank(id, rank),
+    );
+  }
+
+  async verifySkillTreeWill(will: number): Promise<void> {
+    await this.step(`Verify the skill tree shows ${will} Will`, () =>
+      this.campingMap.heroBoardPanel.verifySkillTreeWill(will),
+    );
+  }
+
+  async grantSkillRank(id: HeroSkillId, rank: number): Promise<void> {
+    await this.step(`Grant "${id}" rank ${rank} through the test hook`, () =>
+      this.page.evaluate(
+        ([skill, value]) =>
+          window.__HEXOFLAT_TEST__!.setSkillRank(skill as string, value as number),
+        [id, rank],
+      ),
+    );
+  }
+
+  async resetAllSkills(): Promise<void> {
+    await this.step('Reset all skills and confirm', () =>
+      this.campingMap.heroBoardPanel.resetAllSkills(),
+    );
+  }
+
+  async verifyResetUnavailable(): Promise<void> {
+    await this.step('Verify there is nothing to reset', () =>
+      this.campingMap.heroBoardPanel.verifyResetDisabled(),
+    );
   }
 
   async verifySelectedSkill(name: RegExp, rank: number, maxRank: number): Promise<void> {
@@ -111,7 +170,7 @@ export class VerifyHeroBoardFeature extends BaseFeature {
     await this.step(`Verify "${id}" is locked behind ${parents}`, async () => {
       await this.campingMap.heroBoardPanel.selectSkill(id);
       await this.campingMap.heroBoardPanel.verifySelectedSkillRequirementsShown(parents);
-      await this.campingMap.heroBoardPanel.verifySelectedSkillActionDisabled();
+      await this.campingMap.heroBoardPanel.verifySacrificeDisabled('all');
     });
   }
 
@@ -119,7 +178,7 @@ export class VerifyHeroBoardFeature extends BaseFeature {
     await this.step(`Verify "${id}" is shown but not available yet`, async () => {
       await this.campingMap.heroBoardPanel.selectSkill(id);
       await this.campingMap.heroBoardPanel.verifySelectedSkillRequirementsHidden();
-      await this.campingMap.heroBoardPanel.verifySelectedSkillActionDisabled();
+      await this.campingMap.heroBoardPanel.verifySacrificeHidden();
     });
   }
 

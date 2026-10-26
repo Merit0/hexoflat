@@ -106,4 +106,10 @@ describe('sacrifice view', () => {
       ranksGained: 2,
     });
   });
+
+  it('allows a reset only when some rank or bar exists', () => {
+    expect(buildSkillTreeView(input({}, 50, false)).canReset).toBe(false);
+    expect(buildSkillTreeView(input({ b_strike: 1 }, 50, false)).canReset).toBe(true);
+    expect(buildSkillTreeView(input({}, 50, false, { a_teleport: 5 })).canReset).toBe(true);
+  });
 });

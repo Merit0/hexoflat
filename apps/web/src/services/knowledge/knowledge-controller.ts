@@ -66,6 +66,21 @@ export async function dispatchSkillSacrifice(
   return { state, accepted };
 }
 
+export async function dispatchSkillsReset(host: KnowledgeHost) {
+  let accepted = false;
+  const state = await transactKnowledge(host.heroId, (knowledge) => {
+    if (!host.isCurrent()) return false;
+    const { events } = applyCommand(
+      { map: host.map, heroes: {}, knowledge, knowledgeContext: host.context },
+      { type: 'RESET_SKILLS', payload: { heroId: host.heroId, revision: host.state.revision } },
+      host.engineContext,
+    );
+    accepted = events.some((event) => event.type === 'SKILLS_RESET');
+    return accepted;
+  });
+  return { state, accepted };
+}
+
 export function dispatchDevWillGrant(heroId: string, amount: number) {
   return transactKnowledge(heroId, (knowledge) => {
     const granted = grantWill(knowledge, amount, { kind: 'dev', ref: 'settings' });

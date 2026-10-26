@@ -4,6 +4,7 @@ import type { TestHeroHealth } from '@framework/test-api';
 
 export type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
 export type HeroDetailsTab = 'state' | 'skills';
+export type SacrificeOption = 'small' | 'medium' | 'all';
 export type HeroSkillId =
   'b_crest' | 'b_strike' | 'b_guard' | 'b_heavy' | 'd_crest' | 'a_crest' | 'a_teleport';
 export type HeroHand = 'right' | 'left';
@@ -67,8 +68,24 @@ export class HeroBoardPanelComponent extends BaseComponent {
     return this.page.getByTestId('hero-skill-detail-requires');
   }
 
-  private get skillDetailAction(): Locator {
-    return this.page.getByTestId('hero-skill-detail-action');
+  private sacrificeButton(option: SacrificeOption): Locator {
+    return this.page.getByTestId(`hero-skill-sacrifice-${option}`);
+  }
+
+  private get skillProgressValue(): Locator {
+    return this.page.getByTestId('hero-skill-detail').getByTestId('hero-skill-progress-value');
+  }
+
+  private get skillTreeWill(): Locator {
+    return this.page.getByTestId('hero-skill-will');
+  }
+
+  private get resetButton(): Locator {
+    return this.page.getByTestId('hero-skill-reset');
+  }
+
+  private get resetConfirmButton(): Locator {
+    return this.page.getByTestId('hero-skill-reset-confirm');
   }
 
   private heartNests(): Locator {
@@ -201,8 +218,37 @@ export class HeroBoardPanelComponent extends BaseComponent {
     await this.skillNode(id).click();
   }
 
-  async unlockSelectedSkill(): Promise<void> {
-    await this.skillDetailAction.click();
+  async sacrifice(option: SacrificeOption): Promise<void> {
+    await this.sacrificeButton(option).click();
+  }
+
+  async verifySacrificeDisabled(option: SacrificeOption): Promise<void> {
+    await expect(this.sacrificeButton(option)).toBeDisabled();
+  }
+
+  async verifySacrificeEnabled(option: SacrificeOption): Promise<void> {
+    await expect(this.sacrificeButton(option)).toBeEnabled();
+  }
+
+  async verifySacrificeHidden(): Promise<void> {
+    await expect(this.sacrificeButton('small')).toBeHidden();
+  }
+
+  async verifySelectedSkillProgress(progress: number, cost: number): Promise<void> {
+    await expect(this.skillProgressValue).toHaveText(`${progress}/${cost}`);
+  }
+
+  async verifySkillTreeWill(will: number): Promise<void> {
+    await expect(this.skillTreeWill).toContainText(new RegExp(`^\\s*${will}\\b`));
+  }
+
+  async resetAllSkills(): Promise<void> {
+    await this.resetButton.click();
+    await this.resetConfirmButton.click();
+  }
+
+  async verifyResetDisabled(): Promise<void> {
+    await expect(this.resetButton).toBeDisabled();
   }
 
   async verifySelectedSkillName(name: RegExp): Promise<void> {
@@ -217,14 +263,6 @@ export class HeroBoardPanelComponent extends BaseComponent {
 
   async verifySkillNodeRank(id: HeroSkillId, rank: number): Promise<void> {
     await expect(this.skillNodeRank(id)).toHaveText(String(rank));
-  }
-
-  async verifySelectedSkillActionDisabled(): Promise<void> {
-    await expect(this.skillDetailAction).toBeDisabled();
-  }
-
-  async verifySelectedSkillActionEnabled(): Promise<void> {
-    await expect(this.skillDetailAction).toBeEnabled();
   }
 
   async verifySelectedSkillRequirementsShown(names: RegExp): Promise<void> {
