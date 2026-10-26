@@ -5,12 +5,13 @@
       class="path__content"
       :style="{ transform: `translate(${offsetX}px, 0) scale(${scale})` }"
     >
-      <hero-skill-tree :view="view" @unlock="unlockSkill" />
+      <hero-skill-tree :view="view" @sacrifice="sacrifice" />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import type { SacrificeOptionId } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import { useFitToWidth } from '@/composables/use-fit-to-width';
 import { useHeroStore } from '@/stores/hero-store';
@@ -21,8 +22,8 @@ const view = useHeroDetails();
 const heroStore = useHeroStore();
 const { wrapperRef, contentRef, scale, offsetX } = useFitToWidth();
 
-function unlockSkill(id: SkillId) {
-  void heroStore.unlockSkill(id);
+function sacrifice(id: SkillId, option: SacrificeOptionId) {
+  void heroStore.sacrificeToSkill(id, option);
 }
 </script>
 

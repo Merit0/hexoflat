@@ -260,7 +260,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.ENTER]: {
-        label: 'Open',
+        label: 'Enter',
         durationMs: 400,
         requiredTool: HEXOBJECT_KEYS.HAND,
         willCost: 0,

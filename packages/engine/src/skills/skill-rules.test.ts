@@ -46,8 +46,8 @@ describe('skill rules', () => {
     expect(getSkillStatus({ b_strike: 1 }, 'b_heavy', open)).toBe('soon');
     expect(getSkillStatus({}, 'a_teleport', open)).toBe('requires');
     expect(getSkillStatus({}, 'b_strike', { will: 50, locked: true })).toBe('locked');
-    expect(getSkillStatus({}, 'b_strike', { will: 5, locked: false })).toBe('need-will');
-    expect(getSkillStatus({}, 'b_strike', { will: 6, locked: false })).toBe('ready');
+    expect(getSkillStatus({}, 'b_strike', { will: 0, locked: false })).toBe('need-will');
+    expect(getSkillStatus({}, 'b_strike', { will: 1, locked: false })).toBe('ready');
     expect(getSkillStatus({}, 'a_teleport', { will: 50, locked: true })).toBe('requires');
   });
 

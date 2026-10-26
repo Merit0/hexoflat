@@ -15,6 +15,7 @@ const base: HeroDetailsInput = {
   shieldPoints: 0,
   extraShields: 0,
   skills: {},
+  skillProgress: {},
   skillsLocked: false,
   will: { current: 20, capacity: 50 },
   weapon: null,

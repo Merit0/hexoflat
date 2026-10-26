@@ -1,5 +1,12 @@
 import { SKILLS, type SkillBranch, type SkillId } from '@hexoflat/engine/skills/skill-content';
 import {
+  applySacrifice,
+  getSacrificeOptions,
+  getSkillProgress,
+  type SacrificeOption,
+  type SkillProgress,
+} from '@hexoflat/engine/skills/sacrifice-rules';
+import {
   getMaxRank,
   getNextRankCost,
   getSkillRank,
@@ -19,6 +26,7 @@ export interface SkillNodeView {
   rank: number;
   maxRank: number;
   nextCost: number | null;
+  progress: number;
   status: SkillStatus;
   parentLit: boolean;
 }
@@ -34,6 +42,32 @@ export interface BranchView {
 
 export interface SkillTreeView {
   branches: BranchView[];
+  options: SacrificeOption[];
+}
+
+export interface SkillTreeInput {
+  ranks: SkillRanks;
+  progress: SkillProgress;
+  will: { current: number; capacity: number };
+  locked: boolean;
+}
+
+export interface SacrificePreview {
+  rank: number;
+  progress: number;
+  cost: number | null;
+  ranksGained: number;
+}
+
+export function previewSacrifice(node: SkillNodeView, amount: number): SacrificePreview {
+  const after = applySacrifice(
+    { [node.id]: node.rank },
+    { [node.id]: node.progress },
+    node.id,
+    amount,
+  );
+  const cost = getNextRankCost({ [node.id]: after.rank }, node.id);
+  return { rank: after.rank, progress: after.progress, cost, ranksGained: after.ranksGained };
 }
 
 const ROW_SLOTS = [
@@ -48,18 +82,16 @@ function idAt(branch: SkillBranch, slot: string): SkillId {
   return found.id;
 }
 
-export function buildSkillTreeView(
-  ranks: SkillRanks,
-  will: number,
-  locked: boolean,
-): SkillTreeView {
+export function buildSkillTreeView(input: SkillTreeInput): SkillTreeView {
+  const { ranks, progress, will, locked } = input;
   const node = (id: SkillId): SkillNodeView => ({
     id,
     branch: SKILLS[id].branch,
     rank: getSkillRank(ranks, id),
     maxRank: getMaxRank(id),
     nextCost: getNextRankCost(ranks, id),
-    status: getSkillStatus(ranks, id, { will, locked }),
+    progress: getSkillProgress(progress, id),
+    status: getSkillStatus(ranks, id, { will: will.current, locked }),
     parentLit: requirementsMet(ranks, id),
   });
 
@@ -75,7 +107,7 @@ export function buildSkillTreeView(
       capLit: cap.parentLit,
     };
   });
-  return { branches };
+  return { branches, options: getSacrificeOptions(will.capacity, will.current) };
 }
 
 export function findSkillNode(view: SkillTreeView, id: SkillId): SkillNodeView | null {

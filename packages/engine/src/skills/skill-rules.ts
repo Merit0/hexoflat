@@ -29,12 +29,11 @@ export function getSkillStatus(
   id: SkillId,
   context: { will: number; locked: boolean },
 ): SkillStatus {
-  const cost = getNextRankCost(skills, id);
-  if (cost === null) return 'max';
+  if (getNextRankCost(skills, id) === null) return 'max';
   if (!SKILLS[id].implemented) return 'soon';
   if (!requirementsMet(skills, id)) return 'requires';
   if (context.locked) return 'locked';
-  return context.will < cost ? 'need-will' : 'ready';
+  return context.will < 1 ? 'need-will' : 'ready';
 }
 
 /** Permanent bonuses the unlocked ranks add on top of the hero's base attack and defence. */

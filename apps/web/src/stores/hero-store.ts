@@ -9,12 +9,13 @@ import {
   dispatchHexAction,
   dispatchDevWillGrant,
   dispatchKnowledge,
-  dispatchSkillUnlock,
+  dispatchSkillSacrifice,
   isAtKnowledgeBook,
   locationWillZone,
 } from '@/services/knowledge/knowledge-controller';
 import { defineStore } from 'pinia';
 import { SHIELD_SLOTS } from '@/constants/shield-slots';
+import type { SacrificeOptionId } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import { getSkillBonuses } from '@hexoflat/engine/skills/skill-rules';
 import { i18n } from '@/i18n';
@@ -172,14 +173,15 @@ export const useHeroStore = defineStore('hero', {
       if (heroId === this.hero.id) this.knowledge = state;
     },
 
-    async unlockSkill(skillId: SkillId): Promise<boolean> {
+    async sacrificeToSkill(skillId: SkillId, option: SacrificeOptionId): Promise<boolean> {
       const world = useWorldMapStore();
       if (!world.map || !this.knowledge || this.knowledgeError) return false;
       const heroId = this.hero.id;
       try {
-        const result = await dispatchSkillUnlock(
+        const result = await dispatchSkillSacrifice(
           { ...this.knowledgeHost(world), state: this.knowledge },
           skillId,
+          option,
         );
         if (heroId !== this.hero.id) return false;
         this.knowledge = result.state;

@@ -6,7 +6,6 @@ import { SwitchHeroBoardTabFeature } from './switch-hero-board-tab.feature';
 import { UseEquippedToolFeature } from './use-equipped-tool.feature';
 import { UseHeroToolFeature } from './use-hero-tool.feature';
 import { VerifyActionAlertFeature } from './verify-action-alert.feature';
-import { VerifyHeroBoardFeature } from './verify-hero-board.feature';
 import { VerifyInventoryFeature } from './verify-inventory.feature';
 import { tokenCoordinates, HexobjectKeys } from '@config/test-data';
 import { EquipSlot } from '@config/equip-slot';
@@ -203,28 +202,22 @@ export class VerifyReturnPortalFeature extends BaseFeature {
     });
   }
 
-  async verifyUnlockingTeleportAllowsThePortal(): Promise<void> {
-    await this.step(
-      'Unlocking Teleport rank 1 lets a scroll open a portal for 10 Will',
-      async () => {
-        await this.startInCamp();
-        await new SwitchHeroBoardTabFeature().switchTo('path');
-        const board = new VerifyHeroBoardFeature();
-        await board.unlockSkill('a_crest', 1);
-        await board.unlockSkill('a_teleport', 1);
-        await this.goToSilesia();
-        const willBefore = await this.currentWill();
-        const scrollsBefore = await this.scrollCount();
+  async verifyTeleportRankOneOpensThePortalForTenWill(): Promise<void> {
+    await this.step('Teleport rank 1 lets a scroll open a portal for 10 Will', async () => {
+      await this.startInCamp();
+      await this.grantTeleport(1);
+      await this.goToSilesia();
+      const willBefore = await this.currentWill();
+      const scrollsBefore = await this.scrollCount();
 
-        const { target } = await this.openPortalWithScroll();
+      const { target } = await this.openPortalWithScroll();
 
-        await this.map.knowledge.verifyWill(willBefore - UNLOCKED_RANK_ONE_PRICE);
-        await new VerifyInventoryFeature().verifyItemAmount(
-          HexobjectKeys.returnScroll,
-          scrollsBefore - 1,
-        );
-        await this.map.hexBoard.verifyTileHoldsHexobject(target, HexobjectKeys.returnPortal);
-      },
-    );
+      await this.map.knowledge.verifyWill(willBefore - UNLOCKED_RANK_ONE_PRICE);
+      await new VerifyInventoryFeature().verifyItemAmount(
+        HexobjectKeys.returnScroll,
+        scrollsBefore - 1,
+      );
+      await this.map.hexBoard.verifyTileHoldsHexobject(target, HexobjectKeys.returnPortal);
+    });
   }
 }

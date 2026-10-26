@@ -21,14 +21,15 @@
     <skill-detail-panel
       v-if="selected"
       :node="selected"
-      :will="view.will?.current ?? 0"
-      @unlock="emit('unlock', $event)"
+      :options="view.skillTree.options"
+      @sacrifice="(id, option) => emit('sacrifice', id, option)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import type { SacrificeOptionId } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import { findSkillNode } from '@/composables/skill-tree-view';
 import { WILL_ICON_URL, type HeroDetailsView } from '@/composables/use-hero-details';
@@ -36,7 +37,7 @@ import SkillBranchColumn from './skill-branch-column.vue';
 import SkillDetailPanel from './skill-detail-panel.vue';
 
 const props = defineProps<{ view: HeroDetailsView }>();
-const emit = defineEmits<{ unlock: [SkillId] }>();
+const emit = defineEmits<{ sacrifice: [SkillId, SacrificeOptionId] }>();
 
 const selectedId = ref<SkillId>('b_crest');
 const selected = computed(() => findSkillNode(props.view.skillTree, selectedId.value));

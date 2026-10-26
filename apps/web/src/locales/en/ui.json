@@ -27,6 +27,7 @@
   },
   "tool": {
     "open": "Open",
+    "enter": "Enter",
     "read": "Read",
     "use": "Use"
   },
@@ -150,17 +151,15 @@
         "notOpened": "Not unlocked yet.",
         "maxed": "Fully developed.",
         "requires": "Unlock first: {list}",
-        "cost": "{cost} Will · you have {will}",
         "soon": "Soon",
         "new": "NEW",
-        "action": {
-          "awaken": "Awaken",
-          "open": "Unlock",
-          "upgrade": "Upgrade",
-          "max": "Maximum",
-          "soon": "Soon",
-          "locked": "Locked",
-          "needWill": "Not enough Will"
+        "sacrifice": {
+          "title": "Sacrifice Will",
+          "small": "Small",
+          "medium": "Medium",
+          "all": "All",
+          "after": "After: Lv. {rank}, {progress}/{cost}",
+          "afterMax": "After: maximum level"
         }
       },
       "node": {

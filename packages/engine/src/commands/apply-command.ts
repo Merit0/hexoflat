@@ -1,7 +1,7 @@
 import { isEnterableTile } from '../hero-movement/move-planner';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { applyKnowledgeCommand } from '../knowledge/reducer';
-import { applyUnlockSkill } from '../skills/unlock-skill';
+import { applySacrificeToSkill } from '../skills/sacrifice-skill';
 import type { KnowledgeState } from '../knowledge/state';
 import type { KnowledgeCommand, KnowledgeContext } from '../knowledge/commands';
 import { willZoneCharges } from '../knowledge/will-zone';
@@ -30,7 +30,7 @@ import {
   type CrossExitCommand,
   type StartHexActionCommand,
   type MoveHeroCommand,
-  type UnlockSkillCommand,
+  type SacrificeToSkillCommand,
 } from './hex-engine-commands';
 import { applyEnterPortal, applyOpenPortal, closePortalIfOpen } from '../portal/apply-portal';
 import type { PortalLocation } from '../portal/portal-rules';
@@ -72,8 +72,8 @@ export function applyCommand(
     case 'KNOWLEDGE':
       events.push(...applyKnowledgeState(state, parsed));
       break;
-    case 'UNLOCK_SKILL':
-      events.push(...applyUnlockSkillState(state, parsed));
+    case 'SACRIFICE_TO_SKILL':
+      events.push(...applySacrificeState(state, parsed));
       break;
     case 'START_HEX_ACTION':
       events.push(...applyStartHexAction(state, parsed, ctx));
@@ -228,11 +228,14 @@ function actionCharge(state: HexEngineState, tile: HexTileModel, actionType: EHe
   return willZoneCharges(state.knowledgeContext) ? cost : 0;
 }
 
-function applyUnlockSkillState(state: HexEngineState, command: UnlockSkillCommand): DomainEvent[] {
+function applySacrificeState(
+  state: HexEngineState,
+  command: SacrificeToSkillCommand,
+): DomainEvent[] {
   if (!state.knowledge || !state.knowledgeContext) {
     return [{ type: 'SKILL_REJECTED', payload: { reason: 'Missing authoritative context' } }];
   }
-  return applyUnlockSkill(state.knowledge, state.knowledgeContext, command.payload);
+  return applySacrificeToSkill(state.knowledge, state.knowledgeContext, command.payload);
 }
 
 function applyKnowledgeState(state: HexEngineState, command: KnowledgeCommand): DomainEvent[] {

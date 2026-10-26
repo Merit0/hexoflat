@@ -74,7 +74,13 @@ export const skillDefinitionSchema = z
   );
 export type SkillDefinition = z.infer<typeof skillDefinitionSchema>;
 
-const BRANCH_CAP_COSTS = [30];
+const BIONIC_CAP_COSTS = [30];
+const CREST_FORM_COSTS = [1000];
+const FIRST_UPGRADE_COST = 500;
+
+function doublingCosts(ranks: number): number[] {
+  return Array.from({ length: ranks }, (_, rank) => FIRST_UPGRADE_COST * 2 ** rank);
+}
 
 type SkillSeed = Omit<SkillDefinition, 'id' | 'maxRank' | 'startRank' | 'effect'> & {
   effect?: SkillEffect;
@@ -105,7 +111,11 @@ function node(
 
 const MELEE_RANK_COSTS = [6, 6, 8, 8, 10, 10, 12, 14, 16, 18];
 
-/** Candidate balance (Will capacity is 50); deliberately small so equipment stays the main source of power. */
+/**
+ * Bionic prices are candidate balance (Will capacity is 50). Demonic and Angelic nodes are
+ * priced far above capacity on purpose while those schools are being playtested: forms cost
+ * 1000, upgrades start at 500 and double per rank.
+ */
 const DEFINITIONS: SkillDefinition[] = [
   node('b_crest', 'bionic', 'crest', [0], [], true, { startRank: 1 }),
   node('b_strike', 'bionic', '1L', MELEE_RANK_COSTS, ['b_crest'], true, {
@@ -118,27 +128,27 @@ const DEFINITIONS: SkillDefinition[] = [
   node('b_endure', 'bionic', '2R', [15, 20], ['b_guard']),
   node('b_dash', 'bionic', '3L', [12, 16, 20], ['b_heavy']),
   node('b_aim', 'bionic', '3R', [10, 12, 14, 16, 18], ['b_endure']),
-  node('b_cap', 'bionic', 'cap', BRANCH_CAP_COSTS, ['b_dash', 'b_aim']),
+  node('b_cap', 'bionic', 'cap', BIONIC_CAP_COSTS, ['b_dash', 'b_aim']),
 
-  node('d_crest', 'demonic', 'crest', [10], [], true),
-  node('d_curse', 'demonic', '1L', [8, 10, 12, 14, 16], ['d_crest']),
-  node('d_blood', 'demonic', '1R', [10, 14, 18], ['d_crest']),
-  node('d_fear', 'demonic', '2L', [10, 14, 18], ['d_curse']),
-  node('d_shadow', 'demonic', '2R', [14, 20], ['d_blood']),
-  node('d_devour', 'demonic', '3L', [14, 18, 22], ['d_fear']),
-  node('d_sight', 'demonic', '3R', [12, 18], ['d_shadow']),
-  node('d_cap', 'demonic', 'cap', BRANCH_CAP_COSTS, ['d_devour', 'd_sight']),
+  node('d_crest', 'demonic', 'crest', CREST_FORM_COSTS, [], true),
+  node('d_curse', 'demonic', '1L', doublingCosts(5), ['d_crest']),
+  node('d_blood', 'demonic', '1R', doublingCosts(3), ['d_crest']),
+  node('d_fear', 'demonic', '2L', doublingCosts(3), ['d_curse']),
+  node('d_shadow', 'demonic', '2R', doublingCosts(2), ['d_blood']),
+  node('d_devour', 'demonic', '3L', doublingCosts(3), ['d_fear']),
+  node('d_sight', 'demonic', '3R', doublingCosts(2), ['d_shadow']),
+  node('d_cap', 'demonic', 'cap', doublingCosts(1), ['d_devour', 'd_sight']),
 
-  node('a_crest', 'angelic', 'crest', [10], [], true),
-  node('a_teleport', 'angelic', '1L', [10, 10, 12, 12, 14, 14, 16, 16, 18, 20], ['a_crest'], true, {
+  node('a_crest', 'angelic', 'crest', CREST_FORM_COSTS, [], true),
+  node('a_teleport', 'angelic', '1L', doublingCosts(10), ['a_crest'], true, {
     effect: { kind: 'portal', willCostByRank: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] },
   }),
-  node('a_heal', 'angelic', '1R', [8, 12, 16], ['a_crest']),
-  node('a_gate2', 'angelic', '2L', [25], ['a_teleport']),
-  node('a_ward', 'angelic', '2R', [10, 14, 18], ['a_heal']),
-  node('a_wings', 'angelic', '3L', [14, 20], ['a_gate2']),
-  node('a_light', 'angelic', '3R', [10, 16], ['a_ward']),
-  node('a_cap', 'angelic', 'cap', BRANCH_CAP_COSTS, ['a_wings', 'a_light']),
+  node('a_heal', 'angelic', '1R', doublingCosts(3), ['a_crest']),
+  node('a_gate2', 'angelic', '2L', doublingCosts(1), ['a_teleport']),
+  node('a_ward', 'angelic', '2R', doublingCosts(3), ['a_heal']),
+  node('a_wings', 'angelic', '3L', doublingCosts(2), ['a_gate2']),
+  node('a_light', 'angelic', '3R', doublingCosts(2), ['a_ward']),
+  node('a_cap', 'angelic', 'cap', doublingCosts(1), ['a_wings', 'a_light']),
 ];
 
 export const SKILLS = Object.fromEntries(

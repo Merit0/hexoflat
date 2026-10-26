@@ -25,9 +25,21 @@ describe('skill content', () => {
     );
   });
 
-  it('keeps every rank affordable within Will capacity', () => {
-    for (const id of SKILL_IDS) {
+  it('keeps every bionic rank affordable within Will capacity', () => {
+    for (const id of SKILL_IDS.filter((id) => SKILLS[id].branch === 'bionic')) {
       expect(Math.max(...SKILLS[id].rankCosts)).toBeLessThanOrEqual(KNOWLEDGE_RULES.capacity);
+    }
+  });
+
+  it('prices the Demonic and Angelic forms at 1000 and their upgrades from 500, doubling', () => {
+    for (const id of SKILL_IDS.filter((id) => SKILLS[id].branch !== 'bionic')) {
+      const { slot, rankCosts } = SKILLS[id];
+      if (slot === 'crest') {
+        expect(rankCosts).toEqual([1000]);
+      } else {
+        expect(rankCosts[0]).toBe(500);
+        rankCosts.forEach((cost, i) => expect(cost).toBe(500 * 2 ** i));
+      }
     }
   });
 

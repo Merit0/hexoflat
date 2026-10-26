@@ -16,9 +16,9 @@ test('A scroll without the Teleport skill refuses: only Angels can fly', async (
   await new VerifyReturnPortalFeature().verifyScrollRefusedWithoutTeleportSkill();
 });
 
-test('Unlocking Teleport rank 1 lets a scroll open a portal for 10 Will', async () => {
+test('Teleport rank 1 lets a scroll open a portal for 10 Will', async () => {
   test.setTimeout(180_000);
-  await new VerifyReturnPortalFeature().verifyUnlockingTeleportAllowsThePortal();
+  await new VerifyReturnPortalFeature().verifyTeleportRankOneOpensThePortalForTenWill();
 });
 
 test('A portal opened in the cave is one-way and the camp gets no portal', async () => {

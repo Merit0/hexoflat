@@ -259,6 +259,7 @@ const bestActionLabel = computed(() => {
     activeToolKey.value === HEXOBJECT_KEYS.HAND &&
     object?.groupType === EHexobjectGroup.CONSTRUCTION &&
     !getMeta(object.hexobjectKey)?.heal;
+  if (bestAction.value.actioType === 'ENTER') return t('tool.enter');
   return isHandOnBuilding ? t('tool.open') : bestAction.value.label;
 });
 

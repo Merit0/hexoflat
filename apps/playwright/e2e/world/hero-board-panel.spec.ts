@@ -113,7 +113,8 @@ test('Verify a skill that is not ready yet cannot be bought and says why', async
   const verifyBoard = new VerifyHeroBoardFeature();
   await verifyBoard.verifySkillIsComingSoon('b_heavy');
   await verifyBoard.verifySkillWaitsForParents('a_teleport', /Blessing|Благословення/);
-  await verifyBoard.unlockSkill('a_crest', 1);
+  await verifyBoard.verifySkillCannotBeUnlocked('a_crest');
+  await verifyBoard.verifySkillCannotBeUnlocked('d_crest');
   await verifyBoard.selectSkill('a_teleport');
   await verifyBoard.verifySelectedSkill(/Teleport|Телепорт/, 0, 10);
 });

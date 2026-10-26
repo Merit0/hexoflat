@@ -2,6 +2,7 @@ import { computed } from 'vue';
 import { getScoutProgress, toRoman } from '@hexoflat/engine/hero-movement/scout-progression';
 import { getAttackMultiplier, getMarkerDefense } from '@hexoflat/engine/combat/damage-calculator';
 import { sumShieldPoints } from '@hexoflat/engine/combat/shield-points';
+import type { SkillProgress } from '@hexoflat/engine/skills/sacrifice-rules';
 import { getSkillBonuses, type SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { getPrototype } from '@hexoflat/engine';
@@ -41,6 +42,7 @@ export interface HeroDetailsInput {
   shieldPoints: number;
   extraShields: number;
   skills: SkillRanks;
+  skillProgress: SkillProgress;
   skillsLocked: boolean;
   will: { current: number; capacity: number } | null;
   weapon: { item: HandItem; multiplier: number } | null;
@@ -119,7 +121,12 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
       { id: 'victories', value: String(input.kills) },
     ],
     hands: { right: input.weapon?.item ?? null, left: input.shield?.item ?? null },
-    skillTree: buildSkillTreeView(input.skills, input.will?.current ?? 0, input.skillsLocked),
+    skillTree: buildSkillTreeView({
+      ranks: input.skills,
+      progress: input.skillProgress,
+      will: input.will ?? { current: 0, capacity: 0 },
+      locked: input.skillsLocked,
+    }),
     scout,
   };
 }
@@ -171,6 +178,7 @@ export function useHeroDetails() {
       shieldPoints: sumShieldPoints(Object.values(equipped).map((item) => item?.key)),
       extraShields: heroStore.extraShields,
       skills: knowledge?.skills ?? {},
+      skillProgress: knowledge?.skillProgress ?? {},
       skillsLocked: heroStore.isHeroMoving || combat.combatActive,
       will: knowledge ? { current: knowledge.current, capacity: knowledge.capacity } : null,
       weapon,

@@ -16,6 +16,13 @@
       <path :d="ICON_PATHS[SKILL_ICON[node.id]]" />
     </svg>
     <span class="rank" :data-testid="`hero-skill-node-${node.id}-rank`">{{ node.rank }}</span>
+    <skill-progress-bar
+      v-if="node.progress > 0"
+      class="mini"
+      compact
+      :node="node"
+      :data-testid="`hero-skill-node-${node.id}-progress`"
+    />
     <span v-if="isNew" class="new">{{ t('heroDetails.tree.ui.new') }}</span>
   </button>
 </template>
@@ -26,6 +33,7 @@ import { useI18n } from 'vue-i18n';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
 import { ICON_PATHS } from '@/components/gui/icons/item-icons';
 import type { SkillNodeView } from '@/composables/skill-tree-view';
+import SkillProgressBar from './skill-progress-bar.vue';
 import { BRANCH_COLOR, SKILL_ICON } from './skill-presentation';
 
 const props = defineProps<{
@@ -97,6 +105,13 @@ const isNew = computed(() => props.node.id === 'a_teleport' && props.node.rank =
   box-shadow:
     0 0 0 3px #121416,
     0 0 0 5px #f3ead8;
+}
+.mini {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 3px;
+  width: auto;
 }
 .rank {
   position: absolute;
