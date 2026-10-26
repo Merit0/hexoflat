@@ -30,7 +30,7 @@ describe('buildSkillTreeView', () => {
     expect(angelic.forkLit).toBe(false);
     expect(angelic.crest).toMatchObject({ rank: 0, status: 'ready', nextCost: 10 });
     expect(angelic.rows[0][0]).toMatchObject({
-      id: 'a_gate',
+      id: 'a_teleport',
       status: 'requires',
       parentLit: false,
     });

@@ -12,7 +12,7 @@ import {
   closePortalOnTransition,
   planPortalEntry,
   planPortalOpening,
-  resolvePortalSource,
+  resolvePortalCost,
   type LocationTransition,
   type OpenPortalRejection,
 } from './portal-rules';
@@ -23,6 +23,8 @@ interface PortalRemoval {
   mapId: string | null;
   hex: IHexCoordinates;
 }
+
+const ref = (target: IHexCoordinates) => `${EHexActionType.USE}:${coordinateKey(target)}`;
 
 function openRejected(
   heroId: string,
@@ -54,36 +56,29 @@ export function applyOpenPortal(
   const { inventory } = ctx;
   const scrollKey = HEXOBJECT_KEYS.RETURN_SCROLL;
   const { knowledge } = state;
-  const sourcePlan = resolvePortalSource(
-    knowledge?.heroId === heroId ? knowledge.skills : undefined,
-    inventory.countItem?.(scrollKey) ?? 0,
-  );
-  if (!sourcePlan.ok) return [openRejected(heroId, target, sourcePlan.reason)];
-  const { source, cost } = sourcePlan;
-  const ref = `${EHexActionType.USE}:${coordinateKey(target)}`;
-  if (cost > 0) {
-    if (!knowledge || knowledge.heroId !== heroId) {
-      return [
-        willRejected(heroId, 'NO_WILL_STATE', ref),
-        openRejected(heroId, target, 'NO_WILL_STATE'),
-      ];
-    }
-    if (knowledge.current < cost) {
-      return [
-        willRejected(heroId, 'INSUFFICIENT_WILL', ref),
-        openRejected(heroId, target, 'INSUFFICIENT_WILL'),
-      ];
-    }
+  const ownKnowledge = knowledge?.heroId === heroId ? knowledge : undefined;
+  const costPlan = resolvePortalCost(ownKnowledge?.skills, inventory.countItem?.(scrollKey) ?? 0);
+  if (!costPlan.ok) {
+    const reason =
+      ownKnowledge || costPlan.reason === 'NO_SCROLL' ? costPlan.reason : 'NO_WILL_STATE';
+    const will =
+      reason === 'NO_WILL_STATE' ? [willRejected(heroId, 'NO_WILL_STATE', ref(target))] : [];
+    return [...will, openRejected(heroId, target, reason)];
   }
-  if (source === 'scroll' && !inventory.takeFromInventory?.(scrollKey, 1).ok) {
+  const { cost } = costPlan;
+  if (!ownKnowledge) return [openRejected(heroId, target, 'NO_WILL_STATE')];
+  if (ownKnowledge.current < cost) {
+    return [
+      willRejected(heroId, 'INSUFFICIENT_WILL', ref(target)),
+      openRejected(heroId, target, 'INSUFFICIENT_WILL'),
+    ];
+  }
+  if (!inventory.takeFromInventory?.(scrollKey, 1).ok) {
     return [openRejected(heroId, target, 'NO_SCROLL')];
   }
 
-  const events: DomainEvent[] = [];
-  if (cost > 0 && knowledge) {
-    events.push(...spendWill(knowledge, cost, 'action', ref).events);
-    knowledge.revision++;
-  }
+  const events = spendWill(ownKnowledge, cost, 'action', ref(target)).events;
+  ownKnowledge.revision++;
 
   const tile = state.map.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(target))!;
   tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.RETURN_PORTAL, target);
@@ -97,7 +92,6 @@ export function applyOpenPortal(
       link: plan.link,
       oneWay: plan.link.campHex === null,
       willSpent: cost,
-      source,
     },
   });
   return events;

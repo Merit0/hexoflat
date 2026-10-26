@@ -24,6 +24,8 @@ export function portalRefusalText(reason: string): string {
       return i18n.global.t('portal.refusal.EXIT_HEX');
     case 'NO_SCROLL':
       return i18n.global.t('portal.refusal.NO_SCROLL');
+    case 'NOT_AN_ANGEL':
+      return i18n.global.t('portal.refusal.NOT_AN_ANGEL');
     case 'INSUFFICIENT_WILL':
       return i18n.global.t('portal.refusal.INSUFFICIENT_WILL');
     case 'NO_WILL_STATE':

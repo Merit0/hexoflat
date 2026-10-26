@@ -21,7 +21,7 @@ describe('skill content', () => {
   it('has 24 nodes and exactly 6 implemented ones', () => {
     expect(SKILL_IDS).toHaveLength(24);
     expect(SKILL_IDS.filter((id) => SKILLS[id].implemented).sort()).toEqual(
-      ['a_crest', 'a_gate', 'b_crest', 'b_guard', 'b_strike', 'd_crest'].sort(),
+      ['a_crest', 'a_teleport', 'b_crest', 'b_guard', 'b_strike', 'd_crest'].sort(),
     );
   });
 
@@ -40,7 +40,7 @@ describe('skill content', () => {
   });
 
   it('rejects a portal effect with the wrong number of costs', () => {
-    const bad = { ...SKILLS.a_gate, effect: { kind: 'portal', willCostByRank: [5] } };
+    const bad = { ...SKILLS.a_teleport, effect: { kind: 'portal', willCostByRank: [5] } };
     expect(skillDefinitionSchema.safeParse(bad).success).toBe(false);
   });
 

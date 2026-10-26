@@ -115,7 +115,6 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
       [EHexActionType.USE]: {
         label: 'Use',
         requiredTool: HEXOBJECT_KEYS.RETURN_SCROLL,
-        willCost: 5,
       },
     },
     loot: {

@@ -34,8 +34,8 @@ describe('skill rules', () => {
 
   it('requires every parent at rank 1 or more', () => {
     expect(requirementsMet({}, 'b_strike')).toBe(true);
-    expect(requirementsMet({}, 'a_gate')).toBe(false);
-    expect(requirementsMet({ a_crest: 1 }, 'a_gate')).toBe(true);
+    expect(requirementsMet({}, 'a_teleport')).toBe(false);
+    expect(requirementsMet({ a_crest: 1 }, 'a_teleport')).toBe(true);
     expect(requirementsMet({ b_dash: 1 }, 'b_cap')).toBe(false);
     expect(requirementsMet({ b_dash: 1, b_aim: 1 }, 'b_cap')).toBe(true);
   });
@@ -44,29 +44,30 @@ describe('skill rules', () => {
     expect(getSkillStatus({}, 'b_crest', open)).toBe('max');
     expect(getSkillStatus({ b_strike: 10 }, 'b_strike', open)).toBe('max');
     expect(getSkillStatus({ b_strike: 1 }, 'b_heavy', open)).toBe('soon');
-    expect(getSkillStatus({}, 'a_gate', open)).toBe('requires');
+    expect(getSkillStatus({}, 'a_teleport', open)).toBe('requires');
     expect(getSkillStatus({}, 'b_strike', { will: 50, locked: true })).toBe('locked');
     expect(getSkillStatus({}, 'b_strike', { will: 5, locked: false })).toBe('need-will');
     expect(getSkillStatus({}, 'b_strike', { will: 6, locked: false })).toBe('ready');
-    expect(getSkillStatus({}, 'a_gate', { will: 50, locked: true })).toBe('requires');
+    expect(getSkillStatus({}, 'a_teleport', { will: 50, locked: true })).toBe('requires');
   });
 
   it('sums stat bonuses with rounding', () => {
     expect(getSkillBonuses({})).toEqual({ attack: 0, defense: 0 });
     expect(getSkillBonuses({ b_strike: 3, b_guard: 7 })).toEqual({ attack: 0.15, defense: 0.35 });
     expect(getSkillBonuses({ b_strike: 10, b_guard: 10 })).toEqual({ attack: 0.5, defense: 0.5 });
-    expect(getSkillBonuses({ a_gate: 3, d_crest: 1 })).toEqual({ attack: 0, defense: 0 });
+    expect(getSkillBonuses({ a_teleport: 3, d_crest: 1 })).toEqual({ attack: 0, defense: 0 });
   });
 
-  it('prices the portal 5 / 4 / 3 by gate rank', () => {
+  it('prices the portal from 10 Will at rank 1 down to 1 Will at rank 10', () => {
     expect(getPortalAbility({})).toEqual({ unlocked: false });
-    expect(getPortalAbility({ a_gate: 1 })).toEqual({ unlocked: true, willCost: 5 });
-    expect(getPortalAbility({ a_gate: 2 })).toEqual({ unlocked: true, willCost: 4 });
-    expect(getPortalAbility({ a_gate: 3 })).toEqual({ unlocked: true, willCost: 3 });
+    expect(getPortalAbility({ a_teleport: 1 })).toEqual({ unlocked: true, willCost: 10 });
+    expect(getPortalAbility({ a_teleport: 2 })).toEqual({ unlocked: true, willCost: 9 });
+    expect(getPortalAbility({ a_teleport: 6 })).toEqual({ unlocked: true, willCost: 5 });
+    expect(getPortalAbility({ a_teleport: 10 })).toEqual({ unlocked: true, willCost: 1 });
   });
 
   it('finds the portal skill by its effect, not its id', () => {
     const portals = SKILL_IDS.filter((id) => SKILLS[id].effect.kind === 'portal');
-    expect(portals).toEqual(['a_gate']);
+    expect(portals).toEqual(['a_teleport']);
   });
 });

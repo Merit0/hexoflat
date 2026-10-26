@@ -35,7 +35,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ select: [SkillId] }>();
 const { t } = useI18n();
-const isNew = computed(() => props.node.id === 'a_gate' && props.node.rank === 0);
+const isNew = computed(() => props.node.id === 'a_teleport' && props.node.rank === 0);
 </script>
 
 <style scoped>

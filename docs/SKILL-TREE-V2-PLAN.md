@@ -1,4 +1,4 @@
-# Дерево Шляху v2 — пілот (три школи + Брама Повернення)
+# Дерево Шляху v2 — пілот (три школи + Телепорт)
 
 > Гілка: `new-skills-tree-view` (вже створена). Один чат Claude Code на весь пілот, фази S1 → S4 по черзі.
 > Не комітити — коміти робить Олег. Перед роботою прочитати скіли `hexoflat-engine`, `hexoflat-web-state`, `hexoflat-e2e`.
@@ -15,11 +15,12 @@
 - Кожна школа = вузол-герб (`crest`) → дві гілки по 3 вузли (`1L→2L→3L`, `1R→2R→3R`) → фінальний вузол (`cap`), який вимагає обидва `3L` і `3R`.
 - Вузол має залежності (`requires`): відкрити можна лише коли всі батьки мають ранг ≥ 1.
 - Клік по вузлу виділяє його; панель знизу показує назву, рівень, школу, поточний ефект, наступний рівень, ціну у Волі й кнопку дії.
-- Нова здібність **Брама Повернення** (`a_gate`) відкриває портал у табір **без сувою**. Ціна порталу: 5 / 4 / 3 Волі на рангах 1 / 2 / 3. Сувій лишається як запасний шлях для героя без Брами.
+- Нова навичка **Телепорт** (`a_teleport`, Ангельська школа, 10 рангів) — **дозвіл** відкривати портал у табір. Сувій `RETURN_SCROLL` лишається обов'язковим і витрачається як і раніше. Ціна порталу у Волі залежить лише від навички: ранг 1 → 10 Волі, кожен наступний ранг −1, ранг 10 → 1 Воля (`willCostByRank = [10,9,…,1]`). Власної ціни в сувою більше немає (`willCost` у контенті сувою прибрано).
+- Без навички (ранг 0) герой може взяти сувій у руку, але дія «Use» нічого не робить: ні Воля, ні сувій не витрачаються, а гравець бачить повідомлення «Only Angels can fly!» (uk: «Літати вміють лише ангели!»). Відмова engine — `NOT_AN_ANGEL`.
 
 ### Межі пілоту
 
-Реально працюють (можна купити й вони мають ефект): `b_crest` (безкоштовно, завжди ранг 1), `b_strike`, `b_guard`, `d_crest`, `a_crest`, `a_gate`.
+Реально працюють (можна купити й вони мають ефект): `b_crest` (безкоштовно, завжди ранг 1), `b_strike`, `b_guard`, `d_crest`, `a_crest`, `a_teleport`.
 Решта вузлів **видимі в дереві**, мають назву/опис, але позначені «Скоро» і не купуються (`implemented: false`). Так дерево показує задум, а гравець не витрачає Волю на те, що нічого не робить.
 Кнопки «Скинути навички» в пілоті немає.
 
@@ -62,34 +63,34 @@ Refine-перевірки (і юніт-тест на весь `SKILLS`): `rankCo
 
 ### 1.2 Дані (24 вузли)
 
-| id         | школа   | слот  | maxRank | rankCosts                   | requires          | effect                | implemented |
-| ---------- | ------- | ----- | ------- | --------------------------- | ----------------- | --------------------- | ----------- |
-| `b_crest`  | bionic  | crest | 1       | [0]                         | —                 | none, **startRank 1** | ✅          |
-| `b_strike` | bionic  | 1L    | 10      | [6,6,8,8,10,10,12,14,16,18] | b_crest           | stat attack 0.05      | ✅          |
-| `b_guard`  | bionic  | 1R    | 10      | [6,6,8,8,10,10,12,14,16,18] | b_crest           | stat defense 0.05     | ✅          |
-| `b_heavy`  | bionic  | 2L    | 3       | [10,14,18]                  | b_strike          | none                  | ❌          |
-| `b_endure` | bionic  | 2R    | 2       | [15,20]                     | b_guard           | none                  | ❌          |
-| `b_dash`   | bionic  | 3L    | 3       | [12,16,20]                  | b_heavy           | none                  | ❌          |
-| `b_aim`    | bionic  | 3R    | 5       | [10,12,14,16,18]            | b_endure          | none                  | ❌          |
-| `b_cap`    | bionic  | cap   | 1       | [30]                        | b_dash, b_aim     | none                  | ❌          |
-| `d_crest`  | demonic | crest | 1       | [10]                        | —                 | none                  | ✅          |
-| `d_curse`  | demonic | 1L    | 5       | [8,10,12,14,16]             | d_crest           | none                  | ❌          |
-| `d_blood`  | demonic | 1R    | 3       | [10,14,18]                  | d_crest           | none                  | ❌          |
-| `d_fear`   | demonic | 2L    | 3       | [10,14,18]                  | d_curse           | none                  | ❌          |
-| `d_shadow` | demonic | 2R    | 2       | [14,20]                     | d_blood           | none                  | ❌          |
-| `d_devour` | demonic | 3L    | 3       | [14,18,22]                  | d_fear            | none                  | ❌          |
-| `d_sight`  | demonic | 3R    | 2       | [12,18]                     | d_shadow          | none                  | ❌          |
-| `d_cap`    | demonic | cap   | 1       | [30]                        | d_devour, d_sight | none                  | ❌          |
-| `a_crest`  | angelic | crest | 1       | [10]                        | —                 | none                  | ✅          |
-| `a_gate`   | angelic | 1L    | 3       | [12,12,15]                  | a_crest           | portal [5,4,3]        | ✅          |
-| `a_heal`   | angelic | 1R    | 3       | [8,12,16]                   | a_crest           | none                  | ❌          |
-| `a_gate2`  | angelic | 2L    | 1       | [25]                        | a_gate            | none                  | ❌          |
-| `a_ward`   | angelic | 2R    | 3       | [10,14,18]                  | a_heal            | none                  | ❌          |
-| `a_wings`  | angelic | 3L    | 2       | [14,20]                     | a_gate2           | none                  | ❌          |
-| `a_light`  | angelic | 3R    | 2       | [10,16]                     | a_ward            | none                  | ❌          |
-| `a_cap`    | angelic | cap   | 1       | [30]                        | a_wings, a_light  | none                  | ❌          |
+| id           | школа   | слот  | maxRank | rankCosts                       | requires          | effect                        | implemented |
+| ------------ | ------- | ----- | ------- | ------------------------------- | ----------------- | ----------------------------- | ----------- |
+| `b_crest`    | bionic  | crest | 1       | [0]                             | —                 | none, **startRank 1**         | ✅          |
+| `b_strike`   | bionic  | 1L    | 10      | [6,6,8,8,10,10,12,14,16,18]     | b_crest           | stat attack 0.05              | ✅          |
+| `b_guard`    | bionic  | 1R    | 10      | [6,6,8,8,10,10,12,14,16,18]     | b_crest           | stat defense 0.05             | ✅          |
+| `b_heavy`    | bionic  | 2L    | 3       | [10,14,18]                      | b_strike          | none                          | ❌          |
+| `b_endure`   | bionic  | 2R    | 2       | [15,20]                         | b_guard           | none                          | ❌          |
+| `b_dash`     | bionic  | 3L    | 3       | [12,16,20]                      | b_heavy           | none                          | ❌          |
+| `b_aim`      | bionic  | 3R    | 5       | [10,12,14,16,18]                | b_endure          | none                          | ❌          |
+| `b_cap`      | bionic  | cap   | 1       | [30]                            | b_dash, b_aim     | none                          | ❌          |
+| `d_crest`    | demonic | crest | 1       | [10]                            | —                 | none                          | ✅          |
+| `d_curse`    | demonic | 1L    | 5       | [8,10,12,14,16]                 | d_crest           | none                          | ❌          |
+| `d_blood`    | demonic | 1R    | 3       | [10,14,18]                      | d_crest           | none                          | ❌          |
+| `d_fear`     | demonic | 2L    | 3       | [10,14,18]                      | d_curse           | none                          | ❌          |
+| `d_shadow`   | demonic | 2R    | 2       | [14,20]                         | d_blood           | none                          | ❌          |
+| `d_devour`   | demonic | 3L    | 3       | [14,18,22]                      | d_fear            | none                          | ❌          |
+| `d_sight`    | demonic | 3R    | 2       | [12,18]                         | d_shadow          | none                          | ❌          |
+| `d_cap`      | demonic | cap   | 1       | [30]                            | d_devour, d_sight | none                          | ❌          |
+| `a_crest`    | angelic | crest | 1       | [10]                            | —                 | none                          | ✅          |
+| `a_teleport` | angelic | 1L    | 10      | [10,10,12,12,14,14,16,16,18,20] | a_crest           | portal [10,9,8,7,6,5,4,3,2,1] | ✅          |
+| `a_heal`     | angelic | 1R    | 3       | [8,12,16]                       | a_crest           | none                          | ❌          |
+| `a_gate2`    | angelic | 2L    | 1       | [25]                            | a_teleport        | none                          | ❌          |
+| `a_ward`     | angelic | 2R    | 3       | [10,14,18]                      | a_heal            | none                          | ❌          |
+| `a_wings`    | angelic | 3L    | 2       | [14,20]                         | a_gate2           | none                          | ❌          |
+| `a_light`    | angelic | 3R    | 2       | [10,16]                         | a_ward            | none                          | ❌          |
+| `a_cap`      | angelic | cap   | 1       | [30]                            | a_wings, a_light  | none                          | ❌          |
 
-Ціни — кандидатний баланс (місткість Волі 50), не фінал.
+Ціни — кандидатний баланс (місткість Волі 50), не фінал. Ціни рангів `a_teleport` додані при переході від «Брами Повернення» до «Телепорту»; сумарно 142 Волі за всі 10 рангів.
 
 ---
 
@@ -102,7 +103,7 @@ Refine-перевірки (і юніт-тест на весь `SKILLS`): `rankCo
 - `getNextRankCost(ranks, id)` — як зараз (`null` на максимумі).
 - `getSkillStatus(ranks, id, { will, locked })` → `'max' | 'soon' | 'requires' | 'locked' | 'need-will' | 'ready'` (саме в такому порядку перевірок). `locked` = рух/бій. Статус живе в engine, щоб UI та e2e не дублювали логіку.
 - `getSkillBonuses(ranks)` — сумує всі `effect.kind === 'stat'` (повертає ту саму форму `{ attack, defense }`, тож `combat-store.ts:477/579` і `hero-store.skillBonuses` не міняються).
-- `getPortalAbility(ranks)` → `{ unlocked: false } | { unlocked: true, willCost }` — бере навичку з `effect.kind === 'portal'` і її ранг (cost = `willCostByRank[rank-1]`). Не хардкодити `a_gate` у правилах — шукати за `effect.kind`.
+- `getPortalAbility(ranks)` → `{ unlocked: false } | { unlocked: true, willCost }` — бере навичку з `effect.kind === 'portal'` і її ранг (cost = `willCostByRank[rank-1]`). Не хардкодити `a_teleport` у правилах — шукати за `effect.kind`.
 
 ### S1.2 `unlock-skill.ts`
 
@@ -114,24 +115,25 @@ Refine-перевірки (і юніт-тест на весь `SKILLS`): `rankCo
 
 Додати до `z.preprocess` (поруч із `dropRetiredSessions`) функцію `migrateLegacySkills`: `skills.attack` → `skills.b_strike`, `skills.defense` → `skills.b_guard` (якщо новий ключ уже є — брати більший), невідомі ключі відкинути. `version: 1` лишається, `CONTENT_VERSION` **не** піднімати (інакше збереження зітруться). Юніт-тест: старий стан `{attack: 7, defense: 1}` → `{b_strike: 7, b_guard: 1}`.
 
-### S1.4 Портал без сувою (`portal/`)
+### S1.4 Портал за навичкою Телепорт (`portal/`) [DONE — 2026-10-26, переглянуто]
 
-- У `portal-rules.ts` додати чисту функцію, спільну для engine і UI:
+- `portal-rules.ts`: чиста функція, спільна для engine і UI:
   ```ts
-  resolvePortalSource(skills: SkillRanks | undefined, scrollCount: number)
-    : { ok: true; source: 'skill' | 'scroll'; cost: number } | { ok: false; reason: 'NO_SCROLL' }
+  resolvePortalCost(skills: SkillRanks | undefined, scrollCount: number)
+    : { ok: true; cost: number } | { ok: false; reason: 'NO_SCROLL' | 'NOT_AN_ANGEL' }
   ```
-  Якщо `getPortalAbility(skills).unlocked` → `source: 'skill'`, cost зі здібності (сувій не потрібен і **не витрачається**, навіть якщо є). Інакше → сувій: `scrollCount ≥ 1` ? `{source:'scroll', cost: returnScrollWillCost()}` : `NO_SCROLL`.
-- `applyOpenPortal`: замінити блок «сувій + cost» на `resolvePortalSource(knowledge?.heroId === heroId ? knowledge.skills : undefined, inventory.countItem?.(scrollKey) ?? 0)`. `takeFromInventory` викликати тільки для `source === 'scroll'`. Джерело визначає engine зі стану — **ніколи** не з payload команди.
-- `PORTAL_OPENED.payload` += `source: 'skill' | 'scroll'`; `willSpent` = фактична ціна.
+  Порядок: немає сувою → `NO_SCROLL`; навичка не відкрита → `NOT_AN_ANGEL`; інакше `cost = getPortalAbility(skills).willCost`. `returnScrollWillCost` видалено; `willCost: 5` прибрано з USE-дії сувою в `loot.content.ts`.
+- `applyOpenPortal`: після `planPortalOpening` рахує `resolvePortalCost(knowledge?.skills (лише свого героя), countItem(scroll))`. Відмова → `PORTAL_OPEN_REJECTED` з причиною, **стан не змінюється** (сувій і Воля цілі). Нема Волі → `INSUFFICIENT_WILL`. Успіх: атомарно `takeFromInventory(scroll, 1)` + `spendWill(cost)`. Ціна визначається engine зі стану героя, ніколи не з payload.
+- `NO_WILL_STATE` лишається, якщо немає knowledge-стану героя.
+- `PORTAL_OPENED.payload` не має поля `source`; `willSpent` = фактична ціна.
 - Решта правил порталу (одна пара, закриття, данж в один бік) — без змін.
 
 ### S1.5 Тести (Vitest, engine)
 
 - `skill-content.test.ts`: схема проходить для всього `SKILLS`; усі refine-правила; рівно 6 `implemented`.
-- `skill-rules.test.ts`: startRank для `b_crest`; `requirementsMet`; усі гілки `getSkillStatus`; бонуси від `b_strike`/`b_guard`; `getPortalAbility` ранги 0/1/2/3 → none/5/4/3.
-- `unlock-skill.test.ts`: оновити id; нові відмови; повний шлях `a_crest` → `a_gate` ×3.
-- portal: відкриття за здібністю без сувою (сувій лишився в інвентарі, витрачено 4 Волі на ранзі 2); без здібності і без сувою → `NO_SCROLL`; без здібності з сувоєм → як раніше; недостатньо Волі за здібністю → `INSUFFICIENT_WILL`, стан не змінився.
+- `skill-rules.test.ts`: startRank для `b_crest`; `requirementsMet`; усі гілки `getSkillStatus`; бонуси від `b_strike`/`b_guard`; `getPortalAbility` ранги 0/1/2/6/10 → none/10/9/5/1.
+- `unlock-skill.test.ts`: оновити id; нові відмови; повний шлях `a_crest` → `a_teleport` ×3.
+- portal: ранги 1/2/6/10 → 10/9/5/1 Волі і сувій витрачено; без навички → `NOT_AN_ANGEL`, сувій і Воля цілі, портал не з'явився; навичка без сувою → `NO_SCROLL`; недостатньо Волі → `INSUFFICIENT_WILL`, стан не змінився; навички чужого героя не враховуються. Допоміжний `portal-test-setup.ts` дає за замовчуванням `a_teleport` ранг 6 (ціна 5, як було до змін).
 - міграція з S1.3.
 
 ---
@@ -148,7 +150,7 @@ Refine-перевірки (і юніт-тест на весь `SKILLS`): `rankCo
 
 - `hero-skill-tree.vue` — корінь Волі + з'єднувач + 3 колонки + панель деталей; тримає `selectedId` (за замовчуванням `'b_crest'`).
 - `skill-branch-column.vue` — герб (62px, скруглення 18), назва школи (Alegreya SC, колір школи), підпис, «вилка» до двох колонок, 3 ряди по 2 вузли (56px, скруглення 14) з вертикальними лініями, «вилка» до `cap` (58px).
-- `skill-node.vue` — `<button>`, іконка, круглий значок рангу в правому нижньому куті (як зараз), мітка «НОВЕ» для `a_gate` поки ранг 0.
+- `skill-node.vue` — `<button>`, іконка, круглий значок рангу в правому нижньому куті (як зараз), мітка «НОВЕ» для `a_teleport` поки ранг 0.
 - `skill-detail-panel.vue` — іконка 72px, назва, «Рів. n/max», школа, поточний ефект, наступний рівень, «Спершу відкрий: …» для `requires`, ціна з іконкою Волі «N Волі · у тебе M», кнопка.
 
 Візуальні стани вузла:
@@ -192,7 +194,7 @@ ward:   'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z M12 8v2 M12 14v2 M8 12h2 M
 feather:'M20 4C10 4 5 10 5 19 M5 19l3-3 M20 4c0 8-5 12-12 12 M10 11h6',
 ```
 
-(`sword`, `shield` вже є.) Мапа `SKILL_ICON: Record<SkillId, TIconName>` — у web: b_crest human, b_strike sword, b_guard shield, b_heavy anvil, b_endure heart, b_dash bolt, b_aim bow, b_cap star; d_crest horns, d_curse spiral, d_blood drop, d_fear skull, d_shadow moon, d_devour flame, d_sight eye, d_cap horns; a_crest wings, a_gate portal, a_heal cross, a_gate2 gate2, a_ward ward, a_wings feather, a_light sun, a_cap wings.
+(`sword`, `shield` вже є.) Мапа `SKILL_ICON: Record<SkillId, TIconName>` — у web: b_crest human, b_strike sword, b_guard shield, b_heavy anvil, b_endure heart, b_dash bolt, b_aim bow, b_cap star; d_crest horns, d_curse spiral, d_blood drop, d_fear skull, d_shadow moon, d_devour flame, d_sight eye, d_cap horns; a_crest wings, a_teleport portal, a_heal cross, a_gate2 gate2, a_ward ward, a_wings feather, a_light sun, a_cap wings.
 
 ### S2.4 Тексти (i18n `locales/uk/ui.json` і `en/ui.json`, `heroDetails.tree.*`)
 
@@ -216,13 +218,13 @@ feather:'M20 4C10 4 5 10 5 19 M5 19l3-3 M20 4c0 8-5 12-12 12 M10 11h6',
 - d_sight **Темний зір** — [«Бачиш ворогів у тумані на 1 гекс далі.», «… на 2 гекси далі.»]
 - d_cap **Демонічна форма** — [«Раз за бій: подвійна атака ціною 1 серця.»]
 - a_crest **Благословення** — [«Пробуджує святу магію: брама, світло і зцілення.»]
-- a_gate **Брама Повернення** — [«Відкриває портал у табір без сувою. Ціна порталу: 5 Волі.», «Портал у табір коштує 4 Волі.», «Портал у табір коштує 3 Волі.»] — ціни в тексті брати з `willCostByRank`, не хардкодити.
+- a_teleport **Телепорт** — один рядок із параметром ціни: «Дозволяє відкрити портал у табір за сувоєм. Ціна порталу: {cost} Волі.» (`cost` береться з `willCostByRank` для поточного рангу, не хардкодити).
 - a_heal **Зцілення** — [«1 раз за локацію віднови 1 серце.», «2 рази …», «3 рази …»]
 - a_gate2 **Двобічна брама** — [«Портал із підземелля більше не руйнує його: можна повернутися туди, де зупинився.»]
 - a_ward **Світлий щит** — [«+1 блок проти першого удару в бою.», «+2 блоки …», «+3 блоки …»]
 - a_wings **Крила** — [«Перелетіти через 1 перешкоду за хід.», «… через 2 перешкоди за хід.»]
 - a_light **Світло** — [«Туман відкривається на 1 гекс далі.», «… на 2 гекси далі.»]
-- a_cap **Ангельська форма** — [«Раз за локацію Брама Повернення відкривається безкоштовно.»]
+- a_cap **Ангельська форма** — [«Раз за локацію Телепорт відкривається безкоштовно.»]
 
 Підписи панелі: «Рів.», «Наступний рівень», «Рівень 1», «Ще не відкрито.», «Навичку повністю розвинено.», «Спершу відкрий: {list}», «Волі · у тебе {will}», «Скоро», «НОВЕ» + кнопки з S2.2. Англійською — прямий переклад.
 
@@ -232,12 +234,15 @@ feather:'M20 4C10 4 5 10 5 19 M5 19l3-3 M20 4c0 8-5 12-12 12 M10 11h6',
 
 ---
 
-## Фаза S3 — web: Брама на мапі
+## Фаза S3 — web: Телепорт на мапі [DONE — 2026-10-26, переглянуто]
 
-- `use-portal.ts` `previewOpen`: замість власної перевірки сувою викликати engine `resolvePortalSource(heroStore.knowledge?.skills, inventoryStore.countItem(SCROLL))`; повертати `cost` звідти. Дублювати логіку не можна.
-- `tool-hex-tile.vue:361`: ціну в повідомленні про брак Волі брати з preview, а не `returnScrollWillCost()`.
-- **Як герой запускає Браму без сувою (пілотний шлях):** коли `getPortalAbility(skills).unlocked` і герой не в таборі — показати токен-здібність «Брама Повернення» (іконка `portal`, колір ангельської школи) поруч із токенами інструментів, там же, де зараз з'являється токен сувою (див. `inventory-scene/components/equip-token.vue`, `useToolToken()`). Клік → `heroToolStore.useTool(HEXOBJECT_KEYS.RETURN_SCROLL, heroCoords)`, тобто перевикористовуємо наявний режим наведення порталу (`isScrollTool`). Перевірити, що `useTool`/`allowedKeys` не вимагає мати сувій в інвентарі; якщо вимагає — дозволити ключ `RETURN_SCROLL`, коли здібність відкрита. Якщо знайдеш чистіше місце для кнопки — запропонуй Олегу перед реалізацією.
-- `useGameEventsStore`: для `source: 'skill'` писати «opened the Gate of Return» замість «opened a portal».
+Окремої кнопки здібності **немає** — портал, як і раніше, запускається сувоєм у руці.
+
+- `use-portal.ts` `previewOpen`: після `planPortalOpening` викликає engine `resolvePortalCost(heroStore.knowledge?.skills, inventoryStore.countItem(SCROLL))`. Відмова → `{ ok:false, reason }` (`NO_SCROLL` / `NOT_AN_ANGEL`); нестача Волі → `{ ok:false, reason:'INSUFFICIENT_WILL', cost }`. Логіку не дублювати.
+- `tool-hex-tile.vue`: кнопка «Use» для сувою пропонується і при `NOT_AN_ANGEL` (щоб гравець міг натиснути й побачити повідомлення); ціну в повідомленні про брак Волі та у підказці брати з preview.
+- `openPortal` передає команду в engine; відмова `NOT_AN_ANGEL` → `portalRefusalText` показує «Only Angels can fly!» / «Літати вміють лише ангели!» (`portal.refusal.NOT_AN_ANGEL`), `flashDenied`, нічого не витрачено.
+- Журнал подій: як раніше «opened a portal».
+- Токен/кнопка «Брама» з попередньої версії плану (`gate-ability-button.vue`) **видалені**.
 
 ---
 
@@ -247,7 +252,8 @@ feather:'M20 4C10 4 5 10 5 19 M5 19l3-3 M20 4c0 8-5 12-12 12 M10 11h6',
 - Оновити 3 наявні тести в `e2e/world/hero-board-panel.spec.ts` на `b_strike` (старт Волі 20, ранг коштує 6 → тепер можна купити кілька рангів — переписати сценарій «не можна купити другий» на «не вистачає Волі після N покупок» або дати менше Волі через тестовий хук).
 - Новий тест: вкладка «Шлях» відкривається з виділеним `b_crest`, панель показує «Людська форма».
 - Новий тест: вузол «Скоро» не купується; вузол з невиконаними `requires` показує «Спершу відкрий: …».
-- Новий тест: `a_crest` → `a_gate`, потім на мапі відкрити портал без сувою; Воля зменшилась на 5; сувоїв в інвентарі стільки ж. (Волю дати через `__HEXOFLAT_TEST__`/dev-grant, якщо стартових 20 не вистачає: 10 + 15 + 5 = 30.)
+- Новий тест: з сувоєм у руці, але без навички: «Use» → повідомлення «Only Angels can fly!» (через Feature), Воля і кількість сувоїв не змінились, портал не з'явився.
+- Новий тест: `a_crest` → `a_teleport` (ранг 1), потім на мапі відкрити портал сувоєм; Воля зменшилась на 10, сувоїв на 1 менше. (Волю дати через `__HEXOFLAT_TEST__`/dev-grant: 10 + 10 + 10 = 30 > стартових 20.)
 
 ---
 
@@ -256,7 +262,7 @@ feather:'M20 4C10 4 5 10 5 19 M5 19l3-3 M20 4c0 8-5 12-12 12 M10 11h6',
 1. Дерево виглядає як макет: корінь Волі, 3 школи, Біонічна по центру й вибрана, значки рангу, панель деталей.
 2. Старі збереження з `attack/defense` відкриваються з тими самими рангами в `b_strike/b_guard`; бонуси в бою ті самі.
 3. Купуються лише 6 реалізованих вузлів; решта — «Скоро».
-4. З `a_gate` ≥ 1 портал відкривається без сувою за 5/4/3 Волі; без здібності — як раніше через сувій.
+4. Портал, як і раніше, відкривається сувоєм (сувій витрачається). З `a_teleport` ≥ 1 він коштує 10…1 Волі за рангом; без навички «Use» дає лише «Only Angels can fly!» і нічого не витрачає.
 5. `pnpm lint`, `typecheck`, unit, api-tests, e2e зелені; ESLint-рачет не послаблено.
 6. Додати в `CLAUDE.md` короткий абзац «Дерево Шляху v2 (гілка `new-skills-tree-view`)» з посиланням на цей файл.
 

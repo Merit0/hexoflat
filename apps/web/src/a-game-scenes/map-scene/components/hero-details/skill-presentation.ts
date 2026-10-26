@@ -19,7 +19,7 @@ export const SKILL_ICON: Record<SkillId, TIconName> = {
   d_sight: 'eye',
   d_cap: 'horns',
   a_crest: 'wings',
-  a_gate: 'portal',
+  a_teleport: 'portal',
   a_heal: 'cross',
   a_gate2: 'gate2',
   a_ward: 'ward',

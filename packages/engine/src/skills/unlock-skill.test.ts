@@ -134,10 +134,10 @@ describe('UNLOCK_SKILL tree rules', () => {
 
   it('refuses a skill whose parent is not unlocked', () => {
     const state = stateFixture(50);
-    const { events } = unlock(state, 'a_gate');
+    const { events } = unlock(state, 'a_teleport');
     expect(events[0].payload).toMatchObject({ reason: 'REQUIREMENTS_NOT_MET' });
     expect(state.knowledge!.current).toBe(50);
-    expect(state.knowledge!.skills.a_gate).toBeUndefined();
+    expect(state.knowledge!.skills.a_teleport).toBeUndefined();
   });
 
   it('treats the free bionic crest as already unlocked', () => {
@@ -146,18 +146,18 @@ describe('UNLOCK_SKILL tree rules', () => {
     expect(unlock(state, 'b_strike').events[0].type).toBe('SKILL_UNLOCKED');
   });
 
-  it('walks a_crest to a_gate rank 3 charging each rank price', () => {
+  it('walks a_crest to a_teleport rank 3 charging each rank price', () => {
     const state = stateFixture(50);
     const spent: number[] = [];
-    for (const id of ['a_crest', 'a_gate', 'a_gate', 'a_gate'] as const) {
+    for (const id of ['a_crest', 'a_teleport', 'a_teleport', 'a_teleport'] as const) {
       const before = state.knowledge!.current;
       state.knowledge!.current = 50;
       expect(unlock(state, id).events[0].type).toBe('SKILL_UNLOCKED');
       spent.push(50 - state.knowledge!.current);
       state.knowledge!.current = before;
     }
-    expect(spent).toEqual([10, 12, 12, 15]);
-    expect(state.knowledge!.skills).toMatchObject({ a_crest: 1, a_gate: 3 });
+    expect(spent).toEqual([10, 10, 10, 12]);
+    expect(state.knowledge!.skills).toMatchObject({ a_crest: 1, a_teleport: 3 });
   });
 });
 

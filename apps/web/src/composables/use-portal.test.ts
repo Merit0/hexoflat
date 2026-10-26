@@ -49,6 +49,7 @@ describe('usePortal', () => {
     hero.hero.id = 'hero-1';
     const knowledge = createKnowledgeState('hero-1');
     knowledge.current = will;
+    knowledge.skills = { a_crest: 1, a_teleport: 6 };
     writeKnowledge(knowledge);
     hero.knowledge = knowledge;
     inventory.hydrate();
@@ -97,6 +98,57 @@ describe('usePortal', () => {
     inventory.items = inventory.items.filter((item) => item.key !== SCROLL);
 
     expect(usePortal().previewOpen(target)).toEqual({ ok: false, reason: 'NO_SCROLL' });
+  });
+
+  describe('Teleport skill', () => {
+    function withTeleport(will: number, rank: number, scrolls = 1) {
+      const setup = startInSilesia(will, scrolls);
+      setup.hero.knowledge!.skills = rank ? { a_crest: 1, a_teleport: rank } : {};
+      writeKnowledge(setup.hero.knowledge!);
+      return setup;
+    }
+
+    it('previews the ranked Will price', () => {
+      const { target } = withTeleport(20, 2);
+      expect(usePortal().previewOpen(target)).toMatchObject({ ok: true, cost: 9 });
+    });
+
+    it('previews the price together with an insufficient-Will refusal', () => {
+      const { target } = withTeleport(2, 1);
+      expect(usePortal().previewOpen(target)).toEqual({
+        ok: false,
+        reason: 'INSUFFICIENT_WILL',
+        cost: 10,
+      });
+    });
+
+    it('previews that only Angels can fly when the skill is locked', () => {
+      const { target } = withTeleport(20, 0);
+      expect(usePortal().previewOpen(target)).toEqual({ ok: false, reason: 'NOT_AN_ANGEL' });
+    });
+
+    it('refuses without the skill and keeps both the scroll and the Will', async () => {
+      const { hero, world, inventory, target } = withTeleport(20, 0);
+      const scrollsBefore = inventory.countItem(SCROLL);
+
+      const outcome = await usePortal().openPortal(target);
+
+      expect(outcome).toEqual({ ok: false, reason: 'NOT_AN_ANGEL' });
+      expect(hero.knowledge!.current).toBe(20);
+      expect(inventory.countItem(SCROLL)).toBe(scrollsBefore);
+      expect(portalHexes(world.map as HexMapModel)).toEqual([]);
+    });
+
+    it('opens with the skill, spending the ranked Will and one scroll', async () => {
+      const { hero, inventory, target } = withTeleport(20, 10);
+      const scrollsBefore = inventory.countItem(SCROLL);
+
+      const outcome = await usePortal().openPortal(target);
+
+      expect(outcome.ok).toBe(true);
+      expect(hero.knowledge!.current).toBe(19);
+      expect(inventory.countItem(SCROLL)).toBe(scrollsBefore - 1);
+    });
   });
 
   it('walks the whole loop: origin -> camp portal -> back, both portals gone', async () => {
@@ -178,6 +230,7 @@ describe('usePortal', () => {
     hero.hero.id = 'hero-1';
     const knowledge = createKnowledgeState('hero-1');
     knowledge.current = 20;
+    knowledge.skills = { a_crest: 1, a_teleport: 6 };
     writeKnowledge(knowledge);
     hero.knowledge = knowledge;
     inventory.hydrate();

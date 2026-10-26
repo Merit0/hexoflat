@@ -252,13 +252,9 @@
           "name": "Blessing",
           "fx": ["Awakens holy magic: the gate, light and healing."]
         },
-        "a_gate": {
-          "name": "Gate of Return",
-          "fx": [
-            "Opens a portal to camp without a scroll. Portal cost: {cost} Will.",
-            "The portal to camp costs {cost} Will.",
-            "The portal to camp costs {cost} Will."
-          ]
+        "a_teleport": {
+          "name": "Teleport",
+          "fx": "Lets you open a portal to camp with a scroll. Portal cost: {cost} Will."
         },
         "a_heal": {
           "name": "Healing",
@@ -290,7 +286,7 @@
         },
         "a_cap": {
           "name": "Angelic Form",
-          "fx": ["Once per location the Gate of Return opens for free."]
+          "fx": ["Once per location the Teleport opens for free."]
         }
       }
     }
@@ -309,6 +305,7 @@
       "TILE_OCCUPIED": "The hex is occupied",
       "EXIT_HEX": "Not on an exit hex",
       "NO_SCROLL": "No Return Scroll",
+      "NOT_AN_ANGEL": "Only Angels can fly!",
       "INSUFFICIENT_WILL": "Not enough Will",
       "NO_WILL_STATE": "Will is unavailable",
       "NO_PORTAL": "No portal here",

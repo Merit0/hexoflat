@@ -3,7 +3,7 @@ import type { HexEngineState } from '@hexoflat/engine';
 import { findFreeHexNear } from '@hexoflat/engine/map/free-hex-finder';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
-import { planPortalOpening, returnScrollWillCost } from '@hexoflat/engine/portal/portal-rules';
+import { planPortalOpening, resolvePortalCost } from '@hexoflat/engine/portal/portal-rules';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
@@ -26,7 +26,7 @@ import { useCombatStore } from '@/stores/combat-store';
 const SCROLL = HEXOBJECT_KEYS.RETURN_SCROLL;
 
 export type PortalOpenPreview =
-  { ok: true; oneWay: boolean; cost: number } | { ok: false; reason: string };
+  { ok: true; oneWay: boolean; cost: number } | { ok: false; reason: string; cost?: number };
 
 export interface PortalOutcome {
   ok: boolean;
@@ -71,12 +71,11 @@ export function usePortal() {
       combatStore.combatActive,
     );
     if (!plan.ok) return { ok: false, reason: plan.reason };
-    if (inventoryStore.countItem(SCROLL) < 1) {
-      return { ok: false, reason: 'NO_SCROLL' };
-    }
-    const cost = returnScrollWillCost();
+    const priced = resolvePortalCost(heroStore.knowledge?.skills, inventoryStore.countItem(SCROLL));
+    if (!priced.ok) return { ok: false, reason: priced.reason };
+    const { cost } = priced;
     if ((heroStore.knowledge?.current ?? 0) < cost) {
-      return { ok: false, reason: 'INSUFFICIENT_WILL' };
+      return { ok: false, reason: 'INSUFFICIENT_WILL', cost };
     }
     return { ok: true, oneWay: plan.link.campHex === null, cost };
   }

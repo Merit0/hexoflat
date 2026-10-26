@@ -20,7 +20,7 @@ export const SKILL_IDS = [
   'd_sight',
   'd_cap',
   'a_crest',
-  'a_gate',
+  'a_teleport',
   'a_heal',
   'a_gate2',
   'a_ward',
@@ -130,11 +130,11 @@ const DEFINITIONS: SkillDefinition[] = [
   node('d_cap', 'demonic', 'cap', BRANCH_CAP_COSTS, ['d_devour', 'd_sight']),
 
   node('a_crest', 'angelic', 'crest', [10], [], true),
-  node('a_gate', 'angelic', '1L', [12, 12, 15], ['a_crest'], true, {
-    effect: { kind: 'portal', willCostByRank: [5, 4, 3] },
+  node('a_teleport', 'angelic', '1L', [10, 10, 12, 12, 14, 14, 16, 16, 18, 20], ['a_crest'], true, {
+    effect: { kind: 'portal', willCostByRank: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] },
   }),
   node('a_heal', 'angelic', '1R', [8, 12, 16], ['a_crest']),
-  node('a_gate2', 'angelic', '2L', [25], ['a_gate']),
+  node('a_gate2', 'angelic', '2L', [25], ['a_teleport']),
   node('a_ward', 'angelic', '2R', [10, 14, 18], ['a_heal']),
   node('a_wings', 'angelic', '3L', [14, 20], ['a_gate2']),
   node('a_light', 'angelic', '3R', [10, 16], ['a_ward']),
