@@ -23,36 +23,38 @@ function heroAction(
   battle: BattleState,
   heroId: string,
   action: BattleAction,
+  atMs: number,
   rules: BattleRules,
 ): BattleResult {
   const next = structuredClone(battle);
   const actor = creatureById(next, heroId);
   if (!actor || actor.side !== 'heroes')
     return rejected(battle, reject('NOT_YOUR_TURN'), action.kind);
-  const result = performAction(next, actor, action, rules);
+  const result = performAction(next, actor, action, atMs, rules);
   if (isRejection(result)) return rejected(battle, result, action.kind);
   return { battle: next, events: result };
 }
 
 function stillActing(battle: BattleState, enemyId: string): boolean {
-  return battle.activeId === enemyId && battle.phase !== 'ended';
+  return battle.activeId === enemyId && battle.phase !== 'ended' && !battle.task;
 }
 
-function enemyTurn(battle: BattleState, rules: BattleRules): BattleResult {
+function enemyTurn(battle: BattleState, atMs: number, rules: BattleRules): BattleResult {
   const next = structuredClone(battle);
   const enemyId = next.activeId;
   const actor = creatureById(next, enemyId);
   if (next.phase === 'ended') return rejected(battle, reject('BATTLE_ENDED'), 'run-enemy-turn');
+  if (next.task) return rejected(battle, reject('TASK_OPEN'), 'run-enemy-turn');
   if (!actor || actor.side !== 'enemies')
     return rejected(battle, reject('NOT_YOUR_TURN'), 'run-enemy-turn');
 
   const events: DomainEvent[] = [];
   for (let i = 0; i < MAX_ENEMY_ACTIONS && stillActing(next, enemyId); i++) {
     const action = nextPlaceholderAction(projectBattleForViewer(next, 'enemies'), rules);
-    const result = performAction(next, actor, action, rules);
+    const result = performAction(next, actor, action, atMs, rules);
     events.push(
       ...(isRejection(result)
-        ? (performAction(next, actor, { kind: 'end-turn' }, rules) as DomainEvent[])
+        ? (performAction(next, actor, { kind: 'end-turn' }, atMs, rules) as DomainEvent[])
         : result),
     );
   }
@@ -69,6 +71,6 @@ export function applyBattleCommand(
   }
   const { payload } = command;
   return payload.kind === 'hero'
-    ? heroAction(battle, payload.heroId, payload.action, rules)
-    : enemyTurn(battle, rules);
+    ? heroAction(battle, payload.heroId, payload.action, payload.atMs, rules)
+    : enemyTurn(battle, payload.atMs, rules);
 }

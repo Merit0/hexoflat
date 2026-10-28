@@ -18,6 +18,11 @@ export const BATTLE_REJECTION_CODES = [
   'NO_SHIELD_PLACED',
   'NOT_IN_RING',
   'NOTHING_TO_UNDO',
+  'OUT_OF_RANGE',
+  'TOO_HEAVY',
+  'NO_SPACE',
+  'TASK_OPEN',
+  'NO_TASK',
 ] as const;
 export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 

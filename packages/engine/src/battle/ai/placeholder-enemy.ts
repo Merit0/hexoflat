@@ -1,7 +1,7 @@
 import type { BattleRules } from '../battle-content';
 import type { BattleAction } from '../battle-commands';
 import type { BattleCreature, BattleHand, BattleHex } from '../battle-state';
-import { creatureById, freeNeighbours, livingOnSide } from '../battle-board';
+import { creatureById, freeNeighbours, livingOnSide, terrainAt } from '../battle-board';
 import { battleDistance, hexKey, isAdjacentHex } from '../hex-battle-geom';
 import { cheapestPaths, pathTo, stepCost } from '../movement';
 import type { BattleProjection } from '../projection';
@@ -29,6 +29,7 @@ function retreatStep(
   if (view.undo.length > 0) return null;
   const here = distanceToHeroes(view, self.pos);
   const options = freeNeighbours(view, self.pos)
+    .filter((hex) => terrainAt(view, hex) !== 'saw')
     .filter((hex) => stepCost(view, self.pos, hex, rules) <= view.turnWill)
     .filter((hex) => distanceToHeroes(view, hex) > here)
     .sort(

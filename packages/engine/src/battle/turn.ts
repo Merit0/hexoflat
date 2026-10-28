@@ -70,6 +70,12 @@ export function finishTurn(state: BattleState, stance: number, rules: BattleRule
   return [ended, ...advanceTurn(state, rules)];
 }
 
+export function endTurnIfActiveFell(state: BattleState, rules: BattleRules): DomainEvent[] {
+  const active = creatureById(state, state.activeId);
+  if (state.phase === 'ended' || !active || isAlive(active)) return [];
+  return finishTurn(state, 0, rules);
+}
+
 export function endTurn(state: BattleState, rules: BattleRules): DomainEvent[] {
   return finishTurn(state, Math.min(rules.stanceMax, state.turnWill), rules);
 }

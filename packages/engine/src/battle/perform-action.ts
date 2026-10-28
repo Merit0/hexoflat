@@ -4,8 +4,10 @@ import type { BattleRules } from './battle-content';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleState } from './battle-state';
 import { reject, type BattleRejection } from './battle-rejection';
-import { confirmBlock, placeShield, removeShield, takeHit } from './defend';
+import { confirmBlock, placeShield, removeShield, startDodge, takeHit } from './defend';
+import { startDisplace } from './displace-actions';
 import { moveCreature, undoStep } from './movement';
+import { settleTask } from './resolve-task';
 import { strike } from './strike';
 import { endTurn } from './turn';
 
@@ -14,21 +16,37 @@ const DEFEND_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
   'remove-shield',
   'confirm-block',
   'take-hit',
+  'start-dodge',
 ]);
+
+const TASK_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['answer-task', 'task-timeout']);
 
 function phaseAllows(state: BattleState, action: BattleAction): boolean {
   return DEFEND_ACTIONS.has(action.kind) ? state.phase === 'defend' : state.phase === 'act';
+}
+
+function guard(
+  state: BattleState,
+  actor: BattleCreature,
+  action: BattleAction,
+): BattleRejection | null {
+  if (state.phase === 'ended') return reject('BATTLE_ENDED');
+  if (TASK_ACTIONS.has(action.kind)) return state.task ? null : reject('NO_TASK');
+  if (state.task) return reject('TASK_OPEN');
+  if (state.activeId !== actor.id) return reject('NOT_YOUR_TURN');
+  if (!phaseAllows(state, action)) return reject('WRONG_PHASE');
+  return null;
 }
 
 export function performAction(
   state: BattleState,
   actor: BattleCreature,
   action: BattleAction,
+  atMs: number,
   rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
-  if (state.phase === 'ended') return reject('BATTLE_ENDED');
-  if (state.activeId !== actor.id) return reject('NOT_YOUR_TURN');
-  if (!phaseAllows(state, action)) return reject('WRONG_PHASE');
+  const refused = guard(state, actor, action);
+  if (refused) return refused;
 
   switch (action.kind) {
     case 'place-shield':
@@ -39,12 +57,21 @@ export function performAction(
       return confirmBlock(state, actor, rules);
     case 'take-hit':
       return takeHit(state, actor, rules);
+    case 'start-dodge':
+      return startDodge(state, actor, atMs, rules);
     case 'move':
-      return moveCreature(state, actor, action.hex, rules);
+      return moveCreature(state, actor, action.hex, atMs, rules);
     case 'undo-step':
       return undoStep(state, actor);
     case 'strike':
       return strike(state, actor, action.targetId, action.hand, rules);
+    case 'push':
+    case 'pull':
+      return startDisplace(state, actor, action.targetId, action.kind, atMs, rules);
+    case 'answer-task':
+      return settleTask(state, actor, action.option, atMs, rules);
+    case 'task-timeout':
+      return settleTask(state, actor, null, atMs, rules);
     case 'end-turn':
       return endTurn(state, rules);
     default:

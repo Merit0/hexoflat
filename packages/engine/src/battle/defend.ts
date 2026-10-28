@@ -6,6 +6,7 @@ import { sameHex } from './hex-battle-geom';
 import { reject, spendTurnWill, type BattleRejection } from './battle-rejection';
 import { applyDamage } from './battle-end';
 import { finishTurn } from './turn';
+import { issueTask } from './timed-task';
 
 export function shieldCapacity(creature: BattleCreature, rules: BattleRules): number {
   const total =
@@ -72,14 +73,15 @@ export function removeShield(
   ];
 }
 
-function resolveOne(state: BattleState, strike: PendingStrike) {
+function resolveOne(state: BattleState, strike: PendingStrike, dodged: boolean) {
   const blocked = state.placedShields.some((h) => sameHex(h, strike.fromHex));
+  const outcome = dodged ? 'dodged' : blocked ? 'blocked' : 'hit';
   return {
     strikeId: strike.id,
     attackerId: strike.attackerId,
     fromHex: strike.fromHex,
-    outcome: blocked ? ('blocked' as const) : ('hit' as const),
-    damage: blocked ? 0 : strike.power,
+    outcome,
+    damage: outcome === 'hit' ? strike.power : 0,
   };
 }
 
@@ -87,9 +89,10 @@ export function resolveStrikes(
   state: BattleState,
   defender: BattleCreature,
   rules: BattleRules,
+  dodgeFirst = false,
 ): DomainEvent[] {
   const strikes = strikesOn(state, defender.id);
-  const results = strikes.map((s) => resolveOne(state, s));
+  const results = strikes.map((s, index) => resolveOne(state, s, dodgeFirst && index === 0));
   const shields = state.placedShields;
   state.pending = state.pending.filter((s) => s.targetId !== defender.id);
   state.placedShields = [];
@@ -117,6 +120,27 @@ export function confirmBlock(
 ): DomainEvent[] | BattleRejection {
   if (state.placedShields.length === 0) return reject('NO_SHIELD_PLACED');
   return resolveStrikes(state, defender, rules);
+}
+
+export function startDodge(
+  state: BattleState,
+  defender: BattleCreature,
+  atMs: number,
+  rules: BattleRules,
+): DomainEvent[] | BattleRejection {
+  const refund = state.placedShields.length * rules.shieldPerSide;
+  if (state.turnWill + refund < rules.dodge) {
+    return { rejected: 'INSUFFICIENT_WILL', cost: rules.dodge, left: state.turnWill + refund };
+  }
+  state.turnWill += refund - rules.dodge;
+  state.placedShields = [];
+  return [
+    {
+      type: 'DODGE_STARTED',
+      payload: { creatureId: defender.id, cost: rules.dodge, willLeft: state.turnWill },
+    },
+    ...issueTask(state, 'dodge', defender.id, atMs, rules),
+  ];
 }
 
 export function takeHit(

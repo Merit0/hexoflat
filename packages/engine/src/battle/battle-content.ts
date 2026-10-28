@@ -19,6 +19,9 @@ export const battleRulesSchema = z.object({
   taskMs: z.number().int().positive(),
   ledgeStrikeBonus: z.number().int().min(0),
   maxShieldSides: z.number().int().min(1).max(6),
+  boulderWeight: z.number().int().min(0),
+  fallDamage: z.number().int().min(0),
+  pullRange: z.number().int().min(2),
 });
 export type BattleRules = z.infer<typeof battleRulesSchema>;
 
@@ -36,4 +39,7 @@ export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   taskMs: 5000,
   ledgeStrikeBonus: 1,
   maxShieldSides: 6,
+  boulderWeight: 2,
+  fallDamage: 1,
+  pullRange: 2,
 });

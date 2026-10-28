@@ -4,6 +4,8 @@ import type { BattleCreature, BattleHex, BattleState } from './battle-state';
 import { heightAt, isFreeHex, terrainAt, type BattleBoardView } from './battle-board';
 import { hexKey, hexNeighbours, isAdjacentHex, parseHexKey } from './hex-battle-geom';
 import { reject, spendTurnWill, type BattleRejection } from './battle-rejection';
+import { enterSaw } from './hazard';
+import { endTurnIfActiveFell } from './turn';
 
 export function stepCost(
   state: BattleBoardView,
@@ -22,6 +24,7 @@ export function moveCreature(
   state: BattleState,
   mover: BattleCreature,
   hex: BattleHex,
+  atMs: number,
   rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
   if (!isAdjacentHex(mover.pos, hex)) return reject('NOT_ADJACENT');
@@ -34,11 +37,16 @@ export function moveCreature(
   const from = mover.pos;
   mover.pos = { ...hex };
   state.undo.push({ from, to: { ...hex }, cost });
+  const moved: DomainEvent = {
+    type: 'CREATURE_MOVED',
+    payload: { creatureId: mover.id, from, to: mover.pos, cost, willLeft: state.turnWill },
+  };
+  if (terrainAt(state, hex) !== 'saw') return [moved];
+  state.undo = [];
   return [
-    {
-      type: 'CREATURE_MOVED',
-      payload: { creatureId: mover.id, from, to: mover.pos, cost, willLeft: state.turnWill },
-    },
+    moved,
+    ...enterSaw(state, mover, from, undefined, atMs, rules),
+    ...endTurnIfActiveFell(state, rules),
   ];
 }
 
@@ -75,7 +83,7 @@ export function cheapestPaths(
     const currentKey = open.shift()!;
     const current = parseHexKey(currentKey);
     for (const next of hexNeighbours(current)) {
-      if (!isFreeHex(state, next, mover.id)) continue;
+      if (!isFreeHex(state, next, mover.id) || terrainAt(state, next) === 'saw') continue;
       const cost = nodes.get(currentKey)!.cost + stepCost(state, current, next, rules);
       const known = nodes.get(hexKey(next));
       if (known && known.cost <= cost) continue;

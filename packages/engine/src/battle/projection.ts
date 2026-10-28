@@ -25,6 +25,7 @@ function publicPart(state: BattleState): Omit<BattleState, 'pending' | 'seed'> {
   const copy: Partial<BattleState> = structuredClone(state);
   delete copy.seed;
   delete copy.pending;
+  if (copy.task) copy.task = { ...copy.task, answer: 0 };
   return copy as Omit<BattleState, 'pending' | 'seed'>;
 }
 

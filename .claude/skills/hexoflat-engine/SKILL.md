@@ -96,7 +96,8 @@ The old combat exception is being retired: the new battle runs entirely through 
 - **Prices are content** (`BATTLE_RULES` in `battle/battle-content.ts`); rules read them, never hardcode 3/7/20.
 - **Hidden information.** A strike's side (`fromHex`) is secret to the struck side. Enemy AI must decide from `projectBattleForViewer(state, 'enemies')` only, and anything sent to another player goes through `projectBattleForViewer` / `projectBattleEvent`. A test pins this (REQ-BTL-013).
 - **Randomness** only via `deriveStream(seed, 'battle:<id>:<purpose>:<n>')` (initiative today).
-- **No clock.** Timers live in the web; the engine gets times as command data (timed tasks, B2).
+- **No clock.** Every `BATTLE` command carries `atMs` from the web. A timed task (`battle/timed-task.ts`) stores `deadlineMs`; an answer after it counts as wrong, and the web sends `task-timeout` itself. While `state.task` is open every other action (and the enemy turn) is `TASK_OPEN`; the answer is hidden in the projection.
+- **Displacement** (push, pull, oil slide, ledge fall, saw) is one module, `battle/displacement.ts` (`resolveDisplacement`). Heroes open a task first (`displace-actions.ts`), enemies resolve at once. Hazard on entry lives in `battle/hazard.ts`; anything that can kill the active creature mid-action calls `endTurnIfActiveFell`.
 - `startBattle(setup)` builds a battle from a ready `BattleSetup`; the `START_BATTLE` command arrives with encounters (B4/B6), which compute the setup from content.
 - Tests are named by requirement id (`REQ-BTL-0xx`); fixtures in `battle/battle-test-setup.ts` (`battleWith`, `giveTurn`, `heroDoes`, `enemyTurn`).
 

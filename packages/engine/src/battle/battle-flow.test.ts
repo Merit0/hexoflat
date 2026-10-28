@@ -102,7 +102,10 @@ describe('REQ-BTL-014 end of battle', () => {
     const state: HexEngineState = { map, heroes: {}, knowledge, battle: duel() };
     applyCommand(
       state,
-      { type: 'BATTLE', payload: { kind: 'hero', heroId: 'hero', action: { kind: 'end-turn' } } },
+      {
+        type: 'BATTLE',
+        payload: { kind: 'hero', heroId: 'hero', atMs: 0, action: { kind: 'end-turn' } },
+      },
       createContext(),
     );
     expect(state.knowledge).toBe(knowledge);
@@ -113,7 +116,7 @@ describe('REQ-BTL-014 end of battle', () => {
   it('says there is no battle when none is running', () => {
     const result = applyBattleCommand(undefined, {
       type: 'BATTLE',
-      payload: { kind: 'run-enemy-turn' },
+      payload: { kind: 'run-enemy-turn', atMs: 0 },
     });
     expect(rejectionOf(result.events)).toBe('NO_BATTLE');
   });

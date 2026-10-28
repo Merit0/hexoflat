@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const axialSchema = z.object({ q: z.number().int(), r: z.number().int() });
 export type BattleHex = z.infer<typeof axialSchema>;
 
-export const BATTLE_TERRAINS = ['floor', 'wall', 'rubble', 'ledge'] as const;
+export const BATTLE_TERRAINS = ['floor', 'wall', 'rubble', 'ledge', 'oil', 'saw'] as const;
 export const battleTerrainSchema = z.enum(BATTLE_TERRAINS);
 export type BattleTerrain = z.infer<typeof battleTerrainSchema>;
 
@@ -52,6 +52,32 @@ export const undoStepSchema = z.object({
 });
 export type UndoStep = z.infer<typeof undoStepSchema>;
 
+export const boulderSchema = z.object({ id: z.string().min(1), pos: axialSchema });
+export type Boulder = z.infer<typeof boulderSchema>;
+
+export const TASK_KINDS = ['dodge', 'saw', 'push', 'pull'] as const;
+export const taskKindSchema = z.enum(TASK_KINDS);
+export type TaskKind = z.infer<typeof taskKindSchema>;
+
+export const battleTaskSchema = z.object({
+  id: z.string().min(1),
+  kind: taskKindSchema,
+  creatureId: z.string().min(1),
+  question: z.object({
+    operation: z.enum(['multiply', 'divide']),
+    lhs: z.number().int(),
+    rhs: z.number().int(),
+  }),
+  options: z.array(z.number().int()).length(4),
+  answer: z.number().int(),
+  issuedAtMs: z.number().int().min(0),
+  deadlineMs: z.number().int().min(0),
+  targetId: z.string().optional(),
+  backHex: axialSchema.optional(),
+  pusherHex: axialSchema.optional(),
+});
+export type BattleTask = z.infer<typeof battleTaskSchema>;
+
 export const BATTLE_PHASES = ['defend', 'act', 'ended'] as const;
 export const battlePhaseSchema = z.enum(BATTLE_PHASES);
 export type BattlePhase = z.infer<typeof battlePhaseSchema>;
@@ -77,6 +103,9 @@ export const battleStateSchema = z.object({
   pending: z.array(pendingStrikeSchema),
   undo: z.array(undoStepSchema),
   strikeSeq: z.number().int().min(0),
+  boulders: z.array(boulderSchema).default([]),
+  task: battleTaskSchema.optional(),
+  taskSeq: z.number().int().min(0).default(0),
   outcome: battleOutcomeSchema.optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
@@ -86,5 +115,7 @@ export const battleSetupSchema = z.object({
   seed: z.string().min(1),
   board: z.record(z.string(), battleTerrainSchema),
   creatures: z.array(battleCreatureSchema).min(2),
+  boulders: z.array(boulderSchema).default([]),
 });
 export type BattleSetup = z.infer<typeof battleSetupSchema>;
+export type BattleSetupInput = z.input<typeof battleSetupSchema>;
