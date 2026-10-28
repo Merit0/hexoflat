@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   EChestType,
-  EEquipmentRarity,
+  ERarityKind,
   EHexCollision,
   EHexobjectGroup,
   EQUIP_SLOTS,
@@ -94,10 +94,15 @@ const resourceSchema = z.object({
   }),
 });
 
+const raritySchema = z.object({
+  kind: z.enum(ERarityKind),
+  boss: z.boolean().default(false),
+});
+
 const lootSchema = z.object({
   name: z.string(),
   amount: z.number().optional(),
-  rarity: z.enum(EEquipmentRarity).optional(),
+  rarity: raritySchema.optional(),
   traits: z.object({
     stackable: z.boolean().optional(),
     maxStack: z.number().optional(),
@@ -120,7 +125,7 @@ const toolSchema = z.object({
   durabilityMax: z.number(),
   attackMultiplier: z.number().optional(),
   defense: z.number().optional(),
-  rarity: z.enum(EEquipmentRarity).optional(),
+  rarity: raritySchema.optional(),
   capabilities: z.object({
     canCut: z.boolean().optional(),
     canMine: z.boolean().optional(),
@@ -152,7 +157,7 @@ const equipmentSchema = z.object({
   defense: z.number().optional(),
   shields: z.number().int().min(0).max(HERO_SHIELD_SLOTS).optional(),
   hearts: z.number().int().min(0).max(MAX_EQUIPMENT_HEARTS).optional(),
-  rarity: z.enum(EEquipmentRarity).optional(),
+  rarity: raritySchema.optional(),
   capabilities: z
     .object({
       canAttack: z.boolean().optional(),

@@ -1,11 +1,8 @@
-import {
-  EEquipmentRarity,
-  EHexobjectGroup,
-  type THexobjectPrototype,
-} from '../abstraction/hexobject-abstraction';
+import { EHexobjectGroup, type THexobjectPrototype } from '../abstraction/hexobject-abstraction';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { assertNever } from '../utils/assert-never';
 import { CONTENT } from './content-map';
+import { DEFAULT_RARITY } from './rarity-rules';
 import type { IHexobjectMeta, ObjectTag, TContentDefinition } from './content-schema';
 
 export function getPrototype(key: THexobjectKey): THexobjectPrototype {
@@ -33,7 +30,7 @@ export function getPrototype(key: THexobjectKey): THexobjectPrototype {
       return {
         ...base,
         groupType: content.groupType,
-        tool: { ...content.tool, rarity: content.tool.rarity ?? EEquipmentRarity.COMMON },
+        tool: { ...content.tool, rarity: content.tool.rarity ?? DEFAULT_RARITY },
       };
     case EHexobjectGroup.CONSTRUCTION:
       return { ...base, groupType: content.groupType, construction: content.construction };
@@ -43,7 +40,7 @@ export function getPrototype(key: THexobjectKey): THexobjectPrototype {
         groupType: content.groupType,
         equipment: {
           ...content.equipment,
-          rarity: content.equipment.rarity ?? EEquipmentRarity.COMMON,
+          rarity: content.equipment.rarity ?? DEFAULT_RARITY,
         },
         weapon: content.weapon,
       };

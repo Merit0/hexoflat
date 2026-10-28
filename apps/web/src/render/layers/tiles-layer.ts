@@ -8,7 +8,7 @@ import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/r
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { terrainLook } from '@/render/terrain-look';
 import { hiddenTileLook, type FogLook } from '@/render/fog-look';
-import { getObjectRarity, RARITY_FRAME_URLS } from '@/render/rarity';
+import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 import type { useCombatStore } from '@/stores/combat-store';
 
@@ -95,7 +95,7 @@ function constructionLockLabel(
 }
 
 function getGearRarity(tile: IHexTile) {
-  return tile.hexobject ? getObjectRarity(tile.hexobject) : null;
+  return tile.hexobject ? getObjectRarityTone(tile.hexobject) : null;
 }
 
 function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): string | null {

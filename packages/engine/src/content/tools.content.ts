@@ -1,8 +1,4 @@
-import {
-  EEquipmentRarity,
-  EHexCollision,
-  EHexobjectGroup,
-} from '../abstraction/hexobject-abstraction';
+import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
 
@@ -24,6 +20,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
       durability: 100,
       durabilityMax: 100,
       attackMultiplier: 1,
+      rarity: { kind: ERarityKind.IDOL, boss: false },
       capabilities: { canCut: true, canAttack: true },
       traits: { weightKG: 1 },
     },
@@ -43,6 +40,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
       durability: 100,
       durabilityMax: 100,
       attackMultiplier: 1,
+      rarity: { kind: ERarityKind.IDOL, boss: false },
       capabilities: { canMine: true, canAttack: true },
       traits: { weightKG: 1.5 },
     },
@@ -62,7 +60,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
       durabilityMax: 1000000,
       attackMultiplier: 0.1,
       defense: 0.1,
-      rarity: EEquipmentRarity.BASIC,
+      rarity: { kind: ERarityKind.IDOL, boss: false },
       capabilities: {
         canPickup: true,
         canEnter: true,

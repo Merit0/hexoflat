@@ -6,14 +6,14 @@ import type { SkillProgress } from '@hexoflat/engine/skills/sacrifice-rules';
 import { getSkillBonuses, type SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { getPrototype } from '@hexoflat/engine';
-import type { EEquipmentRarity } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useCombatStore } from '@/stores/combat-store';
-import { getObjectRarity } from '@/render/rarity';
+import { getObjectRarityTone } from '@/render/rarity';
 import { SHIELD_SLOTS } from '@/constants/shield-slots';
 import { buildSkillTreeView, type SkillTreeView } from './skill-tree-view';
 
@@ -26,7 +26,7 @@ export type HeroStatId = 'attack' | 'defense' | 'load' | 'victories';
 
 export interface HandItem {
   titleKey: string;
-  rarity: EEquipmentRarity | null;
+  rarity: TRarityTone | null;
   willCost: number | null;
 }
 
@@ -137,7 +137,7 @@ function toHandItem(key: THexobjectKey, skills: SkillRanks): HandItem {
   const view = resolveInventoryView(key);
   return {
     titleKey: view.title,
-    rarity: getObjectRarity(getPrototype(key)),
+    rarity: getObjectRarityTone(getPrototype(key)),
     willCost: resolveItemTooltip(key, { skills }).use?.will ?? null,
   };
 }

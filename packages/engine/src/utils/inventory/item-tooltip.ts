@@ -1,10 +1,11 @@
 import {
-  EEquipmentRarity,
   EHexobjectGroup,
+  type IItemRarity,
   type THexobjectPrototype,
   type TEquipSlot,
 } from '../../abstraction/hexobject-abstraction';
 import { getMeta, getPrototype } from '../../content';
+import { DEFAULT_RARITY, rarityTone, type TRarityTone } from '../../content/rarity-rules';
 import { getShieldPoints } from '../../combat/shield-points';
 import { getHeartPoints } from '../../combat/heart-points';
 import {
@@ -55,7 +56,8 @@ export interface ItemTooltipView {
   subtitle?: string;
   description?: string;
   group: EHexobjectGroup;
-  rarity: EEquipmentRarity;
+  rarity: IItemRarity;
+  rarityTone: TRarityTone;
   equipSlot?: TEquipSlot;
   equipped: boolean;
   headline?: TooltipHeadline;
@@ -84,16 +86,16 @@ const CAPABILITY_BY_FLAG: Array<[keyof ToolCapabilities, TooltipCapability]> = [
   ['canBlock', 'block'],
 ];
 
-function rarityOf(proto: THexobjectPrototype): EEquipmentRarity {
+function rarityOf(proto: THexobjectPrototype): IItemRarity {
   switch (proto.groupType) {
     case EHexobjectGroup.TOOL:
-      return proto.tool.rarity ?? EEquipmentRarity.COMMON;
+      return proto.tool.rarity ?? DEFAULT_RARITY;
     case EHexobjectGroup.EQUIPMENT:
-      return proto.equipment.rarity ?? EEquipmentRarity.COMMON;
+      return proto.equipment.rarity ?? DEFAULT_RARITY;
     case EHexobjectGroup.LOOT:
-      return proto.loot.rarity ?? EEquipmentRarity.BASIC;
+      return proto.loot.rarity ?? DEFAULT_RARITY;
     default:
-      return EEquipmentRarity.BASIC;
+      return DEFAULT_RARITY;
   }
 }
 
@@ -159,6 +161,7 @@ export function resolveItemTooltip(
   const view = resolveInventoryView(key);
   const meta = getMeta(key);
 
+  const rarity = rarityOf(proto);
   const headline = headlineOf(proto);
   if (headline && options.compareWith && options.compareWith !== key) {
     headline.comparison = compareHeadlines(headline, headlineOf(getPrototype(options.compareWith)));
@@ -170,7 +173,8 @@ export function resolveItemTooltip(
     subtitle: meta?.subtitle,
     description: proto.description,
     group: view.group,
-    rarity: rarityOf(proto),
+    rarity,
+    rarityTone: rarityTone(rarity),
     equipSlot: view.equipSlot,
     equipped: options.equipped ?? false,
     headline,

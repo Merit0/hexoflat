@@ -51,6 +51,10 @@ Current commands, for reference: `START_HEX_ACTION`, `FINISH_PENDING_ACTIONS`, `
 
 Skills and portals follow the same recipe: pure rules in `src/skills/` and `src/portal/` (e.g. `resolvePortalCost`, `applySacrifice`, `getSacrificeOptions`), amounts and prices are computed by the engine from state and **never** read from the command payload. Additive `KnowledgeState` fields (like `skillProgress`) use `.default(...)` and need no `CONTENT_VERSION` bump.
 
+## Item rarity
+
+Rarity is `{ kind: ERarityKind, boss }` printed on tool/equipment/loot content. Read it through `DEFAULT_RARITY` and `rarityTone()` in `src/content/rarity-rules.ts` — never re-declare a fallback. Write rarity explicitly on every new item.
+
 ## Randomness
 
 `Math.random()` is banned in engine rules. Rules take an injected generator:

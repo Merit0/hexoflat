@@ -83,7 +83,7 @@ const SCAN_IGNORE_DIRS = new Set(['node_modules', 'dist']);
 // t('literal.key') / $t('literal.key') — single/double-quoted literal only;
 // dynamic calls like t(hexobject.creature.name) are content-key lookups,
 // already covered by collectContentLocaleKeys() reading CONTENT directly.
-const TRANSLATION_CALL_PATTERN = /\$?\bt\(\s*['"]([A-Za-z0-9_.]+)['"]/g;
+const TRANSLATION_CALL_PATTERN = /\$?\bt\(\s*['"]([A-Za-z0-9_.-]+)['"]/g;
 
 function listSourceFiles(dir: string): string[] {
   const entries = readdirSync(dir);

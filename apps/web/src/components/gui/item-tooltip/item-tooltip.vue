@@ -117,8 +117,8 @@ const props = defineProps<{ view: ItemTooltipView; square?: boolean }>();
 const { t } = useI18n();
 const labels = useItemTooltipLabels();
 
-const rarityColor = computed(() => RARITY_COLOR[props.view.rarity]);
-const rarityLabel = computed(() => labels.value.rarity[props.view.rarity]);
+const rarityColor = computed(() => RARITY_COLOR[props.view.rarityTone]);
+const rarityLabel = computed(() => labels.value.rarity[props.view.rarity.kind]);
 const typeLabel = computed(() =>
   props.view.equipSlot
     ? labels.value.slot[props.view.equipSlot]
