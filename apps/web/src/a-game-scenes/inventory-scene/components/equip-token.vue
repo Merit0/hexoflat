@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!isDragging"
-    class="equip-slot-token"
+    class="equip-slot-token cursor-grab"
     :data-testid="`equip-token-${item.id}`"
     :class="{
       'is-usable-tool': isUsableTool,
@@ -31,7 +31,7 @@
   <Teleport to="body">
     <div
       v-if="isDragging"
-      class="equip-slot-token drag-ghost"
+      class="equip-slot-token cursor-grab drag-ghost"
       :data-testid="`equip-token-${item.id}-drag-ghost`"
       :style="dragGhostStyle"
     >
@@ -138,7 +138,6 @@ function onPointerDown(e: PointerEvent) {
   align-items: center;
   justify-content: center;
   z-index: 2;
-  cursor: grab;
   user-select: none;
   touch-action: none;
   transform: rotate(var(--rot));
@@ -146,10 +145,6 @@ function onPointerDown(e: PointerEvent) {
   transition:
     transform 0.08s linear,
     filter 0.12s ease;
-}
-
-.equip-slot-token:active {
-  cursor: grabbing;
 }
 
 .equip-slot-token:hover {

@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!isDragging"
-    class="token"
+    class="token cursor-grab"
     :data-testid="`inventory-token-${item.id}`"
     :class="{
       'is-selected': isSelected,
@@ -22,7 +22,7 @@
   <Teleport to="body">
     <div
       v-if="isDragging"
-      class="token drag-ghost"
+      class="token cursor-grab drag-ghost"
       :data-testid="`inventory-token-${item.id}-drag-ghost`"
       :style="dragGhostStyle"
     >
@@ -100,17 +100,12 @@ function onClick() {
   height: 100%;
   transform: translate(-50%, -50%);
   transform-origin: center center;
-  cursor: grab;
   user-select: none;
   touch-action: none;
   will-change: transform;
   transition:
     transform 0.08s linear,
     filter 0.12s ease;
-}
-
-.token:active {
-  cursor: grabbing;
 }
 
 .token:hover,
