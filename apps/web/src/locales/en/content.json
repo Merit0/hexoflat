@@ -19,6 +19,84 @@
       "title": "Book of Will",
       "subtitle": "Source of Will",
       "description": "Focus your mind on the numbers and earn the Will to travel the world."
+    },
+    "battle": {
+      "hero": {
+        "title": "Hero",
+        "tableRule": "Three heart tokens. Holds one item in each hand. On your turn take 20 Will on the counter; spend it on steps, strikes, shields and items."
+      },
+      "skeleton-warrior": {
+        "title": "Skeleton Warrior",
+        "tableRule": "Three half-hearts, bone blade and bone buckler. Walks the shortest way to you keeping 7 Will, strikes once, then steps one hex away. Defends with one shield on the ring hex nearest you."
+      },
+      "skeleton-king": {
+        "title": "Skeleton King",
+        "tableRule": "Eight half-hearts, too heavy to push. Fights like a warrior, but if you stand between him and a saw he pushes you onto it instead of striking (once per turn)."
+      },
+      "skeleton-archer": {
+        "title": "Skeleton Archer",
+        "tableRule": "Two half-hearts, no shield. Shoots from 2 or 3 hexes; the arrow card covers the three hexes facing the archer. Never shoots point-blank: steps away first, and strikes in melee only when boxed in."
+      },
+      "sword": {
+        "title": "Sword",
+        "tableRule": "Weapon. A strike costs 7 Will and deals one heart. One strike per turn with this hand."
+      },
+      "dagger": {
+        "title": "Dagger",
+        "tableRule": "Weapon. A strike costs 7 Will and deals half a heart. One strike per turn with this hand."
+      },
+      "wooden-shield": {
+        "title": "Wooden Shield",
+        "tableRule": "Lets you place up to two shield tokens on the ring when defending, 4 Will each."
+      },
+      "health-potion": {
+        "title": "Health Potion",
+        "tableRule": "Use it from a hand for 3 Will: take back one heart, never above your maximum. Remove the card afterwards."
+      },
+      "bone-blade": {
+        "title": "Bone Blade",
+        "tableRule": "Enemy weapon. Deals half a heart."
+      },
+      "bone-buckler": {
+        "title": "Bone Buckler",
+        "tableRule": "Enemy shield. One shield token when defending."
+      },
+      "king-cleaver": {
+        "title": "King's Cleaver",
+        "tableRule": "Enemy weapon. Deals half a heart."
+      },
+      "king-shield": {
+        "title": "King's Shield",
+        "tableRule": "Enemy shield. Two shield tokens when defending."
+      },
+      "bone-bow": {
+        "title": "Bone Bow",
+        "tableRule": "Enemy weapon. Shoots 2 to 3 hexes for half a heart; not point-blank unless boxed in."
+      },
+      "wall": {
+        "title": "Wall",
+        "tableRule": "Nothing enters this hex."
+      },
+      "rubble": {
+        "title": "Rubble",
+        "tableRule": "A step onto rubble costs 5 Will instead of 3."
+      },
+      "ledge": {
+        "title": "Ledge",
+        "tableRule": "Climbing up costs 5 Will, stepping down 3. A strike from a ledge onto a lower hex deals half a heart more. Pushed off a ledge: lose half a heart."
+      },
+      "oil": {
+        "title": "Oil",
+        "tableRule": "Whatever is pushed onto oil slides one more hex the same way, if that hex is free."
+      },
+      "saw": {
+        "title": "Saw",
+        "tableRule": "Entering it starts the 5-second hourglass. Right answer: no harm. Wrong or late: lose half of your hearts, rounded up to a half. Then you are thrown back off the saw."
+      },
+      "boulder": {
+        "title": "Boulder",
+        "tableRule": "Blocks its hex. Weight 2: only a force of 2 can push or pull it."
+      }
     }
   }
 }

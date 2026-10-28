@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BATTLE_RULES } from './battle-content';
 import { battleWith, giveTurn, hero, heroDoes, skeleton } from './battle-test-setup';
 import { projectBattleEvent, projectBattleForViewer } from './projection';
-import { nextPlaceholderAction } from './ai/placeholder-enemy';
+import { nextEnemyAction } from './ai/enemy-ai';
 import { beginTurn } from './turn';
 
 function heroStruckSkeleton() {
@@ -40,8 +40,8 @@ describe('REQ-BTL-013 projection hides the side of strikes', () => {
       state.turnIndex = 0;
       beginTurn(state, 's1', BATTLE_RULES);
     }
-    const a = nextPlaceholderAction(projectBattleForViewer(battle, 'enemies'), BATTLE_RULES);
-    const b = nextPlaceholderAction(projectBattleForViewer(twin, 'enemies'), BATTLE_RULES);
+    const a = nextEnemyAction(projectBattleForViewer(battle, 'enemies'), BATTLE_RULES);
+    const b = nextEnemyAction(projectBattleForViewer(twin, 'enemies'), BATTLE_RULES);
     expect(a).toEqual(b);
   });
 });

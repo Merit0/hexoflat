@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { heroBotAction } from './battle-sim';
+import { projectBattleForViewer } from './projection';
 import { applyCommand, type HexEngineState } from '../commands/apply-command';
 import { createContext } from '../commands/command-test-context';
 import { deserializeState, serializeState } from '../commands/snapshot';
@@ -37,8 +39,8 @@ function play(battle: BattleState, script: (BattleAction | 'enemy')[]) {
   return { battle: state, events };
 }
 
-describe('placeholder enemy turn', () => {
-  it('walks up, strikes, steps away and ends the turn', () => {
+describe('enemy turn', () => {
+  it('walks up, strikes, hides the side and ends the turn', () => {
     const start = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]), [
       's1',
       'hero',
@@ -49,13 +51,17 @@ describe('placeholder enemy turn', () => {
       'CREATURE_MOVED',
       'STRIKE_DEALT',
       'CREATURE_MOVED',
+      'CREATURE_MOVED',
       'TURN_ENDED',
       'TURN_STARTED',
     ]);
     expect(battle.activeId).toBe('hero');
     expect(battle.phase).toBe('defend');
     expect(battle.pending).toHaveLength(1);
-    expect(battle.stance.s1).toBe(4);
+    expect(battle.stance.s1).toBe(1);
+    const guess = heroBotAction(projectBattleForViewer(battle, 'heroes'), BATTLE_RULES);
+    expect(guess).toMatchObject({ kind: 'place-shield' });
+    expect(guess).not.toMatchObject({ hex: battle.pending[0].fromHex });
   });
 
   it('refuses to run when a hero holds the turn', () => {

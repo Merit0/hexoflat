@@ -1,16 +1,54 @@
 import type { DomainEvent } from '../commands/types';
 import type { BattleRules } from './battle-content';
-import type { BattleCreature, BattleHand, BattleHex, BattleState } from './battle-state';
-import { creatureById, freeNeighbours, heightAt, isAlive } from './battle-board';
-import { isAdjacentHex } from './hex-battle-geom';
+import type {
+  BattleCreature,
+  BattleHand,
+  BattleHex,
+  BattleItem,
+  BattleState,
+} from './battle-state';
+import {
+  creatureById,
+  freeNeighbours,
+  heightAt,
+  isAlive,
+  terrainAt,
+  type BattleBoardView,
+} from './battle-board';
+import { archerArc, battleDistance, isAdjacentHex } from './hex-battle-geom';
 import { reject, spendTurnWill, type BattleRejection } from './battle-rejection';
 
 export function strikeRing(
   state: BattleState,
   target: BattleCreature,
-  attackerId: string,
+  attacker: BattleCreature,
 ): BattleHex[] {
-  return freeNeighbours(state, target.pos, attackerId);
+  if (isAdjacentHex(attacker.pos, target.pos))
+    return freeNeighbours(state, target.pos, attacker.id);
+  return archerArc(target.pos, attacker.pos).filter((hex) => terrainAt(state, hex) !== null);
+}
+
+function strikeSide(target: BattleCreature, attacker: BattleCreature): BattleHex {
+  if (isAdjacentHex(attacker.pos, target.pos)) return { ...attacker.pos };
+  return archerArc(target.pos, attacker.pos)[1];
+}
+
+export function isCornered(state: BattleBoardView, creature: BattleCreature): boolean {
+  return freeNeighbours(state, creature.pos).every((hex) => terrainAt(state, hex) === 'saw');
+}
+
+function reachRefusal(
+  state: BattleState,
+  attacker: BattleCreature,
+  target: BattleCreature,
+  weapon: BattleItem,
+): BattleRejection | null {
+  const distance = battleDistance(attacker.pos, target.pos);
+  if (!weapon.range) return distance === 1 ? null : reject('NOT_ADJACENT');
+  if (distance === 1) return isCornered(state, attacker) ? null : reject('TOO_CLOSE');
+  return distance >= weapon.range.min && distance <= weapon.range.max
+    ? null
+    : reject('OUT_OF_RANGE');
 }
 
 export function strikePower(
@@ -32,10 +70,10 @@ function validateStrike(
   hand: BattleHand,
 ): BattleRejection | null {
   if (!target || !isAlive(target) || target.side === attacker.side) return reject('NOT_AN_ENEMY');
-  if (!isAdjacentHex(attacker.pos, target.pos)) return reject('NOT_ADJACENT');
-  if (!attacker.hands[hand]?.power) return reject('NO_WEAPON_IN_HAND');
+  const weapon = attacker.hands[hand];
+  if (!weapon?.power) return reject('NO_WEAPON_IN_HAND');
   if (state.struckHands.includes(hand)) return reject('HAND_ALREADY_STRUCK');
-  return null;
+  return reachRefusal(state, attacker, target, weapon);
 }
 
 export function strike(
@@ -56,8 +94,8 @@ export function strike(
     id: `${state.id}:strike:${state.strikeSeq}`,
     attackerId: attacker.id,
     targetId: target!.id,
-    fromHex: { ...attacker.pos },
-    ring: strikeRing(state, target!, attacker.id),
+    fromHex: strikeSide(target!, attacker),
+    ring: strikeRing(state, target!, attacker),
     power: strikePower(state, attacker, target!, hand, rules),
   };
   state.pending.push(pending);

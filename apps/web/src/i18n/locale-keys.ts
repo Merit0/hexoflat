@@ -2,6 +2,11 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { CONTENT } from '@hexoflat/engine';
 import { SKILL_BRANCHES, SKILL_IDS } from '@hexoflat/engine/skills/skill-content';
+import {
+  BATTLE_CREATURES,
+  BATTLE_ITEMS,
+  BATTLE_OBJECTS,
+} from '@hexoflat/engine/battle/battle-catalogue';
 import ukUi from '@/locales/uk/ui.json';
 
 const CONTENT_KEY_PREFIX = 'content.';
@@ -41,6 +46,16 @@ export function collectContentLocaleKeys(): string[] {
         if (action.label.startsWith(CONTENT_KEY_PREFIX)) keys.add(action.label);
       }
     }
+  }
+
+  const battleDefs: { title: string; tableRule: string; id: string }[] = [
+    ...Object.values(BATTLE_CREATURES),
+    ...Object.values(BATTLE_ITEMS),
+    ...Object.values(BATTLE_OBJECTS),
+  ];
+  for (const def of battleDefs) {
+    keys.add(def.title);
+    keys.add(def.tableRule);
   }
 
   return [...keys].sort();

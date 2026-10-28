@@ -6,7 +6,7 @@ import { creatureById } from './battle-board';
 import { isRejection, reject, type BattleRejection } from './battle-rejection';
 import { performAction } from './perform-action';
 import { projectBattleForViewer } from './projection';
-import { nextPlaceholderAction } from './ai/placeholder-enemy';
+import { nextEnemyAction } from './ai/enemy-ai';
 
 const MAX_ENEMY_ACTIONS = 64;
 
@@ -50,7 +50,7 @@ function enemyTurn(battle: BattleState, atMs: number, rules: BattleRules): Battl
 
   const events: DomainEvent[] = [];
   for (let i = 0; i < MAX_ENEMY_ACTIONS && stillActing(next, enemyId); i++) {
-    const action = nextPlaceholderAction(projectBattleForViewer(next, 'enemies'), rules);
+    const action = nextEnemyAction(projectBattleForViewer(next, 'enemies'), rules);
     const result = performAction(next, actor, action, atMs, rules);
     events.push(
       ...(isRejection(result)

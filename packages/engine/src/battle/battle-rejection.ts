@@ -23,6 +23,9 @@ export const BATTLE_REJECTION_CODES = [
   'NO_SPACE',
   'TASK_OPEN',
   'NO_TASK',
+  'TOO_CLOSE',
+  'NO_SUCH_ITEM',
+  'NOT_USABLE',
 ] as const;
 export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 

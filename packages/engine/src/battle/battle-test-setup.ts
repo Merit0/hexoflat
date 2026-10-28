@@ -40,6 +40,7 @@ export function hero(pos: BattleHex, overrides: Partial<BattleCreature> = {}): B
       right: { key: 'sword', power: 2 },
       left: { key: 'wooden-shield', shieldCapacity: 2 },
     },
+    bag: [],
     ...overrides,
   };
 }
@@ -59,6 +60,7 @@ export function skeleton(
     weight: 1,
     force: 1,
     hands: { right: { key: 'bone-blade', power: 1 }, left: null },
+    bag: [],
     ...overrides,
   };
 }
