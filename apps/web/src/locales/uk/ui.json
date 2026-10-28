@@ -323,5 +323,11 @@
       "NO_PORTAL": "Тут немає порталу",
       "NOT_YOUR_PORTAL": "Цей портал належить іншому герою"
     }
+  },
+  "battle": {
+    "banner": {
+      "round": "{place} · Раунд {round}",
+      "willLeft": "{actor} · лишилось {will} Волі"
+    }
   }
 }

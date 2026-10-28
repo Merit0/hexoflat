@@ -13,24 +13,36 @@ import { checkReachable, checkRequired, checkShape } from './pieces/checks';
 import { formBlobs } from './pieces/blobs';
 import { objectsRules } from './pieces/rules';
 import { gatesEntry } from './pieces/entry';
+import {
+  checkTacticalBudget,
+  formHexagon,
+  objectsBattleCover,
+  reliefBattleFeatures,
+} from './pieces/battlefield';
 import type { CheckResult, Piece } from './types';
 
 export type PieceRegistry<TResult = void> = Record<string, Piece<unknown, TResult>>;
 
-export const FORM: PieceRegistry = { drawing: formDrawing, blobs: formBlobs };
+export const FORM: PieceRegistry = { drawing: formDrawing, blobs: formBlobs, hexagon: formHexagon };
 export const RELIEF: PieceRegistry = {
   drawing: reliefDrawing,
   lake: reliefLake,
   ridge: reliefRidge,
   sea: reliefSea,
+  'battle-features': reliefBattleFeatures,
 };
 export const BOUNDS: PieceRegistry = { void: boundsVoid, wall: boundsWall };
 export const GATES: PieceRegistry = { drawing: gatesDrawing, entry: gatesEntry, exits: gatesExits };
-export const OBJECTS: PieceRegistry = { drawing: objectsDrawing, rules: objectsRules };
+export const OBJECTS: PieceRegistry = {
+  drawing: objectsDrawing,
+  rules: objectsRules,
+  'battle-cover': objectsBattleCover,
+};
 export const CHECKS: PieceRegistry<CheckResult> = {
   reachable: checkReachable,
   shape: checkShape,
   required: checkRequired,
+  'tactical-budget': checkTacticalBudget,
 };
 
 export const STAGE_REGISTRIES: Record<StageName, PieceRegistry<unknown>> = {

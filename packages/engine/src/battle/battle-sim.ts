@@ -3,18 +3,10 @@ import type { RandomNumberGenerator } from '../utils/random';
 import { deriveStream } from '../utils/random-seeded';
 import { BATTLE_RULES, type BattleRules } from './battle-content';
 import type { BattleAction } from './battle-commands';
-import type {
-  BattleCreature,
-  BattleHand,
-  BattleHex,
-  BattleOutcome,
-  BattleState,
-  BattleTerrain,
-} from './battle-state';
+import type { BattleHand, BattleOutcome, BattleSetupInput, BattleState } from './battle-state';
 import { applyBattleCommand } from './apply-battle';
 import { startBattle } from './start-battle';
 import { shieldCapacity } from './defend';
-import { battleDistance, hexKey } from './hex-battle-geom';
 import { projectBattleForViewer, type BattleProjection } from './projection';
 import { activeSelf } from './ai/ai-common';
 import { meleeAction } from './ai/melee-ai';
@@ -46,43 +38,6 @@ export function heroBotAction(view: BattleProjection, rules: BattleRules): Battl
   return meleeAction(view, rules, false);
 }
 
-export function simArena(seed: string, radius = 4): Record<string, BattleTerrain> {
-  const rng = deriveStream(seed, 'sim:arena');
-  const board: Record<string, BattleTerrain> = {};
-  for (let q = -radius; q <= radius; q++) {
-    for (let r = -radius; r <= radius; r++) {
-      const hex = { q, r };
-      if (battleDistance(hex, { q: 0, r: 0 }) > radius) continue;
-      const roll = rng();
-      const middle = Math.abs(q) <= radius - 2;
-      board[hexKey(hex)] = !middle
-        ? 'floor'
-        : roll < 0.06
-          ? 'wall'
-          : roll < 0.14
-            ? 'rubble'
-            : roll < 0.18
-              ? 'ledge'
-              : roll < 0.2
-                ? 'oil'
-                : roll < 0.22
-                  ? 'saw'
-                  : 'floor';
-    }
-  }
-  return board;
-}
-
-export function spawnHexes(radius: number, side: 'heroes' | 'enemies', count: number): BattleHex[] {
-  const q = side === 'heroes' ? -radius : radius;
-  const column: BattleHex[] = [];
-  for (let r = -radius; r <= radius; r++) {
-    if (battleDistance({ q, r }, { q: 0, r: 0 }) <= radius) column.push({ q, r });
-  }
-  const height = (hex: BattleHex) => Math.abs(2 * hex.r + hex.q);
-  return column.sort((a, b) => height(a) - height(b) || a.r - b.r).slice(0, count);
-}
-
 function answerTask(battle: BattleState, rng: RandomNumberGenerator, accuracy: number) {
   const task = battle.task!;
   const right = rng() < accuracy;
@@ -109,14 +64,12 @@ function nextPayload(
 }
 
 export function simulateBattle(
-  seed: string,
-  creatures: BattleCreature[],
-  board: Record<string, BattleTerrain>,
+  setup: BattleSetupInput,
   overrides: Partial<SimOptions> = {},
 ): BattleOutcome | 'stalemate' {
   const options = { ...DEFAULT_SIM, ...overrides };
-  const rng = deriveStream(seed, 'sim:answers');
-  let battle = startBattle({ id: 'sim', seed, board, creatures }, options.rules).battle;
+  const rng = deriveStream(setup.seed, 'sim:answers');
+  let battle = startBattle(setup, options.rules).battle;
   for (let i = 0, atMs = 0; i < MAX_COMMANDS; i++, atMs += 1_000) {
     if (battle.outcome) return battle.outcome;
     if (battle.round > options.maxRounds) return 'stalemate';

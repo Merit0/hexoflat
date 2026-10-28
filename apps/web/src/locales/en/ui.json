@@ -318,5 +318,11 @@
       "NO_PORTAL": "No portal here",
       "NOT_YOUR_PORTAL": "This portal belongs to another hero"
     }
+  },
+  "battle": {
+    "banner": {
+      "round": "{place} · Round {round}",
+      "willLeft": "{actor} · {will} Will left"
+    }
   }
 }

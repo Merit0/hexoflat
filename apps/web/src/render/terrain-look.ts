@@ -5,6 +5,11 @@ export interface TerrainLook {
   sprite: string | null;
 }
 
+const BATTLE_RELIEF_ON_MAP: TerrainLook = {
+  background: '/hex-assets/board-hexes/stone-hex.png',
+  sprite: null,
+};
+
 const TERRAIN_LOOKS: Partial<Record<TerrainId, TerrainLook>> = {
   mountain: {
     background: '/hex-assets/board-hexes/stone-hex.png',
@@ -14,6 +19,9 @@ const TERRAIN_LOOKS: Partial<Record<TerrainId, TerrainLook>> = {
     background: '/hex-assets/board-hexes/water-hex.png',
     sprite: null,
   },
+  ...Object.fromEntries(
+    (['rubble', 'ledge', 'oil', 'saw'] as const).map((id) => [id, BATTLE_RELIEF_ON_MAP]),
+  ),
 };
 
 export function terrainLook(terrain: TerrainId | undefined): TerrainLook | null {

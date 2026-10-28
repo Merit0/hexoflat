@@ -1,23 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { enemyCreature } from './battle-catalogue';
-import type { BattleCreature } from './battle-state';
+import { deployBattle } from '../encounters/battlefield-setup';
+import { battlefieldSeed, generateBattlefield } from './battlefield';
 import { hero } from './battle-test-setup';
-import { simArena, simulateBattle, spawnHexes } from './battle-sim';
+import { simulateBattle } from './battle-sim';
 
 const SEEDS = 500;
-const RADIUS = 4;
 
-function winRate(squad: string[], heroCount: number): number {
+function winRate(members: string[], heroCount: number): number {
   let wins = 0;
   for (let n = 0; n < SEEDS; n++) {
-    const seed = `balance-${n}`;
-    const heroSpots = spawnHexes(RADIUS, 'heroes', heroCount);
-    const enemySpots = spawnHexes(RADIUS, 'enemies', squad.length);
-    const creatures: BattleCreature[] = [
-      ...heroSpots.map((pos, i) => hero(pos, { id: `hero-${i}` })),
-      ...squad.map((kind, i) => enemyCreature(kind, `${kind}-${i}`, enemySpots[i])),
-    ];
-    if (simulateBattle(seed, creatures, simArena(seed, RADIUS)) === 'victory') wins++;
+    const { setup } = deployBattle({
+      battleId: 'sim',
+      field: generateBattlefield('crypt', battlefieldSeed(`balance-${n}`, 0)),
+      heroes: Array.from({ length: heroCount }, (_, i) =>
+        hero({ q: 0, r: 0 }, { id: `hero-${i}` }),
+      ),
+      members,
+      direction: { x: -1, y: 0 },
+      ambush: false,
+    });
+    if (simulateBattle(setup) === 'victory') wins++;
   }
   return wins / SEEDS;
 }

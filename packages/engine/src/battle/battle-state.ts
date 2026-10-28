@@ -109,6 +109,7 @@ export const battleStateSchema = z.object({
   boulders: z.array(boulderSchema).default([]),
   task: battleTaskSchema.optional(),
   taskSeq: z.number().int().min(0).default(0),
+  advantage: battleSideSchema.optional(),
   outcome: battleOutcomeSchema.optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
@@ -119,6 +120,7 @@ export const battleSetupSchema = z.object({
   board: z.record(z.string(), battleTerrainSchema),
   creatures: z.array(battleCreatureSchema).min(2),
   boulders: z.array(boulderSchema).default([]),
+  advantage: battleSideSchema.optional(),
 });
 export type BattleSetup = z.infer<typeof battleSetupSchema>;
 export type BattleSetupInput = z.input<typeof battleSetupSchema>;

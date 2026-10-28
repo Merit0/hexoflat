@@ -26,6 +26,10 @@ layers/
   camp-heal-layer.ts
 ```
 
+## The battle board (`render/battle/`)
+
+The battle board has its own seam, `render/battle/use-battle-board.ts`, separate from `use-hex-board.ts`: the dungeon map stays frozen in `world-map-store` during a battle (R-FIELD-5), and the battle board renders straight from the engine battle state. Layers: `layers/battle-board-layer.ts` (terrain drawn procedurally, pillars/boulders from the rock sprite, the saw spins on the ticker only while the layer is visible), `layers/battle-token-layer.ts`, `layers/battle-overlay-layer.ts`. Overlays come from the pure `battle-overlay-model.ts`, which reads only `projectBattleForViewer` (never the hidden strike side) and is unit-tested; colours live in `battle-look.ts`. Battle hexes are axial and reach pixels through `battleHexToOffset` + `calcHexPixelPosition`, so they share world units with the map. `/dev/battlefield` (dev build only) shows a generated field.
+
 ## The contract
 
 `useHexBoard(options)` takes reactive inputs (`ComputedRef`/`Ref`) and callbacks — never raw values. Adding a visual feature means:

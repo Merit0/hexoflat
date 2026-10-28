@@ -20,8 +20,32 @@ export function orderByDraws(draws: Record<string, number>): string[] {
   return Object.keys(draws).sort((a, b) => draws[b] - draws[a]);
 }
 
+export function drawWithAdvantage(
+  ids: string[],
+  favoured: ReadonlySet<string>,
+  rng: RandomNumberGenerator,
+): Record<string, number> {
+  const bag = ids.map((_, index) => index + 1);
+  const take = () => bag.splice(Math.floor(rng() * bag.length), 1)[0];
+  const draws: Record<string, number> = {};
+  for (const id of ids.filter((i) => favoured.has(i))) {
+    const pair = bag.length > 1 ? [take(), take()] : [take()];
+    draws[id] = Math.max(...pair);
+    if (pair.length > 1) bag.push(Math.min(...pair));
+  }
+  for (const id of ids.filter((i) => !favoured.has(i))) draws[id] = take();
+  return draws;
+}
+
+function favouredIds(state: BattleState): ReadonlySet<string> {
+  if (state.round !== 1 || !state.advantage) return new Set();
+  return new Set(state.creatures.filter((c) => c.side === state.advantage).map((c) => c.id));
+}
+
 export function rollRound(state: BattleState): { draws: Record<string, number>; order: string[] } {
   const ids = state.creatures.filter(isAlive).map((c) => c.id);
-  const draws = drawInitiative(ids, initiativeStream(state, state.round));
+  const favoured = favouredIds(state);
+  const rng = initiativeStream(state, state.round);
+  const draws = favoured.size ? drawWithAdvantage(ids, favoured, rng) : drawInitiative(ids, rng);
   return { draws, order: orderByDraws(draws) };
 }

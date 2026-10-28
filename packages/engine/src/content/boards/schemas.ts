@@ -28,6 +28,6 @@ export const StaticBoardDrawingSchema = z.object({
 });
 export type StaticBoardDrawing = z.infer<typeof StaticBoardDrawingSchema>;
 
-export const BOARD_BIOMES = ['CAVE'] as const;
+export const BOARD_BIOMES = ['CAVE', 'CRYPT'] as const;
 export const BiomeSchema = z.enum(BOARD_BIOMES);
 export type Biome = z.infer<typeof BiomeSchema>;
