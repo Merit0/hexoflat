@@ -21,6 +21,7 @@ export function createBattleOverlayLayer(
   deps: Omit<BattleLayerDeps, 'ticker'>,
 ): BattleOverlayLayer {
   const container = new Container();
+  container.eventMode = 'none';
   deps.worldContainer.addChild(container);
 
   function sync(model: BattleOverlayModel) {

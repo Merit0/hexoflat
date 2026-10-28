@@ -1,7 +1,7 @@
 import { Container, Graphics, Sprite, Text, type Ticker } from 'pixi.js';
 import type { BattleHex, BattleTerrain, Boulder } from '@hexoflat/engine/battle/battle-state';
 import { parseHexKey } from '@hexoflat/engine/battle/hex-battle-geom';
-import { buildHexPolygon } from '@/render/hex-geometry';
+import { buildHexPolygon, createHexHitArea } from '@/render/hex-geometry';
 import { getTexture } from '@/render/texture-cache';
 import {
   BATTLE_SPRITES,
@@ -14,6 +14,7 @@ export interface BattleLayerDeps {
   ticker: Ticker;
   tileSize: { w: number; h: number };
   positionOf(hex: BattleHex): { x: number; y: number };
+  onHexTap?: (hex: BattleHex) => void;
 }
 
 export interface BattleBoardSyncParams {
@@ -118,6 +119,11 @@ export function createBattleBoardLayer(deps: BattleLayerDeps): BattleBoardLayer 
       }
       const { x, y } = deps.positionOf(hex);
       tile.position.set(x, y);
+      if (deps.onHexTap) {
+        tile.eventMode = 'static';
+        tile.hitArea = createHexHitArea(w, h);
+        tile.on('pointertap', () => deps.onHexTap?.(hex));
+      }
       container.addChild(tile);
     }
     for (const boulder of boulders) {

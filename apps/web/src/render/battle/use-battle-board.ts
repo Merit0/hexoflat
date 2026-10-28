@@ -40,6 +40,7 @@ export interface UseBattleBoardOptions {
   scene: ComputedRef<BattleBoardScene>;
   overlay: ComputedRef<BattleOverlayModel>;
   onReady?: () => void;
+  onHexTap?: (hex: BattleHex) => void;
 }
 
 interface Layers {
@@ -79,7 +80,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     const scene = options.scene.value;
     layers.board.sync({ board: scene.board, boulders: scene.boulders });
     layers.overlay.sync(options.overlay.value);
-    layers.tokens.sync(scene.creatures, scene.activeId);
+    layers.tokens.sync(scene.creatures, scene.activeId, options.overlay.value.targets);
   }
 
   async function start(width: number, height: number) {
@@ -96,6 +97,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       ticker: app.app.ticker,
       tileSize: { w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT },
       positionOf,
+      onHexTap: options.onHexTap,
     };
     layers = {
       board: createBattleBoardLayer(deps),

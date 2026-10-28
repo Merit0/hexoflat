@@ -8,6 +8,7 @@ import {
   BATTLE_OBJECTS,
 } from '@hexoflat/engine/battle/battle-catalogue';
 import ukUi from '@/locales/uk/ui.json';
+import { battleLocaleKeys } from '@/composables/battle-hint';
 
 const CONTENT_KEY_PREFIX = 'content.';
 
@@ -138,5 +139,6 @@ export function collectUiTemplateKeys(): string[] {
   }
 
   for (const key of collectSkillTreeLocaleKeys()) keys.add(key);
+  for (const key of battleLocaleKeys()) keys.add(key);
   return [...keys].sort();
 }

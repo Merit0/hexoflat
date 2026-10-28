@@ -62,6 +62,14 @@ After extracting anything, verify the old call site actually imports it and the 
 - Shared presentation data used by both the tree and the item tooltip (icons, school colors) sits in `components/gui/icons/skill-presentation.ts`, not inside a scene folder, so `components/gui` never imports from `a-game-scenes`.
 - Texts looked up by id (`heroDetails.tree.node.<id>.*`) are invisible to the literal-`t('…')` scan; they are registered for the orphan-key test in `i18n/locale-keys.ts` (`collectSkillTreeLocaleKeys`). New id-driven keys need the same treatment.
 
+## Worked example: the battle tab (B5)
+
+- `stores/battle-store.ts` is the store contract in practice: it holds the battle (single-player, the web is authoritative), a `deploy` (setup + zones before START BATTLE), `localHeroIds`, the last hero batch (`lastHeroEvents`, for the hint line and defend results) and an event `queue` for animations (`takeEvents()`). Its actions only send `BATTLE` commands (`act`, `actAll` for multi-step paths, `runEnemyTurn`) or `startBattle`; no rule, no timer, no other store. `projection` is always `projectBattleForViewer(battle, 'heroes')`, and queued events go through `projectBattleEvent`, so the hidden strike side never reaches the UI.
+- The view-model is pure and unit-tested: `composables/battle-view.ts` (`buildBattleView` — rows, initiative chips, deploy card, task, board scene + overlay + banner), `battle-hero-card.ts` (DEFEND / ACT / WAIT / FALLEN / victory / defeat card, hands, actions), `battle-hint.ts` (events → i18n message descriptors `{ key, params }`), `battle-board-tap.ts` (board tap → `BattleAction[]` by phase and mode, reading prices from engine `cheapestPaths`/`stepCost`). `use-battle-view.ts` wires them to the store and i18n and owns the UI-only state (mode, chosen hand, swap hand) as a module-level `reactive`, so the tab and the board share it.
+- Message params whose value starts with `battle.` or `content.` are translated before formatting (`useBattleText().text`). Id-driven battle keys (tags, roles, hands, actions, hints, rejections, task titles, legend) are registered for the orphan-key test through `battleLocaleKeys()` in `battle-hint.ts`; a new dynamic key goes there.
+- Timing is outside the store: `services/battle/use-battle-enemy-driver.ts` runs the enemy turn after `ENEMY_TURN_DELAY_MS` (mounted in `hero-board-panel.vue` and on `/dev/battlefield`), and `battle-timed-task.vue` sends `task-timeout` when its line runs out.
+- The BATTLE tab exists only while `battleStore.isOpen`; opening switches the panel to it, closing goes back to HERO.
+
 ## Other conventions
 
 - Scenes live in `apps/web/src/a-game-scenes/<scene>/components/`. Shared UI in `apps/web/src/components/`.

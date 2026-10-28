@@ -38,3 +38,5 @@ export const BATTLE_OVERLAY_COLORS = {
 export type BattleOverlayTone = keyof typeof BATTLE_OVERLAY_COLORS;
 
 export const SAW_SPIN_RADIANS_PER_SECOND = Math.PI * 2;
+
+export const BATTLE_LEGEND_ITEMS = ['rubble', 'ledge', 'oil', 'saw', 'boulder'] as const;

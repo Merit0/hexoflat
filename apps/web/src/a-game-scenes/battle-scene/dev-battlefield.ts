@@ -1,20 +1,14 @@
-import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { battlefieldSeed, generateBattlefield } from '@hexoflat/engine/battle/battlefield';
-import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
-import { startBattle } from '@hexoflat/engine/battle/start-battle';
 import { deployBattle, type Vector } from '@hexoflat/engine/encounters/battlefield-setup';
-import type { BattleBannerProps } from '@/render/battle/battle-banner';
-import {
-  battleOverlayModel,
-  type BattleOverlayModel,
-  type BattleTargetMode,
-} from '@/render/battle/battle-overlay-model';
-import type { BattleBoardScene } from '@/render/battle/use-battle-board';
+import type { BattleDeploy } from '@/stores/battle-store';
+
+const WEST: Vector = { x: -1, y: 0 };
+const BONE_COURT = ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior', 'skeleton-archer'];
 
 export const DEV_APPROACHES: Record<string, Vector> = {
-  west: { x: -1, y: 0 },
+  west: WEST,
   east: { x: 1, y: 0 },
   'north-west': { x: -0.5, y: -0.866 },
   'north-east': { x: 0.5, y: -0.866 },
@@ -22,7 +16,26 @@ export const DEV_APPROACHES: Record<string, Vector> = {
   'south-east': { x: 0.5, y: 0.866 },
 };
 
-const DEV_SQUAD = ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior', 'skeleton-archer'];
+const APPROACH_LABELS: Record<string, string> = {
+  west: 'W',
+  east: 'E',
+  'north-west': 'NW',
+  'north-east': 'NE',
+  'south-west': 'SW',
+  'south-east': 'SE',
+};
+
+export const DEV_SQUADS: Record<string, string[]> = {
+  'skeleton-pack': ['skeleton-warrior', 'skeleton-warrior', 'skeleton-archer'],
+  'bone-court': BONE_COURT,
+  'lone-skeleton': ['skeleton-warrior'],
+  'archer-watch': ['skeleton-archer', 'skeleton-archer'],
+};
+
+const DEV_HEROES = [
+  { id: 'merito', name: 'Merito' },
+  { id: 'lina', name: 'Lina' },
+];
 
 export function devBattleHero(id: string): BattleCreature {
   return {
@@ -35,7 +48,7 @@ export function devBattleHero(id: string): BattleCreature {
     weight: 1,
     force: 1,
     hands: { right: battleItem('sword'), left: battleItem('wooden-shield') },
-    bag: [],
+    bag: [battleItem('dagger'), battleItem('health-potion')],
   };
 }
 
@@ -43,45 +56,36 @@ export interface DevBattlefieldOptions {
   seed: string;
   approach: string;
   ambush: boolean;
-  showZones: boolean;
-  mode: BattleTargetMode | null;
+  squad: string;
+  withFriend: boolean;
 }
 
-export interface DevBattlefieldView {
-  scene: BattleBoardScene;
-  overlay: BattleOverlayModel;
-  banner: BattleBannerProps;
+export interface DevBattle {
+  deploy: BattleDeploy;
+  heroIds: string[];
 }
 
-export function buildDevBattlefield(options: DevBattlefieldOptions): DevBattlefieldView {
+export function buildDevBattle(options: DevBattlefieldOptions): DevBattle {
   const field = generateBattlefield('crypt', battlefieldSeed(options.seed, 0));
+  const heroes = DEV_HEROES.slice(0, options.withFriend ? 2 : 1);
   const { setup, zones } = deployBattle({
     battleId: 'dev',
     field,
-    heroes: [devBattleHero('merito')],
-    members: DEV_SQUAD,
-    direction: DEV_APPROACHES[options.approach] ?? DEV_APPROACHES.west,
+    heroes: heroes.map((h) => devBattleHero(h.id)),
+    members: DEV_SQUADS[options.squad] ?? BONE_COURT,
+    direction: DEV_APPROACHES[options.approach] ?? WEST,
     ambush: options.ambush,
   });
-  const battle = startBattle(setup).battle;
-  const projection = projectBattleForViewer(battle, 'heroes');
   return {
-    scene: {
+    heroIds: heroes.map((h) => h.id),
+    deploy: {
+      setup,
+      zones,
       biome: field.biome,
-      board: field.board,
-      boulders: field.boulders,
-      creatures: battle.creatures,
-      activeId: battle.activeId,
-    },
-    overlay: battleOverlayModel(
-      { projection, zones: options.showZones ? zones : null, mode: options.mode, results: [] },
-      BATTLE_RULES,
-    ),
-    banner: {
       place: 'Bone Crypt',
-      round: battle.round,
-      actor: battle.activeId,
-      will: battle.turnWill,
+      approach: APPROACH_LABELS[options.approach] ?? 'W',
+      ambush: options.ambush,
+      names: Object.fromEntries(heroes.map((h) => [h.id, h.name])),
     },
   };
 }

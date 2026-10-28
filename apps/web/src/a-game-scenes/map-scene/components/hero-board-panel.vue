@@ -20,9 +20,9 @@
       <knowledge-board v-if="knowledgePanelMode" />
       <div v-else class="hero-board-body">
         <header class="board-top">
-          <div class="tabs">
+          <div class="tabs" :style="{ '--tab-count': tabs.length }">
             <button
-              v-for="tab in TABS"
+              v-for="tab in tabs"
               :key="tab.id"
               class="tab"
               :class="{ 'is-active': activeTab === tab.id, 'is-disabled': tab.disabled }"
@@ -31,12 +31,21 @@
               type="button"
               @click="activeTab = tab.id"
             >
-              {{ tab.label }}
+              <template v-if="tab.id === 'battle'">
+                <svg class="tab__swords" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 5 L19 19 M19 5 L5 19 M5 5 V9 M5 5 H9 M19 5 V9 M19 5 H15" />
+                </svg>
+                {{ t('battle.tab') }}
+                <span class="tab__dot"></span>
+              </template>
+              <template v-else>{{ tab.label }}</template>
             </button>
           </div>
         </header>
 
-        <hero-details-board v-if="activeTab === 'hero'" />
+        <battle-tab v-if="activeTab === 'battle' && battleStore.isOpen" />
+
+        <hero-details-board v-else-if="activeTab === 'hero'" />
 
         <hero-path-board v-else-if="activeTab === 'path'" />
 
@@ -107,8 +116,11 @@ import HeroPathBoard from '@/a-game-scenes/map-scene/components/hero-details/her
 import HeroDetailsBoard from '@/a-game-scenes/map-scene/components/hero-details/hero-details-board.vue';
 import ItemTooltipLayer from '@/components/gui/item-tooltip/item-tooltip-layer.vue';
 import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
+import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vue';
+import { useBattleStore } from '@/stores/battle-store';
+import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
 
-type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
+type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events' | 'battle';
 
 const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
   { id: 'hero', label: 'Hero' },
@@ -118,6 +130,20 @@ const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
 ];
 
 const activeTab = ref<HeroBoardTab>('hero');
+const battleStore = useBattleStore();
+const tabs = computed(() =>
+  battleStore.isOpen ? [...TABS, { id: 'battle' as const, label: 'Battle' }] : TABS,
+);
+
+watch(
+  () => battleStore.isOpen,
+  (open) => {
+    if (open) activeTab.value = 'battle';
+    else if (activeTab.value === 'battle') activeTab.value = 'hero';
+  },
+  { immediate: true },
+);
+useBattleEnemyDriver();
 
 const { t } = useI18n();
 const heroStore = useHeroStore();
@@ -241,7 +267,7 @@ watch(
 .tabs {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--tab-count), 1fr);
   gap: 0;
 
   padding: 0;
@@ -270,6 +296,27 @@ watch(
 .tab.is-active {
   background: rgba(255, 0, 120, 0.3);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.tab__swords {
+  width: 13px;
+  height: 13px;
+  margin-right: 4px;
+  vertical-align: -2px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.tab__dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 5px;
+  border-radius: 999px;
+  background: #e0503c;
+  vertical-align: 2px;
 }
 
 .tab.is-disabled {

@@ -12,67 +12,80 @@
         </select>
       </label>
       <label>
+        Squad
+        <select v-model="squad" data-testid="dev-battlefield-squad">
+          <option v-for="(_, name) in SQUADS" :key="name" :value="name">{{ name }}</option>
+        </select>
+      </label>
+      <label>
         <input v-model="ambush" data-testid="dev-battlefield-ambush" type="checkbox" />
         Ambush
       </label>
       <label>
-        <input v-model="showZones" data-testid="dev-battlefield-zones" type="checkbox" />
-        Deployment zones
+        <input v-model="withFriend" data-testid="dev-battlefield-friend" type="checkbox" />
+        Friend (hot seat)
       </label>
-      <label>
-        Overlay
-        <select v-model="mode" data-testid="dev-battlefield-mode">
-          <option value="">none</option>
-          <option value="move">move</option>
-          <option value="strike">strike</option>
-          <option value="push">push</option>
-          <option value="pull">pull</option>
-        </select>
-      </label>
+      <button type="button" data-testid="dev-battlefield-restart" @click="prepare">
+        New battle
+      </button>
       <span v-if="error" class="dev-battlefield__error">{{ error }}</span>
     </form>
-    <battle-board
-      v-if="view"
-      class="dev-battlefield__board"
-      :scene="view.scene"
-      :overlay="view.overlay"
-      :banner="view.banner"
-    />
+    <div class="dev-battlefield__play">
+      <battle-board-area v-if="store.isOpen" class="dev-battlefield__board" />
+      <aside class="dev-battlefield__panel">
+        <battle-tab v-if="store.isOpen" />
+      </aside>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import BattleBoard from '@/components/battle/battle-board.vue';
-import type { BattleTargetMode } from '@/render/battle/battle-overlay-model';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   DEV_APPROACHES as APPROACHES,
-  buildDevBattlefield,
+  DEV_SQUADS as SQUADS,
+  buildDevBattle,
 } from '@/a-game-scenes/battle-scene/dev-battlefield';
+import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
+import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vue';
+import { resetBattleUi } from '@/composables/use-battle-view';
+import { useBattleStore } from '@/stores/battle-store';
+import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
+
+const store = useBattleStore();
+useBattleEnemyDriver();
 
 const seed = ref('bone-crypt-1');
 const approach = ref('west');
+const squad = ref('bone-court');
 const ambush = ref(false);
-const showZones = ref(true);
-const mode = ref<BattleTargetMode | ''>('');
+const withFriend = ref(false);
+const error = ref('');
 
-const built = computed(() => {
+function prepare() {
   try {
-    const view = buildDevBattlefield({
+    const { deploy, heroIds } = buildDevBattle({
       seed: seed.value,
       approach: approach.value,
       ambush: ambush.value,
-      showZones: showZones.value,
-      mode: mode.value || null,
+      squad: squad.value,
+      withFriend: withFriend.value,
     });
-    return { view, error: '' };
+    resetBattleUi();
+    store.prepare(deploy, heroIds);
+    error.value = '';
   } catch (failure) {
-    return { view: null, error: failure instanceof Error ? failure.message : String(failure) };
+    store.close();
+    error.value = failure instanceof Error ? failure.message : String(failure);
   }
+}
+
+watch([seed, approach, squad, ambush, withFriend], () => {
+  if (!store.battle) prepare();
 });
 
-const view = computed(() => built.value.view);
-const error = computed(() => built.value.error);
+onMounted(prepare);
+onBeforeUnmount(() => store.close());
 </script>
 
 <style scoped>
@@ -87,6 +100,7 @@ const error = computed(() => built.value.error);
 .dev-battlefield__controls {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 16px;
   padding: 10px 16px;
   font-size: 13px;
@@ -96,8 +110,22 @@ const error = computed(() => built.value.error);
   color: #e0503c;
 }
 
-.dev-battlefield__board {
+.dev-battlefield__play {
   flex: 1;
   min-height: 0;
+  display: flex;
+}
+
+.dev-battlefield__board {
+  flex: 1;
+  min-width: 0;
+}
+
+.dev-battlefield__panel {
+  flex: none;
+  width: 560px;
+  max-width: 50vw;
+  min-height: 0;
+  border-left: 1px solid #36424a;
 }
 </style>

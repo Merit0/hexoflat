@@ -2,11 +2,13 @@
   <div ref="pane" class="battle-board" data-testid="battle-board" :data-ready="ready">
     <canvas ref="canvas" class="battle-board__canvas" />
     <battle-banner v-if="banner" class="battle-board__banner" v-bind="banner" />
+    <slot />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
 import BattleBanner from '@/components/battle/battle-banner.vue';
 import type { BattleBannerProps } from '@/render/battle/battle-banner';
 import { useBattleBoard, type BattleBoardScene } from '@/render/battle/use-battle-board';
@@ -17,6 +19,8 @@ const props = defineProps<{
   overlay: BattleOverlayModel;
   banner?: BattleBannerProps | null;
 }>();
+
+const emit = defineEmits<{ 'hex-tap': [hex: BattleHex] }>();
 
 const pane = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -30,6 +34,7 @@ useBattleBoard({
   onReady: () => {
     ready.value = true;
   },
+  onHexTap: (hex) => emit('hex-tap', hex),
 });
 </script>
 

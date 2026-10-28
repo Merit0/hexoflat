@@ -41,6 +41,7 @@ export interface BattleOverlayInput {
 export interface BattleOverlayModel {
   marks: BattleMark[];
   badges: BattleBadge[];
+  targets: string[];
 }
 
 function activeHero(view: BattleProjection): BattleCreature | null {
@@ -74,11 +75,11 @@ function movementMarks(
   return marks;
 }
 
-function targetMarks(
+function targetCreatures(
   view: BattleProjection,
   self: BattleCreature,
   mode: BattleTargetMode,
-): BattleMark[] {
+): BattleCreature[] {
   const foes = livingOnSide(view, self.side === 'heroes' ? 'enemies' : 'heroes');
   const range = self.hands.right?.range ?? self.hands.left?.range;
   const reachable = (foe: BattleCreature) => {
@@ -87,7 +88,7 @@ function targetMarks(
     if (mode === 'push') return d === 1 && self.force >= foe.weight;
     return range ? d >= range.min && d <= range.max : isAdjacentHex(self.pos, foe.pos);
   };
-  return foes.filter(reachable).map((foe) => ({ hex: foe.pos, tone: 'target' as const }));
+  return foes.filter(reachable);
 }
 
 function zoneMarks(zones: DeploymentZones): BattleMark[] {
@@ -120,14 +121,15 @@ export function battleOverlayModel(
 ): BattleOverlayModel {
   const marks: BattleMark[] = input.zones ? zoneMarks(input.zones) : [];
   const view = input.projection;
-  if (!view) return { marks, badges: [] };
+  if (!view) return { marks, badges: [], targets: [] };
 
   marks.push(...strikeMarks(view));
   marks.push(...view.placedShields.map((hex) => ({ hex, tone: 'shield' as const })));
   const hero = activeHero(view);
   if (hero && input.mode === 'move') marks.push(...movementMarks(view, hero, rules));
-  if (hero && input.mode && input.mode !== 'move')
-    marks.push(...targetMarks(view, hero, input.mode));
+  const targets =
+    hero && input.mode && input.mode !== 'move' ? targetCreatures(view, hero, input.mode) : [];
+  marks.push(...targets.map((foe) => ({ hex: foe.pos, tone: 'target' as const })));
   marks.push(...input.results.map((r) => ({ hex: r.fromHex, tone: r.outcome })));
-  return { marks, badges: pendingBadges(view) };
+  return { marks, badges: pendingBadges(view), targets: targets.map((foe) => foe.id) };
 }

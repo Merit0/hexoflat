@@ -5,11 +5,12 @@ import { BATTLE_SPRITES } from '@/render/battle/battle-look';
 import type { BattleLayerDeps } from './battle-board-layer';
 
 export interface BattleTokenLayer {
-  sync(creatures: BattleCreature[], activeId: string | null): void;
+  sync(creatures: BattleCreature[], activeId: string | null, targets?: readonly string[]): void;
   destroy(): void;
 }
 
 const SIDE_RING = { heroes: 0x4a8be0, enemies: 0xb0306a } as const;
+const TARGET_GLOW = 0xe0a93f;
 
 function hearts(creature: BattleCreature): string {
   return `${creature.hp / 2}/${creature.maxHp / 2}`;
@@ -17,9 +18,14 @@ function hearts(creature: BattleCreature): string {
 
 export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): BattleTokenLayer {
   const container = new Container();
+  container.eventMode = 'none';
   deps.worldContainer.addChild(container);
 
-  function sync(creatures: BattleCreature[], activeId: string | null) {
+  function sync(
+    creatures: BattleCreature[],
+    activeId: string | null,
+    targets: readonly string[] = [],
+  ) {
     const { w, h } = deps.tileSize;
     container.removeChildren().forEach((child) => child.destroy({ children: true }));
     for (const creature of creatures.filter((c) => c.hp > 0)) {
@@ -49,6 +55,14 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
       });
       hp.anchor.set(0.5);
       hp.position.set(0, h * 0.32);
+      if (targets.includes(creature.id)) {
+        const glow = new Graphics();
+        glow
+          .circle(0, 0, w * 0.46)
+          .fill({ color: TARGET_GLOW, alpha: 0.28 })
+          .stroke({ color: TARGET_GLOW, width: 3, alpha: 0.9 });
+        token.addChild(glow);
+      }
       token.addChild(face, ring, hp);
       container.addChild(token);
     }
