@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Encounter token guide</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1400px; height: 900px; box-sizing: border-box; padding: 36px 40px; background: #191D20; font-family: 'Alegreya Sans', sans-serif; color: #EDE3D2; display: flex; flex-direction: column; gap: 22px">
+
+  <div style="display: flex; align-items: flex-end; gap: 24px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="font-family: 'Cinzel', serif; font-size: 30px; font-weight: 700; color: #E8D7A8">Encounter tokens</div>
+      <div style="font-size: 16px; color: #CBBFA6; max-width: 760px; line-height: 1.45">One hex = one encounter. <b style="color: #EDE3D2">Stack height and the ×N badge show how many enemies stand there</b> — always visible once the hex leaves the fog. The top token is the leader. Who else is inside is revealed by SCOUT.</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+    <sc-for list="{{specimens}}" as="sp" hint-placeholder-count="6">
+      <div style="display: flex; gap: 20px; align-items: center; padding: 18px 20px; background: #262E33; border: 1px solid #36424A; border-radius: 16px; min-height: 186px; box-sizing: border-box">
+        <div style="width: 130px; height: 150px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: radial-gradient(circle at 50% 40%, #222A2F, #101416); box-shadow: inset 0 4px 12px rgba(0,0,0,0.75), 0 0 0 1px #3A4650">
+          <div style="position: relative; width: 84px; height: {{sp.t.boxH}}px">
+            <sc-for list="{{sp.t.layers}}" as="l" hint-placeholder-count="2">
+              <div style="position: absolute; left: 0; top: {{l.top}}px; width: 84px; height: 96px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{sp.t.edge}}">
+                <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{sp.t.dark}}"></div>
+              </div>
+            </sc-for>
+            <div style="position: absolute; left: 0; top: 0; width: 84px; height: 96px">
+              <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{sp.t.rim}}"></div>
+              <div style="position: absolute; inset: 5px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{sp.t.bg}}; display: flex; align-items: center; justify-content: center">
+                <sc-if value="{{sp.t.isSkull}}" hint-placeholder-val="{{true}}">
+                  <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 70%; height: 70%">
+                    <sc-if value="{{sp.t.crown}}" hint-placeholder-val="{{false}}"><path d="M11 11 L13.5 3.5 L17 8 L20 1.5 L23 8 L26.5 3.5 L29 11 Z" fill="#E0A93F" stroke="#5A3D10" stroke-width="1.2" stroke-linejoin="round"></path></sc-if>
+                    <path d="M20 8c-7.4 0-12.5 5-12.5 11.5 0 3.8 1.7 6.3 4.3 7.8V31.5a2 2 0 0 0 2 2h12.4a2 2 0 0 0 2-2v-4.2c2.6-1.5 4.3-4 4.3-7.8C32.5 13 27.4 8 20 8z" fill="#EFE8D6" stroke="#3A3428" stroke-width="1.6"></path>
+                    <circle cx="14.8" cy="20" r="3.3" fill="#2A2620"></circle><circle cx="25.2" cy="20" r="3.3" fill="#2A2620"></circle>
+                    <path d="M20 23.5 l-1.8 3.4 h3.6 z" fill="#2A2620"></path>
+                    <path d="M16.5 29.5v4 M20 29.5v4 M23.5 29.5v4" stroke="#3A3428" stroke-width="1.3"></path>
+                    <sc-if value="{{sp.t.bow}}" hint-placeholder-val="{{false}}"><path d="M34 5 Q40 20 34 35" stroke="#8A4A22" stroke-width="2.6" fill="none"></path><path d="M34 5 L34 35" stroke="#D8D0BF" stroke-width="0.9"></path></sc-if>
+                  </svg>
+                </sc-if>
+                <sc-if value="{{sp.t.isChest}}" hint-placeholder-val="{{false}}">
+                  <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 70%; height: 70%"><path d="M7 17 Q20 3 33 17 Z" fill="#A06A34" stroke="#2A1A0E" stroke-width="1.6" stroke-linejoin="round"></path><rect x="7" y="17" width="26" height="16" rx="2" fill="#8A5A2A" stroke="#2A1A0E" stroke-width="1.6"></rect><rect x="12" y="10" width="3" height="23" fill="#E0A93F"></rect><rect x="25" y="10" width="3" height="23" fill="#E0A93F"></rect><circle cx="20" cy="22" r="2.6" fill="#E0A93F" stroke="#2A1A0E" stroke-width="1"></circle></svg>
+                </sc-if>
+              </div>
+            </div>
+            <sc-if value="{{sp.t.count}}" hint-placeholder-val="{{false}}">
+              <span style="position: absolute; right: -12px; bottom: 0; min-width: 34px; height: 34px; padding: 0 6px; box-sizing: border-box; border-radius: 17px; background: #121517; border: 2px solid {{sp.t.edge}}; font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: #F4E9D8; display: flex; align-items: center; justify-content: center">×{{sp.t.count}}</span>
+            </sc-if>
+            <sc-if value="{{sp.t.unknown}}" hint-placeholder-val="{{false}}">
+              <span style="position: absolute; right: -10px; top: -6px; width: 28px; height: 28px; border-radius: 50%; background: #2A0E18; border: 2px solid #B0306A; font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: #F4E9D8; display: flex; align-items: center; justify-content: center">?</span>
+            </sc-if>
+            <sc-if value="{{sp.t.sentry}}" hint-placeholder-val="{{false}}">
+              <span style="position: absolute; left: -10px; top: -6px; width: 30px; height: 30px; border-radius: 50%; background: #5A1A14; border: 2px solid #FF8A7A; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12 C5 6.5 8.5 4.5 12 4.5 S19 6.5 22 12 C19 17.5 15.5 19.5 12 19.5 S5 17.5 2 12 Z" fill="#F4E9D8"></path><circle cx="12" cy="12" r="3.6" fill="#5A1A14"></circle></svg></span>
+            </sc-if>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+            <span style="font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: #E8D7A8">{{sp.title}}</span>
+            <sc-if value="{{sp.chip}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: {{sp.chipBg}}; color: {{sp.chipFg}}">{{sp.chip}}</span></sc-if>
+          </div>
+          <sc-for list="{{sp.lines}}" as="ln" hint-placeholder-count="3">
+            <div style="font-size: 14px; line-height: 1.4; color: #CBBFA6">{{ln.t}}</div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px">
+    <div style="padding: 18px 20px; background: #121517; border: 1px solid #2E363A; border-radius: 16px; display: flex; flex-direction: column; gap: 12px">
+      <div style="font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 0.08em; color: #EDE3D2">RIM = THREAT FOR YOUR HERO NOW</div>
+      <div style="display: flex; gap: 12px">
+        <sc-for list="{{threats}}" as="th" hint-placeholder-count="3">
+          <div style="flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #1E2427; border: 1px solid #36424A; border-radius: 12px">
+            <div style="width: 30px; height: 34px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{th.rim}}; flex: none"></div>
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <span style="font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: {{th.fg}}">{{th.label}}</span>
+              <span style="font-size: 12px; color: #CBBFA6">{{th.text}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size: 13px; color: #8E9599; line-height: 1.4">Threat = enemy hearts + strikes compared with your hearts, attack and shield. It changes as the hero grows — the same pack turns from RISKY to EASY.</div>
+    </div>
+    <div style="padding: 18px 20px; background: #121517; border: 1px solid #2E363A; border-radius: 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 0.08em; color: #EDE3D2">AT THE TABLE</div>
+      <div style="font-size: 14px; color: #CBBFA6; line-height: 1.5">Stack the real enemy tokens on one hex, leader on top — the stack height is the count. Unscouted packs are stacked face-down except the leader. The rim colour is a small ring placed under the stack. A sentry gets an eye marker.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1400,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const TH = {
+      easy: { rim: 'linear-gradient(160deg, #A8C98E, #4E6B3E)', edge: '#7FA36B', dark: '#2C3A24', label: 'EASY', chipBg: '#3B4E30', chipFg: '#CFE6B8' },
+      risky: { rim: 'linear-gradient(160deg, #F0C060, #8C5A12)', edge: '#D9A441', dark: '#4A3612', label: 'RISKY', chipBg: '#5A4214', chipFg: '#F4DFA8' },
+      deadly: { rim: 'linear-gradient(160deg, #F07A6A, #7A1A12)', edge: '#D0453A', dark: '#4A1612', label: 'DEADLY', chipBg: '#5A1A14', chipFg: '#FFB4A6' },
+      loot: { rim: 'linear-gradient(160deg, #E8D7A8, #6E5A2E)', edge: '#B89A5A', dark: '#3A3020', label: 'LOOT', chipBg: '#3A3020', chipFg: '#E8D7A8' }
+    };
+    const tok = (threat, n, o) => {
+      const t = TH[threat];
+      const layers = [];
+      for (let i = n - 1; i >= 1; i--) layers.push({ top: i * 8 });
+      return Object.assign({
+        rim: t.rim, edge: t.edge, dark: t.dark, bg: 'linear-gradient(160deg, #4A4238, #241F19)',
+        layers, boxH: 96 + (n - 1) * 8, count: n > 1 ? n : 0,
+        isSkull: true, isChest: false, crown: false, bow: false, unknown: false, sentry: false
+      }, o || {});
+    };
+    const spec = (title, threat, t, lines) => ({ title, chip: TH[threat].label, chipBg: TH[threat].chipBg, chipFg: TH[threat].chipFg, t, lines: lines.map((x) => ({ t: x })) });
+    return {
+      specimens: [
+        spec('Single enemy', 'easy', tok('easy', 1), ['One token, no stack, no badge.', 'Leader icon = the enemy itself.', 'SCOUT is not needed — what you see is all.']),
+        spec('Pack ×3 · scouted', 'risky', tok('risky', 3), ['Stack of 3 layers + badge ×3.', 'Leader on top: the strongest one.', 'Scouted: the full list is in the popover.']),
+        spec('Pack ×3 · unknown', 'risky', tok('risky', 3, { unknown: true }), ['Count is always visible.', '"?" = only the leader is known.', 'SCOUT (1 Will) reveals the rest.']),
+        spec('Sentry ×2', 'risky', tok('risky', 2, { bow: true, sentry: true }), ['Eye = sentry. Its 6 neighbour hexes are tinted red on the map.', 'End your move there and it attacks first (ambush).', 'Attack it or sneak past instead.']),
+        spec('Boss court ×3', 'deadly', tok('deadly', 3, { crown: true }), ['Crowned leader = boss.', 'Deadly rim: you are not ready yet — scout first or come back stronger.']),
+        Object.assign(spec('After victory', 'loot', tok('loot', 1, { isSkull: false, isChest: true, bg: 'linear-gradient(160deg, #3A3020, #1E180E)' }), ['The pack token is replaced by a loot token on the same hex.', 'Walk next to it to pick it up.']), {})
+      ],
+      threats: [
+        { label: 'EASY', rim: TH.easy.rim, fg: '#CFE6B8', text: 'you should win' },
+        { label: 'RISKY', rim: TH.risky.rim, fg: '#F4DFA8', text: 'a real fight' },
+        { label: 'DEADLY', rim: TH.deadly.rim, fg: '#FFB4A6', text: 'likely to fall' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

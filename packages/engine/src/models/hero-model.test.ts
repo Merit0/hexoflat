@@ -88,3 +88,17 @@ describe('HeroModel max health bonus', () => {
     expect(hero(3, 3).setMaxHealthBonus(-2).getEffectiveMaxHealth()).toBe(3);
   });
 });
+
+describe('HeroModel damage', () => {
+  it('keeps a hero alive on half a heart', () => {
+    const model = hero(3, 1);
+    model.takeDamage(0.5);
+    expect(model.currentHealth).toBe(0.5);
+  });
+
+  it('drops to zero, never below, when the damage is larger than the hearts left', () => {
+    const model = hero(3, 0.5);
+    model.takeDamage(2);
+    expect(model.currentHealth).toBe(0);
+  });
+});

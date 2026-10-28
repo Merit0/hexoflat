@@ -45,7 +45,7 @@ All game-state changes go through validated commands that produce domain events.
 
 6. **Unit tests without Pinia**, colocated as `*.test.ts`. If a test needs a store, the logic is in the wrong layer.
 
-Current commands, for reference: `START_HEX_ACTION`, `FINISH_PENDING_ACTIONS`, `WORLD_TICK`, `ADD_RESOURCE_SPAWNER`, `MOVE_HERO`, `CROSS_EXIT`, `KNOWLEDGE`, `SACRIFICE_TO_SKILL`, `RESET_SKILLS`, `OPEN_PORTAL`, `ENTER_PORTAL`.
+Current commands, for reference: `START_HEX_ACTION`, `FINISH_PENDING_ACTIONS`, `WORLD_TICK`, `ADD_RESOURCE_SPAWNER`, `MOVE_HERO`, `CROSS_EXIT`, `KNOWLEDGE`, `SACRIFICE_TO_SKILL`, `RESET_SKILLS`, `OPEN_PORTAL`, `ENTER_PORTAL`, `BATTLE`.
 
 **`apps/web` and `apps/playwright` import the built `packages/engine/dist`** (git-ignored), not `src`. After any engine change run `pnpm build` in `packages/engine` before web typecheck, web tests or e2e, or they will see the old engine.
 
@@ -87,11 +87,18 @@ Rule of thumb:
 
 `serializeState` also writes a SHA-256 checksum over `{version, map, heroes}`; changing what goes into that object changes the checksum shape. Cover both the old-payload and new-payload path with tests.
 
-## Deliberate exception you will run into
+## Battle (`src/battle/`, phases B1–B8 of `docs/BATTLE-SYSTEM-PLAN.md`)
 
-Combat state still lives in `apps/web/src/stores/combat-store.ts` and does **not** go through this command pipeline. This is a tracked, deliberate gap — combat design is unsettled, so migrating it is deferred until the design is ready.
+The old combat exception is being retired: the new battle runs entirely through the engine. The legacy `apps/web/src/stores/combat-store.ts` and `src/combat/` still drive the live game until B6 deletes them (fate of every file: `docs/battle-system/B0-AUDIT.md`). Do not extend the legacy combat code.
 
-Do **not** "fix" this opportunistically: do not add combat commands to `applyCommand`, do not migrate combat state into the engine, unless the task explicitly asks for it. Pure combat _functions_ in `src/combat/` are fine and already exist — that is the agreed boundary.
+- **One command, many actions.** `BATTLE` (`battle/battle-commands.ts`) carries `{ kind: 'hero', heroId, action }` or `{ kind: 'run-enemy-turn' }`, like `KNOWLEDGE`. `applyBattleCommand` (`battle/apply-battle.ts`) clones the state, runs `performAction`, and on a refusal returns the **original** state plus `BATTLE_REJECTED { rejected, cost?, left? }` — never a half-applied action. New actions: add to `battleActionSchema`, a case in `perform-action.ts`, and say whether they belong to the `defend` or `act` phase.
+- **State** is `HexEngineState.battle` (`battle/battle-state.ts`), additive in the snapshot (no `CONTENT_VERSION` bump). Coordinates inside battle are axial `{ q, r }` with `"q,r"` board keys; convert to the map's odd-r offset only at the web boundary (`axialToOffset`). Hearts are integer half-hearts (`hp`), converted from/to `HeroModel` hearts on entry/exit.
+- **Prices are content** (`BATTLE_RULES` in `battle/battle-content.ts`); rules read them, never hardcode 3/7/20.
+- **Hidden information.** A strike's side (`fromHex`) is secret to the struck side. Enemy AI must decide from `projectBattleForViewer(state, 'enemies')` only, and anything sent to another player goes through `projectBattleForViewer` / `projectBattleEvent`. A test pins this (REQ-BTL-013).
+- **Randomness** only via `deriveStream(seed, 'battle:<id>:<purpose>:<n>')` (initiative today).
+- **No clock.** Timers live in the web; the engine gets times as command data (timed tasks, B2).
+- `startBattle(setup)` builds a battle from a ready `BattleSetup`; the `START_BATTLE` command arrives with encounters (B4/B6), which compute the setup from content.
+- Tests are named by requirement id (`REQ-BTL-0xx`); fixtures in `battle/battle-test-setup.ts` (`battleWith`, `giveTurn`, `heroDoes`, `enemyTurn`).
 
 ## Checklist before finishing
 

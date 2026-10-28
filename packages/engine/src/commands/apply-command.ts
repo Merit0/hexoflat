@@ -38,6 +38,8 @@ import { applyEnterPortal, applyOpenPortal, closePortalIfOpen } from '../portal/
 import type { PortalLocation } from '../portal/portal-rules';
 import { getMeta } from '../content/content-accessors';
 import type { ApplyCommandResult, DomainEvent } from './types';
+import type { BattleState } from '../battle/battle-state';
+import { applyBattleCommand } from '../battle/apply-battle';
 
 export interface HexEngineState {
   map: HexMapModel;
@@ -46,6 +48,7 @@ export interface HexEngineState {
   knowledge?: KnowledgeState;
   knowledgeContext?: KnowledgeContext;
   location?: PortalLocation;
+  battle?: BattleState;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -135,6 +138,13 @@ export function applyCommand(
     case 'ENTER_PORTAL':
       events.push(...applyEnterPortal(state, parsed.payload, ctx));
       break;
+
+    case 'BATTLE': {
+      const result = applyBattleCommand(state.battle, parsed);
+      state.battle = result.battle;
+      events.push(...result.events);
+      break;
+    }
 
     default:
       return assertNever(parsed);

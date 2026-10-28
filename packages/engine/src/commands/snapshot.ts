@@ -6,6 +6,7 @@ import { normalizeHeroPortal } from '../portal/portal-state';
 import { sha256Hex } from '../utils/hash/sha256';
 import type { RngState } from '../utils/random-seeded';
 import type { HexEngineState } from './apply-command';
+import { battleStateSchema, type BattleState } from '../battle/battle-state';
 
 export interface SnapshotPayload {
   version: number;
@@ -15,6 +16,7 @@ export interface SnapshotPayload {
   checksum: string;
   rngState?: RngState;
   knowledge?: KnowledgeState;
+  battle?: BattleState;
 }
 
 /** Thrown by `deserializeState` — never partially deserializes a bad payload. */
@@ -55,6 +57,7 @@ export function serializeState(state: HexEngineState): SnapshotPayload {
     map: state.map.toJSON(),
     heroes: state.heroes,
     ...(state.knowledge ? { knowledge: state.knowledge } : {}),
+    ...(state.battle ? { battle: state.battle } : {}),
   };
   return {
     ...content,
@@ -79,6 +82,7 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
       Object.entries(payload.heroes).map(([id, hero]) => [id, normalizeHeroPortal(hero)]),
     ),
     ...(payload.knowledge ? { knowledge: knowledgeStateSchema.parse(payload.knowledge) } : {}),
+    ...(payload.battle ? { battle: battleStateSchema.parse(payload.battle) } : {}),
     rngState: rngState ?? freshRngState(),
   };
 }

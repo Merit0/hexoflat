@@ -1,0 +1,39 @@
+import { z } from 'zod';
+
+export const battleRulesSchema = z.object({
+  willPerTurn: z.number().int().positive(),
+  stanceMax: z.number().int().min(0),
+  step: z.object({
+    floor: z.number().int().positive(),
+    rubble: z.number().int().positive(),
+    climb: z.number().int().positive(),
+    descend: z.number().int().positive(),
+  }),
+  strike: z.number().int().positive(),
+  push: z.number().int().positive(),
+  pull: z.number().int().positive(),
+  shieldPerSide: z.number().int().positive(),
+  dodge: z.number().int().positive(),
+  swap: z.number().int().positive(),
+  use: z.number().int().positive(),
+  taskMs: z.number().int().positive(),
+  ledgeStrikeBonus: z.number().int().min(0),
+  maxShieldSides: z.number().int().min(1).max(6),
+});
+export type BattleRules = z.infer<typeof battleRulesSchema>;
+
+export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
+  willPerTurn: 20,
+  stanceMax: 8,
+  step: { floor: 3, rubble: 5, climb: 5, descend: 3 },
+  strike: 7,
+  push: 6,
+  pull: 8,
+  shieldPerSide: 4,
+  dodge: 6,
+  swap: 4,
+  use: 3,
+  taskMs: 5000,
+  ledgeStrikeBonus: 1,
+  maxShieldSides: 6,
+});

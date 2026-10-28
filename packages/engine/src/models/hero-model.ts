@@ -152,9 +152,6 @@ export class HeroModel implements IHero {
 
   public takeDamage(damage: number): void {
     this.currentHealth = normalizeHealthValue(this.currentHealth - damage);
-    if (this.currentHealth < 1) {
-      this.currentHealth = 0;
-    }
   }
 
   public healthIncreaser(): void {

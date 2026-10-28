@@ -8,6 +8,7 @@ import { BOARD_MODELS } from '@hexoflat/engine/content/boards/models/index';
 import { adjustRuleCount } from '@hexoflat/engine/boards/board-model-edit';
 import { useWorldMapStore, runWorldTick } from './world-map-store';
 import { useHeroStore } from './hero-store';
+import { useCombatStore } from './combat-store';
 
 function buildRevealedMap(width = 3, height = 3) {
   const map = new HexMapBuilder().name('move-test').width(width).height(height).build();
@@ -424,5 +425,34 @@ describe('useWorldMapStore: dev board panel actions', () => {
 
     expect(worldStore.currentMapId).toBe(mapId);
     expect(worldStore.descriptor).toEqual(descriptor);
+  });
+});
+
+describe('useWorldMapStore: respawnHeroAtCamping (characterization, B0 safety net)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
+  });
+
+  it('ends combat, revives the hero at one heart and sends the hero to the camp', async () => {
+    const worldStore = useWorldMapStore();
+    const heroStore = useHeroStore();
+    const combatStore = useCombatStore();
+    worldStore.map = buildRevealedMap();
+    worldStore.currentLocationKey = 'cave';
+    worldStore.currentMapId = 'cave-map-id';
+    heroStore.heroCoordinates = { columnIndex: 1, rowIndex: 1 };
+    heroStore.hero.setHealth(0);
+    combatStore.startCombat();
+    const goToLocation = vi.spyOn(worldStore, 'goToLocation').mockImplementation(() => {});
+
+    await worldStore.respawnHeroAtCamping();
+
+    expect(combatStore.combatActive).toBe(false);
+    expect(heroStore.hero.currentHealth).toBe(1);
+    expect(heroStore.heroCoordinates).toBeNull();
+    expect(worldStore.pendingCampingRespawn).toBe(true);
+    expect(worldStore.currentMapId).toBeNull();
+    expect(goToLocation).toHaveBeenCalledWith('camping');
   });
 });

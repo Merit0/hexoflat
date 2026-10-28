@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Encounters on the dungeon map</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+button:disabled{opacity:0.4;cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 1680px; height: 1000px; display: flex; background: #0E1012; font-family: 'Alegreya Sans', sans-serif; color: #EDE3D2">
+
+  <!-- ===================== BOARD AREA ===================== -->
+  <main style="flex: 1; min-width: 0; position: relative; background-color: #141214; background-image: repeating-linear-gradient(32deg, rgba(255,255,255,0.016) 0 2px, transparent 2px 46px), repeating-linear-gradient(-28deg, rgba(0,0,0,0.3) 0 2px, transparent 2px 52px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px">
+
+    <div style="position: absolute; top: 14px; left: 14px; font-family: monospace; font-size: 12px; color: #CBBFA6; background: #1E2427; border: 1px solid #2E363A; border-radius: 6px; padding: 4px 10px">▸ Board (dev)</div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 22px; border-radius: 999px; background: rgba(18,21,23,0.92); border: 1px solid {{bannerBorder}}">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: {{bannerDot}}"></span>
+      <span style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: #F4E9D8">{{bannerTitle}}</span>
+      <span style="width: 1px; height: 18px; background: #3A474E"></span>
+      <span style="font-size: 15px; color: #CBBFA6">{{bannerSub}}</span>
+    </div>
+
+    <!-- ---------- DUNGEON MAP ---------- -->
+    <sc-if value="{{isMap}}" hint-placeholder-val="{{true}}">
+      <div style="position: relative; width: 812px; height: 520px">
+        <sc-for list="{{cells}}" as="c" hint-placeholder-count="117">
+          <div style="position: absolute; left: {{c.x}}px; top: {{c.y}}px; width: 60px; height: 69px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{c.edge}}">
+            <div style="position: absolute; inset: {{c.inset}}px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{c.fill}}; display: flex; align-items: center; justify-content: center">
+              <sc-if value="{{c.mark}}" hint-placeholder-val="{{false}}"><span style="font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; color: {{c.markColor}}">{{c.mark}}</span></sc-if>
+              <sc-if value="{{c.clickable}}" hint-placeholder-val="{{false}}"><button type="button" aria-label="{{c.aria}}" onClick="{{c.click}}" style="position: absolute; inset: 0; background: transparent; border: 0; padding: 0; cursor: pointer"></button></sc-if>
+            </div>
+          </div>
+        </sc-for>
+
+        <!-- hero -->
+        <div style="position: absolute; left: {{heroX}}px; top: {{heroY}}px; width: 52px; height: 60px; pointer-events: none">
+          <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, #6FA8E8, #1F4A88)"></div>
+          <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); overflow: hidden"><img src="/_blob/8e58a1d86c3a6eac4f800f1a3bfe00f7" alt="" style="width: 100%; height: 100%; object-fit: cover"></div>
+        </div>
+
+        <!-- encounter + loot tokens -->
+        <sc-for list="{{tokens}}" as="t" hint-placeholder-count="4">
+          <div style="position: absolute; left: {{t.x}}px; top: {{t.y}}px; width: 48px; height: {{t.boxH}}px">
+            <sc-for list="{{t.layers}}" as="l" hint-placeholder-count="2">
+              <div style="position: absolute; left: 0; top: {{l.top}}px; width: 48px; height: 55px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.edge}}">
+                <div style="position: absolute; inset: 2px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.dark}}"></div>
+              </div>
+            </sc-for>
+            <div style="position: absolute; left: 0; top: 0; width: 48px; height: 55px">
+              <div style="position: absolute; inset: -4px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.glow}}"></div>
+              <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.rim}}"></div>
+              <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.bg}}; display: flex; align-items: center; justify-content: center">
+                <sc-if value="{{t.isSkull}}" hint-placeholder-val="{{true}}">
+                  <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 72%; height: 72%">
+                    <sc-if value="{{t.crown}}" hint-placeholder-val="{{false}}"><path d="M11 11 L13.5 3.5 L17 8 L20 1.5 L23 8 L26.5 3.5 L29 11 Z" fill="#E0A93F" stroke="#5A3D10" stroke-width="1.2" stroke-linejoin="round"></path></sc-if>
+                    <path d="M20 8c-7.4 0-12.5 5-12.5 11.5 0 3.8 1.7 6.3 4.3 7.8V31.5a2 2 0 0 0 2 2h12.4a2 2 0 0 0 2-2v-4.2c2.6-1.5 4.3-4 4.3-7.8C32.5 13 27.4 8 20 8z" fill="#EFE8D6" stroke="#3A3428" stroke-width="1.6"></path>
+                    <circle cx="14.8" cy="20" r="3.3" fill="#2A2620"></circle><circle cx="25.2" cy="20" r="3.3" fill="#2A2620"></circle>
+                    <path d="M20 23.5 l-1.8 3.4 h3.6 z" fill="#2A2620"></path>
+                    <sc-if value="{{t.bow}}" hint-placeholder-val="{{false}}"><path d="M34 5 Q40 20 34 35" stroke="#8A4A22" stroke-width="2.6" fill="none"></path><path d="M34 5 L34 35" stroke="#D8D0BF" stroke-width="0.9"></path></sc-if>
+                  </svg>
+                </sc-if>
+                <sc-if value="{{t.isChest}}" hint-placeholder-val="{{false}}">
+                  <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 72%; height: 72%"><path d="M7 17 Q20 3 33 17 Z" fill="#A06A34" stroke="#2A1A0E" stroke-width="1.6" stroke-linejoin="round"></path><rect x="7" y="17" width="26" height="16" rx="2" fill="#8A5A2A" stroke="#2A1A0E" stroke-width="1.6"></rect><rect x="12" y="10" width="3" height="23" fill="#E0A93F"></rect><rect x="25" y="10" width="3" height="23" fill="#E0A93F"></rect><circle cx="20" cy="22" r="2.6" fill="#E0A93F" stroke="#2A1A0E" stroke-width="1"></circle></svg>
+                </sc-if>
+              </div>
+            </div>
+            <sc-if value="{{t.count}}" hint-placeholder-val="{{false}}"><span style="position: absolute; right: -10px; bottom: -2px; min-width: 24px; height: 24px; padding: 0 4px; box-sizing: border-box; border-radius: 12px; background: #121517; border: 2px solid {{t.edge}}; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: #F4E9D8; display: flex; align-items: center; justify-content: center">×{{t.count}}</span></sc-if>
+            <sc-if value="{{t.unknown}}" hint-placeholder-val="{{false}}"><span style="position: absolute; right: -8px; top: -6px; width: 20px; height: 20px; border-radius: 50%; background: #2A0E18; border: 2px solid #B0306A; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: #F4E9D8; display: flex; align-items: center; justify-content: center">?</span></sc-if>
+            <sc-if value="{{t.sentry}}" hint-placeholder-val="{{false}}"><span style="position: absolute; left: -8px; top: -6px; width: 22px; height: 22px; border-radius: 50%; background: #5A1A14; border: 2px solid #FF8A7A; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12 C5 6.5 8.5 4.5 12 4.5 S19 6.5 22 12 C19 17.5 15.5 19.5 12 19.5 S5 17.5 2 12 Z" fill="#F4E9D8"></path><circle cx="12" cy="12" r="3.6" fill="#5A1A14"></circle></svg></span></sc-if>
+            <button type="button" aria-label="{{t.aria}}" onClick="{{t.click}}" style="position: absolute; left: 0; top: 0; width: 48px; height: 55px; background: transparent; border: 0; padding: 0; cursor: pointer"></button>
+          </div>
+        </sc-for>
+
+        <!-- popover -->
+        <sc-if value="{{hasPop}}" hint-placeholder-val="{{false}}">
+          <div style="position: absolute; left: {{popX}}px; top: {{popY}}px; width: 300px; box-sizing: border-box; padding: 14px 16px 16px; background: #191D20; border: 1px solid {{popEdge}}; border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.65); display: flex; flex-direction: column; gap: 10px; z-index: 5">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: #E8D7A8">{{popName}}</span>
+              <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: {{popChipBg}}; color: {{popChipFg}}">{{popThreat}}</span>
+              <button type="button" aria-label="Close" onClick="{{closePop}}" style="margin-left: auto; width: 28px; height: 28px; border-radius: 8px; border: 1px solid #36424A; background: #1E2427; color: #CBBFA6; cursor: pointer">×</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; background: #121517; border-radius: 10px">
+              <sc-for list="{{popMembers}}" as="m" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: {{m.color}}">
+                  <span style="width: 18px; height: 20px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{m.chip}}; flex: none"></span>
+                  <span style="flex: 1">{{m.name}}</span>
+                  <span style="font-size: 12px; color: #8E9599">{{m.info}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{popSentryNote}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; color: #FFB4A6">Sentry: ends of moves next to it are spotted — act now.</div></sc-if>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+              <button type="button" onClick="{{attack}}" disabled="{{cantAttack}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 12px; border: 1px solid #A0285A; background: linear-gradient(180deg, #7E1A40, #5A0F2C); color: #F4E9D8; cursor: pointer"><span style="font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700">ATTACK</span><span style="font-size: 11px; color: #E9DCCB">2 Will · you start</span></button>
+              <button type="button" onClick="{{scout}}" disabled="{{cantScout}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 12px; border: 1px solid #4A5862; background: #1E2427; color: #F4E9D8; cursor: pointer"><span style="font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700">SCOUT</span><span style="font-size: 11px; color: #CBBFA6">{{scoutMeta}}</span></button>
+              <button type="button" onClick="{{sneak}}" disabled="{{cantSneak}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 12px; border: 1px solid #4A5862; background: #1E2427; color: #F4E9D8; cursor: pointer"><span style="font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700">SNEAK</span><span style="font-size: 11px; color: #CBBFA6">task · 5 s</span></button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ---------- BATTLEFIELD PREVIEW ---------- -->
+    <sc-if value="{{isBattle}}" hint-placeholder-val="{{false}}">
+      <div style="position: relative; width: 576px; height: 518px">
+        <sc-for list="{{bcells}}" as="c" hint-placeholder-count="61">
+          <div style="position: absolute; left: {{c.x}}px; top: {{c.y}}px; width: 64px; height: 74px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{c.edge}}">
+            <div style="position: absolute; inset: {{c.inset}}px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{c.fill}}; display: flex; align-items: center; justify-content: center">
+              <sc-if value="{{c.isRock}}" hint-placeholder-val="{{false}}"><div style="width: 40px; height: 34px; border-radius: 48% 52% 44% 56%; background: radial-gradient(circle at 38% 32%, #C9C9C9, #8E9094 55%, #5E6166); box-shadow: 0 4px 6px rgba(0,0,0,0.6)"></div></sc-if>
+              <sc-if value="{{c.isSaw}}" hint-placeholder-val="{{false}}"><svg viewBox="0 0 40 40" width="44" height="44" aria-hidden="true"><path d="M20 2 L23 8 L29 4 L29 11 L36 11 L32 17 L38 20 L32 23 L36 29 L29 29 L29 36 L23 32 L20 38 L17 32 L11 36 L11 29 L4 29 L8 23 L2 20 L8 17 L4 11 L11 11 L11 4 L17 8 Z" fill="#B8C0C8" stroke="#2A3036" stroke-width="1.4" stroke-linejoin="round"></path><circle cx="20" cy="20" r="9" fill="#7F8A94" stroke="#2A3036" stroke-width="1.4"></circle><circle cx="20" cy="20" r="3" fill="#2A3036"></circle></svg></sc-if>
+              <sc-if value="{{c.mark}}" hint-placeholder-val="{{false}}"><span style="position: absolute; bottom: 9px; left: 0; right: 0; text-align: center; font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; color: {{c.markColor}}">{{c.mark}}</span></sc-if>
+            </div>
+          </div>
+        </sc-for>
+        <sc-for list="{{btokens}}" as="t" hint-placeholder-count="4">
+          <div style="position: absolute; left: {{t.x}}px; top: {{t.y}}px; width: 56px; height: 64px">
+            <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.rim}}"></div>
+            <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.bg}}; display: flex; align-items: center; justify-content: center; overflow: hidden">
+              <sc-if value="{{t.isHero}}" hint-placeholder-val="{{false}}"><img src="/_blob/8e58a1d86c3a6eac4f800f1a3bfe00f7" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+              <sc-if value="{{t.isSkull}}" hint-placeholder-val="{{true}}">
+                <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 72%; height: 72%">
+                  <sc-if value="{{t.crown}}" hint-placeholder-val="{{false}}"><path d="M11 11 L13.5 3.5 L17 8 L20 1.5 L23 8 L26.5 3.5 L29 11 Z" fill="#E0A93F" stroke="#5A3D10" stroke-width="1.2" stroke-linejoin="round"></path></sc-if>
+                  <path d="M20 8c-7.4 0-12.5 5-12.5 11.5 0 3.8 1.7 6.3 4.3 7.8V31.5a2 2 0 0 0 2 2h12.4a2 2 0 0 0 2-2v-4.2c2.6-1.5 4.3-4 4.3-7.8C32.5 13 27.4 8 20 8z" fill="#EFE8D6" stroke="#3A3428" stroke-width="1.6"></path>
+                  <circle cx="14.8" cy="20" r="3.3" fill="#2A2620"></circle><circle cx="25.2" cy="20" r="3.3" fill="#2A2620"></circle>
+                  <path d="M20 23.5 l-1.8 3.4 h3.6 z" fill="#2A2620"></path>
+                  <sc-if value="{{t.bow}}" hint-placeholder-val="{{false}}"><path d="M34 5 Q40 20 34 35" stroke="#8A4A22" stroke-width="2.6" fill="none"></path><path d="M34 5 L34 35" stroke="#D8D0BF" stroke-width="0.9"></path></sc-if>
+                </svg>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 18px; font-size: 13px; color: #8E9599">
+        <span style="color: #8FC0F0">Blue — your start zone (the side you came from)</span><span style="color: #F08A7A">Red — enemy zone</span><span>Open board · no fog</span>
+      </div>
+    </sc-if>
+
+    <!-- ---------- SNEAK TASK ---------- -->
+    <sc-if value="{{hasTask}}" hint-placeholder-val="{{false}}">
+      <div style="position: absolute; inset: 0; background: rgba(6,7,8,0.55); display: flex; align-items: center; justify-content: center; z-index: 10">
+        <div role="dialog" aria-label="Sneak past" style="width: 420px; box-sizing: border-box; padding: 20px 22px 22px; background: #191D20; border: 1px solid #5BD18A; border-radius: 18px; box-shadow: 0 18px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 12px">
+          <div style="font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.08em; color: #F4E9D8">SNEAK PAST</div>
+          <div style="font-size: 14px; color: #CBBFA6; line-height: 1.4">Answer to slip to the hex behind them. Wrong — they spot you: ambush, enemies start.</div>
+          <div style="height: 10px; border-radius: 5px; background: #0B0D0E; overflow: hidden"><div style="height: 100%; width: 70%; background: #5BD18A"></div></div>
+          <div style="text-align: center; font-family: 'Cinzel', serif; font-size: 38px; font-weight: 700; color: #E8D7A8">{{taskQ}} = ?</div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{taskOpts}}" as="o" hint-placeholder-count="4">
+              <button type="button" onClick="{{o.pick}}" style="min-height: 54px; font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700; color: #F4E9D8; background: #262E33; border: 1px solid #4A5862; border-radius: 12px; cursor: pointer">{{o.v}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ===================== SIDE PANEL ===================== -->
+  <aside style="width: 560px; flex: none; display: flex; flex-direction: column; background: #191D20; border-left: 1px solid #262D31">
+    <div style="display: grid; grid-template-columns: repeat({{tabCount}}, minmax(0, 1fr)); gap: 2px; padding: 0 3px; background: #0E1012">
+      <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="4">
+        <div style="height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: {{tb.fg}}; background: {{tb.bg}}; border: {{tb.border}}">{{tb.label}}</div>
+      </sc-for>
+    </div>
+
+    <div style="flex: 1; min-height: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+
+      <sc-if value="{{isMap}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: #121517; border: 1px solid #2E363A; border-radius: 16px">
+          <img src="/_blob/a1ad7e2dfa4fb9e4bbb9552c58ced4cf" alt="" style="width: 34px; height: 34px; object-fit: contain">
+          <div style="font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 0.08em; color: #CBBFA6">WILL</div>
+          <div style="font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700; color: #E8D7A8">{{will}}<span style="font-family: 'Alegreya Sans', sans-serif; font-size: 13px; font-weight: 400; color: #CBBFA6"> / 50</span></div>
+          <div style="margin-left: auto; font-size: 13px; color: #8E9599">Step 1 · Scout 1 · Attack 2</div>
+        </div>
+
+        <div style="font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #CBBFA6">DISCOVERED ON THIS BOARD</div>
+        <sc-if value="{{noneFound}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; color: #8E9599; font-style: italic">Nothing yet — walk into the fog.</div></sc-if>
+        <sc-for list="{{found}}" as="f" hint-placeholder-count="3">
+          <div style="min-height: 58px; box-sizing: border-box; padding: 8px 14px 8px 12px; border-radius: 14px; border: 1px solid #36424A; background: #262E33; display: flex; align-items: center; gap: 12px; opacity: {{f.opacity}}">
+            <div style="position: relative; width: 34px; height: {{f.boxH}}px; flex: none">
+              <sc-for list="{{f.layers}}" as="l" hint-placeholder-count="2"><div style="position: absolute; left: 0; top: {{l.top}}px; width: 34px; height: 39px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{f.edge}}"></div></sc-for>
+              <div style="position: absolute; left: 0; top: 0; width: 34px; height: 39px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{f.rim}}"></div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <div style="display: flex; align-items: center; gap: 8px"><span style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: #EDE3D2; text-decoration: {{f.deco}}">{{f.name}}</span><span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 999px; background: {{f.chipBg}}; color: {{f.chipFg}}">{{f.threat}}</span></div>
+              <span style="font-size: 13px; color: #CBBFA6">{{f.info}}</span>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #CBBFA6; margin-top: 4px">EVENTS</div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <sc-for list="{{log}}" as="l" hint-placeholder-count="4"><div style="font-size: 14px; line-height: 1.4; color: #CBBFA6">{{l.t}}</div></sc-for>
+        </div>
+
+        <div style="margin-top: auto; padding: 11px; background: #111416; border-radius: 12px; text-align: center; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 0.08em; color: #CBBFA6">STAND NEXT TO A TOKEN AND TAP IT</div>
+      </sc-if>
+
+      <sc-if value="{{isBattle}}" hint-placeholder-val="{{false}}">
+        <div style="padding: 16px 18px; border-radius: 16px; border: 1px solid {{deployEdge}}; background: {{deployBg}}; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: #E8D7A8">{{deployTitle}}</div>
+          <div style="font-size: 15px; line-height: 1.45; color: #EDE3D2">{{deployText}}</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #1E2427; border: 1px solid #36424A; color: #CBBFA6">Board: {{biome}}</span>
+            <span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #1E2427; border: 1px solid #36424A; color: #CBBFA6">Seed: {{seed}}</span>
+            <span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #1E2427; border: 1px solid #36424A; color: #CBBFA6">Approach: {{approach}}</span>
+          </div>
+        </div>
+        <div style="font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #F08A7A">ENEMIES</div>
+        <sc-for list="{{bEnemies}}" as="m" hint-placeholder-count="3">
+          <div style="min-height: 48px; box-sizing: border-box; padding: 6px 14px; border-radius: 12px; border: 1px solid #36424A; background: #262E33; display: flex; align-items: center; gap: 10px">
+            <span style="width: 22px; height: 25px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{m.chip}}"></span>
+            <span style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: #EDE3D2; flex: 1">{{m.name}}</span>
+            <span style="font-size: 12px; color: #8E9599">{{m.info}}</span>
+          </div>
+        </sc-for>
+        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 13px; color: #8E9599; line-height: 1.4">START opens the BATTLE tab from the battle mockup. For this concept you can finish the fight right away:</div>
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px">
+            <button type="button" onClick="{{win}}" style="min-height: 52px; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; color: #F4E9D8; background: linear-gradient(180deg, #7E1A40, #5A0F2C); border: 1px solid #A0285A; border-radius: 12px; cursor: pointer">START → WIN · DEMO</button>
+            <button type="button" onClick="{{lose}}" style="min-height: 52px; font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: #CBBFA6; background: #1E2427; border: 1px solid #4A5862; border-radius: 12px; cursor: pointer">LOSE · DEMO</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1000}}'>
+class Component extends DCLogic {
+  C() {
+    return {
+      W: 60, H: 69,
+      MAP: [
+        '####...##...#',
+        '###.....#....',
+        '##...........',
+        '#....###.....',
+        '#....#####.##',
+        '#.........###',
+        '##...##...###',
+        '#.....#....##',
+        '##...###...##'
+      ],
+      EXIT: '12,2'
+    };
+  }
+  TH() {
+    return {
+      easy: { rim: 'linear-gradient(160deg, #A8C98E, #4E6B3E)', edge: '#7FA36B', dark: '#2C3A24', label: 'EASY', chipBg: '#3B4E30', chipFg: '#CFE6B8' },
+      risky: { rim: 'linear-gradient(160deg, #F0C060, #8C5A12)', edge: '#D9A441', dark: '#4A3612', label: 'RISKY', chipBg: '#5A4214', chipFg: '#F4DFA8' },
+      deadly: { rim: 'linear-gradient(160deg, #F07A6A, #7A1A12)', edge: '#D0453A', dark: '#4A1612', label: 'DEADLY', chipBg: '#5A1A14', chipFg: '#FFB4A6' },
+      loot: { rim: 'linear-gradient(160deg, #E8D7A8, #6E5A2E)', edge: '#B89A5A', dark: '#3A3020', label: 'LOOT', chipBg: '#3A3020', chipFg: '#E8D7A8' }
+    };
+  }
+  encs() {
+    const skel = { k: 'skel', name: 'Skeleton', info: '1.5 ♥ · melee' };
+    const arch = { k: 'arch', name: 'Bone Archer', info: '1 ♥ · ranged', bow: true };
+    const king = { k: 'king', name: 'Bone King', info: '4 ♥ · boss', crown: true };
+    return {
+      e1: { name: 'Lone Skeleton', pos: [4, 5], threat: 'easy', members: [skel], loot: 'Bone charm' },
+      e2: { name: 'Skeleton Pack', pos: [9, 6], threat: 'risky', members: [skel, skel, arch], loot: 'Iron sword' },
+      e3: { name: 'Archer Watch', pos: [4, 1], threat: 'risky', members: [arch, arch], sentry: true, loot: 'Health potion' },
+      e4: { name: 'Bone King’s Court', pos: [11, 1], threat: 'deadly', members: [king, skel, skel], boss: true, loot: 'Crown shard (rare)' }
+    };
+  }
+  fresh() { return { view: 'map', hero: [2, 7], visited: ['2,7'], scouted: {}, defeated: {}, looted: {}, sel: null, will: 34, log: ['Entered the Bone Crypt.'], battle: null, task: null }; }
+  g() { return (this.state && this.state.g) || this.fresh(); }
+  upd(fn) { const g = JSON.parse(JSON.stringify(this.g())); fn(g); this.setState({ g }); }
+
+  key(p) { return p[0] + ',' + p[1]; }
+  ax(p) { return [p[0] - (p[1] - (p[1] & 1)) / 2, p[1]]; }
+  off(a) { return [a[0] + (a[1] - (a[1] & 1)) / 2, a[1]]; }
+  add(p, d) { const a = this.ax(p); return this.off([a[0] + d[0], a[1] + d[1]]); }
+  nbrs(p) { return [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]].map((d) => this.add(p, d)); }
+  dist(p, q) { const a = this.ax(p), b = this.ax(q); const dq = a[0] - b[0], dr = a[1] - b[1]; return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2; }
+  dir(from, to) { const a = this.ax(from), b = this.ax(to); return [b[0] - a[0], b[1] - a[1]]; }
+  isFloor(p) { const m = this.C().MAP; return p[1] >= 0 && p[1] < m.length && p[0] >= 0 && p[0] < m[0].length && m[p[1]][p[0]] !== '#'; }
+  revealed(g, p) { return g.visited.some((v) => this.dist(v.split(',').map(Number), p) <= 2); }
+  blockedBy(g, k) {
+    const E = this.encs();
+    for (const id in E) { if (this.key(E[id].pos) === k && !(g.defeated[id] && g.looted[id])) return id; }
+    return null;
+  }
+  log(g, t) { g.log.unshift(t); g.log = g.log.slice(0, 6); }
+  makeTask() {
+    const a = 2 + Math.floor(Math.random() * 8), b = 2 + Math.floor(Math.random() * 8), ans = a * b;
+    const o = new Set([ans]);
+    while (o.size < 4) { const d = (1 + Math.floor(Math.random() * 9)) * (Math.random() < 0.5 ? -1 : 1); if (ans + d > 0) o.add(ans + d); }
+    return { q: a + ' × ' + b, ans, opts: Array.from(o).sort(() => Math.random() - 0.5) };
+  }
+  startBattle(g, id, ambush) {
+    const e = this.encs()[id];
+    g.battle = { id, ambush, d: this.dir(e.pos, g.hero) };
+    g.view = 'battle'; g.sel = null;
+    this.log(g, ambush ? e.name + ' — AMBUSH!' : 'You attacked ' + e.name + '.');
+  }
+  moveTo(g, p) {
+    g.hero = p; g.will = Math.max(0, g.will - 1); g.sel = null;
+    if (!g.visited.includes(this.key(p))) g.visited.push(this.key(p));
+    const E = this.encs();
+    for (const id in E) {
+      const e = E[id];
+      if (e.sentry && !g.defeated[id] && this.dist(e.pos, p) === 1) { this.log(g, 'The ' + e.name + ' spotted you!'); this.startBattle(g, id, true); return; }
+      if (g.defeated[id] && !g.looted[id] && this.dist(e.pos, p) <= 1) { }
+    }
+  }
+
+  renderVals() {
+    const c = this.C(), g = this.g(), TH = this.TH(), E = this.encs();
+    const isMap = g.view === 'map', isBattle = g.view === 'battle';
+    const hk = this.key(g.hero);
+
+    // ---------- dungeon map ----------
+    const watched = new Set();
+    Object.keys(E).forEach((id) => { const e = E[id]; if (e.sentry && !g.defeated[id] && this.revealed(g, e.pos)) this.nbrs(e.pos).forEach((n) => { if (this.isFloor(n)) watched.add(this.key(n)); }); });
+    const reach = new Set();
+    this.nbrs(g.hero).forEach((n) => { const k = this.key(n); if (this.isFloor(n) && !this.blockedBy(g, k) && g.will >= 1) reach.add(k); });
+
+    const cells = [];
+    for (let r = 0; r < c.MAP.length; r++) for (let col = 0; col < c.MAP[0].length; col++) {
+      const p = [col, r], k = this.key(p);
+      const floor = this.isFloor(p);
+      const nearFloor = floor || this.nbrs(p).some((n) => this.isFloor(n));
+      if (!nearFloor) continue;
+      const rev = this.revealed(g, p);
+      let fill, edge = '#151617', inset = 2, mark = '', markColor = '#CBBFA6', clickable = false;
+      if (!rev) { fill = '#2A1A1E'; edge = '#2A1A1E'; }
+      else if (!floor) { fill = 'radial-gradient(circle at 30% 30%, #E2E2E2 0 6px, transparent 7px), radial-gradient(circle at 70% 36%, #CFCFCF 0 7px, transparent 8px), radial-gradient(circle at 46% 72%, #BDBDBD 0 8px, transparent 9px), radial-gradient(circle at 18% 62%, #C8C8C8 0 5px, transparent 6px), #8E9094'; edge = '#5E6166'; }
+      else {
+        fill = 'radial-gradient(circle at 45% 35%, #2C2D2F, #1F2022)';
+        if (watched.has(k)) { fill = 'radial-gradient(circle at 45% 35%, #3E2224, #2A1719)'; edge = '#7A2A24'; inset = 3; }
+        if (k === c.EXIT) { mark = 'EXIT'; markColor = '#E8D7A8'; edge = '#6E5A2E'; }
+        if (reach.has(k) && isMap) { edge = watched.has(k) ? '#C2412D' : '#4A8BE0'; inset = 3; mark = watched.has(k) ? 'SEEN!' : '1'; markColor = watched.has(k) ? '#FFB4A6' : '#8FC0F0'; clickable = !g.task; }
+      }
+      cells.push({ x: col * c.W + (r % 2 ? c.W / 2 : 0), y: Math.round(r * c.H * 0.75), fill, edge, inset, mark, markColor, clickable, aria: 'Move to ' + k, click: () => this.upd((s) => this.moveTo(s, p)) });
+    }
+
+    const tokFor = (id) => {
+      const e = E[id];
+      const looted = g.looted[id];
+      if (looted) return null;
+      const defeated = !!g.defeated[id];
+      const th = TH[defeated ? 'loot' : e.threat];
+      const n = defeated ? 1 : e.members.length;
+      const layers = [];
+      for (let i = n - 1; i >= 1; i--) layers.push({ top: i * 5 });
+      const lead = e.members[0];
+      const near = this.dist(e.pos, g.hero) === 1;
+      return {
+        x: e.pos[0] * c.W + (e.pos[1] % 2 ? c.W / 2 : 0) + 6, y: Math.round(e.pos[1] * c.H * 0.75) + 4,
+        rim: th.rim, edge: th.edge, dark: th.dark, layers, boxH: 55 + (n - 1) * 5,
+        bg: defeated ? 'linear-gradient(160deg, #3A3020, #1E180E)' : 'linear-gradient(160deg, #4A4238, #241F19)',
+        isSkull: !defeated, isChest: defeated, crown: !!lead.crown, bow: !!lead.bow,
+        count: n > 1 ? n : 0, unknown: !defeated && n > 1 && !g.scouted[id], sentry: !defeated && !!e.sentry,
+        glow: g.sel === id ? 'rgba(232,215,168,0.9)' : (near ? 'rgba(232,215,168,0.35)' : 'transparent'),
+        aria: e.name,
+        click: () => this.upd((s) => {
+          if (this.dist(e.pos, s.hero) !== 1) { this.log(s, 'Come closer to ' + (defeated ? 'the loot' : e.name) + '.'); return; }
+          if (defeated) { s.looted[id] = true; this.log(s, 'Picked up: ' + e.loot + '.'); return; }
+          s.sel = s.sel === id ? null : id;
+        })
+      };
+    };
+    const tokens = Object.keys(E).filter((id) => this.revealed(g, E[id].pos)).map(tokFor).filter(Boolean);
+
+    // popover
+    const se = g.sel ? E[g.sel] : null;
+    let popMembers = [], popX = 0, popY = 0;
+    if (se) {
+      const known = g.scouted[g.sel] || se.members.length === 1;
+      popMembers = se.members.map((m, i) => (known || i === 0)
+        ? { name: (i === 0 ? '★ ' : '') + m.name, info: m.info, chip: TH[se.threat].rim, color: '#EDE3D2' }
+        : { name: 'Unknown', info: '?', chip: '#3A474E', color: '#8E9599' });
+      const px = se.pos[0] * c.W + (se.pos[1] % 2 ? c.W / 2 : 0);
+      const py = Math.round(se.pos[1] * c.H * 0.75);
+      popX = px > 480 ? px - 312 : px + 66;
+      popY = Math.max(0, Math.min(520 - 250, py - 20));
+    }
+
+    const found = Object.keys(E).filter((id) => this.revealed(g, E[id].pos)).map((id) => {
+      const e = E[id];
+      const defeated = !!g.defeated[id];
+      const th = TH[defeated ? 'loot' : e.threat];
+      const n = defeated ? 1 : e.members.length;
+      const layers = [];
+      for (let i = n - 1; i >= 1; i--) layers.push({ top: i * 4 });
+      const known = g.scouted[id] || n === 1;
+      return {
+        name: e.name, threat: th.label, chipBg: th.chipBg, chipFg: th.chipFg, rim: th.rim, edge: th.edge, layers, boxH: 39 + (n - 1) * 4,
+        info: defeated ? (g.looted[id] ? 'Defeated · loot taken' : 'Defeated · loot waiting: ' + e.loot) : (n === 1 ? '1 enemy · ' + e.members[0].name : n + ' enemies · ' + (known ? e.members.map((m) => m.name).join(', ') : e.members[0].name + ' + ' + (n - 1) + ' unknown')) + (e.sentry && !defeated ? ' · sentry' : ''),
+        opacity: g.looted[id] ? 0.5 : 1, deco: defeated ? 'line-through' : 'none'
+      };
+    });
+
+    // ---------- battlefield ----------
+    let bcells = [], btokens = [], bEnemies = [], approach = '', deployTitle = '', deployText = '', biome = '', seed = '';
+    if (isBattle) {
+      const b = g.battle, e = E[b.id];
+      const dpx = 64 * (b.d[0] + b.d[1] / 2), dpy = 55.5 * b.d[1];
+      const dl = Math.hypot(dpx, dpy) || 1;
+      const ang = Math.atan2(dpy, dpx) * 180 / Math.PI;
+      const names = ['east', 'south-east', 'south-west', 'west', 'north-west', 'north-east'];
+      const idx = Math.round((((ang % 360) + 360) % 360) / 60) % 6;
+      approach = ['east', 'south-east', 'south-west', 'west', 'north-west', 'north-east'][[0, 1, 2, 3, 4, 5].indexOf(idx)] || names[0];
+      const FEAT = { pillar: ['0,-2', '-2,2'], rubble: ['1,1', '-1,0', '2,-3'], ledge: ['-3,1', '-2,0', '-3,2'], oil: ['1,-1'], saw: ['2,-1'], rock: ['-1,3', '3,0'] };
+      const featAt = (k) => Object.keys(FEAT).find((f) => FEAT[f].includes(k));
+      const cellsAx = [];
+      for (let q = -4; q <= 4; q++) for (let r = -4; r <= 4; r++) {
+        const s = -q - r, m = Math.max(Math.abs(q), Math.abs(r), Math.abs(s));
+        if (m > 4) continue;
+        if (m === 4 && ((q * 7 + r * 13) % 5 + 5) % 5 === 0) continue;
+        const vx = 64 * (q + r / 2), vy = 55.5 * r, vl = Math.hypot(vx, vy) || 1;
+        const cos = m === 0 ? 0 : (vx * dpx + vy * dpy) / (vl * dl);
+        cellsAx.push({ q, r, m, cos, k: q + ',' + r });
+      }
+      const heroZone = new Set(cellsAx.filter((x) => x.m >= 3 && x.cos > 0.6).map((x) => x.k));
+      const enemyZone = new Set(cellsAx.filter((x) => !heroZone.has(x.k) && (b.ambush ? (x.m >= 2 && x.cos > -0.1 && x.cos <= 0.85) : (x.m >= 2 && x.cos < -0.5))).map((x) => x.k));
+      const heroCell = cellsAx.filter((x) => heroZone.has(x.k) && !featAt(x.k)).sort((a, z) => (z.m - a.m) || (z.cos - a.cos))[0];
+      const hpos = heroCell ? [heroCell.q, heroCell.r] : [0, 3];
+      const hdist = (x) => { const dq = x.q - hpos[0], dr = x.r - hpos[1]; return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2; };
+      const ecands = cellsAx.filter((x) => enemyZone.has(x.k) && !featAt(x.k)).sort((a, z) => b.ambush ? hdist(a) - hdist(z) : a.cos - z.cos);
+      const px = (q, r) => ({ x: 256 + 64 * (q + r / 2), y: Math.round(222 + 55.5 * r) });
+
+      bcells = cellsAx.map((x) => {
+        const f = featAt(x.k);
+        let fill = 'radial-gradient(circle at 40% 30%, #34373A, #26292C)', edge = '#141618', inset = 2, mark = '', markColor = '#CBBFA6';
+        if (heroZone.has(x.k)) { fill = 'radial-gradient(circle at 40% 30%, #24384E, #1A2A3C)'; edge = '#4A8BE0'; inset = 3; }
+        if (enemyZone.has(x.k)) { fill = 'radial-gradient(circle at 40% 30%, #3E2028, #2A161C)'; edge = '#B0306A'; inset = 3; }
+        if (f === 'pillar') { fill = 'radial-gradient(circle at 30% 30%, #E2E2E2 0 6px, transparent 7px), radial-gradient(circle at 70% 36%, #CFCFCF 0 7px, transparent 8px), radial-gradient(circle at 46% 72%, #BDBDBD 0 8px, transparent 9px), #8E9094'; edge = '#5E6166'; inset = 2; }
+        if (f === 'rubble') { fill = 'radial-gradient(circle at 30% 35%, #5C544B 0 5px, transparent 6px), radial-gradient(circle at 66% 62%, #4E473F 0 6px, transparent 7px), #2E2B28'; mark = '5'; }
+        if (f === 'ledge') { fill = 'linear-gradient(180deg, #5A6166 0 18%, #444B50 18%)'; mark = 'LEDGE'; markColor = '#D9DEE2'; }
+        if (f === 'oil') { fill = 'radial-gradient(ellipse at 50% 55%, #120F1C 0 34%, #2A2340 58%, #2A2C2E 62%)'; mark = 'OIL'; markColor = '#B9A8E8'; }
+        const p = px(x.q, x.r);
+        return { x: p.x, y: p.y, fill, edge, inset, mark, markColor, isRock: f === 'rock', isSaw: f === 'saw' };
+      });
+      const hp = px(hpos[0], hpos[1]);
+      btokens.push({ x: hp.x + 4, y: hp.y + 5, isHero: true, isSkull: false, rim: 'linear-gradient(160deg, #6FA8E8, #1F4A88)', bg: '#1B2023' });
+      e.members.forEach((m, i) => {
+        const cc = ecands[i]; if (!cc) return;
+        const p = px(cc.q, cc.r);
+        btokens.push({ x: p.x + 4, y: p.y + 5, isHero: false, isSkull: true, crown: !!m.crown, bow: !!m.bow, rim: 'linear-gradient(160deg, #B0306A, #4E0C27)', bg: 'linear-gradient(160deg, #4A4238, #241F19)' });
+      });
+      bEnemies = e.members.map((m) => ({ name: m.name, info: m.info, chip: 'linear-gradient(160deg, #B0306A, #4E0C27)' }));
+      biome = 'Bone Crypt · battlefield';
+      seed = b.id + '-r1';
+      deployTitle = b.ambush ? 'AMBUSH!' : 'You attack';
+      deployText = b.ambush
+        ? 'They spotted you. Enemies start closer, on your flanks, and draw 2 initiative tokens in round 1 — keep the higher.'
+        : 'You start on the side you came from. In round 1 you draw 2 initiative tokens and keep the higher.';
+    }
+
+    const t = g.task;
+    const tabs = (isBattle ? ['HERO', 'INVENTORY', 'PATH', 'EVENTS', 'BATTLE'] : ['HERO', 'INVENTORY', 'PATH', 'EVENTS']).map((l) => {
+      const active = isBattle ? l === 'BATTLE' : l === 'EVENTS';
+      return { label: l, fg: active ? '#F4E9D8' : '#E9DCCB', bg: active ? 'linear-gradient(180deg, #8C1C47, #5A0F2C)' : '#2A0E18', border: active ? '1px solid #B0306A' : '1px solid #3A1422' };
+    });
+
+    return {
+      isMap, isBattle, cells, tokens, found, noneFound: !found.length,
+      heroX: g.hero[0] * c.W + (g.hero[1] % 2 ? c.W / 2 : 0) + 4, heroY: Math.round(g.hero[1] * c.H * 0.75) + 4,
+      hasPop: !!se && isMap, popX, popY, popMembers,
+      popName: se ? se.name : '', popThreat: se ? TH[se.threat].label : '', popChipBg: se ? TH[se.threat].chipBg : '', popChipFg: se ? TH[se.threat].chipFg : '', popEdge: se ? TH[se.threat].edge : '#36424A',
+      popSentryNote: !!(se && se.sentry),
+      scoutMeta: se && (g.scouted[g.sel] || se.members.length === 1) ? 'known' : '1 Will',
+      cantScout: !se || !!g.scouted[g.sel] || se.members.length === 1 || g.will < 1,
+      cantAttack: g.will < 2, cantSneak: !se,
+      closePop: () => this.upd((s) => { s.sel = null; }),
+      attack: () => this.upd((s) => { s.will -= 2; this.startBattle(s, s.sel, false); }),
+      scout: () => this.upd((s) => { s.will -= 1; s.scouted[s.sel] = true; this.log(s, 'Scouted ' + E[s.sel].name + ': ' + E[s.sel].members.map((m) => m.name).join(', ') + '.'); }),
+      sneak: () => this.upd((s) => { s.task = Object.assign(this.makeTask(), { id: s.sel }); }),
+      hasTask: !!t, taskQ: t ? t.q : '',
+      taskOpts: t ? t.opts.map((v) => ({ v, pick: () => this.upd((s) => {
+        const id = s.task.id, e = E[id]; const ok = v === s.task.ans; s.task = null;
+        if (!ok) { this.log(s, 'Sneak failed (' + t.q + ' = ' + t.ans + ').'); this.startBattle(s, id, true); return; }
+        const beyond = this.add(e.pos, this.dir(s.hero, e.pos));
+        if (this.isFloor(beyond) && !this.blockedBy(s, this.key(beyond))) { s.sel = null; this.log(s, 'Slipped past ' + e.name + '.'); s.hero = beyond; if (!s.visited.includes(this.key(beyond))) s.visited.push(this.key(beyond)); }
+        else { s.sel = null; this.log(s, 'Correct, but no free hex behind them — you stay.'); }
+      }) })) : [],
+      log: g.log.map((x) => ({ t: x })),
+      will: g.will,
+      bcells, btokens, bEnemies, approach, deployTitle, deployText, biome, seed,
+      deployEdge: isBattle && g.battle.ambush ? '#C2412D' : '#B0306A',
+      deployBg: isBattle && g.battle.ambush ? 'linear-gradient(180deg, #4A1A16, #262E33)' : 'linear-gradient(180deg, #3A1424, #262E33)',
+      win: () => this.upd((s) => { const e = E[s.battle.id]; s.defeated[s.battle.id] = true; this.log(s, 'Victory over ' + e.name + '! The token became loot.'); s.view = 'map'; s.battle = null; }),
+      lose: () => this.setState({ g: Object.assign(this.fresh(), { log: ['Merito fell and woke up in camp.'] }) }),
+      tabs, tabCount: tabs.length,
+      bannerTitle: isMap ? 'BONE CRYPT · DUNGEON' : (g.battle.ambush ? 'AMBUSH · BATTLEFIELD' : 'BATTLEFIELD · DEPLOY'),
+      bannerSub: isMap ? 'Explore — enemies wait on their hexes' : E[g.battle.id].name + ' · from the ' + approach,
+      bannerDot: isMap ? '#8FC0F0' : '#FF5A4A', bannerBorder: isMap ? '#2E4A66' : '#B0306A'
+    };
+  }
+}
+</script>
+</body>
+</html>

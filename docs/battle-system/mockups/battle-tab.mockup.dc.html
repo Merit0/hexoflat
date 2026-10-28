@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Battle tab</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font-family:inherit}
+button:disabled{opacity:0.4;cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 1680px; height: 1000px; display: flex; background: #0E1012; font-family: 'Alegreya Sans', sans-serif; color: #EDE3D2">
+
+  <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+    <defs>
+      <radialGradient id="btHeart" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#FF9F8A"></stop><stop offset="0.45" stop-color="#EE4B37"></stop><stop offset="1" stop-color="#A11B14"></stop></radialGradient>
+      <linearGradient id="btShield" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4D8FF"></stop><stop offset="0.5" stop-color="#4F8FDB"></stop><stop offset="1" stop-color="#1F4A88"></stop></linearGradient>
+    </defs>
+  </svg>
+
+  <!-- ===================== BATTLEFIELD ===================== -->
+  <main style="flex: 1; min-width: 0; position: relative; background-color: #121315; background-image: repeating-linear-gradient(32deg, rgba(255,255,255,0.016) 0 2px, transparent 2px 46px), repeating-linear-gradient(-28deg, rgba(0,0,0,0.3) 0 2px, transparent 2px 52px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px">
+
+    <div style="position: absolute; top: 14px; left: 14px; font-family: monospace; font-size: 12px; color: #CBBFA6; background: #1E2427; border: 1px solid #2E363A; border-radius: 6px; padding: 4px 10px">▸ Board (dev)</div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 22px; border-radius: 999px; background: rgba(18,21,23,0.92); border: 1px solid #B0306A; box-shadow: 0 0 24px rgba(176,48,106,0.35)">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5A4A"></span>
+      <span style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: #F4E9D8">BONE CRYPT · ROUND 2</span>
+      <span style="width: 1px; height: 18px; background: #3A474E"></span>
+      <span style="font-size: 15px; color: #CBBFA6">{{bannerSub}}</span>
+    </div>
+
+    <div style="position: relative; width: 736px; height: 464px">
+      <sc-for list="{{cells}}" as="c" hint-placeholder-count="70">
+        <div style="position: absolute; left: {{c.x}}px; top: {{c.y}}px; width: 64px; height: 74px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{c.edge}}">
+          <div style="position: absolute; inset: {{c.inset}}px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{c.fill}}; display: flex; align-items: center; justify-content: center">
+            <sc-if value="{{c.isRock}}" hint-placeholder-val="{{false}}"><div style="width: 42px; height: 36px; border-radius: 48% 52% 44% 56%; background: radial-gradient(circle at 38% 32%, #8E887E, #57524B 55%, #34312D); box-shadow: 0 4px 6px rgba(0,0,0,0.6)"></div></sc-if>
+            <sc-if value="{{c.isSaw}}" hint-placeholder-val="{{false}}">
+              <svg viewBox="0 0 40 40" width="46" height="46" aria-hidden="true"><path d="M20 2 L23 8 L29 4 L29 11 L36 11 L32 17 L38 20 L32 23 L36 29 L29 29 L29 36 L23 32 L20 38 L17 32 L11 36 L11 29 L4 29 L8 23 L2 20 L8 17 L4 11 L11 11 L11 4 L17 8 Z" fill="#B8C0C8" stroke="#2A3036" stroke-width="1.4" stroke-linejoin="round"></path><circle cx="20" cy="20" r="9" fill="#7F8A94" stroke="#2A3036" stroke-width="1.4"></circle><circle cx="20" cy="20" r="3" fill="#2A3036"></circle><path d="M14 13 A9 9 0 0 1 26 12" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="1.4" fill="none"></path></svg>
+            </sc-if>
+            <sc-if value="{{c.shield}}" hint-placeholder-val="{{false}}">
+              <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><path d="M20 3 L35 11.5 V28.5 L20 37 L5 28.5 V11.5 Z" fill="url(#btShield)" stroke="#0E1E36" stroke-width="2" stroke-linejoin="round"></path><path d="M20 8.5 L30 14.2 V25.8 L20 31.5 L10 25.8 V14.2 Z" fill="none" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1.4"></path></svg>
+            </sc-if>
+            <sc-if value="{{c.mark}}" hint-placeholder-val="{{false}}">
+              <span style="position: absolute; bottom: 9px; left: 0; right: 0; text-align: center; font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; color: {{c.markColor}}">{{c.mark}}</span>
+            </sc-if>
+            <sc-if value="{{c.clickable}}" hint-placeholder-val="{{false}}">
+              <button type="button" aria-label="{{c.aria}}" onClick="{{c.click}}" style="position: absolute; inset: 0; background: transparent; border: 0; padding: 0; cursor: pointer"></button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+      <sc-for list="{{boardTokens}}" as="t" hint-placeholder-count="5">
+        <div style="position: absolute; left: {{t.x}}px; top: {{t.y}}px; width: 56px; height: 64px; pointer-events: none">
+          <div style="position: absolute; inset: -4px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.glow}}"></div>
+          <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.frame}}"></div>
+          <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{t.bg}}; display: flex; align-items: center; justify-content: center; overflow: hidden">
+            <sc-if value="{{t.isPortrait}}" hint-placeholder-val="{{false}}"><img src="/_blob/8e58a1d86c3a6eac4f800f1a3bfe00f7" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+            <sc-if value="{{t.isSkull}}" hint-placeholder-val="{{false}}">
+              <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 74%; height: 74%">
+                <sc-if value="{{t.crown}}" hint-placeholder-val="{{false}}"><path d="M11 11 L13.5 3.5 L17 8 L20 1.5 L23 8 L26.5 3.5 L29 11 Z" fill="#E0A93F" stroke="#5A3D10" stroke-width="1.2" stroke-linejoin="round"></path></sc-if>
+                <path d="M20 8c-7.4 0-12.5 5-12.5 11.5 0 3.8 1.7 6.3 4.3 7.8V31.5a2 2 0 0 0 2 2h12.4a2 2 0 0 0 2-2v-4.2c2.6-1.5 4.3-4 4.3-7.8C32.5 13 27.4 8 20 8z" fill="#EFE8D6" stroke="#3A3428" stroke-width="1.6"></path>
+                <circle cx="14.8" cy="20" r="3.3" fill="#2A2620"></circle><circle cx="25.2" cy="20" r="3.3" fill="#2A2620"></circle>
+                <path d="M20 23.5 l-1.8 3.4 h3.6 z" fill="#2A2620"></path>
+                <path d="M16.5 29.5v4 M20 29.5v4 M23.5 29.5v4" stroke="#3A3428" stroke-width="1.3"></path>
+                <sc-if value="{{t.bow}}" hint-placeholder-val="{{false}}"><path d="M34 5 Q40 20 34 35" stroke="#8A4A22" stroke-width="2.6" fill="none"></path><path d="M34 5 L34 35" stroke="#D8D0BF" stroke-width="0.9"></path></sc-if>
+              </svg>
+            </sc-if>
+            <sc-if value="{{t.isLetter}}" hint-placeholder-val="{{false}}"><span style="font-family: 'Cinzel', serif; font-size: 24px; font-weight: 700; color: #F4E9D8">{{t.letter}}</span></sc-if>
+          </div>
+          <sc-if value="{{t.badge}}" hint-placeholder-val="{{false}}"><span style="position: absolute; top: -8px; right: -8px; min-width: 20px; height: 20px; border-radius: 10px; background: #C2412D; border: 1px solid #FFB4A6; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{t.badge}}</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; gap: 18px; font-size: 13px; color: #8E9599">
+      <span>Rubble — 5 Will</span><span>Ledge — 5 up, +½ heart from above</span><span>Oil — slide 1 more</span><span>Saw — −½ of hearts</span><span>Boulder — weight 2</span>
+    </div>
+
+    <sc-if value="{{hasTask}}" hint-placeholder-val="{{false}}">
+      <div style="position: absolute; inset: 0; background: rgba(6,7,8,0.55); display: flex; align-items: center; justify-content: center">
+        <div role="dialog" aria-label="{{taskTitle}}" style="width: 440px; box-sizing: border-box; padding: 20px 22px 22px; background: #191D20; border: 1px solid {{taskBorder}}; border-radius: 18px; box-shadow: 0 18px 50px rgba(0,0,0,0.6), 0 0 30px {{taskGlow}}; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; align-items: baseline; gap: 10px">
+            <span style="font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.08em; color: #F4E9D8">{{taskTitle}}</span>
+            <span style="margin-left: auto; font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: {{timeColor}}">{{timeLeft}} s</span>
+          </div>
+          <div style="font-size: 14px; color: #CBBFA6; line-height: 1.4">{{taskText}}</div>
+          <div style="height: 10px; border-radius: 5px; background: #0B0D0E; overflow: hidden"><div style="height: 100%; width: {{timePct}}%; background: {{timeColor}}; border-radius: 5px"></div></div>
+          <div style="text-align: center; font-family: 'Cinzel', serif; font-size: 40px; font-weight: 700; color: #E8D7A8">{{taskQ}} = ?</div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{taskOpts}}" as="o" hint-placeholder-count="4">
+              <button type="button" onClick="{{o.pick}}" style="min-height: 56px; font-family: 'Cinzel', serif; font-size: 24px; font-weight: 700; color: #F4E9D8; background: #262E33; border: 1px solid #4A5862; border-radius: 12px; cursor: pointer">{{o.v}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ===================== SIDE PANEL ===================== -->
+  <aside style="width: 560px; flex: none; display: flex; flex-direction: column; background: #191D20; border-left: 1px solid #262D31">
+
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 3px; background: #0E1012">
+      <div style="height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #E9DCCB; background: #2A0E18; border: 1px solid #3A1422">HERO</div>
+      <div style="height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #E9DCCB; background: #2A0E18; border: 1px solid #3A1422">INVENTORY</div>
+      <div style="height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #E9DCCB; background: #2A0E18; border: 1px solid #3A1422">PATH</div>
+      <div style="height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #E9DCCB; background: #2A0E18; border: 1px solid #3A1422">EVENTS</div>
+      <div style="position: relative; height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #F4E9D8; background: linear-gradient(180deg, #8C1C47, #5A0F2C); border: 1px solid #B0306A">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F4E9D8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4 L20 20 M20 4 L4 20 M4 4 V8 M4 4 H8 M20 4 V8 M20 4 H16"></path></svg>BATTLE
+        <span style="position: absolute; top: 6px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: #FF5A4A; box-shadow: 0 0 8px #FF5A4A"></span>
+      </div>
+    </div>
+
+    <div style="flex: 1; min-height: 0; padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 10px">
+
+      <!-- initiative -->
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px 18px; background: #121517; border: 1px solid #2E363A; border-radius: 14px">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 60px; flex: none">
+          <span style="font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.12em; color: #CBBFA6">ROUND</span>
+          <span style="font-family: 'Cinzel', serif; font-size: 26px; font-weight: 700; line-height: 1; color: #E8D7A8">2</span>
+        </div>
+        <span style="width: 1px; align-self: stretch; background: #262D31"></span>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <sc-for list="{{queue}}" as="q" hint-placeholder-count="6">
+            <div style="position: relative; width: 38px; height: 44px; opacity: {{q.opacity}}">
+              <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{q.frame}}"></div>
+              <div style="position: absolute; inset: 2px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: {{q.bg}}; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: {{q.fg}}">{{q.num}}</div>
+              <span style="position: absolute; bottom: -15px; left: -8px; right: -8px; text-align: center; font-size: 10px; color: #CBBFA6; white-space: nowrap; overflow: hidden">{{q.short}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: baseline; gap: 8px">
+        <span style="font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #8FC0F0">ALLIES</span>
+        <span style="flex: 1; height: 1px; background: linear-gradient(90deg, #2E4A66, transparent)"></span>
+      </div>
+
+      <!-- ===== MY HERO + CONTROLS ===== -->
+      <div style="box-sizing: border-box; padding: 10px 12px 12px; border-radius: 16px; border: 1px solid #B0306A; background: linear-gradient(180deg, #3A1424, #262E33 90px); box-shadow: 0 0 0 1px rgba(176,48,106,0.3), 0 0 22px rgba(176,48,106,0.22); display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <div style="position: relative; width: 56px; height: 64px; flex: none">
+            <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, #F0C060, #8C5A12)"></div>
+            <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); overflow: hidden"><img src="/_blob/8e58a1d86c3a6eac4f800f1a3bfe00f7" alt="Merito" style="width: 100%; height: 100%; object-fit: cover"></div>
+            <span style="position: absolute; top: -6px; left: -6px; width: 22px; height: 22px; border-radius: 50%; background: #121517; border: 1px solid #6E5A2E; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: #E8D7A8; display: flex; align-items: center; justify-content: center">5</span>
+          </div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: #E8D7A8">Merito</span>
+              <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: #8C1C47; color: #F4E9D8">YOUR TURN</span>
+              <sc-if value="{{heroHitTag}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #5A1A14; border: 1px solid #C2412D; color: #FFB4A6">{{heroHitTag}}</span></sc-if>
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center">
+              <sc-for list="{{heroHearts}}" as="h" hint-placeholder-count="3">
+                <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 26px; height: 26px; padding: 4px; box-sizing: border-box; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #222A2F, #101416); box-shadow: inset 0 2px 5px rgba(0,0,0,0.75), 0 0 0 1px #3A4650">
+                  <path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 A8 8 0 0 1 36.5 13.5 C36.5 21 31 27 20 35 Z" fill="#1B2023" stroke="#4A2C29" stroke-width="2"></path>
+                  <sc-if value="{{h.full}}" hint-placeholder-val="{{true}}"><path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 A8 8 0 0 1 36.5 13.5 C36.5 21 31 27 20 35 Z" fill="url(#btHeart)" stroke="#5A110D" stroke-width="2"></path></sc-if>
+                  <sc-if value="{{h.half}}" hint-placeholder-val="{{false}}"><path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 Z" fill="url(#btHeart)" stroke="#5A110D" stroke-width="2" stroke-linejoin="round"></path></sc-if>
+                </svg>
+              </sc-for>
+              <span style="margin-left: 4px; font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: #E8D7A8">{{heroHpText}}</span>
+            </div>
+          </div>
+          <div style="width: 120px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-left: 12px; border-left: 1px solid #4A2A36">
+            <img src="/_blob/a1ad7e2dfa4fb9e4bbb9552c58ced4cf" alt="" style="width: 30px; height: 30px; object-fit: contain">
+            <div style="font-family: 'Cinzel', serif; font-size: 22px; line-height: 1; font-weight: 700; color: #E8D7A8">{{will}}<span style="font-family: 'Alegreya Sans', sans-serif; font-size: 12px; font-weight: 400; color: #CBBFA6"> / {{willCap}}</span></div>
+            <div style="width: 100%; height: 7px; border-radius: 4px; background: #0B0D0E; overflow: hidden"><div style="width: {{willPct}}%; height: 100%; background: linear-gradient(90deg, #5B3FE0, #9A6BFF)"></div></div>
+          </div>
+        </div>
+
+        <div style="height: 1px; background: #3A2A31"></div>
+
+        <!-- defend controls -->
+        <sc-if value="{{pDefend}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="font-size: 15px; line-height: 1.4; color: #EDE3D2">A skeleton struck you and stepped away. <b style="color: #FFB4A6">Guess the side:</b> tap red hexes on the board to raise shields.</div>
+            <div style="display: flex; align-items: center; gap: 10px">
+              <sc-for list="{{shieldSlots}}" as="s" hint-placeholder-count="2">
+                <svg width="30" height="32" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L35 11.5 V28.5 L20 37 L5 28.5 V11.5 Z" fill="{{s.fill}}" stroke="{{s.stroke}}" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="{{s.dash}}"></path></svg>
+              </sc-for>
+              <span style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: #E8D7A8">{{placedCount}} / 2</span>
+              <span style="font-size: 13px; color: #CBBFA6">Wooden shield · 4 Will each · stance gave +4</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px">
+              <button type="button" onClick="{{block}}" disabled="{{noShields}}" style="min-height: 48px; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; color: #F4E9D8; background: linear-gradient(180deg, #3F7FD0, #1F4A88); border: 1px solid #6FA8E8; border-radius: 12px; cursor: pointer">BLOCK</button>
+              <button type="button" onClick="{{dodge}}" style="min-height: 48px; font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: #E9DCCB; background: #1E2427; border: 1px solid #4A5862; border-radius: 12px; cursor: pointer">DODGE · 6</button>
+              <button type="button" onClick="{{takeHit}}" style="min-height: 48px; font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: #CBBFA6; background: #1E2427; border: 1px solid #36424A; border-radius: 12px; cursor: pointer">TAKE HIT</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- action controls -->
+        <sc-if value="{{pAct}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <sc-for list="{{hands}}" as="hd" hint-placeholder-count="2">
+              <button type="button" onClick="{{hd.pick}}" disabled="{{hd.disabled}}" style="display: flex; align-items: center; height: 50px; box-sizing: border-box; padding: 0 14px; background: #121517; border: {{hd.border}}; border-radius: 12px; cursor: pointer; text-align: left">
+                <span style="width: 110px; font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 0.06em; color: #CBBFA6">{{hd.label}}</span>
+                <span style="width: 2px; height: 28px; background: {{hd.bar}}; margin-right: 14px"></span>
+                <span style="flex: 1; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: {{hd.color}}">{{hd.item}}</span>
+                <span style="font-size: 12px; font-weight: 700; color: #CBBFA6">{{hd.meta}}</span>
+              </button>
+            </sc-for>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+              <sc-for list="{{actions}}" as="a" hint-placeholder-count="4">
+                <button type="button" onClick="{{a.pick}}" disabled="{{a.disabled}}" style="min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 12px; border: {{a.border}}; background: {{a.bg}}; cursor: pointer">
+                  <span style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; color: #F4E9D8">{{a.label}}</span>
+                  <span style="font-size: 12px; color: #CBBFA6">{{a.cost}} Will</span>
+                </button>
+              </sc-for>
+            </div>
+            <div style="min-height: 38px; padding: 8px 12px; box-sizing: border-box; background: #121517; border-radius: 10px; font-size: 14px; line-height: 1.35; color: #CBBFA6">{{actHint}}</div>
+            <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 8px">
+              <button type="button" onClick="{{undo}}" disabled="{{noUndo}}" style="min-height: 50px; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: #CBBFA6; background: #1E2427; border: 1px solid #4A5862; border-radius: 12px; cursor: pointer">UNDO STEP</button>
+              <button type="button" onClick="{{endTurn}}" style="min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; letter-spacing: 0.08em; color: #E8D7A8; background: #121517; border: 1px solid #6E5A2E; border-radius: 12px; cursor: pointer">END TURN <span style="font-family: 'Alegreya Sans', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0; color: #CBBFA6">{{stanceNote}}</span></button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- waiting -->
+        <sc-if value="{{pWait}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div style="flex: 1; font-size: 15px; line-height: 1.4; color: #CBBFA6">Bone King (4) is moving. Your stance holds <b style="color: #E8D7A8">{{stance}} Will</b> for the next block.</div>
+            <button type="button" onClick="{{again}}" style="min-height: 46px; padding: 0 16px; font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: #F4E9D8; background: linear-gradient(180deg, #7E1A40, #5A0F2C); border: 1px solid #A0285A; border-radius: 12px; cursor: pointer">NEXT TURN · DEMO</button>
+          </div>
+        </sc-if>
+
+        <!-- fallen -->
+        <sc-if value="{{pDead}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div style="flex: 1; font-size: 15px; line-height: 1.4; color: #FFB4A6">Not enough hearts to survive that. <b>Merito has fallen</b> and returns to camp.</div>
+            <button type="button" onClick="{{restart}}" style="min-height: 46px; padding: 0 16px; font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: #F4E9D8; background: linear-gradient(180deg, #7E1A40, #5A0F2C); border: 1px solid #A0285A; border-radius: 12px; cursor: pointer">RESTART DEMO</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- friend -->
+      <div style="min-height: 64px; box-sizing: border-box; padding: 8px 14px 8px 10px; border-radius: 14px; border: 1px solid #36424A; background: #262E33; display: flex; align-items: center; gap: 12px; opacity: 0.85">
+        <div style="position: relative; width: 44px; height: 50px; flex: none">
+          <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, #6FA8E8, #1F4A88)"></div>
+          <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, #2F6F77, #173B40); display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: #F4E9D8">L</div>
+          <span style="position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; border-radius: 50%; background: #121517; border: 1px solid #6E5A2E; font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; color: #E8D7A8; display: flex; align-items: center; justify-content: center">6</span>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; align-items: center; gap: 8px"><span style="font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: #E8D7A8">Lina</span><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: #262D31; border: 1px solid #3A474E; color: #CBBFA6">DONE</span></div>
+          <div style="display: flex; gap: 3px; align-items: center">
+            <sc-for list="{{linaHearts}}" as="h" hint-placeholder-count="3">
+              <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 22px; height: 22px; padding: 3px; box-sizing: border-box; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #222A2F, #101416); box-shadow: inset 0 2px 5px rgba(0,0,0,0.75), 0 0 0 1px #3A4650">
+                <path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 A8 8 0 0 1 36.5 13.5 C36.5 21 31 27 20 35 Z" fill="#1B2023" stroke="#4A2C29" stroke-width="2"></path>
+                <sc-if value="{{h.full}}" hint-placeholder-val="{{true}}"><path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 A8 8 0 0 1 36.5 13.5 C36.5 21 31 27 20 35 Z" fill="url(#btHeart)" stroke="#5A110D" stroke-width="2"></path></sc-if>
+                <sc-if value="{{h.half}}" hint-placeholder-val="{{false}}"><path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 Z" fill="url(#btHeart)" stroke="#5A110D" stroke-width="2" stroke-linejoin="round"></path></sc-if>
+              </svg>
+            </sc-for>
+            <span style="margin-left: 4px; font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: #E8D7A8">3 / 3</span>
+          </div>
+        </div>
+        <div style="width: 110px; flex: none; padding-left: 12px; border-left: 1px solid #36424A; font-size: 12px; color: #8E9599">Stance 4 Will<br>Shield + spear</div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span style="flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #5A0F2C)"></span>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B0306A" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 5 L19 19 M19 5 L5 19 M5 5 V9 M5 5 H9 M19 5 V9 M19 5 H15 M8 16 L5 19 M16 16 L19 19"></path></svg>
+        <span style="flex: 1; height: 1px; background: linear-gradient(90deg, #5A0F2C, transparent)"></span>
+      </div>
+
+      <div style="display: flex; align-items: baseline; gap: 8px">
+        <span style="font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #F08A7A">ENEMIES</span>
+        <span style="font-size: 13px; color: #8E9599">{{enemiesLeft}}</span>
+        <span style="flex: 1; height: 1px; background: linear-gradient(90deg, #5A2A26, transparent)"></span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <sc-for list="{{enemies}}" as="r" hint-placeholder-count="4">
+          <div style="min-height: 58px; box-sizing: border-box; padding: 6px 14px 6px 10px; border-radius: 14px; border: {{r.border}}; background: #262E33; display: flex; align-items: center; gap: 12px; opacity: {{r.opacity}}">
+            <div style="position: relative; width: 40px; height: 46px; flex: none; filter: {{r.filter}}">
+              <div style="position: absolute; inset: 0; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, #B0306A, #4E0C27)"></div>
+              <div style="position: absolute; inset: 3px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(160deg, #4A4238, #241F19); display: flex; align-items: center; justify-content: center">
+                <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 76%; height: 76%">
+                  <sc-if value="{{r.crown}}" hint-placeholder-val="{{false}}"><path d="M11 11 L13.5 3.5 L17 8 L20 1.5 L23 8 L26.5 3.5 L29 11 Z" fill="#E0A93F" stroke="#5A3D10" stroke-width="1.2" stroke-linejoin="round"></path></sc-if>
+                  <path d="M20 8c-7.4 0-12.5 5-12.5 11.5 0 3.8 1.7 6.3 4.3 7.8V31.5a2 2 0 0 0 2 2h12.4a2 2 0 0 0 2-2v-4.2c2.6-1.5 4.3-4 4.3-7.8C32.5 13 27.4 8 20 8z" fill="#EFE8D6" stroke="#3A3428" stroke-width="1.6"></path>
+                  <circle cx="14.8" cy="20" r="3.3" fill="#2A2620"></circle><circle cx="25.2" cy="20" r="3.3" fill="#2A2620"></circle>
+                  <path d="M20 23.5 l-1.8 3.4 h3.6 z" fill="#2A2620"></path>
+                  <sc-if value="{{r.bow}}" hint-placeholder-val="{{false}}"><path d="M34 5 Q40 20 34 35" stroke="#8A4A22" stroke-width="2.6" fill="none"></path></sc-if>
+                </svg>
+              </div>
+              <span style="position: absolute; top: -6px; left: -6px; width: 18px; height: 18px; border-radius: 50%; background: #121517; border: 1px solid #6E5A2E; font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; color: #E8D7A8; display: flex; align-items: center; justify-content: center">{{r.init}}</span>
+            </div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span style="font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: #EDE3D2; text-decoration: {{r.deco}}">{{r.name}}</span>
+                <sc-if value="{{r.tag}}" hint-placeholder-val="{{false}}"><span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 999px; background: {{r.tagBg}}; color: #F4E9D8">{{r.tag}}</span></sc-if>
+                <sc-if value="{{r.pending}}" hint-placeholder-val="{{false}}"><span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #5A1A14; border: 1px solid #C2412D; color: #FFB4A6">{{r.pending}}</span></sc-if>
+              </div>
+              <div style="display: flex; gap: 3px; align-items: center">
+                <sc-for list="{{r.hearts}}" as="h" hint-placeholder-count="2">
+                  <svg viewBox="0 0 40 40" aria-hidden="true" style="width: 20px; height: 20px; padding: 3px; box-sizing: border-box; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #222A2F, #101416); box-shadow: inset 0 2px 5px rgba(0,0,0,0.75), 0 0 0 1px #3A4650">
+                    <path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 A8 8 0 0 1 36.5 13.5 C36.5 21 31 27 20 35 Z" fill="#1B2023" stroke="#4A2C29" stroke-width="2"></path>
+                    <sc-if value="{{h.full}}" hint-placeholder-val="{{true}}"><path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 A8 8 0 0 1 36.5 13.5 C36.5 21 31 27 20 35 Z" fill="url(#btHeart)" stroke="#5A110D" stroke-width="2"></path></sc-if>
+                    <sc-if value="{{h.half}}" hint-placeholder-val="{{false}}"><path d="M20 35 C9 27 3.5 21 3.5 13.5 A8 8 0 0 1 20 9.5 Z" fill="url(#btHeart)" stroke="#5A110D" stroke-width="2" stroke-linejoin="round"></path></sc-if>
+                  </svg>
+                </sc-for>
+                <span style="margin-left: 4px; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: #E8D7A8">{{r.hpText}}</span>
+              </div>
+            </div>
+            <div style="width: 120px; flex: none; display: flex; flex-direction: column; gap: 3px; padding-left: 12px; border-left: 1px solid #36424A">
+              <div style="display: flex; gap: 3px">
+                <sc-for list="{{r.shields}}" as="s" hint-placeholder-count="6">
+                  <svg width="14" height="16" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L35 11.5 V28.5 L20 37 L5 28.5 V11.5 Z" fill="{{s.fill}}" stroke="{{s.stroke}}" stroke-width="3" stroke-linejoin="round"></path></svg>
+                </sc-for>
+              </div>
+              <span style="font-size: 12px; color: #8E9599">{{r.role}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1000}}'>
+class Component extends DCLogic {
+  C() {
+    return {
+      COLS: 11, ROWS: 8, W: 64, H: 74,
+      STEP: 3, ROUGH: 5, STRIKE: 7, PUSH: 6, PULL: 8, SWAP: 4, SHIELD: 4, DODGE: 6, TEMPO: 20, GUARD_MAX: 8, USE: 3, TASK_MS: 5000,
+      PILLARS: ['3,2', '8,6'],
+      ROCKS: ['6,5', '2,2'],
+      RUBBLE: ['5,3', '3,3', '2,6'],
+      LEDGE: ['7,4', '8,4', '8,3'],
+      OIL: ['5,5'],
+      SAW: '6,6'
+    };
+  }
+  fresh() {
+    return {
+      phase: 'defend', will: 24, stance: 0, shields: [], mode: 'move', hand: null, msg: '', used: {},
+      potions: 1, hist: [], task: null,
+      left: 'shield', heroHp: 5, hero: [4, 4],
+      enemies: {
+        king: { name: 'Bone King', role: 'Boss · pushes', pos: [7, 2], hp: 8, max: 8, shields: 2, init: 4, crown: true, weight: 3, pending: 0 },
+        skA: { name: 'Skeleton', role: 'Melee · hit & run', pos: [6, 3], hp: 2, max: 3, shields: 1, init: 3, weight: 1, pending: 1 },
+        arch: { name: 'Bone Archer', role: 'Ranged 2–3', pos: [5, 1], hp: 2, max: 2, shields: 0, init: 2, bow: true, weight: 1, pending: 0 },
+        skB: { name: 'Skeleton', role: 'Melee · hit & run', pos: null, hp: 0, max: 3, shields: 0, init: 1, weight: 1, pending: 0 }
+      }
+    };
+  }
+  g() { return (this.state && this.state.g) || this.fresh(); }
+  upd(fn) { const g = JSON.parse(JSON.stringify(this.g())); fn(g); this.setState({ g }); }
+
+  key(p) { return p[0] + ',' + p[1]; }
+  ax(p) { return [p[0] - (p[1] - (p[1] & 1)) / 2, p[1]]; }
+  off(a) { return [a[0] + (a[1] - (a[1] & 1)) / 2, a[1]]; }
+  add(p, d) { const a = this.ax(p); return this.off([a[0] + d[0], a[1] + d[1]]); }
+  nbrs(p) { return [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]].map((d) => this.add(p, d)); }
+  dist(p, q) { const a = this.ax(p), b = this.ax(q); const dq = a[0] - b[0], dr = a[1] - b[1]; return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2; }
+  dir(from, to) { const a = this.ax(from), b = this.ax(to); return [b[0] - a[0], b[1] - a[1]]; }
+
+  map() {
+    const c = this.C();
+    const present = new Set();
+    for (let r = 0; r < c.ROWS; r++) for (let col = 0; col < c.COLS; col++) {
+      const dx = (col - 5) / 5.4, dy = (r - 3.5) / 4.1;
+      if (dx * dx + dy * dy <= 1) present.add(col + ',' + r);
+    }
+    const keep = new Set([].concat(c.ROCKS, c.RUBBLE, c.LEDGE, c.OIL, [c.SAW, '4,4', '2,4', '7,2', '6,3', '5,1']));
+    const walls = new Set(c.PILLARS);
+    present.forEach((k) => {
+      const p = k.split(',').map(Number);
+      if (keep.has(k)) return;
+      if (this.nbrs(p).some((n) => !present.has(this.key(n)))) walls.add(k);
+    });
+    return { present, walls };
+  }
+  unitAt(g, k) {
+    if (this.key(g.hero) === k) return 'hero';
+    if (k === '2,4') return 'lina';
+    for (const id in g.enemies) { const e = g.enemies[id]; if (e.pos && e.hp > 0 && this.key(e.pos) === k) return id; }
+    return null;
+  }
+  solid(g, p, m) { const c = this.C(), k = this.key(p); return !m.present.has(k) || m.walls.has(k) || c.ROCKS.includes(k) || !!this.unitAt(g, k); }
+  height(p) { return this.C().LEDGE.includes(this.key(p)) ? 1 : 0; }
+  stepCost(p, from) { const c = this.C(); if (this.height(p) > this.height(from) || c.RUBBLE.includes(this.key(p))) return c.ROUGH; return c.STEP; }
+
+  forced(g, id, dest, d, m) {
+    const c = this.C(), e = g.enemies[id];
+    const fromH = this.height(e.pos);
+    const parts = [];
+    e.pos = dest;
+    if (c.OIL.includes(this.key(dest))) { const n = this.add(dest, d); if (!this.solid(g, n, m)) { e.pos = n; parts.push('slid on oil'); } }
+    if (fromH > this.height(e.pos)) { e.hp = Math.max(0, e.hp - 1); parts.push('fell off the ledge −½'); }
+    if (this.key(e.pos) === c.SAW && e.hp > 0) { const dmg = Math.max(1, Math.ceil(e.hp / 2)); e.hp -= dmg; parts.push('hit the saw −' + dmg / 2); }
+    if (e.hp <= 0) { e.pos = null; parts.push('FALLEN'); }
+    return parts.length ? parts.join(', ') : 'moved 1 hex';
+  }
+
+  click(g, k) {
+    const c = this.C(), m = this.map();
+    const p = k.split(',').map(Number);
+    if (g.phase === 'defend') {
+      const i = g.shields.indexOf(k);
+      if (i >= 0) { g.shields.splice(i, 1); g.will += c.SHIELD; return; }
+      if (g.shields.length >= 2 || g.will < c.SHIELD) return;
+      g.shields.push(k); g.will -= c.SHIELD; return;
+    }
+    if (g.phase !== 'act') return;
+    const target = this.unitAt(g, k);
+    if (g.mode === 'move') {
+      const cost = this.stepCost(p, g.hero);
+      if (g.will < cost) return;
+      const from = g.hero.slice();
+      g.will -= cost;
+      if (k === c.SAW) { g.hero = p; g.hist = []; this.openTask(g, 'saw', from); return; }
+      g.hist.push({ hero: from, will: g.will + cost });
+      g.hero = p; g.msg = 'Moved for ' + cost + ' Will.';
+      return;
+    }
+    if (!target || !g.enemies[target]) return;
+    const e = g.enemies[target];
+    g.hist = [];
+    if (g.mode === 'strike') {
+      g.will -= c.STRIKE; e.pending += 1; g.used[g.hand] = true;
+      const high = this.height(g.hero) > this.height(e.pos);
+      g.msg = 'Struck ' + e.name + (high ? ' from the ledge (+½)' : '') + '. It only sees a red ring — step away to hide your side.';
+      g.mode = 'move'; g.hand = null; return;
+    }
+    if (g.mode === 'push') {
+      if (e.weight > 1) { g.msg = e.name + ' is too heavy (weight ' + e.weight + ' > your force 1).'; return; }
+      const d = this.dir(g.hero, e.pos), dest = this.add(e.pos, d);
+      if (this.solid(g, dest, m)) { g.msg = 'Nothing behind ' + e.name + ' is free — cannot push.'; return; }
+      g.will -= c.PUSH; g.msg = 'Pushed ' + e.name + ': ' + this.forced(g, target, dest, d, m) + '.'; g.mode = 'move'; return;
+    }
+    if (g.mode === 'pull') {
+      if (e.weight > 1) { g.msg = e.name + ' is too heavy to pull.'; return; }
+      const cand = this.nbrs(g.hero).filter((n) => this.dist(n, e.pos) === 1 && !this.solid(g, n, m));
+      if (!cand.length) { g.msg = 'No free hex between you.'; return; }
+      g.will -= c.PULL; g.msg = 'Pulled ' + e.name + ': ' + this.forced(g, target, cand[0], this.dir(e.pos, cand[0]), m) + '.'; g.mode = 'move';
+    }
+  }
+
+  // ---------- timed math window (dodge / hazard) ----------
+  openTask(g, kind, from) {
+    const c = this.C();
+    const a = 2 + Math.floor(Math.random() * 8), b = 2 + Math.floor(Math.random() * 8);
+    const ans = a * b;
+    const opts = new Set([ans]);
+    while (opts.size < 4) { const d = (1 + Math.floor(Math.random() * 9)) * (Math.random() < 0.5 ? -1 : 1); if (ans + d > 0) opts.add(ans + d); }
+    const list = Array.from(opts).sort(() => Math.random() - 0.5);
+    g.task = { kind, from, q: a + ' × ' + b, ans, opts: list, deadline: Date.now() + c.TASK_MS };
+    setTimeout(() => this.tick(), 0);
+  }
+  tick() {
+    clearInterval(this._timer);
+    this._timer = setInterval(() => {
+      const g = this.g();
+      if (!g.task) { clearInterval(this._timer); return; }
+      if (Date.now() >= g.task.deadline) { clearInterval(this._timer); this.upd((s) => this.resolveTask(s, false, true)); return; }
+      this.forceUpdate();
+    }, 100);
+  }
+  componentWillUnmount() { clearInterval(this._timer); }
+  resolveTask(g, ok, late) {
+    const c = this.C(), m = this.map(), t = g.task;
+    if (!t) return;
+    g.task = null;
+    clearInterval(this._timer);
+    const why = late ? 'Too slow' : 'Wrong answer';
+    if (t.kind === 'dodge') {
+      g.phase = 'act'; g.will = Math.min(c.TEMPO, g.will);
+      if (ok) { g.msg = 'Dodged! ' + t.q + ' = ' + t.ans + ' — the strike missed.'; return; }
+      if (g.heroHp - 2 <= 0) { g.heroHp = 0; g.phase = 'dead'; return; }
+      g.heroHp -= 2; g.msg = why + ' (' + t.q + ' = ' + t.ans + '). The strike lands: −1 heart.'; return;
+    }
+    let dmg = 0;
+    if (!ok) {
+      dmg = Math.max(1, Math.ceil(g.heroHp / 2));
+      if (g.heroHp - dmg <= 0) { g.heroHp = 0; g.phase = 'dead'; return; }
+      g.heroHp -= dmg;
+    }
+    const back = t.from && !this.solid(g, t.from, m) ? t.from : this.nbrs(g.hero).find((n) => !this.solid(g, n, m) && this.key(n) !== c.SAW);
+    if (back) g.hero = back;
+    g.msg = ok ? 'Dodged the saw (' + t.q + ' = ' + t.ans + ') — thrown back, no damage.' : why + ' (' + t.q + ' = ' + t.ans + '). The saw cuts −' + dmg / 2 + ' heart — thrown back.';
+  }
+
+  renderVals() {
+    const c = this.C(), g = this.g(), m = this.map();
+    const ph = g.phase;
+    const hk = this.key(g.hero);
+
+    const ring = new Set();
+    if (ph === 'defend') this.nbrs(g.hero).forEach((n) => { if (!this.solid(g, n, m)) ring.add(this.key(n)); });
+    const reach = new Set(), targets = new Set();
+    if (ph === 'act') {
+      if (g.mode === 'move') this.nbrs(g.hero).forEach((n) => { if (!this.solid(g, n, m) && g.will >= this.stepCost(n, g.hero)) reach.add(this.key(n)); });
+      else Object.keys(g.enemies).forEach((id) => {
+        const e = g.enemies[id]; if (!e.pos || e.hp <= 0) return;
+        const d = this.dist(g.hero, e.pos);
+        if ((g.mode === 'pull' && d === 2) || (g.mode !== 'pull' && d === 1)) targets.add(this.key(e.pos));
+      });
+    }
+
+    const cells = [];
+    m.present.forEach((k) => {
+      const [col, r] = k.split(',').map(Number);
+      let fill = 'radial-gradient(circle at 40% 30%, #34373A, #26292C)', edge = '#141618', inset = 2, mark = '', markColor = '#CBBFA6';
+      if (m.walls.has(k)) { fill = 'repeating-linear-gradient(0deg, #3B3531 0 9px, #241F1C 9px 11px), #3B3531'; edge = '#0B0C0D'; }
+      else if (c.LEDGE.includes(k)) { fill = 'linear-gradient(180deg, #5A6166 0 18%, #444B50 18%)'; edge = '#1A1D1F'; mark = 'LEDGE'; markColor = '#D9DEE2'; }
+      else if (c.RUBBLE.includes(k)) { fill = 'radial-gradient(circle at 30% 35%, #5C544B 0 5px, transparent 6px), radial-gradient(circle at 66% 62%, #4E473F 0 6px, transparent 7px), radial-gradient(circle at 60% 28%, #4A443D 0 3px, transparent 4px), #2E2B28'; mark = '5'; markColor = '#CBBFA6'; }
+      else if (c.OIL.includes(k)) { fill = 'radial-gradient(ellipse at 50% 55%, #120F1C 0 34%, #2A2340 58%, #2A2C2E 62%)'; mark = 'OIL'; markColor = '#B9A8E8'; }
+      if (ring.has(k)) { fill = '#4A1E1B'; edge = '#C2412D'; inset = 3; mark = ''; }
+      if (reach.has(k)) {
+        if (k === c.SAW) { edge = '#C2412D'; inset = 3; mark = 'DANGER'; markColor = '#FFB4A6'; }
+        else { edge = '#4A8BE0'; inset = 3; mark = this.stepCost([col, r], g.hero) + ' WILL'; markColor = '#8FC0F0'; }
+      }
+      if (targets.has(k)) { edge = '#E0A93F'; inset = 4; }
+      const clickable = !g.task && ((ph === 'defend' && ring.has(k)) || (ph === 'act' && (reach.has(k) || targets.has(k))));
+      cells.push({
+        x: col * c.W + (r % 2 ? c.W / 2 : 0), y: Math.round(r * c.H * 0.75),
+        fill, edge, inset, mark, markColor,
+        isRock: c.ROCKS.includes(k), isSaw: k === c.SAW, shield: g.shields.includes(k),
+        clickable, aria: 'Hex ' + k,
+        click: () => this.upd((s) => this.click(s, k))
+      });
+    });
+
+    const tok = (pos, look) => ({ ...look, x: pos[0] * c.W + (pos[1] % 2 ? c.W / 2 : 0) + 4, y: Math.round(pos[1] * c.H * 0.75) + 5 });
+    const boardTokens = [
+      tok(g.hero, { isPortrait: true, frame: 'linear-gradient(160deg, #F0C060, #8C5A12)', bg: '#1B2023', glow: 'rgba(240,192,96,0.55)', badge: '' }),
+      tok([2, 4], { isLetter: true, letter: 'L', frame: 'linear-gradient(160deg, #6FA8E8, #1F4A88)', bg: 'linear-gradient(160deg, #2F6F77, #173B40)', glow: 'transparent', badge: '' })
+    ];
+    Object.keys(g.enemies).forEach((id) => {
+      const e = g.enemies[id]; if (!e.pos || e.hp <= 0) return;
+      boardTokens.push(tok(e.pos, { isSkull: true, crown: !!e.crown, bow: !!e.bow, frame: 'linear-gradient(160deg, #B0306A, #4E0C27)', bg: 'linear-gradient(160deg, #4A4238, #241F19)', glow: targets.has(this.key(e.pos)) ? 'rgba(224,169,63,0.8)' : 'transparent', badge: e.pending ? '×' + e.pending : '' }));
+    });
+
+    const hearts = (hp, max) => Array.from({ length: max / 2 }, (_, i) => ({ full: hp >= 2 * (i + 1), half: hp === 2 * i + 1 }));
+    const shields6 = (n) => Array.from({ length: 6 }, (_, i) => i < n ? { fill: 'url(#btShield)', stroke: '#0E1E36' } : { fill: '#1A2026', stroke: '#34465A' });
+
+    const enemies = Object.keys(g.enemies).map((id) => {
+      const e = g.enemies[id];
+      const fallen = !e.pos || e.hp <= 0;
+      return {
+        name: e.name, role: e.role, init: e.init, crown: !!e.crown, bow: !!e.bow,
+        tag: fallen ? 'FALLEN' : (id === 'king' ? 'NEXT' : ''), tagBg: '#3A474E',
+        pending: !fallen && e.pending ? 'HIT ×' + e.pending : '',
+        hearts: hearts(Math.max(0, e.hp), e.max), hpText: Math.max(0, e.hp) / 2 + ' / ' + e.max / 2,
+        shields: shields6(e.shields),
+        border: !fallen && targets.has(this.key(e.pos)) ? '1px solid #E0A93F' : '1px solid #36424A',
+        opacity: fallen ? 0.45 : 1, filter: fallen ? 'grayscale(1) brightness(0.5)' : 'none', deco: fallen ? 'line-through' : 'none'
+      };
+    });
+
+    const queue = [
+      { num: 6, short: 'Lina', state: 'done', ally: true },
+      { num: 5, short: 'Merito', state: 'active', ally: true },
+      { num: 4, short: 'King', state: 'next' },
+      { num: 3, short: 'Skeleton', state: 'wait' },
+      { num: 2, short: 'Archer', state: 'wait' },
+      { num: 1, short: 'Skeleton', state: g.enemies.skB.hp > 0 ? 'wait' : 'fallen' }
+    ].map((q) => ({
+      num: q.num, short: q.short,
+      frame: q.state === 'active' ? 'linear-gradient(160deg, #F0C060, #8C5A12)' : (q.ally ? '#2E4A66' : '#5A1A2E'),
+      bg: q.state === 'active' ? '#3A2A10' : '#1B2023', fg: q.state === 'active' ? '#F4E9D8' : '#CBBFA6',
+      opacity: q.state === 'fallen' ? 0.3 : (q.state === 'done' ? 0.55 : 1)
+    }));
+
+    const LEFT = {
+      shield: { item: 'Wooden shield', weapon: false, meta: 'blocks 2 sides' },
+      dagger: { item: 'Dagger', weapon: true, power: '½ heart' },
+      potion: { item: 'Health potion', use: true, meta: '+1 heart · use 3' },
+      empty: { item: 'Empty', weapon: false, meta: '' }
+    };
+    const handDefs = [
+      { id: 'right', label: 'RIGHT HAND', item: 'Sword', weapon: true, power: '1 heart' },
+      Object.assign({ id: 'left', label: 'LEFT HAND' }, LEFT[g.left])
+    ];
+    const hands = handDefs.map((h) => {
+      const used = !!g.used[h.id];
+      const sel = g.hand === h.id && g.mode === 'strike';
+      return {
+        label: h.label, item: h.item,
+        meta: h.weapon ? (used ? 'struck this turn' : h.power + ' · strike 7') : h.meta,
+        disabled: h.use ? g.will < c.USE : (!h.weapon || used || g.will < c.STRIKE),
+        border: sel ? '1px solid #4A8BE0' : (h.use ? '1px solid #7A3A34' : '1px solid #2E363A'),
+        bar: sel ? '#4A8BE0' : (h.use ? '#C2412D' : '#3A474E'),
+        color: h.use ? '#F08A7A' : (h.item === 'Empty' ? '#8E9599' : (h.weapon ? (sel ? '#5AA0F2' : '#EDE3D2') : '#8FC0F0')),
+        pick: () => this.upd((s) => {
+          if (h.use) { s.will -= c.USE; s.heroHp = Math.min(6, s.heroHp + 2); s.left = 'empty'; s.potions -= 1; s.hist = []; s.mode = 'move'; s.hand = null; s.msg = 'Drank the potion: +1 heart (−3 Will). Left hand is empty now.'; return; }
+          const on = s.hand === h.id && s.mode === 'strike'; s.mode = on ? 'move' : 'strike'; s.hand = on ? null : h.id; s.msg = ''; })
+      };
+    });
+
+    const modeBtn = (id, label, cost) => ({
+      label, cost,
+      disabled: g.will < cost,
+      border: g.mode === id ? '1px solid #E0A93F' : '1px solid #4A5862',
+      bg: g.mode === id ? 'linear-gradient(180deg, #5A4214, #2E2410)' : '#1E2427',
+      pick: () => this.upd((s) => { s.mode = s.mode === id ? 'move' : id; s.hand = null; s.msg = ''; })
+    });
+    const strikeReady = g.mode === 'strike';
+    const actions = [
+      { label: 'STRIKE', cost: c.STRIKE, disabled: g.will < c.STRIKE, border: strikeReady ? '1px solid #E0A93F' : '1px solid #A0285A', bg: 'linear-gradient(180deg, #7E1A40, #5A0F2C)',
+        pick: () => this.upd((s) => { if (s.mode === 'strike') { s.mode = 'move'; s.hand = null; return; } const free = !s.used.right ? 'right' : (s.left === 'dagger' && !s.used.left ? 'left' : null); if (!free) { s.msg = 'Both hands already struck this turn.'; return; } s.mode = 'strike'; s.hand = free; s.msg = ''; }) },
+      modeBtn('push', 'PUSH', c.PUSH),
+      modeBtn('pull', 'PULL', c.PULL),
+      { label: 'SWAP', cost: c.SWAP, disabled: g.will < c.SWAP, border: '1px solid #4A5862', bg: '#1E2427',
+        pick: () => this.upd((s) => { const order = ['shield', 'dagger'].concat(s.potions > 0 ? ['potion'] : []); const i = order.indexOf(s.left); s.left = order[(i + 1) % order.length]; s.will -= c.SWAP; s.hist = []; s.mode = 'move'; s.hand = null; s.msg = 'Took from the bag into the left hand: ' + LEFT[s.left].item.toLowerCase() + ' (−4 Will).'; }) }
+    ];
+
+    let actHint = g.msg;
+    if (!actHint) {
+      if (g.mode === 'move') actHint = 'Tap a blue hex to move — the price is on the hex. Stand next to an enemy on a free hex to strike.';
+      else if (g.mode === 'strike') actHint = targets.size ? 'Tap a gold-framed enemy to lay the ' + (g.hand === 'right' ? 'sword' : 'dagger') + ' on it.' : 'No enemy next to you. Move closer first.';
+      else if (g.mode === 'push') actHint = 'Tap an adjacent enemy — it is pushed 1 hex away from you.';
+      else actHint = 'Tap an enemy 2 hexes away — it is pulled next to you.';
+    }
+
+    const t = g.task;
+    const left = t ? Math.max(0, t.deadline - Date.now()) : 0;
+    const timePct = t ? Math.round(left / c.TASK_MS * 100) : 0;
+    const timeColor = timePct > 50 ? '#5BD18A' : (timePct > 25 ? '#E0A93F' : '#EE4B37');
+
+    return {
+      hasTask: !!t,
+      taskTitle: t && t.kind === 'saw' ? 'SAW — DODGE!' : 'DODGE!',
+      taskText: t && t.kind === 'saw'
+        ? 'You stepped onto the saw. Answer before the line runs out to jump clear. Wrong or late — the saw takes half your hearts.'
+        : 'Answer before the line runs out and the strike misses. Wrong or late — you take the hit.',
+      taskQ: t ? t.q : '', timePct, timeColor, timeLeft: (left / 1000).toFixed(1),
+      taskBorder: timeColor, taskGlow: timePct > 25 ? 'rgba(91,209,138,0.15)' : 'rgba(238,75,55,0.3)',
+      taskOpts: t ? t.opts.map((v) => ({ v, pick: () => this.upd((s) => this.resolveTask(s, v === t.ans, false)) })) : [],
+      undo: () => this.upd((s) => { const h = s.hist.pop(); if (!h) return; s.hero = h.hero; s.will = h.will; s.msg = 'Step undone — Will returned.'; }),
+      noUndo: !g.hist.length,
+      pDead: ph === 'dead',
+      restart: () => this.setState({ g: this.fresh() }),
+      cells, boardTokens, queue, enemies, hands, actions, actHint,
+      bannerSub: ph === 'defend' ? 'Merito · guess the side' : (ph === 'act' ? 'Merito · ' + g.will + ' Will left' : (ph === 'dead' ? 'Merito has fallen' : 'Bone King is moving')),
+      heroHitTag: ph === 'defend' ? 'HIT ×1' : '',
+      heroHearts: hearts(g.heroHp, 6), heroHpText: g.heroHp / 2 + ' / 3',
+      linaHearts: hearts(6, 6),
+      will: g.will, willCap: ph === 'defend' ? 24 : 20, willPct: Math.min(100, Math.round(g.will / (ph === 'defend' ? 24 : 20) * 100)),
+      pDefend: ph === 'defend', pAct: ph === 'act', pWait: ph === 'wait',
+      shieldSlots: [0, 1].map((i) => i < g.shields.length ? { fill: 'url(#btShield)', stroke: '#0E1E36', dash: 'none' } : { fill: '#1A2026', stroke: '#3E5672', dash: '4 3' }),
+      placedCount: g.shields.length, noShields: !g.shields.length,
+      block: () => this.upd((s) => { const hit = '5,4'; const ok = s.shields.includes(hit); if (!ok) s.heroHp -= 2; s.phase = 'act'; s.will = Math.min(c.TEMPO, s.will); s.msg = ok ? 'Blocked! The strike came from the right. Shields burned: ' + s.shields.length + '.' : 'Missed — the strike came from the right: −1 heart. Shields burned: ' + s.shields.length + '.'; s.shields = []; }),
+      dodge: () => this.upd((s) => { if (s.will + s.shields.length * c.SHIELD < c.DODGE) return; s.will += s.shields.length * c.SHIELD - c.DODGE; s.shields = []; this.openTask(s, 'dodge', null); }),
+      takeHit: () => this.upd((s) => { s.will += s.shields.length * c.SHIELD; s.shields = []; s.heroHp -= 2; s.phase = 'act'; s.will = Math.min(c.TEMPO, s.will); s.msg = 'You took the hit: −1 heart. All Will stays for your turn.'; }),
+      stanceNote: g.will ? '· ' + Math.min(c.GUARD_MAX, g.will) + ' Will goes to stance' : '',
+      stance: g.stance,
+      endTurn: () => this.upd((s) => { s.stance = Math.min(c.GUARD_MAX, s.will); s.phase = 'wait'; s.hist = []; s.mode = 'move'; s.hand = null; }),
+      again: () => this.upd((s) => { s.phase = 'defend'; s.will = c.TEMPO + s.stance; s.used = {}; s.msg = ''; s.shields = []; }),
+      enemiesLeft: Object.keys(g.enemies).filter((id) => g.enemies[id].pos && g.enemies[id].hp > 0).length + ' left'
+    };
+  }
+}
+</script>
+</body>
+</html>
