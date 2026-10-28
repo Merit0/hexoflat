@@ -69,6 +69,14 @@ After extracting anything, verify the old call site actually imports it and the 
 - `overlay-store` is for genuinely modal things only.
 - E2E hooks (`apps/web/src/e2e/`) are gated behind `import.meta.env.VITE_E2E_HOOKS !== 'true'` checked **inline**, so Vite can statically fold the branch away and keep the hooks out of production bundles. Keep the condition inline — do not extract it into a helper.
 
+## Cursors
+
+- Three custom cursors in `apps/web/public/cursors/app-cursor/`, wired only in `apps/web/src/assets/global.css`: `cursor-default.svg` for everything (including clickable things — there is no separate pointer cursor), `holy-cursor-open-hand-plane.svg` on hover over draggable things, `holy-cursor-grab-hand-plane.svg` while pressed / dragging.
+- Make an element draggable-looking by adding the `cursor-grab` class (inventory and equip tokens do). Do not write `cursor: grab/grabbing` in scoped styles: the global rules are `!important` and win anyway.
+- A drag that leaves the element keeps the closed hand via `html.is-grabbing`, toggled in `startInventoryDrag` / `resetInventoryDragState` (`composables/use-inventory-drag.ts`). A new pointer-based drag must toggle the same class.
+- All three SVGs must stay the same size (48×48), share the same `viewBox` (`0 0 32 32`, one coordinate system) and the **same hotspot** (`3 0`). A different size, viewBox or hotspot makes the image jump when the cursor switches.
+- The layered Inkscape source (all three hands as layers, with the dark outlines) is `apps/web/cursor-sources/app-cursors.inkscape.svg` — edit that, never the files in `public/`. To export: per cursor keep only its visible layer, delete hidden layers/images (`display:none` still gets downloaded), and downscale the embedded raster to ~250 px. A multi-MB cursor loads lazily on first hover and the browser shows its tiny native cursor until then; shipped cursors should be ~100 KB each.
+
 ## Checklist before finishing
 
 - [ ] No game rule added to a store

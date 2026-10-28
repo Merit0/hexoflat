@@ -42,8 +42,11 @@ function initialInventoryDragState(): InventoryDragState {
 
 export const inventoryDragState = reactive<InventoryDragState>(initialInventoryDragState());
 
+const GRABBING_CLASS = 'is-grabbing';
+
 export function resetInventoryDragState(): void {
   Object.assign(inventoryDragState, initialInventoryDragState());
+  document.documentElement.classList.remove(GRABBING_CLASS);
 }
 
 export function startInventoryDrag(
@@ -58,6 +61,7 @@ export function startInventoryDrag(
   inventoryDragState.dragOverSlot = null;
   inventoryDragState.dragOverEquipSlot = null;
   inventoryDragState.isDragging = true;
+  document.documentElement.classList.add(GRABBING_CLASS);
 
   inventoryDragState.dragOffsetX = clientX - rect.left;
   inventoryDragState.dragOffsetY = clientY - rect.top;

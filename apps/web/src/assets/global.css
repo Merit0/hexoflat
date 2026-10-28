@@ -85,8 +85,24 @@
 .game-root,
 .game-root * {
   cursor:
-    url('/cursors/cursor-default.svg') 2 2,
+    url('/cursors/app-cursor/cursor-default.svg') 3 0,
     auto !important;
+}
+
+.cursor-grab,
+.cursor-grab * {
+  cursor:
+    url('/cursors/app-cursor/holy-cursor-open-hand-plane.svg') 3 0,
+    grab !important;
+}
+
+.cursor-grab:active,
+.cursor-grab:active *,
+html.is-grabbing,
+html.is-grabbing * {
+  cursor:
+    url('/cursors/app-cursor/holy-cursor-grab-hand-plane.svg') 3 0,
+    grabbing !important;
 }
 
 /* === BASE DOCUMENT === */
@@ -111,7 +127,7 @@ body {
 body {
   overflow: hidden;
   cursor:
-    url('/cursors/cursor-default.svg') 2 2,
+    url('/cursors/app-cursor/cursor-default.svg') 3 0,
     auto !important;
 }
 
