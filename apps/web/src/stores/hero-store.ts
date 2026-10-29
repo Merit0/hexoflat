@@ -26,8 +26,8 @@ import { ApiError } from '../api/client';
 import { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
-import { applyCommand } from '@hexoflat/engine';
-import { isEnterableTile, planCombatRoute } from '@hexoflat/engine/hero-movement/move-planner';
+import { applyCommand, type HexEngineState } from '@hexoflat/engine';
+import { isEnterableTile } from '@hexoflat/engine/hero-movement/move-planner';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { portalLinkSchema, type PortalLink } from '@hexoflat/engine/portal/portal-state';
 import {
@@ -41,7 +41,7 @@ import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 
 type HeroNavState = {
@@ -79,7 +79,7 @@ export const useHeroStore = defineStore('hero', {
     nav: defaultNav(),
     // Where the hero stands on the currently loaded map, and whether it is
     // mid-step. Persisted inside world-map-store's per-map state blob (the
-    // same seam combat-store's toSnapshot()/hydrate() already use) — see
+    // same seam the battle snapshot uses) — see
     // world-map-store.ts's saveToStorage()/loadFromStorage().
     heroCoordinates: null as IHexCoordinates | null,
     isHeroMoving: false,
@@ -96,7 +96,7 @@ export const useHeroStore = defineStore('hero', {
     willZoneContext(): WillZoneContext {
       return {
         willZone: locationWillZone(useWorldMapStore().currentLocationKey),
-        combatActive: useCombatStore().combatActive,
+        combatActive: useBattleStore().inBattle,
       };
     },
   },
@@ -115,7 +115,7 @@ export const useHeroStore = defineStore('hero', {
     knowledgeHost(world: ReturnType<typeof useWorldMapStore>) {
       const heroId = this.hero.id;
       const mapId = world.currentMapId;
-      const combatActive = useCombatStore().combatActive;
+      const combatActive = useBattleStore().inBattle;
       return {
         heroId,
         map: world.map as HexMapModel,
@@ -134,7 +134,7 @@ export const useHeroStore = defineStore('hero', {
         isCurrent: () =>
           this.hero.id === heroId &&
           world.currentMapId === mapId &&
-          useCombatStore().combatActive === combatActive,
+          useBattleStore().inBattle === combatActive,
       };
     },
 
@@ -377,8 +377,7 @@ export const useHeroStore = defineStore('hero', {
     /**
      * Free-roam movement goes through the engine's MOVE_HERO command, so the
      * route comes back as a domain event rather than being computed here.
-     * Returns the route without the hero's current tile, matching
-     * planCombatRoute.
+     * Returns the route without the hero's current tile.
      */
     engineHeroState(coordinates: IHexCoordinates): HeroState {
       return {
@@ -417,17 +416,41 @@ export const useHeroStore = defineStore('hero', {
     },
 
     /**
-     * Moves the hero towards `target`: validates the destination and plans a
-     * route (combat has a hard step budget; free roam goes through the
-     * engine), then walks it one step at a time, reconciling map/combat
-     * state as it goes. Needs the currently loaded map, so it reaches into
+     * Moves the hero towards `target`: validates the destination, plans a
+     * route through the engine, then walks it one step at a time. After each
+     * step the engine checks sentries; a spotted hero stops and the battle is
+     * requested. Needs the currently loaded map, so it reaches into
      * world-map-store rather than owning map data itself.
      */
+    checkSentry(map: HexMapModel, at: IHexCoordinates): boolean {
+      const battleStore = useBattleStore();
+      const state: HexEngineState = {
+        map,
+        heroes: { [this.hero.id]: this.engineHeroState(at) },
+      };
+      const { events } = applyCommand(
+        state,
+        {
+          type: 'ENCOUNTER',
+          payload: { heroId: this.hero.id, atMs: Date.now(), action: { kind: 'step-ended' } },
+        },
+        useWorldMapStore().buildEngineContext(),
+      );
+      if (!state.engagement) return false;
+      battleStore.engage(state.engagement);
+      useGameEventsStore().push(
+        this.hero.name ?? 'Hero',
+        i18n.global.t('encounter.spotted'),
+        'BATTLE',
+      );
+      return events.some((event) => event.type === 'AMBUSH');
+    },
+
     async moveHeroTo(target: IHexCoordinates): Promise<boolean> {
       const worldStore = useWorldMapStore();
       const heroToolStore = useHeroToolStore();
       const events = useGameEventsStore();
-      const combatStore = useCombatStore();
+      const battleStore = useBattleStore();
 
       if (!worldStore.map || !this.heroCoordinates) return false;
       const warn = (message: string, icon: 'will' | null = null) => {
@@ -438,24 +461,15 @@ export const useHeroStore = defineStore('hero', {
       if (portalFxBusy.value) return false;
       if (heroToolStore.isDragging) return false;
       if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));
-      if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero')
-        return warn(i18n.global.t('moveBlocked.notYourTurn'));
-      if (combatStore.combatActive && combatStore.combatStepsLeft <= 0)
-        return warn(i18n.global.t('moveBlocked.noSteps'));
+      if (battleStore.inBattle) return warn(i18n.global.t('moveBlocked.inBattle'));
 
       const map = worldStore.map as HexMapModel;
       if (!isEnterableTile(map, target)) return warn(i18n.global.t('moveBlocked.blockedTile'));
 
-      let route: IHexCoordinates[] | null;
-      if (combatStore.combatActive) {
-        route = planCombatRoute(map, this.heroCoordinates, target, combatStore.combatStepsLeft);
-        if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
-      } else {
-        const plan = this.planFreeRoamRoute(map, target);
-        route = plan.route;
-        if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'), 'will');
-        if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
-      }
+      const plan = this.planFreeRoamRoute(map, target);
+      const route = plan.route;
+      if (!plan.affordable) return warn(i18n.global.t('moveBlocked.noWill'), 'will');
+      if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
 
       let stepsTaken = 0;
 
@@ -476,26 +490,18 @@ export const useHeroStore = defineStore('hero', {
           }
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;
-          if (combatStore.combatActive) {
-            combatStore.combatStepsLeft = Math.max(0, combatStore.combatStepsLeft - 1);
-            combatStore.clearCombatAttackTrace();
-          }
           this.hero?.makeStep();
           this.saveProgressToStorage();
 
           worldStore.revealAroundHero();
-          if (combatStore.combatActive) {
-            combatStore.syncEnemyAutoDefend();
-          }
+          const spotted = this.checkSentry(map, coord);
           worldStore.saveToStorage();
 
           if (worldStore.currentMapId && this.heroCoordinates) {
             this.rememberPosition(worldStore.currentMapId, this.heroCoordinates);
           }
 
-          if (combatStore.combatActive && combatStore.combatStepsLeft <= 0) {
-            return false;
-          }
+          if (spotted) return false;
         });
       } finally {
         this.isHeroMoving = false;

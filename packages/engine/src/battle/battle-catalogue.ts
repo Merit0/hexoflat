@@ -108,6 +108,7 @@ const BATTLE_KIND_BY_HEXOBJECT: Record<string, string> = {
 const BATTLE_ITEM_BY_HEXOBJECT: Record<string, string> = {
   [HEXOBJECT_KEYS.SWORD]: 'sword',
   [HEXOBJECT_KEYS.SHIELD]: 'wooden-shield',
+  [HEXOBJECT_KEYS.HEALTH_BOTTLE]: 'health-potion',
 };
 
 export function battleKindOfHexobject(hexobjectKey: string): string | null {
@@ -116,6 +117,10 @@ export function battleKindOfHexobject(hexobjectKey: string): string | null {
 
 export function battleItemOfHexobject(hexobjectKey: string): string | null {
   return BATTLE_ITEM_BY_HEXOBJECT[hexobjectKey] ?? null;
+}
+
+export function hexobjectOfBattleItem(itemKey: string): string | null {
+  return Object.entries(BATTLE_ITEM_BY_HEXOBJECT).find(([, key]) => key === itemKey)?.[0] ?? null;
 }
 
 export function battleItem(id: string): BattleItem {

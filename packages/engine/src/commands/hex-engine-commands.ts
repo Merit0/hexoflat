@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
 import { KnowledgeCommandSchema, type KnowledgeCommand } from '../knowledge/commands';
 import { BattleCommandSchema, type BattleCommand } from '../battle/battle-commands';
+import { EncounterCommandSchema, type EncounterCommand } from '../encounters/encounter-commands';
 import { SACRIFICE_OPTION_IDS } from '../skills/sacrifice-rules';
 import { skillIdSchema } from '../skills/skill-content';
 import { LOCATION_KEYS } from '../registry/location-key';
@@ -121,7 +122,8 @@ export type HexEngineCommand =
   | ResetSkillsCommand
   | OpenPortalCommand
   | EnterPortalCommand
-  | BattleCommand;
+  | BattleCommand
+  | EncounterCommand;
 
 export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   HexEngineCommand['type'],
@@ -139,4 +141,5 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   OPEN_PORTAL: OpenPortalCommandSchema,
   ENTER_PORTAL: EnterPortalCommandSchema,
   BATTLE: BattleCommandSchema,
+  ENCOUNTER: EncounterCommandSchema,
 };

@@ -219,12 +219,8 @@ export class HeroBoardPanelComponent extends BaseComponent {
     else await expect(this.handWill(hand)).toContainText(String(will));
   }
 
-  async readAttackTileText(): Promise<string> {
-    return this.attackTileValue.innerText();
-  }
-
-  async verifyAttackTileChangedFrom(previous: string): Promise<void> {
-    await expect(this.attackTileValue).not.toHaveText(previous);
+  async verifyAttackTile(value: string): Promise<void> {
+    await expect(this.attackTileValue).toHaveText(value);
   }
 
   async verifySkillTreeVisible(): Promise<void> {

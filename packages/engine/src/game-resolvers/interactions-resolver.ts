@@ -15,8 +15,7 @@ export interface ToolCapabilities {
   canBlock?: boolean;
 }
 
-export type ResolvedActionType =
-  'CUT' | 'TAKE' | 'MINE' | 'USE' | 'ATTACK' | 'BLOCK' | 'OPEN' | 'ENTER';
+export type ResolvedActionType = 'CUT' | 'TAKE' | 'MINE' | 'USE' | 'OPEN' | 'ENTER';
 
 /** Minimal navigation descriptor — engine stays framework-agnostic, apps/web maps this to a real route. */
 export interface EngineRouteDescriptor {
@@ -121,14 +120,8 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
       break;
     }
 
-    case EHexobjectGroup.CREATURE: {
-      resolvedActions.push({
-        actioType: 'ATTACK',
-        label: labelFromMeta(obj, EHexActionType.ATTACK, 'Attack'),
-        priority: 70,
-      });
+    case EHexobjectGroup.CREATURE:
       break;
-    }
 
     case EHexobjectGroup.CONSTRUCTION: {
       const key = obj.hexobjectKey;

@@ -14,7 +14,7 @@ export interface MovePreviewSyncParams {
   markerCoord: IHexCoordinates | null;
   stepCost: number;
   chargesWill: boolean;
-  markerKind: 'move' | 'defend';
+  markerKind: 'move' | 'seen';
 }
 
 export interface MovePreviewLayer {
@@ -76,22 +76,22 @@ export function createMovePreviewLayer(deps: MovePreviewLayerDeps): MovePreviewL
     const { x, y } = calcHexPixelPosition({ coordinates: params.markerCoord }, w, h);
     marker.position.set(x + w / 2, y + h / 2);
 
-    const isDefend = params.markerKind === 'defend';
-    const strokeColor = isDefend ? 0x84bcff : params.reachable ? 0x84ffb8 : 0xff7e7e;
-    const circleFill = isDefend ? 0x5ca0ff : params.reachable ? 0x60ffa4 : 0xff6464;
+    const isSeen = params.markerKind === 'seen';
+    const strokeColor = isSeen ? 0xc2412d : params.reachable ? 0x84ffb8 : 0xff7e7e;
+    const circleFill = isSeen ? 0xc2412d : params.reachable ? 0x60ffa4 : 0xff6464;
 
     markerCircle.clear();
     markerCircle
-      .circle(0, 0, 13)
-      .fill({ color: circleFill, alpha: isDefend ? 0.18 : params.reachable ? 0.16 : 0.14 })
+      .circle(0, 0, isSeen ? 18 : 13)
+      .fill({ color: circleFill, alpha: isSeen ? 0.28 : params.reachable ? 0.16 : 0.14 })
       .stroke({ color: strokeColor, width: 2 });
 
-    markerText.text = isDefend
-      ? '🛡'
+    markerText.text = isSeen
+      ? 'SEEN!'
       : params.chargesWill
         ? `−${params.stepCost}`
         : String(params.stepCost);
-    markerText.style.fontSize = isDefend ? 16 : 12;
+    markerText.style.fontSize = isSeen ? 10 : 12;
   }
 
   return {

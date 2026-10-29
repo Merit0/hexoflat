@@ -4,7 +4,8 @@ import { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { EHexobjectGroup, THexobject } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
+import { useEncounterStore } from '@/stores/encounter-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { crossExitIfStanding } from '@/composables/use-board-crossing';
@@ -49,24 +50,17 @@ function logTileClick(tile: IHexTile) {
 export function useTileClick() {
   const overlayStore = useOverlayStore();
   const worldMapStore = useWorldMapStore();
-  const combatStore = useCombatStore();
+  const battleStore = useBattleStore();
+  const encounterStore = useEncounterStore();
   const heroToolStore = useHeroToolStore();
   const heroStore = useHeroStore();
 
   async function handleTileClick(tile: IHexTile) {
     logTileClick(tile);
 
-    if (
-      combatStore.combatActive &&
-      (combatStore.combatTurnSide !== 'hero' || combatStore.isEnemyTurnResolving)
-    ) {
-      heroToolStore.setActionMessage(i18n.global.t('moveBlocked.notYourTurn'));
+    if (battleStore.inBattle) {
+      heroToolStore.setActionMessage(i18n.global.t('moveBlocked.inBattle'));
       return;
-    }
-
-    if (combatStore.combatActive && combatStore.combatTurnSide === 'hero') {
-      const removed = combatStore.removeCombatDefendMarker(tile.coordinates);
-      if (removed) return;
     }
 
     if (knowledgePanelMode.value) {
@@ -84,6 +78,8 @@ export function useTileClick() {
       worldMapStore.revealTile(tile.coordinates);
       return;
     }
+
+    if (tile.encounter && encounterStore.tapEncounter(tile.encounter.id)) return;
 
     if (tile.hexobject) {
       overlayStore.openOverlay('hex-tile-details', { coordinates: tile.coordinates });

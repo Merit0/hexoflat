@@ -13,6 +13,7 @@ import { creatureById } from '@hexoflat/engine/battle/battle-board';
 import { projectBattleEvent, projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
 import type { DeploymentZones } from '@hexoflat/engine/encounters/battlefield-setup';
+import type { Engagement } from '@hexoflat/engine/encounters/encounter-commands';
 
 export interface BattleDeploy {
   setup: BattleSetupInput;
@@ -26,10 +27,29 @@ export interface BattleDeploy {
 
 export type BattleBatchSource = 'hero' | 'enemy';
 
+export interface BattleStep {
+  battle: BattleState | null;
+  events: DomainEvent[];
+}
+
+export interface BattleEngineBridge {
+  send(command: BattleCommand): BattleStep;
+  start(): BattleStep;
+  leave(): void;
+}
+
+export interface BattleSnapshot {
+  engagement: Engagement | null;
+  battle: BattleState | null;
+}
+
+let bridge: BattleEngineBridge | null = null;
+
 const TASK_ACTIONS = new Set<BattleAction['kind']>(['answer-task', 'task-timeout']);
 
 export const useBattleStore = defineStore('battle-store', () => {
   const deploy = shallowRef<BattleDeploy | null>(null);
+  const engagement = shallowRef<Engagement | null>(null);
   const battle = shallowRef<BattleState | null>(null);
   const localHeroIds = ref<string[]>([]);
   const lastHeroEvents = shallowRef<DomainEvent[]>([]);
@@ -37,6 +57,7 @@ export const useBattleStore = defineStore('battle-store', () => {
   const queue = shallowRef<DomainEvent[]>([]);
 
   const isOpen = computed(() => deploy.value !== null);
+  const inBattle = computed(() => engagement.value !== null || deploy.value !== null);
   const projection = computed(() =>
     battle.value ? projectBattleForViewer(battle.value, 'heroes') : null,
   );
@@ -67,24 +88,49 @@ export const useBattleStore = defineStore('battle-store', () => {
 
   function send(command: BattleCommand): DomainEvent[] {
     const parsed = BattleCommandSchema.parse(command);
-    const result = applyBattleCommand(battle.value ?? undefined, parsed);
+    const result = bridge
+      ? bridge.send(parsed)
+      : applyBattleCommand(battle.value ?? undefined, parsed);
     absorb(result.battle ?? null, result.events);
     return result.events;
   }
 
-  function prepare(next: BattleDeploy, heroes: string[]) {
+  function prepare(next: BattleDeploy, heroes: string[], resumed: BattleState | null = null) {
     deploy.value = next;
     localHeroIds.value = [...heroes];
-    battle.value = null;
+    battle.value = resumed;
     lastHeroEvents.value = [];
     queue.value = [];
-    turnStartWill.value = 0;
+    turnStartWill.value = resumed?.turnWill ?? 0;
   }
 
   function start() {
     if (!deploy.value || battle.value) return;
-    const result = startBattle(deploy.value.setup);
+    const result = bridge ? bridge.start() : startBattle(deploy.value.setup);
     absorb(result.battle, result.events);
+  }
+
+  function bindBridge(next: BattleEngineBridge | null) {
+    bridge = next;
+  }
+
+  function engage(next: Engagement | null) {
+    engagement.value = next;
+  }
+
+  function restore(saved: BattleSnapshot) {
+    close();
+    engagement.value = saved.engagement;
+    battle.value = saved.battle;
+  }
+
+  function snapshot(): BattleSnapshot {
+    return { engagement: engagement.value, battle: battle.value };
+  }
+
+  function leave() {
+    if (bridge) bridge.leave();
+    else close();
   }
 
   function act(action: BattleAction, atMs: number = Date.now()): boolean {
@@ -127,6 +173,7 @@ export const useBattleStore = defineStore('battle-store', () => {
 
   function close() {
     deploy.value = null;
+    engagement.value = null;
     battle.value = null;
     localHeroIds.value = [];
     lastHeroEvents.value = [];
@@ -136,12 +183,14 @@ export const useBattleStore = defineStore('battle-store', () => {
 
   return {
     deploy,
+    engagement,
     battle,
     localHeroIds,
     lastHeroEvents,
     turnStartWill,
     queue,
     isOpen,
+    inBattle,
     projection,
     needsEnemyTurn,
     prepare,
@@ -151,5 +200,10 @@ export const useBattleStore = defineStore('battle-store', () => {
     runEnemyTurn,
     takeEvents,
     close,
+    leave,
+    bindBridge,
+    engage,
+    restore,
+    snapshot,
   };
 });

@@ -12,7 +12,6 @@ describe('ui locale completeness', () => {
         'settings.title',
         'settings.close',
         'settings.showHeroMoveTrail',
-        'settings.showEnemyVisionArea',
         'settings.language',
       ]),
     );

@@ -36,7 +36,7 @@ description: How work is executed in this repo — one planned phase per chat, d
 
 These are the failure modes that have actually cost this project time:
 
-- **Growing the legacy combat.** The old `combat-store.ts` is being replaced by the engine battle (`docs/BATTLE-SYSTEM-PLAN.md`, B1–B6). Do not extend it; new battle rules go to `packages/engine/src/battle/` within the current B-phase only.
+- **Rules outside the engine.** The old `combat-store.ts` lived outside the command pipeline until B6 deleted it. New battle and encounter rules go to `packages/engine/src/battle/` or `src/encounters/`, within the current B-phase only.
 - **Grandfathering instead of fixing.** `KNOWN_CYCLE_FILES` in `eslint.config.js` records reviewed legacy cycles. Adding a file to it to silence a new error converts "we will fix this" into "this is now the architecture".
 - **Raising a threshold to pass lint.** The size/complexity limits are pinned to measured maximums. Trip one → split the code, not the limit.
 - **Extracting without wiring up.** Three composables once sat with zero importers while their logic stayed duplicated inline. Always verify the new module is actually imported and the old copy is deleted.

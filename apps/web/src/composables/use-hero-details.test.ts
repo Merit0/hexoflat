@@ -11,7 +11,6 @@ const base: HeroDetailsInput = {
   kills: 4,
   carriedKg: 1.8,
   capacityKg: 10,
-  attackBase: 1,
   shieldPoints: 0,
   extraShields: 0,
   skills: {},
@@ -25,8 +24,8 @@ const base: HeroDetailsInput = {
 
 const swordItem = { titleKey: 'content.sword.title', rarity: null, willCost: null };
 const shieldItem = { titleKey: 'content.shield.title', rarity: null, willCost: null };
-const sword = { item: swordItem, multiplier: 1.2 };
-const shield = { item: shieldItem, defense: 2.4 };
+const sword = { item: swordItem, power: 2 };
+const shield = { item: shieldItem, sides: 2 };
 
 describe('buildHeroDetails', () => {
   it('counts one heart per max health point with half-heart precision', () => {
@@ -43,15 +42,15 @@ describe('buildHeroDetails', () => {
     expect(buildHeroDetails({ ...base, currentHealth: -1 }).hearts.current).toBe(0);
   });
 
-  it('derives the attack tile from the equipped weapon and the defence tile from the total', () => {
-    const view = buildHeroDetails({ ...base, weapon: sword, shield, defense: 2.4 });
-    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('×1.2');
-    expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2.4');
+  it('shows the battle strike power of the weapon and the shield sides held', () => {
+    const view = buildHeroDetails({ ...base, weapon: sword, shield, defense: 2 });
+    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('2');
+    expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2');
   });
 
-  it('falls back to ×1 attack and zero defence with nothing equipped', () => {
+  it('falls back to the unarmed power and zero shield sides with nothing equipped', () => {
     const view = buildHeroDetails(base);
-    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('×1');
+    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('1');
     expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('0');
   });
 
@@ -121,15 +120,15 @@ describe('buildHeroDetails', () => {
     expect(top.scout.percent).toBe(100);
   });
 
-  it('adds skill bonuses on top of the hero base attack and the defence total', () => {
+  it('does not add skill bonuses to battle numbers until decision C3', () => {
     const view = buildHeroDetails({
       ...base,
       weapon: sword,
-      defense: 2.4,
+      defense: 2,
       skills: { b_strike: 4, b_guard: 6 },
     });
-    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('×1.44');
-    expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2.7');
+    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('2');
+    expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2');
     expect(view.shields.filled).toBe(0);
   });
 });

@@ -41,11 +41,11 @@ All game-state changes go through validated commands that produce domain events.
 
 4. **Emit domain events**, do not just mutate. Events are the output contract: the renderer, the event log, replay and (later) multiplayer sync all read them. A command that changes state without emitting an event is a bug even if the screen looks right.
 
-5. **Pure functions for the actual rules**, in a domain folder (`src/combat/`, `src/hero-movement/`, `src/map/`). The `apply-command.ts` case should orchestrate, not compute. See `src/combat/damage-calculator.ts` for the shape to copy.
+5. **Pure functions for the actual rules**, in a domain folder (`src/battle/`, `src/encounters/`, `src/hero-movement/`, `src/map/`). The `apply-command.ts` case should orchestrate, not compute. See `src/encounters/threat.ts` for the shape to copy.
 
 6. **Unit tests without Pinia**, colocated as `*.test.ts`. If a test needs a store, the logic is in the wrong layer.
 
-Current commands, for reference: `START_HEX_ACTION`, `FINISH_PENDING_ACTIONS`, `WORLD_TICK`, `ADD_RESOURCE_SPAWNER`, `MOVE_HERO`, `CROSS_EXIT`, `KNOWLEDGE`, `SACRIFICE_TO_SKILL`, `RESET_SKILLS`, `OPEN_PORTAL`, `ENTER_PORTAL`, `BATTLE`.
+Current commands, for reference: `START_HEX_ACTION`, `FINISH_PENDING_ACTIONS`, `WORLD_TICK`, `ADD_RESOURCE_SPAWNER`, `MOVE_HERO`, `CROSS_EXIT`, `KNOWLEDGE`, `SACRIFICE_TO_SKILL`, `RESET_SKILLS`, `OPEN_PORTAL`, `ENTER_PORTAL`, `BATTLE`, `ENCOUNTER`.
 
 **`apps/web` and `apps/playwright` import the built `packages/engine/dist`** (git-ignored), not `src`. After any engine change run `pnpm build` in `packages/engine` before web typecheck, web tests or e2e, or they will see the old engine.
 
@@ -63,7 +63,7 @@ Rarity is `{ kind: ERarityKind, boss }` printed on tool/equipment/loot content. 
 import { pickRandom, type RandomNumberGenerator } from '../utils/random';
 ```
 
-Reason: identical inputs plus identical seed must reproduce identical outcomes, or replay, snapshots and authoritative co-op validation all break. Rules already written this way: `src/combat/ai-controller.ts`, `src/map/free-hex-finder.ts`.
+Reason: identical inputs plus identical seed must reproduce identical outcomes, or replay, snapshots and authoritative co-op validation all break. Rules already written this way: `src/battle/initiative.ts` (via `deriveStream`), `src/map/free-hex-finder.ts`.
 
 Never widen a rule's signature to call `Math.random()` internally "just this once" — pass the generator in.
 
@@ -89,7 +89,7 @@ Rule of thumb:
 
 ## Battle (`src/battle/`, phases B1–B8 of `docs/BATTLE-SYSTEM-PLAN.md`)
 
-The old combat exception is being retired: the new battle runs entirely through the engine. The legacy `apps/web/src/stores/combat-store.ts` and `src/combat/` still drive the live game until B6 deletes them (fate of every file: `docs/battle-system/B0-AUDIT.md`). Do not extend the legacy combat code.
+The old combat is gone (B6 deleted `src/combat/`, `EHexActionType.ATTACK/BLOCK` and the web `combat-store`); the battle runs entirely through the engine. `canAttack`/`canBlock` capabilities and `damageMin/Max`/`attackMultiplier` content fields survive only as item-tooltip descriptions. `map/providers/hex-map-provider` is still used by `apps/api`.
 
 - **One command, many actions.** `BATTLE` (`battle/battle-commands.ts`) carries `{ kind: 'hero', heroId, action }` or `{ kind: 'run-enemy-turn' }`, like `KNOWLEDGE`. `applyBattleCommand` (`battle/apply-battle.ts`) clones the state, runs `performAction`, and on a refusal returns the **original** state plus `BATTLE_REJECTED { rejected, cost?, left? }` — never a half-applied action. New actions: add to `battleActionSchema`, a case in `perform-action.ts`, and say whether they belong to the `defend` or `act` phase.
 - **State** is `HexEngineState.battle` (`battle/battle-state.ts`), additive in the snapshot (no `CONTENT_VERSION` bump). Coordinates inside battle are axial `{ q, r }` with `"q,r"` board keys; convert to the map's odd-r offset only at the web boundary (`axialToOffset`). Hearts are integer half-hearts (`hp`), converted from/to `HeroModel` hearts on entry/exit.
@@ -102,7 +102,17 @@ The old combat exception is being retired: the new battle runs entirely through 
 - **Enemy AI** lives in `battle/ai/` as pure functions over `projectBattleForViewer(state, 'enemies')`, dispatched by the creature's `behaviour`. The melee logic is side-neutral and also drives the test hero bot. After a strike an attacker hides its side (`hideStep`); without it the nearest-shield defence blocks almost everything and battles stall.
 - **Balance** (REQ-BTL-016) runs `battle/battle-sim.ts` over 500 seeds in `balance.test.ts` (~20 s). Any change to AI or numbers must keep it inside its bands; record new numbers in the plan journal.
 - **Battlefield** = the board generator with the `battlefield-crypt` model (pieces in `boards/pipeline/pieces/battlefield.ts`; battle reliefs `rubble`/`ledge`/`oil`/`saw` are generator terrains with `symbol: null`, pillars are `stone-wall`, boulders are `rock`). `battle/battlefield.ts` turns the pipeline board into the axial battle board; `encounters/battlefield-setup.ts` (`deployBattle`) places creatures by approach direction or ambush and sets the round-1 `advantage`. Seeds: `battlefieldSeed(encounterId, attempt)`.
-- `startBattle(setup)` builds a battle from a ready `BattleSetup`; the `START_BATTLE` command arrives with encounters (B4/B6), which compute the setup from content.
+- `startBattle(setup)` builds a battle from a ready `BattleSetup`; on the map it is started by the `ENCOUNTER` action `start-battle` (below).
+
+## Encounters (`src/encounters/`, B6)
+
+- A squad lives **on the tile**: `HexTileModel.encounter` (`map-encounter.ts`: `{ id, contentId, scouted, status: active|loot|looted, attempts, taskSeq, sneak? }`, id `<contentId>@<col>-<row>`). That gives fog, movement blocking (`blocksTile` in `movement-grid`/`move-planner`) and map persistence for free; `fromJSON` reads it with `safeParse`, and a legacy `skeletor` hexobject becomes a `lone-skeleton` encounter (D1, no `CONTENT_VERSION` bump).
+- Content: `encounter-content.ts` (`ENCOUNTERS`, `ENCOUNTER_RULES`: attack 2 Will, scout 1, sneak 5 s, threat thresholds). Do not import `battle/battlefield` there — it closes a cycle through the pipeline registry.
+- Threat: `threat.ts` (`encounterThreat` from squad vs hero `ThreatProfile`; hero profile from hands). Projection for the UI: `projectEncounters(map, heroProfile)` returns only revealed, not-looted squads; members stay `null` until scouted.
+- One command `ENCOUNTER` with actions `attack`, `scout`, `start-sneak`, `answer-sneak`, `sneak-timeout`, `pickup-loot`, `step-ended` (sentry check), `start-battle` (hero creatures in the payload, built by web from inventory), `close-battle`. Refusal = unchanged state + `ENCOUNTER_REJECTED { reason }`. Events: `ENCOUNTER_SCOUTED`, `SNEAK_STARTED`, `SNEAK_SUCCEEDED`, `AMBUSH`, `BATTLE_REQUESTED`, `ENCOUNTER_DEFEATED`, `LOOT_DROPPED`, `LOOT_PICKED`, `BATTLE_CLOSED { outcome, heroAt, heroes: { id, hearts, consumed }, kills }`.
+- `HexEngineState.engagement` (between BATTLE_REQUESTED and close) is additive in the snapshot. Battlefield seed `battlefieldSeed(encounterId, attempts)`; a defeat bumps `attempts`, so the next try gets a new board. Will is charged only with a `knowledgeContext` whose zone is paid.
+- Generator: the `objects: encounters` piece (`boards/pipeline/pieces/encounters.ts`) places `cell.encounter` by spot (`treasure`/`chokepoint`/`dead-end`/`deep`, `minSteps`); the cave model places the four pilot squads.
+- Tests: `encounters.test.ts` (REQ-ENC-001…004), `encounter-battle.test.ts` (REQ-ENC-007, 008, save round-trip, skeletor migration); fixture `encounter-test-setup.ts`.
 - Tests are named by requirement id (`REQ-BTL-0xx`); fixtures in `battle/battle-test-setup.ts` (`battleWith`, `giveTurn`, `heroDoes`, `enemyTurn`).
 
 ## Checklist before finishing

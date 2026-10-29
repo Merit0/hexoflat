@@ -46,8 +46,6 @@ function engineCtx(): HexEngineActionContext {
     events: { push: vi.fn() },
     worldMap: {
       combatActive: false,
-      performHeroCombatAttack: vi.fn(() => ({ ok: true, message: '' })),
-      placeCombatDefendMarker: vi.fn(() => true),
       isLocationRespawning: vi.fn(() => false),
       getLocationRespawnRemainingMs: vi.fn(() => 0),
       goToLocation: vi.fn(),

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { coordinateKey, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
 import { crossExitIfStanding } from './use-board-crossing';
 
 const { routeToLocationMock } = vi.hoisted(() => ({ routeToLocationMock: vi.fn() }));
@@ -63,10 +63,16 @@ describe('crossExitIfStanding', () => {
     expect(coordinateKey(hero.heroCoordinates)).not.toBe(coordinateKey(exitTile('N').coordinates));
   });
 
-  it('keeps the hero in place while a combat is running', async () => {
+  it('keeps the hero in place while a battle is open', async () => {
     const world = useWorldMapStore();
     useHeroStore().heroCoordinates = { ...exitTile('N').coordinates };
-    useCombatStore().combatActive = true;
+    useBattleStore().engage({
+      encounterId: 'lone-skeleton@2-2',
+      ambush: false,
+      heroAt: { columnIndex: 0, rowIndex: 0 },
+      heroIds: ['hero'],
+      startItems: {},
+    });
 
     expect(await crossExitIfStanding()).toBe(false);
     expect(world.currentLocationKey).toBe('silesia');

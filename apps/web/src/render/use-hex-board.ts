@@ -12,22 +12,16 @@ import {
   type MovePreviewSyncParams,
 } from '@/render/layers/move-preview-layer';
 import {
-  createEnemyVisionLayer,
-  type EnemyVisionCell,
-  type EnemyVisionLayer,
-} from '@/render/layers/enemy-vision-layer';
-import {
-  createCombatMarkerLayer,
-  type CombatMarkerEntry,
-  type CombatMarkerLayer,
-} from '@/render/layers/combat-marker-layer';
+  createEncounterLayer,
+  type EncounterLayer,
+  type EncounterLayerSync,
+} from '@/render/layers/encounter-layer';
 import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
 import { createPortalLayer, type PortalLayer } from '@/render/layers/portal-layer';
 import { registerPortalFx } from '@/render/portal-fx';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HEX_WORLD_SIZE, type BoardCamera, type PaneSize } from '@/render/board-camera';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { useCombatStore } from '@/stores/combat-store';
 
 export interface UseHexBoardOptions {
   canvasRef: Ref<HTMLCanvasElement | null>;
@@ -49,10 +43,9 @@ export interface UseHexBoardOptions {
     reachable: ComputedRef<boolean>;
     stepCost: ComputedRef<number>;
     chargesWill: ComputedRef<boolean>;
-    markerKind: ComputedRef<'move' | 'defend'>;
+    markerKind: ComputedRef<'move' | 'seen'>;
   };
-  enemyVisionCells: ComputedRef<EnemyVisionCell[]>;
-  combatMarkers: ComputedRef<CombatMarkerEntry[]>;
+  encounters: ComputedRef<EncounterLayerSync>;
   campHeal: {
     coord: ComputedRef<IHexCoordinates | null>;
     active: ComputedRef<boolean>;
@@ -99,7 +92,6 @@ function waitForValidSize(size: ComputedRef<PaneSize>): Promise<PaneSize> {
 
 export function useHexBoard(opts: UseHexBoardOptions) {
   const worldStore = useWorldMapStore();
-  const combatStore = useCombatStore();
 
   let board: HexBoardApp | null = null;
   let tilesLayer: TilesLayer | null = null;
@@ -107,8 +99,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
   let heroLayer: HeroLayer | null = null;
   let unregisterPortalFx: (() => void) | null = null;
   let movePreviewLayer: MovePreviewLayer | null = null;
-  let enemyVisionLayer: EnemyVisionLayer | null = null;
-  let combatMarkerLayer: CombatMarkerLayer | null = null;
+  let encounterLayer: EncounterLayer | null = null;
   let campHealLayer: CampHealLayer | null = null;
   let stopWatchers: Array<() => void> = [];
   let cancelled = false;
@@ -131,7 +122,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       worldContainer: board.worldContainer,
       getTileSize,
       worldStore,
-      combatStore,
       onTileHover: opts.onTileHover,
       onTileClick: opts.onTileClick,
       isForceRevealed: () => opts.devPanel?.showWholeBoard.value ?? false,
@@ -145,7 +135,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       getTileSize,
     });
 
-    enemyVisionLayer = createEnemyVisionLayer({
+    encounterLayer = createEncounterLayer({
       worldContainer: board.worldContainer,
       getTileSize,
     });
@@ -162,11 +152,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     });
 
     movePreviewLayer = createMovePreviewLayer({
-      worldContainer: board.worldContainer,
-      getTileSize,
-    });
-
-    combatMarkerLayer = createCombatMarkerLayer({
       worldContainer: board.worldContainer,
       getTileSize,
     });
@@ -198,18 +183,9 @@ export function useHexBoard(opts: UseHexBoardOptions) {
           tilesLayer?.syncTiles(opts.tiles.value, hasFullySynced ? dirtyKeys : undefined);
           portalLayer?.sync(portalCoordinates(opts.tiles.value), opts.boardKey.value);
           hasFullySynced = true;
-          tilesLayer?.syncDefendMarkers(opts.tiles.value);
           tilesLayer?.syncLockChips(opts.tiles.value, opts.healTickerNow.value);
         },
         { immediate: true },
-      ),
-    );
-
-    stopWatchers.push(
-      watch(
-        () => combatStore.combatMarkers,
-        () => tilesLayer?.syncDefendMarkers(opts.tiles.value),
-        { deep: true },
       ),
     );
 
@@ -264,17 +240,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     );
 
     stopWatchers.push(
-      watch(opts.enemyVisionCells, () => enemyVisionLayer?.syncCells(opts.enemyVisionCells.value), {
-        immediate: true,
-        deep: true,
-      }),
-    );
-
-    stopWatchers.push(
-      watch(opts.combatMarkers, () => combatMarkerLayer?.syncMarkers(opts.combatMarkers.value), {
-        immediate: true,
-        deep: true,
-      }),
+      watch(opts.encounters, (next) => encounterLayer?.sync(next), { immediate: true }),
     );
 
     stopWatchers.push(
@@ -308,8 +274,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     portalLayer?.destroy();
     heroLayer?.destroy();
     movePreviewLayer?.destroy();
-    enemyVisionLayer?.destroy();
-    combatMarkerLayer?.destroy();
+    encounterLayer?.destroy();
     campHealLayer?.destroy();
     board?.destroy();
     board = null;
@@ -317,8 +282,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     portalLayer = null;
     heroLayer = null;
     movePreviewLayer = null;
-    enemyVisionLayer = null;
-    combatMarkerLayer = null;
+    encounterLayer = null;
     campHealLayer = null;
   });
 }

@@ -33,7 +33,7 @@ export interface BattleDeployView {
 }
 
 export interface BattleTaskView {
-  kind: 'dodge' | 'saw' | 'push' | 'pull';
+  kind: 'dodge' | 'saw' | 'push' | 'pull' | 'sneak';
   question: string;
   options: number[];
   issuedAtMs: number;
@@ -67,6 +67,14 @@ export function shieldSides(creature: BattleCreature, rules: BattleRules): numbe
 }
 
 const OPERATION_SIGN = { multiply: '×', divide: '÷' } as const;
+
+export function taskQuestionText(question: {
+  lhs: number;
+  rhs: number;
+  operation: keyof typeof OPERATION_SIGN;
+}): string {
+  return `${question.lhs} ${OPERATION_SIGN[question.operation]} ${question.rhs}`;
+}
 
 function nextLivingId(view: BattleProjection): string | null {
   for (let i = view.turnIndex + 1; i < view.order.length; i++) {
@@ -138,10 +146,9 @@ function selfHero(input: BattleViewInput): BattleCreature | null {
 function taskView(input: BattleViewInput): BattleTaskView | null {
   const task = input.projection?.task;
   if (!task || !input.localHeroIds.includes(task.creatureId)) return null;
-  const { lhs, rhs, operation } = task.question;
   return {
     kind: task.kind,
-    question: `${lhs} ${OPERATION_SIGN[operation]} ${rhs}`,
+    question: taskQuestionText(task.question),
     options: task.options,
     issuedAtMs: task.issuedAtMs,
     deadlineMs: task.deadlineMs,

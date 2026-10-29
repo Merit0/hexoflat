@@ -37,12 +37,11 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { calcHexPixelPosition, type IHexPositioned } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
-  getToolCapabilities,
   resolveActions,
   type ResolvedAction,
 } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
 import { ACTION_TYPE_MAP } from '@hexoflat/engine/registry/action-starters-registry';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { getPrototype, getMeta } from '@hexoflat/engine';
@@ -69,7 +68,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
-const combatStore = useCombatStore();
+const battleStore = useBattleStore();
 const heroStore = useHeroStore();
 const pricing = useWillPricing();
 const portal = usePortal();
@@ -152,16 +151,6 @@ function actionsForTool(tool: THeroToolKey, tile: HexTileModel | null): Resolved
     }
   }
 
-  if (
-    combatStore.combatActive &&
-    tile.hexobject.groupType === EHexobjectGroup.CREATURE &&
-    (combatStore.combatTurnSide !== 'hero' ||
-      combatStore.combatAttackUsed ||
-      !getToolCapabilities(tool).canAttack)
-  ) {
-    return [];
-  }
-
   return resolveActions(tool, tile.hexobject);
 }
 
@@ -182,8 +171,7 @@ watch(
   () => [hoveredTile.value, handTools.value, heroToolStore.isDragging] as const,
   ([tile, tools, dragging]) => {
     const current = activeToolKey.value;
-    if (!dragging || !tile || !current || combatStore.combatActive || heroToolStore.isLocked)
-      return;
+    if (!dragging || !tile || !current || battleStore.inBattle || heroToolStore.isLocked) return;
 
     let best = current;
     let bestPriority = topPriority(current, tile);
@@ -206,32 +194,6 @@ const portalPreview = computed(() => {
 });
 
 const resolvedActions = computed(() => {
-  if (
-    combatStore.combatActive &&
-    combatStore.combatTurnSide === 'hero' &&
-    !combatStore.isEnemyTurnResolving &&
-    !heroStore.isHeroMoving &&
-    heroToolStore.hover &&
-    activeToolKey.value
-  ) {
-    const capabilities = getToolCapabilities(activeToolKey.value);
-
-    if (
-      capabilities.canBlock &&
-      combatStore.combatAttackUsed &&
-      !combatStore.combatDefendUsed &&
-      combatStore.canPlaceCombatDefendMarker(heroToolStore.hover)
-    ) {
-      return [
-        {
-          actioType: 'BLOCK',
-          label: 'Block',
-          priority: 110,
-        } satisfies ResolvedAction,
-      ];
-    }
-  }
-
   return activeToolKey.value ? actionsForTool(activeToolKey.value, hoveredTile.value) : [];
 });
 
@@ -394,9 +356,6 @@ async function executeAction() {
   const res = await worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
 
   if (res.ok) {
-    if (actionType === EHexActionType.BLOCK) {
-      heroToolStore.stopTool();
-    }
     worldMapStore.saveToStorage();
   } else if (res.message) {
     flashDenied();

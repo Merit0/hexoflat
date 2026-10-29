@@ -7,7 +7,6 @@ const UI_SETTINGS_KEY = 'hexoflat:ui-settings:v1';
 
 type PersistedUiSettings = {
   showHeroMoveTrail: boolean;
-  showEnemyVisionArea: boolean;
   locale: string;
 };
 
@@ -23,10 +22,9 @@ describe('useUiSettingsStore', () => {
   });
 
   describe('defaults', () => {
-    it('defaults showHeroMoveTrail and showEnemyVisionArea to true', () => {
+    it('defaults showHeroMoveTrail to true', () => {
       const store = useUiSettingsStore();
       expect(store.showHeroMoveTrail).toBe(true);
-      expect(store.showEnemyVisionArea).toBe(true);
     });
 
     it('defaults locale to a supported locale', () => {
@@ -45,27 +43,12 @@ describe('useUiSettingsStore', () => {
       expect(persisted.showHeroMoveTrail).toBe(false);
     });
 
-    it('toggleEnemyVisionArea flips the flag and persists it', () => {
-      const store = useUiSettingsStore();
-      store.toggleEnemyVisionArea();
-      expect(store.showEnemyVisionArea).toBe(false);
-
-      const persisted = readPersisted();
-      expect(persisted.showEnemyVisionArea).toBe(false);
-    });
-
     it('setHeroMoveTrail sets the flag explicitly and persists it', () => {
       const store = useUiSettingsStore();
       store.setHeroMoveTrail(false);
       expect(store.showHeroMoveTrail).toBe(false);
       store.setHeroMoveTrail(true);
       expect(store.showHeroMoveTrail).toBe(true);
-    });
-
-    it('setEnemyVisionArea sets the flag explicitly and persists it', () => {
-      const store = useUiSettingsStore();
-      store.setEnemyVisionArea(false);
-      expect(store.showEnemyVisionArea).toBe(false);
     });
   });
 
@@ -98,7 +81,6 @@ describe('useUiSettingsStore', () => {
         UI_SETTINGS_KEY,
         JSON.stringify({
           showHeroMoveTrail: false,
-          showEnemyVisionArea: false,
           locale: 'uk',
         }),
       );
@@ -107,7 +89,6 @@ describe('useUiSettingsStore', () => {
       store.hydrateFromStorage();
 
       expect(store.showHeroMoveTrail).toBe(false);
-      expect(store.showEnemyVisionArea).toBe(false);
       expect(store.locale).toBe('uk');
       expect(i18n.global.locale.value).toBe('uk');
     });
@@ -115,7 +96,7 @@ describe('useUiSettingsStore', () => {
     it('falls back to a browser-detected locale when the persisted locale is invalid', () => {
       localStorage.setItem(
         UI_SETTINGS_KEY,
-        JSON.stringify({ showHeroMoveTrail: true, showEnemyVisionArea: true, locale: 'fr' }),
+        JSON.stringify({ showHeroMoveTrail: true, locale: 'fr' }),
       );
 
       const store = useUiSettingsStore();
@@ -132,7 +113,6 @@ describe('useUiSettingsStore', () => {
       store.hydrateFromStorage();
 
       expect(store.showHeroMoveTrail).toBe(true);
-      expect(store.showEnemyVisionArea).toBe(true);
       expect(store.locale).toBe('uk');
     });
   });

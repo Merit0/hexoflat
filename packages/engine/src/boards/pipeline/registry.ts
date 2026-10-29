@@ -13,6 +13,7 @@ import { checkReachable, checkRequired, checkShape } from './pieces/checks';
 import { formBlobs } from './pieces/blobs';
 import { objectsRules } from './pieces/rules';
 import { gatesEntry } from './pieces/entry';
+import { objectsEncounters } from './pieces/encounters';
 import {
   checkTacticalBudget,
   formHexagon,
@@ -37,6 +38,7 @@ export const OBJECTS: PieceRegistry = {
   drawing: objectsDrawing,
   rules: objectsRules,
   'battle-cover': objectsBattleCover,
+  encounters: objectsEncounters,
 };
 export const CHECKS: PieceRegistry<CheckResult> = {
   reachable: checkReachable,

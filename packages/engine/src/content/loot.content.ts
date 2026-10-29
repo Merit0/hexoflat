@@ -8,7 +8,9 @@ export type TLootKeys =
   | typeof HEXOBJECT_KEYS.HEALTH_BOTTLE
   | typeof HEXOBJECT_KEYS.ENERGY_BOTTLE
   | typeof HEXOBJECT_KEYS.MANA_BOTTLE
-  | typeof HEXOBJECT_KEYS.RETURN_SCROLL;
+  | typeof HEXOBJECT_KEYS.RETURN_SCROLL
+  | typeof HEXOBJECT_KEYS.BONE_CHARM
+  | typeof HEXOBJECT_KEYS.CROWN_SHARD;
 
 export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.COINS]: {
@@ -122,6 +124,51 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
         stackKey: HEXOBJECT_KEYS.RETURN_SCROLL,
         maxStack: 50,
         weightKG: 0.05,
+      },
+    },
+  },
+
+  [HEXOBJECT_KEYS.BONE_CHARM]: {
+    hexobjectKey: HEXOBJECT_KEYS.BONE_CHARM,
+    groupType: EHexobjectGroup.LOOT,
+    isInteractable: true,
+    title: 'Bone Charm',
+    subtitle: 'Carved from a fallen guard',
+    description: 'A small charm of bone, still cold from the crypt.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/enemy-assets/boss-hex-images/skeletor-token-image.png',
+    loot: {
+      name: 'Bone Charm',
+      amount: 1,
+      rarity: { kind: ERarityKind.GLOOM, boss: false },
+      traits: {
+        stackable: true,
+        stackKey: HEXOBJECT_KEYS.BONE_CHARM,
+        maxStack: 10,
+        weightKG: 0.05,
+      },
+    },
+  },
+
+  [HEXOBJECT_KEYS.CROWN_SHARD]: {
+    hexobjectKey: HEXOBJECT_KEYS.CROWN_SHARD,
+    tags: ['rare'],
+    groupType: EHexobjectGroup.LOOT,
+    isInteractable: true,
+    title: 'Crown Shard',
+    subtitle: 'A piece of a broken crown',
+    description: 'A shard of the crown worn by the king of the crypt.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/enemy-assets/boss-hex-images/emitter-token-image.png',
+    loot: {
+      name: 'Crown Shard',
+      amount: 1,
+      rarity: { kind: ERarityKind.GLOOM, boss: true },
+      traits: {
+        stackable: true,
+        stackKey: HEXOBJECT_KEYS.CROWN_SHARD,
+        maxStack: 10,
+        weightKG: 0.1,
       },
     },
   },

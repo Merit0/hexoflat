@@ -29,7 +29,15 @@ export const CAVE_MODEL = {
             where: { region: 'deep', steps: [1, 17] },
             required: true,
           },
-          { id: 'guard', pick: 'skeletor', count: [1, 2], where: { region: 'deep' } },
+        ],
+      },
+      {
+        kind: 'encounters',
+        place: [
+          { encounter: 'bone-court', spot: 'deep', minSteps: 6 },
+          { encounter: 'skeleton-pack', spot: 'treasure' },
+          { encounter: 'archer-watch', spot: 'chokepoint' },
+          { encounter: 'lone-skeleton', spot: 'dead-end' },
         ],
       },
     ],

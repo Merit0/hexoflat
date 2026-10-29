@@ -40,6 +40,8 @@ import { getMeta } from '../content/content-accessors';
 import type { ApplyCommandResult, DomainEvent } from './types';
 import type { BattleState } from '../battle/battle-state';
 import { applyBattleCommand } from '../battle/apply-battle';
+import { applyEncounterCommand } from '../encounters/apply-encounter';
+import type { Engagement } from '../encounters/encounter-commands';
 
 export interface HexEngineState {
   map: HexMapModel;
@@ -49,6 +51,7 @@ export interface HexEngineState {
   knowledgeContext?: KnowledgeContext;
   location?: PortalLocation;
   battle?: BattleState;
+  engagement?: Engagement;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -145,6 +148,10 @@ export function applyCommand(
       events.push(...result.events);
       break;
     }
+
+    case 'ENCOUNTER':
+      events.push(...applyEncounterCommand(state, parsed));
+      break;
 
     default:
       return assertNever(parsed);

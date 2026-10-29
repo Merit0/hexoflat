@@ -28,7 +28,6 @@ describe('tiles-layer sparse map characterization', () => {
       worldContainer,
       getTileSize: () => ({ w: 60, h: 60 }),
       worldStore: {} as TilesLayerDeps['worldStore'],
-      combatStore: {} as TilesLayerDeps['combatStore'],
       onTileHover: () => {},
       onTileClick: () => {},
     };
@@ -51,7 +50,6 @@ describe('tiles-layer terrain looks', () => {
       worldContainer: new Container(),
       getTileSize: () => ({ w: 60, h: 60 }),
       worldStore: {} as TilesLayerDeps['worldStore'],
-      combatStore: {} as TilesLayerDeps['combatStore'],
       onTileHover: () => {},
       onTileClick: () => {},
     };
@@ -84,7 +82,6 @@ describe('tiles-layer terrain looks', () => {
         worldContainer: new Container(),
         getTileSize: () => ({ w: 60, h: 60 }),
         worldStore: {} as TilesLayerDeps['worldStore'],
-        combatStore: {} as TilesLayerDeps['combatStore'],
         onTileHover: () => {},
         onTileClick: () => {},
         getFogLook: () => look,
@@ -105,7 +102,6 @@ describe('tiles-layer background path', () => {
       worldContainer: new Container(),
       getTileSize: () => ({ w: 60, h: 60 }),
       worldStore: {} as TilesLayerDeps['worldStore'],
-      combatStore: {} as TilesLayerDeps['combatStore'],
       onTileHover: () => {},
       onTileClick: () => {},
     });

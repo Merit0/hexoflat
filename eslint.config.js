@@ -41,7 +41,6 @@ const KNOWN_CYCLE_FILES = [
   'apps/web/src/a-game-scenes/map-scene/components/hex-world-map.vue',
   'apps/web/src/router/index.ts',
   'apps/web/src/services/world/location-navigator.ts',
-  'apps/web/src/stores/combat-store.ts',
   'apps/web/src/stores/hero-store.ts',
   'apps/web/src/stores/user-store.ts',
   'apps/web/src/stores/world-map-store.ts',
@@ -252,7 +251,6 @@ export default tseslint.config(
     files: [
       'apps/web/src/stores/world-map-store.ts',
       'apps/web/src/stores/hero-inventory-store.ts',
-      'apps/web/src/stores/combat-store.ts',
     ],
     rules: {
       'no-restricted-syntax': [

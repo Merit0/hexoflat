@@ -2,7 +2,7 @@ import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { getMeta, getPrototype } from '@hexoflat/engine';
+import { getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
@@ -10,7 +10,6 @@ import { terrainLook } from '@/render/terrain-look';
 import { hiddenTileLook, type FogLook } from '@/render/fog-look';
 import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
-import type { useCombatStore } from '@/stores/combat-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
 const PICKUP_SPRITE_SCALE = 0.7;
@@ -21,13 +20,11 @@ const PICKUP_GROUPS = new Set<EHexobjectGroup>([
 ]);
 
 type WorldStore = ReturnType<typeof useWorldMapStore>;
-type CombatStore = ReturnType<typeof useCombatStore>;
 
 export interface TilesLayerDeps {
   worldContainer: Container;
   getTileSize(): { w: number; h: number };
   worldStore: WorldStore;
-  combatStore: CombatStore;
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
   /** Dev board panel's "show whole board" toggle — render only, never changes tile.isRevealed. */
@@ -45,7 +42,6 @@ interface TileNode {
   fogFill: Graphics;
   frame: Sprite;
   sprite: Sprite;
-  defendMarker: Sprite | null;
   lockChip: Text | null;
   unsubscribers: Array<() => void>;
   tile: IHexTile;
@@ -63,7 +59,6 @@ export interface TilesLayer {
    */
   syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>): void;
   syncLockChips(tiles: IHexTile[], nowTick: number): void;
-  syncDefendMarkers(tiles: IHexTile[]): void;
   destroy(): void;
 }
 
@@ -96,21 +91,6 @@ function constructionLockLabel(
 
 function getGearRarity(tile: IHexTile) {
   return tile.hexobject ? getObjectRarityTone(tile.hexobject) : null;
-}
-
-function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): string | null {
-  if (!tile.isRevealed) return null;
-
-  const marker = combatStore.combatMarkers.find(
-    (item) =>
-      item.visible &&
-      item.kind === 'defend' &&
-      item.coord.columnIndex === tile.coordinates.columnIndex &&
-      item.coord.rowIndex === tile.coordinates.rowIndex,
-  );
-  if (!marker?.toolKey) return null;
-
-  return getPrototype(marker.toolKey)?.spritePath ?? null;
 }
 
 function applyObjectFit(sprite: Sprite, w: number, h: number, groupType?: EHexobjectGroup) {
@@ -227,7 +207,6 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       fogFill,
       frame,
       sprite,
-      defendMarker: null,
       lockChip: null,
       unsubscribers: [],
       tile,
@@ -316,49 +295,10 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     }
   }
 
-  function syncDefendMarkers(tiles: IHexTile[]) {
-    for (const tile of tiles) {
-      const node = nodes.get(coordinateKey(tile.coordinates));
-      if (!node) continue;
-
-      const path = defendMarkerSpritePath(tile, deps.combatStore);
-      const { w, h } = deps.getTileSize();
-
-      if (!path) {
-        if (node.defendMarker) {
-          node.defendMarker.destroy();
-          node.defendMarker = null;
-        }
-        continue;
-      }
-
-      if (!node.defendMarker) {
-        node.defendMarker = new Sprite();
-        node.defendMarker.anchor.set(0.5, 0.6);
-        node.defendMarker.position.set(w / 2, h / 2);
-        node.root.addChildAt(node.defendMarker, 3);
-      }
-
-      node.defendMarker.texture = getTexture(path);
-
-      const tex = node.defendMarker.texture;
-      const targetWidth = w * 0.68;
-      if (tex.width && tex.height) {
-        const scale = targetWidth / tex.width;
-        node.defendMarker.width = tex.width * scale;
-        node.defendMarker.height = tex.height * scale;
-      } else {
-        node.defendMarker.width = targetWidth;
-        node.defendMarker.height = h * 0.68;
-      }
-    }
-  }
-
   return {
     container,
     syncTiles,
     syncLockChips,
-    syncDefendMarkers,
     destroy() {
       for (const node of nodes.values()) {
         for (const unsub of node.unsubscribers) unsub();

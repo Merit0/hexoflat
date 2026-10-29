@@ -1,4 +1,4 @@
-import { applyCommand, type HexEngineActionContext } from '@hexoflat/engine';
+import { applyCommand, type HexEngineActionContext, type HexEngineState } from '@hexoflat/engine';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
@@ -11,6 +11,8 @@ import { MapRegistry, type LocationKey } from '@hexoflat/engine/registry/world-m
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import type { PortalLocation } from '@hexoflat/engine/portal/portal-rules';
+import type { BattleState } from '@hexoflat/engine/battle/battle-state';
+import type { EncounterCommand, Engagement } from '@hexoflat/engine/encounters/encounter-commands';
 import { transactKnowledge } from '@/services/persistence/knowledge-storage';
 
 export { canReachBook as isAtKnowledgeBook } from '@hexoflat/engine/knowledge/camp-book';
@@ -115,4 +117,33 @@ export async function dispatchHexAction(
     return events.some((event) => event.type === 'WILL_SPENT');
   });
   return { state, events, hero: host.hero };
+}
+
+export interface EncounterHostState {
+  battle?: BattleState;
+  engagement?: Engagement;
+}
+
+export async function dispatchEncounter(
+  host: Omit<KnowledgeHost, 'state'>,
+  command: EncounterCommand,
+  held: EncounterHostState,
+) {
+  let events: DomainEvent[] = [];
+  let after: EncounterHostState = held;
+  const state = await transactKnowledge(host.heroId, (knowledge) => {
+    if (!host.isCurrent()) return false;
+    const world: HexEngineState = {
+      map: host.map,
+      heroes: { [host.hero.id]: host.hero },
+      knowledge,
+      knowledgeContext: host.context,
+      battle: held.battle,
+      engagement: held.engagement,
+    };
+    events = applyCommand(world, command, host.engineContext).events;
+    after = { battle: world.battle, engagement: world.engagement };
+    return events.some((event) => event.type === 'WILL_SPENT');
+  });
+  return { state, events, hero: host.hero, held: after };
 }

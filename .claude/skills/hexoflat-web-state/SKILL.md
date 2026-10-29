@@ -43,9 +43,9 @@ The current stores have not reached this shape. That is expected — the contrac
 
 ## Hard bans (ESLint-enforced, so you will get an error, not a review comment)
 
-- No direct `localStorage` in `world-map-store.ts`, `hero-inventory-store.ts`, `combat-store.ts` → use `services/persistence/*-storage.ts`.
+- No direct `localStorage` in `world-map-store.ts`, `hero-inventory-store.ts` → use `services/persistence/*-storage.ts`.
   - Note: `hero-store.ts`, `user-store.ts`, `ui-settings-store.ts`, `game-events-store.ts` still use it directly by design and are exempt. Do not "consistently" migrate them as a side quest.
-- No direct `Math.random()` in those same three stores → use the RNG port from `@hexoflat/engine/utils/random`.
+- No direct `Math.random()` in those same stores → use the RNG port from `@hexoflat/engine/utils/random`.
 - `import-x/no-cycle` is `error` everywhere except the files in `KNOWN_CYCLE_FILES` in `eslint.config.js`. **Never add a file to that list to make an error go away** — it is a record of reviewed legacy cycles, not an escape hatch. A new cycle means the split is wrong.
 - `max-lines`, `max-lines-per-function`, `complexity`, `max-depth` are pinned to current measured maximums. If a change trips one, split the code — do not raise the threshold.
 
@@ -69,6 +69,17 @@ After extracting anything, verify the old call site actually imports it and the 
 - Message params whose value starts with `battle.` or `content.` are translated before formatting (`useBattleText().text`). Id-driven battle keys (tags, roles, hands, actions, hints, rejections, task titles, legend) are registered for the orphan-key test through `battleLocaleKeys()` in `battle-hint.ts`; a new dynamic key goes there.
 - Timing is outside the store: `services/battle/use-battle-enemy-driver.ts` runs the enemy turn after `ENEMY_TURN_DELAY_MS` (mounted in `hero-board-panel.vue` and on `/dev/battlefield`), and `battle-timed-task.vue` sends `task-timeout` when its line runs out.
 - The BATTLE tab exists only while `battleStore.isOpen`; opening switches the panel to it, closing goes back to HERO.
+
+## Worked example: encounters on the map (B6)
+
+- The old `combat-store.ts` is gone. "Is a battle on?" is `battleStore.inBattle` (an engagement or a deploy exists); hero-store, world-map-store, portal, crossing and the tool tile all read that one flag, and pass it to the engine as `combatActive`.
+- `battle-store` stays a leaf: it holds `engagement` + `battle`, `snapshot()`/`restore()` for saves, and a `BattleEngineBridge` (`bindBridge`). When a bridge is bound, `send`/`start`/`leave` go through it, so a map battle runs through `applyCommand` with the world state; `/dev/battlefield` binds nothing and plays locally.
+- `stores/encounter-store.ts` owns the map side: views from engine `projectEncounters` (recomputed on `dirtyTick`), sentry-watched hexes, `reachableIds`, the selected squad, the sneak task view, and `tapEncounter` (popover / pick up loot / "come closer"). Event handling and the bridge live in `services/encounters/encounter-flow.ts` (`useEncounterFlow`): `BATTLE_REQUESTED` → deploy card (`planEncounterBattle`, rebuilt after a reload by a watch), `SNEAK_SUCCEEDED` → hero moved, `LOOT_PICKED` → inventory, `BATTLE_CLOSED` → hearts written back, consumed items taken, kills, defeat → `respawnHeroAtCamping`. `services/encounters/encounter-loadout.ts` builds the battle hero from inventory (hands = `weapon`/`shield` slots, bag ≤ 3 battle items).
+- ATTACK and SCOUT spend Will, so they go through `dispatchEncounter` in `knowledge-controller.ts` (`transactKnowledge`, same as `dispatchHexAction`); the other encounter actions run `applyCommand` directly.
+- The sentry check runs in `hero-store.checkSentry` after every walked step (ENCOUNTER `step-ended`); an ambush stops the walk.
+- Saves: `TWorldState.battle` holds `{ engagement, battle }`, validated on load by `readBattleSnapshot` (Zod + the encounter must exist on the map). Old `combat*` fields are ignored.
+- While a battle is open, `hex-world-map.vue` mounts `battle-board-area.vue` over the dungeon board; the dungeon map itself stays frozen.
+- Dynamic encounter keys (`encounter.threat.*`, `encounter.rejected.*`, sneak task texts) are registered for the orphan-key test in `encounterLocaleKeys()` (`i18n/locale-keys.ts`); encounter content titles come from engine `ENCOUNTERS`.
 
 ## Other conventions
 

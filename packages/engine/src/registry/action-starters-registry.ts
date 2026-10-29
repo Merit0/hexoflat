@@ -39,8 +39,6 @@ export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
   TAKE: EHexActionType.TAKE,
   USE: EHexActionType.USE,
   OPEN: EHexActionType.OPEN,
-  ATTACK: EHexActionType.ATTACK,
-  BLOCK: EHexActionType.BLOCK,
   ENTER: EHexActionType.ENTER,
 };
 
@@ -271,20 +269,6 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     heroToolStore.lockTool(tile, endsAt);
     return { ok: true, endsAt };
-  },
-
-  [EHexActionType.ATTACK]: (tile, _tool, now, ctx) => {
-    if (isBusy(tile, now)) return { ok: false, message: 'Hex is busy!' };
-    const res = ctx.worldMap.performHeroCombatAttack(tile, _tool);
-    if (!res.ok) return { ok: false, message: res.message };
-    return { ok: true, endsAt: now };
-  },
-
-  [EHexActionType.BLOCK]: (tile, _tool, now, ctx) => {
-    if (isBusy(tile, now)) return { ok: false, message: 'Hex is busy!' };
-    const placed = ctx.worldMap.placeCombatDefendMarker(tile.coordinates, _tool);
-    if (!placed) return { ok: false, message: 'Cannot place block here.' };
-    return { ok: true, endsAt: now };
   },
 
   [EHexActionType.OPEN]: (tile, _tool, now) => {

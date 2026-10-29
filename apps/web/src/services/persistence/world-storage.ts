@@ -8,7 +8,7 @@ import { CONTENT_VERSION } from '@hexoflat/engine';
  *
  * This module deliberately imports no store. Callers pass data in and get
  * data out — that is what keeps it unit-testable on its own, and what stops
- * it from becoming another edge in the world-map-store <-> combat-store
+ * it from becoming another edge in the world-map-store <-> hero-store
  * cycle (see G2 in docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md). It owns
  * the on-disk *format*; deciding *what* is worth saving stays with the
  * stores that own that state.

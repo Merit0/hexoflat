@@ -41,7 +41,7 @@ export function issueTask(
   const question = generateHallQuestion(
     `${state.seed}:battle:${state.id}:task`,
     state.taskSeq,
-    {},
+    state.taskHistory ?? {},
     [],
   );
   const options = taskOptions(

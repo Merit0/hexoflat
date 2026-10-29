@@ -12,6 +12,12 @@ import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction'
 import { EHexActionType } from '../../enums/hex-action-type';
 import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
 import type { ExitSide } from '../../boards/exits';
+import {
+  legacyEnemyEncounter,
+  mapEncounterSchema,
+  newMapEncounter,
+  type MapEncounter,
+} from '../../encounters/map-encounter';
 
 export type TFogPolicy = 'FOG' | 'ALL_REVEALED' | 'BY_REGION';
 
@@ -38,6 +44,7 @@ export interface ISerializedHexTile {
   terrain?: TerrainId;
   exit?: ExitSide;
   regionId?: string;
+  encounter?: MapEncounter;
 }
 
 export interface ISerializedHexMap {
@@ -48,6 +55,12 @@ export interface ISerializedHexMap {
   config: IHexMapPlacement[];
   tiles: ISerializedHexTile[];
   fogPolicy?: TFogPolicy;
+}
+
+function readEncounter(raw: unknown): MapEncounter | undefined {
+  if (!raw) return undefined;
+  const parsed = mapEncounterSchema.safeParse(raw);
+  return parsed.success ? parsed.data : undefined;
 }
 
 export default class HexMapModel implements IWorldMap {
@@ -180,6 +193,7 @@ export default class HexMapModel implements IWorldMap {
         ...(t.terrain === DEFAULT_TERRAIN ? {} : { terrain: t.terrain }),
         ...(t.exit ? { exit: t.exit } : {}),
         ...(t.regionId ? { regionId: t.regionId } : {}),
+        ...(t.encounter ? { encounter: t.encounter } : {}),
       })),
     };
   }
@@ -200,13 +214,18 @@ export default class HexMapModel implements IWorldMap {
       tile.coordinates = t.coordinates ?? { rowIndex: t.r ?? 0, columnIndex: t.q ?? 0 };
 
       const savedObj: THexobject | null = t.hexobject ?? null;
-      tile.hexobject = savedObj ? this.hydrateHexobject(savedObj, tile.coordinates) : null;
+      const legacyEncounter = legacyEnemyEncounter(savedObj?.hexobjectKey);
+      tile.hexobject =
+        savedObj && !legacyEncounter ? this.hydrateHexobject(savedObj, tile.coordinates) : null;
 
       tile.resourceSpawner = t.resourceSpawner ?? null;
       tile.pendingAction = t.pendingAction ?? null;
       tile.terrain = t.terrain ?? DEFAULT_TERRAIN;
       tile.exit = t.exit;
       tile.regionId = t.regionId;
+      tile.encounter =
+        readEncounter(t.encounter) ??
+        (legacyEncounter ? newMapEncounter(legacyEncounter, tile.coordinates) : undefined);
 
       return tile;
     });

@@ -178,20 +178,20 @@ test('Verify the hands show empty, then the equipped item, then empty again afte
   await verifyBoard.verifyHandEmpty('right');
 });
 
-test('Verify unlocking an attack skill rank raises the attack shown on the Hero tab', async () => {
+test('Verify the Hero tab shows the unarmed battle power and a strike skill rank does not change it', async () => {
   await new OpenCampingMapFeature().open();
 
   const switchTab = new SwitchHeroBoardTabFeature();
   const verifyBoard = new VerifyHeroBoardFeature();
 
   await switchTab.switchTo('hero');
-  const before = await verifyBoard.readAttackTileText();
+  await verifyBoard.verifyAttackTile('1');
 
   await switchTab.switchTo('path');
   await verifyBoard.sacrificeToSkill('b_strike', 'small', 2);
 
   await switchTab.switchTo('hero');
-  await verifyBoard.verifyAttackTileChangedFrom(before);
+  await verifyBoard.verifyAttackTile('1');
 });
 
 test('Verify a hand holding the Return Scroll shows its Will cost on the Hero tab', async () => {

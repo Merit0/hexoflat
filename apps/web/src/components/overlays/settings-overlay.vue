@@ -26,16 +26,6 @@
       </label>
 
       <label class="setting-row">
-        <input
-          data-testid="settings-vision-checkbox"
-          :checked="uiSettings.showEnemyVisionArea"
-          type="checkbox"
-          @change="uiSettings.setEnemyVisionArea(($event.target as HTMLInputElement).checked)"
-        />
-        <span>{{ t('settings.showEnemyVisionArea') }}</span>
-      </label>
-
-      <label class="setting-row">
         <span>{{ t('settings.language') }}</span>
         <select
           data-testid="settings-locale-select"

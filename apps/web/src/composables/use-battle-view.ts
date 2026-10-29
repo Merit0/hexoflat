@@ -135,7 +135,7 @@ export function useBattleView() {
 
   function leave() {
     resetBattleUi();
-    store.close();
+    store.leave();
   }
 
   return {

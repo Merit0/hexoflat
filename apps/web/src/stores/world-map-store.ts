@@ -57,14 +57,15 @@ import {
   isLocationRespawning as isRespawning,
   scheduleLocationRespawn as scheduleRespawn,
 } from '@/services/world/respawn-schedule';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
 import {
   isCurrentlyHydratingFromStorage,
   initialLocationKey,
   MAP_ORIGIN,
   requireWorldSeed,
   runWorldTick,
-  withoutCombatAutosave,
+  readBattleSnapshot,
+  withoutBattleAutosave,
   type TWorldState,
 } from '@/stores/world-map-store-helpers';
 
@@ -78,7 +79,7 @@ import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } 
 
 export { runWorldTick };
 
-let combatAutosaveStop: (() => void) | null = null;
+let battleAutosaveStop: (() => void) | null = null;
 
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
@@ -99,21 +100,17 @@ export const useWorldMapStore = defineStore('world-map-store', {
   actions: {
     /**
      * Builds the port context @hexoflat/engine's applyCommand needs. The
-     * `worldMap` port is an adapter over two stores: combat fields/actions
-     * come from combat-store, navigation (isLocationRespawning/goToLocation)
-     * stays here — tracked follow-up debt per docs/MIGRATION-PLAN.md Phase 2
-     * (staged scope) to move this off Pinia stores entirely.
+     * `worldMap` port reads whether a battle is open from battle-store;
+     * navigation (isLocationRespawning/goToLocation) stays here — tracked
+     * follow-up debt per docs/MIGRATION-PLAN.md Phase 2 (staged scope) to
+     * move this off Pinia stores entirely.
      */
     buildEngineContext(): HexEngineActionContext {
-      const combatStore = useCombatStore();
+      const battleStore = useBattleStore();
       const worldMap: IWorldMapPort = {
         get combatActive() {
-          return combatStore.combatActive;
+          return battleStore.inBattle;
         },
-        performHeroCombatAttack: (tile, toolKey) =>
-          combatStore.performHeroCombatAttack(tile, toolKey),
-        placeCombatDefendMarker: (target, toolKey) =>
-          combatStore.placeCombatDefendMarker(target, toolKey),
         isLocationRespawning: (locationKey) => this.isLocationRespawning(locationKey),
         getLocationRespawnRemainingMs: (locationKey) =>
           this.getLocationRespawnRemainingMs(locationKey),
@@ -268,11 +265,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
     async respawnHeroAtCamping() {
       const heroStore = useHeroStore();
       const events = useGameEventsStore();
-      const combatStore = useCombatStore();
       const defeatedLocationKey = this.currentLocationKey;
       const defeatedMapId = this.currentMapId;
 
-      combatStore.endCombat();
+      useBattleStore().close();
       heroStore.closePortalOnDeath();
       if (defeatedMapId) {
         this.clearStoredLocation(defeatedLocationKey, defeatedMapId);
@@ -285,7 +281,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.currentMapId = null;
       heroStore.setPendingLocation('camping');
       heroStore.reviveAtOneHp();
-      events.push('Combat', 'hero was defeated and returned to camping', 'INFO');
+      events.push('Battle', 'hero was defeated and returned to camping', 'BATTLE');
 
       if (isViewingOtherWorldLocation('camping')) {
         await routeToLocation('camping');
@@ -295,9 +291,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.goToLocation('camping');
     },
 
-    enableCombatAutosave() {
-      if (combatAutosaveStop) return;
-      combatAutosaveStop = useCombatStore().$subscribe(() => {
+    enableBattleAutosave() {
+      if (battleAutosaveStop) return;
+      battleAutosaveStop = useBattleStore().$subscribe(() => {
         if (isCurrentlyHydratingFromStorage()) return;
         this.saveToStorage();
       });
@@ -305,7 +301,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     bootstrapWorld() {
       const heroStore = useHeroStore();
-      this.enableCombatAutosave();
+      this.enableBattleAutosave();
 
       const locationKey = heroStore.nav.locationKey;
       const mapId = heroStore.nav.locationMapId ?? undefined;
@@ -457,7 +453,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     loadFromStorage(mapId: string) {
       const heroStore = useHeroStore();
-      const combatStore = useCombatStore();
+      const battleStore = useBattleStore();
 
       const savedMap = readSavedMap(mapId);
       this.descriptor = readSavedWorldState<TWorldState>(mapId)?.descriptor ?? null;
@@ -481,30 +477,13 @@ export const useWorldMapStore = defineStore('world-map-store', {
         heroStore.heroCoordinates = raw.heroCoordinates ?? null;
         const recovered = recoverStepPosition(heroStore.knowledge, mapId, raw.knowledgeRevision);
         if (recovered) heroStore.rememberPosition(mapId, (heroStore.heroCoordinates = recovered));
-        withoutCombatAutosave(() =>
-          combatStore.hydrate({
-            combatActive: raw.combatActive ?? false,
-            combatTurnSide: raw.combatTurnSide ?? 'hero',
-            combatStepsLeft: raw.combatStepsLeft ?? 0,
-            combatStoredStepsBeforeDefend: raw.combatStoredStepsBeforeDefend ?? null,
-            combatTurnEndsAt: raw.combatTurnEndsAt ?? null,
-            combatActionMode: raw.combatActionMode ?? null,
-            combatAttackUsed: raw.combatAttackUsed ?? false,
-            combatDefendUsed: raw.combatDefendUsed ?? false,
-            combatMarkers:
-              raw.combatMarkers?.map((marker) => ({
-                owner: marker.owner,
-                coord: { ...marker.coord },
-                kind: marker.kind,
-                visible: marker.visible ?? true,
-                toolKey: marker.toolKey ?? null,
-              })) ?? [],
-          }),
+        withoutBattleAutosave(() =>
+          battleStore.restore(readBattleSnapshot(raw.battle, this.map as HexMapModel | null)),
         );
       } else {
         heroStore.heroCoordinates = null;
         this.woodCollected = 0;
-        withoutCombatAutosave(() => combatStore.resetToDefaults());
+        withoutBattleAutosave(() => battleStore.close());
       }
 
       if (!this.map) return;
@@ -519,9 +498,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       this.revealAroundHero();
       this.saveToStorage(mapId);
-      if (combatStore.combatActive) {
-        combatStore.revealCombatVision();
-      }
     },
 
     saveToStorage(mapId?: string) {
@@ -536,7 +512,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         knowledgeRevision: useHeroStore().knowledge?.revision,
         worldSeed: getWorldSeed() ?? undefined,
         descriptor: this.descriptor,
-        ...useCombatStore().toSnapshot(),
+        battle: useBattleStore().snapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
     },
@@ -632,7 +608,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       useHeroStore().heroCoordinates = null;
       this.currentMapId = null;
       this.currentLocationKey = 'camping';
-      useCombatStore().endCombat();
+      useBattleStore().close();
     },
   },
 });
