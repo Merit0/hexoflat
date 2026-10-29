@@ -24,6 +24,7 @@ export interface AnimationGeometry {
 
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
+const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 const lerp = (a: Point, b: Point, t: number): Point => ({
   x: a.x + (b.x - a.x) * t,
@@ -63,6 +64,8 @@ export function sampleTokenPose(
       return { ...geo.centreOf(step.at), alpha: t };
     case 'slide':
       return { ...slidePoint(step.path, t, geo), alpha: 1 };
+    case 'walk':
+      return { ...lerp(geo.centreOf(step.from), geo.centreOf(step.to), easeOutCubic(t)), alpha: 1 };
     case 'eject': {
       const p = lerp(geo.centreOf(step.from), geo.centreOf(step.to), easeOut(t));
       return {

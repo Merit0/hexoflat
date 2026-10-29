@@ -8,6 +8,18 @@ function count(field: Battlefield, terrain: string): number {
   return Object.values(field.board).filter((t) => t === terrain).length;
 }
 
+const CENTRE = { q: 0, r: 0 };
+
+function isBorder(key: string, terrain: string): boolean {
+  return terrain === 'wall' && battleDistance(parseHexKey(key), CENTRE) >= 4;
+}
+
+function fieldHexes(field: Battlefield): string[] {
+  return Object.entries(field.board)
+    .filter(([key, t]) => !isBorder(key, t))
+    .map(([key]) => key);
+}
+
 function walkableConnected(field: Battlefield): boolean {
   const blocked = new Set(field.boulders.map((b) => hexKey(b.pos)));
   const open = Object.entries(field.board)
@@ -57,7 +69,10 @@ describe('REQ-ENC-006 battlefield', () => {
       expect(count(field, 'saw'), seed).toBeGreaterThanOrEqual(1);
       expect(count(field, 'saw'), seed).toBeLessThanOrEqual(2);
       expect(count(field, 'ledge'), seed).toBeGreaterThanOrEqual(1);
-      const cover = count(field, 'wall') + field.boulders.length;
+      const pillars = Object.entries(field.board).filter(
+        ([key, t]) => t === 'wall' && !isBorder(key, t),
+      ).length;
+      const cover = pillars + field.boulders.length;
       expect(cover, seed).toBeGreaterThanOrEqual(2);
       expect(cover, seed).toBeLessThanOrEqual(4);
       expect(hasPushCombo(field), seed).toBe(true);
@@ -65,12 +80,26 @@ describe('REQ-ENC-006 battlefield', () => {
     }
   });
 
-  it('is a natural hexagon of radius 4 centred on 0,0, no wider than 11 by 9', () => {
+  it('is a natural hexagon of radius 4 centred on 0,0', () => {
     const field = generateBattlefield('crypt', battlefieldSeed('enc-shape', 0));
-    const hexes = Object.keys(field.board).map(parseHexKey);
-    expect(hexes.every((h) => battleDistance(h, { q: 0, r: 0 }) <= 4)).toBe(true);
+    const hexes = fieldHexes(field).map(parseHexKey);
+    expect(hexes.every((h) => battleDistance(h, CENTRE) <= 4)).toBe(true);
     expect(hexes.length).toBeLessThan(61);
     expect(hexes.length).toBeGreaterThanOrEqual(57);
     expect(field.board['0,0']).toBeDefined();
+  });
+
+  it('is enclosed by a stone border on every seed', () => {
+    for (let n = 0; n < 50; n++) {
+      const field = generateBattlefield('crypt', battlefieldSeed(`enc-${n}`, 0));
+      const inner = fieldHexes(field).filter((key) => field.board[key] !== 'wall');
+      for (const key of inner) {
+        for (const next of hexNeighbours(parseHexKey(key)).map(hexKey)) {
+          expect(field.board[next], `${n} ${key}→${next}`).toBeDefined();
+        }
+      }
+      const border = Object.entries(field.board).filter(([key, t]) => isBorder(key, t));
+      expect(border.length, String(n)).toBeGreaterThan(0);
+    }
   });
 });

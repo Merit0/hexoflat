@@ -66,6 +66,11 @@ const { t } = useI18n();
   background: #262e33;
   border: 1px solid #36424a;
 }
+.creature-row.is-enemies {
+  box-sizing: border-box;
+  height: calc(46px + 20px + 2px);
+  padding: 10px 12px;
+}
 .creature-row.is-target {
   border-color: #e0a93f;
 }

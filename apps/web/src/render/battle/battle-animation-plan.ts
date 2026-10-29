@@ -20,6 +20,7 @@ export type BattleAnimationStep =
       durationMs: number;
     }
   | { kind: 'slide'; creatureId: string; path: BattleHex[]; durationMs: number }
+  | { kind: 'walk'; creatureId: string; from: BattleHex; to: BattleHex; durationMs: number }
   | { kind: 'eject'; creatureId: string; from: BattleHex; to: BattleHex; durationMs: number }
   | {
       kind: 'shake';
@@ -103,7 +104,15 @@ class Planner {
 
   private moved({ creatureId, from, to }: Moved) {
     if (!this.pos.has(creatureId)) return;
-    if (this.sides.get(creatureId) === 'enemies' && !this.hidden.has(creatureId)) {
+    if (this.sides.get(creatureId) === 'heroes') {
+      this.steps.push({
+        kind: 'walk',
+        creatureId,
+        from: copy(from),
+        to: copy(to),
+        durationMs: BATTLE_TIMING.heroStepMs,
+      });
+    } else if (!this.hidden.has(creatureId)) {
       this.hidden.add(creatureId);
       this.steps.push({
         kind: 'vanish',

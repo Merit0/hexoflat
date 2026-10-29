@@ -34,6 +34,32 @@ describe('planBattleAnimation', () => {
     expect(steps[0].durationMs).toBe(BATTLE_TIMING.enemyVanishMs);
   });
 
+  it('walks the hero hex by hex like the map step', () => {
+    const steps = planBattleAnimation(
+      [
+        ev('CREATURE_MOVED', { creatureId: 'hero', from: { q: 0, r: 0 }, to: { q: 1, r: 0 } }),
+        ev('CREATURE_MOVED', { creatureId: 'hero', from: { q: 1, r: 0 }, to: { q: 2, r: 0 } }),
+      ],
+      [{ ...hero, pos: { q: 2, r: 0 } }],
+    );
+    expect(steps).toEqual([
+      {
+        kind: 'walk',
+        creatureId: 'hero',
+        from: { q: 0, r: 0 },
+        to: { q: 1, r: 0 },
+        durationMs: BATTLE_TIMING.heroStepMs,
+      },
+      {
+        kind: 'walk',
+        creatureId: 'hero',
+        from: { q: 1, r: 0 },
+        to: { q: 2, r: 0 },
+        durationMs: BATTLE_TIMING.heroStepMs,
+      },
+    ]);
+  });
+
   it('flies the hero sword from the hex the hero struck from', () => {
     const skeleton: AnimatedCreature = { id: 's1', side: 'enemies', pos: { q: 1, r: 0 } };
     const [strike] = planBattleAnimation(
@@ -112,16 +138,7 @@ describe('planBattleAnimation', () => {
     ]);
   });
 
-  it('plans nothing for a hero walking or for bookkeeping events', () => {
-    const walked: AnimatedCreature = { ...hero, pos: { q: 1, r: 0 } };
-    expect(
-      planBattleAnimation(
-        [
-          ev('CREATURE_MOVED', { creatureId: 'hero', from: { q: 0, r: 0 }, to: { q: 1, r: 0 } }),
-          ev('PHASE_CHANGED', { phase: 'act' }),
-        ],
-        [walked],
-      ),
-    ).toEqual([]);
+  it('plans nothing for bookkeeping events', () => {
+    expect(planBattleAnimation([ev('PHASE_CHANGED', { phase: 'act' })], [hero])).toEqual([]);
   });
 });

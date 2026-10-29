@@ -34,7 +34,7 @@ export function ringOf(draft: Pick<BoardDraft, 'frame'>, coord: IHexCoordinates)
 
 function fieldCells(draft: BoardDraft): IHexCoordinates[] {
   return [...draft.cellMap.entries()]
-    .filter(([, c]) => c.exists)
+    .filter(([, c]) => c.exists && c.regionId === 'field')
     .map(([k]) => parseCoordinateKey(k));
 }
 

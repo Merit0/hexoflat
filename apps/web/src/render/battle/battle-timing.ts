@@ -1,6 +1,7 @@
 export const BATTLE_TIMING = {
   enemyTurnDelayMs: 700,
   strikeMs: 400,
+  heroStepMs: 190,
   enemyVanishMs: 300,
   enemyAppearMs: 300,
   slidePerHexMs: 250,
