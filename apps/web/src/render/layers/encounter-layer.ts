@@ -2,13 +2,16 @@ import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { EncounterView } from '@hexoflat/engine/encounters/encounter-state';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { buildHexPolygon } from '@/render/hex-geometry';
-import { getTexture } from '@/render/texture-cache';
+import { applyObjectFit } from '@/render/object-fit';
+import { createHexToken, type HexToken } from '@/render/hex-token';
+import { getTexture, isTextureReady, onTextureReady } from '@/render/texture-cache';
 import {
   ENCOUNTER_LOOT_URL,
   ENCOUNTER_MARKS,
   ENCOUNTER_RIMS,
-  ENCOUNTER_TOKEN_URL,
+  encounterTokenUrl,
   leaderGlyph,
   rimOf,
   toPixiColor,
@@ -29,9 +32,6 @@ export interface EncounterLayer {
   sync(params: EncounterLayerSync): void;
   destroy(): void;
 }
-
-const STACK_STEP = 5;
-const TOKEN_SCALE = 0.78;
 
 function scaledPolygon(w: number, h: number, scale: number, dx: number, dy: number): number[] {
   const points = buildHexPolygon(w * scale, h * scale).points;
@@ -66,38 +66,39 @@ function drawWatched(layer: Graphics, watched: IHexCoordinates[], w: number, h: 
   }
 }
 
-function tokenNode(view: EncounterView, glow: boolean, w: number, h: number): Container {
+type Refit = (path: string, fit: () => void) => void;
+type Track = (token: HexToken) => void;
+
+function lootFace(w: number, h: number, refit: Refit): Sprite {
+  const sprite = new Sprite(getTexture(ENCOUNTER_LOOT_URL));
+  const fit = () => {
+    sprite.texture = getTexture(ENCOUNTER_LOOT_URL);
+    applyObjectFit(sprite, w, h, EHexobjectGroup.LOOT);
+  };
+  fit();
+  refit(ENCOUNTER_LOOT_URL, fit);
+  return sprite;
+}
+
+function creatureFace(view: EncounterView, w: number, h: number, track: Track): Container {
+  const token = createHexToken(encounterTokenUrl(view.leaderKind));
+  token.layout(w, h);
+  token.body.position.set(w / 2, h / 2);
+  track(token);
+  return token.root;
+}
+
+function tokenNode(
+  view: EncounterView,
+  w: number,
+  h: number,
+  refit: Refit,
+  track: Track,
+): Container {
   const root = new Container();
   const rim = ENCOUNTER_RIMS[rimOf(view)];
   const isLoot = view.status === 'loot';
-  const layers = isLoot ? 0 : view.count - 1;
-  for (let i = layers; i >= 1; i -= 1) {
-    root.addChild(
-      new Graphics()
-        .poly(scaledPolygon(w, h, TOKEN_SCALE, 0, i * STACK_STEP))
-        .fill({ color: toPixiColor(rim.dark) })
-        .stroke({ color: 0x0b0d11, width: 1 }),
-    );
-  }
-  if (glow) {
-    root.addChild(
-      new Graphics()
-        .poly(scaledPolygon(w, h, TOKEN_SCALE + 0.1, 0, 0))
-        .stroke({ color: toPixiColor(ENCOUNTER_MARKS.glow), width: 4, alpha: 0.85 }),
-    );
-  }
-  root.addChild(
-    new Graphics()
-      .poly(scaledPolygon(w, h, TOKEN_SCALE, 0, 0))
-      .fill({ color: 0x15171c })
-      .stroke({ color: toPixiColor(rim.light), width: 3 }),
-  );
-  const sprite = new Sprite(getTexture(isLoot ? ENCOUNTER_LOOT_URL : ENCOUNTER_TOKEN_URL));
-  sprite.anchor.set(0.5);
-  sprite.position.set(w / 2, h / 2);
-  sprite.width = w * 0.52;
-  sprite.height = h * 0.52;
-  root.addChild(sprite);
+  root.addChild(isLoot ? lootFace(w, h, refit) : creatureFace(view, w, h, track));
   if (isLoot) return root;
   const glyph = leaderGlyph(view.leaderKind);
   if (glyph) {
@@ -108,7 +109,7 @@ function tokenNode(view: EncounterView, glow: boolean, w: number, h: number): Co
   }
   if (view.count > 1) {
     const count = badge(`×${view.count}`, '#15171c', rim.light, 12);
-    count.position.set(w * 0.8, h * 0.78 + layers * STACK_STEP);
+    count.position.set(w * 0.8, h * 0.78);
     root.addChild(count);
   }
   if (!view.scouted) {
@@ -131,14 +132,27 @@ export function createEncounterLayer(deps: EncounterLayerDeps): EncounterLayer {
   const tokens = new Container();
   container.addChild(watchedLayer, tokens);
   deps.worldContainer.addChild(container);
+  let unsubscribers: Array<() => void> = [];
+  let faces: HexToken[] = [];
+  const refit: Refit = (path, fit) => {
+    if (!isTextureReady(path)) unsubscribers.push(onTextureReady(path, fit));
+  };
+  const track: Track = (token) => faces.push(token);
+
+  function clearRefits() {
+    for (const unsubscribe of unsubscribers) unsubscribe();
+    unsubscribers = [];
+    for (const face of faces) face.destroy();
+    faces = [];
+  }
 
   function sync(params: EncounterLayerSync) {
     const { w, h } = deps.getTileSize();
     drawWatched(watchedLayer, params.watched, w, h);
+    clearRefits();
     for (const child of tokens.removeChildren()) child.destroy({ children: true });
-    const reachable = new Set(params.reachableIds);
     for (const view of params.encounters) {
-      const node = tokenNode(view, reachable.has(view.id), w, h);
+      const node = tokenNode(view, w, h, refit, track);
       const { x, y } = calcHexPixelPosition({ coordinates: view.coordinates }, w, h);
       node.position.set(x, y);
       tokens.addChild(node);
@@ -148,6 +162,7 @@ export function createEncounterLayer(deps: EncounterLayerDeps): EncounterLayer {
   return {
     sync,
     destroy() {
+      clearRefits();
       container.destroy({ children: true });
     },
   };

@@ -29,7 +29,11 @@
           ⏻
         </button>
       </div>
-      <battle-board-area v-if="battleStore.isOpen" class="battle-pane" />
+      <battle-board-area
+        v-if="battleStore.isOpen"
+        class="battle-pane"
+        :reference-frame="boardFrame"
+      />
       <div ref="containerRef" class="hex-map" data-testid="hex-map">
         <canvas
           ref="boardCanvasRef"

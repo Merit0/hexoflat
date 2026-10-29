@@ -115,6 +115,19 @@ export function fitBoardCamera(input: FitBoardCameraInput): BoardCamera {
   };
 }
 
+export interface FitAtReferenceZoomInput {
+  frameRect: WorldRect;
+  referenceRect: WorldRect | null;
+  pane: PaneSize;
+}
+
+export function fitAtReferenceZoom(input: FitAtReferenceZoomInput): BoardCamera {
+  const { frameRect, referenceRect, pane } = input;
+  if (!referenceRect) return fitBoardCamera({ frameRect, pane });
+  const { zoom } = fitBoardCamera({ frameRect: referenceRect, pane });
+  return fitBoardCamera({ frameRect, pane, minZoom: zoom, maxZoom: zoom });
+}
+
 export function snapCameraToPixels(camera: BoardCamera, pixelRatio: number): BoardCamera {
   const ratio = pixelRatio > 0 ? pixelRatio : 1;
   return {

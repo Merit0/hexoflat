@@ -32,34 +32,23 @@ function heroTurn(
 }
 
 function model(battle: BattleState, patch: Partial<BattleOverlayInput> = {}) {
-  return battleOverlayModel(
-    {
-      projection: projectBattleForViewer(battle, 'heroes'),
-      zones: null,
-      mode: null,
-      results: [],
-      ...patch,
-    },
-    BATTLE_RULES,
-  );
+  return battleOverlayModel({
+    projection: projectBattleForViewer(battle, 'heroes'),
+    zones: null,
+    mode: null,
+    results: [],
+    ...patch,
+  });
 }
 
 const hero = () => ({ ...devBattleHero('h'), pos: { q: 0, r: 0 } });
 
 describe('battle overlay model', () => {
-  it('prices every reachable hex in blue and marks a saw within reach as DANGER', () => {
+  it('puts no price or reachable marks on the board in move mode', () => {
     const battle = heroTurn([hero(), enemyCreature('skeleton-warrior', 'w', { q: 3, r: -3 })], {
       '1,0': 'saw',
     });
-    const { marks } = model(battle, { mode: 'move' });
-    expect(marks).toContainEqual({ hex: { q: -1, r: 0 }, tone: 'reachable', label: '3 WILL' });
-    expect(marks).toContainEqual({ hex: { q: 1, r: 0 }, tone: 'danger', label: 'DANGER' });
-    expect(marks.some((m) => m.tone === 'reachable' && m.hex.q === 1 && m.hex.r === 0)).toBe(false);
-    expect(
-      marks
-        .filter((m) => m.tone === 'reachable')
-        .every((m) => Number(m.label!.split(' ')[0]) <= 20),
-    ).toBe(true);
+    expect(model(battle, { mode: 'move' }).marks).toEqual([]);
   });
 
   it('marks only the foes a strike, push or pull can reach', () => {

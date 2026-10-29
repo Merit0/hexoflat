@@ -45,11 +45,11 @@ describe('encounters on the dungeon map', () => {
     const [view] = projectEncounters(state.map, STRONG);
     expect(view).toMatchObject({
       id: PACK,
-      count: 3,
+      count: 2,
       leaderKind: 'skeleton-warrior',
       sentry: false,
       scouted: false,
-      members: ['skeleton-warrior', null, null],
+      members: ['skeleton-warrior', null],
     });
     expect(['easy', 'risky', 'deadly']).toContain(view.threat);
 
@@ -57,7 +57,6 @@ describe('encounters on the dungeon map', () => {
     expect(projectEncounters(state.map, STRONG)[0].members).toEqual([
       'skeleton-warrior',
       'skeleton-warrior',
-      'skeleton-archer',
     ]);
 
     const lone = encounterWorld({

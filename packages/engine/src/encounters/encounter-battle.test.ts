@@ -62,7 +62,7 @@ describe('encounter battles, loot, threat and saves', () => {
     expect(closed[2].payload).toMatchObject({
       outcome: 'victory',
       heroAt: HERO_AT,
-      kills: 3,
+      kills: 2,
       heroes: [{ id: HERO, hearts: 1.5, consumed: ['health-bottle'] }],
     });
     expect(state.battle).toBeUndefined();

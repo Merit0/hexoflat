@@ -6,8 +6,11 @@
       :scene="view.board.scene"
       :overlay="view.board.overlay"
       :banner="view.board.banner"
+      :preview="view.board.preview"
+      :reference-frame="referenceFrame"
       :take-events="store.takeEvents"
       @hex-tap="tapHex"
+      @hex-hover="hoverHex"
       @animating="store.setAnimating"
     >
       <battle-timed-task v-if="view.task" :task="view.task" @answer="answer" @timeout="timeout" />
@@ -21,10 +24,13 @@ import BattleBoard from '@/components/battle/battle-board.vue';
 import BattleBoardLegend from '@/components/battle/battle-board-legend.vue';
 import { useBattleView } from '@/composables/use-battle-view';
 import { useBattleStore } from '@/stores/battle-store';
+import type { BoardFrame } from '@/render/board-camera';
 import BattleTimedTask from './battle-timed-task.vue';
 
+defineProps<{ referenceFrame: BoardFrame | null }>();
+
 const store = useBattleStore();
-const { view, tapHex, answer, timeout } = useBattleView();
+const { view, tapHex, hoverHex, answer, timeout } = useBattleView();
 </script>
 
 <style scoped>

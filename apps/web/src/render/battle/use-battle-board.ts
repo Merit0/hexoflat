@@ -16,8 +16,9 @@ import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
 import {
   HEX_WORLD_HEIGHT,
   HEX_WORLD_WIDTH,
-  fitBoardCamera,
+  fitAtReferenceZoom,
   frameWorldRect,
+  type BoardFrame,
 } from '@/render/board-camera';
 import { createBattleBoardLayer, type BattleBoardLayer } from '@/render/layers/battle-board-layer';
 import {
@@ -26,6 +27,8 @@ import {
 } from '@/render/layers/battle-overlay-layer';
 import { createBattleFxLayer, type BattleFxLayer } from '@/render/layers/battle-fx-layer';
 import { createBattleTokenLayer, type BattleTokenLayer } from '@/render/layers/battle-token-layer';
+import { createMovePreviewLayer, type MovePreviewLayer } from '@/render/layers/move-preview-layer';
+import type { BattleMovePreview } from '@/composables/battle-board-tap';
 import { createBattleAnimator, type BattleAnimator } from './battle-animator';
 import type { BattleOverlayModel } from './battle-overlay-model';
 
@@ -42,8 +45,11 @@ export interface UseBattleBoardOptions {
   canvas: Ref<HTMLCanvasElement | null>;
   scene: ComputedRef<BattleBoardScene>;
   overlay: ComputedRef<BattleOverlayModel>;
+  preview: ComputedRef<BattleMovePreview | null>;
+  referenceFrame?: ComputedRef<BoardFrame | null>;
   onReady?: () => void;
   onHexTap?: (hex: BattleHex) => void;
+  onHexHover?: (hex: BattleHex) => void;
   takeEvents?: () => DomainEvent[];
   onAnimating?: (busy: boolean) => void;
 }
@@ -52,6 +58,7 @@ interface Layers {
   board: BattleBoardLayer;
   tokens: BattleTokenLayer;
   overlay: BattleOverlayLayer;
+  preview: MovePreviewLayer;
   fx: BattleFxLayer;
   animator: BattleAnimator;
 }
@@ -69,13 +76,18 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       HEX_WORLD_HEIGHT,
     );
 
+  let paneSize = { width: 0, height: 0 };
+
   function fit(width: number, height: number) {
     if (!pixi) return;
+    paneSize = { width, height };
     const { frame } = BATTLEFIELD_BIOMES[options.scene.value.biome];
+    const reference = options.referenceFrame?.value ?? null;
     pixi.resize(width, height);
     pixi.setCamera(
-      fitBoardCamera({
+      fitAtReferenceZoom({
         frameRect: frameWorldRect({ width: frame.columns, height: frame.rows }),
+        referenceRect: reference ? frameWorldRect(reference) : null,
         pane: { width, height },
       }),
     );
@@ -85,11 +97,27 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
   function syncAll() {
     if (!layers) return;
     const scene = options.scene.value;
-    layers.board.sync({ board: scene.board, boulders: scene.boulders });
+    layers.board.sync({ biome: scene.biome, board: scene.board, boulders: scene.boulders });
     layers.overlay.sync(options.overlay.value);
+    syncPreview();
     layers.tokens.sync(scene.creatures, scene.activeId, options.overlay.value.targets);
     const events = options.takeEvents?.() ?? [];
     if (events.length) layers.animator.play(events, scene.creatures);
+  }
+
+  function syncPreview() {
+    if (!layers) return;
+    const preview = options.preview.value;
+    const biome = options.scene.value.biome;
+    const segments = (preview?.path ?? []).map((hex) => battleHexToOffset(biome, hex));
+    layers.preview.sync({
+      segments,
+      reachable: preview?.reachable ?? false,
+      markerCoord: segments[segments.length - 1] ?? null,
+      stepCost: preview?.cost ?? 0,
+      chargesWill: true,
+      markerKind: 'move',
+    });
   }
 
   function createLayers(app: HexBoardApp): Layers {
@@ -99,9 +127,14 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       tileSize: { w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT },
       positionOf,
       onHexTap: options.onHexTap,
+      onHexHover: options.onHexHover,
     };
     const board = createBattleBoardLayer(deps);
     const overlay = createBattleOverlayLayer(deps);
+    const preview = createMovePreviewLayer({
+      worldContainer: app.worldContainer,
+      getTileSize: () => ({ w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT }),
+    });
     const tokens = createBattleTokenLayer(deps);
     const fx = createBattleFxLayer(deps);
     const animator = createBattleAnimator({
@@ -117,7 +150,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       fx,
       onBusyChange: (busy) => options.onAnimating?.(busy),
     });
-    return { board, overlay, tokens, fx, animator };
+    return { board, overlay, preview, tokens, fx, animator };
   }
 
   async function start(width: number, height: number) {
@@ -153,11 +186,21 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     pixi?.renderNow();
   });
 
+  if (options.referenceFrame) {
+    watch(options.referenceFrame, () => fit(paneSize.width, paneSize.height));
+  }
+
+  watch(options.preview, () => {
+    syncPreview();
+    pixi?.renderNow();
+  });
+
   onBeforeUnmount(() => {
     destroyed = true;
     observer?.disconnect();
     layers?.animator.destroy();
     layers?.fx.destroy();
+    layers?.preview.destroy();
     layers?.board.destroy();
     layers?.overlay.destroy();
     layers?.tokens.destroy();

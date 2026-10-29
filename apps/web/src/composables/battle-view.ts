@@ -12,7 +12,7 @@ import {
 } from '@/render/battle/battle-overlay-model';
 import type { BattleBoardScene } from '@/render/battle/use-battle-board';
 import type { NameOf } from './battle-hint';
-import { controlledHero } from './battle-board-tap';
+import { battleMovePreview, controlledHero, type BattleMovePreview } from './battle-board-tap';
 import { buildHeroCard, type BattleHeroCard } from './battle-hero-card';
 import type { BattleCreatureRow, BattleRowTag, BattleViewInput } from './battle-view-types';
 
@@ -43,6 +43,7 @@ export interface BattleTaskView {
 export interface BattleBoardView {
   scene: BattleBoardScene;
   overlay: BattleOverlayModel;
+  preview: BattleMovePreview | null;
   banner: BattleBannerProps | null;
 }
 
@@ -172,15 +173,12 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
   if (!deploy) return null;
   const view = input.projection;
   const controlled = controlledHero(view, input.localHeroIds);
-  const overlay = battleOverlayModel(
-    {
-      projection: view,
-      zones: view ? null : deploy.zones,
-      mode: controlled ? overlayMode(input) : null,
-      results: defendResults(input.lastHeroEvents),
-    },
-    input.rules,
-  );
+  const overlay = battleOverlayModel({
+    projection: view,
+    zones: view ? null : deploy.zones,
+    mode: controlled ? overlayMode(input) : null,
+    results: defendResults(input.lastHeroEvents),
+  });
   const creatures = (view?.creatures ?? deploy.setup.creatures) as BattleCreature[];
   return {
     scene: {
@@ -191,6 +189,16 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
       activeId: view && view.phase !== 'ended' ? view.activeId : null,
     },
     overlay,
+    preview: input.ui.hover
+      ? battleMovePreview({
+          projection: view,
+          localHeroIds: input.localHeroIds,
+          mode: input.ui.mode,
+          hand: input.ui.hand,
+          hex: input.ui.hover,
+          rules: input.rules,
+        })
+      : null,
     banner: view
       ? {
           place: deploy.place,

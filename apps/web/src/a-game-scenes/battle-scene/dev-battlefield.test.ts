@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleOverlayModel } from '@/render/battle/battle-overlay-model';
 import { buildDevBattle, type DevBattlefieldOptions } from './dev-battlefield';
 
@@ -13,10 +12,7 @@ const base: DevBattlefieldOptions = {
 
 function zoneKeys(options: DevBattlefieldOptions, tone: 'heroZone' | 'enemyZone') {
   const { deploy } = buildDevBattle(options);
-  return battleOverlayModel(
-    { projection: null, zones: deploy.zones, mode: null, results: [] },
-    BATTLE_RULES,
-  )
+  return battleOverlayModel({ projection: null, zones: deploy.zones, mode: null, results: [] })
     .marks.filter((m) => m.tone === tone)
     .map((m) => `${m.hex.q},${m.hex.r}`);
 }
@@ -25,7 +21,7 @@ describe('dev battlefield', () => {
   it('deploys the chosen squad on a generated field with both zones for a fixed seed', () => {
     const battle = buildDevBattle(base);
     expect(battle.heroIds).toEqual(['merito']);
-    expect(battle.deploy.setup.creatures).toHaveLength(5);
+    expect(battle.deploy.setup.creatures).toHaveLength(4);
     expect(battle.deploy.names).toEqual({ merito: 'Merito' });
     expect(zoneKeys(base, 'heroZone').length).toBeGreaterThan(0);
     expect(zoneKeys(base, 'enemyZone').length).toBeGreaterThan(0);
@@ -53,6 +49,6 @@ describe('dev battlefield', () => {
       ['dagger', 'health-potion'],
       ['dagger', 'health-potion'],
     ]);
-    expect(battle.deploy.setup.creatures.filter((c) => c.side === 'enemies')).toHaveLength(3);
+    expect(battle.deploy.setup.creatures.filter((c) => c.side === 'enemies')).toHaveLength(2);
   });
 });

@@ -31,7 +31,11 @@
       <span v-if="error" class="dev-battlefield__error">{{ error }}</span>
     </form>
     <div class="dev-battlefield__play">
-      <battle-board-area v-if="store.isOpen" class="dev-battlefield__board" />
+      <battle-board-area
+        v-if="store.isOpen"
+        class="dev-battlefield__board"
+        :reference-frame="DEV_REFERENCE_FRAME"
+      />
       <aside class="dev-battlefield__panel">
         <battle-tab v-if="store.isOpen" />
       </aside>
@@ -45,6 +49,7 @@ import {
   DEV_APPROACHES as APPROACHES,
   DEV_SQUADS as SQUADS,
   buildDevBattle,
+  DEV_REFERENCE_FRAME,
 } from '@/a-game-scenes/battle-scene/dev-battlefield';
 import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
 import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vue';

@@ -39,12 +39,6 @@ export function createBattleOverlayLayer(
       const { x, y } = deps.positionOf(mark.hex);
       g.position.set(x, y);
       container.addChild(g);
-      if (mark.label) {
-        const label = new Text({ text: mark.label, style: LABEL_STYLE });
-        label.anchor.set(0.5);
-        label.position.set(x + w / 2, y + h * 0.22);
-        container.addChild(label);
-      }
     }
 
     for (const badge of model.badges) {

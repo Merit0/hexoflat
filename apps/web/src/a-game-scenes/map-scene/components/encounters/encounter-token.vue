@@ -18,7 +18,7 @@ import {
   ENCOUNTER_LOOT_URL,
   ENCOUNTER_MARKS,
   ENCOUNTER_RIMS,
-  ENCOUNTER_TOKEN_URL,
+  encounterTokenUrl,
   leaderGlyph,
 } from '@/render/encounter-look';
 
@@ -33,7 +33,7 @@ const props = defineProps<{
   size: 'map' | 'list' | 'guide';
 }>();
 
-const tokenUrl = ENCOUNTER_TOKEN_URL;
+const tokenUrl = computed(() => encounterTokenUrl(props.leaderKind));
 const lootUrl = ENCOUNTER_LOOT_URL;
 const STEP = { map: 5, list: 3, guide: 4 } as const;
 

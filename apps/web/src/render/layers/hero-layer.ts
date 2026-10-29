@@ -1,12 +1,12 @@
-import { Container, Sprite, Ticker } from 'pixi.js';
+import { Container, Ticker } from 'pixi.js';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
-import { applyCoverFit, createHexMask, drawHexMask } from '@/render/hex-geometry';
-import { getTexture, onTextureReady } from '@/render/texture-cache';
+import { CREATURE_SPRITES } from '@/render/creature-sprites';
+import { createHexToken } from '@/render/hex-token';
 import { easeOutCubic, runTween, type Tween } from '@/render/tween';
 import { PORTAL_FX } from '@/render/portal-fx-config';
 
-const HERO_SPRITE_URL = '/hero-asssets/human-hex.png';
+const HERO_SPRITE_URL = CREATURE_SPRITES.hero;
 
 const MOVE_DURATION_MS = 180;
 
@@ -24,25 +24,10 @@ export interface HeroLayer {
 }
 
 export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
-  // `root` stays unscaled — mask is defined in the same CSS-pixel units as
-  // `w`/`h`. The Sprite itself gets scaled via applyCoverFit.
-  const root = new Container();
+  const token = createHexToken(HERO_SPRITE_URL);
+  const { root, body } = token;
   root.visible = false;
   deps.worldContainer.addChild(root);
-
-  const mask = createHexMask(1, 1);
-  const body = new Container();
-  const sprite = new Sprite();
-  body.addChild(sprite);
-  root.addChild(mask, body);
-  root.mask = mask;
-
-  const unsubscribe = onTextureReady(HERO_SPRITE_URL, () => {
-    sprite.texture = getTexture(HERO_SPRITE_URL);
-    const { w, h } = deps.getTileSize();
-    applyCoverFit(sprite, w, h);
-  });
-  sprite.texture = getTexture(HERO_SPRITE_URL);
 
   let lastCoordKey: string | null = null;
   let heroTarget = { x: 0, y: 0 };
@@ -82,10 +67,7 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
     }
 
     const { w, h } = deps.getTileSize();
-    applyCoverFit(sprite, w, h);
-    drawHexMask(mask, w, h);
-
-    body.pivot.set(w / 2, h / 2);
+    token.layout(w, h);
     if (!portalTween && !heldByPortal) body.position.set(w / 2, h / 2);
     const { x, y } = calcHexPixelPosition({ coordinates: coord }, w, h);
     heroTarget = { x, y };
@@ -168,8 +150,7 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
     destroy() {
       portalTween?.cancel();
       stopTween();
-      unsubscribe();
-      root.destroy({ children: true });
+      token.destroy();
     },
   };
 }

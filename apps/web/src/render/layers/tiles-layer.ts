@@ -6,19 +6,13 @@ import { getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
+import { applyObjectFit } from '@/render/object-fit';
 import { terrainLook } from '@/render/terrain-look';
 import { hiddenTileLook, type FogLook } from '@/render/fog-look';
 import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
-const PICKUP_SPRITE_SCALE = 0.7;
-const PICKUP_GROUPS = new Set<EHexobjectGroup>([
-  EHexobjectGroup.LOOT,
-  EHexobjectGroup.TOOL,
-  EHexobjectGroup.EQUIPMENT,
-]);
-
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 
 export interface TilesLayerDeps {
@@ -91,19 +85,6 @@ function constructionLockLabel(
 
 function getGearRarity(tile: IHexTile) {
   return tile.hexobject ? getObjectRarityTone(tile.hexobject) : null;
-}
-
-function applyObjectFit(sprite: Sprite, w: number, h: number, groupType?: EHexobjectGroup) {
-  if (!groupType || !PICKUP_GROUPS.has(groupType)) {
-    applyCoverFit(sprite, w, h);
-    return;
-  }
-
-  const boxWidth = w * PICKUP_SPRITE_SCALE;
-  const boxHeight = h * PICKUP_SPRITE_SCALE;
-  applyCoverFit(sprite, boxWidth, boxHeight);
-  sprite.position.x += (w - boxWidth) / 2;
-  sprite.position.y += (h - boxHeight) / 2;
 }
 
 function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => void) {

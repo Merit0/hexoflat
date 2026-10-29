@@ -10,18 +10,17 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { BattleSide } from '@hexoflat/engine/battle/battle-state';
-import { BATTLE_SPRITES } from '@/render/battle/battle-look';
+import { creatureSprite } from '@/render/creature-sprites';
 
 const props = defineProps<{
   side: BattleSide;
+  kind?: string;
   init: number | null;
   active?: boolean;
   fallen?: boolean;
 }>();
 
-const face = computed(() =>
-  props.side === 'heroes' ? BATTLE_SPRITES.hero : BATTLE_SPRITES.skeleton,
-);
+const face = computed(() => creatureSprite(props.side, props.kind));
 </script>
 
 <style scoped>

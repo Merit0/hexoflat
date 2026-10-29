@@ -34,25 +34,52 @@ function defendTap(view: BattleProjection, self: BattleCreature, hex: BattleHex)
   return inRing ? [{ kind: 'place-shield', hex }] : [];
 }
 
+export interface BattleMoveRoute {
+  path: BattleHex[];
+  cost: number;
+}
+
+export interface BattleMovePreview extends BattleMoveRoute {
+  reachable: boolean;
+}
+
+function cheapestRoute(
+  view: BattleProjection,
+  self: BattleCreature,
+  hex: BattleHex,
+  rules: BattleRules,
+): BattleMoveRoute | null {
+  if (sameHex(self.pos, hex)) return null;
+  const nodes = cheapestPaths(view, self, rules);
+  const direct = nodes.get(hexKey(hex));
+  if (direct) return { path: pathTo(nodes, hex), cost: direct.cost };
+  if (terrainAt(view, hex) !== 'saw' || livingCreatureAt(view, hex)) return null;
+  let best: BattleMoveRoute | null = null;
+  for (const from of hexNeighbours(hex)) {
+    const node = nodes.get(hexKey(from));
+    if (!node) continue;
+    const cost = node.cost + stepCost(view, from, hex, rules);
+    if (!best || cost < best.cost) best = { path: [...pathTo(nodes, from), hex], cost };
+  }
+  return best;
+}
+
 function stepsTo(
   view: BattleProjection,
   self: BattleCreature,
   hex: BattleHex,
   rules: BattleRules,
 ): BattleHex[] {
-  const nodes = cheapestPaths(view, self, rules);
-  const direct = nodes.get(hexKey(hex));
-  if (direct) return direct.cost <= view.turnWill ? pathTo(nodes, hex) : [];
-  if (terrainAt(view, hex) !== 'saw' || livingCreatureAt(view, hex)) return [];
-  let best: { path: BattleHex[]; cost: number } | null = null;
-  for (const from of hexNeighbours(hex)) {
-    const node = nodes.get(hexKey(from));
-    if (!node) continue;
-    const cost = node.cost + stepCost(view, from, hex, rules);
-    if (cost <= view.turnWill && (!best || cost < best.cost))
-      best = { path: [...pathTo(nodes, from), hex], cost };
-  }
-  return best?.path ?? [];
+  const route = cheapestRoute(view, self, hex, rules);
+  return route && route.cost <= view.turnWill ? route.path : [];
+}
+
+export function battleMovePreview(input: BattleTapInput): BattleMovePreview | null {
+  const view = input.projection;
+  const self = controlledHero(view, input.localHeroIds);
+  if (!view || !self || view.phase !== 'act' || input.mode !== 'move') return null;
+  const route = cheapestRoute(view, self, input.hex, input.rules);
+  return route ? { ...route, reachable: route.cost <= view.turnWill } : null;
 }
 
 function targetTap(view: BattleProjection, input: BattleTapInput): BattleAction[] {

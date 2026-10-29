@@ -21,13 +21,25 @@ layers/
   tiles-layer.ts          the board itself
   hero-layer.ts
   move-preview-layer.ts
-  encounter-layer.ts       map squads: stack, ×N, ?, eye, threat rim, gold glow, loot chest, watched hexes
+  encounter-layer.ts       map squads drawn with the shared hex token (leader sprite), ×N, ?, eye, 👑, loot chest, watched hexes — no rims/glow/stack
   camp-heal-layer.ts
 ```
 
 ## The battle board (`render/battle/`)
 
-The battle board has its own seam, `render/battle/use-battle-board.ts`, separate from `use-hex-board.ts`: the dungeon map stays frozen in `world-map-store` during a battle (R-FIELD-5), and the battle board renders straight from the engine battle state. Layers: `layers/battle-board-layer.ts` (terrain drawn procedurally, pillars/boulders from the rock sprite, the saw spins on the ticker only while the layer is visible), `layers/battle-token-layer.ts`, `layers/battle-overlay-layer.ts`. Overlays come from the pure `battle-overlay-model.ts`, which reads only `projectBattleForViewer` (never the hidden strike side) and is unit-tested; colours live in `battle-look.ts`. Battle hexes are axial and reach pixels through `battleHexToOffset` + `calcHexPixelPosition`, so they share world units with the map. Input: tiles in `battle-board-layer` are the only hit targets (`onHexTap` in the layer deps → `battle-board.vue` emits `hex-tap`); the overlay and token containers are `eventMode = 'none'` so they never swallow a tap. The gold glow on targeted tokens comes from `BattleOverlayModel.targets` (creature ids), passed to `battle-token-layer.sync`. `battle-board.vue` has a default slot drawn over the canvas — the timed-task window lives there. `/dev/battlefield` (dev build only) plays a whole battle: deploy card, START BATTLE, the BATTLE tab beside the board.
+The battle board has its own seam, `render/battle/use-battle-board.ts`, separate from `use-hex-board.ts`: the dungeon map stays frozen in `world-map-store` during a battle (R-FIELD-5), and the battle board renders straight from the engine battle state. Layers: `layers/battle-board-layer.ts` (tiles drawn exactly like map tiles — hex mask + the biome's floor sprite, cover fit; pillars and boulders use the `stone-wall`/`rock` `spritePath` from `CONTENT`; rubble/ledge/oil/saw are temporary token SVGs in `public/hex-assets/battle-tokens/`; the saw token spins on the ticker only while the layer is visible. Never draw procedural terrain or invent a look — reuse the map's sprites, Oleh's design is fixed), `layers/battle-token-layer.ts` (shared hex token per creature + hearts, no rims), `layers/battle-overlay-layer.ts`, and the map's own `layers/move-preview-layer.ts` for movement: no prices on reachable hexes; hovering a hex shows the path and the total Will cost on the final hex only, like moving on Silesia (`battleMovePreview` in `composables/battle-board-tap.ts`). Overlays come from the pure `battle-overlay-model.ts`, which reads only `projectBattleForViewer` (never the hidden strike side) and is unit-tested; colours live in `battle-look.ts`. Battle hexes are axial and reach pixels through `battleHexToOffset` + `calcHexPixelPosition`, so they share world units with the map. Input: tiles in `battle-board-layer` are the only hit targets (`onHexTap` in the layer deps → `battle-board.vue` emits `hex-tap`); the overlay and token containers are `eventMode = 'none'` so they never swallow a tap. The gold glow on targeted tokens comes from `BattleOverlayModel.targets` (creature ids), passed to `battle-token-layer.sync`. `battle-board.vue` has a default slot drawn over the canvas — the timed-task window lives there. `/dev/battlefield` (dev build only) plays a whole battle: deploy card, START BATTLE, the BATTLE tab beside the board.
+
+### How a sprite sits in a hex cell — by hexobject group
+
+`render/object-fit.ts` is the only place that decides it: `HEXOBJECT_FIT_RULES` maps each `EHexobjectGroup` to its rule — `creature`, `construction` (incl. `resource`), `pickup` (`loot`/`tool`/`equipment`, 0.7 of the cell, centred). `applyObjectFit(sprite, w, h, group)` is used by `tiles-layer`, `encounter-layer` (loot chest), `battle-board-layer` (walls, boulders, rubble/ledge/oil/saw as `CONSTRUCTION`) and `hex-token` (`CREATURE`). Change a rule there, never per layer.
+
+### Battle camera = map zoom
+
+The battle board is drawn at the zoom of the map it came from: `fitAtReferenceZoom` in `board-camera.ts`, fed by `battle-board-area`'s `referenceFrame` (the current map frame in `hex-world-map.vue`, the cave model frame on `/dev/battlefield`). A hex is the same size on screen on the map and on the battle board.
+
+### Creature tokens — one component
+
+Every creature (hero on the map, squads on the dungeon map, heroes and enemies on the battle board) is drawn by `render/hex-token.ts` (`createHexToken`): a hex mask + the sprite cover-fit to the whole cell, body pivoted at the centre. No borders, rims, glows or stack shadows on creature hexes. Sprites come from one map, `creatureSprite(side, kind)` in `render/creature-sprites.ts` (hero `human-hex.png`, skeleton king `enemy-assets/boss-hex-images/skeleton-king-hex.png`, other enemies `enemy-assets/enemies-sprites/skeleton-hex.png`; all 512×512 from Inkscape). Never size or frame a creature differently from the hero.
 
 ### Battle animations (B7)
 

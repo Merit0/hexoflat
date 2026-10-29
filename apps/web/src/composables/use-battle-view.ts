@@ -11,12 +11,13 @@ import { freeStrikeHand, type BattleActionId } from './battle-hero-card';
 import { buildBattleView } from './battle-view';
 import type { BattleUiState } from './battle-view-types';
 
-const ui = reactive<BattleUiState>({ mode: 'move', hand: null, swapHand: 'left' });
+const ui = reactive<BattleUiState>({ mode: 'move', hand: null, swapHand: 'left', hover: null });
 
 export function resetBattleUi(): void {
   ui.mode = 'move';
   ui.hand = null;
   ui.swapHand = 'left';
+  ui.hover = null;
 }
 
 const TRANSLATED_PARAM = /^(battle|content)\./;
@@ -86,6 +87,7 @@ export function useBattleView() {
       rules: BATTLE_RULES,
     });
     if (!actions.length) return;
+    ui.hover = null;
     const accepted = store.actAll(actions);
     if (accepted && ui.mode !== 'move' && ui.mode !== 'swap') resetBattleUi();
   }
@@ -138,10 +140,15 @@ export function useBattleView() {
     store.leave();
   }
 
+  function hoverHex(hex: BattleHex | null) {
+    ui.hover = hex;
+  }
+
   return {
     view,
     ui,
     tapHex,
+    hoverHex,
     pickHand,
     pickAction,
     swapFrom,

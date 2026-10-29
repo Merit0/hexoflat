@@ -36,7 +36,6 @@ export const CAVE_MODEL = {
         place: [
           { encounter: 'bone-court', spot: 'deep', minSteps: 6 },
           { encounter: 'skeleton-pack', spot: 'treasure' },
-          { encounter: 'archer-watch', spot: 'chokepoint' },
           { encounter: 'lone-skeleton', spot: 'dead-end' },
         ],
       },

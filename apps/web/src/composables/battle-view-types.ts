@@ -1,7 +1,7 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
 import type { BattleBehaviour } from '@hexoflat/engine/battle/battle-catalogue';
-import type { BattleCreature, BattleHand } from '@hexoflat/engine/battle/battle-state';
+import type { BattleCreature, BattleHand, BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import type { BattleDeploy } from '@/stores/battle-store';
 import type { NameOf } from './battle-hint';
@@ -30,6 +30,7 @@ export interface BattleUiState {
   mode: BattleUiMode;
   hand: BattleHand | null;
   swapHand: BattleHand;
+  hover: BattleHex | null;
 }
 
 export interface BattleViewInput {

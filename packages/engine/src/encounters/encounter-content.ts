@@ -57,7 +57,7 @@ export const ENCOUNTERS: Record<string, EncounterDef> = Object.fromEntries(
     },
     {
       id: 'skeleton-pack',
-      members: ['skeleton-warrior', 'skeleton-warrior', 'skeleton-archer'],
+      members: ['skeleton-warrior', 'skeleton-warrior'],
       sentry: false,
       boss: false,
       loot: [HEXOBJECT_KEYS.SWORD],

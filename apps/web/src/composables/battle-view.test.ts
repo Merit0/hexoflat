@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-state';
 import { giveTurn, hero, skeleton } from '@hexoflat/engine/battle/battle-test-setup';
+import { hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
 import { useBattleStore } from '@/stores/battle-store';
 import { testDeploy } from '@/stores/battle-store.fixture';
 import { battleTapActions } from './battle-board-tap';
@@ -10,7 +11,7 @@ import { buildBattleView } from './battle-view';
 import type { BattleUiState } from './battle-view-types';
 
 const NAMES: Record<string, string> = { hero: 'Merito', s1: 'Skeleton', s2: 'Skeleton' };
-const MOVE: BattleUiState = { mode: 'move', hand: null, swapHand: 'left' };
+const MOVE: BattleUiState = { mode: 'move', hand: null, swapHand: 'left', hover: null };
 
 function viewOf(ui: BattleUiState = MOVE) {
   const store = useBattleStore();
@@ -110,12 +111,11 @@ describe('battle view', () => {
 
     const willBefore = view.hero!.will;
     const self = store.projection!.creatures.find((c) => c.id === 'hero')!;
-    const step = view.board!.overlay.marks.find(
-      (m) =>
-        m.tone === 'reachable' &&
-        Math.abs(m.hex.q - self.pos.q) + Math.abs(m.hex.r - self.pos.r) <= 2,
-    )!;
-    expect(tap(step.hex)).toBe(true);
+    const step = hexNeighbours(self.pos)
+      .map((hex) => viewOf({ ...MOVE, hover: hex }).board!.preview)
+      .find((preview) => preview?.reachable && preview.path.length === 1)!;
+    expect(step.cost).toBeGreaterThan(0);
+    expect(tap(step.path[0])).toBe(true);
     view = viewOf();
     expect(view.hero?.hint?.key).toBe('battle.hint.moved');
     expect(view.hero?.canUndo).toBe(true);
@@ -136,7 +136,7 @@ describe('battle view', () => {
 
   it('selects strike targets, glows them and strikes with the chosen hand', () => {
     const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
-    const strike: BattleUiState = { mode: 'strike', hand: 'right', swapHand: 'left' };
+    const strike: BattleUiState = { mode: 'strike', hand: 'right', swapHand: 'left', hover: null };
     let view = viewOf(strike);
     expect(view.board?.overlay.targets).toEqual(['s1']);
     expect(view.enemies[0].targeted).toBe(true);

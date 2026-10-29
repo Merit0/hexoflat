@@ -21,9 +21,7 @@ describe('CAVE_MODEL', () => {
       const encounters = built.map.tiles.flatMap((tile) =>
         tile.encounter ? [tile.encounter.contentId] : [],
       );
-      expect(encounters.sort()).toEqual(
-        ['archer-watch', 'bone-court', 'lone-skeleton', 'skeleton-pack'].sort(),
-      );
+      expect(encounters.sort()).toEqual(['bone-court', 'lone-skeleton', 'skeleton-pack'].sort());
       for (const outcome of built.trace.ruleOutcomes) {
         if (outcome.outcome === 'short') {
           expect(built.trace.shortfalls.some((item) => item.ruleId === outcome.ruleId)).toBe(true);

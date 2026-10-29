@@ -1,4 +1,5 @@
 import type { Threat } from '@hexoflat/engine/encounters/threat';
+import { creatureSprite } from '@/render/creature-sprites';
 
 export type EncounterRim = Threat | 'loot';
 
@@ -16,7 +17,9 @@ export const ENCOUNTER_MARKS = {
   glow: '#FFD36B',
 };
 
-export const ENCOUNTER_TOKEN_URL = '/enemy-assets/boss-hex-images/skeletor-token-image.png';
+export function encounterTokenUrl(leaderKind: string): string {
+  return creatureSprite('enemies', leaderKind);
+}
 export const ENCOUNTER_LOOT_URL = '/hex-assets/hex-loot/chest-token.png';
 
 const LEADER_GLYPHS: Record<string, string> = {

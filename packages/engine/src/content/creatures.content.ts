@@ -15,7 +15,7 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
     subtitle: 'content.skeletor.subtitle',
     description: 'content.skeletor.description',
     collision: EHexCollision.SOLID,
-    spritePath: '/enemy-assets/boss-hex-images/skeletor-token-image.png',
+    spritePath: '/enemy-assets/enemies-sprites/skeleton-hex.png',
     creature: {
       name: 'content.skeletor.title',
       hp: 2,

@@ -136,7 +136,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     subtitle: 'Carved from a fallen guard',
     description: 'A small charm of bone, still cold from the crypt.',
     collision: EHexCollision.SOLID,
-    spritePath: '/enemy-assets/boss-hex-images/skeletor-token-image.png',
+    spritePath: '/hex-assets/hex-loot/bone-charm-token.svg',
     loot: {
       name: 'Bone Charm',
       amount: 1,

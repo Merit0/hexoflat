@@ -2,10 +2,16 @@ import { battleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { battlefieldSeed, generateBattlefield } from '@hexoflat/engine/battle/battlefield';
 import { deployBattle, type Vector } from '@hexoflat/engine/encounters/battlefield-setup';
+import { CAVE_MODEL } from '@hexoflat/engine/content/boards/models/cave';
 import type { BattleDeploy } from '@/stores/battle-store';
 
+export const DEV_REFERENCE_FRAME = {
+  width: CAVE_MODEL.frame.columns,
+  height: CAVE_MODEL.frame.rows,
+};
+
 const WEST: Vector = { x: -1, y: 0 };
-const BONE_COURT = ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior', 'skeleton-archer'];
+const BONE_COURT = ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior'];
 
 export const DEV_APPROACHES: Record<string, Vector> = {
   west: WEST,
@@ -26,10 +32,9 @@ const APPROACH_LABELS: Record<string, string> = {
 };
 
 export const DEV_SQUADS: Record<string, string[]> = {
-  'skeleton-pack': ['skeleton-warrior', 'skeleton-warrior', 'skeleton-archer'],
+  'skeleton-pack': ['skeleton-warrior', 'skeleton-warrior'],
   'bone-court': BONE_COURT,
   'lone-skeleton': ['skeleton-warrior'],
-  'archer-watch': ['skeleton-archer', 'skeleton-archer'],
 };
 
 const DEV_HEROES = [

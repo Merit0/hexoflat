@@ -1,15 +1,7 @@
-import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
 import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
-import { creatureById, livingOnSide, terrainAt } from '@hexoflat/engine/battle/battle-board';
-import {
-  battleDistance,
-  hexKey,
-  hexNeighbours,
-  isAdjacentHex,
-  parseHexKey,
-} from '@hexoflat/engine/battle/hex-battle-geom';
-import { cheapestPaths, stepCost } from '@hexoflat/engine/battle/movement';
+import { creatureById, livingOnSide } from '@hexoflat/engine/battle/battle-board';
+import { battleDistance, isAdjacentHex } from '@hexoflat/engine/battle/hex-battle-geom';
 import type { DeploymentZones } from '@hexoflat/engine/encounters/battlefield-setup';
 import type { BattleOverlayTone } from './battle-look';
 
@@ -18,7 +10,6 @@ export type BattleTargetMode = 'move' | 'strike' | 'push' | 'pull';
 export interface BattleMark {
   hex: BattleHex;
   tone: BattleOverlayTone;
-  label?: string;
 }
 
 export interface BattleBadge {
@@ -49,30 +40,6 @@ function activeHero(view: BattleProjection): BattleCreature | null {
   return active && active.side === view.viewer && view.phase === 'act' && !view.task
     ? active
     : null;
-}
-
-function movementMarks(
-  view: BattleProjection,
-  self: BattleCreature,
-  rules: BattleRules,
-): BattleMark[] {
-  const nodes = cheapestPaths(view, self, rules);
-  const marks: BattleMark[] = [];
-  const danger = new Set<string>();
-  for (const [key, node] of nodes) {
-    if (key === hexKey(self.pos) || node.cost > view.turnWill) continue;
-    marks.push({ hex: parseHexKey(key), tone: 'reachable', label: `${node.cost} WILL` });
-  }
-  for (const [key, node] of nodes) {
-    const from = parseHexKey(key);
-    for (const next of hexNeighbours(from)) {
-      if (terrainAt(view, next) !== 'saw' || danger.has(hexKey(next))) continue;
-      if (node.cost + stepCost(view, from, next, rules) > view.turnWill) continue;
-      danger.add(hexKey(next));
-      marks.push({ hex: next, tone: 'danger', label: 'DANGER' });
-    }
-  }
-  return marks;
 }
 
 function targetCreatures(
@@ -115,10 +82,7 @@ function pendingBadges(view: BattleProjection): BattleBadge[] {
   });
 }
 
-export function battleOverlayModel(
-  input: BattleOverlayInput,
-  rules: BattleRules,
-): BattleOverlayModel {
+export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayModel {
   const marks: BattleMark[] = input.zones ? zoneMarks(input.zones) : [];
   const view = input.projection;
   if (!view) return { marks, badges: [], targets: [] };
@@ -126,7 +90,6 @@ export function battleOverlayModel(
   marks.push(...strikeMarks(view));
   marks.push(...view.placedShields.map((hex) => ({ hex, tone: 'shield' as const })));
   const hero = activeHero(view);
-  if (hero && input.mode === 'move') marks.push(...movementMarks(view, hero, rules));
   const targets =
     hero && input.mode && input.mode !== 'move' ? targetCreatures(view, hero, input.mode) : [];
   marks.push(...targets.map((foe) => ({ hex: foe.pos, tone: 'target' as const })));

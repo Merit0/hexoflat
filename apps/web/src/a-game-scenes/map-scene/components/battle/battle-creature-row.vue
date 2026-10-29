@@ -4,7 +4,13 @@
     :class="[`is-${row.side}`, { 'is-fallen': row.fallen, 'is-target': row.targeted }]"
     :data-testid="`battle-row-${row.id}`"
   >
-    <battle-hex-token :side="row.side" :init="row.init" :active="row.active" :fallen="row.fallen" />
+    <battle-hex-token
+      :side="row.side"
+      :kind="row.behaviour"
+      :init="row.init"
+      :active="row.active"
+      :fallen="row.fallen"
+    />
     <div class="creature-row__main">
       <div class="creature-row__title">
         <span class="creature-row__name">{{ row.name }}</span>
