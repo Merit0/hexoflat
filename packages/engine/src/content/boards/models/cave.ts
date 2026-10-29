@@ -21,7 +21,6 @@ export const CAVE_MODEL = {
         kind: 'rules',
         rules: [
           { id: 'rocks', pick: 'rock', count: [3, 6], where: { steps: [2, 12], spacing: 1 } },
-          { id: 'rest', pick: { tag: 'rest' }, count: [1, 2], where: { region: 'room' } },
           {
             id: 'treasure',
             pick: { tag: 'treasure' },

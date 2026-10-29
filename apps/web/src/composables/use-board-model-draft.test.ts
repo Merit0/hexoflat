@@ -15,7 +15,7 @@ describe('useBoardModelDraft', () => {
   it('lists every rule of the current cave with wanted and placed counts', () => {
     const model = useBoardModelDraft();
 
-    expect(model.rules.value.map((rule) => rule.ruleId)).toEqual(['rocks', 'rest', 'treasure']);
+    expect(model.rules.value.map((rule) => rule.ruleId)).toEqual(['rocks', 'treasure']);
     for (const rule of model.rules.value) expect(rule.wanted).toBeGreaterThanOrEqual(rule.placed);
   });
 

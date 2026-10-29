@@ -109,7 +109,7 @@ function tokenNode(
   }
   if (view.count > 1) {
     const count = badge(`×${view.count}`, '#15171c', rim.light, 12);
-    count.position.set(w * 0.8, h * 0.78);
+    count.position.set(w / 2, h / 2);
     root.addChild(count);
   }
   if (!view.scouted) {
