@@ -1,15 +1,10 @@
 import { z } from 'zod';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { axialToPixelPointy, offsetToAxial } from '../utils/hex-utils';
-import { enemyCreature } from '../battle/battle-catalogue';
-import type {
-  BattleCreature,
-  BattleHex,
-  BattleSetupInput,
-  BattleSide,
-} from '../battle/battle-state';
-import type { Battlefield } from '../battle/battlefield';
-import { battleDistance, hexKey, parseHexKey } from '../battle/hex-battle-geom';
+import { enemyCreature } from './battle-catalogue';
+import type { BattleCreature, BattleHex, BattleSetupInput, BattleSide } from './battle-state';
+import type { Battlefield } from './battlefield';
+import { battleDistance, hexKey, parseHexKey } from './hex-battle-geom';
 
 export const deploymentRulesSchema = z.object({
   heroZoneMinRing: z.number().int().min(0),
@@ -38,8 +33,8 @@ export interface Vector {
 const DEFAULT_APPROACH: Vector = { x: -1, y: 0 };
 const CENTER: BattleHex = { q: 0, r: 0 };
 
-export function approachDirection(encounter: IHexCoordinates, hero: IHexCoordinates): Vector {
-  const from = axialToPixelPointy(offsetToAxial(encounter), 1);
+export function approachDirection(squad: IHexCoordinates, hero: IHexCoordinates): Vector {
+  const from = axialToPixelPointy(offsetToAxial(squad), 1);
   const to = axialToPixelPointy(offsetToAxial(hero), 1);
   const x = to.x - from.x;
   const y = to.y - from.y;

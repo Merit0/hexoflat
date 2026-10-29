@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deployBattle } from '../encounters/battlefield-setup';
+import { deployBattle } from './battlefield-setup';
 import { battlefieldSeed, generateBattlefield } from './battlefield';
 import { hero } from './battle-test-setup';
 import { simulateBattle } from './battle-sim';

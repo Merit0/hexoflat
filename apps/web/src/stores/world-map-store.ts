@@ -1,3 +1,4 @@
+import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { recoverStepPosition } from '@/services/persistence/knowledge-storage';
 import { installCampBook } from '@hexoflat/engine/knowledge/camp-book';
 import { defineStore } from 'pinia';
@@ -73,7 +74,7 @@ import {
   devNextSeed as devNextSeedAction,
   devRebuildFromRecipe as devRebuildFromRecipeAction,
   devRegenerateDungeon as devRegenerateDungeonAction,
-  type DevEncounterParams,
+  type DevRecipeParams,
 } from '@/stores/dev-board-panel-actions';
 import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
 
@@ -159,8 +160,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
       tile: HexTileModel,
       actionType: EHexActionType,
       toolKey: THeroToolKey,
-    ): Promise<{ ok: boolean; message?: string }> {
-      if (!this.map) return { ok: false, message: 'No active map.' };
+    ): Promise<{ ok: boolean; message?: string; events: DomainEvent[] }> {
+      if (!this.map) return { ok: false, message: 'No active map.', events: [] };
 
       const events = await useHeroStore().startHexAction({
         type: 'START_HEX_ACTION',
@@ -174,15 +175,15 @@ export const useWorldMapStore = defineStore('world-map-store', {
       });
       this.markTileDirty(tile.coordinates);
 
-      if (!events) return { ok: false, message: 'Will is unavailable.' };
+      if (!events) return { ok: false, message: 'Will is unavailable.', events: [] };
       if (events.some((e) => e.type === 'HEX_ACTION_STARTED')) {
-        return { ok: true };
+        return { ok: true, events };
       }
 
       const rejected = events.find((e) => e.type === 'HEX_ACTION_START_REJECTED') as
         { type: 'HEX_ACTION_START_REJECTED'; payload: { message: string } } | undefined;
 
-      return { ok: false, message: rejected?.payload.message };
+      return { ok: false, message: rejected?.payload.message, events };
     },
 
     getTileAt(coords: IHexCoordinates): HexTileModel | null {
@@ -439,15 +440,15 @@ export const useWorldMapStore = defineStore('world-map-store', {
       useHeroStore().setLocation(locationKey, mapId);
     },
 
-    devRegenerateDungeon(params: DevEncounterParams = {}) {
+    devRegenerateDungeon(params: DevRecipeParams = {}) {
       devRegenerateDungeonAction(this, params);
     },
 
-    devNextSeed(params: DevEncounterParams = {}) {
+    devNextSeed(params: DevRecipeParams = {}) {
       devNextSeedAction(this, params);
     },
 
-    devRebuildFromRecipe(recipe: BoardRecipeInput, params: DevEncounterParams = {}) {
+    devRebuildFromRecipe(recipe: BoardRecipeInput, params: DevRecipeParams = {}) {
       devRebuildFromRecipeAction(this, recipe, params);
     },
 

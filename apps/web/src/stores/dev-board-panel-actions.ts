@@ -16,7 +16,7 @@ import { requireWorldSeed } from '@/stores/world-map-store-helpers';
 
 let nextSeedCounter = 0;
 
-export type DevEncounterParams = Record<string, unknown>;
+export type DevRecipeParams = Record<string, unknown>;
 
 export interface DevBoardPanelHost {
   currentLocationKey: LocationKey;
@@ -38,7 +38,7 @@ function finishRebuild(host: DevBoardPanelHost, locationKey: LocationKey, mapId:
 }
 
 /** Dev board panel's "Regenerate": discards the current DUNGEON board and builds a new one under a fresh mapId/seed, as if the hero had just entered. */
-export function devRegenerateDungeon(host: DevBoardPanelHost, params: DevEncounterParams): void {
+export function devRegenerateDungeon(host: DevBoardPanelHost, params: DevRecipeParams): void {
   const locationKey = host.currentLocationKey;
   const def = MapRegistry.get(locationKey);
   if (def.boardKind !== 'DUNGEON' || !host.currentMapId) return;
@@ -57,7 +57,7 @@ export function devRegenerateDungeon(host: DevBoardPanelHost, params: DevEncount
 }
 
 /** Dev board panel's "Next seed": rebuilds the current DUNGEON board under the same mapId, for quickly cycling through variety. */
-export function devNextSeed(host: DevBoardPanelHost, params: DevEncounterParams): void {
+export function devNextSeed(host: DevBoardPanelHost, params: DevRecipeParams): void {
   const locationKey = host.currentLocationKey;
   const def = MapRegistry.get(locationKey);
   if (def.boardKind !== 'DUNGEON' || !host.currentMapId) return;
@@ -71,7 +71,7 @@ export function devNextSeed(host: DevBoardPanelHost, params: DevEncounterParams)
 export function devRebuildFromRecipe(
   host: DevBoardPanelHost,
   recipe: BoardRecipeInput,
-  params: DevEncounterParams,
+  params: DevRecipeParams,
 ): void {
   const descriptor = host.descriptor;
   if (descriptor?.kind !== 'RECIPE' || !host.currentMapId) return;

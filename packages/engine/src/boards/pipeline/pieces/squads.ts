@@ -1,31 +1,31 @@
 import { z } from 'zod';
 import { objectKeysWithTag } from '../../../content/content-accessors';
+import { isSquadKey } from '../../../content/squad-keys';
 import type { IHexCoordinates } from '../../../map/interfaces/hex-tile-config-interface';
 import { coordinateKey, getHexNeighbors, hexDistance } from '../../../utils/hex-utils';
-import { ENCOUNTERS } from '../../../encounters/encounter-content';
 import { parseCoordinateKey } from '../../board-cell-map';
 import { isFloor, shuffled } from '../piece-utils';
 import type { BoardDraft, Piece } from '../types';
 import { findEntryCoord, floorStepsFrom } from './rules';
 import type { SeededRandom } from '../../../utils/random-seeded';
 
-export const ENCOUNTER_SPOTS = ['treasure', 'chokepoint', 'dead-end', 'deep'] as const;
-type Spot = (typeof ENCOUNTER_SPOTS)[number];
+export const SQUAD_SPOTS = ['treasure', 'chokepoint', 'dead-end', 'deep'] as const;
+type Spot = (typeof SQUAD_SPOTS)[number];
 
-const EncountersParams = z.object({
-  kind: z.literal('encounters'),
+const SquadsParams = z.object({
+  kind: z.literal('squads'),
   spacing: z.number().int().min(1).default(3),
   place: z
     .array(
       z.object({
-        encounter: z.string().refine((id) => !!ENCOUNTERS[id], { message: 'unknown encounter' }),
-        spot: z.enum(ENCOUNTER_SPOTS),
+        squad: z.string().refine(isSquadKey, { message: 'unknown squad' }),
+        spot: z.enum(SQUAD_SPOTS),
         minSteps: z.number().int().min(1).default(3),
       }),
     )
     .min(1),
 });
-type Params = z.infer<typeof EncountersParams>;
+type Params = z.infer<typeof SquadsParams>;
 type Placement = Params['place'][number];
 
 function floorNeighbours(draft: BoardDraft, cell: IHexCoordinates): number {
@@ -49,7 +49,7 @@ function fitsSpot(draft: BoardDraft, cell: IHexCoordinates, spot: Spot): boolean
 
 function freeCells(draft: BoardDraft, steps: Map<string, number>, placement: Placement) {
   return [...draft.cellMap.entries()]
-    .filter(([, cell]) => !cell.hexobject && !cell.encounter)
+    .filter(([, cell]) => !cell.hexobject)
     .map(([key]) => parseCoordinateKey(key))
     .filter((cell) => isFloor(draft, cell))
     .filter((cell) => (steps.get(coordinateKey(cell)) ?? -1) >= placement.minSteps);
@@ -72,9 +72,9 @@ function pickCell(
   );
 }
 
-export const objectsEncounters: Piece<Params> = {
-  id: 'encounters',
-  schema: EncountersParams,
+export const objectsSquads: Piece<Params> = {
+  id: 'squads',
+  schema: SquadsParams,
   tableRule:
     'For each listed enemy group, put its stack on a free floor tile at least the stated number of steps from the entrance and well apart from other groups — next to the treasure, in a narrow passage, at a dead end or as deep as possible; if no such tile exists, any free tile far enough will do.',
   run(draft, params, ctx) {
@@ -89,7 +89,7 @@ export const objectsEncounters: Piece<Params> = {
       const cell = pickCell(draft, placement, candidates, steps, ctx.rng);
       if (!cell) {
         draft.trace.recordShortfall({
-          ruleId: `encounter:${placement.encounter}`,
+          ruleId: `squad:${placement.squad}`,
           wanted: 1,
           placed: 0,
           reason: 'no free floor tile far enough from the entrance and other groups',
@@ -101,14 +101,14 @@ export const objectsEncounters: Piece<Params> = {
       draft.cellMap.set(cell, {
         ...previous,
         exists: true,
-        encounter: { contentId: placement.encounter },
+        hexobject: { hexobjectKey: placement.squad },
       });
       placed.push(cell);
       draft.trace.record(cell, {
         stage: 'objects',
-        pieceId: 'encounters',
-        ruleId: `encounter:${placement.encounter}`,
-        note: placement.encounter,
+        pieceId: 'squads',
+        ruleId: `squad:${placement.squad}`,
+        note: placement.squad,
       });
     }
   },

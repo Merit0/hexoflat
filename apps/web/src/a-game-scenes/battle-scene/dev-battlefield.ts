@@ -1,7 +1,7 @@
 import { battleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { battlefieldSeed, generateBattlefield } from '@hexoflat/engine/battle/battlefield';
-import { deployBattle, type Vector } from '@hexoflat/engine/encounters/battlefield-setup';
+import { deployBattle, type Vector } from '@hexoflat/engine/battle/battlefield-setup';
 import { CAVE_MODEL } from '@hexoflat/engine/content/boards/models/cave';
 import type { BattleDeploy } from '@/stores/battle-store';
 

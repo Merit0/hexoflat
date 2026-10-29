@@ -158,4 +158,6 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
 
   [EHexActionType.OPEN]: FINISH_UNLOCK_ONLY,
   [EHexActionType.ENTER]: FINISH_UNLOCK_ONLY,
+  [EHexActionType.ATTACK]: FINISH_UNLOCK_ONLY,
+  [EHexActionType.SCOUT]: FINISH_UNLOCK_ONLY,
 };

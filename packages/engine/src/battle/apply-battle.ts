@@ -1,6 +1,6 @@
 import type { DomainEvent } from '../commands/types';
 import { BATTLE_RULES, type BattleRules } from './battle-content';
-import type { BattleAction, BattleCommand } from './battle-commands';
+import type { BattleAction, FightCommand } from './battle-commands';
 import type { BattleState } from './battle-state';
 import { creatureById } from './battle-board';
 import { isRejection, reject, type BattleRejection } from './battle-rejection';
@@ -63,7 +63,7 @@ function enemyTurn(battle: BattleState, atMs: number, rules: BattleRules): Battl
 
 export function applyBattleCommand(
   battle: BattleState | undefined,
-  command: BattleCommand,
+  command: FightCommand,
   rules: BattleRules = BATTLE_RULES,
 ): BattleResult | { battle: undefined; events: DomainEvent[] } {
   if (!battle) {

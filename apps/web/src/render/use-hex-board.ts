@@ -11,11 +11,7 @@ import {
   type MovePreviewLayer,
   type MovePreviewSyncParams,
 } from '@/render/layers/move-preview-layer';
-import {
-  createEncounterLayer,
-  type EncounterLayer,
-  type EncounterLayerSync,
-} from '@/render/layers/encounter-layer';
+import { createSquadWatchLayer, type SquadWatchLayer } from '@/render/layers/squad-watch-layer';
 import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
 import { createPortalLayer, type PortalLayer } from '@/render/layers/portal-layer';
 import { registerPortalFx } from '@/render/portal-fx';
@@ -45,7 +41,7 @@ export interface UseHexBoardOptions {
     chargesWill: ComputedRef<boolean>;
     markerKind: ComputedRef<'move' | 'seen'>;
   };
-  encounters: ComputedRef<EncounterLayerSync>;
+  squadWatched: ComputedRef<IHexCoordinates[]>;
   campHeal: {
     coord: ComputedRef<IHexCoordinates | null>;
     active: ComputedRef<boolean>;
@@ -99,7 +95,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
   let heroLayer: HeroLayer | null = null;
   let unregisterPortalFx: (() => void) | null = null;
   let movePreviewLayer: MovePreviewLayer | null = null;
-  let encounterLayer: EncounterLayer | null = null;
+  let squadWatchLayer: SquadWatchLayer | null = null;
   let campHealLayer: CampHealLayer | null = null;
   let stopWatchers: Array<() => void> = [];
   let cancelled = false;
@@ -135,7 +131,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       getTileSize,
     });
 
-    encounterLayer = createEncounterLayer({
+    squadWatchLayer = createSquadWatchLayer({
       worldContainer: board.worldContainer,
       getTileSize,
     });
@@ -240,7 +236,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     );
 
     stopWatchers.push(
-      watch(opts.encounters, (next) => encounterLayer?.sync(next), { immediate: true }),
+      watch(opts.squadWatched, (next) => squadWatchLayer?.sync(next), { immediate: true }),
     );
 
     stopWatchers.push(
@@ -274,7 +270,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     portalLayer?.destroy();
     heroLayer?.destroy();
     movePreviewLayer?.destroy();
-    encounterLayer?.destroy();
+    squadWatchLayer?.destroy();
     campHealLayer?.destroy();
     board?.destroy();
     board = null;
@@ -282,7 +278,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     portalLayer = null;
     heroLayer = null;
     movePreviewLayer = null;
-    encounterLayer = null;
+    squadWatchLayer = null;
     campHealLayer = null;
   });
 }

@@ -2,7 +2,7 @@ import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-s
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { creatureById, livingOnSide } from '@hexoflat/engine/battle/battle-board';
 import { battleDistance, isAdjacentHex } from '@hexoflat/engine/battle/hex-battle-geom';
-import type { DeploymentZones } from '@hexoflat/engine/encounters/battlefield-setup';
+import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
 import type { BattleOverlayTone } from './battle-look';
 
 export type BattleTargetMode = 'move' | 'strike' | 'push' | 'pull';

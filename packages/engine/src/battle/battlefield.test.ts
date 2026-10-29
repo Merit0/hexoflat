@@ -38,7 +38,7 @@ function hasPushCombo(field: Battlefield): boolean {
 }
 
 describe('REQ-ENC-006 battlefield', () => {
-  it('builds the same board from the same encounter and attempt', () => {
+  it('builds the same board from the same squad and attempt', () => {
     const seed = battlefieldSeed('enc-7', 0);
     expect(generateBattlefield('crypt', seed)).toEqual(generateBattlefield('crypt', seed));
     expect(generateBattlefield('crypt', battlefieldSeed('enc-7', 1))).not.toEqual(

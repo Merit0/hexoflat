@@ -98,23 +98,21 @@
         "tableRule": "Blocks its hex. Weight 2: only a force of 2 can push or pull it."
       }
     },
-    "encounter": {
-      "lone-skeleton": {
-        "title": "Lone Skeleton",
-        "tableRule": "One skeleton warrior. A good first fight."
-      },
-      "skeleton-pack": {
-        "title": "Skeleton Pack",
-        "tableRule": "Two skeleton warriors fighting side by side."
-      },
-      "archer-watch": {
-        "title": "Archer Watch",
-        "tableRule": "Two archers on guard. Step into their watched hexes and they ambush you."
-      },
-      "bone-court": {
-        "title": "Bone Court",
-        "tableRule": "The skeleton king with two warriors. The king strikes hard."
-      }
+    "lone-skeleton": {
+      "title": "Lone Skeleton",
+      "tableRule": "One skeleton warrior. A good first fight."
+    },
+    "skeleton-pack": {
+      "title": "Skeleton Pack",
+      "tableRule": "Two skeleton warriors fighting side by side."
+    },
+    "archer-watch": {
+      "title": "Archer Watch",
+      "tableRule": "Two archers on guard. Step into their watched hexes and they ambush you."
+    },
+    "bone-court": {
+      "title": "Bone Court",
+      "tableRule": "The skeleton king with two warriors. The king strikes hard."
     }
   }
 }

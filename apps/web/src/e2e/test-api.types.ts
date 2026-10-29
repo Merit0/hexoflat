@@ -74,6 +74,8 @@ export interface HexoflatTestApi {
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;
   setHeroHealth(current: number): void;
+  placeSquadNextToHero(key: string): TestHexCoordinates;
+  isBattleEngaged(): boolean;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 }

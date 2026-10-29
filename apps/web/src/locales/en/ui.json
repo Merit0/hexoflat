@@ -390,15 +390,13 @@
         "dodge": "Dodge!",
         "saw": "Saw — dodge!",
         "push": "Push!",
-        "pull": "Pull!",
-        "sneak": "Sneak past!"
+        "pull": "Pull!"
       },
       "text": {
         "dodge": "Answer before the line runs out and the strike misses. Wrong or late — you take the hit.",
         "saw": "You stepped onto the saw. Answer before the line runs out to jump clear. Wrong or late — the saw takes half your hearts.",
         "push": "Answer before the line runs out to push. Wrong or late — the push fails and the Will is spent.",
-        "pull": "Answer before the line runs out to pull. Wrong or late — the pull fails and the Will is spent.",
-        "sneak": "Answer before the line runs out to slip past. Wrong or late — the squad ambushes you."
+        "pull": "Answer before the line runs out to pull. Wrong or late — the pull fails and the Will is spent."
       }
     },
     "deploy": {
@@ -488,26 +486,15 @@
       "end-turn": "Ending the turn"
     }
   },
-  "encounter": {
+  "squad": {
     "spotted": "The sentry saw you — ambush!",
-    "close": "Close",
     "attack": "Attack",
     "scout": "Scout",
-    "sneak": "Sneak",
-    "attackCost": "{will} Will",
-    "scoutCost": "{will} Will",
-    "sneakCost": "{seconds} s",
-    "sentryNote": "A sentry: stepping into its watched hexes starts an ambush.",
-    "unknown": "Unknown enemy",
     "discovered": "Discovered",
     "nothingYet": "No squads found yet",
     "prices": "Step {step} · Scout {scout} · Attack {attack}",
-    "lootWaiting": "Loot: {items}",
     "enemies": "{count} enemies",
     "leaderAndUnknown": "{leader} + {unknown} unknown",
-    "sentry": "sentry",
-    "hint": "Tap a squad next to the hero",
-    "comeCloser": "Come closer to {name}",
     "threat": {
       "easy": "Easy",
       "risky": "Risky",
@@ -515,22 +502,14 @@
     },
     "log": {
       "scouted": "scouted the squad",
-      "ambush": "was ambushed!",
-      "sneaked": "slipped past the squad",
-      "sneakBlocked": "stayed unseen, but there was no room to pass",
-      "looted": "picked up the loot"
+      "ambush": "was ambushed!"
     },
+    "watcher": "sentry",
     "rejected": {
-      "UNKNOWN_ENCOUNTER": "There is no squad here",
+      "UNKNOWN_SQUAD": "There is no squad here",
       "NO_HERO": "No hero",
       "NOT_ADJACENT": "Come closer first",
       "ALREADY_SCOUTED": "Already scouted",
-      "INSUFFICIENT_WILL": "Not enough Will",
-      "NO_WILL_STATE": "Will is not ready yet",
-      "ENCOUNTER_DEFEATED": "This squad is already defeated",
-      "NO_LOOT": "There is no loot here",
-      "NO_SNEAK": "No sneak in progress",
-      "SNEAK_OPEN": "Finish sneaking first",
       "BATTLE_OPEN": "A battle is already on",
       "NO_ENGAGEMENT": "No battle was requested",
       "BATTLE_NOT_ENDED": "The battle is not over yet"

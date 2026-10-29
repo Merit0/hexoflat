@@ -27,6 +27,7 @@ import { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { applyCommand, type HexEngineState } from '@hexoflat/engine';
+import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { isEnterableTile } from '@hexoflat/engine/hero-movement/move-planner';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { portalLinkSchema, type PortalLink } from '@hexoflat/engine/portal/portal-state';
@@ -216,7 +217,15 @@ export const useHeroStore = defineStore('hero', {
       if (!world.map || this.knowledgeError) return null;
       const heroId = this.hero.id;
       try {
-        const result = await dispatchHexAction(this.knowledgeHost(world), command);
+        const battleStore = useBattleStore();
+        const held = {
+          battle: battleStore.battle ?? undefined,
+          engagement: battleStore.engagement ?? undefined,
+        };
+        const result = await dispatchHexAction(this.knowledgeHost(world), command, held);
+        if (result.held.engagement !== held.engagement) {
+          battleStore.engage(result.held.engagement ?? null);
+        }
         if (heroId === this.hero.id) {
           this.knowledge = result.state;
           this.setPortal(result.hero.portal ?? null);
@@ -392,12 +401,19 @@ export const useHeroStore = defineStore('hero', {
     planFreeRoamRoute(
       map: HexMapModel,
       target: IHexCoordinates,
-    ): { route: IHexCoordinates[] | null; affordable: boolean } {
+    ): { route: IHexCoordinates[] | null; affordable: boolean; ambush: Engagement | null } {
       const worldStore = useWorldMapStore();
+      const battleStore = useBattleStore();
       const heroState = this.engineHeroState(this.heroCoordinates!);
+      const planned: HexEngineState = {
+        map,
+        heroes: { [heroState.id]: heroState },
+        battle: battleStore.battle ?? undefined,
+        engagement: battleStore.engagement ?? undefined,
+      };
 
       const { events } = applyCommand(
-        { map, heroes: { [heroState.id]: heroState } },
+        planned,
         { type: 'MOVE_HERO', payload: { heroId: heroState.id, target } },
         worldStore.buildEngineContext(),
       );
@@ -412,38 +428,13 @@ export const useHeroStore = defineStore('hero', {
         this.willZoneContext,
       );
       const affordable = !route || route.length <= budget;
-      return { route: affordable ? route : null, affordable };
+      const ambush = events.some((e) => e.type === 'AMBUSH') ? (planned.engagement ?? null) : null;
+      return { route: affordable ? route : null, affordable, ambush };
     },
 
-    /**
-     * Moves the hero towards `target`: validates the destination, plans a
-     * route through the engine, then walks it one step at a time. After each
-     * step the engine checks sentries; a spotted hero stops and the battle is
-     * requested. Needs the currently loaded map, so it reaches into
-     * world-map-store rather than owning map data itself.
-     */
-    checkSentry(map: HexMapModel, at: IHexCoordinates): boolean {
-      const battleStore = useBattleStore();
-      const state: HexEngineState = {
-        map,
-        heroes: { [this.hero.id]: this.engineHeroState(at) },
-      };
-      const { events } = applyCommand(
-        state,
-        {
-          type: 'ENCOUNTER',
-          payload: { heroId: this.hero.id, atMs: Date.now(), action: { kind: 'step-ended' } },
-        },
-        useWorldMapStore().buildEngineContext(),
-      );
-      if (!state.engagement) return false;
-      battleStore.engage(state.engagement);
-      useGameEventsStore().push(
-        this.hero.name ?? 'Hero',
-        i18n.global.t('encounter.spotted'),
-        'BATTLE',
-      );
-      return events.some((event) => event.type === 'AMBUSH');
+    engageAmbush(engagement: Engagement) {
+      useBattleStore().engage(engagement);
+      useGameEventsStore().push(this.hero.name ?? 'Hero', i18n.global.t('squad.spotted'), 'BATTLE');
     },
 
     async moveHeroTo(target: IHexCoordinates): Promise<boolean> {
@@ -472,6 +463,7 @@ export const useHeroStore = defineStore('hero', {
       if (!route) return warn(i18n.global.t('moveBlocked.tooFar'));
 
       let stepsTaken = 0;
+      const ambushAt = plan.ambush ? route[route.length - 1] : null;
 
       if (heroToolStore.isLocked) {
         heroToolStore.cancelLockedAction('MOVE');
@@ -494,7 +486,11 @@ export const useHeroStore = defineStore('hero', {
           this.saveProgressToStorage();
 
           worldStore.revealAroundHero();
-          const spotted = this.checkSentry(map, coord);
+          const spotted =
+            !!plan.ambush &&
+            coord.columnIndex === ambushAt?.columnIndex &&
+            coord.rowIndex === ambushAt.rowIndex;
+          if (spotted) this.engageAmbush(plan.ambush!);
           worldStore.saveToStorage();
 
           if (worldStore.currentMapId && this.heroCoordinates) {

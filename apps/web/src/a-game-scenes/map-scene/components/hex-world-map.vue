@@ -43,13 +43,6 @@
         />
 
         <div class="hex-board-overlays" data-testid="hex-map-inner" :style="overlayStyle">
-          <encounter-popover
-            v-if="encounterStore.selected"
-            :tile-width="screenTileSize.w"
-            :tile-height="screenTileSize.h"
-            :board-width="overlayWidth"
-          />
-
           <tool-hex-tile
             v-if="heroToolStore.isDragging && activeTool"
             :tile-width="screenTileSize.w"
@@ -67,12 +60,6 @@
           />
         </div>
       </div>
-      <battle-timed-task
-        v-if="encounterStore.sneak"
-        :task="encounterStore.sneak"
-        @answer="(option) => encounterStore.answerSneak(encounterStore.sneak!.encounterId, option)"
-        @timeout="encounterStore.sneakTimeout(encounterStore.sneak!.encounterId)"
-      />
       <component
         :is="StaticBoardEditorPanel"
         v-if="StaticBoardEditorPanel && staticBoardEditorStore?.isEditing"
@@ -88,7 +75,8 @@ import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
-import { useEncounterStore } from '@/stores/encounter-store';
+import { useSquadFlow } from '@/services/squads/squad-flow';
+import { useSquadViews } from '@/services/squads/squad-views';
 import { useHexBoard } from '@/render/use-hex-board';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
@@ -107,8 +95,6 @@ import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
-import BattleTimedTask from '@/a-game-scenes/map-scene/components/battle/battle-timed-task.vue';
-import EncounterPopover from '@/a-game-scenes/map-scene/components/encounters/encounter-popover.vue';
 import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
@@ -132,7 +118,8 @@ const props = defineProps<{
 const { handleTileClick } = useTileClick();
 const worldStore = useWorldMapStore();
 const battleStore = useBattleStore();
-const encounterStore = useEncounterStore();
+useSquadFlow();
+const squadViews = useSquadViews();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const heroStore = useHeroStore();
@@ -275,7 +262,6 @@ watch(
 
 const movePreview = useMovePreview({ hoveredTileCoord, getTileByCoord });
 
-const encounterLayer = computed(() => encounterStore.layer);
 const overlayWidth = computed(() => (frameRect.value?.width ?? 0) * camera.value.zoom);
 
 const activeCampfireActionTile = computed(() => {
@@ -329,7 +315,7 @@ useHexBoard({
   heroCoordinates: heroCoordinatesComputed,
   healTickerNow,
   movePreview,
-  encounters: encounterLayer,
+  squadWatched: squadViews.watched,
   campHeal: {
     coord: campHealEffectCoord,
     active: isCampfireHealActive,

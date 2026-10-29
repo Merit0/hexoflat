@@ -40,7 +40,14 @@ export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
   USE: EHexActionType.USE,
   OPEN: EHexActionType.OPEN,
   ENTER: EHexActionType.ENTER,
+  ATTACK: EHexActionType.ATTACK,
+  SCOUT: EHexActionType.SCOUT,
 };
+
+const SQUAD_ONLY: ActionStarter = () => ({
+  ok: false,
+  message: 'Only a squad can be attacked or scouted!',
+});
 
 export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
   [EHexActionType.CUT]: (tile, tool, now, ctx) => {
@@ -326,4 +333,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     return { ok: true, endsAt: now + 100 };
   },
+
+  [EHexActionType.ATTACK]: SQUAD_ONLY,
+  [EHexActionType.SCOUT]: SQUAD_ONLY,
 };

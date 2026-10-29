@@ -6,8 +6,8 @@ import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors'
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { getWorldSeed } from '@/services/rng/world-rng';
 import { battleStateSchema } from '@hexoflat/engine/battle/battle-state';
-import { engagementSchema } from '@hexoflat/engine/encounters/encounter-commands';
-import { findEncounter } from '@hexoflat/engine/encounters/encounter-state';
+import { engagementSchema } from '@hexoflat/engine/squads/engagement';
+import { findSquad } from '@hexoflat/engine/squads/squad-state';
 import type { BattleSnapshot } from '@/stores/battle-store';
 
 export type TWorldState = {
@@ -63,7 +63,7 @@ export function readBattleSnapshot(raw: unknown, map: HexMapModel | null): Battl
   if (!raw || typeof raw !== 'object' || !map) return empty;
   const saved = raw as Record<string, unknown>;
   const engagement = engagementSchema.safeParse(saved.engagement);
-  if (!engagement.success || !findEncounter(map, engagement.data.encounterId)) return empty;
+  if (!engagement.success || !findSquad(map, engagement.data.squadId)) return empty;
   const battle = battleStateSchema.safeParse(saved.battle);
   return { engagement: engagement.data, battle: battle.success ? battle.data : null };
 }

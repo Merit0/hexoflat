@@ -24,8 +24,8 @@ const BATTLE_TERRAIN_OF: Partial<Record<string, BattleTerrain>> = {
   saw: 'saw',
 };
 
-export function battlefieldSeed(encounterId: string, attempt: number): string {
-  return `${encounterId}:battlefield:${attempt}`;
+export function battlefieldSeed(squadId: string, attempt: number): string {
+  return `${squadId}:battlefield:${attempt}`;
 }
 
 function frameOf(model: BoardRecipeInput) {

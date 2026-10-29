@@ -1,18 +1,17 @@
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
-import { EHexCollision } from '../abstraction/hexobject-abstraction';
-import { CONTENT } from '../content';
 import type { BoardCellMap } from './board-cell-map';
 import { isTerrainPassable } from './terrain';
 import { getTags } from '../content/content-accessors';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
+import { walledForBoardWalk } from '../content/squad-keys';
 
 function isPassable(cellMap: BoardCellMap, coord: IHexCoordinates): boolean {
   const cell = cellMap.get(coord);
   if (!cell?.exists) return false;
   if (!isTerrainPassable(cell.terrain)) return false;
   if (!cell.hexobject) return true;
-  return CONTENT[cell.hexobject.hexobjectKey]?.collision !== EHexCollision.SOLID;
+  return !walledForBoardWalk(cell.hexobject.hexobjectKey);
 }
 
 function passableCellsReachableFrom(cellMap: BoardCellMap, start: IHexCoordinates): Set<string> {

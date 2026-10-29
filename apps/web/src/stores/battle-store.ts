@@ -4,6 +4,7 @@ import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { applyBattleCommand } from '@hexoflat/engine/battle/apply-battle';
 import {
   BattleCommandSchema,
+  isFightCommand,
   type BattleAction,
   type BattleCommand,
 } from '@hexoflat/engine/battle/battle-commands';
@@ -12,8 +13,8 @@ import type { BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
 import { creatureById } from '@hexoflat/engine/battle/battle-board';
 import { projectBattleEvent, projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
-import type { DeploymentZones } from '@hexoflat/engine/encounters/battlefield-setup';
-import type { Engagement } from '@hexoflat/engine/encounters/encounter-commands';
+import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
+import type { Engagement } from '@hexoflat/engine/squads/engagement';
 
 export interface BattleDeploy {
   setup: BattleSetupInput;
@@ -91,7 +92,10 @@ export const useBattleStore = defineStore('battle-store', () => {
     const parsed = BattleCommandSchema.parse(command);
     const result = bridge
       ? bridge.send(parsed)
-      : applyBattleCommand(battle.value ?? undefined, parsed);
+      : isFightCommand(parsed)
+        ? applyBattleCommand(battle.value ?? undefined, parsed)
+        : null;
+    if (!result) return [];
     absorb(result.battle ?? null, result.events);
     return result.events;
   }

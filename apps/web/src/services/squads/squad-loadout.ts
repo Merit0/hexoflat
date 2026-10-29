@@ -1,8 +1,8 @@
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
-import { heroBattleCreature, type HeroLoadout } from '@hexoflat/engine/encounters/encounter-battle';
-import type { Vector } from '@hexoflat/engine/encounters/battlefield-setup';
-import { handsProfile, type ThreatProfile } from '@hexoflat/engine/encounters/threat';
+import { heroBattleCreature, type HeroLoadout } from '@hexoflat/engine/squads/squad-battle';
+import type { Vector } from '@hexoflat/engine/battle/battlefield-setup';
+import { handsProfile, type ThreatProfile } from '@hexoflat/engine/battle/threat';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 

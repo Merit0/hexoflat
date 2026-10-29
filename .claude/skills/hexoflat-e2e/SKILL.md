@@ -39,7 +39,7 @@ Game state and hex geometry are asked of the running app through `window.__HEXOF
 
 This exists so tests never re-implement `packages/engine` logic. If a test needs to know where a hex is, whether a tile is revealed, or what the hero's position is — ask the app, do not recompute it. Extend the test API in `apps/web/src/e2e/create-test-api.ts` rather than duplicating a rule.
 
-State that the real game cannot reach cheaply is granted through hooks, not by clicking: `setWill(n)`, `prepareKnowledgeWorld(n)`, `setSkillRank(skillId, rank)` (skills priced above Will capacity, e.g. the Teleport skill). Add a hook in `create-test-api.ts` + `test-api.types.ts` instead of writing helper logic in a test.
+State that the real game cannot reach cheaply is granted through hooks, not by clicking: `setWill(n)`, `prepareKnowledgeWorld(n)`, `setSkillRank(skillId, rank)` (skills priced above Will capacity, e.g. the Teleport skill), `placeSquadNextToHero(key)` (a squad token in camp, since reaching one in the generated cave is random; queried with `isBattleEngaged`). Add a hook in `create-test-api.ts` + `test-api.types.ts` instead of writing helper logic in a test.
 
 Keep the `import.meta.env.VITE_E2E_HOOKS !== 'true'` guard **inline** at its call sites so Vite statically drops the hooks from production bundles.
 

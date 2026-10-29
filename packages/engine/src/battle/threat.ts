@@ -1,6 +1,19 @@
-import { BATTLE_CREATURES, BATTLE_ITEMS } from '../battle/battle-catalogue';
-import type { BattleItem } from '../battle/battle-state';
-import { ENCOUNTER_RULES, type EncounterRules } from './encounter-content';
+import { z } from 'zod';
+import { BATTLE_CREATURES, BATTLE_ITEMS } from './battle-catalogue';
+import type { BattleItem } from './battle-state';
+
+export const threatRulesSchema = z.object({
+  easyMax: z.number().positive(),
+  riskyMax: z.number().positive(),
+  unarmedPower: z.number().int().positive(),
+});
+export type ThreatRules = z.infer<typeof threatRulesSchema>;
+
+export const THREAT_RULES: ThreatRules = threatRulesSchema.parse({
+  easyMax: 0.6,
+  riskyMax: 1.3,
+  unarmedPower: 1,
+});
 
 export const THREATS = ['easy', 'risky', 'deadly'] as const;
 export type Threat = (typeof THREATS)[number];
@@ -28,7 +41,7 @@ export function memberProfile(kind: string): ThreatProfile {
 export function handsProfile(
   hearts: number,
   hands: { right: BattleItem | null; left: BattleItem | null },
-  rules: EncounterRules = ENCOUNTER_RULES,
+  rules: ThreatRules = THREAT_RULES,
 ): ThreatProfile {
   const held = [hands.right, hands.left];
   const power = Math.max(0, ...held.map((item) => item?.power ?? 0));
@@ -47,13 +60,13 @@ export function heroStrength(hero: ThreatProfile): number {
   return hero.hearts * hero.power + hero.shield;
 }
 
-export function encounterThreat(
+export function squadThreat(
   members: readonly string[],
   hero: ThreatProfile,
-  rules: EncounterRules = ENCOUNTER_RULES,
+  rules: ThreatRules = THREAT_RULES,
 ): Threat {
   const ratio = squadStrength(members) / Math.max(Number.EPSILON, heroStrength(hero));
-  if (ratio <= rules.threat.easyMax) return 'easy';
-  if (ratio <= rules.threat.riskyMax) return 'risky';
+  if (ratio <= rules.easyMax) return 'easy';
+  if (ratio <= rules.riskyMax) return 'risky';
   return 'deadly';
 }

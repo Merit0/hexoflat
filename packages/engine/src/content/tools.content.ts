@@ -68,6 +68,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
         canOpen: true,
         canAttack: true,
         canBlock: true,
+        canScout: true,
       },
       traits: { weightKG: 0 },
     },

@@ -12,7 +12,7 @@ import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import type { PortalLocation } from '@hexoflat/engine/portal/portal-rules';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
-import type { EncounterCommand, Engagement } from '@hexoflat/engine/encounters/encounter-commands';
+import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { transactKnowledge } from '@/services/persistence/knowledge-storage';
 
 export { canReachBook as isAtKnowledgeBook } from '@hexoflat/engine/knowledge/camp-book';
@@ -96,41 +96,18 @@ export function locationWillZone(locationKey: LocationKey): WillZone {
   return MapRegistry.get(locationKey)?.willZone ?? 'paid';
 }
 
-export async function dispatchHexAction(
-  host: Omit<KnowledgeHost, 'state'>,
-  command: StartHexActionCommand,
-) {
-  let events: DomainEvent[] = [];
-  const state = await transactKnowledge(host.heroId, (knowledge) => {
-    if (!host.isCurrent()) return false;
-    events = applyCommand(
-      {
-        map: host.map,
-        heroes: { [host.hero.id]: host.hero },
-        knowledge,
-        knowledgeContext: host.context,
-        location: host.location,
-      },
-      command,
-      host.engineContext,
-    ).events;
-    return events.some((event) => event.type === 'WILL_SPENT');
-  });
-  return { state, events, hero: host.hero };
-}
-
-export interface EncounterHostState {
+export interface SquadHostState {
   battle?: BattleState;
   engagement?: Engagement;
 }
 
-export async function dispatchEncounter(
+export async function dispatchHexAction(
   host: Omit<KnowledgeHost, 'state'>,
-  command: EncounterCommand,
-  held: EncounterHostState,
+  command: StartHexActionCommand,
+  held: SquadHostState = {},
 ) {
   let events: DomainEvent[] = [];
-  let after: EncounterHostState = held;
+  let after: SquadHostState = held;
   const state = await transactKnowledge(host.heroId, (knowledge) => {
     if (!host.isCurrent()) return false;
     const world: HexEngineState = {
@@ -138,6 +115,7 @@ export async function dispatchEncounter(
       heroes: { [host.hero.id]: host.hero },
       knowledge,
       knowledgeContext: host.context,
+      location: host.location,
       battle: held.battle,
       engagement: held.engagement,
     };

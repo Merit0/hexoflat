@@ -55,6 +55,8 @@ import { portalRefusalText } from '@/composables/use-portal-messages';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
+import { applySquadEvents } from '@/services/squads/squad-flow';
+import { asSquad } from '@hexoflat/engine/squads/squad-state';
 
 const props = defineProps<{
   tileWidth: number;
@@ -65,7 +67,8 @@ const emit = defineEmits<{
   (e: 'hide'): void;
 }>();
 
-const { t } = useI18n();
+const i18n = useI18n();
+const { t } = i18n;
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const battleStore = useBattleStore();
@@ -222,7 +225,9 @@ const bestActionLabel = computed(() => {
     object?.groupType === EHexobjectGroup.CONSTRUCTION &&
     !getMeta(object.hexobjectKey)?.heal;
   if (bestAction.value.actioType === 'ENTER') return t('tool.enter');
-  return isHandOnBuilding ? t('tool.open') : bestAction.value.label;
+  if (isHandOnBuilding) return t('tool.open');
+  const label = bestAction.value.label;
+  return i18n.te(label) ? t(label) : label;
 });
 
 const bestActionCost = computed(() =>
@@ -353,13 +358,15 @@ async function executeAction() {
     return;
   }
 
+  const onSquad = !!asSquad(tile.hexobject);
   const res = await worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
+  const squadRejection = onSquad ? applySquadEvents(res.events) : null;
 
   if (res.ok) {
     worldMapStore.saveToStorage();
-  } else if (res.message) {
+  } else if (squadRejection ?? res.message) {
     flashDenied();
-    heroToolStore.setActionMessage(res.message);
+    heroToolStore.setActionMessage(squadRejection ?? res.message ?? '');
   }
 }
 </script>

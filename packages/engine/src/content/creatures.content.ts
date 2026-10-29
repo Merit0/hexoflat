@@ -1,11 +1,82 @@
 import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
-import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { EHexActionType } from '../enums/hex-action-type';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import type { ISquad } from '../abstraction/hexobject-abstraction';
 import type { TContentDefinition } from './content-schema';
 
+export type TSquadKeys =
+  | typeof HEXOBJECT_KEYS.LONE_SKELETON
+  | typeof HEXOBJECT_KEYS.SKELETON_PACK
+  | typeof HEXOBJECT_KEYS.ARCHER_WATCH
+  | typeof HEXOBJECT_KEYS.BONE_COURT;
+
 export type TCreatureKeys =
-  typeof HEXOBJECT_KEYS.SKELETOR | typeof HEXOBJECT_KEYS.EMITTER | typeof HEXOBJECT_KEYS.INFERNO;
+  | typeof HEXOBJECT_KEYS.SKELETOR
+  | typeof HEXOBJECT_KEYS.EMITTER
+  | typeof HEXOBJECT_KEYS.INFERNO
+  | TSquadKeys;
+
+const SQUAD_SPRITES = {
+  skeleton: '/enemy-assets/enemies-sprites/skeleton-hex.png',
+} as const;
+
+const SQUAD_ACTIONS = {
+  [EHexActionType.ATTACK]: { label: 'squad.attack', durationMs: 0, willCost: 2 },
+  [EHexActionType.SCOUT]: { label: 'squad.scout', durationMs: 0, willCost: 1 },
+};
+
+function squadContent(
+  key: TSquadKeys,
+  sprite: keyof typeof SQUAD_SPRITES,
+  squad: Omit<ISquad, 'tableRule' | 'battlefieldBiome' | 'loot'> & { loot: THexobjectKey },
+): TContentDefinition {
+  return {
+    hexobjectKey: key,
+    tags: ['enemy'],
+    groupType: EHexobjectGroup.CREATURE,
+    isInteractable: true,
+    title: `content.${key}.title`,
+    description: `content.${key}.tableRule`,
+    collision: EHexCollision.SOLID,
+    spritePath: SQUAD_SPRITES[sprite],
+    actions: SQUAD_ACTIONS,
+    creature: {
+      name: `content.${key}.title`,
+      hp: squad.members.length,
+      hpMax: squad.members.length,
+      attack: 1,
+      faction: 'enemy',
+      squad: { ...squad, battlefieldBiome: 'crypt', tableRule: `content.${key}.tableRule` },
+    },
+  };
+}
 
 export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
+  [HEXOBJECT_KEYS.LONE_SKELETON]: squadContent(HEXOBJECT_KEYS.LONE_SKELETON, 'skeleton', {
+    members: ['skeleton-warrior'],
+    watcher: false,
+    boss: false,
+    loot: HEXOBJECT_KEYS.BONE_CHARM,
+  }),
+  [HEXOBJECT_KEYS.SKELETON_PACK]: squadContent(HEXOBJECT_KEYS.SKELETON_PACK, 'skeleton', {
+    members: ['skeleton-warrior', 'skeleton-warrior'],
+    watcher: false,
+    boss: false,
+    loot: HEXOBJECT_KEYS.SWORD,
+  }),
+  [HEXOBJECT_KEYS.ARCHER_WATCH]: squadContent(HEXOBJECT_KEYS.ARCHER_WATCH, 'skeleton', {
+    members: ['skeleton-archer', 'skeleton-archer'],
+    watcher: true,
+    boss: false,
+    loot: HEXOBJECT_KEYS.HEALTH_BOTTLE,
+  }),
+  [HEXOBJECT_KEYS.BONE_COURT]: squadContent(HEXOBJECT_KEYS.BONE_COURT, 'skeleton', {
+    members: ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior'],
+    watcher: false,
+    boss: true,
+    loot: HEXOBJECT_KEYS.CROWN_SHARD,
+  }),
+
   [HEXOBJECT_KEYS.SKELETOR]: {
     hexobjectKey: HEXOBJECT_KEYS.SKELETOR,
     tags: ['enemy'],

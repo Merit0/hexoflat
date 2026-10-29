@@ -7,7 +7,7 @@ import { sha256Hex } from '../utils/hash/sha256';
 import type { RngState } from '../utils/random-seeded';
 import type { HexEngineState } from './apply-command';
 import { battleStateSchema, type BattleState } from '../battle/battle-state';
-import { engagementSchema, type Engagement } from '../encounters/encounter-commands';
+import { engagementSchema, type Engagement } from '../squads/engagement';
 
 export interface SnapshotPayload {
   version: number;

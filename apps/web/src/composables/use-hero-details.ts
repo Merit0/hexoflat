@@ -1,7 +1,7 @@
 import { computed } from 'vue';
 import { getScoutProgress, toRoman } from '@hexoflat/engine/hero-movement/scout-progression';
 import { BATTLE_ITEMS, battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
-import { ENCOUNTER_RULES } from '@hexoflat/engine/encounters/encounter-content';
+import { THREAT_RULES } from '@hexoflat/engine/battle/threat';
 import { sumShieldPoints } from '@hexoflat/engine/combat/shield-points';
 import type { SkillProgress } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
@@ -103,7 +103,7 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
   const scout = scoutView(input.steps);
   const max = Math.max(1, input.maxHealth);
   const current = Math.max(0, Math.min(max, input.currentHealth));
-  const attack = input.weapon?.power ?? ENCOUNTER_RULES.unarmedPower;
+  const attack = input.weapon?.power ?? THREAT_RULES.unarmedPower;
   const defense = round2(input.defense);
 
   return {
@@ -162,7 +162,7 @@ export function useHeroDetails() {
       weaponItem && weaponItem.key !== HEXOBJECT_KEYS.HAND
         ? {
             item: toHandItem(weaponItem.key, skills),
-            power: battleStat(weaponItem.key, 'power') || ENCOUNTER_RULES.unarmedPower,
+            power: battleStat(weaponItem.key, 'power') || THREAT_RULES.unarmedPower,
           }
         : null;
     const shield =

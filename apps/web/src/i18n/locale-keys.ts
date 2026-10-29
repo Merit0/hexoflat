@@ -7,9 +7,8 @@ import {
   BATTLE_ITEMS,
   BATTLE_OBJECTS,
 } from '@hexoflat/engine/battle/battle-catalogue';
-import { ENCOUNTERS } from '@hexoflat/engine/encounters/encounter-content';
-import { ENCOUNTER_REJECTIONS } from '@hexoflat/engine/encounters/encounter-commands';
-import { THREATS } from '@hexoflat/engine/encounters/threat';
+import { SQUAD_REJECTIONS } from '@hexoflat/engine/squads/engagement';
+import { THREATS } from '@hexoflat/engine/battle/threat';
 import ukUi from '@/locales/uk/ui.json';
 import { battleLocaleKeys } from '@/composables/battle-hint';
 
@@ -56,7 +55,6 @@ export function collectContentLocaleKeys(): string[] {
     ...Object.values(BATTLE_CREATURES),
     ...Object.values(BATTLE_ITEMS),
     ...Object.values(BATTLE_OBJECTS),
-    ...Object.values(ENCOUNTERS),
   ];
   for (const def of battleDefs) {
     keys.add(def.title);
@@ -82,14 +80,12 @@ export function flattenLocaleKeys(source: unknown, prefix = ''): string[] {
   return keys;
 }
 
-export function encounterLocaleKeys(): string[] {
+export function squadLocaleKeys(): string[] {
   return [
-    ...THREATS.map((threat) => `encounter.threat.${threat}`),
-    ...ENCOUNTER_REJECTIONS.map((code) => `encounter.rejected.${code}`),
-    'encounter.log.sneaked',
-    'encounter.log.sneakBlocked',
-    'battle.task.title.sneak',
-    'battle.task.text.sneak',
+    ...THREATS.map((threat) => `squad.threat.${threat}`),
+    ...SQUAD_REJECTIONS.map((code) => `squad.rejected.${code}`),
+    'squad.attack',
+    'squad.scout',
   ];
 }
 
@@ -155,6 +151,6 @@ export function collectUiTemplateKeys(): string[] {
 
   for (const key of collectSkillTreeLocaleKeys()) keys.add(key);
   for (const key of battleLocaleKeys()) keys.add(key);
-  for (const key of encounterLocaleKeys()) keys.add(key);
+  for (const key of squadLocaleKeys()) keys.add(key);
   return [...keys].sort();
 }

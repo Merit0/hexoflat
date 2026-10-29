@@ -7,16 +7,16 @@ description: How work is executed in this repo — one planned phase per chat, d
 
 ## Planning docs
 
-| Doc                                              | What it covers                                                                                                                                         |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md`           | Gameplay content and tactical mechanics — the active track                                                                                             |
-| `docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md` | God Class diagnosis, phases G0–G6, and the target store contract in Part 6                                                                             |
-| `docs/WORLD-MAP-BOARDS-PLAN.md`                  | Location maps: static drawings, dungeon assembly from chunks, in-game editor — phases C0–C4                                                            |
-| `docs/BOARD-GENERATOR-PLAN.md`                   | Board generator: 6-stage pipeline, part registries, measurer, atlas — phases V0–V7                                                                     |
-| `docs/SKILL-TREE-V2-PLAN.md`                     | Skill tree v2: three schools, Will sacrifice into skill bars, Teleport skill — S1–S5 done                                                              |
-| `docs/BATTLE-SYSTEM-PLAN.md`                     | Battle system v2.1 pilot: encounters on the dungeon map, generated battlefield, engine battle — phases B0–B8 (audit: `docs/battle-system/B0-AUDIT.md`) |
-| `docs/MIGRATION-PLAN.md`                         | Infrastructure phases (1–10 done; 11–12 deliberately paused)                                                                                           |
-| `docs/design/*.md`                               | Scout reports — design inspiration only, never a source of copied names/text/art/balance                                                               |
+| Doc                                              | What it covers                                                                                                                                                                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md`           | Gameplay content and tactical mechanics — the active track                                                                                                                                                                     |
+| `docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md` | God Class diagnosis, phases G0–G6, and the target store contract in Part 6                                                                                                                                                     |
+| `docs/WORLD-MAP-BOARDS-PLAN.md`                  | Location maps: static drawings, dungeon assembly from chunks, in-game editor — phases C0–C4                                                                                                                                    |
+| `docs/BOARD-GENERATOR-PLAN.md`                   | Board generator: 6-stage pipeline, part registries, measurer, atlas — phases V0–V7                                                                                                                                             |
+| `docs/SKILL-TREE-V2-PLAN.md`                     | Skill tree v2: three schools, Will sacrifice into skill bars, Teleport skill — S1–S5 done                                                                                                                                      |
+| `docs/BATTLE-SYSTEM-PLAN.md`                     | Battle system v2.1 pilot: squads as creature tokens on the dungeon map (B6b: `docs/battle-system/B6B-SQUADS-AS-TOKENS-PLAN.md`), generated battlefield, engine battle — phases B0–B8 (audit: `docs/battle-system/B0-AUDIT.md`) |
+| `docs/MIGRATION-PLAN.md`                         | Infrastructure phases (1–10 done; 11–12 deliberately paused)                                                                                                                                                                   |
+| `docs/design/*.md`                               | Scout reports — design inspiration only, never a source of copied names/text/art/balance                                                                                                                                       |
 
 ## The rules
 
@@ -36,7 +36,7 @@ description: How work is executed in this repo — one planned phase per chat, d
 
 These are the failure modes that have actually cost this project time:
 
-- **Rules outside the engine.** The old `combat-store.ts` lived outside the command pipeline until B6 deleted it. New battle and encounter rules go to `packages/engine/src/battle/` or `src/encounters/`, within the current B-phase only.
+- **Rules outside the engine.** The old `combat-store.ts` lived outside the command pipeline until B6 deleted it. New battle and squad rules go to `packages/engine/src/battle/` or `src/squads/`, within the current B-phase only.
 - **Grandfathering instead of fixing.** `KNOWN_CYCLE_FILES` in `eslint.config.js` records reviewed legacy cycles. Adding a file to it to silence a new error converts "we will fix this" into "this is now the architecture".
 - **Raising a threshold to pass lint.** The size/complexity limits are pinned to measured maximums. Trip one → split the code, not the limit.
 - **Extracting without wiring up.** Three composables once sat with zero importers while their logic stayed duplicated inline. Always verify the new module is actually imported and the old copy is deleted.

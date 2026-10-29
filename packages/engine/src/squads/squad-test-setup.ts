@@ -1,28 +1,28 @@
 import { assembleHexMapModel } from '../boards/hex-map-assembly';
 import type { ResolvedCell } from '../boards/resolved-cell';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
-import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import { EHexActionType } from '../enums/hex-action-type';
 import { coordinateKey } from '../utils/hex-utils';
 import { createKnowledgeState } from '../knowledge/state';
 import type { HexEngineState } from '../commands/apply-command';
 import { applyCommand } from '../commands/apply-command';
 import { createContext } from '../commands/command-test-context';
 import type { DomainEvent } from '../commands/types';
-import type { EncounterAction } from './encounter-commands';
-import { encounterInstanceId } from './map-encounter';
+import type { SquadLifecyclePayload } from '../battle/battle-commands';
 
 export const HERO = 'hero-1';
 
 export interface FixtureOptions {
-  encounters: { contentId: string; at: IHexCoordinates }[];
+  squads: { key: THexobjectKey; at: IHexCoordinates }[];
   hero: IHexCoordinates;
   walls?: IHexCoordinates[];
   hidden?: IHexCoordinates[];
   will?: number;
 }
 
-export function encounterWorld(options: FixtureOptions): HexEngineState {
-  const encounterAt = new Map(options.encounters.map((e) => [coordinateKey(e.at), e.contentId]));
+export function squadWorld(options: FixtureOptions): HexEngineState {
+  const squadAt = new Map(options.squads.map((s) => [coordinateKey(s.at), s.key]));
   const walls = new Set((options.walls ?? []).map(coordinateKey));
   const map = assembleHexMapModel({
     boardColumns: 9,
@@ -30,12 +30,10 @@ export function encounterWorld(options: FixtureOptions): HexEngineState {
     background: '',
     cellAt: (coord): ResolvedCell => {
       const key = coordinateKey(coord);
-      const contentId = encounterAt.get(key);
-      return {
-        exists: true,
-        ...(walls.has(key) ? { hexobject: { hexobjectKey: HEXOBJECT_KEYS.STONE_WALL } } : {}),
-        ...(contentId ? { encounter: { contentId } } : {}),
-      };
+      const squad = squadAt.get(key);
+      if (walls.has(key))
+        return { exists: true, hexobject: { hexobjectKey: HEXOBJECT_KEYS.STONE_WALL } };
+      return { exists: true, ...(squad ? { hexobject: { hexobjectKey: squad } } : {}) };
     },
   });
   const hidden = new Set((options.hidden ?? []).map(coordinateKey));
@@ -65,18 +63,49 @@ export function encounterWorld(options: FixtureOptions): HexEngineState {
   };
 }
 
-export function idAt(contentId: string, at: IHexCoordinates): string {
-  return encounterInstanceId(contentId, at);
+export function idAt(key: THexobjectKey, at: IHexCoordinates): string {
+  return `${coordinateKey(at)}:${key}`;
 }
 
-export function encounterDo(
+export function hexAction(
   state: HexEngineState,
-  action: EncounterAction,
+  actionType: EHexActionType,
+  at: IHexCoordinates,
+  now = 1000,
+  toolKey: string = HEXOBJECT_KEYS.HAND,
+): DomainEvent[] {
+  return applyCommand(
+    state,
+    {
+      type: 'START_HEX_ACTION',
+      payload: { heroId: HERO, coordinates: at, actionType, toolKey, now },
+    },
+    createContext(),
+  ).events;
+}
+
+type LifecycleInput = SquadLifecyclePayload extends infer P
+  ? P extends SquadLifecyclePayload
+    ? Omit<P, 'heroId' | 'atMs'>
+    : never
+  : never;
+
+export function lifecycle(
+  state: HexEngineState,
+  payload: LifecycleInput,
   atMs = 1000,
 ): DomainEvent[] {
   return applyCommand(
     state,
-    { type: 'ENCOUNTER', payload: { heroId: HERO, atMs, action } },
+    { type: 'BATTLE', payload: { heroId: HERO, atMs, ...payload } },
+    createContext(),
+  ).events;
+}
+
+export function moveHero(state: HexEngineState, target: IHexCoordinates): DomainEvent[] {
+  return applyCommand(
+    state,
+    { type: 'MOVE_HERO', payload: { heroId: HERO, target } },
     createContext(),
   ).events;
 }
@@ -86,6 +115,8 @@ export function eventTypes(events: DomainEvent[]): string[] {
 }
 
 export function rejection(events: DomainEvent[]): string | undefined {
-  const rejected = events.find((e) => e.type === 'ENCOUNTER_REJECTED');
-  return (rejected?.payload as { reason?: string } | undefined)?.reason;
+  const squad = events.find((e) => e.type === 'SQUAD_REJECTED');
+  if (squad) return (squad.payload as { reason?: string }).reason;
+  const will = events.find((e) => e.type === 'WILL_REJECTED');
+  return (will?.payload as { reason?: string } | undefined)?.reason;
 }

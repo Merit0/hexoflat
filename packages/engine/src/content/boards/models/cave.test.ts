@@ -19,7 +19,9 @@ describe('CAVE_MODEL', () => {
       expect(keys).toContain(HEXOBJECT_KEYS.CAVE_EXIT);
       expect(keys).not.toContain(HEXOBJECT_KEYS.SKELETOR);
       const encounters = built.map.tiles.flatMap((tile) =>
-        tile.encounter ? [tile.encounter.contentId] : [],
+        tile.hexobject && 'creature' in tile.hexobject && tile.hexobject.creature.squad
+          ? [tile.hexobject.hexobjectKey]
+          : [],
       );
       expect(encounters.sort()).toEqual(['bone-court', 'lone-skeleton', 'skeleton-pack'].sort());
       for (const outcome of built.trace.ruleOutcomes) {

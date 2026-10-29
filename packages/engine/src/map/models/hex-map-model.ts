@@ -13,11 +13,11 @@ import { EHexActionType } from '../../enums/hex-action-type';
 import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
 import type { ExitSide } from '../../boards/exits';
 import {
-  legacyEnemyEncounter,
-  mapEncounterSchema,
-  newMapEncounter,
-  type MapEncounter,
-} from '../../encounters/map-encounter';
+  hexobjectFromLegacyEncounter,
+  legacySquadKey,
+  squadInstanceOf,
+  withSquadInstance,
+} from '../../squads/squad-migration';
 
 export type TFogPolicy = 'FOG' | 'ALL_REVEALED' | 'BY_REGION';
 
@@ -44,7 +44,7 @@ export interface ISerializedHexTile {
   terrain?: TerrainId;
   exit?: ExitSide;
   regionId?: string;
-  encounter?: MapEncounter;
+  encounter?: unknown;
 }
 
 export interface ISerializedHexMap {
@@ -55,12 +55,6 @@ export interface ISerializedHexMap {
   config: IHexMapPlacement[];
   tiles: ISerializedHexTile[];
   fogPolicy?: TFogPolicy;
-}
-
-function readEncounter(raw: unknown): MapEncounter | undefined {
-  if (!raw) return undefined;
-  const parsed = mapEncounterSchema.safeParse(raw);
-  return parsed.success ? parsed.data : undefined;
 }
 
 export default class HexMapModel implements IWorldMap {
@@ -193,7 +187,6 @@ export default class HexMapModel implements IWorldMap {
         ...(t.terrain === DEFAULT_TERRAIN ? {} : { terrain: t.terrain }),
         ...(t.exit ? { exit: t.exit } : {}),
         ...(t.regionId ? { regionId: t.regionId } : {}),
-        ...(t.encounter ? { encounter: t.encounter } : {}),
       })),
     };
   }
@@ -213,19 +206,13 @@ export default class HexMapModel implements IWorldMap {
       tile.hexBackgroundImagePath = t.imagePath ?? '';
       tile.coordinates = t.coordinates ?? { rowIndex: t.r ?? 0, columnIndex: t.q ?? 0 };
 
-      const savedObj: THexobject | null = t.hexobject ?? null;
-      const legacyEncounter = legacyEnemyEncounter(savedObj?.hexobjectKey);
-      tile.hexobject =
-        savedObj && !legacyEncounter ? this.hydrateHexobject(savedObj, tile.coordinates) : null;
+      tile.hexobject = this.restoreHexobject(t, tile.coordinates);
 
       tile.resourceSpawner = t.resourceSpawner ?? null;
       tile.pendingAction = t.pendingAction ?? null;
       tile.terrain = t.terrain ?? DEFAULT_TERRAIN;
       tile.exit = t.exit;
       tile.regionId = t.regionId;
-      tile.encounter =
-        readEncounter(t.encounter) ??
-        (legacyEncounter ? newMapEncounter(legacyEncounter, tile.coordinates) : undefined);
 
       return tile;
     });
@@ -255,6 +242,18 @@ export default class HexMapModel implements IWorldMap {
     }
 
     return map;
+  }
+
+  private static restoreHexobject(
+    t: ISerializedHexTile,
+    coord: IHexCoordinates,
+  ): THexobject | null {
+    const fromEncounter = hexobjectFromLegacyEncounter(t.encounter, coord);
+    if (fromEncounter !== undefined) return fromEncounter;
+    if (!t.hexobject) return null;
+    const legacySquad = legacySquadKey(t.hexobject.hexobjectKey);
+    if (legacySquad) return HexObjectFactory.create(legacySquad, coord);
+    return this.hydrateHexobject(t.hexobject, coord);
   }
 
   private static hydrateHexobject(saved: THexobject, coord: IHexCoordinates): THexobject {
@@ -290,6 +289,7 @@ export default class HexMapModel implements IWorldMap {
           built.creature.attack = saved.creature.attack ?? built.creature.attack;
           built.creature.faction = saved.creature.faction ?? built.creature.faction;
           built.creature.visionRange = saved.creature.visionRange ?? built.creature.visionRange;
+          withSquadInstance(built, squadInstanceOf(saved.creature));
         }
         break;
       }

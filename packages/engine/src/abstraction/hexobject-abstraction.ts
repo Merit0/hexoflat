@@ -67,6 +67,15 @@ export interface ILoot extends ITraitable<ILootTraits> {
   traits: ILootTraits;
 }
 
+export interface ISquad {
+  members: string[];
+  watcher: boolean;
+  boss: boolean;
+  loot: THexobjectKey;
+  battlefieldBiome: 'crypt';
+  tableRule: string;
+}
+
 export interface ICreature {
   name: string;
   hp: number;
@@ -74,6 +83,9 @@ export interface ICreature {
   attack: number;
   faction?: 'neutral' | 'enemy' | 'friendly';
   visionRange?: number;
+  squad?: ISquad;
+  scouted?: boolean;
+  attempts?: number;
 }
 
 export interface ITool extends IDurable {
@@ -89,6 +101,7 @@ export interface ITool extends IDurable {
     canOpen?: boolean;
     canAttack?: boolean;
     canBlock?: boolean;
+    canScout?: boolean;
   };
 
   traits: {

@@ -67,7 +67,7 @@ describe('crossExitIfStanding', () => {
     const world = useWorldMapStore();
     useHeroStore().heroCoordinates = { ...exitTile('N').coordinates };
     useBattleStore().engage({
-      encounterId: 'lone-skeleton@2-2',
+      squadId: '2:2:lone-skeleton',
       ambush: false,
       heroAt: { columnIndex: 0, rowIndex: 0 },
       heroIds: ['hero'],

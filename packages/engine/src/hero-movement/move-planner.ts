@@ -1,4 +1,3 @@
-import { blocksTile } from '../encounters/map-encounter';
 import type HexMapModel from '../map/models/hex-map-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
@@ -28,7 +27,6 @@ export function isEnterableTile(map: HexMapModel, target: IHexCoordinates): bool
   if (!tile || !tile.isRevealed) return false;
   if (!isTerrainPassable(tile.terrain)) return false;
   if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
-  if (blocksTile(tile.encounter)) return false;
 
   return tile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.CAMPING_ENTRANCE;
 }

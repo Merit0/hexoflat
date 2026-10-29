@@ -4,8 +4,10 @@ import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { applyCommand, CONTENT_VERSION } from '@hexoflat/engine';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
-import { newMapEncounter } from '@hexoflat/engine/encounters/map-encounter';
-import { heroBattleCreature } from '@hexoflat/engine/encounters/encounter-battle';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { heroBattleCreature } from '@hexoflat/engine/squads/squad-battle';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { useWorldMapStore } from './world-map-store';
 import { useBattleStore } from './battle-store';
 import { useHeroStore } from './hero-store';
@@ -38,7 +40,7 @@ function buildBattleMap(name: string) {
   for (const tile of map.tiles) tile.isRevealed = true;
   map.tiles.find(
     (t) => t.coordinates.columnIndex === 2 && t.coordinates.rowIndex === 2,
-  )!.encounter = newMapEncounter('lone-skeleton', SQUAD_AT);
+  )!.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.LONE_SKELETON, SQUAD_AT);
   return map;
 }
 
@@ -52,15 +54,20 @@ function openBattle(name: string) {
     map: worldStore.map as HexMapModel,
     heroes: { [hero.hero.id]: hero.engineHeroState(hero.heroCoordinates) },
   } as Parameters<typeof applyCommand>[0];
-  const send = (action: Record<string, unknown>) =>
-    applyCommand(
-      state,
-      { type: 'ENCOUNTER', payload: { heroId: hero.hero.id, atMs: 0, action } } as Parameters<
-        typeof applyCommand
-      >[1],
-      worldStore.buildEngineContext(),
-    );
-  send({ kind: 'attack', encounterId: 'lone-skeleton@2-2' });
+  applyCommand(
+    state,
+    {
+      type: 'START_HEX_ACTION',
+      payload: {
+        heroId: hero.hero.id,
+        coordinates: SQUAD_AT,
+        actionType: EHexActionType.ATTACK,
+        toolKey: HEXOBJECT_KEYS.HAND,
+        now: 0,
+      },
+    },
+    worldStore.buildEngineContext(),
+  );
   const creature = heroBattleCreature({
     id: hero.hero.id,
     hearts: 3,
@@ -68,7 +75,14 @@ function openBattle(name: string) {
     shield: null,
     bag: [],
   });
-  send({ kind: 'start-battle', heroes: [creature] });
+  applyCommand(
+    state,
+    {
+      type: 'BATTLE',
+      payload: { kind: 'start', heroId: hero.hero.id, atMs: 0, heroes: [creature] },
+    },
+    worldStore.buildEngineContext(),
+  );
   useBattleStore().restore({ engagement: state.engagement!, battle: state.battle! });
   return state;
 }
@@ -247,8 +261,8 @@ describe('world persistence: battle autosave', () => {
         unknown
       >;
 
-      expect((state.battle as { engagement: { encounterId: string } }).engagement.encounterId).toBe(
-        opened.engagement!.encounterId,
+      expect((state.battle as { engagement: { squadId: string } }).engagement.squadId).toBe(
+        opened.engagement!.squadId,
       );
     });
 
@@ -295,7 +309,7 @@ describe('world persistence: loadFromStorage (characterization)', () => {
 
       expect(reloadedHero.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 2 });
       expect(reloadedWorld.map?.tiles).toHaveLength(25);
-      expect(reloadedBattle.engagement?.encounterId).toBe(opened.engagement!.encounterId);
+      expect(reloadedBattle.engagement?.squadId).toBe(opened.engagement!.squadId);
       expect(reloadedBattle.battle?.id).toBe(opened.battle!.id);
     });
 

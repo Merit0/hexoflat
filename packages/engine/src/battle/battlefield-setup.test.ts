@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { generateBattlefield, battlefieldSeed } from '../battle/battlefield';
-import { drawWithAdvantage } from '../battle/initiative';
-import { startBattle } from '../battle/start-battle';
-import { hero } from '../battle/battle-test-setup';
-import { battleDistance, hexKey } from '../battle/hex-battle-geom';
+import { generateBattlefield, battlefieldSeed } from './battlefield';
+import { drawWithAdvantage } from './initiative';
+import { startBattle } from './start-battle';
+import { hero } from './battle-test-setup';
+import { battleDistance, hexKey } from './hex-battle-geom';
 import { createSeededRandom } from '../utils/random-seeded';
 import {
   DEPLOYMENT_RULES,
@@ -31,7 +31,7 @@ const centre = { q: 0, r: 0 };
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 describe('REQ-ENC-005 deployment', () => {
-  it('points the approach from the encounter towards the hero', () => {
+  it('points the approach from the squad towards the hero', () => {
     const d = approachDirection({ columnIndex: 5, rowIndex: 4 }, { columnIndex: 3, rowIndex: 4 });
     expect(d.x).toBeCloseTo(-1);
     expect(d.y).toBeCloseTo(0);

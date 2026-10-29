@@ -396,7 +396,7 @@ describe('useWorldMapStore: dev board panel actions', () => {
     expect(worldStore.descriptor).toEqual(descriptor);
   });
 
-  it('dev rebuild actions use the encounter params they are given', () => {
+  it('dev rebuild actions use the recipe params they are given', () => {
     const worldStore = useWorldMapStore();
     worldStore.loadLocationMap('cave');
 
@@ -442,7 +442,7 @@ describe('useWorldMapStore: respawnHeroAtCamping (characterization, B0 safety ne
     heroStore.heroCoordinates = { columnIndex: 1, rowIndex: 1 };
     heroStore.hero.setHealth(0);
     battleStore.engage({
-      encounterId: 'lone-skeleton@2-2',
+      squadId: '2:2:lone-skeleton',
       ambush: false,
       heroAt: { columnIndex: 1, rowIndex: 1 },
       heroIds: [heroStore.hero.id],

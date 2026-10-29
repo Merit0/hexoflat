@@ -4,14 +4,12 @@ import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { isTerrainPassable, type TerrainId } from '../boards/terrain';
-import { blocksTile, type MapEncounter } from '../encounters/map-encounter';
 
 export type TileLike = {
   coordinates: IHexCoordinates;
   isRevealed: boolean;
   hexobject: THexobject | null;
   terrain?: TerrainId;
-  encounter?: MapEncounter;
 };
 
 export type TileIndex = Map<string, TileLike>;
@@ -34,7 +32,6 @@ export function isTraversableTile(tile: TileLike | null | undefined): tile is Ti
   if (!tile.isRevealed) return false;
   if (!isTerrainPassable(tile.terrain)) return false;
   if (tile.hexobject?.collision === EHexCollision.SOLID) return false;
-  if (blocksTile(tile.encounter)) return false;
   if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAMPING_ENTRANCE) return false;
 
   return true;

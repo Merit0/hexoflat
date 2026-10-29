@@ -9,7 +9,6 @@ export interface ResolvedCell {
   exit?: ExitSide;
   regionId?: string;
   hexobject?: { hexobjectKey: THexobjectKey; overrides?: Record<string, unknown> };
-  encounter?: { contentId: string };
 }
 
 export const VOID_CELL: ResolvedCell = { exists: false };

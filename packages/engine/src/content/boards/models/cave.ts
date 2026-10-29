@@ -31,11 +31,11 @@ export const CAVE_MODEL = {
         ],
       },
       {
-        kind: 'encounters',
+        kind: 'squads',
         place: [
-          { encounter: 'bone-court', spot: 'deep', minSteps: 6 },
-          { encounter: 'skeleton-pack', spot: 'treasure' },
-          { encounter: 'lone-skeleton', spot: 'dead-end' },
+          { squad: 'bone-court', spot: 'deep', minSteps: 6 },
+          { squad: 'skeleton-pack', spot: 'treasure' },
+          { squad: 'lone-skeleton', spot: 'dead-end' },
         ],
       },
     ],

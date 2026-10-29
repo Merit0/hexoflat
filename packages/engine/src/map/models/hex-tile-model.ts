@@ -5,7 +5,6 @@ import { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner';
 import { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
 import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
 import type { ExitSide } from '../../boards/exits';
-import type { MapEncounter } from '../../encounters/map-encounter';
 
 export interface IHexTile {
   tileId: string;
@@ -19,7 +18,6 @@ export interface IHexTile {
   terrain?: TerrainId;
   exit?: ExitSide;
   regionId?: string;
-  encounter?: MapEncounter;
 }
 
 export class HexTileModel implements IHexTile {
@@ -34,7 +32,6 @@ export class HexTileModel implements IHexTile {
   private _terrain: TerrainId = DEFAULT_TERRAIN;
   private _exit: ExitSide | undefined = undefined;
   private _regionId: string | undefined = undefined;
-  private _encounter: MapEncounter | undefined = undefined;
 
   get hexobject(): THexobject | null {
     return this._hexobject;
@@ -118,14 +115,6 @@ export class HexTileModel implements IHexTile {
 
   set regionId(regionId: string | undefined) {
     this._regionId = regionId;
-  }
-
-  get encounter(): MapEncounter | undefined {
-    return this._encounter;
-  }
-
-  set encounter(encounter: MapEncounter | undefined) {
-    this._encounter = encounter;
   }
 
   coordinatesToString(): string {

@@ -6,7 +6,6 @@ import { HexObjectFactory } from '../factory/hex-object-factory';
 import { Complexity } from '../enums/complexity';
 import type { ResolvedCell } from './resolved-cell';
 import { DEFAULT_TERRAIN } from './terrain';
-import { newMapEncounter } from '../encounters/map-encounter';
 
 export interface AssembleHexMapInput {
   boardColumns: number;
@@ -40,7 +39,6 @@ export function assembleHexMapModel(input: AssembleHexMapInput): HexMapModel {
       tile.exit = cell.exit;
       tile.regionId = cell.regionId;
       tile.hexBackgroundImagePath = input.background;
-      if (cell.encounter) tile.encounter = newMapEncounter(cell.encounter.contentId, coordinates);
 
       if (cell.hexobject) {
         tile.hexobject = HexObjectFactory.create(

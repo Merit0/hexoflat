@@ -21,7 +21,7 @@ layers/
   tiles-layer.ts          the board itself
   hero-layer.ts
   move-preview-layer.ts
-  encounter-layer.ts       map squads drawn with the shared hex token (leader sprite), ×N, ?, eye, 👑, loot chest, watched hexes — no rims/glow/stack
+  squad-watch-layer.ts     thin highlight of the hexes a watcher squad sees (squads themselves are hexobjects drawn by tiles-layer with the `creature` fit)
   camp-heal-layer.ts
 ```
 
@@ -31,7 +31,7 @@ The battle board has its own seam, `render/battle/use-battle-board.ts`, separate
 
 ### How a sprite sits in a hex cell — by hexobject group
 
-`render/object-fit.ts` is the only place that decides it: `HEXOBJECT_FIT_RULES` maps each `EHexobjectGroup` to its rule — `creature`, `construction` (incl. `resource`), `pickup` (`loot`/`tool`/`equipment`, 0.7 of the cell, centred). `applyObjectFit(sprite, w, h, group)` is used by `tiles-layer`, `encounter-layer` (loot chest), `battle-board-layer` (walls, boulders, rubble/ledge/oil/saw as `CONSTRUCTION`) and `hex-token` (`CREATURE`). Change a rule there, never per layer.
+`render/object-fit.ts` is the only place that decides it: `HEXOBJECT_FIT_RULES` maps each `EHexobjectGroup` to its rule — `creature`, `construction` (incl. `resource`), `pickup` (`loot`/`tool`/`equipment`, 0.7 of the cell, centred). `applyObjectFit(sprite, w, h, group)` is used by `tiles-layer` (incl. squad tokens), `battle-board-layer` (walls, boulders, rubble/ledge/oil/saw as `CONSTRUCTION`) and `hex-token` (`CREATURE`). Change a rule there, never per layer.
 
 ### Battle camera = map zoom
 
@@ -82,7 +82,7 @@ There is exactly one source of truth for hex size: `HEX_WORLD_WIDTH`/`HEX_WORLD_
 - **Resizing clears the WebGL buffer.** `renderer.resize()` resets the canvas, and the `ResizeObserver` fires after the ticker has already rendered that frame — so without an immediate render the frame is painted blank. `use-hex-board.ts` therefore applies resize + camera and calls `renderNow()` in the same watcher, and `resize()` skips no-op sizes. Keep them together.
 - **Camera offsets are snapped to device pixels** (`snapCameraToPixels`, applied once in `useBoardCamera` so Pixi and the DOM overlays get the same value); fractional offsets make textures shimmer while the camera slides.
 - **Camera = `worldContainer` transform.** `fitBoardCamera()` is a pure function: zoom fits the whole board frame into the pane, clamped to `[MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM]`. When the board fits, it is centered; when `MIN_CAMERA_ZOOM` keeps it bigger than the pane, the camera follows the hero and is clamped so no gap opens past the frame edge. `setCamera()` applies it to `worldContainer`.
-- **DOM overlays** (`tool-hex-tile`, dev coordinate labels, the encounter popover) live in `.hex-board-overlays`, translated by the camera offset. That container sets `--hex-tile-width/height` to the **on-screen** tile size (world × zoom), and children position themselves with `calcHexPixelPosition(coord, screenTileW, screenTileH)`. Never size an overlay from a global CSS variable or scale it with a CSS `transform: scale()` — that is what made overlays drift from the board before.
+- **DOM overlays** (`tool-hex-tile`, dev coordinate labels) live in `.hex-board-overlays`, translated by the camera offset. That container sets `--hex-tile-width/height` to the **on-screen** tile size (world × zoom), and children position themselves with `calcHexPixelPosition(coord, screenTileW, screenTileH)`. Never size an overlay from a global CSS variable or scale it with a CSS `transform: scale()` — that is what made overlays drift from the board before.
 - **e2e** reaches tiles through `getTileFraction()` in `e2e/create-test-api.ts`, which maps a tile center through the same camera (`worldToScreen`). Any new geometry the tests need must go through the camera too.
 
 Pane measurement has the same race the old tile probe had: a single read can land before layout settles and return 0. Keep the `ResizeObserver` plus the bounded polling fallback in `useBoardCamera`. **Do not replace it with a one-shot measurement.**

@@ -8,7 +8,7 @@ import { getScoutMoveStepsForSteps } from '@hexoflat/engine/hero-movement/scout-
 import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { watchingSentry } from '@hexoflat/engine/encounters/encounter-state';
+import { watchingSquad } from '@hexoflat/engine/squads/squad-state';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
@@ -81,7 +81,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
     const route = path?.slice(1) ?? [];
     const reachable = isTraversableTarget && route.length > 0 && route.length <= moveSteps;
     const map = worldStore.map as HexMapModel;
-    const seen = reachable && route.some((step) => !!watchingSentry(map, step));
+    const seen = reachable && route.some((step) => !!watchingSquad(map, step));
 
     return {
       path,

@@ -5,7 +5,6 @@ import { EHexobjectGroup, THexobject } from '@hexoflat/engine/abstraction/hexobj
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
-import { useEncounterStore } from '@/stores/encounter-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { crossExitIfStanding } from '@/composables/use-board-crossing';
@@ -51,7 +50,6 @@ export function useTileClick() {
   const overlayStore = useOverlayStore();
   const worldMapStore = useWorldMapStore();
   const battleStore = useBattleStore();
-  const encounterStore = useEncounterStore();
   const heroToolStore = useHeroToolStore();
   const heroStore = useHeroStore();
 
@@ -78,8 +76,6 @@ export function useTileClick() {
       worldMapStore.revealTile(tile.coordinates);
       return;
     }
-
-    if (tile.encounter && encounterStore.tapEncounter(tile.encounter.id)) return;
 
     if (tile.hexobject) {
       overlayStore.openOverlay('hex-tile-details', { coordinates: tile.coordinates });

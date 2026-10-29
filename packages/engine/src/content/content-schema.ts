@@ -111,6 +111,15 @@ const lootSchema = z.object({
   }),
 });
 
+export const squadSchema = z.object({
+  members: z.array(z.string().regex(/^[a-z0-9-]+$/)).min(1),
+  watcher: z.boolean(),
+  boss: z.boolean(),
+  loot: hexobjectKeySchema,
+  battlefieldBiome: z.enum(['crypt']),
+  tableRule: z.string(),
+});
+
 const creatureSchema = z.object({
   name: z.string(), // i18n key, same convention as baseContentFields.title above
   hp: z.number(),
@@ -118,6 +127,7 @@ const creatureSchema = z.object({
   attack: z.number(),
   faction: z.enum(['neutral', 'enemy', 'friendly']).optional(),
   visionRange: z.number().optional(),
+  squad: squadSchema.optional(),
 });
 
 const toolSchema = z.object({
@@ -135,6 +145,7 @@ const toolSchema = z.object({
     canOpen: z.boolean().optional(),
     canAttack: z.boolean().optional(),
     canBlock: z.boolean().optional(),
+    canScout: z.boolean().optional(),
   }),
   traits: z.object({ weightKG: z.number() }),
 });
