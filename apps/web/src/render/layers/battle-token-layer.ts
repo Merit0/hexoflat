@@ -1,4 +1,4 @@
-import { Container, Text } from 'pixi.js';
+import { Container } from 'pixi.js';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { creatureSprite } from '@/render/creature-sprites';
 import { createHexToken, type HexToken } from '@/render/hex-token';
@@ -16,10 +16,6 @@ interface PlacedToken {
   token: HexToken;
   x: number;
   y: number;
-}
-
-function hearts(creature: BattleCreature): string {
-  return `${creature.hp / 2}/${creature.maxHp / 2}`;
 }
 
 export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): BattleTokenLayer {
@@ -44,19 +40,7 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
     token.layout(w, h);
     token.body.position.set(w / 2, h / 2);
     token.root.position.set(-w / 2, -h / 2);
-    const hp = new Text({
-      text: hearts(creature),
-      style: {
-        fontFamily: 'Cinzel, serif',
-        fontSize: 11,
-        fontWeight: '800',
-        fill: 0xffffff,
-        stroke: { color: 0x000000, width: 3 },
-      },
-    });
-    hp.anchor.set(0.5);
-    hp.position.set(0, h * 0.32);
-    holder.addChild(token.root, hp);
+    holder.addChild(token.root);
     const { x, y } = deps.positionOf(creature.pos);
     return { holder, token, x: x + w / 2, y: y + h / 2 };
   }

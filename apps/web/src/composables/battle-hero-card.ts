@@ -9,7 +9,7 @@ import type { BattleCreatureRow, BattleViewInput } from './battle-view-types';
 
 export type BattleCardState = 'defend' | 'act' | 'wait' | 'fallen' | 'victory' | 'defeat';
 export type BattleHandKind = 'weapon' | 'shield' | 'consumable' | 'empty';
-export type BattleActionId = 'push' | 'pull' | 'swap';
+export type BattleActionId = 'push' | 'swap';
 
 export interface BattleHandView {
   hand: BattleHand;
@@ -140,11 +140,7 @@ function actions(
     selected: ui.mode === id,
     disabled: blocked || will < cost,
   });
-  return [
-    entry('push', rules.push, false),
-    entry('pull', rules.pull, false),
-    entry('swap', rules.swap, self.bag.length === 0),
-  ];
+  return [entry('push', rules.push, false), entry('swap', rules.swap, self.bag.length === 0)];
 }
 
 function defendView(

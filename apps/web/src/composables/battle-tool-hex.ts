@@ -1,6 +1,5 @@
 import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
 import {
-  BATTLE_HANDS,
   type BattleCreature,
   type BattleHand,
   type BattleHex,
@@ -131,7 +130,8 @@ export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null
   const view = input.projection;
   const self = controlledHero(view, input.localHeroIds);
   if (!view || !self || view.phase !== 'act' || input.ui.stage !== 'action') return null;
-  const hand = input.ui.hand ?? BATTLE_HANDS[0];
+  const hand = input.ui.hand;
+  if (!hand) return null;
   const item = self.hands[hand];
   const at = toolAnchor(view, self, input.ui.toolAt, item);
   if (!at) return null;

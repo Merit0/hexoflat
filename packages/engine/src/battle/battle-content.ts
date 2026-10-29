@@ -11,7 +11,6 @@ export const battleRulesSchema = z.object({
   }),
   strike: z.number().int().positive(),
   push: z.number().int().positive(),
-  pull: z.number().int().positive(),
   shieldPerSide: z.number().int().positive(),
   dodge: z.number().int().positive(),
   swap: z.number().int().positive(),
@@ -22,7 +21,6 @@ export const battleRulesSchema = z.object({
   maxShieldSides: z.number().int().min(1).max(6),
   boulderWeight: z.number().int().min(0),
   fallDamage: z.number().int().min(0),
-  pullRange: z.number().int().min(2),
 });
 export type BattleRules = z.infer<typeof battleRulesSchema>;
 
@@ -32,7 +30,6 @@ export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   step: { floor: 1, rubble: 2, climb: 2, descend: 1 },
   strike: 7,
   push: 6,
-  pull: 8,
   shieldPerSide: 4,
   dodge: 6,
   swap: 4,
@@ -43,5 +40,4 @@ export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   maxShieldSides: 6,
   boulderWeight: 2,
   fallDamage: 1,
-  pullRange: 2,
 });

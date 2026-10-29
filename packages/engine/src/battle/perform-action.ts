@@ -5,7 +5,7 @@ import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleState } from './battle-state';
 import { reject, type BattleRejection } from './battle-rejection';
 import { confirmBlock, placeShield, removeShield, startDodge, takeHit } from './defend';
-import { startDisplace } from './displace-actions';
+import { startPush } from './displace-actions';
 import { swapItem, useItem } from './items';
 import { moveCreature, undoStep } from './movement';
 import { settleTask } from './resolve-task';
@@ -71,8 +71,7 @@ export function performAction(
     case 'strike':
       return strike(state, actor, action.targetId, action.hand, rules);
     case 'push':
-    case 'pull':
-      return startDisplace(state, actor, action.targetId, action.kind, atMs, rules);
+      return startPush(state, actor, action.targetId, atMs, rules);
     case 'answer-task':
       return settleTask(state, actor, action.option, atMs, rules);
     case 'task-timeout':

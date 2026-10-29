@@ -13,7 +13,7 @@ import {
   skeleton,
   wrongAnswer,
 } from './battle-test-setup';
-import { findDisplaceable, resolveDisplacement } from './displacement';
+import { findDisplaceable, resolvePush } from './displacement';
 
 const T0 = 1_000;
 
@@ -34,7 +34,7 @@ function pushAndAnswer(battle: BattleState, targetId: string, right = true) {
   return heroDoes(opened, { kind: 'answer-task', option }, 'hero', T0 + 1_000);
 }
 
-describe('REQ-BTL-008 push and pull', () => {
+describe('REQ-BTL-008 push', () => {
   it('pushes a light enemy one hex away after a right answer, for 6 Will', () => {
     const battle = scene([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
     const opened = heroDoes(battle, { kind: 'push', targetId: 's1' }, 'hero', T0).battle;
@@ -97,25 +97,6 @@ describe('REQ-BTL-008 push and pull', () => {
     expect(battle.pending).toEqual(pending);
   });
 
-  it('pulls an enemy from two hexes away onto a free hex next to the hero, for 8 Will', () => {
-    const battle = scene([hero({ q: 0, r: 0 }), skeleton('s1', { q: 2, r: 0 })]);
-    const opened = heroDoes(battle, { kind: 'pull', targetId: 's1' }, 'hero', T0).battle;
-    expect(opened.turnWill).toBe(12);
-    const after = heroDoes(
-      opened,
-      { kind: 'answer-task', option: rightAnswer(opened) },
-      'hero',
-      T0,
-    ).battle;
-    expect(after.creatures[1].pos).toEqual({ q: 1, r: 0 });
-
-    const near = heroDoes(scene([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]), {
-      kind: 'pull',
-      targetId: 's1',
-    });
-    expect(rejectionOf(near.events)).toBe('OUT_OF_RANGE');
-  });
-
   it('moves a boulder only with enough force', () => {
     const boulder = { id: 'rock', pos: { q: 1, r: 0 } };
     const weak = heroDoes(
@@ -138,7 +119,7 @@ describe('REQ-BTL-008 push and pull', () => {
     const battle = scene([hero({ q: 1, r: 0 }), skeleton('s1', { q: 0, r: 0 }, { force: 2 })]);
     const actor = battle.creatures[1];
     const target = findDisplaceable(battle, 'hero', BATTLE_RULES)!;
-    const events = resolveDisplacement(battle, actor, target, 'push', T0, BATTLE_RULES);
+    const events = resolvePush(battle, actor, target, T0, BATTLE_RULES);
     expect(battle.creatures[0].pos).toEqual({ q: 2, r: 0 });
     expect(battle.task).toBeUndefined();
     expect(eventTypes(events)).toEqual(['DISPLACED']);

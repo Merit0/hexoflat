@@ -5,16 +5,11 @@ import { battleDistance, isAdjacentHex } from '@hexoflat/engine/battle/hex-battl
 import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
 import type { BattleOverlayTone } from './battle-look';
 
-export type BattleTargetMode = 'move' | 'strike' | 'push' | 'pull';
+export type BattleTargetMode = 'move' | 'strike' | 'push';
 
 export interface BattleMark {
   hex: BattleHex;
   tone: BattleOverlayTone;
-}
-
-export interface BattleBadge {
-  hex: BattleHex;
-  text: string;
 }
 
 export interface DefendResultMark {
@@ -31,7 +26,6 @@ export interface BattleOverlayInput {
 
 export interface BattleOverlayModel {
   marks: BattleMark[];
-  badges: BattleBadge[];
   targets: string[];
 }
 
@@ -51,7 +45,6 @@ function targetCreatures(
   const range = self.hands.right?.range ?? self.hands.left?.range;
   const reachable = (foe: BattleCreature) => {
     const d = battleDistance(self.pos, foe.pos);
-    if (mode === 'pull') return d === 2 && self.force >= foe.weight;
     if (mode === 'push') return d === 1 && self.force >= foe.weight;
     return range ? d >= range.min && d <= range.max : isAdjacentHex(self.pos, foe.pos);
   };
@@ -72,20 +65,10 @@ function strikeMarks(view: BattleProjection): BattleMark[] {
     .flatMap((strike) => strike.ring.map((hex) => ({ hex, tone: 'ring' as const })));
 }
 
-function pendingBadges(view: BattleProjection): BattleBadge[] {
-  const counts = new Map<string, number>();
-  for (const strike of view.pending)
-    counts.set(strike.targetId, (counts.get(strike.targetId) ?? 0) + 1);
-  return [...counts].flatMap(([id, n]) => {
-    const target = creatureById(view, id);
-    return target ? [{ hex: target.pos, text: `×${n}` }] : [];
-  });
-}
-
 export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayModel {
   const marks: BattleMark[] = input.zones ? zoneMarks(input.zones) : [];
   const view = input.projection;
-  if (!view) return { marks, badges: [], targets: [] };
+  if (!view) return { marks, targets: [] };
 
   marks.push(...strikeMarks(view));
   const guards = Object.values(view.guards).flat();
@@ -97,5 +80,5 @@ export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayMode
     hero && input.mode && input.mode !== 'move' ? targetCreatures(view, hero, input.mode) : [];
   marks.push(...targets.map((foe) => ({ hex: foe.pos, tone: 'target' as const })));
   marks.push(...input.results.map((r) => ({ hex: r.fromHex, tone: r.outcome })));
-  return { marks, badges: pendingBadges(view), targets: targets.map((foe) => foe.id) };
+  return { marks, targets: targets.map((foe) => foe.id) };
 }

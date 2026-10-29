@@ -51,23 +51,22 @@ describe('battle overlay model', () => {
     expect(model(battle, { mode: 'move' }).marks).toEqual([]);
   });
 
-  it('marks only the foes a strike, push or pull can reach', () => {
+  it('marks only the foes a strike or push can reach', () => {
     const battle = heroTurn([
       hero(),
       enemyCreature('skeleton-warrior', 'near', { q: 1, r: 0 }),
       enemyCreature('skeleton-warrior', 'two', { q: -2, r: 0 }),
       enemyCreature('skeleton-king', 'king', { q: 0, r: 1 }),
     ]);
-    const targets = (mode: 'strike' | 'push' | 'pull') =>
+    const targets = (mode: 'strike' | 'push') =>
       model(battle, { mode })
         .marks.filter((m) => m.tone === 'target')
         .map((m) => `${m.hex.q},${m.hex.r}`);
     expect(targets('strike').sort()).toEqual(['0,1', '1,0']);
     expect(targets('push')).toEqual(['1,0']);
-    expect(targets('pull')).toEqual(['-2,0']);
   });
 
-  it('shows the ring of a strike waiting on the hero, placed shields and a ×N badge', () => {
+  it('shows the ring of a strike waiting on the hero, and placed shields', () => {
     const battle = heroTurn([hero(), enemyCreature('skeleton-warrior', 'w', { q: 2, r: 0 })]);
     battle.pending = [
       {
@@ -91,10 +90,9 @@ describe('battle overlay model', () => {
       },
     ];
     battle.placedShields = [{ q: 0, r: 1 }];
-    const { marks, badges } = model(battle);
+    const { marks } = model(battle);
     expect(marks.filter((m) => m.tone === 'ring')).toHaveLength(3);
     expect(marks).toContainEqual({ hex: { q: 0, r: 1 }, tone: 'shield' });
-    expect(badges).toEqual([{ hex: { q: 0, r: 0 }, text: '×2' }]);
   });
 
   it('draws deployment zones and defend results, and nothing for the enemy turn', () => {

@@ -3,7 +3,7 @@ import type { BattleRules } from './battle-content';
 import type { BattleCreature, BattleState, BattleTask } from './battle-state';
 import { isRejection, type BattleRejection } from './battle-rejection';
 import { resolveStrikes } from './defend';
-import { findDisplaceable, resolveDisplacement } from './displacement';
+import { findDisplaceable, resolvePush } from './displacement';
 import { sawOutcome } from './hazard';
 import { gradeTask } from './timed-task';
 import { endTurnIfActiveFell } from './turn';
@@ -22,7 +22,7 @@ function displaceOutcome(
       { type: 'DISPLACE_FAILED', payload: { targetId: task.targetId, reason: 'TASK_FAILED' } },
     ];
   }
-  return resolveDisplacement(state, actor, target, task.kind as 'push' | 'pull', atMs, rules);
+  return resolvePush(state, actor, target, atMs, rules);
 }
 
 function outcome(
@@ -39,7 +39,6 @@ function outcome(
     case 'saw':
       return sawOutcome(state, actor, correct, task.backHex, task.pusherHex);
     case 'push':
-    case 'pull':
       return displaceOutcome(state, actor, task, correct, atMs, rules);
   }
 }

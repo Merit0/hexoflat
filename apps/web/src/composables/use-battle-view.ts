@@ -10,7 +10,8 @@ import {
 } from '@hexoflat/engine/battle/battle-state';
 import { creatureById } from '@hexoflat/engine/battle/battle-board';
 import { useBattleStore } from '@/stores/battle-store';
-import { battleTapActions, controlledHero } from './battle-board-tap';
+import { battleMovePreview, battleTapActions, controlledHero } from './battle-board-tap';
+import { useBattleWarnings } from './use-battle-warnings';
 import type { BattleMessage } from './battle-hint';
 import type { BattleActionId } from './battle-hero-card';
 import { stageMode, type BattleStage } from './battle-stage';
@@ -54,6 +55,7 @@ export function useBattleText() {
 
 export function useBattleView() {
   const store = useBattleStore();
+  const { warn, send } = useBattleWarnings();
   const { t } = useI18n();
 
   function creatureOf(id: string): BattleCreature | null {
@@ -89,12 +91,13 @@ export function useBattleView() {
   }
 
   function act(action: BattleAction): boolean {
-    return store.act(action);
+    return send(() => store.act(action));
   }
 
   function goStage(stage: BattleStage) {
     ui.stage = stage;
     ui.mode = stageMode(stage);
+    ui.hand = null;
     ui.toolAt = null;
   }
 
@@ -107,11 +110,26 @@ export function useBattleView() {
       hex,
       rules: BATTLE_RULES,
     });
-    if (!actions.length) return;
+    if (!actions.length) {
+      warnUnaffordable(hex);
+      return;
+    }
     ui.hover = null;
     if (moving) goStage('move');
-    const accepted = store.actAll(actions);
+    const accepted = send(() => store.actAll(actions));
     if (accepted && ui.mode !== 'move' && ui.mode !== 'swap') resetBattleUi();
+  }
+
+  function warnUnaffordable(hex: BattleHex) {
+    if (ui.mode !== 'move' && !(ui.stage === 'action' && ui.mode === 'strike')) return;
+    const route = battleMovePreview({
+      projection: store.projection,
+      localHeroIds: store.localHeroIds,
+      mode: 'move',
+      hex,
+      rules: BATTLE_RULES,
+    });
+    if (route && !route.reachable) warn('INSUFFICIENT_WILL', route.cost);
   }
 
   function pickHand(hand: BattleHand) {
@@ -147,6 +165,7 @@ export function useBattleView() {
     if (!hero || store.projection?.phase !== 'act' || store.animating) return;
     if (ui.stage !== 'action' || ui.mode !== 'strike') {
       goStage('action');
+      ui.hand = BATTLE_HANDS[0];
       return;
     }
     const at = ui.hand ? BATTLE_HANDS.indexOf(ui.hand) : 0;
@@ -180,10 +199,10 @@ export function useBattleView() {
     const tool = view.value.board?.tool;
     if (!tool?.action) return false;
     if (tool.action === 'attack' && tool.targetId)
-      return store.act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
-    if (tool.action === 'block') return store.act({ kind: 'place-shield', hex: tool.at });
-    if (tool.action === 'use') return store.act({ kind: 'use-item', hand: tool.hand });
-    return store.act({ kind: 'remove-shield', hex: tool.at });
+      return act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
+    if (tool.action === 'block') return act({ kind: 'place-shield', hex: tool.at });
+    if (tool.action === 'use') return act({ kind: 'use-item', hand: tool.hand });
+    return act({ kind: 'remove-shield', hex: tool.at });
   }
 
   return {

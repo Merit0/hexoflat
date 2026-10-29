@@ -370,7 +370,6 @@
     "action": {
       "strike": "Strike",
       "push": "Push",
-      "pull": "Pull",
       "swap": "Swap"
     },
     "defend": {
@@ -389,14 +388,12 @@
       "title": {
         "dodge": "Dodge!",
         "saw": "Saw — dodge!",
-        "push": "Push!",
-        "pull": "Pull!"
+        "push": "Push!"
       },
       "text": {
         "dodge": "Answer before the line runs out and the strike misses. Wrong or late — you take the hit.",
         "saw": "You stepped onto the saw. Answer before the line runs out to jump clear. Wrong or late — the saw takes half your hearts.",
-        "push": "Answer before the line runs out to push. Wrong or late — the push fails and the Will is spent.",
-        "pull": "Answer before the line runs out to pull. Wrong or late — the pull fails and the Will is spent."
+        "push": "Answer before the line runs out to push. Wrong or late — the push fails and the Will is spent."
       }
     },
     "deploy": {
@@ -436,7 +433,6 @@
         "move": "Tap a blue hex to move — every step costs 1 Will.",
         "strike": "Scroll to choose a tool, point it at an enemy or at a side next to you and press its button.",
         "push": "Tap an adjacent enemy — it is pushed 1 hex away from you.",
-        "pull": "Tap an enemy 2 hexes away — it is pulled next to you.",
         "swap": "Pick an item from the bag for the {hand, select, right {right hand} other {left hand}} — tap a hand to switch."
       }
     },
@@ -459,7 +455,7 @@
       "NOT_IN_RING": "Shields go only on the red hexes.",
       "NOTHING_TO_UNDO": "No step to undo.",
       "OUT_OF_RANGE": "Out of range.",
-      "TOO_HEAVY": "Too heavy for your force.",
+      "TOO_HEAVY": "The enemy is quite heavy!",
       "NO_SPACE": "Nothing behind it is free.",
       "TASK_OPEN": "Answer the task first.",
       "NO_TASK": "There is no task to answer.",
@@ -474,7 +470,6 @@
       "take-hit": "Taking the hit",
       "start-dodge": "Dodge",
       "push": "Push",
-      "pull": "Pull",
       "answer-task": "Answer",
       "task-timeout": "Timeout",
       "move": "A step",

@@ -6,7 +6,7 @@ import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-batt
 import { cheapestPaths, pathTo, stepCost } from '@hexoflat/engine/battle/movement';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 
-export type BattleUiMode = 'move' | 'strike' | 'push' | 'pull' | 'swap';
+export type BattleUiMode = 'move' | 'strike' | 'push' | 'swap';
 
 export interface BattleTapInput {
   projection: BattleProjection | null;
@@ -84,8 +84,7 @@ export function battleMovePreview(input: BattleTapInput): BattleMovePreview | nu
 function targetTap(view: BattleProjection, input: BattleTapInput): BattleAction[] {
   const target = livingCreatureAt(view, input.hex);
   if (!target || target.side === view.viewer) return [];
-  if (input.mode === 'push' || input.mode === 'pull')
-    return [{ kind: input.mode, targetId: target.id }];
+  if (input.mode === 'push') return [{ kind: 'push', targetId: target.id }];
   return [];
 }
 

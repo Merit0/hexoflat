@@ -34,7 +34,7 @@ export interface BattleDeployView {
 }
 
 export interface BattleTaskView {
-  kind: 'dodge' | 'saw' | 'push' | 'pull';
+  kind: 'dodge' | 'saw' | 'push';
   question: string;
   options: number[];
   issuedAtMs: number;

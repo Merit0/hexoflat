@@ -1,27 +1,25 @@
 import type { DomainEvent } from '../commands/types';
 import type { BattleRules } from './battle-content';
 import type { BattleCreature, BattleHex, BattleState, Boulder } from './battle-state';
-import { creatureById, heightAt, isAlive, isFreeHex, terrainAt } from './battle-board';
 import {
-  battleDistance,
-  directionIndex,
-  hexInDirection,
-  hexKey,
-  hexNeighbours,
-  isAdjacentHex,
-} from './hex-battle-geom';
+  creatureById,
+  heightAt,
+  isAlive,
+  isFreeHex,
+  terrainAt,
+  type BattleBoardView,
+} from './battle-board';
+import { battleDistance, directionIndex, hexInDirection } from './hex-battle-geom';
 import { reject, type BattleRejection } from './battle-rejection';
 import { applyDamage } from './battle-end';
 import { enterSaw } from './hazard';
-
-export type DisplaceMode = 'push' | 'pull';
 
 export type Displaceable =
   | { kind: 'creature'; id: string; pos: BattleHex; weight: number; creature: BattleCreature }
   | { kind: 'boulder'; id: string; pos: BattleHex; weight: number; boulder: Boulder };
 
 export function findDisplaceable(
-  state: BattleState,
+  state: BattleBoardView,
   id: string,
   rules: BattleRules,
 ): Displaceable | null {
@@ -35,39 +33,32 @@ export function findDisplaceable(
     : null;
 }
 
-export function displacementTarget(
+export function pushTarget(
   state: BattleState,
   actor: BattleCreature,
   target: Displaceable,
-  mode: DisplaceMode,
 ): BattleHex | null {
-  if (mode === 'push') {
-    const next = hexInDirection(target.pos, directionIndex(actor.pos, target.pos));
-    return isFreeHex(state, next) ? next : null;
-  }
-  const shared = hexNeighbours(actor.pos)
-    .filter((hex) => isAdjacentHex(hex, target.pos) && isFreeHex(state, hex))
-    .sort((a, b) => hexKey(a).localeCompare(hexKey(b)));
-  return shared[0] ?? null;
+  const next = hexInDirection(target.pos, directionIndex(actor.pos, target.pos));
+  return isFreeHex(state, next) ? next : null;
 }
 
-export function validateDisplacement(
-  state: BattleState,
-  actor: BattleCreature,
-  target: Displaceable | null,
-  mode: DisplaceMode,
-  rules: BattleRules,
-): BattleRejection | null {
+function validateGrip(actor: BattleCreature, target: Displaceable | null): BattleRejection | null {
   if (!target || target.id === actor.id) return reject('NOT_AN_ENEMY');
   if (target.kind === 'creature' && target.creature.side === actor.side)
     return reject('NOT_AN_ENEMY');
-  const range = mode === 'push' ? 1 : rules.pullRange;
-  if (battleDistance(actor.pos, target.pos) !== range) {
-    return reject(mode === 'push' ? 'NOT_ADJACENT' : 'OUT_OF_RANGE');
-  }
+  if (battleDistance(actor.pos, target.pos) !== 1) return reject('NOT_ADJACENT');
   if (actor.force < target.weight) return reject('TOO_HEAVY');
-  if (!displacementTarget(state, actor, target, mode)) return reject('NO_SPACE');
   return null;
+}
+
+export function validatePush(
+  state: BattleState,
+  actor: BattleCreature,
+  target: Displaceable | null,
+): BattleRejection | null {
+  const refused = validateGrip(actor, target);
+  if (refused) return refused;
+  return pushTarget(state, actor, target!) ? null : reject('NO_SPACE');
 }
 
 function setPos(target: Displaceable, hex: BattleHex): void {
@@ -86,34 +77,51 @@ function slideOnOil(
   return isFreeHex(state, next, target.id) ? next : null;
 }
 
-export function resolveDisplacement(
+function settle(
   state: BattleState,
   actor: BattleCreature,
   target: Displaceable,
-  mode: DisplaceMode,
+  origin: BattleHex,
+  steps: BattleHex[],
   atMs: number,
   rules: BattleRules,
 ): DomainEvent[] {
-  const origin = { ...target.pos };
-  const first = displacementTarget(state, actor, target, mode);
-  if (!first)
-    return [{ type: 'DISPLACE_FAILED', payload: { targetId: target.id, reason: 'NO_SPACE' } }];
-  setPos(target, first);
-  const slid = slideOnOil(state, target, first, directionIndex(origin, first));
+  const last = steps[steps.length - 1];
+  const slid = slideOnOil(
+    state,
+    target,
+    last,
+    directionIndex(steps.length > 1 ? steps[steps.length - 2] : origin, last),
+  );
   if (slid) setPos(target, slid);
-  const path = slid ? [first, slid] : [first];
+  const path = slid ? [...steps, slid] : steps;
   const final = path[path.length - 1];
   const fell = heightAt(state, origin) > heightAt(state, final);
 
   const events: DomainEvent[] = [
     {
       type: 'DISPLACED',
-      payload: { targetId: target.id, mode, from: origin, path, slid: !!slid, fell },
+      payload: { targetId: target.id, mode: 'push', from: origin, path, slid: !!slid, fell },
     },
   ];
   if (target.kind !== 'creature') return events;
   if (fell) events.push(...applyDamage(state, target.creature, rules.fallDamage));
   if (!isAlive(target.creature) || terrainAt(state, final) !== 'saw') return events;
-  const backHex = path.length > 1 ? path[0] : origin;
+  const backHex = path.length > 1 ? path[path.length - 2] : origin;
   return [...events, ...enterSaw(state, target.creature, backHex, actor.pos, atMs, rules)];
+}
+
+export function resolvePush(
+  state: BattleState,
+  actor: BattleCreature,
+  target: Displaceable,
+  atMs: number,
+  rules: BattleRules,
+): DomainEvent[] {
+  const origin = { ...target.pos };
+  const first = pushTarget(state, actor, target);
+  if (!first)
+    return [{ type: 'DISPLACE_FAILED', payload: { targetId: target.id, reason: 'NO_SPACE' } }];
+  setPos(target, first);
+  return settle(state, actor, target, origin, [first], atMs, rules);
 }

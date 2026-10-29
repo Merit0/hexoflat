@@ -13,7 +13,7 @@ import {
   skeleton,
   wrongAnswer,
 } from './battle-test-setup';
-import { findDisplaceable, resolveDisplacement } from './displacement';
+import { findDisplaceable, resolvePush } from './displacement';
 import { sawDamage, throwClearOfSaw } from './hazard';
 
 const T0 = 5_000;
@@ -133,11 +133,10 @@ describe('REQ-BTL-009 saw: pushed onto it', () => {
       ),
       ['k', 'hero'],
     );
-    const events = resolveDisplacement(
+    const events = resolvePush(
       battle,
       battle.creatures[1],
       findDisplaceable(battle, 'hero', BATTLE_RULES)!,
-      'push',
       T0,
       BATTLE_RULES,
     );

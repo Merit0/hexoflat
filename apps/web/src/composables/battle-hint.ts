@@ -35,7 +35,6 @@ export const BATTLE_ACTION_NAMES = [
   'take-hit',
   'start-dodge',
   'push',
-  'pull',
   'answer-task',
   'task-timeout',
   'move',
@@ -59,12 +58,10 @@ const ID_DRIVEN_KEYS = [
   'stage.move',
   'action.strike',
   'action.push',
-  'action.pull',
   'action.swap',
   'hint.act.move',
   'hint.act.strike',
   'hint.act.push',
-  'hint.act.pull',
   'hint.act.swap',
 ];
 
@@ -105,7 +102,7 @@ function rejection(events: DomainEvent[]): BattleMessage | null {
 }
 
 interface TaskResolved {
-  kind: 'dodge' | 'saw' | 'push' | 'pull';
+  kind: 'dodge' | 'saw' | 'push';
   correct: boolean;
   late: boolean;
   answer: number;

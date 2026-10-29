@@ -58,7 +58,7 @@ export type UndoStep = z.infer<typeof undoStepSchema>;
 export const boulderSchema = z.object({ id: z.string().min(1), pos: axialSchema });
 export type Boulder = z.infer<typeof boulderSchema>;
 
-export const TASK_KINDS = ['dodge', 'saw', 'push', 'pull'] as const;
+export const TASK_KINDS = ['dodge', 'saw', 'push'] as const;
 export const taskKindSchema = z.enum(TASK_KINDS);
 export type TaskKind = z.infer<typeof taskKindSchema>;
 

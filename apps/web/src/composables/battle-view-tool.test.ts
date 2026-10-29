@@ -81,6 +81,12 @@ describe('battle tool hex and statuses', () => {
     expect(store.projection?.turnWill).toBe(13);
   });
 
+  it('shows no tool in ACTION until a hand is picked by the wheel or a hand row', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
+    expect(viewOf({ ...ACTION, hand: null }).board?.tool).toBeNull();
+    expect(viewOf({ ...ACTION, hand: 'right' }).board?.tool).toMatchObject({ action: 'attack' });
+  });
+
   it('has two statuses and shows a tool only in ACTION', () => {
     startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
     expect(viewOf(MOVE).hero?.stages).toEqual([

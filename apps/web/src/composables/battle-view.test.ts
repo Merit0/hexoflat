@@ -113,7 +113,7 @@ describe('battle view', () => {
       ['blocked', 'hit', 'dodged'].includes(m.tone),
     );
     expect(results).toHaveLength(1);
-    expect(view.hero?.actions.map((a) => a.id)).toEqual(['push', 'pull', 'swap']);
+    expect(view.hero?.actions.map((a) => a.id)).toEqual(['push', 'swap']);
 
     const willBefore = view.hero!.will;
     const self = store.projection!.creatures.find((c) => c.id === 'hero')!;

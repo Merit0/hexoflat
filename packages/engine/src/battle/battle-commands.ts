@@ -8,7 +8,6 @@ export const battleActionSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('take-hit') }),
   z.object({ kind: z.literal('start-dodge') }),
   z.object({ kind: z.literal('push'), targetId: z.string().min(1) }),
-  z.object({ kind: z.literal('pull'), targetId: z.string().min(1) }),
   z.object({ kind: z.literal('answer-task'), option: z.number().int().min(0).max(3) }),
   z.object({ kind: z.literal('task-timeout') }),
   z.object({ kind: z.literal('move'), hex: axialSchema }),
