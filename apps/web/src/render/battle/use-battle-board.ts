@@ -1,4 +1,5 @@
 import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
+import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type {
   BattleCreature,
   BattleHex,
@@ -23,7 +24,9 @@ import {
   createBattleOverlayLayer,
   type BattleOverlayLayer,
 } from '@/render/layers/battle-overlay-layer';
+import { createBattleFxLayer, type BattleFxLayer } from '@/render/layers/battle-fx-layer';
 import { createBattleTokenLayer, type BattleTokenLayer } from '@/render/layers/battle-token-layer';
+import { createBattleAnimator, type BattleAnimator } from './battle-animator';
 import type { BattleOverlayModel } from './battle-overlay-model';
 
 export interface BattleBoardScene {
@@ -41,12 +44,16 @@ export interface UseBattleBoardOptions {
   overlay: ComputedRef<BattleOverlayModel>;
   onReady?: () => void;
   onHexTap?: (hex: BattleHex) => void;
+  takeEvents?: () => DomainEvent[];
+  onAnimating?: (busy: boolean) => void;
 }
 
 interface Layers {
   board: BattleBoardLayer;
   tokens: BattleTokenLayer;
   overlay: BattleOverlayLayer;
+  fx: BattleFxLayer;
+  animator: BattleAnimator;
 }
 
 export function useBattleBoard(options: UseBattleBoardOptions): void {
@@ -81,6 +88,36 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     layers.board.sync({ board: scene.board, boulders: scene.boulders });
     layers.overlay.sync(options.overlay.value);
     layers.tokens.sync(scene.creatures, scene.activeId, options.overlay.value.targets);
+    const events = options.takeEvents?.() ?? [];
+    if (events.length) layers.animator.play(events, scene.creatures);
+  }
+
+  function createLayers(app: HexBoardApp): Layers {
+    const deps = {
+      worldContainer: app.worldContainer,
+      ticker: app.app.ticker,
+      tileSize: { w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT },
+      positionOf,
+      onHexTap: options.onHexTap,
+    };
+    const board = createBattleBoardLayer(deps);
+    const overlay = createBattleOverlayLayer(deps);
+    const tokens = createBattleTokenLayer(deps);
+    const fx = createBattleFxLayer(deps);
+    const animator = createBattleAnimator({
+      ticker: app.app.ticker,
+      geometry: {
+        centreOf: (hex) => {
+          const { x, y } = positionOf(hex);
+          return { x: x + HEX_WORLD_WIDTH / 2, y: y + HEX_WORLD_HEIGHT / 2 };
+        },
+        tileHeight: HEX_WORLD_HEIGHT,
+      },
+      tokens,
+      fx,
+      onBusyChange: (busy) => options.onAnimating?.(busy),
+    });
+    return { board, overlay, tokens, fx, animator };
   }
 
   async function start(width: number, height: number) {
@@ -92,18 +129,8 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       return;
     }
     pixi = app;
-    const deps = {
-      worldContainer: app.worldContainer,
-      ticker: app.app.ticker,
-      tileSize: { w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT },
-      positionOf,
-      onHexTap: options.onHexTap,
-    };
-    layers = {
-      board: createBattleBoardLayer(deps),
-      overlay: createBattleOverlayLayer(deps),
-      tokens: createBattleTokenLayer(deps),
-    };
+    options.takeEvents?.();
+    layers = createLayers(app);
     syncAll();
     fit(width, height);
     app.onFirstFramePresented(() => options.onReady?.());
@@ -129,6 +156,8 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
   onBeforeUnmount(() => {
     destroyed = true;
     observer?.disconnect();
+    layers?.animator.destroy();
+    layers?.fx.destroy();
     layers?.board.destroy();
     layers?.overlay.destroy();
     layers?.tokens.destroy();

@@ -2,10 +2,12 @@ import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { getTexture } from '@/render/texture-cache';
 import { BATTLE_SPRITES } from '@/render/battle/battle-look';
+import type { TokenPose } from '@/render/battle/battle-animation-sample';
 import type { BattleLayerDeps } from './battle-board-layer';
 
 export interface BattleTokenLayer {
   sync(creatures: BattleCreature[], activeId: string | null, targets?: readonly string[]): void;
+  pose(poses: ReadonlyMap<string, TokenPose>): void;
   destroy(): void;
 }
 
@@ -20,6 +22,16 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
   const container = new Container();
   container.eventMode = 'none';
   deps.worldContainer.addChild(container);
+  const tokens = new Map<string, { token: Container; x: number; y: number }>();
+  let poses: ReadonlyMap<string, TokenPose> = new Map();
+
+  function applyPoses() {
+    for (const [id, { token, x, y }] of tokens) {
+      const posed = poses.get(id);
+      token.position.set(posed?.x ?? x, posed?.y ?? y);
+      token.alpha = posed?.alpha ?? 1;
+    }
+  }
 
   function sync(
     creatures: BattleCreature[],
@@ -28,10 +40,11 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
   ) {
     const { w, h } = deps.tileSize;
     container.removeChildren().forEach((child) => child.destroy({ children: true }));
+    tokens.clear();
     for (const creature of creatures.filter((c) => c.hp > 0)) {
       const token = new Container();
       const { x, y } = deps.positionOf(creature.pos);
-      token.position.set(x + w / 2, y + h / 2);
+      tokens.set(creature.id, { token, x: x + w / 2, y: y + h / 2 });
       const ring = new Graphics();
       const active = creature.id === activeId;
       ring
@@ -66,10 +79,15 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
       token.addChild(face, ring, hp);
       container.addChild(token);
     }
+    applyPoses();
   }
 
   return {
     sync,
+    pose(next) {
+      poses = next;
+      applyPoses();
+    },
     destroy() {
       container.destroy({ children: true });
     },

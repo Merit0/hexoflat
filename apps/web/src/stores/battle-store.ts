@@ -55,6 +55,7 @@ export const useBattleStore = defineStore('battle-store', () => {
   const lastHeroEvents = shallowRef<DomainEvent[]>([]);
   const turnStartWill = ref(0);
   const queue = shallowRef<DomainEvent[]>([]);
+  const animating = ref(false);
 
   const isOpen = computed(() => deploy.value !== null);
   const inBattle = computed(() => engagement.value !== null || deploy.value !== null);
@@ -134,6 +135,7 @@ export const useBattleStore = defineStore('battle-store', () => {
   }
 
   function act(action: BattleAction, atMs: number = Date.now()): boolean {
+    if (animating.value && !TASK_ACTIONS.has(action.kind)) return false;
     const heroId = actorFor(action);
     if (!heroId) return false;
     const events = send({ type: 'BATTLE', payload: { kind: 'hero', heroId, atMs, action } });
@@ -155,7 +157,7 @@ export const useBattleStore = defineStore('battle-store', () => {
 
   const needsEnemyTurn = computed(() => {
     const current = battle.value;
-    if (!current || current.phase === 'ended' || current.task) return false;
+    if (!current || current.phase === 'ended' || current.task || animating.value) return false;
     return creatureById(current, current.activeId)?.side === 'enemies';
   });
 
@@ -171,7 +173,12 @@ export const useBattleStore = defineStore('battle-store', () => {
     return taken;
   }
 
+  function setAnimating(busy: boolean) {
+    animating.value = busy;
+  }
+
   function close() {
+    animating.value = false;
     deploy.value = null;
     engagement.value = null;
     battle.value = null;
@@ -189,6 +196,7 @@ export const useBattleStore = defineStore('battle-store', () => {
     lastHeroEvents,
     turnStartWill,
     queue,
+    animating,
     isOpen,
     inBattle,
     projection,
@@ -199,6 +207,7 @@ export const useBattleStore = defineStore('battle-store', () => {
     actAll,
     runEnemyTurn,
     takeEvents,
+    setAnimating,
     close,
     leave,
     bindBridge,

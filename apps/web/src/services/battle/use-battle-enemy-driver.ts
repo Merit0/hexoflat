@@ -1,9 +1,8 @@
 import { onBeforeUnmount, watch } from 'vue';
 import { useBattleStore } from '@/stores/battle-store';
+import { BATTLE_TIMING } from '@/render/battle/battle-timing';
 
-export const ENEMY_TURN_DELAY_MS = 700;
-
-export function useBattleEnemyDriver(delayMs: number = ENEMY_TURN_DELAY_MS): void {
+export function useBattleEnemyDriver(delayMs: number = BATTLE_TIMING.enemyTurnDelayMs): void {
   const store = useBattleStore();
   let timer: ReturnType<typeof setTimeout> | null = null;
 

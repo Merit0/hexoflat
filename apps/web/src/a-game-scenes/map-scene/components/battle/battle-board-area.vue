@@ -6,7 +6,9 @@
       :scene="view.board.scene"
       :overlay="view.board.overlay"
       :banner="view.board.banner"
+      :take-events="store.takeEvents"
       @hex-tap="tapHex"
+      @animating="store.setAnimating"
     >
       <battle-timed-task v-if="view.task" :task="view.task" @answer="answer" @timeout="timeout" />
     </battle-board>
@@ -18,8 +20,10 @@
 import BattleBoard from '@/components/battle/battle-board.vue';
 import BattleBoardLegend from '@/components/battle/battle-board-legend.vue';
 import { useBattleView } from '@/composables/use-battle-view';
+import { useBattleStore } from '@/stores/battle-store';
 import BattleTimedTask from './battle-timed-task.vue';
 
+const store = useBattleStore();
 const { view, tapHex, answer, timeout } = useBattleView();
 </script>
 

@@ -35,6 +35,8 @@ export const BATTLE_OVERLAY_COLORS = {
   dodged: { fill: 0x3a4a5c, stroke: 0x8aa0b8 },
 } as const;
 
+export const BATTLE_SWORD_COLORS = { blade: 0xe8eef6, guard: 0xe0a93f, grip: 0x6b4a2a } as const;
+
 export type BattleOverlayTone = keyof typeof BATTLE_OVERLAY_COLORS;
 
 export const SAW_SPIN_RADIANS_PER_SECOND = Math.PI * 2;

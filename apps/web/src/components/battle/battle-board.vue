@@ -1,5 +1,11 @@
 <template>
-  <div ref="pane" class="battle-board" data-testid="battle-board" :data-ready="ready">
+  <div
+    ref="pane"
+    class="battle-board"
+    data-testid="battle-board"
+    :data-ready="ready"
+    :data-animating="animating"
+  >
     <canvas ref="canvas" class="battle-board__canvas" />
     <battle-banner v-if="banner" class="battle-board__banner" v-bind="banner" />
     <slot />
@@ -8,6 +14,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
 import BattleBanner from '@/components/battle/battle-banner.vue';
 import type { BattleBannerProps } from '@/render/battle/battle-banner';
@@ -18,13 +25,15 @@ const props = defineProps<{
   scene: BattleBoardScene;
   overlay: BattleOverlayModel;
   banner?: BattleBannerProps | null;
+  takeEvents?: () => DomainEvent[];
 }>();
 
-const emit = defineEmits<{ 'hex-tap': [hex: BattleHex] }>();
+const emit = defineEmits<{ 'hex-tap': [hex: BattleHex]; animating: [busy: boolean] }>();
 
 const pane = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const ready = ref(false);
+const animating = ref(false);
 
 useBattleBoard({
   pane,
@@ -35,6 +44,11 @@ useBattleBoard({
     ready.value = true;
   },
   onHexTap: (hex) => emit('hex-tap', hex),
+  takeEvents: () => props.takeEvents?.() ?? [],
+  onAnimating: (busy) => {
+    animating.value = busy;
+    emit('animating', busy);
+  },
 });
 </script>
 

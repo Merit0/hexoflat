@@ -45,6 +45,26 @@ describe('battle enemy driver', () => {
     app.unmount();
   });
 
+  it('waits for the board animation and starts the pause only after it ends', async () => {
+    const app = mountDriver(200);
+    const store = useBattleStore();
+    store.prepare(testDeploy([hero({ q: 0, r: 0 }), skeleton('s1', { q: 2, r: 0 })]), ['hero']);
+    store.start();
+    store.setAnimating(true);
+    store.battle = giveTurn(structuredClone(store.battle!), ['s1', 'hero']);
+    await nextTick();
+
+    vi.advanceTimersByTime(1000);
+    expect(store.projection?.activeId).toBe('s1');
+    store.setAnimating(false);
+    await nextTick();
+    vi.advanceTimersByTime(199);
+    expect(store.projection?.activeId).toBe('s1');
+    vi.advanceTimersByTime(1);
+    expect(store.projection?.activeId).toBe('hero');
+    app.unmount();
+  });
+
   it('cancels a scheduled enemy turn when unmounted', async () => {
     const app = mountDriver(200);
     const store = useBattleStore();
