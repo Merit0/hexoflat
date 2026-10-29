@@ -21,6 +21,7 @@ import {
   type BoardCamera,
   type BoardFrame,
 } from '@/render/board-camera';
+import { createBattleSyncGate } from '@/render/battle/battle-sync-gate';
 import { createBattleBoardLayer, type BattleBoardLayer } from '@/render/layers/battle-board-layer';
 import {
   createBattleOverlayLayer,
@@ -96,13 +97,19 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     pixi.renderNow();
   }
 
+  const syncGate = createBattleSyncGate();
+
   function syncAll() {
     if (!layers) return;
     const scene = options.scene.value;
-    layers.board.sync({ biome: scene.biome, board: scene.board, boulders: scene.boulders });
-    layers.overlay.sync(options.overlay.value);
+    const overlay = options.overlay.value;
+    const changed = syncGate.diff(scene, overlay);
+    if (changed.board) {
+      layers.board.sync({ biome: scene.biome, board: scene.board, boulders: scene.boulders });
+    }
+    if (changed.overlay) layers.overlay.sync(overlay);
     syncPreview();
-    layers.tokens.sync(scene.creatures, scene.activeId, options.overlay.value.targets);
+    if (changed.tokens) layers.tokens.sync(scene.creatures, scene.activeId, overlay.targets);
     const events = options.takeEvents?.() ?? [];
     if (events.length) layers.animator.play(events, scene.creatures);
   }

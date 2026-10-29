@@ -112,7 +112,8 @@ export function useBattleView() {
       rules: BATTLE_RULES,
     });
     if (!actions.length) {
-      warnUnaffordable(hex);
+      if (store.projection?.phase === 'defend') warn('WRONG_PHASE', null);
+      else warnUnaffordable(hex);
       return;
     }
     ui.hover = null;

@@ -15,6 +15,14 @@ export function useBattleWarnings() {
       heroToolStore.setActionMessage(t('knowledge.insufficientWill'), 'will', cost);
       return;
     }
+    if (code === 'WRONG_PHASE') {
+      heroToolStore.setActionMessage(
+        store.projection?.phase === 'defend'
+          ? t('battle.warn.defendFirst')
+          : t('battle.warn.notNow'),
+      );
+      return;
+    }
     heroToolStore.setActionMessage(t(`battle.reject.${code}`));
   }
 
@@ -24,7 +32,11 @@ export function useBattleWarnings() {
       return true;
     }
     const view = store.projection;
-    if (!view || view.phase === 'ended' || view.task) return false;
+    if (!view || view.phase === 'ended') return false;
+    if (view.task) {
+      warn('TASK_OPEN', null);
+      return true;
+    }
     if (controlledHero(view, store.localHeroIds)) return false;
     warn('NOT_YOUR_TURN', null);
     return true;

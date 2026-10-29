@@ -490,7 +490,9 @@
       "move": "Move"
     },
     "warn": {
-      "enemyTurn": "The enemy is acting — wait for it"
+      "enemyTurn": "The enemy is acting — wait for it",
+      "defendFirst": "You are under attack — block, dodge or take the hit first",
+      "notNow": "That cannot be done right now"
     }
   },
   "squad": {
