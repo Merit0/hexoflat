@@ -1,16 +1,15 @@
 import type { BattleCreature, BattleHand, BattleItem } from '@hexoflat/engine/battle/battle-state';
 import { BATTLE_HANDS } from '@hexoflat/engine/battle/battle-state';
 import { creatureById, isAlive } from '@hexoflat/engine/battle/battle-board';
-import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { battleHint, type BattleMessage } from './battle-hint';
 import type { BattleUiMode } from './battle-board-tap';
-import { strikeHands } from './battle-tool-hex';
+import { stageViews, type BattleStage, type BattleStageView } from './battle-stage';
 import type { BattleCreatureRow, BattleViewInput } from './battle-view-types';
 
 export type BattleCardState = 'defend' | 'act' | 'wait' | 'fallen' | 'victory' | 'defeat';
 export type BattleHandKind = 'weapon' | 'shield' | 'consumable' | 'empty';
-export type BattleActionId = 'strike' | 'push' | 'pull' | 'swap';
+export type BattleActionId = 'push' | 'pull' | 'swap';
 
 export interface BattleHandView {
   hand: BattleHand;
@@ -57,6 +56,9 @@ export interface BattleHeroCard {
   hint: BattleMessage | null;
   canUndo: boolean;
   stanceNote: number;
+  plan: number;
+  stage: BattleStage;
+  stages: BattleStageView[];
   defend: BattleDefendView | null;
   wait: BattleWaitView | null;
   bag: { index: number; key: string }[];
@@ -113,7 +115,7 @@ function hands(
     const selected =
       input.ui.mode === 'swap'
         ? input.ui.swapHand === hand
-        : input.ui.mode === 'strike' && input.ui.hand === hand;
+        : input.ui.stage === 'attack' && input.ui.mode === 'strike' && input.ui.hand === hand;
     return {
       hand,
       kind,
@@ -123,14 +125,6 @@ function hands(
       disabled: handDisabled(kind, struck, view, input),
     };
   });
-}
-
-export function freeStrikeHand(
-  view: BattleProjection,
-  self: BattleCreature,
-  rules: BattleRules,
-): BattleHand | null {
-  return strikeHands(view, self, rules)[0] ?? null;
 }
 
 function actions(
@@ -147,7 +141,6 @@ function actions(
     disabled: blocked || will < cost,
   });
   return [
-    entry('strike', rules.strike, !freeStrikeHand(view, self, rules)),
     entry('push', rules.push, false),
     entry('pull', rules.pull, false),
     entry('swap', rules.swap, self.bag.length === 0),
@@ -253,6 +246,9 @@ export function buildHeroCard(
     hint: cardHint(state, self, input, targets),
     canUndo: view.undo.length > 0,
     stanceNote: Math.min(input.rules.stanceMax, view.turnWill),
+    plan: 0,
+    stage: input.ui.stage,
+    stages: stageViews(input.ui.stage),
     defend: defending ? defendView(view, self, input) : null,
     wait: state === 'wait' ? waitView(view, self, input) : null,
     bag: self.bag.map((item, index) => ({ index, key: item.key })),

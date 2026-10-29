@@ -33,12 +33,7 @@ describe('REQ-BTL-002 turn Will and stance', () => {
     expect(battle.stance.hero).toBe(8);
 
     battle = giveTurn(battle, ['hero', 's1']);
-    battle = heroDoes(battle, { kind: 'move', hex: { q: -1, r: 0 } }).battle;
-    battle = heroDoes(battle, { kind: 'move', hex: { q: -2, r: 0 } }).battle;
-    battle = heroDoes(battle, { kind: 'move', hex: { q: -3, r: 0 } }).battle;
-    battle = heroDoes(battle, { kind: 'move', hex: { q: -3, r: 1 } }).battle;
-    battle = heroDoes(battle, { kind: 'move', hex: { q: -2, r: 1 } }).battle;
-    expect(battle.turnWill).toBe(5);
+    battle.turnWill = 5;
     battle = heroDoes(battle, { kind: 'end-turn' }).battle;
     expect(battle.stance.hero).toBe(5);
   });

@@ -18,6 +18,7 @@
         @take-hit="takeHit"
         @pick-hand="pickHand"
         @pick-action="pickAction"
+        @stage="goStage"
         @swap="swapFrom"
         @undo="undo"
         @end-turn="endTurn"
@@ -54,6 +55,7 @@ const {
   takeHit,
   pickHand,
   pickAction,
+  goStage,
   swapFrom,
   undo,
   endTurn,

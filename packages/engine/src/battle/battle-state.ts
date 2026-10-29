@@ -103,6 +103,8 @@ export const battleStateSchema = z.object({
   stance: z.record(z.string(), z.number().int().min(0)),
   struckHands: z.array(battleHandSchema),
   placedShields: z.array(axialSchema),
+  lockedShields: z.number().int().min(0).default(0),
+  guards: z.record(z.string(), z.array(axialSchema)).default({}),
   pending: z.array(pendingStrikeSchema),
   undo: z.array(undoStepSchema),
   strikeSeq: z.number().int().min(0),

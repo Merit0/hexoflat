@@ -9,8 +9,6 @@ export interface AnimatedCreature {
 }
 
 export type BattleAnimationStep =
-  | { kind: 'vanish'; creatureId: string; at: BattleHex; durationMs: number }
-  | { kind: 'appear'; creatureId: string; at: BattleHex; durationMs: number }
   | {
       kind: 'strike';
       targetId: string;
@@ -36,6 +34,7 @@ interface Moved {
   to: BattleHex;
 }
 interface Struck {
+  attackerId: string;
   targetId: string;
   fromHex: BattleHex | null;
   ring: BattleHex[];
@@ -70,15 +69,8 @@ function rewind(events: DomainEvent[], creatures: AnimatedCreature[]): Map<strin
 
 class Planner {
   readonly steps: BattleAnimationStep[] = [];
-  private readonly hidden = new Set<string>();
-  private readonly sides: Map<string, BattleSide>;
 
-  constructor(
-    creatures: AnimatedCreature[],
-    private readonly pos: Map<string, BattleHex>,
-  ) {
-    this.sides = new Map(creatures.map((c) => [c.id, c.side]));
-  }
+  constructor(private readonly pos: Map<string, BattleHex>) {}
 
   read(event: DomainEvent) {
     if (event.type === 'CREATURE_MOVED') this.moved(event.payload as Moved);
@@ -87,15 +79,6 @@ class Planner {
     if (event.type === 'DISPLACED') this.displaced(event.payload as Displaced);
     if (event.type === 'THROWN_CLEAR') this.thrown(event.payload as Thrown);
     if (event.type === 'CREATURE_DAMAGED') this.shake((event.payload as Moved).creatureId, 'hit');
-    if (event.type === 'TURN_ENDED') this.reveal();
-  }
-
-  reveal() {
-    for (const creatureId of this.hidden) {
-      const at = this.pos.get(creatureId)!;
-      this.steps.push({ kind: 'appear', creatureId, at, durationMs: BATTLE_TIMING.enemyAppearMs });
-    }
-    this.hidden.clear();
   }
 
   private place(creatureId: string, event: DomainEvent) {
@@ -104,34 +87,25 @@ class Planner {
 
   private moved({ creatureId, from, to }: Moved) {
     if (!this.pos.has(creatureId)) return;
-    if (this.sides.get(creatureId) === 'heroes') {
-      this.steps.push({
-        kind: 'walk',
-        creatureId,
-        from: copy(from),
-        to: copy(to),
-        durationMs: BATTLE_TIMING.heroStepMs,
-      });
-    } else if (!this.hidden.has(creatureId)) {
-      this.hidden.add(creatureId);
-      this.steps.push({
-        kind: 'vanish',
-        creatureId,
-        at: copy(from),
-        durationMs: BATTLE_TIMING.enemyVanishMs,
-      });
-    }
+    this.steps.push({
+      kind: 'walk',
+      creatureId,
+      from: copy(from),
+      to: copy(to),
+      durationMs: BATTLE_TIMING.stepMs,
+    });
     this.pos.set(creatureId, copy(to));
   }
 
-  private struck({ targetId, fromHex, ring }: Struck) {
+  private struck({ attackerId, targetId, fromHex, ring }: Struck) {
     const target = this.pos.get(targetId);
     if (!target) return;
+    const attacker = this.pos.get(attackerId) ?? fromHex;
     this.steps.push({
       kind: 'strike',
       targetId,
       target: copy(target),
-      from: fromHex ? copy(fromHex) : null,
+      from: attacker ? copy(attacker) : null,
       ring: ring.map(copy),
       durationMs: BATTLE_TIMING.strikeMs,
     });
@@ -163,7 +137,7 @@ class Planner {
 
   private shake(creatureId: string, style: 'hit' | 'fall') {
     const at = this.pos.get(creatureId);
-    if (!at || this.hidden.has(creatureId)) return;
+    if (!at) return;
     const durationMs =
       style === 'fall' ? BATTLE_TIMING.ledgeFallShakeMs : BATTLE_TIMING.heartShakeMs;
     this.steps.push({ kind: 'shake', creatureId, at: copy(at), style, durationMs });
@@ -174,8 +148,7 @@ export function planBattleAnimation(
   events: DomainEvent[],
   creatures: AnimatedCreature[],
 ): BattleAnimationStep[] {
-  const planner = new Planner(creatures, rewind(events, creatures));
+  const planner = new Planner(rewind(events, creatures));
   for (const event of events) planner.read(event);
-  planner.reveal();
   return planner.steps;
 }

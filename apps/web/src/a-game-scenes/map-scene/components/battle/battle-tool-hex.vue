@@ -44,5 +44,10 @@ const { t } = useI18n();
 const at = computed(() => battleHexToOffset(props.biome, props.tool.at));
 const origin = computed(() => battleHexToOffset(props.biome, props.tool.origin));
 const iconPath = computed(() => getPrototype(props.tool.toolKey as THexobjectKey).spritePath ?? '');
-const label = computed(() => (props.tool.targetId ? t('battle.action.strike') : null));
+const label = computed(() => {
+  if (props.tool.action === 'attack') return t('battle.tool.attack');
+  if (props.tool.action === 'block') return t('battle.tool.block');
+  if (props.tool.action === 'unblock') return t('battle.tool.unblock');
+  return null;
+});
 </script>

@@ -58,10 +58,6 @@ export function sampleTokenPose(
   const t = clamp01(progress);
   const h = geo.tileHeight;
   switch (step.kind) {
-    case 'vanish':
-      return { ...geo.centreOf(step.at), alpha: 1 - t };
-    case 'appear':
-      return { ...geo.centreOf(step.at), alpha: t };
     case 'slide':
       return { ...slidePoint(step.path, t, geo), alpha: 1 };
     case 'walk':

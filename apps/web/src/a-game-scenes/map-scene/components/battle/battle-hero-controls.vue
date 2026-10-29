@@ -29,6 +29,9 @@
         <div class="hero-card__will-value" data-testid="battle-will-value">
           <b>{{ card.will }}</b> / {{ card.willCap }}
         </div>
+        <div v-if="card.plan > 0" class="hero-card__plan" data-testid="battle-plan-cost">
+          −{{ card.plan }}
+        </div>
         <div class="hero-card__will-bar">
           <span :style="{ width: `${willPercent}%` }"></span>
         </div>
@@ -98,14 +101,17 @@
     </section>
 
     <section v-else-if="card.state === 'act'" class="hero-card__body">
-      <battle-hand-row
-        v-for="hand in card.hands"
-        :key="hand.hand"
-        :hand="hand"
-        @pick="emit('pick-hand', $event)"
-      />
-      <battle-action-buttons :actions="card.actions" @pick="emit('pick-action', $event)" />
-      <div v-if="swapping" class="hero-card__bag">
+      <battle-stage-bar :stages="card.stages" @pick="emit('stage', $event)" />
+      <template v-if="card.stage === 'attack'">
+        <battle-hand-row
+          v-for="hand in card.hands"
+          :key="hand.hand"
+          :hand="hand"
+          @pick="emit('pick-hand', $event)"
+        />
+        <battle-action-buttons :actions="card.actions" @pick="emit('pick-action', $event)" />
+      </template>
+      <div v-if="swapping && card.stage === 'attack'" class="hero-card__bag">
         <button
           v-for="item in card.bag"
           :key="item.index"
@@ -120,6 +126,7 @@
       <p class="hero-card__hint" data-testid="battle-act-hint">{{ text(card.hint) }}</p>
       <div class="hero-card__turn-buttons">
         <button
+          v-if="card.stage === 'move'"
           class="hero-card__btn"
           type="button"
           :disabled="!card.canUndo"
@@ -169,6 +176,8 @@ import { computed } from 'vue';
 import type { BattleHand } from '@hexoflat/engine/battle/battle-state';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import type { BattleActionId, BattleHeroCard } from '@/composables/battle-hero-card';
+import type { BattleStage } from '@/composables/battle-stage';
+import BattleStageBar from './battle-stage-bar.vue';
 import { useBattleText } from '@/composables/use-battle-view';
 import BattleHexToken from './battle-hex-token.vue';
 import BattleHearts from './battle-hearts.vue';
@@ -182,6 +191,7 @@ const emit = defineEmits<{
   'take-hit': [];
   'pick-hand': [hand: BattleHand];
   'pick-action': [id: BattleActionId];
+  stage: [stage: BattleStage];
   swap: [bagIndex: number];
   undo: [];
   'end-turn': [];
@@ -195,6 +205,11 @@ const willPercent = computed(() =>
 </script>
 
 <style scoped>
+.hero-card__plan {
+  color: #f08a7a;
+  font-weight: 700;
+  text-align: right;
+}
 .hero-card {
   display: grid;
   gap: 12px;

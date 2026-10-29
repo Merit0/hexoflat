@@ -52,13 +52,15 @@ describe('enemy turn', () => {
       'STRIKE_DEALT',
       'CREATURE_MOVED',
       'CREATURE_MOVED',
+      'CREATURE_MOVED',
+      'CREATURE_MOVED',
       'TURN_ENDED',
       'TURN_STARTED',
     ]);
     expect(battle.activeId).toBe('hero');
     expect(battle.phase).toBe('defend');
     expect(battle.pending).toHaveLength(1);
-    expect(battle.stance.s1).toBe(1);
+    expect(battle.stance.s1).toBe(7);
     const guess = heroBotAction(projectBattleForViewer(battle, 'heroes'), BATTLE_RULES);
     expect(guess).toMatchObject({ kind: 'place-shield' });
     expect(guess).not.toMatchObject({ hex: battle.pending[0].fromHex });

@@ -433,12 +433,13 @@
       "used": "Used {item}: +{hearts} heart. The hand is empty now.",
       "fell": "{name} has fallen.",
       "act": {
-        "move": "Tap a blue hex to move — the price is on the hex. Stand next to an enemy on a free hex to strike.",
-        "strike": "Tap a gold-framed enemy to lay the {item} on it.",
-        "strikeNone": "No enemy in reach. Move closer first.",
+        "move": "Tap a blue hex to move — every step costs 1 Will.",
+        "strike": "Press Attack to lay the {item} on the enemy.",
+        "strikeNone": "Scroll to pick a hand and stand next to an enemy.",
         "push": "Tap an adjacent enemy — it is pushed 1 hex away from you.",
         "pull": "Tap an enemy 2 hexes away — it is pulled next to you.",
-        "swap": "Pick an item from the bag for the {hand, select, right {right hand} other {left hand}} — tap a hand to switch."
+        "swap": "Pick an item from the bag for the {hand, select, right {right hand} other {left hand}} — tap a hand to switch.",
+        "block": "Scroll to the shield, point at a side next to you and press Block — that is the side the enemy will strike from."
       }
     },
     "reject": {
@@ -484,6 +485,16 @@
       "swap-item": "A swap",
       "use-item": "Using an item",
       "end-turn": "Ending the turn"
+    },
+    "tool": {
+      "attack": "Attack",
+      "block": "Block",
+      "unblock": "Lift"
+    },
+    "stage": {
+      "attack": "Attack",
+      "move": "Move",
+      "block": "Block"
     }
   },
   "squad": {

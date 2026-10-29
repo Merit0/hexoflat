@@ -17,19 +17,19 @@ function heroFirst(board = hexagonBoard(), heroAt = { q: 0, r: 0 }) {
 }
 
 describe('REQ-BTL-003 step prices', () => {
-  it('charges 3 on floor, 5 on rubble, 5 to climb a ledge and 3 to come down', () => {
+  it('charges 1 on floor, 2 on rubble, 2 to climb a ledge and 1 to come down', () => {
     let battle = heroFirst(hexagonBoard(3, { '-1,0': 'rubble', '0,-1': 'ledge' }));
     battle = heroDoes(battle, { kind: 'move', hex: { q: 1, r: 0 } }).battle;
-    expect(battle.turnWill).toBe(17);
+    expect(battle.turnWill).toBe(19);
     battle = heroDoes(battle, { kind: 'move', hex: { q: 0, r: 0 } }).battle;
     battle = heroDoes(battle, { kind: 'move', hex: { q: -1, r: 0 } }).battle;
-    expect(battle.turnWill).toBe(9);
+    expect(battle.turnWill).toBe(16);
 
     let ledge = heroFirst(hexagonBoard(3, { '0,-1': 'ledge' }));
     ledge = heroDoes(ledge, { kind: 'move', hex: { q: 0, r: -1 } }).battle;
-    expect(ledge.turnWill).toBe(15);
+    expect(ledge.turnWill).toBe(18);
     ledge = heroDoes(ledge, { kind: 'move', hex: { q: 0, r: 0 } }).battle;
-    expect(ledge.turnWill).toBe(12);
+    expect(ledge.turnWill).toBe(17);
   });
 
   it('refuses walls, creatures, holes and hexes further than one step', () => {
@@ -52,10 +52,10 @@ describe('REQ-BTL-003 step prices', () => {
 
   it('refuses a step it cannot pay for and leaves the state untouched', () => {
     const battle = heroFirst();
-    battle.turnWill = 2;
+    battle.turnWill = 0;
     const result = heroDoes(battle, { kind: 'move', hex: { q: 1, r: 0 } });
     expect(rejectionOf(result.events)).toBe('INSUFFICIENT_WILL');
-    expect(result.events[0].payload).toMatchObject({ cost: 3, left: 2 });
+    expect(result.events[0].payload).toMatchObject({ cost: 1, left: 0 });
     expect(result.battle).toBe(battle);
   });
 });
@@ -65,7 +65,7 @@ describe('REQ-BTL-012 undo', () => {
     let battle = heroFirst(hexagonBoard(3, { '-1,0': 'rubble' }));
     battle = heroDoes(battle, { kind: 'move', hex: { q: -1, r: 0 } }).battle;
     battle = heroDoes(battle, { kind: 'move', hex: { q: -2, r: 0 } }).battle;
-    expect(battle.turnWill).toBe(12);
+    expect(battle.turnWill).toBe(17);
 
     battle = heroDoes(battle, { kind: 'undo-step' }).battle;
     expect(battle.creatures[0].pos).toEqual({ q: -1, r: 0 });

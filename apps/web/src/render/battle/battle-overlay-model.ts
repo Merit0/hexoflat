@@ -88,7 +88,10 @@ export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayMode
   if (!view) return { marks, badges: [], targets: [] };
 
   marks.push(...strikeMarks(view));
-  marks.push(...view.placedShields.map((hex) => ({ hex, tone: 'shield' as const })));
+  const guards = Object.values(view.guards).flat();
+  marks.push(
+    ...[...view.placedShields, ...guards].map((hex) => ({ hex, tone: 'shield' as const })),
+  );
   const hero = activeHero(view);
   const targets =
     hero && input.mode && input.mode !== 'move' ? targetCreatures(view, hero, input.mode) : [];

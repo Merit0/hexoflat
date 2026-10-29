@@ -7,12 +7,20 @@ import { creatureById } from '@hexoflat/engine/battle/battle-board';
 import { useBattleStore } from '@/stores/battle-store';
 import { battleTapActions, controlledHero } from './battle-board-tap';
 import type { BattleMessage } from './battle-hint';
-import { freeStrikeHand, type BattleActionId } from './battle-hero-card';
+import type { BattleActionId } from './battle-hero-card';
+import {
+  BATTLE_STAGES,
+  handFitsStage,
+  stageHands,
+  stageMode,
+  type BattleStage,
+} from './battle-stage';
 import { buildBattleView } from './battle-view';
 import type { BattleUiState } from './battle-view-types';
 
 const ui = reactive<BattleUiState>({
-  mode: 'move',
+  stage: 'attack',
+  mode: 'strike',
   hand: null,
   swapHand: 'left',
   hover: null,
@@ -20,7 +28,8 @@ const ui = reactive<BattleUiState>({
 });
 
 export function resetBattleUi(): void {
-  ui.mode = 'move';
+  ui.stage = 'attack';
+  ui.mode = 'strike';
   ui.hand = null;
   ui.swapHand = 'left';
   ui.hover = null;
@@ -98,6 +107,18 @@ export function useBattleView() {
     if (accepted && ui.mode !== 'move' && ui.mode !== 'swap') resetBattleUi();
   }
 
+  function goStage(stage: BattleStage) {
+    ui.stage = stage;
+    ui.mode = stageMode(stage);
+    ui.hand = null;
+    ui.toolAt = null;
+  }
+
+  function nextStage() {
+    const next = BATTLE_STAGES[BATTLE_STAGES.indexOf(ui.stage) + 1];
+    if (next) goStage(next);
+  }
+
   function pickHand(hand: BattleHand) {
     const hero = self();
     if (!hero) return;
@@ -111,10 +132,10 @@ export function useBattleView() {
       resetBattleUi();
       return;
     }
-    if (item && !item.power) return;
-    const on = ui.mode === 'strike' && ui.hand === hand;
-    ui.mode = on ? 'move' : 'strike';
-    ui.hand = on ? null : hand;
+    if (!handFitsStage(item, 'attack')) return;
+    ui.stage = 'attack';
+    ui.mode = 'strike';
+    ui.hand = hand;
   }
 
   function pickAction(id: BattleActionId) {
@@ -125,7 +146,17 @@ export function useBattleView() {
       return;
     }
     ui.mode = id;
-    ui.hand = id === 'strike' ? freeStrikeHand(store.projection, hero, BATTLE_RULES) : null;
+    ui.hand = null;
+  }
+
+  function cycleHand(direction: 1 | -1) {
+    const hero = self();
+    if (!hero || store.projection?.phase !== 'act' || store.animating) return;
+    if (ui.stage === 'move' || (ui.stage === 'attack' && ui.mode !== 'strike')) return;
+    const usable = stageHands(hero, ui.stage);
+    if (!usable.length) return;
+    const at = ui.hand ? usable.indexOf(ui.hand) : -1;
+    ui.hand = usable[(at + direction + usable.length) % usable.length] ?? usable[0];
   }
 
   function swapFrom(bagIndex: number) {
@@ -148,19 +179,16 @@ export function useBattleView() {
 
   function hoverHex(hex: BattleHex | null) {
     ui.hover = hex;
-    if (hex && ui.mode === 'strike') ui.toolAt = hex;
+    if (hex && (ui.mode === 'strike' || ui.mode === 'block')) ui.toolAt = hex;
   }
 
-  function strikeWithTool() {
+  function actWithTool() {
     const tool = view.value.board?.tool;
-    if (!tool?.targetId) return false;
-    const accepted = store.act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
-    if (accepted) resetBattleUi();
-    return accepted;
-  }
-
-  function hideTool() {
-    resetBattleUi();
+    if (!tool?.action) return false;
+    if (tool.action === 'attack' && tool.targetId)
+      return store.act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
+    if (tool.action === 'block') return store.act({ kind: 'place-shield', hex: tool.at });
+    return store.act({ kind: 'remove-shield', hex: tool.at });
   }
 
   return {
@@ -168,8 +196,10 @@ export function useBattleView() {
     ui,
     tapHex,
     hoverHex,
-    strikeWithTool,
-    hideTool,
+    actWithTool,
+    nextStage,
+    goStage,
+    cycleHand,
     pickHand,
     pickAction,
     swapFrom,

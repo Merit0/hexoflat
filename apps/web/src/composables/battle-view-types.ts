@@ -5,6 +5,7 @@ import type { BattleCreature, BattleHand, BattleHex } from '@hexoflat/engine/bat
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import type { BattleDeploy } from '@/stores/battle-store';
 import type { NameOf } from './battle-hint';
+import type { BattleStage } from './battle-stage';
 import type { BattleUiMode } from './battle-board-tap';
 
 export type BattleRowTag = 'yourTurn' | 'next' | 'done' | 'fallen';
@@ -27,6 +28,7 @@ export interface BattleCreatureRow {
 }
 
 export interface BattleUiState {
+  stage: BattleStage;
   mode: BattleUiMode;
   hand: BattleHand | null;
   swapHand: BattleHand;

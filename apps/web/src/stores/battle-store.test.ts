@@ -44,11 +44,11 @@ describe('battle store', () => {
     const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
     expect(store.act({ kind: 'move', hex: { q: 1, r: 0 } }, 10)).toBe(true);
     expect(store.lastHeroEvents.map((e) => e.type)).toEqual(['CREATURE_MOVED']);
-    expect(store.projection?.turnWill).toBe(17);
+    expect(store.projection?.turnWill).toBe(19);
 
     expect(store.act({ kind: 'move', hex: { q: 3, r: 0 } }, 10)).toBe(false);
     expect(store.lastHeroEvents[0].type).toBe('BATTLE_REJECTED');
-    expect(store.projection?.turnWill).toBe(17);
+    expect(store.projection?.turnWill).toBe(19);
   });
 
   it('locks hero input and enemy turns while the board animates', () => {

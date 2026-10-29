@@ -29,7 +29,7 @@ export type BattleRules = z.infer<typeof battleRulesSchema>;
 export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   willPerTurn: 20,
   stanceMax: 8,
-  step: { floor: 3, rubble: 5, climb: 5, descend: 3 },
+  step: { floor: 1, rubble: 2, climb: 2, descend: 1 },
   strike: 7,
   push: 6,
   pull: 8,

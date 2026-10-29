@@ -21,6 +21,8 @@ export function startBattle(
     stance: {},
     struckHands: [],
     placedShields: [],
+    lockedShields: 0,
+    guards: {},
     pending: [],
     undo: [],
     strikeSeq: 0,

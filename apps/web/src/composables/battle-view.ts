@@ -167,7 +167,7 @@ function defendResults(events: DomainEvent[]): DefendResultMark[] {
 
 function overlayMode(input: BattleViewInput) {
   const { mode } = input.ui;
-  return mode === 'swap' ? null : mode;
+  return mode === 'swap' || mode === 'block' ? null : mode;
 }
 
 function boardView(input: BattleViewInput): BattleBoardView | null {
@@ -239,12 +239,14 @@ export function buildBattleView(input: BattleViewInput): BattleView {
   const rows = (view?.creatures ?? []).map((c) => creatureRow(c, input, targets));
   const self = selfHero(input);
   const enemies = rows.filter((r) => r.side === 'enemies');
+  const card = view && self ? buildHeroCard(input, view, self, rows) : null;
+  const plan = (board?.preview?.cost ?? 0) + (board?.tool?.price ?? 0);
   return {
     stage: !view ? 'deploy' : view.phase === 'ended' ? 'ended' : 'battle',
     outcome: view?.outcome ?? null,
     round: view?.round ?? 0,
     chips: view ? initChips(view, input.nameOf) : [],
-    hero: view && self ? buildHeroCard(input, view, self, rows) : null,
+    hero: card && { ...card, plan },
     friends: rows.filter((r) => r.side === 'heroes' && r.id !== self?.id),
     enemies,
     enemiesLeft: enemies.filter((r) => !r.fallen).length,

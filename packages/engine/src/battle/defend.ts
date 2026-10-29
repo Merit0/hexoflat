@@ -2,7 +2,8 @@ import type { DomainEvent } from '../commands/types';
 import type { BattleRules } from './battle-content';
 import type { BattleCreature, BattleHex, BattleState, PendingStrike } from './battle-state';
 import { isAlive } from './battle-board';
-import { sameHex } from './hex-battle-geom';
+import { hexNeighbours, sameHex } from './hex-battle-geom';
+import { boulderAt, terrainAt, type BattleBoardView } from './battle-board';
 import { reject, spendTurnWill, type BattleRejection } from './battle-rejection';
 import { applyDamage } from './battle-end';
 import { finishTurn } from './turn';
@@ -14,12 +15,36 @@ export function shieldCapacity(creature: BattleCreature, rules: BattleRules): nu
   return Math.min(rules.maxShieldSides, total);
 }
 
+function paidShields(state: BattleState): number {
+  return state.placedShields.length - state.lockedShields;
+}
+
 export function strikesOn(state: BattleState, creatureId: string): PendingStrike[] {
   return state.pending.filter((s) => s.targetId === creatureId);
 }
 
 function inAnyRing(strikes: PendingStrike[], hex: BattleHex): boolean {
   return strikes.some((s) => s.ring.some((h) => sameHex(h, hex)));
+}
+
+function ringRefusal(
+  state: BattleState,
+  defender: BattleCreature,
+  hex: BattleHex,
+): BattleRejection | null {
+  return inAnyRing(strikesOn(state, defender.id), hex) ? null : reject('NOT_IN_RING');
+}
+
+export function guardHexRefusal(
+  state: BattleBoardView,
+  defender: BattleCreature,
+  hex: BattleHex,
+): BattleRejection | null {
+  if (!hexNeighbours(defender.pos).some((n) => sameHex(n, hex))) return reject('NOT_ADJACENT');
+  const terrain = terrainAt(state, hex);
+  return terrain === null || terrain === 'wall' || boulderAt(state, hex)
+    ? reject('HEX_BLOCKED')
+    : null;
 }
 
 export function placeShield(
@@ -30,7 +55,11 @@ export function placeShield(
 ): DomainEvent[] | BattleRejection {
   const capacity = shieldCapacity(defender, rules);
   if (capacity === 0) return reject('NO_SHIELD_IN_HAND');
-  if (!inAnyRing(strikesOn(state, defender.id), hex)) return reject('NOT_IN_RING');
+  const guarding = state.phase === 'act';
+  const refusedHex = guarding
+    ? guardHexRefusal(state, defender, hex)
+    : ringRefusal(state, defender, hex);
+  if (refusedHex) return refusedHex;
   if (state.placedShields.some((h) => sameHex(h, hex))) return reject('SHIELD_ALREADY_PLACED');
   if (state.placedShields.length >= capacity) return reject('SHIELD_CAPACITY_REACHED');
   const refused = spendTurnWill(state, rules.shieldPerSide);
@@ -45,6 +74,7 @@ export function placeShield(
         hex,
         cost: rules.shieldPerSide,
         willLeft: state.turnWill,
+        guard: guarding,
       },
     },
   ];
@@ -58,16 +88,20 @@ export function removeShield(
 ): DomainEvent[] | BattleRejection {
   const index = state.placedShields.findIndex((h) => sameHex(h, hex));
   if (index < 0) return reject('NO_SHIELD_THERE');
+  const locked = index < state.lockedShields;
+  const refund = locked ? 0 : rules.shieldPerSide;
   state.placedShields.splice(index, 1);
-  state.turnWill += rules.shieldPerSide;
+  if (locked) state.lockedShields -= 1;
+  state.turnWill += refund;
   return [
     {
       type: 'SHIELD_REMOVED',
       payload: {
         creatureId: defender.id,
         hex,
-        refund: rules.shieldPerSide,
+        refund,
         willLeft: state.turnWill,
+        guard: state.phase === 'act',
       },
     },
   ];
@@ -96,6 +130,7 @@ export function resolveStrikes(
   const shields = state.placedShields;
   state.pending = state.pending.filter((s) => s.targetId !== defender.id);
   state.placedShields = [];
+  state.lockedShields = 0;
 
   const damage = results.reduce((sum, r) => sum + r.damage, 0);
   const events: DomainEvent[] = [
@@ -128,12 +163,13 @@ export function startDodge(
   atMs: number,
   rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
-  const refund = state.placedShields.length * rules.shieldPerSide;
+  const refund = paidShields(state) * rules.shieldPerSide;
   if (state.turnWill + refund < rules.dodge) {
     return { rejected: 'INSUFFICIENT_WILL', cost: rules.dodge, left: state.turnWill + refund };
   }
   state.turnWill += refund - rules.dodge;
   state.placedShields = [];
+  state.lockedShields = 0;
   return [
     {
       type: 'DODGE_STARTED',
@@ -148,7 +184,8 @@ export function takeHit(
   defender: BattleCreature,
   rules: BattleRules,
 ): DomainEvent[] {
-  state.turnWill += state.placedShields.length * rules.shieldPerSide;
+  state.turnWill += paidShields(state) * rules.shieldPerSide;
   state.placedShields = [];
+  state.lockedShields = 0;
   return resolveStrikes(state, defender, rules);
 }

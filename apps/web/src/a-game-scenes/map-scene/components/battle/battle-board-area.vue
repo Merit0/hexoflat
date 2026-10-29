@@ -1,5 +1,5 @@
 <template>
-  <div class="battle-area" data-testid="battle-board-area">
+  <div class="battle-area" data-testid="battle-board-area" @wheel.prevent="onWheel">
     <battle-board
       v-if="view.board"
       class="battle-area__board"
@@ -21,8 +21,8 @@
           :biome="view.board.scene.biome"
           :tile-width="tileSize.w"
           :tile-height="tileSize.h"
-          @act="strikeWithTool"
-          @hide="hideTool"
+          @act="actWithTool"
+          @hide="nextStage"
         />
       </board-overlay-layer>
       <battle-timed-task v-if="view.task" :task="view.task" @answer="answer" @timeout="timeout" />
@@ -44,6 +44,7 @@ import {
   type BoardFrame,
 } from '@/render/board-camera';
 import BattleTimedTask from './battle-timed-task.vue';
+import { HAND_SCROLL_COOLDOWN_MS } from '@/composables/use-hex-board-input';
 import BattleToolHex from './battle-tool-hex.vue';
 import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import { BATTLEFIELD_BIOMES } from '@hexoflat/engine/battle/battlefield';
@@ -59,7 +60,17 @@ const frame = computed(() => {
   return frameWorldRect({ width: columns, height: rows });
 });
 const tileSize = computed(() => tileScreenSize(camera.value ?? { x: 0, y: 0, zoom: 1 }));
-const { view, tapHex, hoverHex, answer, timeout, strikeWithTool, hideTool } = useBattleView();
+const { view, tapHex, hoverHex, answer, timeout, actWithTool, nextStage, cycleHand } =
+  useBattleView();
+
+let lastWheelAt = 0;
+function onWheel(event: WheelEvent) {
+  if (event.deltaY === 0) return;
+  const now = Date.now();
+  if (now - lastWheelAt < HAND_SCROLL_COOLDOWN_MS) return;
+  lastWheelAt = now;
+  cycleHand(event.deltaY > 0 ? 1 : -1);
+}
 </script>
 
 <style scoped>

@@ -13,8 +13,6 @@ import { strike } from './strike';
 import { endTurn } from './turn';
 
 const DEFEND_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
-  'place-shield',
-  'remove-shield',
   'confirm-block',
   'take-hit',
   'start-dodge',
@@ -22,7 +20,13 @@ const DEFEND_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
 
 const TASK_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['answer-task', 'task-timeout']);
 
+const ANY_PHASE_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
+  'place-shield',
+  'remove-shield',
+]);
+
 function phaseAllows(state: BattleState, action: BattleAction): boolean {
+  if (ANY_PHASE_ACTIONS.has(action.kind)) return state.phase === 'defend' || state.phase === 'act';
   return DEFEND_ACTIONS.has(action.kind) ? state.phase === 'defend' : state.phase === 'act';
 }
 

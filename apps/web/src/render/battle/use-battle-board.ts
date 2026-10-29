@@ -118,6 +118,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       markerCoord: segments[segments.length - 1] ?? null,
       stepCost: preview?.cost ?? 0,
       chargesWill: true,
+      showCost: false,
       markerKind: 'move',
     });
   }

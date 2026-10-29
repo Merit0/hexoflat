@@ -8,7 +8,7 @@ import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 
-const HAND_SCROLL_COOLDOWN_MS = 180;
+export const HAND_SCROLL_COOLDOWN_MS = 180;
 
 export interface UseHexBoardInputDeps {
   hoveredTileCoord: Ref<IHexCoordinates | null>;

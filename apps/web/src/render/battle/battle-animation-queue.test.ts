@@ -9,45 +9,39 @@ const geo: AnimationGeometry = {
   tileHeight: 100,
 };
 
-const vanish: BattleAnimationStep = {
-  kind: 'vanish',
+const walk: BattleAnimationStep = {
+  kind: 'walk',
   creatureId: 's1',
-  at: { q: 3, r: 0 },
+  from: { q: 3, r: 0 },
+  to: { q: 2, r: 0 },
   durationMs: 300,
 };
 const strike: BattleAnimationStep = {
   kind: 'strike',
   targetId: 'hero',
   target: { q: 0, r: 0 },
-  from: null,
+  from: { q: 2, r: 0 },
   ring: [{ q: 1, r: 0 }],
   durationMs: 400,
 };
-const appear: BattleAnimationStep = {
-  kind: 'appear',
-  creatureId: 's1',
-  at: { q: 1, r: -1 },
-  durationMs: 300,
-};
 
 describe('BattleAnimationQueue', () => {
-  it('holds the enemy at its old hex, keeps it hidden through the strike, then shows it at the end', () => {
+  it('holds the enemy at its old hex, walks it to the next, then flies the sword from there', () => {
     const queue = new BattleAnimationQueue(geo);
-    queue.enqueue([vanish, strike, appear]);
+    queue.enqueue([walk, strike]);
 
     expect(queue.frame().poses.get('s1')).toEqual({ x: 300, y: 0, alpha: 1 });
-    expect(queue.advance(150).poses.get('s1')?.alpha).toBeCloseTo(0.5);
+    const mid = queue.advance(150).poses.get('s1')!;
+    expect(mid.x).toBeLessThan(300);
+    expect(mid.x).toBeGreaterThan(200);
 
     const during = queue.advance(150 + 200);
-    expect(during.poses.get('s1')).toEqual({ x: 300, y: 0, alpha: 0 });
+    expect(during.poses.has('s1')).toBe(false);
     expect(during.fx?.ring).toEqual([{ q: 1, r: 0 }]);
+    expect(during.fx?.sword.x).toBeLessThan(200);
     expect(during.busy).toBe(true);
 
-    const showing = queue.advance(200 + 150);
-    expect(showing.fx).toBeNull();
-    expect(showing.poses.get('s1')).toEqual({ x: 100, y: -100, alpha: 0.5 });
-
-    const done = queue.advance(150);
+    const done = queue.advance(200);
     expect(done).toEqual({ poses: new Map(), fx: null, busy: false });
     expect(queue.busy).toBe(false);
   });
@@ -94,13 +88,12 @@ describe('BattleAnimationQueue', () => {
 });
 
 describe('sampleStrikeFx', () => {
-  it('drops a hidden-side sword from straight above onto the target centre', () => {
+  it('flies the sword from the attacker to the target and fades it out', () => {
     const start = sampleStrikeFx(strike, 0, geo)!;
-    expect(start.sword).toMatchObject({ x: 0, alpha: 1 });
-    expect(start.sword.y).toBeCloseTo(-110);
-    expect(start.sword.rotation).toBeCloseTo(Math.PI / 2);
+    expect(start.sword).toMatchObject({ x: 200, y: 0, alpha: 1 });
+    expect(start.sword.rotation).toBeCloseTo(Math.PI);
     const hit = sampleStrikeFx(strike, 0.75, geo)!;
-    expect(hit.sword.x).toBe(0);
+    expect(hit.sword.x).toBeCloseTo(0);
     expect(hit.sword.y).toBeCloseTo(0);
     expect(hit.ringAlpha).toBeGreaterThan(0.5);
     expect(sampleStrikeFx(strike, 1, geo)!.sword.alpha).toBe(0);

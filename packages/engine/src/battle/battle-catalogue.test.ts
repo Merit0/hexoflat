@@ -42,8 +42,8 @@ describe('battle catalogue', () => {
 
   it('builds an enemy from the pilot numbers', () => {
     expect(enemyCreature('skeleton-king', 'k', { q: 0, r: 0 })).toMatchObject({
-      hp: 8,
-      maxHp: 8,
+      hp: 9,
+      maxHp: 9,
       weight: 3,
       force: 2,
       hands: { right: { power: 1 }, left: { shieldCapacity: 2 } },

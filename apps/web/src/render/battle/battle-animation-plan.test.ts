@@ -7,8 +7,8 @@ const hero: AnimatedCreature = { id: 'hero', side: 'heroes', pos: { q: 0, r: 0 }
 const ev = (type: string, payload: Record<string, unknown>): DomainEvent => ({ type, payload });
 
 describe('planBattleAnimation', () => {
-  it('hides an enemy path: fade out at the start, ring + sword without a side, appear at the end', () => {
-    const skeleton: AnimatedCreature = { id: 's1', side: 'enemies', pos: { q: 1, r: -1 } };
+  it('walks an enemy hex by hex like the hero, then swings the sword from where it stands for two seconds', () => {
+    const skeleton: AnimatedCreature = { id: 's1', side: 'enemies', pos: { q: 1, r: 0 } };
     const steps = planBattleAnimation(
       [
         ev('TURN_STARTED', { creatureId: 's1', will: 20 }),
@@ -20,18 +20,25 @@ describe('planBattleAnimation', () => {
           fromHex: null,
           ring: [{ q: 1, r: 0 }],
         }),
-        ev('CREATURE_MOVED', { creatureId: 's1', from: { q: 1, r: 0 }, to: { q: 1, r: -1 } }),
         ev('TURN_ENDED', { creatureId: 's1' }),
       ],
       [hero, skeleton],
     );
 
-    expect(steps.map((s) => s.kind)).toEqual(['vanish', 'strike', 'appear']);
-    expect(steps[0]).toMatchObject({ creatureId: 's1', at: { q: 3, r: 0 } });
-    expect(steps[1]).toMatchObject({ targetId: 'hero', target: { q: 0, r: 0 }, from: null });
-    expect(steps[2]).toMatchObject({ creatureId: 's1', at: { q: 1, r: -1 } });
-    expect(JSON.stringify(steps)).not.toContain('"q":2');
-    expect(steps[0].durationMs).toBe(BATTLE_TIMING.enemyVanishMs);
+    expect(steps.map((s) => s.kind)).toEqual(['walk', 'walk', 'strike']);
+    expect(steps[0]).toMatchObject({
+      creatureId: 's1',
+      from: { q: 3, r: 0 },
+      to: { q: 2, r: 0 },
+      durationMs: BATTLE_TIMING.stepMs,
+    });
+    expect(steps[2]).toMatchObject({
+      targetId: 'hero',
+      target: { q: 0, r: 0 },
+      from: { q: 1, r: 0 },
+      durationMs: BATTLE_TIMING.strikeMs,
+    });
+    expect(BATTLE_TIMING.strikeMs).toBe(2000);
   });
 
   it('walks the hero hex by hex like the map step', () => {
@@ -48,14 +55,14 @@ describe('planBattleAnimation', () => {
         creatureId: 'hero',
         from: { q: 0, r: 0 },
         to: { q: 1, r: 0 },
-        durationMs: BATTLE_TIMING.heroStepMs,
+        durationMs: BATTLE_TIMING.stepMs,
       },
       {
         kind: 'walk',
         creatureId: 'hero',
         from: { q: 1, r: 0 },
         to: { q: 2, r: 0 },
-        durationMs: BATTLE_TIMING.heroStepMs,
+        durationMs: BATTLE_TIMING.stepMs,
       },
     ]);
   });
