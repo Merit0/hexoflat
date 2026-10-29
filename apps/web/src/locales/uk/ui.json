@@ -495,11 +495,6 @@
     "spotted": "Вартовий тебе помітив — засідка!",
     "attack": "Атакувати",
     "scout": "Розвідати",
-    "discovered": "Знайдені",
-    "nothingYet": "Загонів ще не знайдено",
-    "prices": "Крок {step} · Розвідка {scout} · Атака {attack}",
-    "enemies": "Ворогів: {count}",
-    "leaderAndUnknown": "{leader} + невідомих: {unknown}",
     "threat": {
       "easy": "Легко",
       "risky": "Ризиковано",
@@ -509,7 +504,6 @@
       "scouted": "розвідав загін",
       "ambush": "потрапив у засідку!"
     },
-    "watcher": "вартовий",
     "rejected": {
       "UNKNOWN_SQUAD": "Тут немає загону",
       "NO_HERO": "Немає героя",

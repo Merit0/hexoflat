@@ -13,6 +13,7 @@ import {
 import type { BattleBoardScene } from '@/render/battle/use-battle-board';
 import type { NameOf } from './battle-hint';
 import { battleMovePreview, controlledHero, type BattleMovePreview } from './battle-board-tap';
+import { buildBattleToolHex, type BattleToolHex } from './battle-tool-hex';
 import { buildHeroCard, type BattleHeroCard } from './battle-hero-card';
 import type { BattleCreatureRow, BattleRowTag, BattleViewInput } from './battle-view-types';
 
@@ -45,6 +46,7 @@ export interface BattleBoardView {
   overlay: BattleOverlayModel;
   preview: BattleMovePreview | null;
   banner: BattleBannerProps | null;
+  tool: BattleToolHex | null;
 }
 
 export interface BattleView {
@@ -194,7 +196,6 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
           projection: view,
           localHeroIds: input.localHeroIds,
           mode: input.ui.mode,
-          hand: input.ui.hand,
           hex: input.ui.hover,
           rules: input.rules,
         })
@@ -207,6 +208,12 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
           will: view.turnWill,
         }
       : null,
+    tool: buildBattleToolHex({
+      projection: view,
+      localHeroIds: input.localHeroIds,
+      ui: input.ui,
+      rules: input.rules,
+    }),
   };
 }
 

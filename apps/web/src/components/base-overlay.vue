@@ -126,6 +126,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown));
 .overlay-root {
   position: fixed;
   inset: 0;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   background: transparent;

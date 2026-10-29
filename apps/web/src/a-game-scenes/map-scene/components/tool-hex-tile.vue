@@ -1,40 +1,36 @@
 <template>
-  <div class="tool-hex-pos" :style="posStyle" data-testid="tool-hex-tile">
-    <div class="tool-hex-tile" :class="{ doing: isWorking }">
-      <div class="tool-icon" :class="{ flipped: isHoverOnLeft }" :style="iconStyle"></div>
-      <div v-if="!isWorking" class="tool-actions-row">
-        <template v-if="bestActionLabel">
-          <button
-            class="do-btn"
-            :class="{ 'is-denied': denied }"
-            data-testid="tool-action-button"
-            :aria-label="bestActionLabel"
-            :aria-disabled="!canAffordBest"
-            @click.stop="executeAction"
-          >
-            <eye-icon v-if="isReadAction" class="eye-icon" />
-            <template v-else>{{ bestActionLabel }}</template>
-          </button>
-        </template>
-
-        <button v-else class="hide-btn" data-testid="tool-hide-button" @click.stop="emit('hide')">
-          -
-        </button>
-      </div>
-    </div>
+  <tool-hex-anchor
+    v-slot="{ flipped }"
+    :at="anchor"
+    :origin="heroToolStore.origin"
+    :tile-width="tileWidth"
+    :tile-height="tileHeight"
+    data-testid="tool-hex-tile"
+  >
+    <tool-hex-face
+      :icon-path="toolIconPath"
+      :flipped="flipped"
+      :working="isWorking"
+      :label="bestActionLabel"
+      :read="isReadAction"
+      :denied="denied"
+      :can-afford="canAffordBest"
+      @act="executeAction"
+      @hide="emit('hide')"
+    />
     <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
       {{ secondsLeft }}s
     </div>
-  </div>
+  </tool-hex-anchor>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import EyeIcon from '@/components/gui/icons/eye-icon.vue';
+import ToolHexFace from '@/components/gui/tool-hex/tool-hex-face.vue';
+import ToolHexAnchor from '@/components/gui/tool-hex/tool-hex-anchor.vue';
 import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useWillPricing } from '@/composables/use-will-pricing';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { calcHexPixelPosition, type IHexPositioned } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
   resolveActions,
@@ -58,7 +54,7 @@ import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { applySquadEvents } from '@/services/squads/squad-flow';
 import { asSquad } from '@hexoflat/engine/squads/squad-state';
 
-const props = defineProps<{
+defineProps<{
   tileWidth: number;
   tileHeight: number;
 }>();
@@ -94,40 +90,9 @@ const hoveredTile = computed<HexTileModel | null>(() => {
 
 const { isReading, anchor } = useBookReading(activeToolKey);
 
-const posStyle = computed(() => {
-  if (!anchor.value) return { display: 'none' };
-
-  const pseudoTile: IHexPositioned = { coordinates: anchor.value };
-  const { x, y } = calcHexPixelPosition(pseudoTile, props.tileWidth, props.tileHeight);
-
-  return {
-    transform: `translate(${Math.round(x)}px, ${Math.round(y)}px)`,
-  };
-});
-
-const isHoverOnLeft = computed(() => {
-  const origin = heroToolStore.origin;
-  const hover = anchor.value;
-  if (!origin || !hover) return false;
-
-  const originPos = calcHexPixelPosition(
-    { coordinates: origin },
-    props.tileWidth,
-    props.tileHeight,
-  );
-  const hoverPos = calcHexPixelPosition({ coordinates: hover }, props.tileWidth, props.tileHeight);
-
-  return hoverPos.x < originPos.x;
-});
-
-const iconStyle = computed(() => {
-  const key = activeToolKey.value ?? HEXOBJECT_KEYS.HAND;
-  const toolHexImagePath = getPrototype(key).spritePath;
-
-  return {
-    backgroundImage: `url(${toolHexImagePath})`,
-  };
-});
+const toolIconPath = computed(
+  () => getPrototype(activeToolKey.value ?? HEXOBJECT_KEYS.HAND).spritePath ?? '',
+);
 
 const isScrollTool = computed(() => activeToolKey.value === HEXOBJECT_KEYS.RETURN_SCROLL);
 
@@ -372,156 +337,6 @@ async function executeAction() {
 </script>
 
 <style scoped>
-.tool-hex-tile {
-  position: absolute;
-  width: var(--hex-tile-width);
-  height: var(--hex-tile-height);
-
-  clip-path: var(--hex-clip-path);
-
-  z-index: 120;
-  pointer-events: auto;
-
-  background-image: url('/hex-assets/hex-tools/tool-frame-hex.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
-}
-
-.tool-icon {
-  position: absolute;
-  inset: 0;
-
-  background-size: 100%;
-  background-repeat: no-repeat;
-  background-position: center;
-
-  pointer-events: none;
-}
-
-.tool-icon.flipped {
-  transform: scaleX(-1);
-}
-
-.hide-btn {
-  width: 18px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0;
-  border-radius: 999px;
-
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(0, 0, 0, 0.55);
-  color: #f2e9d3;
-
-  font-weight: 900;
-  font-size: 9px;
-  line-height: 1;
-  letter-spacing: 0;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.24);
-
-  transition:
-    transform 120ms ease,
-    background 120ms ease,
-    filter 120ms ease;
-}
-
-.hide-btn:hover {
-  filter: brightness(1.15);
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.hide-btn:active {
-  transform: scale(0.96);
-}
-
-.do-btn {
-  position: relative;
-  min-height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(0, 0, 0, 0.55);
-  color: #e9f7ff;
-  font-weight: 900;
-  font-size: 12px;
-  line-height: 1;
-  letter-spacing: 0.12em;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
-  transition:
-    background 90ms ease,
-    border-color 90ms ease;
-}
-
-.do-btn.is-denied {
-  border-color: rgba(255, 150, 150, 0.45);
-  background: rgba(190, 70, 70, 0.5);
-}
-
-.eye-icon {
-  display: block;
-  width: 20px;
-  height: 20px;
-}
-
-.do-btn:hover {
-  color: #e9f7ff;
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
-}
-
-.do-btn:active {
-  transform: scale(0.98);
-}
-
-.tool-hex-pos {
-  position: absolute;
-  z-index: 120;
-  width: var(--hex-tile-width);
-  height: var(--hex-tile-height);
-  pointer-events: auto;
-
-  transition: transform 120ms linear;
-  will-change: transform;
-  transform: translateZ(0);
-}
-
-.tool-actions-row {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  width: calc(var(--hex-tile-width) * 0.72);
-  max-width: calc(var(--hex-tile-width) * 0.72);
-  z-index: 2;
-  pointer-events: auto;
-}
-
-.tool-hex-tile.doing {
-  background-image: none;
-  animation: tool-chop 220ms ease-in-out infinite;
-  scale: 0.7;
-}
-
-@keyframes tool-chop {
-  0% {
-    transform: rotate(-6deg) scale(1.02);
-  }
-  50% {
-    transform: rotate(7deg) scale(1.04);
-  }
-  100% {
-    transform: rotate(-6deg) scale(1.02);
-  }
-}
-
 .time-chip {
   position: absolute;
   bottom: 10px;

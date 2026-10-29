@@ -51,6 +51,16 @@ function reachRefusal(
     : reject('OUT_OF_RANGE');
 }
 
+export function strikingItem(
+  creature: BattleCreature,
+  hand: BattleHand,
+  rules: BattleRules,
+): BattleItem | null {
+  const item = creature.hands[hand];
+  if (!item) return { key: 'unarmed', power: rules.unarmedPower };
+  return item.power ? item : null;
+}
+
 export function strikePower(
   state: BattleState,
   attacker: BattleCreature,
@@ -58,7 +68,7 @@ export function strikePower(
   hand: BattleHand,
   rules: BattleRules,
 ): number {
-  const base = attacker.hands[hand]?.power ?? 0;
+  const base = strikingItem(attacker, hand, rules)?.power ?? 0;
   const fromAbove = heightAt(state, attacker.pos) > heightAt(state, target.pos);
   return base + (fromAbove ? rules.ledgeStrikeBonus : 0);
 }
@@ -68,10 +78,11 @@ function validateStrike(
   attacker: BattleCreature,
   target: BattleCreature | null,
   hand: BattleHand,
+  rules: BattleRules,
 ): BattleRejection | null {
   if (!target || !isAlive(target) || target.side === attacker.side) return reject('NOT_AN_ENEMY');
-  const weapon = attacker.hands[hand];
-  if (!weapon?.power) return reject('NO_WEAPON_IN_HAND');
+  const weapon = strikingItem(attacker, hand, rules);
+  if (!weapon) return reject('NO_WEAPON_IN_HAND');
   if (state.struckHands.includes(hand)) return reject('HAND_ALREADY_STRUCK');
   return reachRefusal(state, attacker, target, weapon);
 }
@@ -84,7 +95,7 @@ export function strike(
   rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
   const target = creatureById(state, targetId);
-  const invalid = validateStrike(state, attacker, target, hand);
+  const invalid = validateStrike(state, attacker, target, hand, rules);
   if (invalid) return invalid;
   const refused = spendTurnWill(state, rules.strike);
   if (refused) return refused;

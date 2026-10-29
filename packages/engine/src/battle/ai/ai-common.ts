@@ -16,8 +16,8 @@ export function opponents(view: BattleProjection, self: BattleCreature): BattleC
 }
 
 export function readyHand(view: BattleProjection, self: BattleCreature): BattleHand | null {
-  const hands: BattleHand[] = ['right', 'left'];
-  return hands.find((h) => self.hands[h]?.power && !view.struckHands.includes(h)) ?? null;
+  const free = (['right', 'left'] as BattleHand[]).filter((h) => !view.struckHands.includes(h));
+  return free.find((h) => self.hands[h]?.power) ?? free.find((h) => !self.hands[h]) ?? null;
 }
 
 export function weakestFirst(creatures: BattleCreature[]): BattleCreature[] {

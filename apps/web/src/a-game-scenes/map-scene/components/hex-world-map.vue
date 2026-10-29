@@ -42,7 +42,7 @@
           :data-ready="isBoardReady ? '1' : undefined"
         />
 
-        <div class="hex-board-overlays" data-testid="hex-map-inner" :style="overlayStyle">
+        <board-overlay-layer data-testid="hex-map-inner" :camera="camera" :frame-rect="frameRect">
           <tool-hex-tile
             v-if="heroToolStore.isDragging && activeTool"
             :tile-width="screenTileSize.w"
@@ -58,7 +58,7 @@
             :tile-width="screenTileSize.w"
             :tile-height="screenTileSize.h"
           />
-        </div>
+        </board-overlay-layer>
       </div>
       <component
         :is="StaticBoardEditorPanel"
@@ -93,6 +93,7 @@ import {
 import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
+import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
 import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
@@ -223,13 +224,6 @@ const { containerRef, stageRef, canvasSize, frameRect, camera, screenTileSize } 
   boardFrame,
   heroCoordinatesComputed,
 );
-const overlayStyle = computed(() => ({
-  width: `${overlayWidth.value}px`,
-  height: `${(frameRect.value?.height ?? 0) * camera.value.zoom}px`,
-  transform: `translate(${camera.value.x}px, ${camera.value.y}px)`,
-  '--hex-tile-width': `${screenTileSize.value.w}px`,
-  '--hex-tile-height': `${screenTileSize.value.h}px`,
-}));
 const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
@@ -261,8 +255,6 @@ watch(
 );
 
 const movePreview = useMovePreview({ hoveredTileCoord, getTileByCoord });
-
-const overlayWidth = computed(() => (frameRect.value?.width ?? 0) * camera.value.zoom);
 
 const activeCampfireActionTile = computed(() => {
   if (!worldStore.map) return null;
@@ -459,13 +451,6 @@ onBeforeUnmount(() => {
   background-attachment: fixed;
 
   overflow: hidden;
-}
-
-.hex-board-overlays {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
 }
 
 .hex-board-canvas {

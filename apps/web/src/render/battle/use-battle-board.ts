@@ -18,6 +18,7 @@ import {
   HEX_WORLD_WIDTH,
   fitAtReferenceZoom,
   frameWorldRect,
+  type BoardCamera,
   type BoardFrame,
 } from '@/render/board-camera';
 import { createBattleBoardLayer, type BattleBoardLayer } from '@/render/layers/battle-board-layer';
@@ -52,6 +53,7 @@ export interface UseBattleBoardOptions {
   onHexHover?: (hex: BattleHex) => void;
   takeEvents?: () => DomainEvent[];
   onAnimating?: (busy: boolean) => void;
+  onCamera?: (camera: BoardCamera) => void;
 }
 
 interface Layers {
@@ -84,13 +86,13 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     const { frame } = BATTLEFIELD_BIOMES[options.scene.value.biome];
     const reference = options.referenceFrame?.value ?? null;
     pixi.resize(width, height);
-    pixi.setCamera(
-      fitAtReferenceZoom({
-        frameRect: frameWorldRect({ width: frame.columns, height: frame.rows }),
-        referenceRect: reference ? frameWorldRect(reference) : null,
-        pane: { width, height },
-      }),
-    );
+    const camera = fitAtReferenceZoom({
+      frameRect: frameWorldRect({ width: frame.columns, height: frame.rows }),
+      referenceRect: reference ? frameWorldRect(reference) : null,
+      pane: { width, height },
+    });
+    pixi.setCamera(camera);
+    options.onCamera?.(camera);
     pixi.renderNow();
   }
 

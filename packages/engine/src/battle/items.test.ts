@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BATTLE_RULES } from './battle-content';
 import { battleItem } from './battle-catalogue';
 import type { BattleState } from './battle-state';
 import {
@@ -32,7 +33,7 @@ describe('REQ-BTL-004 hands', () => {
     ).toBe('HAND_ALREADY_STRUCK');
   });
 
-  it('cannot strike with a shield or an empty hand', () => {
+  it('cannot strike with a shield, but an empty hand strikes for half a heart', () => {
     const battle = giveTurn(
       battleWith([
         hero({ q: 0, r: 0 }, { hands: { right: null, left: battleItem('wooden-shield') } }),
@@ -40,11 +41,12 @@ describe('REQ-BTL-004 hands', () => {
       ]),
       ['hero', 's1'],
     );
-    for (const hand of ['right', 'left'] as const) {
-      expect(rejectionOf(heroDoes(battle, { kind: 'strike', targetId: 's1', hand }).events)).toBe(
-        'NO_WEAPON_IN_HAND',
-      );
-    }
+    expect(
+      rejectionOf(heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'left' }).events),
+    ).toBe('NO_WEAPON_IN_HAND');
+    const punched = heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'right' }).battle;
+    expect(punched.pending.map((s) => s.power)).toEqual([BATTLE_RULES.unarmedPower]);
+    expect(BATTLE_RULES.unarmedPower).toBe(1);
   });
 });
 

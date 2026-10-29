@@ -11,7 +11,13 @@ import { buildBattleView } from './battle-view';
 import type { BattleUiState } from './battle-view-types';
 
 const NAMES: Record<string, string> = { hero: 'Merito', s1: 'Skeleton', s2: 'Skeleton' };
-const MOVE: BattleUiState = { mode: 'move', hand: null, swapHand: 'left', hover: null };
+const MOVE: BattleUiState = {
+  mode: 'move',
+  hand: null,
+  swapHand: 'left',
+  hover: null,
+  toolAt: null,
+};
 
 function viewOf(ui: BattleUiState = MOVE) {
   const store = useBattleStore();
@@ -33,7 +39,6 @@ function tap(hex: BattleHex, ui: BattleUiState = MOVE): boolean {
     projection: store.projection,
     localHeroIds: store.localHeroIds,
     mode: ui.mode,
-    hand: ui.hand,
     hex,
     rules: BATTLE_RULES,
   });
@@ -136,20 +141,45 @@ describe('battle view', () => {
 
   it('selects strike targets, glows them and strikes with the chosen hand', () => {
     const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
-    const strike: BattleUiState = { mode: 'strike', hand: 'right', swapHand: 'left', hover: null };
+    const strike: BattleUiState = {
+      mode: 'strike',
+      hand: 'right',
+      swapHand: 'left',
+      hover: null,
+      toolAt: null,
+    };
     let view = viewOf(strike);
     expect(view.board?.overlay.targets).toEqual(['s1']);
     expect(view.enemies[0].targeted).toBe(true);
     expect(view.hero?.hint?.key).toBe('battle.hint.act.strike');
     expect(view.hero?.hands[0].selected).toBe(true);
 
-    expect(tap({ q: 1, r: 0 }, strike)).toBe(true);
+    expect(viewOf(strike).board?.tool).toMatchObject({
+      hand: 'right',
+      toolKey: 'sword',
+      targetId: 's1',
+      canAfford: true,
+    });
+    expect(store.act({ kind: 'strike', targetId: 's1', hand: 'right' }, 0)).toBe(true);
     view = viewOf();
     expect(view.hero?.hint).toEqual({ key: 'battle.hint.struck', params: { name: 'Skeleton' } });
     expect(view.enemies[0].hits).toBe(1);
     expect(view.hero?.hands[0].meta?.key).toBe('battle.hand.struck');
     expect(view.hero?.actions[0].disabled).toBe(true);
     expect(store.projection?.turnWill).toBe(13);
+  });
+
+  it('shows a hand tool hex with no target when no foe is beside the hero', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+    const strike: BattleUiState = {
+      mode: 'strike',
+      hand: 'left',
+      swapHand: 'left',
+      hover: null,
+      toolAt: null,
+    };
+    expect(viewOf(strike).board?.tool).toMatchObject({ hand: 'left', targetId: null });
+    expect(viewOf().board?.tool).toBeNull();
   });
 
   it('explains a refusal in the hint line', () => {
@@ -200,7 +230,6 @@ describe('battle view', () => {
         projection: store.projection,
         localHeroIds: ['hero'],
         mode: 'move',
-        hand: null,
         hex: { q: -1, r: 0 },
         rules: BATTLE_RULES,
       }),

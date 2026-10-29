@@ -31,6 +31,7 @@ export interface BattleUiState {
   hand: BattleHand | null;
   swapHand: BattleHand;
   hover: BattleHex | null;
+  toolAt: BattleHex | null;
 }
 
 export interface BattleViewInput {

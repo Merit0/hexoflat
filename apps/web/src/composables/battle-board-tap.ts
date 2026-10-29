@@ -1,6 +1,6 @@
 import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
 import type { BattleAction } from '@hexoflat/engine/battle/battle-commands';
-import type { BattleCreature, BattleHand, BattleHex } from '@hexoflat/engine/battle/battle-state';
+import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-state';
 import { creatureById, livingCreatureAt, terrainAt } from '@hexoflat/engine/battle/battle-board';
 import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
 import { cheapestPaths, pathTo, stepCost } from '@hexoflat/engine/battle/movement';
@@ -12,7 +12,6 @@ export interface BattleTapInput {
   projection: BattleProjection | null;
   localHeroIds: readonly string[];
   mode: BattleUiMode;
-  hand: BattleHand | null;
   hex: BattleHex;
   rules: BattleRules;
 }
@@ -85,8 +84,6 @@ export function battleMovePreview(input: BattleTapInput): BattleMovePreview | nu
 function targetTap(view: BattleProjection, input: BattleTapInput): BattleAction[] {
   const target = livingCreatureAt(view, input.hex);
   if (!target || target.side === view.viewer) return [];
-  if (input.mode === 'strike' && input.hand)
-    return [{ kind: 'strike', targetId: target.id, hand: input.hand }];
   if (input.mode === 'push' || input.mode === 'pull')
     return [{ kind: input.mode, targetId: target.id }];
   return [];

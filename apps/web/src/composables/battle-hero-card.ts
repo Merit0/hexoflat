@@ -1,9 +1,11 @@
 import type { BattleCreature, BattleHand, BattleItem } from '@hexoflat/engine/battle/battle-state';
 import { BATTLE_HANDS } from '@hexoflat/engine/battle/battle-state';
 import { creatureById, isAlive } from '@hexoflat/engine/battle/battle-board';
+import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { battleHint, type BattleMessage } from './battle-hint';
 import type { BattleUiMode } from './battle-board-tap';
+import { strikeHands } from './battle-tool-hex';
 import type { BattleCreatureRow, BattleViewInput } from './battle-view-types';
 
 export type BattleCardState = 'defend' | 'act' | 'wait' | 'fallen' | 'victory' | 'defeat';
@@ -73,20 +75,18 @@ function handMeta(
   input: BattleViewInput,
 ): BattleMessage | null {
   const kind = handKind(item);
-  if (!item || kind === 'empty') return null;
-  if (kind === 'weapon')
+  if (kind === 'weapon' || kind === 'empty') {
+    const power = item?.power ?? input.rules.unarmedPower;
     return struck
       ? { key: 'battle.hand.struck' }
-      : {
-          key: 'battle.hand.weapon',
-          params: { hearts: item.power! / 2, cost: input.rules.strike },
-        };
+      : { key: 'battle.hand.weapon', params: { hearts: power / 2, cost: input.rules.strike } };
+  }
   if (kind === 'consumable')
     return {
       key: 'battle.hand.consumable',
-      params: { hearts: item.heal! / 2, cost: input.rules.use },
+      params: { hearts: item!.heal! / 2, cost: input.rules.use },
     };
-  return { key: 'battle.hand.shield', params: { sides: item.shieldCapacity ?? 0 } };
+  return { key: 'battle.hand.shield', params: { sides: item!.shieldCapacity ?? 0 } };
 }
 
 function handDisabled(
@@ -96,7 +96,7 @@ function handDisabled(
   input: BattleViewInput,
 ) {
   if (input.ui.mode === 'swap') return false;
-  if (kind === 'weapon') return struck || view.turnWill < input.rules.strike;
+  if (kind === 'weapon' || kind === 'empty') return struck || view.turnWill < input.rules.strike;
   if (kind === 'consumable') return view.turnWill < input.rules.use;
   return true;
 }
@@ -125,8 +125,12 @@ function hands(
   });
 }
 
-export function freeStrikeHand(view: BattleProjection, self: BattleCreature): BattleHand | null {
-  return BATTLE_HANDS.find((h) => !!self.hands[h]?.power && !view.struckHands.includes(h)) ?? null;
+export function freeStrikeHand(
+  view: BattleProjection,
+  self: BattleCreature,
+  rules: BattleRules,
+): BattleHand | null {
+  return strikeHands(view, self, rules)[0] ?? null;
 }
 
 function actions(
@@ -143,7 +147,7 @@ function actions(
     disabled: blocked || will < cost,
   });
   return [
-    entry('strike', rules.strike, !freeStrikeHand(view, self)),
+    entry('strike', rules.strike, !freeStrikeHand(view, self, rules)),
     entry('push', rules.push, false),
     entry('pull', rules.pull, false),
     entry('swap', rules.swap, self.bag.length === 0),

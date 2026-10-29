@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BATTLE_CREATURES, BATTLE_ITEMS } from './battle-catalogue';
+import { BATTLE_RULES } from './battle-content';
 import type { BattleItem } from './battle-state';
 
 export const threatRulesSchema = z.object({
@@ -12,7 +13,7 @@ export type ThreatRules = z.infer<typeof threatRulesSchema>;
 export const THREAT_RULES: ThreatRules = threatRulesSchema.parse({
   easyMax: 0.6,
   riskyMax: 1.3,
-  unarmedPower: 1,
+  unarmedPower: BATTLE_RULES.unarmedPower,
 });
 
 export const THREATS = ['easy', 'risky', 'deadly'] as const;

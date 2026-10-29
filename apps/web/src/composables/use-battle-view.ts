@@ -11,13 +11,20 @@ import { freeStrikeHand, type BattleActionId } from './battle-hero-card';
 import { buildBattleView } from './battle-view';
 import type { BattleUiState } from './battle-view-types';
 
-const ui = reactive<BattleUiState>({ mode: 'move', hand: null, swapHand: 'left', hover: null });
+const ui = reactive<BattleUiState>({
+  mode: 'move',
+  hand: null,
+  swapHand: 'left',
+  hover: null,
+  toolAt: null,
+});
 
 export function resetBattleUi(): void {
   ui.mode = 'move';
   ui.hand = null;
   ui.swapHand = 'left';
   ui.hover = null;
+  ui.toolAt = null;
 }
 
 const TRANSLATED_PARAM = /^(battle|content)\./;
@@ -82,7 +89,6 @@ export function useBattleView() {
       projection: store.projection,
       localHeroIds: store.localHeroIds,
       mode: ui.mode,
-      hand: ui.hand,
       hex,
       rules: BATTLE_RULES,
     });
@@ -105,7 +111,7 @@ export function useBattleView() {
       resetBattleUi();
       return;
     }
-    if (!item?.power) return;
+    if (item && !item.power) return;
     const on = ui.mode === 'strike' && ui.hand === hand;
     ui.mode = on ? 'move' : 'strike';
     ui.hand = on ? null : hand;
@@ -119,7 +125,7 @@ export function useBattleView() {
       return;
     }
     ui.mode = id;
-    ui.hand = id === 'strike' ? freeStrikeHand(store.projection, hero) : null;
+    ui.hand = id === 'strike' ? freeStrikeHand(store.projection, hero, BATTLE_RULES) : null;
   }
 
   function swapFrom(bagIndex: number) {
@@ -142,6 +148,19 @@ export function useBattleView() {
 
   function hoverHex(hex: BattleHex | null) {
     ui.hover = hex;
+    if (hex && ui.mode === 'strike') ui.toolAt = hex;
+  }
+
+  function strikeWithTool() {
+    const tool = view.value.board?.tool;
+    if (!tool?.targetId) return false;
+    const accepted = store.act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
+    if (accepted) resetBattleUi();
+    return accepted;
+  }
+
+  function hideTool() {
+    resetBattleUi();
   }
 
   return {
@@ -149,6 +168,8 @@ export function useBattleView() {
     ui,
     tapHex,
     hoverHex,
+    strikeWithTool,
+    hideTool,
     pickHand,
     pickAction,
     swapFrom,

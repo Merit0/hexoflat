@@ -490,11 +490,6 @@
     "spotted": "The sentry saw you — ambush!",
     "attack": "Attack",
     "scout": "Scout",
-    "discovered": "Discovered",
-    "nothingYet": "No squads found yet",
-    "prices": "Step {step} · Scout {scout} · Attack {attack}",
-    "enemies": "{count} enemies",
-    "leaderAndUnknown": "{leader} + {unknown} unknown",
     "threat": {
       "easy": "Easy",
       "risky": "Risky",
@@ -504,7 +499,6 @@
       "scouted": "scouted the squad",
       "ambush": "was ambushed!"
     },
-    "watcher": "sentry",
     "rejected": {
       "UNKNOWN_SQUAD": "There is no squad here",
       "NO_HERO": "No hero",

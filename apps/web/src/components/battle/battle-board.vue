@@ -22,7 +22,7 @@ import type { BattleBannerProps } from '@/render/battle/battle-banner';
 import { useBattleBoard, type BattleBoardScene } from '@/render/battle/use-battle-board';
 import type { BattleOverlayModel } from '@/render/battle/battle-overlay-model';
 import type { BattleMovePreview } from '@/composables/battle-board-tap';
-import type { BoardFrame } from '@/render/board-camera';
+import type { BoardCamera, BoardFrame } from '@/render/board-camera';
 
 const props = defineProps<{
   scene: BattleBoardScene;
@@ -37,6 +37,7 @@ const emit = defineEmits<{
   'hex-tap': [hex: BattleHex];
   'hex-hover': [hex: BattleHex | null];
   animating: [busy: boolean];
+  camera: [camera: BoardCamera];
 }>();
 
 const pane = ref<HTMLElement | null>(null);
@@ -57,6 +58,7 @@ useBattleBoard({
   onHexTap: (hex) => emit('hex-tap', hex),
   onHexHover: (hex) => emit('hex-hover', hex),
   takeEvents: () => props.takeEvents?.() ?? [],
+  onCamera: (camera) => emit('camera', camera),
   onAnimating: (busy) => {
     animating.value = busy;
     emit('animating', busy);

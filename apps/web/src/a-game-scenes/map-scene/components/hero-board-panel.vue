@@ -83,7 +83,6 @@
           class="tab-panel events-tab"
           data-testid="events-tab-content"
         >
-          <squads-discovered-list />
           <game-events-logger />
         </section>
 
@@ -118,7 +117,6 @@ import HeroDetailsBoard from '@/a-game-scenes/map-scene/components/hero-details/
 import ItemTooltipLayer from '@/components/gui/item-tooltip/item-tooltip-layer.vue';
 import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
 import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vue';
-import SquadsDiscoveredList from '@/a-game-scenes/map-scene/components/squads/squads-discovered-list.vue';
 import { useBattleStore } from '@/stores/battle-store';
 import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
 

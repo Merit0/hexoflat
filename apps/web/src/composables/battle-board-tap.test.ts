@@ -40,7 +40,6 @@ function preview(battle: BattleState, hex: BattleHex, mode: BattleUiMode = 'move
     projection: projectBattleForViewer(battle, 'heroes'),
     localHeroIds: ['h'],
     mode,
-    hand: null,
     hex,
     rules: BATTLE_RULES,
   });
