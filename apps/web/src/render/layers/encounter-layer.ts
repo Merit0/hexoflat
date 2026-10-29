@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { EncounterView } from '@hexoflat/engine/encounters/encounter-state';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
@@ -10,10 +10,7 @@ import { getTexture, isTextureReady, onTextureReady } from '@/render/texture-cac
 import {
   ENCOUNTER_LOOT_URL,
   ENCOUNTER_MARKS,
-  ENCOUNTER_RIMS,
   encounterTokenUrl,
-  leaderGlyph,
-  rimOf,
   toPixiColor,
 } from '@/render/encounter-look';
 
@@ -38,21 +35,6 @@ function scaledPolygon(w: number, h: number, scale: number, dx: number, dy: numb
   return points.map((value, i) =>
     i % 2 === 0 ? value + dx + (w * (1 - scale)) / 2 : value + dy + (h * (1 - scale)) / 2,
   );
-}
-
-function badge(text: string, fill: string, stroke: string, radius: number): Container {
-  const root = new Container();
-  const circle = new Graphics()
-    .circle(0, 0, radius)
-    .fill({ color: toPixiColor(fill) })
-    .stroke({ color: toPixiColor(stroke), width: 2 });
-  const label = new Text({
-    text,
-    style: { fontFamily: 'Cinzel, serif', fontSize: radius, fontWeight: '800', fill: 0xf5ead0 },
-  });
-  label.anchor.set(0.5);
-  root.addChild(circle, label);
-  return root;
 }
 
 function drawWatched(layer: Graphics, watched: IHexCoordinates[], w: number, h: number) {
@@ -96,32 +78,8 @@ function tokenNode(
   track: Track,
 ): Container {
   const root = new Container();
-  const rim = ENCOUNTER_RIMS[rimOf(view)];
   const isLoot = view.status === 'loot';
   root.addChild(isLoot ? lootFace(w, h, refit) : creatureFace(view, w, h, track));
-  if (isLoot) return root;
-  const glyph = leaderGlyph(view.leaderKind);
-  if (glyph) {
-    const mark = new Text({ text: glyph, style: { fontSize: w * 0.2 } });
-    mark.anchor.set(0.5);
-    mark.position.set(w / 2, h * 0.2);
-    root.addChild(mark);
-  }
-  if (view.count > 1) {
-    const count = badge(`×${view.count}`, '#15171c', rim.light, 12);
-    count.position.set(w / 2, h / 2);
-    root.addChild(count);
-  }
-  if (!view.scouted) {
-    const unknown = badge('?', ENCOUNTER_MARKS.unknown.fill, ENCOUNTER_MARKS.unknown.stroke, 10);
-    unknown.position.set(w * 0.82, h * 0.2);
-    root.addChild(unknown);
-  }
-  if (view.sentry) {
-    const eye = badge('👁', ENCOUNTER_MARKS.sentry.fill, ENCOUNTER_MARKS.sentry.stroke, 11);
-    eye.position.set(w * 0.18, h * 0.2);
-    root.addChild(eye);
-  }
   return root;
 }
 

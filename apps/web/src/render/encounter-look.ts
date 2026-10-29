@@ -11,7 +11,6 @@ export const ENCOUNTER_RIMS: Record<EncounterRim, { light: string; dark: string 
 };
 
 export const ENCOUNTER_MARKS = {
-  unknown: { fill: '#2A0E18', stroke: '#B0306A' },
   sentry: { fill: '#5A1A14', stroke: '#FF8A7A' },
   watched: { fill: '#2A1719', stroke: '#7A2A24' },
   glow: '#FFD36B',
@@ -21,15 +20,6 @@ export function encounterTokenUrl(leaderKind: string): string {
   return creatureSprite('enemies', leaderKind);
 }
 export const ENCOUNTER_LOOT_URL = '/hex-assets/hex-loot/chest-token.png';
-
-const LEADER_GLYPHS: Record<string, string> = {
-  'skeleton-king': '👑',
-  'skeleton-archer': '🏹',
-};
-
-export function leaderGlyph(kind: string): string {
-  return LEADER_GLYPHS[kind] ?? '';
-}
 
 export function rimOf(view: { status: string; threat: Threat }): EncounterRim {
   return view.status === 'loot' ? 'loot' : view.threat;
