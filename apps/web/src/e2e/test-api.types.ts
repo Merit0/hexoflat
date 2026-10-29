@@ -76,6 +76,7 @@ export interface HexoflatTestApi {
   setHeroHealth(current: number): void;
   placeSquadNextToHero(key: string): TestHexCoordinates;
   isBattleEngaged(): boolean;
+  finishBattle(outcome: 'victory' | 'defeat'): void;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 }

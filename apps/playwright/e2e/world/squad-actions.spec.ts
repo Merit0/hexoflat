@@ -18,3 +18,16 @@ test('Verify the hand on a squad token offers ATTACK and the opened battle survi
   await new ReloadCampingMapFeature().reload();
   await squad.verifyDeployCardOpen();
 });
+
+test('Verify leaving a won battle in the cave brings the board back without render errors', async () => {
+  test.setTimeout(120_000);
+  const squad = new SquadActionsFeature();
+
+  await squad.openCave();
+  await squad.placeSquadNextToHero(HexobjectKeys.skeletonPack);
+  await squad.aimHandAtSquad();
+  await squad.attack();
+  await squad.startBattle();
+  await squad.winAndLeaveBattle();
+  await squad.verifyBoardIsBackWithoutErrors();
+});

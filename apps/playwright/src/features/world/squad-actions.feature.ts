@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
+import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
 import { UseHeroToolFeature } from '@features/world/use-hero-tool.feature';
 import { Tool } from '@config/hero-tool';
 import type { TestHexCoordinates } from '@framework/test-api';
@@ -49,6 +50,37 @@ export class SquadActionsFeature extends BaseFeature {
     await this.step('The battle deploy card is open for the engaged squad', async () => {
       await this.campingMap.battleDeployCard.verifyIsVisible();
       await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(true);
+    });
+  }
+
+  async openCave(): Promise<void> {
+    await this.step('Open the generated cave with enough Will to enter', async () => {
+      await new OpenCampingMapFeature().open();
+      this.campingMap.pageErrors.watch();
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(40));
+      await this.page.goto('/world/cave');
+      await this.campingMap.hexBoard.waitForReady();
+    });
+  }
+
+  async startBattle(): Promise<void> {
+    await this.step('Start the battle from the deploy card', async () => {
+      await this.campingMap.battleTab.startBattle();
+    });
+  }
+
+  async winAndLeaveBattle(): Promise<void> {
+    await this.step('Win the battle and press LEAVE BATTLE', async () => {
+      await this.campingMap.hexBoard.finishBattle('victory');
+      await this.campingMap.battleTab.leaveBattle();
+    });
+  }
+
+  async verifyBoardIsBackWithoutErrors(): Promise<void> {
+    await this.step('The map is back, the battle is closed and nothing threw', async () => {
+      await this.campingMap.battleTab.verifyBoardClosed();
+      await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(false);
+      await this.campingMap.pageErrors.verifyNone();
     });
   }
 }

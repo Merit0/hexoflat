@@ -55,7 +55,7 @@ export function useBattleText() {
 
 export function useBattleView() {
   const store = useBattleStore();
-  const { warn, send } = useBattleWarnings();
+  const { warn, send, lockedWarning } = useBattleWarnings();
   const { t } = useI18n();
 
   function creatureOf(id: string): BattleCreature | null {
@@ -102,6 +102,7 @@ export function useBattleView() {
   }
 
   function tapHex(hex: BattleHex) {
+    if (lockedWarning()) return;
     const moving = ui.stage === 'action' && ui.mode === 'strike';
     const actions = battleTapActions({
       projection: store.projection,
@@ -162,7 +163,7 @@ export function useBattleView() {
 
   function cycleHand(direction: 1 | -1) {
     const hero = self();
-    if (!hero || store.projection?.phase !== 'act' || store.animating) return;
+    if (!hero || store.projection?.phase !== 'act' || store.inputLocked) return;
     if (ui.stage !== 'action' || ui.mode !== 'strike') {
       goStage('action');
       ui.hand = BATTLE_HANDS[0];
@@ -196,6 +197,7 @@ export function useBattleView() {
   }
 
   function actWithTool() {
+    if (lockedWarning()) return false;
     const tool = view.value.board?.tool;
     if (!tool?.action) return false;
     if (tool.action === 'attack' && tool.targetId)

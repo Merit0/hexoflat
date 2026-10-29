@@ -488,6 +488,9 @@
     "stage": {
       "action": "Action",
       "move": "Move"
+    },
+    "warn": {
+      "enemyTurn": "The enemy is acting — wait for it"
     }
   },
   "squad": {

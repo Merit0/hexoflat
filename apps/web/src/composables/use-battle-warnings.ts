@@ -2,6 +2,7 @@ import { useI18n } from 'vue-i18n';
 import type { BattleRejectionCode } from '@hexoflat/engine/battle/battle-rejection';
 import { useBattleStore } from '@/stores/battle-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { controlledHero } from './battle-board-tap';
 import { rejectionWarning } from './battle-warning';
 
 export function useBattleWarnings() {
@@ -17,6 +18,18 @@ export function useBattleWarnings() {
     heroToolStore.setActionMessage(t(`battle.reject.${code}`));
   }
 
+  function lockedWarning(): boolean {
+    if (store.inputLocked) {
+      heroToolStore.setActionMessage(t('battle.warn.enemyTurn'));
+      return true;
+    }
+    const view = store.projection;
+    if (!view || view.phase === 'ended' || view.task) return false;
+    if (controlledHero(view, store.localHeroIds)) return false;
+    warn('NOT_YOUR_TURN', null);
+    return true;
+  }
+
   function send(run: () => boolean): boolean {
     const before = store.lastHeroEvents;
     const accepted = run();
@@ -26,5 +39,5 @@ export function useBattleWarnings() {
     return accepted;
   }
 
-  return { warn, send };
+  return { warn, send, lockedWarning };
 }

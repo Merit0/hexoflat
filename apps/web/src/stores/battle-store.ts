@@ -57,7 +57,9 @@ export const useBattleStore = defineStore('battle-store', () => {
   const turnStartWill = ref(0);
   const queue = shallowRef<DomainEvent[]>([]);
   const animating = ref(false);
+  const enemyTurnPlaying = ref(false);
 
+  const inputLocked = computed(() => animating.value && enemyTurnPlaying.value);
   const isOpen = computed(() => deploy.value !== null);
   const inBattle = computed(() => engagement.value !== null || deploy.value !== null);
   const projection = computed(() =>
@@ -139,7 +141,8 @@ export const useBattleStore = defineStore('battle-store', () => {
   }
 
   function act(action: BattleAction, atMs: number = Date.now()): boolean {
-    if (animating.value && !TASK_ACTIONS.has(action.kind)) return false;
+    if (inputLocked.value && !TASK_ACTIONS.has(action.kind)) return false;
+    if (!animating.value) enemyTurnPlaying.value = false;
     const heroId = actorFor(action);
     if (!heroId) return false;
     const events = send({ type: 'BATTLE', payload: { kind: 'hero', heroId, atMs, action } });
@@ -168,6 +171,7 @@ export const useBattleStore = defineStore('battle-store', () => {
   function runEnemyTurn(atMs: number = Date.now()) {
     if (!needsEnemyTurn.value) return;
     lastHeroEvents.value = [];
+    enemyTurnPlaying.value = true;
     send({ type: 'BATTLE', payload: { kind: 'run-enemy-turn', atMs } });
   }
 
@@ -179,10 +183,12 @@ export const useBattleStore = defineStore('battle-store', () => {
 
   function setAnimating(busy: boolean) {
     animating.value = busy;
+    if (!busy) enemyTurnPlaying.value = false;
   }
 
   function close() {
     animating.value = false;
+    enemyTurnPlaying.value = false;
     deploy.value = null;
     engagement.value = null;
     battle.value = null;
@@ -201,6 +207,7 @@ export const useBattleStore = defineStore('battle-store', () => {
     turnStartWill,
     queue,
     animating,
+    inputLocked,
     isOpen,
     inBattle,
     projection,

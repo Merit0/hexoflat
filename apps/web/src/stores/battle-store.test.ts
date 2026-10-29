@@ -51,11 +51,13 @@ describe('battle store', () => {
     expect(store.projection?.turnWill).toBe(19);
   });
 
-  it('locks hero input and enemy turns while the board animates', () => {
+  it('keeps hero clicks while the hero walks, but holds the enemy turn until the board is still', () => {
     const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
     store.setAnimating(true);
-    expect(store.act({ kind: 'move', hex: { q: 1, r: 0 } }, 10)).toBe(false);
-    expect(store.projection?.turnWill).toBe(20);
+    expect(store.inputLocked).toBe(false);
+    expect(store.act({ kind: 'move', hex: { q: 1, r: 0 } }, 10)).toBe(true);
+    expect(store.act({ kind: 'move', hex: { q: 2, r: 0 } }, 10)).toBe(true);
+    expect(store.projection?.turnWill).toBe(18);
     store.setAnimating(false);
     expect(store.act({ kind: 'end-turn' }, 10)).toBe(true);
     expect(store.needsEnemyTurn).toBe(true);
@@ -63,6 +65,20 @@ describe('battle store', () => {
     expect(store.needsEnemyTurn).toBe(false);
     store.close();
     expect(store.animating).toBe(false);
+  });
+
+  it('locks hero input while an enemy turn plays and frees it afterwards', () => {
+    const store = startedOn(['s1', 'hero'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+    store.runEnemyTurn(10);
+    store.setAnimating(true);
+    expect(store.inputLocked).toBe(true);
+    store.lastHeroEvents = [];
+    expect(store.act({ kind: 'end-turn' }, 10)).toBe(false);
+    expect(store.lastHeroEvents).toEqual([]);
+    store.setAnimating(false);
+    expect(store.inputLocked).toBe(false);
+    store.act({ kind: 'end-turn' }, 10);
+    expect(store.lastHeroEvents.length).toBeGreaterThan(0);
   });
 
   it('refuses to act for anyone when an enemy holds the turn', () => {
