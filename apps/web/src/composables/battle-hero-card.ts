@@ -115,7 +115,7 @@ function hands(
     const selected =
       input.ui.mode === 'swap'
         ? input.ui.swapHand === hand
-        : input.ui.stage === 'attack' && input.ui.mode === 'strike' && input.ui.hand === hand;
+        : input.ui.stage === 'action' && input.ui.mode === 'strike' && input.ui.hand === hand;
     return {
       hand,
       kind,
@@ -202,26 +202,17 @@ function defaultActHint(
   mode: BattleUiMode,
   self: BattleCreature,
   input: BattleViewInput,
-  targets: number,
 ): BattleMessage {
   if (mode === 'strike') {
-    const item = input.ui.hand ? self.hands[input.ui.hand] : null;
-    return targets && item
-      ? { key: 'battle.hint.act.strike', params: { item: `content.battle.${item.key}.title` } }
-      : { key: 'battle.hint.act.strikeNone' };
+    return { key: 'battle.hint.act.strike' };
   }
   if (mode === 'swap') return { key: 'battle.hint.act.swap', params: { hand: input.ui.swapHand } };
   return { key: `battle.hint.act.${mode}` };
 }
 
-function cardHint(
-  state: BattleCardState,
-  self: BattleCreature,
-  input: BattleViewInput,
-  targets: number,
-) {
+function cardHint(state: BattleCardState, self: BattleCreature, input: BattleViewInput) {
   const last = battleHint(input.lastHeroEvents, input.nameOf);
-  if (state === 'act') return last ?? defaultActHint(input.ui.mode, self, input, targets);
+  if (state === 'act') return last ?? defaultActHint(input.ui.mode, self, input);
   return state === 'defend' ? last : null;
 }
 
@@ -232,7 +223,6 @@ export function buildHeroCard(
   rows: BattleCreatureRow[],
 ): BattleHeroCard {
   const state = cardState(view, self, input);
-  const targets = rows.filter((r) => r.targeted).length;
   const defending = state === 'defend';
   const stanceGain = defending ? Math.max(0, input.turnStartWill - input.rules.willPerTurn) : 0;
   return {
@@ -243,7 +233,7 @@ export function buildHeroCard(
     stanceGain,
     hands: hands(view, self, input),
     actions: actions(view, self, input),
-    hint: cardHint(state, self, input, targets),
+    hint: cardHint(state, self, input),
     canUndo: view.undo.length > 0,
     stanceNote: Math.min(input.rules.stanceMax, view.turnWill),
     plan: 0,

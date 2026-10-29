@@ -48,6 +48,7 @@ const label = computed(() => {
   if (props.tool.action === 'attack') return t('battle.tool.attack');
   if (props.tool.action === 'block') return t('battle.tool.block');
   if (props.tool.action === 'unblock') return t('battle.tool.unblock');
+  if (props.tool.action === 'use') return t('battle.tool.use');
   return null;
 });
 </script>

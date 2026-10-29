@@ -115,10 +115,9 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     layers.preview.sync({
       segments,
       reachable: preview?.reachable ?? false,
-      markerCoord: segments[segments.length - 1] ?? null,
+      markerCoord: null,
       stepCost: preview?.cost ?? 0,
       chargesWill: true,
-      showCost: false,
       markerKind: 'move',
     });
   }

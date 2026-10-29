@@ -14,7 +14,6 @@ export interface MovePreviewSyncParams {
   markerCoord: IHexCoordinates | null;
   stepCost: number;
   chargesWill: boolean;
-  showCost?: boolean;
   markerKind: 'move' | 'seen';
 }
 
@@ -93,7 +92,6 @@ export function createMovePreviewLayer(deps: MovePreviewLayerDeps): MovePreviewL
         ? `−${params.stepCost}`
         : String(params.stepCost);
     markerText.style.fontSize = isSeen ? 10 : 12;
-    markerText.visible = isSeen || params.showCost !== false;
   }
 
   return {

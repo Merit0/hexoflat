@@ -22,7 +22,7 @@
           :tile-width="tileSize.w"
           :tile-height="tileSize.h"
           @act="actWithTool"
-          @hide="nextStage"
+          @hide="closeTool"
         />
       </board-overlay-layer>
       <battle-timed-task v-if="view.task" :task="view.task" @answer="answer" @timeout="timeout" />
@@ -60,7 +60,7 @@ const frame = computed(() => {
   return frameWorldRect({ width: columns, height: rows });
 });
 const tileSize = computed(() => tileScreenSize(camera.value ?? { x: 0, y: 0, zoom: 1 }));
-const { view, tapHex, hoverHex, answer, timeout, actWithTool, nextStage, cycleHand } =
+const { view, tapHex, hoverHex, answer, timeout, actWithTool, closeTool, cycleHand } =
   useBattleView();
 
 let lastWheelAt = 0;

@@ -6,7 +6,7 @@ import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-batt
 import { cheapestPaths, pathTo, stepCost } from '@hexoflat/engine/battle/movement';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 
-export type BattleUiMode = 'move' | 'strike' | 'block' | 'push' | 'pull' | 'swap';
+export type BattleUiMode = 'move' | 'strike' | 'push' | 'pull' | 'swap';
 
 export interface BattleTapInput {
   projection: BattleProjection | null;

@@ -167,7 +167,7 @@ function defendResults(events: DomainEvent[]): DefendResultMark[] {
 
 function overlayMode(input: BattleViewInput) {
   const { mode } = input.ui;
-  return mode === 'swap' || mode === 'block' ? null : mode;
+  return mode === 'swap' ? null : mode;
 }
 
 function boardView(input: BattleViewInput): BattleBoardView | null {

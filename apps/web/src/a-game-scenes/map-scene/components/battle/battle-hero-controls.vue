@@ -102,7 +102,7 @@
 
     <section v-else-if="card.state === 'act'" class="hero-card__body">
       <battle-stage-bar :stages="card.stages" @pick="emit('stage', $event)" />
-      <template v-if="card.stage === 'attack'">
+      <template v-if="card.stage === 'action'">
         <battle-hand-row
           v-for="hand in card.hands"
           :key="hand.hand"
@@ -111,7 +111,7 @@
         />
         <battle-action-buttons :actions="card.actions" @pick="emit('pick-action', $event)" />
       </template>
-      <div v-if="swapping && card.stage === 'attack'" class="hero-card__bag">
+      <div v-if="swapping && card.stage === 'action'" class="hero-card__bag">
         <button
           v-for="item in card.bag"
           :key="item.index"

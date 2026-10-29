@@ -1,9 +1,10 @@
 import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
-import type {
-  BattleCreature,
-  BattleHand,
-  BattleHex,
-  BattleItem,
+import {
+  BATTLE_HANDS,
+  type BattleCreature,
+  type BattleHand,
+  type BattleHex,
+  type BattleItem,
 } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { livingCreatureAt, terrainAt } from '@hexoflat/engine/battle/battle-board';
@@ -13,9 +14,9 @@ import { strikingItem } from '@hexoflat/engine/battle/strike';
 import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { controlledHero } from './battle-board-tap';
-import { handFitsStage, stageHands, type BattleStage } from './battle-stage';
+import type { BattleStage } from './battle-stage';
 
-export type BattleToolAction = 'attack' | 'block' | 'unblock';
+export type BattleToolAction = 'attack' | 'block' | 'unblock' | 'use';
 
 export interface BattleToolHex {
   origin: BattleHex;
@@ -53,12 +54,13 @@ function toolAnchor(
   view: BattleProjection,
   self: BattleCreature,
   preferred: BattleHex | null,
-  stage: BattleStage,
+  item: BattleItem | null,
 ): BattleHex | null {
   if (preferred && isAdjacentHex(self.pos, preferred)) return preferred;
   const around = hexNeighbours(self.pos).filter((hex) => terrainAt(view, hex) !== null);
-  if (stage === 'block') return around.find((hex) => !guardHexRefusal(view, self, hex)) ?? null;
-  return around.find((hex) => foeAt(view, self, hex)) ?? around[0] ?? null;
+  if (item?.shieldCapacity) return around.find((hex) => !guardHexRefusal(view, self, hex)) ?? null;
+  if (!item || item.power) return around.find((hex) => foeAt(view, self, hex)) ?? around[0] ?? null;
+  return around[0] ?? null;
 }
 
 export function strikeHands(
@@ -106,26 +108,39 @@ function blockDecision(
     : { action: null, targetId: null, price: 0 };
 }
 
+const NO_ACTION: Decision = { action: null, targetId: null, price: 0 };
+
+function useDecision(item: BattleItem, rules: BattleRules): Decision {
+  return item.heal ? { action: 'use', targetId: null, price: rules.use } : NO_ACTION;
+}
+
+function decide(
+  view: BattleProjection,
+  self: BattleCreature,
+  hand: BattleHand,
+  at: BattleHex,
+  rules: BattleRules,
+): Decision {
+  const item = self.hands[hand];
+  if (!item || item.power) return attackDecision(view, self, hand, at, rules);
+  if (item.shieldCapacity) return blockDecision(view, self, at, rules);
+  return useDecision(item, rules);
+}
+
 export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null {
   const view = input.projection;
   const self = controlledHero(view, input.localHeroIds);
-  const { stage } = input.ui;
-  if (!view || !self || view.phase !== 'act' || stage === 'move') return null;
-  const chosen = input.ui.hand;
-  const hand =
-    chosen && handFitsStage(self.hands[chosen], stage) ? chosen : stageHands(self, stage)[0];
-  if (!hand) return null;
-  const at = toolAnchor(view, self, input.ui.toolAt, stage);
+  if (!view || !self || view.phase !== 'act' || input.ui.stage !== 'action') return null;
+  const hand = input.ui.hand ?? BATTLE_HANDS[0];
+  const item = self.hands[hand];
+  const at = toolAnchor(view, self, input.ui.toolAt, item);
   if (!at) return null;
-  const decision =
-    stage === 'attack'
-      ? attackDecision(view, self, hand, at, input.rules)
-      : blockDecision(view, self, at, input.rules);
+  const decision = decide(view, self, hand, at, input.rules);
   return {
     origin: { ...self.pos },
     at: { ...at },
     hand,
-    toolKey: battleToolKey(self.hands[hand]),
+    toolKey: battleToolKey(item),
     action: decision.action,
     targetId: decision.targetId,
     canAfford: view.turnWill >= decision.price,

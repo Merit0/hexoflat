@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
+import { battleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import { giveTurn, hero, skeleton } from '@hexoflat/engine/battle/battle-test-setup';
 import { useBattleStore } from '@/stores/battle-store';
 import { testDeploy } from '@/stores/battle-store.fixture';
@@ -40,36 +41,37 @@ function startedOn(order: string[], creatures: BattleCreature[]) {
   return store;
 }
 
-describe('battle tool hex and stages', () => {
+const ACTION: BattleUiState = {
+  stage: 'action',
+  mode: 'strike',
+  hand: 'right',
+  swapHand: 'left',
+  hover: null,
+  toolAt: null,
+};
+
+describe('battle tool hex and statuses', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
-  it('selects strike targets, glows them and strikes with the chosen hand', () => {
+  it('offers Attack with the sword beside a foe, glows the target and shows the plan price', () => {
     const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
-    const strike: BattleUiState = {
-      stage: 'attack',
-      mode: 'strike',
-      hand: 'right',
-      swapHand: 'left',
-      hover: null,
-      toolAt: null,
-    };
-    let view = viewOf(strike);
+    let view = viewOf(ACTION);
     expect(view.board?.overlay.targets).toEqual(['s1']);
     expect(view.enemies[0].targeted).toBe(true);
     expect(view.hero?.hint?.key).toBe('battle.hint.act.strike');
     expect(view.hero?.hands[0].selected).toBe(true);
-
-    expect(viewOf(strike).board?.tool).toMatchObject({
+    expect(view.board?.tool).toMatchObject({
       hand: 'right',
       toolKey: 'sword',
       action: 'attack',
       targetId: 's1',
       canAfford: true,
     });
-    expect(viewOf(strike).hero?.plan).toBe(BATTLE_RULES.strike);
+    expect(view.hero?.plan).toBe(BATTLE_RULES.strike);
     expect(viewOf().hero?.plan).toBe(0);
+
     expect(store.act({ kind: 'strike', targetId: 's1', hand: 'right' }, 0)).toBe(true);
     view = viewOf();
     expect(view.hero?.hint).toEqual({ key: 'battle.hint.struck', params: { name: 'Skeleton' } });
@@ -79,47 +81,48 @@ describe('battle tool hex and stages', () => {
     expect(store.projection?.turnWill).toBe(13);
   });
 
-  it('shows the shield tool only in the block stage and lets the hero switch stage freely', () => {
-    const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
-    const block: BattleUiState = {
-      stage: 'block',
-      mode: 'block',
-      hand: null,
-      swapHand: 'left',
-      hover: null,
-      toolAt: { q: 1, r: 0 },
-    };
-    expect(viewOf().hero?.stages.map((s) => s.current)).toEqual([false, true, false]);
+  it('has two statuses and shows a tool only in ACTION', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+    expect(viewOf(MOVE).hero?.stages).toEqual([
+      { id: 'action', current: false },
+      { id: 'move', current: true },
+    ]);
     expect(viewOf(MOVE).board?.tool).toBeNull();
+    expect(viewOf(ACTION).board?.tool).toMatchObject({ hand: 'right', action: null });
+  });
 
-    const tool = viewOf(block).board?.tool;
-    expect(tool).toMatchObject({
-      hand: 'left',
+  it('offers Block with the shield and Lift once the side is guarded', () => {
+    const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+    const shield: BattleUiState = { ...ACTION, hand: 'left', toolAt: { q: 1, r: 0 } };
+    expect(viewOf(shield).board?.tool).toMatchObject({
       toolKey: 'shield',
       action: 'block',
       price: BATTLE_RULES.shieldPerSide,
     });
-    expect(viewOf(block).hero?.plan).toBe(BATTLE_RULES.shieldPerSide);
+    expect(viewOf(shield).hero?.plan).toBe(BATTLE_RULES.shieldPerSide);
 
     expect(store.act({ kind: 'place-shield', hex: { q: 1, r: 0 } }, 0)).toBe(true);
-    expect(viewOf(block).board?.tool).toMatchObject({ action: 'unblock', price: 0 });
-    expect(viewOf(block).board?.overlay.marks).toContainEqual({
+    expect(viewOf(shield).board?.tool).toMatchObject({ action: 'unblock', price: 0 });
+    expect(viewOf(shield).board?.overlay.marks).toContainEqual({
       hex: { q: 1, r: 0 },
       tone: 'shield',
     });
   });
 
-  it('falls back to the weapon hand and offers no action when no foe is beside the hero', () => {
-    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
-    const strike: BattleUiState = {
-      stage: 'attack',
-      mode: 'strike',
-      hand: 'left',
-      swapHand: 'left',
-      hover: null,
-      toolAt: null,
-    };
-    expect(viewOf(strike).board?.tool).toMatchObject({ hand: 'right', action: null });
-    expect(viewOf().board?.tool).toBeNull();
+  it('offers Use with a potion in hand for the use price', () => {
+    startedOn(
+      ['hero', 's1'],
+      [
+        hero(
+          { q: 0, r: 0 },
+          { hp: 3, hands: { right: battleItem('sword'), left: battleItem('health-potion') } },
+        ),
+        skeleton('s1', { q: 3, r: 0 }),
+      ],
+    );
+    expect(viewOf({ ...ACTION, hand: 'left' }).board?.tool).toMatchObject({
+      action: 'use',
+      price: BATTLE_RULES.use,
+    });
   });
 });

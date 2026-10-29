@@ -434,12 +434,10 @@
       "fell": "{name} has fallen.",
       "act": {
         "move": "Tap a blue hex to move — every step costs 1 Will.",
-        "strike": "Press Attack to lay the {item} on the enemy.",
-        "strikeNone": "Scroll to pick a hand and stand next to an enemy.",
+        "strike": "Scroll to choose a tool, point it at an enemy or at a side next to you and press its button.",
         "push": "Tap an adjacent enemy — it is pushed 1 hex away from you.",
         "pull": "Tap an enemy 2 hexes away — it is pulled next to you.",
-        "swap": "Pick an item from the bag for the {hand, select, right {right hand} other {left hand}} — tap a hand to switch.",
-        "block": "Scroll to the shield, point at a side next to you and press Block — that is the side the enemy will strike from."
+        "swap": "Pick an item from the bag for the {hand, select, right {right hand} other {left hand}} — tap a hand to switch."
       }
     },
     "reject": {
@@ -489,12 +487,12 @@
     "tool": {
       "attack": "Attack",
       "block": "Block",
-      "unblock": "Lift"
+      "unblock": "Lift",
+      "use": "Use"
     },
     "stage": {
-      "attack": "Attack",
-      "move": "Move",
-      "block": "Block"
+      "action": "Action",
+      "move": "Move"
     }
   },
   "squad": {
