@@ -340,6 +340,7 @@
       "victory": "Victory! All enemies have fallen.",
       "defeat": "Defeat — the hero returns to camp."
     },
+    "turnCost": "Turn cost",
     "endTurn": "END TURN",
     "wait": "{name} ({init}) is moving. Your stance holds",
     "waitStance": "{will} Will for the next block.",
@@ -408,15 +409,9 @@
       }
     },
     "legend": {
-      "rubble": "Rubble — {cost} Will",
-      "ledge": "Ledge — {cost} up, +½ from above",
-      "oil": "Oil — slide 1 more",
-      "saw": "Saw — −½ of hearts",
-      "boulder": "Boulder — weight {weight}"
+      "saw": "Saw — −½ of hearts"
     },
     "hint": {
-      "moved": "{steps, plural, one {Moved one step} other {Moved # steps}} for {cost} Will.",
-      "undone": "Step undone — Will returned.",
       "struck": "Struck {name}. It only sees a red ring — step away to hide your side.",
       "blocked": "Blocked! Shields burned: {burned}.",
       "hitTaken": "The strike landed: −{hearts} heart. Shields burned: {burned}.",

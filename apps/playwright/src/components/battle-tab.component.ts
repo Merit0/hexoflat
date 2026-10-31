@@ -10,6 +10,10 @@ export class BattleTabComponent extends BaseComponent {
     };
   }
 
+  async verifyTurnCost(cost: number): Promise<void> {
+    await expect(this.page.getByTestId('battle-turn-cost-value')).toHaveText(String(cost));
+  }
+
   async verifyBoardOpen(): Promise<void> {
     await expect(this.page.getByTestId('battle-board')).toBeVisible();
     await expect(this.page.getByTestId('battle-start')).toHaveCount(0);

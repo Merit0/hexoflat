@@ -21,7 +21,7 @@ export const RecipeSchema = z.object({
   }),
   biome: BiomeSchema.optional(),
   background: z.string(),
-  fog: z.enum(['FOG', 'ALL_REVEALED', 'BY_REGION']),
+  fog: z.enum(['FOG', 'ALL_REVEALED']),
   willZone: z.enum(['paid', 'free']).optional(),
   entryObject: hexobjectKeySchema.optional(),
   fallbackSeed: z.string().optional(),

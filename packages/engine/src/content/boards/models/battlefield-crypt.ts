@@ -14,9 +14,10 @@ export const BATTLEFIELD_CRYPT_MODEL = {
     form: [{ kind: 'hexagon', radius: 4, edgeNoise: [2, 4] }],
     bounds: [{ kind: 'wall', enclose: true, hexobject: 'stone-wall' }],
     relief: [
-      { kind: 'battle-features', hazards: [1, 2], ledges: [2, 3], rubble: [2, 4], oil: [1, 1] },
+      { kind: 'battle-features', hazards: [1, 2], ledges: [0, 0], rubble: [0, 0], oil: [0, 0] },
     ],
-    objects: [{ kind: 'battle-cover', cover: [2, 4] }],
-    checks: [{ kind: 'tactical-budget', hazards: [1, 2], minLedges: 1, cover: [2, 4] }],
+    checks: [
+      { kind: 'tactical-budget', hazards: [1, 2], minLedges: 0, cover: [0, 0], minCombos: 0 },
+    ],
   },
 } satisfies BoardRecipeInput;

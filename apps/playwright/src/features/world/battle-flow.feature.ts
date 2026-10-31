@@ -299,6 +299,7 @@ export class BattleFlowFeature extends BaseFeature {
         const now = await this.snapshot();
         expect(now.heroDistances[this.attackerId!]).toBe(1);
         expect(now.turnWill).toBeLessThanOrEqual(13);
+        await this.campingMap.battleTab.verifyTurnCost(0);
         expect(this.hero(now).hp).toBe(this.hero(this.before!).hp);
         expect(now.wounds[this.hero(now).id] ?? []).toEqual([]);
         expect(now.activeId).toBe(this.hero(now).id);

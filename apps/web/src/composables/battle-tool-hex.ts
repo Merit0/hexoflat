@@ -101,7 +101,7 @@ function attackDecision(
   const reachable =
     !!foe &&
     !!weapon &&
-    !reachRefusal(view, self, foe, weapon, view.turnWill - rules.strike, rules);
+    !reachRefusal(view, self, foe, weapon, Math.max(0, view.turnWill - rules.strike), rules);
   return foe && ready && reachable
     ? { action: 'attack', targetId: foe.id, price: rules.strike }
     : { action: null, targetId: null, price: 0 };

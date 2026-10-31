@@ -100,6 +100,7 @@ function growCluster(
   rng: SeededRandom,
   maxRing: number,
 ): IHexCoordinates[] {
+  if (size <= 0) return [];
   const start = shuffled(innerOpen(draft, maxRing), rng)[0];
   if (!start) return [];
   const cluster = [start];

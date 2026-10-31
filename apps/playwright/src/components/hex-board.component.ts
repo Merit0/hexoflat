@@ -93,6 +93,13 @@ export class HexBoardComponent extends BaseComponent {
     await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveHeroTheTurn());
   }
 
+  async watchSprite(url: RegExp): Promise<() => Promise<void>> {
+    const response = this.page.waitForResponse((r) => url.test(r.url()));
+    return async () => {
+      expect((await response).status()).toBe(200);
+    };
+  }
+
   async readBattleSnapshot() {
     return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleSnapshot());
   }

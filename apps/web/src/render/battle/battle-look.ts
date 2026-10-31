@@ -9,7 +9,7 @@ export const BATTLE_TERRAIN_TOKENS: Partial<Record<BattleTerrain, string>> = {
   rubble: `${BATTLE_TOKEN_DIR}/rubble-token.svg`,
   ledge: `${BATTLE_TOKEN_DIR}/ledge-token.svg`,
   oil: `${BATTLE_TOKEN_DIR}/oil-token.svg`,
-  saw: `${BATTLE_TOKEN_DIR}/saw-token.svg`,
+  saw: '/hex-assets/hex-constructs/saw-token.png',
 };
 
 export function battleFloorSprite(biome: BattlefieldBiome): string {
@@ -32,4 +32,4 @@ export type BattleOverlayTone =
 
 export const SAW_SPIN_RADIANS_PER_SECOND = Math.PI * 2;
 
-export const BATTLE_LEGEND_ITEMS = ['rubble', 'ledge', 'oil', 'saw', 'boulder'] as const;
+export const BATTLE_LEGEND_ITEMS = ['saw'] as const;

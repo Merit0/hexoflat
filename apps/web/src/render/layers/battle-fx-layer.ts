@@ -1,12 +1,11 @@
 import { Container, Sprite } from 'pixi.js';
 import { getPrototype } from '@hexoflat/engine';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
-import { createHexToken } from '@/render/hex-token';
+import { applyObjectFit } from '@/render/object-fit';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import type { StrikeFx } from '@/render/battle/battle-animation-sample';
 import type { BattleLayerDeps } from './battle-board-layer';
-
-const TOOL_FRAME_URL = '/hex-assets/hex-tools/tool-frame-hex.png';
 
 export interface BattleFxLayer {
   sync(fx: StrikeFx | null): void;
@@ -20,27 +19,37 @@ export function createBattleFxLayer(deps: Omit<BattleLayerDeps, 'ticker'>): Batt
   deps.worldContainer.addChild(container);
 
   const tool = new Container();
-  const toolToken = createHexToken();
-  toolToken.layout(w, h);
-  toolToken.body.position.set(w / 2, h / 2);
-  toolToken.root.position.set(-w / 2, -h / 2);
-  const frame = new Sprite(getTexture(TOOL_FRAME_URL));
-  frame.anchor.set(0.5);
-  const fitFrame = () => frame.setSize(w, h);
-  fitFrame();
-  const stopFrameWatch = onTextureReady(TOOL_FRAME_URL, () => {
-    frame.texture = getTexture(TOOL_FRAME_URL);
-    fitFrame();
-  });
-  tool.addChild(toolToken.root, frame);
+  const sprite = new Sprite();
+  tool.addChild(sprite);
   tool.visible = false;
   container.addChild(tool);
+
+  let url: string | null = null;
+  let stopWatch: (() => void) | null = null;
+
+  const fit = () => {
+    applyObjectFit(sprite, w, h, EHexobjectGroup.TOOL);
+    sprite.position.x -= w / 2;
+    sprite.position.y -= h / 2;
+  };
+
+  function show(next: string) {
+    if (next === url) return;
+    stopWatch?.();
+    url = next;
+    sprite.texture = getTexture(next);
+    stopWatch = onTextureReady(next, () => {
+      sprite.texture = getTexture(next);
+      fit();
+    });
+    fit();
+  }
 
   function sync(fx: StrikeFx | null) {
     tool.visible = !!fx;
     if (!fx) return;
-    const sprite = getPrototype(fx.toolKey as THexobjectKey).spritePath;
-    if (sprite) toolToken.setSprite(sprite);
+    const path = getPrototype(fx.toolKey as THexobjectKey).spritePath;
+    if (path) show(path);
     tool.position.set(fx.tool.x, fx.tool.y);
     tool.alpha = fx.tool.alpha;
   }
@@ -48,8 +57,7 @@ export function createBattleFxLayer(deps: Omit<BattleLayerDeps, 'ticker'>): Batt
   return {
     sync,
     destroy() {
-      stopFrameWatch();
-      toolToken.destroy();
+      stopWatch?.();
       container.destroy({ children: true });
     },
   };

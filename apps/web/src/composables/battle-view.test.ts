@@ -123,13 +123,13 @@ describe('battle view', () => {
     expect(step.cost).toBeGreaterThan(0);
     expect(tap(step.path[0])).toBe(true);
     view = viewOf();
-    expect(view.hero?.hint?.key).toBe('battle.hint.moved');
+    expect(view.hero?.turnCost).toBe(0);
     expect(view.hero?.canUndo).toBe(true);
     expect(view.hero!.will).toBeLessThan(willBefore);
 
     expect(store.act({ kind: 'undo-step' }, 0)).toBe(true);
     view = viewOf();
-    expect(view.hero?.hint?.key).toBe('battle.hint.undone');
+    expect(view.hero?.turnCost).toBe(0);
     expect(view.hero?.will).toBe(willBefore);
 
     expect(store.act({ kind: 'end-turn' }, 0)).toBe(true);

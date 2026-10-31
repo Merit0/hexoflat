@@ -25,7 +25,7 @@ export interface TilesLayerDeps {
   isForceRevealed?(): boolean;
   /** Dev board panel's zone-outline toggle — a Pixi tint per tile, or null for no tint. */
   getZoneTint?(tile: IHexTile): number | null;
-  /** How hidden tiles look on the current board: clouds on the world, darkness in the cave. */
+  /** How hidden tiles look on the current board: clouds on the world, the mist hex in dungeons. */
   getFogLook?(): FogLook;
 }
 
@@ -33,7 +33,6 @@ interface TileNode {
   root: Container;
   mask: Graphics;
   bg: Sprite;
-  fogFill: Graphics;
   frame: Sprite;
   sprite: Sprite;
   lockChip: Text | null;
@@ -111,14 +110,7 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
 
   const hidden = hiddenTileLook(deps.getFogLook?.() ?? 'clouds');
   const look = displayRevealed ? terrainLook(tile.terrain) : null;
-  const fogFill = !displayRevealed && hidden.kind === 'fill' ? hidden.color : null;
-  node.fogFill.visible = fogFill !== null;
-  if (fogFill !== null) {
-    const { w, h } = deps.getTileSize();
-    drawHexMask(node.fogFill, w, h);
-    node.fogFill.tint = fogFill;
-    node.bg.texture = Texture.EMPTY;
-  } else if (displayRevealed) {
+  if (displayRevealed) {
     applyTexture(
       node.bg,
       look?.background ??
@@ -127,7 +119,7 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
       node,
       bgFit,
     );
-  } else if (hidden.kind === 'texture') {
+  } else {
     applyTexture(node.bg, hidden.url, node, bgFit);
   }
   node.bg.tint = deps.getZoneTint?.(tile) ?? 0xffffff;
@@ -172,12 +164,10 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
 
     const mask = createHexMask(w, h);
     const bg = new Sprite();
-    const fogFill = new Graphics();
-    fogFill.visible = false;
     const frame = new Sprite();
     const sprite = new Sprite();
 
-    root.addChild(mask, bg, fogFill, frame, sprite);
+    root.addChild(mask, bg, frame, sprite);
     root.mask = mask;
     container.addChild(root);
 
@@ -185,7 +175,6 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       root,
       mask,
       bg,
-      fogFill,
       frame,
       sprite,
       lockChip: null,

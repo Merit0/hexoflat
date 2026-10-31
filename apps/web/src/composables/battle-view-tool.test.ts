@@ -69,8 +69,6 @@ describe('battle tool hex and statuses', () => {
       targetId: 's1',
       canAfford: true,
     });
-    expect(view.hero?.plan).toBe(BATTLE_RULES.strike);
-    expect(viewOf().hero?.plan).toBe(0);
 
     expect(store.act({ kind: 'strike', targetId: 's1', hand: 'right' }, 0)).toBe(true);
     view = viewOf();
@@ -132,6 +130,43 @@ describe('battle tool hex and statuses', () => {
     expect(viewOf({ ...ACTION, hand: 'left' }).board?.tool).toMatchObject({
       action: 'use',
       price: battleItem('health-potion').usePrice,
+    });
+  });
+
+  describe('the cost shows the price of the next action', () => {
+    it('shows the attack price only while the tool offers a valid attack', () => {
+      startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
+      const onFoe = viewOf({ ...ACTION, toolAt: { q: 1, r: 0 } }).hero!;
+      expect(onFoe.turnCost).toBe(BATTLE_RULES.strike);
+      expect(onFoe.costTooHigh).toBe(false);
+
+      const onEmpty = viewOf({ ...ACTION, toolAt: { q: -1, r: 0 } }).hero!;
+      expect(onEmpty.turnCost).toBe(0);
+      expect(onEmpty.costTooHigh).toBe(false);
+    });
+
+    it('shows the price of the walk to the hovered hex, and nothing once the step is done', () => {
+      startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+      const near = viewOf({ ...MOVE, hover: { q: -1, r: 0 } });
+      expect(near.hero!.turnCost).toBe(near.board!.preview!.cost);
+      expect(near.hero!.costTooHigh).toBe(false);
+
+      expect(viewOf(MOVE).hero!.turnCost).toBe(0);
+    });
+
+    it('turns red when the next action costs more Will than the hero has left', () => {
+      const store = startedOn(
+        ['hero', 's1'],
+        [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })],
+      );
+      store.battle = { ...store.battle!, turnWill: 2 };
+      const attack = viewOf({ ...ACTION, toolAt: { q: 1, r: 0 } }).hero!;
+      expect(attack.turnCost).toBe(BATTLE_RULES.strike);
+      expect(attack.costTooHigh).toBe(true);
+
+      const walk = viewOf({ ...MOVE, hover: { q: -3, r: 0 } }).hero!;
+      expect(walk.turnCost).toBeGreaterThan(2);
+      expect(walk.costTooHigh).toBe(true);
     });
   });
 });

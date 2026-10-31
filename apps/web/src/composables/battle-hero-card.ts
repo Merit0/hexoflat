@@ -58,7 +58,8 @@ export interface BattleHeroCard {
   actions: BattleActionView[];
   hint: BattleMessage | null;
   canUndo: boolean;
-  plan: number;
+  turnCost: number;
+  costTooHigh: boolean;
   stage: BattleStage;
   defend: BattleDefendView | null;
   wait: BattleWaitView | null;
@@ -233,7 +234,8 @@ export function buildHeroCard(
     actions: actions(view, self, input),
     hint: cardHint(state, self, input),
     canUndo: view.undo.length > 0,
-    plan: 0,
+    costTooHigh: false,
+    turnCost: 0,
     stage: input.ui.stage,
     defend: defending ? defendView(view, self, input) : null,
     wait: state === 'wait' ? waitView(view, self, input) : null,

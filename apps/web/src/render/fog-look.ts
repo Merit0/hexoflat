@@ -1,18 +1,14 @@
-export type FogLook = 'clouds' | 'dark';
+export type FogLook = 'clouds' | 'mist';
 
 const CLOUD_SPRITE_URL = '/hex-assets/hex-effects/cloud-hex.png';
-const DARK_FOG_SPRITE_URL: string | null = null;
-const DARK_FOG_COLOR = 0x0f1218;
+const MIST_SPRITE_URL = '/hex-assets/hex-effects/fog-hex.png';
 
-export type HiddenTileLook = { kind: 'texture'; url: string } | { kind: 'fill'; color: number };
+export type HiddenTileLook = { kind: 'texture'; url: string };
 
 export function hiddenTileLook(look: FogLook): HiddenTileLook {
-  if (look === 'clouds') return { kind: 'texture', url: CLOUD_SPRITE_URL };
-  return DARK_FOG_SPRITE_URL
-    ? { kind: 'texture', url: DARK_FOG_SPRITE_URL }
-    : { kind: 'fill', color: DARK_FOG_COLOR };
+  return { kind: 'texture', url: look === 'clouds' ? CLOUD_SPRITE_URL : MIST_SPRITE_URL };
 }
 
-export function fogLookForPolicy(policy: string | undefined): FogLook {
-  return policy === 'BY_REGION' ? 'dark' : 'clouds';
+export function fogLookForBoardKind(kind: 'STATIC' | 'DUNGEON' | undefined): FogLook {
+  return kind === 'DUNGEON' ? 'mist' : 'clouds';
 }

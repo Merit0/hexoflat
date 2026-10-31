@@ -14,6 +14,7 @@ import type { BattleBoardScene } from '@/render/battle/use-battle-board';
 import type { NameOf } from './battle-hint';
 import { battleMovePreview, controlledHero, type BattleMovePreview } from './battle-board-tap';
 import { buildBattleToolHex, type BattleToolHex } from './battle-tool-hex';
+import { nextActionCost } from './battle-next-cost';
 import { buildHeroCard, type BattleHeroCard } from './battle-hero-card';
 import type { BattleCreatureRow, BattleRowTag, BattleViewInput } from './battle-view-types';
 
@@ -246,13 +247,17 @@ export function buildBattleView(input: BattleViewInput): BattleView {
   const self = selfHero(input);
   const enemies = rows.filter((r) => r.side === 'enemies');
   const card = view && self ? buildHeroCard(input, view, self, rows) : null;
-  const plan = (board?.preview?.cost ?? 0) + (board?.tool?.price ?? 0);
+  const planned = nextActionCost(board, input.ui.stage).cost;
   return {
     stage: !view ? 'deploy' : view.phase === 'ended' ? 'ended' : 'battle',
     outcome: view?.outcome ?? null,
     round: view?.round ?? 0,
     chips: view ? initChips(view, input.nameOf) : [],
-    hero: card && { ...card, plan },
+    hero: card && {
+      ...card,
+      turnCost: planned,
+      costTooHigh: planned > (view?.turnWill ?? 0),
+    },
     friends: rows.filter((r) => r.side === 'heroes' && r.id !== self?.id),
     enemies,
     enemiesLeft: enemies.filter((r) => !r.fallen).length,

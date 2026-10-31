@@ -19,7 +19,7 @@ import {
   withSquadInstance,
 } from '../../squads/squad-migration';
 
-export type TFogPolicy = 'FOG' | 'ALL_REVEALED' | 'BY_REGION';
+export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
 
 interface IWorldMap {
   name: string;
@@ -119,7 +119,7 @@ export default class HexMapModel implements IWorldMap {
   }
 
   set fogPolicy(v: TFogPolicy) {
-    this._fogPolicy = v;
+    this._fogPolicy = v === 'ALL_REVEALED' ? 'ALL_REVEALED' : 'FOG';
   }
 
   public generateTiles(): void {

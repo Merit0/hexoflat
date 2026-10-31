@@ -33,9 +33,6 @@
         <div class="hero-card__will-value" data-testid="battle-will-value">
           <b>{{ card.will }}</b> / {{ card.willCap }}
         </div>
-        <div v-if="card.plan > 0" class="hero-card__plan" data-testid="battle-plan-cost">
-          −{{ card.plan }}
-        </div>
         <div class="hero-card__will-bar">
           <span :style="{ width: `${willPercent}%` }"></span>
         </div>
@@ -123,7 +120,17 @@
           {{ t(`content.battle.${item.key}.title`) }}
         </button>
       </div>
-      <p class="hero-card__hint" data-testid="battle-act-hint">{{ text(card.hint) }}</p>
+      <div
+        class="hero-card__cost"
+        :class="{ 'is-planned': card.turnCost > 0, 'is-too-high': card.costTooHigh }"
+        data-testid="battle-turn-cost"
+      >
+        <span class="hero-card__cost-label">{{ t('battle.turnCost') }}</span>
+        <span class="hero-card__cost-value">
+          <img class="hero-card__cost-icon" :src="WILL_ICON_URL" alt="" />
+          <b data-testid="battle-turn-cost-value">{{ card.turnCost }}</b>
+        </span>
+      </div>
       <div class="hero-card__turn-buttons">
         <button
           v-if="card.stage === 'move'"
@@ -223,10 +230,47 @@ const willPercent = computed(() =>
     transform: scaleX(0);
   }
 }
-.hero-card__plan {
-  color: #f08a7a;
-  font-weight: 700;
-  text-align: right;
+.hero-card__cost {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #3a2f1c, #2a2418);
+  border: 1px solid #b98a2e;
+  box-shadow: 0 0 14px rgb(185 138 46 / 28%);
+}
+.hero-card__cost.is-planned .hero-card__cost-value {
+  color: #fff6dc;
+  text-shadow: 0 0 10px rgb(255 214 120 / 70%);
+}
+.hero-card__cost.is-too-high {
+  border-color: #c2412d;
+  box-shadow: 0 0 14px rgb(194 65 45 / 40%);
+}
+.hero-card__cost.is-too-high .hero-card__cost-value {
+  color: #ff7a66;
+  text-shadow: 0 0 10px rgb(255 90 70 / 60%);
+}
+.hero-card__cost-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e6c27a;
+}
+.hero-card__cost-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 28px;
+  line-height: 1;
+  color: #ffe2a3;
+}
+.hero-card__cost-icon {
+  width: 22px;
+  height: 22px;
 }
 .hero-card {
   display: grid;

@@ -58,7 +58,7 @@ describe('REQ-ENC-006 battlefield', () => {
     );
   });
 
-  it('passes the tactical budget on 200 seeds without the fallback board', () => {
+  it('uses only the approved hexes: floor, the border wall and one or two saws', () => {
     for (let n = 0; n < 200; n++) {
       const seed = battlefieldSeed(`enc-${n}`, 0);
       const pipeline = runBoardPipeline(BATTLEFIELD_CRYPT_MODEL, { seed });
@@ -68,14 +68,14 @@ describe('REQ-ENC-006 battlefield', () => {
       const field = generateBattlefield('crypt', seed);
       expect(count(field, 'saw'), seed).toBeGreaterThanOrEqual(1);
       expect(count(field, 'saw'), seed).toBeLessThanOrEqual(2);
-      expect(count(field, 'ledge'), seed).toBeGreaterThanOrEqual(1);
+      for (const terrain of ['ledge', 'rubble', 'oil'] as const) {
+        expect(count(field, terrain), `${seed} ${terrain}`).toBe(0);
+      }
       const pillars = Object.entries(field.board).filter(
         ([key, t]) => t === 'wall' && !isBorder(key, t),
       ).length;
-      const cover = pillars + field.boulders.length;
-      expect(cover, seed).toBeGreaterThanOrEqual(2);
-      expect(cover, seed).toBeLessThanOrEqual(4);
-      expect(hasPushCombo(field), seed).toBe(true);
+      expect(pillars, seed).toBe(0);
+      expect(field.boulders, seed).toEqual([]);
       expect(walkableConnected(field), seed).toBe(true);
     }
   });

@@ -12,8 +12,6 @@ export interface BattleMessage {
 export type NameOf = (id: string) => string;
 
 export const BATTLE_HINT_KEYS = [
-  'moved',
-  'undone',
   'struck',
   'blocked',
   'hitTaken',
@@ -165,11 +163,7 @@ function actionMessage(events: DomainEvent[], nameOf: NameOf): BattleMessage | n
       key: 'battle.hint.swapped',
       params: { item: `content.battle.${swapped.taken}.title`, hand: swapped.hand },
     };
-  if (find(events, 'MOVE_UNDONE')) return { key: 'battle.hint.undone' };
-  const steps = events.filter((e) => e.type === 'CREATURE_MOVED');
-  if (!steps.length) return null;
-  const cost = steps.reduce((sum, e) => sum + (e.payload as { cost: number }).cost, 0);
-  return { key: 'battle.hint.moved', params: { cost, steps: steps.length } };
+  return null;
 }
 
 export function battleHint(events: DomainEvent[], nameOf: NameOf): BattleMessage | null {
