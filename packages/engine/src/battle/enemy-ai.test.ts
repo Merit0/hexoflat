@@ -112,20 +112,23 @@ describe('REQ-BTL-010 archer', () => {
 });
 
 describe('skeleton warrior (R-AI-2)', () => {
-  it('walks up, strikes once, then steps away from the hero', () => {
+  it('picks the hero from where it stands, then walks up only after the block window', () => {
     const struck = enemyTurn(
       enemyFirst([hero({ q: 0, r: 0 }), enemyCreature('skeleton-warrior', 's1', { q: 3, r: 0 })]),
     );
+    expect(eventTypes(struck.events)).toEqual(['STRIKE_DEALT', 'REACTION_OPENED']);
+    expect(struck.battle.creatures[1].pos).toEqual({ q: 3, r: 0 });
+
     const hit = heroDoes(struck.battle, { kind: 'take-hit' });
     const rest = enemyTurn(hit.battle);
     const types = [struck.events, hit.events, rest.events].flatMap(eventTypes);
     expect(types.filter((t) => t === 'STRIKE_DEALT')).toHaveLength(1);
-    expect(types.lastIndexOf('CREATURE_MOVED')).toBeGreaterThan(types.indexOf('STRIKE_DEALT'));
+    expect(types.indexOf('CREATURE_MOVED')).toBeGreaterThan(types.indexOf('REACTION_OPENED'));
     const warrior = rest.battle.creatures.find((c) => c.id === 's1')!;
-    expect(battleDistance(warrior.pos, { q: 0, r: 0 })).toBeGreaterThan(1);
+    expect(battleDistance(warrior.pos, { q: 0, r: 0 })).toBe(1);
   });
 
-  it('raises its shield on the ring hex nearest the hero, and the hero then picks the side', () => {
+  it('guesses where to raise its shield, and the hero then picks the side', () => {
     const battle = enemyFirst([
       hero({ q: 0, r: 0 }),
       enemyCreature('skeleton-warrior', 's1', { q: 1, r: 0 }),
@@ -142,12 +145,37 @@ describe('skeleton warrior (R-AI-2)', () => {
       'SHIELD_PLACED',
       'REACTION_AIMING',
     ]);
-    expect(events[2].payload).toMatchObject({ hex: { q: 0, r: 0 } });
+    const shield = (events[2].payload as { hex: { q: number; r: number } }).hex;
     expect(after.reaction!.stage).toBe('aim');
-    const blocked = heroDoes(after, { kind: 'aim', hex: { q: 0, r: 0 } });
+    const options = after.pending[0].ring;
+    expect(options).toContainEqual(shield);
+
+    const open = options.find((hex) => hex.q !== shield.q || hex.r !== shield.r)!;
+    const hit = heroDoes(after, { kind: 'aim', hex: open });
+    expect(hit.events.find((e) => e.type === 'STRIKES_RESOLVED')!.payload).toMatchObject({
+      results: [{ outcome: 'hit' }],
+    });
+    const blocked = heroDoes(after, { kind: 'aim', hex: shield });
     expect(blocked.events.find((e) => e.type === 'STRIKES_RESOLVED')!.payload).toMatchObject({
       results: [{ outcome: 'blocked' }],
     });
+  });
+
+  it('does not always cover the hex the hero stands on', () => {
+    const covered = new Set<string>();
+    for (let seq = 0; seq < 12; seq++) {
+      const start = giveTurn(
+        enemyFirst([hero({ q: 0, r: 0 }), enemyCreature('skeleton-warrior', 's1', { q: 1, r: 0 })]),
+        ['hero', 's1'],
+      );
+      start.strikeSeq = seq * 3;
+      const { events } = heroDoes(start, { kind: 'strike', targetId: 's1', hand: 'right' });
+      const placed = events.find((e) => e.type === 'SHIELD_PLACED')!.payload as {
+        hex: { q: number; r: number };
+      };
+      covered.add(`${placed.hex.q},${placed.hex.r}`);
+    }
+    expect(covered.size).toBeGreaterThan(2);
   });
 });
 

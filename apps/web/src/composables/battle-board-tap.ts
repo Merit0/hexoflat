@@ -96,7 +96,7 @@ export function aimHexes(
 ): BattleHex[] {
   if (view.reaction?.stage !== 'aim') return [];
   const strike = view.pending.find((s) => s.attackerId === self.id);
-  return strike ? aimOptions(view, self, strike, view.turnWill, rules) : [];
+  return strike ? aimOptions(view, self, strike, view.turnWill, rules, view.reaction.ranged) : [];
 }
 
 export function battleTapActions(input: BattleTapInput): BattleAction[] {

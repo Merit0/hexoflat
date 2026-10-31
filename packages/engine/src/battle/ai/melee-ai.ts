@@ -9,8 +9,8 @@ import {
   adjacentFoes,
   approachStep,
   defendAction,
-  hideStep,
   opponents,
+  reachableFoes,
   readyHand,
 } from './ai-common';
 
@@ -34,12 +34,12 @@ export function meleeAction(
 ): BattleAction {
   const self = activeSelf(view);
   if (view.phase === 'defend') return defendAction(view, self, rules);
-  if (view.struckHands.length > 0) return hideStep(view, self, rules) ?? { kind: 'end-turn' };
+  if (view.struckHands.length > 0) return { kind: 'end-turn' };
 
   const push = pushesToSaw ? pushToSaw(view, self, rules) : null;
   if (push) return push;
   const hand = readyHand(view, self);
-  const target = adjacentFoes(view, self)[0];
+  const target = reachableFoes(view, self, rules)[0];
   if (target && hand) {
     return view.turnWill >= rules.strike
       ? { kind: 'strike', targetId: target.id, hand }

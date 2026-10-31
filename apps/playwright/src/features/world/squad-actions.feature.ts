@@ -50,11 +50,14 @@ export class SquadActionsFeature extends BaseFeature {
     });
   }
 
-  async verifyDeployCardOpen(): Promise<void> {
-    await this.step('The battle deploy card is open for the engaged squad', async () => {
-      await this.campingMap.battleDeployCard.verifyIsVisible();
-      await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(true);
-    });
+  async verifyBattleOpenAtOnce(): Promise<void> {
+    await this.step(
+      'The battle opens at once, with no deploy card, for the engaged squad',
+      async () => {
+        await this.campingMap.battleTab.verifyBoardOpen();
+        await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(true);
+      },
+    );
   }
 
   async openCave(): Promise<void> {
@@ -68,8 +71,8 @@ export class SquadActionsFeature extends BaseFeature {
   }
 
   async startBattle(): Promise<void> {
-    await this.step('Start the battle from the deploy card', async () => {
-      await this.campingMap.battleTab.startBattle();
+    await this.step('The battle starts straight from the attack', async () => {
+      await this.campingMap.battleTab.verifyBoardOpen();
     });
   }
 

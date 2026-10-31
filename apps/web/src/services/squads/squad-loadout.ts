@@ -10,6 +10,7 @@ const BAG_LIMIT = 3;
 export interface LoadoutSource {
   heroId: string;
   hearts: number;
+  maxHearts: number;
   weapon: InventoryItem | null;
   shield: InventoryItem | null;
   items: InventoryItem[];
@@ -29,6 +30,7 @@ export function heroLoadout(source: LoadoutSource): HeroLoadout {
   return {
     id: source.heroId,
     hearts: source.hearts,
+    maxHearts: source.maxHearts,
     weapon: handKey(source.weapon),
     shield: handKey(source.shield),
     bag,

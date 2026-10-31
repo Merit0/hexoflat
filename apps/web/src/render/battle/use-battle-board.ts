@@ -18,9 +18,11 @@ import {
   HEX_WORLD_WIDTH,
   fitAtReferenceZoom,
   frameWorldRect,
+  worldToScreen,
   type BoardCamera,
   type BoardFrame,
 } from '@/render/board-camera';
+import { registerBattleHexProbe } from '@/e2e/battle-hooks';
 import { createBattleSyncGate } from '@/render/battle/battle-sync-gate';
 import { createBattleBoardLayer, type BattleBoardLayer } from '@/render/layers/battle-board-layer';
 import {
@@ -81,6 +83,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     );
 
   let paneSize = { width: 0, height: 0 };
+  let currentCamera: BoardCamera | null = null;
 
   function fit(width: number, height: number) {
     if (!pixi) return;
@@ -94,6 +97,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       pane: { width, height },
     });
     pixi.setCamera(camera);
+    currentCamera = camera;
     options.onCamera?.(camera);
     pixi.renderNow();
   }
@@ -177,6 +181,16 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     layers = createLayers(app);
     syncAll();
     fit(width, height);
+    if (import.meta.env.VITE_E2E_HOOKS === 'true') {
+      registerBattleHexProbe((hex) => {
+        if (!currentCamera) return null;
+        const { x, y } = positionOf(hex);
+        return worldToScreen(currentCamera, {
+          x: x + HEX_WORLD_WIDTH / 2,
+          y: y + HEX_WORLD_HEIGHT / 2,
+        });
+      });
+    }
     app.onFirstFramePresented(() => options.onReady?.());
   }
 
@@ -208,6 +222,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
 
   onBeforeUnmount(() => {
     destroyed = true;
+    if (import.meta.env.VITE_E2E_HOOKS === 'true') registerBattleHexProbe(null);
     observer?.disconnect();
     layers?.animator.destroy();
     layers?.fx.destroy();

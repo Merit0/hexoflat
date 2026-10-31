@@ -45,4 +45,5 @@ export interface BattleViewInput {
   ui: BattleUiState;
   rules: BattleRules;
   nameOf: NameOf;
+  revealedShields?: readonly BattleHex[];
 }

@@ -23,13 +23,14 @@ describe('REQ-BTL-001 initiative', () => {
     expect(battle.activeId).toBe(battle.order[0]);
   });
 
-  it('skips the fallen and draws again for the living every round', () => {
+  it('rolls once and keeps the same order for the whole fight, skipping the fallen', () => {
     const start = battleWith([
       hero({ q: -3, r: 0 }),
       skeleton('s1', { q: 3, r: 0 }, { hp: 0 }),
       skeleton('s2', { q: 3, r: -1 }),
     ]);
     let battle = giveTurn(start, ['hero', 's1', 's2']);
+    const drawsBefore = structuredClone(battle.draws);
     battle = heroDoes(battle, { kind: 'end-turn' }).battle;
     expect(battle.activeId).toBe('s2');
 
@@ -37,7 +38,8 @@ describe('REQ-BTL-001 initiative', () => {
     battle = heroDoes(battle, { kind: 'take-hit' }).battle;
     battle = enemyTurn(battle).battle;
     expect(battle.round).toBe(2);
-    expect(Object.keys(battle.draws).sort()).toEqual(['hero', 's2']);
-    expect(Object.values(battle.draws).sort()).toEqual([1, 2]);
+    expect(battle.activeId).toBe('hero');
+    expect(battle.order).toEqual(['hero', 's1', 's2']);
+    expect(battle.draws).toEqual(drawsBefore);
   });
 });

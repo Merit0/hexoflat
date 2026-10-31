@@ -160,7 +160,9 @@ describe('REQ-BTL-009 saw: pushed onto it', () => {
       ),
       ['s1', 'hero'],
     );
-    const { events } = enemyTurn(battle);
+    const opened = enemyTurn(battle);
+    const landed = heroDoes(opened.battle, { kind: 'take-hit' });
+    const events = [...opened.events, ...landed.events];
     const steps = events.filter((e) => e.type === 'CREATURE_MOVED');
     expect(steps.length).toBeGreaterThan(0);
     for (const step of steps)

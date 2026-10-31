@@ -4,6 +4,7 @@ import type { BattleCreature, BattleHand, BattleHex } from '../battle-state';
 import { creatureById, freeNeighbours, livingOnSide, terrainAt } from '../battle-board';
 import { shieldCapacity } from '../defend';
 import { aimOptions } from '../reaction';
+import { reachableRing } from '../strike';
 import { battleDistance, hexKey, isAdjacentHex, parseHexKey, sameHex } from '../hex-battle-geom';
 import { cheapestPaths, pathTo, stepCost } from '../movement';
 import type { BattleProjection } from '../projection';
@@ -31,6 +32,21 @@ export function distanceToFoes(
   hex: BattleHex,
 ): number {
   return Math.min(...opponents(view, self).map((foe) => battleDistance(foe.pos, hex)));
+}
+
+export function reachableFoes(
+  view: BattleProjection,
+  self: BattleCreature,
+  rules: BattleRules,
+): BattleCreature[] {
+  const willLeft = view.turnWill - rules.strike;
+  return weakestFirst(
+    opponents(view, self).filter(
+      (foe) =>
+        reachableRing(view, self, freeNeighbours(view, foe.pos, self.id), willLeft, rules).length >
+        0,
+    ),
+  );
 }
 
 export function adjacentFoes(view: BattleProjection, self: BattleCreature): BattleCreature[] {
@@ -123,10 +139,14 @@ function shieldCandidates(view: BattleProjection, self: BattleCreature): BattleH
     .filter((hex, i, all) => all.findIndex((h) => sameHex(h, hex)) === i)
     .filter((hex) => !placed.some((p) => sameHex(p, hex)))
     .sort(
-      (a, b) =>
-        distanceToFoes(view, self, a) - distanceToFoes(view, self, b) ||
-        hexKey(a).localeCompare(hexKey(b)),
+      (a, b) => shieldGuess(view, a) - shieldGuess(view, b) || hexKey(a).localeCompare(hexKey(b)),
     );
+}
+
+function shieldGuess(view: BattleProjection, hex: BattleHex): number {
+  let hash = view.strikeSeq * 2654435761;
+  for (const char of hexKey(hex)) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return hash % 9973;
 }
 
 export function defendAction(
@@ -149,7 +169,7 @@ export function aimAction(
   if (view.reaction?.stage !== 'aim' || view.reaction.attackerId !== self.id) return null;
   const strike = view.pending.find((s) => s.attackerId === self.id);
   if (!strike) return null;
-  const options = aimOptions(view, self, strike, view.turnWill, rules);
+  const options = aimOptions(view, self, strike, view.turnWill, rules, view.reaction.ranged);
   if (!options.length) return { kind: 'reaction-timeout' };
   return { kind: 'aim', hex: options[(view.strikeSeq + view.round) % options.length] };
 }

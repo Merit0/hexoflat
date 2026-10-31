@@ -77,4 +77,14 @@ describe('REQ-BTL-021 wounds (where the hits landed)', () => {
     expect(later.round).toBe(2);
     expect(later.wounds).toEqual({});
   });
+
+  it('leaves no drop on the hero hex when the hero himself hits an enemy', () => {
+    const battle = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]), [
+      'hero',
+      's1',
+    ]);
+    const after = heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'right' }).battle;
+    expect(after.creatures[1].hp).toBeLessThan(3);
+    expect(after.wounds).toEqual({});
+  });
 });

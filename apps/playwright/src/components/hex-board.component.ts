@@ -93,6 +93,21 @@ export class HexBoardComponent extends BaseComponent {
     await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveHeroTheTurn());
   }
 
+  async readBattleSnapshot() {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleSnapshot());
+  }
+
+  async battleHexPoint(hex: { q: number; r: number }) {
+    return this.page.evaluate(
+      (target) => window.__HEXOFLAT_TEST__!.getBattleHexPoint(target.q, target.r),
+      hex,
+    );
+  }
+
+  async giveEnemyTheTurn(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveEnemyTheTurn());
+  }
+
   async finishBattle(outcome: 'victory' | 'defeat'): Promise<void> {
     await this.page.evaluate((result) => window.__HEXOFLAT_TEST__!.finishBattle(result), outcome);
   }

@@ -94,6 +94,7 @@ export const reactionSchema = z.object({
   attackerId: z.string().min(1),
   defenderId: z.string().min(1),
   hand: battleHandSchema,
+  ranged: z.boolean().default(false),
   deadlineMs: z.number().int().min(0),
   shields: z.array(axialSchema),
   resume: z.object({

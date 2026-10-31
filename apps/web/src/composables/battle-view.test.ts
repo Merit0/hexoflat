@@ -113,7 +113,7 @@ describe('battle view', () => {
     view = viewOf();
     expect(view.hero?.state).toBe('act');
     expect(store.projection?.reaction).toBeUndefined();
-    expect(view.hero?.actions.map((a) => a.id)).toEqual(['push', 'swap']);
+    expect(view.hero?.actions.map((a) => a.id)).toEqual(['push']);
 
     const willBefore = view.hero!.will;
     const self = store.projection!.creatures.find((c) => c.id === 'hero')!;
@@ -131,7 +131,6 @@ describe('battle view', () => {
     view = viewOf();
     expect(view.hero?.hint?.key).toBe('battle.hint.undone');
     expect(view.hero?.will).toBe(willBefore);
-    expect(view.hero?.stanceNote).toBe(Math.min(8, willBefore));
 
     expect(store.act({ kind: 'end-turn' }, 0)).toBe(true);
     view = viewOf();
@@ -145,6 +144,7 @@ describe('battle view', () => {
     const store = useBattleStore();
     store.act({ kind: 'swap-item', hand: 'left', bagIndex: 0 }, 0);
     expect(viewOf().hero?.hint).toMatchObject({ key: 'battle.reject.NO_SUCH_ITEM' });
+    store.battle = { ...store.battle!, turnWill: 8 };
     store.act({ kind: 'strike', targetId: 's1', hand: 'right' }, 0);
     expect(viewOf().hero?.hint).toMatchObject({ key: 'battle.reject.NOT_ADJACENT' });
   });

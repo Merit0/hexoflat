@@ -105,7 +105,7 @@ export function sampleStrikeFx(
   if (!owner) return { toolKey: step.toolKey, tool: { ...target, alpha: 0 } };
   const radius = geo.tileHeight * BATTLE_MOTION.toolOrbitTiles;
   const first = Math.atan2(target.y - owner.y, target.x - owner.x);
-  const angle = first + easeInOut(t) * Math.PI * 2;
+  const angle = first + easeInOut(t) * Math.PI * 2 * BATTLE_MOTION.toolTurns;
   const fadeIn = clamp01(t / BATTLE_MOTION.toolFadeIn);
   const fadeOut = clamp01((1 - t) / BATTLE_MOTION.toolFadeOut);
   return {

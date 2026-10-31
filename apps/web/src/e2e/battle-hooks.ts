@@ -1,4 +1,9 @@
 import { toRaw } from 'vue';
+import { aimOptions } from '@hexoflat/engine/battle/reaction';
+import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
+import { battleDistance, hexKey } from '@hexoflat/engine/battle/hex-battle-geom';
+import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
+import { controlledHero } from '@/composables/battle-board-tap';
 import { useBattleStore } from '@/stores/battle-store';
 
 export function finishOpenBattle(outcome: 'victory' | 'defeat'): void {
@@ -30,6 +35,120 @@ export function giveHeroTheTurn(willPerTurn: number): void {
   store.battle = battle;
 }
 
+export interface BattleHexPoint {
+  x: number;
+  y: number;
+}
+
+let hexPointProbe: ((hex: { q: number; r: number }) => BattleHexPoint | null) | null = null;
+
+export function registerBattleHexProbe(
+  probe: ((hex: { q: number; r: number }) => BattleHexPoint | null) | null,
+): void {
+  hexPointProbe = probe;
+}
+
+export interface BattleSnapshot {
+  round: number;
+  phase: string;
+  activeId: string;
+  order: string[];
+  draws: Record<string, number>;
+  turnWill: number;
+  reaction: { stage: 'block' | 'aim'; attackerId: string; defenderId: string } | null;
+  creatures: { id: string; side: string; hp: number; maxHp: number; q: number; r: number }[];
+  wounds: Record<string, { q: number; r: number }[]>;
+  heroDistances: Record<string, number>;
+  placedShields: number;
+  revealedShields: number;
+  aimOptions: { q: number; r: number }[];
+}
+
+export function giveEnemyTheTurn(willPerTurn: number): void {
+  const store = useBattleStore();
+  if (!store.battle) throw new Error('No battle is open');
+  const battle = structuredClone(toRaw(store.battle));
+  const living = battle.creatures.filter(
+    (creature) => creature.side === 'enemies' && creature.hp > 0,
+  );
+  const enemy = living.find((creature) => creature.kind === 'skeleton-warrior') ?? living[0];
+  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
+  if (!enemy || !hero) throw new Error('No living enemy or hero in the battle');
+  const spot = Object.keys(battle.board)
+    .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
+    .find(
+      (hex) =>
+        battle.board[hexKey(hex)] === 'floor' &&
+        battleDistance(hex, hero.pos) === 2 &&
+        isFreeHex(battle, hex),
+    );
+  if (spot) enemy.pos = spot;
+  battle.order = [enemy.id, ...battle.order.filter((id) => id !== enemy.id)];
+  battle.turnIndex = 0;
+  battle.activeId = enemy.id;
+  battle.phase = 'act';
+  battle.turnWill = willPerTurn;
+  battle.pending = [];
+  battle.reaction = undefined;
+  battle.placedShields = [];
+  battle.struckHands = [];
+  battle.undo = [];
+  store.battle = battle;
+}
+
+function heroDistanceTo(
+  battle: { creatures: { side: string; pos: { q: number; r: number } }[] },
+  pos: { q: number; r: number },
+): number {
+  const hero = battle.creatures.find((c) => c.side === 'heroes');
+  return hero ? battleDistance(hero.pos, pos) : -1;
+}
+
+export function readBattleSnapshot(): BattleSnapshot | null {
+  const store = useBattleStore();
+  const battle = store.battle;
+  const view = store.projection;
+  if (!battle || !view) return null;
+  const hero = controlledHero(view, store.localHeroIds);
+  const strike = hero ? view.pending.find((s) => s.attackerId === hero.id) : undefined;
+  const options =
+    hero && strike && view.reaction?.stage === 'aim'
+      ? aimOptions(view, hero, strike, view.turnWill, BATTLE_RULES, view.reaction.ranged)
+      : [];
+  return {
+    round: battle.round,
+    phase: battle.phase,
+    activeId: battle.activeId,
+    order: [...battle.order],
+    draws: { ...battle.draws },
+    turnWill: battle.turnWill,
+    reaction: battle.reaction
+      ? {
+          stage: battle.reaction.stage,
+          attackerId: battle.reaction.attackerId,
+          defenderId: battle.reaction.defenderId,
+        }
+      : null,
+    creatures: battle.creatures.map((c) => ({
+      id: c.id,
+      side: c.side,
+      hp: c.hp,
+      maxHp: c.maxHp,
+      q: c.pos.q,
+      r: c.pos.r,
+    })),
+    wounds: structuredClone(toRaw(battle.wounds)),
+    heroDistances: Object.fromEntries(
+      battle.creatures
+        .filter((c) => c.side === 'enemies')
+        .map((c) => [c.id, heroDistanceTo(battle, c.pos)]),
+    ),
+    placedShields: battle.placedShields.length,
+    revealedShields: store.revealedShields.length,
+    aimOptions: options.map((h) => ({ q: h.q, r: h.r })),
+  };
+}
+
 export interface BattleHandsSnapshot {
   right: string | null;
   left: string | null;
@@ -53,6 +172,16 @@ export function battleTestHooks() {
   return {
     getBattleHands(): BattleHandsSnapshot | null {
       return readBattleHands();
+    },
+    getBattleSnapshot(): BattleSnapshot | null {
+      return readBattleSnapshot();
+    },
+    giveEnemyTheTurn(): void {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      giveEnemyTheTurn(20);
+    },
+    getBattleHexPoint(q: number, r: number): BattleHexPoint | null {
+      return hexPointProbe ? hexPointProbe({ q, r }) : null;
     },
     giveHeroTheTurn(): void {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;

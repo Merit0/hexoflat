@@ -23,6 +23,7 @@ import { done, refuse, type Outcome, type SquadWorld } from './squad-actions';
 export interface HeroLoadout {
   id: string;
   hearts: number;
+  maxHearts?: number;
   weapon: string | null;
   shield: string | null;
   bag: string[];
@@ -36,13 +37,14 @@ function itemFrom(hexobjectKey: string | null) {
 export function heroBattleCreature(loadout: HeroLoadout): BattleCreature {
   const def = BATTLE_CREATURES.hero;
   const hp = Math.max(1, Math.round(loadout.hearts * 2));
+  const maxHp = Math.max(hp, Math.round((loadout.maxHearts ?? loadout.hearts) * 2));
   return {
     id: loadout.id,
     side: 'heroes',
     kind: 'hero',
     pos: { q: 0, r: 0 },
     hp,
-    maxHp: hp,
+    maxHp,
     weight: def.weight,
     force: def.force,
     hands: { right: itemFrom(loadout.weapon), left: itemFrom(loadout.shield) },

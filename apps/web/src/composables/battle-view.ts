@@ -87,10 +87,14 @@ function nextLivingId(view: BattleProjection): string | null {
   return null;
 }
 
+function turnOwnerId(view: BattleProjection): string {
+  return view.reaction?.attackerId ?? view.activeId;
+}
+
 function rowTags(view: BattleProjection, creature: BattleCreature, local: boolean): BattleRowTag[] {
   if (!isAlive(creature)) return ['fallen'];
   if (view.phase === 'ended') return [];
-  if (creature.id === view.activeId) return local ? ['yourTurn'] : [];
+  if (creature.id === turnOwnerId(view)) return local ? ['yourTurn'] : [];
   if (creature.id === nextLivingId(view)) return ['next'];
   return view.order.indexOf(creature.id) < view.turnIndex ? ['done'] : [];
 }
@@ -114,7 +118,7 @@ function creatureRow(
     hits: view?.pending.filter((s) => s.targetId === creature.id).length ?? 0,
     stance: view?.stance[creature.id] ?? 0,
     tags: view ? rowTags(view, creature, local) : [],
-    active: view?.activeId === creature.id && view.phase !== 'ended',
+    active: !!view && turnOwnerId(view) === creature.id && view.phase !== 'ended',
     fallen: !isAlive(creature),
     targeted: targets.has(creature.id),
   };
@@ -126,7 +130,7 @@ function initChips(view: BattleProjection, nameOf: NameOf): BattleInitChip[] {
     if (!creature) return [];
     const state = !isAlive(creature)
       ? 'fallen'
-      : id === view.activeId && view.phase !== 'ended'
+      : id === turnOwnerId(view) && view.phase !== 'ended'
         ? 'active'
         : index < view.turnIndex
           ? 'done'
@@ -180,6 +184,7 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
     zones: view ? null : deploy.zones,
     mode: controlled ? overlayMode(input) : null,
     results: defendResults(input.lastHeroEvents),
+    revealed: input.revealedShields ?? [],
   });
   const creatures = (view?.creatures ?? deploy.setup.creatures) as BattleCreature[];
   return {

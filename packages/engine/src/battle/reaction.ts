@@ -9,10 +9,10 @@ import type {
 } from './battle-state';
 import { creatureById } from './battle-board';
 import { applyDamage } from './battle-end';
-import { isAdjacentHex, sameHex, hexKey } from './hex-battle-geom';
+import { sameHex } from './hex-battle-geom';
 import { cheapestPaths, moveCreature, pathTo } from './movement';
 import { reject, type BattleRejection } from './battle-rejection';
-import { strikePower, strikingItem } from './strike';
+import { isRangedStrike, reachableRing, strikePower, strikingItem } from './strike';
 
 export function openReaction(
   state: BattleState,
@@ -28,6 +28,7 @@ export function openReaction(
     attackerId: attacker.id,
     defenderId: defender.id,
     hand,
+    ranged: isRangedStrike(strikingItem(attacker, hand, rules), attacker, defender),
     deadlineMs,
     shields: [],
     resume: {
@@ -69,15 +70,11 @@ export function aimOptions(
   strike: Pick<PendingStrike, 'targetId' | 'ring'>,
   willLeft: number,
   rules: BattleRules,
+  ranged: boolean,
 ): BattleHex[] {
-  const target = creatureById(state, strike.targetId);
-  if (!target) return [];
-  if (!isAdjacentHex(attacker.pos, target.pos)) return strike.ring.map((hex) => ({ ...hex }));
-  const nodes = cheapestPaths(state, attacker, rules);
-  return strike.ring.filter((hex) => {
-    const node = nodes.get(hexKey(hex));
-    return !!node && node.cost <= willLeft;
-  });
+  if (!creatureById(state, strike.targetId)) return [];
+  if (ranged) return strike.ring.map((hex) => ({ ...hex }));
+  return reachableRing(state, attacker, strike.ring, willLeft, rules);
 }
 
 function pendingOf(state: BattleState): PendingStrike | undefined {
@@ -96,7 +93,7 @@ function resolveAt(
   const strike = pendingOf(state)!;
   const defender = creatureById(state, reaction.defenderId)!;
   const events: DomainEvent[] = [];
-  if (!sameHex(attacker.pos, fromHex) && isAdjacentHex(attacker.pos, defender.pos)) {
+  if (!reaction.ranged && !sameHex(attacker.pos, fromHex)) {
     const nodes = cheapestPaths(state, attacker, rules);
     for (const step of pathTo(nodes, fromHex)) {
       events.push(...(moveCreature(state, attacker, step, atMs, rules) as DomainEvent[]));
@@ -110,7 +107,7 @@ function resolveAt(
   const weapon = strikingItem(attacker, reaction.hand, rules);
   state.pending = state.pending.filter((s) => s.id !== strike.id);
   state.reaction = undefined;
-  if (!blocked) {
+  if (!blocked && attacker.side === 'enemies') {
     state.wounds[defender.id] = [...(state.wounds[defender.id] ?? []), { ...fromHex }];
   }
   return [
@@ -157,11 +154,9 @@ export function finishBlock(
   restoreAttacker(state);
   const attacker = creatureById(state, reaction.attackerId)!;
   const strike = pendingOf(state)!;
-  const options =
-    reaction.shields.length > 0 ? aimOptions(state, attacker, strike, state.turnWill, rules) : [];
-  if (options.length < 2) {
-    const only = options[0] ?? strike.fromHex;
-    return resolveAt(state, attacker, only, atMs, rules);
+  const options = aimOptions(state, attacker, strike, state.turnWill, rules, reaction.ranged);
+  if (reaction.shields.length === 0 || options.length < 2) {
+    return resolveAt(state, attacker, options[0] ?? attacker.pos, atMs, rules);
   }
   reaction.stage = 'aim';
   reaction.deadlineMs = atMs + rules.blockWindowMs;
@@ -189,7 +184,7 @@ export function aimStrike(
   const reaction = state.reaction;
   if (!reaction || reaction.stage !== 'aim') return reject('WRONG_PHASE');
   const strike = pendingOf(state)!;
-  const options = aimOptions(state, attacker, strike, state.turnWill, rules);
+  const options = aimOptions(state, attacker, strike, state.turnWill, rules, reaction.ranged);
   if (!options.some((h) => sameHex(h, hex))) return reject('NOT_AN_OPTION');
   return resolveAt(state, attacker, hex, atMs, rules);
 }
@@ -203,7 +198,7 @@ export function aimTimeout(
   const reaction = state.reaction;
   if (!reaction || reaction.stage !== 'aim') return reject('WRONG_PHASE');
   const strike = pendingOf(state)!;
-  const options = aimOptions(state, attacker, strike, state.turnWill, rules);
+  const options = aimOptions(state, attacker, strike, state.turnWill, rules, reaction.ranged);
   const stay = options.find((h) => sameHex(h, attacker.pos)) ?? options[0] ?? strike.fromHex;
   return resolveAt(state, attacker, stay, atMs, rules);
 }

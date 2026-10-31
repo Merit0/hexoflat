@@ -32,15 +32,19 @@ export function beginTurn(
 export function startRound(state: BattleState, rules: BattleRules): DomainEvent[] {
   state.round += 1;
   state.wounds = {};
-  const { draws, order } = rollRound(state);
-  state.draws = draws;
-  state.order = order;
-  state.turnIndex = 0;
-  const rolled: DomainEvent = {
-    type: 'INITIATIVE_ROLLED',
-    payload: { round: state.round, draws, order },
-  };
-  return [rolled, ...beginTurn(state, order[0], rules)];
+  const events: DomainEvent[] = [];
+  if (state.round === 1) {
+    const { draws, order } = rollRound(state);
+    state.draws = draws;
+    state.order = order;
+    events.push({ type: 'INITIATIVE_ROLLED', payload: { round: state.round, draws, order } });
+  }
+  const first = state.order.findIndex((id) => {
+    const creature = creatureById(state, id);
+    return !!creature && isAlive(creature);
+  });
+  state.turnIndex = Math.max(0, first);
+  return [...events, ...beginTurn(state, state.order[state.turnIndex], rules)];
 }
 
 export function advanceTurn(state: BattleState, rules: BattleRules): DomainEvent[] {

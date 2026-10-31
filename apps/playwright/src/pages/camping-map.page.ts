@@ -9,7 +9,6 @@ import { SettingsOverlayComponent } from '@components/settings-overlay.component
 import { ToolActionOverlayComponent } from '@components/tool-action-overlay.component';
 import { HeroInventoryComponent } from '@components/hero-inventory.component';
 import { ActionAlertBannerComponent } from '@components/action-alert-banner.component';
-import { BattleDeployCardComponent } from '@components/battle-deploy-card.component';
 import { BattleTabComponent } from '@components/battle-tab.component';
 import { PageErrorsComponent } from '@components/page-errors.component';
 
@@ -24,7 +23,6 @@ export class CampingMapPage extends BasePage {
   readonly toolActionOverlay = new ToolActionOverlayComponent();
   readonly inventory = new HeroInventoryComponent();
   readonly actionAlertBanner = new ActionAlertBannerComponent();
-  readonly battleDeployCard = new BattleDeployCardComponent();
   readonly battleTab = new BattleTabComponent();
   readonly pageErrors = new PageErrorsComponent();
 

@@ -4,7 +4,7 @@ import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feat
 import { SquadActionsFeature } from '@features/world/squad-actions.feature';
 import { HexobjectKeys } from '@config/test-data';
 
-test('Verify the hand on a squad token offers ATTACK and the opened battle survives a reload', async () => {
+test('Verify the hand on a squad token offers ATTACK, the battle opens at once and survives a reload', async () => {
   await new OpenCampingMapFeature().open();
   const squad = new SquadActionsFeature();
 
@@ -13,10 +13,10 @@ test('Verify the hand on a squad token offers ATTACK and the opened battle survi
   await squad.verifyHandOffersAttack();
 
   await squad.attack();
-  await squad.verifyDeployCardOpen();
+  await squad.verifyBattleOpenAtOnce();
 
   await new ReloadCampingMapFeature().reload();
-  await squad.verifyDeployCardOpen();
+  await squad.verifyBattleOpenAtOnce();
 });
 
 test('Verify leaving a won battle in the cave brings the board back without render errors', async () => {

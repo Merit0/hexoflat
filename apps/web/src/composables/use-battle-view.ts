@@ -87,6 +87,7 @@ export function useBattleView() {
       localHeroIds: store.localHeroIds,
       lastHeroEvents: store.lastHeroEvents,
       turnStartWill: store.turnStartWill,
+      revealedShields: store.revealedShields,
       ui: { ...ui },
       rules: BATTLE_RULES,
       nameOf,

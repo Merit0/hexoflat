@@ -1,9 +1,10 @@
 import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
-import { creatureById, livingOnSide } from '@hexoflat/engine/battle/battle-board';
-import { battleDistance, isAdjacentHex } from '@hexoflat/engine/battle/hex-battle-geom';
+import { creatureById, freeNeighbours, livingOnSide } from '@hexoflat/engine/battle/battle-board';
+import { battleDistance } from '@hexoflat/engine/battle/hex-battle-geom';
 import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
+import { reachableRing } from '@hexoflat/engine/battle/strike';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import type { BattleOverlayTone } from './battle-look';
 
@@ -24,6 +25,7 @@ export interface BattleOverlayInput {
   zones: DeploymentZones | null;
   mode: BattleTargetMode | null;
   results: DefendResultMark[];
+  revealed?: readonly BattleHex[];
 }
 
 export interface BattleOverlayModel {
@@ -48,7 +50,11 @@ function targetCreatures(
   const reachable = (foe: BattleCreature) => {
     const d = battleDistance(self.pos, foe.pos);
     if (mode === 'push') return d === 1 && self.force >= foe.weight;
-    return range ? d >= range.min && d <= range.max : isAdjacentHex(self.pos, foe.pos);
+    if (range) return d >= range.min && d <= range.max;
+    const ring = freeNeighbours(view, foe.pos, self.id);
+    return (
+      reachableRing(view, self, ring, view.turnWill - BATTLE_RULES.strike, BATTLE_RULES).length > 0
+    );
   };
   return foes.filter(reachable);
 }
@@ -79,10 +85,12 @@ function aimMarks(view: BattleProjection): BattleMark[] {
   const self = activeHero(view);
   const strike = self ? view.pending.find((s) => s.attackerId === self.id) : undefined;
   if (!self || !strike || view.reaction?.stage !== 'aim') return [];
-  return aimOptions(view, self, strike, view.turnWill, BATTLE_RULES).map((hex) => ({
-    hex,
-    tone: 'target' as const,
-  }));
+  return aimOptions(view, self, strike, view.turnWill, BATTLE_RULES, view.reaction.ranged).map(
+    (hex) => ({
+      hex,
+      tone: 'target' as const,
+    }),
+  );
 }
 
 export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayModel {
@@ -96,6 +104,7 @@ export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayMode
   const targets =
     hero && input.mode && input.mode !== 'move' ? targetCreatures(view, hero, input.mode) : [];
   marks.push(...targets.map((foe) => ({ hex: foe.pos, tone: 'target' as const })));
+  marks.push(...(input.revealed ?? []).map((hex) => ({ hex, tone: 'shield' as const })));
   marks.push(...input.results.map((r) => ({ hex: r.fromHex, tone: r.outcome })));
   return { marks, targets: targets.map((foe) => foe.id) };
 }

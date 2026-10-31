@@ -57,11 +57,27 @@ describe('REQ-BTL-004 melee strike', () => {
     expect(opened.pending[0]).toMatchObject({ attackerId: 'hero', targetId: 's1', power: 2 });
   });
 
-  it('strikes only from a neighbouring hex', () => {
+  it('picks a target that can be reached, and walks to it only after the block window', () => {
     const battle = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 2, r: 0 })]), [
       'hero',
       's1',
     ]);
+    const { battle: after, events } = heroDoes(battle, {
+      kind: 'strike',
+      targetId: 's1',
+      hand: 'right',
+    });
+    expect(events.map((e) => e.type)).toContain('CREATURE_MOVED');
+    expect(after.creatures[0].pos).toEqual({ q: 1, r: 0 });
+    expect(after.creatures[1].hp).toBe(1);
+  });
+
+  it('refuses a target no neighbouring hex of which can be reached with the Will left', () => {
+    const battle = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]), [
+      'hero',
+      's1',
+    ]);
+    battle.turnWill = 8;
     const { events } = heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'right' });
     expect(rejectionOf(events)).toBe('NOT_ADJACENT');
   });

@@ -9,7 +9,7 @@ import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { livingCreatureAt, terrainAt } from '@hexoflat/engine/battle/battle-board';
 import { shieldCapacity } from '@hexoflat/engine/battle/defend';
 import { hexNeighbours, isAdjacentHex, sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
-import { strikingItem } from '@hexoflat/engine/battle/strike';
+import { reachRefusal, strikingItem } from '@hexoflat/engine/battle/strike';
 import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { controlledHero } from './battle-board-tap';
@@ -63,7 +63,9 @@ function toolAnchor(
   preferred: BattleHex | null,
   item: BattleItem | null,
 ): BattleHex | null {
-  if (preferred && isAdjacentHex(self.pos, preferred)) return preferred;
+  if (preferred && (isAdjacentHex(self.pos, preferred) || foeAt(view, self, preferred))) {
+    return preferred;
+  }
   const around = hexNeighbours(self.pos).filter((hex) => terrainAt(view, hex) !== null);
   if (item?.shieldCapacity) return around.find((hex) => inRing(view, self, hex)) ?? null;
   if (!item || item.power) return around.find((hex) => foeAt(view, self, hex)) ?? around[0] ?? null;
@@ -95,7 +97,12 @@ function attackDecision(
 ): Decision {
   const foe = foeAt(view, self, at);
   const ready = strikeHands(view, self, rules).includes(hand);
-  return foe && ready
+  const weapon = strikingItem(self, hand, rules);
+  const reachable =
+    !!foe &&
+    !!weapon &&
+    !reachRefusal(view, self, foe, weapon, view.turnWill - rules.strike, rules);
+  return foe && ready && reachable
     ? { action: 'attack', targetId: foe.id, price: rules.strike }
     : { action: null, targetId: null, price: 0 };
 }

@@ -62,7 +62,7 @@ describe('battle overlay model', () => {
       model(battle, { mode })
         .marks.filter((m) => m.tone === 'target')
         .map((m) => `${m.hex.q},${m.hex.r}`);
-    expect(targets('strike').sort()).toEqual(['0,1', '1,0']);
+    expect(targets('strike').sort()).toEqual(['-2,0', '0,1', '1,0']);
     expect(targets('push')).toEqual(['1,0']);
   });
 
@@ -134,5 +134,11 @@ describe('battle overlay model', () => {
     ]);
     const targets = model(battle, { mode: 'strike' }).marks.filter((m) => m.tone === 'target');
     expect(targets.map((m) => m.hex)).toEqual([{ q: -3, r: 0 }]);
+  });
+
+  it('shows the real shield hexes revealed after a strike as shield marks', () => {
+    const battle = heroTurn([hero(), enemyCreature('skeleton-warrior', 'w', { q: 2, r: 0 })]);
+    const marks = model(battle, { mode: 'move', revealed: [{ q: 1, r: 0 }] }).marks;
+    expect(marks).toContainEqual({ hex: { q: 1, r: 0 }, tone: 'shield' });
   });
 });

@@ -8,7 +8,11 @@ import {
   type BattleAction,
   type BattleCommand,
 } from '@hexoflat/engine/battle/battle-commands';
-import type { BattleSetupInput, BattleState } from '@hexoflat/engine/battle/battle-state';
+import type {
+  BattleHex,
+  BattleSetupInput,
+  BattleState,
+} from '@hexoflat/engine/battle/battle-state';
 import type { BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
 import { creatureById } from '@hexoflat/engine/battle/battle-board';
 import { projectBattleEvent, projectBattleForViewer } from '@hexoflat/engine/battle/projection';
@@ -46,6 +50,8 @@ export interface BattleSnapshot {
 
 let bridge: BattleEngineBridge | null = null;
 
+const REVEAL_MS = 2500;
+
 const TASK_ACTIONS = new Set<BattleAction['kind']>(['answer-task', 'task-timeout']);
 
 export const useBattleStore = defineStore('battle-store', () => {
@@ -58,6 +64,8 @@ export const useBattleStore = defineStore('battle-store', () => {
   const queue = shallowRef<DomainEvent[]>([]);
   const animating = ref(false);
   const enemyTurnPlaying = ref(false);
+  const revealedShields = shallowRef<BattleHex[]>([]);
+  let revealTimer: ReturnType<typeof setTimeout> | null = null;
 
   const inputLocked = computed(() => animating.value && enemyTurnPlaying.value);
   const isOpen = computed(() => deploy.value !== null);
@@ -66,8 +74,31 @@ export const useBattleStore = defineStore('battle-store', () => {
     battle.value ? projectBattleForViewer(battle.value, 'heroes') : null,
   );
 
+  function animatesForeignCreature(events: DomainEvent[]): boolean {
+    return events.some((event) => {
+      const payload = event.payload as { creatureId?: string; attackerId?: string };
+      if (event.type === 'CREATURE_MOVED') return !isLocalHero(payload.creatureId);
+      if (event.type === 'STRIKE_LANDED') return !isLocalHero(payload.attackerId);
+      return false;
+    });
+  }
+
+  function revealShields(events: DomainEvent[]) {
+    const resolved = [...events].reverse().find((e) => e.type === 'STRIKES_RESOLVED');
+    if (!resolved) return;
+    const { burnedShields } = resolved.payload as { burnedShields: BattleHex[] };
+    if (revealTimer) clearTimeout(revealTimer);
+    revealedShields.value = burnedShields.map((hex) => ({ q: hex.q, r: hex.r }));
+    revealTimer = setTimeout(() => {
+      revealedShields.value = [];
+      revealTimer = null;
+    }, REVEAL_MS);
+  }
+
   function absorb(next: BattleState | null, events: DomainEvent[]) {
     battle.value = next;
+    revealShields(events);
+    if (animatesForeignCreature(events)) enemyTurnPlaying.value = true;
     for (const event of events) {
       if (event.type === 'TURN_STARTED')
         turnStartWill.value = (event.payload as { will: number }).will;
@@ -187,6 +218,9 @@ export const useBattleStore = defineStore('battle-store', () => {
   }
 
   function close() {
+    if (revealTimer) clearTimeout(revealTimer);
+    revealTimer = null;
+    revealedShields.value = [];
     animating.value = false;
     enemyTurnPlaying.value = false;
     deploy.value = null;
@@ -208,6 +242,7 @@ export const useBattleStore = defineStore('battle-store', () => {
     queue,
     animating,
     inputLocked,
+    revealedShields,
     isOpen,
     inBattle,
     projection,

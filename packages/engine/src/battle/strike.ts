@@ -15,36 +15,69 @@ import {
   terrainAt,
   type BattleBoardView,
 } from './battle-board';
-import { archerArc, battleDistance, isAdjacentHex } from './hex-battle-geom';
+import { archerArc, battleDistance, hexKey, isAdjacentHex } from './hex-battle-geom';
+import { cheapestPaths } from './movement';
 import { reject, spendTurnWill, type BattleRejection } from './battle-rejection';
+
+export function isRangedStrike(
+  weapon: BattleItem | null,
+  attacker: BattleCreature,
+  target: BattleCreature,
+): boolean {
+  return !!weapon?.range && !isAdjacentHex(attacker.pos, target.pos);
+}
 
 export function strikeRing(
   state: BattleState,
   target: BattleCreature,
   attacker: BattleCreature,
+  ranged: boolean,
 ): BattleHex[] {
-  if (isAdjacentHex(attacker.pos, target.pos))
-    return freeNeighbours(state, target.pos, attacker.id);
+  if (!ranged) return freeNeighbours(state, target.pos, attacker.id);
   return archerArc(target.pos, attacker.pos).filter((hex) => terrainAt(state, hex) !== null);
 }
 
-function strikeSide(target: BattleCreature, attacker: BattleCreature): BattleHex {
-  if (isAdjacentHex(attacker.pos, target.pos)) return { ...attacker.pos };
+function strikeSide(target: BattleCreature, attacker: BattleCreature, ranged: boolean): BattleHex {
+  if (!ranged) return { ...attacker.pos };
   return archerArc(target.pos, attacker.pos)[1];
+}
+
+export function reachableRing(
+  state: BattleBoardView,
+  attacker: BattleCreature,
+  ring: readonly BattleHex[],
+  willLeft: number,
+  rules: BattleRules,
+): BattleHex[] {
+  const nodes = cheapestPaths(state, attacker, rules);
+  return ring
+    .map((hex) => ({ hex, cost: nodes.get(hexKey(hex))?.cost }))
+    .filter((entry): entry is { hex: BattleHex; cost: number } => {
+      return entry.cost !== undefined && entry.cost <= willLeft;
+    })
+    .sort((a, b) => a.cost - b.cost)
+    .map((entry) => ({ ...entry.hex }));
 }
 
 export function isCornered(state: BattleBoardView, creature: BattleCreature): boolean {
   return freeNeighbours(state, creature.pos).every((hex) => terrainAt(state, hex) === 'saw');
 }
 
-function reachRefusal(
-  state: BattleState,
+export function reachRefusal(
+  state: BattleBoardView,
   attacker: BattleCreature,
   target: BattleCreature,
   weapon: BattleItem,
+  willLeft: number,
+  rules: BattleRules,
 ): BattleRejection | null {
   const distance = battleDistance(attacker.pos, target.pos);
-  if (!weapon.range) return distance === 1 ? null : reject('NOT_ADJACENT');
+  if (!weapon.range) {
+    const ring = freeNeighbours(state, target.pos, attacker.id);
+    return reachableRing(state, attacker, ring, willLeft, rules).length > 0
+      ? null
+      : reject('NOT_ADJACENT');
+  }
   if (distance === 1) return isCornered(state, attacker) ? null : reject('TOO_CLOSE');
   return distance >= weapon.range.min && distance <= weapon.range.max
     ? null
@@ -84,7 +117,7 @@ function validateStrike(
   const weapon = strikingItem(attacker, hand, rules);
   if (!weapon) return reject('NO_WEAPON_IN_HAND');
   if (state.struckHands.includes(hand)) return reject('HAND_ALREADY_STRUCK');
-  return reachRefusal(state, attacker, target, weapon);
+  return reachRefusal(state, attacker, target, weapon, state.turnWill - rules.strike, rules);
 }
 
 export function strike(
@@ -100,13 +133,14 @@ export function strike(
   const refused = spendTurnWill(state, rules.strike);
   if (refused) return refused;
 
+  const ranged = isRangedStrike(strikingItem(attacker, hand, rules), attacker, target!);
   state.strikeSeq += 1;
   const pending = {
     id: `${state.id}:strike:${state.strikeSeq}`,
     attackerId: attacker.id,
     targetId: target!.id,
-    fromHex: strikeSide(target!, attacker),
-    ring: strikeRing(state, target!, attacker),
+    fromHex: strikeSide(target!, attacker, ranged),
+    ring: strikeRing(state, target!, attacker, ranged),
     power: strikePower(state, attacker, target!, hand, rules),
   };
   state.pending.push(pending);

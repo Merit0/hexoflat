@@ -1,7 +1,7 @@
 <template>
   <div
     class="hero-card"
-    :class="{ 'is-turn': card.state === 'act' || card.state === 'defend' }"
+    :class="{ 'is-turn': card.state === 'act' || card.state === 'aim' }"
     data-testid="battle-hero-controls"
     :data-state="card.state"
   >
@@ -15,7 +15,11 @@
       <div class="hero-card__who">
         <div class="hero-card__title">
           <span class="hero-card__name">{{ card.row.name }}</span>
-          <span v-if="card.row.tags.includes('yourTurn')" class="hero-card__tag">
+          <span
+            v-if="card.row.tags.includes('yourTurn')"
+            class="hero-card__tag"
+            data-testid="battle-tag-your-turn"
+          >
             {{ t('battle.tag.yourTurn') }}
           </span>
           <span v-if="card.row.hits" class="hero-card__tag is-hit">
@@ -138,9 +142,6 @@
           @click="emit('end-turn')"
         >
           {{ t('battle.endTurn') }}
-          <span v-if="card.stanceNote" class="hero-card__stance-note">
-            {{ t('battle.stanceNote', { will: card.stanceNote }) }}
-          </span>
         </button>
       </div>
     </section>

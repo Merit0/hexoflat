@@ -3,6 +3,7 @@ import { applyCommand, type HexEngineState } from '@hexoflat/engine';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { BattleCommand, SquadLifecyclePayload } from '@hexoflat/engine/battle/battle-commands';
+import type { BattleState } from '@hexoflat/engine/battle/battle-state';
 import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
 import { planSquadBattle, type HeroBattleSummary } from '@hexoflat/engine/squads/squad-battle';
 import { findSquad } from '@hexoflat/engine/squads/squad-state';
@@ -15,6 +16,7 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
+import { logBattleEvents } from '@/services/battle/battle-event-log';
 import { bindBattleHandsGate } from '@/services/battle/battle-hands-gate';
 import { useBattleWarnings } from '@/composables/use-battle-warnings';
 
@@ -36,6 +38,7 @@ export function squadLoadoutSource(): LoadoutSource {
   return {
     heroId: heroStore.hero.id,
     hearts: heroStore.hero.currentHealth,
+    maxHearts: heroStore.heroHpMax,
     weapon: inventory.equippedItems.weapon,
     shield: inventory.equippedItems.shield,
     items: inventory.items,
@@ -142,8 +145,18 @@ function prepareDeploy() {
   battleStore.engage(engagement);
 }
 
+function followBattleHealth(battle: BattleState | null | undefined): void {
+  const heroStore = useHeroStore();
+  const hero = battle?.creatures.find((creature) => creature.id === heroStore.hero.id);
+  if (!hero || heroStore.hero.currentHealth === hero.hp / 2) return;
+  heroStore.hero.setHealth(hero.hp / 2);
+  heroStore.saveProgressToStorage();
+}
+
 function bridgeStep(state: HexEngineState, events: DomainEvent[]): BattleStep {
   useBattleStore().engage(state.engagement ?? null);
+  followBattleHealth(state.battle);
+  logBattleEvents(events, state.battle ?? null);
   return { battle: state.battle ?? null, events };
 }
 
@@ -188,6 +201,7 @@ export function useSquadFlow() {
     () => [battleStore.engagement, battleStore.deploy, world.map] as const,
     () => {
       if (battleStore.engagement && !battleStore.deploy) prepareDeploy();
+      if (battleStore.deploy && !battleStore.battle) battleStore.start();
     },
     { immediate: true },
   );

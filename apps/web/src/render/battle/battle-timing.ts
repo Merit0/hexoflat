@@ -1,6 +1,6 @@
 export const BATTLE_TIMING = {
   enemyTurnDelayMs: 700,
-  strikeMs: 2000,
+  strikeMs: 1000,
   stepMs: 190,
   slidePerHexMs: 250,
   ledgeFallShakeMs: 320,
@@ -13,6 +13,7 @@ export const BATTLE_MOTION = {
   dropRadiusTiles: 0.065,
   maxDropsPerSide: 4,
   toolOrbitTiles: 0.7,
+  toolTurns: 2,
   toolFadeIn: 0.1,
   toolFadeOut: 0.15,
   ejectLiftTiles: 0.45,

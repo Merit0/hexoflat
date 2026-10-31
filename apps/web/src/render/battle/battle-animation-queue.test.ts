@@ -97,9 +97,12 @@ describe('sampleStrikeFx', () => {
   });
 
   it('goes once round the attacker hex, never round the target, and fades out', () => {
-    const half = sampleStrikeFx(strike, 0.5, geo)!;
-    expect(half.tool.x).toBeCloseTo(200 + 70);
-    expect(half.tool.y).toBeCloseTo(0);
+    const turned = sampleStrikeFx(strike, 0.5, geo)!;
+    expect(turned.tool.x).toBeCloseTo(200 - 70);
+    expect(turned.tool.y).toBeCloseTo(0);
+    const quarter = sampleStrikeFx(strike, 0.25, geo)!;
+    expect(quarter.tool.x).toBeCloseTo(200);
+    expect(Math.abs(quarter.tool.y)).toBeCloseTo(70);
     for (const t of [0.1, 0.3, 0.6, 0.9]) {
       const { tool } = sampleStrikeFx(strike, t, geo)!;
       expect(Math.hypot(tool.x - 200, tool.y)).toBeCloseTo(70);

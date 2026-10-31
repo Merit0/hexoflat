@@ -18,6 +18,7 @@ export type TCreatureKeys =
 
 const SQUAD_SPRITES = {
   skeleton: '/enemy-assets/enemies-sprites/skeleton-hex.png',
+  skeletonKing: '/enemy-assets/boss-hex-images/skeleton-king-hex.png',
 } as const;
 
 const SQUAD_ACTIONS = {
@@ -70,7 +71,7 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
     boss: false,
     loot: HEXOBJECT_KEYS.HEALTH_BOTTLE,
   }),
-  [HEXOBJECT_KEYS.BONE_COURT]: squadContent(HEXOBJECT_KEYS.BONE_COURT, 'skeleton', {
+  [HEXOBJECT_KEYS.BONE_COURT]: squadContent(HEXOBJECT_KEYS.BONE_COURT, 'skeletonKing', {
     members: ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior'],
     watcher: false,
     boss: true,

@@ -58,7 +58,6 @@ export interface BattleHeroCard {
   actions: BattleActionView[];
   hint: BattleMessage | null;
   canUndo: boolean;
-  stanceNote: number;
   plan: number;
   stage: BattleStage;
   defend: BattleDefendView | null;
@@ -144,7 +143,7 @@ function actions(
     selected: ui.mode === id,
     disabled: blocked || will < cost,
   });
-  return [entry('push', rules.push, false), entry('swap', rules.swap, self.bag.length === 0)];
+  return [entry('push', rules.push, false)];
 }
 
 function defendView(
@@ -234,7 +233,6 @@ export function buildHeroCard(
     actions: actions(view, self, input),
     hint: cardHint(state, self, input),
     canUndo: view.undo.length > 0,
-    stanceNote: Math.min(input.rules.stanceMax, view.turnWill),
     plan: 0,
     stage: input.ui.stage,
     defend: defending ? defendView(view, self, input) : null,

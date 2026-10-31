@@ -85,5 +85,23 @@ export interface HexoflatTestApi {
     will: number;
   } | null;
 
+  getBattleSnapshot(): {
+    round: number;
+    phase: string;
+    activeId: string;
+    order: string[];
+    draws: Record<string, number>;
+    turnWill: number;
+    reaction: { stage: 'block' | 'aim'; attackerId: string; defenderId: string } | null;
+    creatures: { id: string; side: string; hp: number; maxHp: number; q: number; r: number }[];
+    wounds: Record<string, { q: number; r: number }[]>;
+    heroDistances: Record<string, number>;
+    placedShields: number;
+    revealedShields: number;
+    aimOptions: { q: number; r: number }[];
+  } | null;
+  giveEnemyTheTurn(): void;
+  getBattleHexPoint(q: number, r: number): { x: number; y: number } | null;
+
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 }

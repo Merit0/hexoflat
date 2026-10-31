@@ -5,6 +5,7 @@ import { getMeta } from '../content/content-accessors';
 import { resolveActions } from '../game-resolvers/interactions-resolver';
 import type { HexEngineState } from '../commands/apply-command';
 import { findSquad, projectSquads, watchedHexes } from './squad-state';
+import { heroBattleCreature } from './squad-battle';
 import {
   HERO,
   eventTypes,
@@ -142,5 +143,19 @@ describe('squad watcher', () => {
     calm.heroes[HERO].heroSteps = 200;
     expect(eventTypes(moveHero(calm, HERO_AT))).toEqual(['HERO_MOVED']);
     expect(calm.engagement).toBeUndefined();
+  });
+});
+
+describe('heroBattleCreature hearts', () => {
+  it('keeps the hero maximum from the hero board, not his current hearts', () => {
+    const hero = heroBattleCreature({
+      id: 'hero',
+      hearts: 2,
+      maxHearts: 4,
+      weapon: null,
+      shield: null,
+      bag: [],
+    });
+    expect([hero.hp, hero.maxHp]).toEqual([4, 8]);
   });
 });

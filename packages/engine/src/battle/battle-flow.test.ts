@@ -46,12 +46,8 @@ describe('enemy turn', () => {
       'hero',
     ]);
     const { battle, events } = enemyTurn(start);
-    expect(eventTypes(events)).toEqual([
-      'CREATURE_MOVED',
-      'CREATURE_MOVED',
-      'STRIKE_DEALT',
-      'REACTION_OPENED',
-    ]);
+    expect(eventTypes(events)).toEqual(['STRIKE_DEALT', 'REACTION_OPENED']);
+    expect(battle.creatures[1].pos).toEqual({ q: 3, r: 0 });
     expect(battle.activeId).toBe('hero');
     expect(battle.phase).toBe('defend');
     expect(battle.pending).toHaveLength(1);

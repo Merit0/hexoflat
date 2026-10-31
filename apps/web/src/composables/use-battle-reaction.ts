@@ -7,6 +7,8 @@ import { controlledHero } from './battle-board-tap';
 import { activateBattleHand } from './use-battle-view';
 import { useBattleWarnings } from './use-battle-warnings';
 
+const RETRY_MS = 250;
+
 export function useBattleReaction(): void {
   const store = useBattleStore();
   const heroToolStore = useHeroToolStore();
@@ -30,10 +32,13 @@ export function useBattleReaction(): void {
     const reaction = store.projection?.reaction;
     const hero = controlledHero(store.projection, store.localHeroIds);
     if (!reaction || !hero) return;
-    timer = setTimeout(
-      () => send(() => store.act({ kind: 'reaction-timeout' })),
-      Math.max(0, reaction.deadlineMs - Date.now()),
-    );
+    const key = currentKey();
+    const fire = () => {
+      timer = null;
+      if (currentKey() !== key) return;
+      if (!send(() => store.act({ kind: 'reaction-timeout' }))) timer = setTimeout(fire, RETRY_MS);
+    };
+    timer = setTimeout(fire, Math.max(0, reaction.deadlineMs - Date.now()));
     if (reaction.stage !== 'block') return;
     const shield = BATTLE_HANDS.find((hand) => !!hero.hands[hand]?.shieldCapacity);
     if (shield) activateBattleHand(shield);

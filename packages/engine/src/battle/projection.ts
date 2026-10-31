@@ -12,6 +12,7 @@ export type BattleProjection = Omit<BattleState, 'pending' | 'seed' | 'reaction'
     attackerId: string;
     defenderId: string;
     deadlineMs: number;
+    ranged: boolean;
   };
 };
 
@@ -59,6 +60,7 @@ export function projectBattleForViewer(state: BattleState, viewer: BattleSide): 
         attackerId: state.reaction.attackerId,
         defenderId: state.reaction.defenderId,
         deadlineMs: state.reaction.deadlineMs,
+        ranged: state.reaction.ranged,
       }
     : undefined;
   const view = {

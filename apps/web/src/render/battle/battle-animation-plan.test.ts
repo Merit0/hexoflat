@@ -7,7 +7,7 @@ const hero: AnimatedCreature = { id: 'hero', side: 'heroes', pos: { q: 0, r: 0 }
 const ev = (type: string, payload: Record<string, unknown>): DomainEvent => ({ type, payload });
 
 describe('planBattleAnimation', () => {
-  it('walks an enemy hex by hex like the hero, then swings the sword from where it stands for two seconds', () => {
+  it('walks an enemy hex by hex like the hero, then swings the tool from where it stands for one second', () => {
     const skeleton: AnimatedCreature = { id: 's1', side: 'enemies', pos: { q: 1, r: 0 } };
     const steps = planBattleAnimation(
       [
@@ -38,7 +38,7 @@ describe('planBattleAnimation', () => {
       from: { q: 1, r: 0 },
       durationMs: BATTLE_TIMING.strikeMs,
     });
-    expect(BATTLE_TIMING.strikeMs).toBe(2000);
+    expect(BATTLE_TIMING.strikeMs).toBe(1000);
   });
 
   it('walks the hero hex by hex like the map step', () => {

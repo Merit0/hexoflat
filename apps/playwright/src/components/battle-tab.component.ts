@@ -3,9 +3,16 @@ import { BaseComponent } from '@framework/base-component';
 
 /** The BATTLE tab and the battle board laid over the map (battle-tab.vue, battle-board-area.vue). */
 export class BattleTabComponent extends BaseComponent {
-  async startBattle(): Promise<void> {
-    await this.page.getByTestId('battle-start').click();
+  async watchSprite(url: RegExp): Promise<() => Promise<void>> {
+    const response = this.page.waitForResponse((r) => url.test(r.url()));
+    return async () => {
+      expect((await response).status()).toBe(200);
+    };
+  }
+
+  async verifyBoardOpen(): Promise<void> {
     await expect(this.page.getByTestId('battle-board')).toBeVisible();
+    await expect(this.page.getByTestId('battle-start')).toHaveCount(0);
   }
 
   async leaveBattle(): Promise<void> {
@@ -19,5 +26,72 @@ export class BattleTabComponent extends BaseComponent {
   async verifyBoardClosed(): Promise<void> {
     await expect(this.page.getByTestId('battle-board-area')).toBeHidden();
     await expect(this.page.getByTestId('battle-tab')).toBeHidden();
+  }
+
+  private get toolHex() {
+    return this.page.getByTestId('battle-tool-hex');
+  }
+
+  private get heroCard() {
+    return this.page.getByTestId('battle-hero-controls');
+  }
+
+  private get canvas() {
+    return this.page.getByTestId('battle-board').locator('canvas');
+  }
+
+  async verifyHeroCardState(state: 'defend' | 'aim' | 'act' | 'wait'): Promise<void> {
+    await expect(this.heroCard).toHaveAttribute('data-state', state);
+  }
+
+  async verifyReactionTimerRunning(): Promise<void> {
+    await expect(this.page.getByTestId('battle-reaction-timer')).toBeVisible();
+  }
+
+  async verifyWaitingForTheDefender(): Promise<void> {
+    await expect(this.page.getByTestId('battle-wait-blocking')).toBeVisible();
+  }
+
+  async verifyYourTurnTag(visible: boolean): Promise<void> {
+    const tag = this.page.getByTestId('battle-tag-your-turn');
+    if (visible) await expect(tag).toBeVisible();
+    else await expect(tag).toBeHidden();
+  }
+
+  async verifyNoStageBarAndNoBlockButton(): Promise<void> {
+    await expect(this.page.getByTestId('battle-stage-bar')).toHaveCount(0);
+    await expect(this.page.getByTestId('battle-block')).toHaveCount(0);
+  }
+
+  async takeHit(): Promise<void> {
+    await this.page.getByTestId('battle-take-hit').click();
+  }
+
+  async verifyShieldCount(placed: number, capacity: number): Promise<void> {
+    await expect(this.page.getByTestId('battle-shield-count')).toHaveText(
+      `${placed} / ${capacity}`,
+    );
+  }
+
+  async verifyToolHexOffers(label: RegExp): Promise<void> {
+    await expect(this.toolHex.getByTestId('tool-action-button')).toHaveText(label);
+  }
+
+  async pressToolHexAction(): Promise<void> {
+    await this.toolHex.getByTestId('tool-action-button').click();
+  }
+
+  async scrollTheHandsWithTheWheel(): Promise<void> {
+    await this.page.getByTestId('battle-board-area').hover();
+    await this.page.mouse.wheel(0, 100);
+    await expect(this.page.getByTestId('battle-hand-right')).toBeVisible();
+  }
+
+  async hoverBoardPoint(point: { x: number; y: number }): Promise<void> {
+    await this.canvas.hover({ position: point });
+  }
+
+  async clickBoardPoint(point: { x: number; y: number }): Promise<void> {
+    await this.canvas.click({ position: point });
   }
 }

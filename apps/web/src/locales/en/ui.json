@@ -329,8 +329,18 @@
     "enemiesLeft": "{count} left",
     "will": "{will} Will",
     "undo": "Undo step",
-    "endTurn": "End turn",
-    "stanceNote": "· {will} Will goes to stance",
+    "log": {
+      "actor": "Battle",
+      "started": "The battle begins.",
+      "turn": "{name} acts.",
+      "picks": "{attacker} picks {target}.",
+      "hit": "{attacker} hit {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
+      "blocked": "{attacker} struck {target} — blocked.",
+      "fell": "{name} has fallen.",
+      "victory": "Victory! All enemies have fallen.",
+      "defeat": "Defeat — the hero returns to camp."
+    },
+    "endTurn": "END TURN",
     "wait": "{name} ({init}) is moving. Your stance holds",
     "waitStance": "{will} Will for the next block.",
     "waitBlocking": "{name} is putting shields around — wait.",
@@ -396,17 +406,6 @@
         "saw": "You stepped onto the saw. Answer before the line runs out to jump clear. Wrong or late — the saw takes half your hearts.",
         "push": "Answer before the line runs out to push. Wrong or late — the push fails and the Will is spent."
       }
-    },
-    "deploy": {
-      "attack": "You attack",
-      "ambush": "Ambush!",
-      "attackText": "You start on the side you came from. In round 1 you draw 2 initiative tokens and keep the lower.",
-      "ambushText": "The enemies caught you. They stand closer and on your flanks, and in round 1 they draw 2 initiative tokens and keep the lower.",
-      "board": "Board: {place} · battlefield",
-      "seed": "Seed: {seed}",
-      "approach": "Approach: {approach}",
-      "enemyMeta": "{hearts} ♥",
-      "start": "Start battle"
     },
     "legend": {
       "rubble": "Rubble — {cost} Will",
