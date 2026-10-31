@@ -101,6 +101,7 @@ export interface HexoflatTestApi {
     aimOptions: { q: number; r: number }[];
   } | null;
   giveEnemyTheTurn(): void;
+  crowdTheHero(): void;
   getBattleHexPoint(q: number, r: number): { x: number; y: number } | null;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;

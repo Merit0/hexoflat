@@ -34,6 +34,23 @@ export function distanceToFoes(
   return Math.min(...opponents(view, self).map((foe) => battleDistance(foe.pos, hex)));
 }
 
+const MAX_AROUND_ONE_FOE = 2;
+const BOXED_IN_EXITS = 2;
+
+export function isCrowdedAround(
+  view: BattleProjection,
+  self: BattleCreature,
+  foe: BattleCreature,
+): boolean {
+  const mates = livingOnSide(view, self.side).filter(
+    (mate) => mate.id !== self.id && isAdjacentHex(mate.pos, foe.pos),
+  );
+  const exits = freeNeighbours(view, foe.pos).filter(
+    (hex) => terrainAt(view, hex) !== 'saw',
+  ).length;
+  return mates.length >= MAX_AROUND_ONE_FOE && exits > BOXED_IN_EXITS;
+}
+
 export function reachableFoes(
   view: BattleProjection,
   self: BattleCreature,
@@ -43,8 +60,9 @@ export function reachableFoes(
   return weakestFirst(
     opponents(view, self).filter(
       (foe) =>
+        !isCrowdedAround(view, self, foe) &&
         reachableRing(view, self, freeNeighbours(view, foe.pos, self.id), willLeft, rules).length >
-        0,
+          0,
     ),
   );
 }

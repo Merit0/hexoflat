@@ -54,6 +54,15 @@ export function logBattleEvents(events: DomainEvent[], battle: BattleState | nul
         }
         break;
       }
+      case 'STRIKE_SWEPT': {
+        const attacker = nameOf(String(payload.attackerId));
+        const target = nameOf(String(payload.victimId));
+        push(
+          attacker,
+          t('battle.log.swept', { attacker, target, hearts: Number(payload.damage) / 2 }),
+        );
+        break;
+      }
       case 'CREATURE_FELL': {
         const name = nameOf(String(payload.creatureId));
         push(name, t('battle.log.fell', { name }));

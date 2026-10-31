@@ -7,9 +7,9 @@ import type {
   BattleState,
   PendingStrike,
 } from './battle-state';
-import { creatureById } from './battle-board';
+import { creatureById, isAlive } from './battle-board';
 import { applyDamage } from './battle-end';
-import { sameHex } from './hex-battle-geom';
+import { isAdjacentHex, sameHex } from './hex-battle-geom';
 import { cheapestPaths, moveCreature, pathTo } from './movement';
 import { reject, type BattleRejection } from './battle-rejection';
 import { isRangedStrike, reachableRing, strikePower, strikingItem } from './strike';
@@ -82,6 +82,43 @@ function pendingOf(state: BattleState): PendingStrike | undefined {
   return reaction ? state.pending.find((s) => s.attackerId === reaction.attackerId) : undefined;
 }
 
+function sweepAround(
+  state: BattleState,
+  attacker: BattleCreature,
+  target: BattleCreature,
+  hand: BattleHand,
+  rules: BattleRules,
+): DomainEvent[] {
+  const weapon = strikingItem(attacker, hand, rules);
+  if (weapon?.range) return [];
+  const events: DomainEvent[] = [];
+  const victims = state.creatures.filter(
+    (c) =>
+      c.side !== attacker.side &&
+      c.id !== target.id &&
+      isAlive(c) &&
+      isAdjacentHex(attacker.pos, c.pos),
+  );
+  for (const victim of victims) {
+    if (state.phase === 'ended') break;
+    const damage = strikePower(state, attacker, victim, hand, rules);
+    events.push({
+      type: 'STRIKE_SWEPT',
+      payload: {
+        attackerId: attacker.id,
+        victimId: victim.id,
+        fromHex: { ...attacker.pos },
+        damage,
+      },
+    });
+    if (attacker.side === 'enemies') {
+      state.wounds[victim.id] = [...(state.wounds[victim.id] ?? []), { ...attacker.pos }];
+    }
+    events.push(...applyDamage(state, victim, damage));
+  }
+  return events;
+}
+
 function resolveAt(
   state: BattleState,
   attacker: BattleCreature,
@@ -139,6 +176,7 @@ function resolveAt(
       },
     },
     ...applyDamage(state, defender, damage),
+    ...(reaction.ranged ? [] : sweepAround(state, attacker, defender, reaction.hand, rules)),
   ];
 }
 

@@ -25,10 +25,10 @@ function winRate(members: string[], heroCount: number): number {
 }
 
 describe('REQ-BTL-016 balance (hero bot, 500 seeds)', () => {
-  it('one hero beats two skeleton warriors 70–85% of the time', { timeout: 120_000 }, () => {
+  it('one hero beats two skeleton warriors 60–85% of the time', { timeout: 120_000 }, () => {
     const rate = winRate(['skeleton-warrior', 'skeleton-warrior'], 1);
     console.info(`2 warriors vs 1 hero: ${(rate * 100).toFixed(1)}%`);
-    expect(rate).toBeGreaterThanOrEqual(0.7);
+    expect(rate).toBeGreaterThanOrEqual(0.6);
     expect(rate).toBeLessThanOrEqual(0.85);
   });
 

@@ -102,3 +102,24 @@ test('Verify a hurt hero shows the same hearts in the battle as on the hero boar
   await battle.startBattleNextToTheSquad({ hurtHero: true });
   await battle.verifyTheBattleHeartsMatchTheHeroBoard();
 });
+
+test('Verify USE on a return scroll during a battle tells the player it cannot be used', async () => {
+  test.setTimeout(120_000);
+  const battle = new BattleFlowFeature();
+
+  await battle.startBattleNextToTheSquad({ withScroll: true });
+  await battle.pressUseOnTheScrollDuringTheBattle();
+  await battle.verifyTheBattleRefusesTheScroll();
+});
+
+test('Verify a melee swing hurts every enemy beside the hero, not only the one he picked', async () => {
+  test.setTimeout(120_000);
+  const battle = new BattleFlowFeature();
+
+  await battle.startBattleNextToTheSquad({ squad: 'bone-court' });
+  await battle.giveHeroTheTurn();
+  await battle.crowdTheHeroWithTwoEnemies();
+  await battle.aimTheHandAtAnEnemyAndStrike();
+  await battle.chooseTheStrikeHexWhenAsked();
+  await battle.verifyTheOtherEnemyBesideTheHeroWasHurtToo();
+});

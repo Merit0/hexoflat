@@ -179,6 +179,57 @@ describe('skeleton warrior (R-AI-2)', () => {
   });
 });
 
+describe('enemies keep out of the hero sweep', () => {
+  it('holds back instead of becoming the third enemy around one hero', () => {
+    const battle = giveTurn(
+      battleWith(
+        [
+          hero({ q: 0, r: 0 }),
+          enemyCreature('skeleton-warrior', 's1', { q: 1, r: 0 }),
+          enemyCreature('skeleton-warrior', 's2', { q: 0, r: 1 }),
+          enemyCreature('skeleton-warrior', 's3', { q: -3, r: 0 }),
+        ],
+        hexagonBoard(4),
+      ),
+      ['s3', 'hero', 's1', 's2'],
+    );
+    expect(decide(battle)).toEqual({ kind: 'end-turn' });
+  });
+
+  it('crowds in as the third when that boxes the hero against the wall', () => {
+    const walls: Record<string, 'wall'> = {};
+    for (const hex of ['-1,0', '-1,1', '0,-1']) walls[hex] = 'wall';
+    const battle = giveTurn(
+      battleWith(
+        [
+          hero({ q: 0, r: 0 }),
+          enemyCreature('skeleton-warrior', 's1', { q: 1, r: 0 }),
+          enemyCreature('skeleton-warrior', 's2', { q: 0, r: 1 }),
+          enemyCreature('skeleton-warrior', 's3', { q: 3, r: -1 }),
+        ],
+        hexagonBoard(4, walls),
+      ),
+      ['s3', 'hero', 's1', 's2'],
+    );
+    expect(decide(battle)).toMatchObject({ kind: 'strike', targetId: 'hero' });
+  });
+
+  it('still joins the fight as the second enemy', () => {
+    const battle = giveTurn(
+      battleWith(
+        [
+          hero({ q: 0, r: 0 }),
+          enemyCreature('skeleton-warrior', 's1', { q: 1, r: 0 }),
+          enemyCreature('skeleton-warrior', 's2', { q: -2, r: 0 }),
+        ],
+        hexagonBoard(4),
+      ),
+      ['s2', 'hero', 's1'],
+    );
+    expect(decide(battle)).toMatchObject({ kind: 'strike', targetId: 'hero' });
+  });
+});
+
 describe('skeleton king (R-AI-3)', () => {
   it('pushes an adjacent hero onto a saw behind the hero instead of striking', () => {
     const battle = enemyFirst(

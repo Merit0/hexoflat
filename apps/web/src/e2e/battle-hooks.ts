@@ -64,6 +64,23 @@ export interface BattleSnapshot {
   aimOptions: { q: number; r: number }[];
 }
 
+export function crowdTheHero(): void {
+  const store = useBattleStore();
+  if (!store.battle) throw new Error('No battle is open');
+  const battle = structuredClone(toRaw(store.battle));
+  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
+  if (!hero) throw new Error('No hero in the battle');
+  const enemies = battle.creatures.filter((c) => c.side === 'enemies' && c.hp > 0).slice(0, 2);
+  const spots = Object.keys(battle.board)
+    .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
+    .filter((hex) => battle.board[hexKey(hex)] === 'floor' && battleDistance(hex, hero.pos) === 1);
+  for (const enemy of enemies) {
+    const spot = spots.find((hex) => isFreeHex(battle, hex));
+    if (spot) enemy.pos = spot;
+  }
+  store.battle = battle;
+}
+
 export function giveEnemyTheTurn(willPerTurn: number): void {
   const store = useBattleStore();
   if (!store.battle) throw new Error('No battle is open');
@@ -175,6 +192,10 @@ export function battleTestHooks() {
     },
     getBattleSnapshot(): BattleSnapshot | null {
       return readBattleSnapshot();
+    },
+    crowdTheHero(): void {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      crowdTheHero();
     },
     giveEnemyTheTurn(): void {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;

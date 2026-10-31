@@ -111,6 +111,10 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async crowdTheHero(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.crowdTheHero());
+  }
+
   async giveEnemyTheTurn(): Promise<void> {
     await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveEnemyTheTurn());
   }

@@ -7,6 +7,8 @@ import { SquadActionsFeature } from '@features/world/squad-actions.feature';
 import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
 import { EquipSlot } from '@config/equip-slot';
+import { UseEquippedToolFeature } from '@features/world/use-equipped-tool.feature';
+import { VerifyActionAlertFeature } from '@features/world/verify-action-alert.feature';
 import { HexobjectKeys } from '@config/test-data';
 
 const WINDOW_RESOLVES_MS = 20_000;
@@ -38,13 +40,19 @@ export class BattleFlowFeature extends BaseFeature {
   }
 
   async startBattleNextToTheSquad(
-    options: { withShield?: boolean; squad?: string; hurtHero?: boolean } = {},
+    options: {
+      withShield?: boolean;
+      squad?: string;
+      hurtHero?: boolean;
+      withScroll?: boolean;
+    } = {},
   ): Promise<void> {
     await this.step('Open a battle against a squad', async () => {
       const squad = new SquadActionsFeature();
       await new OpenCampingMapFeature().open();
       if (options.withShield) await this.equipAShieldOnTheMap();
       if (options.hurtHero) await this.hurtTheHero();
+      if (options.withScroll) await this.putAReturnScrollInTheHand();
       await squad.placeSquadNextToHero(options.squad ?? HexobjectKeys.skeletonPack);
       await squad.aimHandAtSquad();
       await squad.attack();
@@ -94,9 +102,38 @@ export class BattleFlowFeature extends BaseFeature {
     });
   }
 
+  async verifyTheBattleRefusesTheScroll(): Promise<void> {
+    await this.step('The alert says the scroll cannot be used in a battle', async () => {
+      await new VerifyActionAlertFeature().verifyIsShownMatching(
+        /cannot be used in a battle|не можна використати в бою/,
+      );
+    });
+  }
+
   async hurtTheHero(): Promise<void> {
     await this.step('Hurt the hero before the fight', async () => {
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.setHeroHealth(1.5));
+    });
+  }
+
+  async putAReturnScrollInTheHand(): Promise<void> {
+    await this.step('Equip a return scroll in the shield hand on the map', async () => {
+      await this.page.evaluate(() =>
+        window.__HEXOFLAT_TEST__!.grantInventoryItem('return-scroll', 1),
+      );
+      await new SwitchHeroBoardTabFeature().switchTo('inventory');
+      await new DragInventoryItemFeature().dragToEquipSlot(
+        HexobjectKeys.returnScroll,
+        EquipSlot.SHIELD,
+      );
+      await new SwitchHeroBoardTabFeature().switchTo('hero');
+    });
+  }
+
+  async pressUseOnTheScrollDuringTheBattle(): Promise<void> {
+    await this.step('Press USE on the scroll while the battle is open', async () => {
+      await new SwitchHeroBoardTabFeature().switchTo('inventory');
+      await new UseEquippedToolFeature().use(HexobjectKeys.returnScroll);
     });
   }
 
@@ -257,9 +294,19 @@ export class BattleFlowFeature extends BaseFeature {
     });
   }
 
+  async crowdTheHeroWithTwoEnemies(): Promise<void> {
+    await this.step('Stand two enemies beside the hero', async () => {
+      await this.campingMap.hexBoard.crowdTheHero();
+      await this.campingMap.battleTab.waitForBoardStill();
+      this.before = await this.snapshot();
+    });
+  }
+
   async aimTheHandAtAnEnemyAndStrike(): Promise<void> {
     await this.step('Hover an enemy on the board and press ATTACK in the tool hex', async () => {
-      const enemy = this.before!.creatures.find((c) => c.side === 'enemies' && c.hp > 0)!;
+      const enemy = this.before!.creatures.filter((c) => c.side === 'enemies' && c.hp > 0).sort(
+        (a, b) => this.before!.heroDistances[a.id] - this.before!.heroDistances[b.id],
+      )[0];
       this.attackerId = enemy.id;
       const point = await this.campingMap.hexBoard.battleHexPoint({ q: enemy.q, r: enemy.r });
       if (!point) throw new Error('The battle board did not report a point for the enemy hex.');
@@ -267,6 +314,24 @@ export class BattleFlowFeature extends BaseFeature {
       await this.campingMap.battleTab.hoverBoardPoint(point);
       await this.campingMap.battleTab.verifyToolHexOffers(/Атакувати|Attack/);
       await this.campingMap.battleTab.pressToolHexAction();
+    });
+  }
+
+  async verifyTheOtherEnemyBesideTheHeroWasHurtToo(): Promise<void> {
+    await this.step('The enemy the hero did not pick lost hearts from the swing', async () => {
+      await expect
+        .poll(async () => (await this.snapshot()).reaction, { timeout: WINDOW_RESOLVES_MS })
+        .toBeNull();
+      const now = await this.snapshot();
+      const bystander = this.before!.creatures.find(
+        (c) =>
+          c.side === 'enemies' &&
+          c.hp > 0 &&
+          c.id !== this.attackerId &&
+          this.before!.heroDistances[c.id] === 1,
+      )!;
+      expect(this.creature(now, bystander.id).hp).toBeLessThan(bystander.hp);
+      expect(this.hero(now).hp).toBe(this.hero(this.before!).hp);
     });
   }
 
@@ -282,7 +347,10 @@ export class BattleFlowFeature extends BaseFeature {
       if (now.reaction?.stage !== 'aim') return;
       expect(now.aimOptions.length).toBeGreaterThan(1);
       await this.campingMap.battleTab.verifyHeroCardState('aim');
-      const choice = now.aimOptions[now.aimOptions.length - 1];
+      const standing = this.hero(now);
+      const choice =
+        now.aimOptions.find((h) => h.q === standing.q && h.r === standing.r) ??
+        now.aimOptions[now.aimOptions.length - 1];
       const point = await this.campingMap.hexBoard.battleHexPoint(choice);
       if (!point) throw new Error('The battle board did not report a point for the option hex.');
       await this.campingMap.battleTab.clickBoardPoint(point);

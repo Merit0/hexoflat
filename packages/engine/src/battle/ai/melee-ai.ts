@@ -9,6 +9,7 @@ import {
   adjacentFoes,
   approachStep,
   defendAction,
+  isCrowdedAround,
   opponents,
   reachableFoes,
   readyHand,
@@ -46,6 +47,8 @@ export function meleeAction(
       : { kind: 'end-turn' };
   }
   const nextToFoe = (hex: BattleHex) =>
-    opponents(view, self).some((foe) => isAdjacentHex(foe.pos, hex));
+    opponents(view, self).some(
+      (foe) => isAdjacentHex(foe.pos, hex) && !isCrowdedAround(view, self, foe),
+    );
   return approachStep(view, self, rules, nextToFoe) ?? { kind: 'end-turn' };
 }

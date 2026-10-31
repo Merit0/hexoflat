@@ -336,6 +336,7 @@
       "picks": "{attacker} picks {target}.",
       "hit": "{attacker} hit {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
       "blocked": "{attacker} struck {target} — blocked.",
+      "swept": "{attacker}'s swing also caught {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
       "fell": "{name} has fallen.",
       "victory": "Victory! All enemies have fallen.",
       "defeat": "Defeat — the hero returns to camp."
@@ -483,6 +484,7 @@
     "warn": {
       "enemyTurn": "The enemy is acting — wait for it",
       "defendFirst": "You are under attack — put shields around you or take the hit",
+      "notInBattle": "This item cannot be used in a battle",
       "underAttack": "Under attack! Put shields around you — 5 s",
       "notNow": "That cannot be done right now"
     }
