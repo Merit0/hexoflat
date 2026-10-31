@@ -57,6 +57,7 @@ export interface BattleHeroCard {
   canUndo: boolean;
   stanceNote: number;
   plan: number;
+  defenseMode: boolean;
   stage: BattleStage;
   stages: BattleStageView[];
   defend: BattleDefendView | null;
@@ -67,7 +68,7 @@ export interface BattleHeroCard {
 function handKind(item: BattleItem | null): BattleHandKind {
   if (!item) return 'empty';
   if (item.power) return 'weapon';
-  if (item.heal) return 'consumable';
+  if (item.usePrice) return 'consumable';
   return 'shield';
 }
 
@@ -86,20 +87,21 @@ function handMeta(
   if (kind === 'consumable')
     return {
       key: 'battle.hand.consumable',
-      params: { hearts: item!.heal! / 2, cost: input.rules.use },
+      params: { hearts: item!.heal! / 2, cost: item!.usePrice! },
     };
   return { key: 'battle.hand.shield', params: { sides: item!.shieldCapacity ?? 0 } };
 }
 
 function handDisabled(
   kind: BattleHandKind,
+  item: BattleItem | null,
   struck: boolean,
   view: BattleProjection,
   input: BattleViewInput,
 ) {
   if (input.ui.mode === 'swap') return false;
   if (kind === 'weapon' || kind === 'empty') return struck || view.turnWill < input.rules.strike;
-  if (kind === 'consumable') return view.turnWill < input.rules.use;
+  if (kind === 'consumable') return view.turnWill < (item?.usePrice ?? 0);
   return true;
 }
 
@@ -122,7 +124,7 @@ function hands(
       itemKey: item?.key ?? null,
       meta: handMeta(item, struck, input),
       selected,
-      disabled: handDisabled(kind, struck, view, input),
+      disabled: handDisabled(kind, item, struck, view, input),
     };
   });
 }
@@ -233,6 +235,7 @@ export function buildHeroCard(
     canUndo: view.undo.length > 0,
     stanceNote: Math.min(input.rules.stanceMax, view.turnWill),
     plan: 0,
+    defenseMode: state === 'act' && view.placedShields.length > 0,
     stage: input.ui.stage,
     stages: stageViews(input.ui.stage),
     defend: defending ? defendView(view, self, input) : null,

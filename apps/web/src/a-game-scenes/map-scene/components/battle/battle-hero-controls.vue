@@ -18,6 +18,9 @@
           <span v-if="card.row.tags.includes('yourTurn')" class="hero-card__tag">
             {{ t('battle.tag.yourTurn') }}
           </span>
+          <span v-if="card.defenseMode" class="hero-card__tag" data-testid="battle-defense-mode">
+            {{ t('battle.tag.defenseMode') }}
+          </span>
           <span v-if="card.row.hits" class="hero-card__tag is-hit">
             {{ t('battle.tag.hit', { count: card.row.hits }) }}
           </span>

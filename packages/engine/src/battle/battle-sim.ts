@@ -31,8 +31,9 @@ export function heroBotAction(view: BattleProjection, rules: BattleRules): Battl
   ) {
     return { kind: 'start-dodge' };
   }
-  const potionHand = (['right', 'left'] as BattleHand[]).find((h) => self.hands[h]?.heal);
-  if (view.phase === 'act' && potionHand && self.hp <= 2 && view.turnWill >= rules.use) {
+  const potionHand = (['right', 'left'] as BattleHand[]).find((h) => self.hands[h]?.usePrice);
+  const potionPrice = potionHand ? self.hands[potionHand]!.usePrice! : 0;
+  if (view.phase === 'act' && potionHand && self.hp <= 2 && view.turnWill >= potionPrice) {
     return { kind: 'use-item', hand: potionHand };
   }
   return meleeAction(view, rules, false);

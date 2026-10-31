@@ -1,18 +1,25 @@
 import { z } from 'zod';
-import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { usePriceOf } from '../content/content-accessors';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import type { BattleCreature, BattleHex, BattleItem } from './battle-state';
 
 const i18nKey = z.string().regex(/^content\.battle\.[a-z0-9-]+\.[a-zA-Z]+$/);
 
-export const battleItemDefSchema = z.object({
-  id: z.string().min(1),
-  power: z.number().int().positive().optional(),
-  range: z.object({ min: z.number().int().min(2), max: z.number().int().min(2) }).optional(),
-  shieldCapacity: z.number().int().positive().optional(),
-  heal: z.number().int().positive().optional(),
-  title: i18nKey,
-  tableRule: i18nKey,
-});
+export const battleItemDefSchema = z
+  .object({
+    id: z.string().min(1),
+    power: z.number().int().positive().optional(),
+    range: z.object({ min: z.number().int().min(2), max: z.number().int().min(2) }).optional(),
+    shieldCapacity: z.number().int().positive().optional(),
+    heal: z.number().int().positive().optional(),
+    usePrice: z.number().int().positive().optional(),
+    title: i18nKey,
+    tableRule: i18nKey,
+  })
+  .refine((def) => def.heal === undefined || def.usePrice !== undefined, {
+    message: 'a usable item needs a usePrice',
+    path: ['usePrice'],
+  });
 export type BattleItemDef = z.infer<typeof battleItemDefSchema>;
 
 export const BATTLE_BEHAVIOURS = ['hero', 'warrior', 'king', 'archer'] as const;
@@ -37,6 +44,12 @@ export const battleObjectDefSchema = z.object({
 });
 export type BattleObjectDef = z.infer<typeof battleObjectDefSchema>;
 
+function requiredUsePrice(key: THexobjectKey): number {
+  const price = usePriceOf(key);
+  if (price === null) throw new Error(`Usable item ${key} has no usePrice`);
+  return price;
+}
+
 function texts(id: string) {
   return { title: `content.battle.${id}.title`, tableRule: `content.battle.${id}.tableRule` };
 }
@@ -49,7 +62,12 @@ export const BATTLE_ITEMS: Record<string, BattleItemDef> = byId(battleItemDefSch
   { id: 'sword', power: 2, ...texts('sword') },
   { id: 'dagger', power: 1, ...texts('dagger') },
   { id: 'wooden-shield', shieldCapacity: 2, ...texts('wooden-shield') },
-  { id: 'health-potion', heal: 2, ...texts('health-potion') },
+  {
+    id: 'health-potion',
+    heal: 2,
+    usePrice: requiredUsePrice(HEXOBJECT_KEYS.HEALTH_BOTTLE),
+    ...texts('health-potion'),
+  },
   { id: 'bone-blade', power: 1, ...texts('bone-blade') },
   { id: 'bone-buckler', shieldCapacity: 1, ...texts('bone-buckler') },
   { id: 'king-cleaver', power: 1, ...texts('king-cleaver') },
@@ -131,6 +149,7 @@ export function battleItem(id: string): BattleItem {
   if (def.range) item.range = { ...def.range };
   if (def.shieldCapacity) item.shieldCapacity = def.shieldCapacity;
   if (def.heal) item.heal = def.heal;
+  if (def.usePrice) item.usePrice = def.usePrice;
   return item;
 }
 

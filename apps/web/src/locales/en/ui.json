@@ -338,6 +338,7 @@
     "leave": "Leave battle",
     "tag": {
       "yourTurn": "Your turn",
+      "defenseMode": "Defense mode",
       "next": "Next",
       "done": "Done",
       "fallen": "Fallen",
@@ -399,8 +400,8 @@
     "deploy": {
       "attack": "You attack",
       "ambush": "Ambush!",
-      "attackText": "You start on the side you came from. In round 1 you draw 2 initiative tokens and keep the higher.",
-      "ambushText": "The enemies caught you. They stand closer and on your flanks, and in round 1 they draw 2 initiative tokens and keep the higher.",
+      "attackText": "You start on the side you came from. In round 1 you draw 2 initiative tokens and keep the lower.",
+      "ambushText": "The enemies caught you. They stand closer and on your flanks, and in round 1 they draw 2 initiative tokens and keep the lower.",
       "board": "Board: {place} · battlefield",
       "seed": "Seed: {seed}",
       "approach": "Approach: {approach}",
@@ -461,7 +462,8 @@
       "NO_TASK": "There is no task to answer.",
       "TOO_CLOSE": "Too close for a ranged strike.",
       "NO_SUCH_ITEM": "There is no such item.",
-      "NOT_USABLE": "This item cannot be used."
+      "NOT_USABLE": "This item cannot be used.",
+      "DEFENSE_MODE": "Defense mode: lower all shields to move."
     },
     "actionName": {
       "place-shield": "Raising a shield",

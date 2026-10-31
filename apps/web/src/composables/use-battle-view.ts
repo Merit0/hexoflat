@@ -148,7 +148,7 @@ export function useBattleView() {
       ui.swapHand = hand;
       return;
     }
-    if (hero.hands[hand]?.heal) {
+    if (hero.hands[hand]?.usePrice) {
       act({ kind: 'use-item', hand });
       resetBattleUi();
       return;

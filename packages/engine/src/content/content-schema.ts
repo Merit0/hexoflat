@@ -103,6 +103,7 @@ const lootSchema = z.object({
   name: z.string(),
   amount: z.number().optional(),
   rarity: raritySchema.optional(),
+  usePrice: z.number().int().positive().optional(),
   traits: z.object({
     stackable: z.boolean().optional(),
     maxStack: z.number().optional(),

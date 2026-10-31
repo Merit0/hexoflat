@@ -109,8 +109,8 @@ function blockDecision(
 
 const NO_ACTION: Decision = { action: null, targetId: null, price: 0 };
 
-function useDecision(item: BattleItem, rules: BattleRules): Decision {
-  return item.heal ? { action: 'use', targetId: null, price: rules.use } : NO_ACTION;
+function useDecision(item: BattleItem): Decision {
+  return item.usePrice ? { action: 'use', targetId: null, price: item.usePrice } : NO_ACTION;
 }
 
 function decide(
@@ -123,7 +123,7 @@ function decide(
   const item = self.hands[hand];
   if (!item || item.power) return attackDecision(view, self, hand, at, rules);
   if (item.shieldCapacity) return blockDecision(view, self, at, rules);
-  return useDecision(item, rules);
+  return useDecision(item);
 }
 
 export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null {

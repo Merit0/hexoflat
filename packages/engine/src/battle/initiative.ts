@@ -17,7 +17,7 @@ export function drawInitiative(ids: string[], rng: RandomNumberGenerator): Recor
 }
 
 export function orderByDraws(draws: Record<string, number>): string[] {
-  return Object.keys(draws).sort((a, b) => draws[b] - draws[a]);
+  return Object.keys(draws).sort((a, b) => draws[a] - draws[b]);
 }
 
 export function drawWithAdvantage(
@@ -30,8 +30,8 @@ export function drawWithAdvantage(
   const draws: Record<string, number> = {};
   for (const id of ids.filter((i) => favoured.has(i))) {
     const pair = bag.length > 1 ? [take(), take()] : [take()];
-    draws[id] = Math.max(...pair);
-    if (pair.length > 1) bag.push(Math.min(...pair));
+    draws[id] = Math.min(...pair);
+    if (pair.length > 1) bag.push(Math.max(...pair));
   }
   for (const id of ids.filter((i) => !favoured.has(i))) draws[id] = take();
   return draws;

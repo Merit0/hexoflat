@@ -26,6 +26,7 @@ export const BATTLE_REJECTION_CODES = [
   'TOO_CLOSE',
   'NO_SUCH_ITEM',
   'NOT_USABLE',
+  'DEFENSE_MODE',
 ] as const;
 export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 

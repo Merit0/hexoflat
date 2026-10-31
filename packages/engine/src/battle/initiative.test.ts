@@ -12,8 +12,8 @@ describe('REQ-BTL-001 initiative', () => {
     expect(Object.values(draws).sort()).toEqual([1, 2, 3, 4]);
   });
 
-  it('orders creatures from the highest token to the lowest', () => {
-    expect(orderByDraws({ a: 2, b: 4, c: 1, d: 3 })).toEqual(['b', 'd', 'a', 'c']);
+  it('orders creatures from token 1 up, so the lowest token acts first', () => {
+    expect(orderByDraws({ a: 2, b: 4, c: 1, d: 3 })).toEqual(['c', 'a', 'd', 'b']);
   });
 
   it('rolls at battle start and the first in order takes the turn', () => {

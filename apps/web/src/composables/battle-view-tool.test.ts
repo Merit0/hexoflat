@@ -128,7 +128,7 @@ describe('battle tool hex and statuses', () => {
     );
     expect(viewOf({ ...ACTION, hand: 'left' }).board?.tool).toMatchObject({
       action: 'use',
-      price: BATTLE_RULES.use,
+      price: battleItem('health-potion').usePrice,
     });
   });
 });

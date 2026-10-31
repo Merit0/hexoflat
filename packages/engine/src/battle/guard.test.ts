@@ -3,6 +3,7 @@ import { BATTLE_RULES } from './battle-content';
 import { projectBattleEvent, projectBattleForViewer } from './projection';
 import {
   battleWith,
+  eventTypes,
   giveTurn,
   hero,
   heroDoes,
@@ -108,5 +109,28 @@ describe('REQ-BTL-017 guard (block as the last stage of the turn)', () => {
     expect(next.phase).toBe('act');
     expect(next.placedShields).toEqual([]);
     expect(next.guards.hero).toBeUndefined();
+  });
+});
+
+describe('REQ-BTL-020 defense mode (a raised shield locks movement)', () => {
+  function raised() {
+    const battle = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]), [
+      'hero',
+      's1',
+    ]);
+    return heroDoes(battle, { kind: 'place-shield', hex: { q: 1, r: 0 } }).battle;
+  }
+
+  it('refuses a step while any shield is raised, and the Will stays', () => {
+    const battle = raised();
+    const step = heroDoes(battle, { kind: 'move', hex: { q: 0, r: 1 } });
+    expect(rejectionOf(step.events)).toBe('DEFENSE_MODE');
+    expect(step.battle.turnWill).toBe(battle.turnWill);
+  });
+
+  it('lets the hero walk again once the last shield is lowered, for free', () => {
+    const lowered = heroDoes(raised(), { kind: 'remove-shield', hex: { q: 1, r: 0 } }).battle;
+    const step = heroDoes(lowered, { kind: 'move', hex: { q: 0, r: 1 } });
+    expect(eventTypes(step.events)).toEqual(['CREATURE_MOVED']);
   });
 });

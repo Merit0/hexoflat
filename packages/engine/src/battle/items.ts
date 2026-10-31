@@ -40,12 +40,11 @@ export function useItem(
   state: BattleState,
   actor: BattleCreature,
   hand: BattleHand,
-  rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
   const item = actor.hands[hand];
   if (!item) return reject('NO_SUCH_ITEM');
-  if (!item.heal) return reject('NOT_USABLE');
-  const refused = spendTurnWill(state, rules.use);
+  if (!item.heal || !item.usePrice) return reject('NOT_USABLE');
+  const refused = spendTurnWill(state, item.usePrice);
   if (refused) return refused;
 
   const before = actor.hp;
@@ -61,7 +60,7 @@ export function useItem(
         itemKey: item.key,
         healed: actor.hp - before,
         hp: actor.hp,
-        cost: rules.use,
+        cost: item.usePrice,
         willLeft: state.turnWill,
       },
     },

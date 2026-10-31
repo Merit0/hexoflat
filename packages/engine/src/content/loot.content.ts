@@ -46,6 +46,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
       name: 'Health Potion',
       amount: 1,
       rarity: { kind: ERarityKind.IDOL, boss: false },
+      usePrice: 3,
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
@@ -119,6 +120,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
       name: 'Return Scroll',
       amount: 1,
       rarity: { kind: ERarityKind.SPARK, boss: false },
+      usePrice: 10,
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.RETURN_SCROLL,

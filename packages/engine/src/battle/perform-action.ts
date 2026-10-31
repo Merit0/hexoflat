@@ -79,7 +79,7 @@ export function performAction(
     case 'swap-item':
       return swapItem(state, actor, action.hand, action.bagIndex, rules);
     case 'use-item':
-      return useItem(state, actor, action.hand, rules);
+      return useItem(state, actor, action.hand);
     case 'set-hands':
       return setHands(state, actor, { right: action.right, left: action.left }, rules);
     case 'end-turn':

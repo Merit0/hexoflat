@@ -83,7 +83,7 @@ describe('REQ-ENC-005 deployment', () => {
     expect(mean(near)).toBeLessThan(mean(far) - 1);
   });
 
-  it('gives the favoured side the higher of two tokens in round 1, without repeats', () => {
+  it('gives the favoured side the lower of two tokens in round 1, without repeats', () => {
     let favouredSum = 0;
     let plainSum = 0;
     for (let n = 0; n < 300; n++) {
@@ -96,7 +96,7 @@ describe('REQ-ENC-005 deployment', () => {
       favouredSum += draws.a;
       plainSum += draws.d;
     }
-    expect(favouredSum / 300).toBeGreaterThan(plainSum / 300 + 0.5);
+    expect(favouredSum / 300).toBeLessThan(plainSum / 300 - 0.5);
   });
 
   it('starts a deployed battle with the advantage only in round 1', () => {
