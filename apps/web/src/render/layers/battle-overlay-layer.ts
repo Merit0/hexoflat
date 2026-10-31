@@ -1,6 +1,9 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { buildHexPolygon } from '@/render/hex-geometry';
-import { BATTLE_OVERLAY_COLORS } from '@/render/battle/battle-look';
+import { BATTLE_OVERLAY_COLORS, battleShieldSprite } from '@/render/battle/battle-look';
+import { applyObjectFit } from '@/render/object-fit';
+import { getTexture, onTextureReady } from '@/render/texture-cache';
 import type { BattleOverlayModel } from '@/render/battle/battle-overlay-model';
 import type { BattleLayerDeps } from './battle-board-layer';
 
@@ -18,10 +21,37 @@ export function createBattleOverlayLayer(
   container.eventMode = 'none';
   deps.worldContainer.addChild(container);
 
+  let unsubscribers: Array<() => void> = [];
+
+  function clear() {
+    for (const unsubscribe of unsubscribers) unsubscribe();
+    unsubscribers = [];
+    container.removeChildren().forEach((child) => child.destroy({ children: true }));
+  }
+
+  function shieldSprite(x: number, y: number): Sprite {
+    const { w, h } = deps.tileSize;
+    const path = battleShieldSprite();
+    const sprite = new Sprite(getTexture(path));
+    const fit = () => {
+      applyObjectFit(sprite, w, h, EHexobjectGroup.EQUIPMENT);
+      sprite.position.x += x;
+      sprite.position.y += y;
+    };
+    fit();
+    unsubscribers.push(
+      onTextureReady(path, () => {
+        sprite.texture = getTexture(path);
+        fit();
+      }),
+    );
+    return sprite;
+  }
+
   function sync(model: BattleOverlayModel) {
     const { w, h } = deps.tileSize;
     const polygon = buildHexPolygon(w, h).points;
-    container.removeChildren().forEach((child) => child.destroy({ children: true }));
+    clear();
 
     for (const mark of model.marks) {
       const colors = BATTLE_OVERLAY_COLORS[mark.tone];
@@ -33,12 +63,14 @@ export function createBattleOverlayLayer(
       const { x, y } = deps.positionOf(mark.hex);
       g.position.set(x, y);
       container.addChild(g);
+      if (mark.tone === 'shield') container.addChild(shieldSprite(x, y));
     }
   }
 
   return {
     sync,
     destroy() {
+      clear();
       container.destroy({ children: true });
     },
   };

@@ -85,6 +85,14 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async readBattleHands() {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleHands());
+  }
+
+  async giveHeroTheTurn(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveHeroTheTurn());
+  }
+
   async finishBattle(outcome: 'victory' | 'defeat'): Promise<void> {
     await this.page.evaluate((result) => window.__HEXOFLAT_TEST__!.finishBattle(result), outcome);
   }

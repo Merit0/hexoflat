@@ -2,8 +2,12 @@ import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
+import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
+import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { UseHeroToolFeature } from '@features/world/use-hero-tool.feature';
 import { Tool } from '@config/hero-tool';
+import { EquipSlot } from '@config/equip-slot';
+import { HexobjectKeys } from '@config/test-data';
 import type { TestHexCoordinates } from '@framework/test-api';
 
 /**
@@ -81,6 +85,35 @@ export class SquadActionsFeature extends BaseFeature {
       await this.campingMap.battleTab.verifyBoardClosed();
       await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(false);
       await this.campingMap.pageErrors.verifyNone();
+    });
+  }
+
+  async grantShieldToTheBag(): Promise<void> {
+    await this.step('Put a shield in the bag', async () => {
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.grantInventoryItem('shield', 1));
+    });
+  }
+
+  async giveHeroTheTurn(): Promise<void> {
+    await this.step('Give the hero the turn with the full Will', async () => {
+      await this.campingMap.hexBoard.giveHeroTheTurn();
+      await this.campingMap.battleTab.waitForBoardStill();
+    });
+  }
+
+  async equipShieldInTheInventory(): Promise<void> {
+    await this.step('Drag the shield into the left hand slot of the inventory', async () => {
+      await new SwitchHeroBoardTabFeature().switchTo('inventory');
+      await new DragInventoryItemFeature().dragToEquipSlot(HexobjectKeys.shield, EquipSlot.SHIELD);
+      await new SwitchHeroBoardTabFeature().switchTo('battle');
+    });
+  }
+
+  async verifyBattleHandHoldsTheShield(): Promise<void> {
+    await this.step('The battle hand holds the shield and the swap price was paid', async () => {
+      await expect
+        .poll(() => this.campingMap.hexBoard.readBattleHands())
+        .toEqual({ right: null, left: 'wooden-shield', bag: [], will: 16 });
     });
   }
 }

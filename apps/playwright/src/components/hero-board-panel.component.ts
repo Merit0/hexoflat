@@ -2,7 +2,7 @@ import { expect, type Locator } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 import type { TestHeroHealth } from '@framework/test-api';
 
-export type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
+export type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events' | 'battle';
 export type HeroDetailsTab = 'state' | 'skills';
 export type SacrificeOption = 'small' | 'medium' | 'all';
 export type HeroSkillId =

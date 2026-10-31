@@ -77,6 +77,13 @@ export interface HexoflatTestApi {
   placeSquadNextToHero(key: string): TestHexCoordinates;
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): void;
+  giveHeroTheTurn(): void;
+  getBattleHands(): {
+    right: string | null;
+    left: string | null;
+    bag: string[];
+    will: number;
+  } | null;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 }

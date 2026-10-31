@@ -21,6 +21,10 @@ export function battleObjectSprite(key: 'wall' | 'boulder'): string {
   return CONTENT[hexobjectKey]?.spritePath ?? '';
 }
 
+export function battleShieldSprite(): string {
+  return CONTENT[HEXOBJECT_KEYS.SHIELD]?.spritePath ?? '';
+}
+
 export const BATTLE_OVERLAY_COLORS = {
   heroZone: { fill: 0x1a2a3c, stroke: 0x4a8be0 },
   enemyZone: { fill: 0x2a161c, stroke: 0xb0306a },

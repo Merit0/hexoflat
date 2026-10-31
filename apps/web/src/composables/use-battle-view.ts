@@ -36,6 +36,13 @@ export function resetBattleUi(): void {
   ui.toolAt = null;
 }
 
+export function activateBattleHand(hand: BattleHand): void {
+  ui.stage = 'action';
+  ui.mode = stageMode('action');
+  ui.hand = hand;
+  ui.toolAt = null;
+}
+
 const TRANSLATED_PARAM = /^(battle|content)\./;
 
 export function useBattleText() {

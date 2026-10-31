@@ -20,7 +20,7 @@ import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { isEnterableTile } from '@hexoflat/engine/hero-movement/move-planner';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useBattleStore } from '@/stores/battle-store';
-import { finishOpenBattle } from './finish-battle';
+import { battleTestHooks } from './battle-hooks';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -247,10 +247,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     isBattleEngaged(): boolean {
       return useBattleStore().engagement !== null;
     },
-    finishBattle(outcome: 'victory' | 'defeat'): void {
-      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      finishOpenBattle(outcome);
-    },
+    ...battleTestHooks(),
 
     previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview {
       const preview = portal.previewOpen(coordinates);

@@ -12,6 +12,10 @@ export class BattleTabComponent extends BaseComponent {
     await this.page.getByTestId('battle-leave').click();
   }
 
+  async waitForBoardStill(): Promise<void> {
+    await expect(this.page.getByTestId('battle-board')).toHaveAttribute('data-animating', 'false');
+  }
+
   async verifyBoardClosed(): Promise<void> {
     await expect(this.page.getByTestId('battle-board-area')).toBeHidden();
     await expect(this.page.getByTestId('battle-tab')).toBeHidden();

@@ -31,3 +31,18 @@ test('Verify leaving a won battle in the cave brings the board back without rend
   await squad.winAndLeaveBattle();
   await squad.verifyBoardIsBackWithoutErrors();
 });
+
+test('Verify a shield put in the hand during a battle appears in the battle hand for one swap price', async () => {
+  test.setTimeout(120_000);
+  const squad = new SquadActionsFeature();
+
+  await new OpenCampingMapFeature().open();
+  await squad.grantShieldToTheBag();
+  await squad.placeSquadNextToHero(HexobjectKeys.skeletonPack);
+  await squad.aimHandAtSquad();
+  await squad.attack();
+  await squad.startBattle();
+  await squad.giveHeroTheTurn();
+  await squad.equipShieldInTheInventory();
+  await squad.verifyBattleHandHoldsTheShield();
+});

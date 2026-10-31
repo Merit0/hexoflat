@@ -48,6 +48,8 @@ import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-re
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useBattleStore } from '@/stores/battle-store';
+import { activateBattleHand } from '@/composables/use-battle-view';
 import { useHeroStore } from '@/stores/hero-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
@@ -64,6 +66,7 @@ const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
 const heroStore = useHeroStore();
 const overlayStore = useOverlayStore();
+const battleStore = useBattleStore();
 const dragHandle = useInventoryDragHandle(() => props.item.id);
 
 const isDragging = computed(() => inventoryDragState.draggingId === props.item.id);
@@ -106,6 +109,11 @@ function resolveToolType(): THeroToolKey | null {
 
 function useToolToken() {
   if (!isUsableTool.value) return;
+
+  if (battleStore.isOpen) {
+    activateBattleHand(props.item.slotKey === 'eq:weapon' ? 'right' : 'left');
+    return;
+  }
 
   const toolType = resolveToolType();
   if (!toolType) return;

@@ -3,17 +3,20 @@ import { applyCommand, type HexEngineState } from '@hexoflat/engine';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { BattleCommand, SquadLifecyclePayload } from '@hexoflat/engine/battle/battle-commands';
+import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
 import { planSquadBattle, type HeroBattleSummary } from '@hexoflat/engine/squads/squad-battle';
 import { findSquad } from '@hexoflat/engine/squads/squad-state';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { i18n } from '@/i18n';
-import { compassOf, heroCreatureFrom, type LoadoutSource } from './squad-loadout';
+import { compassOf, heroCreatureFrom, heroLoadout, type LoadoutSource } from './squad-loadout';
 import { useBattleStore, type BattleStep } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
+import { bindBattleHandsGate } from '@/services/battle/battle-hands-gate';
+import { useBattleWarnings } from '@/composables/use-battle-warnings';
 
 interface ClosedPayload {
   outcome: 'victory' | 'defeat';
@@ -172,6 +175,14 @@ export function useSquadFlow() {
   const battleStore = useBattleStore();
 
   bindBattleBridge();
+  bindBattleHandsGate({
+    ...useBattleWarnings(),
+    hands: () => {
+      const loadout = heroLoadout(squadLoadoutSource());
+      const battleKey = (key: string | null) => (key ? battleItemOfHexobject(key) : null);
+      return { right: battleKey(loadout.weapon), left: battleKey(loadout.shield) };
+    },
+  });
 
   watch(
     () => [battleStore.engagement, battleStore.deploy, world.map] as const,

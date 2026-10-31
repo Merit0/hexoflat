@@ -42,6 +42,7 @@ export const BATTLE_ACTION_NAMES = [
   'strike',
   'swap-item',
   'use-item',
+  'set-hands',
   'end-turn',
 ] as const;
 

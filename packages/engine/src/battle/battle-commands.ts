@@ -19,6 +19,11 @@ export const battleActionSchema = z.discriminatedUnion('kind', [
     bagIndex: z.number().int().min(0),
   }),
   z.object({ kind: z.literal('use-item'), hand: battleHandSchema }),
+  z.object({
+    kind: z.literal('set-hands'),
+    right: z.string().min(1).nullable(),
+    left: z.string().min(1).nullable(),
+  }),
   z.object({ kind: z.literal('end-turn') }),
 ]);
 export type BattleAction = z.infer<typeof battleActionSchema>;

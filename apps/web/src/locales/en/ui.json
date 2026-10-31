@@ -477,7 +477,8 @@
       "strike": "A strike",
       "swap-item": "A swap",
       "use-item": "Using an item",
-      "end-turn": "Ending the turn"
+      "end-turn": "Ending the turn",
+      "set-hands": "Changing hands"
     },
     "tool": {
       "attack": "Attack",

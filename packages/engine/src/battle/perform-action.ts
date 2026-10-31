@@ -6,7 +6,7 @@ import type { BattleCreature, BattleState } from './battle-state';
 import { reject, type BattleRejection } from './battle-rejection';
 import { confirmBlock, placeShield, removeShield, startDodge, takeHit } from './defend';
 import { startPush } from './displace-actions';
-import { swapItem, useItem } from './items';
+import { setHands, swapItem, useItem } from './items';
 import { moveCreature, undoStep } from './movement';
 import { settleTask } from './resolve-task';
 import { strike } from './strike';
@@ -80,6 +80,8 @@ export function performAction(
       return swapItem(state, actor, action.hand, action.bagIndex, rules);
     case 'use-item':
       return useItem(state, actor, action.hand, rules);
+    case 'set-hands':
+      return setHands(state, actor, { right: action.right, left: action.left }, rules);
     case 'end-turn':
       return endTurn(state, rules);
     default:
