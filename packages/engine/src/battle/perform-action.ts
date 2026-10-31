@@ -3,8 +3,9 @@ import { assertNever } from '../utils/assert-never';
 import type { BattleRules } from './battle-content';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleState } from './battle-state';
-import { reject, type BattleRejection } from './battle-rejection';
-import { confirmBlock, placeShield, removeShield, startDodge, takeHit } from './defend';
+import { isRejection, reject, type BattleRejection } from './battle-rejection';
+import { placeShield, reactionTimeout, removeShield, takeHit } from './defend';
+import { aimStrike, openReaction } from './reaction';
 import { startPush } from './displace-actions';
 import { setHands, swapItem, useItem } from './items';
 import { moveCreature, undoStep } from './movement';
@@ -13,20 +14,17 @@ import { strike } from './strike';
 import { endTurn } from './turn';
 
 const DEFEND_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
-  'confirm-block',
+  'place-shield',
+  'remove-shield',
   'take-hit',
-  'start-dodge',
 ]);
+
+const AIM_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['aim', 'reaction-timeout']);
 
 const TASK_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['answer-task', 'task-timeout']);
 
-const ANY_PHASE_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
-  'place-shield',
-  'remove-shield',
-]);
-
 function phaseAllows(state: BattleState, action: BattleAction): boolean {
-  if (ANY_PHASE_ACTIONS.has(action.kind)) return state.phase === 'defend' || state.phase === 'act';
+  if (action.kind === 'reaction-timeout') return !!state.reaction;
   return DEFEND_ACTIONS.has(action.kind) ? state.phase === 'defend' : state.phase === 'act';
 }
 
@@ -39,8 +37,24 @@ function guard(
   if (TASK_ACTIONS.has(action.kind)) return state.task ? null : reject('NO_TASK');
   if (state.task) return reject('TASK_OPEN');
   if (state.activeId !== actor.id) return reject('NOT_YOUR_TURN');
+  if (state.reaction?.stage === 'aim' && !AIM_ACTIONS.has(action.kind))
+    return reject('AIM_PENDING');
+  if (action.kind === 'aim' && state.reaction?.stage !== 'aim') return reject('WRONG_PHASE');
   if (!phaseAllows(state, action)) return reject('WRONG_PHASE');
   return null;
+}
+
+function strikeAndReact(
+  state: BattleState,
+  actor: BattleCreature,
+  action: Extract<BattleAction, { kind: 'strike' }>,
+  atMs: number,
+  rules: BattleRules,
+): DomainEvent[] | BattleRejection {
+  const dealt = strike(state, actor, action.targetId, action.hand, rules);
+  if (isRejection(dealt)) return dealt;
+  const target = state.creatures.find((c) => c.id === action.targetId)!;
+  return [...dealt, ...openReaction(state, actor, target, action.hand, atMs, rules)];
 }
 
 export function performAction(
@@ -57,19 +71,19 @@ export function performAction(
     case 'place-shield':
       return placeShield(state, actor, action.hex, rules);
     case 'remove-shield':
-      return removeShield(state, actor, action.hex, rules);
-    case 'confirm-block':
-      return confirmBlock(state, actor, rules);
+      return removeShield(state, actor, action.hex);
+    case 'reaction-timeout':
+      return reactionTimeout(state, actor, atMs, rules);
+    case 'aim':
+      return aimStrike(state, actor, action.hex, atMs, rules);
     case 'take-hit':
-      return takeHit(state, actor, rules);
-    case 'start-dodge':
-      return startDodge(state, actor, atMs, rules);
+      return takeHit(state, actor, atMs, rules);
     case 'move':
       return moveCreature(state, actor, action.hex, atMs, rules);
     case 'undo-step':
       return undoStep(state, actor);
     case 'strike':
-      return strike(state, actor, action.targetId, action.hand, rules);
+      return strikeAndReact(state, actor, action, atMs, rules);
     case 'push':
       return startPush(state, actor, action.targetId, atMs, rules);
     case 'answer-task':

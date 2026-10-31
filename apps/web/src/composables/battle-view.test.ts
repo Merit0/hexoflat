@@ -91,28 +91,28 @@ describe('battle view', () => {
       placed: 0,
       capacity: 2,
     });
-    expect(view.hero?.defend?.canBlock).toBe(false);
-    expect(view.hero?.will).toBe(20);
+    expect(view.hero?.will).toBe(0);
+    expect(store.projection?.reaction).toMatchObject({ stage: 'block', attackerId: 's1' });
 
     const ring = store.projection!.pending[0].ring;
     expect(tap(ring[0])).toBe(true);
     expect(tap(ring[1])).toBe(true);
     view = viewOf();
-    expect(view.hero?.defend).toMatchObject({ placed: 2, canBlock: true });
-    expect(view.hero?.will).toBe(12);
+    expect(view.hero?.defend).toMatchObject({ placed: 2 });
+    expect(view.hero?.will).toBe(0);
     expect(view.board?.overlay.marks.filter((m) => m.tone === 'shield')).toHaveLength(2);
 
     expect(tap(ring[1])).toBe(true);
     expect(viewOf().hero?.defend?.placed).toBe(1);
 
-    expect(store.act({ kind: 'confirm-block' }, 0)).toBe(true);
+    expect(store.act({ kind: 'reaction-timeout' }, 0)).toBe(true);
+    expect(viewOf().hero?.state).toBe('wait');
+    expect(store.projection?.reaction?.stage).toBe('aim');
+    store.runEnemyTurn(0);
+    store.setAnimating(false);
     view = viewOf();
     expect(view.hero?.state).toBe('act');
-    expect(['battle.hint.blocked', 'battle.hint.hitTaken']).toContain(view.hero?.hint?.key);
-    const results = view.board!.overlay.marks.filter((m) =>
-      ['blocked', 'hit', 'dodged'].includes(m.tone),
-    );
-    expect(results).toHaveLength(1);
+    expect(store.projection?.reaction).toBeUndefined();
     expect(view.hero?.actions.map((a) => a.id)).toEqual(['push', 'swap']);
 
     const willBefore = view.hero!.will;

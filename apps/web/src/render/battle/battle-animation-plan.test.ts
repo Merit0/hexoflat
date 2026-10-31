@@ -14,7 +14,7 @@ describe('planBattleAnimation', () => {
         ev('TURN_STARTED', { creatureId: 's1', will: 20 }),
         ev('CREATURE_MOVED', { creatureId: 's1', from: { q: 3, r: 0 }, to: { q: 2, r: 0 } }),
         ev('CREATURE_MOVED', { creatureId: 's1', from: { q: 2, r: 0 }, to: { q: 1, r: 0 } }),
-        ev('STRIKE_DEALT', {
+        ev('STRIKE_LANDED', {
           attackerId: 's1',
           targetId: 'hero',
           fromHex: null,
@@ -67,14 +67,15 @@ describe('planBattleAnimation', () => {
     ]);
   });
 
-  it('flies the hero sword from the hex the hero struck from', () => {
+  it('swings the tool the hero struck with from the hex the hero struck from', () => {
     const skeleton: AnimatedCreature = { id: 's1', side: 'enemies', pos: { q: 1, r: 0 } };
     const [strike] = planBattleAnimation(
       [
-        ev('STRIKE_DEALT', {
+        ev('STRIKE_LANDED', {
           attackerId: 'hero',
           targetId: 's1',
           fromHex: { q: 0, r: 0 },
+          itemKey: 'sword',
           ring: [{ q: 0, r: 0 }],
         }),
       ],
@@ -84,6 +85,7 @@ describe('planBattleAnimation', () => {
       kind: 'strike',
       from: { q: 0, r: 0 },
       target: { q: 1, r: 0 },
+      toolKey: 'sword',
       durationMs: BATTLE_TIMING.strikeMs,
     });
   });

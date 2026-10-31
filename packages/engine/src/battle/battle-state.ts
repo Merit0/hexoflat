@@ -59,7 +59,7 @@ export type UndoStep = z.infer<typeof undoStepSchema>;
 export const boulderSchema = z.object({ id: z.string().min(1), pos: axialSchema });
 export type Boulder = z.infer<typeof boulderSchema>;
 
-export const TASK_KINDS = ['dodge', 'saw', 'push'] as const;
+export const TASK_KINDS = ['saw', 'push'] as const;
 export const taskKindSchema = z.enum(TASK_KINDS);
 export type TaskKind = z.infer<typeof taskKindSchema>;
 
@@ -89,6 +89,23 @@ export type BattlePhase = z.infer<typeof battlePhaseSchema>;
 export const battleOutcomeSchema = z.enum(['victory', 'defeat']);
 export type BattleOutcome = z.infer<typeof battleOutcomeSchema>;
 
+export const reactionSchema = z.object({
+  stage: z.enum(['block', 'aim']),
+  attackerId: z.string().min(1),
+  defenderId: z.string().min(1),
+  hand: battleHandSchema,
+  deadlineMs: z.number().int().min(0),
+  shields: z.array(axialSchema),
+  resume: z.object({
+    phase: battlePhaseSchema,
+    turnWill: z.number().int().min(0),
+    placedShields: z.array(axialSchema),
+    struckHands: z.array(battleHandSchema),
+    undo: z.array(undoStepSchema),
+  }),
+});
+export type BattleReaction = z.infer<typeof reactionSchema>;
+
 export const battleStateSchema = z.object({
   id: z.string().min(1),
   seed: z.string().min(1),
@@ -104,9 +121,9 @@ export const battleStateSchema = z.object({
   stance: z.record(z.string(), z.number().int().min(0)),
   struckHands: z.array(battleHandSchema),
   placedShields: z.array(axialSchema),
-  lockedShields: z.number().int().min(0).default(0),
-  guards: z.record(z.string(), z.array(axialSchema)).default({}),
+  wounds: z.record(z.string(), z.array(axialSchema)).default({}),
   pending: z.array(pendingStrikeSchema),
+  reaction: reactionSchema.optional(),
   undo: z.array(undoStepSchema),
   strikeSeq: z.number().int().min(0),
   boulders: z.array(boulderSchema).default([]),

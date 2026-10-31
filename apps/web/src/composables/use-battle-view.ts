@@ -231,8 +231,6 @@ export function useBattleView() {
     start,
     leave,
     undo: () => act({ kind: 'undo-step' }),
-    block: () => act({ kind: 'confirm-block' }),
-    dodge: () => act({ kind: 'start-dodge' }),
     takeHit: () => act({ kind: 'take-hit' }),
     answer: (option: number) => act({ kind: 'answer-task', option }),
     timeout: () => act({ kind: 'task-timeout' }),

@@ -15,7 +15,6 @@ export const BATTLE_REJECTION_CODES = [
   'SHIELD_CAPACITY_REACHED',
   'SHIELD_ALREADY_PLACED',
   'NO_SHIELD_THERE',
-  'NO_SHIELD_PLACED',
   'NOT_IN_RING',
   'NOTHING_TO_UNDO',
   'OUT_OF_RANGE',
@@ -26,7 +25,8 @@ export const BATTLE_REJECTION_CODES = [
   'TOO_CLOSE',
   'NO_SUCH_ITEM',
   'NOT_USABLE',
-  'DEFENSE_MODE',
+  'NOT_AN_OPTION',
+  'AIM_PENDING',
 ] as const;
 export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 

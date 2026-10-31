@@ -3,6 +3,7 @@ import type { BattleAction } from '../battle-commands';
 import type { BattleCreature, BattleHand, BattleHex } from '../battle-state';
 import { creatureById, freeNeighbours, livingOnSide, terrainAt } from '../battle-board';
 import { shieldCapacity } from '../defend';
+import { aimOptions } from '../reaction';
 import { battleDistance, hexKey, isAdjacentHex, parseHexKey, sameHex } from '../hex-battle-geom';
 import { cheapestPaths, pathTo, stepCost } from '../movement';
 import type { BattleProjection } from '../projection';
@@ -134,8 +135,21 @@ export function defendAction(
   rules: BattleRules,
 ): BattleAction {
   const placed = view.placedShields.length;
-  const canShield = shieldCapacity(self, rules) > placed && view.turnWill >= rules.shieldPerSide;
+  const canShield = shieldCapacity(self, rules) > placed;
   const next = canShield ? shieldCandidates(view, self)[0] : undefined;
   if (next) return { kind: 'place-shield', hex: next };
-  return placed ? { kind: 'confirm-block' } : { kind: 'take-hit' };
+  return placed ? { kind: 'reaction-timeout' } : { kind: 'take-hit' };
+}
+
+export function aimAction(
+  view: BattleProjection,
+  self: BattleCreature,
+  rules: BattleRules,
+): BattleAction | null {
+  if (view.reaction?.stage !== 'aim' || view.reaction.attackerId !== self.id) return null;
+  const strike = view.pending.find((s) => s.attackerId === self.id);
+  if (!strike) return null;
+  const options = aimOptions(view, self, strike, view.turnWill, rules);
+  if (!options.length) return { kind: 'reaction-timeout' };
+  return { kind: 'aim', hex: options[(view.strikeSeq + view.round) % options.length] };
 }

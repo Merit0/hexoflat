@@ -34,6 +34,8 @@ describe('REQ-BTL-001 initiative', () => {
     expect(battle.activeId).toBe('s2');
 
     battle = enemyTurn(battle).battle;
+    battle = heroDoes(battle, { kind: 'take-hit' }).battle;
+    battle = enemyTurn(battle).battle;
     expect(battle.round).toBe(2);
     expect(Object.keys(battle.draws).sort()).toEqual(['hero', 's2']);
     expect(Object.values(battle.draws).sort()).toEqual([1, 2]);

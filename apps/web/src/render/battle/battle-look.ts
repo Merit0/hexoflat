@@ -25,20 +25,10 @@ export function battleShieldSprite(): string {
   return CONTENT[HEXOBJECT_KEYS.SHIELD]?.spritePath ?? '';
 }
 
-export const BATTLE_OVERLAY_COLORS = {
-  heroZone: { fill: 0x1a2a3c, stroke: 0x4a8be0 },
-  enemyZone: { fill: 0x2a161c, stroke: 0xb0306a },
-  ring: { fill: 0x4a1e1b, stroke: 0xc2412d },
-  target: { fill: 0xe0a93f, stroke: 0xe0a93f },
-  shield: { fill: 0x8fb4d9, stroke: 0xdbe8f5 },
-  blocked: { fill: 0x2f8f4e, stroke: 0x4fd07a },
-  hit: { fill: 0x8c2a22, stroke: 0xe0503c },
-  dodged: { fill: 0x3a4a5c, stroke: 0x8aa0b8 },
-} as const;
+export const BATTLE_BLOOD_COLORS = { fill: 0xb3121c, shine: 0xe85a63 } as const;
 
-export const BATTLE_SWORD_COLORS = { blade: 0xe8eef6, guard: 0xe0a93f, grip: 0x6b4a2a } as const;
-
-export type BattleOverlayTone = keyof typeof BATTLE_OVERLAY_COLORS;
+export type BattleOverlayTone =
+  'heroZone' | 'enemyZone' | 'ring' | 'target' | 'shield' | 'blocked' | 'hit' | 'dodged';
 
 export const SAW_SPIN_RADIANS_PER_SECOND = Math.PI * 2;
 

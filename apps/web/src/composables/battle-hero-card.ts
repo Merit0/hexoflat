@@ -4,10 +4,10 @@ import { creatureById, isAlive } from '@hexoflat/engine/battle/battle-board';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { battleHint, type BattleMessage } from './battle-hint';
 import type { BattleUiMode } from './battle-board-tap';
-import { stageViews, type BattleStage, type BattleStageView } from './battle-stage';
+import type { BattleStage } from './battle-stage';
 import type { BattleCreatureRow, BattleViewInput } from './battle-view-types';
 
-export type BattleCardState = 'defend' | 'act' | 'wait' | 'fallen' | 'victory' | 'defeat';
+export type BattleCardState = 'defend' | 'aim' | 'act' | 'wait' | 'fallen' | 'victory' | 'defeat';
 export type BattleHandKind = 'weapon' | 'shield' | 'consumable' | 'empty';
 export type BattleActionId = 'push' | 'swap';
 
@@ -33,16 +33,19 @@ export interface BattleDefendView {
   placed: number;
   capacity: number;
   shieldKey: string | null;
-  shieldCost: number;
-  dodgeCost: number;
-  canBlock: boolean;
-  canDodge: boolean;
+  deadlineMs: number;
 }
 
 export interface BattleWaitView {
   name: string;
   init: number;
   stance: number;
+  blocking: boolean;
+}
+
+export interface BattleAimView {
+  deadlineMs: number;
+  shieldsRaised: boolean;
 }
 
 export interface BattleHeroCard {
@@ -57,11 +60,10 @@ export interface BattleHeroCard {
   canUndo: boolean;
   stanceNote: number;
   plan: number;
-  defenseMode: boolean;
   stage: BattleStage;
-  stages: BattleStageView[];
   defend: BattleDefendView | null;
   wait: BattleWaitView | null;
+  aim: BattleAimView | null;
   bag: { index: number; key: string }[];
 }
 
@@ -164,10 +166,7 @@ function defendView(
     placed,
     capacity,
     shieldKey: shieldHand ? self.hands[shieldHand]!.key : null,
-    shieldCost: rules.shieldPerSide,
-    dodgeCost: rules.dodge,
-    canBlock: placed > 0,
-    canDodge: view.turnWill + placed * rules.shieldPerSide >= rules.dodge,
+    deadlineMs: view.reaction?.deadlineMs ?? 0,
   };
 }
 
@@ -182,6 +181,7 @@ function waitView(
     name: input.nameOf(active.id),
     init: view.draws[active.id] ?? 0,
     stance: view.stance[self.id] ?? 0,
+    blocking: view.reaction?.stage === 'block',
   };
 }
 
@@ -193,6 +193,7 @@ function cardState(
   if (view.phase === 'ended') return view.outcome === 'victory' ? 'victory' : 'defeat';
   if (!isAlive(self)) return 'fallen';
   if (view.activeId !== self.id || !input.localHeroIds.includes(self.id)) return 'wait';
+  if (view.reaction?.stage === 'aim') return 'aim';
   return view.phase === 'defend' ? 'defend' : 'act';
 }
 
@@ -235,11 +236,13 @@ export function buildHeroCard(
     canUndo: view.undo.length > 0,
     stanceNote: Math.min(input.rules.stanceMax, view.turnWill),
     plan: 0,
-    defenseMode: state === 'act' && view.placedShields.length > 0,
     stage: input.ui.stage,
-    stages: stageViews(input.ui.stage),
     defend: defending ? defendView(view, self, input) : null,
     wait: state === 'wait' ? waitView(view, self, input) : null,
+    aim:
+      state === 'aim'
+        ? { deadlineMs: view.reaction?.deadlineMs ?? 0, shieldsRaised: view.shieldsRaised }
+        : null,
     bag: self.bag.map((item, index) => ({ index, key: item.key })),
   };
 }

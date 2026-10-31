@@ -34,7 +34,7 @@ export interface BattleDeployView {
 }
 
 export interface BattleTaskView {
-  kind: 'dodge' | 'saw' | 'push';
+  kind: 'saw' | 'push';
   question: string;
   options: number[];
   issuedAtMs: number;
@@ -188,6 +188,7 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
       board: deploy.setup.board,
       boulders: view?.boulders ?? deploy.setup.boulders ?? [],
       creatures,
+      wounds: view?.wounds ?? {},
       activeId: view && view.phase !== 'ended' ? view.activeId : null,
     },
     overlay,

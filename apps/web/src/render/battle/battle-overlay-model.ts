@@ -3,6 +3,8 @@ import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { creatureById, livingOnSide } from '@hexoflat/engine/battle/battle-board';
 import { battleDistance, isAdjacentHex } from '@hexoflat/engine/battle/hex-battle-geom';
 import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
+import { aimOptions } from '@hexoflat/engine/battle/reaction';
+import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import type { BattleOverlayTone } from './battle-look';
 
 export type BattleTargetMode = 'move' | 'strike' | 'push';
@@ -65,16 +67,31 @@ function strikeMarks(view: BattleProjection): BattleMark[] {
     .flatMap((strike) => strike.ring.map((hex) => ({ hex, tone: 'ring' as const })));
 }
 
+function decoyShieldMarks(view: BattleProjection): BattleMark[] {
+  if (!view.shieldsRaised) return [];
+  const own = new Set(livingOnSide(view, view.viewer).map((c) => c.id));
+  return view.pending
+    .filter((strike) => own.has(strike.attackerId))
+    .flatMap((strike) => strike.ring.map((hex) => ({ hex, tone: 'shield' as const })));
+}
+
+function aimMarks(view: BattleProjection): BattleMark[] {
+  const self = activeHero(view);
+  const strike = self ? view.pending.find((s) => s.attackerId === self.id) : undefined;
+  if (!self || !strike || view.reaction?.stage !== 'aim') return [];
+  return aimOptions(view, self, strike, view.turnWill, BATTLE_RULES).map((hex) => ({
+    hex,
+    tone: 'target' as const,
+  }));
+}
+
 export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayModel {
   const marks: BattleMark[] = input.zones ? zoneMarks(input.zones) : [];
   const view = input.projection;
   if (!view) return { marks, targets: [] };
 
-  marks.push(...strikeMarks(view));
-  const guards = Object.values(view.guards).flat();
-  marks.push(
-    ...[...view.placedShields, ...guards].map((hex) => ({ hex, tone: 'shield' as const })),
-  );
+  marks.push(...strikeMarks(view), ...aimMarks(view), ...decoyShieldMarks(view));
+  marks.push(...view.placedShields.map((hex) => ({ hex, tone: 'shield' as const })));
   const hero = activeHero(view);
   const targets =
     hero && input.mode && input.mode !== 'move' ? targetCreatures(view, hero, input.mode) : [];

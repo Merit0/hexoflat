@@ -2,7 +2,6 @@ import type { DomainEvent } from '../commands/types';
 import type { BattleRules } from './battle-content';
 import type { BattleCreature, BattleState, BattleTask } from './battle-state';
 import { isRejection, type BattleRejection } from './battle-rejection';
-import { resolveStrikes } from './defend';
 import { findDisplaceable, resolvePush } from './displacement';
 import { sawOutcome } from './hazard';
 import { gradeTask } from './timed-task';
@@ -34,8 +33,6 @@ function outcome(
   rules: BattleRules,
 ): DomainEvent[] {
   switch (task.kind) {
-    case 'dodge':
-      return resolveStrikes(state, actor, rules, correct);
     case 'saw':
       return sawOutcome(state, actor, correct, task.backHex, task.pusherHex);
     case 'push':

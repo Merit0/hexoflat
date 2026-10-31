@@ -9,8 +9,12 @@ export const BATTLE_TIMING = {
 } as const;
 
 export const BATTLE_MOTION = {
-  swordDropTiles: 1.1,
-  swordLength: 0.42,
+  dropSpreadTiles: 0.16,
+  dropRadiusTiles: 0.065,
+  maxDropsPerSide: 4,
+  toolOrbitTiles: 0.7,
+  toolFadeIn: 0.1,
+  toolFadeOut: 0.15,
   ejectLiftTiles: 0.45,
   heartShakeTiles: 0.07,
   fallShakeTiles: 0.1,

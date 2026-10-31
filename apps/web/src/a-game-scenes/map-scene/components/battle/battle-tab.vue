@@ -13,12 +13,9 @@
         v-if="view.hero"
         :card="view.hero"
         :swapping="ui.mode === 'swap'"
-        @block="block"
-        @dodge="dodge"
         @take-hit="takeHit"
         @pick-hand="pickHand"
         @pick-action="pickAction"
-        @stage="goStage"
         @swap="swapFrom"
         @undo="undo"
         @end-turn="endTurn"
@@ -42,25 +39,14 @@ import { useI18n } from 'vue-i18n';
 import { useBattleView } from '@/composables/use-battle-view';
 import BattleDeployCard from './battle-deploy-card.vue';
 import BattleInitiativeStrip from './battle-initiative-strip.vue';
+import { useBattleReaction } from '@/composables/use-battle-reaction';
 import BattleHeroControls from './battle-hero-controls.vue';
 import BattleCreatureRow from './battle-creature-row.vue';
 
 const { t } = useI18n();
-const {
-  view,
-  ui,
-  start,
-  block,
-  dodge,
-  takeHit,
-  pickHand,
-  pickAction,
-  goStage,
-  swapFrom,
-  undo,
-  endTurn,
-  leave,
-} = useBattleView();
+const { view, ui, start, takeHit, pickHand, pickAction, swapFrom, undo, endTurn, leave } =
+  useBattleView();
+useBattleReaction();
 </script>
 
 <style scoped>

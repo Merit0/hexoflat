@@ -112,10 +112,15 @@ export function strike(
   state.pending.push(pending);
   state.struckHands.push(hand);
   state.undo = [];
-  return [
-    {
-      type: 'STRIKE_DEALT',
-      payload: { ...pending, hand, cost: rules.strike, willLeft: state.turnWill },
+  const dealt: DomainEvent = {
+    type: 'STRIKE_DEALT',
+    payload: {
+      ...pending,
+      hand,
+      itemKey: strikingItem(attacker, hand, rules)!.key,
+      cost: rules.strike,
+      willLeft: state.turnWill,
     },
-  ];
+  };
+  return [dealt];
 }

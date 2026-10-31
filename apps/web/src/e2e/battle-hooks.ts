@@ -24,8 +24,8 @@ export function giveHeroTheTurn(willPerTurn: number): void {
   battle.phase = 'act';
   battle.turnWill = willPerTurn;
   battle.pending = [];
+  battle.reaction = undefined;
   battle.placedShields = [];
-  battle.lockedShields = 0;
   battle.undo = [];
   store.battle = battle;
 }

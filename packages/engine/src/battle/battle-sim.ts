@@ -6,9 +6,8 @@ import type { BattleAction } from './battle-commands';
 import type { BattleHand, BattleOutcome, BattleSetupInput, BattleState } from './battle-state';
 import { applyBattleCommand } from './apply-battle';
 import { startBattle } from './start-battle';
-import { shieldCapacity } from './defend';
 import { projectBattleForViewer, type BattleProjection } from './projection';
-import { activeSelf } from './ai/ai-common';
+import { activeSelf, aimAction } from './ai/ai-common';
 import { meleeAction } from './ai/melee-ai';
 
 export interface SimOptions {
@@ -24,13 +23,8 @@ const MAX_COMMANDS = 5_000;
 
 export function heroBotAction(view: BattleProjection, rules: BattleRules): BattleAction {
   const self = activeSelf(view);
-  if (
-    view.phase === 'defend' &&
-    shieldCapacity(self, rules) === 0 &&
-    view.turnWill >= rules.dodge
-  ) {
-    return { kind: 'start-dodge' };
-  }
+  const aim = aimAction(view, self, rules);
+  if (aim) return aim;
   const potionHand = (['right', 'left'] as BattleHand[]).find((h) => self.hands[h]?.usePrice);
   const potionPrice = potionHand ? self.hands[potionHand]!.usePrice! : 0;
   if (view.phase === 'act' && potionHand && self.hp <= 2 && view.turnWill >= potionPrice) {

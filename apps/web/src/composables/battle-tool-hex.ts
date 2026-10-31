@@ -7,7 +7,7 @@ import {
 } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { livingCreatureAt, terrainAt } from '@hexoflat/engine/battle/battle-board';
-import { guardHexRefusal, shieldCapacity } from '@hexoflat/engine/battle/defend';
+import { shieldCapacity } from '@hexoflat/engine/battle/defend';
 import { hexNeighbours, isAdjacentHex, sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
 import { strikingItem } from '@hexoflat/engine/battle/strike';
 import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
@@ -49,6 +49,14 @@ function foeAt(
   return creature && creature.side !== self.side ? creature : null;
 }
 
+function ringOf(view: BattleProjection, self: BattleCreature): BattleHex[] {
+  return view.pending.filter((s) => s.targetId === self.id).flatMap((s) => s.ring);
+}
+
+function inRing(view: BattleProjection, self: BattleCreature, hex: BattleHex): boolean {
+  return ringOf(view, self).some((h) => sameHex(h, hex));
+}
+
 function toolAnchor(
   view: BattleProjection,
   self: BattleCreature,
@@ -57,7 +65,7 @@ function toolAnchor(
 ): BattleHex | null {
   if (preferred && isAdjacentHex(self.pos, preferred)) return preferred;
   const around = hexNeighbours(self.pos).filter((hex) => terrainAt(view, hex) !== null);
-  if (item?.shieldCapacity) return around.find((hex) => !guardHexRefusal(view, self, hex)) ?? null;
+  if (item?.shieldCapacity) return around.find((hex) => inRing(view, self, hex)) ?? null;
   if (!item || item.power) return around.find((hex) => foeAt(view, self, hex)) ?? around[0] ?? null;
   return around[0] ?? null;
 }
@@ -100,10 +108,9 @@ function blockDecision(
 ): Decision {
   if (view.placedShields.some((hex) => sameHex(hex, at)))
     return { action: 'unblock', targetId: null, price: 0 };
-  const open =
-    !guardHexRefusal(view, self, at) && view.placedShields.length < shieldCapacity(self, rules);
+  const open = inRing(view, self, at) && view.placedShields.length < shieldCapacity(self, rules);
   return open
-    ? { action: 'block', targetId: null, price: rules.shieldPerSide }
+    ? { action: 'block', targetId: null, price: 0 }
     : { action: null, targetId: null, price: 0 };
 }
 
@@ -129,7 +136,9 @@ function decide(
 export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null {
   const view = input.projection;
   const self = controlledHero(view, input.localHeroIds);
-  if (!view || !self || view.phase !== 'act' || input.ui.stage !== 'action') return null;
+  const blocking = view?.phase === 'defend' && view.reaction?.stage === 'block';
+  if (!view || !self || (view.phase !== 'act' && !blocking) || input.ui.stage !== 'action')
+    return null;
   const hand = input.ui.hand;
   if (!hand) return null;
   const item = self.hands[hand];

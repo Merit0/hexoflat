@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { BATTLE_RULES } from './battle-content';
-import { battleWith, giveTurn, hero, heroDoes, skeleton } from './battle-test-setup';
+import { battleWith, giveTurn, hero, skeleton, strikeOpened } from './battle-test-setup';
 import { projectBattleEvent, projectBattleForViewer } from './projection';
 import { nextEnemyAction } from './ai/enemy-ai';
-import { beginTurn } from './turn';
 
 function heroStruckSkeleton() {
   const battle = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]), [
     'hero',
     's1',
   ]);
-  return heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'right' });
+  const opened = strikeOpened(battle, 'hero', 's1');
+  const dealt = {
+    type: 'STRIKE_DEALT',
+    payload: { attackerId: 'hero', fromHex: opened.pending[0].fromHex },
+  };
+  return { battle: opened, events: [dealt] };
 }
 
 describe('REQ-BTL-013 projection hides the side of strikes', () => {
@@ -35,11 +39,6 @@ describe('REQ-BTL-013 projection hides the side of strikes', () => {
     const { battle } = heroStruckSkeleton();
     const twin = structuredClone(battle);
     twin.pending[0].fromHex = { q: 1, r: -1 };
-    for (const state of [battle, twin]) {
-      state.order = ['s1', 'hero'];
-      state.turnIndex = 0;
-      beginTurn(state, 's1', BATTLE_RULES);
-    }
     const a = nextEnemyAction(projectBattleForViewer(battle, 'enemies'), BATTLE_RULES);
     const b = nextEnemyAction(projectBattleForViewer(twin, 'enemies'), BATTLE_RULES);
     expect(a).toEqual(b);

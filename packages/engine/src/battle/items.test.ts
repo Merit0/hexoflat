@@ -16,7 +16,7 @@ function twoBlades(): BattleState {
   return giveTurn(
     battleWith([
       hero({ q: 0, r: 0 }, { hands: { right: battleItem('sword'), left: battleItem('dagger') } }),
-      skeleton('s1', { q: 1, r: 0 }),
+      skeleton('s1', { q: 1, r: 0 }, { hp: 10, maxHp: 10 }),
     ]),
     ['hero', 's1'],
   );
@@ -26,7 +26,8 @@ describe('REQ-BTL-004 hands', () => {
   it('strikes once with each weapon in hand, each with its own power', () => {
     let battle = heroDoes(twoBlades(), { kind: 'strike', targetId: 's1', hand: 'right' }).battle;
     battle = heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'left' }).battle;
-    expect(battle.pending.map((p) => p.power)).toEqual([2, 1]);
+    expect(battle.pending).toEqual([]);
+    expect(battle.creatures[1].hp).toBe(7);
     expect(battle.turnWill).toBe(6);
     expect(
       rejectionOf(heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'left' }).events),
@@ -45,7 +46,7 @@ describe('REQ-BTL-004 hands', () => {
       rejectionOf(heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'left' }).events),
     ).toBe('NO_WEAPON_IN_HAND');
     const punched = heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'right' }).battle;
-    expect(punched.pending.map((s) => s.power)).toEqual([BATTLE_RULES.unarmedPower]);
+    expect(punched.creatures[1].hp).toBe(3 - BATTLE_RULES.unarmedPower);
     expect(BATTLE_RULES.unarmedPower).toBe(1);
   });
 });

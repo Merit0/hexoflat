@@ -12,9 +12,8 @@ export interface TokenPose extends Point {
 }
 
 export interface StrikeFx {
-  ring: BattleHex[];
-  ringAlpha: number;
-  sword: Point & { rotation: number; alpha: number };
+  tool: Point & { alpha: number };
+  toolKey: string;
 }
 
 export interface AnimationGeometry {
@@ -102,18 +101,19 @@ export function sampleStrikeFx(
   if (step.kind !== 'strike') return null;
   const t = clamp01(progress);
   const target = geo.centreOf(step.target);
-  const start = step.from
-    ? geo.centreOf(step.from)
-    : { x: target.x, y: target.y - BATTLE_MOTION.swordDropTiles * geo.tileHeight };
-  const flight = clamp01(t / 0.75);
-  const at = lerp(start, target, easeInOut(flight));
-  const rotation =
-    start.x === target.x && start.y === target.y
-      ? Math.PI / 2
-      : Math.atan2(target.y - start.y, target.x - start.x);
+  const owner = step.from ? geo.centreOf(step.from) : null;
+  if (!owner) return { toolKey: step.toolKey, tool: { ...target, alpha: 0 } };
+  const radius = geo.tileHeight * BATTLE_MOTION.toolOrbitTiles;
+  const first = Math.atan2(target.y - owner.y, target.x - owner.x);
+  const angle = first + easeInOut(t) * Math.PI * 2;
+  const fadeIn = clamp01(t / BATTLE_MOTION.toolFadeIn);
+  const fadeOut = clamp01((1 - t) / BATTLE_MOTION.toolFadeOut);
   return {
-    ring: step.ring,
-    ringAlpha: Math.sin(t * Math.PI),
-    sword: { ...at, rotation, alpha: t < 0.75 ? 1 : 1 - (t - 0.75) / 0.25 },
+    toolKey: step.toolKey,
+    tool: {
+      x: owner.x + Math.cos(angle) * radius,
+      y: owner.y + Math.sin(angle) * radius,
+      alpha: Math.min(fadeIn, fadeOut),
+    },
   };
 }

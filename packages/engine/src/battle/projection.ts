@@ -3,9 +3,16 @@ import type { BattleHex, BattleSide, BattleState, PendingStrike } from './battle
 import { creatureById } from './battle-board';
 
 export type ProjectedStrike = Omit<PendingStrike, 'fromHex'> & { fromHex: BattleHex | null };
-export type BattleProjection = Omit<BattleState, 'pending' | 'seed'> & {
+export type BattleProjection = Omit<BattleState, 'pending' | 'seed' | 'reaction'> & {
   viewer: BattleSide;
   pending: ProjectedStrike[];
+  shieldsRaised: boolean;
+  reaction?: {
+    stage: 'block' | 'aim';
+    attackerId: string;
+    defenderId: string;
+    deadlineMs: number;
+  };
 };
 
 function attackerSide(state: BattleState, attackerId: string): BattleSide | null {
@@ -21,28 +28,50 @@ function projectStrike(
   return { ...strike, fromHex: own ? { ...strike.fromHex } : null };
 }
 
-function publicPart(state: BattleState): Omit<BattleState, 'pending' | 'seed'> {
+function publicPart(state: BattleState): Omit<BattleState, 'pending' | 'seed' | 'reaction'> {
   const copy: Partial<BattleState> = structuredClone(state);
   delete copy.seed;
   delete copy.pending;
+  delete copy.reaction;
   if (copy.task) copy.task = { ...copy.task, answer: 0 };
-  return copy as Omit<BattleState, 'pending' | 'seed'>;
-}
-
-function ownGuards(state: BattleState, viewer: BattleSide): BattleState['guards'] {
-  return Object.fromEntries(
-    Object.entries(state.guards).filter(([id]) => creatureById(state, id)?.side === viewer),
-  );
+  return copy as Omit<BattleState, 'pending' | 'seed' | 'reaction'>;
 }
 
 function hidesActiveShields(state: BattleState, viewer: BattleSide): boolean {
-  return state.phase === 'act' && creatureById(state, state.activeId)?.side !== viewer;
+  const acting = state.phase === 'act' || !!state.reaction;
+  return acting && creatureById(state, state.activeId)?.side !== viewer;
+}
+
+function aimView(state: BattleState, view: BattleProjection, viewer: BattleSide): BattleProjection {
+  const reaction = state.reaction!;
+  const defenderSide = creatureById(state, reaction.defenderId)?.side;
+  if (viewer === defenderSide) {
+    return { ...view, placedShields: reaction.shields.map((hex) => ({ ...hex })) };
+  }
+  return { ...view, shieldsRaised: reaction.shields.length > 0 };
 }
 
 export function projectBattleForViewer(state: BattleState, viewer: BattleSide): BattleProjection {
   const pending = state.pending.map((s) => projectStrike(state, s, viewer));
-  const view = { ...publicPart(state), viewer, pending, guards: ownGuards(state, viewer) };
-  return hidesActiveShields(state, viewer) ? { ...view, placedShields: [] } : view;
+  const reaction = state.reaction
+    ? {
+        stage: state.reaction.stage,
+        attackerId: state.reaction.attackerId,
+        defenderId: state.reaction.defenderId,
+        deadlineMs: state.reaction.deadlineMs,
+      }
+    : undefined;
+  const view = {
+    ...publicPart(state),
+    viewer,
+    pending,
+    reaction,
+    shieldsRaised: false,
+  };
+  if (state.reaction?.stage === 'aim') return aimView(state, view, viewer);
+  return hidesActiveShields(state, viewer)
+    ? { ...view, placedShields: [], shieldsRaised: state.placedShields.length > 0 }
+    : view;
 }
 
 export function projectBattleEvent(
@@ -51,9 +80,14 @@ export function projectBattleEvent(
   viewer: BattleSide,
 ): DomainEvent {
   if (event.type === 'SHIELD_PLACED' || event.type === 'SHIELD_REMOVED') {
-    const shield = event.payload as { creatureId: string; guard?: boolean };
-    if (!shield.guard || creatureById(state, shield.creatureId)?.side === viewer) return event;
-    return { type: event.type, payload: { creatureId: shield.creatureId, guard: true } };
+    const shield = event.payload as { creatureId: string };
+    if (creatureById(state, shield.creatureId)?.side === viewer) return event;
+    return { type: event.type, payload: { creatureId: shield.creatureId } };
+  }
+  if (event.type === 'REACTION_AIMING') {
+    const aiming = event.payload as { attackerId: string; options: BattleHex[] };
+    if (attackerSide(state, aiming.attackerId) === viewer) return event;
+    return { type: event.type, payload: { ...aiming, options: [] } };
   }
   if (event.type !== 'STRIKE_DEALT') return event;
   const payload = event.payload as { attackerId: string; fromHex: BattleHex };

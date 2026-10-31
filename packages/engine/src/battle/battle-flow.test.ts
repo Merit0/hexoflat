@@ -40,7 +40,7 @@ function play(battle: BattleState, script: (BattleAction | 'enemy')[]) {
 }
 
 describe('enemy turn', () => {
-  it('walks up, strikes, hides the side and ends the turn', () => {
+  it('walks up, strikes and hands the turn to the defender for the block window', () => {
     const start = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]), [
       's1',
       'hero',
@@ -50,20 +50,14 @@ describe('enemy turn', () => {
       'CREATURE_MOVED',
       'CREATURE_MOVED',
       'STRIKE_DEALT',
-      'CREATURE_MOVED',
-      'CREATURE_MOVED',
-      'CREATURE_MOVED',
-      'CREATURE_MOVED',
-      'TURN_ENDED',
-      'TURN_STARTED',
+      'REACTION_OPENED',
     ]);
     expect(battle.activeId).toBe('hero');
     expect(battle.phase).toBe('defend');
     expect(battle.pending).toHaveLength(1);
-    expect(battle.stance.s1).toBe(7);
+    expect(battle.reaction).toMatchObject({ stage: 'block', attackerId: 's1', defenderId: 'hero' });
     const guess = heroBotAction(projectBattleForViewer(battle, 'heroes'), BATTLE_RULES);
     expect(guess).toMatchObject({ kind: 'place-shield' });
-    expect(guess).not.toMatchObject({ hex: battle.pending[0].fromHex });
   });
 
   it('refuses to run when a hero holds the turn', () => {
@@ -135,7 +129,7 @@ describe('REQ-BTL-015 replay', () => {
     { kind: 'end-turn' },
     'enemy',
     { kind: 'place-shield', hex: { q: 1, r: 0 } },
-    { kind: 'confirm-block' },
+    { kind: 'reaction-timeout' },
     { kind: 'end-turn' },
   ];
 

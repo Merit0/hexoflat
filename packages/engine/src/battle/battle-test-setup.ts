@@ -9,6 +9,11 @@ import type {
   Boulder,
 } from './battle-state';
 import { applyBattleCommand } from './apply-battle';
+import { creatureById } from './battle-board';
+import { isRejection } from './battle-rejection';
+import { performAction } from './perform-action';
+import { openReaction } from './reaction';
+import { strike } from './strike';
 import { startBattle } from './start-battle';
 import { battleDistance, hexKey } from './hex-battle-geom';
 import { beginTurn } from './turn';
@@ -121,4 +126,37 @@ export function eventTypes(events: DomainEvent[]): string[] {
 export function rejectionOf(events: DomainEvent[]): unknown {
   const refusal = events.find((e) => e.type === 'BATTLE_REJECTED');
   return refusal ? (refusal.payload as { rejected: string }).rejected : null;
+}
+
+export function enemyDoes(
+  battle: BattleState,
+  action: BattleAction,
+  enemyId = 's1',
+  atMs = 0,
+): { battle: BattleState; events: DomainEvent[] } {
+  const next = structuredClone(battle);
+  const result = performAction(next, creatureById(next, enemyId)!, action, atMs, BATTLE_RULES);
+  if (isRejection(result)) {
+    return {
+      battle,
+      events: [{ type: 'BATTLE_REJECTED', payload: { ...result, action: action.kind } }],
+    };
+  }
+  return { battle: next, events: result };
+}
+
+export function strikeOpened(
+  battle: BattleState,
+  attackerId: string,
+  targetId: string,
+  hand: 'right' | 'left' = 'right',
+  atMs = 0,
+): BattleState {
+  const next = structuredClone(battle);
+  const attacker = creatureById(next, attackerId)!;
+  const target = creatureById(next, targetId)!;
+  const dealt = strike(next, attacker, targetId, hand, BATTLE_RULES);
+  if (isRejection(dealt)) throw new Error(`strike refused: ${dealt.rejected}`);
+  openReaction(next, attacker, target, hand, atMs, BATTLE_RULES);
+  return next;
 }

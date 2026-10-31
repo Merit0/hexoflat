@@ -74,8 +74,8 @@ describe('battle tool hex and statuses', () => {
 
     expect(store.act({ kind: 'strike', targetId: 's1', hand: 'right' }, 0)).toBe(true);
     view = viewOf();
-    expect(view.hero?.hint).toEqual({ key: 'battle.hint.struck', params: { name: 'Skeleton' } });
-    expect(view.enemies[0].hits).toBe(1);
+    expect(view.hero?.hint?.key).toBe('battle.hint.hitTaken');
+    expect(view.enemies[0].hits).toBe(0);
     expect(view.hero?.hands[0].meta?.key).toBe('battle.hand.struck');
     expect(view.board?.tool).toBeNull();
     expect(store.projection?.turnWill).toBe(13);
@@ -87,25 +87,28 @@ describe('battle tool hex and statuses', () => {
     expect(viewOf({ ...ACTION, hand: 'right' }).board?.tool).toMatchObject({ action: 'attack' });
   });
 
-  it('has two statuses and shows a tool only in ACTION', () => {
+  it('shows a tool only in ACTION', () => {
     startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
-    expect(viewOf(MOVE).hero?.stages).toEqual([
-      { id: 'action', current: false },
-      { id: 'move', current: true },
-    ]);
     expect(viewOf(MOVE).board?.tool).toBeNull();
     expect(viewOf(ACTION).board?.tool).toMatchObject({ hand: 'right', action: null });
   });
 
-  it('offers Block with the shield and Lift once the side is guarded', () => {
-    const store = startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+  it('offers no shield action on the hero turn', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+    const shield: BattleUiState = { ...ACTION, hand: 'left', toolAt: { q: 1, r: 0 } };
+    expect(viewOf(shield).board?.tool).toMatchObject({ toolKey: 'shield', action: null });
+  });
+
+  it('offers Block with the shield and Lift once the side is raised, inside the block window', () => {
+    const store = startedOn(['s1', 'hero'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
+    store.runEnemyTurn(0);
+    store.setAnimating(false);
     const shield: BattleUiState = { ...ACTION, hand: 'left', toolAt: { q: 1, r: 0 } };
     expect(viewOf(shield).board?.tool).toMatchObject({
       toolKey: 'shield',
       action: 'block',
-      price: BATTLE_RULES.shieldPerSide,
+      price: 0,
     });
-    expect(viewOf(shield).hero?.plan).toBe(BATTLE_RULES.shieldPerSide);
 
     expect(store.act({ kind: 'place-shield', hex: { q: 1, r: 0 } }, 0)).toBe(true);
     expect(viewOf(shield).board?.tool).toMatchObject({ action: 'unblock', price: 0 });

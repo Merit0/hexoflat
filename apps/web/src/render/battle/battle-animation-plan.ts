@@ -1,5 +1,7 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleHex, BattleSide } from '@hexoflat/engine/battle/battle-state';
+import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { BATTLE_TIMING } from './battle-timing';
 
 export interface AnimatedCreature {
@@ -14,6 +16,7 @@ export type BattleAnimationStep =
       targetId: string;
       target: BattleHex;
       from: BattleHex | null;
+      toolKey: string;
       ring: BattleHex[];
       durationMs: number;
     }
@@ -37,6 +40,7 @@ interface Struck {
   attackerId: string;
   targetId: string;
   fromHex: BattleHex | null;
+  itemKey?: string;
   ring: BattleHex[];
 }
 interface Displaced {
@@ -75,7 +79,7 @@ class Planner {
   read(event: DomainEvent) {
     if (event.type === 'CREATURE_MOVED') this.moved(event.payload as Moved);
     if (event.type === 'MOVE_UNDONE') this.place((event.payload as Moved).creatureId, event);
-    if (event.type === 'STRIKE_DEALT') this.struck(event.payload as Struck);
+    if (event.type === 'STRIKE_LANDED') this.struck(event.payload as Struck);
     if (event.type === 'DISPLACED') this.displaced(event.payload as Displaced);
     if (event.type === 'THROWN_CLEAR') this.thrown(event.payload as Thrown);
     if (event.type === 'CREATURE_DAMAGED') this.shake((event.payload as Moved).creatureId, 'hit');
@@ -97,15 +101,16 @@ class Planner {
     this.pos.set(creatureId, copy(to));
   }
 
-  private struck({ attackerId, targetId, fromHex, ring }: Struck) {
+  private struck({ attackerId, targetId, itemKey, ring }: Struck) {
     const target = this.pos.get(targetId);
     if (!target) return;
-    const attacker = this.pos.get(attackerId) ?? fromHex;
+    const attacker = this.pos.get(attackerId);
     this.steps.push({
       kind: 'strike',
       targetId,
       target: copy(target),
       from: attacker ? copy(attacker) : null,
+      toolKey: (itemKey && hexobjectOfBattleItem(itemKey)) || HEXOBJECT_KEYS.HAND,
       ring: ring.map(copy),
       durationMs: BATTLE_TIMING.strikeMs,
     });

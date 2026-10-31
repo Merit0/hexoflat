@@ -39,6 +39,7 @@ export interface BattleBoardScene {
   board: Record<string, BattleTerrain>;
   boulders: Boulder[];
   creatures: BattleCreature[];
+  wounds: Record<string, BattleHex[]>;
   activeId: string | null;
 }
 
@@ -109,7 +110,8 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     }
     if (changed.overlay) layers.overlay.sync(overlay);
     syncPreview();
-    if (changed.tokens) layers.tokens.sync(scene.creatures, scene.activeId, overlay.targets);
+    if (changed.tokens)
+      layers.tokens.sync(scene.creatures, scene.activeId, overlay.targets, scene.wounds);
     const events = options.takeEvents?.() ?? [];
     if (events.length) layers.animator.play(events, scene.creatures);
   }

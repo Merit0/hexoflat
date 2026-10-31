@@ -5,6 +5,7 @@ import { creatureById, livingCreatureAt, terrainAt } from '@hexoflat/engine/batt
 import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
 import { cheapestPaths, pathTo, stepCost } from '@hexoflat/engine/battle/movement';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
+import { aimOptions } from '@hexoflat/engine/battle/reaction';
 
 export type BattleUiMode = 'move' | 'strike' | 'push' | 'swap';
 
@@ -88,10 +89,24 @@ function targetTap(view: BattleProjection, input: BattleTapInput): BattleAction[
   return [];
 }
 
+export function aimHexes(
+  view: BattleProjection,
+  self: BattleCreature,
+  rules: BattleRules,
+): BattleHex[] {
+  if (view.reaction?.stage !== 'aim') return [];
+  const strike = view.pending.find((s) => s.attackerId === self.id);
+  return strike ? aimOptions(view, self, strike, view.turnWill, rules) : [];
+}
+
 export function battleTapActions(input: BattleTapInput): BattleAction[] {
   const view = input.projection;
   const self = controlledHero(view, input.localHeroIds);
   if (!view || !self) return [];
+  if (view.reaction?.stage === 'aim') {
+    const chosen = aimHexes(view, self, input.rules).find((h) => sameHex(h, input.hex));
+    return chosen ? [{ kind: 'aim', hex: chosen }] : [];
+  }
   if (view.phase === 'defend') return defendTap(view, self, input.hex);
   if (input.mode === 'move') {
     return stepsTo(view, self, input.hex, input.rules).map((hex) => ({ kind: 'move', hex }));

@@ -18,9 +18,6 @@
           <span v-if="card.row.tags.includes('yourTurn')" class="hero-card__tag">
             {{ t('battle.tag.yourTurn') }}
           </span>
-          <span v-if="card.defenseMode" class="hero-card__tag" data-testid="battle-defense-mode">
-            {{ t('battle.tag.defenseMode') }}
-          </span>
           <span v-if="card.row.hits" class="hero-card__tag is-hit">
             {{ t('battle.tag.hit', { count: card.row.hits }) }}
           </span>
@@ -66,32 +63,18 @@
           {{
             t('battle.defend.shieldNote', {
               shield: t(`content.battle.${card.defend.shieldKey}.title`),
-              cost: card.defend.shieldCost,
               stance: card.stanceGain,
             })
           }}
         </span>
         <span v-else class="hero-card__note">{{ t('battle.defend.noShield') }}</span>
       </div>
+      <div
+        class="hero-card__timer"
+        data-testid="battle-reaction-timer"
+        :style="timerStyle(card.defend.deadlineMs)"
+      ></div>
       <div class="hero-card__defend-buttons">
-        <button
-          class="hero-card__btn is-block"
-          type="button"
-          :disabled="!card.defend.canBlock"
-          data-testid="battle-block"
-          @click="emit('block')"
-        >
-          {{ t('battle.defend.block') }}
-        </button>
-        <button
-          class="hero-card__btn"
-          type="button"
-          :disabled="!card.defend.canDodge"
-          data-testid="battle-dodge"
-          @click="emit('dodge')"
-        >
-          {{ t('battle.defend.dodge', { cost: card.defend.dodgeCost }) }}
-        </button>
         <button
           class="hero-card__btn"
           type="button"
@@ -103,8 +86,18 @@
       </div>
     </section>
 
+    <section v-else-if="card.state === 'aim' && card.aim" class="hero-card__body">
+      <p class="hero-card__text" data-testid="battle-aim-hint">
+        {{ card.aim.shieldsRaised ? t('battle.aim.text') : t('battle.aim.none') }}
+      </p>
+      <div
+        class="hero-card__timer"
+        data-testid="battle-reaction-timer"
+        :style="timerStyle(card.aim.deadlineMs)"
+      ></div>
+    </section>
+
     <section v-else-if="card.state === 'act'" class="hero-card__body">
-      <battle-stage-bar :stages="card.stages" @pick="emit('stage', $event)" />
       <template v-if="card.stage === 'action'">
         <battle-hand-row
           v-for="hand in card.hands"
@@ -153,7 +146,14 @@
     </section>
 
     <section v-else class="hero-card__body">
-      <p v-if="card.state === 'wait' && card.wait" class="hero-card__text">
+      <p
+        v-if="card.state === 'wait' && card.wait && card.wait.blocking"
+        class="hero-card__text"
+        data-testid="battle-wait-blocking"
+      >
+        {{ t('battle.waitBlocking', { name: card.wait.name }) }}
+      </p>
+      <p v-else-if="card.state === 'wait' && card.wait" class="hero-card__text">
         {{ t('battle.wait', { name: card.wait.name, init: card.wait.init }) }}
         <b>{{ t('battle.waitStance', { will: card.wait.stance }) }}</b>
       </p>
@@ -179,8 +179,6 @@ import { computed } from 'vue';
 import type { BattleHand } from '@hexoflat/engine/battle/battle-state';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import type { BattleActionId, BattleHeroCard } from '@/composables/battle-hero-card';
-import type { BattleStage } from '@/composables/battle-stage';
-import BattleStageBar from './battle-stage-bar.vue';
 import { useBattleText } from '@/composables/use-battle-view';
 import BattleHexToken from './battle-hex-token.vue';
 import BattleHearts from './battle-hearts.vue';
@@ -189,12 +187,9 @@ import BattleActionButtons from './battle-action-buttons.vue';
 
 const props = defineProps<{ card: BattleHeroCard; swapping: boolean }>();
 const emit = defineEmits<{
-  block: [];
-  dodge: [];
   'take-hit': [];
   'pick-hand': [hand: BattleHand];
   'pick-action': [id: BattleActionId];
-  stage: [stage: BattleStage];
   swap: [bagIndex: number];
   undo: [];
   'end-turn': [];
@@ -202,12 +197,31 @@ const emit = defineEmits<{
 }>();
 const { t, text } = useBattleText();
 
+function timerStyle(deadlineMs: number) {
+  return { animationDuration: `${Math.max(0, deadlineMs - Date.now())}ms` };
+}
+
 const willPercent = computed(() =>
   props.card.willCap ? Math.min(100, Math.round((props.card.will / props.card.willCap) * 100)) : 0,
 );
 </script>
 
 <style scoped>
+.hero-card__timer {
+  height: 4px;
+  border-radius: 2px;
+  background: #e0a93f;
+  transform-origin: left;
+  animation: hero-card-timer linear forwards;
+}
+@keyframes hero-card-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
 .hero-card__plan {
   color: #f08a7a;
   font-weight: 700;

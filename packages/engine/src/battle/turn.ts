@@ -7,12 +7,7 @@ import { rollRound } from './initiative';
 function resetTurnScratch(state: BattleState): void {
   state.struckHands = [];
   state.placedShields = [];
-  state.lockedShields = 0;
   state.undo = [];
-}
-
-export function hasPendingStrikes(state: BattleState, creatureId: string): boolean {
-  return state.pending.some((s) => s.targetId === creatureId);
 }
 
 export function beginTurn(
@@ -22,19 +17,9 @@ export function beginTurn(
 ): DomainEvent[] {
   resetTurnScratch(state);
   state.activeId = creatureId;
-  const stance = state.stance[creatureId] ?? 0;
   delete state.stance[creatureId];
-
-  const guard = state.guards[creatureId] ?? [];
-  delete state.guards[creatureId];
-
-  const defending = hasPendingStrikes(state, creatureId);
-  if (defending) {
-    state.placedShields = guard.map((hex) => ({ ...hex }));
-    state.lockedShields = guard.length;
-  }
-  state.phase = defending ? 'defend' : 'act';
-  state.turnWill = rules.willPerTurn + (defending ? stance : 0);
+  state.phase = 'act';
+  state.turnWill = rules.willPerTurn;
 
   return [
     {
@@ -46,6 +31,7 @@ export function beginTurn(
 
 export function startRound(state: BattleState, rules: BattleRules): DomainEvent[] {
   state.round += 1;
+  state.wounds = {};
   const { draws, order } = rollRound(state);
   state.draws = draws;
   state.order = order;
@@ -72,10 +58,6 @@ export function advanceTurn(state: BattleState, rules: BattleRules): DomainEvent
 export function finishTurn(state: BattleState, stance: number, rules: BattleRules): DomainEvent[] {
   const creatureId = state.activeId;
   if (stance > 0) state.stance[creatureId] = stance;
-  const self = creatureById(state, creatureId);
-  if (state.phase === 'act' && self && isAlive(self) && state.placedShields.length) {
-    state.guards[creatureId] = state.placedShields.map((hex) => ({ ...hex }));
-  }
   resetTurnScratch(state);
   state.turnWill = 0;
   const ended: DomainEvent = { type: 'TURN_ENDED', payload: { creatureId, stance } };

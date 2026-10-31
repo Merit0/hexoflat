@@ -12,10 +12,10 @@ import {
   heroDoes,
   hexagonBoard,
   rejectionOf,
+  strikeOpened,
 } from './battle-test-setup';
 import { nextEnemyAction } from './ai/enemy-ai';
 import { projectBattleForViewer } from './projection';
-import { beginTurn } from './turn';
 
 function enemyFirst(
   creatures: BattleCreature[],
@@ -93,7 +93,7 @@ describe('REQ-BTL-010 archer', () => {
     );
     const shot = heroDoes(boxed, { kind: 'strike', targetId: 's1', hand: 'right' });
     expect(rejectionOf(shot.events)).toBeNull();
-    expect(shot.battle.pending[0].power).toBe(1);
+    expect(eventTypes(shot.events)).toContain('STRIKE_DEALT');
   });
 
   it('refuses a shot beyond three hexes', () => {
@@ -113,42 +113,41 @@ describe('REQ-BTL-010 archer', () => {
 
 describe('skeleton warrior (R-AI-2)', () => {
   it('walks up, strikes once, then steps away from the hero', () => {
-    const { battle, events } = enemyTurn(
+    const struck = enemyTurn(
       enemyFirst([hero({ q: 0, r: 0 }), enemyCreature('skeleton-warrior', 's1', { q: 3, r: 0 })]),
     );
-    const types = eventTypes(events);
+    const hit = heroDoes(struck.battle, { kind: 'take-hit' });
+    const rest = enemyTurn(hit.battle);
+    const types = [struck.events, hit.events, rest.events].flatMap(eventTypes);
     expect(types.filter((t) => t === 'STRIKE_DEALT')).toHaveLength(1);
     expect(types.lastIndexOf('CREATURE_MOVED')).toBeGreaterThan(types.indexOf('STRIKE_DEALT'));
-    const warrior = battle.creatures.find((c) => c.id === 's1')!;
-    expect(warrior.pos).not.toEqual(battle.pending[0].fromHex);
+    const warrior = rest.battle.creatures.find((c) => c.id === 's1')!;
+    expect(battleDistance(warrior.pos, { q: 0, r: 0 })).toBeGreaterThan(1);
   });
 
-  it('raises its shield on the ring hex nearest the hero, then blocks', () => {
+  it('raises its shield on the ring hex nearest the hero, and the hero then picks the side', () => {
     const battle = enemyFirst([
       hero({ q: 0, r: 0 }),
-      enemyCreature('skeleton-warrior', 's1', { q: 2, r: 0 }),
+      enemyCreature('skeleton-warrior', 's1', { q: 1, r: 0 }),
     ]);
-    battle.pending = [
-      {
-        id: 'p',
-        attackerId: 'hero',
-        targetId: 's1',
-        fromHex: { q: 1, r: 0 },
-        ring: [
-          { q: 1, r: 0 },
-          { q: 3, r: 0 },
-        ],
-        power: 2,
-      },
-    ];
-    beginTurn(battle, 's1', BATTLE_RULES);
-    const { events } = enemyTurn(battle);
-    expect(eventTypes(events).slice(0, 3)).toEqual([
+    const mine = giveTurn(battle, ['hero', 's1']);
+    const { battle: after, events } = heroDoes(mine, {
+      kind: 'strike',
+      targetId: 's1',
+      hand: 'right',
+    });
+    expect(eventTypes(events).slice(0, 4)).toEqual([
+      'STRIKE_DEALT',
+      'REACTION_OPENED',
       'SHIELD_PLACED',
-      'STRIKES_RESOLVED',
-      'PHASE_CHANGED',
+      'REACTION_AIMING',
     ]);
-    expect(events[0].payload).toMatchObject({ hex: { q: 1, r: 0 } });
+    expect(events[2].payload).toMatchObject({ hex: { q: 0, r: 0 } });
+    expect(after.reaction!.stage).toBe('aim');
+    const blocked = heroDoes(after, { kind: 'aim', hex: { q: 0, r: 0 } });
+    expect(blocked.events.find((e) => e.type === 'STRIKES_RESOLVED')!.payload).toMatchObject({
+      results: [{ outcome: 'blocked' }],
+    });
   });
 });
 
@@ -182,25 +181,21 @@ describe('REQ-BTL-013 enemy AI reads only the projection', () => {
   it.each(['skeleton-warrior', 'skeleton-king', 'skeleton-archer'])(
     '%s decides the same whatever the hidden side is',
     (kind) => {
-      const battle = enemyFirst([hero({ q: -1, r: 0 }), enemyCreature(kind, 'e', { q: 1, r: 0 })]);
-      battle.pending = [
-        {
-          id: 'p',
-          attackerId: 'hero',
-          targetId: 'e',
-          fromHex: { q: 0, r: 0 },
-          ring: [
-            { q: 0, r: 0 },
-            { q: 2, r: 0 },
-            { q: 1, r: 1 },
-          ],
-          power: 2,
-        },
-      ];
-      beginTurn(battle, 'e', BATTLE_RULES);
+      const start = giveTurn(
+        battleWith([hero({ q: 0, r: 0 }), enemyCreature(kind, 'e', { q: 1, r: 0 })]),
+        ['hero', 'e'],
+      );
+      start.creatures[1].pos = { q: 2, r: 0 };
+      const battle = strikeOpenedFar(start);
       const twin = structuredClone(battle);
-      twin.pending[0].fromHex = { q: 2, r: 0 };
+      twin.pending[0].fromHex = { q: 3, r: 0 };
       expect(decide(battle)).toEqual(decide(twin));
     },
   );
 });
+
+function strikeOpenedFar(start: BattleState): BattleState {
+  const next = structuredClone(start);
+  next.creatures[1].pos = { q: 1, r: 0 };
+  return strikeOpened(next, 'hero', 'e');
+}

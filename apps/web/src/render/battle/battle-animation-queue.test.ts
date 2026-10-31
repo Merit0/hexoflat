@@ -21,12 +21,13 @@ const strike: BattleAnimationStep = {
   targetId: 'hero',
   target: { q: 0, r: 0 },
   from: { q: 2, r: 0 },
+  toolKey: 'sword',
   ring: [{ q: 1, r: 0 }],
   durationMs: 400,
 };
 
 describe('BattleAnimationQueue', () => {
-  it('holds the enemy at its old hex, walks it to the next, then flies the sword from there', () => {
+  it('holds the enemy at its old hex, walks it to the next, then swings the tool round the attacker', () => {
     const queue = new BattleAnimationQueue(geo);
     queue.enqueue([walk, strike]);
 
@@ -37,8 +38,7 @@ describe('BattleAnimationQueue', () => {
 
     const during = queue.advance(150 + 200);
     expect(during.poses.has('s1')).toBe(false);
-    expect(during.fx?.ring).toEqual([{ q: 1, r: 0 }]);
-    expect(during.fx?.sword.x).toBeLessThan(200);
+    expect(during.fx?.toolKey).toBe('sword');
     expect(during.busy).toBe(true);
 
     const done = queue.advance(200);
@@ -88,20 +88,29 @@ describe('BattleAnimationQueue', () => {
 });
 
 describe('sampleStrikeFx', () => {
-  it('flies the sword from the attacker to the target and fades it out', () => {
+  it('starts the tool beside the attacker, on the side of the target, fading in', () => {
     const start = sampleStrikeFx(strike, 0, geo)!;
-    expect(start.sword).toMatchObject({ x: 200, y: 0, alpha: 1 });
-    expect(start.sword.rotation).toBeCloseTo(Math.PI);
-    const hit = sampleStrikeFx(strike, 0.75, geo)!;
-    expect(hit.sword.x).toBeCloseTo(0);
-    expect(hit.sword.y).toBeCloseTo(0);
-    expect(hit.ringAlpha).toBeGreaterThan(0.5);
-    expect(sampleStrikeFx(strike, 1, geo)!.sword.alpha).toBe(0);
+    expect(start.tool.x).toBeCloseTo(200 - 70);
+    expect(start.tool.y).toBeCloseTo(0);
+    expect(start.tool.alpha).toBe(0);
+    expect(sampleStrikeFx(strike, 0.2, geo)!.tool.alpha).toBe(1);
   });
 
-  it('flies a known-side sword from the striker towards the target', () => {
-    const fx = sampleStrikeFx({ ...strike, from: { q: -1, r: 0 } }, 0, geo)!;
-    expect(fx.sword).toMatchObject({ x: -100, y: 0 });
-    expect(fx.sword.rotation).toBeCloseTo(0);
+  it('goes once round the attacker hex, never round the target, and fades out', () => {
+    const half = sampleStrikeFx(strike, 0.5, geo)!;
+    expect(half.tool.x).toBeCloseTo(200 + 70);
+    expect(half.tool.y).toBeCloseTo(0);
+    for (const t of [0.1, 0.3, 0.6, 0.9]) {
+      const { tool } = sampleStrikeFx(strike, t, geo)!;
+      expect(Math.hypot(tool.x - 200, tool.y)).toBeCloseTo(70);
+    }
+    const end = sampleStrikeFx(strike, 1, geo)!;
+    expect(end.tool.x).toBeCloseTo(200 - 70);
+    expect(end.tool.alpha).toBe(0);
+  });
+
+  it('never shows the tool when the owner is unknown, so it cannot circle anyone else', () => {
+    const fx = sampleStrikeFx({ ...strike, from: null }, 0.5, geo)!;
+    expect(fx.tool.alpha).toBe(0);
   });
 });

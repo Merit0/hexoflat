@@ -333,12 +333,12 @@
     "stanceNote": "· {will} Will goes to stance",
     "wait": "{name} ({init}) is moving. Your stance holds",
     "waitStance": "{will} Will for the next block.",
+    "waitBlocking": "{name} is putting shields around — wait.",
     "victory": "Victory! All enemies have fallen.",
     "fallen": "Not enough hearts to survive that. {name} has fallen and returns to camp.",
     "leave": "Leave battle",
     "tag": {
       "yourTurn": "Your turn",
-      "defenseMode": "Defense mode",
       "next": "Next",
       "done": "Done",
       "fallen": "Fallen",
@@ -374,25 +374,25 @@
       "swap": "Swap"
     },
     "defend": {
-      "struck": "{count, plural, one {{name} struck you and stepped away.} other {# strikes are waiting for you.}}",
+      "struck": "{name} chose you!",
       "guess": "Guess the side:",
-      "tapRed": "tap red hexes on the board to raise shields.",
-      "shieldNote": "{shield} · {cost} Will each · stance gave +{stance}",
+      "tapRed": "tap hexes around you to raise shields before the line runs out.",
+      "shieldNote": "{shield} · free",
       "noShield": "No shield in hand — you can take one on your turn (swap, 4 Will).",
-      "block": "Block",
-      "dodge": "Dodge · {cost}",
       "takeHit": "Take hit"
+    },
+    "aim": {
+      "text": "Choose the hex to strike from. The defender raised shields somewhere around — you cannot see where. No choice in time — you strike from here.",
+      "none": "The defender raised no shield — the strike lands."
     },
     "task": {
       "seconds": "{seconds} s",
       "question": "{question} = ?",
       "title": {
-        "dodge": "Dodge!",
         "saw": "Saw — dodge!",
         "push": "Push!"
       },
       "text": {
-        "dodge": "Answer before the line runs out and the strike misses. Wrong or late — you take the hit.",
         "saw": "You stepped onto the saw. Answer before the line runs out to jump clear. Wrong or late — the saw takes half your hearts.",
         "push": "Answer before the line runs out to push. Wrong or late — the push fails and the Will is spent."
       }
@@ -421,8 +421,6 @@
       "struck": "Struck {name}. It only sees a red ring — step away to hide your side.",
       "blocked": "Blocked! Shields burned: {burned}.",
       "hitTaken": "The strike landed: −{hearts} heart. Shields burned: {burned}.",
-      "dodged": "Dodged! The answer was {answer} — the strike missed.",
-      "dodgeFailed": "{late, select, yes {Too slow} other {Wrong answer}} — it was {answer}. The strike lands.",
       "sawDodged": "Dodged the saw ({answer}) — thrown back, no damage.",
       "sawCut": "{late, select, yes {Too slow} other {Wrong answer}} — it was {answer}. The saw cuts — thrown back.",
       "displaced": "{mode, select, push {Pushed} other {Pulled}} {name}.{slid, select, yes { It slid on the oil.} other {}}{fell, select, yes { It fell off the ledge.} other {}}",
@@ -452,7 +450,6 @@
       "SHIELD_CAPACITY_REACHED": "Your shield covers no more sides.",
       "SHIELD_ALREADY_PLACED": "A shield already stands there.",
       "NO_SHIELD_THERE": "There is no shield there.",
-      "NO_SHIELD_PLACED": "Raise at least one shield first.",
       "NOT_IN_RING": "Shields go only on the red hexes.",
       "NOTHING_TO_UNDO": "No step to undo.",
       "OUT_OF_RANGE": "Out of range.",
@@ -463,14 +460,15 @@
       "TOO_CLOSE": "Too close for a ranged strike.",
       "NO_SUCH_ITEM": "There is no such item.",
       "NOT_USABLE": "This item cannot be used.",
-      "DEFENSE_MODE": "Defense mode: lower all shields to move."
+      "NOT_AN_OPTION": "You cannot strike from that hex.",
+      "AIM_PENDING": "Choose the hex of the strike first."
     },
     "actionName": {
       "place-shield": "Raising a shield",
       "remove-shield": "Lowering a shield",
-      "confirm-block": "Block",
       "take-hit": "Taking the hit",
-      "start-dodge": "Dodge",
+      "aim": "Choosing the side of the strike",
+      "reaction-timeout": "Time is up",
       "push": "Push",
       "answer-task": "Answer",
       "task-timeout": "Timeout",
@@ -488,13 +486,10 @@
       "unblock": "Lift",
       "use": "Use"
     },
-    "stage": {
-      "action": "Action",
-      "move": "Move"
-    },
     "warn": {
       "enemyTurn": "The enemy is acting — wait for it",
-      "defendFirst": "You are under attack — block, dodge or take the hit first",
+      "defendFirst": "You are under attack — put shields around you or take the hit",
+      "underAttack": "Under attack! Put shields around you — 5 s",
       "notNow": "That cannot be done right now"
     }
   },

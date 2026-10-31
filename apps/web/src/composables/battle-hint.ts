@@ -17,8 +17,6 @@ export const BATTLE_HINT_KEYS = [
   'struck',
   'blocked',
   'hitTaken',
-  'dodged',
-  'dodgeFailed',
   'sawDodged',
   'sawCut',
   'displaced',
@@ -31,9 +29,9 @@ export const BATTLE_HINT_KEYS = [
 export const BATTLE_ACTION_NAMES = [
   'place-shield',
   'remove-shield',
-  'confirm-block',
   'take-hit',
-  'start-dodge',
+  'aim',
+  'reaction-timeout',
   'push',
   'answer-task',
   'task-timeout',
@@ -55,8 +53,6 @@ const ID_DRIVEN_KEYS = [
   'hand.consumable',
   'hand.shield',
   'hand.struck',
-  'stage.action',
-  'stage.move',
   'action.strike',
   'action.push',
   'action.swap',
@@ -103,7 +99,7 @@ function rejection(events: DomainEvent[]): BattleMessage | null {
 }
 
 interface TaskResolved {
-  kind: 'dodge' | 'saw' | 'push';
+  kind: 'saw' | 'push';
   correct: boolean;
   late: boolean;
   answer: number;
@@ -111,8 +107,6 @@ interface TaskResolved {
 
 function taskMessage(task: TaskResolved): BattleMessage | null {
   const params = { answer: task.answer, late: task.late ? 'yes' : 'no' };
-  if (task.kind === 'dodge')
-    return { key: task.correct ? 'battle.hint.dodged' : 'battle.hint.dodgeFailed', params };
   if (task.kind === 'saw')
     return { key: task.correct ? 'battle.hint.sawDodged' : 'battle.hint.sawCut', params };
   return task.correct ? null : { key: 'battle.hint.displaceFailed', params };

@@ -29,7 +29,6 @@ export function moveCreature(
 ): DomainEvent[] | BattleRejection {
   if (!isAdjacentHex(mover.pos, hex)) return reject('NOT_ADJACENT');
   if (!isFreeHex(state, hex)) return reject('HEX_BLOCKED');
-  if (state.placedShields.length > 0) return reject('DEFENSE_MODE');
 
   const cost = stepCost(state, mover.pos, hex, rules);
   const refused = spendTurnWill(state, cost);

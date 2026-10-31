@@ -97,7 +97,7 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
   {
     id: 'skeleton-king',
     behaviour: 'king',
-    hp: 9,
+    hp: 11,
     weight: 3,
     force: 2,
     hands: { right: 'king-cleaver', left: 'king-shield' },

@@ -9,6 +9,7 @@ import { projectBattleForViewer } from './projection';
 import { nextEnemyAction } from './ai/enemy-ai';
 
 const MAX_ENEMY_ACTIONS = 64;
+const MAX_REACTION_ACTIONS = 8;
 
 export interface BattleResult {
   battle: BattleState;
@@ -32,7 +33,27 @@ function heroAction(
     return rejected(battle, reject('NOT_YOUR_TURN'), action.kind);
   const result = performAction(next, actor, action, atMs, rules);
   if (isRejection(result)) return rejected(battle, result, action.kind);
-  return { battle: next, events: result };
+  return { battle: next, events: [...result, ...enemyReacts(next, atMs, rules)] };
+}
+
+function enemyReacts(next: BattleState, atMs: number, rules: BattleRules): DomainEvent[] {
+  const events: DomainEvent[] = [];
+  for (
+    let i = 0;
+    i < MAX_REACTION_ACTIONS && next.reaction?.stage === 'block' && next.phase !== 'ended';
+    i++
+  ) {
+    const defender = creatureById(next, next.activeId);
+    if (!defender || defender.side !== 'enemies' || next.task) break;
+    const action = nextEnemyAction(projectBattleForViewer(next, 'enemies'), rules);
+    const result = performAction(next, defender, action, atMs, rules);
+    events.push(
+      ...(isRejection(result)
+        ? (performAction(next, defender, { kind: 'take-hit' }, atMs, rules) as DomainEvent[])
+        : result),
+    );
+  }
+  return events;
 }
 
 function stillActing(battle: BattleState, enemyId: string): boolean {
