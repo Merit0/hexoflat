@@ -14,6 +14,33 @@ export class BattleTabComponent extends BaseComponent {
     await expect(this.page.getByTestId('battle-turn-cost-value')).toHaveText(String(cost));
   }
 
+  async readTurnCost(): Promise<number> {
+    const text = await this.page.getByTestId('battle-turn-cost-value').innerText();
+    return Number(text);
+  }
+
+  async verifyCostTooHigh(tooHigh: boolean): Promise<void> {
+    const panel = this.page.getByTestId('battle-turn-cost');
+    if (tooHigh) await expect(panel).toHaveClass(/is-too-high/);
+    else await expect(panel).not.toHaveClass(/is-too-high/);
+  }
+
+  async pressEndTurn(): Promise<void> {
+    await this.page.getByTestId('battle-end-turn').click();
+  }
+
+  async pressUndo(): Promise<void> {
+    await this.page.getByTestId('battle-undo').click();
+  }
+
+  async verifyEndTurnHidden(): Promise<void> {
+    await expect(this.page.getByTestId('battle-end-turn')).toHaveCount(0);
+  }
+
+  async verifyInitiativeChips(count: number): Promise<void> {
+    await expect(this.page.getByTestId(/^battle-init-chip-/)).toHaveCount(count);
+  }
+
   async verifyBoardOpen(): Promise<void> {
     await expect(this.page.getByTestId('battle-board')).toBeVisible();
     await expect(this.page.getByTestId('battle-start')).toHaveCount(0);

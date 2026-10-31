@@ -153,6 +153,10 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return getHexNeighbors(coordinates);
     },
 
+    countExistingNeighbours(coordinates: TestHexCoordinates): number {
+      return getHexNeighbors(coordinates).filter((neighbour) => !!findTile(neighbour)).length;
+    },
+
     getDistance(from: TestHexCoordinates, to: TestHexCoordinates): number {
       return hexDistance(from, to);
     },

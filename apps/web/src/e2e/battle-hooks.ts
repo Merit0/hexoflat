@@ -4,6 +4,7 @@ import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleDistance, hexKey } from '@hexoflat/engine/battle/hex-battle-geom';
 import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { controlledHero } from '@/composables/battle-board-tap';
+import type { BattleState } from '@hexoflat/engine/battle/battle-state';
 import { useBattleStore } from '@/stores/battle-store';
 
 export function finishOpenBattle(outcome: 'victory' | 'defeat'): void {
@@ -61,23 +62,37 @@ export interface BattleSnapshot {
   heroDistances: Record<string, number>;
   placedShields: number;
   revealedShields: number;
+  heroFreeNeighbours: { q: number; r: number }[];
+  terrain: Record<string, number>;
   aimOptions: { q: number; r: number }[];
 }
 
-export function crowdTheHero(): void {
+export function crowdTheHero(adjacent = 2, far = 0): void {
   const store = useBattleStore();
   if (!store.battle) throw new Error('No battle is open');
   const battle = structuredClone(toRaw(store.battle));
   const hero = battle.creatures.find((creature) => creature.side === 'heroes');
   if (!hero) throw new Error('No hero in the battle');
-  const enemies = battle.creatures.filter((c) => c.side === 'enemies' && c.hp > 0).slice(0, 2);
-  const spots = Object.keys(battle.board)
+  const enemies = battle.creatures.filter((c) => c.side === 'enemies' && c.hp > 0);
+  const floor = Object.keys(battle.board)
     .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
-    .filter((hex) => battle.board[hexKey(hex)] === 'floor' && battleDistance(hex, hero.pos) === 1);
-  for (const enemy of enemies) {
-    const spot = spots.find((hex) => isFreeHex(battle, hex));
+    .filter((hex) => battle.board[hexKey(hex)] === 'floor');
+  const place = (enemy: (typeof enemies)[number], distance: number) => {
+    const spot = floor.find(
+      (hex) => battleDistance(hex, hero.pos) === distance && isFreeHex(battle, hex),
+    );
     if (spot) enemy.pos = spot;
-  }
+  };
+  enemies.slice(0, adjacent).forEach((enemy) => place(enemy, 1));
+  enemies.slice(adjacent, adjacent + far).forEach((enemy) => place(enemy, 2));
+  store.battle = battle;
+}
+
+export function holdTheWindowOpen(extraMs: number): void {
+  const store = useBattleStore();
+  if (!store.battle?.reaction) throw new Error('No block window is open');
+  const battle = structuredClone(toRaw(store.battle));
+  battle.reaction!.deadlineMs += extraMs;
   store.battle = battle;
 }
 
@@ -121,6 +136,26 @@ function heroDistanceTo(
   return hero ? battleDistance(hero.pos, pos) : -1;
 }
 
+function freeBesideHero(battle: BattleState): { q: number; r: number }[] {
+  const hero = battle.creatures.find((c) => c.side === 'heroes');
+  if (!hero) return [];
+  return Object.keys(battle.board)
+    .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
+    .filter(
+      (hex) =>
+        battle.board[hexKey(hex)] === 'floor' &&
+        battleDistance(hex, hero.pos) === 1 &&
+        isFreeHex(battle, hex),
+    );
+}
+
+function terrainCounts(battle: BattleState): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const terrain of Object.values(battle.board)) counts[terrain] = (counts[terrain] ?? 0) + 1;
+  counts.boulder = battle.boulders.length;
+  return counts;
+}
+
 export function readBattleSnapshot(): BattleSnapshot | null {
   const store = useBattleStore();
   const battle = store.battle;
@@ -162,6 +197,8 @@ export function readBattleSnapshot(): BattleSnapshot | null {
     ),
     placedShields: battle.placedShields.length,
     revealedShields: store.revealedShields.length,
+    heroFreeNeighbours: freeBesideHero(battle),
+    terrain: terrainCounts(battle),
     aimOptions: options.map((h) => ({ q: h.q, r: h.r })),
   };
 }
@@ -193,9 +230,13 @@ export function battleTestHooks() {
     getBattleSnapshot(): BattleSnapshot | null {
       return readBattleSnapshot();
     },
-    crowdTheHero(): void {
+    holdTheWindowOpen(extraMs: number): void {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      crowdTheHero();
+      holdTheWindowOpen(extraMs);
+    },
+    crowdTheHero(adjacent?: number, far?: number): void {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+      crowdTheHero(adjacent, far);
     },
     giveEnemyTheTurn(): void {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
@@ -204,9 +245,9 @@ export function battleTestHooks() {
     getBattleHexPoint(q: number, r: number): BattleHexPoint | null {
       return hexPointProbe ? hexPointProbe({ q, r }) : null;
     },
-    giveHeroTheTurn(): void {
+    giveHeroTheTurn(will = 20): void {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      giveHeroTheTurn(20);
+      giveHeroTheTurn(will);
     },
     finishBattle(outcome: 'victory' | 'defeat'): void {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;

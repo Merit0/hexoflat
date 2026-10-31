@@ -332,12 +332,12 @@
     "log": {
       "actor": "Battle",
       "started": "The battle begins.",
-      "turn": "{name} acts.",
-      "picks": "{attacker} picks {target}.",
-      "hit": "{attacker} hit {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
-      "blocked": "{attacker} struck {target} — blocked.",
-      "swept": "{attacker}'s swing also caught {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
-      "fell": "{name} has fallen.",
+      "turn": "takes the turn.",
+      "picks": "attacks {target}!",
+      "hit": "hits {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
+      "blocked": "strikes {target} — blocked.",
+      "swept": "swing also catches {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
+      "fell": "has fallen.",
       "victory": "Victory! All enemies have fallen.",
       "defeat": "Defeat — the hero returns to camp."
     },

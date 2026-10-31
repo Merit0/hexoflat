@@ -337,12 +337,12 @@
     "log": {
       "actor": "Бій",
       "started": "Бій почався.",
-      "turn": "Ходить {name}.",
-      "picks": "{attacker} обрав ціллю {target}.",
-      "hit": "{attacker} влучив у {target}: −{hearts, plural, one {# серце} few {# серця} other {# сердець}}.",
-      "blocked": "{attacker} вдарив {target} — заблоковано.",
-      "swept": "Помах {attacker} зачепив і {target}: −{hearts, plural, one {# серце} few {# серця} other {# сердець}}.",
-      "fell": "{name} упав.",
+      "turn": "ходить.",
+      "picks": "атакує {target}!",
+      "hit": "влучає в {target}: −{hearts, plural, one {# серце} few {# серця} other {# сердець}}.",
+      "blocked": "б'є {target} — заблоковано.",
+      "swept": "помах зачіпає і {target}: −{hearts, plural, one {# серце} few {# серця} other {# сердець}}.",
+      "fell": "падає.",
       "victory": "Перемога! Усі вороги полягли.",
       "defeat": "Поразка — герой повертається до табору."
     },

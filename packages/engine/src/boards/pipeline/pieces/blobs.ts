@@ -205,7 +205,15 @@ export const formBlobs: Piece<BlobsParams> = {
     const blobs = placeBlobCenters(draft, wanted, params.radius, rng);
     if (blobs.length === 0) return;
 
-    const entry = intBetween(0, blobs.length - 1, rng);
+    const middle = {
+      columnIndex: Math.floor(draft.frame.columns / 2),
+      rowIndex: Math.floor(draft.frame.rows / 2),
+    };
+    const outermost = Math.max(...blobs.map((blob) => hexDistance(blob.center, middle)));
+    const rim = blobs
+      .map((blob, index) => ({ index, far: hexDistance(blob.center, middle) }))
+      .filter((blob) => blob.far === outermost);
+    const entry = rim[intBetween(0, rim.length - 1, rng)].index;
     const edges = chooseEdges(buildEdges(blobs, params.radius), blobs.length, entry, params.link);
     const distances = graphDistances(blobs.length, edges, entry);
     const reachable = distances.filter((distance) => distance !== Infinity);

@@ -32,13 +32,13 @@ export function logBattleEvents(events: DomainEvent[], battle: BattleState | nul
         break;
       case 'TURN_STARTED': {
         const name = nameOf(String(payload.creatureId));
-        push(name, t('battle.log.turn', { name }));
+        push(name, t('battle.log.turn'));
         break;
       }
       case 'REACTION_OPENED': {
         const attacker = nameOf(String(payload.attackerId));
         const target = nameOf(String(payload.defenderId));
-        push(attacker, t('battle.log.picks', { attacker, target }));
+        push(attacker, t('battle.log.picks', { target }));
         break;
       }
       case 'STRIKES_RESOLVED': {
@@ -48,8 +48,8 @@ export function logBattleEvents(events: DomainEvent[], battle: BattleState | nul
           const attacker = nameOf(result.attackerId);
           const text =
             result.outcome === 'hit'
-              ? t('battle.log.hit', { attacker, target, hearts: result.damage / 2 })
-              : t('battle.log.blocked', { attacker, target });
+              ? t('battle.log.hit', { target, hearts: result.damage / 2 })
+              : t('battle.log.blocked', { target });
           push(attacker, text);
         }
         break;
@@ -57,15 +57,12 @@ export function logBattleEvents(events: DomainEvent[], battle: BattleState | nul
       case 'STRIKE_SWEPT': {
         const attacker = nameOf(String(payload.attackerId));
         const target = nameOf(String(payload.victimId));
-        push(
-          attacker,
-          t('battle.log.swept', { attacker, target, hearts: Number(payload.damage) / 2 }),
-        );
+        push(attacker, t('battle.log.swept', { target, hearts: Number(payload.damage) / 2 }));
         break;
       }
       case 'CREATURE_FELL': {
         const name = nameOf(String(payload.creatureId));
-        push(name, t('battle.log.fell', { name }));
+        push(name, t('battle.log.fell'));
         break;
       }
       case 'BATTLE_ENDED':

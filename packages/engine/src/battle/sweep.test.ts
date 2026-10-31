@@ -111,4 +111,19 @@ describe('melee sweep (the weapon on its way hits everyone it passes)', () => {
     expect(eventTypes(events)).not.toContain('STRIKE_SWEPT');
     expect(after.creatures.find((c) => c.id === 's2')!.hp).toBe(6);
   });
+
+  it('sweeps with an empty hand too, for the fist damage, never past two hexes', () => {
+    const battle = giveTurn(
+      battleWith([
+        hero({ q: 0, r: 0 }, { hp: 12, maxHp: 12, hands: { right: null, left: null } }),
+        skeleton('s1', { q: 1, r: 0 }, FIELD),
+        skeleton('s2', { q: 0, r: 1 }, FIELD),
+        skeleton('s3', { q: -2, r: 0 }, FIELD),
+      ]),
+      ['hero', 's1', 's2', 's3'],
+    );
+    const { battle: after } = heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'right' });
+    expect(after.creatures.find((c) => c.id === 's2')!.hp).toBe(5);
+    expect(after.creatures.find((c) => c.id === 's3')!.hp).toBe(6);
+  });
 });

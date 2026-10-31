@@ -23,6 +23,9 @@ type Snapshot = NonNullable<Awaited<ReturnType<CampingMapPage['hexBoard']['readB
 export class BattleFlowFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
   private before: Snapshot | null = null;
+  private shownCost = 0;
+  private walkTo: { q: number; r: number } | null = null;
+  private tappedShields: { q: number; r: number }[] = [];
   private attackerId: string | null = null;
 
   private async snapshot(): Promise<Snapshot> {
@@ -251,8 +254,8 @@ export class BattleFlowFeature extends BaseFeature {
   async verifyTheBattleIsInTheEventsLog(): Promise<void> {
     await this.step('The Events tab lists the strike and the pick of the target', async () => {
       await new SwitchHeroBoardTabFeature().switchTo('events');
-      await this.campingMap.eventsLog.verifyHasRowMatching(/влучив|hit|заблоковано|blocked/);
-      await this.campingMap.eventsLog.verifyHasRowMatching(/обрав ціллю|picks/);
+      await this.campingMap.eventsLog.verifyHasRowMatching(/влучає|hits|заблоковано|blocked/);
+      await this.campingMap.eventsLog.verifyHasRowMatching(/атакує|attacks/);
     });
   }
 
@@ -292,6 +295,34 @@ export class BattleFlowFeature extends BaseFeature {
       await this.campingMap.battleTab.waitForBoardStill();
       this.before = await this.snapshot();
     });
+  }
+
+  async crowdTheHeroWithOneBesideAndOneFar(): Promise<void> {
+    await this.step('Stand two enemies beside the hero and a third two hexes away', async () => {
+      await this.campingMap.hexBoard.crowdTheHero(2, 1);
+      await this.campingMap.battleTab.waitForBoardStill();
+      this.before = await this.snapshot();
+    });
+  }
+
+  async verifyOnlyTheEnemiesBesideTheHeroWereSwept(): Promise<void> {
+    await this.step(
+      'The enemy beside him is hurt, the one two hexes away is untouched',
+      async () => {
+        await expect
+          .poll(async () => (await this.snapshot()).reaction, { timeout: WINDOW_RESOLVES_MS })
+          .toBeNull();
+        const now = await this.snapshot();
+        const was = this.before!;
+        const enemies = was.creatures.filter((c) => c.side === 'enemies');
+        const far = enemies.find((c) => was.heroDistances[c.id] === 2)!;
+        const bystander = enemies.find(
+          (c) => was.heroDistances[c.id] === 1 && c.id !== this.attackerId,
+        )!;
+        expect(this.creature(now, far.id).hp).toBe(far.hp);
+        expect(this.creature(now, bystander.id).hp).toBeLessThan(bystander.hp);
+      },
+    );
   }
 
   async crowdTheHeroWithTwoEnemies(): Promise<void> {
@@ -378,5 +409,232 @@ export class BattleFlowFeature extends BaseFeature {
         );
       },
     );
+  }
+
+  private async pointOf(hex: { q: number; r: number }) {
+    const point = await this.campingMap.hexBoard.battleHexPoint(hex);
+    if (!point) throw new Error('The battle board did not report a point for that hex.');
+    return point;
+  }
+
+  async verifyInitiativeChipsMatchTheCreatures(): Promise<void> {
+    await this.step('The initiative strip shows one chip per creature', async () => {
+      await this.campingMap.battleTab.verifyInitiativeChips(
+        (await this.snapshot()).creatures.length,
+      );
+    });
+  }
+
+  async verifyOnlyApprovedHexesOnTheField(): Promise<void> {
+    await this.step('The field has floor, the border wall and one or two saws only', async () => {
+      const { terrain } = await this.snapshot();
+      expect(terrain.floor).toBeGreaterThan(0);
+      expect(terrain.wall).toBeGreaterThan(0);
+      expect(terrain.saw).toBeGreaterThanOrEqual(1);
+      expect(terrain.saw).toBeLessThanOrEqual(2);
+      for (const key of ['ledge', 'rubble', 'oil', 'boulder']) {
+        expect(terrain[key] ?? 0, key).toBe(0);
+      }
+    });
+  }
+
+  async verifyNoEndTurnButtonInTheWindow(): Promise<void> {
+    await this.step('The hero has no END TURN button while he defends', async () => {
+      await this.campingMap.battleTab.verifyEndTurnHidden();
+    });
+  }
+
+  async giveHeroTheTurnWithWill(will: number): Promise<void> {
+    await this.step(`Give the hero the turn with ${will} Will`, async () => {
+      await this.campingMap.hexBoard.giveHeroTheTurn(will);
+      await this.campingMap.battleTab.waitForBoardStill();
+      this.before = await this.snapshot();
+    });
+  }
+
+  private nearestEnemy(snapshot: Snapshot) {
+    return snapshot.creatures
+      .filter((c) => c.side === 'enemies' && c.hp > 0)
+      .sort((a, b) => snapshot.heroDistances[a.id] - snapshot.heroDistances[b.id])[0];
+  }
+
+  async hoverTheNearestEnemyWithTheWeapon(): Promise<void> {
+    await this.step('Open the weapon with the wheel and hover the nearest enemy', async () => {
+      const enemy = this.nearestEnemy(await this.snapshot());
+      this.attackerId = enemy.id;
+      await this.campingMap.battleTab.scrollTheHandsWithTheWheel();
+      await this.campingMap.battleTab.hoverBoardPoint(await this.pointOf(enemy));
+      await this.campingMap.battleTab.verifyToolHexOffers(/Атакувати|Attack/);
+    });
+  }
+
+  async hoverAnEmptyHexWithTheWeapon(): Promise<void> {
+    await this.step('Open the weapon with the wheel and hover an empty hex', async () => {
+      const [hex] = (await this.snapshot()).heroFreeNeighbours;
+      await this.campingMap.battleTab.scrollTheHandsWithTheWheel();
+      await this.campingMap.battleTab.hoverBoardPoint(await this.pointOf(hex));
+    });
+  }
+
+  async rememberTheDisplayedCost(): Promise<void> {
+    await this.step('Remember the cost the panel shows', async () => {
+      await expect.poll(() => this.campingMap.battleTab.readTurnCost()).toBeGreaterThan(0);
+      this.shownCost = await this.campingMap.battleTab.readTurnCost();
+    });
+  }
+
+  async verifyTheCostIsZero(): Promise<void> {
+    await this.step('The panel shows no cost for an action that does nothing', async () => {
+      await this.campingMap.battleTab.verifyTurnCost(0);
+      await this.campingMap.battleTab.verifyCostTooHigh(false);
+    });
+  }
+
+  async verifyTheCostIsRed(price: number): Promise<void> {
+    await this.step('The cost is shown red when the Will does not cover it', async () => {
+      await this.campingMap.battleTab.verifyTurnCost(price);
+      await this.campingMap.battleTab.verifyCostTooHigh(true);
+    });
+  }
+
+  async pressTheToolAction(): Promise<void> {
+    await this.step('Press the action in the tool hex', async () => {
+      await this.campingMap.battleTab.pressToolHexAction();
+    });
+  }
+
+  async verifyTheWillSpentEqualsTheShownCost(): Promise<void> {
+    await this.step('The Will really spent equals the cost the panel showed', async () => {
+      await expect
+        .poll(async () => (await this.snapshot()).reaction, { timeout: WINDOW_RESOLVES_MS })
+        .toBeNull();
+      const now = await this.snapshot();
+      expect(this.before!.turnWill - now.turnWill).toBe(this.shownCost);
+      await this.campingMap.battleTab.verifyTurnCost(0);
+    });
+  }
+
+  async hoverAFreeHexToWalk(): Promise<void> {
+    await this.step('Hover a free hex beside the hero in MOVE', async () => {
+      const [hex] = (await this.snapshot()).heroFreeNeighbours;
+      this.walkTo = hex;
+      await this.campingMap.battleTab.hoverBoardPoint(await this.pointOf(hex));
+    });
+  }
+
+  async tapTheHexToWalk(): Promise<void> {
+    await this.step('Tap the hex to walk there', async () => {
+      await this.campingMap.battleTab.clickBoardPoint(await this.pointOf(this.walkTo!));
+    });
+  }
+
+  async verifyTheHeroWalkedAndPaidTheShownCost(): Promise<void> {
+    await this.step('The hero stands on the hex and paid the shown cost', async () => {
+      await expect
+        .poll(async () => {
+          const hero = this.hero(await this.snapshot());
+          return hero.q === this.walkTo!.q && hero.r === this.walkTo!.r;
+        })
+        .toBe(true);
+      const now = await this.snapshot();
+      expect(this.before!.turnWill - now.turnWill).toBe(this.shownCost);
+      await this.campingMap.battleTab.verifyTurnCost(0);
+    });
+  }
+
+  async undoTheStep(): Promise<void> {
+    await this.step('Press UNDO and get the step and the Will back', async () => {
+      await this.campingMap.battleTab.pressUndo();
+      await expect
+        .poll(async () => {
+          const now = await this.snapshot();
+          const hero = this.hero(now);
+          const start = this.hero(this.before!);
+          return hero.q === start.q && hero.r === start.r && now.turnWill === this.before!.turnWill;
+        })
+        .toBe(true);
+    });
+  }
+
+  async endTheTurn(): Promise<void> {
+    await this.step('Press END TURN and the turn passes on', async () => {
+      const heroId = this.hero(await this.snapshot()).id;
+      await this.campingMap.battleTab.pressEndTurn();
+      await expect.poll(async () => (await this.snapshot()).activeId !== heroId).toBe(true);
+    });
+  }
+
+  async holdTheWindowOpen(): Promise<void> {
+    await this.step('Give the block window a minute so the taps are not rushed', async () => {
+      await this.campingMap.hexBoard.holdTheWindowOpen(60_000);
+    });
+  }
+
+  async tapShieldHexes(count: number): Promise<void> {
+    await this.step(`Tap ${count} free hexes around the hero to raise shields`, async () => {
+      const hexes = (await this.snapshot()).heroFreeNeighbours.slice(0, count);
+      this.tappedShields = hexes;
+      for (const hex of hexes) {
+        await this.campingMap.battleTab.clickBoardPoint(await this.pointOf(hex));
+      }
+    });
+  }
+
+  async tapTheFirstShieldAgain(): Promise<void> {
+    await this.step('Tap a raised shield again to take it down', async () => {
+      await this.campingMap.battleTab.clickBoardPoint(await this.pointOf(this.tappedShields[0]));
+    });
+  }
+
+  async verifyShieldsRaised(placed: number, capacity: number): Promise<void> {
+    await this.step(`${placed} of ${capacity} shields stand`, async () => {
+      await this.campingMap.battleTab.verifyShieldCount(placed, capacity);
+    });
+  }
+
+  async liftTheShieldWithTheToolHex(): Promise<void> {
+    await this.step('The tool hex now offers Lift and takes the shield down', async () => {
+      await this.campingMap.battleTab.verifyToolHexOffers(/Зняти|Lift/);
+      await this.campingMap.battleTab.pressToolHexAction();
+    });
+  }
+
+  async waitForTheAimToTimeOut(): Promise<void> {
+    await this.step('Let the aim stage run out without choosing a hex', async () => {
+      await expect
+        .poll(async () => {
+          const now = await this.snapshot();
+          return now.reaction === null || now.reaction.stage === 'aim';
+        })
+        .toBe(true);
+      await expect
+        .poll(async () => (await this.snapshot()).reaction, { timeout: WINDOW_RESOLVES_MS })
+        .toBeNull();
+    });
+  }
+
+  async verifyTheHeroStandsBesideTheTargetAfterTheAim(): Promise<void> {
+    await this.step('The hero stands beside the target, nothing is pending', async () => {
+      const now = await this.snapshot();
+      expect(now.heroDistances[this.attackerId!]).toBe(1);
+      expect(now.activeId).toBe(this.hero(now).id);
+      await this.campingMap.battleTab.verifyTurnCost(0);
+    });
+  }
+
+  async loseTheBattleAndLeave(): Promise<void> {
+    await this.step('Lose the battle and press LEAVE BATTLE', async () => {
+      await this.campingMap.hexBoard.finishBattle('defeat');
+      await this.campingMap.battleTab.leaveBattle();
+    });
+  }
+
+  async verifyTheDefeatSentTheHeroHome(): Promise<void> {
+    await this.step('The battle is closed and the hero is back alive at the camp', async () => {
+      await this.campingMap.battleTab.verifyBoardClosed();
+      await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(false);
+      const health = await this.campingMap.heroBoardPanel.getHeroHealth();
+      expect(health.current).toBeGreaterThan(0);
+    });
   }
 }

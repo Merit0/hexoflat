@@ -41,7 +41,8 @@ describe('FORM:blobs', () => {
         expect(tiles.length).toBeLessThan(BOARD_COLUMNS * BOARD_ROWS);
         for (const tile of tiles) {
           const onEdge = tile.coordinates.columnIndex === 0 || tile.coordinates.rowIndex === 0;
-          if (onEdge) expect(tile.hexobject?.hexobjectKey).toBe(wall);
+          if (onEdge)
+            expect([wall, HEXOBJECT_KEYS.CAVE_EXIT]).toContain(tile.hexobject?.hexobjectKey);
         }
       }
     },
@@ -79,19 +80,27 @@ describe('FORM:blobs', () => {
     }
   });
 
-  it('GATES:entry puts the entry object on a tile with floor on every side', () => {
+  it('GATES:entry builds the way in into the outer wall: on the border, with floor to step onto', () => {
     for (let i = 0; i < 100; i += 1) {
       const built = runBoardPipeline(caveShape('branch'), { seed: `entry-${i}` });
       const byKey = new Map(built.map.tiles.map((tile) => [coordinateKey(tile.coordinates), tile]));
       const entry = built.map.tiles.find(
         (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAVE_EXIT,
       );
-      expect(entry).toBeDefined();
-      for (const neighbor of getHexNeighbors(entry!.coordinates)) {
-        expect(byKey.get(coordinateKey(neighbor))?.hexobject?.hexobjectKey).not.toBe(
-          HEXOBJECT_KEYS.STONE_WALL,
-        );
-      }
+      expect(entry, `entry-${i}`).toBeDefined();
+      const neighbours = getHexNeighbors(entry!.coordinates).map((n) =>
+        byKey.get(coordinateKey(n)),
+      );
+      expect(
+        neighbours.some((tile) => !tile),
+        `border entry-${i}`,
+      ).toBe(true);
+      expect(
+        neighbours.some(
+          (tile) => tile && tile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.STONE_WALL,
+        ),
+        `floor entry-${i}`,
+      ).toBe(true);
     }
   });
 

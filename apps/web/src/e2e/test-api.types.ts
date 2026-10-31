@@ -46,6 +46,7 @@ export interface HexoflatTestApi {
   getTileFraction(coordinates: TestHexCoordinates): TestTileFraction;
 
   getNeighbors(coordinates: TestHexCoordinates): TestHexCoordinates[];
+  countExistingNeighbours(coordinates: TestHexCoordinates): number;
 
   getDistance(from: TestHexCoordinates, to: TestHexCoordinates): number;
 
@@ -77,7 +78,7 @@ export interface HexoflatTestApi {
   placeSquadNextToHero(key: string): TestHexCoordinates;
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): void;
-  giveHeroTheTurn(): void;
+  giveHeroTheTurn(will?: number): void;
   getBattleHands(): {
     right: string | null;
     left: string | null;
@@ -98,10 +99,13 @@ export interface HexoflatTestApi {
     heroDistances: Record<string, number>;
     placedShields: number;
     revealedShields: number;
+    heroFreeNeighbours: { q: number; r: number }[];
+    terrain: Record<string, number>;
     aimOptions: { q: number; r: number }[];
   } | null;
   giveEnemyTheTurn(): void;
-  crowdTheHero(): void;
+  crowdTheHero(adjacent?: number, far?: number): void;
+  holdTheWindowOpen(extraMs: number): void;
   getBattleHexPoint(q: number, r: number): { x: number; y: number } | null;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;

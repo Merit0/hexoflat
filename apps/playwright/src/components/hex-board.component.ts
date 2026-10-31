@@ -89,8 +89,8 @@ export class HexBoardComponent extends BaseComponent {
     return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleHands());
   }
 
-  async giveHeroTheTurn(): Promise<void> {
-    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveHeroTheTurn());
+  async giveHeroTheTurn(will?: number): Promise<void> {
+    await this.page.evaluate((value) => window.__HEXOFLAT_TEST__!.giveHeroTheTurn(value), will);
   }
 
   async watchSprite(url: RegExp): Promise<() => Promise<void>> {
@@ -98,6 +98,28 @@ export class HexBoardComponent extends BaseComponent {
     return async () => {
       expect((await response).status()).toBe(200);
     };
+  }
+
+  async findTilesWithKey(key: string): Promise<TestHexCoordinates[]> {
+    return this.page.evaluate((k) => window.__HEXOFLAT_TEST__!.findTilesWithKey(k), key);
+  }
+
+  async countExistingNeighbours(coordinates: TestHexCoordinates): Promise<number> {
+    return this.page.evaluate(
+      (c) => window.__HEXOFLAT_TEST__!.countExistingNeighbours(c),
+      coordinates,
+    );
+  }
+
+  async readHeroCoordinates(): Promise<TestHexCoordinates | null> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getHeroCoordinates());
+  }
+
+  async distanceBetween(from: TestHexCoordinates, to: TestHexCoordinates): Promise<number> {
+    return this.page.evaluate(([a, b]) => window.__HEXOFLAT_TEST__!.getDistance(a, b), [
+      from,
+      to,
+    ] as const);
   }
 
   async readBattleSnapshot() {
@@ -111,8 +133,15 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
-  async crowdTheHero(): Promise<void> {
-    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.crowdTheHero());
+  async holdTheWindowOpen(extraMs: number): Promise<void> {
+    await this.page.evaluate((ms) => window.__HEXOFLAT_TEST__!.holdTheWindowOpen(ms), extraMs);
+  }
+
+  async crowdTheHero(adjacent?: number, far?: number): Promise<void> {
+    await this.page.evaluate(([near, away]) => window.__HEXOFLAT_TEST__!.crowdTheHero(near, away), [
+      adjacent,
+      far,
+    ] as const);
   }
 
   async giveEnemyTheTurn(): Promise<void> {
