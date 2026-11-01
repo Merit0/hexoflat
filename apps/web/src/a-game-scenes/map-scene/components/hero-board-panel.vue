@@ -288,9 +288,10 @@ watch(
   color: rgba(255, 255, 255, 0.9);
 
   font-weight: 1000;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: 20px;
+  white-space: nowrap;
 }
 
 .tab.is-active {

@@ -44,8 +44,11 @@ export function useFitToWidth() {
       wrapperBox.height / nextContentHeight,
     );
     scale.value = nextScale;
-    offsetX.value = Math.max(0, (wrapperBox.width - nextContentWidth * nextScale) / 2);
-    offsetY.value = Math.max(0, (wrapperBox.height - nextContentHeight * nextScale) / 2);
+    offsetX.value = Math.max(0, Math.round((wrapperBox.width - nextContentWidth * nextScale) / 2));
+    offsetY.value = Math.max(
+      0,
+      Math.round((wrapperBox.height - nextContentHeight * nextScale) / 2),
+    );
   }
 
   let wrapperObserver: ResizeObserver | null = null;
