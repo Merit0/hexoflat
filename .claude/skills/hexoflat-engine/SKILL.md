@@ -131,3 +131,4 @@ The old combat is gone (B6 deleted `src/combat/`, `EHexActionType.ATTACK/BLOCK` 
 - [ ] No `Math.random()` — generator injected
 - [ ] Tests run without Pinia or jsdom
 - [ ] `CONTENT_VERSION` bumped only if the change is genuinely breaking
+- **Window deadline, fuzz, cave exit (Oleh, 2026-11-01).** `performAction`'s guard rejects `place-shield`, `remove-shield` and `aim` with `WINDOW_CLOSED` once `atMs` passes `reaction.deadlineMs` (`reaction-timeout` and `take-hit` still close it). The cave `gates: entry` piece builds `cave-exit` into the outer wall of the entry room (the room farthest from the centre, chosen in `blobs`), so the entry coordinate is a wall cell on the border. `battle-fuzz.test.ts` (random play incl. garbage actions, `FUZZ_BATTLES` env) and `battle-adhoc.test.ts` guard the invariants; add a new rule's invariant there. Read `docs/battle-system/BATTLE-HANDOFF.md` first.
