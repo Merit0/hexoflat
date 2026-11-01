@@ -24,7 +24,12 @@
         {{ t('battle.enemies') }}
         <small>{{ t('battle.enemiesLeft', { count: view.enemiesLeft }) }}</small>
       </div>
-      <battle-creature-row v-for="row in view.enemies" :key="row.id" :row="row" />
+      <battle-creature-row
+        v-for="row in view.enemies"
+        :key="row.id"
+        :row="row"
+        @select="selectEnemy"
+      />
     </template>
   </section>
 </template>
@@ -38,7 +43,8 @@ import BattleHeroControls from './battle-hero-controls.vue';
 import BattleCreatureRow from './battle-creature-row.vue';
 
 const { t } = useI18n();
-const { view, ui, takeHit, pickHand, pickAction, swapFrom, undo, endTurn, leave } = useBattleView();
+const { view, ui, selectEnemy, takeHit, pickHand, pickAction, swapFrom, undo, endTurn, leave } =
+  useBattleView();
 useBattleReaction();
 </script>
 

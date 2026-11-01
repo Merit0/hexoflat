@@ -13,6 +13,7 @@ import { reachRefusal, strikingItem } from '@hexoflat/engine/battle/strike';
 import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { controlledHero } from './battle-board-tap';
+import { effectiveTarget } from './battle-target';
 import type { BattleStage } from './battle-stage';
 
 export type BattleToolAction = 'attack' | 'block' | 'unblock' | 'use';
@@ -31,7 +32,12 @@ export interface BattleToolHex {
 export interface BattleToolInput {
   projection: BattleProjection | null;
   localHeroIds: readonly string[];
-  ui: { stage: BattleStage; hand: BattleHand | null; toolAt: BattleHex | null };
+  ui: {
+    stage: BattleStage;
+    hand: BattleHand | null;
+    toolAt: BattleHex | null;
+    selectedId?: string | null;
+  };
   rules: BattleRules;
 }
 
@@ -140,6 +146,15 @@ function decide(
   return useDecision(item);
 }
 
+function defaultAnchor(
+  self: BattleCreature,
+  target: BattleCreature | null,
+  chosen: boolean,
+): BattleHex | null {
+  if (!target) return null;
+  return chosen || isAdjacentHex(self.pos, target.pos) ? target.pos : null;
+}
+
 export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null {
   const view = input.projection;
   const self = controlledHero(view, input.localHeroIds);
@@ -149,7 +164,15 @@ export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null
   const hand = input.ui.hand;
   if (!hand) return null;
   const item = self.hands[hand];
-  const at = toolAnchor(view, self, input.ui.toolAt, item);
+  const target = effectiveTarget(view, self, input.ui.selectedId);
+  const striking = !item || !!item.power;
+  const at = toolAnchor(
+    view,
+    self,
+    input.ui.toolAt ??
+      defaultAnchor(self, striking ? target : null, target?.id === input.ui.selectedId),
+    item,
+  );
   if (!at) return null;
   const decision = decide(view, self, hand, at, input.rules);
   return {

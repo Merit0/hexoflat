@@ -4,8 +4,8 @@ import type { BattleRules } from './battle-content';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleState } from './battle-state';
 import { isRejection, reject, type BattleRejection } from './battle-rejection';
-import { placeShield, reactionTimeout, removeShield, takeHit } from './defend';
-import { aimStrike, openReaction } from './reaction';
+import { placeShield, reactionTimeout, removeShield, shieldCapacity, takeHit } from './defend';
+import { aimStrike, finishBlock, openReaction } from './reaction';
 import { startPush } from './displace-actions';
 import { setHands, swapItem, useItem } from './items';
 import { moveCreature, undoStep } from './movement';
@@ -63,7 +63,10 @@ function strikeAndReact(
   const dealt = strike(state, actor, action.targetId, action.hand, rules);
   if (isRejection(dealt)) return dealt;
   const target = state.creatures.find((c) => c.id === action.targetId)!;
-  return [...dealt, ...openReaction(state, actor, target, action.hand, atMs, rules)];
+  const opened = openReaction(state, actor, target, action.hand, atMs, rules);
+  if (shieldCapacity(target, rules) > 0) return [...dealt, ...opened];
+  const settled = finishBlock(state, target, atMs, rules);
+  return isRejection(settled) ? settled : [...dealt, ...opened, ...settled];
 }
 
 export function performAction(

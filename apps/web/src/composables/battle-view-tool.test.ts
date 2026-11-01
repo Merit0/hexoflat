@@ -7,6 +7,7 @@ import { giveTurn, hero, skeleton } from '@hexoflat/engine/battle/battle-test-se
 import { useBattleStore } from '@/stores/battle-store';
 import { testDeploy } from '@/stores/battle-store.fixture';
 import { buildBattleView } from './battle-view';
+import { battleTapActions } from './battle-board-tap';
 import type { BattleUiState } from './battle-view-types';
 
 const NAMES: Record<string, string> = { hero: 'Merito', s1: 'Skeleton', s2: 'Skeleton' };
@@ -88,7 +89,7 @@ describe('battle tool hex and statuses', () => {
   it('shows a tool only in ACTION', () => {
     startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
     expect(viewOf(MOVE).board?.tool).toBeNull();
-    expect(viewOf(ACTION).board?.tool).toMatchObject({ hand: 'right', action: null });
+    expect(viewOf(ACTION).board?.tool).toMatchObject({ hand: 'right' });
   });
 
   it('offers no shield action on the hero turn', () => {
@@ -168,5 +169,114 @@ describe('battle tool hex and statuses', () => {
       expect(walk.turnCost).toBeGreaterThan(2);
       expect(walk.costTooHigh).toBe(true);
     });
+  });
+});
+
+describe('auto-selecting the closest foe', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  const CLOSE_AND_FAR = [
+    hero({ q: 0, r: 0 }),
+    skeleton('s1', { q: 1, r: 0 }),
+    skeleton('s2', { q: 0, r: 3 }),
+  ];
+
+  it('selects the only foe in a 1 on 1 fight', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]);
+    expect(viewOf(MOVE).enemies.map((r) => r.selected)).toEqual([true]);
+  });
+
+  it('selects the closest of several foes and aims the weapon at it', () => {
+    startedOn(['hero', 's1', 's2'], CLOSE_AND_FAR);
+    const view = viewOf(ACTION);
+    expect(view.enemies.find((r) => r.id === 's1')?.selected).toBe(true);
+    expect(view.enemies.find((r) => r.id === 's2')?.selected).toBe(false);
+    expect(view.board?.tool).toMatchObject({
+      action: 'attack',
+      targetId: 's1',
+      at: { q: 1, r: 0 },
+    });
+    expect(view.board?.overlay.marks).toContainEqual({ hex: { q: 1, r: 0 }, tone: 'selected' });
+  });
+
+  it('lets the hero reselect another foe', () => {
+    startedOn(['hero', 's1', 's2'], CLOSE_AND_FAR);
+    const view = viewOf({ ...ACTION, selectedId: 's2' });
+    expect(view.enemies.find((r) => r.id === 's2')?.selected).toBe(true);
+    expect(view.enemies.find((r) => r.id === 's1')?.selected).toBe(false);
+    expect(view.board?.tool).toMatchObject({ targetId: 's2' });
+  });
+
+  it('keeps the tool hex on the hovered hex instead of jumping to the target', () => {
+    startedOn(['hero', 's1', 's2'], CLOSE_AND_FAR);
+    const hovered = viewOf({ ...ACTION, toolAt: { q: -1, r: 0 } }).board?.tool;
+    expect(hovered).toMatchObject({ at: { q: -1, r: 0 }, action: null });
+  });
+
+  it('falls back to the closest foe when the selection is not a living foe', () => {
+    startedOn(['hero', 's1', 's2'], CLOSE_AND_FAR);
+    const view = viewOf({ ...ACTION, selectedId: 'hero' });
+    expect(view.enemies.find((r) => r.id === 's1')?.selected).toBe(true);
+  });
+
+  it('keeps moving free without any manual selection', () => {
+    startedOn(['hero', 's1', 's2'], CLOSE_AND_FAR);
+    expect(
+      battleTapActions({
+        projection: useBattleStore().projection,
+        localHeroIds: ['hero'],
+        mode: 'move',
+        hex: { q: -1, r: 0 },
+        rules: BATTLE_RULES,
+      }),
+    ).toEqual([{ kind: 'move', hex: { q: -1, r: 0 } }]);
+    expect(viewOf({ ...MOVE, hover: { q: -1, r: 0 } }).board?.preview).not.toBeNull();
+  });
+});
+
+describe('decoy shields around the selected foe', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  const shieldBearer = () =>
+    skeleton('s1', { q: 2, r: 0 }, { hands: { right: null, left: battleItem('wooden-shield') } });
+  const decoys = (ui: BattleUiState) =>
+    viewOf(ui)
+      .board!.overlay.marks.filter((m) => m.tone === 'shield')
+      .map((m) => `${m.hex.q},${m.hex.r}`)
+      .sort();
+
+  it('fills every free hex around the selected foe, hiding the real ones', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), shieldBearer()]);
+    const around = decoys(MOVE);
+    expect(around.length).toBeGreaterThan(2);
+    expect(around).not.toContain('2,0');
+  });
+
+  it('shows nothing around a foe without a shield', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 2, r: 0 })]);
+    expect(decoys(MOVE)).toEqual([]);
+  });
+
+  it('gives way to the revealed real shields after the attack', () => {
+    startedOn(['hero', 's1'], [hero({ q: 0, r: 0 }), shieldBearer()]);
+    const store = useBattleStore();
+    const real = [{ q: 3, r: 0 }];
+    const view = buildBattleView({
+      deploy: store.deploy,
+      projection: store.projection,
+      localHeroIds: store.localHeroIds,
+      lastHeroEvents: store.lastHeroEvents,
+      turnStartWill: store.turnStartWill,
+      ui: MOVE,
+      rules: BATTLE_RULES,
+      nameOf: (id) => id,
+      revealedShields: real,
+    });
+    const marks = view.board!.overlay.marks.filter((m) => m.tone === 'shield');
+    expect(marks.map((m) => `${m.hex.q},${m.hex.r}`)).toEqual(['3,0']);
   });
 });

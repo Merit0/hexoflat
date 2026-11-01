@@ -113,11 +113,14 @@ describe('REQ-BTL-006 block window', () => {
     );
   });
 
-  it('refuses shields without a shield in hand and off the ring', () => {
+  it('does not open a block window without a shield in hand', () => {
     const noShield = heroUnderAttack({ hands: { right: { key: 'sword', power: 2 }, left: null } });
-    expect(rejectionOf(heroDoes(noShield, { kind: 'place-shield', hex: EAST }).events)).toBe(
-      'NO_SHIELD_IN_HAND',
-    );
+    expect(noShield.reaction).toBeUndefined();
+    expect(noShield.phase).not.toBe('defend');
+    expect(noShield.pending).toHaveLength(0);
+  });
+
+  it('refuses shields off the ring', () => {
     const battle = heroUnderAttack();
     expect(
       rejectionOf(heroDoes(battle, { kind: 'place-shield', hex: { q: 2, r: 0 } }).events),

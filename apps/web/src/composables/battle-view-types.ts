@@ -25,6 +25,8 @@ export interface BattleCreatureRow {
   active: boolean;
   fallen: boolean;
   targeted: boolean;
+  selected: boolean;
+  block: 'blocking' | 'ready' | null;
 }
 
 export interface BattleUiState {
@@ -34,6 +36,7 @@ export interface BattleUiState {
   swapHand: BattleHand;
   hover: BattleHex | null;
   toolAt: BattleHex | null;
+  selectedId?: string | null;
 }
 
 export interface BattleViewInput {

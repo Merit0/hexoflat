@@ -14,6 +14,7 @@ import type { BattleBoardScene } from '@/render/battle/use-battle-board';
 import type { NameOf } from './battle-hint';
 import { battleMovePreview, controlledHero, type BattleMovePreview } from './battle-board-tap';
 import { buildBattleToolHex, type BattleToolHex } from './battle-tool-hex';
+import { effectiveTarget } from './battle-target';
 import { nextActionCost } from './battle-next-cost';
 import { buildHeroCard, type BattleHeroCard } from './battle-hero-card';
 import type { BattleCreatureRow, BattleRowTag, BattleViewInput } from './battle-view-types';
@@ -100,10 +101,24 @@ function rowTags(view: BattleProjection, creature: BattleCreature, local: boolea
   return view.order.indexOf(creature.id) < view.turnIndex ? ['done'] : [];
 }
 
+function targetIdOf(input: BattleViewInput): string | null {
+  return effectiveTarget(input.projection, selfHero(input), input.ui.selectedId)?.id ?? null;
+}
+
+function blockStatus(
+  view: BattleProjection | null,
+  creature: BattleCreature,
+): BattleCreatureRow['block'] {
+  const reaction = view?.reaction;
+  if (!view || reaction?.stage !== 'block' || reaction.defenderId !== creature.id) return null;
+  return view.shieldsRaised ? 'ready' : 'blocking';
+}
+
 function creatureRow(
   creature: BattleCreature,
   input: BattleViewInput,
   targets: ReadonlySet<string>,
+  targetId: string | null,
 ): BattleCreatureRow {
   const view = input.projection;
   const local = input.localHeroIds.includes(creature.id);
@@ -122,6 +137,8 @@ function creatureRow(
     active: !!view && turnOwnerId(view) === creature.id && view.phase !== 'ended',
     fallen: !isAlive(creature),
     targeted: targets.has(creature.id),
+    selected: creature.side === 'enemies' && targetId === creature.id,
+    block: blockStatus(view, creature),
   };
 }
 
@@ -186,6 +203,7 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
     mode: controlled ? overlayMode(input) : null,
     results: defendResults(input.lastHeroEvents),
     revealed: input.revealedShields ?? [],
+    selectedId: targetIdOf(input),
   });
   const creatures = (view?.creatures ?? deploy.setup.creatures) as BattleCreature[];
   return {
@@ -229,7 +247,7 @@ function deployView(input: BattleViewInput): BattleDeployView | null {
   if (!deploy || input.projection) return null;
   const enemies = (deploy.setup.creatures as BattleCreature[])
     .filter((c) => c.side === 'enemies')
-    .map((c) => creatureRow(c, input, new Set()));
+    .map((c) => creatureRow(c, input, new Set(), null));
   return {
     ambush: deploy.ambush,
     approach: deploy.approach,
@@ -243,7 +261,9 @@ export function buildBattleView(input: BattleViewInput): BattleView {
   const view = input.projection;
   const board = boardView(input);
   const targets = new Set(board?.overlay.targets ?? []);
-  const rows = (view?.creatures ?? []).map((c) => creatureRow(c, input, targets));
+  const rows = (view?.creatures ?? []).map((c) =>
+    creatureRow(c, input, targets, targetIdOf(input)),
+  );
   const self = selfHero(input);
   const enemies = rows.filter((r) => r.side === 'enemies');
   const card = view && self ? buildHeroCard(input, view, self, rows) : null;

@@ -1,6 +1,7 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { battleShieldSprite } from '@/render/battle/battle-look';
+import { BATTLE_SELECTED_COLOR, battleShieldSprite } from '@/render/battle/battle-look';
+import { buildHexPolygon } from '@/render/hex-geometry';
 import { applyObjectFit } from '@/render/object-fit';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import type { BattleOverlayModel } from '@/render/battle/battle-overlay-model';
@@ -45,12 +46,23 @@ export function createBattleOverlayLayer(
     return sprite;
   }
 
+  function selectionOutline(x: number, y: number): Graphics {
+    const { w, h } = deps.tileSize;
+    const outline = new Graphics();
+    outline
+      .poly(buildHexPolygon(w, h).points)
+      .fill({ color: BATTLE_SELECTED_COLOR, alpha: 0.18 })
+      .stroke({ color: BATTLE_SELECTED_COLOR, width: 4, alpha: 0.95 });
+    outline.position.set(x, y);
+    return outline;
+  }
+
   function sync(model: BattleOverlayModel) {
     clear();
     for (const mark of model.marks) {
-      if (mark.tone !== 'shield') continue;
       const { x, y } = deps.positionOf(mark.hex);
-      container.addChild(shieldSprite(x, y));
+      if (mark.tone === 'selected') container.addChild(selectionOutline(x, y));
+      else if (mark.tone === 'shield') container.addChild(shieldSprite(x, y));
     }
   }
 

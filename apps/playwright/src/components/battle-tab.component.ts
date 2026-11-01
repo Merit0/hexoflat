@@ -122,6 +122,10 @@ export class BattleTabComponent extends BaseComponent {
     await this.canvas.hover({ position: point });
   }
 
+  async verifyEnemySelected(id: string): Promise<void> {
+    await expect(this.page.getByTestId(`battle-row-selected-${id}`)).toBeVisible();
+  }
+
   async clickBoardPoint(point: { x: number; y: number }): Promise<void> {
     await this.canvas.click({ position: point });
   }

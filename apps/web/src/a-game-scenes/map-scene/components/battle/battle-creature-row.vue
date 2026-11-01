@@ -1,8 +1,12 @@
 <template>
   <div
     class="creature-row"
-    :class="[`is-${row.side}`, { 'is-fallen': row.fallen, 'is-target': row.targeted }]"
+    :class="[
+      `is-${row.side}`,
+      { 'is-fallen': row.fallen, 'is-target': row.targeted, 'is-selected': row.selected },
+    ]"
     :data-testid="`battle-row-${row.id}`"
+    @click="emit('select', row.id)"
   >
     <battle-hex-token
       :side="row.side"
@@ -16,6 +20,21 @@
         <span class="creature-row__name">{{ row.name }}</span>
         <span v-for="tag in row.tags" :key="tag" class="creature-row__tag" :class="`is-${tag}`">
           {{ t(`battle.tag.${tag}`) }}
+        </span>
+        <span
+          v-if="row.selected"
+          class="creature-row__tag is-selected"
+          :data-testid="`battle-row-selected-${row.id}`"
+        >
+          {{ t('battle.tag.selected') }}
+        </span>
+        <span
+          v-if="row.block && !row.fallen"
+          class="creature-row__tag is-block"
+          :class="`is-${row.block}`"
+          :data-testid="`battle-row-block-${row.id}`"
+        >
+          {{ row.block === 'ready' ? t('battle.block.ready') : t('battle.block.blocking') }}
         </span>
         <span
           v-if="row.hits && !row.fallen"
@@ -53,6 +72,7 @@ import BattleHexToken from './battle-hex-token.vue';
 import BattleHearts from './battle-hearts.vue';
 
 defineProps<{ row: BattleCreatureRow }>();
+const emit = defineEmits<{ select: [id: string] }>();
 const { t } = useI18n();
 </script>
 
@@ -73,6 +93,13 @@ const { t } = useI18n();
 }
 .creature-row.is-target {
   border-color: #e0a93f;
+}
+.creature-row.is-enemies {
+  cursor: pointer;
+}
+.creature-row.is-selected {
+  border-color: #e0463d;
+  box-shadow: 0 0 0 1px #e0463d inset;
 }
 .creature-row.is-fallen {
   opacity: 0.45;
@@ -114,6 +141,21 @@ const { t } = useI18n();
   background: #5a1a14;
   border: 1px solid #c2412d;
   color: #ffb4a6;
+}
+.creature-row__tag.is-selected {
+  background: #6b1a16;
+  border: 1px solid #e0463d;
+  color: #ffc4be;
+}
+.creature-row__tag.is-block {
+  background: #1f3a5a;
+  border: 1px solid #5d93cf;
+  color: #bcdcff;
+}
+.creature-row__tag.is-ready {
+  background: #1d4a2c;
+  border-color: #5fbf7e;
+  color: #c3f2d2;
 }
 .creature-row__tag.is-yourTurn {
   background: #8c1c47;

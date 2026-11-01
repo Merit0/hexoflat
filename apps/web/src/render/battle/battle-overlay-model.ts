@@ -1,6 +1,11 @@
 import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
-import { creatureById, freeNeighbours, livingOnSide } from '@hexoflat/engine/battle/battle-board';
+import {
+  creatureById,
+  freeNeighbours,
+  isAlive,
+  livingOnSide,
+} from '@hexoflat/engine/battle/battle-board';
 import { battleDistance } from '@hexoflat/engine/battle/hex-battle-geom';
 import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
@@ -26,6 +31,7 @@ export interface BattleOverlayInput {
   mode: BattleTargetMode | null;
   results: DefendResultMark[];
   revealed?: readonly BattleHex[];
+  selectedId?: string | null;
 }
 
 export interface BattleOverlayModel {
@@ -93,6 +99,18 @@ function aimMarks(view: BattleProjection): BattleMark[] {
   );
 }
 
+function selectedFoeDecoys(
+  view: BattleProjection,
+  hero: BattleCreature,
+  foe: BattleCreature,
+): BattleMark[] {
+  const guarded =
+    (foe.hands.right?.shieldCapacity ?? 0) + (foe.hands.left?.shieldCapacity ?? 0) > 0;
+  const ranged = !!(hero.hands.right?.range ?? hero.hands.left?.range);
+  if (!guarded || ranged || view.reaction) return [];
+  return freeNeighbours(view, foe.pos, hero.id).map((hex) => ({ hex, tone: 'shield' as const }));
+}
+
 export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayModel {
   const marks: BattleMark[] = input.zones ? zoneMarks(input.zones) : [];
   const view = input.projection;
@@ -104,6 +122,11 @@ export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayMode
   const targets =
     hero && input.mode && input.mode !== 'move' ? targetCreatures(view, hero, input.mode) : [];
   marks.push(...targets.map((foe) => ({ hex: foe.pos, tone: 'target' as const })));
+  const selected = input.selectedId ? creatureById(view, input.selectedId) : null;
+  if (selected && isAlive(selected) && selected.side !== view.viewer && view.phase !== 'ended') {
+    marks.push({ hex: selected.pos, tone: 'selected' });
+    if (hero && !input.revealed?.length) marks.push(...selectedFoeDecoys(view, hero, selected));
+  }
   marks.push(...(input.revealed ?? []).map((hex) => ({ hex, tone: 'shield' as const })));
   marks.push(...input.results.map((r) => ({ hex: r.fromHex, tone: r.outcome })));
   return { marks, targets: targets.map((foe) => foe.id) };

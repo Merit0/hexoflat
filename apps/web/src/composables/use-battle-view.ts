@@ -8,7 +8,7 @@ import {
   type BattleHand,
   type BattleHex,
 } from '@hexoflat/engine/battle/battle-state';
-import { creatureById } from '@hexoflat/engine/battle/battle-board';
+import { creatureById, isAlive, livingCreatureAt } from '@hexoflat/engine/battle/battle-board';
 import { useBattleStore } from '@/stores/battle-store';
 import { battleMovePreview, battleTapActions, controlledHero } from './battle-board-tap';
 import { useBattleWarnings } from './use-battle-warnings';
@@ -25,6 +25,7 @@ const ui = reactive<BattleUiState>({
   swapHand: 'left',
   hover: null,
   toolAt: null,
+  selectedId: null,
 });
 
 export function resetBattleUi(): void {
@@ -34,6 +35,7 @@ export function resetBattleUi(): void {
   ui.swapHand = 'left';
   ui.hover = null;
   ui.toolAt = null;
+  ui.selectedId = null;
 }
 
 export function activateBattleHand(hand: BattleHand): void {
@@ -120,6 +122,7 @@ export function useBattleView() {
       rules: BATTLE_RULES,
     });
     if (!actions.length) {
+      if (selectFoeAt(hex)) return;
       if (store.projection?.phase === 'defend') warn('WRONG_PHASE', null);
       else warnUnaffordable(hex);
       return;
@@ -128,6 +131,25 @@ export function useBattleView() {
     if (moving) goStage('move');
     const accepted = send(() => store.actAll(actions));
     if (accepted && ui.mode !== 'move' && ui.mode !== 'swap') resetBattleUi();
+  }
+
+  function selectFoeAt(hex: BattleHex): boolean {
+    const projection = store.projection;
+    if (!projection || projection.phase === 'ended') return false;
+    const foe = livingCreatureAt(projection, hex);
+    if (!foe || foe.side === projection.viewer) return false;
+    ui.selectedId = foe.id;
+    ui.toolAt = null;
+    return true;
+  }
+
+  function selectEnemy(id: string) {
+    const projection = store.projection;
+    if (!projection || projection.phase === 'ended') return;
+    const foe = creatureById(projection, id);
+    if (!foe || foe.side === projection.viewer || !isAlive(foe)) return;
+    ui.selectedId = id;
+    ui.toolAt = null;
   }
 
   function warnUnaffordable(hex: BattleHex) {
@@ -220,6 +242,7 @@ export function useBattleView() {
     view,
     ui,
     tapHex,
+    selectEnemy,
     hoverHex,
     actWithTool,
     closeTool: () => goStage('move'),

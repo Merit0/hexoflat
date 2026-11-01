@@ -345,7 +345,7 @@
     "endTurn": "END TURN",
     "wait": "{name} ({init}) is moving. Your stance holds",
     "waitStance": "{will} Will for the next block.",
-    "waitBlocking": "{name} is putting shields around — wait.",
+    "waitBlocking": "Waiting on {name} block!",
     "victory": "Victory! All enemies have fallen.",
     "fallen": "Not enough hearts to survive that. {name} has fallen and returns to camp.",
     "leave": "Leave battle",
@@ -354,7 +354,12 @@
       "next": "Next",
       "done": "Done",
       "fallen": "Fallen",
-      "hit": "Hit ×{count}"
+      "hit": "Hit ×{count}",
+      "selected": "Selected"
+    },
+    "block": {
+      "blocking": "Blocking…",
+      "ready": "Block is ready"
     },
     "row": {
       "stance": "Stance {will} Will"

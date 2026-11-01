@@ -28,7 +28,17 @@ export function battleShieldSprite(): string {
 export const BATTLE_BLOOD_COLORS = { fill: 0xb3121c, shine: 0xe85a63 } as const;
 
 export type BattleOverlayTone =
-  'heroZone' | 'enemyZone' | 'ring' | 'target' | 'shield' | 'blocked' | 'hit' | 'dodged';
+  | 'heroZone'
+  | 'enemyZone'
+  | 'ring'
+  | 'target'
+  | 'selected'
+  | 'shield'
+  | 'blocked'
+  | 'hit'
+  | 'dodged';
+
+export const BATTLE_SELECTED_COLOR = 0xe03a32;
 
 export const SAW_SPIN_RADIANS_PER_SECOND = Math.PI * 2;
 

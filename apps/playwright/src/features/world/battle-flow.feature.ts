@@ -334,18 +334,23 @@ export class BattleFlowFeature extends BaseFeature {
   }
 
   async aimTheHandAtAnEnemyAndStrike(): Promise<void> {
-    await this.step('Hover an enemy on the board and press ATTACK in the tool hex', async () => {
-      const enemy = this.before!.creatures.filter((c) => c.side === 'enemies' && c.hp > 0).sort(
-        (a, b) => this.before!.heroDistances[a.id] - this.before!.heroDistances[b.id],
-      )[0];
-      this.attackerId = enemy.id;
-      const point = await this.campingMap.hexBoard.battleHexPoint({ q: enemy.q, r: enemy.r });
-      if (!point) throw new Error('The battle board did not report a point for the enemy hex.');
-      await this.campingMap.battleTab.scrollTheHandsWithTheWheel();
-      await this.campingMap.battleTab.hoverBoardPoint(point);
-      await this.campingMap.battleTab.verifyToolHexOffers(/Атакувати|Attack/);
-      await this.campingMap.battleTab.pressToolHexAction();
-    });
+    await this.step(
+      'Select an enemy on the board, hover it and press ATTACK in the tool hex',
+      async () => {
+        const enemy = this.before!.creatures.filter((c) => c.side === 'enemies' && c.hp > 0).sort(
+          (a, b) => this.before!.heroDistances[a.id] - this.before!.heroDistances[b.id],
+        )[0];
+        this.attackerId = enemy.id;
+        const point = await this.campingMap.hexBoard.battleHexPoint({ q: enemy.q, r: enemy.r });
+        if (!point) throw new Error('The battle board did not report a point for the enemy hex.');
+        await this.campingMap.battleTab.clickBoardPoint(point);
+        await this.campingMap.battleTab.verifyEnemySelected(enemy.id);
+        await this.campingMap.battleTab.scrollTheHandsWithTheWheel();
+        await this.campingMap.battleTab.hoverBoardPoint(point);
+        await this.campingMap.battleTab.verifyToolHexOffers(/Атакувати|Attack/);
+        await this.campingMap.battleTab.pressToolHexAction();
+      },
+    );
   }
 
   async verifyTheOtherEnemyBesideTheHeroWasHurtToo(): Promise<void> {

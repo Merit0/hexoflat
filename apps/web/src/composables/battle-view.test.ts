@@ -118,7 +118,7 @@ describe('battle view', () => {
     const willBefore = view.hero!.will;
     const self = store.projection!.creatures.find((c) => c.id === 'hero')!;
     const step = hexNeighbours(self.pos)
-      .map((hex) => viewOf({ ...MOVE, hover: hex }).board!.preview)
+      .map((hex) => viewOf({ ...MOVE, hover: hex, selectedId: 's1' }).board!.preview)
       .find((preview) => preview?.reachable && preview.path.length === 1)!;
     expect(step.cost).toBeGreaterThan(0);
     expect(tap(step.path[0])).toBe(true);
