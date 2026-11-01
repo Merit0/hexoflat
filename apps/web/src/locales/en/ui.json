@@ -456,7 +456,8 @@
       "NO_SUCH_ITEM": "There is no such item.",
       "NOT_USABLE": "This item cannot be used.",
       "NOT_AN_OPTION": "You cannot strike from that hex.",
-      "AIM_PENDING": "Choose the hex of the strike first."
+      "AIM_PENDING": "Choose the hex of the strike first.",
+      "WINDOW_CLOSED": "The time is up — the window is closed."
     },
     "actionName": {
       "place-shield": "Raising a shield",

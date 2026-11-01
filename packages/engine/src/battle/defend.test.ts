@@ -134,7 +134,9 @@ describe('REQ-BTL-006 block window', () => {
     const battle = heroUnderAttack();
     expect(rejectionOf(heroDoes(battle, { kind: 'move', hex: WEST }).events)).toBe('WRONG_PHASE');
   });
+});
 
+describe('REQ-BTL-006 block window: who may act and until when', () => {
   it('keeps the attacker standing still while the defender decides', () => {
     const battle = heroUnderAttack();
     const attempts = [
@@ -149,5 +151,27 @@ describe('REQ-BTL-006 block window', () => {
       expect(refused.battle).toBe(battle);
     }
     expect(rejectionOf(enemyTurn(battle).events)).toBe('NOT_YOUR_TURN');
+  });
+
+  it('refuses shields and the aim once the five seconds are over (REQ-BTL-022)', () => {
+    const battle = heroUnderAttack();
+    const late = battle.reaction!.deadlineMs + 1;
+    expect(
+      rejectionOf(heroDoes(battle, { kind: 'place-shield', hex: EAST }, 'hero', late).events),
+    ).toBe('WINDOW_CLOSED');
+    expect(
+      heroDoes(battle, { kind: 'reaction-timeout' }, 'hero', late).battle.reaction,
+    ).toBeUndefined();
+    expect(heroDoes(battle, { kind: 'take-hit' }, 'hero', late).battle.creatures[0].hp).toBe(5);
+
+    const placed = heroDoes(battle, { kind: 'place-shield', hex: EAST }, 'hero', 100).battle;
+    const aiming = heroDoes(placed, { kind: 'reaction-timeout' }, 'hero', 100).battle;
+    const lateAim = aiming.reaction!.deadlineMs + 1;
+    expect(rejectionOf(enemyDoes(aiming, { kind: 'aim', hex: SOUTH }, 's1', lateAim).events)).toBe(
+      'WINDOW_CLOSED',
+    );
+    expect(
+      enemyDoes(aiming, { kind: 'reaction-timeout' }, 's1', lateAim).battle.reaction,
+    ).toBeUndefined();
   });
 });

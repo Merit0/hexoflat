@@ -27,6 +27,7 @@ export const BATTLE_REJECTION_CODES = [
   'NOT_USABLE',
   'NOT_AN_OPTION',
   'AIM_PENDING',
+  'WINDOW_CLOSED',
 ] as const;
 export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 

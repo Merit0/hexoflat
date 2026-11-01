@@ -23,6 +23,12 @@ const AIM_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['aim', 'reaction
 
 const TASK_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['answer-task', 'task-timeout']);
 
+const WINDOW_TIMED_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
+  'place-shield',
+  'remove-shield',
+  'aim',
+]);
+
 function phaseAllows(state: BattleState, action: BattleAction): boolean {
   if (action.kind === 'reaction-timeout') return !!state.reaction;
   return DEFEND_ACTIONS.has(action.kind) ? state.phase === 'defend' : state.phase === 'act';
@@ -32,6 +38,7 @@ function guard(
   state: BattleState,
   actor: BattleCreature,
   action: BattleAction,
+  atMs: number,
 ): BattleRejection | null {
   if (state.phase === 'ended') return reject('BATTLE_ENDED');
   if (TASK_ACTIONS.has(action.kind)) return state.task ? null : reject('NO_TASK');
@@ -41,6 +48,8 @@ function guard(
     return reject('AIM_PENDING');
   if (action.kind === 'aim' && state.reaction?.stage !== 'aim') return reject('WRONG_PHASE');
   if (!phaseAllows(state, action)) return reject('WRONG_PHASE');
+  if (state.reaction && atMs > state.reaction.deadlineMs && WINDOW_TIMED_ACTIONS.has(action.kind))
+    return reject('WINDOW_CLOSED');
   return null;
 }
 
@@ -64,7 +73,7 @@ export function performAction(
   atMs: number,
   rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
-  const refused = guard(state, actor, action);
+  const refused = guard(state, actor, action, atMs);
   if (refused) return refused;
 
   switch (action.kind) {
