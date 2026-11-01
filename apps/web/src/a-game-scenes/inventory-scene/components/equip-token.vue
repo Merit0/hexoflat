@@ -9,6 +9,7 @@
     :style="tokenStyle"
     tabindex="0"
     @pointerdown="onPointerDown"
+    @click="useToolToken()"
     @mouseenter="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
     @mouseleave="hideItemTooltip()"
     @focus="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
