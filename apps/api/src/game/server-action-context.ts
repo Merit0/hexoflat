@@ -34,8 +34,6 @@ export function createServerActionContext(): HexEngineActionContext {
     },
     worldMap: {
       combatActive: false,
-      performHeroCombatAttack: () => ({ ok: true, message: '' }),
-      placeCombatDefendMarker: () => true,
       isLocationRespawning: () => false,
       getLocationRespawnRemainingMs: () => 0,
       goToLocation: () => {},

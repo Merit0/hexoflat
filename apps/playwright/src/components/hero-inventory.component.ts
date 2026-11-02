@@ -90,6 +90,8 @@ export class HeroInventoryComponent extends BaseComponent {
 
   private async dragBetween(source: Locator, target: Locator): Promise<void> {
     await expect(source).toBeVisible();
+    await source.scrollIntoViewIfNeeded();
+    await target.scrollIntoViewIfNeeded();
     const [sourceBox, targetBox] = await Promise.all([source.boundingBox(), target.boundingBox()]);
     if (!sourceBox || !targetBox) {
       throw new Error('dragBetween: source or target has no bounding box (not visible/rendered).');

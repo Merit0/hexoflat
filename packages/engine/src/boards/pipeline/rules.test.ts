@@ -134,7 +134,7 @@ describe('OBJECTS:rules', () => {
     expect(again.map.toJSON()).toEqual(first.map.toJSON());
   });
 
-  it('OBJECTS:rules when gates a rule on the encounter parameters', () => {
+  it('OBJECTS:rules when gates a rule on the recipe parameters', () => {
     const elite: RuleInput = {
       id: 'elite',
       pick: { tag: 'enemy' },

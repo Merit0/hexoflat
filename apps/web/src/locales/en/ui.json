@@ -3,7 +3,6 @@
     "title": "Settings",
     "close": "Close",
     "showHeroMoveTrail": "Show hero move trail",
-    "showEnemyVisionArea": "Show enemy vision area",
     "language": "Language",
     "devAddWill": "Dev: +50 Will",
     "devCutHealth": "Dev: −0.5 health",
@@ -18,12 +17,11 @@
   "moveBlocked": {
     "panel": "Close the Book of Will or use Escape to move",
     "moving": "The hero is already on the move",
-    "notYourTurn": "It's not your turn",
-    "noSteps": "No movement left this turn",
     "blockedTile": "You can't walk there",
     "tooFar": "Too far, or the way is blocked",
     "hallUnavailable": "Stand next to the Knowledge book, standing still, to open the Hall",
-    "noWill": "Not enough Will"
+    "noWill": "Not enough Will",
+    "inBattle": "A battle is on — finish it first"
   },
   "tool": {
     "open": "Open",
@@ -317,6 +315,207 @@
       "NO_WILL_STATE": "Will is unavailable",
       "NO_PORTAL": "No portal here",
       "NOT_YOUR_PORTAL": "This portal belongs to another hero"
+    }
+  },
+  "battle": {
+    "banner": {
+      "round": "{place} · Round {round}",
+      "willLeft": "{actor} · {will} Will left"
+    },
+    "tab": "Battle",
+    "round": "Round",
+    "allies": "Allies",
+    "enemies": "Enemies",
+    "enemiesLeft": "{count} left",
+    "will": "{will} Will",
+    "undo": "Undo step",
+    "log": {
+      "actor": "Battle",
+      "started": "The battle begins.",
+      "turn": "takes the turn.",
+      "picks": "attacks {target}!",
+      "hit": "hits {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
+      "blocked": "strikes {target} — blocked.",
+      "swept": "swing also catches {target}: −{hearts, plural, one {# heart} other {# hearts}}.",
+      "fell": "has fallen.",
+      "victory": "Victory! All enemies have fallen.",
+      "defeat": "Defeat — the hero returns to camp."
+    },
+    "turnCost": "Turn cost",
+    "endTurn": "END TURN",
+    "wait": "{name} ({init}) is moving. Your stance holds",
+    "waitStance": "{will} Will for the next block.",
+    "waitBlocking": "Waiting on {name} block!",
+    "victory": "Victory! All enemies have fallen.",
+    "fallen": "Not enough hearts to survive that. {name} has fallen and returns to camp.",
+    "leave": "Leave battle",
+    "tag": {
+      "yourTurn": "Your turn",
+      "next": "Next",
+      "done": "Done",
+      "fallen": "Fallen",
+      "hit": "Hit ×{count}",
+      "selected": "Selected"
+    },
+    "block": {
+      "blocking": "Blocking…",
+      "ready": "Block is ready"
+    },
+    "row": {
+      "stance": "Stance {will} Will"
+    },
+    "role": {
+      "hero": "Hero",
+      "warrior": "Melee · hit & run",
+      "king": "Boss · pushes",
+      "archer": "Ranged 2–3"
+    },
+    "roleShort": {
+      "hero": "hero",
+      "warrior": "melee",
+      "king": "boss",
+      "archer": "ranged"
+    },
+    "hand": {
+      "right": "Right hand",
+      "left": "Left hand",
+      "empty": "Empty",
+      "weapon": "{hearts} heart · strike {cost}",
+      "consumable": "+{hearts} heart · use {cost}",
+      "shield": "blocks {sides} sides",
+      "struck": "struck this turn"
+    },
+    "action": {
+      "strike": "Strike",
+      "push": "Push",
+      "swap": "Swap"
+    },
+    "defend": {
+      "struck": "{name} chose you!",
+      "guess": "Guess the side:",
+      "tapRed": "tap hexes around you to raise shields before the line runs out.",
+      "shieldNote": "{shield} · free",
+      "noShield": "No shield in hand — you can take one on your turn (swap, 4 Will).",
+      "takeHit": "Take hit"
+    },
+    "aim": {
+      "text": "Choose the hex to strike from. The defender raised shields somewhere around — you cannot see where. No choice in time — you strike from here.",
+      "none": "The defender raised no shield — the strike lands."
+    },
+    "task": {
+      "seconds": "{seconds} s",
+      "question": "{question} = ?",
+      "title": {
+        "saw": "Saw — dodge!",
+        "push": "Push!"
+      },
+      "text": {
+        "saw": "You stepped onto the saw. Answer before the line runs out to jump clear. Wrong or late — the saw takes half your hearts.",
+        "push": "Answer before the line runs out to push. Wrong or late — the push fails and the Will is spent."
+      }
+    },
+    "legend": {
+      "saw": "Saw — −½ of hearts"
+    },
+    "hint": {
+      "struck": "Struck {name}. It only sees a red ring — step away to hide your side.",
+      "blocked": "Blocked! Shields burned: {burned}.",
+      "hitTaken": "The strike landed: −{hearts} heart. Shields burned: {burned}.",
+      "sawDodged": "Dodged the saw ({answer}) — thrown back, no damage.",
+      "sawCut": "{late, select, yes {Too slow} other {Wrong answer}} — it was {answer}. The saw cuts — thrown back.",
+      "displaced": "{mode, select, push {Pushed} other {Pulled}} {name}.{slid, select, yes { It slid on the oil.} other {}}{fell, select, yes { It fell off the ledge.} other {}}",
+      "displaceFailed": "{late, select, yes {Too slow} other {Wrong answer}} — it was {answer}. It did not budge; the Will is spent.",
+      "swapped": "Took {item} into the {hand, select, right {right hand} other {left hand}}.",
+      "used": "Used {item}: +{hearts} heart. The hand is empty now.",
+      "fell": "{name} has fallen.",
+      "act": {
+        "move": "Tap a blue hex to move — every step costs 1 Will.",
+        "strike": "Scroll to choose a tool, point it at an enemy or at a side next to you and press its button.",
+        "push": "Tap an adjacent enemy — it is pushed 1 hex away from you.",
+        "swap": "Pick an item from the bag for the {hand, select, right {right hand} other {left hand}} — tap a hand to switch."
+      }
+    },
+    "reject": {
+      "NO_BATTLE": "There is no battle.",
+      "BATTLE_ENDED": "The battle is over.",
+      "NOT_YOUR_TURN": "It is not your turn.",
+      "WRONG_PHASE": "{action} is not possible right now.",
+      "INSUFFICIENT_WILL": "{action} costs {cost} Will, but only {left} left.",
+      "NOT_ADJACENT": "Stand next to it first.",
+      "HEX_BLOCKED": "That hex is blocked.",
+      "NOT_AN_ENEMY": "Pick an enemy.",
+      "NO_WEAPON_IN_HAND": "No weapon in that hand.",
+      "HAND_ALREADY_STRUCK": "That hand already struck this turn.",
+      "NO_SHIELD_IN_HAND": "No shield in hand. You can take one on your turn — a swap costs 4 Will.",
+      "SHIELD_CAPACITY_REACHED": "Your shield covers no more sides.",
+      "SHIELD_ALREADY_PLACED": "A shield already stands there.",
+      "NO_SHIELD_THERE": "There is no shield there.",
+      "NOT_IN_RING": "Shields go only on the red hexes.",
+      "NOTHING_TO_UNDO": "No step to undo.",
+      "OUT_OF_RANGE": "Out of range.",
+      "TOO_HEAVY": "The enemy is quite heavy!",
+      "NO_SPACE": "Nothing behind it is free.",
+      "TASK_OPEN": "Answer the task first.",
+      "NO_TASK": "There is no task to answer.",
+      "TOO_CLOSE": "Too close for a ranged strike.",
+      "NO_SUCH_ITEM": "There is no such item.",
+      "NOT_USABLE": "This item cannot be used.",
+      "NOT_AN_OPTION": "You cannot strike from that hex.",
+      "AIM_PENDING": "Choose the hex of the strike first.",
+      "WINDOW_CLOSED": "The time is up — the window is closed."
+    },
+    "actionName": {
+      "place-shield": "Raising a shield",
+      "remove-shield": "Lowering a shield",
+      "take-hit": "Taking the hit",
+      "aim": "Choosing the side of the strike",
+      "reaction-timeout": "Time is up",
+      "push": "Push",
+      "answer-task": "Answer",
+      "task-timeout": "Timeout",
+      "move": "A step",
+      "undo-step": "Undo",
+      "strike": "A strike",
+      "swap-item": "A swap",
+      "use-item": "Using an item",
+      "end-turn": "Ending the turn",
+      "set-hands": "Changing hands"
+    },
+    "tool": {
+      "attack": "Attack",
+      "block": "Block",
+      "unblock": "Lift",
+      "use": "Use"
+    },
+    "warn": {
+      "enemyTurn": "The enemy is acting — wait for it",
+      "defendFirst": "You are under attack — put shields around you or take the hit",
+      "notInBattle": "This item cannot be used in a battle",
+      "underAttack": "Under attack! Put shields around you — 5 s",
+      "notNow": "That cannot be done right now"
+    }
+  },
+  "squad": {
+    "spotted": "The sentry saw you — ambush!",
+    "attack": "Attack",
+    "scout": "Scout",
+    "threat": {
+      "easy": "Easy",
+      "risky": "Risky",
+      "deadly": "Deadly"
+    },
+    "log": {
+      "scouted": "scouted the squad",
+      "ambush": "was ambushed!"
+    },
+    "rejected": {
+      "UNKNOWN_SQUAD": "There is no squad here",
+      "NO_HERO": "No hero",
+      "NOT_ADJACENT": "Come closer first",
+      "ALREADY_SCOUTED": "Already scouted",
+      "BATTLE_OPEN": "A battle is already on",
+      "NO_ENGAGEMENT": "No battle was requested",
+      "BATTLE_NOT_ENDED": "The battle is not over yet"
     }
   }
 }

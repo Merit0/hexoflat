@@ -62,9 +62,18 @@
           </span>
         </div>
 
-        <span v-if="!cell.blocked && itemsBySlot[cell.key]?.isNew" class="badge"> </span>
+        <span
+          v-if="!cell.blocked && !isBeingDragged(cell.key) && itemsBySlot[cell.key]?.isNew"
+          class="badge"
+        >
+        </span>
 
-        <span v-if="!cell.blocked && (itemsBySlot[cell.key]?.amount ?? 1) > 1" class="amount">
+        <span
+          v-if="
+            !cell.blocked && !isBeingDragged(cell.key) && (itemsBySlot[cell.key]?.amount ?? 1) > 1
+          "
+          class="amount"
+        >
           {{ itemsBySlot[cell.key]!.amount }}
         </span>
       </div>
@@ -99,6 +108,11 @@ watch(
 
 const itemsBySlot = computed(() => inv.itemsBySlot);
 const selectedId = computed(() => inv.selectedItemId);
+
+function isBeingDragged(slotKey: string) {
+  const item = itemsBySlot.value[slotKey];
+  return !!item && dragState.draggingId === item.id;
+}
 
 function onCellClick(slotKey: string) {
   const item = itemsBySlot.value[slotKey];

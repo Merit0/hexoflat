@@ -8,7 +8,6 @@
   >
     <div class="map-pane">
       <component :is="DevBoardPanel" v-if="DevBoardPanel" />
-      <combat-hud />
       <action-alert-banner />
       <div class="map-session-controls">
         <button
@@ -30,6 +29,11 @@
           ⏻
         </button>
       </div>
+      <battle-board-area
+        v-if="battleStore.isOpen"
+        class="battle-pane"
+        :reference-frame="boardFrame"
+      />
       <div ref="containerRef" class="hex-map" data-testid="hex-map">
         <canvas
           ref="boardCanvasRef"
@@ -38,9 +42,7 @@
           :data-ready="isBoardReady ? '1' : undefined"
         />
 
-        <div class="hex-board-overlays" data-testid="hex-map-inner" :style="overlayStyle">
-          <div v-if="combatStore.combatActive" class="combat-alert-overlay"></div>
-
+        <board-overlay-layer data-testid="hex-map-inner" :camera="camera" :frame-rect="frameRect">
           <tool-hex-tile
             v-if="heroToolStore.isDragging && activeTool"
             :tile-width="screenTileSize.w"
@@ -56,7 +58,7 @@
             :tile-width="screenTileSize.w"
             :tile-height="screenTileSize.h"
           />
-        </div>
+        </board-overlay-layer>
       </div>
       <component
         :is="StaticBoardEditorPanel"
@@ -72,7 +74,9 @@ import { closeKnowledgePanel, knowledgePanelMode } from '@/composables/use-knowl
 import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
+import { useSquadFlow } from '@/services/squads/squad-flow';
+import { useSquadViews } from '@/services/squads/squad-views';
 import { useHexBoard } from '@/render/use-hex-board';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
@@ -89,14 +93,15 @@ import {
 import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
+import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
-import CombatHud from '@/a-game-scenes/map-scene/components/combat-hud.vue';
+import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
 import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { coordinateKey, getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
-import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { EHexCollision } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
@@ -113,7 +118,9 @@ const props = defineProps<{
 
 const { handleTileClick } = useTileClick();
 const worldStore = useWorldMapStore();
-const combatStore = useCombatStore();
+const battleStore = useBattleStore();
+useSquadFlow();
+const squadViews = useSquadViews();
 const heroToolStore = useHeroToolStore();
 const worldMapStore = useWorldMapStore();
 const heroStore = useHeroStore();
@@ -217,13 +224,6 @@ const { containerRef, stageRef, canvasSize, frameRect, camera, screenTileSize } 
   boardFrame,
   heroCoordinatesComputed,
 );
-const overlayStyle = computed(() => ({
-  width: `${(frameRect.value?.width ?? 0) * camera.value.zoom}px`,
-  height: `${(frameRect.value?.height ?? 0) * camera.value.zoom}px`,
-  transform: `translate(${camera.value.x}px, ${camera.value.y}px)`,
-  '--hex-tile-width': `${screenTileSize.value.w}px`,
-  '--hex-tile-height': `${screenTileSize.value.h}px`,
-}));
 const { sceneLayoutStyle } = useGameLayout();
 
 function getTileByCoord(coord: IHexCoordinates) {
@@ -255,48 +255,6 @@ watch(
 );
 
 const movePreview = useMovePreview({ hoveredTileCoord, getTileByCoord });
-
-const enemyVisionCells = computed(() => {
-  if (!uiSettingsStore.showEnemyVisionArea) return [];
-  if (!worldStore.map) return [];
-
-  const cells = new Map<string, { key: string; coord: IHexCoordinates }>();
-
-  for (const enemyTile of worldStore.map.tiles) {
-    const hexobject = enemyTile.hexobject;
-    if (!hexobject || hexobject.groupType !== EHexobjectGroup.CREATURE) continue;
-    if (hexobject.creature?.faction !== 'enemy') continue;
-    if (!enemyTile.isRevealed) continue;
-
-    const visionRange = hexobject.creature.visionRange ?? 3;
-    for (const tile of worldStore.map.tiles) {
-      if (!tile.isRevealed) continue;
-      if (hexDistance(enemyTile.coordinates, tile.coordinates) > visionRange) continue;
-
-      cells.set(coordinateKey(tile.coordinates), {
-        key: coordinateKey(tile.coordinates),
-        coord: tile.coordinates,
-      });
-    }
-  }
-
-  return [...cells.values()];
-});
-
-const isHeroInEnemyVision = computed(() => {
-  return combatStore.getEnemyTilesSeeingHero().length > 0;
-});
-
-const combatMarkers = computed(() => {
-  return combatStore.combatMarkers
-    .filter((marker) => marker.kind !== 'defend')
-    .filter((marker) => marker.visible)
-    .map((marker) => ({
-      key: `${marker.owner}:${marker.kind}:${coordinateKey(marker.coord)}`,
-      owner: marker.owner,
-      coord: marker.coord,
-    }));
-});
 
 const activeCampfireActionTile = computed(() => {
   if (!worldStore.map) return null;
@@ -339,16 +297,6 @@ const campHealInfoLabel = computed(() => {
   return `${percentPerTick}%/10с`;
 });
 
-watch(
-  isHeroInEnemyVision,
-  (inVision) => {
-    if (inVision && !combatStore.combatActive) {
-      combatStore.startCombat();
-    }
-  },
-  { immediate: true },
-);
-
 useHexBoard({
   canvasRef: boardCanvasRef,
   canvasSize,
@@ -359,8 +307,7 @@ useHexBoard({
   heroCoordinates: heroCoordinatesComputed,
   healTickerNow,
   movePreview,
-  enemyVisionCells,
-  combatMarkers,
+  squadWatched: squadViews.watched,
   campHeal: {
     coord: campHealEffectCoord,
     active: isCampfireHealActive,
@@ -442,13 +389,15 @@ onBeforeUnmount(() => {
   position: relative;
 
   display: grid;
-  grid-template-columns: var(--map-pane-width) var(--hero-board-panel-width);
+  grid-template-columns: minmax(0, var(--map-pane-width)) minmax(0, var(--hero-board-panel-width));
   transition: grid-template-columns 260ms ease;
 }
 
 .map-pane {
   position: relative;
   height: 100vh;
+  min-width: 0;
+  contain: inline-size;
   overflow: hidden;
 }
 
@@ -506,13 +455,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.hex-board-overlays {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-}
-
 .hex-board-canvas {
   position: absolute;
   top: 0;
@@ -520,28 +462,10 @@ onBeforeUnmount(() => {
   display: block;
 }
 
-.combat-alert-overlay {
+.battle-pane {
   position: absolute;
-  inset: -18px;
-  pointer-events: none;
-  z-index: 120;
-  border: 2px solid rgba(255, 92, 92, 0.82);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 160, 160, 0.35),
-    inset 0 0 64px rgba(120, 0, 0, 0.18),
-    0 0 28px rgba(255, 70, 70, 0.2);
-  background: radial-gradient(circle at center, rgba(255, 0, 0, 0) 54%, rgba(120, 0, 0, 0.1) 100%);
-  animation: combatPulse 1.2s ease-in-out infinite;
-}
-
-@keyframes combatPulse {
-  0%,
-  100% {
-    opacity: 0.75;
-  }
-
-  50% {
-    opacity: 1;
-  }
+  inset: 0;
+  z-index: 140;
+  background: #0b0d11;
 }
 </style>

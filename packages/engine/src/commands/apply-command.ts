@@ -19,9 +19,7 @@ import type { IActionContext } from '../abstraction/abstract-action';
 import type { HexObjectPlacementRef } from '../abstraction/hex-map-placement';
 import type { THeroToolKey } from '../content/equipment.content';
 import type { HeroState } from '../hero-movement/hero-state';
-import { getReachableTileDistances } from '../hero-movement/reachable-range-service';
-import { findShortestPath } from '../hero-movement/pathfinding-service';
-import { getScoutMoveStepsForSteps } from '../hero-movement/scout-progression';
+import { applyMoveHero } from '../hero-movement/apply-move-hero';
 import type { RngState } from '../utils/random-seeded';
 import { assertNever } from '../utils/assert-never';
 import { planBoardCrossing } from '../hero-movement/board-crossing';
@@ -30,7 +28,6 @@ import {
   type HexEngineCommand,
   type CrossExitCommand,
   type StartHexActionCommand,
-  type MoveHeroCommand,
   type ResetSkillsCommand,
   type SacrificeToSkillCommand,
 } from './hex-engine-commands';
@@ -38,6 +35,15 @@ import { applyEnterPortal, applyOpenPortal, closePortalIfOpen } from '../portal/
 import type { PortalLocation } from '../portal/portal-rules';
 import { getMeta } from '../content/content-accessors';
 import type { ApplyCommandResult, DomainEvent } from './types';
+import type { BattleState } from '../battle/battle-state';
+import { applyBattleCommand } from '../battle/apply-battle';
+import {
+  isFightCommand,
+  isSquadLifecycleCommand,
+  type BattleCommand,
+} from '../battle/battle-commands';
+import type { Engagement } from '../squads/engagement';
+import { applySquadLifecycle, isSquadAction, startSquadAction } from '../squads/apply-squad';
 
 export interface HexEngineState {
   map: HexMapModel;
@@ -46,6 +52,8 @@ export interface HexEngineState {
   knowledge?: KnowledgeState;
   knowledgeContext?: KnowledgeContext;
   location?: PortalLocation;
+  battle?: BattleState;
+  engagement?: Engagement;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -116,7 +124,7 @@ export function applyCommand(
     }
 
     case 'MOVE_HERO':
-      applyMoveHero(state, parsed.payload, events);
+      events.push(...applyMoveHero(state, parsed.payload));
       break;
 
     case 'CROSS_EXIT': {
@@ -136,11 +144,24 @@ export function applyCommand(
       events.push(...applyEnterPortal(state, parsed.payload, ctx));
       break;
 
+    case 'BATTLE':
+      events.push(...applyBattleState(state, parsed));
+      break;
+
     default:
       return assertNever(parsed);
   }
 
   return { state, events };
+}
+
+function applyBattleState(state: HexEngineState, command: BattleCommand): DomainEvent[] {
+  if (isFightCommand(command)) {
+    const result = applyBattleCommand(state.battle, command);
+    state.battle = result.battle;
+    return result.events;
+  }
+  return isSquadLifecycleCommand(command) ? applySquadLifecycle(state, command) : [];
 }
 
 function isWorldGate(tile: HexTileModel, actionType: EHexActionType): boolean {
@@ -186,11 +207,12 @@ function applyStartHexAction(
   }
 
   const fullCtx: IActionContext = { ...ctx, map: state.map, now };
-  const result = new ExecuteHexActionFeature(tile).execute(
-    actionType,
-    toolKey as THeroToolKey,
-    fullCtx,
-  );
+  const squadStart = isSquadAction(actionType)
+    ? startSquadAction(state, tile, { heroId: parsed.payload.heroId, actionType, now })
+    : null;
+  const result =
+    squadStart ??
+    new ExecuteHexActionFeature(tile).execute(actionType, toolKey as THeroToolKey, fullCtx);
 
   if (result.ok && cost > 0) {
     const knowledge = state.knowledge!;
@@ -198,6 +220,14 @@ function applyStartHexAction(
     const spent = spendWill(knowledge, cost, reason, `${actionType}:${coordinateKey(coordinates)}`);
     knowledge.revision++;
     out.push(...spent.events);
+  }
+
+  if (squadStart?.ok) out.push(...squadStart.events);
+  if (squadStart && !squadStart.ok) {
+    out.push({
+      type: 'SQUAD_REJECTED',
+      payload: { heroId: parsed.payload.heroId, action: actionType, reason: squadStart.reason },
+    });
   }
 
   if (result.ok && isWorldGate(tile, actionType)) {
@@ -267,72 +297,6 @@ function applyKnowledgeState(state: HexEngineState, command: KnowledgeCommand): 
     }
   }
   return applyKnowledgeCommand(state.knowledge, command, state.knowledgeContext);
-}
-
-function applyMoveHero(
-  state: HexEngineState,
-  payload: MoveHeroCommand['payload'],
-  events: DomainEvent[],
-): void {
-  const { heroId, target } = payload;
-  const hero = state.heroes[heroId];
-
-  if (!hero) {
-    events.push({
-      type: 'HERO_MOVE_REJECTED',
-      payload: { heroId, target, reason: 'HERO_NOT_FOUND' },
-    });
-    return;
-  }
-
-  const targetKey = coordinateKey(target);
-  const isOccupiedByOtherHero = Object.values(state.heroes).some(
-    (other) => other.id !== heroId && coordinateKey(other.coordinates) === targetKey,
-  );
-
-  if (isOccupiedByOtherHero) {
-    events.push({
-      type: 'HERO_MOVE_REJECTED',
-      payload: { heroId, target, reason: 'TILE_OCCUPIED' },
-    });
-    return;
-  }
-
-  const moveSteps = getScoutMoveStepsForSteps(hero.heroSteps);
-  const reachable = getReachableTileDistances(state.map, hero.coordinates, moveSteps);
-
-  if (!reachable.has(targetKey)) {
-    events.push({
-      type: 'HERO_MOVE_REJECTED',
-      payload: { heroId, target, reason: 'UNREACHABLE' },
-    });
-    return;
-  }
-
-  const path = findShortestPath(state.map, hero.coordinates, target, moveSteps);
-
-  if (!path || path.length < 2) {
-    events.push({
-      type: 'HERO_MOVE_REJECTED',
-      payload: { heroId, target, reason: 'NO_PATH' },
-    });
-    return;
-  }
-
-  const stepsTaken = path.length - 1;
-  // Deliberate in-place mutation, not a copy-on-write update: applyCommand
-  // has exactly one writer per HexEngineState (the single-threaded
-  // server/client loop that owns `state`), so there's no concurrent
-  // reader to see a torn intermediate value. Don't "fix" this into
-  // rebuilding `state.heroes` — that would just be extra allocation for
-  // the same guarantee this already has.
-  hero.coordinates = { ...target };
-  hero.heroSteps += stepsTaken;
-
-  events.push({
-    type: 'HERO_MOVED',
-    payload: { heroId, path, heroSteps: hero.heroSteps },
-  });
 }
 
 function applyCrossExit(

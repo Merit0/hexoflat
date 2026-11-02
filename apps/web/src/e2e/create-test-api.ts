@@ -16,6 +16,11 @@ import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { skillIdSchema } from '@hexoflat/engine/skills/skill-content';
 import { usePortal } from '@/composables/use-portal';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import { isEnterableTile } from '@hexoflat/engine/hero-movement/move-planner';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { useBattleStore } from '@/stores/battle-store';
+import { battleTestHooks } from './battle-hooks';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -148,6 +153,10 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return getHexNeighbors(coordinates);
     },
 
+    countExistingNeighbours(coordinates: TestHexCoordinates): number {
+      return getHexNeighbors(coordinates).filter((neighbour) => !!findTile(neighbour)).length;
+    },
+
     getDistance(from: TestHexCoordinates, to: TestHexCoordinates): number {
       return hexDistance(from, to);
     },
@@ -226,6 +235,23 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       heroStore.hero.adjustHealthOnStatChange();
       heroStore.saveProgressToStorage();
     },
+    placeSquadNextToHero(key: string): TestHexCoordinates {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('Test hooks are off');
+      const map = worldStore.map as HexMapModel | null;
+      const at = heroStore.heroCoordinates;
+      const spot =
+        map && at ? getHexNeighbors(at).find((coord) => isEnterableTile(map, coord)) : null;
+      const tile = spot ? findTile(spot) : undefined;
+      if (!spot || !tile) throw new Error('No free hex next to the hero');
+      tile.hexobject = HexObjectFactory.create(key as THexobjectKey, spot);
+      worldStore.markTileDirty(spot);
+      worldStore.saveToStorage();
+      return { columnIndex: spot.columnIndex, rowIndex: spot.rowIndex };
+    },
+    isBattleEngaged(): boolean {
+      return useBattleStore().engagement !== null;
+    },
+    ...battleTestHooks(),
 
     previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview {
       const preview = portal.previewOpen(coordinates);

@@ -4,7 +4,7 @@ import {
   type THexobjectPrototype,
   type TEquipSlot,
 } from '../../abstraction/hexobject-abstraction';
-import { getMeta, getPrototype } from '../../content';
+import { getMeta, getPrototype, usePriceOf } from '../../content';
 import { DEFAULT_RARITY, rarityTone, type TRarityTone } from '../../content/rarity-rules';
 import { getShieldPoints } from '../../combat/shield-points';
 import { getHeartPoints } from '../../combat/heart-points';
@@ -14,7 +14,6 @@ import {
 } from '../../game-resolvers/interactions-resolver';
 import type { THeroToolKey } from '../../content/equipment.content';
 import type { THexobjectKey } from '../../registry/hexobjects-registry';
-import { EHexActionType } from '../../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
 import type { SkillId } from '../../skills/skill-content';
 import {
@@ -149,7 +148,7 @@ function useWillOf(key: THexobjectKey, skills: SkillRanks = {}): TooltipWillUse 
     if (portal.unlocked) return { kind: 'cost', will: portal.willCost, skillId };
     return { kind: 'locked', will: getPortalBaseCost() ?? 0, skillId };
   }
-  const cost = getMeta(key)?.actions?.[EHexActionType.USE]?.willCost ?? 0;
+  const cost = usePriceOf(key) ?? 0;
   return cost > 0 ? { kind: 'cost', will: cost } : undefined;
 }
 

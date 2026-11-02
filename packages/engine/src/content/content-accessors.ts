@@ -1,4 +1,5 @@
 import { EHexobjectGroup, type THexobjectPrototype } from '../abstraction/hexobject-abstraction';
+import { EHexActionType } from '../enums/hex-action-type';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { assertNever } from '../utils/assert-never';
 import { CONTENT } from './content-map';
@@ -81,6 +82,15 @@ export function getMeta(key: THexobjectKey): IHexobjectMeta {
     enter: content.enter as IHexobjectMeta['enter'],
     heal: content.heal,
   };
+}
+
+export function usePriceOf(key: THexobjectKey): number | null {
+  const content = CONTENT[key];
+  if (!content) throw new Error(`Unknown Hexobject key: [ ${key} ]`);
+  if (content.groupType === EHexobjectGroup.LOOT && content.loot.usePrice !== undefined) {
+    return content.loot.usePrice;
+  }
+  return content.actions?.[EHexActionType.USE]?.willCost ?? null;
 }
 
 export function getTags(key: THexobjectKey): readonly ObjectTag[] {

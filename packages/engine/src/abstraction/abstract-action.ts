@@ -55,11 +55,6 @@ export interface IEventsPort {
 
 export interface IWorldMapPort {
   combatActive: boolean;
-  performHeroCombatAttack: (
-    tile: HexTileModel,
-    toolKey: string,
-  ) => { ok: boolean; message: string };
-  placeCombatDefendMarker: (target: IHexCoordinates, toolKey?: THeroToolKey | null) => boolean;
   isLocationRespawning: (locationKey: LocationKey) => boolean;
   getLocationRespawnRemainingMs: (locationKey: LocationKey) => number;
   goToLocation: (locationKey: LocationKey) => void;

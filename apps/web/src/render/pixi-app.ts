@@ -65,7 +65,7 @@ export async function createHexBoardApp(
       app.ticker.addOnce(callback, undefined, UPDATE_PRIORITY.UTILITY);
     },
     destroy() {
-      app.destroy(true, { children: true, texture: false });
+      app.destroy({ removeView: true }, { children: true, texture: false });
     },
   };
 }

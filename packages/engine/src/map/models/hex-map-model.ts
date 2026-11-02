@@ -12,8 +12,14 @@ import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction'
 import { EHexActionType } from '../../enums/hex-action-type';
 import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
 import type { ExitSide } from '../../boards/exits';
+import {
+  hexobjectFromLegacyEncounter,
+  legacySquadKey,
+  squadInstanceOf,
+  withSquadInstance,
+} from '../../squads/squad-migration';
 
-export type TFogPolicy = 'FOG' | 'ALL_REVEALED' | 'BY_REGION';
+export type TFogPolicy = 'FOG' | 'ALL_REVEALED';
 
 interface IWorldMap {
   name: string;
@@ -38,6 +44,7 @@ export interface ISerializedHexTile {
   terrain?: TerrainId;
   exit?: ExitSide;
   regionId?: string;
+  encounter?: unknown;
 }
 
 export interface ISerializedHexMap {
@@ -112,7 +119,7 @@ export default class HexMapModel implements IWorldMap {
   }
 
   set fogPolicy(v: TFogPolicy) {
-    this._fogPolicy = v;
+    this._fogPolicy = v === 'ALL_REVEALED' ? 'ALL_REVEALED' : 'FOG';
   }
 
   public generateTiles(): void {
@@ -199,8 +206,7 @@ export default class HexMapModel implements IWorldMap {
       tile.hexBackgroundImagePath = t.imagePath ?? '';
       tile.coordinates = t.coordinates ?? { rowIndex: t.r ?? 0, columnIndex: t.q ?? 0 };
 
-      const savedObj: THexobject | null = t.hexobject ?? null;
-      tile.hexobject = savedObj ? this.hydrateHexobject(savedObj, tile.coordinates) : null;
+      tile.hexobject = this.restoreHexobject(t, tile.coordinates);
 
       tile.resourceSpawner = t.resourceSpawner ?? null;
       tile.pendingAction = t.pendingAction ?? null;
@@ -238,6 +244,18 @@ export default class HexMapModel implements IWorldMap {
     return map;
   }
 
+  private static restoreHexobject(
+    t: ISerializedHexTile,
+    coord: IHexCoordinates,
+  ): THexobject | null {
+    const fromEncounter = hexobjectFromLegacyEncounter(t.encounter, coord);
+    if (fromEncounter !== undefined) return fromEncounter;
+    if (!t.hexobject) return null;
+    const legacySquad = legacySquadKey(t.hexobject.hexobjectKey);
+    if (legacySquad) return HexObjectFactory.create(legacySquad, coord);
+    return this.hydrateHexobject(t.hexobject, coord);
+  }
+
   private static hydrateHexobject(saved: THexobject, coord: IHexCoordinates): THexobject {
     const overrides: Record<string, any> = {};
 
@@ -271,6 +289,7 @@ export default class HexMapModel implements IWorldMap {
           built.creature.attack = saved.creature.attack ?? built.creature.attack;
           built.creature.faction = saved.creature.faction ?? built.creature.faction;
           built.creature.visionRange = saved.creature.visionRange ?? built.creature.visionRange;
+          withSquadInstance(built, squadInstanceOf(saved.creature));
         }
         break;
       }

@@ -2,11 +2,10 @@ import type HexMapModel from '../map/models/hex-map-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { EHexCollision } from '../abstraction/hexobject-abstraction';
-import { CONTENT } from '../content';
 import { getMeta } from '../content/content-accessors';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { isTerrainPassable } from './terrain';
+import { walledForBoardWalk } from '../content/squad-keys';
 import { mustBeReachable } from './board-reachability';
 
 export interface BoardMeasurements {
@@ -56,7 +55,7 @@ export function measureBoard(
   const passable = new Set<string>();
   for (const tile of tiles) {
     const key = tile.hexobject?.hexobjectKey;
-    const solid = !!key && CONTENT[key]?.collision === EHexCollision.SOLID;
+    const solid = !!key && walledForBoardWalk(key);
     if (!solid && isTerrainPassable(tile.terrain)) {
       passable.add(coordinateKey(tile.coordinates));
     }

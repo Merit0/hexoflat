@@ -102,10 +102,6 @@ function onClick() {
   transform-origin: center center;
   user-select: none;
   touch-action: none;
-  will-change: transform;
-  transition:
-    transform 0.08s linear,
-    filter 0.12s ease;
 }
 
 .token:hover,

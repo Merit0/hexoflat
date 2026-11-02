@@ -7,7 +7,7 @@ export const CAVE_MODEL = {
   frame: { columns: 18, rows: 17 },
   biome: 'CAVE',
   background: '/hex-assets/board-hexes/stone-hex.png',
-  fog: 'BY_REGION',
+  fog: 'FOG',
   willZone: 'paid',
   entryObject: 'cave-exit',
   fallbackSeed: 'cave-fallback',
@@ -21,7 +21,6 @@ export const CAVE_MODEL = {
         kind: 'rules',
         rules: [
           { id: 'rocks', pick: 'rock', count: [3, 6], where: { steps: [2, 12], spacing: 1 } },
-          { id: 'rest', pick: { tag: 'rest' }, count: [1, 2], where: { region: 'room' } },
           {
             id: 'treasure',
             pick: { tag: 'treasure' },
@@ -29,7 +28,14 @@ export const CAVE_MODEL = {
             where: { region: 'deep', steps: [1, 17] },
             required: true,
           },
-          { id: 'guard', pick: 'skeletor', count: [1, 2], where: { region: 'deep' } },
+        ],
+      },
+      {
+        kind: 'squads',
+        place: [
+          { squad: 'bone-court', spot: 'deep', minSteps: 6 },
+          { squad: 'skeleton-pack', spot: 'treasure' },
+          { squad: 'lone-skeleton', spot: 'dead-end' },
         ],
       },
     ],

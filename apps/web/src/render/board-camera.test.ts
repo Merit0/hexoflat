@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  fitAtReferenceZoom,
   fitBoardCamera,
   frameWorldRect,
   HEX_WORLD_HEIGHT,
@@ -101,5 +102,30 @@ describe('fitBoardCamera', () => {
       w: HEX_WORLD_WIDTH * 0.5,
       h: HEX_WORLD_HEIGHT * 0.5,
     });
+  });
+});
+
+describe('fitAtReferenceZoom', () => {
+  const pane = { width: 1000, height: 800 };
+  const map = frameWorldRect({ width: 18, height: 17 });
+  const battle = frameWorldRect({ width: 11, height: 9 });
+
+  it('draws the battle board at the zoom of the map it came from', () => {
+    const mapZoom = fitBoardCamera({ frameRect: map, pane }).zoom;
+    const camera = fitAtReferenceZoom({ frameRect: battle, referenceRect: map, pane });
+    expect(camera.zoom).toBe(mapZoom);
+    expect(camera.zoom).toBeLessThan(fitBoardCamera({ frameRect: battle, pane }).zoom);
+  });
+
+  it('centres the smaller battle board in the pane', () => {
+    const camera = fitAtReferenceZoom({ frameRect: battle, referenceRect: map, pane });
+    expect(camera.x + (battle.x + battle.width / 2) * camera.zoom).toBeCloseTo(pane.width / 2);
+    expect(camera.y + (battle.y + battle.height / 2) * camera.zoom).toBeCloseTo(pane.height / 2);
+  });
+
+  it('falls back to fitting the board itself without a reference', () => {
+    expect(fitAtReferenceZoom({ frameRect: battle, referenceRect: null, pane })).toEqual(
+      fitBoardCamera({ frameRect: battle, pane }),
+    );
   });
 });

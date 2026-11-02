@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { useHeroInventoryStore } from './hero-inventory-store';
+import { bindInventoryHandsGate, useHeroInventoryStore } from './hero-inventory-store';
 
 const SCROLL = HEXOBJECT_KEYS.RETURN_SCROLL;
 const POTION = HEXOBJECT_KEYS.HEALTH_BOTTLE;
@@ -145,5 +145,58 @@ describe('useHeroInventoryStore: unequipHand', () => {
 
     expect(inventory.unequipHand('weapon')).toBe(false);
     expect(inventory.equippedItems.weapon?.key).toBe(SCROLL);
+  });
+});
+
+describe('useHeroInventoryStore: hands gate (equipment changes during a battle)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
+  });
+
+  afterEach(() => bindInventoryHandsGate(null));
+
+  function sword(inventory: ReturnType<typeof useHeroInventoryStore>) {
+    inventory.putToInventory(HEXOBJECT_KEYS.SWORD, 1);
+    return inventory.items.find((item) => item.key === HEXOBJECT_KEYS.SWORD)!;
+  }
+
+  it('keeps an equip the gate accepts', () => {
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    const item = sword(inventory);
+    bindInventoryHandsGate(() => true);
+
+    inventory.moveItemToSlot(item.id, 'eq:weapon');
+
+    expect(inventory.equippedItems.weapon?.key).toBe(HEXOBJECT_KEYS.SWORD);
+  });
+
+  it('puts everything back when the gate refuses the new hands', () => {
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    const item = sword(inventory);
+    const slotBefore = item.slotKey;
+    bindInventoryHandsGate(() => false);
+
+    inventory.moveItemToSlot(item.id, 'eq:weapon');
+
+    expect(inventory.items.find((i) => i.id === item.id)?.slotKey).toBe(slotBefore);
+    expect(inventory.equippedItems.weapon?.key).toBe(HEXOBJECT_KEYS.HAND);
+  });
+
+  it('does not ask the gate about moves that leave the hands alone', () => {
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    const item = sword(inventory);
+    let asked = 0;
+    bindInventoryHandsGate(() => {
+      asked += 1;
+      return false;
+    });
+
+    inventory.moveItemToSlot(item.id, inventory.freeSlotKeys[0]);
+
+    expect(asked).toBe(0);
   });
 });

@@ -13,10 +13,11 @@ export interface ToolCapabilities {
   canOpen?: boolean;
   canAttack?: boolean;
   canBlock?: boolean;
+  canScout?: boolean;
 }
 
 export type ResolvedActionType =
-  'CUT' | 'TAKE' | 'MINE' | 'USE' | 'ATTACK' | 'BLOCK' | 'OPEN' | 'ENTER';
+  'CUT' | 'TAKE' | 'MINE' | 'USE' | 'OPEN' | 'ENTER' | 'ATTACK' | 'SCOUT';
 
 /** Minimal navigation descriptor — engine stays framework-agnostic, apps/web maps this to a real route. */
 export interface EngineRouteDescriptor {
@@ -56,6 +57,29 @@ function labelFromMeta(obj: THexobject, action: EHexActionType, fallback: string
 
   const meta: IHexobjectMeta = getMeta(key);
   return meta?.actions?.[action]?.label ?? fallback;
+}
+
+function squadActions(
+  cap: ToolCapabilities,
+  obj: Extract<THexobject, { groupType: EHexobjectGroup.CREATURE }>,
+): ResolvedAction[] {
+  if (!obj.creature.squad) return [];
+  const actions: ResolvedAction[] = [];
+  if (cap.canAttack) {
+    actions.push({
+      actioType: 'ATTACK',
+      label: labelFromMeta(obj, EHexActionType.ATTACK, 'Attack'),
+      priority: 90,
+    });
+  }
+  if (cap.canScout && !obj.creature.scouted && obj.creature.squad.members.length > 1) {
+    actions.push({
+      actioType: 'SCOUT',
+      label: labelFromMeta(obj, EHexActionType.SCOUT, 'Scout'),
+      priority: 80,
+    });
+  }
+  return actions;
 }
 
 export function resolveActions(toolKey: THeroToolKey, obj: THexobject): ResolvedAction[] {
@@ -121,14 +145,9 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
       break;
     }
 
-    case EHexobjectGroup.CREATURE: {
-      resolvedActions.push({
-        actioType: 'ATTACK',
-        label: labelFromMeta(obj, EHexActionType.ATTACK, 'Attack'),
-        priority: 70,
-      });
+    case EHexobjectGroup.CREATURE:
+      resolvedActions.push(...squadActions(cap, obj));
       break;
-    }
 
     case EHexobjectGroup.CONSTRUCTION: {
       const key = obj.hexobjectKey;

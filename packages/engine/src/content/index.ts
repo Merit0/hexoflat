@@ -1,5 +1,5 @@
 export { CONTENT } from './content-map';
-export { getPrototype, getMeta } from './content-accessors';
+export { getPrototype, getMeta, usePriceOf } from './content-accessors';
 export { CONTENT_VERSION } from './content-version';
 export {
   ContentDefinitionSchema,

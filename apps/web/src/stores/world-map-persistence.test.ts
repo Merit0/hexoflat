@@ -2,9 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
-import { CONTENT_VERSION } from '@hexoflat/engine';
+import { applyCommand, CONTENT_VERSION } from '@hexoflat/engine';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { heroBattleCreature } from '@hexoflat/engine/squads/squad-battle';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { useWorldMapStore } from './world-map-store';
-import { useCombatStore } from './combat-store';
+import { useBattleStore } from './battle-store';
 import { useHeroStore } from './hero-store';
 
 /**
@@ -26,6 +31,60 @@ function buildMap(name: string) {
   const map = new HexMapBuilder().name(name).width(2).height(2).build();
   for (const tile of map.tiles) tile.isRevealed = true;
   return map;
+}
+
+const SQUAD_AT = { columnIndex: 2, rowIndex: 2 };
+
+function buildBattleMap(name: string) {
+  const map = new HexMapBuilder().name(name).width(5).height(5).build();
+  for (const tile of map.tiles) tile.isRevealed = true;
+  map.tiles.find(
+    (t) => t.coordinates.columnIndex === 2 && t.coordinates.rowIndex === 2,
+  )!.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.LONE_SKELETON, SQUAD_AT);
+  return map;
+}
+
+function openBattle(name: string) {
+  const worldStore = useWorldMapStore();
+  const hero = useHeroStore();
+  worldStore.map = buildBattleMap(name);
+  hero.hero.id = 'hero-1';
+  hero.heroCoordinates = { columnIndex: 1, rowIndex: 2 };
+  const state = {
+    map: worldStore.map as HexMapModel,
+    heroes: { [hero.hero.id]: hero.engineHeroState(hero.heroCoordinates) },
+  } as Parameters<typeof applyCommand>[0];
+  applyCommand(
+    state,
+    {
+      type: 'START_HEX_ACTION',
+      payload: {
+        heroId: hero.hero.id,
+        coordinates: SQUAD_AT,
+        actionType: EHexActionType.ATTACK,
+        toolKey: HEXOBJECT_KEYS.HAND,
+        now: 0,
+      },
+    },
+    worldStore.buildEngineContext(),
+  );
+  const creature = heroBattleCreature({
+    id: hero.hero.id,
+    hearts: 3,
+    weapon: null,
+    shield: null,
+    bag: [],
+  });
+  applyCommand(
+    state,
+    {
+      type: 'BATTLE',
+      payload: { kind: 'start', heroId: hero.hero.id, atMs: 0, heroes: [creature] },
+    },
+    worldStore.buildEngineContext(),
+  );
+  useBattleStore().restore({ engagement: state.engagement!, battle: state.battle! });
+  return state;
 }
 
 // Shared across the three top-level describes below. They are kept separate
@@ -82,15 +141,10 @@ describe('world persistence: saveToStorage (characterization)', () => {
       expect(written.map.tiles).toHaveLength(4);
     });
 
-    it('folds the combat snapshot into the same state blob as heroCoordinates', () => {
+    it('folds the battle snapshot into the same state blob as heroCoordinates', () => {
       const worldStore = useWorldMapStore();
-      const combatStore = useCombatStore();
-      worldStore.map = buildMap('combat-blob');
       worldStore.currentMapId = 'map-c';
-      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 1 };
-      combatStore.combatActive = true;
-      combatStore.combatStepsLeft = 3;
-      combatStore.combatTurnSide = 'enemy';
+      const opened = openBattle('battle-blob');
 
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
@@ -101,10 +155,10 @@ describe('world persistence: saveToStorage (characterization)', () => {
       >;
 
       expect(state.contentVersion).toBe(CONTENT_VERSION);
-      expect(state.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 1 });
-      expect(state.combatActive).toBe(true);
-      expect(state.combatStepsLeft).toBe(3);
-      expect(state.combatTurnSide).toBe('enemy');
+      expect(state.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 2 });
+      expect(state.battle).toEqual(
+        JSON.parse(JSON.stringify({ engagement: opened.engagement, battle: opened.battle })),
+      );
     });
 
     it('snapshots state at call time, not at flush time', () => {
@@ -189,20 +243,16 @@ describe('world persistence: saveToStorage (characterization)', () => {
   });
 });
 
-describe('world persistence: combat autosave (characterization)', () => {
+describe('world persistence: battle autosave', () => {
   useIsolatedWorld();
 
-  describe('combat autosave', () => {
-    it('persists a combat mutation without combat-store asking for a save', async () => {
+  describe('battle autosave', () => {
+    it('persists a battle change without battle-store asking for a save', async () => {
       const worldStore = useWorldMapStore();
-      const combatStore = useCombatStore();
-      worldStore.map = buildMap('autosave');
       worldStore.currentMapId = 'map-auto';
-      useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
-      worldStore.enableCombatAutosave();
+      worldStore.enableBattleAutosave();
 
-      combatStore.combatActive = true;
-      combatStore.combatStepsLeft = 5;
+      const opened = openBattle('autosave');
       await nextTick();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
@@ -211,32 +261,29 @@ describe('world persistence: combat autosave (characterization)', () => {
         unknown
       >;
 
-      expect(state.combatActive).toBe(true);
-      expect(state.combatStepsLeft).toBe(5);
+      expect((state.battle as { engagement: { squadId: string } }).engagement.squadId).toBe(
+        opened.engagement!.squadId,
+      );
     });
 
-    it('does not write anything back while loadFromStorage is hydrating combat', async () => {
+    it('does not write anything back while loadFromStorage is hydrating a battle', async () => {
       const worldStore = useWorldMapStore();
-      worldStore.map = buildMap('no-write-on-load');
       worldStore.currentMapId = 'map-load';
-      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 0 };
-      useCombatStore().combatActive = true;
+      openBattle('no-write-on-load');
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
       setActivePinia(createPinia());
       const reloaded = useWorldMapStore();
       reloaded.currentMapId = 'map-load';
-      reloaded.enableCombatAutosave();
+      reloaded.enableBattleAutosave();
 
       localStorage.removeItem(STATE_KEY('map-load'));
       reloaded.loadFromStorage('map-load');
       await nextTick();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      // The only writes allowed here are loadFromStorage's own explicit
-      // saves. Hydrating combat must not itself trigger one.
-      expect(useCombatStore().combatActive).toBe(false);
+      expect(useBattleStore().inBattle).toBe(false);
     });
   });
 });
@@ -245,29 +292,48 @@ describe('world persistence: loadFromStorage (characterization)', () => {
   useIsolatedWorld();
 
   describe('loadFromStorage', () => {
-    it('restores heroCoordinates and combat state written by saveToStorage', () => {
+    it('restores heroCoordinates and an open battle written by saveToStorage', () => {
       const worldStore = useWorldMapStore();
-      const combatStore = useCombatStore();
-      worldStore.map = buildMap('roundtrip');
       worldStore.currentMapId = 'map-rt';
-      useHeroStore().heroCoordinates = { columnIndex: 1, rowIndex: 1 };
-      combatStore.combatActive = true;
-      combatStore.combatStepsLeft = 2;
+      const opened = openBattle('roundtrip');
 
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
       setActivePinia(createPinia());
       const reloadedWorld = useWorldMapStore();
-      const reloadedCombat = useCombatStore();
+      const reloadedBattle = useBattleStore();
       const reloadedHero = useHeroStore();
       reloadedWorld.currentMapId = 'map-rt';
       reloadedWorld.loadFromStorage('map-rt');
 
-      expect(reloadedHero.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 1 });
-      expect(reloadedWorld.map?.tiles).toHaveLength(4);
-      expect(reloadedCombat.combatActive).toBe(true);
-      expect(reloadedCombat.combatStepsLeft).toBe(2);
+      expect(reloadedHero.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 2 });
+      expect(reloadedWorld.map?.tiles).toHaveLength(25);
+      expect(reloadedBattle.engagement?.squadId).toBe(opened.engagement!.squadId);
+      expect(reloadedBattle.battle?.id).toBe(opened.battle!.id);
+    });
+
+    it('ignores the old combat fields of a save written before B6', () => {
+      const worldStore = useWorldMapStore();
+      worldStore.map = buildMap('legacy');
+      worldStore.currentMapId = 'map-legacy';
+      useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      worldStore.saveToStorage();
+      vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+      const state = JSON.parse(localStorage.getItem(STATE_KEY('map-legacy'))!) as Record<
+        string,
+        unknown
+      >;
+      localStorage.setItem(
+        STATE_KEY('map-legacy'),
+        JSON.stringify({ ...state, battle: undefined, combatActive: true, combatStepsLeft: 3 }),
+      );
+
+      setActivePinia(createPinia());
+      useWorldMapStore().loadFromStorage('map-legacy');
+
+      expect(useBattleStore().inBattle).toBe(false);
+      expect(useHeroStore().heroCoordinates).toEqual({ columnIndex: 0, rowIndex: 0 });
     });
 
     it('discards and removes a saved map whose content version does not match', () => {
@@ -303,15 +369,12 @@ describe('world persistence: loadFromStorage (characterization)', () => {
       warn.mockRestore();
     });
 
-    it('resets combat to defaults when there is no saved state at all', () => {
-      const combatStore = useCombatStore();
-      combatStore.combatActive = true;
-      combatStore.combatStepsLeft = 4;
+    it('closes any open battle when there is no saved state at all', () => {
+      openBattle('absent-battle');
 
       useWorldMapStore().loadFromStorage('absent');
 
-      expect(combatStore.combatActive).toBe(false);
-      expect(combatStore.combatStepsLeft).toBe(0);
+      expect(useBattleStore().inBattle).toBe(false);
     });
   });
 });

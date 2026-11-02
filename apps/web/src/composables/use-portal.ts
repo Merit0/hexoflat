@@ -21,7 +21,7 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
 
 const SCROLL = HEXOBJECT_KEYS.RETURN_SCROLL;
 
@@ -44,7 +44,7 @@ export function usePortal() {
   const worldStore = useWorldMapStore();
   const inventoryStore = useHeroInventoryStore();
   const heroToolStore = useHeroToolStore();
-  const combatStore = useCombatStore();
+  const battleStore = useBattleStore();
 
   function engineState(): HexEngineState | null {
     const map = worldStore.map as HexMapModel | null;
@@ -68,7 +68,7 @@ export function usePortal() {
       state.heroes,
       target,
       state.location!,
-      combatStore.combatActive,
+      battleStore.inBattle,
     );
     if (!plan.ok) return { ok: false, reason: plan.reason };
     const priced = resolvePortalCost(heroStore.knowledge?.skills, inventoryStore.countItem(SCROLL));

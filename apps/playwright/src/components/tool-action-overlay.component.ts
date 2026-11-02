@@ -11,6 +11,10 @@ export class ToolActionOverlayComponent extends BaseComponent {
     return this.page.getByTestId('tool-action-button');
   }
 
+  async verifyOfferedAction(label: RegExp): Promise<void> {
+    await expect(this.actionButton).toHaveText(label);
+  }
+
   async triggerAction(): Promise<void> {
     await this.actionButton.click();
   }

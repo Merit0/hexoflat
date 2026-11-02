@@ -1,16 +1,16 @@
-import { stepCost as willPerStep, travelStepBudget } from '@hexoflat/engine/knowledge/math';
-import { willZoneCharges } from '@hexoflat/engine/knowledge/will-zone';
+import { travelStepBudget } from '@hexoflat/engine/knowledge/math';
 import { computed, type Ref } from 'vue';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import { getScoutMoveStepsForSteps } from '@hexoflat/engine/hero-movement/scout-progression';
-import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { EHexCollision, EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { getToolCapabilities } from '@hexoflat/engine/game-resolvers/interactions-resolver';
+import { watchingSquad } from '@hexoflat/engine/squads/squad-state';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
@@ -21,14 +21,14 @@ export interface UseMovePreviewDeps {
 }
 
 /**
- * Move/defend-marker preview shown as the player hovers a tile: whether the
- * hovered tile is reachable this turn, the path segments to draw, and the
- * marker's kind/cost. Same game rules the engine itself enforces on the
+ * Move preview shown as the player hovers a tile: whether the hovered tile
+ * is reachable, the path segments to draw, and the marker's cost — or
+ * SEEN! when the walk would end next to a sentry. Same game rules the engine itself enforces on the
  * actual MOVE_HERO command — this is purely the preview, not authoritative.
  */
 export function useMovePreview(deps: UseMovePreviewDeps) {
   const worldStore = useWorldMapStore();
-  const combatStore = useCombatStore();
+  const battleStore = useBattleStore();
   const heroToolStore = useHeroToolStore();
   const uiSettingsStore = useUiSettingsStore();
   const heroStore = useHeroStore();
@@ -47,42 +47,9 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
     if (!uiSettingsStore.showHeroMoveTrail) return null;
     if (!worldStore.map || !heroStore.heroCoordinates || !hoveredTileCoord) return null;
     if (heroStore.isHeroMoving) return null;
-    if (combatStore.combatActive && combatStore.combatTurnSide !== 'hero') return null;
+    if (battleStore.inBattle) return null;
 
-    const activeToolCapabilities = heroToolStore.activeTool
-      ? getToolCapabilities(heroToolStore.activeTool)
-      : {};
-
-    if (
-      combatStore.combatActive &&
-      combatStore.combatTurnSide === 'hero' &&
-      heroToolStore.isDragging &&
-      activeToolCapabilities.canBlock &&
-      combatStore.combatAttackUsed &&
-      !combatStore.combatDefendUsed
-    ) {
-      const isAdjacent = getHexNeighbors(heroStore.heroCoordinates).some(
-        (coord) =>
-          coord.columnIndex === hoveredTileCoord.columnIndex &&
-          coord.rowIndex === hoveredTileCoord.rowIndex,
-      );
-      if (!isAdjacent) return null;
-
-      const reachable = combatStore.canPlaceCombatDefendMarker(hoveredTileCoord);
-
-      return {
-        path: null,
-        reachable,
-        markerCoord: hoveredTileCoord,
-        stepCost: 0,
-        chargesWill: false,
-        markerKind: 'defend' as const,
-      };
-    }
-
-    const hasMovementSteps = combatStore.combatActive
-      ? combatStore.combatStepsLeft > 0
-      : getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
+    const hasMovementSteps = getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
     const hasNoActiveTool =
       !heroToolStore.isDragging &&
       (!heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND);
@@ -95,9 +62,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
     const targetTile = deps.getTileByCoord(hoveredTileCoord);
     if (!targetTile) return null;
 
-    const moveSteps = combatStore.combatActive
-      ? combatStore.combatStepsLeft
-      : availableWorldSteps.value;
+    const moveSteps = availableWorldSteps.value;
     const path = findShortestPath(
       worldStore.map,
       heroStore.heroCoordinates,
@@ -114,14 +79,14 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
 
     const route = path?.slice(1) ?? [];
     const reachable = isTraversableTarget && route.length > 0 && route.length <= moveSteps;
+    const map = worldStore.map as HexMapModel;
+    const seen = reachable && route.some((step) => !!watchingSquad(map, step));
 
     return {
       path,
       reachable,
       markerCoord: isTraversableTarget ? hoveredTileCoord : null,
-      stepCost: route.length * willPerStep(heroStore.willZoneContext),
-      chargesWill: willZoneCharges(heroStore.willZoneContext),
-      markerKind: 'move' as const,
+      markerKind: seen ? ('seen' as const) : ('move' as const),
     };
   });
 
@@ -134,9 +99,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
 
   const markerCoord = computed(() => movePreview.value?.markerCoord ?? null);
   const reachable = computed(() => movePreview.value?.reachable ?? false);
-  const stepCost = computed(() => movePreview.value?.stepCost ?? 0);
-  const chargesWill = computed(() => movePreview.value?.chargesWill ?? false);
   const markerKind = computed(() => movePreview.value?.markerKind ?? 'move');
 
-  return { segments, markerCoord, reachable, stepCost, chargesWill, markerKind };
+  return { segments, markerCoord, reachable, markerKind };
 }

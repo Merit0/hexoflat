@@ -46,6 +46,7 @@ export interface HexoflatTestApi {
   getTileFraction(coordinates: TestHexCoordinates): TestTileFraction;
 
   getNeighbors(coordinates: TestHexCoordinates): TestHexCoordinates[];
+  countExistingNeighbours(coordinates: TestHexCoordinates): number;
 
   getDistance(from: TestHexCoordinates, to: TestHexCoordinates): number;
 
@@ -74,6 +75,38 @@ export interface HexoflatTestApi {
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;
   setHeroHealth(current: number): void;
+  placeSquadNextToHero(key: string): TestHexCoordinates;
+  isBattleEngaged(): boolean;
+  finishBattle(outcome: 'victory' | 'defeat'): void;
+  giveHeroTheTurn(will?: number): void;
+  getBattleHands(): {
+    right: string | null;
+    left: string | null;
+    bag: string[];
+    will: number;
+  } | null;
+
+  getBattleSnapshot(): {
+    round: number;
+    phase: string;
+    activeId: string;
+    order: string[];
+    draws: Record<string, number>;
+    turnWill: number;
+    reaction: { stage: 'block' | 'aim'; attackerId: string; defenderId: string } | null;
+    creatures: { id: string; side: string; hp: number; maxHp: number; q: number; r: number }[];
+    wounds: Record<string, { q: number; r: number }[]>;
+    heroDistances: Record<string, number>;
+    placedShields: number;
+    revealedShields: number;
+    heroFreeNeighbours: { q: number; r: number }[];
+    terrain: Record<string, number>;
+    aimOptions: { q: number; r: number }[];
+  } | null;
+  giveEnemyTheTurn(): void;
+  crowdTheHero(adjacent?: number, far?: number): void;
+  holdTheWindowOpen(extraMs: number): void;
+  getBattleHexPoint(q: number, r: number): { x: number; y: number } | null;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 }

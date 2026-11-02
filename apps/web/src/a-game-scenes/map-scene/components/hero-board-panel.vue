@@ -20,9 +20,9 @@
       <knowledge-board v-if="knowledgePanelMode" />
       <div v-else class="hero-board-body">
         <header class="board-top">
-          <div class="tabs">
+          <div class="tabs" :style="{ '--tab-count': tabs.length }">
             <button
-              v-for="tab in TABS"
+              v-for="tab in tabs"
               :key="tab.id"
               class="tab"
               :class="{ 'is-active': activeTab === tab.id, 'is-disabled': tab.disabled }"
@@ -31,12 +31,15 @@
               type="button"
               @click="activeTab = tab.id"
             >
-              {{ tab.label }}
+              <template v-if="tab.id === 'battle'">{{ t('battle.tab') }}</template>
+              <template v-else>{{ tab.label }}</template>
             </button>
           </div>
         </header>
 
-        <hero-details-board v-if="activeTab === 'hero'" />
+        <battle-tab v-if="activeTab === 'battle' && battleStore.isOpen" />
+
+        <hero-details-board v-else-if="activeTab === 'hero'" />
 
         <hero-path-board v-else-if="activeTab === 'path'" />
 
@@ -107,8 +110,11 @@ import HeroPathBoard from '@/a-game-scenes/map-scene/components/hero-details/her
 import HeroDetailsBoard from '@/a-game-scenes/map-scene/components/hero-details/hero-details-board.vue';
 import ItemTooltipLayer from '@/components/gui/item-tooltip/item-tooltip-layer.vue';
 import TokenDetailsPanel from '@/a-game-scenes/inventory-scene/components/token-details-panel.vue';
+import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vue';
+import { useBattleStore } from '@/stores/battle-store';
+import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
 
-type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
+type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events' | 'battle';
 
 const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
   { id: 'hero', label: 'Hero' },
@@ -118,6 +124,20 @@ const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
 ];
 
 const activeTab = ref<HeroBoardTab>('hero');
+const battleStore = useBattleStore();
+const tabs = computed(() =>
+  battleStore.isOpen ? [...TABS, { id: 'battle' as const, label: 'Battle' }] : TABS,
+);
+
+watch(
+  () => battleStore.isOpen,
+  (open) => {
+    if (open) activeTab.value = 'battle';
+    else if (activeTab.value === 'battle') activeTab.value = 'hero';
+  },
+  { immediate: true },
+);
+useBattleEnemyDriver();
 
 const { t } = useI18n();
 const heroStore = useHeroStore();
@@ -178,6 +198,9 @@ watch(
 }
 .hero-board-panel {
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  contain: inline-size;
   display: flex;
   flex-direction: row;
   overflow: hidden;
@@ -230,7 +253,9 @@ watch(
   flex: 1;
   min-height: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -241,7 +266,8 @@ watch(
 .tabs {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--tab-count), minmax(0, 1fr));
+  container-type: inline-size;
   gap: 0;
 
   padding: 0;
@@ -253,7 +279,11 @@ watch(
 
 .tab {
   width: 100%;
+  min-width: 0;
   height: 44px;
+  padding: 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -262,9 +292,10 @@ watch(
   color: rgba(255, 255, 255, 0.9);
 
   font-weight: 1000;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: clamp(9px, calc(100cqw / var(--tab-count) / 7.5), 20px);
+  white-space: nowrap;
 }
 
 .tab.is-active {

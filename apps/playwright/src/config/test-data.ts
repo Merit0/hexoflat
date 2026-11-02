@@ -22,6 +22,8 @@ export const HexobjectKeys = {
   shield: 'shield',
   fireplace: 'fireplace',
   returnPortal: 'return-portal',
+  skeletonPack: 'skeleton-pack',
+  boneCourt: 'bone-court',
 } as const;
 
 /** Written by apps/web's ui-settings-store (`hexoflat:ui-settings:v1`). */

@@ -5,7 +5,10 @@ import { applyCommand } from '@hexoflat/engine';
 import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { getWorldSeed } from '@/services/rng/world-rng';
-import type { CombatSnapshot } from '@/stores/combat-store';
+import { battleStateSchema } from '@hexoflat/engine/battle/battle-state';
+import { engagementSchema } from '@hexoflat/engine/squads/engagement';
+import { findSquad } from '@hexoflat/engine/squads/squad-state';
+import type { BattleSnapshot } from '@/stores/battle-store';
 
 export type TWorldState = {
   knowledgeRevision?: number;
@@ -13,7 +16,8 @@ export type TWorldState = {
   heroCoordinates: IHexCoordinates | null;
   worldSeed?: string;
   descriptor?: BoardDescriptor | null;
-} & CombatSnapshot;
+  battle?: BattleSnapshot;
+};
 
 export function initialLocationKey(): LocationKey {
   return 'camping';
@@ -33,7 +37,7 @@ export function isCurrentlyHydratingFromStorage(): boolean {
   return isHydratingFromStorage;
 }
 
-export function withoutCombatAutosave(hydrate: () => void): void {
+export function withoutBattleAutosave(hydrate: () => void): void {
   isHydratingFromStorage = true;
   try {
     hydrate();
@@ -52,4 +56,14 @@ export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineAction
     { type: 'WORLD_TICKED'; payload: { changed: boolean } } | undefined;
 
   return tickEvent?.payload.changed ?? false;
+}
+
+export function readBattleSnapshot(raw: unknown, map: HexMapModel | null): BattleSnapshot {
+  const empty: BattleSnapshot = { engagement: null, battle: null };
+  if (!raw || typeof raw !== 'object' || !map) return empty;
+  const saved = raw as Record<string, unknown>;
+  const engagement = engagementSchema.safeParse(saved.engagement);
+  if (!engagement.success || !findSquad(map, engagement.data.squadId)) return empty;
+  const battle = battleStateSchema.safeParse(saved.battle);
+  return { engagement: engagement.data, battle: battle.success ? battle.data : null };
 }

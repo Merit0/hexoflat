@@ -1,9 +1,10 @@
 import { computed } from 'vue';
 import { getScoutProgress, toRoman } from '@hexoflat/engine/hero-movement/scout-progression';
-import { getAttackMultiplier, getMarkerDefense } from '@hexoflat/engine/combat/damage-calculator';
+import { BATTLE_ITEMS, battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
+import { THREAT_RULES } from '@hexoflat/engine/battle/threat';
 import { sumShieldPoints } from '@hexoflat/engine/combat/shield-points';
 import type { SkillProgress } from '@hexoflat/engine/skills/sacrifice-rules';
-import { getSkillBonuses, type SkillRanks } from '@hexoflat/engine/skills/skill-rules';
+import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { getPrototype } from '@hexoflat/engine';
 import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
@@ -12,7 +13,7 @@ import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-toolti
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
-import { useCombatStore } from '@/stores/combat-store';
+import { useBattleStore } from '@/stores/battle-store';
 import { getObjectRarityTone } from '@/render/rarity';
 import { SHIELD_SLOTS } from '@/constants/shield-slots';
 import { buildSkillTreeView, type SkillTreeView } from './skill-tree-view';
@@ -40,15 +41,14 @@ export interface HeroDetailsInput {
   kills: number;
   carriedKg: number;
   capacityKg: number;
-  attackBase: number;
   shieldPoints: number;
   extraShields: number;
   skills: SkillRanks;
   skillProgress: SkillProgress;
   skillsLocked: boolean;
   will: { current: number; capacity: number } | null;
-  weapon: { item: HandItem; multiplier: number } | null;
-  shield: { item: HandItem; defense: number } | null;
+  weapon: { item: HandItem; power: number } | null;
+  shield: { item: HandItem; sides: number } | null;
   defense: number;
 }
 
@@ -103,10 +103,8 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
   const scout = scoutView(input.steps);
   const max = Math.max(1, input.maxHealth);
   const current = Math.max(0, Math.min(max, input.currentHealth));
-  const multiplier = input.weapon?.multiplier ?? 1;
-  const bonuses = getSkillBonuses(input.skills);
-  const defense = round2(input.defense + bonuses.defense);
-  const attack = round2((input.attackBase + bonuses.attack) * multiplier);
+  const attack = input.weapon?.power ?? THREAT_RULES.unarmedPower;
+  const defense = round2(input.defense);
 
   return {
     name: input.name,
@@ -117,7 +115,7 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
     shields: { filled: shieldsFilled(input), total: SHIELD_SLOTS },
     will: input.will,
     tiles: [
-      { id: 'attack', value: `×${attack}` },
+      { id: 'attack', value: String(attack) },
       { id: 'defense', value: String(defense) },
       { id: 'load', value: `${fixed2(input.carriedKg)} / ${fixed2(input.capacityKg)}` },
       { id: 'victories', value: String(input.kills) },
@@ -133,6 +131,11 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
   };
 }
 
+function battleStat(key: THexobjectKey, stat: 'power' | 'shieldCapacity'): number {
+  const item = battleItemOfHexobject(key);
+  return item ? (BATTLE_ITEMS[item]?.[stat] ?? 0) : 0;
+}
+
 function toHandItem(key: THexobjectKey, skills: SkillRanks): HandItem {
   const view = resolveInventoryView(key);
   return {
@@ -145,7 +148,7 @@ function toHandItem(key: THexobjectKey, skills: SkillRanks): HandItem {
 export function useHeroDetails() {
   const heroStore = useHeroStore();
   const inventory = useHeroInventoryStore();
-  const combat = useCombatStore();
+  const battle = useBattleStore();
 
   return computed<HeroDetailsView>(() => {
     const hero = heroStore.hero;
@@ -159,15 +162,18 @@ export function useHeroDetails() {
       weaponItem && weaponItem.key !== HEXOBJECT_KEYS.HAND
         ? {
             item: toHandItem(weaponItem.key, skills),
-            multiplier: getAttackMultiplier(weaponItem.key),
+            power: battleStat(weaponItem.key, 'power') || THREAT_RULES.unarmedPower,
           }
         : null;
     const shield =
       shieldItem && shieldItem.key !== HEXOBJECT_KEYS.HAND
-        ? { item: toHandItem(shieldItem.key, skills), defense: getMarkerDefense(shieldItem.key) }
+        ? {
+            item: toHandItem(shieldItem.key, skills),
+            sides: battleStat(shieldItem.key, 'shieldCapacity'),
+          }
         : null;
-    const defense = Object.values(equipped).reduce(
-      (sum, item) => sum + (item ? getMarkerDefense(item.key) : 0),
+    const defense = [weaponItem, shieldItem].reduce(
+      (sum, item) => sum + (item ? battleStat(item.key, 'shieldCapacity') : 0),
       0,
     );
 
@@ -181,12 +187,11 @@ export function useHeroDetails() {
       kills: hero.kills,
       carriedKg: inventory.carriedWeightKg,
       capacityKg: inventory.carryCapacityKg,
-      attackBase: hero.attack,
       shieldPoints: sumShieldPoints(Object.values(equipped).map((item) => item?.key)),
       extraShields: heroStore.extraShields,
       skills: knowledge?.skills ?? {},
       skillProgress: knowledge?.skillProgress ?? {},
-      skillsLocked: heroStore.isHeroMoving || combat.combatActive,
+      skillsLocked: heroStore.isHeroMoving || battle.inBattle,
       will: knowledge ? { current: knowledge.current, capacity: knowledge.capacity } : null,
       weapon,
       shield,

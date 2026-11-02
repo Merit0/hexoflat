@@ -39,10 +39,15 @@ export const ACTION_TYPE_MAP: Record<ResolvedActionType, EHexActionType> = {
   TAKE: EHexActionType.TAKE,
   USE: EHexActionType.USE,
   OPEN: EHexActionType.OPEN,
-  ATTACK: EHexActionType.ATTACK,
-  BLOCK: EHexActionType.BLOCK,
   ENTER: EHexActionType.ENTER,
+  ATTACK: EHexActionType.ATTACK,
+  SCOUT: EHexActionType.SCOUT,
 };
+
+const SQUAD_ONLY: ActionStarter = () => ({
+  ok: false,
+  message: 'Only a squad can be attacked or scouted!',
+});
 
 export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
   [EHexActionType.CUT]: (tile, tool, now, ctx) => {
@@ -273,20 +278,6 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     return { ok: true, endsAt };
   },
 
-  [EHexActionType.ATTACK]: (tile, _tool, now, ctx) => {
-    if (isBusy(tile, now)) return { ok: false, message: 'Hex is busy!' };
-    const res = ctx.worldMap.performHeroCombatAttack(tile, _tool);
-    if (!res.ok) return { ok: false, message: res.message };
-    return { ok: true, endsAt: now };
-  },
-
-  [EHexActionType.BLOCK]: (tile, _tool, now, ctx) => {
-    if (isBusy(tile, now)) return { ok: false, message: 'Hex is busy!' };
-    const placed = ctx.worldMap.placeCombatDefendMarker(tile.coordinates, _tool);
-    if (!placed) return { ok: false, message: 'Cannot place block here.' };
-    return { ok: true, endsAt: now };
-  },
-
   [EHexActionType.OPEN]: (tile, _tool, now) => {
     const obj = tile.hexobject;
     if (!obj) return { ok: false, message: 'Hex has no object!' };
@@ -342,4 +333,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     return { ok: true, endsAt: now + 100 };
   },
+
+  [EHexActionType.ATTACK]: SQUAD_ONLY,
+  [EHexActionType.SCOUT]: SQUAD_ONLY,
 };

@@ -3,13 +3,27 @@ import { useUserStore } from '@/stores/user-store';
 
 const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-page.vue');
 const HexWorldMap = () => import('@/a-game-scenes/map-scene/components/hex-world-map.vue');
+const DevBattlefieldPage = () =>
+  import('@/a-game-scenes/battle-scene/components/dev-battlefield-page.vue');
 
 export const ROUTES = {
   LOGIN: 'login',
   REGISTER: 'register',
   WORLD: 'world',
   BATTLE: 'battle',
+  DEV_BATTLEFIELD: 'dev-battlefield',
 } as const;
+
+const DEV_ROUTES: RouteRecordRaw[] = import.meta.env.DEV
+  ? [
+      {
+        path: '/dev/battlefield',
+        name: ROUTES.DEV_BATTLEFIELD,
+        component: DevBattlefieldPage,
+        meta: { requiresAuth: false },
+      },
+    ]
+  : [];
 
 const routes: RouteRecordRaw[] = [
   {
@@ -37,6 +51,7 @@ const routes: RouteRecordRaw[] = [
     }),
     meta: { requiresAuth: true },
   },
+  ...DEV_ROUTES,
   {
     path: '/:pathMatch(.*)*',
     redirect: { name: ROUTES.LOGIN },

@@ -1,0 +1,229 @@
+import { describe, expect, it } from 'vitest';
+import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
+import type { BattleAnimationStep } from './battle-animation-plan';
+import { BattleAnimationQueue } from './battle-animation-queue';
+import { splashFrameIndex } from '@/render/blood-splash';
+import { sampleStrikeFx, sampleTokenPose, type AnimationGeometry } from './battle-animation-sample';
+
+const geo: AnimationGeometry = {
+  centreOf: (hex: BattleHex) => ({ x: hex.q * 100, y: hex.r * 100 }),
+  tileHeight: 100,
+};
+
+const walk: BattleAnimationStep = {
+  kind: 'walk',
+  creatureId: 's1',
+  from: { q: 3, r: 0 },
+  to: { q: 2, r: 0 },
+  durationMs: 300,
+};
+const strike: BattleAnimationStep = {
+  kind: 'strike',
+  targetId: 'hero',
+  target: { q: 0, r: 0 },
+  from: { q: 2, r: 0 },
+  toolKey: 'sword',
+  ring: [{ q: 1, r: 0 }],
+  splashAt: [{ q: 0, r: 0 }],
+  hits: [{ at: { q: 0, r: 0 }, damage: 2 }],
+  durationMs: 400,
+};
+
+describe('BattleAnimationQueue', () => {
+  it('holds the enemy at its old hex, walks it to the next, then swings the tool round the attacker', () => {
+    const queue = new BattleAnimationQueue(geo);
+    queue.enqueue([walk, strike]);
+
+    expect(queue.frame().poses.get('s1')).toEqual({ x: 300, y: 0, alpha: 1 });
+    const mid = queue.advance(150).poses.get('s1')!;
+    expect(mid.x).toBeLessThan(300);
+    expect(mid.x).toBeGreaterThan(200);
+
+    const during = queue.advance(150 + 200);
+    expect(during.poses.has('s1')).toBe(false);
+    expect(during.fx?.toolKey).toBe('sword');
+    expect(during.busy).toBe(true);
+
+    const done = queue.advance(200);
+    expect(done).toMatchObject({ poses: new Map(), fx: null, dying: new Set(), busy: false });
+    expect(queue.busy).toBe(false);
+  });
+
+  it('slides through every hex of the path and shakes back to rest', () => {
+    const queue = new BattleAnimationQueue(geo);
+    queue.enqueue([
+      {
+        kind: 'slide',
+        creatureId: 'hero',
+        path: [
+          { q: 0, r: 0 },
+          { q: 1, r: 0 },
+          { q: 2, r: 0 },
+        ],
+        durationMs: 500,
+      },
+      { kind: 'shake', creatureId: 'hero', at: { q: 2, r: 0 }, style: 'fall', durationMs: 300 },
+    ]);
+    expect(queue.advance(250).poses.get('hero')).toEqual({ x: 100, y: 0, alpha: 1 });
+    expect(queue.advance(250).poses.get('hero')).toEqual({ x: 200, y: 0, alpha: 1 });
+    const shaking = queue.advance(25).poses.get('hero')!;
+    expect(shaking.x).toBe(200);
+    expect(shaking.y).toBeGreaterThan(0);
+    expect(queue.advance(275).busy).toBe(false);
+  });
+
+  it('lifts a saw eject in an arc and lands on the free hex', () => {
+    const queue = new BattleAnimationQueue(geo);
+    queue.enqueue([
+      {
+        kind: 'eject',
+        creatureId: 'hero',
+        from: { q: 1, r: 0 },
+        to: { q: 0, r: 0 },
+        durationMs: 350,
+      },
+      { kind: 'shake', creatureId: 'hero', at: { q: 0, r: 0 }, style: 'hit', durationMs: 280 },
+    ]);
+    const mid = queue.advance(175).poses.get('hero')!;
+    expect(mid.y).toBeLessThan(-40);
+    expect(queue.advance(175).poses.get('hero')).toEqual({ x: 0, y: 0, alpha: 1 });
+  });
+});
+
+describe('sampleStrikeFx', () => {
+  it('starts the tool beside the attacker, on the side of the target, fading in', () => {
+    const start = sampleStrikeFx(strike, 0, geo)!;
+    expect(start.tool.x).toBeCloseTo(200 - 70);
+    expect(start.tool.y).toBeCloseTo(0);
+    expect(start.tool.alpha).toBe(0);
+    expect(sampleStrikeFx(strike, 0.2, geo)!.tool.alpha).toBe(1);
+  });
+
+  it('goes once round the attacker hex, never round the target, and fades out', () => {
+    const turned = sampleStrikeFx(strike, 0.5, geo)!;
+    expect(turned.tool.x).toBeCloseTo(200 - 70);
+    expect(turned.tool.y).toBeCloseTo(0);
+    const quarter = sampleStrikeFx(strike, 0.25, geo)!;
+    expect(quarter.tool.x).toBeCloseTo(200);
+    expect(Math.abs(quarter.tool.y)).toBeCloseTo(70);
+    for (const t of [0.1, 0.3, 0.6, 0.9]) {
+      const { tool } = sampleStrikeFx(strike, t, geo)!;
+      expect(Math.hypot(tool.x - 200, tool.y)).toBeCloseTo(70);
+    }
+    const end = sampleStrikeFx(strike, 1, geo)!;
+    expect(end.tool.x).toBeCloseTo(200 - 70);
+    expect(end.tool.alpha).toBe(0);
+  });
+
+  it('never shows the tool when the owner is unknown, so it cannot circle anyone else', () => {
+    const fx = sampleStrikeFx({ ...strike, from: null }, 0.5, geo)!;
+    expect(fx.tool.alpha).toBe(0);
+  });
+});
+
+describe('blood splash on a landed weapon strike', () => {
+  it('stays hidden until the weapon has swung, then runs from 0 to 1 over the target hex', () => {
+    expect(sampleStrikeFx(strike, 0.3, geo)!.splash).toBeNull();
+    const mid = sampleStrikeFx(strike, 0.775, geo)!.splash!;
+    expect(mid.progress).toBeCloseTo(0.5);
+    expect(mid.at).toEqual([{ x: 0, y: 0 }]);
+    expect(sampleStrikeFx(strike, 1, geo)!.splash!.progress).toBeCloseTo(1);
+  });
+
+  it('is not drawn when nobody took damage', () => {
+    expect(sampleStrikeFx({ ...strike, splashAt: [] }, 0.9, geo)!.splash).toBeNull();
+  });
+
+  it('is drawn on every creature the swing hurt', () => {
+    const swing = {
+      ...strike,
+      splashAt: [
+        { q: 0, r: 0 },
+        { q: 0, r: 1 },
+      ],
+    };
+    expect(sampleStrikeFx(swing, 0.9, geo)!.splash!.at).toEqual([
+      { x: 0, y: 0 },
+      { x: 0, y: 100 },
+    ]);
+  });
+
+  it('is still drawn on the target when the attacker is unknown', () => {
+    expect(sampleStrikeFx({ ...strike, from: null }, 0.9, geo)!.splash).not.toBeNull();
+  });
+});
+
+describe('splashFrameIndex', () => {
+  it('walks the frames in order and clamps at both ends', () => {
+    expect([0, 0.17, 0.34, 0.5, 0.67, 0.84, 1].map((p) => splashFrameIndex(p, 6))).toEqual([
+      0, 1, 2, 3, 4, 5, 5,
+    ]);
+    expect(splashFrameIndex(-1, 6)).toBe(0);
+    expect(splashFrameIndex(0.5, 0)).toBe(0);
+  });
+});
+
+describe('death fall', () => {
+  const fall: BattleAnimationStep = {
+    kind: 'fall',
+    creatureId: 's1',
+    at: { q: 1, r: 0 },
+    durationMs: 400,
+  };
+
+  it('fades the token out in place', () => {
+    expect(sampleTokenPose(fall, 0, geo)).toEqual({ x: 100, y: 0, alpha: 1 });
+    expect(sampleTokenPose(fall, 0.5, geo)!.alpha).toBeCloseTo(0.5);
+    expect(sampleTokenPose(fall, 1, geo)!.alpha).toBe(0);
+  });
+
+  it('keeps the creature marked as dying until its fall is over, after the strike', () => {
+    const queue = new BattleAnimationQueue(geo);
+    queue.enqueue([{ ...strike, targetId: 's1' }, fall]);
+    expect([...queue.frame().dying]).toEqual(['s1']);
+    expect(queue.frame().poses.get('s1')).toEqual({ x: 100, y: 0, alpha: 1 });
+    expect([...queue.advance(strike.durationMs + 100).dying]).toEqual(['s1']);
+    const done = queue.advance(400);
+    expect(done.dying.size).toBe(0);
+    expect(done.busy).toBe(false);
+  });
+
+  describe('damage numbers', () => {
+    it('announces each strike once, when the blow lands', () => {
+      const queue = new BattleAnimationQueue(geo);
+      queue.enqueue([strike]);
+      expect(queue.advance(100).numbers).toEqual([]);
+      expect(queue.advance(150).numbers).toEqual([{ at: { x: 0, y: 0 }, damage: 2 }]);
+      expect(queue.advance(10).numbers).toEqual([]);
+      expect(queue.advance(500).numbers).toEqual([]);
+    });
+
+    it('never announces a blow that did no damage', () => {
+      const queue = new BattleAnimationQueue(geo);
+      queue.enqueue([{ ...strike, hits: [{ at: { q: 0, r: 0 }, damage: 0 }] }]);
+      expect(queue.advance(5000).numbers).toEqual([]);
+    });
+
+    it('announces a wound that no blow caused, together with its splash', () => {
+      const queue = new BattleAnimationQueue(geo);
+      const wound: BattleAnimationStep = {
+        kind: 'shake',
+        creatureId: 'hero',
+        at: { q: 0, r: 0 },
+        style: 'hit',
+        damage: 3,
+        durationMs: 650,
+      };
+      queue.enqueue([wound]);
+      const frame = queue.advance(10);
+      expect(frame.numbers).toEqual([{ at: { x: 0, y: 0 }, damage: 3 }]);
+      expect(frame.fx?.splash?.at).toEqual([{ x: 0, y: 0 }]);
+    });
+
+    it('still announces a strike that a long frame skipped over', () => {
+      const queue = new BattleAnimationQueue(geo);
+      queue.enqueue([strike]);
+      expect(queue.advance(5000).numbers).toHaveLength(1);
+    });
+  });
+});

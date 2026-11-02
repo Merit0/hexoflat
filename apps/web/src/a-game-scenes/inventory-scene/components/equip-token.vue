@@ -9,6 +9,7 @@
     :style="tokenStyle"
     tabindex="0"
     @pointerdown="onPointerDown"
+    @click="useToolToken()"
     @mouseenter="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
     @mouseleave="hideItemTooltip()"
     @focus="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
@@ -19,6 +20,7 @@
     <button
       v-if="isUsableTool"
       class="hex-use-btn"
+      :class="{ 'is-blocked': blockedInBattle }"
       :data-testid="`equip-token-use-button-${item.id}`"
       type="button"
       @click.stop="useToolToken()"
@@ -42,12 +44,16 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, type CSSProperties } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
 import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useBattleStore } from '@/stores/battle-store';
+import { activateBattleHand } from '@/composables/use-battle-view';
 import { useHeroStore } from '@/stores/hero-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
@@ -64,6 +70,8 @@ const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
 const heroStore = useHeroStore();
 const overlayStore = useOverlayStore();
+const battleStore = useBattleStore();
+const { t } = useI18n();
 const dragHandle = useInventoryDragHandle(() => props.item.id);
 
 const isDragging = computed(() => inventoryDragState.draggingId === props.item.id);
@@ -104,8 +112,22 @@ function resolveToolType(): THeroToolKey | null {
   return toolKeyOfItem(props.item.key);
 }
 
+const blockedInBattle = computed(
+  () => battleStore.isOpen && !battleItemOfHexobject(props.item.key),
+);
+
 function useToolToken() {
   if (!isUsableTool.value) return;
+
+  if (blockedInBattle.value) {
+    heroToolStore.setActionMessage(t('battle.warn.notInBattle'));
+    return;
+  }
+
+  if (battleStore.isOpen) {
+    activateBattleHand(props.item.slotKey === 'eq:weapon' ? 'right' : 'left');
+    return;
+  }
 
   const toolType = resolveToolType();
   if (!toolType) return;
@@ -198,6 +220,11 @@ function onPointerDown(e: PointerEvent) {
     opacity 0.12s ease,
     transform 0.08s linear,
     filter 0.12s ease;
+}
+
+.hex-use-btn.is-blocked {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .hex-use-btn:hover {

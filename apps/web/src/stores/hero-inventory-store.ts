@@ -21,6 +21,14 @@ import {
   writeSavedInventory,
 } from '@/services/persistence/inventory-storage';
 
+export type InventoryHandsGate = () => boolean;
+
+let handsGate: InventoryHandsGate | null = null;
+
+export function bindInventoryHandsGate(gate: InventoryHandsGate | null): void {
+  handsGate = gate;
+}
+
 export type { TEquipSlot };
 export type { InventoryItem };
 
@@ -224,6 +232,22 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     },
 
     moveItemToSlot(itemId: string, targetSlotKey: string) {
+      const gate = handsGate;
+      if (!gate) {
+        this.applyMoveToSlot(itemId, targetSlotKey);
+        return;
+      }
+      const handKeys = () =>
+        `${this.equippedItems.weapon?.key ?? ''}|${this.equippedItems.shield?.key ?? ''}`;
+      const before = handKeys();
+      const snapshot = JSON.parse(JSON.stringify(this.items)) as InventoryItem[];
+      this.applyMoveToSlot(itemId, targetSlotKey);
+      if (handKeys() === before || gate()) return;
+      this.items = snapshot;
+      this.persist();
+    },
+
+    applyMoveToSlot(itemId: string, targetSlotKey: string) {
       const fromItem = this.items.find((i) => i.id === itemId);
       if (!fromItem) return;
 

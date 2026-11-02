@@ -78,6 +78,84 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async placeSquadNextToHero(key: string): Promise<TestHexCoordinates> {
+    return this.page.evaluate(
+      (squad) => window.__HEXOFLAT_TEST__!.placeSquadNextToHero(squad),
+      key,
+    );
+  }
+
+  async readBattleHands() {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleHands());
+  }
+
+  async giveHeroTheTurn(will?: number): Promise<void> {
+    await this.page.evaluate((value) => window.__HEXOFLAT_TEST__!.giveHeroTheTurn(value), will);
+  }
+
+  async watchSprite(url: RegExp): Promise<() => Promise<void>> {
+    const response = this.page.waitForResponse((r) => url.test(r.url()));
+    return async () => {
+      expect((await response).status()).toBe(200);
+    };
+  }
+
+  async findTilesWithKey(key: string): Promise<TestHexCoordinates[]> {
+    return this.page.evaluate((k) => window.__HEXOFLAT_TEST__!.findTilesWithKey(k), key);
+  }
+
+  async countExistingNeighbours(coordinates: TestHexCoordinates): Promise<number> {
+    return this.page.evaluate(
+      (c) => window.__HEXOFLAT_TEST__!.countExistingNeighbours(c),
+      coordinates,
+    );
+  }
+
+  async readHeroCoordinates(): Promise<TestHexCoordinates | null> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getHeroCoordinates());
+  }
+
+  async distanceBetween(from: TestHexCoordinates, to: TestHexCoordinates): Promise<number> {
+    return this.page.evaluate(([a, b]) => window.__HEXOFLAT_TEST__!.getDistance(a, b), [
+      from,
+      to,
+    ] as const);
+  }
+
+  async readBattleSnapshot() {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleSnapshot());
+  }
+
+  async battleHexPoint(hex: { q: number; r: number }) {
+    return this.page.evaluate(
+      (target) => window.__HEXOFLAT_TEST__!.getBattleHexPoint(target.q, target.r),
+      hex,
+    );
+  }
+
+  async holdTheWindowOpen(extraMs: number): Promise<void> {
+    await this.page.evaluate((ms) => window.__HEXOFLAT_TEST__!.holdTheWindowOpen(ms), extraMs);
+  }
+
+  async crowdTheHero(adjacent?: number, far?: number): Promise<void> {
+    await this.page.evaluate(([near, away]) => window.__HEXOFLAT_TEST__!.crowdTheHero(near, away), [
+      adjacent,
+      far,
+    ] as const);
+  }
+
+  async giveEnemyTheTurn(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveEnemyTheTurn());
+  }
+
+  async finishBattle(outcome: 'victory' | 'defeat'): Promise<void> {
+    await this.page.evaluate((result) => window.__HEXOFLAT_TEST__!.finishBattle(result), outcome);
+  }
+
+  async isBattleEngaged(): Promise<boolean> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.isBattleEngaged());
+  }
+
   private async tilePosition(coordinates: TestHexCoordinates): Promise<{ x: number; y: number }> {
     const fraction = await this.page.evaluate(
       (coord) => window.__HEXOFLAT_TEST__!.getTileFraction(coord),

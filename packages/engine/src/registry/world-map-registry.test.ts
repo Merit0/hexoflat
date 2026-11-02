@@ -53,7 +53,7 @@ describe('MapRegistry', () => {
     }
   });
 
-  it('cave passes encounter params to the recipe descriptor', () => {
+  it('cave passes recipe params to the recipe descriptor', () => {
     const { descriptor } = MapRegistry.get('cave').create({ seed: 'seed', params: { tier: 3 } });
     expect(descriptor.kind === 'RECIPE' && descriptor.params).toEqual({ tier: 3 });
   });

@@ -27,6 +27,10 @@ export class EventsLogComponent extends BaseComponent {
     await expect(this.clearButton).toBeVisible();
   }
 
+  async verifyHasRowMatching(text: RegExp): Promise<void> {
+    await expect(this.rows.filter({ hasText: text }).first()).toBeVisible();
+  }
+
   async verifyRowCount(count: number): Promise<void> {
     await expect(this.rows).toHaveCount(count);
   }

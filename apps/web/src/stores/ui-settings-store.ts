@@ -4,7 +4,6 @@ import { detectBrowserLocale, isSupportedLocale, type TLocale } from '@/i18n/loc
 
 type UiSettingsState = {
   showHeroMoveTrail: boolean;
-  showEnemyVisionArea: boolean;
   locale: TLocale;
 };
 
@@ -13,7 +12,6 @@ const UI_SETTINGS_KEY = 'hexoflat:ui-settings:v1';
 function defaultState(): UiSettingsState {
   return {
     showHeroMoveTrail: true,
-    showEnemyVisionArea: true,
     locale: detectBrowserLocale(),
   };
 }
@@ -28,7 +26,6 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
 
       const parsed = JSON.parse(raw) as Partial<UiSettingsState>;
       this.showHeroMoveTrail = parsed.showHeroMoveTrail ?? true;
-      this.showEnemyVisionArea = parsed.showEnemyVisionArea ?? true;
       this.locale = isSupportedLocale(parsed.locale) ? parsed.locale : detectBrowserLocale();
       i18n.global.locale.value = this.locale;
     },
@@ -38,7 +35,6 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
         UI_SETTINGS_KEY,
         JSON.stringify({
           showHeroMoveTrail: this.showHeroMoveTrail,
-          showEnemyVisionArea: this.showEnemyVisionArea,
           locale: this.locale,
         } satisfies UiSettingsState),
       );
@@ -49,18 +45,8 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
       this.saveToStorage();
     },
 
-    toggleEnemyVisionArea() {
-      this.showEnemyVisionArea = !this.showEnemyVisionArea;
-      this.saveToStorage();
-    },
-
     setHeroMoveTrail(value: boolean) {
       this.showHeroMoveTrail = value;
-      this.saveToStorage();
-    },
-
-    setEnemyVisionArea(value: boolean) {
-      this.showEnemyVisionArea = value;
       this.saveToStorage();
     },
 

@@ -8,9 +8,16 @@ import {
 } from './terrain';
 
 describe('TERRAIN registry', () => {
-  it('TERRAIN every id has a unique symbol', () => {
-    const symbols = TERRAIN_IDS.map((id) => TERRAIN[id].symbol);
+  it('TERRAIN every drawable id has a unique symbol', () => {
+    const symbols = TERRAIN_IDS.map((id) => TERRAIN[id].symbol).filter((s) => s !== null);
     expect(new Set(symbols).size).toBe(symbols.length);
+  });
+
+  it('TERRAIN battle reliefs cannot be drawn and stay passable', () => {
+    for (const id of ['rubble', 'ledge', 'oil', 'saw'] as const) {
+      expect(TERRAIN[id].symbol).toBeNull();
+      expect(isTerrainPassable(id)).toBe(true);
+    }
   });
 
   it('TERRAIN only ground is passable; undefined means ground', () => {

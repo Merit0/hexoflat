@@ -103,12 +103,22 @@ const lootSchema = z.object({
   name: z.string(),
   amount: z.number().optional(),
   rarity: raritySchema.optional(),
+  usePrice: z.number().int().positive().optional(),
   traits: z.object({
     stackable: z.boolean().optional(),
     maxStack: z.number().optional(),
     stackKey: hexobjectKeySchema,
     weightKG: z.number(),
   }),
+});
+
+export const squadSchema = z.object({
+  members: z.array(z.string().regex(/^[a-z0-9-]+$/)).min(1),
+  watcher: z.boolean(),
+  boss: z.boolean(),
+  loot: hexobjectKeySchema,
+  battlefieldBiome: z.enum(['crypt']),
+  tableRule: z.string(),
 });
 
 const creatureSchema = z.object({
@@ -118,6 +128,7 @@ const creatureSchema = z.object({
   attack: z.number(),
   faction: z.enum(['neutral', 'enemy', 'friendly']).optional(),
   visionRange: z.number().optional(),
+  squad: squadSchema.optional(),
 });
 
 const toolSchema = z.object({
@@ -135,6 +146,7 @@ const toolSchema = z.object({
     canOpen: z.boolean().optional(),
     canAttack: z.boolean().optional(),
     canBlock: z.boolean().optional(),
+    canScout: z.boolean().optional(),
   }),
   traits: z.object({ weightKG: z.number() }),
 });

@@ -2,7 +2,15 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { CONTENT } from '@hexoflat/engine';
 import { SKILL_BRANCHES, SKILL_IDS } from '@hexoflat/engine/skills/skill-content';
+import {
+  BATTLE_CREATURES,
+  BATTLE_ITEMS,
+  BATTLE_OBJECTS,
+} from '@hexoflat/engine/battle/battle-catalogue';
+import { SQUAD_REJECTIONS } from '@hexoflat/engine/squads/engagement';
+import { THREATS } from '@hexoflat/engine/battle/threat';
 import ukUi from '@/locales/uk/ui.json';
+import { battleLocaleKeys } from '@/composables/battle-hint';
 
 const CONTENT_KEY_PREFIX = 'content.';
 
@@ -43,6 +51,16 @@ export function collectContentLocaleKeys(): string[] {
     }
   }
 
+  const battleDefs: { title: string; tableRule: string; id: string }[] = [
+    ...Object.values(BATTLE_CREATURES),
+    ...Object.values(BATTLE_ITEMS),
+    ...Object.values(BATTLE_OBJECTS),
+  ];
+  for (const def of battleDefs) {
+    keys.add(def.title);
+    keys.add(def.tableRule);
+  }
+
   return [...keys].sort();
 }
 
@@ -60,6 +78,15 @@ export function flattenLocaleKeys(source: unknown, prefix = ''): string[] {
     }
   }
   return keys;
+}
+
+export function squadLocaleKeys(): string[] {
+  return [
+    ...THREATS.map((threat) => `squad.threat.${threat}`),
+    ...SQUAD_REJECTIONS.map((code) => `squad.rejected.${code}`),
+    'squad.attack',
+    'squad.scout',
+  ];
 }
 
 // Skill-tree texts are looked up by skill/branch id (see use-skill-texts.ts), so
@@ -123,5 +150,7 @@ export function collectUiTemplateKeys(): string[] {
   }
 
   for (const key of collectSkillTreeLocaleKeys()) keys.add(key);
+  for (const key of battleLocaleKeys()) keys.add(key);
+  for (const key of squadLocaleKeys()) keys.add(key);
   return [...keys].sort();
 }

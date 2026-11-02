@@ -1,0 +1,167 @@
+{
+  "frames": {
+    "splash_00.png": {
+      "frame": {
+        "x": 1,
+        "y": 1,
+        "w": 264,
+        "h": 264
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 264,
+        "h": 264
+      },
+      "sourceSize": {
+        "w": 264,
+        "h": 264
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "splash_01.png": {
+      "frame": {
+        "x": 267,
+        "y": 1,
+        "w": 264,
+        "h": 264
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 264,
+        "h": 264
+      },
+      "sourceSize": {
+        "w": 264,
+        "h": 264
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "splash_02.png": {
+      "frame": {
+        "x": 533,
+        "y": 1,
+        "w": 264,
+        "h": 264
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 264,
+        "h": 264
+      },
+      "sourceSize": {
+        "w": 264,
+        "h": 264
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "splash_03.png": {
+      "frame": {
+        "x": 1,
+        "y": 267,
+        "w": 264,
+        "h": 264
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 264,
+        "h": 264
+      },
+      "sourceSize": {
+        "w": 264,
+        "h": 264
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "splash_04.png": {
+      "frame": {
+        "x": 267,
+        "y": 267,
+        "w": 264,
+        "h": 264
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 264,
+        "h": 264
+      },
+      "sourceSize": {
+        "w": 264,
+        "h": 264
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "splash_05.png": {
+      "frame": {
+        "x": 533,
+        "y": 267,
+        "w": 264,
+        "h": 264
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 264,
+        "h": 264
+      },
+      "sourceSize": {
+        "w": 264,
+        "h": 264
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  },
+  "animations": {
+    "splash": [
+      "splash_00.png",
+      "splash_01.png",
+      "splash_02.png",
+      "splash_03.png",
+      "splash_04.png",
+      "splash_05.png"
+    ]
+  },
+  "meta": {
+    "image": "vfx.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 798,
+      "h": 532
+    },
+    "scale": "1"
+  }
+}

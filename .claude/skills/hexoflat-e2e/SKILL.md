@@ -39,7 +39,7 @@ Game state and hex geometry are asked of the running app through `window.__HEXOF
 
 This exists so tests never re-implement `packages/engine` logic. If a test needs to know where a hex is, whether a tile is revealed, or what the hero's position is — ask the app, do not recompute it. Extend the test API in `apps/web/src/e2e/create-test-api.ts` rather than duplicating a rule.
 
-State that the real game cannot reach cheaply is granted through hooks, not by clicking: `setWill(n)`, `prepareKnowledgeWorld(n)`, `setSkillRank(skillId, rank)` (skills priced above Will capacity, e.g. the Teleport skill). Add a hook in `create-test-api.ts` + `test-api.types.ts` instead of writing helper logic in a test.
+State that the real game cannot reach cheaply is granted through hooks, not by clicking: `setWill(n)`, `prepareKnowledgeWorld(n)`, `setSkillRank(skillId, rank)` (skills priced above Will capacity, e.g. the Teleport skill), `placeSquadNextToHero(key)` (a squad token in camp, since reaching one in the generated cave is random; queried with `isBattleEngaged`), `finishBattle('victory' | 'defeat')` (ends the open battle so a spec can test leaving it), `giveHeroTheTurn()`, `giveEnemyTheTurn()` (an enemy two hexes from the hero), `crowdTheHero()` (two enemies beside the hero), `getBattleSnapshot()` (order, draws, reaction stage, creatures with hp/position, wounds, hero distances, aim options, revealed shields), `getBattleHexPoint(q, r)` (canvas point of a battle hex for hover/tap), `crowdTheHero(adjacent, far)`, `holdTheWindowOpen(ms)` (keeps the 5 s block window open for slow taps), `giveHeroTheTurn(will)`, `findTilesWithKey` / `countExistingNeighbours` (border checks) and `getBattleHands()` (all in `apps/web/src/e2e/battle-hooks.ts`; battle specs live in `e2e/world/battle-flow.spec.ts` through `BattleFlowFeature`, the block window is closed by the 5 s timer or TAKE HIT, and a battle starts straight from ATTACK; page exceptions are collected by `PageErrorsComponent`). Add a hook in `create-test-api.ts` + `test-api.types.ts` instead of writing helper logic in a test.
 
 Keep the `import.meta.env.VITE_E2E_HOOKS !== 'true'` guard **inline** at its call sites so Vite statically drops the hooks from production bundles.
 
@@ -66,3 +66,10 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - [ ] No engine logic recomputed in test code — asked of `window.__HEXOFLAT_TEST__`
 - [ ] Assertions on debounced state cannot pass on the pre-debounce value
 - [ ] New Feature methods wrapped in `this.step`
+
+## Battle specs (2026-11-02)
+
+- A defender with no shield in hand takes a strike at once, with no block window (`strikeAndReact`). A spec that waits for the block window must start with `startBattleNextToTheSquad({ withShield: true })`.
+- With a foe adjacent or selected, the wheel opens the tool hex ON that foe's hex, and its Attack button covers the canvas there. `BattleTabComponent.hoverBoardPoint` therefore skips the hover when the tool hex already covers the point; do not add `force: true` hovers.
+- `giveHeroTheTurn` / `giveEnemyTheTurn` also clear `battle.wounds`, because an unshielded hero is wounded by the first enemy turn before the hook runs.
+- Run a subset with `sh scripts/pre-push-e2e.sh e2e/world/battle-flow.spec.ts -g "<title part>"`; the log of a failing run names the spec and `test-results/**/error-context.md` has the message.

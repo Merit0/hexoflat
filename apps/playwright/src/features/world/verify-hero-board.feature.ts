@@ -220,15 +220,9 @@ export class VerifyHeroBoardFeature extends BaseFeature {
     );
   }
 
-  async readAttackTileText(): Promise<string> {
-    return this.step('Read the attack tile', () =>
-      this.campingMap.heroBoardPanel.readAttackTileText(),
-    );
-  }
-
-  async verifyAttackTileChangedFrom(previous: string): Promise<void> {
-    await this.step('Verify the attack tile changed', () =>
-      this.campingMap.heroBoardPanel.verifyAttackTileChangedFrom(previous),
+  async verifyAttackTile(value: string): Promise<void> {
+    await this.step(`Verify the attack tile shows ${value}`, () =>
+      this.campingMap.heroBoardPanel.verifyAttackTile(value),
     );
   }
 }

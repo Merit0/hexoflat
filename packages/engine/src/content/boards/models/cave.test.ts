@@ -11,13 +11,19 @@ describe('CAVE_MODEL', () => {
     expect(() => RecipeSchema.parse(CAVE_MODEL)).not.toThrow();
   });
 
-  it(`builds on ${SEEDS} seeds with every rule done or explained (REQ-BOARD-004, REQ-BOARD-006)`, () => {
+  it(`builds on ${SEEDS} seeds with every rule done or explained and the four pilot encounters (REQ-BOARD-004, REQ-BOARD-006)`, () => {
     for (let i = 0; i < SEEDS; i += 1) {
       const built = runBoardPipeline(CAVE_MODEL, { seed: `cave-model-${i}` });
       const keys = built.map.tiles.map((tile) => tile.hexobject?.hexobjectKey);
 
       expect(keys).toContain(HEXOBJECT_KEYS.CAVE_EXIT);
-      expect(keys).toContain(HEXOBJECT_KEYS.SKELETOR);
+      expect(keys).not.toContain(HEXOBJECT_KEYS.SKELETOR);
+      const encounters = built.map.tiles.flatMap((tile) =>
+        tile.hexobject && 'creature' in tile.hexobject && tile.hexobject.creature.squad
+          ? [tile.hexobject.hexobjectKey]
+          : [],
+      );
+      expect(encounters.sort()).toEqual(['bone-court', 'lone-skeleton', 'skeleton-pack'].sort());
       for (const outcome of built.trace.ruleOutcomes) {
         if (outcome.outcome === 'short') {
           expect(built.trace.shortfalls.some((item) => item.ruleId === outcome.ruleId)).toBe(true);

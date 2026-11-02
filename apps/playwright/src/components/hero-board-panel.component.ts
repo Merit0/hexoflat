@@ -2,7 +2,7 @@ import { expect, type Locator } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 import type { TestHeroHealth } from '@framework/test-api';
 
-export type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events';
+export type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events' | 'battle';
 export type HeroDetailsTab = 'state' | 'skills';
 export type SacrificeOption = 'small' | 'medium' | 'all';
 export type HeroSkillId =
@@ -219,12 +219,8 @@ export class HeroBoardPanelComponent extends BaseComponent {
     else await expect(this.handWill(hand)).toContainText(String(will));
   }
 
-  async readAttackTileText(): Promise<string> {
-    return this.attackTileValue.innerText();
-  }
-
-  async verifyAttackTileChangedFrom(previous: string): Promise<void> {
-    await expect(this.attackTileValue).not.toHaveText(previous);
+  async verifyAttackTile(value: string): Promise<void> {
+    await expect(this.attackTileValue).toHaveText(value);
   }
 
   async verifySkillTreeVisible(): Promise<void> {

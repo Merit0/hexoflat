@@ -44,6 +44,10 @@ export function getTexture(path: string): Texture {
   return Texture.EMPTY;
 }
 
+export async function preloadTextures(paths: readonly string[]): Promise<void> {
+  await Promise.all(paths.filter((path) => path && !cache.has(path)).map((path) => load(path)));
+}
+
 export function isTextureReady(path: string): boolean {
   return cache.has(path);
 }

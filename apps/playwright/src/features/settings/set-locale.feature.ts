@@ -33,10 +33,7 @@ export class SetLocaleFeature extends BaseFeature {
 
       await this.page.addInitScript(
         ({ key, locale }) => {
-          localStorage.setItem(
-            key,
-            JSON.stringify({ showHeroMoveTrail: true, showEnemyVisionArea: true, locale }),
-          );
+          localStorage.setItem(key, JSON.stringify({ showHeroMoveTrail: true, locale }));
         },
         { key: UI_SETTINGS_STORAGE_KEY, locale: this.locale },
       );

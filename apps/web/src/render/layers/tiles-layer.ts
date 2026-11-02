@@ -2,39 +2,30 @@ import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { getMeta, getPrototype } from '@hexoflat/engine';
+import { getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
+import { applyObjectFit } from '@/render/object-fit';
 import { terrainLook } from '@/render/terrain-look';
 import { hiddenTileLook, type FogLook } from '@/render/fog-look';
 import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
-import type { useCombatStore } from '@/stores/combat-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
-const PICKUP_SPRITE_SCALE = 0.7;
-const PICKUP_GROUPS = new Set<EHexobjectGroup>([
-  EHexobjectGroup.LOOT,
-  EHexobjectGroup.TOOL,
-  EHexobjectGroup.EQUIPMENT,
-]);
-
 type WorldStore = ReturnType<typeof useWorldMapStore>;
-type CombatStore = ReturnType<typeof useCombatStore>;
 
 export interface TilesLayerDeps {
   worldContainer: Container;
   getTileSize(): { w: number; h: number };
   worldStore: WorldStore;
-  combatStore: CombatStore;
   onTileHover: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
   /** Dev board panel's "show whole board" toggle — render only, never changes tile.isRevealed. */
   isForceRevealed?(): boolean;
   /** Dev board panel's zone-outline toggle — a Pixi tint per tile, or null for no tint. */
   getZoneTint?(tile: IHexTile): number | null;
-  /** How hidden tiles look on the current board: clouds on the world, darkness in the cave. */
+  /** How hidden tiles look on the current board: clouds on the world, the mist hex in dungeons. */
   getFogLook?(): FogLook;
 }
 
@@ -42,10 +33,8 @@ interface TileNode {
   root: Container;
   mask: Graphics;
   bg: Sprite;
-  fogFill: Graphics;
   frame: Sprite;
   sprite: Sprite;
-  defendMarker: Sprite | null;
   lockChip: Text | null;
   unsubscribers: Array<() => void>;
   tile: IHexTile;
@@ -63,7 +52,6 @@ export interface TilesLayer {
    */
   syncTiles(tiles: IHexTile[], dirtyKeys?: Set<string>): void;
   syncLockChips(tiles: IHexTile[], nowTick: number): void;
-  syncDefendMarkers(tiles: IHexTile[]): void;
   destroy(): void;
 }
 
@@ -98,34 +86,6 @@ function getGearRarity(tile: IHexTile) {
   return tile.hexobject ? getObjectRarityTone(tile.hexobject) : null;
 }
 
-function defendMarkerSpritePath(tile: IHexTile, combatStore: CombatStore): string | null {
-  if (!tile.isRevealed) return null;
-
-  const marker = combatStore.combatMarkers.find(
-    (item) =>
-      item.visible &&
-      item.kind === 'defend' &&
-      item.coord.columnIndex === tile.coordinates.columnIndex &&
-      item.coord.rowIndex === tile.coordinates.rowIndex,
-  );
-  if (!marker?.toolKey) return null;
-
-  return getPrototype(marker.toolKey)?.spritePath ?? null;
-}
-
-function applyObjectFit(sprite: Sprite, w: number, h: number, groupType?: EHexobjectGroup) {
-  if (!groupType || !PICKUP_GROUPS.has(groupType)) {
-    applyCoverFit(sprite, w, h);
-    return;
-  }
-
-  const boxWidth = w * PICKUP_SPRITE_SCALE;
-  const boxHeight = h * PICKUP_SPRITE_SCALE;
-  applyCoverFit(sprite, boxWidth, boxHeight);
-  sprite.position.x += (w - boxWidth) / 2;
-  sprite.position.y += (h - boxHeight) / 2;
-}
-
 function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => void) {
   sprite.texture = getTexture(path);
   fit();
@@ -150,14 +110,7 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
 
   const hidden = hiddenTileLook(deps.getFogLook?.() ?? 'clouds');
   const look = displayRevealed ? terrainLook(tile.terrain) : null;
-  const fogFill = !displayRevealed && hidden.kind === 'fill' ? hidden.color : null;
-  node.fogFill.visible = fogFill !== null;
-  if (fogFill !== null) {
-    const { w, h } = deps.getTileSize();
-    drawHexMask(node.fogFill, w, h);
-    node.fogFill.tint = fogFill;
-    node.bg.texture = Texture.EMPTY;
-  } else if (displayRevealed) {
+  if (displayRevealed) {
     applyTexture(
       node.bg,
       look?.background ??
@@ -166,7 +119,7 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
       node,
       bgFit,
     );
-  } else if (hidden.kind === 'texture') {
+  } else {
     applyTexture(node.bg, hidden.url, node, bgFit);
   }
   node.bg.tint = deps.getZoneTint?.(tile) ?? 0xffffff;
@@ -211,12 +164,10 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
 
     const mask = createHexMask(w, h);
     const bg = new Sprite();
-    const fogFill = new Graphics();
-    fogFill.visible = false;
     const frame = new Sprite();
     const sprite = new Sprite();
 
-    root.addChild(mask, bg, fogFill, frame, sprite);
+    root.addChild(mask, bg, frame, sprite);
     root.mask = mask;
     container.addChild(root);
 
@@ -224,10 +175,8 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       root,
       mask,
       bg,
-      fogFill,
       frame,
       sprite,
-      defendMarker: null,
       lockChip: null,
       unsubscribers: [],
       tile,
@@ -316,49 +265,10 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
     }
   }
 
-  function syncDefendMarkers(tiles: IHexTile[]) {
-    for (const tile of tiles) {
-      const node = nodes.get(coordinateKey(tile.coordinates));
-      if (!node) continue;
-
-      const path = defendMarkerSpritePath(tile, deps.combatStore);
-      const { w, h } = deps.getTileSize();
-
-      if (!path) {
-        if (node.defendMarker) {
-          node.defendMarker.destroy();
-          node.defendMarker = null;
-        }
-        continue;
-      }
-
-      if (!node.defendMarker) {
-        node.defendMarker = new Sprite();
-        node.defendMarker.anchor.set(0.5, 0.6);
-        node.defendMarker.position.set(w / 2, h / 2);
-        node.root.addChildAt(node.defendMarker, 3);
-      }
-
-      node.defendMarker.texture = getTexture(path);
-
-      const tex = node.defendMarker.texture;
-      const targetWidth = w * 0.68;
-      if (tex.width && tex.height) {
-        const scale = targetWidth / tex.width;
-        node.defendMarker.width = tex.width * scale;
-        node.defendMarker.height = tex.height * scale;
-      } else {
-        node.defendMarker.width = targetWidth;
-        node.defendMarker.height = h * 0.68;
-      }
-    }
-  }
-
   return {
     container,
     syncTiles,
     syncLockChips,
-    syncDefendMarkers,
     destroy() {
       for (const node of nodes.values()) {
         for (const unsub of node.unsubscribers) unsub();

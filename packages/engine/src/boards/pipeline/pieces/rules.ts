@@ -84,7 +84,7 @@ function chanceHolds(chance: string, rng: SeededRandom): boolean {
   return Math.floor(rng() * denominator) < numerator;
 }
 
-function findEntryCoord(draft: BoardDraft): IHexCoordinates | undefined {
+export function findEntryCoord(draft: BoardDraft): IHexCoordinates | undefined {
   for (const [key, cell] of draft.cellMap.entries()) {
     if (cell.hexobject && cell.hexobject.hexobjectKey === draft.entryObject) {
       return parseCoordinateKey(key);
@@ -93,7 +93,7 @@ function findEntryCoord(draft: BoardDraft): IHexCoordinates | undefined {
   return undefined;
 }
 
-function floorStepsFrom(draft: BoardDraft, start: IHexCoordinates): Map<string, number> {
+export function floorStepsFrom(draft: BoardDraft, start: IHexCoordinates): Map<string, number> {
   const steps = new Map<string, number>([[coordinateKey(start), 0]]);
   let frontier = [start];
   while (frontier.length) {

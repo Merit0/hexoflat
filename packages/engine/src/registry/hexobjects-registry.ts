@@ -7,6 +7,10 @@ export const HEXOBJECT_KEYS = {
   SKELETOR: 'skeletor',
   EMITTER: 'emitter',
   INFERNO: 'inferno',
+  LONE_SKELETON: 'lone-skeleton',
+  SKELETON_PACK: 'skeleton-pack',
+  ARCHER_WATCH: 'archer-watch',
+  BONE_COURT: 'bone-court',
   AXE: 'axe',
   HAND: 'hand',
   PICKAXE: 'pickaxe',
@@ -28,6 +32,8 @@ export const HEXOBJECT_KEYS = {
   STONE_WALL: 'stone-wall',
   RETURN_SCROLL: 'return-scroll',
   RETURN_PORTAL: 'return-portal',
+  BONE_CHARM: 'bone-charm',
+  CROWN_SHARD: 'crown-shard',
 } as const;
 
 export type THexobjectKey = (typeof HEXOBJECT_KEYS)[keyof typeof HEXOBJECT_KEYS];

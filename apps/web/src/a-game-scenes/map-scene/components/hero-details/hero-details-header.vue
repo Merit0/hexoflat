@@ -20,7 +20,7 @@
         <img class="will__icon" :src="WILL_ICON_URL" alt="" data-testid="hero-will-icon" />
         <div class="will__label" data-testid="hero-will-label">{{ labels.vitals.will }}</div>
         <div class="will__value" data-testid="hero-will-value">
-          <b>{{ view.will.current }}</b> / {{ view.will.capacity }}
+          <will-number :current="view.will.current" /> / {{ view.will.capacity }}
         </div>
       </div>
     </template>
@@ -33,6 +33,7 @@ import {
   WILL_ICON_URL,
   type HeroDetailsView,
 } from '@/composables/use-hero-details';
+import WillNumber from '@/components/gui/will-number.vue';
 import { useHeroDetailsLabels } from './use-hero-details-labels';
 
 defineProps<{ view: HeroDetailsView }>();
