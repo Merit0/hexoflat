@@ -16,7 +16,7 @@ test('Verify an enemy that picks the hero waits where it stands while the hero h
   test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
-  await battle.startBattleNextToTheSquad();
+  await battle.startBattleNextToTheSquad({ withShield: true });
   await battle.giveEnemyTheTurn();
   await battle.waitForTheBlockWindow();
   await battle.verifyTheEnemyStandsStillWhileTheHeroBlocks();
@@ -27,7 +27,7 @@ test('Verify taking the hit lands it, wounds the hero and brings the enemy besid
   test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
-  await battle.startBattleNextToTheSquad();
+  await battle.startBattleNextToTheSquad({ withShield: true });
   await battle.giveEnemyTheTurn();
   await battle.waitForTheBlockWindow();
   await battle.takeTheHit();
@@ -39,7 +39,7 @@ test('Verify the battle writes its strikes to the Events tab', async () => {
   test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
-  await battle.startBattleNextToTheSquad();
+  await battle.startBattleNextToTheSquad({ withShield: true });
   await battle.giveEnemyTheTurn();
   await battle.waitForTheBlockWindow();
   await battle.takeTheHit();
@@ -51,7 +51,7 @@ test('Verify the block window closes by itself after five seconds and the hit la
   test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
-  await battle.startBattleNextToTheSquad();
+  await battle.startBattleNextToTheSquad({ withShield: true });
   await battle.giveEnemyTheTurn();
   await battle.waitForTheBlockWindow();
   await battle.verifyTheHitLandedAndTheEnemyWalkedUp();
@@ -73,7 +73,7 @@ test('Verify reloading in the middle of the block window does not freeze the bat
   test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
-  await battle.startBattleNextToTheSquad();
+  await battle.startBattleNextToTheSquad({ withShield: true });
   await battle.giveEnemyTheTurn();
   await battle.waitForTheBlockWindow();
   await battle.reloadInTheMiddleOfTheWindow();

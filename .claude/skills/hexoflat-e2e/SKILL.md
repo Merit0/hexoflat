@@ -66,3 +66,10 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - [ ] No engine logic recomputed in test code — asked of `window.__HEXOFLAT_TEST__`
 - [ ] Assertions on debounced state cannot pass on the pre-debounce value
 - [ ] New Feature methods wrapped in `this.step`
+
+## Battle specs (2026-11-02)
+
+- A defender with no shield in hand takes a strike at once, with no block window (`strikeAndReact`). A spec that waits for the block window must start with `startBattleNextToTheSquad({ withShield: true })`.
+- With a foe adjacent or selected, the wheel opens the tool hex ON that foe's hex, and its Attack button covers the canvas there. `BattleTabComponent.hoverBoardPoint` therefore skips the hover when the tool hex already covers the point; do not add `force: true` hovers.
+- `giveHeroTheTurn` / `giveEnemyTheTurn` also clear `battle.wounds`, because an unshielded hero is wounded by the first enemy turn before the hook runs.
+- Run a subset with `sh scripts/pre-push-e2e.sh e2e/world/battle-flow.spec.ts -g "<title part>"`; the log of a failing run names the spec and `test-results/**/error-context.md` has the message.

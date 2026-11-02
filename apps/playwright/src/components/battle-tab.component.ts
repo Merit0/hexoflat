@@ -119,7 +119,18 @@ export class BattleTabComponent extends BaseComponent {
   }
 
   async hoverBoardPoint(point: { x: number; y: number }): Promise<void> {
+    if (await this.toolHexCovers(point)) return;
     await this.canvas.hover({ position: point });
+  }
+
+  private async toolHexCovers(point: { x: number; y: number }): Promise<boolean> {
+    if ((await this.toolHex.count()) === 0) return false;
+    const canvas = await this.canvas.boundingBox();
+    const tool = await this.toolHex.boundingBox();
+    if (!canvas || !tool) return false;
+    const x = canvas.x + point.x;
+    const y = canvas.y + point.y;
+    return x >= tool.x && x <= tool.x + tool.width && y >= tool.y && y <= tool.y + tool.height;
   }
 
   async verifyEnemySelected(id: string): Promise<void> {

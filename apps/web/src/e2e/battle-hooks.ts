@@ -33,6 +33,7 @@ export function giveHeroTheTurn(willPerTurn: number): void {
   battle.reaction = undefined;
   battle.placedShields = [];
   battle.undo = [];
+  battle.wounds = {};
   store.battle = battle;
 }
 
@@ -125,6 +126,7 @@ export function giveEnemyTheTurn(willPerTurn: number): void {
   battle.placedShields = [];
   battle.struckHands = [];
   battle.undo = [];
+  battle.wounds = {};
   store.battle = battle;
 }
 
