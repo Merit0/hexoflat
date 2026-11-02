@@ -50,11 +50,7 @@ export function hexobjectFromLegacyEncounter(
   if (!parsed.success) return undefined;
   const { contentId, status, ...instance } = parsed.data;
   const key = squadPrototypeKey(contentId);
-  if (!key || status === 'looted') return null;
+  if (!key || status === 'looted' || status === 'loot') return null;
   const squad = HexObjectFactory.create(key, at);
-  if (status === 'loot') {
-    const loot = asSquad(squad)?.creature.squad.loot;
-    return loot ? HexObjectFactory.create(loot, at) : null;
-  }
   return withSquadInstance(squad, squadInstanceOf(instance));
 }

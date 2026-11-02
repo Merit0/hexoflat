@@ -10,6 +10,8 @@ import type { BattleUiMode } from './battle-board-tap';
 
 export type BattleRowTag = 'yourTurn' | 'next' | 'done' | 'fallen';
 
+import type { BattleRowHand } from './battle-row-hands';
+
 export interface BattleCreatureRow {
   id: string;
   name: string;
@@ -18,7 +20,7 @@ export interface BattleCreatureRow {
   init: number | null;
   hp: number;
   maxHp: number;
-  shields: number;
+  hands: BattleRowHand[];
   hits: number;
   stance: number;
   tags: BattleRowTag[];

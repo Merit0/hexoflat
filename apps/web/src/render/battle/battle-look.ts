@@ -1,4 +1,4 @@
-import type { BattleTerrain } from '@hexoflat/engine/battle/battle-state';
+import type { BattleSide, BattleTerrain } from '@hexoflat/engine/battle/battle-state';
 import { CONTENT } from '@hexoflat/engine/content/content-map';
 import { BATTLEFIELD_BIOMES, type BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
 import { CREATURE_SPRITES } from '@/render/creature-sprites';
@@ -12,6 +12,12 @@ export const BATTLE_TERRAIN_TOKENS: Partial<Record<BattleTerrain, string>> = {
   oil: `${BATTLE_TOKEN_DIR}/oil-token.svg`,
   saw: '/hex-assets/hex-constructs/saw-token.png',
 };
+
+export const BATTLE_GRAVE_SPRITES: Partial<Record<BattleSide, string>> = {
+  enemies: '/hex-assets/hex-constructs/enemy-constructs/skeleton-grave-token.png',
+};
+
+export const BATTLE_GRAVE_SPRITE_FIT = 1.1;
 
 export function battleFloorSprite(biome: BattlefieldBiome): string {
   return BATTLEFIELD_BIOMES[biome].background;
@@ -34,6 +40,7 @@ export function battleAssetPaths(biome: BattlefieldBiome): string[] {
     battleShieldSprite(),
     ...Object.values(BATTLE_TERRAIN_TOKENS),
     ...Object.values(CREATURE_SPRITES),
+    ...Object.values(BATTLE_GRAVE_SPRITES),
   ].filter(Boolean);
 }
 

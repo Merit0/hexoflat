@@ -14,6 +14,7 @@
       :init="row.init"
       :active="row.active"
       :fallen="row.fallen"
+      :plain="row.side === 'enemies'"
     />
     <div class="creature-row__main">
       <div class="creature-row__title">
@@ -47,13 +48,18 @@
       <battle-hearts :hp="row.hp" :max-hp="row.maxHp" :size="18" />
     </div>
     <div class="creature-row__side">
-      <span v-if="row.side === 'enemies'" class="creature-row__shields">
+      <span v-if="row.side === 'enemies'" class="creature-row__hands">
         <span
-          v-for="n in 6"
-          :key="n"
-          class="creature-row__shield"
-          :class="{ 'is-filled': n <= row.shields }"
-        ></span>
+          v-for="slot in row.hands"
+          :key="slot.hand"
+          class="creature-row__hand"
+          :class="{ 'is-empty': !slot.itemKey }"
+          :title="handTitle(slot)"
+          :data-testid="`battle-row-hand-${slot.hand}-${row.id}`"
+          :data-tool="slot.toolKey"
+        >
+          <span class="creature-row__hand-art" :style="handArt(slot)"></span>
+        </span>
       </span>
       <span v-if="row.side === 'enemies'" class="creature-row__role">
         {{ t(`battle.role.${row.behaviour}`) }}
@@ -70,8 +76,21 @@ import { useI18n } from 'vue-i18n';
 import type { BattleCreatureRow } from '@/composables/battle-view-types';
 import BattleHexToken from './battle-hex-token.vue';
 import BattleHearts from './battle-hearts.vue';
+import { getPrototype } from '@hexoflat/engine';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import type { BattleRowHand } from '@/composables/battle-row-hands';
 
 defineProps<{ row: BattleCreatureRow }>();
+
+function handArt(slot: BattleRowHand) {
+  const path = getPrototype(slot.toolKey as THexobjectKey).spritePath;
+  return path ? { backgroundImage: `url('${path}')` } : {};
+}
+
+function handTitle(slot: BattleRowHand): string {
+  const name = slot.itemKey ? t(`content.battle.${slot.itemKey}.title`) : t('battle.hand.empty');
+  return `${t(`battle.hand.${slot.hand}`)}: ${name}`;
+}
 const emit = defineEmits<{ select: [id: string] }>();
 const { t } = useI18n();
 </script>
@@ -167,18 +186,28 @@ const { t } = useI18n();
   color: #8e9599;
   font-size: 0.75rem;
 }
-.creature-row__shields {
+.creature-row__hands {
   display: flex;
-  gap: 3px;
+  gap: 4px;
 }
-.creature-row__shield {
-  width: 11px;
-  height: 12px;
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: #34465a;
+.creature-row__hand {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: #121517;
+  border: 1px solid #36424a;
 }
-.creature-row__shield.is-filled {
-  background: linear-gradient(160deg, #8fc0f0, #3a6aa8);
+.creature-row__hand.is-empty {
+  opacity: 0.6;
+}
+.creature-row__hand-art {
+  width: 20px;
+  height: 20px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 .creature-row__role {
   white-space: nowrap;

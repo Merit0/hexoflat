@@ -49,7 +49,7 @@ const SQUAD_MEMBERS = Object.values(CONTENT).flatMap((def) =>
 );
 
 describe('squad battles, loot, threat and saves', () => {
-  it('REQ-ENC-007: victory puts the hero back on the start hex and leaves a loot token taken with TAKE', () => {
+  it('REQ-ENC-007: victory puts the hero back on the start hex and the squad hex disappears without a loot token', () => {
     const state = packWorld();
     hexAction(state, EHexActionType.ATTACK, SQUAD_AT);
     const hero = heroBattleCreature({
@@ -73,9 +73,8 @@ describe('squad battles, loot, threat and saves', () => {
     battle.phase = 'ended';
 
     const closed = lifecycle(state, { kind: 'close' });
-    expect(eventTypes(closed)).toEqual(['SQUAD_DEFEATED', 'LOOT_DROPPED', 'BATTLE_CLOSED']);
-    expect(closed[1].payload).toMatchObject({ items: [HEXOBJECT_KEYS.SWORD] });
-    expect(closed[2].payload).toMatchObject({
+    expect(eventTypes(closed)).toEqual(['SQUAD_DEFEATED', 'BATTLE_CLOSED']);
+    expect(closed[1].payload).toMatchObject({
       outcome: 'victory',
       heroAt: HERO_AT,
       kills: 2,
@@ -85,10 +84,7 @@ describe('squad battles, loot, threat and saves', () => {
     expect(state.engagement).toBeUndefined();
     expect(heroAt(state)).toEqual(HERO_AT);
     expect(projectSquads(state.map, STRONG)).toEqual([]);
-    expect(tileAt(state.map, SQUAD_AT).hexobject?.hexobjectKey).toBe(HEXOBJECT_KEYS.SWORD);
-
-    const taken = hexAction(state, EHexActionType.TAKE, SQUAD_AT);
-    expect(eventTypes(taken)).toEqual(['HEX_ACTION_STARTED']);
+    expect(tileAt(state.map, SQUAD_AT).hexobject).toBeNull();
   });
 
   it('REQ-ENC-007: defeat keeps the squad and counts the attempt for the next battlefield seed', () => {
@@ -174,14 +170,14 @@ describe('B6b save migration (D1, no CONTENT_VERSION bump)', () => {
     expect(JSON.stringify(loaded.toJSON())).not.toContain('"encounter"');
   });
 
-  it('a loot encounter becomes its loot token, a looted one leaves the hex empty', () => {
+  it('a legacy loot or looted encounter leaves the hex empty', () => {
     const loot = HexMapModel.fromJSON(
       savedWith((t) => {
         t.encounter = { id: 'x', contentId: 'skeleton-pack', status: 'loot' };
       }),
       0,
     );
-    expect(tileAt(loot, AT).hexobject?.hexobjectKey).toBe(HEXOBJECT_KEYS.SWORD);
+    expect(tileAt(loot, AT).hexobject).toBeNull();
 
     const looted = HexMapModel.fromJSON(
       savedWith((t) => {

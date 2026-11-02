@@ -1,5 +1,5 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
+import { rowHands } from './battle-row-hands';
 import { behaviourOf } from '@hexoflat/engine/battle/battle-catalogue';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { creatureById, isAlive } from '@hexoflat/engine/battle/battle-board';
@@ -65,12 +65,6 @@ export interface BattleView {
   board: BattleBoardView | null;
 }
 
-export function shieldSides(creature: BattleCreature, rules: BattleRules): number {
-  const total =
-    (creature.hands.right?.shieldCapacity ?? 0) + (creature.hands.left?.shieldCapacity ?? 0);
-  return Math.min(rules.maxShieldSides, total);
-}
-
 const OPERATION_SIGN = { multiply: '×', divide: '÷' } as const;
 
 export function taskQuestionText(question: {
@@ -130,7 +124,7 @@ function creatureRow(
     init: view?.draws[creature.id] ?? null,
     hp: creature.hp,
     maxHp: creature.maxHp,
-    shields: shieldSides(creature, input.rules),
+    hands: rowHands(creature),
     hits: view?.pending.filter((s) => s.targetId === creature.id).length ?? 0,
     stance: view?.stance[creature.id] ?? 0,
     tags: view ? rowTags(view, creature, local) : [],

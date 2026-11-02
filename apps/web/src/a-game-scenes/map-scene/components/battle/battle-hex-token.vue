@@ -1,5 +1,8 @@
 <template>
-  <span class="hex-token" :class="[`is-${side}`, { 'is-active': active, 'is-fallen': fallen }]">
+  <span
+    class="hex-token"
+    :class="[`is-${side}`, { 'is-active': active, 'is-fallen': fallen, 'is-plain': plain }]"
+  >
     <span class="hex-token__frame">
       <span class="hex-token__face" :style="{ backgroundImage: `url('${face}')` }"></span>
     </span>
@@ -18,6 +21,7 @@ const props = defineProps<{
   init: number | null;
   active?: boolean;
   fallen?: boolean;
+  plain?: boolean;
 }>();
 
 const face = computed(() => creatureSprite(props.side, props.kind));
@@ -50,6 +54,17 @@ const face = computed(() => creatureSprite(props.side, props.kind));
   background-color: #1b2023;
   background-position: center;
   background-size: 120%;
+}
+.is-plain .hex-token__frame {
+  background: none;
+}
+.is-plain .hex-token__face {
+  inset: 0;
+  background-color: transparent;
+  background-size: cover;
+}
+.is-plain.is-active {
+  filter: drop-shadow(0 0 6px rgb(240 192 96 / 85%));
 }
 .is-fallen {
   filter: grayscale(1) brightness(0.5);

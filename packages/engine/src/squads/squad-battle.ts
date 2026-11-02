@@ -15,7 +15,6 @@ import {
   type Vector,
 } from '../battle/battlefield-setup';
 import { startBattle } from '../battle/start-battle';
-import { HexObjectFactory } from '../factory/hex-object-factory';
 import type { Engagement } from './engagement';
 import { findSquad } from './squad-state';
 import { done, refuse, type Outcome, type SquadWorld } from './squad-actions';
@@ -149,15 +148,8 @@ export function closeBattle(world: SquadWorld): Outcome {
   const events: DomainEvent[] = [];
   const victory = battle.outcome === 'victory';
   if (victory) {
-    const loot = squad.creature.squad.loot;
-    tile.hexobject = HexObjectFactory.create(loot, tile.coordinates);
-    events.push(
-      { type: 'SQUAD_DEFEATED', payload: { squadId: squad.id } },
-      {
-        type: 'LOOT_DROPPED',
-        payload: { squadId: squad.id, coordinates: { ...tile.coordinates }, items: [loot] },
-      },
-    );
+    tile.hexobject = null;
+    events.push({ type: 'SQUAD_DEFEATED', payload: { squadId: squad.id } });
   } else {
     squad.creature.attempts = (squad.creature.attempts ?? 0) + 1;
   }

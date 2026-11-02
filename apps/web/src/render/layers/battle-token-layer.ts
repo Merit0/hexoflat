@@ -1,7 +1,9 @@
-import { Container } from 'pixi.js';
+import { Container, Sprite } from 'pixi.js';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { creatureSprite } from '@/render/creature-sprites';
 import { createHexToken, type HexToken } from '@/render/hex-token';
+import { getTexture, onTextureReady } from '@/render/texture-cache';
+import { BATTLE_GRAVE_SPRITES, BATTLE_GRAVE_SPRITE_FIT } from '@/render/battle/battle-look';
 import { drawBattleGrave } from './battle-grave';
 import type { TokenPose } from '@/render/battle/battle-animation-sample';
 import type { BattleLayerDeps } from './battle-board-layer';
@@ -59,8 +61,25 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
     placed.clear();
   }
 
+  let graveWatchers: Array<() => void> = [];
+
+  function graveSpriteOf(path: string): Sprite {
+    const sprite = new Sprite(getTexture(path));
+    sprite.anchor.set(0.5);
+    const fit = () => {
+      sprite.texture = getTexture(path);
+      const side = Math.min(w, h) * BATTLE_GRAVE_SPRITE_FIT;
+      sprite.width = side;
+      sprite.height = side;
+    };
+    fit();
+    graveWatchers.push(onTextureReady(path, fit));
+    return sprite;
+  }
+
   function graveOf(creature: BattleCreature): Container {
-    const grave = drawBattleGrave(h);
+    const path = BATTLE_GRAVE_SPRITES[creature.side];
+    const grave = path ? graveSpriteOf(path) : drawBattleGrave(h);
     const { x, y } = deps.positionOf(creature.pos);
     grave.position.set(x + w / 2, y + h / 2);
     return grave;
@@ -68,6 +87,8 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
 
   function rebuild() {
     clear();
+    for (const stop of graveWatchers) stop();
+    graveWatchers = [];
     graves.removeChildren().forEach((child) => child.destroy({ children: true }));
     for (const creature of creatures) {
       if (creature.hp > 0 || dying.has(creature.id)) {
@@ -103,6 +124,8 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
     },
     destroy() {
       clear();
+      for (const stop of graveWatchers) stop();
+      graveWatchers = [];
       container.destroy({ children: true });
     },
   };
