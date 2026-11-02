@@ -56,6 +56,14 @@ export function freeNeighbours(
   return hexNeighbours(hex).filter((n) => isFreeHex(state, n, ignoreId));
 }
 
+export function strikeSideHexes(
+  state: BattleBoardView,
+  hex: BattleHex,
+  ignoreId?: string,
+): BattleHex[] {
+  return freeNeighbours(state, hex, ignoreId).filter((n) => terrainAt(state, n) !== 'saw');
+}
+
 export function livingOnSide(
   state: BattleBoardView,
   side: BattleCreature['side'],

@@ -1,6 +1,7 @@
 import type { BattleTerrain } from '@hexoflat/engine/battle/battle-state';
 import { CONTENT } from '@hexoflat/engine/content/content-map';
 import { BATTLEFIELD_BIOMES, type BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
+import { CREATURE_SPRITES } from '@/render/creature-sprites';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 
 const BATTLE_TOKEN_DIR = '/hex-assets/battle-tokens';
@@ -23,6 +24,17 @@ export function battleObjectSprite(key: 'wall' | 'boulder'): string {
 
 export function battleShieldSprite(): string {
   return CONTENT[HEXOBJECT_KEYS.SHIELD]?.spritePath ?? '';
+}
+
+export function battleAssetPaths(biome: BattlefieldBiome): string[] {
+  return [
+    battleFloorSprite(biome),
+    battleObjectSprite('wall'),
+    battleObjectSprite('boulder'),
+    battleShieldSprite(),
+    ...Object.values(BATTLE_TERRAIN_TOKENS),
+    ...Object.values(CREATURE_SPRITES),
+  ].filter(Boolean);
 }
 
 export const BATTLE_BLOOD_COLORS = { fill: 0xb3121c, shine: 0xe85a63 } as const;

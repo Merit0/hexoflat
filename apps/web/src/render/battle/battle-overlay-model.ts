@@ -2,7 +2,7 @@ import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-s
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import {
   creatureById,
-  freeNeighbours,
+  strikeSideHexes,
   isAlive,
   livingOnSide,
 } from '@hexoflat/engine/battle/battle-board';
@@ -57,7 +57,7 @@ function targetCreatures(
     const d = battleDistance(self.pos, foe.pos);
     if (mode === 'push') return d === 1 && self.force >= foe.weight;
     if (range) return d >= range.min && d <= range.max;
-    const ring = freeNeighbours(view, foe.pos, self.id);
+    const ring = strikeSideHexes(view, foe.pos, self.id);
     return (
       reachableRing(view, self, ring, view.turnWill - BATTLE_RULES.strike, BATTLE_RULES).length > 0
     );
@@ -108,7 +108,7 @@ function selectedFoeDecoys(
     (foe.hands.right?.shieldCapacity ?? 0) + (foe.hands.left?.shieldCapacity ?? 0) > 0;
   const ranged = !!(hero.hands.right?.range ?? hero.hands.left?.range);
   if (!guarded || ranged || view.reaction) return [];
-  return freeNeighbours(view, foe.pos, hero.id).map((hex) => ({ hex, tone: 'shield' as const }));
+  return strikeSideHexes(view, foe.pos, hero.id).map((hex) => ({ hex, tone: 'shield' as const }));
 }
 
 export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayModel {

@@ -31,13 +31,7 @@
               type="button"
               @click="activeTab = tab.id"
             >
-              <template v-if="tab.id === 'battle'">
-                <svg class="tab__swords" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 5 L19 19 M19 5 L5 19 M5 5 V9 M5 5 H9 M19 5 V9 M19 5 H15" />
-                </svg>
-                {{ t('battle.tab') }}
-                <span class="tab__dot"></span>
-              </template>
+              <template v-if="tab.id === 'battle'">{{ t('battle.tab') }}</template>
               <template v-else>{{ tab.label }}</template>
             </button>
           </div>
@@ -204,6 +198,9 @@ watch(
 }
 .hero-board-panel {
   height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  contain: inline-size;
   display: flex;
   flex-direction: row;
   overflow: hidden;
@@ -256,7 +253,9 @@ watch(
   flex: 1;
   min-height: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -267,7 +266,8 @@ watch(
 .tabs {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(var(--tab-count), 1fr);
+  grid-template-columns: repeat(var(--tab-count), minmax(0, 1fr));
+  container-type: inline-size;
   gap: 0;
 
   padding: 0;
@@ -279,7 +279,11 @@ watch(
 
 .tab {
   width: 100%;
+  min-width: 0;
   height: 44px;
+  padding: 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -290,34 +294,13 @@ watch(
   font-weight: 1000;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 20px;
+  font-size: clamp(9px, calc(100cqw / var(--tab-count) / 7.5), 20px);
   white-space: nowrap;
 }
 
 .tab.is-active {
   background: rgba(255, 0, 120, 0.3);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
-
-.tab__swords {
-  width: 13px;
-  height: 13px;
-  margin-right: 4px;
-  vertical-align: -2px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-.tab__dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-left: 5px;
-  border-radius: 999px;
-  background: #e0503c;
-  vertical-align: 2px;
 }
 
 .tab.is-disabled {

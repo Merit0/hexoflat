@@ -1,7 +1,13 @@
 import type { BattleRules } from '../battle-content';
 import type { BattleAction } from '../battle-commands';
 import type { BattleCreature, BattleHand, BattleHex } from '../battle-state';
-import { creatureById, freeNeighbours, livingOnSide, terrainAt } from '../battle-board';
+import {
+  creatureById,
+  freeNeighbours,
+  livingOnSide,
+  strikeSideHexes,
+  terrainAt,
+} from '../battle-board';
 import { shieldCapacity } from '../defend';
 import { aimOptions } from '../reaction';
 import { reachableRing } from '../strike';
@@ -61,7 +67,7 @@ export function reachableFoes(
     opponents(view, self).filter(
       (foe) =>
         !isCrowdedAround(view, self, foe) &&
-        reachableRing(view, self, freeNeighbours(view, foe.pos, self.id), willLeft, rules).length >
+        reachableRing(view, self, strikeSideHexes(view, foe.pos, self.id), willLeft, rules).length >
           0,
     ),
   );

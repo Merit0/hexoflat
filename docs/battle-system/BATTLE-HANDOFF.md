@@ -18,6 +18,7 @@ One page for a fresh chat: what exists, what Oleh decided, where the code lives,
 - Hero battle items: sword (power 2), wooden shield (2 sides), health potion (use price from the content, not wired into play yet). Axe/pickaxe/scroll give an empty hand; USE on them in a battle says it cannot be used.
 - `usePrice` is a global content field (`loot.usePrice`, `usePriceOf`); `content/use-price.test.ts` enforces it for every usable item.
 - Crypt battlefield: floor, border wall, 1–2 saws. Ledges, rubble, oil, pillars, boulders are not generated (the engine still supports them). New saw sprite `hex-constructs/saw-token.png`.
+- A saw hex is never a strike position: `strikeSideHexes` (`battle-board.ts`) = free neighbours of the target without saws; used by `strikeRing`, `reachRefusal`, AI `reachableFoes` and the decoy-shield overlay (`battle-overlay-model.ts`). Test: `strike.test.ts` (REQ-BTL-005).
 - Squads: `lone-skeleton`, `skeleton-pack` (2 warriors), `archer-watch`, `bone-court` (king + 2 warriors; the cave generator places it in the deep spot; its map token uses the king sprite). Warriors 5 hp, king 13 hp, king cleaver power 1.
 - Fog: one rule for every board (hero hex + six neighbours; `BY_REGION` removed). Dungeons cover hidden hexes with `fog-hex.png`, the world with `cloud-hex.png`.
 - Cave entrance/exit portal is built into the **outer wall** of the entry room (`pieces/entry.ts`; the entry room is the one farthest from the board centre in `pieces/blobs.ts`), so it is on the border, never in the middle.

@@ -22,6 +22,8 @@ import {
   type BoardCamera,
   type BoardFrame,
 } from '@/render/board-camera';
+import { preloadTextures } from '@/render/texture-cache';
+import { battleAssetPaths } from '@/render/battle/battle-look';
 import { registerBattleHexProbe } from '@/e2e/battle-hooks';
 import { createBattleSyncGate } from '@/render/battle/battle-sync-gate';
 import { createBattleBoardLayer, type BattleBoardLayer } from '@/render/layers/battle-board-layer';
@@ -172,6 +174,11 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     const canvas = options.canvas.value;
     if (!canvas || pixi) return;
     const app = await createHexBoardApp(canvas, width, height);
+    if (destroyed) {
+      app.destroy();
+      return;
+    }
+    await preloadTextures(battleAssetPaths(options.scene.value.biome));
     if (destroyed) {
       app.destroy();
       return;

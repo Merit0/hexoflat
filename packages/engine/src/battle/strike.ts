@@ -10,6 +10,7 @@ import type {
 import {
   creatureById,
   freeNeighbours,
+  strikeSideHexes,
   heightAt,
   isAlive,
   terrainAt,
@@ -33,8 +34,11 @@ export function strikeRing(
   attacker: BattleCreature,
   ranged: boolean,
 ): BattleHex[] {
-  if (!ranged) return freeNeighbours(state, target.pos, attacker.id);
-  return archerArc(target.pos, attacker.pos).filter((hex) => terrainAt(state, hex) !== null);
+  if (!ranged) return strikeSideHexes(state, target.pos, attacker.id);
+  return archerArc(target.pos, attacker.pos).filter((hex) => {
+    const terrain = terrainAt(state, hex);
+    return terrain !== null && terrain !== 'saw';
+  });
 }
 
 function strikeSide(target: BattleCreature, attacker: BattleCreature, ranged: boolean): BattleHex {
@@ -73,7 +77,7 @@ export function reachRefusal(
 ): BattleRejection | null {
   const distance = battleDistance(attacker.pos, target.pos);
   if (!weapon.range) {
-    const ring = freeNeighbours(state, target.pos, attacker.id);
+    const ring = strikeSideHexes(state, target.pos, attacker.id);
     return reachableRing(state, attacker, ring, willLeft, rules).length > 0
       ? null
       : reject('NOT_ADJACENT');

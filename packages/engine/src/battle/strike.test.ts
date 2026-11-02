@@ -10,6 +10,7 @@ import {
   strikeOpened,
 } from './battle-test-setup';
 import type { BattleState } from './battle-state';
+import { strikeSideHexes } from './battle-board';
 
 function heroNextToSkeleton(
   board = hexagonBoard(),
@@ -141,5 +142,16 @@ describe('REQ-BTL-005 strike ring', () => {
     const battle = strikeOpened(heroNextToSkeleton(), 'hero', 's1');
     expect(battle.creatures[0].pos).toEqual({ q: 0, r: 0 });
     expect(battle.pending[0].fromHex).toEqual({ q: 0, r: 0 });
+  });
+
+  it('leaves saw hexes out of the ring, so nobody strikes from a saw', () => {
+    const board = hexagonBoard(3, { '1,-1': 'saw' });
+    const start = heroNextToSkeleton(board);
+    const ring = strikeOpened(start, 'hero', 's1').pending[0].ring;
+    expect(ring).toHaveLength(5);
+    expect(ring).not.toContainEqual({ q: 1, r: -1 });
+    expect(strikeSideHexes(start, { q: 1, r: 0 }, 'hero')).toEqual(
+      expect.not.arrayContaining([{ q: 1, r: -1 }]),
+    );
   });
 });

@@ -389,13 +389,15 @@ onBeforeUnmount(() => {
   position: relative;
 
   display: grid;
-  grid-template-columns: var(--map-pane-width) var(--hero-board-panel-width);
+  grid-template-columns: minmax(0, var(--map-pane-width)) minmax(0, var(--hero-board-panel-width));
   transition: grid-template-columns 260ms ease;
 }
 
 .map-pane {
   position: relative;
   height: 100vh;
+  min-width: 0;
+  contain: inline-size;
   overflow: hidden;
 }
 
