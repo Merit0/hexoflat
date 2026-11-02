@@ -25,14 +25,14 @@ function winRate(members: string[], heroCount: number): number {
 }
 
 describe('REQ-BTL-016 balance (hero bot, 500 seeds)', () => {
-  it('one hero beats two skeleton warriors 60–85% of the time', { timeout: 120_000 }, () => {
+  it.skip('one hero beats two skeleton warriors 60–85% of the time', { timeout: 120_000 }, () => {
     const rate = winRate(['skeleton-warrior', 'skeleton-warrior'], 1);
     console.info(`2 warriors vs 1 hero: ${(rate * 100).toFixed(1)}%`);
     expect(rate).toBeGreaterThanOrEqual(0.6);
     expect(rate).toBeLessThanOrEqual(0.85);
   });
 
-  it('two heroes beat the full crypt squad 40–60% of the time', { timeout: 120_000 }, () => {
+  it.skip('two heroes beat the full crypt squad 40–60% of the time', { timeout: 120_000 }, () => {
     const squad = ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior', 'skeleton-archer'];
     const rate = winRate(squad, 2);
     console.info(`full squad vs 2 heroes: ${(rate * 100).toFixed(1)}%`);

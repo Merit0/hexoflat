@@ -1,6 +1,5 @@
 import type { BattleCreature, BattleHand, BattleItem } from '@hexoflat/engine/battle/battle-state';
-import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
-import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { battleToolKeyOf } from '@/render/battle/battle-tool-key';
 
 export interface BattleRowHand {
   hand: BattleHand;
@@ -9,12 +8,7 @@ export interface BattleRowHand {
 }
 
 export function rowToolKey(item: BattleItem | null): string {
-  if (!item) return HEXOBJECT_KEYS.HAND;
-  const own = hexobjectOfBattleItem(item.key);
-  if (own) return own;
-  if (item.shieldCapacity) return HEXOBJECT_KEYS.SHIELD;
-  if (item.power) return HEXOBJECT_KEYS.SWORD;
-  return HEXOBJECT_KEYS.HAND;
+  return battleToolKeyOf(item?.key);
 }
 
 export function rowHands(creature: Pick<BattleCreature, 'hands'>): BattleRowHand[] {

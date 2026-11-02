@@ -79,4 +79,31 @@ describe('planBattleAnimation effects', () => {
       durationMs: BATTLE_TIMING.deathFadeMs,
     });
   });
+
+  it('swings the enemy weapon, not a hand, when an enemy strikes with its blade', () => {
+    const skeleton: AnimatedCreature = { id: 's1', side: 'enemies', pos: { q: 1, r: 0 } };
+    const strike = (itemKey: string) =>
+      planBattleAnimation(
+        [
+          ev('STRIKE_LANDED', {
+            attackerId: 's1',
+            targetId: 'hero',
+            fromHex: { q: 1, r: 0 },
+            itemKey,
+            ring: [{ q: 1, r: 0 }],
+          }),
+          ev('STRIKES_RESOLVED', {
+            creatureId: 'hero',
+            results: [{ strikeId: 'x', attackerId: 's1', outcome: 'hit', damage: 1 }],
+          }),
+        ],
+        [hero, skeleton],
+      )[0] as { toolKey: string; splashAt: unknown[] };
+    const blade = strike('bone-blade');
+    expect(blade.toolKey).toBe('sword');
+    expect(blade.splashAt).toHaveLength(1);
+    const bare = strike('unarmed');
+    expect(bare.toolKey).toBe('hand');
+    expect(bare.splashAt).toEqual([]);
+  });
 });

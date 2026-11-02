@@ -1,6 +1,6 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleHex, BattleSide } from '@hexoflat/engine/battle/battle-state';
-import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
+import { battleToolKeyOf } from './battle-tool-key';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { BATTLE_TIMING } from './battle-timing';
 
@@ -122,7 +122,7 @@ class Planner {
       targetId,
       target: copy(target),
       from: attacker ? copy(attacker) : null,
-      toolKey: (itemKey && hexobjectOfBattleItem(itemKey)) || HEXOBJECT_KEYS.HAND,
+      toolKey: battleToolKeyOf(itemKey),
       ring: ring.map(copy),
       splashAt,
       durationMs: BATTLE_TIMING.strikeMs,
@@ -134,7 +134,7 @@ class Planner {
     target: BattleHex,
     later: DomainEvent[],
   ): BattleHex[] {
-    const toolKey = (itemKey && hexobjectOfBattleItem(itemKey)) || HEXOBJECT_KEYS.HAND;
+    const toolKey = battleToolKeyOf(itemKey);
     if (toolKey === HEXOBJECT_KEYS.HAND) return [];
     const next = later.findIndex((e) => e.type === 'STRIKE_LANDED');
     const mine = next < 0 ? later : later.slice(0, next);
