@@ -24,6 +24,7 @@ export type BattleAnimationStep =
   | { kind: 'slide'; creatureId: string; path: BattleHex[]; durationMs: number }
   | { kind: 'walk'; creatureId: string; from: BattleHex; to: BattleHex; durationMs: number }
   | { kind: 'eject'; creatureId: string; from: BattleHex; to: BattleHex; durationMs: number }
+  | { kind: 'fall'; creatureId: string; at: BattleHex; durationMs: number }
   | {
       kind: 'shake';
       creatureId: string;
@@ -92,6 +93,7 @@ class Planner {
     if (event.type === 'DISPLACED') this.displaced(event.payload as Displaced);
     if (event.type === 'THROWN_CLEAR') this.thrown(event.payload as Thrown);
     if (event.type === 'CREATURE_DAMAGED') this.shake((event.payload as Moved).creatureId, 'hit');
+    if (event.type === 'CREATURE_FELL') this.fell((event.payload as Moved).creatureId);
   }
 
   private place(creatureId: string, event: DomainEvent) {
@@ -171,6 +173,17 @@ class Planner {
       durationMs: BATTLE_TIMING.sawEjectMs,
     });
     this.pos.set(creatureId, copy(to));
+  }
+
+  private fell(creatureId: string) {
+    const at = this.pos.get(creatureId);
+    if (!at) return;
+    this.steps.push({
+      kind: 'fall',
+      creatureId,
+      at: copy(at),
+      durationMs: BATTLE_TIMING.deathFadeMs,
+    });
   }
 
   private shake(creatureId: string, style: 'hit' | 'fall') {

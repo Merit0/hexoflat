@@ -3,7 +3,7 @@ import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleAnimationStep } from './battle-animation-plan';
 import { BattleAnimationQueue } from './battle-animation-queue';
 import { splashFrameIndex } from '@/render/blood-splash';
-import { sampleStrikeFx, type AnimationGeometry } from './battle-animation-sample';
+import { sampleStrikeFx, sampleTokenPose, type AnimationGeometry } from './battle-animation-sample';
 
 const geo: AnimationGeometry = {
   centreOf: (hex: BattleHex) => ({ x: hex.q * 100, y: hex.r * 100 }),
@@ -44,7 +44,7 @@ describe('BattleAnimationQueue', () => {
     expect(during.busy).toBe(true);
 
     const done = queue.advance(200);
-    expect(done).toEqual({ poses: new Map(), fx: null, busy: false });
+    expect(done).toEqual({ poses: new Map(), fx: null, dying: new Set(), busy: false });
     expect(queue.busy).toBe(false);
   });
 
@@ -159,5 +159,31 @@ describe('splashFrameIndex', () => {
     ]);
     expect(splashFrameIndex(-1, 6)).toBe(0);
     expect(splashFrameIndex(0.5, 0)).toBe(0);
+  });
+});
+
+describe('death fall', () => {
+  const fall: BattleAnimationStep = {
+    kind: 'fall',
+    creatureId: 's1',
+    at: { q: 1, r: 0 },
+    durationMs: 400,
+  };
+
+  it('fades the token out in place', () => {
+    expect(sampleTokenPose(fall, 0, geo)).toEqual({ x: 100, y: 0, alpha: 1 });
+    expect(sampleTokenPose(fall, 0.5, geo)!.alpha).toBeCloseTo(0.5);
+    expect(sampleTokenPose(fall, 1, geo)!.alpha).toBe(0);
+  });
+
+  it('keeps the creature marked as dying until its fall is over, after the strike', () => {
+    const queue = new BattleAnimationQueue(geo);
+    queue.enqueue([{ ...strike, targetId: 's1' }, fall]);
+    expect([...queue.frame().dying]).toEqual(['s1']);
+    expect(queue.frame().poses.get('s1')).toEqual({ x: 100, y: 0, alpha: 1 });
+    expect([...queue.advance(strike.durationMs + 100).dying]).toEqual(['s1']);
+    const done = queue.advance(400);
+    expect(done.dying.size).toBe(0);
+    expect(done.busy).toBe(false);
   });
 });

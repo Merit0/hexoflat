@@ -16,6 +16,7 @@ import type { BattleMessage } from './battle-hint';
 import type { BattleActionId } from './battle-hero-card';
 import { stageMode, type BattleStage } from './battle-stage';
 import { buildBattleView } from './battle-view';
+import { weaponHandsLeft } from './battle-tool-hex';
 import type { BattleUiState } from './battle-view-types';
 
 const ui = reactive<BattleUiState>({
@@ -227,12 +228,22 @@ export function useBattleView() {
     if (hex && ui.mode === 'strike') ui.toolAt = hex;
   }
 
+  function hideToolWhenNoWeaponLeft() {
+    const projection = store.projection;
+    const hero = self();
+    if (!projection || !hero) return;
+    if (weaponHandsLeft(projection, hero).length === 0) goStage('move');
+  }
+
   function actWithTool() {
     if (lockedWarning()) return false;
     const tool = view.value.board?.tool;
     if (!tool?.action) return false;
-    if (tool.action === 'attack' && tool.targetId)
-      return act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
+    if (tool.action === 'attack' && tool.targetId) {
+      const struck = act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
+      if (struck) hideToolWhenNoWeaponLeft();
+      return struck;
+    }
     if (tool.action === 'block') return act({ kind: 'place-shield', hex: tool.at });
     if (tool.action === 'use') return act({ kind: 'use-item', hand: tool.hand });
     return act({ kind: 'remove-shield', hex: tool.at });

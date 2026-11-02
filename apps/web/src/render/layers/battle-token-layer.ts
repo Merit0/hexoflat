@@ -2,12 +2,14 @@ import { Container } from 'pixi.js';
 import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
 import { creatureSprite } from '@/render/creature-sprites';
 import { createHexToken, type HexToken } from '@/render/hex-token';
+import { drawBattleGrave } from './battle-grave';
 import type { TokenPose } from '@/render/battle/battle-animation-sample';
 import type { BattleLayerDeps } from './battle-board-layer';
 
 export interface BattleTokenLayer {
   sync(creatures: BattleCreature[], activeId: string | null, targets?: readonly string[]): void;
   pose(poses: ReadonlyMap<string, TokenPose>): void;
+  setDying(ids: ReadonlySet<string>): void;
   destroy(): void;
 }
 
@@ -23,7 +25,11 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
   const container = new Container();
   container.eventMode = 'none';
   deps.worldContainer.addChild(container);
+  const graves = new Container();
+  container.addChild(graves);
   const placed = new Map<string, PlacedToken>();
+  let creatures: BattleCreature[] = [];
+  let dying: ReadonlySet<string> = new Set();
   let poses: ReadonlyMap<string, TokenPose> = new Map();
 
   function applyPoses() {
@@ -53,22 +59,44 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
     placed.clear();
   }
 
-  function sync(
-    creatures: BattleCreature[],
-    _activeId?: string | null,
-    _targets?: readonly string[],
-  ) {
+  function graveOf(creature: BattleCreature): Container {
+    const grave = drawBattleGrave(h);
+    const { x, y } = deps.positionOf(creature.pos);
+    grave.position.set(x + w / 2, y + h / 2);
+    return grave;
+  }
+
+  function rebuild() {
     clear();
-    for (const creature of creatures.filter((c) => c.hp > 0)) {
-      const entry = holderOf(creature);
-      placed.set(creature.id, entry);
-      container.addChild(entry.holder);
+    graves.removeChildren().forEach((child) => child.destroy({ children: true }));
+    for (const creature of creatures) {
+      if (creature.hp > 0 || dying.has(creature.id)) {
+        const entry = holderOf(creature);
+        placed.set(creature.id, entry);
+        container.addChild(entry.holder);
+      } else {
+        graves.addChild(graveOf(creature));
+      }
     }
     applyPoses();
   }
 
+  function sync(next: BattleCreature[], _activeId?: string | null, _targets?: readonly string[]) {
+    creatures = next;
+    rebuild();
+  }
+
+  function sameIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+    return a.size === b.size && [...a].every((id) => b.has(id));
+  }
+
   return {
     sync,
+    setDying(next) {
+      if (sameIds(dying, next)) return;
+      dying = new Set(next);
+      rebuild();
+    },
     pose(next) {
       poses = next;
       applyPoses();

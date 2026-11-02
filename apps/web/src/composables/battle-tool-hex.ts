@@ -88,6 +88,15 @@ export function strikeHands(
   );
 }
 
+export function weaponHandsLeft(
+  view: Pick<BattleProjection, 'struckHands'>,
+  self: Pick<BattleCreature, 'hands'>,
+): BattleHand[] {
+  return (['right', 'left'] as BattleHand[]).filter(
+    (hand) => !!self.hands[hand]?.power && !view.struckHands.includes(hand),
+  );
+}
+
 interface Decision {
   action: BattleToolAction | null;
   targetId: string | null;

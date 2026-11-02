@@ -86,6 +86,8 @@ export function sampleTokenPose(
       }
       return { x: c.x + shakeOffset(t, BATTLE_MOTION.heartShakeTiles * h), y: c.y, alpha: 1 };
     }
+    case 'fall':
+      return { ...geo.centreOf(step.at), alpha: 1 - t };
     case 'strike':
       return null;
   }

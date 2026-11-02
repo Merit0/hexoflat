@@ -14,6 +14,7 @@ import {
 export interface BattleAnimationFrame {
   poses: Map<string, TokenPose>;
   fx: StrikeFx | null;
+  dying: Set<string>;
   busy: boolean;
 }
 
@@ -55,12 +56,15 @@ export class BattleAnimationQueue {
 
   frame(): BattleAnimationFrame {
     const poses = new Map(this.held);
+    const dying = new Set(
+      this.steps.filter((s) => s.kind === 'fall').map((s) => stepCreatureId(s)),
+    );
     const current = this.steps[0];
-    if (!current) return { poses, fx: null, busy: false };
+    if (!current) return { poses, fx: null, dying, busy: false };
     const progress = current.durationMs > 0 ? this.elapsedMs / current.durationMs : 1;
     const pose = sampleTokenPose(current, progress, this.geo);
     if (pose) poses.set(stepCreatureId(current), pose);
-    return { poses, fx: sampleStrikeFx(current, progress, this.geo), busy: true };
+    return { poses, fx: sampleStrikeFx(current, progress, this.geo), dying, busy: true };
   }
 
   private touchedLater(id: string): boolean {

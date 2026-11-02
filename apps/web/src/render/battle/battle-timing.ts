@@ -6,6 +6,7 @@ export const BATTLE_TIMING = {
   ledgeFallShakeMs: 320,
   sawEjectMs: 350,
   heartShakeMs: 280,
+  deathFadeMs: 450,
 } as const;
 
 export const BATTLE_MOTION = {

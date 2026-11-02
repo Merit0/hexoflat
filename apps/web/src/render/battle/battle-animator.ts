@@ -25,6 +25,7 @@ export function createBattleAnimator(deps: BattleAnimatorDeps): BattleAnimator {
 
   function render(deltaMs: number) {
     const frame = queue.advance(deltaMs);
+    deps.tokens.setDying(frame.dying);
     deps.tokens.pose(frame.poses);
     deps.fx.sync(frame.fx);
     if (!frame.busy) setRunning(false);

@@ -90,55 +90,6 @@ describe('planBattleAnimation', () => {
     });
   });
 
-  describe('blood splash hexes', () => {
-    const attacker: AnimatedCreature = { id: 'hero', side: 'heroes', pos: { q: 0, r: 0 } };
-    const target: AnimatedCreature = { id: 's1', side: 'enemies', pos: { q: 1, r: 0 } };
-    const bystander: AnimatedCreature = { id: 's2', side: 'enemies', pos: { q: 0, r: 1 } };
-    const landed = (itemKey: string) =>
-      ev('STRIKE_LANDED', {
-        attackerId: 'hero',
-        targetId: 's1',
-        fromHex: { q: 0, r: 0 },
-        itemKey,
-        ring: [{ q: 0, r: 0 }],
-      });
-    const resolved = (outcome: string, damage: number) =>
-      ev('STRIKES_RESOLVED', {
-        creatureId: 's1',
-        results: [{ strikeId: 'x', attackerId: 'hero', outcome, damage }],
-      });
-    const swept = (damage: number) =>
-      ev('STRIKE_SWEPT', { attackerId: 'hero', victimId: 's2', fromHex: { q: 0, r: 0 }, damage });
-    const splashOf = (events: DomainEvent[]) =>
-      (planBattleAnimation(events, [attacker, target, bystander])[0] as { splashAt: unknown })
-        .splashAt;
-
-    it('marks the target when the weapon hurt it', () => {
-      expect(splashOf([landed('sword'), resolved('hit', 2)])).toEqual([{ q: 1, r: 0 }]);
-    });
-
-    it('marks nobody when the shield took the whole blow', () => {
-      expect(splashOf([landed('sword'), resolved('blocked', 0)])).toEqual([]);
-      expect(splashOf([landed('sword'), resolved('hit', 0)])).toEqual([]);
-      expect(splashOf([landed('sword')])).toEqual([]);
-    });
-
-    it('marks every swept creature that lost health, even when the target blocked', () => {
-      expect(splashOf([landed('sword'), resolved('blocked', 0), swept(2)])).toEqual([
-        { q: 0, r: 1 },
-      ]);
-      expect(splashOf([landed('sword'), resolved('hit', 2), swept(2)])).toEqual([
-        { q: 1, r: 0 },
-        { q: 0, r: 1 },
-      ]);
-      expect(splashOf([landed('sword'), resolved('hit', 2), swept(0)])).toEqual([{ q: 1, r: 0 }]);
-    });
-
-    it('marks nothing for a bare hand, however much damage it did', () => {
-      expect(splashOf([landed('unarmed'), resolved('hit', 1), swept(1)])).toEqual([]);
-    });
-  });
-
   it('slides along an oil path, shakes on a ledge fall and on lost hearts', () => {
     const pushed: AnimatedCreature = { ...hero, pos: { q: 2, r: 0 } };
     const steps = planBattleAnimation(

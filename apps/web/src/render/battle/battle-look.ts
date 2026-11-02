@@ -53,3 +53,13 @@ export const BATTLE_SELECTED_COLOR = 0xe03a32;
 export const SAW_SPIN_RADIANS_PER_SECOND = Math.PI * 2;
 
 export const BATTLE_LEGEND_ITEMS = ['saw'] as const;
+
+export const BATTLE_GRAVE_LOOK = {
+  stone: 0x8a8f98,
+  stoneShade: 0x5d626b,
+  outline: 0x23262c,
+  engraving: 0x2f333a,
+  mound: 0x4a3f33,
+  widthTiles: 0.42,
+  heightTiles: 0.56,
+} as const;
