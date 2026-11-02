@@ -20,7 +20,6 @@ test('Verify the hand on a squad token offers ATTACK, the battle opens at once a
 });
 
 test('Verify leaving a won battle in the cave brings the board back without render errors', async () => {
-  test.setTimeout(120_000);
   const squad = new SquadActionsFeature();
 
   await squad.openCave();
@@ -33,7 +32,6 @@ test('Verify leaving a won battle in the cave brings the board back without rend
 });
 
 test('Verify a shield put in the hand during a battle appears in the battle hand for one swap price', async () => {
-  test.setTimeout(120_000);
   const squad = new SquadActionsFeature();
 
   await new OpenCampingMapFeature().open();

@@ -3,7 +3,6 @@ import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature'
 import { KnowledgeHallFeature } from '@features/world/knowledge-hall.feature';
 
 test('Endless Hall questions and capped refill', async () => {
-  test.setTimeout(240_000);
   await new OpenCampingMapFeature().open();
   const knowledge = new KnowledgeHallFeature();
   await knowledge.openHall();
@@ -13,7 +12,6 @@ test('Endless Hall questions and capped refill', async () => {
 });
 
 test('Escape interrupts the Hall, reopening starts fresh and correct answers are accepted', async () => {
-  test.setTimeout(120_000);
   await new OpenCampingMapFeature().open();
   const knowledge = new KnowledgeHallFeature();
   await knowledge.openHall();
