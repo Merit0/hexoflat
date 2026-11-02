@@ -82,6 +82,29 @@ export default defineConfig({
   // so assets need that prefix in production. Local dev/build stays at '/'.
   base: process.env.GITHUB_PAGES ? '/hexoflat/' : '/',
   plugins: [vue(), devStaticBoardSavePlugin(), devBoardModelSavePlugin()],
+  build: {
+    rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        if (warning.code === 'INVALID_ANNOTATION' && warning.id?.includes('/node_modules/zod/')) {
+          return;
+        }
+        defaultHandler(warning);
+      },
+      output: {
+        manualChunks(id) {
+          if (!id.includes('/node_modules/')) return undefined;
+          if (
+            /\/node_modules\/(\.pnpm\/)?(vue|@vue|pinia|vue-router|vue-i18n|@intlify)[@/]/.test(id)
+          ) {
+            return 'vendor-vue';
+          }
+          if (id.includes('/@tanstack/')) return 'vendor-query';
+          if (id.includes('/zod/')) return 'vendor-zod';
+          return undefined;
+        },
+      },
+    },
+  },
   server: {
     open: true,
   },
