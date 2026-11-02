@@ -109,6 +109,7 @@ function attackDecision(
   hand: BattleHand,
   at: BattleHex,
   rules: BattleRules,
+  chosenId: string | null,
 ): Decision {
   const foe = foeAt(view, self, at);
   const ready = strikeHands(view, self, rules).includes(hand);
@@ -117,7 +118,8 @@ function attackDecision(
     !!foe &&
     !!weapon &&
     !reachRefusal(view, self, foe, weapon, Math.max(0, view.turnWill - rules.strike), rules);
-  return foe && ready && reachable
+  const allowed = !chosenId || foe?.id === chosenId;
+  return foe && ready && reachable && allowed
     ? { action: 'attack', targetId: foe.id, price: rules.strike }
     : { action: null, targetId: null, price: 0 };
 }
@@ -148,9 +150,10 @@ function decide(
   hand: BattleHand,
   at: BattleHex,
   rules: BattleRules,
+  chosenId: string | null,
 ): Decision {
   const item = self.hands[hand];
-  if (!item || item.power) return attackDecision(view, self, hand, at, rules);
+  if (!item || item.power) return attackDecision(view, self, hand, at, rules, chosenId);
   if (item.shieldCapacity) return blockDecision(view, self, at, rules);
   return useDecision(item);
 }
@@ -183,7 +186,8 @@ export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null
     item,
   );
   if (!at) return null;
-  const decision = decide(view, self, hand, at, input.rules);
+  const chosenId = target && target.id === input.ui.selectedId ? target.id : null;
+  const decision = decide(view, self, hand, at, input.rules, chosenId);
   return {
     origin: { ...self.pos },
     at: { ...at },

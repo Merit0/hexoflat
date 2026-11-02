@@ -51,4 +51,5 @@ export interface BattleViewInput {
   rules: BattleRules;
   nameOf: NameOf;
   revealedShields?: readonly BattleHex[];
+  animating?: boolean;
 }

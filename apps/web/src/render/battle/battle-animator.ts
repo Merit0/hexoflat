@@ -1,5 +1,6 @@
 import type { Ticker } from 'pixi.js';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
+import type { BattleDamageLayer } from '@/render/layers/battle-damage-layer';
 import type { BattleFxLayer } from '@/render/layers/battle-fx-layer';
 import type { BattleTokenLayer } from '@/render/layers/battle-token-layer';
 import { planBattleAnimation, type AnimatedCreature } from './battle-animation-plan';
@@ -11,6 +12,7 @@ export interface BattleAnimatorDeps {
   geometry: AnimationGeometry;
   tokens: BattleTokenLayer;
   fx: BattleFxLayer;
+  damage: BattleDamageLayer;
   onBusyChange(busy: boolean): void;
 }
 
@@ -28,6 +30,7 @@ export function createBattleAnimator(deps: BattleAnimatorDeps): BattleAnimator {
     deps.tokens.setDying(frame.dying);
     deps.tokens.pose(frame.poses);
     deps.fx.sync(frame.fx);
+    if (frame.numbers.length) deps.damage.spawn(frame.numbers);
     if (!frame.busy) setRunning(false);
   }
 

@@ -31,7 +31,7 @@
       <div class="hero-card__will">
         <img class="hero-card__will-icon" :src="WILL_ICON_URL" alt="" />
         <div class="hero-card__will-value" data-testid="battle-will-value">
-          <b>{{ card.will }}</b> / {{ card.willCap }}
+          <will-number :current="card.will" /> / {{ card.willCap }}
         </div>
         <div class="hero-card__will-bar">
           <span :style="{ width: `${willPercent}%` }"></span>
@@ -185,6 +185,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { BattleHand } from '@hexoflat/engine/battle/battle-state';
+import WillNumber from '@/components/gui/will-number.vue';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import type { BattleActionId, BattleHeroCard } from '@/composables/battle-hero-card';
 import { useBattleText } from '@/composables/use-battle-view';

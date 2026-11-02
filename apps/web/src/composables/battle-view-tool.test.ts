@@ -117,6 +117,17 @@ describe('battle tool hex and statuses', () => {
     });
   });
 
+  it('keeps the shield tool hex after the last shield and offers Lift over a placed one', () => {
+    const store = startedOn(['s1', 'hero'], [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
+    store.runEnemyTurn(0);
+    store.setAnimating(false);
+    const ring = store.projection!.pending.flatMap((p) => p.ring);
+    for (const hex of ring) store.act({ kind: 'place-shield', hex }, 0);
+    const placed = store.projection!.placedShields[0];
+    const shield: BattleUiState = { ...ACTION, hand: 'left', toolAt: placed };
+    expect(viewOf(shield).board?.tool).toMatchObject({ toolKey: 'shield', action: 'unblock' });
+  });
+
   it('offers Use with a potion in hand for the use price', () => {
     startedOn(
       ['hero', 's1'],
@@ -207,6 +218,17 @@ describe('auto-selecting the closest foe', () => {
     expect(view.enemies.find((r) => r.id === 's2')?.selected).toBe(true);
     expect(view.enemies.find((r) => r.id === 's1')?.selected).toBe(false);
     expect(view.board?.tool).toMatchObject({ targetId: 's2' });
+  });
+
+  it('refuses to attack an unselected foe with the tool hex while another foe is chosen', () => {
+    startedOn(
+      ['hero', 's1', 's2'],
+      [hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 }), skeleton('s2', { q: 0, r: 1 })],
+    );
+    const onOther = viewOf({ ...ACTION, selectedId: 's1', toolAt: { q: 0, r: 1 } }).board?.tool;
+    expect(onOther).toMatchObject({ at: { q: 0, r: 1 }, action: null, targetId: null });
+    const onChosen = viewOf({ ...ACTION, selectedId: 's1', toolAt: { q: 1, r: 0 } }).board?.tool;
+    expect(onChosen).toMatchObject({ action: 'attack', targetId: 's1' });
   });
 
   it('keeps the tool hex on the hovered hex instead of jumping to the target', () => {

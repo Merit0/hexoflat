@@ -1,3 +1,4 @@
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleAnimationStep } from './battle-animation-plan';
 import { BATTLE_MOTION } from './battle-timing';
@@ -14,6 +15,26 @@ export interface TokenPose extends Point {
 export interface StrikeSplash {
   at: Point[];
   progress: number;
+}
+
+export interface DamageNumber {
+  at: Point;
+  damage: number;
+}
+
+export function damageNumbersOf(step: BattleAnimationStep, geo: AnimationGeometry): DamageNumber[] {
+  if (step.kind === 'shake' && step.damage) {
+    return [{ at: geo.centreOf(step.at), damage: step.damage }];
+  }
+  if (step.kind !== 'strike') return [];
+  return step.hits
+    .filter((hit) => hit.damage > 0)
+    .map((hit) => ({ at: geo.centreOf(hit.at), damage: hit.damage }));
+}
+
+export function strikeReachedHit(step: BattleAnimationStep, progress: number): boolean {
+  if (step.kind === 'shake') return !!step.damage;
+  return step.kind === 'strike' && progress >= BATTLE_MOTION.splashStart;
 }
 
 export interface StrikeFx {
@@ -84,7 +105,9 @@ export function sampleTokenPose(
           alpha: 1,
         };
       }
-      return { x: c.x + shakeOffset(t, BATTLE_MOTION.heartShakeTiles * h), y: c.y, alpha: 1 };
+      const amplitude =
+        step.style === 'soft' ? BATTLE_MOTION.softShakeTiles : BATTLE_MOTION.heartShakeTiles;
+      return { x: c.x + shakeOffset(t, amplitude * h), y: c.y, alpha: 1 };
     }
     case 'fall':
       return { ...geo.centreOf(step.at), alpha: 1 - t };
@@ -118,8 +141,16 @@ export function sampleStrikeFx(
   progress: number,
   geo: AnimationGeometry,
 ): StrikeFx | null {
-  if (step.kind !== 'strike') return null;
   const t = clamp01(progress);
+  if (step.kind === 'shake' && step.damage) {
+    const at = geo.centreOf(step.at);
+    return {
+      toolKey: HEXOBJECT_KEYS.HAND,
+      tool: { ...at, alpha: 0 },
+      splash: { at: [at], progress: t },
+    };
+  }
+  if (step.kind !== 'strike') return null;
   const target = geo.centreOf(step.target);
   const owner = step.from ? geo.centreOf(step.from) : null;
   const splash = sampleSplash(step, t, geo);

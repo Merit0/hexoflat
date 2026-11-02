@@ -1,5 +1,4 @@
-import { stepCost as willPerStep, travelStepBudget } from '@hexoflat/engine/knowledge/math';
-import { willZoneCharges } from '@hexoflat/engine/knowledge/will-zone';
+import { travelStepBudget } from '@hexoflat/engine/knowledge/math';
 import { computed, type Ref } from 'vue';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
@@ -87,8 +86,6 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
       path,
       reachable,
       markerCoord: isTraversableTarget ? hoveredTileCoord : null,
-      stepCost: route.length * willPerStep(heroStore.willZoneContext),
-      chargesWill: willZoneCharges(heroStore.willZoneContext),
       markerKind: seen ? ('seen' as const) : ('move' as const),
     };
   });
@@ -102,9 +99,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
 
   const markerCoord = computed(() => movePreview.value?.markerCoord ?? null);
   const reachable = computed(() => movePreview.value?.reachable ?? false);
-  const stepCost = computed(() => movePreview.value?.stepCost ?? 0);
-  const chargesWill = computed(() => movePreview.value?.chargesWill ?? false);
   const markerKind = computed(() => movePreview.value?.markerKind ?? 'move');
 
-  return { segments, markerCoord, reachable, stepCost, chargesWill, markerKind };
+  return { segments, markerCoord, reachable, markerKind };
 }

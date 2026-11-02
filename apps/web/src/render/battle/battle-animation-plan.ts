@@ -10,6 +10,11 @@ export interface AnimatedCreature {
   pos: BattleHex;
 }
 
+export interface StrikeHit {
+  at: BattleHex;
+  damage: number;
+}
+
 export type BattleAnimationStep =
   | {
       kind: 'strike';
@@ -19,6 +24,7 @@ export type BattleAnimationStep =
       toolKey: string;
       ring: BattleHex[];
       splashAt: BattleHex[];
+      hits: StrikeHit[];
       durationMs: number;
     }
   | { kind: 'slide'; creatureId: string; path: BattleHex[]; durationMs: number }
@@ -29,7 +35,8 @@ export type BattleAnimationStep =
       kind: 'shake';
       creatureId: string;
       at: BattleHex;
-      style: 'hit' | 'fall';
+      style: 'hit' | 'fall' | 'soft';
+      damage?: number;
       durationMs: number;
     };
 
@@ -59,11 +66,21 @@ interface Displaced {
   path: BattleHex[];
   fell: boolean;
 }
+interface Damaged {
+  creatureId: string;
+  amount: number;
+}
 interface Thrown {
   creatureId: string;
   from: BattleHex;
   to: BattleHex;
 }
+
+const SHAKE_MS = {
+  fall: BATTLE_TIMING.ledgeFallShakeMs,
+  hit: BATTLE_TIMING.heartShakeMs,
+  soft: BATTLE_TIMING.softShakeMs,
+} as const;
 
 const copy = (hex: BattleHex): BattleHex => ({ q: hex.q, r: hex.r });
 
@@ -83,6 +100,7 @@ function rewind(events: DomainEvent[], creatures: AnimatedCreature[]): Map<strin
 
 class Planner {
   readonly steps: BattleAnimationStep[] = [];
+  private readonly covered: string[] = [];
 
   constructor(private readonly pos: Map<string, BattleHex>) {}
 
@@ -92,7 +110,7 @@ class Planner {
     if (event.type === 'STRIKE_LANDED') this.struck(event.payload as Struck, later);
     if (event.type === 'DISPLACED') this.displaced(event.payload as Displaced);
     if (event.type === 'THROWN_CLEAR') this.thrown(event.payload as Thrown);
-    if (event.type === 'CREATURE_DAMAGED') this.shake((event.payload as Moved).creatureId, 'hit');
+    if (event.type === 'CREATURE_DAMAGED') this.damaged(event.payload as Damaged);
     if (event.type === 'CREATURE_FELL') this.fell((event.payload as Moved).creatureId);
   }
 
@@ -116,39 +134,44 @@ class Planner {
     const target = this.pos.get(targetId);
     if (!target) return;
     const attacker = this.pos.get(attackerId);
-    const splashAt = this.splashHexes({ attackerId, itemKey }, target, later);
+    const toolKey = battleToolKeyOf(itemKey);
+    const hits = this.strikeHits(attackerId, targetId, later);
+    this.covered.push(...hits.filter((h) => h.damage > 0).map((h) => h.victimId));
     this.steps.push({
       kind: 'strike',
       targetId,
       target: copy(target),
       from: attacker ? copy(attacker) : null,
-      toolKey: battleToolKeyOf(itemKey),
+      toolKey,
       ring: ring.map(copy),
-      splashAt,
+      splashAt:
+        toolKey === HEXOBJECT_KEYS.HAND ? [] : hits.filter((h) => h.damage > 0).map((h) => h.at),
+      hits,
       durationMs: BATTLE_TIMING.strikeMs,
     });
+    if (hits.some((h) => h.victimId === targetId && h.damage === 0)) this.shake(targetId, 'soft');
   }
 
-  private splashHexes(
-    { attackerId, itemKey }: Pick<Struck, 'attackerId' | 'itemKey'>,
-    target: BattleHex,
+  private strikeHits(
+    attackerId: string,
+    targetId: string,
     later: DomainEvent[],
-  ): BattleHex[] {
-    const toolKey = battleToolKeyOf(itemKey);
-    if (toolKey === HEXOBJECT_KEYS.HAND) return [];
+  ): Array<StrikeHit & { victimId: string }> {
     const next = later.findIndex((e) => e.type === 'STRIKE_LANDED');
     const mine = next < 0 ? later : later.slice(0, next);
     const resolved = mine.find((e) => e.type === 'STRIKES_RESOLVED')?.payload as
       Resolved | undefined;
     const result = resolved?.results.find((r) => r.attackerId === attackerId);
-    const hexes = result?.outcome === 'hit' && result.damage > 0 ? [copy(target)] : [];
+    const target = this.pos.get(targetId);
+    const hits: Array<StrikeHit & { victimId: string }> =
+      result && target ? [{ at: copy(target), damage: result.damage, victimId: targetId }] : [];
     for (const event of mine) {
       if (event.type !== 'STRIKE_SWEPT') continue;
       const swept = event.payload as Swept;
       const at = swept.damage > 0 ? this.pos.get(swept.victimId) : undefined;
-      if (at) hexes.push(copy(at));
+      if (at) hits.push({ at: copy(at), damage: swept.damage, victimId: swept.victimId });
     }
-    return hexes;
+    return hits;
   }
 
   private displaced({ targetId, from, path, fell }: Displaced) {
@@ -186,12 +209,21 @@ class Planner {
     });
   }
 
-  private shake(creatureId: string, style: 'hit' | 'fall') {
+  private damaged({ creatureId, amount }: Damaged) {
+    const covered = this.covered.indexOf(creatureId);
+    if (covered >= 0) {
+      this.covered.splice(covered, 1);
+      this.shake(creatureId, 'hit');
+      return;
+    }
+    this.shake(creatureId, 'hit', amount);
+  }
+
+  private shake(creatureId: string, style: 'hit' | 'fall' | 'soft', damage?: number) {
     const at = this.pos.get(creatureId);
     if (!at) return;
-    const durationMs =
-      style === 'fall' ? BATTLE_TIMING.ledgeFallShakeMs : BATTLE_TIMING.heartShakeMs;
-    this.steps.push({ kind: 'shake', creatureId, at: copy(at), style, durationMs });
+    const durationMs = damage ? BATTLE_TIMING.woundMs : SHAKE_MS[style];
+    this.steps.push({ kind: 'shake', creatureId, at: copy(at), style, damage, durationMs });
   }
 }
 

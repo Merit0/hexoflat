@@ -1,12 +1,15 @@
 import type { BattleAnimationStep } from './battle-animation-plan';
 import {
   movesToken,
+  damageNumbersOf,
   sampleStrikeFx,
   sampleTokenPose,
   stepCreatureId,
   stepEndPose,
   stepStartPose,
+  strikeReachedHit,
   type AnimationGeometry,
+  type DamageNumber,
   type StrikeFx,
   type TokenPose,
 } from './battle-animation-sample';
@@ -15,6 +18,7 @@ export interface BattleAnimationFrame {
   poses: Map<string, TokenPose>;
   fx: StrikeFx | null;
   dying: Set<string>;
+  numbers: DamageNumber[];
   busy: boolean;
 }
 
@@ -22,6 +26,7 @@ export class BattleAnimationQueue {
   private steps: BattleAnimationStep[] = [];
   private elapsedMs = 0;
   private readonly held = new Map<string, TokenPose>();
+  private readonly announced = new WeakSet<BattleAnimationStep>();
 
   constructor(private readonly geo: AnimationGeometry) {}
 
@@ -40,12 +45,19 @@ export class BattleAnimationQueue {
 
   advance(deltaMs: number): BattleAnimationFrame {
     this.elapsedMs += deltaMs;
+    const numbers: DamageNumber[] = [];
     while (this.steps.length && this.elapsedMs >= this.steps[0].durationMs) {
       this.elapsedMs -= this.steps[0].durationMs;
-      this.finish(this.steps.shift()!);
+      const done = this.steps.shift()!;
+      numbers.push(...this.announce(done));
+      this.finish(done);
     }
     if (!this.steps.length) this.elapsedMs = 0;
-    return this.frame();
+    const current = this.steps[0];
+    if (current && strikeReachedHit(current, this.progress(current))) {
+      numbers.push(...this.announce(current));
+    }
+    return { ...this.frame(), numbers };
   }
 
   clear() {
@@ -60,11 +72,27 @@ export class BattleAnimationQueue {
       this.steps.filter((s) => s.kind === 'fall').map((s) => stepCreatureId(s)),
     );
     const current = this.steps[0];
-    if (!current) return { poses, fx: null, dying, busy: false };
-    const progress = current.durationMs > 0 ? this.elapsedMs / current.durationMs : 1;
+    if (!current) return { poses, fx: null, dying, numbers: [], busy: false };
+    const progress = this.progress(current);
     const pose = sampleTokenPose(current, progress, this.geo);
     if (pose) poses.set(stepCreatureId(current), pose);
-    return { poses, fx: sampleStrikeFx(current, progress, this.geo), dying, busy: true };
+    return {
+      poses,
+      fx: sampleStrikeFx(current, progress, this.geo),
+      dying,
+      numbers: [],
+      busy: true,
+    };
+  }
+
+  private progress(step: BattleAnimationStep): number {
+    return step.durationMs > 0 ? this.elapsedMs / step.durationMs : 1;
+  }
+
+  private announce(step: BattleAnimationStep): DamageNumber[] {
+    if (this.announced.has(step)) return [];
+    this.announced.add(step);
+    return damageNumbersOf(step, this.geo);
   }
 
   private touchedLater(id: string): boolean {

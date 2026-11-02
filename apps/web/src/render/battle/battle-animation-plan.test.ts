@@ -119,7 +119,11 @@ describe('planBattleAnimation', () => {
       durationMs: BATTLE_TIMING.slidePerHexMs * 2,
     });
     expect(steps[1]).toMatchObject({ style: 'fall', at: { q: 2, r: 0 } });
-    expect(steps[2]).toMatchObject({ style: 'hit', durationMs: BATTLE_TIMING.heartShakeMs });
+    expect(steps[2]).toMatchObject({
+      style: 'hit',
+      damage: 1,
+      durationMs: BATTLE_TIMING.woundMs,
+    });
   });
 
   it('ejects a creature from the saw and ignores boulders', () => {

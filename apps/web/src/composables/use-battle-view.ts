@@ -91,6 +91,7 @@ export function useBattleView() {
       lastHeroEvents: store.lastHeroEvents,
       turnStartWill: store.turnStartWill,
       revealedShields: store.revealedShields,
+      animating: store.animating,
       ui: { ...ui },
       rules: BATTLE_RULES,
       nameOf,

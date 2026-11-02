@@ -95,6 +95,22 @@ describe('battle overlay model', () => {
     expect(marks).toContainEqual({ hex: { q: 0, r: 1 }, tone: 'shield' });
   });
 
+  it('keeps the strike ring hidden while the enemy is still animating towards it', () => {
+    const battle = heroTurn([hero(), enemyCreature('skeleton-warrior', 'w', { q: 2, r: 0 })]);
+    battle.pending = [
+      {
+        id: 'p1',
+        attackerId: 'w',
+        targetId: 'h',
+        fromHex: { q: 1, r: 0 },
+        ring: [{ q: 1, r: 0 }],
+        power: 1,
+      },
+    ];
+    expect(model(battle, { animating: true }).marks.some((m) => m.tone === 'ring')).toBe(false);
+    expect(model(battle, { animating: false }).marks.some((m) => m.tone === 'ring')).toBe(true);
+  });
+
   it('draws deployment zones and defend results, and nothing for the enemy turn', () => {
     const battle = heroTurn([enemyCreature('skeleton-warrior', 'w', { q: 2, r: 0 }), hero()]);
     const { marks } = model(battle, {

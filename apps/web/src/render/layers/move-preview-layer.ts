@@ -12,8 +12,6 @@ export interface MovePreviewSyncParams {
   segments: IHexCoordinates[];
   reachable: boolean;
   markerCoord: IHexCoordinates | null;
-  stepCost: number;
-  chargesWill: boolean;
   markerKind: 'move' | 'seen';
 }
 
@@ -67,7 +65,7 @@ export function createMovePreviewLayer(deps: MovePreviewLayerDeps): MovePreviewL
       segmentPool[i].clear();
     }
 
-    if (!params.markerCoord) {
+    if (!params.markerCoord || params.markerKind !== 'seen') {
       marker.visible = false;
       return;
     }
@@ -76,22 +74,13 @@ export function createMovePreviewLayer(deps: MovePreviewLayerDeps): MovePreviewL
     const { x, y } = calcHexPixelPosition({ coordinates: params.markerCoord }, w, h);
     marker.position.set(x + w / 2, y + h / 2);
 
-    const isSeen = params.markerKind === 'seen';
-    const strokeColor = isSeen ? 0xc2412d : params.reachable ? 0x84ffb8 : 0xff7e7e;
-    const circleFill = isSeen ? 0xc2412d : params.reachable ? 0x60ffa4 : 0xff6464;
-
     markerCircle.clear();
     markerCircle
-      .circle(0, 0, isSeen ? 18 : 13)
-      .fill({ color: circleFill, alpha: isSeen ? 0.28 : params.reachable ? 0.16 : 0.14 })
-      .stroke({ color: strokeColor, width: 2 });
-
-    markerText.text = isSeen
-      ? 'SEEN!'
-      : params.chargesWill
-        ? `−${params.stepCost}`
-        : String(params.stepCost);
-    markerText.style.fontSize = isSeen ? 10 : 12;
+      .circle(0, 0, 18)
+      .fill({ color: 0xc2412d, alpha: 0.28 })
+      .stroke({ color: 0xc2412d, width: 2 });
+    markerText.text = 'SEEN!';
+    markerText.style.fontSize = 10;
   }
 
   return {

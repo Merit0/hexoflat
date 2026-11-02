@@ -38,8 +38,6 @@ export interface UseHexBoardOptions {
     segments: ComputedRef<IHexCoordinates[]>;
     markerCoord: ComputedRef<IHexCoordinates | null>;
     reachable: ComputedRef<boolean>;
-    stepCost: ComputedRef<number>;
-    chargesWill: ComputedRef<boolean>;
     markerKind: ComputedRef<'move' | 'seen'>;
   };
   squadWatched: ComputedRef<IHexCoordinates[]>;
@@ -218,8 +216,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
           opts.movePreview.segments,
           opts.movePreview.markerCoord,
           opts.movePreview.reachable,
-          opts.movePreview.stepCost,
-          opts.movePreview.chargesWill,
           opts.movePreview.markerKind,
         ],
         () => {
@@ -227,8 +223,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
             segments: opts.movePreview.segments.value,
             reachable: opts.movePreview.reachable.value,
             markerCoord: opts.movePreview.markerCoord.value,
-            stepCost: opts.movePreview.stepCost.value,
-            chargesWill: opts.movePreview.chargesWill.value,
             markerKind: opts.movePreview.markerKind.value,
           };
           movePreviewLayer?.sync(params);

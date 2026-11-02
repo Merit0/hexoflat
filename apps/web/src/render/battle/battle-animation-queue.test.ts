@@ -25,6 +25,7 @@ const strike: BattleAnimationStep = {
   toolKey: 'sword',
   ring: [{ q: 1, r: 0 }],
   splashAt: [{ q: 0, r: 0 }],
+  hits: [{ at: { q: 0, r: 0 }, damage: 2 }],
   durationMs: 400,
 };
 
@@ -44,7 +45,7 @@ describe('BattleAnimationQueue', () => {
     expect(during.busy).toBe(true);
 
     const done = queue.advance(200);
-    expect(done).toEqual({ poses: new Map(), fx: null, dying: new Set(), busy: false });
+    expect(done).toMatchObject({ poses: new Map(), fx: null, dying: new Set(), busy: false });
     expect(queue.busy).toBe(false);
   });
 
@@ -185,5 +186,44 @@ describe('death fall', () => {
     const done = queue.advance(400);
     expect(done.dying.size).toBe(0);
     expect(done.busy).toBe(false);
+  });
+
+  describe('damage numbers', () => {
+    it('announces each strike once, when the blow lands', () => {
+      const queue = new BattleAnimationQueue(geo);
+      queue.enqueue([strike]);
+      expect(queue.advance(100).numbers).toEqual([]);
+      expect(queue.advance(150).numbers).toEqual([{ at: { x: 0, y: 0 }, damage: 2 }]);
+      expect(queue.advance(10).numbers).toEqual([]);
+      expect(queue.advance(500).numbers).toEqual([]);
+    });
+
+    it('never announces a blow that did no damage', () => {
+      const queue = new BattleAnimationQueue(geo);
+      queue.enqueue([{ ...strike, hits: [{ at: { q: 0, r: 0 }, damage: 0 }] }]);
+      expect(queue.advance(5000).numbers).toEqual([]);
+    });
+
+    it('announces a wound that no blow caused, together with its splash', () => {
+      const queue = new BattleAnimationQueue(geo);
+      const wound: BattleAnimationStep = {
+        kind: 'shake',
+        creatureId: 'hero',
+        at: { q: 0, r: 0 },
+        style: 'hit',
+        damage: 3,
+        durationMs: 650,
+      };
+      queue.enqueue([wound]);
+      const frame = queue.advance(10);
+      expect(frame.numbers).toEqual([{ at: { x: 0, y: 0 }, damage: 3 }]);
+      expect(frame.fx?.splash?.at).toEqual([{ x: 0, y: 0 }]);
+    });
+
+    it('still announces a strike that a long frame skipped over', () => {
+      const queue = new BattleAnimationQueue(geo);
+      queue.enqueue([strike]);
+      expect(queue.advance(5000).numbers).toHaveLength(1);
+    });
   });
 });

@@ -198,6 +198,7 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
     results: defendResults(input.lastHeroEvents),
     revealed: input.revealedShields ?? [],
     selectedId: targetIdOf(input),
+    animating: input.animating,
   });
   const creatures = (view?.creatures ?? deploy.setup.creatures) as BattleCreature[];
   return {

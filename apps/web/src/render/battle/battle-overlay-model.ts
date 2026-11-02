@@ -32,6 +32,7 @@ export interface BattleOverlayInput {
   results: DefendResultMark[];
   revealed?: readonly BattleHex[];
   selectedId?: string | null;
+  animating?: boolean;
 }
 
 export interface BattleOverlayModel {
@@ -116,7 +117,9 @@ export function battleOverlayModel(input: BattleOverlayInput): BattleOverlayMode
   const view = input.projection;
   if (!view) return { marks, targets: [] };
 
-  marks.push(...strikeMarks(view), ...aimMarks(view), ...decoyShieldMarks(view));
+  if (!input.animating) {
+    marks.push(...strikeMarks(view), ...aimMarks(view), ...decoyShieldMarks(view));
+  }
   marks.push(...view.placedShields.map((hex) => ({ hex, tone: 'shield' as const })));
   const hero = activeHero(view);
   const targets =

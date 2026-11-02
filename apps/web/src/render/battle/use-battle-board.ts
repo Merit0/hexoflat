@@ -32,6 +32,10 @@ import {
   createBattleOverlayLayer,
   type BattleOverlayLayer,
 } from '@/render/layers/battle-overlay-layer';
+import {
+  createBattleDamageLayer,
+  type BattleDamageLayer,
+} from '@/render/layers/battle-damage-layer';
 import { createBattleFxLayer, type BattleFxLayer } from '@/render/layers/battle-fx-layer';
 import { createBattleTokenLayer, type BattleTokenLayer } from '@/render/layers/battle-token-layer';
 import { createMovePreviewLayer, type MovePreviewLayer } from '@/render/layers/move-preview-layer';
@@ -68,6 +72,7 @@ interface Layers {
   overlay: BattleOverlayLayer;
   preview: MovePreviewLayer;
   fx: BattleFxLayer;
+  damage: BattleDamageLayer;
   animator: BattleAnimator;
 }
 
@@ -130,8 +135,6 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       segments,
       reachable: preview?.reachable ?? false,
       markerCoord: null,
-      stepCost: preview?.cost ?? 0,
-      chargesWill: true,
       markerKind: 'move',
     });
   }
@@ -153,6 +156,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     });
     const tokens = createBattleTokenLayer(deps);
     const fx = createBattleFxLayer(deps);
+    const damage = createBattleDamageLayer(deps);
     const animator = createBattleAnimator({
       ticker: app.app.ticker,
       geometry: {
@@ -164,9 +168,10 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       },
       tokens,
       fx,
+      damage,
       onBusyChange: (busy) => options.onAnimating?.(busy),
     });
-    return { board, overlay, preview, tokens, fx, animator };
+    return { board, overlay, preview, tokens, fx, damage, animator };
   }
 
   async function start(width: number, height: number) {
@@ -235,6 +240,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     observer?.disconnect();
     layers?.animator.destroy();
     layers?.fx.destroy();
+    layers?.damage.destroy();
     layers?.preview.destroy();
     layers?.board.destroy();
     layers?.overlay.destroy();
