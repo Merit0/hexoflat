@@ -37,8 +37,6 @@ export function battleAssetPaths(biome: BattlefieldBiome): string[] {
   ].filter(Boolean);
 }
 
-export const BATTLE_BLOOD_COLORS = { fill: 0xb3121c, shine: 0xe85a63 } as const;
-
 export type BattleOverlayTone =
   | 'heroZone'
   | 'enemyZone'

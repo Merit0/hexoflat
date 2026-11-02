@@ -96,6 +96,12 @@ After extracting anything, verify the old call site actually imports it and the 
 - `overlay-store` is for genuinely modal things only.
 - E2E hooks (`apps/web/src/e2e/`) are gated behind `import.meta.env.VITE_E2E_HOOKS !== 'true'` checked **inline**, so Vite can statically fold the branch away and keep the hooks out of production bundles. Keep the condition inline — do not extract it into a helper.
 
+## Layout width guards
+
+- The map/hero-board split is `use-game-layout.ts` percentages only. Grid tracks in `hex-world-map.vue` are `minmax(0, var(--…))`, `.map-pane` and `.hero-board-panel` use `contain: inline-size` + `min-width: 0`, and `.hero-board-body` has an explicit `grid-template-columns: minmax(0, 1fr)`. Content wider than a pane is clipped, never stretches the layout. Do not use `contain: layout`/`paint` there (it makes the block the containing block for `position: fixed` descendants).
+- Any `display: grid` inside the panel needs an explicit `minmax(0, …)` column; an implicit `auto` column grows to its content.
+- Tab labels (`hero-board-panel.vue`) are plain text (no icon/dot); the font scales with the panel via a container query: `clamp(9px, 100cqw / tab-count / 7.5, 20px)`.
+
 ## Cursors
 
 - Three custom cursors in `apps/web/public/cursors/app-cursor/`, wired only in `apps/web/src/assets/global.css`: `cursor-default.svg` for everything (including clickable things — there is no separate pointer cursor), `holy-cursor-open-hand-plane.svg` on hover over draggable things, `holy-cursor-grab-hand-plane.svg` while pressed / dragging.

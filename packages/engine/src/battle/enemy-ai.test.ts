@@ -128,7 +128,7 @@ describe('skeleton warrior (R-AI-2)', () => {
     expect(battleDistance(warrior.pos, { q: 0, r: 0 })).toBe(1);
   });
 
-  it('guesses where to raise its shield, and the hero then picks the side', () => {
+  it('guesses where to raise its shield, and the hero hits at once without waiting to aim', () => {
     const battle = enemyFirst([
       hero({ q: 0, r: 0 }),
       enemyCreature('skeleton-warrior', 's1', { q: 1, r: 0 }),
@@ -139,26 +139,20 @@ describe('skeleton warrior (R-AI-2)', () => {
       targetId: 's1',
       hand: 'right',
     });
-    expect(eventTypes(events).slice(0, 4)).toEqual([
+    expect(eventTypes(events).slice(0, 3)).toEqual([
       'STRIKE_DEALT',
       'REACTION_OPENED',
       'SHIELD_PLACED',
-      'REACTION_AIMING',
     ]);
+    expect(eventTypes(events)).not.toContain('REACTION_AIMING');
+    expect(after.reaction).toBeUndefined();
+    expect(after.pending).toEqual([]);
+    expect(after.activeId).toBe('hero');
     const shield = (events[2].payload as { hex: { q: number; r: number } }).hex;
-    expect(after.reaction!.stage).toBe('aim');
-    const options = after.pending[0].ring;
-    expect(options).toContainEqual(shield);
-
-    const open = options.find((hex) => hex.q !== shield.q || hex.r !== shield.r)!;
-    const hit = heroDoes(after, { kind: 'aim', hex: open });
-    expect(hit.events.find((e) => e.type === 'STRIKES_RESOLVED')!.payload).toMatchObject({
-      results: [{ outcome: 'hit' }],
-    });
-    const blocked = heroDoes(after, { kind: 'aim', hex: shield });
-    expect(blocked.events.find((e) => e.type === 'STRIKES_RESOLVED')!.payload).toMatchObject({
-      results: [{ outcome: 'blocked' }],
-    });
+    const outcome = events.find((e) => e.type === 'STRIKES_RESOLVED')!.payload as {
+      results: Array<{ outcome: string }>;
+    };
+    expect(outcome.results[0].outcome).toBe(shield.q === 0 && shield.r === 0 ? 'blocked' : 'hit');
   });
 
   it('does not always cover the hex the hero stands on', () => {

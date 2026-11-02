@@ -121,6 +121,7 @@ function validateStrike(
   const weapon = strikingItem(attacker, hand, rules);
   if (!weapon) return reject('NO_WEAPON_IN_HAND');
   if (state.struckHands.includes(hand)) return reject('HAND_ALREADY_STRUCK');
+  if (state.turnWill < rules.strike) return null;
   return reachRefusal(state, attacker, target, weapon, state.turnWill - rules.strike, rules);
 }
 

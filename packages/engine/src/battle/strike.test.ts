@@ -154,4 +154,23 @@ describe('REQ-BTL-005 strike ring', () => {
       expect.not.arrayContaining([{ q: 1, r: -1 }]),
     );
   });
+
+  it('says the Will is short, not "stand next to it", when the hero is already beside the enemy', () => {
+    const battle = heroNextToSkeleton();
+    battle.turnWill = 5;
+    expect(
+      rejectionOf(heroDoes(battle, { kind: 'strike', targetId: 's1', hand: 'right' }).events),
+    ).toBe('INSUFFICIENT_WILL');
+  });
+
+  it('still says to come closer when the enemy is out of reach with the Will left', () => {
+    const far = giveTurn(
+      battleWith([hero({ q: -2, r: 0 }), skeleton('s1', { q: 2, r: 0 })], hexagonBoard()),
+      ['hero', 's1'],
+    );
+    far.turnWill = 8;
+    expect(
+      rejectionOf(heroDoes(far, { kind: 'strike', targetId: 's1', hand: 'right' }).events),
+    ).toBe('NOT_ADJACENT');
+  });
 });

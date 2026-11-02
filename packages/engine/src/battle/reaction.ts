@@ -193,7 +193,7 @@ export function finishBlock(
   const attacker = creatureById(state, reaction.attackerId)!;
   const strike = pendingOf(state)!;
   const options = aimOptions(state, attacker, strike, state.turnWill, rules, reaction.ranged);
-  if (reaction.shields.length === 0 || options.length < 2) {
+  if (reaction.shields.length === 0 || options.length < 2 || attacker.side === 'heroes') {
     return resolveAt(state, attacker, options[0] ?? attacker.pos, atMs, rules);
   }
   reaction.stage = 'aim';

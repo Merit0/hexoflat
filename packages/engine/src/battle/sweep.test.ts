@@ -52,10 +52,8 @@ describe('melee sweep (the weapon on its way hits everyone it passes)', () => {
     );
     let battle = strikeOpened(start, 'hero', 's1');
     battle = enemyDoes(battle, { kind: 'place-shield', hex: { q: 0, r: 0 } }, 's1').battle;
-    battle = enemyDoes(battle, { kind: 'reaction-timeout' }, 's1').battle;
-    expect(battle.reaction!.stage).toBe('aim');
-
-    const { battle: after, events } = heroDoes(battle, { kind: 'aim', hex: { q: 0, r: 0 } });
+    const { battle: after, events } = enemyDoes(battle, { kind: 'reaction-timeout' }, 's1');
+    expect(after.reaction).toBeUndefined();
     expect(after.creatures.find((c) => c.id === 's1')!.hp).toBe(6);
     expect(after.creatures.find((c) => c.id === 's2')!.hp).toBe(4);
     expect(eventTypes(events)).toContain('STRIKE_SWEPT');

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleAnimationStep } from './battle-animation-plan';
 import { BattleAnimationQueue } from './battle-animation-queue';
+import { splashFrameIndex } from '@/render/blood-splash';
 import { sampleStrikeFx, type AnimationGeometry } from './battle-animation-sample';
 
 const geo: AnimationGeometry = {
@@ -23,6 +24,7 @@ const strike: BattleAnimationStep = {
   from: { q: 2, r: 0 },
   toolKey: 'sword',
   ring: [{ q: 1, r: 0 }],
+  splashAt: [{ q: 0, r: 0 }],
   durationMs: 400,
 };
 
@@ -115,5 +117,47 @@ describe('sampleStrikeFx', () => {
   it('never shows the tool when the owner is unknown, so it cannot circle anyone else', () => {
     const fx = sampleStrikeFx({ ...strike, from: null }, 0.5, geo)!;
     expect(fx.tool.alpha).toBe(0);
+  });
+});
+
+describe('blood splash on a landed weapon strike', () => {
+  it('stays hidden until the weapon has swung, then runs from 0 to 1 over the target hex', () => {
+    expect(sampleStrikeFx(strike, 0.3, geo)!.splash).toBeNull();
+    const mid = sampleStrikeFx(strike, 0.775, geo)!.splash!;
+    expect(mid.progress).toBeCloseTo(0.5);
+    expect(mid.at).toEqual([{ x: 0, y: 0 }]);
+    expect(sampleStrikeFx(strike, 1, geo)!.splash!.progress).toBeCloseTo(1);
+  });
+
+  it('is not drawn when nobody took damage', () => {
+    expect(sampleStrikeFx({ ...strike, splashAt: [] }, 0.9, geo)!.splash).toBeNull();
+  });
+
+  it('is drawn on every creature the swing hurt', () => {
+    const swing = {
+      ...strike,
+      splashAt: [
+        { q: 0, r: 0 },
+        { q: 0, r: 1 },
+      ],
+    };
+    expect(sampleStrikeFx(swing, 0.9, geo)!.splash!.at).toEqual([
+      { x: 0, y: 0 },
+      { x: 0, y: 100 },
+    ]);
+  });
+
+  it('is still drawn on the target when the attacker is unknown', () => {
+    expect(sampleStrikeFx({ ...strike, from: null }, 0.9, geo)!.splash).not.toBeNull();
+  });
+});
+
+describe('splashFrameIndex', () => {
+  it('walks the frames in order and clamps at both ends', () => {
+    expect([0, 0.17, 0.34, 0.5, 0.67, 0.84, 1].map((p) => splashFrameIndex(p, 6))).toEqual([
+      0, 1, 2, 3, 4, 5, 5,
+    ]);
+    expect(splashFrameIndex(-1, 6)).toBe(0);
+    expect(splashFrameIndex(0.5, 0)).toBe(0);
   });
 });

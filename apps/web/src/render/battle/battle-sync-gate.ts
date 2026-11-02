@@ -13,7 +13,6 @@ export function createBattleSyncGate() {
   let biome: BattleBoardScene['biome'] | null = null;
   let creatures: BattleBoardScene['creatures'] | null = null;
   let activeId: string | null | undefined;
-  let woundsKey = '';
   let targets = '';
   let overlayKey = '';
 
@@ -23,12 +22,8 @@ export function createBattleSyncGate() {
         scene.board !== board || scene.boulders !== boulders || scene.biome !== biome;
       const nextOverlayKey = JSON.stringify(overlay.marks);
       const nextTargets = overlay.targets.join(',');
-      const nextWounds = JSON.stringify(scene.wounds);
       const tokensChanged =
-        scene.creatures !== creatures ||
-        scene.activeId !== activeId ||
-        nextTargets !== targets ||
-        nextWounds !== woundsKey;
+        scene.creatures !== creatures || scene.activeId !== activeId || nextTargets !== targets;
       const overlayChanged = nextOverlayKey !== overlayKey;
 
       board = scene.board;
@@ -37,7 +32,6 @@ export function createBattleSyncGate() {
       creatures = scene.creatures;
       activeId = scene.activeId;
       targets = nextTargets;
-      woundsKey = nextWounds;
       overlayKey = nextOverlayKey;
       return { board: boardChanged, overlay: overlayChanged, tokens: tokensChanged };
     },

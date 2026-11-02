@@ -18,6 +18,7 @@ export type BattleAnimationStep =
       from: BattleHex | null;
       toolKey: string;
       ring: BattleHex[];
+      splashAt: BattleHex[];
       durationMs: number;
     }
   | { kind: 'slide'; creatureId: string; path: BattleHex[]; durationMs: number }
@@ -35,6 +36,14 @@ interface Moved {
   creatureId: string;
   from: BattleHex;
   to: BattleHex;
+}
+interface Resolved {
+  results: Array<{ attackerId: string; outcome: string; damage: number }>;
+}
+interface Swept {
+  attackerId: string;
+  victimId: string;
+  damage: number;
 }
 interface Struck {
   attackerId: string;
@@ -76,10 +85,10 @@ class Planner {
 
   constructor(private readonly pos: Map<string, BattleHex>) {}
 
-  read(event: DomainEvent) {
+  read(event: DomainEvent, later: DomainEvent[] = []) {
     if (event.type === 'CREATURE_MOVED') this.moved(event.payload as Moved);
     if (event.type === 'MOVE_UNDONE') this.place((event.payload as Moved).creatureId, event);
-    if (event.type === 'STRIKE_LANDED') this.struck(event.payload as Struck);
+    if (event.type === 'STRIKE_LANDED') this.struck(event.payload as Struck, later);
     if (event.type === 'DISPLACED') this.displaced(event.payload as Displaced);
     if (event.type === 'THROWN_CLEAR') this.thrown(event.payload as Thrown);
     if (event.type === 'CREATURE_DAMAGED') this.shake((event.payload as Moved).creatureId, 'hit');
@@ -101,10 +110,11 @@ class Planner {
     this.pos.set(creatureId, copy(to));
   }
 
-  private struck({ attackerId, targetId, itemKey, ring }: Struck) {
+  private struck({ attackerId, targetId, itemKey, ring }: Struck, later: DomainEvent[]) {
     const target = this.pos.get(targetId);
     if (!target) return;
     const attacker = this.pos.get(attackerId);
+    const splashAt = this.splashHexes({ attackerId, itemKey }, target, later);
     this.steps.push({
       kind: 'strike',
       targetId,
@@ -112,8 +122,31 @@ class Planner {
       from: attacker ? copy(attacker) : null,
       toolKey: (itemKey && hexobjectOfBattleItem(itemKey)) || HEXOBJECT_KEYS.HAND,
       ring: ring.map(copy),
+      splashAt,
       durationMs: BATTLE_TIMING.strikeMs,
     });
+  }
+
+  private splashHexes(
+    { attackerId, itemKey }: Pick<Struck, 'attackerId' | 'itemKey'>,
+    target: BattleHex,
+    later: DomainEvent[],
+  ): BattleHex[] {
+    const toolKey = (itemKey && hexobjectOfBattleItem(itemKey)) || HEXOBJECT_KEYS.HAND;
+    if (toolKey === HEXOBJECT_KEYS.HAND) return [];
+    const next = later.findIndex((e) => e.type === 'STRIKE_LANDED');
+    const mine = next < 0 ? later : later.slice(0, next);
+    const resolved = mine.find((e) => e.type === 'STRIKES_RESOLVED')?.payload as
+      Resolved | undefined;
+    const result = resolved?.results.find((r) => r.attackerId === attackerId);
+    const hexes = result?.outcome === 'hit' && result.damage > 0 ? [copy(target)] : [];
+    for (const event of mine) {
+      if (event.type !== 'STRIKE_SWEPT') continue;
+      const swept = event.payload as Swept;
+      const at = swept.damage > 0 ? this.pos.get(swept.victimId) : undefined;
+      if (at) hexes.push(copy(at));
+    }
+    return hexes;
   }
 
   private displaced({ targetId, from, path, fell }: Displaced) {
@@ -154,6 +187,6 @@ export function planBattleAnimation(
   creatures: AnimatedCreature[],
 ): BattleAnimationStep[] {
   const planner = new Planner(rewind(events, creatures));
-  for (const event of events) planner.read(event);
+  events.forEach((event, i) => planner.read(event, events.slice(i + 1)));
   return planner.steps;
 }

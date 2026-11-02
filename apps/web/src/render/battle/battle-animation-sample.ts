@@ -11,9 +11,15 @@ export interface TokenPose extends Point {
   alpha: number;
 }
 
+export interface StrikeSplash {
+  at: Point[];
+  progress: number;
+}
+
 export interface StrikeFx {
   tool: Point & { alpha: number };
   toolKey: string;
+  splash: StrikeSplash | null;
 }
 
 export interface AnimationGeometry {
@@ -93,6 +99,18 @@ export function stepEndPose(step: BattleAnimationStep, geo: AnimationGeometry): 
   return sampleTokenPose(step, 1, geo);
 }
 
+function sampleSplash(
+  step: Extract<BattleAnimationStep, { kind: 'strike' }>,
+  t: number,
+  geo: AnimationGeometry,
+): StrikeSplash | null {
+  if (step.splashAt.length === 0 || t < BATTLE_MOTION.splashStart) return null;
+  return {
+    at: step.splashAt.map((hex) => geo.centreOf(hex)),
+    progress: (t - BATTLE_MOTION.splashStart) / (1 - BATTLE_MOTION.splashStart),
+  };
+}
+
 export function sampleStrikeFx(
   step: BattleAnimationStep,
   progress: number,
@@ -102,7 +120,8 @@ export function sampleStrikeFx(
   const t = clamp01(progress);
   const target = geo.centreOf(step.target);
   const owner = step.from ? geo.centreOf(step.from) : null;
-  if (!owner) return { toolKey: step.toolKey, tool: { ...target, alpha: 0 } };
+  const splash = sampleSplash(step, t, geo);
+  if (!owner) return { toolKey: step.toolKey, tool: { ...target, alpha: 0 }, splash };
   const radius = geo.tileHeight * BATTLE_MOTION.toolOrbitTiles;
   const first = Math.atan2(target.y - owner.y, target.x - owner.x);
   const angle = first + easeInOut(t) * Math.PI * 2 * BATTLE_MOTION.toolTurns;
@@ -115,5 +134,6 @@ export function sampleStrikeFx(
       y: owner.y + Math.sin(angle) * radius,
       alpha: Math.min(fadeIn, fadeOut),
     },
+    splash,
   };
 }

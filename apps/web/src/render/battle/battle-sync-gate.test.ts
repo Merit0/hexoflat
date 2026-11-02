@@ -8,7 +8,7 @@ const boulders: BattleBoardScene['boulders'] = [];
 const creatures = [] as BattleBoardScene['creatures'];
 
 function scene(overrides: Partial<BattleBoardScene> = {}): BattleBoardScene {
-  return { biome: 'crypt', board, boulders, creatures, wounds: {}, activeId: 'hero', ...overrides };
+  return { biome: 'crypt', board, boulders, creatures, activeId: 'hero', ...overrides };
 }
 
 function overlay(tone: 'shield' | 'ring' = 'ring', targets: string[] = []): BattleOverlayModel {
@@ -51,15 +51,5 @@ describe('createBattleSyncGate', () => {
     expect(
       gate.diff(scene({ board: nextBoard, creatures: nextCreatures }), overlay('shield', ['s1'])),
     ).toEqual({ board: false, overlay: false, tokens: true });
-  });
-
-  it('rebuilds the tokens when a new wound appears', () => {
-    const gate = createBattleSyncGate();
-    gate.diff(scene(), overlay());
-    expect(gate.diff(scene({ wounds: { hero: [{ q: 1, r: 0 }] } }), overlay())).toEqual({
-      board: false,
-      overlay: false,
-      tokens: true,
-    });
   });
 });

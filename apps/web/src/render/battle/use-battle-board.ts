@@ -23,6 +23,7 @@ import {
   type BoardFrame,
 } from '@/render/board-camera';
 import { preloadTextures } from '@/render/texture-cache';
+import { preloadBloodSplash } from '@/render/blood-splash';
 import { battleAssetPaths } from '@/render/battle/battle-look';
 import { registerBattleHexProbe } from '@/e2e/battle-hooks';
 import { createBattleSyncGate } from '@/render/battle/battle-sync-gate';
@@ -43,7 +44,6 @@ export interface BattleBoardScene {
   board: Record<string, BattleTerrain>;
   boulders: Boulder[];
   creatures: BattleCreature[];
-  wounds: Record<string, BattleHex[]>;
   activeId: string | null;
 }
 
@@ -116,8 +116,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     }
     if (changed.overlay) layers.overlay.sync(overlay);
     syncPreview();
-    if (changed.tokens)
-      layers.tokens.sync(scene.creatures, scene.activeId, overlay.targets, scene.wounds);
+    if (changed.tokens) layers.tokens.sync(scene.creatures, scene.activeId, overlay.targets);
     const events = options.takeEvents?.() ?? [];
     if (events.length) layers.animator.play(events, scene.creatures);
   }
@@ -178,7 +177,10 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       app.destroy();
       return;
     }
-    await preloadTextures(battleAssetPaths(options.scene.value.biome));
+    await Promise.all([
+      preloadTextures(battleAssetPaths(options.scene.value.biome)),
+      preloadBloodSplash(),
+    ]);
     if (destroyed) {
       app.destroy();
       return;
