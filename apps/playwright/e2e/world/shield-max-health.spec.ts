@@ -63,7 +63,6 @@ test('The raised maximum survives a reload without healing the hero', async () =
 });
 
 test('A hero at the old maximum still heals at the fireplace up to the raised maximum', async () => {
-  test.setTimeout(120_000);
   const shield = new ShieldMaxHealthFeature();
   await shield.startWithShieldInBag();
   await shield.equipShield();
@@ -75,7 +74,6 @@ test('A hero at the old maximum still heals at the fireplace up to the raised ma
 });
 
 test('A full shielded hero is told health is already full at the fireplace', async () => {
-  test.setTimeout(120_000);
   const shield = new ShieldMaxHealthFeature();
   await shield.startWithShieldInBag();
   await shield.equipShield();

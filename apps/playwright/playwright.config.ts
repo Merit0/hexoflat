@@ -7,12 +7,17 @@ export default defineConfig({
   globalSetup: './global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI || process.env.E2E_PRE_PUSH === '1',
-  timeout: process.env.CI ? 60_000 : 45_000,
+  // The slowest test of a full run takes ~36 s, so 60 s is ~1.7x headroom for
+  // a loaded machine; a test that needs more is a problem to fix, not a
+  // number to raise per test.
+  timeout: 60_000,
   // Two retries on CI is the community standard for a suite that talks to a
-  // real API and a real browser; zero locally so flakiness is visible the
-  // moment it appears instead of being quietly retried away.
-  retries: process.env.CI ? 2 : 0,
-  // Each worker renders a Pixi board and records video. CPU-based defaults
+  // real API and a real browser. Locally one retry exists only to film the
+  // failure (see video below); failOnFlakyTests keeps a test that passes on
+  // retry red, so flakiness is still never quietly retried away.
+  retries: process.env.CI ? 2 : 1,
+  failOnFlakyTests: !process.env.CI,
+  // Each worker renders a Pixi board. CPU-based defaults
   // oversubscribe local machines and can consume the entire test timeout.
   workers: process.env.CI ? 1 : 2,
   maxFailures: process.env.CI ? 10 : undefined,
@@ -40,9 +45,11 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: {
-      // retain-on-failure rather than on-first-retry: this also produces
-      // video locally, where retries are 0.
-      mode: 'retain-on-failure',
+      // Playwright cannot record a failure after the fact, so
+      // retain-on-failure films every test just to delete the passing ones
+      // (a Pixi board plus ffmpeg per worker). Locally we film only the
+      // retry of a failed test instead; CI keeps retain-on-failure.
+      mode: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
       size: { width: 1280, height: 720 },
       // Action and step captions burned onto the video. For a canvas game
       // this is the only way to see *what* a click at (x, y) was trying to

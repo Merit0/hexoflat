@@ -6,7 +6,6 @@ test('A hero without Will cannot walk away from the Camp', async () => {
 });
 
 test('A paid entrance is locked with a warning when Will is short', async () => {
-  test.setTimeout(120_000);
   await new WillEconomyFeature().verifyPaidEntranceLocksWhenWillIsShort();
 });
 
@@ -15,6 +14,5 @@ test('Walking around the Camp is free', async () => {
 });
 
 test('Entering the cave spends its Will price and leaving it is free', async () => {
-  test.setTimeout(120_000);
   await new WillEconomyFeature().verifyEnteringCavePaysAndLeavingIsFree(2);
 });

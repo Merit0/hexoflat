@@ -2,7 +2,6 @@ import { test } from '@fixtures';
 import { BattleFlowFeature } from '@features/world/battle-flow.feature';
 
 test('Verify the initiative runs from token 1 up and the battle controls carry no stage bar', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad();
@@ -13,7 +12,6 @@ test('Verify the initiative runs from token 1 up and the battle controls carry n
 });
 
 test('Verify an enemy that picks the hero waits where it stands while the hero holds the block window', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -24,7 +22,6 @@ test('Verify an enemy that picks the hero waits where it stands while the hero h
 });
 
 test('Verify taking the hit lands it, wounds the hero and brings the enemy beside him', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -36,7 +33,6 @@ test('Verify taking the hit lands it, wounds the hero and brings the enemy besid
 });
 
 test('Verify the battle writes its strikes to the Events tab', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -48,7 +44,6 @@ test('Verify the battle writes its strikes to the Events tab', async () => {
 });
 
 test('Verify the block window closes by itself after five seconds and the hit lands', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -58,7 +53,6 @@ test('Verify the block window closes by itself after five seconds and the hit la
 });
 
 test('Verify a shield raised through the tool hex is counted and the outcome matches the wounds', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -70,7 +64,6 @@ test('Verify a shield raised through the tool hex is counted and the outcome mat
 });
 
 test('Verify reloading in the middle of the block window does not freeze the battle', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -81,7 +74,6 @@ test('Verify reloading in the middle of the block window does not freeze the bat
 });
 
 test('Verify the hero picks an enemy from where he stands and walks up only after the block', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad();
@@ -92,14 +84,12 @@ test('Verify the hero picks an enemy from where he stands and walks up only afte
 });
 
 test('Verify a bone court battle shows the skeleton king with his own sprite', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleAgainstTheBoneCourtAndVerifyTheKingSprite();
 });
 
 test('Verify a hurt hero shows the same hearts in the battle as on the hero board', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ hurtHero: true });
@@ -107,7 +97,6 @@ test('Verify a hurt hero shows the same hearts in the battle as on the hero boar
 });
 
 test('Verify USE on a return scroll during a battle tells the player it cannot be used', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withScroll: true });
@@ -116,7 +105,6 @@ test('Verify USE on a return scroll during a battle tells the player it cannot b
 });
 
 test('Verify a melee swing hurts every enemy beside the hero, not only the one he picked', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ squad: 'bone-court' });
@@ -128,7 +116,6 @@ test('Verify a melee swing hurts every enemy beside the hero, not only the one h
 });
 
 test('Verify the swing reaches only the enemies beside the hero, not one two hexes away', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ squad: 'bone-court' });
@@ -140,7 +127,6 @@ test('Verify the swing reaches only the enemies beside the hero, not one two hex
 });
 
 test('Verify the cost panel shows the attack price and the Will really spent equals it', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ squad: 'bone-court' });
@@ -154,7 +140,6 @@ test('Verify the cost panel shows the attack price and the Will really spent equ
 });
 
 test('Verify the cost panel shows nothing for the weapon over an empty hex', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad();
@@ -164,7 +149,6 @@ test('Verify the cost panel shows nothing for the weapon over an empty hex', asy
 });
 
 test('Verify the cost turns red when the next action costs more than the Will left', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ squad: 'bone-court' });
@@ -176,7 +160,6 @@ test('Verify the cost turns red when the next action costs more than the Will le
 });
 
 test('Verify a walk shows its path price, charges exactly that, and UNDO gives it back', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad();
@@ -189,7 +172,6 @@ test('Verify a walk shows its path price, charges exactly that, and UNDO gives i
 });
 
 test('Verify END TURN passes the turn on to the next creature', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad();
@@ -198,7 +180,6 @@ test('Verify END TURN passes the turn on to the next creature', async () => {
 });
 
 test('Verify shields are capped by the shield in hand and a tap on a raised one takes it down', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -212,7 +193,6 @@ test('Verify shields are capped by the shield in hand and a tap on a raised one 
 });
 
 test('Verify the tool hex lifts the shield it just raised', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ withShield: true });
@@ -224,7 +204,6 @@ test('Verify the tool hex lifts the shield it just raised', async () => {
 });
 
 test('Verify an aim that is not chosen runs out and the hero strikes from where he stands', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad({ squad: 'bone-court' });
@@ -237,7 +216,6 @@ test('Verify an aim that is not chosen runs out and the hero strikes from where 
 });
 
 test('Verify losing a battle closes it and brings the hero home alive', async () => {
-  test.setTimeout(120_000);
   const battle = new BattleFlowFeature();
 
   await battle.startBattleNextToTheSquad();
