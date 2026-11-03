@@ -8,6 +8,7 @@
         :eye-y="mood.eyeY"
         :eyes-closed="mood.eyesClosed"
         :heart-seconds="mood.heartSeconds"
+        :look="mood.look"
         :shake-key="form.shakeKey"
         size="sm"
       />

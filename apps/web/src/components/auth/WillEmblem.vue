@@ -23,28 +23,53 @@
           stroke-linejoin="round"
         />
         <g class="emblem__eyes" :style="{ transform: `translate(${eyeX}px, ${eyeY}px)` }">
-          <g class="emblem__lids" :style="{ opacity: eyesClosed ? 0 : 1 }">
-            <polygon
-              points="79,85 83.5,77.2 92.5,77.2 97,85 92.5,92.8 83.5,92.8"
-              fill="none"
-              stroke="#ececee"
-              :stroke-width="widths.eye"
-            />
-            <polygon
-              points="103,85 107.5,77.2 116.5,77.2 121,85 116.5,92.8 107.5,92.8"
-              fill="none"
-              stroke="#ececee"
-              :stroke-width="widths.eye"
-            />
+          <g class="emblem__eye" :style="{ transform: `translate(${look.leftDx}px, 0)` }">
+            <g
+              class="emblem__scale"
+              :style="{ transform: `scale(${look.leftScale})`, transformOrigin: '88px 85px' }"
+            >
+              <g class="emblem__lids" :style="{ opacity: leftClosed ? 0 : 1 }">
+                <polygon
+                  points="79,85 83.5,77.2 92.5,77.2 97,85 92.5,92.8 83.5,92.8"
+                  fill="none"
+                  stroke="#ececee"
+                  :stroke-width="widths.eye"
+                />
+              </g>
+              <g class="emblem__lids" :style="{ opacity: leftClosed ? 1 : 0 }">
+                <path
+                  d="M80 86 Q88 91 96 86"
+                  fill="none"
+                  stroke="#ececee"
+                  :stroke-width="widths.eye"
+                  stroke-linecap="round"
+                />
+              </g>
+            </g>
           </g>
-          <g class="emblem__lids" :style="{ opacity: eyesClosed ? 1 : 0 }">
-            <path
-              d="M80 86 Q88 91 96 86 M104 86 Q112 91 120 86"
-              fill="none"
-              stroke="#ececee"
-              :stroke-width="widths.eye"
-              stroke-linecap="round"
-            />
+          <g class="emblem__eye" :style="{ transform: `translate(${look.rightDx}px, 0)` }">
+            <g
+              class="emblem__scale"
+              :style="{ transform: `scale(${look.rightScale})`, transformOrigin: '112px 85px' }"
+            >
+              <g class="emblem__lids" :style="{ opacity: rightClosed ? 0 : 1 }">
+                <polygon
+                  points="103,85 107.5,77.2 116.5,77.2 121,85 116.5,92.8 107.5,92.8"
+                  fill="none"
+                  stroke="#ececee"
+                  :stroke-width="widths.eye"
+                />
+              </g>
+              <g class="emblem__lids" :style="{ opacity: rightClosed ? 1 : 0 }">
+                <path
+                  d="M104 86 Q112 91 120 86"
+                  fill="none"
+                  stroke="#ececee"
+                  :stroke-width="widths.eye"
+                  stroke-linecap="round"
+                />
+              </g>
+            </g>
           </g>
         </g>
         <polyline
@@ -70,6 +95,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { eyeLookFor, type EyeLook } from '@/features/auth/logic/emblem-mood';
 
 const props = withDefaults(
   defineProps<{
@@ -79,12 +105,15 @@ const props = withDefaults(
     heartSeconds: number;
     shakeKey: number;
     size?: 'lg' | 'sm';
+    look?: EyeLook;
   }>(),
-  { size: 'lg' },
+  { size: 'lg', look: () => eyeLookFor('none') },
 );
 
 const { t } = useI18n();
 const root = ref<HTMLElement | null>(null);
+const leftClosed = computed(() => props.eyesClosed || props.look.leftClosed);
+const rightClosed = computed(() => props.eyesClosed || props.look.rightClosed);
 
 const shakeClass = computed(() => {
   if (props.shakeKey === 0) return '';
@@ -121,6 +150,18 @@ defineExpose({ el: root });
 }
 .emblem__eyes {
   transition: transform 0.14s ease-out;
+}
+.emblem__eye {
+  transition: transform 0.3s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.emblem__scale {
+  transition: transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .emblem__eye,
+  .emblem__scale {
+    transition: none;
+  }
 }
 .emblem__lids {
   transition: opacity 0.08s;

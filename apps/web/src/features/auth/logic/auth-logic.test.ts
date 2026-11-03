@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { passwordScore, isPasswordStrongEnough } from './password-score';
 import { computeGaze } from './gaze';
-import { deriveEmblemMood } from './emblem-mood';
+import { deriveEmblemMood, eyeLookFor, IDLE_EXPRESSIONS } from './emblem-mood';
 import { pickRune, resetRunes, runePolyline } from './runes';
 import { forgeSteps, forgeDone } from './forge-progress';
 import { heroColorFor, GRADE_COLORS } from './grade-colors';
@@ -66,7 +66,7 @@ describe('deriveEmblemMood', () => {
   };
 
   it('follows the gaze by default with the idle heartbeat', () => {
-    expect(deriveEmblemMood(base)).toEqual({
+    expect(deriveEmblemMood(base)).toMatchObject({
       eyeX: 1,
       eyeY: 2,
       eyesClosed: false,
@@ -98,6 +98,41 @@ describe('deriveEmblemMood', () => {
 
   it('beats fastest while loading', () => {
     expect(deriveEmblemMood({ ...base, loading: true, focus: 'name' }).heartSeconds).toBe(0.5);
+  });
+});
+
+describe('idle expressions', () => {
+  const base = {
+    focus: '' as const,
+    show: false,
+    blink: false,
+    loading: false,
+    gaze: { x: 0, y: 0 },
+    nameLength: 0,
+  };
+
+  it('makes one eye bigger and the other smaller', () => {
+    const look = deriveEmblemMood({ ...base, expression: 'wonky' }).look;
+    expect(look.leftScale).toBeGreaterThan(1);
+    expect(look.rightScale).toBeLessThan(1);
+  });
+
+  it('winks with the right eye', () => {
+    expect(deriveEmblemMood({ ...base, expression: 'wink' }).look.rightClosed).toBe(true);
+  });
+
+  it('stays neutral while typing, loading or blinking', () => {
+    for (const patch of [{ focus: 'name' as const }, { loading: true }, { blink: true }]) {
+      expect(deriveEmblemMood({ ...base, ...patch, expression: 'wow' }).look).toEqual(
+        eyeLookFor('none'),
+      );
+    }
+  });
+
+  it('has a look for every idle expression', () => {
+    for (const expression of IDLE_EXPRESSIONS) {
+      expect(eyeLookFor(expression)).not.toEqual(eyeLookFor('none'));
+    }
   });
 });
 
