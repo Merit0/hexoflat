@@ -5,7 +5,7 @@
         v-for="i in 4"
         :key="i"
         class="strength__segment"
-        :style="{ background: i <= score ? STRENGTH_COLORS[score] : '#2A3340' }"
+        :style="{ background: i <= score ? STRENGTH_COLORS[score] : '#2e2e31' }"
       />
     </div>
     <span class="strength__label" :style="{ color: STRENGTH_COLORS[shown] }">{{ label }}</span>
@@ -50,7 +50,7 @@ const label = computed(() => (props.empty ? '' : labels.value[shown.value]));
   transition: background 0.2s;
 }
 .strength__label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   min-width: 64px;
   text-align: right;

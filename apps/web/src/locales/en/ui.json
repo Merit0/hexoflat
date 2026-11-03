@@ -535,7 +535,7 @@
     "tab": {
       "signin": "Sign in",
       "code": "Hero code",
-      "new": "New hero"
+      "new": "New Hero"
     },
     "signin": {
       "title": "Welcome back",
@@ -545,7 +545,7 @@
     },
     "recent": "Recent on this device",
     "field": {
-      "name": "Hero name",
+      "name": "Username",
       "namePlaceholder": "e.g. StarFox42",
       "password": "Password",
       "passwordPlaceholder": "Your secret word"
@@ -560,15 +560,15 @@
     "or": "or",
     "passkey": "Sign in with a passkey",
     "err": {
-      "name": "Enter your hero name to continue.",
+      "name": "Enter your username to continue.",
       "password": "Enter your password.",
-      "credentials": "That hero name and password don't match.",
+      "credentials": "That username and password don't match.",
       "pickHero": "First choose who is playing.",
-      "newName": "Choose a hero name.",
+      "newName": "Choose a username.",
       "weak": "Make the password a little stronger.",
       "guardian": "Add a grown-up's email so they can confirm.",
       "notAvailable": "This sign-in method isn't available yet.",
-      "taken": "That hero name is already taken.",
+      "taken": "That username is already taken.",
       "generic": "Something went wrong. Please try again."
     },
     "success": {
@@ -594,6 +594,8 @@
       "sun": "Sun"
     },
     "new": {
+      "title": "Create your hero",
+      "subtitle": "Pick a name and a strong password to begin.",
       "namePlaceholder": "Pick something fun",
       "nameHelp": "Friends will see this name. Don't use your real name.",
       "passwordPlaceholder": "At least 8 characters",

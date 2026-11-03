@@ -20,7 +20,7 @@
           aria-hidden="true"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#7FB8E6"
+          stroke="#8ba2b8"
           stroke-width="1.6"
           stroke-linejoin="round"
         >
@@ -35,7 +35,7 @@
           aria-hidden="true"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#7FB8E6"
+          stroke="#8ba2b8"
           stroke-width="1.6"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -50,7 +50,7 @@
           aria-hidden="true"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#7FB8E6"
+          stroke="#8ba2b8"
           stroke-width="1.6"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -86,10 +86,11 @@ defineExpose({ emblemEl: computed(() => emblem.value?.el ?? null) });
   flex: 1 1 520px;
   min-width: 0;
   box-sizing: border-box;
-  padding: 64px clamp(24px, 6vw, 96px);
+  padding: 40px clamp(24px, 4vw, 64px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   gap: 28px;
 }
 .brand__text {

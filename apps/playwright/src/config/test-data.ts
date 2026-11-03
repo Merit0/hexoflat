@@ -48,14 +48,14 @@ export const SETTINGS_CLOSE_LABEL: Record<SupportedLocale, string> = {
 export const BASE_HERO_HEALTH = { current: 3, max: 3 };
 
 export const AuthText = {
-  nameRequired: 'Enter your hero name to continue.',
+  nameRequired: 'Enter your username to continue.',
   passwordRequired: 'Enter your password.',
-  badCredentials: "That hero name and password don't match.",
+  badCredentials: "That username and password don't match.",
   pickHeroFirst: 'First choose who is playing.',
   weakPassword: 'Make the password a little stronger.',
   guardianRequired: "Add a grown-up's email so they can confirm.",
   notAvailable: "This sign-in method isn't available yet.",
-  newNameRequired: 'Choose a hero name.',
+  newNameRequired: 'Choose a username.',
 } as const;
 
 export const NEW_HERO_PASSWORD = 'Strong-pass-1';

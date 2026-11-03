@@ -5,10 +5,10 @@ export const GRADES: readonly Grade[] = [2, 3, 4, 5];
 export const DEFAULT_GRADE: Grade = 4;
 
 export const GRADE_COLORS: Record<Grade, string> = {
-  2: '#8FD3B6',
-  3: '#F2C46D',
-  4: '#7FB8E6',
-  5: '#C9A7F0',
+  2: '#8fd3b6',
+  3: '#f2c46d',
+  4: '#8ba2b8',
+  5: '#c9a7f0',
 };
 
 export function heroColorFor(name: string): string {

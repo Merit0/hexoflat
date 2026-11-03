@@ -5,7 +5,7 @@
       aria-hidden="true"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#7FB8E6"
+      stroke="#8ba2b8"
       stroke-width="1.4"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -44,20 +44,20 @@ const { t } = useI18n();
 .success__title {
   margin: 0;
   font-family: Cinzel, serif;
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 600;
   color: var(--pow-text-strong);
 }
 .success__text {
   margin: 0;
   color: var(--pow-text-3);
-  font-size: 15px;
+  font-size: 17px;
 }
 .success__track {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: #222b37;
+  background: #28282b;
   overflow: hidden;
 }
 .success__fill {

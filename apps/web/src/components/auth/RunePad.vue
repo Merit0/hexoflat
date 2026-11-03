@@ -1,10 +1,10 @@
 <template>
   <div class="pad">
-    <svg class="pad__trail" aria-hidden="true" viewBox="0 0 224 216">
+    <svg class="pad__trail" aria-hidden="true" viewBox="0 0 188 171">
       <polyline
         :points="runePolyline(picked)"
         fill="none"
-        stroke="#7FB8E6"
+        stroke="#8ba2b8"
         stroke-width="3"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -19,15 +19,18 @@
       type="button"
       :data-testid="`auth-rune-${id}`"
       :aria-label="runeLabel(id)"
-      :style="{ left: `${RUNE_POSITIONS[id][0]}px`, top: `${RUNE_POSITIONS[id][1]}px` }"
+      :style="{
+        left: `${(RUNE_POSITIONS[id][0] / PAD_WIDTH) * 100}%`,
+        top: `${(RUNE_POSITIONS[id][1] / PAD_HEIGHT) * 100}%`,
+      }"
       @click="emit('pick', id)"
     >
       <svg class="pad__svg" aria-hidden="true" viewBox="0 0 68 72">
         <polygon
           class="pad__hex"
           points="34,3 64,19.5 64,52.5 34,69 4,52.5 4,19.5"
-          :fill="isPicked(id) ? '#22374D' : '#141A23'"
-          :stroke="isPicked(id) ? '#7FB8E6' : '#33404F'"
+          :fill="isPicked(id) ? '#2b3036' : '#18181a'"
+          :stroke="isPicked(id) ? '#8ba2b8' : '#46464b'"
           stroke-width="2"
           stroke-linejoin="round"
         />
@@ -35,7 +38,7 @@
           <path
             :d="RUNE_PATHS[id]"
             fill="none"
-            :stroke="isPicked(id) ? '#F2F6FA' : '#B4C3D3'"
+            :stroke="isPicked(id) ? '#f4f4f5' : '#b8b8bf'"
             stroke-width="1.8"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -52,6 +55,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import {
+  PAD_HEIGHT,
+  PAD_WIDTH,
   RUNE_IDS,
   RUNE_PATHS,
   RUNE_POSITIONS,
@@ -91,35 +96,44 @@ const runeLabel = (id: RuneId): string => {
 <style scoped>
 .pad {
   position: relative;
-  width: 224px;
-  height: 216px;
-  align-self: center;
+  width: 100%;
+  aspect-ratio: 188 / 171;
 }
 .pad__trail {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 224px;
-  height: 216px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 .pad__rune {
   position: absolute;
-  width: 68px;
-  height: 72px;
+  z-index: 0;
+  width: 36.17%;
+  height: 42.11%;
+  container-type: inline-size;
   padding: 0;
   border: 0;
   border-radius: 16px;
   background: transparent;
-  cursor: pointer;
+}
+.pad__rune:hover,
+.pad__rune:focus-visible {
+  z-index: 1;
+}
+.pad__rune:hover,
+.pad__rune:active {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
 }
 .pad__rune:focus-visible {
   outline: 2px solid var(--pow-accent);
   outline-offset: 3px;
 }
 .pad__svg {
-  width: 68px;
-  height: 72px;
+  width: 100%;
+  height: 100%;
   display: block;
   transition: transform 0.1s;
 }
@@ -136,16 +150,19 @@ const runeLabel = (id: RuneId): string => {
 }
 .pad__badge {
   position: absolute;
-  right: 2px;
-  top: 2px;
-  width: 20px;
-  height: 20px;
+  left: 73.5%;
+  top: 33.3%;
+  width: 26cqw;
+  height: 26cqw;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--pow-text-strong);
   color: var(--pow-accent-ink);
-  font:
-    700 11px/20px Inter,
-    sans-serif;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 16cqw;
+  line-height: 26cqw;
   text-align: center;
+  pointer-events: none;
 }
 </style>

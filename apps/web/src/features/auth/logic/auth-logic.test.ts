@@ -114,7 +114,7 @@ describe('runes', () => {
   });
 
   it('draws the polyline through the picked runes in order', () => {
-    expect(runePolyline(['star', 'moon'])).toBe('112,108 171,74');
+    expect(runePolyline(['star', 'moon'])).toBe('94,85.5 124,36');
     expect(runePolyline([])).toBe('');
   });
 });

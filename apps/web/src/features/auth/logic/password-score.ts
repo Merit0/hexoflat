@@ -2,7 +2,7 @@ export type PasswordScore = 0 | 1 | 2 | 3 | 4;
 
 export const MIN_PASSWORD_SCORE = 2;
 
-export const STRENGTH_COLORS = ['#3A4452', '#E5484D', '#F5A524', '#7FB8E6', '#5FD4A0'] as const;
+export const STRENGTH_COLORS = ['#4a4a4f', '#E5484D', '#f5a524', '#8ba2b8', '#5fd4a0'] as const;
 
 export function passwordScore(password: string): PasswordScore {
   let score = 0;

@@ -33,9 +33,8 @@ const { t } = useI18n();
   background: transparent;
   color: var(--pow-text-2);
   font:
-    500 14px Inter,
+    500 16px Inter,
     sans-serif;
-  cursor: pointer;
 }
 .switch:focus-visible {
   outline: 2px solid var(--pow-accent);

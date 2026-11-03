@@ -83,12 +83,11 @@ const { t } = useI18n();
   right: 4px;
   top: 4px;
   width: 44px;
-  height: 40px;
+  height: 46px;
   border: 0;
   border-radius: 9px;
   background: transparent;
   color: var(--pow-text-muted);
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,16 +101,16 @@ const { t } = useI18n();
   outline-offset: 3px;
 }
 .pwd__forgot {
-  font-size: 13px;
+  font-size: 15px;
   text-decoration: none;
   color: var(--pow-link);
 }
 .pwd__forgot:hover {
-  color: #cfe6f8;
+  color: #d3dde7;
 }
 .pwd__caps {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--pow-warning);
 }
 </style>

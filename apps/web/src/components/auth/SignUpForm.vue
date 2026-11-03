@@ -5,6 +5,11 @@
     data-testid="auth-signup-form"
     @submit.prevent="form.submitSignUp"
   >
+    <div class="signup__head">
+      <h1 class="signup__title">{{ t('auth.new.title') }}</h1>
+      <p class="signup__subtitle">{{ t('auth.new.subtitle') }}</p>
+    </div>
+
     <HeroTokenPreview
       v-if="form.flags.guardianSignup"
       :name="form.newName"
@@ -90,5 +95,28 @@ const { t } = useI18n();
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+.signup__head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.signup__title {
+  margin: 0;
+  font-family: Cinzel, serif;
+  font-size: 34px;
+  font-weight: 600;
+  color: var(--pow-text-strong);
+}
+.signup__subtitle {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--pow-text-muted);
+}
+@media (max-width: 599.98px) {
+  .signup__title {
+    font-size: 28px;
+  }
 }
 </style>

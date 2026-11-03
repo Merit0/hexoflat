@@ -1,5 +1,5 @@
 <template>
-  <section class="login" data-testid="login-page">
+  <section class="login game-root" data-testid="login-page">
     <AuthLayoutPhone v-if="breakpoint === 'phone'" />
     <AuthLayoutWide v-else />
   </section>
@@ -33,5 +33,12 @@ onMounted(() => {
 <style scoped>
 .login {
   background: var(--pow-bg);
+}
+</style>
+
+<style>
+.login button:not(.primary),
+.login button:not(.primary):hover {
+  box-shadow: none;
 }
 </style>

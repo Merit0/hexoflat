@@ -10,7 +10,7 @@
     <svg class="chip__avatar" aria-hidden="true" viewBox="0 0 32 32">
       <polygon
         points="16,1 29,8.5 29,23.5 16,31 3,23.5 3,8.5"
-        fill="#223042"
+        fill="#2c2c2f"
         :stroke="hero.color"
         stroke-width="1.4"
       />
@@ -21,7 +21,7 @@
         font-family="Cinzel, serif"
         font-size="13"
         font-weight="700"
-        fill="#E6EBF2"
+        fill="#e8e8ea"
       >
         {{ initial }}
       </text>
@@ -52,9 +52,8 @@ const initial = computed(() => (props.hero.name.trim()[0] ?? '?').toUpperCase())
   background: var(--pow-chip);
   color: var(--pow-text);
   font:
-    500 14px Inter,
+    500 16px Inter,
     sans-serif;
-  cursor: pointer;
   transition:
     background 0.15s,
     border-color 0.15s;

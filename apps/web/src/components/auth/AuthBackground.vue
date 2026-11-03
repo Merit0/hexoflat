@@ -4,7 +4,7 @@
       <svg class="auth-bg__layer auth-bg__layer--base">
         <defs>
           <pattern :id="baseId" width="60" height="104" patternUnits="userSpaceOnUse">
-            <path :d="LATTICE_PATH" fill="none" stroke="#6F8BA8" stroke-width="1" />
+            <path :d="LATTICE_PATH" fill="none" stroke="#7a8088" stroke-width="1" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" :fill="`url(#${baseId})`" />
@@ -12,7 +12,7 @@
       <svg class="auth-bg__layer auth-bg__layer--spot" :style="spotStyle">
         <defs>
           <pattern :id="spotId" width="60" height="104" patternUnits="userSpaceOnUse">
-            <path :d="LATTICE_PATH" fill="none" stroke="#7FB8E6" stroke-width="1.4" />
+            <path :d="LATTICE_PATH" fill="none" stroke="#8ba2b8" stroke-width="1.4" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" :fill="`url(#${spotId})`" />
@@ -30,7 +30,7 @@
         class="pow-ripple"
         points="60,6 107,33 107,87 60,114 13,87 13,33"
         fill="none"
-        stroke="#7FB8E6"
+        stroke="#8ba2b8"
         stroke-width="2"
       />
     </svg>
@@ -99,7 +99,7 @@ const spotStyle = computed(() => {
   width: 640px;
   height: 640px;
   margin-top: -320px;
-  background: radial-gradient(circle, rgba(127, 184, 230, 0.16) 0%, rgba(127, 184, 230, 0) 65%);
+  background: radial-gradient(circle, rgba(139, 162, 184, 0.16) 0%, rgba(139, 162, 184, 0) 65%);
 }
 .auth-bg__glow--phone {
   left: 50%;
@@ -107,7 +107,7 @@ const spotStyle = computed(() => {
   width: 420px;
   height: 420px;
   margin-left: -210px;
-  background: radial-gradient(circle, rgba(127, 184, 230, 0.18) 0%, rgba(127, 184, 230, 0) 65%);
+  background: radial-gradient(circle, rgba(139, 162, 184, 0.18) 0%, rgba(139, 162, 184, 0) 65%);
 }
 .auth-bg__ripple {
   position: absolute;

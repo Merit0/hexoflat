@@ -12,14 +12,19 @@ export const RUNE_PATHS: Record<RuneId, string> = {
   sun: 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8',
 };
 
+export const PAD_WIDTH = 188;
+export const PAD_HEIGHT = 171;
+export const RUNE_BOX_WIDTH = 68;
+export const RUNE_BOX_HEIGHT = 72;
+
 export const RUNE_POSITIONS: Record<RuneId, readonly [number, number]> = {
-  star: [78, 72],
-  moon: [137, 38],
-  leaf: [137, 106],
-  flame: [78, 140],
-  drop: [19, 106],
-  bolt: [19, 38],
-  sun: [78, 4],
+  star: [60, 49.5],
+  sun: [30, 0],
+  moon: [90, 0],
+  leaf: [120, 49.5],
+  flame: [90, 99],
+  drop: [30, 99],
+  bolt: [0, 49.5],
 };
 
 export const RUNE_CODE_LENGTH = 4;

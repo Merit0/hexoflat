@@ -22,7 +22,7 @@
           class="tagline__pill"
           :style="{
             width: `${i === index ? 24 : 8}px`,
-            background: i === index ? '#7FB8E6' : '#3A4452',
+            background: i === index ? '#8ba2b8' : '#4a4a4f',
           }"
         />
       </button>
@@ -75,7 +75,6 @@ const tips = computed(() => [t('auth.tagline.1'), t('auth.tagline.2'), t('auth.t
   border: 0;
   border-radius: 8px;
   background: transparent;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;

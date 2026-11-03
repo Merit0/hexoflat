@@ -54,7 +54,7 @@ const { t, locale } = useI18n();
 .footer__links {
   display: flex;
   gap: 14px;
-  font-size: 12px;
+  font-size: 14px;
   padding-top: 12px;
 }
 .footer__link {
@@ -62,7 +62,7 @@ const { t, locale } = useI18n();
   color: var(--pow-link);
 }
 .footer__link:hover {
-  color: #cfe6f8;
+  color: #d3dde7;
 }
 .footer__lang {
   min-height: 44px;
@@ -76,14 +76,13 @@ const { t, locale } = useI18n();
   background: transparent;
   color: var(--pow-text-2);
   font:
-    600 12px Inter,
+    600 14px Inter,
     sans-serif;
-  cursor: pointer;
   transition: background 0.15s;
 }
 .footer__lang svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 .footer__lang:hover {
   background: var(--pow-chip-hover);

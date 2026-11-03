@@ -37,12 +37,15 @@ const { mx, my, ripples, mood } = useAuthStage(root, () => brand.value?.emblemEl
 }
 .wide__auth {
   position: relative;
-  flex: 1 1 480px;
+  flex: 0 0 540px;
   min-width: 0;
   box-sizing: border-box;
-  padding: 48px 24px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+}
+@media (max-width: 1023.98px) {
+  .wide__auth {
+    flex: 1 1 100%;
+  }
 }
 </style>

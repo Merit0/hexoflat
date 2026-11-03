@@ -9,7 +9,7 @@
       <polygon
         class="token__outline"
         points="32,2 58,17 58,47 32,62 6,47 6,17"
-        fill="#1A2330"
+        fill="#1b1c1f"
         :stroke="color"
         stroke-width="2.5"
         stroke-linejoin="round"
@@ -21,7 +21,7 @@
         font-family="Cinzel, serif"
         font-size="24"
         font-weight="700"
-        fill="#F2F6FA"
+        fill="#f4f4f5"
       >
         {{ initial }}
       </text>
@@ -35,7 +35,7 @@
             class="token__cell-hex"
             points="7,1 13,4.5 13,11.5 7,15 1,11.5 1,4.5"
             :fill="ok ? color : 'transparent'"
-            :stroke="ok ? color : '#3A4452'"
+            :stroke="ok ? color : '#4a4a4f'"
             stroke-width="1.2"
           />
         </svg>
@@ -74,7 +74,7 @@ const done = computed(() => props.steps.filter(Boolean).length);
   padding: 14px;
   border-radius: 16px;
   background: var(--pow-field);
-  border: 1px solid #222b37;
+  border: 1px solid #28282b;
 }
 .token__hex {
   width: 64px;
@@ -95,7 +95,7 @@ const done = computed(() => props.steps.filter(Boolean).length);
 .token__name {
   margin: 0;
   font-family: Cinzel, serif;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--pow-text-strong);
   overflow: hidden;
@@ -104,7 +104,7 @@ const done = computed(() => props.steps.filter(Boolean).length);
 }
 .token__grade {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--pow-text-muted);
 }
 .token__forge {
@@ -120,7 +120,7 @@ const done = computed(() => props.steps.filter(Boolean).length);
   transition: fill 0.2s;
 }
 .token__label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--pow-text-muted);
   margin-left: 4px;
 }

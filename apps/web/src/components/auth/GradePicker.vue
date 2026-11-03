@@ -10,8 +10,8 @@
         :data-testid="`auth-grade-${g}`"
         :aria-pressed="model === g"
         :style="{
-          borderColor: model === g ? GRADE_COLORS[g] : '#2A3340',
-          background: model === g ? '#22374D' : '#151B24',
+          borderColor: model === g ? GRADE_COLORS[g] : '#2e2e31',
+          background: model === g ? '#2b3036' : '#1a1a1c',
         }"
         @click="model = g"
       >
@@ -42,7 +42,7 @@ const { t } = useI18n();
 .grades__legend {
   padding: 0;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--pow-text-2);
 }
@@ -57,9 +57,8 @@ const { t } = useI18n();
   border: 1px solid var(--pow-border);
   color: var(--pow-text);
   font:
-    600 15px Inter,
+    600 17px Inter,
     sans-serif;
-  cursor: pointer;
   transition:
     background 0.15s,
     border-color 0.15s;

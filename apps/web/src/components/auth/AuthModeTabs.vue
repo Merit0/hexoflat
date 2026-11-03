@@ -1,11 +1,5 @@
 <template>
-  <div
-    class="tabs"
-    role="group"
-    :aria-label="t('auth.tabs')"
-    :style="{ '--n': modes.length, '--i': Math.max(0, modes.indexOf(current)) }"
-  >
-    <span class="tabs__thumb" aria-hidden="true" />
+  <div class="tabs" role="group" :aria-label="t('auth.tabs')">
     <button
       v-for="mode in modes"
       :key="mode"
@@ -16,7 +10,19 @@
       :aria-pressed="mode === current"
       @click="emit('select', mode)"
     >
-      {{ labels[mode] }}
+      <svg
+        class="tabs__icon"
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path v-for="d in ICONS[mode]" :key="d" :d="d" />
+      </svg>
+      <span class="tabs__label">{{ labels[mode] }}</span>
     </button>
   </div>
 </template>
@@ -35,57 +41,99 @@ const labels = computed<Record<AuthMode, string>>(() => ({
   code: t('auth.tab.code'),
   new: t('auth.tab.new'),
 }));
+
+const ICONS: Record<AuthMode, string[]> = {
+  signin: ['M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3', 'M10 17l5-5-5-5', 'M15 12H4'],
+  code: ['M12 2l8.7 5v10L12 22l-8.7-5V7z', 'M12 8l3.5 2v4L12 16l-3.5-2v-4z'],
+  new: [
+    'M12 3v4M12 17v4M3 12h4M17 12h4',
+    'M12 8l1.6 2.4L16 12l-2.4 1.6L12 16l-1.6-2.4L8 12l2.4-1.6z',
+  ],
+};
 </script>
 
 <style scoped>
 .tabs {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  border-radius: 14px;
-  background: var(--pow-field);
-  border: 1px solid #222b37;
-}
-.tabs__thumb {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: calc(4px + var(--i) * ((100% - (4px * var(--n) + 4px)) / var(--n) + 4px));
-  width: calc((100% - (4px * var(--n) + 4px)) / var(--n));
-  border-radius: 10px;
-  background: var(--pow-selected);
-  transition: left 0.25s cubic-bezier(0.3, 0.7, 0.2, 1);
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  margin: 0 calc(-1 * var(--pad-x, 0px));
+  border-bottom: 1px solid var(--pow-border-field);
 }
 .tabs__btn {
   position: relative;
-  min-height: 40px;
-  border: 0;
-  border-radius: 10px;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 56px;
+  margin-bottom: -1px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 0;
   background: transparent;
   color: var(--pow-text-muted);
   font:
-    600 13px/1.2 Inter,
+    600 16px/1.2 Inter,
     sans-serif;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   transition:
-    filter 0.15s,
-    transform 0.1s;
-}
-.tabs__btn--active {
-  color: var(--pow-text-strong);
+    color 0.2s,
+    background 0.2s,
+    border-color 0.2s;
 }
 .tabs__btn:hover {
-  filter: brightness(1.1);
+  color: var(--pow-text-2);
+  background: var(--pow-chip);
+}
+.tabs__btn::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  height: 3px;
+  background: var(--pow-accent);
+  box-shadow: 0 0 14px rgba(139, 162, 184, 0.6);
+  transform: scaleX(0);
+  opacity: 0;
+  transition:
+    transform 0.3s cubic-bezier(0.3, 0.7, 0.2, 1),
+    opacity 0.2s;
+}
+.tabs__btn--active,
+.tabs__btn--active:hover {
+  color: var(--pow-text-strong);
+  background: linear-gradient(0deg, rgba(139, 162, 184, 0.16) 0%, var(--pow-field) 70%);
+  border-color: var(--pow-border-field);
+}
+.tabs__btn--active::before {
+  transform: scaleX(1);
+  opacity: 1;
+}
+.tabs__btn--active .tabs__icon {
+  color: var(--pow-accent);
+  filter: drop-shadow(0 0 6px rgba(139, 162, 184, 0.55));
 }
 .tabs__btn:focus-visible {
   outline: 2px solid var(--pow-accent);
-  outline-offset: 3px;
+  outline-offset: -2px;
+}
+.tabs__icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .tabs__thumb {
+  .tabs__btn::before {
     transition: none;
+  }
+}
+@media (max-width: 420px) {
+  .tabs__icon {
+    display: none;
   }
 }
 </style>

@@ -3,9 +3,11 @@
     <SuccessPanel v-if="form.showSuccess" :name="form.successName" />
     <div v-else class="card__content">
       <AuthModeTabs :modes="form.modes" :current="form.mode" @select="form.setMode" />
-      <SignInForm v-if="form.mode === 'signin'" :key="'signin'" />
-      <HeroCodeForm v-else-if="form.mode === 'code'" :key="'code'" />
-      <SignUpForm v-else :key="'new'" />
+      <div class="card__body">
+        <SignInForm v-if="form.mode === 'signin'" :key="'signin'" />
+        <HeroCodeForm v-else-if="form.mode === 'code'" :key="'code'" />
+        <SignUpForm v-else :key="'new'" />
+      </div>
       <AuthFooter />
     </div>
   </div>
@@ -36,16 +38,28 @@ const form = useAuthForm();
   display: flex;
   flex-direction: column;
   gap: inherit;
+  flex: 1;
+  min-height: 0;
+}
+.card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 32px;
+}
+.card--wide .card__body > * {
+  width: 100%;
 }
 .card--wide {
   width: 100%;
-  max-width: 440px;
-  padding: 32px;
-  border-radius: var(--pow-radius-card);
+  min-height: 100vh;
+  --pad-x: 44px;
+  padding: 0 var(--pad-x) 20px;
+  border-radius: 0;
+  border-width: 0 0 0 1px;
   background: var(--pow-surface);
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -54,10 +68,11 @@ const form = useAuthForm();
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 22px 20px 28px;
-  border-radius: 28px 28px 0 0;
+  --pad-x: 20px;
+  padding: 0 var(--pad-x) 28px;
+  border-radius: 0;
   border-width: 1px 0 0;
-  background: rgba(19, 24, 32, 0.92);
+  background: rgba(22, 22, 23, 0.92);
   box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;

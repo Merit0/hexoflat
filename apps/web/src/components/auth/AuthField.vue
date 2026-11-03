@@ -70,7 +70,7 @@ defineExpose({ focus: () => input.value?.focus() });
   align-items: baseline;
 }
 .field__label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--pow-text-2);
 }
@@ -79,7 +79,7 @@ defineExpose({ focus: () => input.value?.focus() });
 }
 .field__input {
   width: 100%;
-  height: 48px;
+  height: 54px;
   box-sizing: border-box;
   padding: 0 14px;
   border-radius: var(--pow-radius-field);
@@ -87,7 +87,7 @@ defineExpose({ focus: () => input.value?.focus() });
   background: var(--pow-field);
   color: var(--pow-text-strong);
   font:
-    400 15px Inter,
+    400 17px Inter,
     sans-serif;
   transition:
     border-color 0.15s,
@@ -106,7 +106,7 @@ defineExpose({ focus: () => input.value?.focus() });
 }
 .field__helper {
   margin: 0;
-  font-size: 12px;
-  color: #8e9aaa;
+  font-size: 14px;
+  color: #8c8c93;
 }
 </style>

@@ -78,7 +78,7 @@
           aria-hidden="true"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#7FB8E6"
+          stroke="#8ba2b8"
           stroke-width="1.7"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -132,13 +132,14 @@ onMounted(() => {
 .signin__title {
   margin: 0;
   font-family: Cinzel, serif;
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 600;
   color: var(--pow-text-strong);
 }
 .signin__subtitle {
   margin: 0;
-  font-size: 15px;
+  font-size: 17px;
+  line-height: 1.45;
   color: var(--pow-text-muted);
 }
 .signin__recent {
@@ -148,11 +149,11 @@ onMounted(() => {
 }
 .signin__section {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #8e9aaa;
+  color: #8c8c93;
 }
 .signin__chips {
   display: flex;
@@ -163,24 +164,23 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #6f7b8b;
-  font-size: 12px;
+  color: #707077;
+  font-size: 14px;
 }
 .signin__line {
   flex: 1;
   height: 1px;
-  background: #232c38;
+  background: #2b2b2e;
 }
 .signin__passkey {
-  height: 48px;
+  height: 54px;
   border-radius: var(--pow-radius-btn);
   border: 1px solid var(--pow-border-field);
   background: var(--pow-chip);
   color: var(--pow-text);
   font:
-    600 15px Inter,
+    600 17px Inter,
     sans-serif;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -205,7 +205,7 @@ onMounted(() => {
 }
 @media (max-width: 599.98px) {
   .signin__title {
-    font-size: 24px;
+    font-size: 28px;
   }
 }
 </style>

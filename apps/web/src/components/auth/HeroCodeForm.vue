@@ -4,14 +4,17 @@
       <h1 class="code__title">{{ t('auth.code.title') }}</h1>
       <p class="code__subtitle">{{ t('auth.code.subtitle') }}</p>
     </div>
-    <div class="code__chips">
-      <RecentHeroChip
-        v-for="hero in form.recentHeroes"
-        :key="hero.name"
-        :hero="hero"
-        :selected="form.runeHero === hero.name"
-        @pick="form.choosePickedHero(hero.name)"
-      />
+    <div v-if="form.recentHeroes.length" class="code__recent">
+      <p class="code__section">{{ t('auth.recent') }}</p>
+      <div class="code__chips">
+        <RecentHeroChip
+          v-for="hero in form.recentHeroes"
+          :key="hero.name"
+          :hero="hero"
+          :selected="form.runeHero === hero.name"
+          @pick="form.choosePickedHero(hero.name)"
+        />
+      </div>
     </div>
     <RunePad :picked="form.runes" @pick="form.pickRuneById" />
     <div class="code__progress">
@@ -25,7 +28,7 @@
           v-for="i in 4"
           :key="i"
           class="code__dot"
-          :style="{ background: i <= form.runes.length ? '#7FB8E6' : '#2A3340' }"
+          :style="{ background: i <= form.runes.length ? '#8ba2b8' : '#2e2e31' }"
         />
       </div>
       <button
@@ -69,14 +72,28 @@ const { t } = useI18n();
 .code__title {
   margin: 0;
   font-family: Cinzel, serif;
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 600;
   color: var(--pow-text-strong);
 }
 .code__subtitle {
   margin: 0;
-  font-size: 15px;
+  font-size: 17px;
+  line-height: 1.45;
   color: var(--pow-text-muted);
+}
+.code__recent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.code__section {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8c8c93;
 }
 .code__chips {
   display: flex;
@@ -108,9 +125,8 @@ const { t } = useI18n();
   background: transparent;
   color: var(--pow-link);
   font:
-    500 14px Inter,
+    500 16px Inter,
     sans-serif;
-  cursor: pointer;
 }
 .code__reset:focus-visible {
   outline: 2px solid var(--pow-accent);
@@ -119,12 +135,12 @@ const { t } = useI18n();
 .code__checking {
   margin: 0;
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--pow-link);
 }
 @media (max-width: 599.98px) {
   .code__title {
-    font-size: 24px;
+    font-size: 28px;
   }
 }
 </style>

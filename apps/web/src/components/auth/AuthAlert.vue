@@ -14,6 +14,6 @@ defineProps<{ message: string }>();
   background: var(--pow-error-bg);
   border: 1px solid var(--pow-error-border);
   color: var(--pow-error-text);
-  font-size: 14px;
+  font-size: 16px;
 }
 </style>
