@@ -146,8 +146,8 @@ Diff-діапазон: git передає хуку в stdin рядки `<local_r
 **Підсумок фази 5.**
 
 - `ci.yml`: новий job `e2e-plan` (дешевий). Для гейтового PR (`game-dev-vite` → `main`) ставить checkout з повною історією, запускає `select-e2e-cli.ts --range "<base.sha>...HEAD" --json`, віддає `mode` і `grep`, а пояснення «файл → група → чому» пише в Job Summary. Інші PR отримують `none` без install; push і nightly отримують `all`. Job `e2e` залежить від `e2e-plan`, пропускається при `none` і передає `grep` у reusable `e2e-tests.yml` (новий input `grep`, порожній = весь набір).
-- Додано `schedule` (`0 3 * * *`) і запуск повного e2e на push у `main`/`game-dev-vite`. Nightly не публікує Pages (`build-pages` і `deploy` пропускаються при `schedule`).
-- **Зміна політики CI (підтвердьте):** раніше e2e в CI йшов лише для гейтового PR, а push у trunk e2e не запускав; тепер кожен push у `main`/`game-dev-vite` і nightly це повний прогін, як вимагає ця фаза.
+- Додано `schedule` (`0 3 * * *`) і запуск повного e2e на push у `main` (push у `game-dev-vite` e2e не запускає, як і раніше). Nightly не публікує Pages (`build-pages` і `deploy` пропускаються при `schedule`).
+- **Зміна політики CI (підтвердьте):** раніше e2e в CI йшов лише для гейтового PR, а push у trunk e2e не запускав; тепер кожен push у `main` і nightly це повний прогін (рішення власника: `game-dev-vite` без e2e), як вимагає ця фаза.
 - Allure: частковий PR-прогін публікує менший звіт, тренди повні лише на повних прогонах.
 - `e2e:map:check` (`pnpm run e2e:map:check`, крок у lint-job): `scripts/check-e2e-map.ts` (7 Vitest-тестів) і `e2e-map-check-cli.ts`, що бере теги з `playwright test --list --reporter=json`. Падає, якщо тест без тегу своєї папки (`@<група>`), з невідомим тегом, поза папками груп, або в групі немає спеків. Файли `apps/web/src`, до яких не доходить жоден root, друкуються як `unmapped` без падіння (зараз 13). У `global` додано `App.vue`, `router/routes.ts`, `assets/global.css`, `scripts/**`; `*.fixture.ts` в `ignore`.
 - Відхилення від плану: перевірка «досяжність з roots» лише друкує, не валить CI.

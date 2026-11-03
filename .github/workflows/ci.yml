@@ -12,8 +12,8 @@ name: CI
 #
 # What E2E runs (docs/e2e/e2e-impact-selection-plan.md, phase 5): the gating PR
 # runs only the groups its diff against the merge-base affects (+ @smoke), via
-# the same selector the pre-push hook uses (the `e2e-plan` job). Pushes to the
-# trunk branches and the nightly schedule ALWAYS run the whole suite — that is
+# the same selector the pre-push hook uses (the `e2e-plan` job). Pushes to
+# `main` and the nightly schedule ALWAYS run the whole suite — that is
 # the safety net for mistakes in the impact map. The nightly run does not deploy
 # Pages. Partial PR runs publish a smaller Allure report; the trend history is
 # only complete on full runs.
@@ -156,10 +156,14 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
+          REF: ${{ github.ref }}
         run: |
-          if [ "$EVENT_NAME" != "pull_request" ]; then
+          if [ "$EVENT_NAME" = "schedule" ] || { [ "$EVENT_NAME" = "push" ] && [ "$REF" = "refs/heads/main" ]; }; then
             echo "mode=all" >> "$GITHUB_OUTPUT"
             echo "### E2E plan: whole suite ($EVENT_NAME run)" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$EVENT_NAME" = "push" ]; then
+            echo "mode=none" >> "$GITHUB_OUTPUT"
+            echo "### E2E plan: none (pushes to $REF run e2e locally via the pre-push hook)" >> "$GITHUB_STEP_SUMMARY"
           elif [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" = "game-dev-vite" ]; then
             echo "mode=pending" >> "$GITHUB_OUTPUT"
           else
