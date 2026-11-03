@@ -10,6 +10,14 @@ name: CI
 # from game-dev-vite into main, gated behind the cheaper checks. Other
 # pushes run E2E locally through the Husky pre-push hook.
 #
+# What E2E runs (docs/e2e/e2e-impact-selection-plan.md, phase 5): the gating PR
+# runs only the groups its diff against the merge-base affects (+ @smoke), via
+# the same selector the pre-push hook uses (the `e2e-plan` job). Pushes to the
+# trunk branches and the nightly schedule ALWAYS run the whole suite — that is
+# the safety net for mistakes in the impact map. The nightly run does not deploy
+# Pages. Partial PR runs publish a smaller Allure report; the trend history is
+# only complete on full runs.
+#
 # Deliberately still deploys the whole Pages site (apps/web/dist + the Allure
 # report at /e2e-report) from every PR as well as from the trunk branches, so
 # a PR always has a live report link rather than a zip artifact. The
@@ -22,6 +30,8 @@ on:
   push:
     branches: [main, game-dev-vite]
   pull_request:
+  schedule:
+    - cron: '0 3 * * *'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -52,6 +62,7 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint
+      - run: pnpm run e2e:map:check
       - run: pnpm format:check
 
   type-checks:
@@ -129,17 +140,80 @@ jobs:
         env:
           DATABASE_URL: postgresql://hexoflat:hexoflat@localhost:5432/hexoflat
 
+  # Decides how much of the e2e suite this run needs: `all` (trunk push, nightly),
+  # `groups` + a --grep regex (the gating PR, from its diff), or `none` (a PR that
+  # is not the gate, or a diff that touches only docs/unit tests/tooling).
+  e2e-plan:
+    name: E2E plan
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.plan.outputs.mode || steps.default.outputs.mode }}
+      grep: ${{ steps.plan.outputs.grep }}
+    steps:
+      - name: Default plan
+        id: default
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "mode=all" >> "$GITHUB_OUTPUT"
+            echo "### E2E plan: whole suite ($EVENT_NAME run)" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" = "game-dev-vite" ]; then
+            echo "mode=pending" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=none" >> "$GITHUB_OUTPUT"
+            echo "### E2E plan: none (this PR is not the game-dev-vite -> main gate)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Checkout
+        if: steps.default.outputs.mode == 'pending'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        if: steps.default.outputs.mode == 'pending'
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        if: steps.default.outputs.mode == 'pending'
+        uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
+
+      - name: Install dependencies
+        if: steps.default.outputs.mode == 'pending'
+        run: pnpm install --frozen-lockfile
+
+      - name: Select affected e2e groups
+        id: plan
+        if: steps.default.outputs.mode == 'pending'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          pnpm --silent --filter @hexoflat/playwright exec tsx scripts/select-e2e-cli.ts \
+            --range "$BASE_SHA...HEAD" --json > "$RUNNER_TEMP/selection.json"
+          mode=$(jq -r '.mode' "$RUNNER_TEMP/selection.json")
+          grep=$(jq -r '.grep // ""' "$RUNNER_TEMP/selection.json")
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "grep=$grep" >> "$GITHUB_OUTPUT"
+          {
+            echo "### E2E plan: $mode ${grep:+(--grep \`$grep\`)}"
+            echo ""
+            jq -r '.reasons[] | "- `\(.file)`: \(.why)"' "$RUNNER_TEMP/selection.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # The one job that spins up Postgres + apps/api + a real Chromium browser —
   # by far the most expensive step, so it runs last, only after every cheap
   # check has already passed. See e2e-tests.yml for the actual steps.
   e2e:
     name: E2E tests
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.base_ref == 'main' &&
-      github.head_ref == 'game-dev-vite'
-    needs: [audit, lint, type-checks, app-build, unit-tests, api-tests, db-migrations]
+    if: needs.e2e-plan.outputs.mode != 'none'
+    needs: [audit, lint, type-checks, app-build, unit-tests, api-tests, db-migrations, e2e-plan]
     uses: ./.github/workflows/e2e-tests.yml
+    with:
+      grep: ${{ needs.e2e-plan.outputs.mode == 'groups' && needs.e2e-plan.outputs.grep || '' }}
 
   # Rebuilds apps/web with GITHUB_PAGES=true (a different base path than the
   # app-build check above, which is why it isn't deduplicated with it) and
@@ -150,7 +224,7 @@ jobs:
   build-pages:
     name: Build Pages site
     needs: e2e
-    if: always()
+    if: always() && github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -213,6 +287,7 @@ jobs:
     # failing on something the contributor cannot fix.
     if: |
       !cancelled() &&
+      github.event_name != 'schedule' &&
       (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     # A fixed group (not the ref-scoped one above): only one Pages deployment

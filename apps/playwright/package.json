@@ -9,6 +9,7 @@
     "e2e:group": "playwright test --grep",
     "test": "vitest run",
     "e2e:select": "tsx scripts/select-e2e-cli.ts",
+    "e2e:map:check": "tsx scripts/e2e-map-check-cli.ts",
     "test:e2e:headed": "playwright test --headed",
     "lint": "eslint \"e2e/**/*.ts\" \"src/**/*.ts\" \"scripts/**/*.ts\" \"*.ts\"",
     "typecheck": "tsc --noEmit",
