@@ -42,7 +42,7 @@
 
 Фаза 1 закінчена, коли повний прогін дає ту саму кількість тестів і той самий результат, що й до переносу (порівняй числа).
 
-## Фаза 2 — Карта впливу (impact map)
+## Фаза 2 — Карта впливу (impact map) ✅ 2026-11-03
 
 Файл `apps/playwright/impact-map.ts` (типізований, валідація через Zod):
 
@@ -76,12 +76,14 @@ export const impactMap = {
 } as const;
 ```
 
+**Підсумок фази 2.** `apps/playwright/impact-map.ts` готовий: `impactMapSchema` (Zod) і `impactMap`, який парситься при імпорті. Відхилення від ескізу: (1) `'**/*.spec.ts'` НЕ в `ignore`, бо `*.spec.ts` у `apps/playwright/e2e` це e2e-спеки; ігноруються тільки `**/*.test.ts`; (2) додано `smokeTag`/`smokeOn` (правило 6 фази 3 живе в даних); (3) `roots` це globs: файл належить групі, якщо збігається з root або транзитивно імпортується файлом root (граф у фазі 3); сюди ж входять не-web шляхи (`apps/api/src/auth/**` для `auth`); (4) `global` розширено `config/**`, `global-setup.ts`, `pnpm-workspace.yaml`, `**/tsconfig*.json`. Схема перевіряє: назва групи `[a-z]+`, `specs` лежить у `e2e/<група>/`, `smoke` не група, glob не одночасно в `global` і `ignore`. Перевірено: усі roots збігаються з реальними файлами, кількість спеків за групами 3+3+3+2+7+1=19, негативний кейс (чужа папка спеків) відхиляється. Додано залежність `zod` у `apps/playwright`. Vitest-тести карти й селектора з'являються у фазі 3.
+
 Правила:
 
 - `roots` — це «власні» папки фічі. Зміна spec-а, Feature, Page Object чи Component групи → запуск цієї групи (компонент, який використовують кілька груп → всі групи, що його імпортують).
 - Чесне доповнення: не вгадуй відповідність лише за назвами папок. Див. фазу 3.
 
-## Фаза 3 — Селектор `apps/playwright/scripts/select-e2e.ts`
+## Фаза 3 — Селектор `apps/playwright/scripts/select-e2e.ts` ✅ 2026-11-03
 
 Вхід: список змінених файлів. Вихід: `{ mode: 'all' | 'groups' | 'none', groups: string[], reasons: Array<{file, groups, why}> }` і готовий `--grep`.
 
@@ -95,6 +97,10 @@ export const impactMap = {
 6. Будь-яка зміна в `apps/web/**` → додати `@smoke`.
 
 Логіка чиста: функція `selectE2E(changedFiles, impactMap, depGraph)` без доступу до git і ФС — щоб тестувати її у Vitest. Обгортка CLI окремо збирає git-diff і граф.
+
+**Підсумок фази 3.** Файли: `scripts/select-e2e.ts` (чиста `selectE2E`, picomatch, без git і ФС), `scripts/build-dep-graph.ts` (програмний API `dependency-cruiser`, `.vue` і alias `@/` резолвляться; ~1 с на 471 вузол, графи `apps/web/src`, `apps/playwright/src`, `apps/playwright/e2e`), `scripts/select-e2e-cli.ts` (`pnpm --filter @hexoflat/playwright e2e:select --files a b` або `--range base..head`, `--json`), `scripts/select-e2e.test.ts` (22 тести Vitest, `pnpm --filter @hexoflat/playwright test`, його ж запускає `turbo test`). Додано залежності `vitest`, `dependency-cruiser`, `picomatch`, `tsx`, `typescript`, `@vue/compiler-sfc`; pnpm сам дописав `minimumReleaseAgeExclude` для `dependency-cruiser@18.7.2` і `semver@7.8.6` у `pnpm-workspace.yaml`.
+
+**Знахідка: `boundaries`.** Наївний зворотний граф дає «усе досяжне з усього»: `login-form.vue → router/index.ts → hex-world-map.vue`, а Pinia-сторі (`hero-store`, `world-map-store`, `battle-store`) імпортують майже все. Будь-яка зміна у `apps/web` піднімала всі шість груп. Рішення: `boundaries` в `impact-map.ts` (`router/**`, `stores/*-store.ts`): обхід доходить до межі, але не йде крізь неї, крім випадку, коли межа сама є root цієї групи (`hero-store` це root `hero`, тому `hero` бачить його імпорти). Ціна: зміна глибоко під стором приписується групі власника стору, а не його споживачам; страховка від помилок карти це повний прогін на trunk і nightly (фаза 5). Приклади: `render/fog-look.ts` → `board, smoke`; `use-fit-to-width.ts` → `board, hero, smoke`; `api/client.ts` → `auth, hero, smoke`; `packages/engine/**` → усе.
 
 **Vitest-тести селектора** (`select-e2e.test.ts`), мінімум:
 

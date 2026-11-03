@@ -61,6 +61,10 @@ Run a subset with `sh scripts/pre-push-e2e.sh e2e/<group>/<spec>.spec.ts` (own p
 
 Specs live in `e2e/<group>/` (`auth`, `board`, `camp`, `combat`, `hero`, `shell`). Each file wraps its tests in one `test.describe(title, { tag: ['@<group>'] }, ...)`, so the folder and the tag always agree. `@smoke` is an extra tag on single tests (login, hero movement). Run one group with `pnpm --filter @hexoflat/playwright e2e:group @board`.
 
+### Impact selection (`apps/playwright/impact-map.ts`, `scripts/select-e2e*.ts`)
+
+`impact-map.ts` (Zod) lists `global`, `ignore`, `boundaries` and, per group, `roots` + `specs`. `selectE2E(changedFiles, impactMap, depGraph)` is pure; `build-dep-graph.ts` builds the graph with dependency-cruiser. Try it: `pnpm --filter @hexoflat/playwright e2e:select --files <path>...`. Unit tests: `pnpm --filter @hexoflat/playwright test`. A new web feature folder belongs in some group's `roots`; an unmapped file runs the whole suite on purpose.
+
 ### Pre-push picks the specs (`.husky/pre-push`)
 
 `scripts/pre-push-e2e-plan.sh` reads the pushed diff and prints `none` (only tests/docs/tooling), `all`, or a list of specs. The path → spec rules live in `scripts/e2e-suites.map`; an edited `apps/playwright/e2e/**/*.spec.ts` owns itself, and any path with no rule runs the whole suite (unlisted = safe, just slower). When you add a spec, add it to at least one rule, and when you add a feature area, list its engine/store paths there. `pnpm run lint:e2e-map` (also a CI lint step and run by the planner) fails if a spec is in no rule or a rule names a missing spec.
