@@ -65,9 +65,9 @@ Specs live in `e2e/<group>/` (`auth`, `board`, `camp`, `combat`, `hero`, `shell`
 
 `impact-map.ts` (Zod) lists `global`, `ignore`, `boundaries` and, per group, `roots` + `specs`. `selectE2E(changedFiles, impactMap, depGraph)` is pure; `build-dep-graph.ts` builds the graph with dependency-cruiser. Try it: `pnpm --filter @hexoflat/playwright e2e:select --files <path>...`. Unit tests: `pnpm --filter @hexoflat/playwright test`. A new web feature folder belongs in some group's `roots`; an unmapped file runs the whole suite on purpose.
 
-### Pre-push picks the specs (`.husky/pre-push`)
+### Pre-push picks the groups (`.husky/pre-push`)
 
-`scripts/pre-push-e2e-plan.sh` reads the pushed diff and prints `none` (only tests/docs/tooling), `all`, or a list of specs. The path → spec rules live in `scripts/e2e-suites.map`; an edited `apps/playwright/e2e/**/*.spec.ts` owns itself, and any path with no rule runs the whole suite (unlisted = safe, just slower). When you add a spec, add it to at least one rule, and when you add a feature area, list its engine/store paths there. `pnpm run lint:e2e-map` (also a CI lint step and run by the planner) fails if a spec is in no rule or a rule names a missing spec.
+The hook asks `scripts/select-e2e-cli.ts --pre-push` (stdin = git's ref lines) which files the push changes: existing branch = `remote..local`, new branch = `merge-base origin/main..local`, deletion = nothing, several refs are merged; an unknown remote commit or a missing `origin/main` means the whole suite. It prints the reason per file to stderr and `none` / `all` / `grep:<regex>` to stdout, then runs `scripts/pre-push-e2e.sh --grep "<regex>"`. The selection happens before any typecheck or build. Overrides: `E2E_ALL=1` (whole suite), `E2E_SKIP=1` (skip with a warning; CI still runs everything). `--no-verify` works as always.
 
 E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allure report with trend history to GitHub Pages on every PR and trunk push.
 

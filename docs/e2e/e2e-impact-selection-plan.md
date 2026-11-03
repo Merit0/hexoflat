@@ -111,7 +111,7 @@ export const impactMap = {
 - новий незмаплений файл → `all` з reason `unmapped`
 - зміна Component тестового фреймворку, яку використовує лише одна група → ця група
 
-## Фаза 4 — Pre-push хук
+## Фаза 4 — Pre-push хук ✅ 2026-11-03
 
 Використай уже наявний хук-менеджер; якщо немає — `lefthook`.
 
@@ -129,6 +129,10 @@ Diff-діапазон: git передає хуку в stdin рядки `<local_r
 - Інакше `pnpm --filter playwright exec playwright test --grep "@smoke|@board"`.
 - Ручні перемикачі: `E2E_ALL=1` (повний прогін), `E2E_SKIP=1` (пропустити, з попередженням). `--no-verify` працює й так.
 - Хук не повинен сам будувати весь застосунок, якщо e2e не потрібні: селектор запускається до білду.
+
+**Підсумок фази 4.** `.husky/pre-push` викликає `select-e2e-cli.ts --pre-push` до будь-якого білду. Діапазони diff рахує чиста `diffRanges` у `scripts/push-refs.ts` (8 Vitest-тестів у `push-refs.test.ts`): наявна гілка `remote..local`, нова `merge-base origin/main..local`, видалення нічого, кілька рефів об'єднуються. Відхилення від плану: невідомий локально `remote_sha` або відсутній `origin/main` дають повний прогін (план мовчав). stdout селектора це `none` / `all` / `grep:<regex>`, пояснення «файл → група → чому» іде в stderr. `E2E_ALL=1` і `E2E_SKIP=1` працюють. Тимчасові `scripts/e2e-suites.map` і `scripts/pre-push-e2e-plan.sh` та крок CI `lint:e2e-map` видалені; їхню роль (кожен спек у групі) перебере `e2e:map:check` у фазі 5.
+
+**Демо (фейкові коміти через `git commit-tree`, гілки не чіпалися).** (а) `render/fog-look.ts` → `board, smoke`: через хук реально пройшло 7 тестів, 30 с тестів, 50 с стіни разом з typecheck і білдом engine (повний прогін: 93 тести, 4,6 хв тестів). (б) `components/gui/will-number.vue` → `board, camp, combat, hero, smoke` (споживачі за графом; `auth` і `shell` не потрібні). (в) `packages/engine/src/battle/strike.ts` → `global`, повний прогін. Для (б) і (в) показано лише рішення селектора, e2e не запускалось.
 
 ## Фаза 5 — CI і захист від деградації карти
 

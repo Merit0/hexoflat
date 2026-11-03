@@ -1,13 +1,23 @@
 set -e
 
-plan=$(cat | sh scripts/pre-push-e2e-plan.sh)
+if [ "${E2E_SKIP:-}" = "1" ]; then
+  echo "pre-push: WARNING — E2E_SKIP=1, e2e skipped. CI will still run the full suite."
+  exit 0
+fi
+
+if [ "${E2E_ALL:-}" = "1" ]; then
+  pnpm run test:e2e:push
+  exit 0
+fi
+
+plan=$(pnpm --silent --filter @hexoflat/playwright exec tsx scripts/select-e2e-cli.ts --pre-push)
 
 case "$plan" in
-  none) echo "pre-push: only tests, docs or tooling changed — skipping e2e." ;;
+  none) echo "pre-push: only docs, unit tests or tooling changed — skipping e2e." ;;
   all) pnpm run test:e2e:push ;;
+  grep:*) sh scripts/pre-push-e2e.sh --grep "${plan#grep:}" ;;
   *)
-    echo "pre-push: running only the affected specs: $plan"
-    # shellcheck disable=SC2086
-    sh scripts/pre-push-e2e.sh $plan
+    echo "pre-push: unexpected selector output: $plan" >&2
+    exit 1
     ;;
 esac
