@@ -1,0 +1,48 @@
+import { test } from '@fixtures';
+import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
+import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feature';
+import { SquadActionsFeature } from '@features/world/squad-actions.feature';
+import { HexobjectKeys } from '@config/test-data';
+
+test.describe('squad actions', { tag: ['@combat'] }, () => {
+  test('Verify the hand on a squad token offers ATTACK, the battle opens at once and survives a reload', async () => {
+    await new OpenCampingMapFeature().open();
+    const squad = new SquadActionsFeature();
+
+    await squad.placeSquadNextToHero(HexobjectKeys.skeletonPack);
+    await squad.aimHandAtSquad();
+    await squad.verifyHandOffersAttack();
+
+    await squad.attack();
+    await squad.verifyBattleOpenAtOnce();
+
+    await new ReloadCampingMapFeature().reload();
+    await squad.verifyBattleOpenAtOnce();
+  });
+
+  test('Verify leaving a won battle in the cave brings the board back without render errors', async () => {
+    const squad = new SquadActionsFeature();
+
+    await squad.openCave();
+    await squad.placeSquadNextToHero(HexobjectKeys.skeletonPack);
+    await squad.aimHandAtSquad();
+    await squad.attack();
+    await squad.startBattle();
+    await squad.winAndLeaveBattle();
+    await squad.verifyBoardIsBackWithoutErrors();
+  });
+
+  test('Verify a shield put in the hand during a battle appears in the battle hand for one swap price', async () => {
+    const squad = new SquadActionsFeature();
+
+    await new OpenCampingMapFeature().open();
+    await squad.grantShieldToTheBag();
+    await squad.placeSquadNextToHero(HexobjectKeys.skeletonPack);
+    await squad.aimHandAtSquad();
+    await squad.attack();
+    await squad.startBattle();
+    await squad.giveHeroTheTurn();
+    await squad.equipShieldInTheInventory();
+    await squad.verifyBattleHandHoldsTheShield();
+  });
+});

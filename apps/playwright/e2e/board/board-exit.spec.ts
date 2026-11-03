@@ -1,0 +1,12 @@
+import { test } from '@fixtures';
+import { BoardExitFeature } from '@features/world/board-exit.feature';
+
+test.describe('board exit', { tag: ['@board'] }, () => {
+  test('Walking onto the north exit leads to the neighbouring board and back again', async () => {
+    await new BoardExitFeature().verifyWalkOutAndBack();
+  });
+
+  test('A hero on the neighbouring board keeps its board and place after a reload', async () => {
+    await new BoardExitFeature().verifyNeighbourPlaceSurvivesReload();
+  });
+});

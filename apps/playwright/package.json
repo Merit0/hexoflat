@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
+    "e2e:all": "playwright test",
+    "e2e:group": "playwright test --grep",
     "test:e2e:headed": "playwright test --headed",
     "lint": "eslint \"e2e/**/*.ts\" \"src/**/*.ts\" \"*.ts\"",
     "typecheck": "tsc --noEmit",
