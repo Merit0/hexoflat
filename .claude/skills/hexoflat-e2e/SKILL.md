@@ -57,6 +57,10 @@ Waiting for the board specifically: the canvas exposes `data-ready` once `onBoar
 
 Run a subset with `sh scripts/pre-push-e2e.sh e2e/world/<spec>.spec.ts` (own ports 3101/5273; it starts Postgres only if it was not running and stops only what it started). Rebuild `packages/engine` first if engine code changed.
 
+### Pre-push picks the specs (`.husky/pre-push`)
+
+`scripts/pre-push-e2e-plan.sh` reads the pushed diff and prints `none` (only tests/docs/tooling), `all`, or a list of specs. The path → spec rules live in `scripts/e2e-suites.map`; an edited `apps/playwright/e2e/**/*.spec.ts` owns itself, and any path with no rule runs the whole suite (unlisted = safe, just slower). When you add a spec, add it to at least one rule, and when you add a feature area, list its engine/store paths there. `pnpm run lint:e2e-map` (also a CI lint step and run by the planner) fails if a spec is in no rule or a rule names a missing spec.
+
 E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allure report with trend history to GitHub Pages on every PR and trunk push.
 
 ## Checklist before finishing

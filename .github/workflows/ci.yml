@@ -52,6 +52,7 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint
+      - run: pnpm run lint:e2e-map
       - run: pnpm format:check
 
   type-checks:

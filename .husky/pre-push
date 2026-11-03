@@ -1,9 +1,13 @@
 set -e
 
-refs=$(cat)
+plan=$(cat | sh scripts/pre-push-e2e-plan.sh)
 
-if printf '%s\n' "$refs" | sh scripts/pre-push-needs-e2e.sh; then
-  pnpm run test:e2e:push
-else
-  echo "pre-push: only tests, docs or tooling changed — skipping e2e."
-fi
+case "$plan" in
+  none) echo "pre-push: only tests, docs or tooling changed — skipping e2e." ;;
+  all) pnpm run test:e2e:push ;;
+  *)
+    echo "pre-push: running only the affected specs: $plan"
+    # shellcheck disable=SC2086
+    sh scripts/pre-push-e2e.sh $plan
+    ;;
+esac

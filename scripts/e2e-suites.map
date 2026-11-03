@@ -1,0 +1,26 @@
+# Which e2e specs a changed path owns. One rule per line: <glob> <spec> [<spec>...]
+# A changed file takes the union of every rule it matches. A file that matches
+# no rule (and is not docs/tests/tooling) runs the WHOLE suite, so a path you do
+# not list here is always safe, only slower. Only list a path when the specs
+# below really cover it. `*` matches across `/`.
+# apps/playwright/e2e/**/*.spec.ts needs no rule: it owns itself.
+# Every spec must appear in at least one rule (scripts/pre-push-e2e-plan.sh --check).
+
+packages/engine/src/battle/*                  e2e/world/battle-flow.spec.ts e2e/world/squad-actions.spec.ts
+packages/engine/src/squads/*                  e2e/world/battle-flow.spec.ts e2e/world/squad-actions.spec.ts
+apps/web/src/components/battle/*              e2e/world/battle-flow.spec.ts
+apps/web/src/stores/battle-store.ts           e2e/world/battle-flow.spec.ts
+apps/web/src/e2e/battle-hooks.ts              e2e/world/battle-flow.spec.ts e2e/world/squad-actions.spec.ts
+packages/engine/src/skills/*                  e2e/world/return-portal.spec.ts e2e/world/will-economy.spec.ts
+packages/engine/src/portal/*                  e2e/world/return-portal.spec.ts e2e/world/board-exit.spec.ts
+packages/engine/src/knowledge/*               e2e/world/knowledge-hall.spec.ts e2e/world/will-economy.spec.ts
+packages/engine/src/boards/*                  e2e/world/board-exit.spec.ts e2e/world/dungeon-fog.spec.ts e2e/world/hero-movement.spec.ts
+packages/engine/src/hero-movement/*           e2e/world/hero-movement.spec.ts e2e/world/hero-board-panel.spec.ts
+packages/engine/src/utils/inventory/*         e2e/world/inventory-drag.spec.ts e2e/world/item-tooltip.spec.ts e2e/world/shield-max-health.spec.ts e2e/world/open-chest.spec.ts
+apps/web/src/stores/hero-inventory-store.ts   e2e/world/inventory-drag.spec.ts e2e/world/item-tooltip.spec.ts e2e/world/shield-max-health.spec.ts e2e/world/open-chest.spec.ts
+apps/web/src/stores/game-events-store.ts      e2e/world/events-log.spec.ts
+apps/web/src/stores/gathering-store.ts        e2e/world/gather-resource.spec.ts
+apps/api/src/auth/*                           e2e/auth/login.spec.ts e2e/auth/rate-limit.spec.ts e2e/auth/session-restore.spec.ts
+apps/web/src/stores/user-store.ts             e2e/auth/login.spec.ts e2e/auth/session-restore.spec.ts
+apps/web/src/i18n/*                           e2e/i18n/locale.spec.ts
+apps/web/src/locales/*                        e2e/i18n/locale.spec.ts
