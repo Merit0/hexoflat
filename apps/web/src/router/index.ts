@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { useUserStore } from '@/stores/user-store';
 
-const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-page.vue');
+const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-view.vue');
 const HexWorldMap = () => import('@/a-game-scenes/map-scene/components/hex-world-map.vue');
 const DevBattlefieldPage = () =>
   import('@/a-game-scenes/battle-scene/components/dev-battlefield-page.vue');
@@ -39,7 +39,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/register',
     name: ROUTES.REGISTER,
-    component: LoginPage,
+    redirect: { name: ROUTES.LOGIN, query: { mode: 'new' } },
     meta: { requiresAuth: false },
   },
   {

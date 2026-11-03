@@ -40,6 +40,7 @@ export const useUserStore = defineStore('user', {
     user: new UserModel().build(),
     accessToken: null as string | null,
     error: '',
+    errorKind: null as 'credentials' | 'taken' | 'validation' | 'network' | null,
   }),
   getters: {
     isLoggedIn: (): boolean => localStorage.getItem('uStatus') === 'true',
@@ -86,15 +87,19 @@ export const useUserStore = defineStore('user', {
         await this.applyAuthResult(authResult, { clearPriorSession: true });
 
         this.error = '';
+        this.errorKind = null;
         return true;
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
           this.error = `${username} is not found.`;
+          this.errorKind = 'credentials';
         } else if (error instanceof ApiError && error.status === 400) {
           this.error = describeValidationError(error) ?? 'Invalid username or password.';
+          this.errorKind = 'validation';
         } else {
           console.error('Login failed:', error);
           this.error = 'Login failed. Please check your connection and try again.';
+          this.errorKind = 'network';
         }
         return false;
       }
@@ -105,15 +110,19 @@ export const useUserStore = defineStore('user', {
         await this.applyAuthResult(authResult, { clearPriorSession: true });
 
         this.error = '';
+        this.errorKind = null;
         return true;
       } catch (error) {
         if (error instanceof ApiError && error.status === 409) {
           this.error = `Username "${username}" is already taken.`;
+          this.errorKind = 'taken';
         } else if (error instanceof ApiError && error.status === 400) {
           this.error = describeValidationError(error) ?? 'Invalid registration details.';
+          this.errorKind = 'validation';
         } else {
           console.error('Registration failed:', error);
           this.error = 'Registration failed. Please check your connection and try again.';
+          this.errorKind = 'network';
         }
         return false;
       }
@@ -168,9 +177,11 @@ export const useUserStore = defineStore('user', {
     },
     clearErrorMsg() {
       this.error = '';
+      this.errorKind = null;
     },
     setError(message: string) {
       this.error = message;
+      this.errorKind = null;
     },
   },
 });

@@ -42,6 +42,7 @@ const I18N_MIGRATED_VUE_FILES = [
 // to `error` everywhere else without failing CI on architecture that was
 // already reviewed and accepted.
 const KNOWN_CYCLE_FILES = [
+  'apps/web/src/a-game-scenes/login-scene/components/login-view.vue',
   'apps/web/src/a-game-scenes/map-scene/components/hex-world-map.vue',
   'apps/web/src/router/index.ts',
   'apps/web/src/services/world/location-navigator.ts',

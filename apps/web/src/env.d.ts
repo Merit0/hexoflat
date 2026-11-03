@@ -8,6 +8,10 @@ interface ImportMetaEnv {
    * normal build, which makes the hook code dead and tree-shakes it away.
    */
   readonly VITE_E2E_HOOKS?: string;
+  readonly VITE_AUTH_HERO_CODE?: string;
+  readonly VITE_AUTH_PASSKEY?: string;
+  readonly VITE_AUTH_GUARDIAN_SIGNUP?: string;
+  readonly VITE_AUTH_PLACEHOLDER_LINKS?: string;
 }
 
 interface ImportMeta {

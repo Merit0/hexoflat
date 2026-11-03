@@ -100,6 +100,10 @@ const impactMapInput = {
     auth: {
       roots: [
         `${SCENES}/login-scene/**`,
+        `${WEB}/components/auth/**`,
+        `${WEB}/features/auth/**`,
+        `${WEB}/services/auth-gateway.ts`,
+        `${WEB}/styles/auth-*.css`,
         `${WEB}/stores/user-store.ts`,
         `${WEB}/api/auth-token.ts`,
         'apps/api/src/auth/**',

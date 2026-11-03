@@ -1,0 +1,169 @@
+@keyframes powDrift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-30px, -52px, 0);
+  }
+}
+@keyframes powPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+@keyframes powSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes powFill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+@keyframes powRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes powFadeA {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes powFadeB {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes powShakeA {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-8px) rotate(-3deg);
+  }
+  40% {
+    transform: translateX(7px) rotate(2deg);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+@keyframes powShakeB {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-8px) rotate(-3deg);
+  }
+  40% {
+    transform: translateX(7px) rotate(2deg);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+@keyframes powRipple {
+  from {
+    transform: scale(0.2);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+@keyframes powFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.pow-lattice {
+  animation: powDrift 40s linear infinite alternate;
+}
+.pow-heart {
+  transform-origin: 100px 150px;
+  animation: powPulse 2.4s ease-in-out infinite;
+}
+.pow-float {
+  animation: powFloat 6s ease-in-out infinite;
+}
+.pow-spin {
+  animation: powSpin 0.8s linear infinite;
+}
+.pow-bar {
+  animation: powFill 1.6s ease-out forwards;
+}
+.pow-rise {
+  animation: powRise 0.35s ease-out;
+}
+.pow-fade-a {
+  animation: powFadeA 0.5s ease-out;
+}
+.pow-fade-b {
+  animation: powFadeB 0.5s ease-out;
+}
+.pow-shake-a {
+  animation: powShakeA 0.45s ease-in-out;
+}
+.pow-shake-b {
+  animation: powShakeB 0.45s ease-in-out;
+}
+.pow-ripple {
+  transform-origin: 60px 60px;
+  animation: powRipple 0.9s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pow-lattice,
+  .pow-heart,
+  .pow-float,
+  .pow-spin,
+  .pow-bar,
+  .pow-rise,
+  .pow-fade-a,
+  .pow-fade-b,
+  .pow-shake-a,
+  .pow-shake-b,
+  .pow-ripple {
+    animation: none;
+  }
+}
