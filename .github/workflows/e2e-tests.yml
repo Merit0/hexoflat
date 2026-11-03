@@ -5,6 +5,11 @@ name: E2E tests (reusable)
 # Postgres+api+Playwright steps stay easy to read on their own.
 on:
   workflow_call:
+    inputs:
+      grep:
+        description: 'Playwright --grep regex (e.g. "@board|@smoke"); empty runs the whole suite'
+        type: string
+        default: ''
 
 jobs:
   e2e:
@@ -72,7 +77,16 @@ jobs:
           exit 1
 
       - name: Run Playwright e2e
-        run: pnpm --filter @hexoflat/playwright test:e2e
+        env:
+          E2E_GREP: ${{ inputs.grep }}
+        run: |
+          if [ -n "$E2E_GREP" ]; then
+            echo "Running only: $E2E_GREP"
+            pnpm --filter @hexoflat/playwright test:e2e --grep "$E2E_GREP"
+          else
+            echo "Running the whole suite"
+            pnpm --filter @hexoflat/playwright test:e2e
+          fi
 
       - name: Upload Playwright report
         if: always()

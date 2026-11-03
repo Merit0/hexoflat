@@ -36,7 +36,7 @@ Common filters (all standard Playwright CLI flags — nothing project-specific):
 
 ```bash
 # one file
-pnpm --filter @hexoflat/playwright exec playwright test e2e/world/hero-movement.spec.ts
+pnpm --filter @hexoflat/playwright exec playwright test e2e/board/hero-movement.spec.ts
 
 # by title
 pnpm --filter @hexoflat/playwright exec playwright test -g "starts with base 10 HP"

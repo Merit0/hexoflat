@@ -1,0 +1,34 @@
+import { test } from '@fixtures';
+import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
+import { MoveHeroFeature } from '@features/world/move-hero.feature';
+import { VerifyHeroPositionFeature } from '@features/world/verify-hero-position.feature';
+import { VerifyHeroBoardFeature } from '@features/world/verify-hero-board.feature';
+
+test.describe('hero movement', { tag: ['@board'] }, () => {
+  const STEPS_BEFORE_RELOAD = 3;
+
+  test('Verify clicking an adjacent tile moves the hero there', { tag: '@smoke' }, async () => {
+    await new OpenCampingMapFeature().open();
+
+    const moveHero = new MoveHeroFeature();
+    const positionBefore = await moveHero.readPosition();
+    const stepsBefore = await moveHero.readStepsChipText();
+
+    await moveHero.moveOneStep();
+
+    await new VerifyHeroPositionFeature().verifyChanged(positionBefore);
+    await new VerifyHeroBoardFeature().verifyStepsChanged(stepsBefore);
+  });
+
+  test('Verify Hero saves map placement after movement on reload page', async () => {
+    await new OpenCampingMapFeature().open();
+
+    const moveHero = new MoveHeroFeature();
+    const positionBefore = await moveHero.readPosition();
+
+    const positionAfter = await moveHero.moveSteps(STEPS_BEFORE_RELOAD);
+    await new VerifyHeroPositionFeature().verifyChanged(positionBefore);
+
+    await new VerifyHeroPositionFeature().verifySurvivesReload(positionAfter);
+  });
+});

@@ -16,6 +16,14 @@
       "@web-test-api": ["../web/src/e2e/test-api.types.ts"]
     }
   },
-  "include": ["playwright.config.ts", "global-setup.ts", "e2e/**/*.ts", "src/**/*.ts"],
+  "include": [
+    "playwright.config.ts",
+    "global-setup.ts",
+    "impact-map.ts",
+    "vitest.config.ts",
+    "scripts/**/*.ts",
+    "e2e/**/*.ts",
+    "src/**/*.ts"
+  ],
   "exclude": ["node_modules", "dist", "test-results", "playwright-report", ".tmp"]
 }

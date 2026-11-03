@@ -21,7 +21,11 @@ const API_SRC_FILES = ['apps/api/src/**/*.ts'];
 // owns them. The rules below are what actually keep that boundary from
 // eroding — see apps/playwright/src/framework/base-component.ts.
 const E2E_TEST_FILES = ['apps/playwright/e2e/**/*.ts'];
-const E2E_FRAMEWORK_FILES = ['apps/playwright/src/**/*.ts', 'apps/playwright/*.ts'];
+const E2E_FRAMEWORK_FILES = [
+  'apps/playwright/src/**/*.ts',
+  'apps/playwright/scripts/**/*.ts',
+  'apps/playwright/*.ts',
+];
 // The i18n vertical slice (docs/I18N-PLAN.md) only migrated these 3
 // components to t()/useI18n() — everywhere else in apps/web still has
 // literal English text by design (future migration phase), so no-raw-text
