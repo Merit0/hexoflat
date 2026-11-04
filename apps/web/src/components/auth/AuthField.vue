@@ -94,7 +94,7 @@ defineExpose({ focus: () => input.value?.focus() });
     box-shadow 0.15s;
 }
 .field__input--trailing {
-  padding-right: 64px;
+  padding-right: 70px;
 }
 .field__input::placeholder {
   color: var(--pow-placeholder);

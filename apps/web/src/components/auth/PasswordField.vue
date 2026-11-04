@@ -82,7 +82,7 @@ const { t } = useI18n();
   position: absolute;
   right: 4px;
   top: 4px;
-  width: 44px;
+  width: 50px;
   height: 46px;
   border: 0;
   border-radius: 9px;
@@ -93,8 +93,8 @@ const { t } = useI18n();
   justify-content: center;
 }
 .pwd__toggle svg {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
 }
 .pwd__toggle:focus-visible {
   outline: 2px solid var(--pow-accent);

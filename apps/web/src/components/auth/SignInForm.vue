@@ -11,7 +11,6 @@
     </div>
 
     <div v-if="form.recentHeroes.length" class="signin__recent">
-      <p class="signin__section">{{ t('auth.recent') }}</p>
       <div class="signin__chips">
         <RecentHeroChip
           v-for="hero in form.recentHeroes"
@@ -146,14 +145,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-.signin__section {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #8c8c93;
 }
 .signin__chips {
   display: flex;

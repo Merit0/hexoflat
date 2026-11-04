@@ -5,7 +5,6 @@
       <p class="code__subtitle">{{ t('auth.code.subtitle') }}</p>
     </div>
     <div v-if="form.recentHeroes.length" class="code__recent">
-      <p class="code__section">{{ t('auth.recent') }}</p>
       <div class="code__chips">
         <RecentHeroChip
           v-for="hero in form.recentHeroes"
@@ -86,14 +85,6 @@ const { t } = useI18n();
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-.code__section {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #8c8c93;
 }
 .code__chips {
   display: flex;
