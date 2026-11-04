@@ -212,7 +212,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     description: 'A shared storage crate for the camp.',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/stash-chest-token-image.png',
-    construction: { integrity: 1000, isLocked: false, chestType: EChestType.STASH },
+    construction: { integrity: 0, isLocked: false, chestType: EChestType.STASH },
     actions: {
       [EHexActionType.OPEN]: {
         label: 'Open',

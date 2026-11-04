@@ -23,13 +23,11 @@ import { nextTick, onBeforeUnmount, onMounted, watch, type Component } from 'vue
 import type { ComponentPublicInstance } from 'vue';
 import { useOverlayStore } from '@/stores/overlay-store';
 import type { OverlayType } from '@/types/overlay-types';
-import HexTileDetailsOverlay from '@/components/overlays/hex-tile-details-overlay.vue';
 import SettingsOverlay from '@/components/overlays/settings-overlay.vue';
 
 const overlay = useOverlayStore();
 
 const registry: Partial<Record<OverlayType, Component>> = {
-  'hex-tile-details': HexTileDetailsOverlay,
   settings: SettingsOverlay,
 };
 

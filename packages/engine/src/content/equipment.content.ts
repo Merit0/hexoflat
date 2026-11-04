@@ -33,6 +33,7 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
       damageMin: 1,
       damageMax: 1,
       attackMultiplier: 1.2,
+      radius: 1,
     },
     equip: { slot: 'weapon' },
   },

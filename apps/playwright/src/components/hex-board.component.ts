@@ -1,7 +1,6 @@
 import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 import { MISSING_TEST_HOOKS_MESSAGE, type TestHexCoordinates } from '@framework/test-api';
-import { TileDetailsOverlayComponent } from '@components/tile-details-overlay.component';
 
 const HERO_MOVE_TIMEOUT_MS = 1_500;
 const POLL_INTERVALS_MS = [100];
@@ -15,8 +14,6 @@ function coordinateKey(coordinates: TestHexCoordinates | null): string {
 }
 
 export class HexBoardComponent extends BaseComponent {
-  private readonly tileDetails = new TileDetailsOverlayComponent();
-
   private get canvas() {
     return this.page.getByTestId('hex-board-canvas');
   }
@@ -232,7 +229,6 @@ export class HexBoardComponent extends BaseComponent {
 
     for (const candidate of await this.getNeighbors(from)) {
       await this.clickTile(candidate);
-      await this.tileDetails.closeIfOpen();
       try {
         return await this.waitForHeroCoordinates(
           (coordinates) => coordinateKey(coordinates) !== fromKey,
@@ -269,14 +265,12 @@ export class HexBoardComponent extends BaseComponent {
 
   async clickTileAndDismissDetails(coordinates: TestHexCoordinates): Promise<void> {
     await this.clickTile(coordinates);
-    await this.tileDetails.closeIfOpen();
   }
 
   async tryStepAndVerifyBlocked(): Promise<void> {
     const from = await this.requireHeroCoordinates();
     for (const candidate of await this.getNeighbors(from)) {
       await this.clickTile(candidate);
-      await this.tileDetails.closeIfOpen();
     }
     expect(coordinateKey(await this.getHeroCoordinates())).toBe(coordinateKey(from));
   }
@@ -287,7 +281,7 @@ export class HexBoardComponent extends BaseComponent {
       const distanceToTarget = await this.getDistance(from, target);
       if (distanceToTarget <= 1) return;
 
-      // Clicking an occupied tile opens details rather than moving. Read
+      // Clicking an occupied tile does not move the hero. Read
       // candidates together from the app instead of probing each object
       // with a click followed by a guaranteed movement timeout.
       const scored = await this.page.evaluate(
@@ -318,7 +312,6 @@ export class HexBoardComponent extends BaseComponent {
       for (const { candidate } of [...closer, ...lateral]) {
         const candidateKey = coordinateKey(candidate);
         await this.clickTile(candidate);
-        await this.tileDetails.closeIfOpen();
         try {
           await this.waitForHeroCoordinates(
             (coordinates) => coordinateKey(coordinates) === candidateKey,

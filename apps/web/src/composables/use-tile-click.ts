@@ -2,7 +2,6 @@ import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { i18n } from '@/i18n';
 import { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { EHexobjectGroup, THexobject } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { useOverlayStore } from '@/stores/overlay-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -47,7 +46,6 @@ function logTileClick(tile: IHexTile) {
 }
 
 export function useTileClick() {
-  const overlayStore = useOverlayStore();
   const worldMapStore = useWorldMapStore();
   const battleStore = useBattleStore();
   const heroToolStore = useHeroToolStore();
@@ -77,10 +75,7 @@ export function useTileClick() {
       return;
     }
 
-    if (tile.hexobject) {
-      overlayStore.openOverlay('hex-tile-details', { coordinates: tile.coordinates });
-      return;
-    }
+    if (tile.hexobject) return;
 
     const moved = await heroStore.moveHeroTo(tile.coordinates);
     if (moved) await crossExitIfStanding();

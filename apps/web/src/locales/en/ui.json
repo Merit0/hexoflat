@@ -8,11 +8,38 @@
     "devCutHealth": "Dev: −0.5 health",
     "devAddShield": "Dev: +1 shield"
   },
-  "hexTileDetails": {
-    "emptyTile": "Empty Tile",
-    "tileNotFound": "Tile not found",
-    "noFurtherDetails": "No further details.",
-    "nothingOfInterest": "Nothing of interest here."
+  "hexInfo": {
+    "tags": {
+      "boss": "Boss",
+      "watcher": "Watching",
+      "hostile": "Hostile",
+      "friendly": "Friendly",
+      "neutral": "Neutral",
+      "locked": "Locked",
+      "depleted": "Depleted",
+      "regrowing": "Regrowing",
+      "needsTool": "Needs {tool}",
+      "broken": "Broken",
+      "interactable": "Interactable"
+    },
+    "stats": {
+      "attack": "Attack",
+      "squad": "Squad",
+      "weight": "Weight",
+      "durability": "Durability",
+      "defense": "Defense",
+      "shields": "Shields",
+      "hearts": "Hearts",
+      "damage": "Damage",
+      "radius": "Radius",
+      "amount": "Amount",
+      "stash": "Stash",
+      "loot": "Loot chest"
+    },
+    "actions": "Actions",
+    "free": "Free",
+    "will": "{n} Will",
+    "kg": "kg"
   },
   "moveBlocked": {
     "panel": "Close the Book of Will or use Escape to move",
