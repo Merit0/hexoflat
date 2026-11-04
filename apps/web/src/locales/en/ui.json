@@ -517,5 +517,108 @@
       "NO_ENGAGEMENT": "No battle was requested",
       "BATTLE_NOT_ENDED": "The battle is not over yet"
     }
+  },
+  "auth": {
+    "emblem": "Path of Will emblem: a hex robot with a red heart",
+    "tagline": {
+      "1": "Every step takes Will. Spend it wisely.",
+      "2": "Every riddle you solve makes your hero stronger.",
+      "3": "Friends can join your adventure at any time."
+    },
+    "tip": "Show tip {n}",
+    "feature": {
+      "map": "Explore a new hex map on every run",
+      "riddles": "Solve riddles to level up your hero",
+      "friends": "Team up with friends — join any adventure"
+    },
+    "tabs": "How do you want to sign in?",
+    "tab": {
+      "signin": "Sign In",
+      "code": "Hero code",
+      "new": "New Hero"
+    },
+    "signin": {
+      "title": "Welcome back",
+      "subtitle": "Your hero is waiting where you left off.",
+      "submit": "Enter the world",
+      "loading": "Opening the gates…"
+    },
+    "field": {
+      "name": "Username",
+      "namePlaceholder": "e.g. StarFox42",
+      "password": "Password",
+      "passwordPlaceholder": "Your secret word"
+    },
+    "forgot": "Forgot it?",
+    "password": {
+      "show": "Show password",
+      "hide": "Hide password"
+    },
+    "caps": "Caps Lock is on",
+    "remember": "Keep me signed in",
+    "or": "or",
+    "passkey": "Sign in with a passkey",
+    "err": {
+      "name": "Enter your username to continue.",
+      "password": "Enter your password.",
+      "credentials": "That username and password don't match.",
+      "pickHero": "First choose who is playing.",
+      "newName": "Choose a username.",
+      "weak": "Make the password a little stronger.",
+      "guardian": "Add a grown-up's email so they can confirm.",
+      "notAvailable": "This sign-in method isn't available yet.",
+      "taken": "That username is already taken.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "success": {
+      "title": "Welcome, {name}!",
+      "loading": "Unfolding your map…"
+    },
+    "code": {
+      "title": "Hero code",
+      "subtitle": "No typing needed — pick your hero, then tap your 4 secret runes in order.",
+      "restart": "Start over",
+      "checking": "Checking your runes…",
+      "progress": "{n} of 4 runes chosen",
+      "rune": "{name} rune",
+      "runeChosen": "{name} rune, chosen {n}"
+    },
+    "rune": {
+      "star": "Star",
+      "moon": "Moon",
+      "leaf": "Leaf",
+      "flame": "Flame",
+      "drop": "Drop",
+      "bolt": "Bolt",
+      "sun": "Sun"
+    },
+    "new": {
+      "title": "Create your hero",
+      "subtitle": "Pick a name and a strong password to begin.",
+      "namePlaceholder": "Pick something fun",
+      "nameHelp": "Friends will see this name. Don't use your real name.",
+      "passwordPlaceholder": "At least 8 characters",
+      "grade": "School grade — sets your first riddles",
+      "gradeShort": "Grade {n} riddles",
+      "guardian": "Parent or guardian email",
+      "guardianPlaceholder": "grown-up@example.com",
+      "guardianHelp": "A grown-up confirms the account and sees progress reports.",
+      "submit": "Create Hero",
+      "loading": "Forging your hero…",
+      "ready": "Ready!",
+      "yourHero": "Your hero",
+      "forge": "{n} of 4 steps done"
+    },
+    "strength": {
+      "1": "Weak",
+      "2": "Okay",
+      "3": "Strong",
+      "4": "Legendary"
+    },
+    "footer": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "language": "Change language"
+    }
   }
 }

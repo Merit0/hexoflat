@@ -1,51 +1,100 @@
 import { BaseFeature } from '@framework/base-feature';
 import { LoginPage } from '@pages/login.page';
+import { AuthText, GUARDIAN_EMAIL } from '@config/test-data';
 
-/**
- * Both modes are the same Vue component (login-form.vue / LoginFormComponent) —
- * one Feature covering both, rather than two near-identical classes.
- */
 export class VerifyLoginFormFeature extends BaseFeature {
   private readonly loginPage = new LoginPage();
 
-  /**
-   * Checks presence *and* interactivity, plus the absence of register-only
-   * fields — "renders in the DOM" is a much weaker claim than "is a working
-   * login form", and mode-specific fields leaking across modes was a real bug.
-   */
   async verifyLoginModeIsUsable(): Promise<void> {
-    await this.step('Verify the login form is complete and interactive', async () => {
+    await this.step('Verify the sign-in form is complete and interactive', async () => {
       await this.loginPage.gotoLogin();
 
-      await this.loginPage.form.verifyLoginFieldsAreVisible();
-      await this.loginPage.form.verifyRememberMeIsCheckedByDefault();
-      await this.loginPage.form.verifySubmitButtonLabel('PLAY');
-      await this.loginPage.form.verifyToggleModeButtonLabel('Create account');
-      await this.loginPage.form.verifyRegisterOnlyFieldsAreAbsent();
+      await this.loginPage.tabs.verifySelected('signin');
+      await this.loginPage.signIn.verifyFormIsComplete();
+      await this.loginPage.signIn.verifyRememberIsOnByDefault();
+      await this.loginPage.signIn.verifyPasskeyVisible();
 
-      await this.loginPage.form.fillCredentials('someone', 'whatever123');
-      await this.loginPage.form.togglePasswordVisibility();
-      await this.loginPage.form.verifyTypedValues('someone', 'whatever123');
-      await this.loginPage.form.verifyPasswordIsRevealed();
+      await this.loginPage.signIn.fillCredentials('someone', 'whatever123');
+      await this.loginPage.signIn.verifyTypedValues('someone', 'whatever123');
+    });
+  }
+
+  async verifyEmptySubmitShowsErrors(): Promise<void> {
+    await this.step('Verify empty and half-filled submits explain what is missing', async () => {
+      await this.loginPage.gotoLogin();
+
+      await this.loginPage.signIn.submit();
+      await this.loginPage.signIn.verifyError(AuthText.nameRequired);
+
+      await this.loginPage.signIn.fillCredentials('someone', '');
+      await this.loginPage.signIn.submit();
+      await this.loginPage.signIn.verifyError(AuthText.passwordRequired);
+    });
+  }
+
+  async verifyErrorClearsOnEdit(): Promise<void> {
+    await this.step('Verify an error disappears as soon as a field is edited', async () => {
+      await this.loginPage.gotoLogin();
+      await this.loginPage.signIn.submit();
+      await this.loginPage.signIn.verifyError(AuthText.nameRequired);
+
+      await this.loginPage.signIn.fillCredentials('a', '');
+      await this.loginPage.signIn.verifyErrorIsGone();
     });
   }
 
   async verifyRegisterModeIsUsable(): Promise<void> {
-    await this.step('Verify the register form is complete and interactive', async () => {
+    await this.step(
+      'Verify the New hero form is complete and sign-in-only fields are absent',
+      async () => {
+        await this.loginPage.gotoRegister();
+
+        await this.loginPage.verifyUrlIsNewHero();
+        await this.loginPage.tabs.verifySelected('new');
+        await this.loginPage.signUp.verifyFormIsComplete();
+        await this.loginPage.signUp.verifySignInOnlyFieldsAreAbsent();
+        await this.loginPage.signUp.verifyGradeSelected(4);
+
+        await this.loginPage.signUp.fillName('Real');
+        await this.loginPage.signUp.verifyNameValue('Real');
+        await this.loginPage.signUp.verifyForgeLabel('2 / 4');
+        await this.loginPage.signUp.fillPassword('Strong-pass-1');
+        await this.loginPage.signUp.fillGuardian(GUARDIAN_EMAIL);
+        await this.loginPage.signUp.verifyForgeLabel('Ready!');
+      },
+    );
+  }
+
+  async verifyRegisterRouteSurvivesReload(): Promise<void> {
+    await this.step('Verify /register lands on New hero and survives a reload', async () => {
+      await this.loginPage.gotoRegister();
+      await this.loginPage.verifyUrlIsNewHero();
+
+      await this.loginPage.reload();
+
+      await this.loginPage.verifyUrlIsNewHero();
+      await this.loginPage.tabs.verifySelected('new');
+      await this.loginPage.signUp.verifyFormIsComplete();
+    });
+  }
+
+  async verifySignUpValidation(): Promise<void> {
+    await this.step('Verify New hero validation messages in order', async () => {
       await this.loginPage.gotoRegister();
 
-      await this.loginPage.form.verifyRegisterFieldsAreVisible();
-      await this.loginPage.form.verifyPasswordHintMentions('8 characters');
-      await this.loginPage.form.verifySubmitButtonLabel('REGISTER');
-      await this.loginPage.form.verifyToggleModeButtonLabel('Back to login');
-      // Login-only field must not leak into register mode.
-      await this.loginPage.form.verifyRememberMeIsAbsent();
+      await this.loginPage.signUp.submit();
+      await this.loginPage.signUp.verifyError(AuthText.newNameRequired);
 
-      await this.loginPage.form.fillRegisterName('Real User');
-      await this.loginPage.form.fillCredentials('real-user', 'longenoughpw');
-      await this.loginPage.form.fillRegisterConfirmPassword('longenoughpw');
-      await this.loginPage.form.verifyRegisterNameValue('Real User');
-      await this.loginPage.form.verifyTypedValues('real-user', 'longenoughpw');
+      await this.loginPage.signUp.fillName('Tester');
+      await this.loginPage.signUp.fillPassword('abc');
+      await this.loginPage.signUp.verifyStrength('Weak');
+      await this.loginPage.signUp.submit();
+      await this.loginPage.signUp.verifyError(AuthText.weakPassword);
+
+      await this.loginPage.signUp.fillPassword('Strong-pass-1');
+      await this.loginPage.signUp.verifyStrength('Legendary');
+      await this.loginPage.signUp.submit();
+      await this.loginPage.signUp.verifyError(AuthText.guardianRequired);
     });
   }
 }

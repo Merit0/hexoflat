@@ -1,12 +1,18 @@
 import { expect } from '@playwright/test';
 import { BasePage } from '@framework/base-page';
-import { LoginFormComponent } from '@components/login-form.component';
+import { AuthModeTabsComponent } from '@components/auth-mode-tabs.component';
+import { AuthRunePadComponent } from '@components/auth-rune-pad.component';
+import { AuthSignInComponent } from '@components/auth-sign-in.component';
+import { AuthSignUpComponent } from '@components/auth-sign-up.component';
+import { AuthStageComponent } from '@components/auth-stage.component';
 
-/** The `/login` and `/register` routes — one Vue page rendering both modes. */
 export class LoginPage extends BasePage {
-  readonly form = new LoginFormComponent();
+  readonly tabs = new AuthModeTabsComponent();
+  readonly signIn = new AuthSignInComponent();
+  readonly signUp = new AuthSignUpComponent();
+  readonly runePad = new AuthRunePadComponent();
+  readonly stage = new AuthStageComponent();
 
-  /** The app root, which redirects an anonymous visitor to /login. */
   async gotoRoot(): Promise<void> {
     await this.page.goto('/');
   }
@@ -19,6 +25,10 @@ export class LoginPage extends BasePage {
     await this.page.goto('/register');
   }
 
+  async gotoHeroCode(): Promise<void> {
+    await this.page.goto('/login?mode=code');
+  }
+
   async reload(): Promise<void> {
     await this.page.reload();
   }
@@ -27,8 +37,8 @@ export class LoginPage extends BasePage {
     await expect(this.page).toHaveURL(/\/login$/);
   }
 
-  async verifyUrlIsRegister(): Promise<void> {
-    await expect(this.page).toHaveURL(/\/register$/);
+  async verifyUrlIsNewHero(): Promise<void> {
+    await expect(this.page).toHaveURL(/\/login\?mode=new$/);
   }
 
   async verifyStillOnLoginRoute(): Promise<void> {
@@ -36,6 +46,6 @@ export class LoginPage extends BasePage {
   }
 
   async verifyNotRedirectedToLogin(): Promise<void> {
-    await expect(this.page).not.toHaveURL(/\/login$/);
+    await expect(this.page).not.toHaveURL(/\/login/);
   }
 }
