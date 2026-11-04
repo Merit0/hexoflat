@@ -30,7 +30,13 @@
         </span>
       </div>
 
-      <div v-else class="card__seal" :class="sealClass" data-testid="hex-info-seal">
+      <div
+        v-else
+        class="card__seal"
+        :class="sealClass"
+        :data-state="sealState"
+        data-testid="hex-info-seal"
+      >
         <svg v-if="view.broken" viewBox="0 0 24 24" aria-hidden="true">
           <path :d="ICON_PATHS.victory" />
         </svg>
@@ -98,6 +104,11 @@ const { t } = useI18n();
 const hasReadout = computed(
   () => !!props.view.hearts || !!props.view.supply || props.view.variant === 'construction',
 );
+
+const sealState = computed(() => {
+  if (props.view.broken) return 'broken';
+  return props.view.locked ? 'locked' : 'interactable';
+});
 
 const sealClass = computed(() => {
   if (props.view.broken) return 'is-broken';

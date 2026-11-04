@@ -10,6 +10,7 @@ import { ToolActionOverlayComponent } from '@components/tool-action-overlay.comp
 import { HeroInventoryComponent } from '@components/hero-inventory.component';
 import { ActionAlertBannerComponent } from '@components/action-alert-banner.component';
 import { BattleTabComponent } from '@components/battle-tab.component';
+import { HexInfoTooltipComponent } from '@components/hex-info-tooltip.component';
 import { PageErrorsComponent } from '@components/page-errors.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
@@ -24,6 +25,7 @@ export class CampingMapPage extends BasePage {
   readonly inventory = new HeroInventoryComponent();
   readonly actionAlertBanner = new ActionAlertBannerComponent();
   readonly battleTab = new BattleTabComponent();
+  readonly hexInfoTooltip = new HexInfoTooltipComponent();
   readonly pageErrors = new PageErrorsComponent();
 
   async goto(): Promise<void> {

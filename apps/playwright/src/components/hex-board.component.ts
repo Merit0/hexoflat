@@ -195,6 +195,10 @@ export class HexBoardComponent extends BaseComponent {
       .toEqual(coordinates);
   }
 
+  async hoverTileForInfo(coordinates: TestHexCoordinates): Promise<void> {
+    await this.canvas.hover({ position: await this.tilePosition(coordinates) });
+  }
+
   async armHandTool(): Promise<void> {
     await this.canvas.hover();
     await this.page.mouse.wheel(0, 100);
