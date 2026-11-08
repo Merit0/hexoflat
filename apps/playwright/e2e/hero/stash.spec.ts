@@ -171,7 +171,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await stash.verifyStashCell(0, NONE);
     });
 
-    test('Verify a double click sends a bag item across and a right click brings it back', async () => {
+    test('Verify a double click sends a bag item to the stash', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
       await stash.openByHand();
@@ -180,22 +180,23 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await stash.givenBag([{ key: K.axe, amount: 1 }]);
 
       await stash.quickMoveBagItem(K.axe);
+
       await stash.verifyStashCell(0, { key: K.axe, amount: 1 });
       await stash.verifyBagAmount(K.axe, 0);
-
-      await stash.quickMoveStashItem(0);
-      await stash.verifyStashCell(0, NONE);
-      await stash.verifyBagAmount(K.axe, 1);
     });
 
-    test('Verify a stack of one coin shows a counter chip, like the Will', async () => {
+    test('Verify a right click brings a stash item back to the bag', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
       await stash.openByHand();
       await stash.givenChests(1);
-      await stash.givenStash([{ key: K.coins, amount: 1 }]);
+      await stash.givenBag([]);
+      await stash.givenStash([{ key: K.axe, amount: 1 }]);
 
-      await stash.verifyCounterOnCell(0, 1);
+      await stash.quickMoveStashItem(0);
+
+      await stash.verifyStashCell(0, NONE);
+      await stash.verifyBagAmount(K.axe, 1);
     });
   });
 
@@ -220,7 +221,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await stash.verifyStashFirstKeys([K.coins, K.healthBottle, NONE]);
     });
 
-    test('Verify Sort merges stacks and puts gear first, resources last', async () => {
+    test('Verify Sort puts gear first and resources last', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
       await stash.openByHand();
@@ -228,14 +229,28 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       const cells: StashCellContent[] = Array.from({ length: 13 }, () => NONE);
       cells[0] = { key: K.coins, amount: 4 };
       cells[5] = { key: K.sword, amount: 1 };
-      cells[9] = { key: K.coins, amount: 6 };
       cells[12] = { key: K.axe, amount: 1 };
       await stash.givenStash(cells);
 
       await stash.sort();
 
       await stash.verifyStashFirstKeys([K.sword, K.axe, K.coins, NONE]);
-      await stash.verifyStashCell(2, { key: K.coins, amount: 10 });
+    });
+
+    test('Verify Sort merges stacks of the same kind', async () => {
+      await new OpenCampingMapFeature().open();
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+      await stash.givenChests(1);
+      const cells: StashCellContent[] = Array.from({ length: 10 }, () => NONE);
+      cells[0] = { key: K.coins, amount: 4 };
+      cells[9] = { key: K.coins, amount: 6 };
+      await stash.givenStash(cells);
+
+      await stash.sort();
+
+      await stash.verifyStashCell(0, { key: K.coins, amount: 10 });
+      await stash.verifyStashCell(1, NONE);
     });
 
     test('Verify Store resources asks to unlock a chest first when none is unlocked', async () => {

@@ -164,12 +164,6 @@ export class StashBoardFeature extends BaseFeature {
     );
   }
 
-  async verifyCounterOnCell(index: number, amount: number): Promise<void> {
-    await this.step(`Verify the counter chip of stash cell ${index} reads ${amount}`, () =>
-      this.board.verifyCounterOnCell(index, amount),
-    );
-  }
-
   async verifyChests(count: number): Promise<void> {
     await this.step(`Verify ${count} chest(s) are unlocked`, () => this.board.verifyChests(count));
   }

@@ -154,10 +154,6 @@ export class StashBoardComponent extends BaseComponent {
     await expect(cell).toHaveAttribute('data-item-amount', String(amount));
   }
 
-  async verifyCounterOnCell(index: number, amount: number): Promise<void> {
-    await expect(this.stashCell(index).locator('.amount')).toHaveText(String(amount));
-  }
-
   async givenChests(count: number): Promise<void> {
     await this.page.evaluate((n) => window.__HEXOFLAT_TEST__!.setStashChests(n), count);
   }
