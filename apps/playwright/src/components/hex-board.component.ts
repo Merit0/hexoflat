@@ -199,6 +199,10 @@ export class HexBoardComponent extends BaseComponent {
     await this.canvas.hover({ position: await this.tilePosition(coordinates) });
   }
 
+  async moveAwayFromBoard(): Promise<void> {
+    await this.page.mouse.move(0, 0);
+  }
+
   async armHandTool(): Promise<void> {
     await this.canvas.hover();
     await this.page.mouse.wheel(0, 100);

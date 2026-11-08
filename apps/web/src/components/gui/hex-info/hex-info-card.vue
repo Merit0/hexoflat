@@ -11,6 +11,8 @@
     <div
       class="card__divider"
       :style="{ '--gem': view.rarity?.color ?? '#d9a553' }"
+      :data-rarity-tone="view.rarity?.tone ?? 'none'"
+      data-testid="hex-info-divider"
       aria-hidden="true"
     >
       <span />

@@ -27,6 +27,7 @@
               class="hex-info__rarity is-bottom"
               :style="{ '--rarity': view.rarity.color }"
               data-testid="hex-info-rarity"
+              :data-rarity-tone="view.rarity.tone"
               >{{ view.rarity.label }}</span
             >
             <span v-else class="hex-info__gem is-bottom" aria-hidden="true" />

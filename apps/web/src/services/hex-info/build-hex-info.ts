@@ -6,6 +6,7 @@ import {
   EHexobjectGroup,
   type THexobject,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
 import { RARITY_COLOR, getObjectRarity, getObjectRarityTone } from '@/render/rarity';
 import { ITEM_ICON_BY_KEY, type TIconName } from '@/components/gui/icons/item-icons';
 
@@ -50,6 +51,7 @@ export interface HexInfoHeadline {
 export interface HexInfoRarity {
   label: string;
   color: string;
+  tone: TRarityTone;
 }
 
 export type HexInfoVariant = 'creature' | 'resource' | 'construction' | 'weapon' | 'item';
@@ -328,7 +330,9 @@ export function buildHexInfo(
     accent,
     icon,
     rarity:
-      rarity && tone ? { label: rarityLabel(ctx, rarity.kind), color: RARITY_COLOR[tone] } : null,
+      rarity && tone
+        ? { label: rarityLabel(ctx, rarity.kind), color: RARITY_COLOR[tone], tone }
+        : null,
     hearts: part.hearts ?? null,
     supply: part.supply ?? null,
     headline: part.headline ?? null,

@@ -30,4 +30,33 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
 
     await hexInfo.verifySealState('interactable');
   });
+
+  test('An item shows its icon and rarity, and the divider gem follows the rarity', async () => {
+    await new OpenCampingMapFeature().open();
+    const hexInfo = new HexInfoTooltipFeature();
+
+    await hexInfo.hoverToken('starterAxe');
+
+    await hexInfo.verifyShowsItemIconAndRarity(/Idol/i);
+  });
+
+  test('An object without rarity shows neither an icon nor a rarity', async () => {
+    await new OpenCampingMapFeature().open();
+    const hexInfo = new HexInfoTooltipFeature();
+
+    await hexInfo.hoverFirstHexWithKey(HexobjectKeys.fireplace);
+
+    await hexInfo.verifyHasNoIconAndNoRarity();
+  });
+
+  test('The card disappears when the pointer leaves the board', async () => {
+    await new OpenCampingMapFeature().open();
+    const hexInfo = new HexInfoTooltipFeature();
+    await hexInfo.hoverToken('starterAxe');
+    await hexInfo.verifyShowsTitleAndKind(/Axe/i);
+
+    await hexInfo.leaveTheBoard();
+
+    await hexInfo.verifyIsHidden();
+  });
 });

@@ -32,4 +32,35 @@ export class HexInfoTooltipFeature extends BaseFeature {
       this.campingMap.hexInfoTooltip.verifySealState(state),
     );
   }
+
+  async leaveTheBoard(): Promise<void> {
+    await this.step('Move the pointer off the board', () =>
+      this.campingMap.hexBoard.moveAwayFromBoard(),
+    );
+  }
+
+  async verifyShowsItemIconAndRarity(rarity: RegExp): Promise<void> {
+    await this.step(
+      `Verify the hover card shows an item icon and the rarity "${rarity}"`,
+      async () => {
+        await this.campingMap.hexInfoTooltip.verifyIconIsShown();
+        await this.campingMap.hexInfoTooltip.verifyRarity(rarity);
+        await this.campingMap.hexInfoTooltip.verifyDividerFollowsRarity();
+      },
+    );
+  }
+
+  async verifyHasNoIconAndNoRarity(): Promise<void> {
+    await this.step('Verify the hover card has no item icon and no rarity', async () => {
+      await this.campingMap.hexInfoTooltip.verifyNoIcon();
+      await this.campingMap.hexInfoTooltip.verifyNoRarity();
+      await this.campingMap.hexInfoTooltip.verifyDividerHasNoRarity();
+    });
+  }
+
+  async verifyIsHidden(): Promise<void> {
+    await this.step('Verify the hover card is gone', () =>
+      this.campingMap.hexInfoTooltip.verifyIsHidden(),
+    );
+  }
 }
