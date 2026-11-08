@@ -87,3 +87,10 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - With a foe adjacent or selected, the wheel opens the tool hex ON that foe's hex, and its Attack button covers the canvas there. `BattleTabComponent.hoverBoardPoint` therefore skips the hover when the tool hex already covers the point; do not add `force: true` hovers.
 - `giveHeroTheTurn` / `giveEnemyTheTurn` also clear `battle.wounds`, because an unshielded hero is wounded by the first enemy turn before the hook runs.
 - Run a subset with `sh scripts/pre-push-e2e.sh e2e/combat/battle-flow.spec.ts -g "<title part>"`; the log of a failing run names the spec and `test-results/**/error-context.md` has the message.
+
+## Stash specs (2026-11-08)
+
+- `e2e/hero/stash.spec.ts` goes through `StashBoardFeature` (open by hand with the real OPEN flow, drag, split, quick move, filters, Store, Sort, reload) and `UnlockStashChestFeature` (coins held in a hand, the "Unlock" action over the chest). Locators live in `StashBoardComponent`; state is arranged and read through the hooks `setStashChests`, `getStashChests`, `setBag`, `getBag`, `setStash`, `getStash` (owned cells only; `apps/web/src/e2e/stash-hooks.ts`).
+- Drags use real pointer events (`mouse.down` / stepped `move` / `up`, `Shift` held for a split). Dropping "on the panel" targets the `stash-count` or `stash-load-value` label, never a cell.
+- Stash cells are addressed by their global index (chest 2 starts at 42); the bag shows items sorted on top, so `stash-bag-cell-N` is a display position and `data-drop-index` is the real bag cell.
+- The old OPEN-on-stash "chest is broken" alert no longer exists: OPEN on the Stash Chest opens the board.
