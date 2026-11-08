@@ -84,23 +84,38 @@ export class StashBoardComponent extends BaseComponent {
   }
 
   async dragBagItemToStashCell(itemKey: string, index: number): Promise<void> {
-    await this.dragBetween(this.bagCellWith(itemKey), this.stashCell(index), false);
+    await this.dragBetween(this.bagCellWith(itemKey), this.stashCell(index), { shift: false });
   }
 
   async splitDragBagItemToStashCell(itemKey: string, index: number): Promise<void> {
-    await this.dragBetween(this.bagCellWith(itemKey), this.stashCell(index), true);
+    await this.dragBetween(this.bagCellWith(itemKey), this.stashCell(index), { shift: true });
   }
 
   async dragBagItemToStashPane(itemKey: string): Promise<void> {
-    await this.dragBetween(this.bagCellWith(itemKey), this.stashPaneDropPoint, false);
+    await this.dragBetween(this.bagCellWith(itemKey), this.stashPaneDropPoint, { shift: false });
   }
 
   async dragStashItemToFreeBagCell(index: number): Promise<void> {
-    await this.dragBetween(this.stashCell(index), this.freeBagCell, false);
+    await this.dragBetween(this.stashCell(index), this.freeBagCell, { shift: false });
   }
 
   async dragStashItemToBagPane(index: number): Promise<void> {
-    await this.dragBetween(this.stashCell(index), this.bagPaneDropPoint, false);
+    await this.dragBetween(this.stashCell(index), this.bagPaneDropPoint, { shift: false });
+  }
+
+  async holdBagItemOverStashCell(itemKey: string, index: number): Promise<void> {
+    await this.dragBetween(this.bagCellWith(itemKey), this.stashCell(index), {
+      shift: false,
+      release: false,
+    });
+  }
+
+  async releasePointer(): Promise<void> {
+    await this.page.mouse.up();
+  }
+
+  async pressEscape(): Promise<void> {
+    await this.page.keyboard.press('Escape');
   }
 
   async quickMoveBagItem(itemKey: string): Promise<void> {
@@ -207,7 +222,12 @@ export class StashBoardComponent extends BaseComponent {
       .toBe(amount);
   }
 
-  private async dragBetween(source: Locator, target: Locator, shift: boolean): Promise<void> {
+  private async dragBetween(
+    source: Locator,
+    target: Locator,
+    options: { shift: boolean; release?: boolean },
+  ): Promise<void> {
+    const { shift, release = true } = options;
     await expect(source).toBeVisible();
     await source.scrollIntoViewIfNeeded();
     await target.scrollIntoViewIfNeeded();
@@ -223,7 +243,7 @@ export class StashBoardComponent extends BaseComponent {
       const t = step / DRAG_MOVE_STEPS;
       await this.page.mouse.move(start.x + (end.x - start.x) * t, start.y + (end.y - start.y) * t);
     }
-    await this.page.mouse.up();
+    if (release) await this.page.mouse.up();
     if (shift) await this.page.keyboard.up('Shift');
   }
 }

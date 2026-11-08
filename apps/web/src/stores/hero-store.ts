@@ -41,6 +41,7 @@ import {
 import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -450,6 +451,11 @@ export const useHeroStore = defineStore('hero', {
       };
       if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
       if (portalFxBusy.value) return false;
+      const stash = useHeroStashStore();
+      if (stash.isOpen) {
+        stash.close();
+        heroToolStore.stopTool();
+      }
       if (heroToolStore.isDragging) return false;
       if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));
       if (battleStore.inBattle) return warn(i18n.global.t('moveBlocked.inBattle'));

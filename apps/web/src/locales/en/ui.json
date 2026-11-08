@@ -686,12 +686,12 @@
       "STASH_LOCKED": "Open the stash chest first.",
       "EMPTY_SOURCE": "There is nothing in that cell.",
       "INVALID_LOCATION": "That place does not exist.",
-      "NO_CHEST": "Buy a chest first."
+      "NO_CHEST": "Unlock a chest first."
     },
     "chest": "Chest {n}",
     "chests": "Stash chests",
     "buy": {
-      "after": "Buy Chest {prev} first."
+      "after": "Unlock Chest {prev} first."
     },
     "unlock": "Unlock",
     "pay": {

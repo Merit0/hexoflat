@@ -31,6 +31,42 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await new VerifyActionAlertFeature().verifyIsShownMatching(/coins|монет/i);
     });
 
+    test('Verify walking away from the chest closes the board', async () => {
+      await new OpenCampingMapFeature().open();
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+
+      await stash.walkAwayFromTheChest();
+
+      await stash.verifyIsClosed();
+    });
+
+    test('Verify Escape closes the board', async () => {
+      await new OpenCampingMapFeature().open();
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+
+      await stash.pressEscape();
+
+      await stash.verifyIsClosed();
+    });
+
+    test('Verify Escape during a drag cancels only the drag: the board stays open and the item stays put', async () => {
+      await new OpenCampingMapFeature().open();
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+      await stash.givenChests(1);
+      await stash.givenBag([{ key: K.sword, amount: 1 }]);
+
+      await stash.holdBagItemOverStashCell(K.sword, 3);
+      await stash.pressEscape();
+      await stash.releasePointer();
+
+      await stash.verifyIsOpen();
+      await stash.verifyStashCell(3, NONE);
+      await stash.verifyBagAmount(K.sword, 1);
+    });
+
     test('Verify closing the board stops the working hand tool', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
@@ -182,6 +218,28 @@ test.describe('stash', { tag: ['@hero'] }, () => {
 
       await stash.verifyStashFirstKeys([K.sword, K.axe, K.coins, NONE]);
       await stash.verifyStashCell(2, { key: K.coins, amount: 10 });
+    });
+
+    test('Verify Store resources asks to unlock a chest first when none is unlocked', async () => {
+      await new OpenCampingMapFeature().open();
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+      await stash.givenBag([{ key: K.coins, amount: 5 }]);
+
+      await stash.storeResources();
+
+      await new VerifyActionAlertFeature().verifyIsShownMatching(/unlock a chest|відімкни скриню/i);
+      await stash.verifyBagAmount(K.coins, 5);
+    });
+
+    test('Verify Sort asks to unlock a chest first when none is unlocked', async () => {
+      await new OpenCampingMapFeature().open();
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+
+      await stash.sort();
+
+      await new VerifyActionAlertFeature().verifyIsShownMatching(/unlock a chest|відімкни скриню/i);
     });
 
     test('Verify a filter dims what does not match and keeps every item where it was', async () => {

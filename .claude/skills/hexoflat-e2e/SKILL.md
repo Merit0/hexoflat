@@ -94,3 +94,4 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - Drags use real pointer events (`mouse.down` / stepped `move` / `up`, `Shift` held for a split). Dropping "on the panel" targets the `stash-count` or `stash-load-value` label, never a cell.
 - Stash cells are addressed by their global index (chest 2 starts at 42); the bag shows items sorted on top, so `stash-bag-cell-N` is a display position and `data-drop-index` is the real bag cell.
 - The old OPEN-on-stash "chest is broken" alert no longer exists: OPEN on the Stash Chest opens the board.
+- Escape during a stash drag: hold the drag with `holdBagItemOverStashCell`, press Escape, then `releasePointer` (the drag is already cancelled, so nothing drops).

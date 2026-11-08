@@ -1,5 +1,6 @@
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
+import { MoveHeroFeature } from '@features/world/move-hero.feature';
 import { OpenChestFeature } from '@features/world/open-chest.feature';
 import type {
   StashCellContent,
@@ -20,6 +21,30 @@ export class StashBoardFeature extends BaseFeature {
       await new OpenChestFeature('stashChest').open();
       await this.board.verifyIsOpen();
     });
+  }
+
+  async verifyIsOpen(): Promise<void> {
+    await this.step('Verify the stash board is open', () => this.board.verifyIsOpen());
+  }
+
+  async walkAwayFromTheChest(): Promise<void> {
+    await this.step('Walk the hero one step away from the chest', async () => {
+      await new MoveHeroFeature().moveOneStep();
+    });
+  }
+
+  async pressEscape(): Promise<void> {
+    await this.step('Press Escape', () => this.board.pressEscape());
+  }
+
+  async holdBagItemOverStashCell(itemKey: string, index: number): Promise<void> {
+    await this.step(`Hold "${itemKey}" over stash cell ${index} without dropping it`, () =>
+      this.board.holdBagItemOverStashCell(itemKey, index),
+    );
+  }
+
+  async releasePointer(): Promise<void> {
+    await this.step('Release the pointer', () => this.board.releasePointer());
   }
 
   async close(): Promise<void> {
