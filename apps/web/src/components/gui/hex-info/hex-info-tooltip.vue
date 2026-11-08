@@ -3,7 +3,7 @@
     <transition name="hex-info">
       <div
         v-if="view && target"
-        :key="view.key + '-' + target.coordinates.columnIndex + '-' + target.coordinates.rowIndex"
+        :key="view.key + '-' + hoveredKey"
         ref="el"
         class="hex-info"
         :class="{ 'is-above': above }"
@@ -12,9 +12,24 @@
       >
         <div class="hex-info__frame">
           <div class="hex-info__body">
-            <span class="hex-info__gem is-top" aria-hidden="true" />
+            <span
+              v-if="view.icon"
+              class="hex-info__badge is-top"
+              data-testid="hex-info-icon"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24"><path :d="ICON_PATHS[view.icon]" /></svg>
+            </span>
+            <span v-else class="hex-info__gem is-top" aria-hidden="true" />
             <hex-info-card :view="view" />
-            <span class="hex-info__gem is-bottom" aria-hidden="true" />
+            <span
+              v-if="view.rarity"
+              class="hex-info__rarity is-bottom"
+              :style="{ '--rarity': view.rarity.color }"
+              data-testid="hex-info-rarity"
+              >{{ view.rarity.label }}</span
+            >
+            <span v-else class="hex-info__gem is-bottom" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -31,6 +46,7 @@ import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { useHexHoverInfo } from '@/composables/use-hex-hover-info';
 import { buildHexInfo } from '@/services/hex-info/build-hex-info';
+import { ICON_PATHS } from '@/components/gui/icons/item-icons';
 import HexInfoCard from './hex-info-card.vue';
 
 const WIDTH_PX = 190;
@@ -45,15 +61,21 @@ const battleStore = useBattleStore();
 const heroToolStore = useHeroToolStore();
 const { target } = useHexHoverInfo();
 
+const hoveredKey = computed(() => {
+  const coordinates = target.value?.coordinates;
+  return coordinates ? `${coordinates.columnIndex}:${coordinates.rowIndex}` : null;
+});
+
 const view = computed(() => {
-  const hovered = target.value;
-  if (!hovered || battleStore.isOpen || heroToolStore.isDragging || knowledgePanelMode.value) {
+  const key = hoveredKey.value;
+  if (!key || battleStore.isOpen || heroToolStore.isDragging || knowledgePanelMode.value) {
     return null;
   }
+  const [columnIndex, rowIndex] = key.split(':').map(Number);
   const tile = worldStore.map?.tiles.find(
     (candidate) =>
-      candidate.coordinates.columnIndex === hovered.coordinates.columnIndex &&
-      candidate.coordinates.rowIndex === hovered.coordinates.rowIndex,
+      candidate.coordinates.columnIndex === columnIndex &&
+      candidate.coordinates.rowIndex === rowIndex,
   );
   if (!tile?.isRevealed || !tile.hexobject) return null;
   return buildHexInfo(tile.hexobject, t(`itemTooltip.group.${tile.hexobject.groupType}`), t, te);
@@ -67,7 +89,10 @@ watch(
   el,
   (node) => {
     observer?.disconnect();
-    if (!node) return;
+    if (!node) {
+      height.value = 0;
+      return;
+    }
     height.value = node.offsetHeight;
     observer = new ResizeObserver(() => {
       height.value = el.value?.offsetHeight ?? 0;
@@ -88,6 +113,7 @@ const layerStyle = computed(() => {
   return {
     left: `${centerX}px`,
     top: `${above.value ? (anchor?.top ?? 0) - GAP_PX : (anchor?.bottom ?? 0) + GAP_PX}px`,
+    visibility: height.value > 0 ? ('visible' as const) : ('hidden' as const),
     '--accent': view.value?.accent ?? '#d1a35f',
   };
 });
@@ -158,6 +184,44 @@ const layerStyle = computed(() => {
 }
 .hex-info__gem.is-bottom {
   bottom: 12px;
+}
+.hex-info__badge,
+.hex-info__rarity {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.hex-info__badge {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: #f4d9a0;
+}
+.hex-info__badge.is-top {
+  top: 8px;
+}
+.hex-info__badge svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hex-info__rarity {
+  max-width: 120px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rarity);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--rarity) 55%, transparent);
+}
+.hex-info__rarity.is-bottom {
+  bottom: 14px;
 }
 .hex-info-enter-active {
   transition:

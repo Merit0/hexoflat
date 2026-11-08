@@ -12,6 +12,11 @@ describe('heartsFor', () => {
     expect(hearts.fills.filter((fill) => fill === 1)).toHaveLength(3);
   });
 
+  it('never shows a living creature with an empty heart row', () => {
+    expect(heartsFor(1, 100).fills[0]).toBe(0.5);
+    expect(heartsFor(0, 100).fills.every((fill) => fill === 0)).toBe(true);
+  });
+
   it('rounds partial hearts to halves', () => {
     expect(heartsFor(2, 15).fills.slice(0, 2)).toEqual([1, 0.5]);
   });

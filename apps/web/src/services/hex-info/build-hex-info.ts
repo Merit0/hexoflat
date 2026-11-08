@@ -2,10 +2,12 @@ import { getMeta } from '@hexoflat/engine';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import {
   EChestType,
+  ERarityKind,
   EHexobjectGroup,
   type THexobject,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { RARITY_COLOR, getObjectRarityTone } from '@/render/rarity';
+import { RARITY_COLOR, getObjectRarity, getObjectRarityTone } from '@/render/rarity';
+import { ITEM_ICON_BY_KEY, type TIconName } from '@/components/gui/icons/item-icons';
 
 export type HexInfoTranslate = (key: string, params?: Record<string, unknown>) => string;
 export type HexInfoTagTone = 'neutral' | 'good' | 'warn' | 'danger';
@@ -45,6 +47,11 @@ export interface HexInfoHeadline {
   label: string;
 }
 
+export interface HexInfoRarity {
+  label: string;
+  color: string;
+}
+
 export type HexInfoVariant = 'creature' | 'resource' | 'construction' | 'weapon' | 'item';
 
 export interface HexInfoView {
@@ -55,6 +62,8 @@ export interface HexInfoView {
   subtitle: string | null;
   description: string | null;
   accent: string;
+  icon: TIconName | null;
+  rarity: HexInfoRarity | null;
   hearts: HexInfoHearts | null;
   supply: HexInfoSupply | null;
   headline: HexInfoHeadline | null;
@@ -73,7 +82,8 @@ export function heartsFor(hp: number, hpMax: number): HexInfoHearts {
   const per = max / count;
   const fills = Array.from({ length: count }, (_, index) => {
     const raw = Math.min(1, Math.max(0, (hp - index * per) / per));
-    return Math.round(raw * 2) / 2;
+    const rounded = Math.round(raw * 2) / 2;
+    return raw > 0 && rounded === 0 ? 0.5 : rounded;
   });
   return { fills, value: hp, max };
 }
@@ -86,6 +96,19 @@ const GROUP_ACCENT: Record<EHexobjectGroup, string> = {
   [EHexobjectGroup.LOOT]: '#e6c75a',
   [EHexobjectGroup.EQUIPMENT]: '#b78fe6',
 };
+
+function rarityLabel(ctx: Ctx, kind: ERarityKind): string {
+  switch (kind) {
+    case ERarityKind.GLOOM:
+      return ctx.t('itemTooltip.rarity.gloom');
+    case ERarityKind.SPARK:
+      return ctx.t('itemTooltip.rarity.spark');
+    case ERarityKind.GOD_EXECUTOR:
+      return ctx.t('itemTooltip.rarity.god-executor');
+    default:
+      return ctx.t('itemTooltip.rarity.idol');
+  }
+}
 
 const HIDDEN_ACTIONS: ReadonlySet<string> = new Set([EHexActionType.SCOUT]);
 
@@ -278,6 +301,8 @@ export function buildHexInfo(
     default:
       part = gearInfo(ctx, obj);
   }
+  const rarity = getObjectRarity(obj);
+  const icon = ITEM_ICON_BY_KEY[obj.hexobjectKey] ?? (part.headline ? 'sword' : null);
   const accent = tone ? RARITY_COLOR[tone] : (part.accent ?? GROUP_ACCENT[obj.groupType]);
 
   const title =
@@ -301,6 +326,9 @@ export function buildHexInfo(
     subtitle: meta.subtitle ? localize(ctx, meta.subtitle) : null,
     description: obj.description ? localize(ctx, obj.description) : null,
     accent,
+    icon,
+    rarity:
+      rarity && tone ? { label: rarityLabel(ctx, rarity.kind), color: RARITY_COLOR[tone] } : null,
     hearts: part.hearts ?? null,
     supply: part.supply ?? null,
     headline: part.headline ?? null,

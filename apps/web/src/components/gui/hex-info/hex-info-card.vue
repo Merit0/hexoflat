@@ -8,7 +8,13 @@
       </div>
     </header>
 
-    <div class="card__divider" aria-hidden="true"><span /></div>
+    <div
+      class="card__divider"
+      :style="{ '--gem': view.rarity?.color ?? '#d9a553' }"
+      aria-hidden="true"
+    >
+      <span />
+    </div>
 
     <p v-if="view.description" class="card__flavor">{{ view.description }}</p>
 
@@ -195,7 +201,8 @@ const rows = computed(() => {
 .card__divider span {
   width: 8px;
   height: 8px;
-  background: #d9a553;
+  background: var(--gem);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--gem) 60%, transparent);
   transform: rotate(45deg) scale(0.85);
 }
 .card__flavor {
