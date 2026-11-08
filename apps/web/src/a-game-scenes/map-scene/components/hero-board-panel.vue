@@ -1,7 +1,10 @@
 <template>
   <aside
     class="hero-board-panel"
-    :class="{ 'is-collapsed': !isHeroBoardOpen, 'is-knowledge': !!knowledgePanelMode }"
+    :class="{
+      'is-collapsed': !isHeroBoardOpen,
+      'is-knowledge': !!knowledgePanelMode || stashStore.isOpen,
+    }"
     data-testid="hero-board-panel"
   >
     <button
@@ -17,7 +20,8 @@
 
     <item-tooltip-layer />
     <div v-show="isHeroBoardOpen" class="hero-board-content">
-      <knowledge-board v-if="knowledgePanelMode" />
+      <stash-board v-if="stashStore.isOpen" />
+      <knowledge-board v-else-if="knowledgePanelMode" />
       <div v-else class="hero-board-body">
         <header class="board-top">
           <div class="tabs" :style="{ '--tab-count': tabs.length }">
@@ -94,6 +98,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import KnowledgeBoard from './knowledge-board.vue';
+import StashBoard from './stash/stash-board.vue';
+import { useStashSession } from '@/composables/use-stash-session';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useHeroStore } from '@/stores/hero-store';
@@ -125,6 +132,8 @@ const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
 
 const activeTab = ref<HeroBoardTab>('hero');
 const battleStore = useBattleStore();
+const stashStore = useHeroStashStore();
+useStashSession();
 const tabs = computed(() =>
   battleStore.isOpen ? [...TABS, { id: 'battle' as const, label: 'Battle' }] : TABS,
 );

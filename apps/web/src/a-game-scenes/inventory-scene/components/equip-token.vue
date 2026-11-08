@@ -17,6 +17,14 @@
   >
     <div class="icon" :style="iconStyle"></div>
 
+    <span
+      v-if="showsCounter(item)"
+      class="amount"
+      :data-testid="`equip-amount-${item.id}`"
+      aria-hidden="true"
+      >{{ item.amount }}</span
+    >
+
     <button
       v-if="isUsableTool"
       class="hex-use-btn"
@@ -47,6 +55,7 @@ import { computed, onBeforeUnmount, type CSSProperties } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
 import { toolKeyOfItem } from '@/composables/hand-tools';
+import { showsCounter } from '@/composables/item-counter';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -80,7 +89,8 @@ const isUsableTool = computed(() => {
   return (
     (props.item.type === EHexobjectGroup.TOOL ||
       props.item.type === EHexobjectGroup.EQUIPMENT ||
-      props.item.key === HEXOBJECT_KEYS.RETURN_SCROLL) &&
+      props.item.key === HEXOBJECT_KEYS.RETURN_SCROLL ||
+      props.item.key === HEXOBJECT_KEYS.COINS) &&
     isHandSlotKey(props.item.slotKey)
   );
 });
@@ -194,6 +204,21 @@ function onPointerDown(e: PointerEvent) {
   opacity: 0.7;
   pointer-events: auto;
   transform: translateX(-50%) scale(calc(1 / 1.05));
+}
+
+.amount {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%) rotate(calc(var(--rot) * -1));
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 900;
+  font-size: 11px;
+  pointer-events: none;
 }
 
 .hex-use-btn {

@@ -74,8 +74,14 @@ export interface HexoflatTestApi {
 
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;
+  getStash(): ({ key: string; amount: number; id: string } | null)[];
+  getBag(): ({ key: string; amount: number; id: string } | null)[];
+  getStashChests(): number;
+  setStashChests(chests: number): void;
+  setStash(cells: ({ key: string; amount: number } | null)[]): void;
+  setBag(cells: ({ key: string; amount: number } | null)[]): void;
   setHeroHealth(current: number): void;
-  placeSquadNextToHero(key: string): TestHexCoordinates;
+  placeHexobjectNextToHero(key: string): TestHexCoordinates;
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): void;
   giveHeroTheTurn(will?: number): void;

@@ -7,7 +7,9 @@ import {
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { inventoryDragState } from '@/composables/use-inventory-drag';
+import { stashDrag } from '@/composables/stash-drag-state';
 
 const SHOW_DELAY_MS = 120;
 const SIDE_GAP_PX = 16;
@@ -57,7 +59,11 @@ export function hideItemTooltip() {
 }
 
 function isTooltipSuppressed(): boolean {
-  return inventoryDragState.isDragging || useHeroInventoryStore().selectedItemId !== null;
+  return (
+    inventoryDragState.isDragging ||
+    stashDrag.active ||
+    useHeroInventoryStore().selectedItemId !== null
+  );
 }
 
 export function showItemTooltip(itemId: string, element: HTMLElement) {
@@ -85,10 +91,14 @@ export function resolveInventoryItemTooltip(
 export function useItemTooltip() {
   const inventory = useHeroInventoryStore();
   const heroStore = useHeroStore();
+  const stash = useHeroStashStore();
 
   const view = computed<ItemTooltipView | null>(() => {
     if (!target.value) return null;
-    const item = inventory.items.find((entry) => entry.id === target.value?.itemId);
+    const id = target.value.itemId;
+    const item =
+      inventory.items.find((entry) => entry.id === id) ??
+      stash.cells.find((cell) => cell?.id === id);
     return item ? resolveInventoryItemTooltip(inventory, item, heroStore.knowledge?.skills) : null;
   });
 

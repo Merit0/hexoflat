@@ -1,20 +1,31 @@
 <template>
   <Transition name="action-alert">
-    <div v-if="displayMessage" class="action-alert-banner" data-testid="action-alert-banner">
+    <div
+      v-if="displayMessage"
+      class="action-alert-banner"
+      :class="`is-${heroToolStore.actionMessageTone}`"
+      :data-tone="heroToolStore.actionMessageTone"
+      data-testid="action-alert-banner"
+    >
       {{ displayMessage
       }}<template v-if="heroToolStore.actionMessageWillCost !== null">
         (<span class="action-alert-cost" data-testid="action-alert-will-cost">{{
           heroToolStore.actionMessageWillCost
         }}</span
         >)</template
-      ><span class="action-alert-mark" aria-hidden="true">!</span>
+      ><span
+        v-if="heroToolStore.actionMessageTone === 'warn'"
+        class="action-alert-mark"
+        aria-hidden="true"
+        >!</span
+      >
       <img
-        v-if="heroToolStore.actionMessageIcon === 'will'"
+        v-if="iconSrc"
         class="action-alert-icon"
-        src="/board-assets/will-icon-image.png"
+        :src="iconSrc"
         alt=""
         aria-hidden="true"
-        data-testid="action-alert-will-icon"
+        :data-testid="`action-alert-${heroToolStore.actionMessageIcon}-icon`"
       />
     </div>
   </Transition>
@@ -22,11 +33,22 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, watch } from 'vue';
+import { getPrototype } from '@hexoflat/engine';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 
 const ACTION_ALERT_HIDE_MS = 3000;
 
 const heroToolStore = useHeroToolStore();
+
+const ICON_SOURCES = {
+  will: '/board-assets/will-icon-image.png',
+  coins: getPrototype(HEXOBJECT_KEYS.COINS).spritePath ?? '',
+} as const;
+
+const iconSrc = computed(() =>
+  heroToolStore.actionMessageIcon ? ICON_SOURCES[heroToolStore.actionMessageIcon] : null,
+);
 
 const displayMessage = computed(() => heroToolStore.actionMessage?.replace(/\.+$/, '') ?? null);
 
@@ -75,6 +97,10 @@ onBeforeUnmount(() => {
 
   z-index: 200;
   pointer-events: none;
+}
+
+.action-alert-banner.is-success {
+  border-color: rgba(141, 255, 176, 0.5);
 }
 
 .action-alert-mark {

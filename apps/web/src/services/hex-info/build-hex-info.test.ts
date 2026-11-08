@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { getPrototype } from '@hexoflat/engine';
-import type { THexobject } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import {
+  EHexobjectGroup,
+  type THexobject,
+} from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { buildHexInfo, heartsFor } from './build-hex-info';
 
@@ -50,5 +53,23 @@ describe('buildHexInfo icon', () => {
   it('uses a resource icon for trees and mountains', () => {
     expect(buildHexInfo(placed('tree'), 'Resource', t, te).icon).toBe('wood');
     expect(buildHexInfo(placed('mountain'), 'Resource', t, te).icon).toBe('rock');
+  });
+});
+
+describe('buildHexInfo broken seal', () => {
+  it('never marks the stash chest as broken, even in a save that kept integrity 0', () => {
+    const chest = placed('stash-chest');
+    if (chest.groupType !== EHexobjectGroup.CONSTRUCTION)
+      throw new Error('stash chest is a construction');
+    chest.construction = { ...chest.construction, integrity: 0 };
+    expect(buildHexInfo(chest, 'Structure', t, te).broken).toBe(false);
+  });
+
+  it('still marks another interactive construction with no integrity as broken', () => {
+    const chest = placed('chest');
+    if (chest.groupType !== EHexobjectGroup.CONSTRUCTION)
+      throw new Error('chest is a construction');
+    chest.construction = { ...chest.construction, integrity: 0 };
+    expect(buildHexInfo(chest, 'Structure', t, te).broken).toBe(true);
   });
 });

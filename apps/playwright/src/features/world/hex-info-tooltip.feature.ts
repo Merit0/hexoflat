@@ -12,6 +12,13 @@ export class HexInfoTooltipFeature extends BaseFeature {
     );
   }
 
+  async placeItemAndHover(hexobjectKey: string): Promise<void> {
+    await this.step(`Put "${hexobjectKey}" next to the hero and hover it`, async () => {
+      const at = await this.campingMap.hexBoard.placeItemNextToHero(hexobjectKey);
+      await this.campingMap.hexBoard.hoverTileForInfo(at);
+    });
+  }
+
   async hoverFirstHexWithKey(hexobjectKey: string): Promise<void> {
     await this.step(`Hover the first hex holding "${hexobjectKey}"`, async () => {
       const [first] = await this.campingMap.hexBoard.findTilesWithKey(hexobjectKey);

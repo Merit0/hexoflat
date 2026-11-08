@@ -184,7 +184,7 @@ describe('usePortal', () => {
       (t) => coordinateKey(t.coordinates) === coordinateKey(CAMP_PORTAL_SPOT),
     )!;
     spotTile.hexobject = {
-      ...camp.tiles.find((t) => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.COINS)!.hexobject!,
+      ...camp.tiles.find((t) => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE)!.hexobject!,
     };
     world.goToLocation('silesia');
     hero.heroCoordinates = { ...origin };

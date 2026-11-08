@@ -4,13 +4,8 @@ export const CAMPING_BOARD = {
   id: 'camping',
   background: '/hex-assets/board-hexes/stone-hex.png',
   legend: {
-    A: { hexobjectKey: 'axe' },
-    C: { hexobjectKey: 'coins' },
-    D: { hexobjectKey: 'shield' },
     F: { hexobjectKey: 'fireplace' },
     G: { hexobjectKey: 'homeland-gate' },
-    K: { hexobjectKey: 'pickaxe' },
-    S: { hexobjectKey: 'sword' },
     T: { hexobjectKey: 'stash-chest' },
     W: { hexobjectKey: 'wood-and-leaves' },
   },
@@ -22,10 +17,10 @@ export const CAMPING_BOARD = {
     ' ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~', // r03
     '~ ~ ~ ~ ~ ~ ~ G W W W W ~ ~ ~ ~ ~ ~', // r04
     ' ~ ~ ~ ~ ~ ~ W . . . . W ~ ~ ~ ~ ~ ~', // r05
-    '~ ~ ~ ~ ~ ~ W . . . . S W ~ ~ ~ ~ ~', // r06
-    ' ~ ~ ~ ~ ~ W . . C . . A W ~ ~ ~ ~ ~', // r07
-    '~ ~ ~ ~ ~ W . . . F . D . W ~ ~ ~ ~', // r08
-    ' ~ ~ ~ ~ ~ W . . T . K . W ~ ~ ~ ~ ~', // r09
+    '~ ~ ~ ~ ~ ~ W . . . . . W ~ ~ ~ ~ ~', // r06
+    ' ~ ~ ~ ~ ~ W . . . . . . W ~ ~ ~ ~ ~', // r07
+    '~ ~ ~ ~ ~ W . . . F . . . W ~ ~ ~ ~', // r08
+    ' ~ ~ ~ ~ ~ W . . T . . . W ~ ~ ~ ~ ~', // r09
     '~ ~ ~ ~ ~ ~ W . . . . . W ~ ~ ~ ~ ~', // r10
     ' ~ ~ ~ ~ ~ ~ W . . . . W ~ ~ ~ ~ ~ ~', // r11
     '~ ~ ~ ~ ~ ~ ~ W W W W W ~ ~ ~ ~ ~ ~', // r12

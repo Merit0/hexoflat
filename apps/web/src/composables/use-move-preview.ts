@@ -12,6 +12,7 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 
@@ -30,6 +31,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
   const worldStore = useWorldMapStore();
   const battleStore = useBattleStore();
   const heroToolStore = useHeroToolStore();
+  const stashStore = useHeroStashStore();
   const uiSettingsStore = useUiSettingsStore();
   const heroStore = useHeroStore();
 
@@ -51,8 +53,9 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
 
     const hasMovementSteps = getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0) > 0;
     const hasNoActiveTool =
-      !heroToolStore.isDragging &&
-      (!heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND);
+      stashStore.isOpen ||
+      (!heroToolStore.isDragging &&
+        (!heroToolStore.activeTool || heroToolStore.activeTool === HEXOBJECT_KEYS.HAND));
     if (!hasMovementSteps || !hasNoActiveTool) return null;
 
     const heroKey = coordinateKey(heroStore.heroCoordinates);

@@ -2,8 +2,12 @@ import type { TestHexCoordinates } from '@web-test-api';
 
 export const MapTokens = {
   knowledgeBook: { columnIndex: 10, rowIndex: 10 },
-  starterAxe: { columnIndex: 11, rowIndex: 7 },
   stashChest: { columnIndex: 8, rowIndex: 9 },
+  formerSwordSpot: { columnIndex: 11, rowIndex: 6 },
+  formerAxeSpot: { columnIndex: 11, rowIndex: 7 },
+  formerShieldSpot: { columnIndex: 11, rowIndex: 8 },
+  formerPickaxeSpot: { columnIndex: 10, rowIndex: 9 },
+  formerCoinsSpot: { columnIndex: 8, rowIndex: 7 },
   caveEntrance: { columnIndex: 10, rowIndex: 3 },
   homelandGate: { columnIndex: 7, rowIndex: 4 },
 } as const satisfies Record<string, TestHexCoordinates>;
@@ -19,6 +23,10 @@ export const HexobjectKeys = {
   axe: 'axe',
   stashChest: 'stash-chest',
   returnScroll: 'return-scroll',
+  coins: 'coins',
+  healthBottle: 'health-bottle',
+  sword: 'sword',
+  pickaxe: 'pickaxe',
   shield: 'shield',
   fireplace: 'fireplace',
   returnPortal: 'return-portal',

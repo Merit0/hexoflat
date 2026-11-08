@@ -247,7 +247,10 @@ function constructionInfo(
     tags,
     stats,
     locked: !!construction.isLocked,
-    broken: !!obj.isInteractable && construction.integrity <= 0,
+    broken:
+      !!obj.isInteractable &&
+      construction.integrity <= 0 &&
+      construction.chestType !== EChestType.STASH,
   };
 }
 

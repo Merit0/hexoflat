@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { readSavedWorldState } from '@/services/persistence/world-storage';
 import { useWorldMapStore } from './world-map-store';
 
@@ -26,8 +27,9 @@ describe('useWorldMapStore: loading a map that finishes a due action', () => {
     const campId = world.currentMapId!;
     const campHash = (world.descriptor as { drawingHash?: string }).drawingHash;
     const coins = (world.map as HexMapModel).tiles.find(
-      (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.COINS,
+      (tile) => tile.coordinates.columnIndex === 8 && tile.coordinates.rowIndex === 7,
     )!;
+    coins.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.COINS, coins.coordinates);
     coins.pendingAction = {
       type: EHexActionType.TAKE,
       startedAt: 0,

@@ -69,10 +69,9 @@
         </span>
 
         <span
-          v-if="
-            !cell.blocked && !isBeingDragged(cell.key) && (itemsBySlot[cell.key]?.amount ?? 1) > 1
-          "
+          v-if="!cell.blocked && !isBeingDragged(cell.key) && showsCounter(itemsBySlot[cell.key])"
           class="amount"
+          :data-testid="`inventory-amount-${cell.key}`"
         >
           {{ itemsBySlot[cell.key]!.amount }}
         </span>
@@ -90,6 +89,7 @@ import { useHeroInventoryStore, WILL_SLOT_KEY as willSlotKey } from '@/stores/he
 import { useHeroStore } from '@/stores/hero-store';
 import { inventoryDragState as dragState } from '@/composables/use-inventory-drag';
 import InventoryToken from '@/a-game-scenes/inventory-scene/components/inventory-token.vue';
+import { showsCounter } from '@/composables/item-counter';
 
 const inv = useHeroInventoryStore();
 const hero = useHeroStore();

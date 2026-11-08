@@ -17,15 +17,11 @@
     <knowledge-help :text="t('knowledge.hallLore')" />
     <header>
       <h2>{{ t('knowledge.title') }}</h2>
-      <button
-        type="button"
-        class="close-btn"
-        data-testid="knowledge-close"
-        :aria-label="t('knowledge.close')"
-        @click="closeKnowledgePanel()"
-      >
-        ×
-      </button>
+      <board-close-button
+        testid="knowledge-close"
+        :label="t('knowledge.close')"
+        @close="closeKnowledgePanel()"
+      />
     </header>
     <div class="ornament" aria-hidden="true"><span></span><i></i><span></span></div>
     <p v-if="hero.knowledgeError" role="alert">{{ t('knowledge.saveError') }}</p>
@@ -108,6 +104,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { knowledgePanelMode as mode, closeKnowledgePanel } from '@/composables/use-knowledge-panel';
+import BoardCloseButton from '@/components/gui/board/board-close-button.vue';
 import KnowledgeWillMeter from './knowledge-will-meter.vue';
 import KnowledgeHelp from './knowledge-help.vue';
 import EyeIcon from '@/components/gui/icons/eye-icon.vue';

@@ -6,7 +6,8 @@
     "language": "Language",
     "devAddWill": "Dev: +50 Will",
     "devCutHealth": "Dev: −0.5 health",
-    "devAddShield": "Dev: +1 shield"
+    "devAddShield": "Dev: +1 shield",
+    "devAddCoins": "Dev: +500 coins"
   },
   "hexInfo": {
     "tags": {
@@ -653,5 +654,61 @@
       "privacy": "Privacy",
       "language": "Change language"
     }
+  },
+  "stash": {
+    "title": "Camp Stash",
+    "close": "Close stash",
+    "bag": "Bag",
+    "stash": "Stash",
+    "weight": "{current} / {max} kg",
+    "count": "{used} / {total}",
+    "hint": {
+      "idle": "Drag items between the bag and the stash, or double-click to send one across. Stored items weigh nothing.",
+      "drag": "Release over a cell or a panel. Esc cancels.",
+      "split": "Moving half of the stack. Esc cancels."
+    },
+    "drop": {
+      "swap": "Swap",
+      "merge": "Stack +{n}",
+      "split": "Split {n}",
+      "equip": "Equip",
+      "toBag": "To bag",
+      "toStash": "To stash",
+      "cant": "Can't drop"
+    },
+    "error": {
+      "WRONG_SLOT": "This item does not fit that slot.",
+      "SWAP_WRONG_SLOT": "The other item does not fit the slot it would go back to.",
+      "STACK_FULL": "That stack is already full.",
+      "SPLIT_TARGET_TAKEN": "Split a stack onto an empty cell or the same kind of stack.",
+      "OVERWEIGHT": "Too heavy for the bag.",
+      "CONTAINER_FULL": "No room left there.",
+      "STASH_LOCKED": "Open the stash chest first.",
+      "EMPTY_SOURCE": "There is nothing in that cell.",
+      "INVALID_LOCATION": "That place does not exist.",
+      "NO_CHEST": "Unlock a chest first."
+    },
+    "chest": "Chest {n}",
+    "chests": "Stash chests",
+    "unlock": "Unlock",
+    "pay": {
+      "hint": "Put coins in your hand and drag them over the Stash Chest to unlock it.",
+      "notEnough": "Not enough coins to pay",
+      "unlocked": "You unlock the stash chest"
+    },
+    "filter": {
+      "all": "All",
+      "gear": "Gear",
+      "tool": "Tools",
+      "resource": "Resources",
+      "consumable": "Consumables"
+    },
+    "action": {
+      "store": "Store resources",
+      "sort": "Sort"
+    },
+    "moreBelow": "{n} more below",
+    "nothingToStore": "No resources or consumables in the bag.",
+    "lockedChest": "Unlock Chest {prev} first."
   }
 }
