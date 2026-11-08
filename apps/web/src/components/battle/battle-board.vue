@@ -5,7 +5,10 @@
     data-testid="battle-board"
     :data-ready="ready"
     :data-animating="animating"
-    @pointerleave="emit('hex-hover', null)"
+    @pointerleave="
+      emit('hex-hover', null);
+      emit('hex-pointer', null, null);
+    "
   >
     <canvas ref="canvas" class="battle-board__canvas" />
     <battle-banner v-if="banner" class="battle-board__banner" v-bind="banner" />
@@ -22,6 +25,7 @@ import type { BattleBannerProps } from '@/render/battle/battle-banner';
 import { useBattleBoard, type BattleBoardScene } from '@/render/battle/use-battle-board';
 import type { BattleOverlayModel } from '@/render/battle/battle-overlay-model';
 import type { BattleMovePreview } from '@/composables/battle-board-tap';
+import type { TileAnchor } from '@/render/layers/tiles-layer';
 import type { BoardCamera, BoardFrame } from '@/render/board-camera';
 
 const props = defineProps<{
@@ -36,6 +40,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'hex-tap': [hex: BattleHex];
   'hex-hover': [hex: BattleHex | null];
+  'hex-pointer': [hex: BattleHex | null, anchor: TileAnchor | null];
   animating: [busy: boolean];
   camera: [camera: BoardCamera];
 }>();
@@ -57,6 +62,7 @@ useBattleBoard({
   },
   onHexTap: (hex) => emit('hex-tap', hex),
   onHexHover: (hex) => emit('hex-hover', hex),
+  onHexPointer: (hex, anchor) => emit('hex-pointer', hex, anchor),
   takeEvents: () => props.takeEvents?.() ?? [],
   onCamera: (camera) => emit('camera', camera),
   onAnimating: (busy) => {

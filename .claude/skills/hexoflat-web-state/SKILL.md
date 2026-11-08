@@ -91,6 +91,10 @@ After extracting anything, verify the old call site actually imports it and the 
 - While a battle is open, `hex-world-map.vue` mounts `battle-board-area.vue` over the dungeon board; the dungeon map itself stays frozen.
 - Dynamic squad keys (`squad.threat.*`, `squad.rejected.*`, action labels) are registered for the orphan-key test in `squadLocaleKeys()` (`i18n/locale-keys.ts`); squad titles are `content.<key>.title|tableRule`.
 
+## Worked example: the hex hover card
+
+Pure view model in `services/hex-info/build-hex-info.ts` (content -> `HexInfoView`, no Vue, covered by `build-hex-info.test.ts`); hover state in the composable `use-hex-hover-info.ts` (module-level `shallowRef`, set from `hex-world-map.vue` via the tiles-layer callbacks); the components in `components/gui/hex-info/` only render the view. New card fields go through the view model, and every `hexInfo.*` i18n key must be referenced literally or the ui.json key test fails. Engine content fields shown on the card (for example `weapon.radius`) need the Zod schema, the abstraction type and a rebuild of `packages/engine/dist`.
+
 ## Other conventions
 
 - Scenes live in `apps/web/src/a-game-scenes/<scene>/components/`. Shared UI in `apps/web/src/components/`.

@@ -119,6 +119,7 @@ export interface IWeapon {
   damageMin: number;
   damageMax: number;
   attackMultiplier?: number;
+  radius?: number;
 }
 
 export interface IEquipment extends IDurable {

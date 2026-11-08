@@ -161,6 +161,7 @@ const weaponSchema = z.object({
   damageMin: z.number(),
   damageMax: z.number(),
   attackMultiplier: z.number().optional(),
+  radius: z.number().int().min(1).optional(),
 });
 
 const equipmentSchema = z.object({

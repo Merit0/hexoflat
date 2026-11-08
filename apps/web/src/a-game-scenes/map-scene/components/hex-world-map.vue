@@ -66,6 +66,7 @@
       />
     </div>
     <hero-board-panel />
+    <hex-info-tooltip />
   </div>
 </template>
 
@@ -96,6 +97,9 @@ import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
 import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
 import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
+import HexInfoTooltip from '@/components/gui/hex-info/hex-info-tooltip.vue';
+import { useHexHoverInfo } from '@/composables/use-hex-hover-info';
+import type { TilePointer } from '@/render/layers/tiles-layer';
 import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
@@ -209,8 +213,11 @@ const boardKey = computed(() =>
 );
 const activeTool = computed(() => heroToolStore.activeTool);
 
-function handleTileHover(tile: IHexTile) {
+const hexHoverInfo = useHexHoverInfo();
+
+function handleTileHover(tile: IHexTile, point: TilePointer) {
   hoveredTileCoord.value = tile.coordinates;
+  hexHoverInfo.show(tile.coordinates, point.anchor);
   if (heroToolStore.isDragging) {
     heroToolStore.updateHover(tile.coordinates);
   }
@@ -314,7 +321,10 @@ useHexBoard({
     label: campHealInfoLabel,
   },
   onTileHover: handleTileHover,
+  onTileMove: (_tile, point) => hexHoverInfo.move(point.anchor),
+  onTileLeave: () => hexHoverInfo.hide(),
   onTileClick: (tile) => {
+    hexHoverInfo.hide();
     if (devBoardPanelStore?.inspectMode) {
       devBoardPanelStore.inspect(tile.coordinates);
       return;
@@ -367,6 +377,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  hexHoverInfo.hide();
   window.removeEventListener('keydown', onKeyDown);
   if (healTickerTimer) {
     window.clearInterval(healTickerTimer);

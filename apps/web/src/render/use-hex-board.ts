@@ -5,7 +5,7 @@ import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
-import { createTilesLayer, type TilesLayer } from '@/render/layers/tiles-layer';
+import { createTilesLayer, type TilePointer, type TilesLayer } from '@/render/layers/tiles-layer';
 import { createHeroLayer, type HeroLayer } from '@/render/layers/hero-layer';
 import {
   createMovePreviewLayer,
@@ -46,7 +46,9 @@ export interface UseHexBoardOptions {
     active: ComputedRef<boolean>;
     label: ComputedRef<string>;
   };
-  onTileHover: (tile: IHexTile) => void;
+  onTileHover: (tile: IHexTile, point: TilePointer) => void;
+  onTileMove?: (tile: IHexTile, point: TilePointer) => void;
+  onTileLeave?: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
   /** Dev-only board panel toggles (see dev-board-panel.vue) — both default away in production. */
   devPanel?: {
@@ -118,6 +120,8 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       getTileSize,
       worldStore,
       onTileHover: opts.onTileHover,
+      onTileMove: opts.onTileMove,
+      onTileLeave: opts.onTileLeave,
       onTileClick: opts.onTileClick,
       isForceRevealed: () => opts.devPanel?.showWholeBoard.value ?? false,
       getFogLook: () =>

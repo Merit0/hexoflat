@@ -1,8 +1,9 @@
-import { Container, Sprite, type Ticker } from 'pixi.js';
+import { Container, Sprite, type FederatedPointerEvent, type Ticker } from 'pixi.js';
 import type { BattleHex, BattleTerrain, Boulder } from '@hexoflat/engine/battle/battle-state';
 import type { BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
 import { hexKey, parseHexKey } from '@hexoflat/engine/battle/hex-battle-geom';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import type { TileAnchor } from '@/render/layers/tiles-layer';
 import { createHexHitArea, createHexMask } from '@/render/hex-geometry';
 import { applyObjectFit } from '@/render/object-fit';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
@@ -20,6 +21,7 @@ export interface BattleLayerDeps {
   positionOf(hex: BattleHex): { x: number; y: number };
   onHexTap?: (hex: BattleHex) => void;
   onHexHover?: (hex: BattleHex) => void;
+  onHexPointer?: (hex: BattleHex | null, anchor: TileAnchor | null) => void;
 }
 
 export interface BattleBoardSyncParams {
@@ -74,6 +76,14 @@ export function createBattleBoardLayer(deps: BattleLayerDeps): BattleBoardLayer 
     if (on && blades.length) deps.ticker.add(spin);
   }
 
+  function anchorOf(tile: Container, event: FederatedPointerEvent): TileAnchor {
+    const offsetX = event.clientX - event.global.x;
+    const offsetY = event.clientY - event.global.y;
+    const top = tile.toGlobal({ x: w / 2, y: 0 });
+    const bottom = tile.toGlobal({ x: w / 2, y: h });
+    return { centerX: top.x + offsetX, top: top.y + offsetY, bottom: bottom.y + offsetY };
+  }
+
   function tileAt(hex: BattleHex, layers: Sprite[]): Container {
     const tile = new Container();
     const mask = createHexMask(w, h);
@@ -85,7 +95,12 @@ export function createBattleBoardLayer(deps: BattleLayerDeps): BattleBoardLayer 
       tile.eventMode = 'static';
       tile.hitArea = createHexHitArea(w, h);
       tile.on('pointertap', () => deps.onHexTap?.(hex));
-      tile.on('pointerover', () => deps.onHexHover?.(hex));
+      tile.on('pointerover', (event) => {
+        deps.onHexHover?.(hex);
+        deps.onHexPointer?.(hex, anchorOf(tile, event));
+      });
+      tile.on('pointermove', (event) => deps.onHexPointer?.(hex, anchorOf(tile, event)));
+      tile.on('pointerout', () => deps.onHexPointer?.(null, null));
     }
     return tile;
   }

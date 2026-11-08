@@ -8,11 +8,44 @@
     "devCutHealth": "Dev: −0.5 здоров’я",
     "devAddShield": "Dev: +1 щит"
   },
-  "hexTileDetails": {
-    "emptyTile": "Порожній тайл",
-    "tileNotFound": "Тайл не знайдено",
-    "noFurtherDetails": "Немає додаткових деталей.",
-    "nothingOfInterest": "Тут немає нічого цікавого."
+  "hexInfo": {
+    "tags": {
+      "boss": "Бос",
+      "watcher": "Вартує",
+      "hostile": "Ворожий",
+      "friendly": "Дружній",
+      "neutral": "Нейтральний",
+      "locked": "Замкнено",
+      "depleted": "Вичерпано",
+      "regrowing": "Відростає",
+      "needsTool": "Потрібен {tool}",
+      "broken": "Зламано",
+      "interactable": "Можна взаємодіяти"
+    },
+    "stats": {
+      "attack": "Атака",
+      "squad": "Загін",
+      "weight": "Вага",
+      "durability": "Міцність",
+      "defense": "Захист",
+      "shields": "Щити",
+      "hearts": "Серця",
+      "damage": "Шкода",
+      "radius": "Радіус",
+      "amount": "Кількість",
+      "stash": "Схованка",
+      "loot": "Скриня з добром"
+    },
+    "effects": {
+      "sawHurts": "Дуже боляче"
+    },
+    "hints": {
+      "saw": "Дай відповідь за 5 с, або пила вкусить."
+    },
+    "actions": "Дії",
+    "free": "Безкоштовно",
+    "will": "{n} Волі",
+    "kg": "кг"
   },
   "moveBlocked": {
     "panel": "Закрий Книгу Волі або натисни Escape, щоб рухатися",

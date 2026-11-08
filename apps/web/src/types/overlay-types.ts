@@ -1,7 +1,6 @@
 import { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 
 export type OverlayType =
-  | 'hex-tile-details'
   | 'hero-dressing-room'
   | 'battle'
   | 'chest-inventory'
@@ -23,6 +22,5 @@ export type OverlayPayloads = {
   'grave-inventory': { graveId: string };
   'dungeon-preview': { dungeonKey: string };
   'confirm-escape-battle': { battleId: string };
-  'hex-tile-details': { coordinates: IHexCoordinates };
   settings: undefined;
 };

@@ -11,6 +11,7 @@
       :take-events="store.takeEvents"
       @hex-tap="tapHex"
       @hex-hover="hoverHex"
+      @hex-pointer="pointHex"
       @animating="store.setAnimating"
       @camera="camera = $event"
     >
@@ -27,6 +28,7 @@
       </board-overlay-layer>
       <battle-timed-task v-if="view.task" :task="view.task" @answer="answer" @timeout="timeout" />
     </battle-board>
+    <battle-hex-info-tooltip v-if="view.board" :scene="view.board.scene" />
     <battle-board-legend />
   </div>
 </template>
@@ -34,6 +36,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import BattleBoard from '@/components/battle/battle-board.vue';
+import BattleHexInfoTooltip from '@/components/gui/hex-info/battle-hex-info-tooltip.vue';
+import { useBattleHexHover } from '@/composables/use-battle-hex-hover';
 import BattleBoardLegend from '@/components/battle/battle-board-legend.vue';
 import { useBattleView } from '@/composables/use-battle-view';
 import { useBattleStore } from '@/stores/battle-store';
@@ -62,6 +66,8 @@ const frame = computed(() => {
 const tileSize = computed(() => tileScreenSize(camera.value ?? { x: 0, y: 0, zoom: 1 }));
 const { view, tapHex, hoverHex, answer, timeout, actWithTool, closeTool, cycleHand } =
   useBattleView();
+
+const { point: pointHex } = useBattleHexHover();
 
 let lastWheelAt = 0;
 function onWheel(event: WheelEvent) {

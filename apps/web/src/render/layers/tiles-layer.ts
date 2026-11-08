@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture, type FederatedPointerEvent } from 'pixi.js';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -15,11 +15,25 @@ import type { useWorldMapStore } from '@/stores/world-map-store';
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 
+export interface TileAnchor {
+  centerX: number;
+  top: number;
+  bottom: number;
+}
+
+export interface TilePointer {
+  x: number;
+  y: number;
+  anchor: TileAnchor;
+}
+
 export interface TilesLayerDeps {
   worldContainer: Container;
   getTileSize(): { w: number; h: number };
   worldStore: WorldStore;
-  onTileHover: (tile: IHexTile) => void;
+  onTileHover: (tile: IHexTile, point: TilePointer) => void;
+  onTileMove?: (tile: IHexTile, point: TilePointer) => void;
+  onTileLeave?: (tile: IHexTile) => void;
   onTileClick: (tile: IHexTile) => void;
   /** Dev board panel's "show whole board" toggle — render only, never changes tile.isRevealed. */
   isForceRevealed?(): boolean;
@@ -182,8 +196,27 @@ export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {
       tile,
     };
 
+    const pointerOf = (event: FederatedPointerEvent): TilePointer => {
+      const { w, h } = deps.getTileSize();
+      const offsetX = event.clientX - event.global.x;
+      const offsetY = event.clientY - event.global.y;
+      const top = root.toGlobal({ x: w / 2, y: 0 });
+      const bottom = root.toGlobal({ x: w / 2, y: h });
+      return {
+        x: event.clientX,
+        y: event.clientY,
+        anchor: {
+          centerX: top.x + offsetX,
+          top: top.y + offsetY,
+          bottom: bottom.y + offsetY,
+        },
+      };
+    };
+
     root.on('pointertap', () => deps.onTileClick(node.tile));
-    root.on('pointerover', () => deps.onTileHover(node.tile));
+    root.on('pointerover', (event) => deps.onTileHover(node.tile, pointerOf(event)));
+    root.on('pointermove', (event) => deps.onTileMove?.(node.tile, pointerOf(event)));
+    root.on('pointerout', () => deps.onTileLeave?.(node.tile));
 
     return node;
   }

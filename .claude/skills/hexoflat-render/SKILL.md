@@ -18,7 +18,7 @@ texture-cache.ts     texture reuse; preloadTextures(paths) awaits loads
 token-utils.ts       token drawing helpers
 tile-dirty-tracker.ts  which tiles changed since the last flush
 layers/
-  tiles-layer.ts          the board itself
+  tiles-layer.ts          the board itself (hover/move callbacks get a `TilePointer`: cursor x/y plus an `anchor` {centerX, top, bottom} of the hex in screen px, camera included; the hex hover card positions itself from it)
   hero-layer.ts
   move-preview-layer.ts
   squad-watch-layer.ts     thin highlight of the hexes a watcher squad sees (squads themselves are hexobjects drawn by tiles-layer with the `creature` fit)

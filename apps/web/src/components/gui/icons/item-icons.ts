@@ -24,6 +24,8 @@ export const ICON_PATHS = {
   boots: 'M8 3 H13 V13 L19 15.5 V20 H6 V13 Z M6 17 H19',
   ring: 'M6 15 A6 6 0 1 0 18 15 A6 6 0 1 0 6 15 Z M9 6 L12 3 L15 6 L12 9 Z',
   amulet: 'M6 3 L12 11 L18 3 M12 11 L16 15.5 L12 21 L8 15.5 Z',
+  target:
+    'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M12 1v4 M12 19v4 M1 12h4 M19 12h4',
   weight: 'M7 9 H17 L19 20 H5 Z M9 9 A3 3 0 1 1 15 9',
   durability: 'M3 7 H16 C16 9 18 10 21 10 V11 H15.5 L14.5 14 H17.5 V18 H6.5 V14 H9.5 L8.5 11 H3 Z',
   stack: 'M12 3 L21 8 L12 13 L3 8 Z M3 12 L12 17 L21 12 M3 16 L12 21 L21 16',
@@ -55,6 +57,7 @@ export const ICON_PATHS = {
   cross: 'M9 3h6v6h6v6h-6v6H9v-6H3V9h6z',
   sun: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z M12 2v3 M12 19v3 M2 12h3 M19 12h3 M5 5l2 2 M17 17l2 2 M5 19l2-2 M17 7l2-2',
   ward: 'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z M12 8v2 M12 14v2 M8 12h2 M14 12h2',
+  tower: 'M6 21V8H4V3h4v2h2V3h4v2h2V3h4v5h-2v13z M3 21h18 M10 21v-5a2 2 0 0 1 4 0v5',
   feather: 'M20 4C10 4 5 10 5 19 M5 19l3-3 M20 4c0 8-5 12-12 12 M10 11h6',
 } as const;
 
