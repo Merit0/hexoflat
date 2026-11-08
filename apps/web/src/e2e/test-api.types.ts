@@ -101,6 +101,7 @@ export interface HexoflatTestApi {
     revealedShields: number;
     heroFreeNeighbours: { q: number; r: number }[];
     terrain: Record<string, number>;
+    terrainByHex: Record<string, string>;
     aimOptions: { q: number; r: number }[];
   } | null;
   giveEnemyTheTurn(): void;

@@ -1,6 +1,12 @@
 <template>
   <ul v-if="tags.length" class="tags" :class="{ 'is-center': center }">
-    <li v-for="chip in tags" :key="chip.id" class="tag" :class="`is-${chip.tone}`">
+    <li
+      v-for="chip in tags"
+      :key="chip.id"
+      class="tag"
+      :class="`is-${chip.tone}`"
+      :data-testid="`hex-info-tag-${chip.id}`"
+    >
       {{ chip.label }}
     </li>
   </ul>

@@ -27,6 +27,7 @@ import { preloadBloodSplash } from '@/render/blood-splash';
 import { battleAssetPaths } from '@/render/battle/battle-look';
 import { registerBattleHexProbe } from '@/e2e/battle-hooks';
 import { createBattleSyncGate } from '@/render/battle/battle-sync-gate';
+import type { TileAnchor } from '@/render/layers/tiles-layer';
 import { createBattleBoardLayer, type BattleBoardLayer } from '@/render/layers/battle-board-layer';
 import {
   createBattleOverlayLayer,
@@ -61,6 +62,7 @@ export interface UseBattleBoardOptions {
   onReady?: () => void;
   onHexTap?: (hex: BattleHex) => void;
   onHexHover?: (hex: BattleHex) => void;
+  onHexPointer?: (hex: BattleHex | null, anchor: TileAnchor | null) => void;
   takeEvents?: () => DomainEvent[];
   onAnimating?: (busy: boolean) => void;
   onCamera?: (camera: BoardCamera) => void;
@@ -147,6 +149,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       positionOf,
       onHexTap: options.onHexTap,
       onHexHover: options.onHexHover,
+      onHexPointer: options.onHexPointer,
     };
     const board = createBattleBoardLayer(deps);
     const overlay = createBattleOverlayLayer(deps);

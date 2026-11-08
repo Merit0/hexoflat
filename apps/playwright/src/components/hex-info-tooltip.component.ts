@@ -60,4 +60,9 @@ export class HexInfoTooltipComponent extends BaseComponent {
   async verifyIsHidden(): Promise<void> {
     await expect(this.tooltip).toHaveCount(0);
   }
+
+  async verifyEffectIsShown(): Promise<void> {
+    await expect(this.tooltip).toBeVisible();
+    await expect(this.page.getByTestId('hex-info-effect')).toBeVisible();
+  }
 }

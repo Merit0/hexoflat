@@ -50,9 +50,9 @@ export class HexInfoTooltipFeature extends BaseFeature {
     );
   }
 
-  async verifyHasNoIconAndNoRarity(): Promise<void> {
-    await this.step('Verify the hover card has no item icon and no rarity', async () => {
-      await this.campingMap.hexInfoTooltip.verifyNoIcon();
+  async verifyShowsIconWithoutRarity(): Promise<void> {
+    await this.step('Verify the hover card shows an icon but no rarity', async () => {
+      await this.campingMap.hexInfoTooltip.verifyIconIsShown();
       await this.campingMap.hexInfoTooltip.verifyNoRarity();
       await this.campingMap.hexInfoTooltip.verifyDividerHasNoRarity();
     });

@@ -40,13 +40,13 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
     await hexInfo.verifyShowsItemIconAndRarity(/Idol/i);
   });
 
-  test('An object without rarity shows neither an icon nor a rarity', async () => {
+  test('A construction shows a general icon on top and no rarity', async () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
 
     await hexInfo.hoverFirstHexWithKey(HexobjectKeys.fireplace);
 
-    await hexInfo.verifyHasNoIconAndNoRarity();
+    await hexInfo.verifyShowsIconWithoutRarity();
   });
 
   test('The card disappears when the pointer leaves the board', async () => {

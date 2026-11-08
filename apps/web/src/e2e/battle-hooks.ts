@@ -65,6 +65,7 @@ export interface BattleSnapshot {
   revealedShields: number;
   heroFreeNeighbours: { q: number; r: number }[];
   terrain: Record<string, number>;
+  terrainByHex: Record<string, string>;
   aimOptions: { q: number; r: number }[];
 }
 
@@ -201,6 +202,7 @@ export function readBattleSnapshot(): BattleSnapshot | null {
     revealedShields: store.revealedShields.length,
     heroFreeNeighbours: freeBesideHero(battle),
     terrain: terrainCounts(battle),
+    terrainByHex: { ...battle.board },
     aimOptions: options.map((h) => ({ q: h.q, r: h.r })),
   };
 }

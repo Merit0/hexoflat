@@ -54,6 +54,10 @@ export interface HexInfoRarity {
   tone: TRarityTone;
 }
 
+export interface HexInfoEffect {
+  label: string;
+}
+
 export type HexInfoVariant = 'creature' | 'resource' | 'construction' | 'weapon' | 'item';
 
 export interface HexInfoView {
@@ -71,6 +75,7 @@ export interface HexInfoView {
   headline: HexInfoHeadline | null;
   locked: boolean;
   broken: boolean;
+  effect: HexInfoEffect | null;
   tags: HexInfoTag[];
   stats: HexInfoStat[];
   actions: HexInfoAction[];
@@ -111,6 +116,17 @@ function rarityLabel(ctx: Ctx, kind: ERarityKind): string {
       return ctx.t('itemTooltip.rarity.idol');
   }
 }
+
+const GROUP_ICON: Partial<Record<EHexobjectGroup, TIconName>> = {
+  [EHexobjectGroup.CREATURE]: 'skull',
+  [EHexobjectGroup.RESOURCE]: 'stack',
+  [EHexobjectGroup.CONSTRUCTION]: 'tower',
+};
+
+const RESOURCE_ICON_BY_KEY: Partial<Record<string, TIconName>> = {
+  tree: 'wood',
+  mountain: 'rock',
+};
 
 const HIDDEN_ACTIONS: ReadonlySet<string> = new Set([EHexActionType.SCOUT]);
 
@@ -304,7 +320,10 @@ export function buildHexInfo(
       part = gearInfo(ctx, obj);
   }
   const rarity = getObjectRarity(obj);
-  const icon = ITEM_ICON_BY_KEY[obj.hexobjectKey] ?? (part.headline ? 'sword' : null);
+  const icon =
+    ITEM_ICON_BY_KEY[obj.hexobjectKey] ??
+    RESOURCE_ICON_BY_KEY[obj.hexobjectKey] ??
+    (part.headline ? 'sword' : (GROUP_ICON[obj.groupType] ?? null));
   const accent = tone ? RARITY_COLOR[tone] : (part.accent ?? GROUP_ACCENT[obj.groupType]);
 
   const title =
@@ -338,6 +357,7 @@ export function buildHexInfo(
     headline: part.headline ?? null,
     locked: part.locked ?? false,
     broken: part.broken ?? false,
+    effect: null,
     tags: part.tags,
     stats: part.stats,
     actions,

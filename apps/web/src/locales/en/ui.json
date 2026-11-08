@@ -36,6 +36,12 @@
       "stash": "Stash",
       "loot": "Loot chest"
     },
+    "effects": {
+      "sawHurts": "Hurts too strong"
+    },
+    "hints": {
+      "saw": "Answer in 5 s or the saw bites."
+    },
     "actions": "Actions",
     "free": "Free",
     "will": "{n} Will",

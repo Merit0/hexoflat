@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { heartsFor } from './build-hex-info';
+import { getPrototype } from '@hexoflat/engine';
+import type { THexobject } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { buildHexInfo, heartsFor } from './build-hex-info';
+
+const t = (key: string) => key;
+const te = () => false;
+
+function placed(key: THexobjectKey): THexobject {
+  return { ...getPrototype(key), id: `test-${key}` };
+}
 
 describe('heartsFor', () => {
   it('draws one heart per hp for small creatures', () => {
@@ -19,5 +29,26 @@ describe('heartsFor', () => {
 
   it('rounds partial hearts to halves', () => {
     expect(heartsFor(2, 15).fills.slice(0, 2)).toEqual([1, 0.5]);
+  });
+});
+
+describe('buildHexInfo icon', () => {
+  it('uses the skull for creatures', () => {
+    const view = buildHexInfo(placed('skeleton-pack'), 'Creature', t, te);
+    expect(view.icon).toBe('skull');
+    expect(view.rarity).toBeNull();
+  });
+
+  it('uses the item own icon for a sword', () => {
+    expect(buildHexInfo(placed('sword'), 'Equipment', t, te).icon).toBe('sword');
+  });
+
+  it('uses the tower for constructions', () => {
+    expect(buildHexInfo(placed('fireplace'), 'Structure', t, te).icon).toBe('tower');
+  });
+
+  it('uses a resource icon for trees and mountains', () => {
+    expect(buildHexInfo(placed('tree'), 'Resource', t, te).icon).toBe('wood');
+    expect(buildHexInfo(placed('mountain'), 'Resource', t, te).icon).toBe('rock');
   });
 });

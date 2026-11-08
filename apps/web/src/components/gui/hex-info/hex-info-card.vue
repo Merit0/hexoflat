@@ -23,6 +23,10 @@
     <section v-if="hasReadout" class="card__readout" data-testid="hex-info-readout">
       <hex-info-hearts v-if="view.hearts" :hearts="view.hearts" large />
 
+      <div v-else-if="view.effect" class="card__effect" data-testid="hex-info-effect">
+        <strong class="card__effect-label">{{ view.effect.label }}</strong>
+      </div>
+
       <div v-else-if="view.supply" class="card__supply" data-testid="hex-info-supply">
         <div class="card__pips">
           <span
@@ -110,7 +114,11 @@ const props = defineProps<{ view: HexInfoView }>();
 const { t } = useI18n();
 
 const hasReadout = computed(
-  () => !!props.view.hearts || !!props.view.supply || props.view.variant === 'construction',
+  () =>
+    !!props.view.hearts ||
+    !!props.view.supply ||
+    !!props.view.effect ||
+    props.view.variant === 'construction',
 );
 
 const sealState = computed(() => {
@@ -206,6 +214,16 @@ const rows = computed(() => {
   background: var(--gem);
   box-shadow: 0 0 6px color-mix(in srgb, var(--gem) 60%, transparent);
   transform: rotate(45deg) scale(0.85);
+}
+.card__effect {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card__effect-label {
+  color: #ff8a7a;
+  font-size: 1rem;
+  font-weight: 700;
 }
 .card__flavor {
   margin: 0;
