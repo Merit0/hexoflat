@@ -9,13 +9,14 @@
     :data-drop-container="location.container"
     :data-drop-index="location.container === 'equip' ? undefined : location.index"
     :data-drop-slot="location.container === 'equip' ? location.slot : undefined"
-    :tabindex="item ? 0 : undefined"
+    :tabindex="item ? 0 : -1"
     :role="item ? 'button' : undefined"
     :aria-label="label"
     @pointerdown.prevent="onPointerDown"
     @dblclick.prevent="onQuickMove"
     @contextmenu.prevent="onQuickMove"
     @keydown.enter.prevent="onQuickMove"
+    @keydown="onNavigate"
   >
     <slot name="placeholder" />
     <stash-item-token v-if="item && !isLifted" :item="item" />
@@ -32,6 +33,7 @@ import type { TItemLocation } from '@hexoflat/engine/inventory/item-location';
 import { getObjectRarityTone } from '@/render/rarity';
 import { showsCounter } from '@/composables/item-counter';
 import { locationKey, stashDrag, stashFx } from '@/composables/stash-drag-state';
+import { isGridNavKey, nextCellIndex } from '@/composables/stash-grid-nav';
 import { beginStashDrag, quickMove } from '@/composables/use-stash-drag';
 import StashItemToken from './stash-item-token.vue';
 
@@ -81,6 +83,18 @@ const classes = computed(() => ({
 
 function onPointerDown(event: PointerEvent) {
   if (props.item) beginStashDrag(event, props.location, props.item);
+}
+
+function onNavigate(event: KeyboardEvent) {
+  if (!isGridNavKey(event.key)) return;
+  const current = event.currentTarget as HTMLElement;
+  const grid = current.closest<HTMLElement>('[data-cell-grid]');
+  if (!grid) return;
+  const cells = [...grid.querySelectorAll<HTMLElement>('[data-drop-container]')];
+  const columns = Number(grid.dataset.columns) || 1;
+  const target = nextCellIndex(cells.indexOf(current), event.key, columns, cells.length);
+  event.preventDefault();
+  if (target !== null) cells[target].focus();
 }
 
 function onQuickMove(event: MouseEvent | KeyboardEvent) {

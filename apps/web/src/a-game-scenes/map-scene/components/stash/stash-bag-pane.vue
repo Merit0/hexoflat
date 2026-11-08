@@ -26,7 +26,7 @@
       more-selector="[data-item-key]"
       more-testid="stash-more-bag"
     >
-      <div class="grid">
+      <div class="grid" data-cell-grid data-columns="7">
         <stash-cell
           v-for="(cell, position) in bagView"
           :key="cell.index"

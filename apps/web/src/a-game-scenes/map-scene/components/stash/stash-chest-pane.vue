@@ -49,7 +49,13 @@
         {{ stashFilterText(filter) }}
       </button>
     </div>
-    <div v-if="hasChest" class="grid" data-testid="stash-chest-grid">
+    <div
+      v-if="hasChest"
+      class="grid"
+      data-cell-grid
+      data-columns="7"
+      data-testid="stash-chest-grid"
+    >
       <stash-cell
         v-for="cell in activeCells"
         :key="cell.index"

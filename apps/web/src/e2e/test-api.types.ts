@@ -81,7 +81,7 @@ export interface HexoflatTestApi {
   setStash(cells: ({ key: string; amount: number } | null)[]): void;
   setBag(cells: ({ key: string; amount: number } | null)[]): void;
   setHeroHealth(current: number): void;
-  placeSquadNextToHero(key: string): TestHexCoordinates;
+  placeHexobjectNextToHero(key: string): TestHexCoordinates;
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): void;
   giveHeroTheTurn(will?: number): void;

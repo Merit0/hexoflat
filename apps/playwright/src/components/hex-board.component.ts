@@ -77,7 +77,7 @@ export class HexBoardComponent extends BaseComponent {
 
   async placeSquadNextToHero(key: string): Promise<TestHexCoordinates> {
     return this.page.evaluate(
-      (squad) => window.__HEXOFLAT_TEST__!.placeSquadNextToHero(squad),
+      (squad) => window.__HEXOFLAT_TEST__!.placeHexobjectNextToHero(squad),
       key,
     );
   }
@@ -196,7 +196,7 @@ export class HexBoardComponent extends BaseComponent {
   }
 
   async placeItemNextToHero(key: string): Promise<TestHexCoordinates> {
-    return this.page.evaluate((k) => window.__HEXOFLAT_TEST__!.placeSquadNextToHero(k), key);
+    return this.page.evaluate((k) => window.__HEXOFLAT_TEST__!.placeHexobjectNextToHero(k), key);
   }
 
   async hoverTileForInfo(coordinates: TestHexCoordinates): Promise<void> {

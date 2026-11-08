@@ -690,9 +690,6 @@
     },
     "chest": "Chest {n}",
     "chests": "Stash chests",
-    "buy": {
-      "after": "Unlock Chest {prev} first."
-    },
     "unlock": "Unlock",
     "pay": {
       "hint": "Put coins in your hand and drag them over the Stash Chest to unlock it.",
@@ -711,6 +708,7 @@
       "sort": "Sort"
     },
     "moreBelow": "{n} more below",
-    "nothingToStore": "No resources or consumables in the bag."
+    "nothingToStore": "No resources or consumables in the bag.",
+    "lockedChest": "Unlock Chest {prev} first."
   }
 }

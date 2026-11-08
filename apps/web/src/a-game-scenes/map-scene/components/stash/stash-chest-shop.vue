@@ -24,8 +24,8 @@
       class="lock"
       viewBox="0 0 24 24"
       role="img"
-      :aria-label="t('stash.buy.after', { prev: stash.chests + 1 })"
-      data-testid="stash-buy-after"
+      :aria-label="t('stash.lockedChest', { prev: stash.chests + 1 })"
+      data-testid="stash-locked-hint"
     >
       <rect x="5" y="11" width="14" height="9" rx="1.5" />
       <path d="M8 11V8a4 4 0 0 1 8 0v3" />

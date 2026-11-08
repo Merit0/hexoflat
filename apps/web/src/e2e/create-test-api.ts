@@ -237,7 +237,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       heroStore.hero.adjustHealthOnStatChange();
       heroStore.saveProgressToStorage();
     },
-    placeSquadNextToHero(key: string): TestHexCoordinates {
+    placeHexobjectNextToHero(key: string): TestHexCoordinates {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('Test hooks are off');
       const map = worldStore.map as HexMapModel | null;
       const at = heroStore.heroCoordinates;

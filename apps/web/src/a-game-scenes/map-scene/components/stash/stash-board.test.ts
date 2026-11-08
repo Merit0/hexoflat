@@ -205,7 +205,7 @@ describe('stash board layout', () => {
       byId('stash-tab-3')!.click();
       await nextTick();
       expect(byId('stash-price')).toBeNull();
-      expect(byId('stash-buy-after')?.getAttribute('aria-label')).toContain('2');
+      expect(byId('stash-locked-hint')?.getAttribute('aria-label')).toContain('2');
       expect(byId('stash-shop')?.textContent?.trim()).toBe('');
     });
 
@@ -425,5 +425,68 @@ describe('stash filters, actions and the bag overflow button', () => {
       byId('stash-more-bag')!.click();
       expect(scroller.scrollTop).toBe(32);
     });
+  });
+});
+
+describe('stash keyboard navigation', () => {
+  beforeEach(mountBoard);
+  afterEach(() => {
+    app?.unmount();
+    host.remove();
+  });
+
+  const press = (target: HTMLElement | null, key: string) =>
+    target!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+  it('moves focus between the cells of the bag with the arrow keys, empty cells included', () => {
+    const first = byId('stash-bag-cell-0')!;
+    first.focus();
+    expect(document.activeElement).toBe(first);
+
+    press(first, 'ArrowRight');
+    expect(document.activeElement).toBe(byId('stash-bag-cell-1'));
+
+    press(document.activeElement as HTMLElement, 'ArrowDown');
+    expect(document.activeElement).toBe(byId('stash-bag-cell-8'));
+
+    press(document.activeElement as HTMLElement, 'ArrowLeft');
+    press(document.activeElement as HTMLElement, 'ArrowUp');
+    expect(document.activeElement).toBe(byId('stash-bag-cell-0'));
+  });
+
+  it('stops at the edge of the grid instead of leaving it', () => {
+    const first = byId('stash-bag-cell-0')!;
+    first.focus();
+    press(first, 'ArrowLeft');
+    press(first, 'ArrowUp');
+    expect(document.activeElement).toBe(first);
+  });
+
+  it('jumps to the first and the last cell with Home and End', () => {
+    const middle = byId('stash-bag-cell-20')!;
+    middle.focus();
+    press(middle, 'End');
+    expect(document.activeElement).toBe(byId('stash-bag-cell-52'));
+    press(document.activeElement as HTMLElement, 'Home');
+    expect(document.activeElement).toBe(byId('stash-bag-cell-0'));
+  });
+
+  it('walks the stash grid on its own and never into the bag', async () => {
+    useHeroStashStore().setChests(1);
+    await nextTick();
+    const start = byId('stash-cell-0')!;
+    start.focus();
+    press(start, 'End');
+    expect(document.activeElement).toBe(byId('stash-cell-41'));
+    press(document.activeElement as HTMLElement, 'ArrowDown');
+    expect(document.activeElement).toBe(byId('stash-cell-41'));
+  });
+
+  it('leaves the other keys to their own handlers', () => {
+    const first = byId('stash-bag-cell-0')!;
+    first.focus();
+    const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true, cancelable: true });
+    first.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
   });
 });
