@@ -18,7 +18,7 @@ export function planStoreResources(
     const category = categoryOf(item);
     if (category !== 'resource' && category !== 'consumable') return;
     candidates += 1;
-    const placed = placeInto(stash, item);
+    const placed = placeInto(stash, item, opts.stashPreferred);
     if (!placed) return;
     stash = placed;
     bag[index] = null;

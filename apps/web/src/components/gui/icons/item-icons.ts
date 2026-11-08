@@ -58,6 +58,7 @@ export const ICON_PATHS = {
   sun: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z M12 2v3 M12 19v3 M2 12h3 M19 12h3 M5 5l2 2 M17 17l2 2 M5 19l2-2 M17 7l2-2',
   ward: 'M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z M12 8v2 M12 14v2 M8 12h2 M14 12h2',
   tower: 'M6 21V8H4V3h4v2h2V3h4v2h2V3h4v5h-2v13z M3 21h18 M10 21v-5a2 2 0 0 1 4 0v5',
+  sort: 'M4 6h16 M4 12h11 M4 18h6 M19 14v6 M16 17l3 3 3-3',
   feather: 'M20 4C10 4 5 10 5 19 M5 19l3-3 M20 4c0 8-5 12-12 12 M10 11h6',
 } as const;
 

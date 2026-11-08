@@ -89,7 +89,10 @@ export function unlockNextChest(): TUnlockChestResult {
 }
 
 export function storeResources() {
-  return run((agg) => planStoreResources(agg, { stashOpen: useHeroStashStore().isOpen }));
+  const stash = useHeroStashStore();
+  return run((agg) =>
+    planStoreResources(agg, { stashOpen: stash.isOpen, stashPreferred: stash.preferredRange }),
+  );
 }
 
 export function sortStash() {

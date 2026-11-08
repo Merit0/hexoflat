@@ -52,4 +52,5 @@ export interface ITransferOptions {
 
 export interface IStashActionOptions {
   stashOpen: boolean;
+  stashPreferred?: ICellRange;
 }

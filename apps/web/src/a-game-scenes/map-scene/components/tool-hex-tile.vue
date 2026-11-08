@@ -18,7 +18,11 @@
       @act="executeAction"
       @hide="emit('hide')"
     />
-    <div v-if="isWorking && !isReading" class="time-chip label" data-testid="tool-working-timer">
+    <div
+      v-if="isWorking && !isReading && !isOpeningStash"
+      class="time-chip label"
+      data-testid="tool-working-timer"
+    >
       {{ secondsLeft }}s
     </div>
   </tool-hex-anchor>
@@ -50,6 +54,7 @@ import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useBookReading } from '@/composables/use-book-reading';
+import { useStashOpening } from '@/composables/use-stash-opening';
 import { usePortal } from '@/composables/use-portal';
 import { portalRefusalText } from '@/composables/use-portal-messages';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -92,7 +97,9 @@ const hoveredTile = computed<HexTileModel | null>(() => {
   );
 });
 
-const { isReading, anchor } = useBookReading(activeToolKey);
+const { isReading, anchor: bookAnchor } = useBookReading(activeToolKey);
+const { isOpening: isOpeningStash, anchor: stashAnchor } = useStashOpening(activeToolKey);
+const anchor = computed(() => (isOpeningStash.value ? stashAnchor.value : bookAnchor.value));
 
 const toolIconPath = computed(
   () => getPrototype(activeToolKey.value ?? HEXOBJECT_KEYS.HAND).spritePath ?? '',
@@ -254,7 +261,7 @@ onBeforeUnmount(() => {
 });
 
 const isWorking = computed(() => {
-  if (isReading.value) return true;
+  if (isReading.value || isOpeningStash.value) return true;
   const a = pendingAction.value;
   if (!a?.endsAt) return false;
 

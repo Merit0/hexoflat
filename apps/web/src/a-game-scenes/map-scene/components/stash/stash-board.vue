@@ -9,15 +9,11 @@
     <header class="top">
       <img class="emblem" :src="CHEST_IMAGE" alt="" aria-hidden="true" />
       <h2>{{ t('stash.title') }}</h2>
-      <button
-        type="button"
-        class="close-btn"
-        data-testid="stash-close"
-        :aria-label="t('stash.close')"
-        @click="closeStashBoard()"
-      >
-        ×
-      </button>
+      <board-close-button
+        testid="stash-close"
+        :label="t('stash.close')"
+        @close="closeStashBoard()"
+      />
     </header>
     <div class="ornament" aria-hidden="true"><span></span><i></i><span></span></div>
 
@@ -36,6 +32,7 @@ import { closeStashBoard } from '@/composables/use-stash-board';
 import { stashDrag } from '@/composables/stash-drag-state';
 import { useInventoryCellSize } from '@/composables/use-inventory-cell-size';
 import { dragCancel } from '@/composables/use-stash-drag';
+import BoardCloseButton from '@/components/gui/board/board-close-button.vue';
 import StashBagPane from './stash-bag-pane.vue';
 import StashChestPane from './stash-chest-pane.vue';
 import StashDragGhost from './stash-drag-ghost.vue';
@@ -76,8 +73,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 44px;
-  padding: 0 52px;
+  min-height: 54px;
+  padding: 0 64px;
 }
 .emblem {
   width: 40px;
@@ -95,18 +92,6 @@ h2 {
   text-align: center;
   color: rgba(255, 236, 186, 0.95);
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
-}
-.close-btn {
-  position: absolute;
-  top: 2px;
-  right: 8px;
-  width: 40px;
-  min-height: 40px;
-  height: 40px;
-  padding: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1;
 }
 .ornament {
   display: flex;

@@ -39,6 +39,7 @@ const props = defineProps<{
   item: InventoryItem | null;
   testid: string;
   location: TItemLocation;
+  dim?: boolean;
 }>();
 
 const i18n = useI18n();
@@ -70,6 +71,7 @@ const isNext = computed(
 const classes = computed(() => ({
   'cursor-grab': !!props.item,
   'is-lifted': isLifted.value,
+  'is-dim': !!props.dim,
   'is-next': isNext.value && !isTarget.value,
   'is-valid': isTarget.value && !!stashDrag.preview?.ok && stashDrag.preview.kind !== 'noop',
   'is-invalid': isTarget.value && stashDrag.preview?.ok === false,
@@ -157,6 +159,9 @@ function onQuickMove(event: MouseEvent | KeyboardEvent) {
   .cell.is-shake {
     animation: none;
   }
+}
+.cell.is-dim > :not(.slot) {
+  opacity: 0.18;
 }
 .amount {
   position: absolute;

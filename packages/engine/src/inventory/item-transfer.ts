@@ -1,7 +1,8 @@
 export { planItemMove } from './plan-item-move';
 export { planItemAutoPlace } from './plan-auto-place';
 export { planStoreResources, planSortStash } from './plan-stash-actions';
-export { carriedWeightKg, compareItemsForSort, fitsEquipSlot } from './item-queries';
+export { carriedWeightKg, categoryOf, compareItemsForSort, fitsEquipSlot } from './item-queries';
+export type { TItemCategory } from './item-queries';
 export type {
   IInventoryAggregate,
   IStashActionOptions,

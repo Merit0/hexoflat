@@ -21,7 +21,11 @@
         :style="{ width: loadWidth }"
       ></i>
     </div>
-    <stash-scroll-box class="bag-scroll">
+    <stash-scroll-box
+      class="bag-scroll"
+      more-selector="[data-item-key]"
+      more-testid="stash-more-bag"
+    >
       <div class="grid">
         <stash-cell
           v-for="(cell, position) in bagView"

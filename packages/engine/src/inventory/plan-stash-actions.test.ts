@@ -27,6 +27,23 @@ describe('planStoreResources', () => {
     expect(done.next.stash.filter(Boolean)).toHaveLength(2);
   });
 
+  it('prefers the chest on view and spills over to the others', () => {
+    const agg = aggregate({
+      bag: { 0: item(K.COINS, 3), 1: item(K.HEALTH_BOTTLE, 2) },
+      stash: Object.fromEntries(
+        Array.from({ length: 41 }, (_, i) => [42 + i, item(K.AXE, 1, `a-${i}`)]),
+      ),
+      stashSize: 84,
+    });
+    const done = success(
+      planStoreResources(agg, { stashOpen: true, stashPreferred: { start: 42, end: 84 } }),
+    );
+    const slots = done.next.stash.map((cell, index) => (cell && index >= 83 ? cell.key : null));
+    expect(done.next.stash[83]).not.toBeNull();
+    expect(slots.filter(Boolean)).toHaveLength(1);
+    expect(done.next.stash.slice(0, 42).filter(Boolean)).toHaveLength(1);
+  });
+
   it('reports nothing to store when the bag holds only gear and tools', () => {
     const agg = aggregate({ bag: { 0: item(K.SWORD), 1: item(K.AXE) } });
     const done = success(planStoreResources(agg, { stashOpen: true }));

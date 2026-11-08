@@ -5,6 +5,7 @@ import {
   STASH_CHEST_CELLS,
   STASH_MAX_CHESTS,
 } from '@hexoflat/engine/inventory/stash-constants';
+import type { StashFilter } from '@/composables/stash-filter';
 import type { StashCells } from '@/services/persistence/stash-storage';
 import { readSavedStash, writeSavedStash } from '@/services/persistence/stash-storage';
 
@@ -12,11 +13,21 @@ function pad(cells: StashCells): StashCells {
   return Array.from({ length: STASH_CAPACITY }, (_, index) => cells[index] ?? null);
 }
 
+interface HeroStashState {
+  cells: StashCells;
+  chests: number;
+  activeChest: number;
+  filter: StashFilter;
+  isOpen: boolean;
+  isHydrated: boolean;
+}
+
 export const useHeroStashStore = defineStore('heroStash', {
-  state: () => ({
+  state: (): HeroStashState => ({
     cells: emptyStash().cells,
     chests: 0,
     activeChest: 0,
+    filter: 'all',
     isOpen: false,
     isHydrated: false,
   }),
@@ -52,6 +63,10 @@ export const useHeroStashStore = defineStore('heroStash', {
 
     close() {
       this.isOpen = false;
+    },
+
+    setFilter(filter: StashFilter) {
+      this.filter = filter;
     },
 
     selectChest(index: number) {

@@ -698,6 +698,19 @@
       "hint": "Put coins in your hand and drag them over the Stash Chest to unlock it.",
       "notEnough": "Not enough coins to pay",
       "unlocked": "You unlock the stash chest"
-    }
+    },
+    "filter": {
+      "all": "All",
+      "gear": "Gear",
+      "tool": "Tools",
+      "resource": "Resources",
+      "consumable": "Consumables"
+    },
+    "action": {
+      "store": "Store resources",
+      "sort": "Sort"
+    },
+    "moreBelow": "{n} more below",
+    "nothingToStore": "No resources or consumables in the bag."
   }
 }

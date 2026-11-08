@@ -1,5 +1,6 @@
 import { i18n } from '@/i18n';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import type { StashFilter } from './stash-filter';
 import type { TTransferError } from '@hexoflat/engine/inventory/item-transfer';
 import type { StashDropLabel } from './stash-drop-label';
 
@@ -52,4 +53,27 @@ export function stashDropText(label: StashDropLabel): string {
 
 export function warnHero(text: string): void {
   useHeroToolStore().setActionMessage(text);
+}
+
+export function stashFilterText(filter: StashFilter): string {
+  switch (filter) {
+    case 'all':
+      return t('stash.filter.all');
+    case 'gear':
+      return t('stash.filter.gear');
+    case 'tool':
+      return t('stash.filter.tool');
+    case 'resource':
+      return t('stash.filter.resource');
+    case 'consumable':
+      return t('stash.filter.consumable');
+  }
+}
+
+export function stashMoreText(count: number): string {
+  return t('stash.moreBelow', { n: count });
+}
+
+export function stashNothingToStoreText(): string {
+  return t('stash.nothingToStore');
 }
