@@ -124,3 +124,13 @@ Pure view model in `services/hex-info/build-hex-info.ts` (content -> `HexInfoVie
 - [ ] Persistence goes through `services/persistence/`
 - [ ] Anything extracted is actually imported, and its inline twin is gone
 - [ ] Lint passes without raising any threshold
+
+## Stash board (2026-11-08)
+
+- State: `stores/hero-stash-store.ts` (cells, chests, activeChest, filter, isOpen; no rules), `services/persistence/stash-storage.ts` (`hexoflat.hero.stash.v2`). The adapter between the `rXcY` bag grid and the engine's flat cells is `services/inventory/inventory-aggregate.ts`; `stash-transfer.ts` runs a `plan*` and applies the result in one synchronous step (`moveItem`, `autoPlaceItem`, `storeResources`, `sortStash`, `unlockNextChest`).
+- UI: `a-game-scenes/map-scene/components/stash/` replaces the hero-panel content while `heroStash.isOpen` (like the Book of Will). It has its own pointer drag (`composables/use-stash-drag.ts`, state in `stash-drag-state.ts`), deliberately NOT the Inventory's `use-inventory-drag`. Cell size and padding come from `use-inventory-cell-size.ts`, which repeats the Inventory's fit so cells match it.
+- Closing: `use-stash-session.ts` (walking away, leaving the location, a battle, the Book of Will, Escape). While open, `use-stash-opening.ts` keeps the hand tool working on the chest hex.
+- Messages: never a custom toast. Use `heroToolStore.setActionMessage(text, icon?, cost?, tone?)` (icons `will` / `coins`, tones `warn` / `info` / `success`) shown by `action-alert-banner`. No success toasts for plain moves.
+- Counter chips: `composables/item-counter.ts` (`showsCounter`) gives every stackable item a chip, also a stack of one.
+- Coins in a hand slot are a tool (`toolKeyOfItem`, `equip-token` USE); over the Stash Chest hex `tool-hex-tile.vue` offers "Unlock" (priority 95, equal to OPEN so the auto tool pick does not override the player's choice).
+- Dev: settings has "Dev: +500 coins" (dev build only).

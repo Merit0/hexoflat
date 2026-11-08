@@ -134,3 +134,10 @@ The old combat is gone (B6 deleted `src/combat/`, `EHexActionType.ATTACK/BLOCK` 
 - [ ] Tests run without Pinia or jsdom
 - [ ] `CONTENT_VERSION` bumped only if the change is genuinely breaking
 - **Window deadline, fuzz, cave exit (Oleh, 2026-11-01).** `performAction`'s guard rejects `place-shield`, `remove-shield` and `aim` with `WINDOW_CLOSED` once `atMs` passes `reaction.deadlineMs` (`reaction-timeout` and `take-hit` still close it). The cave `gates: entry` piece builds `cave-exit` into the outer wall of the entry room (the room farthest from the centre, chosen in `blobs`), so the entry coordinate is a wall cell on the border. `battle-fuzz.test.ts` (random play incl. garbage actions, `FUZZ_BATTLES` env) and `battle-adhoc.test.ts` guard the invariants; add a new rule's invariant there. Read `docs/battle-system/BATTLE-HANDOFF.md` first.
+
+## Inventory transfers and the camp stash (`src/inventory/`, 2026-11-08)
+
+- Pure rules over a flat aggregate `{ bag, equip, stash }` of `InventoryItem` cells (`slotKey` / `isNew` belong to the web adapter, the rules never read them): `planItemMove`, `planItemAutoPlace`, `planStoreResources`, `planSortStash`, `planUnlockStashChest`, `carriedWeightKg`, `compareItemsForSort`, `categoryOf`. All return a result with a new aggregate or a refusal code (`TTransferError`), never mutate, never touch randomness (`newId` is injected for split stacks).
+- Stash model: up to 5 chests of 6x7 = 42 cells (`stash-constants.ts`), `IStashState { cells (210), chests }`, only the first `chests * 42` cells are open. Prices `STASH_CHEST_PRICES` = 100 then 1000, bought in order. `planUnlockStashChest` pays exactly the price from the coins held in a hand slot (`coinHandSlot`) and leaves the rest; coins in the bag or the stash never count.
+- Stash weighs nothing; weight may grow only up to the capacity (`OVERWEIGHT`), shrinking is always allowed. `stashPreferred` (a cell range) makes auto-place and Store resources fill the chest on view first. No chest bought: `NO_CHEST`.
+- Inventory moves are NOT engine commands (they go through web store actions); the rules still live here so the server can reuse them.

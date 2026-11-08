@@ -58,18 +58,6 @@ h2 {
     0 0 12px rgba(255, 233, 138, 0.4),
     0 2px 3px rgba(0, 0, 0, 0.8);
 }
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 50px;
-  min-height: 50px;
-  height: 50px;
-  padding: 0;
-  font-size: 1.7rem;
-  font-weight: 700;
-  line-height: 1;
-}
 .ornament {
   display: flex;
   align-items: center;
@@ -246,12 +234,6 @@ button::before {
 }
 button:not(:disabled):hover {
   --face: linear-gradient(180deg, #4a5d6e, #34444f);
-}
-.close-btn {
-  padding: 0;
-}
-.close-btn::before {
-  background: var(--face);
 }
 .answers button {
   font-size: 2.1rem;
