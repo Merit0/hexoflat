@@ -76,6 +76,8 @@ export interface HexoflatTestApi {
   grantInventoryItem(key: string, amount: number): void;
   getStash(): ({ key: string; amount: number; id: string } | null)[];
   getBag(): ({ key: string; amount: number; id: string } | null)[];
+  getStashChests(): number;
+  setStashChests(chests: number): void;
   setStash(cells: ({ key: string; amount: number } | null)[]): void;
   setBag(cells: ({ key: string; amount: number } | null)[]): void;
   setHeroHealth(current: number): void;

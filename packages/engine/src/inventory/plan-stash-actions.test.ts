@@ -43,6 +43,11 @@ describe('planStoreResources', () => {
     expect(failure(planStoreResources(agg, { stashOpen: true }))).toBe('CONTAINER_FULL');
   });
 
+  it('asks to buy a chest when there is none', () => {
+    const none = aggregate({ bag: { 0: item(K.COINS, 3) }, stashSize: 0 });
+    expect(failure(planStoreResources(none, { stashOpen: true }))).toBe('NO_CHEST');
+  });
+
   it('is locked while the stash is closed', () => {
     expect(failure(planStoreResources(aggregate({}), { stashOpen: false }))).toBe('STASH_LOCKED');
   });

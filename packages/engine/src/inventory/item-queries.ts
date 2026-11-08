@@ -66,6 +66,19 @@ export function rarityToneOf(item: InventoryItem): TRarityTone | null {
   return null;
 }
 
+function toneRank(item: InventoryItem): number {
+  const tone = rarityToneOf(item);
+  return tone ? TONE_SORT_ORDER.indexOf(tone) : TONE_SORT_ORDER.length;
+}
+
+export function compareItemsForSort(a: InventoryItem, b: InventoryItem): number {
+  return (
+    CATEGORY_ORDER.indexOf(categoryOf(a)) - CATEGORY_ORDER.indexOf(categoryOf(b)) ||
+    toneRank(a) - toneRank(b) ||
+    a.key.localeCompare(b.key)
+  );
+}
+
 export function carriedWeightKg(agg: IInventoryAggregate): number {
   const worn = Object.values(agg.equip).flatMap((item) => (item ? [item] : []));
   const packed = agg.bag.flatMap((item) => (item ? [item] : []));

@@ -3,6 +3,7 @@
     <div
       ref="scroller"
       class="scroller"
+      data-scroller
       :class="{ 'fade-top': canScrollUp, 'fade-bottom': canScrollDown }"
       @scroll.passive="measure"
     >
@@ -37,8 +38,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => observer?.disconnect());
-
-defineExpose({ scroller });
 </script>
 
 <style scoped>
@@ -46,14 +45,14 @@ defineExpose({ scroller });
   position: relative;
   flex: 1;
   min-height: 0;
+  margin-right: calc(-1 * var(--stash-pad, 0px));
 }
 .scroller {
   position: absolute;
   inset: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(122, 141, 160, 0.5) transparent;
   --fade-top: 0px;
   --fade-bottom: 0px;
   -webkit-mask-image: linear-gradient(
@@ -70,6 +69,22 @@ defineExpose({ scroller });
     #000 calc(100% - var(--fade-bottom)),
     transparent 100%
   );
+}
+.scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.scroller::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .scroller {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
 }
 .scroller.fade-top {
   --fade-top: 22px;

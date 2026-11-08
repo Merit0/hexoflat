@@ -61,6 +61,16 @@
       <button
         v-if="isDev"
         class="dev-btn"
+        data-testid="settings-dev-add-coins-button"
+        type="button"
+        @click="addCoins"
+      >
+        {{ t('settings.devAddCoins') }}
+      </button>
+
+      <button
+        v-if="isDev"
+        class="dev-btn"
         data-testid="settings-dev-cut-health-button"
         type="button"
         @click="heroStore.takeDamage(DEV_HEALTH_CUT)"
@@ -76,6 +86,9 @@ import { useI18n } from 'vue-i18n';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroStore } from '@/stores/hero-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { SUPPORTED_LOCALES, type TLocale } from '@/i18n/locale';
 
 const LOCALE_LABELS: Record<TLocale, string> = {
@@ -87,10 +100,19 @@ const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const uiSettings = useUiSettingsStore();
 const heroStore = useHeroStore();
+const inventoryStore = useHeroInventoryStore();
+const heroToolStore = useHeroToolStore();
 
 const isDev = import.meta.env.DEV;
 const DEV_WILL_GRANT = 50;
 const DEV_HEALTH_CUT = 0.5;
+const DEV_COINS_GRANT = 500;
+
+function addCoins() {
+  inventoryStore.hydrate();
+  const result = inventoryStore.putToInventory(HEXOBJECT_KEYS.COINS, DEV_COINS_GRANT);
+  if (!result.ok && result.message) heroToolStore.setActionMessage(result.message);
+}
 
 function close() {
   overlayStore.closeOverlay('settings');

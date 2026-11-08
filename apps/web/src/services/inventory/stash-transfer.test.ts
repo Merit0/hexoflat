@@ -7,6 +7,7 @@ import { readSavedStash } from '@/services/persistence/stash-storage';
 import {
   autoPlaceItem,
   moveItem,
+  unlockNextChest,
   readInventoryAggregate,
   sortStash,
   storeResources,
@@ -19,6 +20,7 @@ function setup() {
   const stash = useHeroStashStore();
   inventory.hydrate();
   inventory.carryCapacityKg = 10;
+  stash.setChests(1);
   return { inventory, stash };
 }
 
@@ -48,7 +50,7 @@ describe('stash transfers on the real stores', () => {
     expect(inventory.countItem(K.HEALTH_BOTTLE)).toBe(0);
     expect(stash.cells[5]).toMatchObject({ id, amount: 3, slotKey: 'stash:5' });
     expect(occurrences(id)).toBe(1);
-    expect(readSavedStash()?.[5]?.id).toBe(id);
+    expect(readSavedStash()?.cells[5]?.id).toBe(id);
   });
 
   it('refuses while the stash is closed and leaves both stores alone', () => {
@@ -116,5 +118,98 @@ describe('stash transfers on the real stores', () => {
     expect(sortStash().ok).toBe(true);
     const order = stash.cells.flatMap((cell) => (cell ? [cell.key] : []));
     expect(order.indexOf(K.HEALTH_BOTTLE)).toBeLessThan(order.indexOf(K.COINS));
+  });
+
+  function holdCoins(amount: number, slot: 'weapon' | 'shield' = 'weapon') {
+    const inventory = useHeroInventoryStore();
+    inventory.putToInventory(K.COINS, amount);
+    const index = readInventoryAggregate().bag.findIndex((item) => item?.key === K.COINS);
+    moveItem({ container: 'bag', index }, { container: 'equip', slot });
+    return inventory;
+  }
+
+  it('pays 100 from the coins in the hand for the first chest and keeps the rest there', () => {
+    const { stash } = setup();
+    stash.setChests(0);
+    stash.open();
+    const inventory = holdCoins(140);
+
+    const unlocked = unlockNextChest();
+
+    expect(unlocked.ok && unlocked.price).toBe(100);
+    expect(stash.chests).toBe(1);
+    expect(stash.ownedCells).toHaveLength(42);
+    expect(inventory.equippedItems.weapon).toMatchObject({ key: K.COINS, amount: 40 });
+    expect(stash.activeChest).toBe(0);
+    expect(readSavedStash()?.chests).toBe(1);
+  });
+
+  it('gives the bare hand back when the stack is exactly the price', () => {
+    const { stash } = setup();
+    stash.setChests(0);
+    const inventory = holdCoins(100);
+    expect(unlockNextChest().ok).toBe(true);
+    expect(inventory.equippedItems.weapon?.key).toBe(K.HAND);
+    expect(inventory.countItem(K.COINS)).toBe(0);
+  });
+
+  it('refuses 90 coins, reports the price and changes nothing', () => {
+    const { stash } = setup();
+    stash.setChests(0);
+    const inventory = holdCoins(90);
+    expect(unlockNextChest()).toEqual({ ok: false, reason: 'NOT_ENOUGH_COINS', price: 100 });
+    expect(stash.chests).toBe(0);
+    expect(inventory.equippedItems.weapon?.amount).toBe(90);
+  });
+
+  it('does not count coins that stay in the bag', () => {
+    const { inventory, stash } = setup();
+    stash.setChests(0);
+    inventory.putToInventory(K.COINS, 5000);
+    expect(unlockNextChest()).toEqual({ ok: false, reason: 'NO_COINS_IN_HAND', price: 100 });
+    expect(stash.chests).toBe(0);
+  });
+
+  it('charges 1000 for the next chest and jumps to its tab', () => {
+    const { stash } = setup();
+    holdCoins(1200, 'shield');
+    const unlocked = unlockNextChest();
+    expect(unlocked.ok && unlocked.price).toBe(1000);
+    expect(stash.chests).toBe(2);
+    expect(stash.activeChest).toBe(1);
+    expect(useHeroInventoryStore().equippedItems.shield?.amount).toBe(200);
+  });
+
+  it('works while the stash board is closed', () => {
+    const { stash } = setup();
+    stash.setChests(0);
+    stash.close();
+    holdCoins(100);
+    expect(unlockNextChest().ok).toBe(true);
+  });
+
+  it('puts an item into the chest on view first', () => {
+    const { inventory, stash } = setup();
+    stash.setChests(2);
+    stash.selectChest(1);
+    stash.open();
+    inventory.putToInventory(K.SWORD, 1);
+
+    const result = autoPlaceItem({ container: 'bag', index: bagIndexOf(K.SWORD) }, 'stash');
+
+    expect(result.ok).toBe(true);
+    expect(stash.cells[42]?.key).toBe(K.SWORD);
+    expect(stash.cells[0]).toBeNull();
+  });
+
+  it('asks for a chest when none is bought', () => {
+    const { inventory, stash } = setup();
+    stash.setChests(0);
+    stash.open();
+    inventory.putToInventory(K.SWORD, 1);
+    expect(autoPlaceItem({ container: 'bag', index: bagIndexOf(K.SWORD) }, 'stash')).toEqual({
+      ok: false,
+      reason: 'NO_CHEST',
+    });
   });
 });

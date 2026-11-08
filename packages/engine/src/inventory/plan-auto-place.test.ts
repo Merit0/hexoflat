@@ -68,4 +68,60 @@ describe('planItemAutoPlace', () => {
     const agg = aggregate({ bag: { 0: item(K.SWORD) } });
     expect(success(planItemAutoPlace(agg, bag(0), 'bag', options())).kind).toBe('noop');
   });
+
+  describe('with several chests', () => {
+    const chest = (fill: Record<number, ReturnType<typeof item>> = {}) =>
+      aggregate({ bag: { 0: item(K.SWORD, 1, 'sword') }, stash: fill, stashSize: 84 });
+
+    it('prefers the chest the player is looking at', () => {
+      const done = success(
+        planItemAutoPlace(
+          chest(),
+          bag(0),
+          'stash',
+          options({ stashPreferred: { start: 42, end: 84 } }),
+        ),
+      );
+      expect(done.next.stash[42]?.id).toBe('sword');
+      expect(done.next.stash[0]).toBeNull();
+    });
+
+    it('tops up a stack inside the preferred chest first', () => {
+      const agg = aggregate({
+        bag: { 0: item(K.HEALTH_BOTTLE, 3, 'carried') },
+        stash: { 0: item(K.HEALTH_BOTTLE, 5), 45: item(K.HEALTH_BOTTLE, 5) },
+        stashSize: 84,
+      });
+      const done = success(
+        planItemAutoPlace(
+          agg,
+          bag(0),
+          'stash',
+          options({ stashPreferred: { start: 42, end: 84 } }),
+        ),
+      );
+      expect(done.next.stash[45]?.amount).toBe(8);
+      expect(done.next.stash[0]?.amount).toBe(5);
+    });
+
+    it('falls over to the other chests when the preferred one is full', () => {
+      const full = Object.fromEntries(
+        Array.from({ length: 42 }, (_, i) => [42 + i, item(K.AXE, 1, `axe-${i}`)]),
+      );
+      const done = success(
+        planItemAutoPlace(
+          chest(full),
+          bag(0),
+          'stash',
+          options({ stashPreferred: { start: 42, end: 84 } }),
+        ),
+      );
+      expect(done.next.stash[0]?.id).toBe('sword');
+    });
+
+    it('asks to buy a chest when there is none', () => {
+      const none = aggregate({ bag: { 0: item(K.SWORD) }, stashSize: 0 });
+      expect(failure(planItemAutoPlace(none, bag(0), 'stash', options()))).toBe('NO_CHEST');
+    });
+  });
 });

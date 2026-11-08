@@ -30,6 +30,9 @@ import ToolHexFace from '@/components/gui/tool-hex/tool-hex-face.vue';
 import ToolHexAnchor from '@/components/gui/tool-hex/tool-hex-anchor.vue';
 import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { openStashBoard } from '@/composables/use-stash-board';
+import { unlockNextChest } from '@/services/inventory/stash-transfer';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { STASH_MAX_CHESTS } from '@hexoflat/engine/inventory/stash-constants';
 import { useWillPricing } from '@/composables/use-will-pricing';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -96,6 +99,8 @@ const toolIconPath = computed(
 );
 
 const isScrollTool = computed(() => activeToolKey.value === HEXOBJECT_KEYS.RETURN_SCROLL);
+const isCoinsTool = computed(() => activeToolKey.value === HEXOBJECT_KEYS.COINS);
+const stashStore = useHeroStashStore();
 
 function actionsForTool(tool: THeroToolKey, tile: HexTileModel | null): ResolvedAction[] {
   if (tool === HEXOBJECT_KEYS.RETURN_SCROLL) {
@@ -105,6 +110,14 @@ function actionsForTool(tool: THeroToolKey, tile: HexTileModel | null): Resolved
       (preview.ok || preview.reason === 'INSUFFICIENT_WILL' || preview.reason === 'NOT_AN_ANGEL');
     return offersUse
       ? [{ actioType: 'USE', label: t('tool.use'), priority: 100 } satisfies ResolvedAction]
+      : [];
+  }
+
+  if (tool === HEXOBJECT_KEYS.COINS) {
+    const atStashChest = tile?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.STASH_CHEST;
+    const hasLockedChest = stashStore.chests < STASH_MAX_CHESTS;
+    return atStashChest && hasLockedChest
+      ? [{ actioType: 'USE', label: t('stash.unlock'), priority: 95 } satisfies ResolvedAction]
       : [];
   }
 
@@ -183,7 +196,7 @@ const isReadAction = computed(
 );
 const bestActionLabel = computed(() => {
   if (!bestAction.value) return null;
-  if (isScrollTool.value) return bestAction.value.label;
+  if (isScrollTool.value || isCoinsTool.value) return bestAction.value.label;
   const object = hoveredTile.value?.hexobject;
   if (isReadAction.value) return t('tool.read');
   const isHandOnBuilding =
@@ -197,12 +210,14 @@ const bestActionLabel = computed(() => {
 });
 
 const bestActionCost = computed(() =>
-  isScrollTool.value
-    ? (portalPreview.value?.cost ?? 0)
-    : pricing.costOf(
-        hoveredTile.value,
-        bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
-      ),
+  isCoinsTool.value
+    ? 0
+    : isScrollTool.value
+      ? (portalPreview.value?.cost ?? 0)
+      : pricing.costOf(
+          hoveredTile.value,
+          bestAction.value ? ACTION_TYPE_MAP[bestAction.value.actioType] : undefined,
+        ),
 );
 const canAffordBest = computed(() => pricing.canAfford(bestActionCost.value));
 
@@ -274,6 +289,16 @@ function flashDenied() {
   deniedTimer = window.setTimeout(() => (denied.value = false), 200);
 }
 
+function unlockWithCoins() {
+  const result = unlockNextChest();
+  if (result.ok) {
+    heroToolStore.setActionMessage(t('stash.pay.unlocked'), null, null, 'success');
+    return;
+  }
+  flashDenied();
+  heroToolStore.setActionMessage(t('stash.pay.notEnough'), 'coins', result.price);
+}
+
 async function executeAction() {
   const tile = hoveredTile.value;
   const best = bestAction.value;
@@ -281,6 +306,11 @@ async function executeAction() {
   if (!canAffordBest.value) {
     flashDenied();
     heroToolStore.setActionMessage(t('knowledge.insufficientWill'), 'will', bestActionCost.value);
+    return;
+  }
+
+  if (isCoinsTool.value) {
+    unlockWithCoins();
     return;
   }
 

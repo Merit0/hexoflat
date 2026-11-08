@@ -9,6 +9,7 @@ import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { inventoryDragState } from '@/composables/use-inventory-drag';
+import { stashDrag } from '@/composables/stash-drag-state';
 
 const SHOW_DELAY_MS = 120;
 const SIDE_GAP_PX = 16;
@@ -58,7 +59,11 @@ export function hideItemTooltip() {
 }
 
 function isTooltipSuppressed(): boolean {
-  return inventoryDragState.isDragging || useHeroInventoryStore().selectedItemId !== null;
+  return (
+    inventoryDragState.isDragging ||
+    stashDrag.active ||
+    useHeroInventoryStore().selectedItemId !== null
+  );
 }
 
 export function showItemTooltip(itemId: string, element: HTMLElement) {

@@ -17,9 +17,16 @@ export function planItemAutoPlace(
   }
   if (!src) return { ok: false, reason: 'EMPTY_SOURCE' };
 
+  if (toContainer === 'stash' && agg.stash.length === 0) {
+    return { ok: false, reason: 'NO_CHEST' };
+  }
+
   const half = opts.split && canSplit(src);
   const piece = half ? { ...src, id: opts.newId(), amount: halfOf(src) } : src;
-  const placed = placeInto(toContainer === 'bag' ? agg.bag : agg.stash, piece);
+  const placed =
+    toContainer === 'bag'
+      ? placeInto(agg.bag, piece)
+      : placeInto(agg.stash, piece, opts.stashPreferred);
   if (!placed) return { ok: false, reason: 'CONTAINER_FULL' };
 
   const filled = toContainer === 'bag' ? { ...agg, bag: placed } : { ...agg, stash: placed };

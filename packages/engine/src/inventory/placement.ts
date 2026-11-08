@@ -1,12 +1,22 @@
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
 import { canStackTogether, stackLimit } from './item-queries';
-import type { TItemCells } from './transfer-types';
+import type { ICellRange, TItemCells } from './transfer-types';
 
 /**
  * Puts a piece into a container: first tops up unfinished stacks of the same kind (in index
- * order), then takes the first empty cell. All or nothing: `null` when it does not fit.
+ * order), then takes the first empty cell. A preferred range is tried first. All or nothing:
+ * `null` when it does not fit.
  */
-export function placeInto(cells: TItemCells, piece: InventoryItem): TItemCells | null {
+export function placeInto(
+  cells: TItemCells,
+  piece: InventoryItem,
+  preferred?: ICellRange,
+): TItemCells | null {
+  if (preferred) {
+    const inside = placeInto(cells.slice(preferred.start, preferred.end), piece);
+    if (inside)
+      return [...cells.slice(0, preferred.start), ...inside, ...cells.slice(preferred.end)];
+  }
   const next = cells.slice();
   const limit = stackLimit(piece);
   let remaining = piece.amount;

@@ -41,7 +41,7 @@ export const stashTestFixtures = {
   readStash(): (ReadCell | null)[] {
     const stash = useHeroStashStore();
     stash.hydrate();
-    return summarise(stash.cells);
+    return summarise(stash.ownedCells);
   },
 
   readBag(): (ReadCell | null)[] {
@@ -57,7 +57,19 @@ export const stashTestFixtures = {
       const cell = cells[index];
       return cell ? fixtureItem(cell, `stash:${index}`) : null;
     });
-    stash.replaceCells(next);
+    stash.replaceOwnedCells(next);
+  },
+
+  readChests(): number {
+    const stash = useHeroStashStore();
+    stash.hydrate();
+    return stash.chests;
+  },
+
+  writeChests(chests: number): void {
+    const stash = useHeroStashStore();
+    stash.hydrate();
+    stash.setChests(chests);
   },
 
   writeBag(cells: (FixtureCell | null)[]): void {
@@ -80,6 +92,10 @@ const HOOKS_ON = import.meta.env.VITE_E2E_HOOKS === 'true';
 export const stashTestApi = {
   getStash: () => stashTestFixtures.readStash(),
   getBag: () => stashTestFixtures.readBag(),
+  getStashChests: () => stashTestFixtures.readChests(),
+  setStashChests(chests: number) {
+    if (HOOKS_ON) stashTestFixtures.writeChests(chests);
+  },
   setStash(cells: (FixtureCell | null)[]) {
     if (HOOKS_ON) stashTestFixtures.writeStash(cells);
   },

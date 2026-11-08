@@ -1,11 +1,12 @@
 <template>
   <div
     class="token"
+    :class="{ 'is-ghost': ghost }"
     :style="{ '--rot': `${rotation}deg` }"
-    @mouseenter="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
+    @mouseenter="onEnter"
     @mouseleave="hideItemTooltip()"
   >
-    <div v-if="glowStyle" class="rarity-glow" :style="glowStyle" aria-hidden="true"></div>
+    <div v-if="glowStyle && !ghost" class="rarity-glow" :style="glowStyle" aria-hidden="true"></div>
     <div class="icon" :style="iconStyle"></div>
   </div>
 </template>
@@ -18,7 +19,7 @@ import { rarityFrameUrlForKey } from '@/render/rarity';
 import { hideItemTooltip, showItemTooltip } from '@/composables/use-item-tooltip';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 
-const props = defineProps<{ item: InventoryItem }>();
+const props = defineProps<{ item: InventoryItem; ghost?: boolean }>();
 
 const inventory = useHeroInventoryStore();
 const rotation = computed(() => inventory.ensureRotation(props.item.id));
@@ -30,6 +31,10 @@ const glowStyle = computed(() => {
   const url = rarityFrameUrlForKey(props.item.key);
   return url ? { backgroundImage: `url("${url}")` } : null;
 });
+
+function onEnter(event: MouseEvent) {
+  if (!props.ghost) showItemTooltip(props.item.id, event.currentTarget as HTMLElement);
+}
 
 onBeforeUnmount(hideItemTooltip);
 </script>
@@ -61,7 +66,7 @@ onBeforeUnmount(hideItemTooltip);
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.55));
 }
 .token:hover .icon {
   transform: rotate(0deg) scale(1.06);

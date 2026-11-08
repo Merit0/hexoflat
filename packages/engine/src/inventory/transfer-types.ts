@@ -25,6 +25,7 @@ export type TTransferError =
   | 'OVERWEIGHT'
   | 'CONTAINER_FULL'
   | 'STASH_LOCKED'
+  | 'NO_CHEST'
   | 'EMPTY_SOURCE'
   | 'INVALID_LOCATION';
 
@@ -36,11 +37,17 @@ export type TTransferResult =
   | { ok: true; next: IInventoryAggregate; kind: TTransferKind; moved: number }
   | { ok: false; reason: TTransferError };
 
+export interface ICellRange {
+  start: number;
+  end: number;
+}
+
 export interface ITransferOptions {
   split: boolean;
   capacityKg: number;
   stashOpen: boolean;
   newId: () => string;
+  stashPreferred?: ICellRange;
 }
 
 export interface IStashActionOptions {

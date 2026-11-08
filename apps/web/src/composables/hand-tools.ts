@@ -15,6 +15,8 @@ export function toolKeyOfItem(itemKey: string | null | undefined): THeroToolKey 
       return HEXOBJECT_KEYS.SHIELD;
     case HEXOBJECT_KEYS.RETURN_SCROLL:
       return HEXOBJECT_KEYS.RETURN_SCROLL;
+    case HEXOBJECT_KEYS.COINS:
+      return HEXOBJECT_KEYS.COINS;
     default:
       return null;
   }

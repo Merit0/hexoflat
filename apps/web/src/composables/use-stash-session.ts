@@ -1,6 +1,7 @@
 import { onBeforeUnmount, onMounted, watch } from 'vue';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { closeStashBoard } from '@/composables/use-stash-board';
+import { stashDrag } from '@/composables/stash-drag-state';
 import { useBattleStore } from '@/stores/battle-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroStore } from '@/stores/hero-store';
@@ -33,7 +34,7 @@ export function useStashSession() {
   );
 
   function onKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape' && stash.isOpen) closeStashBoard();
+    if (event.key === 'Escape' && stash.isOpen && !stashDrag.active) closeStashBoard();
   }
 
   onMounted(() => window.addEventListener('keydown', onKeydown));

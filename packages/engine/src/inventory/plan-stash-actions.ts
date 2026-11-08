@@ -1,12 +1,5 @@
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
-import {
-  CATEGORY_ORDER,
-  TONE_SORT_ORDER,
-  canStackTogether,
-  categoryOf,
-  rarityToneOf,
-  stackLimit,
-} from './item-queries';
+import { canStackTogether, categoryOf, compareItemsForSort, stackLimit } from './item-queries';
 import { placeInto } from './placement';
 import type { IInventoryAggregate, IStashActionOptions, TTransferResult } from './transfer-types';
 
@@ -33,6 +26,7 @@ export function planStoreResources(
   });
 
   if (candidates === 0) return { ok: true, next: agg, kind: 'noop', moved: 0 };
+  if (agg.stash.length === 0) return { ok: false, reason: 'NO_CHEST' };
   if (stored === 0) return { ok: false, reason: 'CONTAINER_FULL' };
   return { ok: true, next: { ...agg, bag, stash }, kind: 'store', moved: stored };
 }
@@ -54,19 +48,6 @@ function mergeStacks(items: InventoryItem[]): InventoryItem[] {
   return merged;
 }
 
-function toneRank(item: InventoryItem): number {
-  const tone = rarityToneOf(item);
-  return tone ? TONE_SORT_ORDER.indexOf(tone) : TONE_SORT_ORDER.length;
-}
-
-function compareForSort(a: InventoryItem, b: InventoryItem): number {
-  return (
-    CATEGORY_ORDER.indexOf(categoryOf(a)) - CATEGORY_ORDER.indexOf(categoryOf(b)) ||
-    toneRank(a) - toneRank(b) ||
-    a.key.localeCompare(b.key)
-  );
-}
-
 function sameCells(a: (InventoryItem | null)[], b: (InventoryItem | null)[]): boolean {
   return a.every((cell, index) => cell?.id === b[index]?.id && cell?.amount === b[index]?.amount);
 }
@@ -78,7 +59,7 @@ export function planSortStash(
 ): TTransferResult {
   if (!opts.stashOpen) return { ok: false, reason: 'STASH_LOCKED' };
   const items = agg.stash.flatMap((cell) => (cell ? [cell] : []));
-  const ordered = mergeStacks(items).sort(compareForSort);
+  const ordered = mergeStacks(items).sort(compareItemsForSort);
   const stash = Array.from({ length: agg.stash.length }, (_, index) => ordered[index] ?? null);
   if (sameCells(stash, agg.stash)) return { ok: true, next: agg, kind: 'noop', moved: 0 };
   return { ok: true, next: { ...agg, stash }, kind: 'sort', moved: items.length - ordered.length };
