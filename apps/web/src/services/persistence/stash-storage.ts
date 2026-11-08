@@ -22,6 +22,7 @@ const payloadSchema = z.object({
   version: z.literal(2),
   contentVersion: z.number(),
   chests: z.number().int().min(0).max(STASH_MAX_CHESTS),
+  starterGiven: z.boolean().default(false),
   cells: z.array(z.unknown()),
 });
 
@@ -29,6 +30,7 @@ export type StashCells = (InventoryItem | null)[];
 
 export interface SavedStash {
   chests: number;
+  starterGiven: boolean;
   cells: StashCells;
 }
 
@@ -49,7 +51,7 @@ export function readSavedStash(): SavedStash | null {
     const cells = Array.from({ length: STASH_CAPACITY }, (_, index) =>
       readCell(parsed.data.cells[index], seen),
     );
-    return { chests: parsed.data.chests, cells };
+    return { chests: parsed.data.chests, starterGiven: parsed.data.starterGiven, cells };
   } catch (error) {
     console.error('Failed to hydrate the camp stash:', error);
     return null;

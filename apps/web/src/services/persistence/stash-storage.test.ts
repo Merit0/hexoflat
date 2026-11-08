@@ -25,7 +25,7 @@ describe('stash storage', () => {
 
   it('round-trips the chests and cells and always returns all 210 cells', () => {
     const cells = [stored('a') as never, null, stored('b', 'health-bottle', 2) as never];
-    writeSavedStash({ chests: 1, cells });
+    writeSavedStash({ chests: 1, starterGiven: true, cells });
     const saved = readSavedStash();
     expect(saved?.chests).toBe(1);
     expect(saved?.cells).toHaveLength(STASH_CAPACITY);
@@ -77,8 +77,15 @@ describe('stash storage', () => {
     expect(readSavedStash()).toBeNull();
   });
 
+  it('reads the starter flag, and treats a save from before the flag as not given yet', () => {
+    writeSavedStash({ chests: 1, starterGiven: true, cells: [] });
+    expect(readSavedStash()?.starterGiven).toBe(true);
+    save({ chests: 1, cells: [] });
+    expect(readSavedStash()?.starterGiven).toBe(false);
+  });
+
   it('can be cleared', () => {
-    writeSavedStash({ chests: 1, cells: [stored('a') as never] });
+    writeSavedStash({ chests: 1, starterGiven: true, cells: [stored('a') as never] });
     clearSavedStash();
     expect(readSavedStash()).toBeNull();
   });

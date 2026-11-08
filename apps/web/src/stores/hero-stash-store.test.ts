@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { CONTENT_VERSION } from '@hexoflat/engine';
 import { STASH_CAPACITY } from '@hexoflat/engine/inventory/stash-constants';
 import { readSavedStash } from '@/services/persistence/stash-storage';
 import { useHeroStashStore } from './hero-stash-store';
@@ -65,6 +66,7 @@ describe('useHeroStashStore', () => {
 
   it('saves the chests and cells and gets them back after a reload', () => {
     const first = useHeroStashStore();
+    first.starterGiven = true;
     first.setChests(1);
     const cells = first.ownedCells.slice();
     cells[3] = coins('coin-stack', 3);
@@ -81,6 +83,7 @@ describe('useHeroStashStore', () => {
 
   it('counts only what sits in the open chests', () => {
     const stash = useHeroStashStore();
+    stash.starterGiven = true;
     stash.setChests(1);
     const cells = stash.cells.slice();
     cells[1] = coins('inside', 1);
@@ -132,6 +135,50 @@ describe('useHeroStashStore', () => {
       reloaded.replaceOwnedCells(reloaded.ownedCells.map(() => null));
       setActivePinia(createPinia());
       const again = useHeroStashStore();
+      again.hydrate();
+      expect(again.usedCount).toBe(0);
+    });
+
+    it('is also given once to a stash saved before the gear existed, into the free cells of the first chest', () => {
+      const old = useHeroStashStore();
+      old.starterGiven = true;
+      old.setChests(1);
+      const cells = old.ownedCells.slice();
+      cells[0] = coins('mine', 0);
+      old.replaceOwnedCells(cells);
+      localStorage.setItem(
+        'hexoflat.hero.stash.v2',
+        JSON.stringify({
+          version: 2,
+          contentVersion: CONTENT_VERSION,
+          chests: 1,
+          cells: old.cells,
+        }),
+      );
+
+      setActivePinia(createPinia());
+      const reloaded = useHeroStashStore();
+      reloaded.hydrate();
+
+      expect(reloaded.chests).toBe(1);
+      expect(reloaded.ownedCells.slice(0, 5).map((cell) => cell?.key ?? null)).toEqual([
+        'coins',
+        'sword',
+        'axe',
+        'shield',
+        'pickaxe',
+      ]);
+    });
+
+    it('is not given again after the hero took it out', () => {
+      const first = useHeroStashStore();
+      first.hydrate();
+      first.setChests(1);
+      first.replaceOwnedCells(first.ownedCells.map(() => null));
+
+      setActivePinia(createPinia());
+      const again = useHeroStashStore();
+      again.hydrate();
       again.hydrate();
       expect(again.usedCount).toBe(0);
     });

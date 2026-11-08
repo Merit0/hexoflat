@@ -8,7 +8,7 @@ import {
 import type { StashFilter } from '@/composables/stash-filter';
 import type { StashCells } from '@/services/persistence/stash-storage';
 import { readSavedStash, writeSavedStash } from '@/services/persistence/stash-storage';
-import { starterStashCells } from '@/services/inventory/starter-stash';
+import { grantStarterGear } from '@/services/inventory/starter-stash';
 
 function pad(cells: StashCells): StashCells {
   return Array.from({ length: STASH_CAPACITY }, (_, index) => cells[index] ?? null);
@@ -19,6 +19,7 @@ interface HeroStashState {
   chests: number;
   activeChest: number;
   filter: StashFilter;
+  starterGiven: boolean;
   isOpen: boolean;
   isHydrated: boolean;
 }
@@ -29,6 +30,7 @@ export const useHeroStashStore = defineStore('heroStash', {
     chests: 0,
     activeChest: 0,
     filter: 'all',
+    starterGiven: false,
     isOpen: false,
     isHydrated: false,
   }),
@@ -52,8 +54,11 @@ export const useHeroStashStore = defineStore('heroStash', {
       if (saved) {
         this.cells = saved.cells;
         this.chests = saved.chests;
-      } else {
-        this.cells = starterStashCells();
+        this.starterGiven = saved.starterGiven;
+      }
+      if (!this.starterGiven) {
+        this.cells = grantStarterGear(this.cells);
+        this.starterGiven = true;
         this.persist();
       }
       this.isHydrated = true;
@@ -78,17 +83,23 @@ export const useHeroStashStore = defineStore('heroStash', {
     },
 
     replaceOwnedCells(cells: StashCells) {
+      this.hydrate();
       this.cells = pad(cells);
       this.persist();
     },
 
     setChests(chests: number) {
+      this.hydrate();
       this.chests = Math.min(STASH_MAX_CHESTS, Math.max(0, chests));
       this.persist();
     },
 
     persist() {
-      writeSavedStash({ chests: this.chests, cells: this.cells });
+      writeSavedStash({
+        chests: this.chests,
+        starterGiven: this.starterGiven,
+        cells: this.cells,
+      });
     },
   },
 });

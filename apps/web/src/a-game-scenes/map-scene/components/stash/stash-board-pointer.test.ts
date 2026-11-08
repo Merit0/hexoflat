@@ -26,7 +26,7 @@ async function mountBoard() {
   const pinia = createPinia();
   setActivePinia(pinia);
   localStorage.clear();
-  writeSavedStash({ chests: 0, cells: [] });
+  writeSavedStash({ chests: 0, starterGiven: true, cells: [] });
   resetStashDrag();
   useHeroToolStore().clearActionMessage();
   const inventory = useHeroInventoryStore();
