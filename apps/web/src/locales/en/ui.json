@@ -653,5 +653,17 @@
       "privacy": "Privacy",
       "language": "Change language"
     }
+  },
+  "stash": {
+    "title": "Camp Stash",
+    "close": "Close stash",
+    "bag": "Bag",
+    "stash": "Stash",
+    "equipped": "Equipped",
+    "carried": "Carried",
+    "resize": "Drag to resize",
+    "hint": "Stored items weigh nothing.",
+    "weight": "{current} / {max} kg",
+    "count": "{used} / {total}"
   }
 }

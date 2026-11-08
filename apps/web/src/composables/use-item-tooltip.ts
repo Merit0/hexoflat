@@ -7,6 +7,7 @@ import {
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { inventoryDragState } from '@/composables/use-inventory-drag';
 
 const SHOW_DELAY_MS = 120;
@@ -85,10 +86,14 @@ export function resolveInventoryItemTooltip(
 export function useItemTooltip() {
   const inventory = useHeroInventoryStore();
   const heroStore = useHeroStore();
+  const stash = useHeroStashStore();
 
   const view = computed<ItemTooltipView | null>(() => {
     if (!target.value) return null;
-    const item = inventory.items.find((entry) => entry.id === target.value?.itemId);
+    const id = target.value.itemId;
+    const item =
+      inventory.items.find((entry) => entry.id === id) ??
+      stash.cells.find((cell) => cell?.id === id);
     return item ? resolveInventoryItemTooltip(inventory, item, heroStore.knowledge?.skills) : null;
   });
 

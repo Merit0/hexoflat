@@ -318,3 +318,15 @@ Web, без UI дошки (вона в S3):
 - E2E: очікування в `hex-info-tooltip.spec.ts` для stash-скрині змінено на «interactable» (не запускалось).
 
 Поки немає S3, дія OPEN лише ставить `isOpen = true` і відкриває праву панель, видимої дошки ще нема. Автозакриття (відхід героя, початок бою) і кнопка закриття входять в S3 разом з дошкою.
+
+### S3 — розкладка [DONE — 2026-11-08]
+
+Дошка видима, без взаємодії (drag, подвійний клік тощо в S4). Файли в `apps/web/src/a-game-scenes/map-scene/components/stash/`: `stash-board.vue`, `stash-bag-pane.vue`, `stash-chest-pane.vue`, `stash-splitter.vue`, `stash-scroll-box.vue`, `stash-cell.vue`, `stash-item-token.vue` (+ тест дошки). Допоміжні: `composables/use-stash-board-data.ts`, `use-stash-session.ts`, `stash-split.ts`.
+
+- **Вигляд з нашого CSS:** рамка, заголовок small-caps `#ffe98a`, орнамент-розділювач і шрифт взяті з Книги Волі (вона так само замінює панель); клітинки, бейдж кількості, світіння рідкості й тултіп з Inventory; панелі `rgba(0,0,0,.35)` з рамкою `rgba(255,255,255,.1)` як `center-hole` та hint. Кольорів і шрифтів зі специфікації немає.
+- **Замість вмісту панелі:** `hero-board-panel.vue` показує `<stash-board v-if="stashStore.isOpen">` перед Книгою Волі; мобільне накладання (`.is-knowledge`) діє й для схованки.
+- **Розкладка:** нагорі скриня і назва, потім BAG (вага, шкала, рядок EQUIPPED на 8 слотів зі згортанням, сітка CARRIED з 53 клітинок у скролі), розділювач, STASH (лічильник, 64 клітинки у скролі), підказка внизу. Сітки по 8 колонок, клітинки квадратні (`aspect-ratio`), затемнення країв скролу через `mask-image`.
+- **Розділювач:** `role="separator"`, перетягування вказівником, ↑/↓ на 5 %, подвійний клік повертає 50 %, межі 25–75 %, значення в `ui-settings-store` (`stashSplitRatio`, зберігається).
+- **Закриття (`use-stash-session.ts`):** кнопка ×, Esc, відхід героя на інший гекс, зміна локації, початок бою, відкриття Книги Волі.
+- **Тултіп** предмета з схованки працює (`use-item-tooltip` шукає й у схованці). Існуючі компоненти Inventory не змінені, `inventory-token.vue` не перевикористано: він прив'язаний до store інвентаря та drag, тому зроблено окремий показовий токен з тими ж спрайтами; в S4 його, ймовірно, варто об'єднати з перетягуванням.
+- **Заплановано на потім:** «N more below» і фільтри (S5), `data-testid` для решти (`stash-filter-*`, `stash-store-resources`, `stash-sort`, `stash-toast`) разом із діями (S4–S5). Уже є: `stash-board`, `stash-bag-pane`, `stash-chest-pane`, `stash-splitter`, `stash-load-value`, `stash-count`, `stash-equip-toggle`, `stash-close`, `stash-cell-<i>`, `stash-bag-cell-<i>`, `stash-equip-<slot>` з `data-item-key`, `data-item-amount`, `data-rarity`.
