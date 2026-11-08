@@ -10,6 +10,7 @@ import { readInventoryAggregate } from '@/services/inventory/stash-transfer';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { stashErrorText, stashNothingToStoreText } from '@/composables/stash-messages';
+import { writeSavedStash } from '@/services/persistence/stash-storage';
 import StashBoard from './stash-board.vue';
 
 let app: App | null = null;
@@ -31,6 +32,7 @@ async function mountBoard() {
   const pinia = createPinia();
   setActivePinia(pinia);
   localStorage.clear();
+  writeSavedStash({ chests: 0, cells: [] });
   useHeroToolStore().clearActionMessage();
   const inventory = useHeroInventoryStore();
   inventory.hydrate();

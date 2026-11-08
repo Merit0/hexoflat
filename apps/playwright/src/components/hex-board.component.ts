@@ -195,6 +195,10 @@ export class HexBoardComponent extends BaseComponent {
       .toEqual(coordinates);
   }
 
+  async placeItemNextToHero(key: string): Promise<TestHexCoordinates> {
+    return this.page.evaluate((k) => window.__HEXOFLAT_TEST__!.placeSquadNextToHero(k), key);
+  }
+
   async hoverTileForInfo(coordinates: TestHexCoordinates): Promise<void> {
     await this.canvas.hover({ position: await this.tilePosition(coordinates) });
   }

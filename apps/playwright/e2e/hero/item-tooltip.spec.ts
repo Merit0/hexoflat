@@ -1,7 +1,7 @@
 import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
 import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
-import { TakeTokenFeature } from '@features/world/take-token.feature';
+import { TakePlacedItemFeature } from '@features/world/take-placed-item.feature';
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
 import { VerifyHeroBoardFeature } from '@features/world/verify-hero-board.feature';
 import { VerifyInventoryFeature } from '@features/world/verify-inventory.feature';
@@ -13,7 +13,7 @@ test.describe('item tooltip', { tag: ['@hero'] }, () => {
     await new OpenCampingMapFeature().open();
     const verifyInventory = new VerifyInventoryFeature();
     await verifyInventory.verifyPanelIsVisible();
-    await new TakeTokenFeature('starterAxe').take();
+    await new TakePlacedItemFeature(HexobjectKeys.axe).take();
     await verifyInventory.verifyContainsItem(HexobjectKeys.axe);
 
     await verifyInventory.verifyBagItemTooltip(HexobjectKeys.axe, /Axe/i);

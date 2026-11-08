@@ -5,7 +5,7 @@ import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab
 import { ToggleHeroBoardFeature } from '@features/world/toggle-hero-board.feature';
 import { VerifyHeroBoardFeature } from '@features/world/verify-hero-board.feature';
 import { VerifyInventoryFeature } from '@features/world/verify-inventory.feature';
-import { TakeTokenFeature } from '@features/world/take-token.feature';
+import { TakePlacedItemFeature } from '@features/world/take-placed-item.feature';
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
 import { HexobjectKeys } from '@config/test-data';
 import { EquipSlot } from '@config/equip-slot';
@@ -27,7 +27,7 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
     const verifyBoard = new VerifyHeroBoardFeature();
     await verifyBoard.verifyTabActive('hero');
 
-    await new TakeTokenFeature('starterAxe').take();
+    await new TakePlacedItemFeature(HexobjectKeys.axe).take();
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
     await verifyBoard.verifyTabActive('inventory');
   });
@@ -156,7 +156,7 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
 
   test('Verify the hands show empty, then the equipped item, then empty again after unequipping', async () => {
     await new OpenCampingMapFeature().open();
-    await new TakeTokenFeature('starterAxe').take();
+    await new TakePlacedItemFeature(HexobjectKeys.axe).take();
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
 
     const switchTab = new SwitchHeroBoardTabFeature();

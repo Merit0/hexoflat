@@ -95,3 +95,4 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - Stash cells are addressed by their global index (chest 2 starts at 42); the bag shows items sorted on top, so `stash-bag-cell-N` is a display position and `data-drop-index` is the real bag cell.
 - The old OPEN-on-stash "chest is broken" alert no longer exists: OPEN on the Stash Chest opens the board.
 - Escape during a stash drag: hold the drag with `holdBagItemOverStashCell`, press Escape, then `releasePointer` (the drag is already cancelled, so nothing drops).
+- The camp map holds no loose gear any more. To get an item on the map use `TakePlacedItemFeature(key)` (`place`, `take`, `verifyIsOnTheMap`, `verifyIsTaken`) or `HexInfoTooltipFeature.placeItemAndHover(key)`; both use the `placeSquadNextToHero` hook, which places any hexobject by key. A fresh stash starts with the starter gear in cells 0-3 of the first chest: call `givenEmptyStash()` when a test needs clean cells.

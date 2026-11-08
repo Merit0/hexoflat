@@ -88,4 +88,52 @@ describe('useHeroStashStore', () => {
     stash.replaceOwnedCells(cells);
     expect(stash.usedCount).toBe(1);
   });
+
+  describe('the starter gear', () => {
+    it('lies in the first chest of a new hero, hidden while that chest is locked', () => {
+      const stash = useHeroStashStore();
+      stash.hydrate();
+      expect(stash.chests).toBe(0);
+      expect(stash.ownedCells).toHaveLength(0);
+      expect(stash.usedCount).toBe(0);
+      expect(stash.cells.slice(0, 5).map((cell) => cell?.key ?? null)).toEqual([
+        'sword',
+        'axe',
+        'shield',
+        'pickaxe',
+        null,
+      ]);
+    });
+
+    it('shows up once the first chest is unlocked', () => {
+      const stash = useHeroStashStore();
+      stash.hydrate();
+      stash.setChests(1);
+      expect(stash.ownedCells.slice(0, 4).map((cell) => cell?.key)).toEqual([
+        'sword',
+        'axe',
+        'shield',
+        'pickaxe',
+      ]);
+      expect(stash.usedCount).toBe(4);
+    });
+
+    it('is given once: it survives a reload with the same items, and an emptied stash stays empty', () => {
+      const first = useHeroStashStore();
+      first.hydrate();
+      const ids = first.cells.slice(0, 4).map((cell) => cell?.id);
+
+      setActivePinia(createPinia());
+      const reloaded = useHeroStashStore();
+      reloaded.hydrate();
+      expect(reloaded.cells.slice(0, 4).map((cell) => cell?.id)).toEqual(ids);
+
+      reloaded.setChests(1);
+      reloaded.replaceOwnedCells(reloaded.ownedCells.map(() => null));
+      setActivePinia(createPinia());
+      const again = useHeroStashStore();
+      again.hydrate();
+      expect(again.usedCount).toBe(0);
+    });
+  });
 });

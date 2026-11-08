@@ -6,7 +6,7 @@ import { Tool } from '@config/hero-tool';
 import { tokenCoordinates, type MapToken } from '@config/test-data';
 
 /**
- * Clicking OPEN on a chest with the bare HAND. Mirrors TakeTokenFeature's
+ * Clicking OPEN on a chest with the bare HAND. Mirrors TakePlacedItemFeature's
  * shape but exercises the OPEN branch of the same START_HEX_ACTION pipeline
  * — see action-starters-registry.ts's EHexActionType.OPEN handler, which
  * currently always rejects (the open-a-chest-for-loot mechanic isn't

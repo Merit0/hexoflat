@@ -8,6 +8,7 @@ import {
 import type { StashFilter } from '@/composables/stash-filter';
 import type { StashCells } from '@/services/persistence/stash-storage';
 import { readSavedStash, writeSavedStash } from '@/services/persistence/stash-storage';
+import { starterStashCells } from '@/services/inventory/starter-stash';
 
 function pad(cells: StashCells): StashCells {
   return Array.from({ length: STASH_CAPACITY }, (_, index) => cells[index] ?? null);
@@ -51,6 +52,9 @@ export const useHeroStashStore = defineStore('heroStash', {
       if (saved) {
         this.cells = saved.cells;
         this.chests = saved.chests;
+      } else {
+        this.cells = starterStashCells();
+        this.persist();
       }
       this.isHydrated = true;
     },

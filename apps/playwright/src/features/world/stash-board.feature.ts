@@ -63,6 +63,12 @@ export class StashBoardFeature extends BaseFeature {
     await this.step('Arrange the bag', () => this.board.givenBag(cells));
   }
 
+  async givenEmptyStash(): Promise<void> {
+    await this.step('Arrange an empty stash (without the starter gear)', () =>
+      this.board.givenStash([]),
+    );
+  }
+
   async givenStash(cells: StashCellContent[]): Promise<void> {
     await this.step('Arrange the stash', () => this.board.givenStash(cells));
   }

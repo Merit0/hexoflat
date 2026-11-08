@@ -2,11 +2,7 @@ import { z } from 'zod';
 import { CONTENT_VERSION } from '@hexoflat/engine';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import {
-  STASH_CAPACITY,
-  STASH_CHEST_CELLS,
-  STASH_MAX_CHESTS,
-} from '@hexoflat/engine/inventory/stash-constants';
+import { STASH_CAPACITY, STASH_MAX_CHESTS } from '@hexoflat/engine/inventory/stash-constants';
 
 const STASH_STORAGE_KEY = 'hexoflat.hero.stash.v2';
 const KNOWN_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));
@@ -50,9 +46,8 @@ export function readSavedStash(): SavedStash | null {
     const parsed = payloadSchema.safeParse(JSON.parse(raw));
     if (!parsed.success || parsed.data.contentVersion !== CONTENT_VERSION) return null;
     const seen = new Set<string>();
-    const opened = parsed.data.chests * STASH_CHEST_CELLS;
     const cells = Array.from({ length: STASH_CAPACITY }, (_, index) =>
-      index < opened ? readCell(parsed.data.cells[index], seen) : null,
+      readCell(parsed.data.cells[index], seen),
     );
     return { chests: parsed.data.chests, cells };
   } catch (error) {

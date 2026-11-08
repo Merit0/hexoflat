@@ -34,12 +34,13 @@ describe('stash storage', () => {
     expect(saved?.cells[2]).toMatchObject({ id: 'b', amount: 2 });
   });
 
-  it('drops items sitting in a chest that was never bought', () => {
+  it('keeps items that lie in a chest which is not unlocked yet', () => {
     const cells = Array.from({ length: 100 }, (_, i) => stored(`i-${i}`));
     save({ chests: 1, cells });
     const saved = readSavedStash();
-    expect(saved?.cells.filter(Boolean)).toHaveLength(42);
-    expect(saved?.cells[42]).toBeNull();
+    expect(saved?.cells.filter(Boolean)).toHaveLength(100);
+    expect(saved?.cells[99]).not.toBeNull();
+    expect(saved?.cells[100]).toBeNull();
   });
 
   it('turns broken, unknown or duplicate cells into empty ones instead of failing', () => {

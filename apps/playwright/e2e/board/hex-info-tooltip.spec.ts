@@ -8,7 +8,7 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
 
-    await hexInfo.hoverToken('starterAxe');
+    await hexInfo.placeItemAndHover(HexobjectKeys.axe);
 
     await hexInfo.verifyShowsTitleAndKind(/Axe/i);
   });
@@ -35,7 +35,7 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
 
-    await hexInfo.hoverToken('starterAxe');
+    await hexInfo.placeItemAndHover(HexobjectKeys.sword);
 
     await hexInfo.verifyShowsItemIconAndRarity(/Idol/i);
   });
@@ -52,7 +52,7 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
   test('The card disappears when the pointer leaves the board', async () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
-    await hexInfo.hoverToken('starterAxe');
+    await hexInfo.placeItemAndHover(HexobjectKeys.axe);
     await hexInfo.verifyShowsTitleAndKind(/Axe/i);
 
     await hexInfo.leaveTheBoard();

@@ -1,6 +1,6 @@
 import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
-import { TakeTokenFeature } from '@features/world/take-token.feature';
+import { TakePlacedItemFeature } from '@features/world/take-placed-item.feature';
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
 import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { VerifyInventoryFeature } from '@features/world/verify-inventory.feature';
@@ -13,7 +13,7 @@ test.describe('inventory drag', { tag: ['@hero'] }, () => {
   test('Verify dragging a grid item to another grid slot moves it there', async () => {
     await new OpenCampingMapFeature().open();
     await new VerifyInventoryFeature().verifyPanelIsVisible();
-    await new TakeTokenFeature('starterAxe').take();
+    await new TakePlacedItemFeature(HexobjectKeys.axe).take();
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
 
     await new DragInventoryItemFeature().dragToGridSlot(HexobjectKeys.axe, 'r0c1');
@@ -27,7 +27,7 @@ test.describe('inventory drag', { tag: ['@hero'] }, () => {
     const verifyInventory = new VerifyInventoryFeature();
     await verifyInventory.verifyPanelIsVisible();
     await verifyInventory.verifyWillTokenPresent();
-    await new TakeTokenFeature('starterAxe').take();
+    await new TakePlacedItemFeature(HexobjectKeys.axe).take();
     await verifyInventory.verifyContainsItem(HexobjectKeys.axe);
 
     const dragItem = new DragInventoryItemFeature();
@@ -43,7 +43,7 @@ test.describe('inventory drag', { tag: ['@hero'] }, () => {
   test('Verify dragging an item onto an equip slot equips it, and dragging it back unequips it', async () => {
     await new OpenCampingMapFeature().open();
     await new VerifyInventoryFeature().verifyPanelIsVisible();
-    await new TakeTokenFeature('starterAxe').take();
+    await new TakePlacedItemFeature(HexobjectKeys.axe).take();
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.axe);
     const dragItem = new DragInventoryItemFeature();
     const verifyInventory = new VerifyInventoryFeature();
@@ -57,7 +57,7 @@ test.describe('inventory drag', { tag: ['@hero'] }, () => {
 
   test('Verify unequipping the tool in use removes the tool hex from the map', async () => {
     await new OpenCampingMapFeature().open();
-    await new TakeTokenFeature('starterAxe').take();
+    await new TakePlacedItemFeature(HexobjectKeys.axe).take();
     const verifyInventory = new VerifyInventoryFeature();
     await verifyInventory.verifyContainsItem(HexobjectKeys.axe);
 

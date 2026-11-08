@@ -4,12 +4,25 @@ import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feat
 import { StashBoardFeature, type StashCellContent } from '@features/world/stash-board.feature';
 import { UnlockStashChestFeature } from '@features/world/unlock-stash-chest.feature';
 import { VerifyActionAlertFeature } from '@features/world/verify-action-alert.feature';
+import { VerifyMapTileFeature } from '@features/world/verify-map-tile.feature';
 import { VerifyToolActionFeature } from '@features/world/verify-tool-action.feature';
 import { HexobjectKeys as K } from '@config/test-data';
 
 const NONE = null;
 
 test.describe('stash', { tag: ['@hero'] }, () => {
+  test.describe('the camp map', () => {
+    test('Verify the camp map no longer holds the starter gear or coins', async () => {
+      await new OpenCampingMapFeature().open();
+
+      await new VerifyMapTileFeature('formerSwordSpot').verifyCleared();
+      await new VerifyMapTileFeature('formerAxeSpot').verifyCleared();
+      await new VerifyMapTileFeature('formerShieldSpot').verifyCleared();
+      await new VerifyMapTileFeature('formerPickaxeSpot').verifyCleared();
+      await new VerifyMapTileFeature('formerCoinsSpot').verifyCleared();
+    });
+  });
+
   test.describe('opening and closing', () => {
     test('Verify OPEN by hand on the stash chest opens the board with five locked tabs and a priced first chest', async () => {
       await new OpenCampingMapFeature().open();
@@ -56,6 +69,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       const stash = new StashBoardFeature();
       await stash.openByHand();
       await stash.givenChests(1);
+      await stash.givenEmptyStash();
       await stash.givenBag([{ key: K.sword, amount: 1 }]);
 
       await stash.holdBagItemOverStashCell(K.sword, 3);
@@ -112,6 +126,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       const stash = new StashBoardFeature();
       await stash.openByHand();
       await stash.givenChests(1);
+      await stash.givenEmptyStash();
       await stash.givenBag([{ key: K.healthBottle, amount: 7 }]);
 
       await stash.splitDragBagItemToStashCell(K.healthBottle, 2);
@@ -146,6 +161,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       const stash = new StashBoardFeature();
       await stash.openByHand();
       await stash.givenChests(2);
+      await stash.givenEmptyStash();
       await stash.givenBag([{ key: K.sword, amount: 1 }]);
       await stash.selectChest(2);
 
@@ -160,6 +176,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       const stash = new StashBoardFeature();
       await stash.openByHand();
       await stash.givenChests(1);
+      await stash.givenEmptyStash();
       await stash.givenBag([{ key: K.axe, amount: 1 }]);
 
       await stash.quickMoveBagItem(K.axe);
@@ -188,6 +205,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       const stash = new StashBoardFeature();
       await stash.openByHand();
       await stash.givenChests(1);
+      await stash.givenEmptyStash();
       await stash.givenBag([
         { key: K.coins, amount: 12 },
         { key: K.healthBottle, amount: 2 },
@@ -299,6 +317,18 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await new VerifyActionAlertFeature().verifyIsShownMatching(/100/);
       await new StashBoardFeature().verifyChests(0);
       await unlock.verifyCoinsLeftInHand(90);
+    });
+
+    test('Verify the first chest holds the starter gear once it is unlocked', async () => {
+      await new OpenCampingMapFeature().open();
+      const unlock = new UnlockStashChestFeature();
+      await unlock.holdCoinsInHand(100);
+
+      await unlock.useCoinsOnTheChest();
+
+      const stash = new StashBoardFeature();
+      await stash.verifyChests(1);
+      await stash.verifyStashFirstKeys([K.sword, K.axe, K.shield, K.pickaxe, NONE]);
     });
 
     test('Verify the second chest costs 1000 coins', async () => {
