@@ -84,7 +84,7 @@ export const useHeroStashStore = defineStore('heroStash', {
 
     replaceOwnedCells(cells: StashCells) {
       this.hydrate();
-      this.cells = pad(cells);
+      this.cells = pad(cells.concat(this.cells.slice(cells.length)));
       this.persist();
     },
 

@@ -319,18 +319,6 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await unlock.verifyCoinsLeftInHand(90);
     });
 
-    test('Verify the first chest holds the starter gear once it is unlocked', async () => {
-      await new OpenCampingMapFeature().open();
-      const unlock = new UnlockStashChestFeature();
-      await unlock.holdCoinsInHand(100);
-
-      await unlock.useCoinsOnTheChest();
-
-      const stash = new StashBoardFeature();
-      await stash.verifyChests(1);
-      await stash.verifyStashFirstKeys([K.sword, K.axe, K.shield, K.pickaxe, NONE]);
-    });
-
     test('Verify the second chest costs 1000 coins', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();

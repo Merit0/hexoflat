@@ -82,7 +82,7 @@ export function unlockNextChest(): TUnlockChestResult {
   }
   const result = planUnlockStashChest(agg, stash.chests, slot);
   if (!result.ok) return result;
-  applyAggregate(result.next);
+  applyAggregate({ ...result.next, stash: result.next.stash.slice(0, agg.stash.length) });
   stash.setChests(result.chests);
   stash.selectChest(result.chests - 1);
   return result;

@@ -145,6 +145,21 @@ describe('stash transfers on the real stores', () => {
     expect(readSavedStash()?.chests).toBe(1);
   });
 
+  it('keeps the starter gear of a locked first chest when it is paid for before the stash was ever opened', () => {
+    setActivePinia(createPinia());
+    localStorage.clear();
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    const stash = useHeroStashStore();
+    holdCoins(100);
+
+    expect(unlockNextChest().ok).toBe(true);
+
+    const keys = stash.ownedCells.flatMap((cell) => (cell ? [cell.key] : []));
+    expect(keys.sort()).toEqual([K.AXE, K.PICKAXE, K.SHIELD, K.SWORD].sort());
+    expect(readSavedStash()?.cells.filter(Boolean)).toHaveLength(4);
+  });
+
   it('gives the bare hand back when the stack is exactly the price', () => {
     const { stash } = setup();
     stash.setChests(0);
