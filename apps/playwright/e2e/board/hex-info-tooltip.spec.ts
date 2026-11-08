@@ -13,13 +13,13 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
     await hexInfo.verifyShowsTitleAndKind(/Axe/i);
   });
 
-  test('The stash chest shows as broken', async () => {
+  test('The stash chest shows as interactable', async () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
 
     await hexInfo.hoverToken('stashChest');
 
-    await hexInfo.verifySealState('broken');
+    await hexInfo.verifySealState('interactable');
   });
 
   test('A working construction shows as interactable', async () => {

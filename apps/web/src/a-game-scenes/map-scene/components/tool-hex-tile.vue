@@ -29,6 +29,7 @@ import { useI18n } from 'vue-i18n';
 import ToolHexFace from '@/components/gui/tool-hex/tool-hex-face.vue';
 import ToolHexAnchor from '@/components/gui/tool-hex/tool-hex-anchor.vue';
 import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
+import { openStashBoard } from '@/composables/use-stash-board';
 import { useWillPricing } from '@/composables/use-will-pricing';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -320,6 +321,11 @@ async function executeAction() {
       flashDenied();
       heroToolStore.setActionMessage(t('moveBlocked.hallUnavailable'));
     }
+    return;
+  }
+
+  if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.STASH_CHEST) {
+    openStashBoard();
     return;
   }
 

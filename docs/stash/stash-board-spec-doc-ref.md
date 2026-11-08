@@ -302,3 +302,19 @@ _(заповнює Claude Code після кожної фази)_
 - `planItemAutoPlace` і `planStoreResources` працюють за принципом «все або нічого» для кожного стеку; нові ідентифікатори розділених стеків дає параметр `newId` (engine не викликає `crypto`).
 - Порядок сортування: категорія (gear, tool, consumable, resource, quest), далі рідкість `god-executor, spark-boss, gloom-boss, idol-boss, spark, gloom, idol`, предмети без рідкості в кінці, далі `hexobjectKey`. Порядок босів між царствами мій вибір, його легко змінити в `TONE_SORT_ORDER`. Категорія «consumable» це LOOT із `usePrice`, решта LOOT це «resource»; «quest» поки порожня.
 - Вага: `carriedWeightKg` = сумка + спорядження, схованка не рахується; зростання понад ліміт дає `OVERWEIGHT`, зменшення дозволене завжди.
+
+### S2 — стан [DONE — 2026-11-08]
+
+Web, без UI дошки (вона в S3):
+
+- `services/persistence/stash-storage.ts` (+ тест): ключ `hexoflat.hero.stash.v1`, Zod на читання, биті/невідомі/дубльовані клітинки стають порожніми, завжди повертає 64 клітинки, версія контенту не збігається значить «нічого не збережено».
+- `stores/hero-stash-store.ts` (+ тест): `cells`, `isOpen`, `hydrate/open/close/replaceCells`; правил немає.
+- `services/inventory/inventory-aggregate.ts` (+ тест): адаптер нашої сітки `rXcY` (53 клітини: 12×7 без центру під спорядження і без слота Волі) до плоских клітинок engine і назад. Порожня «рука-заглушка» стає `null` і лишається на місці, якщо слот не зайнятий; предмет на незнайомій клітинці не губиться.
+- `services/inventory/stash-transfer.ts` (+ тест на справжніх store): `moveItem`, `autoPlaceItem`, `storeResources`, `sortStash`, `readInventoryAggregate`. Результат `plan*` застосовується одним синхронним кроком: спершу `items` інвентаря, потім клітинки схованки, обидва зберігаються. Відмова не змінює жодного store.
+- `composables/use-stash-board.ts`: `openStashBoard()` відкриває store і праву панель, `closeStashBoard()`.
+- `tool-hex-tile.vue`: OPEN рукою по `stash-chest` відкриває схованку (як Книга Волі, до `executeHexAction`). Ціна 0 Волі, як у контенті.
+- Скриня робоча: `integrity: 1000` у контенті, а в `build-hex-info` stash-скриня ніколи не «Broken» (збережені мапи тримають старе значення 0). Інша скриня (LOOT) і заглушка «chest is broken» у стартері OPEN не чіпались: це інша функція.
+- Тест-хуки `getStash/getBag/setStash/setBag` у `e2e/stash-hooks.ts`. Хук `setCamping` не потрібен: умови «Camping» немає.
+- E2E: очікування в `hex-info-tooltip.spec.ts` для stash-скрині змінено на «interactable» (не запускалось).
+
+Поки немає S3, дія OPEN лише ставить `isOpen = true` і відкриває праву панель, видимої дошки ще нема. Автозакриття (відхід героя, початок бою) і кнопка закриття входять в S3 разом з дошкою.
