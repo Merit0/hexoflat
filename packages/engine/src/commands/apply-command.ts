@@ -44,6 +44,8 @@ import {
 } from '../battle/battle-commands';
 import type { Engagement } from '../squads/engagement';
 import type { InventoryState } from '../inventory/inventory-state';
+import type { InventoryContext } from '../inventory/inventory-commands';
+import { applyInventoryCommand } from '../inventory/apply-inventory';
 import { applySquadLifecycle, isSquadAction, startSquadAction } from '../squads/apply-squad';
 
 export interface HexEngineState {
@@ -56,6 +58,7 @@ export interface HexEngineState {
   battle?: BattleState;
   engagement?: Engagement;
   inventory?: InventoryState;
+  inventoryContext?: InventoryContext;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -149,6 +152,17 @@ export function applyCommand(
     case 'BATTLE':
       events.push(...applyBattleState(state, parsed));
       break;
+
+    case 'MOVE_ITEM':
+    case 'AUTO_PLACE_ITEM':
+    case 'STORE_RESOURCES':
+    case 'SORT_STASH':
+    case 'UNLOCK_STASH_CHEST': {
+      const result = applyInventoryCommand(state.inventory, parsed, state.inventoryContext);
+      state.inventory = result.inventory;
+      events.push(...result.events);
+      break;
+    }
 
     default:
       return assertNever(parsed);
