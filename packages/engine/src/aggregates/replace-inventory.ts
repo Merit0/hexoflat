@@ -12,11 +12,6 @@ function totals(state: InventoryState): Map<string, number> {
   return held;
 }
 
-/**
- * Dev / sandbox fixture: swaps the hero's whole inventory for the given one. The hero id stays
- * the hero's own, the revision moves forward, and the difference is reported item by item so the
- * ledger still adds up.
- */
 export function replaceInventory(
   current: InventoryState,
   payload: { heroId: string; revision: number; inventory: InventoryState },

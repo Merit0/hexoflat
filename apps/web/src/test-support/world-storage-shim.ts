@@ -18,7 +18,6 @@ function toBlobKey(key: string): string {
   return hit ? hit[1] + key.slice(hit[0].length) : key;
 }
 
-/** The old localStorage-shaped view of the world documents, so characterization tests keep their wording. */
 export const worldStorage = {
   getItem: (key: string) => readBlob(toBlobKey(key)),
   setItem: (key: string, value: string) => writeBlob(toBlobKey(key), value),

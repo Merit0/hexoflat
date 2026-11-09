@@ -2,13 +2,11 @@ import { randomBytes } from 'node:crypto';
 
 export const HERO_SESSIONS = Symbol('HERO_SESSIONS');
 
-/** One active session per hero: a new connection takes the hero over from the old one. */
 export class HeroSessions {
   private readonly bySocket = new Map<string, string>();
   private readonly byHero = new Map<string, string>();
   private readonly tokens = new Map<string, string>();
 
-  /** Returns the socket that was just replaced, if any. */
   claim(heroId: string, socketId: string): string | null {
     this.release(socketId);
     const previous = this.byHero.get(heroId) ?? null;
@@ -19,7 +17,6 @@ export class HeroSessions {
     return previous && previous !== socketId ? previous : null;
   }
 
-  /** The secret of the tab that owns the hero now; REST calls of that tab carry it. */
   tokenOf(heroId: string): string | null {
     return this.tokens.get(heroId) ?? null;
   }

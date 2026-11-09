@@ -35,12 +35,6 @@ function rejection(events: readonly DomainEvent[]): ProgressOutcome | null {
   return { ok: false, code: reason ?? 'KNOWLEDGE_REJECTED', events: [...events] };
 }
 
-/**
- * The knowledge rules take their context from the state owner. Until the server holds the map
- * (D4b) it builds it from what it saw last: where the hero stood and which location that is. It
- * never trusts a claim that would make something cheaper: it assumes no battle and no movement
- * in flight, so a step is charged wherever the location charges one.
- */
 export function serverKnowledgeContext(presence: Presence | null): KnowledgeContext {
   const locationKey = presence?.locationKey ?? 'camping';
   return {

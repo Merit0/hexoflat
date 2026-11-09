@@ -248,6 +248,55 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     ).toBe(true);
   });
 
+  it('answers an action with the effects the client replays, and a refusal with none', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.FIREPLACE);
+    const hint = {
+      tool: { dragging: true, hover: spot, active: HEXOBJECT_KEYS.HAND },
+      health: { current: 1, max: 3 },
+    };
+    const started = await send(userId, heroId, 'WORLD_ACTION', {
+      coordinates: spot,
+      actionType: EHexActionTypeForTests.USE,
+      toolKey: HEXOBJECT_KEYS.HAND,
+      client: hint,
+    });
+    expect(started.result).toBe('applied');
+    expect(started.effects).toHaveLength(1);
+    expect(started.effects[0]).toMatchObject({ kind: 'lockTool', coordinates: spot });
+    expect(typeof (started.effects[0] as { endsAt: number }).endsAt).toBe('number');
+
+    const refused = await send(userId, heroId, 'WORLD_ACTION', {
+      coordinates: { columnIndex: 0, rowIndex: 0 },
+      actionType: EHexActionTypeForTests.USE,
+      toolKey: HEXOBJECT_KEYS.HAND,
+      client: hint,
+    });
+    expect(refused).toMatchObject({ result: 'rejected', effects: [] });
+
+    const full = await send(userId, heroId, 'WORLD_ACTION', {
+      coordinates: spot,
+      actionType: EHexActionTypeForTests.USE,
+      toolKey: HEXOBJECT_KEYS.HAND,
+      client: { ...hint, health: { current: 3, max: 3 } },
+    });
+    expect(full).toMatchObject({ result: 'rejected', effects: [] });
+  });
+
+  it('refuses a client hint that carries anything else', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    await expect(
+      send(userId, heroId, 'WORLD_TICK', {
+        client: {
+          tool: { dragging: false, hover: null, active: null, extra: 1 },
+          health: { current: 1, max: 3 },
+        },
+      }),
+    ).rejects.toBeDefined();
+  });
+
   it('builds a location on request without moving the hero, and keeps it', async () => {
     const { userId, heroId } = await kit.newPlayer();
     const a = (await world.ensure(userId, heroId, 'silesia')) as { mapId: string };

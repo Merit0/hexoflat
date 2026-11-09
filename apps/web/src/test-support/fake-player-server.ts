@@ -14,11 +14,6 @@ import type {
   PlayerEnvelope,
 } from '@/services/player/player-socket';
 
-/**
- * An in-memory server for unit tests: it runs the real engine rules (`executePlayerCommand`) over
- * the same aggregates the API stores, with the same revision checks, so a test of the web talks to
- * the real behaviour and not to a hand-written guess of it.
- */
 interface Store {
   heroId: string;
   inventory: { revision: number; state: PlayerAggregates['inventory'] };

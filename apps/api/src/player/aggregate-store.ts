@@ -56,7 +56,6 @@ function toLoaded(rows: readonly (typeof heroAggregates.$inferSelect)[]): Loaded
   return loaded;
 }
 
-/** Locks the rows in the fixed kind order, so two commands can never wait on each other. */
 export async function loadAggregatesForUpdate(
   tx: Tx,
   heroId: string,

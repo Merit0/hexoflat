@@ -47,7 +47,6 @@ function applyInventory(projection: ProjectedAggregate | undefined): void {
 type KnowledgeListener = (knowledge: KnowledgeState | null) => void;
 let knowledgeListener: KnowledgeListener | null = null;
 
-/** The hero store keeps its own reactive copy of the knowledge; it hears every server change here. */
 export function bindKnowledgeListener(listener: KnowledgeListener | null): void {
   knowledgeListener = listener;
 }
@@ -194,12 +193,10 @@ export function endPlayerSession(): void {
   resetInventorySession();
 }
 
-/** Resolves once every local change made so far has been confirmed by the server. */
 export function settleInventorySync(): Promise<void> {
   return chain.then(() => flushExpedition());
 }
 
-/** Sends the stores' whole current inventory as a dev/e2e fixture (refused by a production server). */
 export function pushInventoryFixture(): void {
   if (inventorySession.status !== 'live') return;
   const current = readInventoryState(stores());
@@ -209,7 +206,6 @@ export function pushInventoryFixture(): void {
 
 export type ClaimOutcome = { ok: true } | { ok: false; code: string };
 
-/** Opens the free camp chest once. The server decides; the answer is applied, never guessed. */
 export function claimCampChest(): Promise<ClaimOutcome> {
   if (inventorySession.claimedRewards.includes(CAMP_FIRST_CHEST_REWARD)) {
     return Promise.resolve({ ok: true });
@@ -237,10 +233,6 @@ export interface ProgressResult {
   knowledge: KnowledgeState | null;
 }
 
-/**
- * Sends a command on the hero's progress (Will, skills, steps) and applies the server's answer.
- * Gains and spends alike wait for the server: the client never decides what the hero has.
- */
 export function sendProgress(
   type: string,
   payload: Record<string, unknown>,
@@ -294,16 +286,11 @@ function samePresence(known: ServerPresence | null, now: ServerPresence): boolea
   );
 }
 
-/**
- * Tells the server where the hero stands, when it does not already know. Until the server holds
- * the map, a step is checked against this last seen place and the location's Will rule.
- */
 export async function ensurePresence(now: ServerPresence | null): Promise<void> {
   if (!now || samePresence(inventorySession.presence, now)) return;
   await sendProgress('ARRIVE', { ...now }, { withKnowledgeRevision: false });
 }
 
-/** Dev / e2e fixture: the stores' knowledge (changed by hand) becomes the server's. Refused in production. */
 export function pushKnowledgeFixture(knowledge: KnowledgeState): void {
   if (inventorySession.status !== 'live') return;
   inventorySession.knowledge = knowledge;

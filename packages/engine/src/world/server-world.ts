@@ -11,10 +11,9 @@ import type { BoardDescriptor } from '../boards/board-descriptors';
 import { deriveStream } from '../utils/random-seeded';
 import { applyCommand } from '../commands/apply-command';
 import { engagementSchema, type Engagement } from '../squads/engagement';
-import { createServerActionContext } from './server-ports';
+import { createRecordingPorts } from './server-ports';
 import { findEntryHex } from './hero-placement';
 
-/** One map the hero is on, held by the server: the map itself, the hero's place on it and the seed of its dice. */
 export interface ServerWorld {
   locationKey: LocationKey;
   mapId: string;
@@ -67,11 +66,6 @@ export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   };
 }
 
-/**
- * A fresh board for a location, built the way the client builds one when none is saved: generated
- * from the seed, fog on, resource spawners filled in, the camp's Book installed, the hero put at
- * the entry and what he sees revealed. The seed comes from the expedition, never from a player.
- */
 export function createServerWorld(
   locationKey: LocationKey,
   mapId: string,
@@ -83,7 +77,7 @@ export function createServerWorld(
   const { map } = created;
   initFog(map);
 
-  const ctx = createServerActionContext();
+  const { ctx } = createRecordingPorts();
   for (const { tile, hexobject } of findTilesMissingSpawners(map)) {
     applyCommand(
       { map, heroes: {} },

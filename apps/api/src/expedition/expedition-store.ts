@@ -19,7 +19,6 @@ export class ExpeditionError extends Error {
   }
 }
 
-/** The hero's active solo expedition; created on first use. Co-op later adds members, not tables. */
 export async function ensureExpedition(db: Db, userId: string, heroId: string): Promise<string> {
   const find = (exec: Executor) =>
     exec
@@ -53,7 +52,6 @@ export async function ensureExpedition(db: Db, userId: string, heroId: string): 
   });
 }
 
-/** Documents the server writes itself (D4b): a player's browser neither reads nor writes them. */
 export const SERVER_KEY_PATTERN = /^srv-(?:index|world:[0-9a-f-]{36})$/;
 
 export async function loadBlobs(
@@ -188,7 +186,6 @@ export async function patchBlobs(
   });
 }
 
-/** Dev reset: the hero's world is forgotten too. */
 export async function clearExpeditionBlobs(tx: Tx, heroId: string): Promise<void> {
   const members = await tx
     .select({ id: expeditionMembers.expeditionId })

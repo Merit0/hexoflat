@@ -16,11 +16,6 @@ export const presenceSchema = z
   .strict();
 export type Presence = z.infer<typeof presenceSchema>;
 
-/**
- * Everything a hero earns by playing that is not an item: Will and skills (the knowledge state),
- * the steps he walked, the one-time rewards he took, and where he stands (so a step can be
- * checked against the last position the server saw).
- */
 export const progressStateSchema = z
   .object({
     claimedRewards: z.array(z.string().min(1)).max(1000),

@@ -11,12 +11,6 @@ import {
 const SEND_DEBOUNCE_MS = 400;
 const KEEPALIVE_LIMIT_BYTES = 60_000;
 
-/**
- * D4a, temporary: the world is still played on the client, so the server keeps what the client
- * reports (maps with fog, battle snapshots, where the hero is) as opaque documents. This module
- * loads them when the session starts and sends changes on, a short moment after they happen.
- * D4b replaces it with server-held state.
- */
 const dirtyPut = new Set<string>();
 const dirtyRemoved = new Set<string>();
 let timer: number | null = null;
@@ -69,7 +63,6 @@ function schedule(): void {
   }, SEND_DEBOUNCE_MS);
 }
 
-/** Sends everything that changed so far and waits for the server. */
 export function flushExpedition(): Promise<void> {
   if (timer !== null) {
     window.clearTimeout(timer);
@@ -98,7 +91,6 @@ function bindHiddenFlush(): void {
   window.addEventListener('pagehide', flushOnLeave);
 }
 
-/** Loads the hero's expedition into the browser copy and starts sending changes. */
 export async function startExpeditionSync(): Promise<void> {
   const current = await apiClient.get<{ blobs: Record<string, string> }>('/expeditions/current');
   dirtyPut.clear();

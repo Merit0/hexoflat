@@ -48,10 +48,6 @@ function movementOf(event: DomainEvent): Movement | null {
   }
 }
 
-/**
- * One ledger row per stock movement in the events; `balanceAfter` is a running balance that starts
- * from what the hero held before the command and ends at what he holds after it.
- */
 export function ledgerEntriesFor(
   events: readonly DomainEvent[],
   before: InventoryState,

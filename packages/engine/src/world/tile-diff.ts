@@ -18,7 +18,6 @@ export interface TileDiff {
   tile: SerializedTile;
 }
 
-/** The tiles that differ from the snapshot, in the serialized form the client's map model reads. */
 export function diffTiles(before: TileSnapshot, map: HexMapModel): TileDiff[] {
   const diffs: TileDiff[] = [];
   for (const tile of map.toJSON().tiles) {

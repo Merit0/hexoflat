@@ -8,9 +8,25 @@ const coordinates = z.object({
   rowIndex: z.number().int().min(0).max(255),
 });
 const KNOWN_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));
+const clientHint = z
+  .object({
+    tool: z
+      .object({
+        dragging: z.boolean(),
+        hover: coordinates.strict().nullable(),
+        active: z
+          .string()
+          .refine((key) => KNOWN_KEYS.has(key), 'unknown tool')
+          .nullable(),
+      })
+      .strict(),
+    health: z
+      .object({ current: z.number().min(0).max(1000), max: z.number().min(0).max(1000) })
+      .strict(),
+  })
+  .strict();
 const base = { heroId: z.string().min(1) };
 
-/** Commands on the world the server holds (D4b). Every payload is strict: nothing the player adds is read. */
 export const WORLD_COMMAND_SCHEMAS = {
   WORLD_ENTER: z
     .object({
@@ -33,12 +49,16 @@ export const WORLD_COMMAND_SCHEMAS = {
           coordinates: coordinates.strict(),
           actionType: z.enum(EHexActionType),
           toolKey: z.string().refine((key) => KNOWN_KEYS.has(key), 'unknown tool'),
+          client: clientHint.optional(),
         })
         .strict(),
     })
     .strict(),
   WORLD_TICK: z
-    .object({ type: z.literal('WORLD_TICK'), payload: z.object(base).strict() })
+    .object({
+      type: z.literal('WORLD_TICK'),
+      payload: z.object({ ...base, client: clientHint.optional() }).strict(),
+    })
     .strict(),
 } as const;
 

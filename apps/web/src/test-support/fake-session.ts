@@ -4,10 +4,6 @@ import { inventorySession, resetInventorySession } from '@/services/inventory/in
 import { applyProgress } from '@/services/inventory/inventory-sync';
 import { resetFakePlayerServer, snapshot } from './fake-player-server';
 
-/**
- * Puts the web session straight into the "live" state against the fake server (no socket round
- * trip, so a test can call it from synchronous setup): the hero begins with the given Will and skills.
- */
 export function seedFakeSession(
   heroId: string,
   start: { will?: number; skills?: KnowledgeState['skills'] } = {},

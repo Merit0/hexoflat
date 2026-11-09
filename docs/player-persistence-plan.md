@@ -590,3 +590,31 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 5. Юніт-тести з заповненим кешем світу (`createServerWorld`), e2e по групах `board`, `hero`, `camp`, `combat`.
 
 **Стан дерева:** клієнт без змін відносно D4a (гра працює як раніше); серверні `ensure`/`adopt`/`WORLD_*` ще не мають клієнтського споживача.
+
+## Старт чату: D4b-A крок 1 (порти як запис і відтворення)
+
+Прочитай: цей документ (розділи «Результати D4b-A, фундамент» і «D4b-A, друга половина»), скіли `hexoflat-phase`, `hexoflat-engine`, `hexoflat-web-state`, `hexoflat-e2e`, `CLAUDE.md`. Гілка `player-persistent-data-implement`. Не комітити, наприкінці дати повідомлення для коміту й звіт українською. Не використовувати `git stash`/`checkout`/`reset`.
+
+**Крок 0 (до коду): прибрати коментарі.** У D1–D4b я додав у нетестовий код близько 150 рядків пояснювальних коментарів, а в цьому проєкті коментарі не додаються ніколи. Знайти: `git diff <база> -U0` або `grep -nE '^[[:space:]]*(//|/\*|\*/|\* )'` у файлах: `apps/api/src/{world,player,expedition,cli}`, `apps/web/src/services/{inventory,player,persistence/world-blob-store.ts,knowledge}`, `apps/web/src/test-support`, `packages/engine/src/{aggregates,world}`. Прибрати коментарі (потрібне міркування лишається в цьому документі), перевірити lint/типи/тести.
+
+**Крок 1: що зробити.**
+
+1. У `packages/engine/src/world/` замінити `createServerActionContext` записувачем ефектів: `createRecordingPorts()` повертає `{ ctx, effects }`, де `effects` це масив `{ kind: 'lockTool', coordinates, endsAt } | 'unlockTool' | { kind: 'consumeDurability', pct } | 'stopTool' | 'clearResolvedActions' | { kind: 'setActiveTool', key } | { kind: 'treeCut', amount } | { kind: 'stones', amount } | { kind: 'gather', key, amount } | { kind: 'log', source, text, type } | { kind: 'heal', amount }`. `actWorld` і `tickWorld` повертають `effects`, `WorldService` кладе їх у `WorldResponse`.
+2. Спроєктувати `USE` біля вогнища (`action-finishers-registry.ts`, цикл лікування читає `heroToolStore.isDragging/hover/activeTool`): варіант А, стан інструмента клієнт передає в `WORLD_ACTION`/`WORLD_TICK` (`tool: { dragging, hover, active }`, не довіряти для чогось, що дешевшає); варіант Б, лікування стає серверною дією зі здоров'ям (D4b-3). Вибрати й записати рішення сюди, показати Олегу, якщо змінює поведінку.
+3. Тести engine: кожен вид ефекту від відповідної дії (рубання, видобуток, взяття, вогнище, відкриття), порядок ефектів, відсутність ефектів при відмові. Тести API на реальному Postgres: ефекти доходять у відповіді, відмова не повертає ефектів.
+4. Клієнт ще не чіпати. Кінець кроку: engine і API зелені, документ оновлено, скіли оновлено.
+
+**Далі (окремі чати):** крок 2 клієнт бере карту з сервера й ходить через `WORLD_STEP`; крок 3 дії й тік, відтворення ефектів, прибрати `ARRIVE`/`SPEND_WILL` з ключем/світові `DEV_*`; крок 4 тимчасові шляхи через `PUT /player/world`; крок 5 тести й e2e по групах.
+
+## Результати D4b-A, крок 0 і 1 (2026-11-09)
+
+**Крок 0.** З нетестового коду каталогів D1–D4b прибрано ~135 рядків пояснювальних коментарів (потрібні міркування лишаються в цьому документі). Типи й lint зелені.
+
+**Крок 1 (engine + API, клієнт не чіпали).**
+
+- `createServerActionContext` замінено `createRecordingPorts(hint?)` (`packages/engine/src/world/server-ports.ts`): повертає `{ ctx, effects }`. Ефекти: `lockTool`, `unlockTool`, `consumeDurability`, `stopTool`, `clearResolvedActions`, `setActiveTool`, `treeCut`, `stones`, `gather`, `log`, `heal`. `actWorld`/`tickWorld` повертають `effects` (`stepWorld` порожній масив), `WorldService` кладе їх у `WorldResponse.effects`; для ідемпотентної повторної відповіді й відмов `effects: []`.
+- Рушійні умови, які порти мусять імітувати: `isLocked` завжди `true`, щоб завершення дії завжди давало `unlockTool` (інакше клієнтський інструмент лишився б заблокованим); `stoneCollected` завжди truthy, щоб `collectStones` записувався (на клієнті цей прапорець раніше гейтив лічильник, тож перший видобутий камінь не рахувався, це стара особливість клієнтського стору, не серверна).
+- **Рішення щодо `USE` біля вогнища: варіант А.** Цикл лікування читає, чи рука ще на вогнищі (`isDragging`, `hover`, `activeTool`) і здоров'я героя. `WORLD_ACTION` і `WORLD_TICK` мають необов'язкове strict-поле `client: { tool: { dragging, hover, active }, health: { current, max } }`. Серверу довіряється лише те, що не робить гру дешевшою: лікування бере кількість з контенту, а не з клієнта; клієнт може лише збрехати про «ще відпочиваю» й «здоров'я» (лікування біля вогнища безкоштовне, Воля списується при старті дії). Без `client` здоров'я 0, тож `USE` біля вогнища відмовляє «Health is already full». Здоров'я переходить на сервер у D4b-3, тоді поле `health` зникне. Поведінка для гравця не змінюється.
+- Тести: engine 923 (`world/effects.test.ts`: рубання, видобуток, взяття, вогнище зі «ще лікується» й «пішов», повне здоров'я, відмова без ефектів), API 144 (`effects` у відповіді, відмова з `effects: []`, зайві поля в `client` відхиляються).
+
+**Далі:** крок 2 (клієнт бере карту з сервера й ходить через `WORLD_STEP`), крок 3 (дії й тік, відтворення `effects`, клієнт шле `client`, прибрати `ARRIVE`/`SPEND_WILL` з ключем/світові `DEV_*`), кроки 4–5 як вище.

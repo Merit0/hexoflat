@@ -38,7 +38,6 @@ function assertDevOnly(): void {
   }
 }
 
-/** Gives a test hero a ready kit. Dev only — a real hero earns everything by playing. */
 export async function seedHero(
   db: Db,
   heroes: HeroesService,
@@ -84,10 +83,6 @@ export interface RollbackPlan {
   newRevision: number;
 }
 
-/**
- * Restores an aggregate to a stored snapshot. Revisions only ever grow: the restored state is
- * written as the next revision, and what it replaced is kept as a `rollback` snapshot.
- */
 export async function rollbackAggregate(
   db: Db,
   heroId: string,

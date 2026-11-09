@@ -131,7 +131,6 @@ export const PLAYER_COMMAND_SCHEMAS = {
 export type TPlayerCommandType = keyof typeof PLAYER_COMMAND_SCHEMAS;
 export type PlayerCommand = z.infer<(typeof PLAYER_COMMAND_SCHEMAS)[TPlayerCommandType]>;
 
-/** Aggregates a command reads and may change, in the fixed lock order. */
 export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAggregateKind[]> = {
   MOVE_ITEM: ['inventory'],
   AUTO_PLACE_ITEM: ['inventory'],
@@ -151,11 +150,6 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   DEV_SET_KNOWLEDGE: ['progress'],
 };
 
-/**
- * What `payload.revision` means. `aggregate`: it must equal the envelope's expected revision of the
- * primary aggregate. `knowledge`: it is checked by the knowledge rules against `knowledge.revision`.
- * `none`: the command carries no revision (the envelope's revision still guards the order).
- */
 export const PLAYER_COMMAND_REVISION: Record<
   TPlayerCommandType,
   'aggregate' | 'knowledge' | 'none'

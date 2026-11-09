@@ -15,6 +15,8 @@ import {
   type DomainEvent,
   type ServerWorld,
   type TileDiff,
+  type WorldClientHint,
+  type WorldEffect,
   type WorldOutcome,
   type WorldPlayerCommand,
   type WorldRun,
@@ -53,6 +55,7 @@ export interface WorldResponse {
   replayed?: boolean;
   events: DomainEvent[];
   tileDiffs: TileDiff[];
+  effects: WorldEffect[];
   engagement?: unknown;
   hero: {
     locationKey: string;
@@ -86,12 +89,6 @@ async function saveWorld(tx: Tx, expeditionId: string, world: ServerWorld): Prom
   );
 }
 
-/**
- * The world the server holds (D4b-A): maps it generated itself from the expedition seed, the
- * hero's place on them, and the commands that move him and act on a hex. A step or an action runs
- * over the server's map, the hero's progress and his inventory in one transaction, so the fog, the
- * Will, the loot and the changed hex land together or not at all.
- */
 @Injectable()
 export class WorldService {
   constructor(
@@ -151,6 +148,7 @@ export class WorldService {
         replayed: true,
         events: prior.events as DomainEvent[],
         tileDiffs: [],
+        effects: [],
         hero: null,
         aggregates: {
           inventory: projectAggregate(inventory),
@@ -184,12 +182,14 @@ export class WorldService {
       events: DomainEvent[],
       tileDiffs: TileDiff[],
       world: ServerWorld | null,
+      effects: WorldEffect[] = [],
     ): WorldResponse => ({
       commandId,
       result,
       ...(code ? { code } : {}),
       events,
       tileDiffs,
+      effects,
       hero: world
         ? { locationKey: world.locationKey, mapId: world.mapId, coordinates: world.heroCoordinates }
         : null,
@@ -259,12 +259,22 @@ export class WorldService {
       inventory: inventory.state,
       heroId,
       now,
+      client:
+        command.type === 'WORLD_ACTION' || command.type === 'WORLD_TICK'
+          ? (command.payload.client as WorldClientHint | undefined)
+          : undefined,
     };
     const outcome: WorldOutcome =
       command.type === 'WORLD_STEP'
         ? stepWorld(run, command.payload.target)
         : command.type === 'WORLD_ACTION'
-          ? actWorld(run, { ...command.payload, now })
+          ? actWorld(run, {
+              heroId: command.payload.heroId,
+              coordinates: command.payload.coordinates,
+              actionType: command.payload.actionType,
+              toolKey: command.payload.toolKey,
+              now,
+            })
           : tickWorld(run);
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
@@ -305,6 +315,7 @@ export class WorldService {
       result: 'applied',
       events: outcome.events,
       tileDiffs: outcome.tileDiffs,
+      effects: outcome.effects,
       engagement: outcome.world.engagement,
       hero: {
         locationKey: outcome.world.locationKey,
@@ -315,10 +326,6 @@ export class WorldService {
     };
   }
 
-  /**
-   * The map of a location, built on first use and kept. Does not move the hero, so a client can
-   * fetch every location it may walk into before it needs one (it loads synchronously).
-   */
   async ensure(userId: string, heroId: string, locationKey: LocationKey): Promise<unknown> {
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
@@ -343,11 +350,6 @@ export class WorldService {
     });
   }
 
-  /**
-   * Dev and sandbox only, temporary until D4b-3 and D4b-4: the world changes that still happen on
-   * the client (a portal, a crossing, a respawn, the dev tools) hand the server the map they made.
-   * A production server refuses it, so those changes only work where the dev commands do.
-   */
   async adopt(userId: string, heroId: string, raw: unknown): Promise<void> {
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
@@ -383,7 +385,6 @@ export class WorldService {
     });
   }
 
-  /** The whole map the hero is on, for the client to draw. Never changes anything. */
   async snapshot(userId: string, heroId: string): Promise<unknown> {
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');

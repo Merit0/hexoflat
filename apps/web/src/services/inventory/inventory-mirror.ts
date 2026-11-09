@@ -1,11 +1,6 @@
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 
-/**
- * The seam between the synchronous local inventory (the stores run the engine at once, so a drag
- * feels instant) and the server (the authority). `inventory-store-io` calls it after every
- * committed local change; `inventory-sync` binds it. A separate module so neither imports the other.
- */
 export interface InventoryMirrorHandler {
   command(command: HexEngineCommand, before: InventoryState): void;
   world(before: InventoryState, after: InventoryState): void;

@@ -119,7 +119,6 @@ export function executePlayerCommand(
   }
 }
 
-/** Server-internal stock changes (rewards, loot, spending) — never reachable from a client. */
 export function grantItemServerSide(
   inventory: InventoryState,
   key: THexobjectKey,
@@ -145,7 +144,6 @@ export function consumeItemServerSide(
   return inventoryOutcome(inventory, result.inventory, result.events);
 }
 
-/** How many of an item the hero holds across bag, hands and stash. */
 export function heldAmount(inventory: InventoryState, key: string): number {
   return countItem(toAggregate(inventory), key as THexobjectKey);
 }

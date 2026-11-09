@@ -132,10 +132,6 @@ export class PlayerCommandService {
     );
   }
 
-  /**
-   * Dev and sandbox only: puts the hero back to a brand-new state (empty bag, no chest, no claimed
-   * reward). Revisions keep growing, and the removed items are written off in the ledger.
-   */
   async resetHero(userId: string, heroId: string): Promise<HeroSnapshot> {
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
@@ -191,7 +187,6 @@ export class PlayerCommandService {
     return this.snapshot(userId, heroId);
   }
 
-  /** For server code that spends items on the hero's behalf (a purchase, a world action). */
   async consumeItem(
     userId: string,
     heroId: string,
@@ -204,7 +199,6 @@ export class PlayerCommandService {
     );
   }
 
-  /** For server code that hands items to the hero (a reward, a loot pickup). */
   async grantItem(
     userId: string,
     heroId: string,

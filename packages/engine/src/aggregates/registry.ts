@@ -49,7 +49,6 @@ export const AGGREGATES: { [K in TAggregateKind]: IAggregateDefinition<Aggregate
   progress: progressDefinition,
 };
 
-/** Runs a stored document through the upcasters up to the current schema version. */
 export function upcastAggregate<K extends TAggregateKind>(
   kind: K,
   storedVersion: number,

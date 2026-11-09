@@ -19,10 +19,6 @@ function refused(heroId: string, reason: ClaimRejectReason): ClaimCampChestResul
   };
 }
 
-/**
- * The hero opens the camp chest once, for free: the first stash chest is unlocked and holds the
- * camp gear. The reward id in `progress.claimedRewards` is what stops a second claim.
- */
 export function claimCampChest(
   inventory: InventoryState,
   progress: ProgressState,
