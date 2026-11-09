@@ -8,6 +8,7 @@ import type { RngState } from '../utils/random-seeded';
 import type { HexEngineState } from './apply-command';
 import { battleStateSchema, type BattleState } from '../battle/battle-state';
 import { engagementSchema, type Engagement } from '../squads/engagement';
+import { inventoryStateSchema, type InventoryState } from '../inventory/inventory-state';
 
 export interface SnapshotPayload {
   version: number;
@@ -19,6 +20,7 @@ export interface SnapshotPayload {
   knowledge?: KnowledgeState;
   battle?: BattleState;
   engagement?: Engagement;
+  inventory?: InventoryState;
 }
 
 /** Thrown by `deserializeState` — never partially deserializes a bad payload. */
@@ -61,6 +63,7 @@ export function serializeState(state: HexEngineState): SnapshotPayload {
     ...(state.knowledge ? { knowledge: state.knowledge } : {}),
     ...(state.battle ? { battle: state.battle } : {}),
     ...(state.engagement ? { engagement: state.engagement } : {}),
+    ...(state.inventory ? { inventory: state.inventory } : {}),
   };
   return {
     ...content,
@@ -87,6 +90,9 @@ export function deserializeState(payload: SnapshotPayload, now: number): HexEngi
     ...(payload.knowledge ? { knowledge: knowledgeStateSchema.parse(payload.knowledge) } : {}),
     ...(payload.battle ? { battle: battleStateSchema.parse(payload.battle) } : {}),
     ...(payload.engagement ? { engagement: engagementSchema.parse(payload.engagement) } : {}),
+    ...(payload.inventory
+      ? { inventory: inventoryStateSchema.parse(payload.inventory) as InventoryState }
+      : {}),
     rngState: rngState ?? freshRngState(),
   };
 }

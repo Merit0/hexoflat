@@ -3,6 +3,7 @@ import type HexMapModel from '../map/models/hex-map-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { HeroState } from '../hero-movement/hero-state';
 import type { KnowledgeState } from '../knowledge/state';
+import type { InventoryState } from '../inventory/inventory-state';
 import type { BattleState } from '../battle/battle-state';
 import { approachDirection } from '../battle/battlefield-setup';
 import type { Engagement, SquadRejection } from './engagement';
@@ -14,6 +15,7 @@ export interface SquadWorld {
   knowledge?: KnowledgeState;
   battle?: BattleState;
   engagement?: Engagement;
+  inventory?: InventoryState;
 }
 
 export interface SquadInput {

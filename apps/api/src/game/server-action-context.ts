@@ -3,8 +3,8 @@ import type { HexEngineActionContext } from '@hexoflat/engine';
 /**
  * Minimal working ports so the 4 pre-multiplayer commands (START_HEX_ACTION,
  * FINISH_PENDING_ACTIONS, WORLD_TICK, ADD_RESOURCE_SPAWNER) don't throw when
- * forwarded generically through the gateway. Real inventory/gathering/heal
- * persistence is out of scope for this phase (tracked as follow-up debt).
+ * forwarded generically through the gateway. Heal and gathering
+ * persistence is out of scope for this phase; the hero's inventory lives in the state itself.
  */
 export function createServerActionContext(): HexEngineActionContext {
   return {
@@ -25,9 +25,6 @@ export function createServerActionContext(): HexEngineActionContext {
     },
     gathering: {
       add: () => {},
-    },
-    inventory: {
-      putToInventory: () => ({ ok: true }),
     },
     events: {
       push: () => {},

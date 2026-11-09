@@ -1,11 +1,16 @@
-import { vi } from 'vitest';
 import { type HexEngineState } from '../commands/apply-command';
 import { buildHero, createContext } from '../commands/command-test-context';
 import { createKnowledgeState } from '../knowledge/state';
 import { grantWill } from '../knowledge/will';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
+import { emptyInventoryState, mintItem } from '../inventory/inventory-state';
+import { toAggregate } from '../inventory/inventory-adapter';
+import { countItem } from '../inventory/plan-stock';
+import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+
+const SCROLL = HEXOBJECT_KEYS.RETURN_SCROLL;
 
 export function setup(
   options: {
@@ -36,21 +41,23 @@ export function setup(
     knowledge,
     location: { locationKey, mapId: 'map-1', boardKind: options.boardKind ?? 'STATIC' },
   };
-  let scrolls = options.scrolls ?? 1;
+  const inventory = emptyInventoryState(hero.id);
+  const scrollCount = options.scrolls ?? 1;
+  if (scrollCount > 0)
+    inventory.bag[0] = mintItem(inventory, HEXOBJECT_KEYS.RETURN_SCROLL, scrollCount);
+  state.inventory = inventory;
   const base = createContext();
   const ctx = createContext({
-    inventory: {
-      ...base.inventory,
-      countItem: vi.fn(() => scrolls),
-      takeFromInventory: vi.fn(() => {
-        scrolls--;
-        return { ok: true };
-      }),
-    },
     worldMap: { ...base.worldMap, combatActive: options.combat ?? false },
   });
   const target = getHexNeighbors(hero.coordinates).find(isFree)!;
-  return { state, hero, ctx, target, scrolls: () => scrolls };
+  return {
+    state,
+    hero,
+    ctx,
+    target,
+    scrolls: () => (state.inventory ? countItem(toAggregate(state.inventory), SCROLL) : 0),
+  };
 }
 
 export const open = (heroId: string, target: IHexCoordinates) =>

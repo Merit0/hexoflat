@@ -152,7 +152,9 @@ describe('R5: dungeon portals are one-way', () => {
     const { events } = applyCommand(s.state, open(s.hero.id, s.target), s.ctx);
 
     expect(s.hero.portal?.campHex).toBeNull();
-    expect(events.at(-1)).toMatchObject({ type: 'PORTAL_OPENED', payload: { oneWay: true } });
+    expect(events.find((e) => e.type === 'PORTAL_OPENED')).toMatchObject({
+      payload: { oneWay: true },
+    });
   });
 
   it('R5 entering a one-way portal arrives in the camping with no camp hex', () => {

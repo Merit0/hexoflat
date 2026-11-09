@@ -1,6 +1,18 @@
 import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
 import { KnowledgeCommandSchema, type KnowledgeCommand } from '../knowledge/commands';
+import {
+  AutoPlaceItemCommandSchema,
+  ConsumeItemCommandSchema,
+  GrantItemCommandSchema,
+  type ConsumeItemCommand,
+  type GrantItemCommand,
+  MoveItemCommandSchema,
+  SortStashCommandSchema,
+  StoreResourcesCommandSchema,
+  UnlockStashChestCommandSchema,
+  type InventoryCommand,
+} from '../inventory/inventory-commands';
 import { BattleCommandSchema, type BattleCommand } from '../battle/battle-commands';
 import { SACRIFICE_OPTION_IDS } from '../skills/sacrifice-rules';
 import { skillIdSchema } from '../skills/skill-content';
@@ -121,6 +133,9 @@ export type HexEngineCommand =
   | ResetSkillsCommand
   | OpenPortalCommand
   | EnterPortalCommand
+  | InventoryCommand
+  | GrantItemCommand
+  | ConsumeItemCommand
   | BattleCommand;
 
 export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
@@ -138,5 +153,12 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   RESET_SKILLS: ResetSkillsCommandSchema,
   OPEN_PORTAL: OpenPortalCommandSchema,
   ENTER_PORTAL: EnterPortalCommandSchema,
+  MOVE_ITEM: MoveItemCommandSchema,
+  AUTO_PLACE_ITEM: AutoPlaceItemCommandSchema,
+  STORE_RESOURCES: StoreResourcesCommandSchema,
+  SORT_STASH: SortStashCommandSchema,
+  UNLOCK_STASH_CHEST: UnlockStashChestCommandSchema,
+  GRANT_ITEM: GrantItemCommandSchema,
+  CONSUME_ITEM: ConsumeItemCommandSchema,
   BATTLE: BattleCommandSchema,
 };

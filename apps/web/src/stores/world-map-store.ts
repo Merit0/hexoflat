@@ -10,7 +10,6 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useGatheringStore } from '@/stores/gathering-store';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
   LocationKey,
   MapRegistry,
@@ -122,7 +121,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
         heroToolStore: useHeroToolStore(),
         hero: useHeroStore(),
         gathering: useGatheringStore(),
-        inventory: useHeroInventoryStore(),
         events: useGameEventsStore(),
         worldMap,
         navigate: (locationKey) => navigateToLocation(locationKey),
@@ -465,7 +463,12 @@ export const useWorldMapStore = defineStore('world-map-store', {
         this.map = hydratedMap;
         this.hydrateResourcesFromConfig();
 
-        const changed = runWorldTick(hydratedMap, loadedAt, this.buildEngineContext());
+        const changed = runWorldTick(
+          hydratedMap,
+          loadedAt,
+          this.buildEngineContext(),
+          useHeroStore().hero.id,
+        );
         if (changed) this.markAllTilesDirty();
       } else {
         this.map = null;
@@ -525,6 +528,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
           this.map as HexMapModel,
           Date.now(),
           this.buildEngineContext(),
+          useHeroStore().hero.id,
         );
         if (changed) {
           this.markAllTilesDirty();

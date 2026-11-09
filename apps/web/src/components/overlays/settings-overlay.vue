@@ -100,7 +100,6 @@ const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const uiSettings = useUiSettingsStore();
 const heroStore = useHeroStore();
-const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
 
 const isDev = import.meta.env.DEV;
@@ -109,8 +108,7 @@ const DEV_HEALTH_CUT = 0.5;
 const DEV_COINS_GRANT = 500;
 
 function addCoins() {
-  inventoryStore.hydrate();
-  const result = inventoryStore.putToInventory(HEXOBJECT_KEYS.COINS, DEV_COINS_GRANT);
+  const result = useHeroInventoryStore().putToInventory(HEXOBJECT_KEYS.COINS, DEV_COINS_GRANT);
   if (!result.ok && result.message) heroToolStore.setActionMessage(result.message);
 }
 

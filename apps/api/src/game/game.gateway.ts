@@ -1,3 +1,4 @@
+import { commandRefusal } from './command-guard';
 import { Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
@@ -181,12 +182,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayDisconnect {
     }
 
     const hexCommand = parsedCommand.data;
-    const isHeroScoped =
-      hexCommand.type === 'MOVE_HERO' ||
-      hexCommand.type === 'START_HEX_ACTION' ||
-      hexCommand.type === 'ADD_RESOURCE_SPAWNER';
-    if (isHeroScoped && hexCommand.payload.heroId !== client.data.heroId) {
-      client.emit('error', { message: 'Cannot act as a hero you do not control' });
+    const refusal = commandRefusal(hexCommand, client.data.heroId);
+    if (refusal) {
+      client.emit('error', { message: refusal });
       return;
     }
 

@@ -1,9 +1,10 @@
 import { computed } from 'vue';
 import { compareItemsForSort } from '@hexoflat/engine/inventory/item-transfer';
 import { STASH_CHEST_CELLS } from '@hexoflat/engine/inventory/stash-constants';
-import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
+import { BAG_SLOT_KEYS } from '@hexoflat/engine/inventory/bag-layout';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
-import { bagSlotKeys, toAggregate } from '@/services/inventory/inventory-aggregate';
+import { toAggregate } from '@/services/inventory/inventory-aggregate';
 
 function formatKg(value: number): string {
   return String(Number(value.toFixed(1)));
@@ -14,7 +15,7 @@ export function useStashBoardData() {
   const stash = useHeroStashStore();
 
   const aggregate = computed(() =>
-    toAggregate(inventory.items, stash.ownedCells, bagSlotKeys(inventory.grid, WILL_SLOT_KEY)),
+    toAggregate(inventory.items, stash.ownedCells, [...BAG_SLOT_KEYS]),
   );
 
   const bagView = computed(() => {

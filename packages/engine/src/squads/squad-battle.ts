@@ -17,6 +17,10 @@ import {
 import { startBattle } from '../battle/start-battle';
 import type { Engagement } from './engagement';
 import { findSquad } from './squad-state';
+import { loadoutFromInventory } from './inventory-loadout';
+import type { InventoryState } from '../inventory/inventory-state';
+import { consumeFromDraft, type IInventoryDraft } from '../inventory/apply-stock';
+import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { done, refuse, type Outcome, type SquadWorld } from './squad-actions';
 
 export interface HeroLoadout {
@@ -49,6 +53,16 @@ export function heroBattleCreature(loadout: HeroLoadout): BattleCreature {
     hands: { right: itemFrom(loadout.weapon), left: itemFrom(loadout.shield) },
     bag: loadout.bag.map(itemFrom).filter((item) => item !== null),
   };
+}
+
+export function withInventoryLoadout(
+  creature: BattleCreature,
+  inventory: InventoryState | undefined,
+): BattleCreature {
+  if (!inventory || inventory.heroId !== creature.id) return creature;
+  const loadout = loadoutFromInventory(inventory, creature.hp / 2, creature.maxHp / 2);
+  const { hands, bag } = heroBattleCreature(loadout);
+  return { ...creature, hands, bag };
 }
 
 export interface SquadBattlePlan {
@@ -130,12 +144,23 @@ export function beginBattle(world: SquadWorld, heroes: BattleCreature[]): Outcom
   if (!engagement) return refuse('NO_ENGAGEMENT');
   if (world.battle) return refuse('BATTLE_OPEN');
   if (!findSquad(world.map, engagement.squadId)) return refuse('UNKNOWN_SQUAD');
-  const plan = planSquadBattle(world.map, engagement, heroes);
+  const fighters = heroes.map((hero) => withInventoryLoadout(hero, world.inventory));
+  const plan = planSquadBattle(world.map, engagement, fighters);
   const setup = { ...plan.deployment.setup, taskHistory: world.knowledge?.history ?? {} };
   const result = startBattle(setup);
   world.battle = result.battle;
-  engagement.startItems = startItemsOf(heroes);
+  engagement.startItems = startItemsOf(fighters);
   return done(result.events);
+}
+
+function spendConsumables(world: SquadWorld, summaries: HeroBattleSummary[]): DomainEvent[] {
+  const draft: IInventoryDraft = { current: world.inventory, events: [] };
+  for (const summary of summaries) {
+    if (draft.current?.heroId !== summary.id) continue;
+    for (const key of summary.consumed) consumeFromDraft(draft, key as THexobjectKey, 1);
+  }
+  world.inventory = draft.current;
+  return draft.events;
 }
 
 export function closeBattle(world: SquadWorld): Outcome {
@@ -163,6 +188,7 @@ export function closeBattle(world: SquadWorld): Outcome {
       kills: victory ? enemiesIn(battle) : 0,
     },
   });
+  events.push(...spendConsumables(world, heroSummaries(battle, engagement)));
   world.battle = undefined;
   world.engagement = undefined;
   return done(events);

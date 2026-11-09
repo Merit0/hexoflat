@@ -22,6 +22,7 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useBattleStore } from '@/stores/battle-store';
 import { battleTestHooks } from './battle-hooks';
 import { stashTestApi } from './stash-hooks';
+import { inventoryTestApi } from './inventory-hooks';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -224,11 +225,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return heroInventoryStore.countItem(key as THexobjectKey);
     },
 
-    grantInventoryItem(key: string, amount: number) {
-      if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      const result = heroInventoryStore.putToInventory(key as THexobjectKey, amount);
-      if (!result.ok) throw new Error(`Cannot grant ${amount} x ${key}`);
-    },
+    ...inventoryTestApi,
     ...stashTestApi,
     setHeroHealth(current: number) {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;

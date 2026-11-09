@@ -17,6 +17,7 @@ import { playPortalEnter, playPortalExit, portalFxBusy, releasePortalFx } from '
 import { routeToLocation } from '@/services/world/location-navigator';
 import { transactKnowledge } from '@/services/persistence/knowledge-storage';
 import { useGameEventsStore } from '@/stores/game-events-store';
+import { withStoreInventory } from '@/services/inventory/inventory-bridge';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -93,10 +94,8 @@ export function usePortal() {
     let opened = false;
 
     const knowledge = await transactKnowledge(heroId, (current) => {
-      const { events } = applyCommand(
-        { ...state, knowledge: current },
-        { type: 'OPEN_PORTAL', payload: { heroId, target } },
-        ctx,
+      const { events } = withStoreInventory(heroId, { ...state, knowledge: current }, (bound) =>
+        applyCommand(bound, { type: 'OPEN_PORTAL', payload: { heroId, target } }, ctx),
       );
       opened = events.some((event) => event.type === 'PORTAL_OPENED');
       const rejected = events.find((event) => event.type === 'PORTAL_OPEN_REJECTED');

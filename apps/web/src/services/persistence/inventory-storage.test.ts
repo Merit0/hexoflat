@@ -92,7 +92,7 @@ describe('inventory-storage (characterization)', () => {
     expect(readSavedInventory()!.items).toEqual([makeItem()]);
   });
 
-  it('defaults carry capacity to 5 when the saved value is not a number', () => {
+  it('defaults carry capacity to 10 when the saved value is not a number', () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -104,7 +104,7 @@ describe('inventory-storage (characterization)', () => {
       }),
     );
 
-    expect(readSavedInventory()!.carryCapacityKg).toBe(5);
+    expect(readSavedInventory()!.carryCapacityKg).toBe(10);
   });
 
   it('returns null instead of throwing on unparsable JSON', () => {

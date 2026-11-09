@@ -4,17 +4,15 @@ import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { BattleCommand, SquadLifecyclePayload } from '@hexoflat/engine/battle/battle-commands';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
-import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
 import { planSquadBattle, type HeroBattleSummary } from '@hexoflat/engine/squads/squad-battle';
 import { findSquad } from '@hexoflat/engine/squads/squad-state';
-import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { i18n } from '@/i18n';
-import { compassOf, heroCreatureFrom, heroLoadout, type LoadoutSource } from './squad-loadout';
+import { compassOf, heroCreatureFrom, type LoadoutSource } from './squad-loadout';
 import { useBattleStore, type BattleStep } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { withStoreInventory } from '@/services/inventory/inventory-bridge';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { logBattleEvents } from '@/services/battle/battle-event-log';
 import { bindBattleHandsGate } from '@/services/battle/battle-hands-gate';
@@ -34,14 +32,10 @@ type LifecycleInput = SquadLifecyclePayload extends infer P
 
 export function squadLoadoutSource(): LoadoutSource {
   const heroStore = useHeroStore();
-  const inventory = useHeroInventoryStore();
   return {
     heroId: heroStore.hero.id,
     hearts: heroStore.hero.currentHealth,
     maxHearts: heroStore.heroHpMax,
-    weapon: inventory.equippedItems.weapon,
-    shield: inventory.equippedItems.shield,
-    items: inventory.items,
   };
 }
 
@@ -64,11 +58,9 @@ function engineState(map: HexMapModel): HexEngineState {
 function closeOut(closed: ClosedPayload) {
   const world = useWorldMapStore();
   const heroStore = useHeroStore();
-  const inventory = useHeroInventoryStore();
   const mine = closed.heroes.find((h) => h.id === heroStore.hero.id);
   if (mine) {
     heroStore.hero.setHealth(mine.hearts);
-    for (const key of mine.consumed) inventory.takeFromInventory(key as THexobjectKey, 1);
   }
   for (let i = 0; i < closed.kills; i += 1) heroStore.hero.addKilled();
   heroStore.saveProgressToStorage();
@@ -111,10 +103,8 @@ function runLifecycle(input: LifecycleInput): { state: HexEngineState; events: D
   const world = useWorldMapStore();
   const state = engineState(world.map as HexMapModel);
   const payload = { heroId: useHeroStore().hero.id, atMs: Date.now(), ...input };
-  const { events } = applyCommand(
-    state,
-    { type: 'BATTLE', payload: payload },
-    world.buildEngineContext(),
+  const { events } = withStoreInventory(payload.heroId, state, (bound) =>
+    applyCommand(bound, { type: 'BATTLE', payload }, world.buildEngineContext()),
   );
   useBattleStore().engage(state.engagement ?? null);
   return { state, events };
@@ -188,14 +178,7 @@ export function useSquadFlow() {
   const battleStore = useBattleStore();
 
   bindBattleBridge();
-  bindBattleHandsGate({
-    ...useBattleWarnings(),
-    hands: () => {
-      const loadout = heroLoadout(squadLoadoutSource());
-      const battleKey = (key: string | null) => (key ? battleItemOfHexobject(key) : null);
-      return { right: battleKey(loadout.weapon), left: battleKey(loadout.shield) };
-    },
-  });
+  bindBattleHandsGate(useBattleWarnings());
 
   watch(
     () => [battleStore.engagement, battleStore.deploy, world.map] as const,
