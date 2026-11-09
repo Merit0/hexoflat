@@ -4,3 +4,5 @@ export * from './tile-diff';
 export * from './world-commands';
 export * from './hero-placement';
 export * from './travel';
+export * from './world-leave';
+export * from './portal-world';

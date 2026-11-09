@@ -16,11 +16,15 @@ import {
   type ServerWorld,
   type TileDiff,
   type WorldClientHint,
+  type PortalRun,
   type TravelRun,
   type WorldEffect,
   type WorldOutcome,
   type WorldPlayerCommand,
   type WorldRun,
+  closePortalWorld,
+  enterPortalWorld,
+  openPortalWorld,
   travelWorld,
 } from '@hexoflat/engine';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
@@ -58,6 +62,7 @@ export interface WorldResponse {
   events: DomainEvent[];
   tileDiffs: TileDiff[];
   effects: WorldEffect[];
+  touched?: { locationKey: LocationKey; world: unknown }[];
   travel?: {
     locationKey: LocationKey;
     world: unknown;
@@ -271,24 +276,39 @@ export class WorldService {
           ? (command.payload.client as WorldClientHint | undefined)
           : undefined,
     };
-    if (command.type === 'WORLD_TRAVEL') {
-      const stored: Partial<Record<LocationKey, ServerWorld>> = {};
+    const needsFinders =
+      command.type === 'WORLD_TRAVEL' ||
+      command.type === 'WORLD_PORTAL_ENTER' ||
+      command.type === 'WORLD_PORTAL_CLOSE';
+    const stored: Partial<Record<LocationKey, ServerWorld>> = {};
+    const byMap = new Map<string, ServerWorld>();
+    if (needsFinders) {
       for (const [key, mapId] of Object.entries(index) as [LocationKey, string][]) {
         const held = mapId === world.mapId ? null : await loadWorld(tx, expeditionId, mapId, now);
-        if (held) stored[key] = held;
+        if (held) {
+          stored[key] = held;
+          byMap.set(mapId, held);
+        }
       }
-      const seed = await expeditionSeed(tx, expeditionId);
-      const travelRun: TravelRun = {
-        ...run,
-        loadStored: (key) => stored[key] ?? null,
-        create: (key) => createServerWorld(key, randomUUID(), seed, heroId),
-      };
-      const travelled = travelWorld(travelRun, command.payload.via);
+    }
+    const seed = needsFinders ? await expeditionSeed(tx, expeditionId) : '';
+    const finders = {
+      loadStored: (key: LocationKey) => stored[key] ?? null,
+      loadById: (mapId: string) => byMap.get(mapId) ?? null,
+      create: (key: LocationKey) => createServerWorld(key, randomUUID(), seed, heroId),
+    };
+    if (command.type === 'WORLD_TRAVEL' || command.type === 'WORLD_PORTAL_ENTER') {
+      const travelRun: TravelRun & PortalRun = { ...run, ...finders };
+      const travelled =
+        command.type === 'WORLD_TRAVEL'
+          ? travelWorld(travelRun, command.payload.via)
+          : enterPortalWorld(travelRun);
       if (!travelled.ok) {
         await journal('rejected', travelled.events, travelled.code, null);
         return respond('rejected', travelled.code, travelled.events, [], world, travelled.effects);
       }
-      const { origin, destination, replaced } = travelled;
+      const { origin, destination, replaced, touched } = travelled;
+      for (const other of touched) await saveWorld(tx, expeditionId, other);
       if (replaced) {
         await deleteServerDocument(tx, expeditionId, worldKey(origin.mapId));
         await saveWorld(tx, expeditionId, replaced);
@@ -330,6 +350,10 @@ export class WorldService {
       await journal('applied', travelled.events, null, savedProgress);
       return {
         ...respond('applied', undefined, travelled.events, [], destination, travelled.effects),
+        touched: [...(replaced ? [] : [origin]), ...touched].map((other) => ({
+          locationKey: other.locationKey,
+          world: serializeWorld(other),
+        })),
         travel: {
           locationKey: destination.locationKey,
           world: serializeWorld(destination),
@@ -351,7 +375,11 @@ export class WorldService {
               toolKey: command.payload.toolKey,
               now,
             })
-          : tickWorld(run);
+          : command.type === 'WORLD_PORTAL_OPEN'
+            ? openPortalWorld(run, command.payload.target)
+            : command.type === 'WORLD_PORTAL_CLOSE'
+              ? closePortalWorld({ ...run, ...finders })
+              : tickWorld(run);
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
       return respond('rejected', outcome.code, outcome.events, [], world, outcome.effects);
@@ -385,6 +413,7 @@ export class WorldService {
       }
     }
     await saveWorld(tx, expeditionId, outcome.world);
+    for (const other of outcome.touched ?? []) await saveWorld(tx, expeditionId, other);
     await journal('applied', outcome.events, null, saved);
     return {
       commandId,
@@ -392,6 +421,10 @@ export class WorldService {
       events: outcome.events,
       tileDiffs: outcome.tileDiffs,
       effects: outcome.effects,
+      touched: (outcome.touched ?? []).map((other) => ({
+        locationKey: other.locationKey,
+        world: serializeWorld(other),
+      })),
       engagement: outcome.world.engagement,
       hero: {
         locationKey: outcome.world.locationKey,

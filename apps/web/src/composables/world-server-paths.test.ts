@@ -5,11 +5,12 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import {
   fakePresence,
+  sentCommands,
   fakeStoredWorld,
   fakeStoredWorldOf,
 } from '@/test-support/fake-player-server';
 import { seedFakeSession } from '@/test-support/fake-session';
-import { flushWorld } from '@/services/inventory/inventory-sync';
+import { flushWorld, settleInventorySync } from '@/services/inventory/inventory-sync';
 import { queueWorldPush, takePendingPushes } from '@/services/player/world-sync';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
@@ -77,6 +78,25 @@ describe('the temporary world paths reach the server through PUT /player/world',
     expect(world.currentLocationKey).toBe('silesia');
     expect(fakePresence()).toMatchObject({ locationKey: 'silesia', mapId: world.currentMapId });
     expect(portalKeys(fakeStoredWorldOf('silesia')!.map)).toEqual([]);
+    expect(hero.portal).toBeNull();
+  });
+
+  it('opens and walks a portal through server commands only, with the scroll taken from the server inventory', async () => {
+    const { hero, target } = start('silesia');
+    const before = useHeroInventoryStore().countItem(HEXOBJECT_KEYS.RETURN_SCROLL);
+    await settleInventorySync();
+    sentCommands.length = 0;
+    const portal = usePortal();
+    expect(await portal.openPortal(target)).toEqual({ ok: true });
+    expect(hero.portal).toMatchObject({ originLocationKey: 'silesia' });
+    expect(useHeroInventoryStore().countItem(HEXOBJECT_KEYS.RETURN_SCROLL)).toBe(before - 1);
+    await portal.enterPortal();
+    await flushWorld();
+    const types = sentCommands.map((c) => c.command.type);
+    expect(types).toEqual(expect.arrayContaining(['WORLD_PORTAL_OPEN', 'WORLD_PORTAL_ENTER']));
+    expect(types.some((type) => type.startsWith('DEV_'))).toBe(false);
+    expect(types).not.toContain('SPEND_WILL');
+    await portal.enterPortal();
     expect(hero.portal).toBeNull();
   });
 

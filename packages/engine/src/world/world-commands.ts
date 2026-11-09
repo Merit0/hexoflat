@@ -35,10 +35,11 @@ export type WorldOutcome =
       events: DomainEvent[];
       tileDiffs: TileDiff[];
       effects: WorldEffect[];
+      touched?: ServerWorld[];
     }
   | { ok: false; code: string; events: DomainEvent[]; effects: WorldEffect[] };
 
-function heroOf(run: WorldRun): HeroState | null {
+export function heroOf(run: WorldRun): HeroState | null {
   const { heroCoordinates } = run.world;
   if (!heroCoordinates) return null;
   return {
@@ -46,11 +47,11 @@ function heroOf(run: WorldRun): HeroState | null {
     controlledBy: null,
     coordinates: { ...heroCoordinates },
     heroSteps: run.progress.steps,
-    portal: null,
+    portal: run.progress.portal,
   };
 }
 
-function refuse(
+export function refuse(
   code: string,
   events: DomainEvent[] = [],
   effects: WorldEffect[] = [],
@@ -58,7 +59,7 @@ function refuse(
   return { ok: false, code, events, effects };
 }
 
-function locationOf(world: ServerWorld) {
+export function locationOf(world: ServerWorld) {
   return {
     locationKey: world.locationKey,
     mapId: world.mapId,
@@ -66,7 +67,7 @@ function locationOf(world: ServerWorld) {
   };
 }
 
-function stateOf(run: WorldRun, hero: HeroState): HexEngineState {
+export function stateOf(run: WorldRun, hero: HeroState): HexEngineState {
   const presence = {
     locationKey: run.world.locationKey,
     mapId: run.world.mapId,

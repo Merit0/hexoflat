@@ -46,12 +46,18 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
   bindKnowledgeListener,
+  bindPortalListener,
   endPlayerSession,
   startPlayerSession,
 } from '@/services/inventory/inventory-sync';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
-import { buildClientHint } from '@/services/world/served-world';
+import { isServerWorldMode } from '@/services/player/world-sync';
+import {
+  buildClientHint,
+  installTravelledWorlds,
+  portalCommandOnServer,
+} from '@/services/world/served-world';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
@@ -119,6 +125,10 @@ export const useHeroStore = defineStore('hero', {
       bindKnowledgeListener((knowledge) => {
         if (knowledge && knowledge.heroId === this.hero.id) this.knowledge = knowledge;
       });
+      bindPortalListener((portal) => {
+        this.portal = portal;
+      });
+      this.portal = inventorySession.portal;
       this.knowledge = inventorySession.knowledge;
       this.knowledgeError = !this.knowledge;
     },
@@ -253,9 +263,9 @@ export const useHeroStore = defineStore('hero', {
         }
         if (heroId === this.hero.id) {
           this.knowledge = result.state;
-          this.setPortal(result.hero.portal ?? null);
+          if (!isServerWorldMode()) this.setPortal(result.hero.portal ?? null);
         }
-        this.applyPortalClosures(portalClosedEvents(result.events));
+        if (!isServerWorldMode()) this.applyPortalClosures(portalClosedEvents(result.events));
         return result.events;
       } catch {
         this.knowledgeError = true;
@@ -272,9 +282,19 @@ export const useHeroStore = defineStore('hero', {
       applyPortalClosedOnHost(world, world.map as HexMapModel | null, closures);
     },
 
-    closePortalOnDeath() {
+    async closePortalOnDeath() {
       const world = useWorldMapStore();
-      const hero = this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 });
+      const from = this.heroCoordinates;
+      if (isServerWorldMode()) {
+        if (!this.portal || !from || !world.currentMapId) return;
+        const at = { locationKey: world.currentLocationKey, mapId: world.currentMapId, from };
+        const result = await portalCommandOnServer(at, 'WORLD_PORTAL_CLOSE');
+        if (!result.ok) return;
+        installTravelledWorlds(result);
+        world.applyWorldResult(result);
+        return;
+      }
+      const hero = this.engineHeroState(from ?? { columnIndex: 0, rowIndex: 0 });
       if (closePortalForDeath(world, world.map as HexMapModel | null, hero)) this.setPortal(null);
     },
 
@@ -400,6 +420,7 @@ export const useHeroStore = defineStore('hero', {
       this.portal = null;
       this.nav = defaultNav();
       bindKnowledgeListener(null);
+      bindPortalListener(null);
       endPlayerSession();
       useHeroInventoryStore().reset();
       useHeroStashStore().reset();

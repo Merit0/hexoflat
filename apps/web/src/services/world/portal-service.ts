@@ -11,8 +11,14 @@ import type { PortalLocation } from '@hexoflat/engine/portal/portal-rules';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { MapRegistry, type LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { readLocationMapIndex, updateSavedMap } from '@/services/persistence/world-storage';
-import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
+import {
+  findPortalSpot,
+  placeReturnPortal,
+  removeReturnPortal,
+} from '@hexoflat/engine/portal/portal-placement';
 import { coordinateKey, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+
+export { findPortalSpot, placeReturnPortal };
 
 export interface PortalRemoval {
   locationKey: LocationKey;
@@ -37,51 +43,6 @@ export interface PortalWorldPort {
 
 export function portalLocation(locationKey: LocationKey, mapId: string | null): PortalLocation {
   return { locationKey, mapId: mapId ?? '', boardKind: MapRegistry.get(locationKey).boardKind };
-}
-
-function tileAt(map: HexMapModel, at: IHexCoordinates): HexTileModel | undefined {
-  const key = coordinateKey(at);
-  return map.tiles.find((tile) => coordinateKey(tile.coordinates) === key);
-}
-
-function isFreeGround(tile: HexTileModel, occupied: Set<string>): boolean {
-  return (
-    isTerrainPassable(tile.terrain) &&
-    tile.terrain === 'ground' &&
-    !tile.exit &&
-    !tile.hexobject &&
-    !occupied.has(coordinateKey(tile.coordinates))
-  );
-}
-
-export function findPortalSpot(
-  map: HexMapModel,
-  desired: IHexCoordinates,
-  occupied: IHexCoordinates[] = [],
-): IHexCoordinates | null {
-  const taken = new Set(occupied.map(coordinateKey));
-  const free = map.tiles
-    .filter((tile) => isFreeGround(tile, taken))
-    .sort(
-      (a, b) =>
-        hexDistance(a.coordinates, desired) - hexDistance(b.coordinates, desired) ||
-        coordinateKey(a.coordinates).localeCompare(coordinateKey(b.coordinates)),
-    );
-  return free[0] ? { ...free[0].coordinates } : null;
-}
-
-export function placeReturnPortal(map: HexMapModel, spot: IHexCoordinates): boolean {
-  const tile = tileAt(map, spot);
-  if (!tile) return false;
-  tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.RETURN_PORTAL, spot);
-  return true;
-}
-
-function removeFromMap(map: HexMapModel, hex: IHexCoordinates): boolean {
-  const tile = tileAt(map, hex);
-  if (tile?.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.RETURN_PORTAL) return false;
-  tile.hexobject = null;
-  return true;
 }
 
 function removeFromSerialized(map: ISerializedHexMap, hex: IHexCoordinates): boolean {
@@ -121,7 +82,7 @@ export function applyPortalRemovals(
         entry.locationKey === port.currentLocationKey &&
         (entry.mapId === null || entry.mapId === port.currentMapId);
       if (isCurrent && port.map) {
-        if (removeFromMap(port.map, entry.hex)) {
+        if (removeReturnPortal(port.map, entry.hex)) {
           port.markTileDirty(entry.hex);
           touchedCurrent = true;
         }

@@ -236,13 +236,25 @@ export async function travelOnServer(
 }
 
 export function installTravelledWorlds(result: WorldCommandResult): LocationKey | null {
+  if (!result.ok) return null;
   const { travel } = result;
-  if (!result.ok || !travel) return null;
-  for (const entry of [travel, travel.refreshed]) {
+  const entries = [travel, travel?.refreshed, ...(result.touched ?? [])];
+  for (const entry of entries) {
     if (!entry) continue;
     const world = entry.world as { mapId: string };
     dropPendingPushesOf(entry.locationKey);
     rememberServerWorld(entry.locationKey, world.mapId, JSON.stringify(entry.world));
   }
-  return travel.locationKey as LocationKey;
+  return travel ? (travel.locationKey as LocationKey) : null;
+}
+
+type PortalAt = { locationKey: LocationKey; mapId: string; from: IHexCoordinates };
+
+export async function portalCommandOnServer(
+  at: PortalAt,
+  type: 'WORLD_PORTAL_OPEN' | 'WORLD_PORTAL_ENTER' | 'WORLD_PORTAL_CLOSE',
+  payload: Record<string, unknown> = {},
+): Promise<WorldCommandResult> {
+  await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId, coordinates: at.from });
+  return sendWorldCommand(type, payload);
 }

@@ -7,18 +7,12 @@ import { planPortalOpening, resolvePortalCost } from '@hexoflat/engine/portal/po
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
-import {
-  findPortalSpot,
-  placeReturnPortal,
-  portalClosedEvents,
-  portalLocation,
-} from '@/services/world/portal-service';
+import { portalLocation } from '@/services/world/portal-service';
+import { installTravelledWorlds, portalCommandOnServer } from '@/services/world/served-world';
 import { playPortalEnter, playPortalExit, portalFxBusy, releasePortalFx } from '@/render/portal-fx';
 import { routeToLocation } from '@/services/world/location-navigator';
-import { ensurePresence, sendProgress } from '@/services/inventory/inventory-sync';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { useGameEventsStore } from '@/stores/game-events-store';
-import { withStoreInventory } from '@/services/inventory/inventory-bridge';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -82,92 +76,41 @@ export function usePortal() {
     return { ok: true, oneWay: plan.link.campHex === null, cost };
   }
 
+  function currentPlace() {
+    const from = heroStore.heroCoordinates;
+    if (!worldStore.map || !worldStore.currentMapId || !from) return null;
+    return {
+      locationKey: worldStore.currentLocationKey,
+      mapId: worldStore.currentMapId,
+      from: { ...from },
+    };
+  }
+
   async function openPortal(target: IHexCoordinates): Promise<PortalOutcome> {
     if (portalFxBusy.value) return { ok: false };
-    const state = engineState();
-    if (!state || heroStore.knowledgeError) {
-      return { ok: false, reason: 'NO_LOCATION' };
-    }
-    const hero = Object.values(state.heroes)[0];
-    const heroId = hero.id;
-    const ctx = worldStore.buildEngineContext();
-    let reason = 'NO_LOCATION';
-    let opened = false;
-
-    const current = inventorySession.knowledge;
-    if (!current) return { ok: false, reason: 'NO_WILL_STATE' };
-    const { events } = withStoreInventory(
-      heroId,
-      { ...state, knowledge: structuredClone(current) },
-      (bound) => applyCommand(bound, { type: 'OPEN_PORTAL', payload: { heroId, target } }, ctx),
-    );
-    opened = events.some((event) => event.type === 'PORTAL_OPENED');
-    const rejected = events.find((event) => event.type === 'PORTAL_OPEN_REJECTED');
-    if (rejected) reason = (rejected.payload as { reason: string }).reason;
-
-    let knowledge = current;
-    if (opened) {
-      const position = heroStore.heroCoordinates;
-      await ensurePresence(
-        position
-          ? {
-              locationKey: worldStore.currentLocationKey,
-              mapId: worldStore.currentMapId ?? '',
-              coordinates: { ...position },
-            }
-          : null,
-      );
-      const paid = await sendProgress('SPEND_WILL', {
-        spend: { kind: 'portal', target: { ...target } },
-      });
-      if (!paid.ok) reason = paid.code ?? 'INSUFFICIENT_WILL';
-      knowledge = paid.knowledge ?? current;
-    }
-
-    if (!opened) return { ok: false, reason };
-
-    heroStore.knowledge = knowledge;
-    heroStore.setPortal(hero.portal ?? null);
-    worldStore.markTileDirty(target);
-    worldStore.saveToStorage();
+    const at = currentPlace();
+    if (!at || heroStore.knowledgeError) return { ok: false, reason: 'NO_LOCATION' };
+    const result = await portalCommandOnServer(at, 'WORLD_PORTAL_OPEN', { target });
+    if (!result.ok) return { ok: false, reason: result.code ?? 'NO_LOCATION' };
+    worldStore.applyWorldResult(result);
+    heroStore.knowledge = inventorySession.knowledge;
+    worldStore.saveToStorage(undefined, { synced: true });
     useGameEventsStore().push(heroStore.hero.name, 'opened a portal', 'MAP');
     heroToolStore.stopTool();
     return { ok: true };
   }
 
-  function placeCampPortal(campHex: IHexCoordinates): IHexCoordinates | null {
-    const map = worldStore.map as HexMapModel | null;
-    if (!map) return null;
-    const spot = findPortalSpot(
-      map,
-      campHex,
-      heroStore.heroCoordinates ? [heroStore.heroCoordinates] : [],
-    );
-    if (!spot || !placeReturnPortal(map, spot)) return null;
-    worldStore.markTileDirty(spot);
-    return spot;
-  }
-
-  function standBeside(anchor: IHexCoordinates | null) {
-    const map = worldStore.map as HexMapModel | null;
-    if (!map || !anchor) return;
-    const spot = findFreeHexNear(map, anchor);
-    if (!spot) return;
-    heroStore.heroCoordinates = spot;
-    if (worldStore.currentMapId) heroStore.rememberPosition(worldStore.currentMapId, spot);
-  }
-
   async function enterPortal(): Promise<PortalOutcome> {
     if (portalFxBusy.value) return { ok: false };
     const state = engineState();
-    if (!state) return { ok: false, reason: 'NO_LOCATION' };
+    const at = currentPlace();
+    if (!state || !at) return { ok: false, reason: 'NO_LOCATION' };
     const hero = Object.values(state.heroes)[0];
     const { events } = applyCommand(
       state,
       { type: 'ENTER_PORTAL', payload: { heroId: hero.id } },
       worldStore.buildEngineContext(),
     );
-
     const entered = events.find((event) => event.type === 'PORTAL_ENTERED');
     if (!entered) {
       const rejected = events.find((event) => event.type === 'PORTAL_ENTER_REJECTED');
@@ -177,41 +120,20 @@ export function usePortal() {
 
     heroToolStore.stopTool();
     const destination = entered.payload as PortalEnteredPayload;
-    const closures = portalClosedEvents(events);
     const portalHex = (entered.payload as { portalHex: IHexCoordinates }).portalHex;
     try {
       await playPortalEnter(portalHex);
-      return await travel(destination, closures, hero.portal ?? null);
+      const result = await portalCommandOnServer(at, 'WORLD_PORTAL_ENTER');
+      if (!result.ok) return { ok: false, reason: result.code ?? 'NO_PORTAL' };
+      installTravelledWorlds(result);
+      worldStore.goToLocation(destination.to, undefined, true);
+      await routeToLocation(destination.to);
+      const anchor = inventorySession.portal?.campHex ?? destination.arrivalNear;
+      if (anchor) await playPortalExit(anchor);
+      return { ok: true };
     } finally {
       releasePortalFx();
     }
-  }
-
-  async function travel(
-    destination: PortalEnteredPayload,
-    closures: ReturnType<typeof portalClosedEvents>,
-    nextPortal: PortalLink | null,
-  ): Promise<PortalOutcome> {
-    heroStore.setPortal(nextPortal);
-    heroStore.applyPortalClosures(closures);
-    worldStore.goToLocation(destination.to, destination.toMapId ?? undefined);
-
-    let anchor = destination.arrivalNear;
-    const link = heroStore.portal;
-    if (!closures.length && link?.campHex) {
-      const spot = placeCampPortal(link.campHex);
-      if (spot) {
-        anchor = spot;
-        heroStore.setPortal({ ...link, campHex: spot });
-      }
-    }
-    standBeside(anchor);
-    worldStore.revealAroundHero();
-    worldStore.markAllTilesDirty();
-    worldStore.saveToStorage();
-    await routeToLocation(destination.to);
-    if (anchor) await playPortalExit(anchor);
-    return { ok: true };
   }
 
   return { previewOpen, openPortal, enterPortal };

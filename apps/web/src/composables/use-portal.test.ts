@@ -205,7 +205,7 @@ describe('usePortal', () => {
     await portal.openPortal(target);
     await portal.enterPortal();
 
-    hero.closePortalOnDeath();
+    await hero.closePortalOnDeath();
 
     expect(hero.portal).toBeNull();
     expect(portalHexes(world.map as HexMapModel)).toEqual([]);

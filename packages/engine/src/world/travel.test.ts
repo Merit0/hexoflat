@@ -23,6 +23,7 @@ function runOf(
     heroId: HERO,
     now,
     loadStored: (key) => stored[key] ?? null,
+    loadById: () => null,
     create: (key) => createServerWorld(key, `fresh-${key}-${now}`, SEED, HERO),
   };
 }

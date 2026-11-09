@@ -42,8 +42,10 @@ export async function crossExitIfStanding(): Promise<boolean> {
     if (!result.ok) return false;
     installTravelledWorlds(result);
   }
-  heroStore.setPortal(hero.portal ?? null);
-  heroStore.applyPortalClosures(portalClosedEvents(events));
+  if (!serverMode) {
+    heroStore.setPortal(hero.portal ?? null);
+    heroStore.applyPortalClosures(portalClosedEvents(events));
+  }
   heroStore.heroCoordinates = { ...hero.coordinates };
   worldStore.pendingArrivalSide = serverMode ? null : crossing.arrivalSide;
   worldStore.goToLocation(crossing.to, undefined, serverMode);

@@ -14,7 +14,7 @@ export interface CampRespawnHost {
 export interface CampRespawnDeps {
   hero: {
     heroCoordinates: IHexCoordinates | null;
-    closePortalOnDeath(): void;
+    closePortalOnDeath(): Promise<void>;
     setPendingLocation(locationKey: LocationKey): void;
     reviveAtOneHp(): void;
   };
@@ -33,7 +33,7 @@ export async function respawnHeroAtCampingAction(
   const defeatedMapId = host.currentMapId;
 
   battle.close();
-  hero.closePortalOnDeath();
+  await hero.closePortalOnDeath();
   if (defeatedMapId) {
     host.clearStoredLocation(defeatedLocationKey, defeatedMapId);
   }

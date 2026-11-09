@@ -37,6 +37,7 @@ import {
   stopExpeditionSync,
 } from '@/services/player/expedition-sync';
 import { bindInventoryMirror } from './inventory-mirror';
+import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import { inventorySession, resetInventorySession, type ServerPresence } from './inventory-session';
 import { readInventoryState, writeInventoryState } from './inventory-store-io';
@@ -64,6 +65,12 @@ function applyInventory(projection: ProjectedAggregate | undefined): void {
 type KnowledgeListener = (knowledge: KnowledgeState | null) => void;
 let knowledgeListener: KnowledgeListener | null = null;
 
+let portalListener: ((portal: PortalLink | null) => void) | null = null;
+
+export function bindPortalListener(listener: typeof portalListener): void {
+  portalListener = listener;
+}
+
 export function bindKnowledgeListener(listener: KnowledgeListener | null): void {
   knowledgeListener = listener;
 }
@@ -76,6 +83,7 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     presence?: ServerPresence | null;
     steps?: number;
     sealedUntil?: Record<string, number>;
+    portal?: PortalLink | null;
   };
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
   inventorySession.progressRevision = projection.revision;
@@ -83,6 +91,8 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
   inventorySession.presence = progress.presence ?? null;
   inventorySession.steps = progress.steps ?? 0;
   inventorySession.sealedUntil = progress.sealedUntil ?? {};
+  inventorySession.portal = progress.portal ?? null;
+  portalListener?.(inventorySession.portal);
   knowledgeListener?.(inventorySession.knowledge);
 }
 
@@ -361,12 +371,20 @@ export interface WorldCommandResult {
   effects: WorldEffect[];
   engagement: Engagement | null;
   travel?: WorldCommandResponse['travel'];
+  touched?: WorldCommandResponse['touched'];
 }
 
 export type WorldStepResult = WorldCommandResult;
 
 export function sendWorldCommand(
-  type: 'WORLD_STEP' | 'WORLD_ACTION' | 'WORLD_TICK' | 'WORLD_TRAVEL',
+  type:
+    | 'WORLD_STEP'
+    | 'WORLD_ACTION'
+    | 'WORLD_TICK'
+    | 'WORLD_TRAVEL'
+    | 'WORLD_PORTAL_OPEN'
+    | 'WORLD_PORTAL_ENTER'
+    | 'WORLD_PORTAL_CLOSE',
   payload: Record<string, unknown>,
 ): Promise<WorldCommandResult> {
   const failed = (code: string): WorldCommandResult => ({
@@ -403,6 +421,7 @@ export function sendWorldCommand(
       effects: response.effects as WorldEffect[],
       engagement: (response.engagement as Engagement | null | undefined) ?? null,
       travel: response.travel,
+      touched: response.touched,
     };
     if (response.result !== 'applied') {
       return { ...common, ok: false, code: response.code ?? response.result };

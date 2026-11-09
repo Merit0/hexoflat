@@ -382,6 +382,80 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(back.result).toBe('rejected');
   });
 
+  async function equipForPortal(userId: string, heroId: string) {
+    const snapshot = await kit.service.snapshot(userId, heroId);
+    const inventoryRevision = snapshot.aggregates.inventory!.revision;
+    await kit.service.execute(userId, {
+      commandId: randomUUID(),
+      heroId,
+      aggregate: 'inventory',
+      expectedRevision: inventoryRevision,
+      command: {
+        type: 'DEV_GRANT_ITEM',
+        payload: {
+          heroId,
+          revision: inventoryRevision,
+          key: HEXOBJECT_KEYS.RETURN_SCROLL,
+          amount: 2,
+        },
+      },
+    });
+    const progress = snapshot.aggregates.progress!;
+    const knowledge = (progress.state as { knowledge: { revision: number } }).knowledge;
+    await kit.service.execute(userId, {
+      commandId: randomUUID(),
+      heroId,
+      aggregate: 'progress',
+      expectedRevision: progress.revision,
+      command: {
+        type: 'DEV_SET_KNOWLEDGE',
+        payload: {
+          heroId,
+          revision: knowledge.revision,
+          knowledge: { ...knowledge, skills: { a_crest: 1, a_teleport: 6 } },
+        },
+      },
+    });
+  }
+
+  it('opens a portal, walks it to the camp and back, and keeps both ends on the server', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    await enter(userId, heroId, 'silesia');
+    await equipForPortal(userId, heroId);
+    const origin = (await presenceOf(userId, heroId)).presence;
+    const held = deserializeWorld(await world.snapshot(userId, heroId), 0);
+    const target = getHexNeighbors(held.heroCoordinates!).find((hex) => {
+      const tile = held.map.tiles.find(
+        (t) =>
+          t.coordinates.columnIndex === hex.columnIndex && t.coordinates.rowIndex === hex.rowIndex,
+      );
+      return !!tile && tile.terrain === 'ground' && !tile.hexobject && !tile.exit;
+    })!;
+
+    const far = await send(userId, heroId, 'WORLD_PORTAL_OPEN', {
+      target: { columnIndex: 250, rowIndex: 250 },
+    });
+    expect(far.result).toBe('rejected');
+
+    const opened = await send(userId, heroId, 'WORLD_PORTAL_OPEN', { target });
+    expect(opened).toMatchObject({ result: 'applied' });
+    expect(opened.tileDiffs.length).toBeGreaterThan(0);
+    const inventoryAfter = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
+    expect(JSON.stringify(inventoryAfter.state)).toContain(HEXOBJECT_KEYS.RETURN_SCROLL);
+
+    const there = await send(userId, heroId, 'WORLD_PORTAL_ENTER', {});
+    expect(there.result).toBe('applied');
+    expect(there.travel?.locationKey).toBe('camping');
+    expect((await presenceOf(userId, heroId)).presence.locationKey).toBe('camping');
+
+    const back = await send(userId, heroId, 'WORLD_PORTAL_ENTER', {});
+    expect(back.result).toBe('applied');
+    expect((await presenceOf(userId, heroId)).presence.mapId).toBe(origin.mapId);
+    const closedAgain = await send(userId, heroId, 'WORLD_PORTAL_CLOSE', {});
+    expect(closedAgain).toMatchObject({ result: 'rejected', code: 'NO_PORTAL' });
+  });
+
   it('builds a location on request without moving the hero, and keeps it', async () => {
     const { userId, heroId } = await kit.newPlayer();
     const a = (await world.ensure(userId, heroId, 'silesia')) as { mapId: string };

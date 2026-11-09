@@ -72,6 +72,18 @@ export const WORLD_COMMAND_SCHEMAS = {
         .strict(),
     })
     .strict(),
+  WORLD_PORTAL_OPEN: z
+    .object({
+      type: z.literal('WORLD_PORTAL_OPEN'),
+      payload: z.object({ ...base, target: coordinates.strict() }).strict(),
+    })
+    .strict(),
+  WORLD_PORTAL_ENTER: z
+    .object({ type: z.literal('WORLD_PORTAL_ENTER'), payload: z.object(base).strict() })
+    .strict(),
+  WORLD_PORTAL_CLOSE: z
+    .object({ type: z.literal('WORLD_PORTAL_CLOSE'), payload: z.object(base).strict() })
+    .strict(),
   WORLD_TICK: z
     .object({
       type: z.literal('WORLD_TICK'),

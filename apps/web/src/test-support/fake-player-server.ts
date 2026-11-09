@@ -10,6 +10,9 @@ import {
 } from '@hexoflat/engine';
 import {
   actWorld,
+  closePortalWorld,
+  enterPortalWorld,
+  openPortalWorld,
   createServerWorld,
   deserializeWorld,
   serializeWorld,
@@ -209,7 +212,10 @@ function handleWorld(envelope: PlayerEnvelope) {
     client: payload.client,
   };
   const type = envelope.command.type;
-  if (type === 'WORLD_TRAVEL') return travelFake(envelope, base, run);
+  const finders = fakeFinders(run.world);
+  if (type === 'WORLD_TRAVEL' || type === 'WORLD_PORTAL_ENTER') {
+    return travelFake(envelope, base, { ...run, ...finders });
+  }
   const outcome =
     type === 'WORLD_STEP'
       ? stepWorld(run, payload.target)
@@ -221,7 +227,11 @@ function handleWorld(envelope: PlayerEnvelope) {
             toolKey: payload.toolKey,
             now: run.now,
           })
-        : tickWorld(run);
+        : type === 'WORLD_PORTAL_OPEN'
+          ? openPortalWorld(run, payload.target)
+          : type === 'WORLD_PORTAL_CLOSE'
+            ? closePortalWorld({ ...run, ...finders })
+            : tickWorld(run);
   if (!outcome.ok) {
     return {
       ...base,
@@ -234,12 +244,18 @@ function handleWorld(envelope: PlayerEnvelope) {
     };
   }
   world = outcome.world;
+  storedWorlds.set(outcome.world.mapId, outcome.world);
+  for (const other of outcome.touched ?? []) storedWorlds.set(other.mapId, other);
   s.progress = { revision: s.progress.revision + 1, state: outcome.progress };
   if (outcome.inventory !== s.inventory.state) {
     s.inventory = { revision: s.inventory.revision + 1, state: outcome.inventory };
   }
   return {
     ...base,
+    touched: (outcome.touched ?? []).map((other) => ({
+      locationKey: other.locationKey,
+      world: serializeWorld(other),
+    })),
     events: outcome.events,
     tileDiffs: outcome.tileDiffs,
     effects: outcome.effects,
@@ -250,23 +266,28 @@ function handleWorld(envelope: PlayerEnvelope) {
   };
 }
 
+function fakeFinders(current: ServerWorld) {
+  return {
+    loadStored: (location: string) =>
+      [...storedWorlds.values()].find((w) => w.locationKey === location && w !== current) ?? null,
+    loadById: (mapId: string) => {
+      const held = storedWorlds.get(mapId) ?? null;
+      return held === current ? null : held;
+    },
+    create: (location: Parameters<typeof createServerWorld>[0]) =>
+      createServerWorld(location, crypto.randomUUID(), 'fake-seed', store!.heroId),
+  };
+}
+
 function travelFake(
   envelope: PlayerEnvelope,
   base: { commandId: string; tileDiffs: never[]; effects: never[]; events: never[] },
-  run: Parameters<typeof tickWorld>[0],
+  run: Parameters<typeof tickWorld>[0] & ReturnType<typeof fakeFinders>,
 ) {
   const s = store!;
+  const type = envelope.command.type;
   const via = (envelope.command.payload as { via: Parameters<typeof travelWorld>[1] }).via;
-  const heldOther = (location: string) =>
-    [...storedWorlds.values()].find((w) => w.locationKey === location && w !== run.world) ?? null;
-  const outcome = travelWorld(
-    {
-      ...run,
-      loadStored: heldOther,
-      create: (location) => createServerWorld(location, crypto.randomUUID(), 'fake-seed', s.heroId),
-    },
-    via,
-  );
+  const outcome = type === 'WORLD_TRAVEL' ? travelWorld(run, via) : enterPortalWorld(run);
   if (!outcome.ok) {
     return {
       ...base,
@@ -278,12 +299,13 @@ function travelFake(
       aggregates: snapshot().aggregates,
     };
   }
-  const { origin, destination, replaced } = outcome;
+  const { origin, destination, replaced, touched } = outcome;
   for (const [mapId, held] of storedWorlds) {
     if (held.locationKey === origin.locationKey) storedWorlds.delete(mapId);
   }
   storedWorlds.set((replaced ?? origin).mapId, replaced ?? origin);
   storedWorlds.set(destination.mapId, destination);
+  for (const other of touched) storedWorlds.set(other.mapId, other);
   world = destination;
   s.progress = { revision: s.progress.revision + 1, state: outcome.progress };
   if (outcome.inventory !== s.inventory.state) {
@@ -295,6 +317,10 @@ function travelFake(
     effects: outcome.effects,
     result: 'applied' as const,
     hero: null,
+    touched: [...(replaced ? [] : [origin]), ...touched].map((other) => ({
+      locationKey: other.locationKey,
+      world: serializeWorld(other),
+    })),
     travel: {
       locationKey: destination.locationKey,
       world: serializeWorld(destination),

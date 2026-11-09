@@ -9,20 +9,19 @@ import type { ProgressState } from '../aggregates/progress-state';
 import { revealAroundHero, revealEntryTile } from '../map/fog-service';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
-import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
+import type { LocationKey } from '../registry/world-map-registry';
 import { deriveStream } from '../utils/random-seeded';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { findArrivalHex } from './hero-placement';
 import type { ServerWorld } from './server-world';
 import type { WorldEffect } from './server-ports';
+import { closePortalIfOpen } from '../portal/apply-portal';
+import { leaveOrigin, removeClosedPortals, type WorldFinders } from './world-leave';
 import { actWorld, type WorldRun } from './world-commands';
 
 export type TravelVia = { kind: 'exit' } | { kind: 'gate'; coordinates: IHexCoordinates };
 
-export interface TravelRun extends WorldRun {
-  loadStored(locationKey: LocationKey): ServerWorld | null;
-  create(locationKey: LocationKey): ServerWorld;
-}
+export interface TravelRun extends WorldRun, WorldFinders {}
 
 export type TravelOutcome =
   | {
@@ -30,6 +29,7 @@ export type TravelOutcome =
       origin: ServerWorld;
       destination: ServerWorld;
       replaced: ServerWorld | null;
+      touched: ServerWorld[];
       progress: ProgressState;
       inventory: InventoryState;
       events: DomainEvent[];
@@ -98,18 +98,28 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
   }
 
   const origin = world;
-  const definition = MapRegistry.get(origin.locationKey);
-  if (
-    definition.respawnAfterClearedMs &&
-    origin.map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE)
-  ) {
-    progress.sealedUntil[origin.locationKey] = now + definition.respawnAfterClearedMs;
-  }
+  const hero = {
+    id: run.heroId,
+    controlledBy: null,
+    coordinates: { ...position },
+    heroSteps: progress.steps,
+    portal: progress.portal,
+  };
+  const closure = closePortalIfOpen(
+    { map: origin.map, heroes: { [run.heroId]: hero } },
+    run.heroId,
+    {
+      kind: 'GATE',
+    },
+  );
+  progress.portal = hero.portal;
+  events.push(...closure);
+  const replaced = leaveOrigin(run, progress, origin, now);
   const due = progress.sealedUntil[to];
   if (due !== undefined && due <= now) delete progress.sealedUntil[to];
 
   const destination = (due === undefined ? run.loadStored(to) : null) ?? run.create(to);
-  const replaced = definition.boardKind === 'DUNGEON' ? run.create(origin.locationKey) : null;
+  const touched = removeClosedPortals(closure, [origin, destination], run);
   origin.heroCoordinates = { ...(resting ?? position) };
 
   const arrival =
@@ -133,5 +143,5 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
     type: 'WORLD_TRAVELLED',
     payload: { heroId: run.heroId, from: origin.locationKey, to, via: via.kind },
   });
-  return { ok: true, origin, destination, replaced, progress, inventory, events, effects };
+  return { ok: true, origin, destination, replaced, touched, progress, inventory, events, effects };
 }

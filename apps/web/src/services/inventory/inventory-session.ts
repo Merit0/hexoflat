@@ -1,3 +1,4 @@
+import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 
 export type TSessionStatus = 'offline' | 'connecting' | 'live' | 'taken-over';
@@ -15,6 +16,7 @@ export const inventorySession = {
   presence: null as ServerPresence | null,
   steps: 0,
   sealedUntil: {} as Record<string, number>,
+  portal: null as PortalLink | null,
   sessionToken: null as string | null,
 };
 
@@ -35,5 +37,6 @@ export function resetInventorySession(): void {
   inventorySession.presence = null;
   inventorySession.steps = 0;
   inventorySession.sealedUntil = {};
+  inventorySession.portal = null;
   inventorySession.sessionToken = null;
 }

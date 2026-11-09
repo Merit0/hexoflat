@@ -20,7 +20,6 @@ import {
 } from '@/services/world/served-world';
 import { getMeta } from '@hexoflat/engine';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
-import { closePortalIfOpen } from '@hexoflat/engine/portal/apply-portal';
 import type { WorldClientHint } from '@hexoflat/engine/world/server-ports';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import { inventorySession, type ServerPresence } from '@/services/inventory/inventory-session';
@@ -149,8 +148,6 @@ export async function dispatchHexAction(
   const events = [...result.events];
   const started = events.some((event) => event.type === 'HEX_ACTION_STARTED');
   if (started && gate && !stale) {
-    const world: HexEngineState = { map: host.map, heroes: { [host.hero.id]: host.hero } };
-    events.push(...closePortalIfOpen(world, host.hero.id, { kind: 'GATE' }));
     installTravelledWorlds(result);
     host.travelTo(gate);
     host.engineContext.navigate?.(gate);
