@@ -153,6 +153,54 @@ describe.skipIf(!dbAvailable)('PlayerGateway (socket.io + real Postgres)', () =>
     expect(codes).toContain('RATE_LIMITED');
   });
 
+  it('enters a world and takes a step over the socket, and the server map is the one the REST snapshot returns', async () => {
+    const { userId } = await kit.newPlayer();
+    const client = await connect(userId);
+    await waitFor(client, 'connect');
+    const snapshot = waitFor<Snapshot>(client, 'hero:snapshot');
+    client.emit('hero:subscribe', {});
+    const { heroId, aggregates } = await snapshot;
+
+    const entered = waitFor<{ result: string; hero: { coordinates: unknown } }>(
+      client,
+      'world:result',
+    );
+    client.emit('world:command', {
+      commandId: randomUUID(),
+      heroId,
+      aggregate: 'progress',
+      expectedRevision: aggregates.progress.revision,
+      command: { type: 'WORLD_ENTER', payload: { heroId, locationKey: 'camping' } },
+    });
+    const answer = await entered;
+    expect(answer.result).toBe('applied');
+    expect(answer.hero.coordinates).not.toBeNull();
+
+    const bearer = await jwt.signAsync({ sub: userId, tokenVersion: 0 });
+    const rest = await fetch(`${url}/player/world`, {
+      headers: { Authorization: `Bearer ${bearer}` },
+    });
+    expect(rest.status).toBe(200);
+    const map = (await rest.json()) as { locationKey: string; heroCoordinates: unknown };
+    expect(map.locationKey).toBe('camping');
+    expect(map.heroCoordinates).toEqual(answer.hero.coordinates);
+  });
+
+  it('refuses a world command before subscribing', async () => {
+    const mine = await kit.newPlayer();
+    const client = await connect(mine.userId);
+    await waitFor(client, 'connect');
+    const error = waitFor<{ code: string }>(client, 'hero:error');
+    client.emit('world:command', {
+      commandId: randomUUID(),
+      heroId: mine.heroId,
+      aggregate: 'progress',
+      expectedRevision: 0,
+      command: { type: 'WORLD_ENTER', payload: { heroId: mine.heroId, locationKey: 'camping' } },
+    });
+    expect((await error).code).toBe('SESSION_TAKEN_OVER');
+  });
+
   it('refuses to subscribe to a hero of another account', async () => {
     const mine = await kit.newPlayer();
     const other = await kit.newPlayer();

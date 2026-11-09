@@ -53,6 +53,9 @@ export async function ensureExpedition(db: Db, userId: string, heroId: string): 
   });
 }
 
+/** Documents the server writes itself (D4b): a player's browser neither reads nor writes them. */
+export const SERVER_KEY_PATTERN = /^srv-(?:index|world:[0-9a-f-]{36})$/;
+
 export async function loadBlobs(
   db: Executor,
   expeditionId: string,
@@ -61,7 +64,57 @@ export async function loadBlobs(
     .select({ key: expeditionBlobs.key, data: expeditionBlobs.data })
     .from(expeditionBlobs)
     .where(eq(expeditionBlobs.expeditionId, expeditionId));
-  return Object.fromEntries(rows.map((row) => [row.key, row.data]));
+  return Object.fromEntries(
+    rows.filter((row) => !row.key.startsWith('srv-')).map((row) => [row.key, row.data]),
+  );
+}
+
+export async function readServerDocument(
+  exec: Executor,
+  expeditionId: string,
+  key: string,
+): Promise<string | null> {
+  if (!SERVER_KEY_PATTERN.test(key)) throw new ExpeditionError('BAD_KEY');
+  const [row] = await exec
+    .select({ data: expeditionBlobs.data })
+    .from(expeditionBlobs)
+    .where(and(eq(expeditionBlobs.expeditionId, expeditionId), eq(expeditionBlobs.key, key)))
+    .limit(1);
+  return row?.data ?? null;
+}
+
+export async function writeServerDocument(
+  tx: Tx,
+  expeditionId: string,
+  key: string,
+  data: string,
+): Promise<void> {
+  if (!SERVER_KEY_PATTERN.test(key)) throw new ExpeditionError('BAD_KEY');
+  await tx
+    .insert(expeditionBlobs)
+    .values({ expeditionId, key, data })
+    .onConflictDoUpdate({
+      target: [expeditionBlobs.expeditionId, expeditionBlobs.key],
+      set: { data, updatedAt: new Date().toISOString() },
+    });
+}
+
+export async function lockExpedition(tx: Tx, expeditionId: string): Promise<void> {
+  await tx
+    .select({ id: expeditions.id })
+    .from(expeditions)
+    .where(eq(expeditions.id, expeditionId))
+    .for('update');
+}
+
+export async function expeditionSeed(exec: Executor, expeditionId: string): Promise<string> {
+  const [row] = await exec
+    .select({ seed: expeditions.seed })
+    .from(expeditions)
+    .where(eq(expeditions.id, expeditionId))
+    .limit(1);
+  if (!row) throw new Error(`No expedition ${expeditionId}`);
+  return row.seed;
 }
 
 export function validatePut(put: Record<string, string>): void {
@@ -110,7 +163,12 @@ export async function patchBlobs(
         bytes: sql<number>`coalesce(sum(octet_length(${expeditionBlobs.data})), 0)::int`,
       })
       .from(expeditionBlobs)
-      .where(eq(expeditionBlobs.expeditionId, expeditionId));
+      .where(
+        and(
+          eq(expeditionBlobs.expeditionId, expeditionId),
+          sql`${expeditionBlobs.key} not like 'srv-%'`,
+        ),
+      );
     if (keys > MAX_BLOB_KEYS) throw new ExpeditionError('TOO_MANY_KEYS');
     if (bytes > MAX_TOTAL_BYTES) throw new ExpeditionError('EXPEDITION_TOO_LARGE');
     const revision = locked.revision + 1;

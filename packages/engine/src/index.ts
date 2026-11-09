@@ -9,3 +9,4 @@ export type { SnapshotPayload } from './commands/snapshot';
 export { createSeededRandom, deriveStream } from './utils/random-seeded';
 export type { RngState, SeededRandom } from './utils/random-seeded';
 export * from './aggregates';
+export * from './world';
