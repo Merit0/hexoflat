@@ -14,6 +14,7 @@ export const inventorySession = {
   knowledge: null as KnowledgeState | null,
   presence: null as ServerPresence | null,
   steps: 0,
+  sealedUntil: {} as Record<string, number>,
   sessionToken: null as string | null,
 };
 
@@ -33,5 +34,6 @@ export function resetInventorySession(): void {
   inventorySession.knowledge = null;
   inventorySession.presence = null;
   inventorySession.steps = 0;
+  inventorySession.sealedUntil = {};
   inventorySession.sessionToken = null;
 }

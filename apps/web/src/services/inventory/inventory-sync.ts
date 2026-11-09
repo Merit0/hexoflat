@@ -75,12 +75,14 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     knowledge?: KnowledgeState;
     presence?: ServerPresence | null;
     steps?: number;
+    sealedUntil?: Record<string, number>;
   };
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
   inventorySession.progressRevision = projection.revision;
   inventorySession.knowledge = progress.knowledge ?? null;
   inventorySession.presence = progress.presence ?? null;
   inventorySession.steps = progress.steps ?? 0;
+  inventorySession.sealedUntil = progress.sealedUntil ?? {};
   knowledgeListener?.(inventorySession.knowledge);
 }
 
@@ -358,12 +360,13 @@ export interface WorldCommandResult {
   events: DomainEvent[];
   effects: WorldEffect[];
   engagement: Engagement | null;
+  travel?: WorldCommandResponse['travel'];
 }
 
 export type WorldStepResult = WorldCommandResult;
 
 export function sendWorldCommand(
-  type: 'WORLD_STEP' | 'WORLD_ACTION' | 'WORLD_TICK',
+  type: 'WORLD_STEP' | 'WORLD_ACTION' | 'WORLD_TICK' | 'WORLD_TRAVEL',
   payload: Record<string, unknown>,
 ): Promise<WorldCommandResult> {
   const failed = (code: string): WorldCommandResult => ({
@@ -399,6 +402,7 @@ export function sendWorldCommand(
       events: response.events as DomainEvent[],
       effects: response.effects as WorldEffect[],
       engagement: (response.engagement as Engagement | null | undefined) ?? null,
+      travel: response.travel,
     };
     if (response.result !== 'applied') {
       return { ...common, ok: false, code: response.code ?? response.result };

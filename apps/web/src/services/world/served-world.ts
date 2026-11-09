@@ -17,7 +17,13 @@ import {
   sendWorldStep,
   type WorldCommandResult,
 } from '@/services/inventory/inventory-sync';
-import { cachedWorldJson, forgetServerWorld, queueWorldPush } from '@/services/player/world-sync';
+import {
+  cachedWorldJson,
+  dropPendingPushesOf,
+  forgetServerWorld,
+  queueWorldPush,
+  rememberServerWorld,
+} from '@/services/player/world-sync';
 import { createServerWorld, serializeWorld } from '@hexoflat/engine/world/server-world';
 
 export function readCachedWorld(locationKey: LocationKey): ServerWorld | null {
@@ -209,4 +215,34 @@ export function queueFreshServedWorld(locationKey: LocationKey, heroId: string):
   const fresh = createServerWorld(locationKey, crypto.randomUUID(), crypto.randomUUID(), heroId);
   const json = JSON.stringify(serializeWorld(fresh));
   queueWorldPush(locationKey, fresh.mapId, json);
+}
+
+export async function travelOnServer(
+  at: { locationKey: LocationKey; mapId: string; from: IHexCoordinates },
+  via: { kind: 'exit' } | { kind: 'gate'; coordinates: IHexCoordinates },
+): Promise<WorldCommandResult> {
+  await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId, coordinates: at.from });
+  const body =
+    via.kind === 'exit'
+      ? via
+      : {
+          kind: 'gate',
+          coordinates: {
+            columnIndex: via.coordinates.columnIndex,
+            rowIndex: via.coordinates.rowIndex,
+          },
+        };
+  return sendWorldCommand('WORLD_TRAVEL', { via: body });
+}
+
+export function installTravelledWorlds(result: WorldCommandResult): LocationKey | null {
+  const { travel } = result;
+  if (!result.ok || !travel) return null;
+  for (const entry of [travel, travel.refreshed]) {
+    if (!entry) continue;
+    const world = entry.world as { mapId: string };
+    dropPendingPushesOf(entry.locationKey);
+    rememberServerWorld(entry.locationKey, world.mapId, JSON.stringify(entry.world));
+  }
+  return travel.locationKey as LocationKey;
 }

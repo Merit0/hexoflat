@@ -76,6 +76,12 @@ export function forgetServerWorld(locationKey: string): void {
   }
 }
 
+export function dropPendingPushesOf(locationKey: string): void {
+  for (const [mapId, push] of pending) {
+    if (push.locationKey === locationKey) pending.delete(mapId);
+  }
+}
+
 export function forgetAllServerWorlds(): void {
   documents.clear();
 }

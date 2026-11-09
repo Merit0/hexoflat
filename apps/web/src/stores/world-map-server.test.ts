@@ -7,7 +7,7 @@ import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { useHeroInventoryStore } from './hero-inventory-store';
 import { useHeroToolStore } from './hero-tool-store';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
-import { sentCommands } from '@/test-support/fake-player-server';
+import { fakePresence, fakeStoredWorld, sentCommands } from '@/test-support/fake-player-server';
 import { seedFakeSession } from '@/test-support/fake-session';
 import { cacheServerWorld } from '@/services/player/world-sync';
 import { useHeroStore } from './hero-store';
@@ -170,5 +170,46 @@ describe('actions and ticks through the server', () => {
     await world.serverTick();
     expect(hero.hero.currentHealth).toBe(4);
     expect(tool.isLocked).toBe(false);
+  });
+});
+
+describe('travel through the server', () => {
+  beforeEach(() => {
+    vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
+  });
+
+  it('enters the cave through the gate the server charged, with the server map and place', async () => {
+    setActivePinia(createPinia());
+    const hero = useHeroStore();
+    hero.hero.id = HERO;
+    seedFakeSession(HERO);
+    hero.loadKnowledge();
+    const silesia = createServerWorld('silesia', 'silesia-map', 'seed', HERO);
+    const spot = getHexNeighbors(silesia.heroCoordinates!).find((hex) => {
+      const tile = silesia.map.tiles.find(
+        (t) =>
+          t.coordinates.columnIndex === hex.columnIndex && t.coordinates.rowIndex === hex.rowIndex,
+      );
+      return !!tile && !tile.hexobject && tile.terrain === 'ground';
+    })!;
+    const gate = silesia.map.tiles.find(
+      (t) =>
+        t.coordinates.columnIndex === spot.columnIndex && t.coordinates.rowIndex === spot.rowIndex,
+    )!;
+    gate.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CAVE_ENTRANCE, spot);
+    gate.isRevealed = true;
+    cacheServerWorld('silesia', silesia.mapId, JSON.stringify(serializeWorld(silesia)));
+    const world = useWorldMapStore();
+    world.goToLocation('silesia');
+    const tile = world.getTileAt(spot)!;
+
+    const outcome = await world.executeHexAction(tile, EHexActionType.ENTER, HEXOBJECT_KEYS.HAND);
+
+    expect(outcome.ok).toBe(true);
+    expect(world.currentLocationKey).toBe('cave');
+    expect(sentCommands.map((c) => c.command.type)).toContain('WORLD_TRAVEL');
+    expect(hero.knowledge!.current).toBe(18);
+    expect(fakePresence()).toMatchObject({ locationKey: 'cave', mapId: world.currentMapId });
+    expect(fakeStoredWorld(world.currentMapId!)).not.toBeNull();
   });
 });

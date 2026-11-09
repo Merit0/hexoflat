@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createKnowledgeState, knowledgeStateSchema } from '../knowledge/state';
 import { LOCATION_KEYS } from '../registry/location-key';
+import { portalLinkSchema } from '../portal/portal-state';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
 
@@ -22,6 +23,8 @@ export const progressStateSchema = z
     knowledge: knowledgeStateSchema,
     presence: presenceSchema.nullable(),
     steps: z.number().int().nonnegative(),
+    sealedUntil: z.partialRecord(z.enum(LOCATION_KEYS), z.number().int().nonnegative()),
+    portal: portalLinkSchema.nullable(),
   })
   .strict();
 export type ProgressState = z.infer<typeof progressStateSchema>;
@@ -32,5 +35,7 @@ export function emptyProgressState(heroId: string): ProgressState {
     knowledge: createKnowledgeState(heroId),
     presence: null,
     steps: 0,
+    sealedUntil: {},
+    portal: null,
   };
 }

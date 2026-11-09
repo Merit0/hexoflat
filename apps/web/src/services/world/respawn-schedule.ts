@@ -1,4 +1,6 @@
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import { isServerWorldMode } from '@/services/player/world-sync';
 import { readRespawnSchedule, writeRespawnSchedule } from '@/services/persistence/world-storage';
 
 /**
@@ -17,12 +19,14 @@ import { readRespawnSchedule, writeRespawnSchedule } from '@/services/persistenc
  */
 
 export function scheduleLocationRespawn(locationKey: LocationKey, delayMs: number): void {
+  if (isServerWorldMode()) return;
   const schedule = readRespawnSchedule();
   schedule[locationKey] = Date.now() + delayMs;
   writeRespawnSchedule(schedule);
 }
 
 export function clearLocationRespawn(locationKey: LocationKey): void {
+  if (isServerWorldMode()) return;
   const schedule = readRespawnSchedule();
   if (!(locationKey in schedule)) return;
   delete schedule[locationKey];
@@ -30,6 +34,9 @@ export function clearLocationRespawn(locationKey: LocationKey): void {
 }
 
 export function getLocationRespawnRemainingMs(locationKey: LocationKey): number {
+  if (isServerWorldMode()) {
+    return Math.max(0, (inventorySession.sealedUntil[locationKey] ?? 0) - Date.now());
+  }
   const respawnAt = readRespawnSchedule()[locationKey];
   if (!respawnAt) return 0;
 
@@ -46,6 +53,7 @@ export function isLocationRespawning(locationKey: LocationKey): boolean {
  * caller — this module owns the clock, not the map.
  */
 export function consumeDueLocationRespawn(locationKey: LocationKey): boolean {
+  if (isServerWorldMode()) return false;
   const schedule = readRespawnSchedule();
   const respawnAt = schedule[locationKey];
   if (!respawnAt) return false;

@@ -95,6 +95,7 @@ import {
   serverWorldJsonOfHost,
   stepOnServerAction,
 } from '@/stores/server-world-actions';
+import { leaveCurrentLocationAction } from '@/stores/leave-location-action';
 import { placeHeroOnArrivalAction } from '@/stores/arrival-action';
 import { respawnHeroAtCampingAction } from '@/stores/camp-respawn-action';
 import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
@@ -325,7 +326,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
     },
 
-    goToLocation(locationKey: LocationKey, preferredMapId?: string) {
+    goToLocation(locationKey: LocationKey, preferredMapId?: string, serverTravelled = false) {
       if (locationKey !== this.currentLocationKey && this.isLocationRespawning(locationKey)) {
         useGameEventsStore().push(
           'World',
@@ -335,7 +336,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         return;
       }
 
-      this.leaveCurrentLocation(locationKey);
+      this.leaveCurrentLocation(locationKey, serverTravelled);
       this.loadLocationMap(locationKey, preferredMapId);
 
       if (!this.currentMapId) return;
@@ -346,30 +347,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.saveToStorage(this.currentMapId);
     },
 
-    leaveCurrentLocation(nextLocationKey: LocationKey) {
-      const leavingKey = this.currentLocationKey;
-      const leavingDef = MapRegistry.get(leavingKey);
-      const respawnDelayMs = leavingDef.respawnAfterClearedMs;
-      const isLeavingToElsewhere = nextLocationKey !== leavingKey;
-
-      if (isLeavingToElsewhere && respawnDelayMs && this.hasGraveMarker()) {
-        this.scheduleLocationRespawn(leavingKey, respawnDelayMs);
-      }
-
-      if (this.currentMapId) {
-        const heroCoordinates = useHeroStore().heroCoordinates;
-        if (heroCoordinates) {
-          useHeroStore().rememberPosition(this.currentMapId, heroCoordinates);
-        }
-
-        if (isLeavingToElsewhere && leavingDef.boardKind === 'DUNGEON') {
-          this.clearStoredLocation(leavingKey, this.currentMapId);
-        } else {
-          this.saveToStorage(this.currentMapId);
-        }
-      }
-
-      this.stopWorldLoop();
+    leaveCurrentLocation(nextLocationKey: LocationKey, serverTravelled = false) {
+      leaveCurrentLocationAction(this, useHeroStore(), nextLocationKey, serverTravelled);
     },
 
     placeHeroOnArrival(locationKey: LocationKey) {

@@ -16,10 +16,12 @@ import {
   type ServerWorld,
   type TileDiff,
   type WorldClientHint,
+  type TravelRun,
   type WorldEffect,
   type WorldOutcome,
   type WorldPlayerCommand,
   type WorldRun,
+  travelWorld,
 } from '@hexoflat/engine';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { DB, type Db } from '../db/db.module';
@@ -56,6 +58,11 @@ export interface WorldResponse {
   events: DomainEvent[];
   tileDiffs: TileDiff[];
   effects: WorldEffect[];
+  travel?: {
+    locationKey: LocationKey;
+    world: unknown;
+    refreshed: { locationKey: LocationKey; world: unknown } | null;
+  };
   engagement?: unknown;
   hero: {
     locationKey: string;
@@ -264,6 +271,75 @@ export class WorldService {
           ? (command.payload.client as WorldClientHint | undefined)
           : undefined,
     };
+    if (command.type === 'WORLD_TRAVEL') {
+      const stored: Partial<Record<LocationKey, ServerWorld>> = {};
+      for (const [key, mapId] of Object.entries(index) as [LocationKey, string][]) {
+        const held = mapId === world.mapId ? null : await loadWorld(tx, expeditionId, mapId, now);
+        if (held) stored[key] = held;
+      }
+      const seed = await expeditionSeed(tx, expeditionId);
+      const travelRun: TravelRun = {
+        ...run,
+        loadStored: (key) => stored[key] ?? null,
+        create: (key) => createServerWorld(key, randomUUID(), seed, heroId),
+      };
+      const travelled = travelWorld(travelRun, command.payload.via);
+      if (!travelled.ok) {
+        await journal('rejected', travelled.events, travelled.code, null);
+        return respond('rejected', travelled.code, travelled.events, [], world, travelled.effects);
+      }
+      const { origin, destination, replaced } = travelled;
+      if (replaced) {
+        await deleteServerDocument(tx, expeditionId, worldKey(origin.mapId));
+        await saveWorld(tx, expeditionId, replaced);
+        index[replaced.locationKey] = replaced.mapId;
+      } else {
+        await saveWorld(tx, expeditionId, origin);
+      }
+      await saveWorld(tx, expeditionId, destination);
+      index[destination.locationKey] = destination.mapId;
+      await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
+      const savedProgress = await saveAggregate(
+        tx,
+        heroId,
+        'progress',
+        progress.revision,
+        travelled.progress,
+      );
+      const travelAggregates: ProjectedAggregates = {
+        progress: projectAggregate({
+          kind: 'progress',
+          revision: savedProgress,
+          state: travelled.progress,
+        }),
+      };
+      if (JSON.stringify(travelled.inventory) !== JSON.stringify(inventory.state)) {
+        const revision = await saveAggregate(
+          tx,
+          heroId,
+          'inventory',
+          inventory.revision,
+          travelled.inventory,
+        );
+        travelAggregates.inventory = projectAggregate({
+          kind: 'inventory',
+          revision,
+          state: travelled.inventory,
+        });
+      }
+      await journal('applied', travelled.events, null, savedProgress);
+      return {
+        ...respond('applied', undefined, travelled.events, [], destination, travelled.effects),
+        travel: {
+          locationKey: destination.locationKey,
+          world: serializeWorld(destination),
+          refreshed: replaced
+            ? { locationKey: replaced.locationKey, world: serializeWorld(replaced) }
+            : null,
+        },
+        aggregates: { inventory: projectAggregate(inventory), ...travelAggregates },
+      };
+    }
     const outcome: WorldOutcome =
       command.type === 'WORLD_STEP'
         ? stepWorld(run, command.payload.target)

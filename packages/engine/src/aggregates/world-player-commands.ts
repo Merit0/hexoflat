@@ -58,6 +58,20 @@ export const WORLD_COMMAND_SCHEMAS = {
         .strict(),
     })
     .strict(),
+  WORLD_TRAVEL: z
+    .object({
+      type: z.literal('WORLD_TRAVEL'),
+      payload: z
+        .object({
+          ...base,
+          via: z.discriminatedUnion('kind', [
+            z.object({ kind: z.literal('exit') }).strict(),
+            z.object({ kind: z.literal('gate'), coordinates: coordinates.strict() }).strict(),
+          ]),
+        })
+        .strict(),
+    })
+    .strict(),
   WORLD_TICK: z
     .object({
       type: z.literal('WORLD_TICK'),

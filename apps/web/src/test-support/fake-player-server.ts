@@ -10,7 +10,10 @@ import {
 } from '@hexoflat/engine';
 import {
   actWorld,
+  createServerWorld,
   deserializeWorld,
+  serializeWorld,
+  travelWorld,
   stepWorld,
   tickWorld,
   type ServerWorld,
@@ -206,6 +209,7 @@ function handleWorld(envelope: PlayerEnvelope) {
     client: payload.client,
   };
   const type = envelope.command.type;
+  if (type === 'WORLD_TRAVEL') return travelFake(envelope, base, run);
   const outcome =
     type === 'WORLD_STEP'
       ? stepWorld(run, payload.target)
@@ -242,6 +246,62 @@ function handleWorld(envelope: PlayerEnvelope) {
     engagement: outcome.world.engagement,
     result: 'applied' as const,
     hero: null,
+    aggregates: snapshot().aggregates,
+  };
+}
+
+function travelFake(
+  envelope: PlayerEnvelope,
+  base: { commandId: string; tileDiffs: never[]; effects: never[]; events: never[] },
+  run: Parameters<typeof tickWorld>[0],
+) {
+  const s = store!;
+  const via = (envelope.command.payload as { via: Parameters<typeof travelWorld>[1] }).via;
+  const heldOther = (location: string) =>
+    [...storedWorlds.values()].find((w) => w.locationKey === location && w !== run.world) ?? null;
+  const outcome = travelWorld(
+    {
+      ...run,
+      loadStored: heldOther,
+      create: (location) => createServerWorld(location, crypto.randomUUID(), 'fake-seed', s.heroId),
+    },
+    via,
+  );
+  if (!outcome.ok) {
+    return {
+      ...base,
+      events: outcome.events,
+      effects: outcome.effects,
+      result: 'rejected' as const,
+      code: outcome.code,
+      hero: null,
+      aggregates: snapshot().aggregates,
+    };
+  }
+  const { origin, destination, replaced } = outcome;
+  for (const [mapId, held] of storedWorlds) {
+    if (held.locationKey === origin.locationKey) storedWorlds.delete(mapId);
+  }
+  storedWorlds.set((replaced ?? origin).mapId, replaced ?? origin);
+  storedWorlds.set(destination.mapId, destination);
+  world = destination;
+  s.progress = { revision: s.progress.revision + 1, state: outcome.progress };
+  if (outcome.inventory !== s.inventory.state) {
+    s.inventory = { revision: s.inventory.revision + 1, state: outcome.inventory };
+  }
+  return {
+    ...base,
+    events: outcome.events,
+    effects: outcome.effects,
+    result: 'applied' as const,
+    hero: null,
+    travel: {
+      locationKey: destination.locationKey,
+      world: serializeWorld(destination),
+      refreshed: replaced
+        ? { locationKey: replaced.locationKey, world: serializeWorld(replaced) }
+        : null,
+    },
     aggregates: snapshot().aggregates,
   };
 }

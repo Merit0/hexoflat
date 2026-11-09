@@ -322,6 +322,66 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     ).rejects.toBeDefined();
   });
 
+  async function presenceOf(userId: string, heroId: string) {
+    return (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+      presence: { locationKey: string; mapId: string };
+      sealedUntil: Record<string, number>;
+      knowledge: { current: number };
+    };
+  }
+
+  it('walks through a gate on the server: the Will is charged, the presence moves and the map comes back', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'silesia');
+    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const travelled = await send(userId, heroId, 'WORLD_TRAVEL', {
+      via: { kind: 'gate', coordinates: spot },
+    });
+    expect(travelled.result).toBe('applied');
+    expect(travelled.travel?.locationKey).toBe('cave');
+    const after = await presenceOf(userId, heroId);
+    expect(after.presence).toMatchObject({ locationKey: 'cave' });
+    expect(after.knowledge.current).toBe(18);
+    expect(travelled.hero).toMatchObject({ locationKey: 'cave' });
+  });
+
+  it('refuses to travel by a hex that is no gate, and from nowhere', async () => {
+    const lost = await kit.newPlayer();
+    expect(
+      await send(lost.userId, lost.heroId, 'WORLD_TRAVEL', { via: { kind: 'exit' } }),
+    ).toMatchObject({ result: 'rejected', code: 'NO_WORLD' });
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'silesia');
+    expect(
+      await send(userId, heroId, 'WORLD_TRAVEL', {
+        via: { kind: 'gate', coordinates: { columnIndex: 0, rowIndex: 0 } },
+      }),
+    ).toMatchObject({ result: 'rejected', code: 'NOT_A_GATE' });
+    expect((await presenceOf(userId, heroId)).presence.locationKey).toBe('silesia');
+  });
+
+  it('leaves a dungeon through its gate: a fresh dungeon waits on the server and a cleared one is sealed', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const first = await enter(userId, heroId, 'cave');
+    const oldMapId = first.hero!.mapId;
+    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CAMPING_ENTRANCE);
+    await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.GRAVE);
+    const travelled = await send(userId, heroId, 'WORLD_TRAVEL', {
+      via: { kind: 'gate', coordinates: spot },
+    });
+    expect(travelled.result).toBe('applied');
+    expect(travelled.travel?.refreshed?.locationKey).toBe('cave');
+    const again = (await world.ensure(userId, heroId, 'cave')) as { mapId: string };
+    expect(again.mapId).not.toBe(oldMapId);
+    const state = await presenceOf(userId, heroId);
+    expect(state.presence.locationKey).toBe('camping');
+    expect(state.sealedUntil.cave).toBeGreaterThan(Date.now());
+    const back = await send(userId, heroId, 'WORLD_TRAVEL', {
+      via: { kind: 'gate', coordinates: { columnIndex: 0, rowIndex: 0 } },
+    });
+    expect(back.result).toBe('rejected');
+  });
+
   it('builds a location on request without moving the hero, and keeps it', async () => {
     const { userId, heroId } = await kit.newPlayer();
     const a = (await world.ensure(userId, heroId, 'silesia')) as { mapId: string };

@@ -508,7 +508,12 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       .set({ schemaVersion: 1, state: { claimedRewards: ['camp-first-chest'] } })
       .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
     const progress = await progressOf(userId, heroId);
-    expect(progress.state).toMatchObject({ claimedRewards: ['camp-first-chest'], steps: 0 });
+    expect(progress.state).toMatchObject({
+      claimedRewards: ['camp-first-chest'],
+      steps: 0,
+      sealedUntil: {},
+      portal: null,
+    });
     expect(knowledgeOf(progress.state).current).toBe(20);
     const arrived = await kit.service.execute(
       userId,
@@ -519,7 +524,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       .select()
       .from(heroAggregates)
       .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
-    expect(row.schemaVersion).toBe(2);
+    expect(row.schemaVersion).toBe(3);
   });
 
   it('takes a snapshot every 50 revisions', async () => {

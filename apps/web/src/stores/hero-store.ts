@@ -154,6 +154,7 @@ export const useHeroStore = defineStore('hero', {
         engineContext: world.buildEngineContext(),
         clientHint: () => buildClientHint(useHeroToolStore(), this.hero),
         applyWorldResult: (result: WorldCommandResult) => world.applyWorldResult(result),
+        travelTo: (locationKey: LocationKey) => world.goToLocation(locationKey, undefined, true),
         hero: this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }),
         location: portalLocation(world.currentLocationKey, world.currentMapId),
         isCurrent: () =>

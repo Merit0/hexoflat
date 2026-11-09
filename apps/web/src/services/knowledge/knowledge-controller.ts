@@ -13,7 +13,11 @@ import type { PortalLocation } from '@hexoflat/engine/portal/portal-rules';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { ensurePresence, sendProgress } from '@/services/inventory/inventory-sync';
-import { actOnServerWorld } from '@/services/world/served-world';
+import {
+  actOnServerWorld,
+  installTravelledWorlds,
+  travelOnServer,
+} from '@/services/world/served-world';
 import { getMeta } from '@hexoflat/engine';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { closePortalIfOpen } from '@hexoflat/engine/portal/apply-portal';
@@ -34,6 +38,7 @@ export interface KnowledgeHost {
   isCurrent(): boolean;
   clientHint(): WorldClientHint;
   applyWorldResult(result: WorldCommandResult): void;
+  travelTo(locationKey: LocationKey): void;
 }
 
 function presenceOf(host: Omit<KnowledgeHost, 'state'>): ServerPresence | null {
@@ -129,13 +134,16 @@ export async function dispatchHexAction(
 
   const { coordinates, actionType, toolKey } = command.payload;
   const from = host.context.coordinates ?? host.hero.coordinates;
-  const result = await actOnServerWorld(
-    { locationKey: host.context.locationKey as LocationKey, mapId: host.context.mapId, from },
-    { coordinates, actionType, toolKey },
-    host.clientHint(),
-  );
-  const stale = !host.isCurrent();
+  const at = {
+    locationKey: host.context.locationKey as LocationKey,
+    mapId: host.context.mapId,
+    from,
+  };
   const gate = actionType === EHexActionType.ENTER ? enteredGate(host, command) : null;
+  const result = gate
+    ? await travelOnServer(at, { kind: 'gate', coordinates })
+    : await actOnServerWorld(at, { coordinates, actionType, toolKey }, host.clientHint());
+  const stale = !host.isCurrent();
   if (!stale) host.applyWorldResult(result);
 
   const events = [...result.events];
@@ -143,7 +151,8 @@ export async function dispatchHexAction(
   if (started && gate && !stale) {
     const world: HexEngineState = { map: host.map, heroes: { [host.hero.id]: host.hero } };
     events.push(...closePortalIfOpen(world, host.hero.id, { kind: 'GATE' }));
-    host.engineContext.worldMap.goToLocation(gate);
+    installTravelledWorlds(result);
+    host.travelTo(gate);
     host.engineContext.navigate?.(gate);
   }
   const engaged = events.some((event) => event.type === 'BATTLE_REQUESTED');
