@@ -28,6 +28,7 @@ import {
   resetWorldSync,
   snapshotWorld,
   takePendingPushes,
+  worldBody,
 } from '@/services/player/world-sync';
 import {
   flushExpedition,
@@ -334,7 +335,7 @@ export function flushWorld(): Promise<void> {
       try {
         const body = await apiClient.putJson<{ aggregates?: { progress?: ProjectedAggregate } }>(
           '/player/world',
-          push.json,
+          worldBody(push),
           { headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' } },
         );
         pushSucceeded(push);

@@ -30,6 +30,7 @@ interface Store {
 
 let store: Store | null = null;
 let world: ServerWorld | null = null;
+const storedWorlds = new Map<string, ServerWorld>();
 export const sentCommands: PlayerEnvelope[] = [];
 
 export function resetFakePlayerServer(
@@ -45,6 +46,7 @@ export function resetFakePlayerServer(
   };
   sentCommands.length = 0;
   world = null;
+  storedWorlds.clear();
 }
 
 export function snapshot(): HeroSnapshot {
@@ -136,15 +138,39 @@ export function fakePlayerSocketModule() {
   return { PlayerSocket, PlayerSocketError };
 }
 
+export function fakeStoredWorld(mapId: string): ServerWorld | null {
+  return storedWorlds.get(mapId) ?? null;
+}
+
+export function fakeStoredWorldOf(locationKey: string): ServerWorld | null {
+  return [...storedWorlds.values()].find((stored) => stored.locationKey === locationKey) ?? null;
+}
+
+export function fakePresence() {
+  return store!.progress.state.presence;
+}
+
 export function adoptFakeWorld(json: string): { ok: true; aggregates: HeroSnapshot['aggregates'] } {
   const s = store!;
-  world = deserializeWorld(JSON.parse(json), 0);
+  const adopted = deserializeWorld(JSON.parse(json), 0);
+  const current = (JSON.parse(json) as { current?: boolean }).current === true;
+  for (const [mapId, stored] of storedWorlds) {
+    if (stored.locationKey === adopted.locationKey) storedWorlds.delete(mapId);
+  }
+  storedWorlds.set(adopted.mapId, adopted);
+  if (!current) {
+    return {
+      ok: true,
+      aggregates: { progress: { revision: s.progress.revision, state: s.progress.state } },
+    };
+  }
+  world = adopted;
   const next = structuredClone(s.progress.state);
-  if (world.heroCoordinates) {
+  if (adopted.heroCoordinates) {
     next.presence = {
-      locationKey: world.locationKey,
-      mapId: world.mapId,
-      coordinates: { ...world.heroCoordinates },
+      locationKey: adopted.locationKey,
+      mapId: adopted.mapId,
+      coordinates: { ...adopted.heroCoordinates },
     };
   }
   s.progress = { revision: s.progress.revision + 1, state: next };

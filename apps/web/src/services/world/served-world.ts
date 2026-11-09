@@ -17,7 +17,8 @@ import {
   sendWorldStep,
   type WorldCommandResult,
 } from '@/services/inventory/inventory-sync';
-import { cachedWorldJson, forgetServerWorld } from '@/services/player/world-sync';
+import { cachedWorldJson, forgetServerWorld, queueWorldPush } from '@/services/player/world-sync';
+import { createServerWorld, serializeWorld } from '@hexoflat/engine/world/server-world';
 
 export function readCachedWorld(locationKey: LocationKey): ServerWorld | null {
   const json = cachedWorldJson(locationKey);
@@ -50,7 +51,6 @@ export function serverWorldJson(view: ServedWorldView): string {
     heroCoordinates: view.heroCoordinates,
     worldSeed: view.worldSeed ?? 'local',
     engagement: view.engagement,
-    current: true,
   });
 }
 
@@ -203,4 +203,10 @@ export async function actOnServerWorld(
     toolKey: action.toolKey,
     client,
   });
+}
+
+export function queueFreshServedWorld(locationKey: LocationKey, heroId: string): void {
+  const fresh = createServerWorld(locationKey, crypto.randomUUID(), crypto.randomUUID(), heroId);
+  const json = JSON.stringify(serializeWorld(fresh));
+  queueWorldPush(locationKey, fresh.mapId, json);
 }

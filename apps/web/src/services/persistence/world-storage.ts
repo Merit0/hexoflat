@@ -118,9 +118,9 @@ export function updateSavedMap(
   if (isServerWorldMode()) {
     const held = cachedWorldJsonByMap(mapId);
     if (!held) return false;
-    const doc = JSON.parse(held.json) as { map: ISerializedHexMap; current?: boolean };
+    const doc = JSON.parse(held.json) as { map: ISerializedHexMap };
     if (!mutate(doc.map)) return false;
-    queueWorldPush(held.locationKey, mapId, JSON.stringify({ ...doc, current: false }));
+    queueWorldPush(held.locationKey, mapId, JSON.stringify(doc));
     return true;
   }
   const map = readSavedMap(mapId);

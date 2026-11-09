@@ -1,6 +1,7 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { recoverStepPosition } from '@/services/knowledge/step-recovery';
 import {
+  bindCurrentMapId,
   bindWorldSnapshotter,
   forgetAllServerWorlds,
   forgetServerWorld,
@@ -9,7 +10,7 @@ import {
   rememberServerWorld,
 } from '@/services/player/world-sync';
 import type { ServerWorld } from '@hexoflat/engine/world/server-world';
-import { readCachedWorld } from '@/services/world/served-world';
+import { queueFreshServedWorld, readCachedWorld } from '@/services/world/served-world';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { installCampBook } from '@hexoflat/engine/knowledge/camp-book';
@@ -101,6 +102,7 @@ import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } 
 export { runWorldTick };
 
 bindWorldSnapshotter((force) => useWorldMapStore().queueServerWorld(force));
+bindCurrentMapId(() => useWorldMapStore().currentMapId);
 
 let battleAutosaveStop: (() => void) | null = null;
 
@@ -223,6 +225,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       removeSavedWorld(mapId);
       forgetServerWorld(locationKey);
+      if (isServerWorldMode()) queueFreshServedWorld(locationKey, heroStore.hero.id);
 
       if (index[locationKey] === mapId) {
         delete index[locationKey];

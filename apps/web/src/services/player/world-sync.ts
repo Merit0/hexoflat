@@ -13,6 +13,7 @@ const pending = new Map<string, WorldPush>();
 let timer: number | null = null;
 let enabled = false;
 let flusher: (() => Promise<void>) | null = null;
+let currentMapId: (() => string | null) | null = null;
 let snapshotter: ((force: boolean) => void) | null = null;
 
 export function bindWorldFlusher(next: (() => Promise<void>) | null): void {
@@ -21,6 +22,15 @@ export function bindWorldFlusher(next: (() => Promise<void>) | null): void {
 
 export function bindWorldSnapshotter(next: ((force: boolean) => void) | null): void {
   snapshotter = next;
+}
+
+export function bindCurrentMapId(next: (() => string | null) | null): void {
+  currentMapId = next;
+}
+
+export function worldBody(push: WorldPush): string {
+  const current = currentMapId?.() === push.mapId;
+  return push.json.replace(/\}$/, `,"current":${current}}`);
 }
 
 export function snapshotWorld(force: boolean): void {
@@ -61,6 +71,9 @@ export function cachedWorldJsonByMap(mapId: string): { locationKey: string; json
 
 export function forgetServerWorld(locationKey: string): void {
   documents.delete(locationKey);
+  for (const [mapId, push] of pending) {
+    if (push.locationKey === locationKey) pending.delete(mapId);
+  }
 }
 
 export function forgetAllServerWorlds(): void {
@@ -78,6 +91,7 @@ export function queueWorldPush(
     pending.delete(mapId);
     return;
   }
+  pending.delete(mapId);
   pending.set(mapId, { locationKey, mapId, json });
   if (timer !== null || !flusher) return;
   timer = window.setTimeout(() => {
