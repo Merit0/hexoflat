@@ -15,7 +15,8 @@ import {
 } from '@/services/world/portal-service';
 import { playPortalEnter, playPortalExit, portalFxBusy, releasePortalFx } from '@/render/portal-fx';
 import { routeToLocation } from '@/services/world/location-navigator';
-import { transactKnowledge } from '@/services/persistence/knowledge-storage';
+import { ensurePresence, sendProgress } from '@/services/inventory/inventory-sync';
+import { inventorySession } from '@/services/inventory/inventory-session';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { withStoreInventory } from '@/services/inventory/inventory-bridge';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -93,15 +94,35 @@ export function usePortal() {
     let reason = 'NO_LOCATION';
     let opened = false;
 
-    const knowledge = await transactKnowledge(heroId, (current) => {
-      const { events } = withStoreInventory(heroId, { ...state, knowledge: current }, (bound) =>
-        applyCommand(bound, { type: 'OPEN_PORTAL', payload: { heroId, target } }, ctx),
+    const current = inventorySession.knowledge;
+    if (!current) return { ok: false, reason: 'NO_WILL_STATE' };
+    const { events } = withStoreInventory(
+      heroId,
+      { ...state, knowledge: structuredClone(current) },
+      (bound) => applyCommand(bound, { type: 'OPEN_PORTAL', payload: { heroId, target } }, ctx),
+    );
+    opened = events.some((event) => event.type === 'PORTAL_OPENED');
+    const rejected = events.find((event) => event.type === 'PORTAL_OPEN_REJECTED');
+    if (rejected) reason = (rejected.payload as { reason: string }).reason;
+
+    let knowledge = current;
+    if (opened) {
+      const position = heroStore.heroCoordinates;
+      await ensurePresence(
+        position
+          ? {
+              locationKey: worldStore.currentLocationKey,
+              mapId: worldStore.currentMapId ?? '',
+              coordinates: { ...position },
+            }
+          : null,
       );
-      opened = events.some((event) => event.type === 'PORTAL_OPENED');
-      const rejected = events.find((event) => event.type === 'PORTAL_OPEN_REJECTED');
-      if (rejected) reason = (rejected.payload as { reason: string }).reason;
-      return opened;
-    });
+      const paid = await sendProgress('SPEND_WILL', {
+        spend: { kind: 'portal', target: { ...target } },
+      });
+      if (!paid.ok) reason = paid.code ?? 'INSUFFICIENT_WILL';
+      knowledge = paid.knowledge ?? current;
+    }
 
     if (!opened) return { ok: false, reason };
 

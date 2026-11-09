@@ -7,6 +7,7 @@ import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { toAggregate } from '../inventory/inventory-adapter';
 import { countItem } from '../inventory/plan-stock';
 import { replaceInventory } from './replace-inventory';
+import { executeProgressCommand } from './execute-progress-command';
 import { claimCampChest } from './claim-camp-chest';
 import type { PlayerCommand } from './player-commands';
 import type { ProgressState } from './progress-state';
@@ -97,6 +98,19 @@ export function executePlayerCommand(
         command.payload as unknown as Parameters<typeof replaceInventory>[1],
       );
       return inventoryOutcome(inventory, result.inventory, result.events);
+    }
+    case 'KNOWLEDGE':
+    case 'SACRIFICE_TO_SKILL':
+    case 'RESET_SKILLS':
+    case 'ARRIVE':
+    case 'SPEND_WILL':
+    case 'DEV_GRANT_WILL':
+    case 'DEV_SET_KNOWLEDGE': {
+      const outcome = executeProgressCommand(progress, command, ctx.devGrantAllowed);
+      if (!outcome) return { ok: false, code: 'UNKNOWN_COMMAND', events: [] };
+      return outcome.ok
+        ? { ok: true, changed: { progress: outcome.progress }, events: outcome.events }
+        : outcome;
     }
     default: {
       const result = applyInventoryCommand(inventory, command, ctx.inventory);

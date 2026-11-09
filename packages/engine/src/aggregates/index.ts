@@ -5,3 +5,4 @@ export * from './player-commands';
 export * from './execute-player-command';
 export * from './registry';
 export * from './replace-inventory';
+export * from './execute-progress-command';

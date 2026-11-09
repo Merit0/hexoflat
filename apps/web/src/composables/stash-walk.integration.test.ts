@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
@@ -10,6 +10,11 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { seedFakeSession } from '@/test-support/fake-session';
+
+vi.mock('@/services/player/player-socket', async () =>
+  (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
+);
 
 const START = { columnIndex: 0, rowIndex: 0 };
 const TARGET = { columnIndex: 1, rowIndex: 0 };
@@ -21,6 +26,8 @@ function setup() {
   const world = useWorldMapStore();
   const hero = useHeroStore();
   hero.hero.id = 'hero-1';
+  seedFakeSession('hero-1');
+  hero.loadKnowledge();
   const map = new HexMapBuilder().name('walk-test').width(3).height(3).build();
   for (const tile of map.tiles) tile.isRevealed = true;
   world.map = map;

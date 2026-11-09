@@ -1,7 +1,7 @@
 import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
 import { KNOWLEDGE_RULES } from '@hexoflat/engine/knowledge/math';
-import { writeKnowledge } from '@/services/persistence/knowledge-storage';
+import { pushKnowledgeFixture } from '@/services/inventory/inventory-sync';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import {
   tileWorldCenter,
@@ -86,7 +86,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       )
         throw new Error('Invalid fixture');
       const state = { ...heroStore.knowledge, current, session: null };
-      writeKnowledge(state);
+      pushKnowledgeFixture(state);
       heroStore.loadKnowledge();
       worldStore.goToLocation('silesia');
     },
@@ -94,7 +94,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
       if (!heroStore.knowledge || !Number.isInteger(current) || current < 0)
         throw new Error('Invalid fixture');
-      writeKnowledge({ ...heroStore.knowledge, current });
+      pushKnowledgeFixture({ ...heroStore.knowledge, current });
       heroStore.loadKnowledge();
     },
     setSkillRank(skillId: string, rank: number) {
@@ -103,7 +103,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       if (!heroStore.knowledge || !parsed.success || !Number.isInteger(rank) || rank < 0)
         throw new Error('Invalid fixture');
       const skills = { ...heroStore.knowledge.skills, [parsed.data]: rank };
-      writeKnowledge({ ...heroStore.knowledge, skills });
+      pushKnowledgeFixture({ ...heroStore.knowledge, skills });
       heroStore.loadKnowledge();
     },
     getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null {

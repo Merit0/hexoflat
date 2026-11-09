@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { CAMP_PORTAL_SPOT } from '@hexoflat/engine/content/boards/camp-portal-spot';
-import { createKnowledgeState } from '@hexoflat/engine/knowledge/state';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { coordinateKey, getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
-import { writeKnowledge } from '@/services/persistence/knowledge-storage';
+import { seedFakeSession } from '@/test-support/fake-session';
 import { readLocationMapIndex, readSavedMap } from '@/services/persistence/world-storage';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
@@ -14,6 +13,9 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { crossExitIfStanding } from './use-board-crossing';
 import { usePortal } from './use-portal';
 
+vi.mock('@/services/player/player-socket', async () =>
+  (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
+);
 vi.mock('@/services/world/location-navigator', () => ({
   navigateToLocation: vi.fn(),
   isViewingOtherWorldLocation: vi.fn(() => false),
@@ -42,16 +44,17 @@ describe('usePortal', () => {
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
   });
 
-  function startInSilesia(will = 20, scrolls = 5) {
+  function startInSilesia(
+    will = 20,
+    scrolls = 5,
+    skills: Record<string, number> = { a_crest: 1, a_teleport: 6 },
+  ) {
     const hero = useHeroStore();
     const world = useWorldMapStore();
     const inventory = useHeroInventoryStore();
     hero.hero.id = 'hero-1';
-    const knowledge = createKnowledgeState('hero-1');
-    knowledge.current = will;
-    knowledge.skills = { a_crest: 1, a_teleport: 6 };
-    writeKnowledge(knowledge);
-    hero.knowledge = knowledge;
+    seedFakeSession('hero-1', { will, skills });
+    hero.loadKnowledge();
     inventory.hydrate();
     if (scrolls) inventory.putToInventory(SCROLL, scrolls);
 
@@ -102,9 +105,7 @@ describe('usePortal', () => {
 
   describe('Teleport skill', () => {
     function withTeleport(will: number, rank: number, scrolls = 1) {
-      const setup = startInSilesia(will, scrolls);
-      setup.hero.knowledge!.skills = rank ? { a_crest: 1, a_teleport: rank } : {};
-      writeKnowledge(setup.hero.knowledge!);
+      const setup = startInSilesia(will, scrolls, rank ? { a_crest: 1, a_teleport: rank } : {});
       return setup;
     }
 
@@ -228,11 +229,8 @@ describe('usePortal', () => {
     const world = useWorldMapStore();
     const inventory = useHeroInventoryStore();
     hero.hero.id = 'hero-1';
-    const knowledge = createKnowledgeState('hero-1');
-    knowledge.current = 20;
-    knowledge.skills = { a_crest: 1, a_teleport: 6 };
-    writeKnowledge(knowledge);
-    hero.knowledge = knowledge;
+    seedFakeSession('hero-1', { will: 20, skills: { a_crest: 1, a_teleport: 6 } });
+    hero.loadKnowledge();
     inventory.hydrate();
     inventory.putToInventory(SCROLL, 1);
     expect(MapRegistry.get('cave').boardKind).toBe('DUNGEON');

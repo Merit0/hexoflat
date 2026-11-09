@@ -61,7 +61,10 @@ export function claimCampChest(
   return {
     ok: true,
     inventory: next,
-    progress: { claimedRewards: [...progress.claimedRewards, CAMP_FIRST_CHEST_REWARD] },
+    progress: {
+      ...progress,
+      claimedRewards: [...progress.claimedRewards, CAMP_FIRST_CHEST_REWARD],
+    },
     events: [
       ...granted,
       { type: 'INVENTORY_CHANGED', payload: { heroId, revision: next.revision } },

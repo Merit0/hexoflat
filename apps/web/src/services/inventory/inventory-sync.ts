@@ -14,7 +14,8 @@ import {
   type ProjectedAggregate,
 } from '@/services/player/player-socket';
 import { bindInventoryMirror } from './inventory-mirror';
-import { inventorySession, resetInventorySession } from './inventory-session';
+import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
+import { inventorySession, resetInventorySession, type ServerPresence } from './inventory-session';
 import { readInventoryState, writeInventoryState } from './inventory-store-io';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
@@ -37,10 +38,28 @@ function applyInventory(projection: ProjectedAggregate | undefined): void {
   writeInventoryState(stores(), { ...state, revision: projection.revision });
 }
 
-function applyProgress(projection: ProjectedAggregate | undefined): void {
+type KnowledgeListener = (knowledge: KnowledgeState | null) => void;
+let knowledgeListener: KnowledgeListener | null = null;
+
+/** The hero store keeps its own reactive copy of the knowledge; it hears every server change here. */
+export function bindKnowledgeListener(listener: KnowledgeListener | null): void {
+  knowledgeListener = listener;
+}
+
+export function applyProgress(projection: ProjectedAggregate | undefined): void {
   if (!projection) return;
-  const progress = projection.state as { claimedRewards?: string[] };
+  const progress = projection.state as {
+    claimedRewards?: string[];
+    knowledge?: KnowledgeState;
+    presence?: ServerPresence | null;
+    steps?: number;
+  };
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
+  inventorySession.progressRevision = projection.revision;
+  inventorySession.knowledge = progress.knowledge ?? null;
+  inventorySession.presence = progress.presence ?? null;
+  inventorySession.steps = progress.steps ?? 0;
+  knowledgeListener?.(inventorySession.knowledge);
 }
 
 function applySnapshot(aggregates: HeroSnapshot['aggregates']): void {
@@ -200,4 +219,83 @@ export function claimCampChest(): Promise<ClaimOutcome> {
       return { ok: false, code: error instanceof PlayerSocketError ? error.code : 'OFFLINE' };
     }
   });
+}
+
+export interface ProgressResult {
+  ok: boolean;
+  code?: string;
+  knowledge: KnowledgeState | null;
+}
+
+/**
+ * Sends a command on the hero's progress (Will, skills, steps) and applies the server's answer.
+ * Gains and spends alike wait for the server: the client never decides what the hero has.
+ */
+export function sendProgress(
+  type: string,
+  payload: Record<string, unknown>,
+  options: { withKnowledgeRevision?: boolean } = {},
+): Promise<ProgressResult> {
+  const withRevision = options.withKnowledgeRevision !== false;
+  if (inventorySession.status !== 'live') {
+    return Promise.resolve({ ok: false, code: 'OFFLINE', knowledge: inventorySession.knowledge });
+  }
+  return enqueue(async (): Promise<ProgressResult> => {
+    const expectedRevision = inventorySession.progressRevision;
+    const env: PlayerEnvelope = {
+      commandId: crypto.randomUUID(),
+      heroId: inventorySession.heroId,
+      aggregate: 'progress',
+      expectedRevision,
+      command: {
+        type,
+        payload: {
+          heroId: inventorySession.heroId,
+          ...(withRevision ? { revision: inventorySession.knowledge?.revision ?? 0 } : {}),
+          ...payload,
+        },
+      },
+    };
+    let response: PlayerCommandResponse;
+    try {
+      response = await socket.send(env);
+    } catch (error) {
+      lost(error);
+      const code = error instanceof PlayerSocketError ? error.code : 'OFFLINE';
+      return { ok: false, code, knowledge: inventorySession.knowledge };
+    }
+    applyProgress(response.aggregates.progress);
+    if (response.result === 'conflict') warn(i18n.global.t('player.sync.restored'));
+    return {
+      ok: response.result === 'applied',
+      ...(response.result === 'applied' ? {} : { code: response.code ?? response.result }),
+      knowledge: inventorySession.knowledge,
+    };
+  });
+}
+
+function samePresence(known: ServerPresence | null, now: ServerPresence): boolean {
+  return (
+    !!known &&
+    known.locationKey === now.locationKey &&
+    known.mapId === now.mapId &&
+    known.coordinates.columnIndex === now.coordinates.columnIndex &&
+    known.coordinates.rowIndex === now.coordinates.rowIndex
+  );
+}
+
+/**
+ * Tells the server where the hero stands, when it does not already know. Until the server holds
+ * the map, a step is checked against this last seen place and the location's Will rule.
+ */
+export async function ensurePresence(now: ServerPresence | null): Promise<void> {
+  if (!now || samePresence(inventorySession.presence, now)) return;
+  await sendProgress('ARRIVE', { ...now }, { withKnowledgeRevision: false });
+}
+
+/** Dev / e2e fixture: the stores' knowledge (changed by hand) becomes the server's. Refused in production. */
+export function pushKnowledgeFixture(knowledge: KnowledgeState): void {
+  if (inventorySession.status !== 'live') return;
+  inventorySession.knowledge = knowledge;
+  void sendProgress('DEV_SET_KNOWLEDGE', { knowledge });
 }

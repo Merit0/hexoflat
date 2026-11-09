@@ -197,6 +197,7 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
 
   test('Verify a hand holding the Return Scroll shows its Will cost on the Hero tab', async () => {
     await new OpenCampingMapFeature().open();
+    await new VerifyInventoryFeature().givenItem(HexobjectKeys.returnScroll, 5);
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
 
     const switchTab = new SwitchHeroBoardTabFeature();
@@ -218,6 +219,7 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
 
   test('Verify clicking a hand icon puts the held item back into the bag', async () => {
     await new OpenCampingMapFeature().open();
+    await new VerifyInventoryFeature().givenItem(HexobjectKeys.returnScroll, 5);
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
 
     const switchTab = new SwitchHeroBoardTabFeature();
@@ -234,6 +236,7 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
     await verifyBoard.emptyHandByIcon('right');
 
     await switchTab.switchTo('inventory');
+    await new VerifyInventoryFeature().givenItem(HexobjectKeys.returnScroll, 5);
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
   });
 });

@@ -11,6 +11,18 @@ export class VerifyInventoryFeature extends BaseFeature {
     );
   }
 
+  async givenItem(itemKey: string, amount: number): Promise<void> {
+    await this.step(`Give the hero ${amount} x "${itemKey}" and wait until the server has it`, () =>
+      this.page.evaluate(
+        async ([key, n]) => {
+          window.__HEXOFLAT_TEST__!.grantInventoryItem(key as string, n as number);
+          await window.__HEXOFLAT_TEST__!.settleInventorySync();
+        },
+        [itemKey, amount] as const,
+      ),
+    );
+  }
+
   async verifyContainsItem(itemKey: string): Promise<void> {
     await this.step(`Verify "${itemKey}" reached the inventory`, () =>
       this.campingMap.inventory.verifyContainsItem(itemKey),

@@ -1,3 +1,5 @@
+import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
+
 export type TSessionStatus = 'offline' | 'connecting' | 'live' | 'taken-over';
 
 export const LOCAL_HERO_ID = 'hero';
@@ -9,7 +11,17 @@ export const inventorySession = {
   revision: 0,
   idSeq: 0,
   claimedRewards: [] as string[],
+  progressRevision: 0,
+  knowledge: null as KnowledgeState | null,
+  presence: null as ServerPresence | null,
+  steps: 0,
 };
+
+export interface ServerPresence {
+  locationKey: string;
+  mapId: string;
+  coordinates: { columnIndex: number; rowIndex: number };
+}
 
 export function resetInventorySession(): void {
   inventorySession.status = 'offline';
@@ -17,4 +29,8 @@ export function resetInventorySession(): void {
   inventorySession.revision = 0;
   inventorySession.idSeq = 0;
   inventorySession.claimedRewards = [];
+  inventorySession.progressRevision = 0;
+  inventorySession.knowledge = null;
+  inventorySession.presence = null;
+  inventorySession.steps = 0;
 }

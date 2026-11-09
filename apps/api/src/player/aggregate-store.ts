@@ -41,7 +41,7 @@ function loadOne<K extends TAggregateKind>(
   kind: K,
   row: typeof heroAggregates.$inferSelect,
 ): LoadedAggregate<K> {
-  const state = upcastAggregate(kind, row.schemaVersion, row.state);
+  const state = upcastAggregate(kind, row.schemaVersion, row.state, { heroId: row.heroId });
   if (kind === 'inventory') (state as AggregateStates['inventory']).revision = row.revision;
   return { kind, revision: row.revision, state };
 }

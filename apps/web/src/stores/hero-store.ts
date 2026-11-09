@@ -1,10 +1,9 @@
 import { travelStepBudget } from '@hexoflat/engine/knowledge/math';
-import { willZoneCharges, type WillZoneContext } from '@hexoflat/engine/knowledge/will-zone';
+import type { WillZoneContext } from '@hexoflat/engine/knowledge/will-zone';
 import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import type { KnowledgeAction } from '@hexoflat/engine/knowledge/commands';
-import { readKnowledge } from '@/services/persistence/knowledge-storage';
 import {
   dispatchHexAction,
   dispatchDevWillGrant,
@@ -43,7 +42,12 @@ import { executeMovementRoute } from '@/services/hero-movement/movement-executor
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
-import { endPlayerSession, startPlayerSession } from '@/services/inventory/inventory-sync';
+import {
+  bindKnowledgeListener,
+  endPlayerSession,
+  startPlayerSession,
+} from '@/services/inventory/inventory-sync';
+import { inventorySession } from '@/services/inventory/inventory-session';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
@@ -108,13 +112,11 @@ export const useHeroStore = defineStore('hero', {
 
   actions: {
     loadKnowledge() {
-      try {
-        this.knowledge = readKnowledge(this.hero.id);
-        this.knowledgeError = false;
-      } catch {
-        this.knowledge = null;
-        this.knowledgeError = true;
-      }
+      bindKnowledgeListener((knowledge) => {
+        if (knowledge && knowledge.heroId === this.hero.id) this.knowledge = knowledge;
+      });
+      this.knowledge = inventorySession.knowledge;
+      this.knowledgeError = !this.knowledge;
     },
 
     knowledgeHost(world: ReturnType<typeof useWorldMapStore>) {
@@ -175,8 +177,8 @@ export const useHeroStore = defineStore('hero', {
     async devGrantWill(amount: number): Promise<void> {
       if (!import.meta.env.DEV || !this.knowledge) return;
       const heroId = this.hero.id;
-      const state = await dispatchDevWillGrant(heroId, amount);
-      if (heroId === this.hero.id) this.knowledge = state;
+      const state = await dispatchDevWillGrant(amount);
+      if (heroId === this.hero.id && state) this.knowledge = state;
     },
 
     async sacrificeToSkill(skillId: SkillId, option: SacrificeOptionId): Promise<boolean> {
@@ -339,6 +341,7 @@ export const useHeroStore = defineStore('hero', {
           .setSteps(hero.heroSteps);
 
         this.hydrateProgressFromStorage();
+        this.hero.setSteps(inventorySession.steps);
 
         return true;
       } catch (error) {
@@ -375,6 +378,7 @@ export const useHeroStore = defineStore('hero', {
       this.extraShields = 0;
       this.portal = null;
       this.nav = defaultNav();
+      bindKnowledgeListener(null);
       endPlayerSession();
       useHeroInventoryStore().reset();
       useHeroStashStore().reset();
@@ -478,11 +482,9 @@ export const useHeroStore = defineStore('hero', {
 
       try {
         await executeMovementRoute(route, async (coord) => {
-          if (willZoneCharges(this.willZoneContext)) {
-            if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
-              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'), 'will');
-              return false;
-            }
+          if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
+            heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'), 'will');
+            return false;
           }
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;

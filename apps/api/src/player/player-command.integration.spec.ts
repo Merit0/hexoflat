@@ -44,7 +44,11 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     const inventory = snapshot.aggregates.inventory!;
     expect(coinsHeld(inventory)).toBe(0);
     expect((inventory.state as InventoryState).stash.chests).toBe(0);
-    expect(snapshot.aggregates.progress!.state).toEqual({ claimedRewards: [] });
+    expect(snapshot.aggregates.progress!.state).toMatchObject({
+      claimedRewards: [],
+      presence: null,
+      steps: 0,
+    });
 
     const [row] = await kit.db
       .select()
@@ -90,7 +94,9 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     const first = await kit.service.execute(userId, envelope(heroId, 'CLAIM_CAMP_CHEST', {}, 0));
     expect(first.result).toBe('applied');
     expect(first.aggregates.inventory!.revision).toBe(1);
-    expect(first.aggregates.progress!.state).toEqual({ claimedRewards: ['camp-first-chest'] });
+    expect(first.aggregates.progress!.state).toMatchObject({
+      claimedRewards: ['camp-first-chest'],
+    });
 
     const again = await kit.service.execute(userId, envelope(heroId, 'CLAIM_CAMP_CHEST', {}, 1));
     expect(again).toMatchObject({ result: 'rejected', code: 'ALREADY_CLAIMED' });
@@ -392,7 +398,11 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     expect(snapshot.aggregates.inventory!.revision).toBe(3);
     expect(coinsHeld(snapshot.aggregates.inventory!)).toBe(0);
     expect((snapshot.aggregates.inventory!.state as InventoryState).stash.chests).toBe(0);
-    expect(snapshot.aggregates.progress!.state).toEqual({ claimedRewards: [] });
+    expect(snapshot.aggregates.progress!.state).toMatchObject({
+      claimedRewards: [],
+      presence: null,
+      steps: 0,
+    });
 
     const again = await kit.service.execute(
       userId,
@@ -417,6 +427,99 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     } finally {
       vi.unstubAllEnvs();
     }
+  });
+
+  const progressOf = async (userId: string, heroId: string) =>
+    (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
+  const knowledgeOf = (state: unknown) =>
+    (state as { knowledge: { current: number; revision: number } }).knowledge;
+  const arrive = (heroId: string, revision: number, locationKey: string, c: number, r: number) => {
+    const e = envelope(
+      heroId,
+      'ARRIVE',
+      { locationKey, mapId: `${locationKey}-1`, coordinates: { columnIndex: c, rowIndex: r } },
+      revision,
+      { aggregate: 'progress' },
+    );
+    delete (e.command.payload as { revision?: number }).revision;
+    return e;
+  };
+  const stepTo = (
+    heroId: string,
+    revision: number,
+    knowledgeRevision: number,
+    c: number,
+    r: number,
+  ) => {
+    const e = envelope(
+      heroId,
+      'KNOWLEDGE',
+      { action: { kind: 'step', target: { columnIndex: c, rowIndex: r } } },
+      revision,
+      { aggregate: 'progress' },
+    );
+    e.command.payload.revision = knowledgeRevision;
+    return e;
+  };
+
+  it("spends the hero's Will on the server, one step at a time, and keeps it after a reload", async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const arrived = await kit.service.execute(userId, arrive(heroId, 0, 'silesia', 5, 5));
+    expect(arrived.result).toBe('applied');
+    let revision = arrived.aggregates.progress!.revision;
+    for (let i = 0; i < 3; i += 1) {
+      const result = await kit.service.execute(userId, stepTo(heroId, revision, i, 5, 6 + i));
+      expect(result.result).toBe('applied');
+      revision = result.aggregates.progress!.revision;
+    }
+    const reloaded = await progressOf(userId, heroId);
+    expect(knowledgeOf(reloaded.state).current).toBe(17);
+    expect((reloaded.state as { steps: number }).steps).toBe(3);
+  });
+
+  it('refuses a step that is not next to the last place the server saw, and a step with no Will left', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const arrived = await kit.service.execute(userId, arrive(heroId, 0, 'silesia', 5, 5));
+    const jump = await kit.service.execute(
+      userId,
+      stepTo(heroId, arrived.aggregates.progress!.revision, 0, 9, 9),
+    );
+    expect(jump).toMatchObject({ result: 'rejected', code: 'INVALID_STEP' });
+    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(20);
+  });
+
+  it('lets only one of ten parallel steps from the same place through, and never overspends', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const arrived = await kit.service.execute(userId, arrive(heroId, 0, 'silesia', 5, 5));
+    const revision = arrived.aggregates.progress!.revision;
+    const results = await Promise.all(
+      Array.from({ length: 10 }, (_v, i) =>
+        kit.service.execute(userId, stepTo(heroId, revision, 0, 5, 6 + (i % 2))),
+      ),
+    );
+    expect(results.filter((r) => r.result === 'applied')).toHaveLength(1);
+    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(19);
+  });
+
+  it('upgrades a hero stored before Will lived on the server, keeping what he had claimed', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await kit.db
+      .update(heroAggregates)
+      .set({ schemaVersion: 1, state: { claimedRewards: ['camp-first-chest'] } })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+    const progress = await progressOf(userId, heroId);
+    expect(progress.state).toMatchObject({ claimedRewards: ['camp-first-chest'], steps: 0 });
+    expect(knowledgeOf(progress.state).current).toBe(20);
+    const arrived = await kit.service.execute(
+      userId,
+      arrive(heroId, progress.revision, 'camping', 1, 1),
+    );
+    expect(arrived.result).toBe('applied');
+    const [row] = await kit.db
+      .select()
+      .from(heroAggregates)
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+    expect(row.schemaVersion).toBe(2);
   });
 
   it('takes a snapshot every 50 revisions', async () => {

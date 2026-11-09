@@ -1,5 +1,5 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import { recoverStepPosition } from '@/services/persistence/knowledge-storage';
+import { recoverStepPosition } from '@/services/knowledge/step-recovery';
 import { installCampBook } from '@hexoflat/engine/knowledge/camp-book';
 import { defineStore } from 'pinia';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';

@@ -26,7 +26,7 @@ const CTX: PlayerCommandContext = {
 };
 
 function fresh(): PlayerAggregates {
-  return { inventory: emptyInventoryState(HERO), progress: emptyProgressState() };
+  return { inventory: emptyInventoryState(HERO), progress: emptyProgressState(HERO) };
 }
 
 function parse(command: unknown): PlayerCommand {
@@ -45,22 +45,33 @@ describe('aggregate registry', () => {
     expect(countItem(toAggregate(inventory), HEXOBJECT_KEYS.COINS)).toBe(0);
     expect(inventory.stash.chests).toBe(0);
     expect(progress.claimedRewards).toEqual([]);
+    expect(progress.knowledge.current).toBe(20);
+    expect(progress.presence).toBeNull();
   });
 
   it('upcasts a stored v1 document unchanged and refuses unknown fields', () => {
     const stored = { claimedRewards: [CAMP_FIRST_CHEST_REWARD] };
-    expect(upcastAggregate('progress', 1, stored)).toEqual(stored);
-    expect(() => upcastAggregate('progress', 1, { ...stored, coins: 99 })).toThrow();
+    expect(upcastAggregate('progress', 1, stored, { heroId: HERO })).toEqual({
+      ...emptyProgressState(HERO),
+      claimedRewards: [CAMP_FIRST_CHEST_REWARD],
+    });
+    expect(() =>
+      upcastAggregate('progress', 1, { ...stored, coins: 99 }, { heroId: HERO }),
+    ).toThrow();
+    const current = emptyProgressState(HERO);
+    expect(
+      upcastAggregate('progress', 2, JSON.parse(JSON.stringify(current)), { heroId: HERO }),
+    ).toEqual(current);
   });
 
   it('keeps inventory v1 valid after a round trip through JSON', () => {
     const inventory = AGGREGATES.inventory.createInitial({ heroId: HERO });
     const stored: unknown = JSON.parse(JSON.stringify(inventory));
-    expect(upcastAggregate('inventory', 1, stored)).toEqual(inventory);
+    expect(upcastAggregate('inventory', 1, stored, { heroId: HERO })).toEqual(inventory);
   });
 
   it('throws when a stored version has no upcaster', () => {
-    expect(() => upcastAggregate('progress', 0, {})).toThrow(/No upcaster/);
+    expect(() => upcastAggregate('progress', 0, {}, { heroId: HERO })).toThrow(/No upcaster/);
   });
 });
 

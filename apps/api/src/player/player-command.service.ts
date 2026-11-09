@@ -5,6 +5,7 @@ import {
   AGGREGATES,
   AGGREGATE_KINDS,
   PLAYER_COMMAND_AGGREGATES,
+  PLAYER_COMMAND_REVISION,
   PLAYER_COMMAND_SCHEMAS,
   consumeItemServerSide,
   emptyProgressState,
@@ -18,6 +19,7 @@ import {
   type TAggregateKind,
 } from '@hexoflat/engine';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
+import { emptyInventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
@@ -62,11 +64,10 @@ function projectAll(loaded: LoadedAggregates): ProjectedAggregates {
   return projected;
 }
 
-function asAggregates(loaded: LoadedAggregates): PlayerAggregates {
-  if (!loaded.inventory) throw new Error('Hero has no inventory aggregate');
+function asAggregates(heroId: string, loaded: LoadedAggregates): PlayerAggregates {
   return {
-    inventory: loaded.inventory.state,
-    progress: loaded.progress?.state ?? emptyProgressState(),
+    inventory: loaded.inventory?.state ?? emptyInventoryState(heroId),
+    progress: loaded.progress?.state ?? emptyProgressState(heroId),
   };
 }
 
@@ -102,7 +103,11 @@ export class PlayerCommandService {
     const kinds = PLAYER_COMMAND_AGGREGATES[command.type];
     if (command.payload.heroId !== heroId) throw new PlayerCommandError('FORBIDDEN');
     if (aggregate !== kinds[0]) throw new PlayerCommandError('AGGREGATE_MISMATCH');
-    if (command.payload.revision !== expectedRevision) {
+    const revisionRule = PLAYER_COMMAND_REVISION[command.type];
+    if (
+      revisionRule === 'aggregate' &&
+      (command.payload as { revision: number }).revision !== expectedRevision
+    ) {
       throw new PlayerCommandError('INVALID_COMMAND');
     }
 
@@ -291,7 +296,7 @@ export class PlayerCommandService {
       };
     }
 
-    const outcome = input.run(asAggregates(loaded));
+    const outcome = input.run(asAggregates(heroId, loaded));
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
       return {

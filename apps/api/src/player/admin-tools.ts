@@ -126,7 +126,9 @@ export async function rollbackAggregate(
     };
     if (!options.confirm) return plan;
 
-    const restored = upcastAggregate(kind, AGGREGATES[kind].schemaVersion, snapshot.state);
+    const restored = upcastAggregate(kind, AGGREGATES[kind].schemaVersion, snapshot.state, {
+      heroId,
+    });
     await tx.insert(aggregateSnapshots).values({
       heroId,
       kind,
