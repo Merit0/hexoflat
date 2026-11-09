@@ -187,3 +187,58 @@ export const itemLedger = pgTable(
   },
   (table) => [index('item_ledger_hero_item_idx').on(table.heroId, table.itemKey, table.createdAt)],
 );
+
+export const expeditions = pgTable(
+  'expeditions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    hostUserId: uuid('host_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull().default('world'),
+    seed: text('seed').notNull(),
+    revision: integer('revision').notNull().default(0),
+    status: text('status').notNull().default('active'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+    endedAt: timestamp('ended_at', { withTimezone: true, mode: 'string' }),
+  },
+  (table) => [index('expeditions_host_idx').on(table.hostUserId, table.status)],
+);
+
+export const expeditionMembers = pgTable(
+  'expedition_members',
+  {
+    expeditionId: uuid('expedition_id')
+      .notNull()
+      .references(() => expeditions.id, { onDelete: 'cascade' }),
+    heroId: uuid('hero_id')
+      .notNull()
+      .references(() => heroes.id, { onDelete: 'cascade' }),
+    joinedAt: timestamp('joined_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+    leftAt: timestamp('left_at', { withTimezone: true, mode: 'string' }),
+    controlledByUserId: uuid('controlled_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+  },
+  (table) => [primaryKey({ columns: [table.expeditionId, table.heroId] })],
+);
+
+// D4a, temporary: the world is still played on the client, so the server keeps what the client
+// reports (maps, fog, battle, where the hero is) as opaque keyed documents. D4b replaces them
+// with server-held state.
+export const expeditionBlobs = pgTable(
+  'expedition_blobs',
+  {
+    expeditionId: uuid('expedition_id')
+      .notNull()
+      .references(() => expeditions.id, { onDelete: 'cascade' }),
+    key: text('key').notNull(),
+    data: text('data').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.expeditionId, table.key] })],
+);

@@ -39,6 +39,8 @@ import {
 } from '@/services/world/portal-service';
 import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
+import { readBlob, writeBlob } from '@/services/persistence/world-blob-store';
+import { HERO_STORE_BLOB } from '@/stores/hero-store-blob';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -77,8 +79,8 @@ function defaultNav(): HeroNavState {
   };
 }
 
-const HERO_NAV_KEY = 'hexoflat:heroNav:v1';
-const HERO_PROGRESS_KEY = 'hexoflat:heroProgress:v1';
+const HERO_NAV_KEY = 'nav';
+const HERO_PROGRESS_KEY = 'progress';
 
 export const useHeroStore = defineStore('hero', {
   state: () => ({
@@ -117,6 +119,18 @@ export const useHeroStore = defineStore('hero', {
       });
       this.knowledge = inventorySession.knowledge;
       this.knowledgeError = !this.knowledge;
+    },
+
+    /** Where the hero stands, his health and the portal link come from the server's copy of his world. */
+    restoreFromExpedition() {
+      const raw = readBlob(HERO_STORE_BLOB);
+      if (!raw) return;
+      try {
+        const saved = JSON.parse(raw) as Record<string, unknown>;
+        if (saved && typeof saved === 'object') this.$patch(saved as never);
+      } catch (error) {
+        console.warn('Could not restore the hero from the saved expedition', error);
+      }
     },
 
     knowledgeHost(world: ReturnType<typeof useWorldMapStore>) {
@@ -245,7 +259,7 @@ export const useHeroStore = defineStore('hero', {
     },
 
     saveNavToStorage() {
-      localStorage.setItem(HERO_NAV_KEY, JSON.stringify(this.nav));
+      writeBlob(HERO_NAV_KEY, JSON.stringify(this.nav));
     },
 
     applyPortalClosures(closures: PortalClosedPayload[]) {
@@ -272,11 +286,11 @@ export const useHeroStore = defineStore('hero', {
         extraShields: this.extraShields,
         portal: this.portal,
       };
-      localStorage.setItem(HERO_PROGRESS_KEY, JSON.stringify(progress));
+      writeBlob(HERO_PROGRESS_KEY, JSON.stringify(progress));
     },
 
     hydrateProgressFromStorage() {
-      const raw = localStorage.getItem(HERO_PROGRESS_KEY);
+      const raw = readBlob(HERO_PROGRESS_KEY);
       if (!raw) return;
 
       const progress = JSON.parse(raw) as Partial<HeroProgressState>;
@@ -327,6 +341,8 @@ export const useHeroStore = defineStore('hero', {
 
         this.hero.id = hero.id;
         await startPlayerSession(hero.id);
+        this.restoreFromExpedition();
+        this.hero.id = hero.id;
         this.loadKnowledge();
 
         this.hero
@@ -382,8 +398,6 @@ export const useHeroStore = defineStore('hero', {
       endPlayerSession();
       useHeroInventoryStore().reset();
       useHeroStashStore().reset();
-      localStorage.removeItem(HERO_NAV_KEY);
-      localStorage.removeItem(HERO_PROGRESS_KEY);
     },
 
     /**

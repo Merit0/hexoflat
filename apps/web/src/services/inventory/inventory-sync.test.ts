@@ -11,6 +11,13 @@ import { inventorySession, resetInventorySession } from './inventory-session';
 import { inventoryStateFromStores, withStoreInventory } from './inventory-bridge';
 import { moveItem } from './stash-transfer';
 
+vi.mock('@/services/player/expedition-sync', () => ({
+  flushExpedition: () => Promise.resolve(),
+  onExpeditionTakenOver: () => undefined,
+  startExpeditionSync: () => Promise.resolve(),
+  stopExpeditionSync: () => undefined,
+}));
+
 const sent: PlayerEnvelope[] = [];
 let reply: (envelope: PlayerEnvelope) => PlayerCommandResponse | Error;
 let takenOver: (() => void) | null = null;

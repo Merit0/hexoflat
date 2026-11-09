@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { verifyAccessToken } from '../auth/jwt-auth.guard';
 import { DB, type Db } from '../db/db.module';
 import { HeroesService } from '../heroes/heroes.service';
-import { HeroRateLimiter, HeroSessions } from './hero-sessions';
+import { HERO_SESSIONS, HeroRateLimiter, type HeroSessions } from './hero-sessions';
 import { PlayerCommandService } from './player-command.service';
 import { PlayerCommandError, type PlayerErrorCode } from './player-command.types';
 
@@ -36,7 +36,6 @@ const SubscribeSchema = z.object({ heroId: z.uuid().optional() }).strict();
   maxPayload: 16 * 1024,
 })
 export class PlayerGateway implements OnGatewayInit, OnGatewayDisconnect {
-  private readonly sessions = new HeroSessions();
   private readonly limiter = new HeroRateLimiter();
   private namespace!: Namespace;
 
@@ -45,6 +44,7 @@ export class PlayerGateway implements OnGatewayInit, OnGatewayDisconnect {
     @Inject(HeroesService) private readonly heroes: HeroesService,
     @Inject(JwtService) private readonly jwtService: JwtService,
     @Inject(DB) private readonly db: Db,
+    @Inject(HERO_SESSIONS) private readonly sessions: HeroSessions,
   ) {}
 
   afterInit(namespace: Namespace): void {
@@ -80,7 +80,7 @@ export class PlayerGateway implements OnGatewayInit, OnGatewayDisconnect {
       const snapshot = await this.commands.snapshot(userId, heroId);
       const replaced = this.sessions.claim(heroId, client.id);
       if (replaced) this.takeOver(replaced);
-      client.emit('hero:snapshot', snapshot);
+      client.emit('hero:snapshot', { ...snapshot, sessionToken: this.sessions.tokenOf(heroId) });
     } catch (error) {
       this.fail(client, error);
     }

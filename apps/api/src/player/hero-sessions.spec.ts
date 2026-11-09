@@ -37,6 +37,25 @@ describe('HeroSessions', () => {
   });
 });
 
+describe('HeroSessions secrets', () => {
+  it('gives the owning tab a secret that dies when another tab takes over or the tab leaves', () => {
+    const sessions = new HeroSessions();
+    expect(sessions.tokenOf('hero')).toBeNull();
+    sessions.claim('hero', 'a');
+    const first = sessions.tokenOf('hero')!;
+    expect(sessions.isValidToken('hero', first)).toBe(true);
+    expect(sessions.isValidToken('hero', undefined)).toBe(false);
+    expect(sessions.isValidToken('other', first)).toBe(false);
+
+    sessions.claim('hero', 'b');
+    expect(sessions.isValidToken('hero', first)).toBe(false);
+    expect(sessions.isValidToken('hero', sessions.tokenOf('hero')!)).toBe(true);
+
+    sessions.release('b');
+    expect(sessions.tokenOf('hero')).toBeNull();
+  });
+});
+
 describe('HeroRateLimiter', () => {
   it('allows the limit per window per hero and opens a new window later', () => {
     let now = 0;

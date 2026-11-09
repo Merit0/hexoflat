@@ -9,6 +9,7 @@ export interface ProjectedAggregate {
 
 export interface HeroSnapshot {
   heroId: string;
+  sessionToken?: string | null;
   aggregates: { inventory?: ProjectedAggregate; progress?: ProjectedAggregate };
 }
 

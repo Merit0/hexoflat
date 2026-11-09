@@ -89,4 +89,14 @@ export class HeroPersistenceFeature extends BaseFeature {
       new CampingMapPage().inventory.verifyServerSessionIs('taken-over'),
     );
   }
+
+  async wipeEverythingTheBrowserKeeps(): Promise<void> {
+    await this.step('Wipe the browser storage, as on a different device', async () => {
+      await this.page.evaluate(async () => {
+        await window.__HEXOFLAT_TEST__!.settleInventorySync();
+        localStorage.clear();
+        sessionStorage.clear();
+      });
+    });
+  }
 }

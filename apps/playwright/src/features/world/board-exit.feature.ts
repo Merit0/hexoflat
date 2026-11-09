@@ -25,6 +25,7 @@ export class BoardExitFeature extends BaseFeature {
   }
 
   private async reloadBoard(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
     await this.map.reload();
     await this.map.hexBoard.waitForReady();
   }

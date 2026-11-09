@@ -1,3 +1,4 @@
+import { worldStorage } from '@/test-support/world-storage-shim';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearLocationRespawn,
@@ -11,7 +12,7 @@ import {
 
 describe('respawn-schedule', () => {
   beforeEach(() => {
-    localStorage.clear();
+    worldStorage.clear();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-10T12:00:00Z'));
   });

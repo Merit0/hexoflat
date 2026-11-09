@@ -1,3 +1,4 @@
+import { worldStorage } from '@/test-support/world-storage-shim';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CONTENT_VERSION } from '@hexoflat/engine';
 import type { ISerializedHexMap } from '@hexoflat/engine/map/models/hex-map-model';
@@ -22,7 +23,7 @@ function stateEnvelope(extra: Record<string, unknown> = {}): string {
 
 describe('world-storage (characterization)', () => {
   beforeEach(() => {
-    localStorage.clear();
+    worldStorage.clear();
     vi.useFakeTimers();
   });
 
@@ -31,11 +32,11 @@ describe('world-storage (characterization)', () => {
     vi.useRealTimers();
   });
 
-  it('readSavedMap sees a still-pending (debounced) save before it flushes to localStorage', () => {
+  it('readSavedMap sees a save at once: the copy is updated before anything is sent to the server', () => {
     const mapId = 'map-read-your-writes';
     scheduleWorldSave(mapId, mapEnvelope(), stateEnvelope());
 
-    expect(localStorage.getItem('hexoflat:world:map:v1:' + mapId)).toBeNull();
+    expect(worldStorage.getItem('hexoflat:world:map:v1:' + mapId)).not.toBeNull();
     expect(readSavedMap(mapId)?.name).toBe('test');
   });
 
@@ -69,7 +70,7 @@ describe('world-storage (characterization)', () => {
     removeSavedWorld(mapId);
     vi.runAllTimers();
 
-    expect(localStorage.getItem('hexoflat:world:map:v1:' + mapId)).toBeNull();
+    expect(worldStorage.getItem('hexoflat:world:map:v1:' + mapId)).toBeNull();
     expect(readSavedMap(mapId)).toBeNull();
   });
 

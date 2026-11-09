@@ -9,6 +9,7 @@ import { ApiError, type ApiValidationIssue } from '../api/client';
 import { setAuthToken } from '../api/auth-token';
 import UserModel from '@hexoflat/engine/models/user-model';
 import router, { ROUTES } from '../router';
+import { endPlayerSession } from '@/services/inventory/inventory-sync';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useOverlayStore } from '@/stores/overlay-store';
@@ -143,6 +144,7 @@ export const useUserStore = defineStore('user', {
       const worldMapStore = useWorldMapStore();
       const overlayStore = useOverlayStore();
 
+      endPlayerSession();
       try {
         this.user.setLoggedIn(false);
         this.accessToken = null;

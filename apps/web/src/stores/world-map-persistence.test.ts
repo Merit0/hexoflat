@@ -1,3 +1,4 @@
+import { worldStorage } from '@/test-support/world-storage-shim';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
@@ -93,7 +94,7 @@ function openBattle(name: string) {
 function useIsolatedWorld() {
   beforeEach(() => {
     setActivePinia(createPinia());
-    localStorage.clear();
+    worldStorage.clear();
     vi.useFakeTimers();
   });
 
@@ -106,7 +107,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
   useIsolatedWorld();
 
   describe('saveToStorage', () => {
-    it('debounces the write: nothing hits localStorage before the timer fires', () => {
+    it('writes the documents at once; sending them to the server is debounced elsewhere', () => {
       const worldStore = useWorldMapStore();
       worldStore.map = buildMap('debounce');
       worldStore.currentMapId = 'map-a';
@@ -114,13 +115,13 @@ describe('world persistence: saveToStorage (characterization)', () => {
 
       worldStore.saveToStorage();
 
-      expect(localStorage.getItem(MAP_KEY('map-a'))).toBeNull();
-      expect(localStorage.getItem(STATE_KEY('map-a'))).toBeNull();
+      expect(worldStorage.getItem(MAP_KEY('map-a'))).not.toBeNull();
+      expect(worldStorage.getItem(STATE_KEY('map-a'))).not.toBeNull();
 
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      expect(localStorage.getItem(MAP_KEY('map-a'))).not.toBeNull();
-      expect(localStorage.getItem(STATE_KEY('map-a'))).not.toBeNull();
+      expect(worldStorage.getItem(MAP_KEY('map-a'))).not.toBeNull();
+      expect(worldStorage.getItem(STATE_KEY('map-a'))).not.toBeNull();
     });
 
     it('writes the map under a versioned envelope', () => {
@@ -132,7 +133,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      const written = JSON.parse(localStorage.getItem(MAP_KEY('map-b'))!) as {
+      const written = JSON.parse(worldStorage.getItem(MAP_KEY('map-b'))!) as {
         contentVersion: number;
         map: { tiles: unknown[] };
       };
@@ -149,7 +150,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      const state = JSON.parse(localStorage.getItem(STATE_KEY('map-c'))!) as Record<
+      const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-c'))!) as Record<
         string,
         unknown
       >;
@@ -171,7 +172,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       useHeroStore().heroCoordinates = { columnIndex: 9, rowIndex: 9 };
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      const state = JSON.parse(localStorage.getItem(STATE_KEY('map-d'))!) as {
+      const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-d'))!) as {
         heroCoordinates: unknown;
       };
 
@@ -189,7 +190,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      const state = JSON.parse(localStorage.getItem(STATE_KEY('map-e'))!) as {
+      const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-e'))!) as {
         heroCoordinates: unknown;
       };
 
@@ -206,10 +207,10 @@ describe('world persistence: saveToStorage (characterization)', () => {
       worldStore.saveToStorage('map-right');
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      const left = JSON.parse(localStorage.getItem(STATE_KEY('map-left'))!) as {
+      const left = JSON.parse(worldStorage.getItem(STATE_KEY('map-left'))!) as {
         heroCoordinates: unknown;
       };
-      const right = JSON.parse(localStorage.getItem(STATE_KEY('map-right'))!) as {
+      const right = JSON.parse(worldStorage.getItem(STATE_KEY('map-right'))!) as {
         heroCoordinates: unknown;
       };
 
@@ -225,7 +226,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      expect(localStorage.length).toBe(0);
+      expect(worldStorage.length).toBe(0);
     });
 
     it('writes only the state blob when there is no map in memory', () => {
@@ -237,8 +238,8 @@ describe('world persistence: saveToStorage (characterization)', () => {
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      expect(localStorage.getItem(MAP_KEY('map-f'))).toBeNull();
-      expect(localStorage.getItem(STATE_KEY('map-f'))).not.toBeNull();
+      expect(worldStorage.getItem(MAP_KEY('map-f'))).toBeNull();
+      expect(worldStorage.getItem(STATE_KEY('map-f'))).not.toBeNull();
     });
   });
 });
@@ -256,7 +257,7 @@ describe('world persistence: battle autosave', () => {
       await nextTick();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
 
-      const state = JSON.parse(localStorage.getItem(STATE_KEY('map-auto'))!) as Record<
+      const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-auto'))!) as Record<
         string,
         unknown
       >;
@@ -278,7 +279,7 @@ describe('world persistence: battle autosave', () => {
       reloaded.currentMapId = 'map-load';
       reloaded.enableBattleAutosave();
 
-      localStorage.removeItem(STATE_KEY('map-load'));
+      worldStorage.removeItem(STATE_KEY('map-load'));
       reloaded.loadFromStorage('map-load');
       await nextTick();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
@@ -320,11 +321,11 @@ describe('world persistence: loadFromStorage (characterization)', () => {
       useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
-      const state = JSON.parse(localStorage.getItem(STATE_KEY('map-legacy'))!) as Record<
+      const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-legacy'))!) as Record<
         string,
         unknown
       >;
-      localStorage.setItem(
+      worldStorage.setItem(
         STATE_KEY('map-legacy'),
         JSON.stringify({ ...state, battle: undefined, combatActive: true, combatStepsLeft: 3 }),
       );
@@ -337,7 +338,7 @@ describe('world persistence: loadFromStorage (characterization)', () => {
     });
 
     it('discards and removes a saved map whose content version does not match', () => {
-      localStorage.setItem(
+      worldStorage.setItem(
         MAP_KEY('stale'),
         JSON.stringify({ contentVersion: CONTENT_VERSION - 1, map: { tiles: [] } }),
       );
@@ -347,12 +348,12 @@ describe('world persistence: loadFromStorage (characterization)', () => {
       worldStore.loadFromStorage('stale');
 
       expect(worldStore.map).toBeNull();
-      expect(localStorage.getItem(MAP_KEY('stale'))).toBeNull();
+      expect(worldStorage.getItem(MAP_KEY('stale'))).toBeNull();
       warn.mockRestore();
     });
 
     it('discards and removes saved world state whose content version does not match', () => {
-      localStorage.setItem(
+      worldStorage.setItem(
         STATE_KEY('stale-state'),
         JSON.stringify({
           contentVersion: CONTENT_VERSION - 1,
@@ -365,7 +366,7 @@ describe('world persistence: loadFromStorage (characterization)', () => {
       worldStore.loadFromStorage('stale-state');
 
       expect(useHeroStore().heroCoordinates).toBeNull();
-      expect(localStorage.getItem(STATE_KEY('stale-state'))).toBeNull();
+      expect(worldStorage.getItem(STATE_KEY('stale-state'))).toBeNull();
       warn.mockRestore();
     });
 

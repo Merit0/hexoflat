@@ -43,6 +43,13 @@
       "when": 1794246214668,
       "tag": "0005_player_persistence",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794251675244,
+      "tag": "0006_expeditions",
+      "breakpoints": true
     }
   ]
 }

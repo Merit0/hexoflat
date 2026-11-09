@@ -33,6 +33,7 @@ import {
   type LoadedAggregates,
   type Tx,
 } from './aggregate-store';
+import { clearExpeditionBlobs } from '../expedition/expedition-store';
 import { ledgerEntriesFor } from './item-ledger';
 import {
   MAX_COMMAND_BYTES,
@@ -161,6 +162,7 @@ export class PlayerCommandService {
             : AGGREGATES[kind].createInitial({ heroId });
         await saveAggregate(tx, heroId, kind, before.revision, fresh as never);
       }
+      await clearExpeditionBlobs(tx, heroId);
       await tx.insert(commandJournal).values({
         commandId: randomUUID(),
         userId,

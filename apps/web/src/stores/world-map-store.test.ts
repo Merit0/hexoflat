@@ -1,3 +1,4 @@
+import { worldStorage } from '@/test-support/world-storage-shim';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
@@ -50,7 +51,7 @@ function createEngineContext(
 describe('useWorldMapStore: leaveCurrentLocation', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    localStorage.clear();
+    worldStorage.clear();
   });
 
   function buildClearedMap(name: string) {
@@ -151,7 +152,7 @@ describe('useWorldMapStore: leaveCurrentLocation', () => {
 describe('useWorldMapStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    localStorage.clear();
+    worldStorage.clear();
   });
 
   describe('runWorldTick', () => {
@@ -269,7 +270,7 @@ describe('useWorldMapStore', () => {
 describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    localStorage.clear();
+    worldStorage.clear();
   });
 
   it('builds silesia as a STATIC board via MapRegistry', () => {
@@ -299,15 +300,15 @@ describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
       resourceSpawner: null,
       pendingAction: null,
     };
-    localStorage.setItem('hexoflat:world:index:v1', JSON.stringify({ silesia: staleMapId }));
-    localStorage.setItem(
+    worldStorage.setItem('hexoflat:world:index:v1', JSON.stringify({ silesia: staleMapId }));
+    worldStorage.setItem(
       'hexoflat:world:map:v1:' + staleMapId,
       JSON.stringify({
         contentVersion: 1,
         map: { name: 'stale', width: 1, height: 1, complexity: 0, config: [], tiles: [staleTile] },
       }),
     );
-    localStorage.setItem(
+    worldStorage.setItem(
       'hexoflat:world:state:v1:' + staleMapId,
       JSON.stringify({
         contentVersion: 1,
@@ -342,7 +343,7 @@ describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
 describe('useWorldMapStore: dev board panel actions', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    localStorage.clear();
+    worldStorage.clear();
   });
 
   it('devRegenerateDungeon discards the old mapId and builds a different board under a new one', () => {
@@ -428,7 +429,7 @@ describe('useWorldMapStore: dev board panel actions', () => {
 describe('useWorldMapStore: respawnHeroAtCamping (characterization, B0 safety net)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    localStorage.clear();
+    worldStorage.clear();
   });
 
   it('closes the battle, revives the hero at one heart and sends the hero to the camp', async () => {

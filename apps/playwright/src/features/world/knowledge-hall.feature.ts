@@ -35,6 +35,7 @@ export class KnowledgeHallFeature extends BaseFeature {
           const saved = await this.page.evaluate(
             () => window.__HEXOFLAT_TEST__!.getKnowledge()!.current,
           );
+          await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
           await this.camp.reload();
           await this.camp.waitUntilReady();
           await this.camp.knowledge.verifyWill(saved);

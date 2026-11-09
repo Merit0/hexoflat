@@ -1,3 +1,4 @@
+import { worldStorage } from '@/test-support/world-storage-shim';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { CAMP_PORTAL_SPOT } from '@hexoflat/engine/content/boards/camp-portal-spot';
@@ -40,7 +41,7 @@ function storedPortalHexes(locationKey: 'camping' | 'silesia') {
 describe('usePortal', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    localStorage.clear();
+    worldStorage.clear();
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
   });
 

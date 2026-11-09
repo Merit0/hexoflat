@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
 import { HeroesModule } from '../heroes/heroes.module';
+import { ExpeditionController } from '../expedition/expedition.controller';
+import { HERO_SESSIONS, HeroSessions } from './hero-sessions';
 import { PlayerCommandService } from './player-command.service';
 import { PlayerController } from './player.controller';
 import { PlayerGateway } from './player.gateway';
 
 @Module({
   imports: [HeroesModule],
-  controllers: [PlayerController],
-  providers: [PlayerCommandService, PlayerGateway],
+  controllers: [PlayerController, ExpeditionController],
+  providers: [
+    PlayerCommandService,
+    PlayerGateway,
+    { provide: HERO_SESSIONS, useValue: new HeroSessions() },
+  ],
   exports: [PlayerCommandService],
 })
 export class PlayerModule {}

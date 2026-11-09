@@ -1,10 +1,12 @@
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { ISerializedHexMap } from '@hexoflat/engine/map/models/hex-map-model';
 import { CONTENT_VERSION } from '@hexoflat/engine';
+import { readBlob, removeBlob, writeBlob } from './world-blob-store';
 
 /**
- * The single owner of world persistence: every localStorage key the world
- * uses, the CONTENT_VERSION gate, the debounce, and the tab-close flush.
+ * The single owner of world persistence: every document key the world uses and the
+ * CONTENT_VERSION gate. The documents live in `world-blob-store` (a copy of the server's
+ * expedition, D4a); `expedition-sync` sends changes on with its own debounce.
  *
  * This module deliberately imports no store. Callers pass data in and get
  * data out — that is what keeps it unit-testable on its own, and what stops
@@ -14,88 +16,55 @@ import { CONTENT_VERSION } from '@hexoflat/engine';
  * stores that own that state.
  */
 
-const STORAGE_MAP_PREFIX = 'hexoflat:world:map:v1:';
-const STORAGE_STATE_PREFIX = 'hexoflat:world:state:v1:';
-const STORAGE_INDEX = 'hexoflat:world:index:v1';
-const STORAGE_RESPAWN_AT = 'hexoflat:world:respawn-at:v1';
-const SAVE_DEBOUNCE_MS = 750;
+const MAP_KEY = (mapId: string) => `map:${mapId}`;
+const STATE_KEY = (mapId: string) => `state:${mapId}`;
+const INDEX_KEY = 'index';
+const RESPAWN_KEY = 'respawn';
 
 export function newMapId(): string {
   return crypto.randomUUID();
 }
 
+function readJson<T>(key: string, empty: T): T {
+  const raw = readBlob(key);
+  return raw ? (JSON.parse(raw) as T) : empty;
+}
+
 export function readLocationMapIndex(): Partial<Record<LocationKey, string>> {
-  const raw = localStorage.getItem(STORAGE_INDEX);
-  return raw ? (JSON.parse(raw) as Partial<Record<LocationKey, string>>) : {};
+  return readJson(INDEX_KEY, {});
 }
 
 export function writeLocationMapIndex(index: Partial<Record<LocationKey, string>>): void {
-  localStorage.setItem(STORAGE_INDEX, JSON.stringify(index));
+  writeBlob(INDEX_KEY, JSON.stringify(index));
 }
 
 export function clearLocationMapIndex(): void {
-  localStorage.removeItem(STORAGE_INDEX);
+  removeBlob(INDEX_KEY);
 }
 
 export function readRespawnSchedule(): Partial<Record<LocationKey, number>> {
-  const raw = localStorage.getItem(STORAGE_RESPAWN_AT);
-  return raw ? (JSON.parse(raw) as Partial<Record<LocationKey, number>>) : {};
+  return readJson(RESPAWN_KEY, {});
 }
 
 export function writeRespawnSchedule(schedule: Partial<Record<LocationKey, number>>): void {
-  localStorage.setItem(STORAGE_RESPAWN_AT, JSON.stringify(schedule));
-}
-
-interface PendingSave {
-  mapSnapshot: string | null;
-  stateSnapshot: string;
-  timer: number;
-}
-
-const pendingSaves = new Map<string, PendingSave>();
-
-function flushPendingSave(mapId: string, save: PendingSave) {
-  if (save.mapSnapshot) localStorage.setItem(STORAGE_MAP_PREFIX + mapId, save.mapSnapshot);
-  localStorage.setItem(STORAGE_STATE_PREFIX + mapId, save.stateSnapshot);
-}
-
-// Debounced writes are still pending in memory until their timer fires — flush
-// them immediately so a tab close doesn't silently lose the last ~750ms of state.
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    for (const [mapId, save] of pendingSaves) {
-      window.clearTimeout(save.timer);
-      flushPendingSave(mapId, save);
-    }
-    pendingSaves.clear();
-  });
+  writeBlob(RESPAWN_KEY, JSON.stringify(schedule));
 }
 
 /**
- * Queues a debounced write. Both snapshots must already be serialized by the
- * caller, at the moment the save was requested — the debounce delays the
- * write, never the read of the state being written.
+ * Both snapshots must already be serialized by the caller, at the moment the save was requested.
+ * The copy is updated at once; sending it to the server is debounced elsewhere.
  */
 export function scheduleWorldSave(
   mapId: string,
   mapSnapshot: string | null,
   stateSnapshot: string,
 ): void {
-  const existing = pendingSaves.get(mapId);
-  if (existing) window.clearTimeout(existing.timer);
-
-  const timer = window.setTimeout(() => {
-    const save = pendingSaves.get(mapId);
-    pendingSaves.delete(mapId);
-    if (save) flushPendingSave(mapId, save);
-  }, SAVE_DEBOUNCE_MS);
-
-  pendingSaves.set(mapId, { mapSnapshot, stateSnapshot, timer });
+  if (mapSnapshot) writeBlob(MAP_KEY(mapId), mapSnapshot);
+  writeBlob(STATE_KEY(mapId), stateSnapshot);
 }
 
 export function readSavedMap(mapId: string): ISerializedHexMap | null {
-  const saved =
-    pendingSaves.get(mapId)?.mapSnapshot ?? localStorage.getItem(STORAGE_MAP_PREFIX + mapId);
+  const saved = readBlob(MAP_KEY(mapId));
   const parsed = saved
     ? (JSON.parse(saved) as { contentVersion?: number; map?: ISerializedHexMap })
     : null;
@@ -106,7 +75,7 @@ export function readSavedMap(mapId: string): ISerializedHexMap | null {
     console.warn(
       `[world-map-store] Discarding saved map for "${mapId}": content version mismatch.`,
     );
-    localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
+    removeBlob(MAP_KEY(mapId));
   }
   return null;
 }
@@ -114,8 +83,7 @@ export function readSavedMap(mapId: string): ISerializedHexMap | null {
 export function readSavedWorldState<T extends { contentVersion?: number }>(
   mapId: string,
 ): Partial<T> | null {
-  const saved =
-    pendingSaves.get(mapId)?.stateSnapshot ?? localStorage.getItem(STORAGE_STATE_PREFIX + mapId);
+  const saved = readBlob(STATE_KEY(mapId));
   const raw = saved ? (JSON.parse(saved) as Partial<T>) : null;
 
   if (raw && raw.contentVersion === CONTENT_VERSION) return raw;
@@ -124,19 +92,14 @@ export function readSavedWorldState<T extends { contentVersion?: number }>(
     console.warn(
       `[world-map-store] Discarding saved world state for "${mapId}": content version mismatch.`,
     );
-    localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
+    removeBlob(STATE_KEY(mapId));
   }
   return null;
 }
 
 export function removeSavedWorld(mapId: string): void {
-  const pending = pendingSaves.get(mapId);
-  if (pending) {
-    window.clearTimeout(pending.timer);
-    pendingSaves.delete(mapId);
-  }
-  localStorage.removeItem(STORAGE_MAP_PREFIX + mapId);
-  localStorage.removeItem(STORAGE_STATE_PREFIX + mapId);
+  removeBlob(MAP_KEY(mapId));
+  removeBlob(STATE_KEY(mapId));
 }
 
 export function updateSavedMap(
@@ -147,9 +110,7 @@ export function updateSavedMap(
   if (!map || !mutate(map)) return false;
 
   const stateSnapshot =
-    pendingSaves.get(mapId)?.stateSnapshot ??
-    localStorage.getItem(STORAGE_STATE_PREFIX + mapId) ??
-    JSON.stringify({ contentVersion: CONTENT_VERSION });
+    readBlob(STATE_KEY(mapId)) ?? JSON.stringify({ contentVersion: CONTENT_VERSION });
   scheduleWorldSave(mapId, JSON.stringify({ contentVersion: CONTENT_VERSION, map }), stateSnapshot);
   return true;
 }

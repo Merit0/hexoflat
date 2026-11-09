@@ -15,6 +15,7 @@ export const inventorySession = {
   knowledge: null as KnowledgeState | null,
   presence: null as ServerPresence | null,
   steps: 0,
+  sessionToken: null as string | null,
 };
 
 export interface ServerPresence {
@@ -33,4 +34,5 @@ export function resetInventorySession(): void {
   inventorySession.knowledge = null;
   inventorySession.presence = null;
   inventorySession.steps = 0;
+  inventorySession.sessionToken = null;
 }

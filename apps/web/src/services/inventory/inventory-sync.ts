@@ -13,6 +13,12 @@ import {
   type PlayerEnvelope,
   type ProjectedAggregate,
 } from '@/services/player/player-socket';
+import {
+  flushExpedition,
+  onExpeditionTakenOver,
+  startExpeditionSync,
+  stopExpeditionSync,
+} from '@/services/player/expedition-sync';
 import { bindInventoryMirror } from './inventory-mirror';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import { inventorySession, resetInventorySession, type ServerPresence } from './inventory-session';
@@ -170,7 +176,10 @@ export async function startPlayerSession(heroId: string): Promise<boolean> {
     await socket.connect(token);
     const snapshot = await socket.subscribe(heroId);
     applySnapshot(snapshot.aggregates);
+    inventorySession.sessionToken = snapshot.sessionToken ?? null;
+    await startExpeditionSync();
     inventorySession.status = 'live';
+    onExpeditionTakenOver(() => lost(new PlayerSocketError('SESSION_TAKEN_OVER')));
     return true;
   } catch {
     inventorySession.status = 'offline';
@@ -180,13 +189,14 @@ export async function startPlayerSession(heroId: string): Promise<boolean> {
 
 export function endPlayerSession(): void {
   epoch += 1;
+  stopExpeditionSync();
   socket.close();
   resetInventorySession();
 }
 
 /** Resolves once every local change made so far has been confirmed by the server. */
 export function settleInventorySync(): Promise<void> {
-  return chain.then(() => undefined);
+  return chain.then(() => flushExpedition());
 }
 
 /** Sends the stores' whole current inventory as a dev/e2e fixture (refused by a production server). */
