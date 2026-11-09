@@ -6,6 +6,8 @@ import { BAG_SLOT_KEYS } from '@hexoflat/engine/inventory/bag-layout';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { toAggregate } from '@/services/inventory/inventory-aggregate';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import { pushInventoryFixture, settleInventorySync } from '@/services/inventory/inventory-sync';
 
 interface FixtureCell {
   key: string;
@@ -59,6 +61,7 @@ export const stashTestFixtures = {
       return cell ? fixtureItem(cell, `stash:${index}`) : null;
     });
     stash.replaceOwnedCells(next);
+    pushInventoryFixture();
   },
 
   readChests(): number {
@@ -71,6 +74,7 @@ export const stashTestFixtures = {
     const stash = useHeroStashStore();
     stash.hydrate();
     stash.setChests(chests);
+    pushInventoryFixture();
   },
 
   writeBag(cells: (FixtureCell | null)[]): void {
@@ -84,7 +88,7 @@ export const stashTestFixtures = {
     );
     inventory.items = [...kept, ...placed];
     for (const item of placed) inventory.ensureRotation(item.id);
-    inventory.persist();
+    pushInventoryFixture();
   },
 };
 
@@ -102,5 +106,11 @@ export const stashTestApi = {
   },
   setBag(cells: (FixtureCell | null)[]) {
     if (HOOKS_ON) stashTestFixtures.writeBag(cells);
+  },
+  getInventorySyncStatus(): string {
+    return inventorySession.status;
+  },
+  settleInventorySync(): Promise<void> {
+    return HOOKS_ON ? settleInventorySync() : Promise.resolve();
   },
 };

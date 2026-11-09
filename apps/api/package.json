@@ -13,7 +13,10 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "seed-hero": "tsx src/cli/seed-hero.ts",
+    "hero-history": "tsx src/cli/hero-history.ts",
+    "hero-rollback": "tsx src/cli/hero-rollback.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

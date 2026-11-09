@@ -5,22 +5,11 @@ import {
   type TEquipSlot,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
-import { migrateLegacyInventory } from '@hexoflat/engine/inventory/inventory-migration';
 import { calculateCarriedWeightKg } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { randomTokenRotationDeg } from '@/render/token-utils';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { bindInventoryHandsGate, moveBySlot } from '@/services/inventory/inventory-moves';
-import {
-  bagItemsOf,
-  consumeItem,
-  grantItem,
-  LOCAL_HERO_ID,
-} from '@/services/inventory/inventory-store-io';
-import {
-  clearInventoryRecord,
-  patchInventoryRecord,
-  readInventoryRecord,
-} from '@/services/persistence/inventory-record-storage';
+import { consumeItem, grantItem } from '@/services/inventory/inventory-store-io';
 
 export { bindInventoryHandsGate };
 
@@ -135,39 +124,17 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
   actions: {
     hydrate() {
       if (this.isHydrated) return;
-
-      const saved = readInventoryRecord().bag;
-      const legacy = saved ? { items: saved.items, carryCapacityKg: saved.carryCapacityKg } : null;
-      const { state } = migrateLegacyInventory(LOCAL_HERO_ID, legacy, null);
-      const before = new Map((saved?.items ?? []).map((item) => [item.id, item]));
-      this.items = bagItemsOf(state, before).map((item) => ({
-        ...item,
-        isNew: before.get(item.id)?.isNew ?? false,
-      }));
-      if (saved) {
-        this.rotationsById = saved.rotationsById;
-        this.carryCapacityKg = saved.carryCapacityKg;
-      }
-      for (const item of this.items) this.ensureRotation(item.id);
-
       this.fillEmptySlotsWithHands();
-      if (!saved) this.persist();
       this.selectedItemId = null;
       this.isHydrated = true;
     },
 
-    persist() {
-      patchInventoryRecord({
-        bag: {
-          items: this.items,
-          rotationsById: this.rotationsById,
-          carryCapacityKg: this.carryCapacityKg,
-        },
-      });
-    },
-
-    clearPersistence() {
-      clearInventoryRecord();
+    reset() {
+      this.items = [];
+      this.rotationsById = emptyRotations();
+      this.carryCapacityKg = 10;
+      this.selectedItemId = null;
+      this.isHydrated = false;
     },
 
     rerollRotation(id: string) {
@@ -205,7 +172,6 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       const it = this.items.find((x) => x.id === id);
       if (it && it.isNew) {
         it.isNew = false;
-        this.persist();
       }
     },
 

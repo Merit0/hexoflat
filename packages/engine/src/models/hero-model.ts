@@ -13,7 +13,6 @@ export class HeroModel implements IHero {
   private bonusHealthDebt = 0;
   attack = 0;
   defense = 0;
-  coins = 0;
   kills = 0;
   currentEnergy = 0;
   maxEnergy: number;
@@ -102,11 +101,6 @@ export class HeroModel implements IHero {
 
   public setCurrentEnergy(currentEnergyValue: number): HeroModel {
     this.currentEnergy = currentEnergyValue;
-    return this;
-  }
-
-  public setCoins(coins: number): HeroModel {
-    this.coins = coins;
     return this;
   }
 

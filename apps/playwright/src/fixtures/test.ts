@@ -1,6 +1,7 @@
 import { test as base } from '@playwright/test';
 import { setCurrentPage, setCurrentRequest } from '@framework/test-context';
 import { registerTestUser, type RegisterResult, type TestUser } from '@api/register-user';
+import { resetTestHero } from '@api/reset-hero';
 
 interface WorkerFixtures {
   workerRegistration: RegisterResult;
@@ -10,6 +11,8 @@ interface WorkerFixtures {
 interface TestFixtures {
   /** Auto-fixture: binds the ambient framework context for the test's lifetime. */
   bindTestContext: void;
+  /** Auto-fixture: the worker's hero starts every test brand new on the server. */
+  freshHero: void;
 }
 
 /**
@@ -39,6 +42,14 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   storageState: async ({ workerRegistration }, use) => {
     await use(workerRegistration.storageState);
   },
+
+  freshHero: [
+    async ({ workerRegistration }, use) => {
+      await resetTestHero(workerRegistration);
+      await use();
+    },
+    { auto: true },
+  ],
 
   bindTestContext: [
     async ({ page, request }, use) => {

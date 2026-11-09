@@ -167,7 +167,7 @@ const impactMapInput = {
         `${WEB}/composables/item-counter.ts`,
         `${WEB}/composables/use-inventory-cell-size.ts`,
         `${WEB}/services/inventory/**`,
-        `${WEB}/services/persistence/stash-storage.ts`,
+        `${WEB}/services/player/**`,
         `${SCENES}/map-scene/components/action-alert-banner.vue`,
         `${WEB}/components/gui/item-tooltip/**`,
         `${WEB}/components/gui/tool-hex/**`,

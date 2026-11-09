@@ -96,3 +96,9 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - The old OPEN-on-stash "chest is broken" alert no longer exists: OPEN on the Stash Chest opens the board.
 - Escape during a stash drag: hold the drag with `holdBagItemOverStashCell`, press Escape, then `releasePointer` (the drag is already cancelled, so nothing drops).
 - The camp map holds no loose gear any more. To get an item on the map use `TakePlacedItemFeature(key)` (`place`, `take`, `verifyIsOnTheMap`, `verifyIsTaken`) or `HexInfoTooltipFeature.placeItemAndHover(key)`; both use the `placeHexobjectNextToHero` hook. A fresh stash starts with the starter gear in cells 0-3 of the first chest: call `givenEmptyStash()` when a test needs clean cells.
+
+## The hero lives on the server (2026-11-09)
+
+- Every worker has one registered user, and its hero is now stored in the database, so state would leak between tests. The auto-fixture `freshHero` (`src/fixtures/test.ts`, `src/api/reset-hero.ts`) calls `POST /player/dev/reset` before each test; it uses the registration's session cookie as the bearer token and only logs in (throttled) if a logout revoked it.
+- A new hero holds nothing: no scrolls, no gear, no coins. The camp gear (sword, axe, shield, pickaxe) lies in the first stash chest, which `StashBoardFeature.openByHand()` opens for free through the server (once). Coins and other items come from fixture hooks (`grantInventoryItem`, `setBag`, `setStash`, `setStashChests`), which mirror to the server, or from `seed-hero` outside the tests. `settleInventorySync()` waits until the server has what the page did.
+- Persistence specs: `e2e/hero/hero-persistence.spec.ts` through `HeroPersistenceFeature` (reload, forged browser storage, a second tab taking the hero over).

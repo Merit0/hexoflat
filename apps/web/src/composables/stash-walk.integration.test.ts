@@ -47,7 +47,7 @@ describe('walking with the hand tool working on the stash chest (no mocks)', () 
   });
 
   it('walks to the clicked hex while the stash is open', async () => {
-    openStashBoard();
+    await openStashBoard();
     expect(ctx.stash.isOpen).toBe(true);
 
     await useTileClick().handleTileClick(ctx.target);
@@ -56,7 +56,7 @@ describe('walking with the hand tool working on the stash chest (no mocks)', () 
   });
 
   it('closes the stash and stops the tool when the hero walks away', async () => {
-    openStashBoard();
+    await openStashBoard();
 
     await useTileClick().handleTileClick(ctx.target);
 

@@ -42,6 +42,9 @@ import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { endPlayerSession, startPlayerSession } from '@/services/inventory/inventory-sync';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -90,7 +93,7 @@ export const useHeroStore = defineStore('hero', {
   }),
 
   getters: {
-    coins: (s) => s.hero.coins,
+    coins: () => useHeroInventoryStore().countItem(HEXOBJECT_KEYS.COINS),
     isAlive: (s) => s.hero.getHealth() > 0,
     heroHp: (s) => s.hero.currentHealth,
     heroHpMax: (s) => s.hero.getEffectiveMaxHealth(),
@@ -321,6 +324,7 @@ export const useHeroStore = defineStore('hero', {
         const hero = await fetchHero();
 
         this.hero.id = hero.id;
+        await startPlayerSession(hero.id);
         this.loadKnowledge();
 
         this.hero
@@ -329,7 +333,6 @@ export const useHeroStore = defineStore('hero', {
           .setHealth(hero.currentHealth)
           .setAttack(hero.attack)
           .setDefense(hero.defense)
-          .setCoins(hero.coins)
           .setKills(hero.kills)
           .setCurrentEnergy(hero.currentEnergy)
           .setMaxEnergy(hero.maxEnergy)
@@ -364,14 +367,6 @@ export const useHeroStore = defineStore('hero', {
       this.saveProgressToStorage();
     },
 
-    pay(coins: number): void {
-      this.hero.coins -= coins;
-    },
-
-    collect(coins: number): void {
-      this.hero.coins += coins;
-    },
-
     resetHero(): void {
       console.log('Resetting hero state');
       this.hero = new HeroModel();
@@ -380,6 +375,9 @@ export const useHeroStore = defineStore('hero', {
       this.extraShields = 0;
       this.portal = null;
       this.nav = defaultNav();
+      endPlayerSession();
+      useHeroInventoryStore().reset();
+      useHeroStashStore().reset();
       localStorage.removeItem(HERO_NAV_KEY);
       localStorage.removeItem(HERO_PROGRESS_KEY);
     },

@@ -42,7 +42,7 @@ describe('usePortal', () => {
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
   });
 
-  function startInSilesia(will = 20, scrolls = 0) {
+  function startInSilesia(will = 20, scrolls = 5) {
     const hero = useHeroStore();
     const world = useWorldMapStore();
     const inventory = useHeroInventoryStore();

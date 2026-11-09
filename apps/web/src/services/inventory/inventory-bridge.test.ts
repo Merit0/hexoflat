@@ -7,7 +7,6 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { runWorldTick } from '@/stores/world-map-store-helpers';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { readInventoryRecord } from '@/services/persistence/inventory-record-storage';
 import { inventoryStateFromStores } from './inventory-bridge';
 
 const HERO = 'hero-1';
@@ -48,14 +47,14 @@ describe('inventory bridge: state from the stores', () => {
 });
 
 describe('inventory bridge: grant and consume', () => {
-  it('grants into the store with isNew, a rotation and a saved copy', () => {
+  it('grants into the store with isNew and a rotation, and saves nothing locally', () => {
     const { inventory } = setup();
     const result = inventory.putToInventory(POTION, 2);
     expect(result.ok).toBe(true);
     const potion = inventory.items.find((i) => i.key === POTION)!;
     expect(potion).toMatchObject({ amount: 2, isNew: true });
     expect(inventory.rotationsById[potion.id]).toBeDefined();
-    expect(readInventoryRecord().bag?.items).toHaveLength(inventory.items.length);
+    expect(localStorage.length).toBe(0);
   });
 
   it('tops up the existing stack and keeps the hands filled', () => {

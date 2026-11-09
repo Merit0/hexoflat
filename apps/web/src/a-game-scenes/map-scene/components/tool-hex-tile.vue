@@ -305,6 +305,10 @@ function unlockWithCoins() {
     return;
   }
   flashDenied();
+  if (result.reason === 'CAMP_CHEST_NOT_CLAIMED') {
+    heroToolStore.setActionMessage(t('stash.pay.openFirst'));
+    return;
+  }
   heroToolStore.setActionMessage(t('stash.pay.notEnough'), 'coins', result.price);
 }
 
@@ -364,7 +368,7 @@ async function executeAction() {
   }
 
   if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.STASH_CHEST) {
-    openStashBoard();
+    await openStashBoard();
     return;
   }
 

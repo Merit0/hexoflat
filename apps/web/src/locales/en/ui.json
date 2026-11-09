@@ -694,7 +694,8 @@
     "pay": {
       "hint": "Put coins in your hand and drag them over the Stash Chest to unlock it.",
       "notEnough": "Not enough coins to pay",
-      "unlocked": "You unlock the stash chest"
+      "unlocked": "You unlock the stash chest",
+      "openFirst": "Open the camp chest with your hand first."
     },
     "filter": {
       "all": "All",
@@ -710,5 +711,13 @@
     "moreBelow": "{n} more below",
     "nothingToStore": "No resources or consumables in the bag.",
     "lockedChest": "Unlock Chest {prev} first."
+  },
+  "player": {
+    "sync": {
+      "restored": "The server restored your bag to the saved state.",
+      "takenOver": "This hero is open somewhere else. Changes here are no longer saved.",
+      "offline": "No connection to the server. Changes are not saved.",
+      "claimFailed": "Could not open the chest. Try again."
+    }
   }
 }

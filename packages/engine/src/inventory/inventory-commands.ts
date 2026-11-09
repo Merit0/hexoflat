@@ -89,7 +89,7 @@ export const GrantItemCommandSchema = z.object({
     ...base,
     key: stockItem,
     amount: z.number().int().min(1).max(9999),
-    source: z.enum(['pickup', 'loot', 'starter', 'dev']),
+    source: z.enum(['pickup', 'loot', 'reward', 'dev']),
   }),
 });
 export type GrantItemCommand = z.infer<typeof GrantItemCommandSchema>;
@@ -121,6 +121,7 @@ export type InventoryRejectReason =
   | 'INVENTORY_STALE'
   | 'HANDS_LOCKED'
   | 'MAX_CHESTS'
+  | 'CAMP_CHEST_NOT_CLAIMED'
   | 'NO_COINS_IN_HAND'
   | 'NOT_ENOUGH_COINS'
   | TTransferError;

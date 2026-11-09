@@ -3,7 +3,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
-import { readInventoryRecord } from '@/services/persistence/inventory-record-storage';
 import {
   autoPlaceItem,
   moveItem,
@@ -20,7 +19,6 @@ function setup() {
   const stash = useHeroStashStore();
   inventory.hydrate();
   inventory.carryCapacityKg = 10;
-  stash.starterGiven = true;
   stash.setChests(1);
   return { inventory, stash };
 }
@@ -38,7 +36,7 @@ function occurrences(id: string): number {
 describe('stash transfers on the real stores', () => {
   beforeEach(() => setup());
 
-  it('moves a bag item into the stash, once, and saves both sides', () => {
+  it('moves a bag item into the stash, once', () => {
     const { inventory, stash } = setup();
     stash.open();
     inventory.putToInventory(K.HEALTH_BOTTLE, 3);
@@ -51,7 +49,6 @@ describe('stash transfers on the real stores', () => {
     expect(inventory.countItem(K.HEALTH_BOTTLE)).toBe(0);
     expect(stash.cells[5]).toMatchObject({ id, amount: 3, slotKey: 'stash:5' });
     expect(occurrences(id)).toBe(1);
-    expect(readInventoryRecord().stash?.cells[5]?.id).toBe(id);
   });
 
   it('refuses while the stash is closed and leaves both stores alone', () => {
@@ -129,40 +126,35 @@ describe('stash transfers on the real stores', () => {
     return inventory;
   }
 
-  it('pays 100 from the coins in the hand for the first chest and keeps the rest there', () => {
+  it('pays 100 from the coins in the hand for the second chest and keeps the rest there', () => {
     const { stash } = setup();
-    stash.setChests(0);
     stash.open();
     const inventory = holdCoins(140);
 
     const unlocked = unlockNextChest();
 
     expect(unlocked.ok && unlocked.price).toBe(100);
-    expect(stash.chests).toBe(1);
-    expect(stash.ownedCells).toHaveLength(42);
+    expect(stash.chests).toBe(2);
+    expect(stash.ownedCells).toHaveLength(84);
     expect(inventory.equippedItems.weapon).toMatchObject({ key: K.COINS, amount: 40 });
-    expect(stash.activeChest).toBe(0);
-    expect(readInventoryRecord().stash?.chests).toBe(1);
+    expect(stash.activeChest).toBe(1);
   });
 
-  it('keeps the starter gear of a locked first chest when it is paid for before the stash was ever opened', () => {
-    setActivePinia(createPinia());
-    localStorage.clear();
-    const inventory = useHeroInventoryStore();
-    inventory.hydrate();
-    const stash = useHeroStashStore();
-    holdCoins(100);
+  it('refuses to buy the first chest: it only comes free from the camp', () => {
+    const { stash } = setup();
+    stash.setChests(0);
+    holdCoins(5000);
 
-    expect(unlockNextChest().ok).toBe(true);
-
-    const keys = stash.ownedCells.flatMap((cell) => (cell ? [cell.key] : []));
-    expect(keys.sort()).toEqual([K.AXE, K.PICKAXE, K.SHIELD, K.SWORD].sort());
-    expect(readInventoryRecord().stash?.cells.filter(Boolean)).toHaveLength(4);
+    expect(unlockNextChest()).toEqual({
+      ok: false,
+      reason: 'CAMP_CHEST_NOT_CLAIMED',
+      price: 0,
+    });
+    expect(stash.chests).toBe(0);
   });
 
   it('gives the bare hand back when the stack is exactly the price', () => {
-    const { stash } = setup();
-    stash.setChests(0);
+    setup();
     const inventory = holdCoins(100);
     expect(unlockNextChest().ok).toBe(true);
     expect(inventory.equippedItems.weapon?.key).toBe(K.HAND);
@@ -171,34 +163,32 @@ describe('stash transfers on the real stores', () => {
 
   it('refuses 90 coins, reports the price and changes nothing', () => {
     const { stash } = setup();
-    stash.setChests(0);
     const inventory = holdCoins(90);
     expect(unlockNextChest()).toEqual({ ok: false, reason: 'NOT_ENOUGH_COINS', price: 100 });
-    expect(stash.chests).toBe(0);
+    expect(stash.chests).toBe(1);
     expect(inventory.equippedItems.weapon?.amount).toBe(90);
   });
 
   it('does not count coins that stay in the bag', () => {
     const { inventory, stash } = setup();
-    stash.setChests(0);
     inventory.putToInventory(K.COINS, 5000);
     expect(unlockNextChest()).toEqual({ ok: false, reason: 'NO_COINS_IN_HAND', price: 100 });
-    expect(stash.chests).toBe(0);
+    expect(stash.chests).toBe(1);
   });
 
   it('charges 1000 for the next chest and jumps to its tab', () => {
     const { stash } = setup();
+    stash.setChests(2);
     holdCoins(1200, 'shield');
     const unlocked = unlockNextChest();
     expect(unlocked.ok && unlocked.price).toBe(1000);
-    expect(stash.chests).toBe(2);
-    expect(stash.activeChest).toBe(1);
+    expect(stash.chests).toBe(3);
+    expect(stash.activeChest).toBe(2);
     expect(useHeroInventoryStore().equippedItems.shield?.amount).toBe(200);
   });
 
   it('works while the stash board is closed', () => {
     const { stash } = setup();
-    stash.setChests(0);
     stash.close();
     holdCoins(100);
     expect(unlockNextChest().ok).toBe(true);

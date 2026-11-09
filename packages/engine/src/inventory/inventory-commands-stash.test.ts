@@ -6,7 +6,6 @@ import { applyInventoryCommand } from './apply-inventory';
 import { toAggregate } from './inventory-adapter';
 import { carriedWeightKg } from './item-queries';
 import { emptyInventoryState, inventoryStateSchema, type InventoryState } from './inventory-state';
-import { STASH_CHEST_CELLS, STARTER_STASH_ITEMS } from './stash-constants';
 
 import {
   HERO,
@@ -27,33 +26,22 @@ describe('UNLOCK_STASH_CHEST', () => {
   });
 
   it('pays the price from the coins in a hand and opens the next chest', () => {
-    const inv = fresh(0);
+    const inv = fresh(1);
     give(inv, hand('weapon'), HEXOBJECT_KEYS.COINS, 130);
     const { state, events } = run(world(inv), unlock(0));
-    expect(state.inventory!.stash.chests).toBe(1);
+    expect(state.inventory!.stash.chests).toBe(2);
     expect(state.inventory!.equip.weapon?.amount).toBe(30);
     expect(events.map((e) => e.type)).toEqual(['STASH_CHEST_UNLOCKED', 'INVENTORY_CHANGED']);
-    expect(events[0].payload).toMatchObject({ chests: 1, price: 100 });
+    expect(events[0].payload).toMatchObject({ chests: 2, price: 100 });
   });
 
   it('empties the hand when the coins are paid exactly', () => {
-    const inv = fresh(0);
+    const inv = fresh(1);
     give(inv, hand('shield'), HEXOBJECT_KEYS.COINS, 100);
     expect(run(world(inv), unlock(0)).state.inventory!.equip.shield).toBeNull();
   });
 
-  it('keeps the starter gear that waited in the locked chest and shows it after the unlock', () => {
-    const inv = emptyInventoryState(HERO);
-    STARTER_STASH_ITEMS.forEach((key, index) => give(inv, stash(index), key));
-    give(inv, hand('weapon'), HEXOBJECT_KEYS.COINS, 100);
-    const { state } = run(world(inv), unlock(0));
-    expect(
-      state.inventory!.stash.cells.slice(0, STARTER_STASH_ITEMS.length).map((c) => c?.key),
-    ).toEqual([...STARTER_STASH_ITEMS]);
-    expect(toAggregate(state.inventory!).stash).toHaveLength(STASH_CHEST_CELLS);
-  });
-
-  it('keeps the starter gear when another command runs while the chest is still locked', () => {
+  it('keeps items that wait in a locked chest when another command runs', () => {
     const inv = emptyInventoryState(HERO);
     give(inv, stash(0), HEXOBJECT_KEYS.SWORD);
     give(inv, bag(0), HEXOBJECT_KEYS.AXE);
@@ -62,11 +50,12 @@ describe('UNLOCK_STASH_CHEST', () => {
   });
 
   it.each([
-    ['no coins in a hand', () => fresh(0), 'NO_COINS_IN_HAND'],
+    ['the camp chest is not claimed yet', () => fresh(0), 'CAMP_CHEST_NOT_CLAIMED'],
+    ['no coins in a hand', () => fresh(1), 'NO_COINS_IN_HAND'],
     [
       'too few coins',
       () => {
-        const i = fresh(0);
+        const i = fresh(1);
         give(i, hand('weapon'), HEXOBJECT_KEYS.COINS, 99);
         return i;
       },
@@ -75,7 +64,7 @@ describe('UNLOCK_STASH_CHEST', () => {
     [
       'coins only in the bag',
       () => {
-        const i = fresh(0);
+        const i = fresh(1);
         give(i, bag(0), HEXOBJECT_KEYS.COINS, 500);
         return i;
       },

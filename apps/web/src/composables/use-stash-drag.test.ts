@@ -29,7 +29,6 @@ function setup() {
   const stashStore = useHeroStashStore();
   inventory.hydrate();
   inventory.carryCapacityKg = 10;
-  stashStore.starterGiven = true;
   stashStore.setChests(1);
   stashStore.open();
   return { inventory, stashStore };

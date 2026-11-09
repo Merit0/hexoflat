@@ -12,7 +12,6 @@ import router, { ROUTES } from '../router';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useOverlayStore } from '@/stores/overlay-store';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 
 // ✅ Тільки ключі гри/сесії користувача. НЕ чіпаємо device-level UI-налаштування
 // (наприклад "hexoflat:ui-settings:v1"), бо вони мають переживати логін/логаут.
@@ -143,7 +142,6 @@ export const useUserStore = defineStore('user', {
       const heroStore = useHeroStore();
       const worldMapStore = useWorldMapStore();
       const overlayStore = useOverlayStore();
-      const heroInventoryStore = useHeroInventoryStore();
 
       try {
         this.user.setLoggedIn(false);
@@ -155,7 +153,6 @@ export const useUserStore = defineStore('user', {
         overlayStore.closeOverlay();
         worldMapStore.clearAllWorlds();
         heroStore.resetHero();
-        heroInventoryStore.clearPersistence();
 
         clearSessionStorage();
         localStorage.setItem('uStatus', 'false');

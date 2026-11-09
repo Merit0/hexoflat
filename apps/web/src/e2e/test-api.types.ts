@@ -80,6 +80,8 @@ export interface HexoflatTestApi {
   setStashChests(chests: number): void;
   setStash(cells: ({ key: string; amount: number } | null)[]): void;
   setBag(cells: ({ key: string; amount: number } | null)[]): void;
+  settleInventorySync(): Promise<void>;
+  getInventorySyncStatus(): string;
   setHeroHealth(current: number): void;
   placeHexobjectNextToHero(key: string): TestHexCoordinates;
   isBattleEngaged(): boolean;

@@ -3,7 +3,8 @@ import type { TEquipSlot } from '../abstraction/hexobject-abstraction';
 import { STASH_CHEST_CELLS, stashChestPrice } from './stash-constants';
 import type { IInventoryAggregate } from './transfer-types';
 
-export type TUnlockChestError = 'MAX_CHESTS' | 'NO_COINS_IN_HAND' | 'NOT_ENOUGH_COINS';
+export type TUnlockChestError =
+  'MAX_CHESTS' | 'CAMP_CHEST_NOT_CLAIMED' | 'NO_COINS_IN_HAND' | 'NOT_ENOUGH_COINS';
 
 export type TUnlockChestResult =
   | { ok: true; next: IInventoryAggregate; chests: number; price: number }
@@ -34,6 +35,7 @@ export function planUnlockStashChest(
   owned: number,
   slot: TEquipSlot,
 ): TUnlockChestResult {
+  if (owned === 0) return { ok: false, reason: 'CAMP_CHEST_NOT_CLAIMED', price: 0 };
   const price = stashChestPrice(owned);
   if (price === null) return { ok: false, reason: 'MAX_CHESTS', price };
   const held = coinsInHand(agg, slot);
