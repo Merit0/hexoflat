@@ -36,7 +36,6 @@ function createEngineContext(
       healHero: vi.fn(),
     },
     gathering: { add: vi.fn() },
-    inventory: { putToInventory: vi.fn(() => ({ ok: true })) },
     events: { push: vi.fn() },
     worldMap: {
       combatActive: false,

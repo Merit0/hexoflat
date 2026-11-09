@@ -133,7 +133,12 @@ describe('Teleport skill', () => {
 
     expect(s.state.knowledge!.current).toBe(20 - cost);
     expect(s.scrolls()).toBe(0);
-    expect(events.map((e) => e.type)).toEqual(['WILL_SPENT', 'PORTAL_OPENED']);
+    expect(events.map((e) => e.type)).toEqual([
+      'WILL_SPENT',
+      'PORTAL_OPENED',
+      'ITEM_CONSUMED',
+      'INVENTORY_CHANGED',
+    ]);
     expect(events[1]).toMatchObject({ payload: { willSpent: cost } });
   });
 
@@ -197,7 +202,12 @@ describe('R2: portal cost', () => {
       originHex: s.target,
       campHex: CAMP_PORTAL_SPOT,
     });
-    expect(events.map((e) => e.type)).toEqual(['WILL_SPENT', 'PORTAL_OPENED']);
+    expect(events.map((e) => e.type)).toEqual([
+      'WILL_SPENT',
+      'PORTAL_OPENED',
+      'ITEM_CONSUMED',
+      'INVENTORY_CHANGED',
+    ]);
     expect(events[0]).toMatchObject({ payload: { amount: 5, balanceAfter: 15 } });
   });
 

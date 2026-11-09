@@ -46,6 +46,7 @@ import type { Engagement } from '../squads/engagement';
 import type { InventoryState } from '../inventory/inventory-state';
 import type { InventoryContext } from '../inventory/inventory-commands';
 import { applyInventoryCommand } from '../inventory/apply-inventory';
+import { applyConsumeItem, applyGrantItem, type IInventoryDraft } from '../inventory/apply-stock';
 import { applySquadLifecycle, isSquadAction, startSquadAction } from '../squads/apply-squad';
 
 export interface HexEngineState {
@@ -62,7 +63,10 @@ export interface HexEngineState {
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
-export type HexEngineActionContext = Omit<IActionContext, 'map' | 'now'>;
+export type HexEngineActionContext = Omit<IActionContext, 'map' | 'now' | 'inventory'>;
+
+/** The same context once `applyCommand` has bound the hero's inventory draft to it. */
+export type BoundActionContext = Omit<IActionContext, 'map' | 'now'>;
 
 function findTile(map: HexMapModel, coordinates: IHexCoordinates): HexTileModel | null {
   return (
@@ -82,6 +86,8 @@ export function applyCommand(
   const schema = HEX_ENGINE_COMMAND_SCHEMAS[command.type];
   const parsed = schema.parse(command);
   const events: DomainEvent[] = [];
+  const draft: IInventoryDraft = { current: state.inventory, events: [] };
+  const bound: BoundActionContext = { ...ctx, inventory: draft };
 
   switch (parsed.type) {
     case 'KNOWLEDGE':
@@ -94,18 +100,18 @@ export function applyCommand(
       events.push(...applySacrificeState(state, parsed));
       break;
     case 'START_HEX_ACTION':
-      events.push(...applyStartHexAction(state, parsed, ctx));
+      events.push(...applyStartHexAction(state, parsed, bound));
       break;
 
     case 'FINISH_PENDING_ACTIONS': {
-      const fullCtx: IActionContext = { ...ctx, map: state.map, now: parsed.payload.now };
+      const fullCtx: IActionContext = { ...bound, map: state.map, now: parsed.payload.now };
       const changed = new FinishPendingActionsFeature(state.map).finish(fullCtx);
       events.push({ type: 'HEX_ACTIONS_FINISHED', payload: { changed } });
       break;
     }
 
     case 'WORLD_TICK': {
-      const fullCtx: IActionContext = { ...ctx, map: state.map, now: parsed.payload.now };
+      const fullCtx: IActionContext = { ...bound, map: state.map, now: parsed.payload.now };
       const changed = new WorldTickFeature(state.map).tick(fullCtx);
       events.push({ type: 'WORLD_TICKED', payload: { changed } });
       break;
@@ -142,7 +148,7 @@ export function applyCommand(
     }
 
     case 'OPEN_PORTAL':
-      events.push(...applyOpenPortal(state, parsed.payload, ctx));
+      events.push(...applyOpenPortal(state, parsed.payload, bound));
       break;
 
     case 'ENTER_PORTAL':
@@ -159,7 +165,18 @@ export function applyCommand(
     case 'SORT_STASH':
     case 'UNLOCK_STASH_CHEST': {
       const result = applyInventoryCommand(state.inventory, parsed, state.inventoryContext);
-      state.inventory = result.inventory;
+      draft.current = result.inventory;
+      events.push(...result.events);
+      break;
+    }
+
+    case 'GRANT_ITEM':
+    case 'CONSUME_ITEM': {
+      const result =
+        parsed.type === 'GRANT_ITEM'
+          ? applyGrantItem(state.inventory, parsed)
+          : applyConsumeItem(state.inventory, parsed);
+      draft.current = result.inventory;
       events.push(...result.events);
       break;
     }
@@ -168,6 +185,8 @@ export function applyCommand(
       return assertNever(parsed);
   }
 
+  if (draft.current !== state.inventory) state.inventory = draft.current;
+  events.push(...draft.events);
   return { state, events };
 }
 
@@ -188,7 +207,7 @@ function isWorldGate(tile: HexTileModel, actionType: EHexActionType): boolean {
 function applyStartHexAction(
   state: HexEngineState,
   parsed: StartHexActionCommand,
-  ctx: HexEngineActionContext,
+  ctx: BoundActionContext,
 ): DomainEvent[] {
   const out: DomainEvent[] = [];
   const { coordinates, actionType, toolKey, now } = parsed.payload;

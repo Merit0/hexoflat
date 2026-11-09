@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { EQUIP_SLOTS } from '../abstraction/hexobject-abstraction';
+import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { BAG_CAPACITY } from './bag-layout';
 import type { TTransferError } from './transfer-types';
 import { STASH_CAPACITY, STASH_MAX_CHESTS } from './stash-constants';
@@ -23,6 +24,8 @@ const itemLocationSchema = z.discriminatedUnion('container', [
   }),
   z.object({ container: z.literal('equip'), slot: z.enum(EQUIP_SLOTS) }),
 ]);
+
+const KNOWN_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));
 
 const base = {
   heroId: z.string().min(1),
@@ -75,6 +78,31 @@ export const UnlockStashChestCommandSchema = z.object({
   payload: z.object(base),
 });
 export type UnlockStashChestCommand = z.infer<typeof UnlockStashChestCommandSchema>;
+
+const stockItem = z
+  .string()
+  .refine((key) => key !== 'hand' && KNOWN_KEYS.has(key), 'unknown or unstorable hexobject key');
+
+export const GrantItemCommandSchema = z.object({
+  type: z.literal('GRANT_ITEM'),
+  payload: z.object({
+    ...base,
+    key: stockItem,
+    amount: z.number().int().min(1).max(9999),
+    source: z.enum(['pickup', 'loot', 'starter', 'dev']),
+  }),
+});
+export type GrantItemCommand = z.infer<typeof GrantItemCommandSchema>;
+
+export const ConsumeItemCommandSchema = z.object({
+  type: z.literal('CONSUME_ITEM'),
+  payload: z.object({
+    ...base,
+    key: stockItem,
+    amount: z.number().int().min(1).max(9999),
+  }),
+});
+export type ConsumeItemCommand = z.infer<typeof ConsumeItemCommandSchema>;
 
 export type InventoryCommand =
   | MoveItemCommand

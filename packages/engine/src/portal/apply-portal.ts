@@ -1,5 +1,11 @@
 import type { DomainEvent } from '../commands/types';
-import type { HexEngineActionContext, HexEngineState } from '../commands/apply-command';
+import { consumeFromDraft, countInDraft, type IInventoryDraft } from '../inventory/apply-stock';
+import type { THexobjectKey } from '../registry/hexobjects-registry';
+import type {
+  BoundActionContext,
+  HexEngineActionContext,
+  HexEngineState,
+} from '../commands/apply-command';
 import type { EnterPortalCommand, OpenPortalCommand } from '../commands/hex-engine-commands';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HexObjectFactory } from '../factory/hex-object-factory';
@@ -34,10 +40,14 @@ function openRejected(
   return { type: 'PORTAL_OPEN_REJECTED', payload: { heroId, target, reason } };
 }
 
+function ownScrolls(inventory: IInventoryDraft, heroId: string, key: THexobjectKey): number {
+  return inventory.current?.heroId === heroId ? countInDraft(inventory, key) : 0;
+}
+
 export function applyOpenPortal(
   state: HexEngineState,
   { heroId, target }: OpenPortalCommand['payload'],
-  ctx: HexEngineActionContext,
+  ctx: BoundActionContext,
 ): DomainEvent[] {
   const hero = state.heroes[heroId];
   if (!hero) return [openRejected(heroId, target, 'HERO_NOT_FOUND')];
@@ -57,7 +67,10 @@ export function applyOpenPortal(
   const scrollKey = HEXOBJECT_KEYS.RETURN_SCROLL;
   const { knowledge } = state;
   const ownKnowledge = knowledge?.heroId === heroId ? knowledge : undefined;
-  const costPlan = resolvePortalCost(ownKnowledge?.skills, inventory.countItem?.(scrollKey) ?? 0);
+  const costPlan = resolvePortalCost(
+    ownKnowledge?.skills,
+    ownScrolls(inventory, heroId, scrollKey),
+  );
   if (!costPlan.ok) {
     const reason =
       ownKnowledge || costPlan.reason === 'NO_SCROLL' ? costPlan.reason : 'NO_WILL_STATE';
@@ -73,7 +86,7 @@ export function applyOpenPortal(
       openRejected(heroId, target, 'INSUFFICIENT_WILL'),
     ];
   }
-  if (!inventory.takeFromInventory?.(scrollKey, 1).ok) {
+  if (!consumeFromDraft(inventory, scrollKey, 1)) {
     return [openRejected(heroId, target, 'NO_SCROLL')];
   }
 

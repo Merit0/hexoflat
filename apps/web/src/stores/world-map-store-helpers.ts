@@ -1,7 +1,9 @@
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { HexEngineActionContext } from '@hexoflat/engine';
-import { applyCommand } from '@hexoflat/engine';
+import { applyCommand, type HexEngineState } from '@hexoflat/engine';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
+import { withStoreInventory } from '@/services/inventory/inventory-bridge';
 import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { getWorldSeed } from '@/services/rng/world-rng';
@@ -46,12 +48,20 @@ export function withoutBattleAutosave(hydrate: () => void): void {
   }
 }
 
-export function runWorldTick(map: HexMapModel, now: number, ctx: HexEngineActionContext): boolean {
-  const { events } = applyCommand(
-    { map, heroes: {} },
-    { type: 'WORLD_TICK', payload: { now } },
-    ctx,
-  );
+function hasPendingTake(map: HexMapModel): boolean {
+  return map.tiles.some((tile) => tile.pendingAction?.type === EHexActionType.TAKE);
+}
+
+export function runWorldTick(
+  map: HexMapModel,
+  now: number,
+  ctx: HexEngineActionContext,
+  heroId?: string,
+): boolean {
+  const state: HexEngineState = { map, heroes: {} };
+  const tick = () => applyCommand(state, { type: 'WORLD_TICK', payload: { now } }, ctx);
+  const { events } =
+    heroId && hasPendingTake(map) ? withStoreInventory(heroId, state, tick) : tick();
   const tickEvent = events.find((e) => e.type === 'WORLD_TICKED') as
     { type: 'WORLD_TICKED'; payload: { changed: boolean } } | undefined;
 

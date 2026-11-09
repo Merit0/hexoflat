@@ -134,3 +134,7 @@ Pure view model in `services/hex-info/build-hex-info.ts` (content -> `HexInfoVie
 - Counter chips: `composables/item-counter.ts` (`showsCounter`) gives every stackable item a chip, also a stack of one.
 - Coins in a hand slot are a tool (`toolKeyOfItem`, `equip-token` USE); over the Stash Chest hex `tool-hex-tile.vue` offers "Unlock" (priority 95, equal to OPEN so the auto tool pick does not override the player's choice).
 - Dev: settings has "Dev: +500 coins" (dev build only).
+
+## Inventory bridge (migration plan I3a, temporary until I4)
+
+`services/inventory/inventory-bridge.ts` rebuilds the engine `InventoryState` from `hero-inventory-store` + `hero-stash-store` (`inventoryStateFromStores`), runs an engine command on it (`withStoreInventory`, `grantItemToStores`, `consumeItemFromStores`) and writes a changed bag and hands back (the stash is never written by it). Use it for anything outside the stores that gives or takes items (world tick pickups, portal scroll, battle consumables, dev coins, e2e `grantInventoryItem`); do not call `putToInventory`/`takeFromInventory` from new code. The bridge is deleted when I4 makes the stores a read model over the engine state.

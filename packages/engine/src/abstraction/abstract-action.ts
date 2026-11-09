@@ -1,3 +1,4 @@
+import type { IInventoryDraft } from '../inventory/apply-stock';
 import type HexMapModel from '../map/models/hex-map-model';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
@@ -43,12 +44,6 @@ export interface IGatheringPort {
   add: (key: THexobjectKey, amount?: number) => void;
 }
 
-export interface IInventoryPort {
-  putToInventory: (key: THexobjectKey, amount?: number) => { ok: boolean; message?: string };
-  countItem?: (key: THexobjectKey) => number;
-  takeFromInventory?: (key: THexobjectKey, amount: number) => { ok: boolean };
-}
-
 export interface IEventsPort {
   push: (actorName: string, message: string, type?: TGameEventType) => void;
 }
@@ -66,7 +61,7 @@ export interface IActionContext {
   heroToolStore: IHeroToolPort;
   hero: IHeroPort;
   gathering: IGatheringPort;
-  inventory: IInventoryPort;
+  inventory: IInventoryDraft;
   events: IEventsPort;
   worldMap: IWorldMapPort;
   navigate?: (locationKey: LocationKey) => void;

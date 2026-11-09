@@ -15,6 +15,7 @@ import { useBattleStore, type BattleStep } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { consumeItemFromStores } from '@/services/inventory/inventory-bridge';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { logBattleEvents } from '@/services/battle/battle-event-log';
 import { bindBattleHandsGate } from '@/services/battle/battle-hands-gate';
@@ -64,11 +65,13 @@ function engineState(map: HexMapModel): HexEngineState {
 function closeOut(closed: ClosedPayload) {
   const world = useWorldMapStore();
   const heroStore = useHeroStore();
-  const inventory = useHeroInventoryStore();
   const mine = closed.heroes.find((h) => h.id === heroStore.hero.id);
   if (mine) {
     heroStore.hero.setHealth(mine.hearts);
-    for (const key of mine.consumed) inventory.takeFromInventory(key as THexobjectKey, 1);
+    const ctx = world.buildEngineContext();
+    for (const key of mine.consumed) {
+      consumeItemFromStores(heroStore.hero.id, ctx, key as THexobjectKey, 1);
+    }
   }
   for (let i = 0; i < closed.kills; i += 1) heroStore.hero.addKilled();
   heroStore.saveProgressToStorage();

@@ -86,7 +86,8 @@ import { useI18n } from 'vue-i18n';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroStore } from '@/stores/hero-store';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { grantItemToStores } from '@/services/inventory/inventory-bridge';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { SUPPORTED_LOCALES, type TLocale } from '@/i18n/locale';
@@ -100,7 +101,6 @@ const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const uiSettings = useUiSettingsStore();
 const heroStore = useHeroStore();
-const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
 
 const isDev = import.meta.env.DEV;
@@ -109,8 +109,13 @@ const DEV_HEALTH_CUT = 0.5;
 const DEV_COINS_GRANT = 500;
 
 function addCoins() {
-  inventoryStore.hydrate();
-  const result = inventoryStore.putToInventory(HEXOBJECT_KEYS.COINS, DEV_COINS_GRANT);
+  const result = grantItemToStores(
+    heroStore.hero.id,
+    useWorldMapStore().buildEngineContext(),
+    HEXOBJECT_KEYS.COINS,
+    DEV_COINS_GRANT,
+    'dev',
+  );
   if (!result.ok && result.message) heroToolStore.setActionMessage(result.message);
 }
 

@@ -3,6 +3,10 @@ import { EHexActionType } from '../enums/hex-action-type';
 import { KnowledgeCommandSchema, type KnowledgeCommand } from '../knowledge/commands';
 import {
   AutoPlaceItemCommandSchema,
+  ConsumeItemCommandSchema,
+  GrantItemCommandSchema,
+  type ConsumeItemCommand,
+  type GrantItemCommand,
   MoveItemCommandSchema,
   SortStashCommandSchema,
   StoreResourcesCommandSchema,
@@ -130,6 +134,8 @@ export type HexEngineCommand =
   | OpenPortalCommand
   | EnterPortalCommand
   | InventoryCommand
+  | GrantItemCommand
+  | ConsumeItemCommand
   | BattleCommand;
 
 export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
@@ -152,5 +158,7 @@ export const HEX_ENGINE_COMMAND_SCHEMAS: Record<
   STORE_RESOURCES: StoreResourcesCommandSchema,
   SORT_STASH: SortStashCommandSchema,
   UNLOCK_STASH_CHEST: UnlockStashChestCommandSchema,
+  GRANT_ITEM: GrantItemCommandSchema,
+  CONSUME_ITEM: ConsumeItemCommandSchema,
   BATTLE: BattleCommandSchema,
 };

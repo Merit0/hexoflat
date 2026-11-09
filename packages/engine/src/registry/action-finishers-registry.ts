@@ -2,6 +2,7 @@ import { healthCapOf } from '../utils/combat/health-format';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import type { IPendingTileAction } from '../abstraction/hex-tile-abstraction';
+import { grantToDraft } from '../inventory/apply-stock';
 import { IActionContext } from '../abstraction/abstract-action';
 import { getMeta } from '../content';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
@@ -95,9 +96,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     const amount =
       hexobject.groupType === EHexobjectGroup.RESOURCE ? (hexobject.resource?.amount ?? 1) : 1;
 
-    const result = ctx.inventory.putToInventory(hexobject.hexobjectKey, amount);
-
-    if (!result?.ok) {
+    if (!grantToDraft(ctx.inventory, hexobject.hexobjectKey, amount, 'pickup')) {
       ensureUnlocked(ctx);
       return false;
     }
