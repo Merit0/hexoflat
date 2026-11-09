@@ -87,7 +87,10 @@ export function writeInventoryState(stores: InventoryStores, state: InventorySta
       item ? [[item.id, item] as const] : [],
     ),
   );
-  const items = bagItemsOf(state, before);
+  const order = new Map(inventory.items.map((item, index) => [item.id, index]));
+  const items = bagItemsOf(state, before).sort(
+    (a, b) => (order.get(a.id) ?? Infinity) - (order.get(b.id) ?? Infinity),
+  );
   const cells = state.stash.cells.map((cell, index) =>
     cell ? toStoreItem(cell, `${STASH_PREFIX}${index}`, before) : null,
   );
