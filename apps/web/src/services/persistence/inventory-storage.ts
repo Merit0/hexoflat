@@ -1,4 +1,5 @@
 import { CONTENT_VERSION } from '@hexoflat/engine';
+import { DEFAULT_CARRY_CAPACITY_KG } from '@hexoflat/engine/inventory/bag-layout';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 
 const INVENTORY_STORAGE_KEY = 'hexoflat.hero.inventory.v1';
@@ -42,7 +43,10 @@ export function readSavedInventory(): Pick<
         parsed.rotationsById && typeof parsed.rotationsById === 'object'
           ? parsed.rotationsById
           : {},
-      carryCapacityKg: typeof parsed.carryCapacityKg === 'number' ? parsed.carryCapacityKg : 5,
+      carryCapacityKg:
+        typeof parsed.carryCapacityKg === 'number'
+          ? parsed.carryCapacityKg
+          : DEFAULT_CARRY_CAPACITY_KG,
     };
   } catch (error) {
     console.error('Failed to hydrate hero inventory:', error);

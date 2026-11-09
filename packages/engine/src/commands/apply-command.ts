@@ -43,6 +43,7 @@ import {
   type BattleCommand,
 } from '../battle/battle-commands';
 import type { Engagement } from '../squads/engagement';
+import type { InventoryState } from '../inventory/inventory-state';
 import { applySquadLifecycle, isSquadAction, startSquadAction } from '../squads/apply-squad';
 
 export interface HexEngineState {
@@ -54,6 +55,7 @@ export interface HexEngineState {
   location?: PortalLocation;
   battle?: BattleState;
   engagement?: Engagement;
+  inventory?: InventoryState;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
