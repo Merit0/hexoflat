@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { CONTENT_VERSION } from '@hexoflat/engine';
 import { STASH_CAPACITY } from '@hexoflat/engine/inventory/stash-constants';
-import { readSavedStash } from '@/services/persistence/stash-storage';
+import { readInventoryRecord } from '@/services/persistence/inventory-record-storage';
 import { useHeroStashStore } from './hero-stash-store';
 
 const coins = (id: string, slot: number) =>
@@ -71,7 +71,7 @@ describe('useHeroStashStore', () => {
     const cells = first.ownedCells.slice();
     cells[3] = coins('coin-stack', 3);
     first.replaceOwnedCells(cells);
-    expect(readSavedStash()?.cells[3]?.amount).toBe(9);
+    expect(readInventoryRecord().stash?.cells[3]?.amount).toBe(9);
 
     setActivePinia(createPinia());
     const reloaded = useHeroStashStore();
@@ -146,6 +146,7 @@ describe('useHeroStashStore', () => {
       const cells = old.ownedCells.slice();
       cells[0] = coins('mine', 0);
       old.replaceOwnedCells(cells);
+      localStorage.clear();
       localStorage.setItem(
         'hexoflat.hero.stash.v2',
         JSON.stringify({

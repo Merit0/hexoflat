@@ -12,6 +12,8 @@ export interface PersistedHeroInventory {
   carryCapacityKg: number;
 }
 
+export type SavedBag = Pick<PersistedHeroInventory, 'items' | 'rotationsById' | 'carryCapacityKg'>;
+
 function isSerializableInventoryItem(value: unknown): value is InventoryItem {
   if (!value || typeof value !== 'object') return false;
   const v = value as Record<string, unknown>;
@@ -26,45 +28,37 @@ function isSerializableInventoryItem(value: unknown): value is InventoryItem {
   );
 }
 
-export function readSavedInventory(): Pick<
-  PersistedHeroInventory,
-  'items' | 'rotationsById' | 'carryCapacityKg'
-> | null {
+export function bagPayload(state: SavedBag): PersistedHeroInventory {
+  return { version: 1, contentVersion: CONTENT_VERSION, ...state };
+}
+
+export function parseSavedBag(value: unknown): SavedBag | null {
+  const parsed = value as Partial<PersistedHeroInventory> | null;
+  if (parsed?.version !== 1 || parsed?.contentVersion !== CONTENT_VERSION) return null;
+  return {
+    items: Array.isArray(parsed.items) ? parsed.items.filter(isSerializableInventoryItem) : [],
+    rotationsById:
+      parsed.rotationsById && typeof parsed.rotationsById === 'object' ? parsed.rotationsById : {},
+    carryCapacityKg:
+      typeof parsed.carryCapacityKg === 'number'
+        ? parsed.carryCapacityKg
+        : DEFAULT_CARRY_CAPACITY_KG,
+  };
+}
+
+export function readSavedInventory(): SavedBag | null {
   try {
     const raw = localStorage.getItem(INVENTORY_STORAGE_KEY);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as Partial<PersistedHeroInventory>;
-    if (parsed?.version !== 1 || parsed?.contentVersion !== CONTENT_VERSION) return null;
-
-    return {
-      items: Array.isArray(parsed.items) ? parsed.items.filter(isSerializableInventoryItem) : [],
-      rotationsById:
-        parsed.rotationsById && typeof parsed.rotationsById === 'object'
-          ? parsed.rotationsById
-          : {},
-      carryCapacityKg:
-        typeof parsed.carryCapacityKg === 'number'
-          ? parsed.carryCapacityKg
-          : DEFAULT_CARRY_CAPACITY_KG,
-    };
+    return raw ? parseSavedBag(JSON.parse(raw)) : null;
   } catch (error) {
     console.error('Failed to hydrate hero inventory:', error);
     return null;
   }
 }
 
-export function writeSavedInventory(
-  state: Pick<PersistedHeroInventory, 'items' | 'rotationsById' | 'carryCapacityKg'>,
-): void {
+export function writeSavedInventory(state: SavedBag): void {
   try {
-    const payload: PersistedHeroInventory = {
-      version: 1,
-      contentVersion: CONTENT_VERSION,
-      ...state,
-    };
-
-    localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(bagPayload(state)));
   } catch (error) {
     console.error('Failed to persist hero inventory:', error);
   }

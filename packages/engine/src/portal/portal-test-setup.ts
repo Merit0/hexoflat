@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { type HexEngineState } from '../commands/apply-command';
 import { buildHero, createContext } from '../commands/command-test-context';
 import { createKnowledgeState } from '../knowledge/state';

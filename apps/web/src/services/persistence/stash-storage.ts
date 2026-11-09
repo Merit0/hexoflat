@@ -41,17 +41,24 @@ function readCell(value: unknown, seen: Set<string>): InventoryItem | null {
   return parsed.data as InventoryItem;
 }
 
+export function stashPayload(stash: SavedStash) {
+  return { version: 2, contentVersion: CONTENT_VERSION, ...stash };
+}
+
+export function parseSavedStash(value: unknown): SavedStash | null {
+  const parsed = payloadSchema.safeParse(value);
+  if (!parsed.success || parsed.data.contentVersion !== CONTENT_VERSION) return null;
+  const seen = new Set<string>();
+  const cells = Array.from({ length: STASH_CAPACITY }, (_, index) =>
+    readCell(parsed.data.cells[index], seen),
+  );
+  return { chests: parsed.data.chests, starterGiven: parsed.data.starterGiven, cells };
+}
+
 export function readSavedStash(): SavedStash | null {
   try {
     const raw = localStorage.getItem(STASH_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = payloadSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success || parsed.data.contentVersion !== CONTENT_VERSION) return null;
-    const seen = new Set<string>();
-    const cells = Array.from({ length: STASH_CAPACITY }, (_, index) =>
-      readCell(parsed.data.cells[index], seen),
-    );
-    return { chests: parsed.data.chests, starterGiven: parsed.data.starterGiven, cells };
+    return raw ? parseSavedStash(JSON.parse(raw)) : null;
   } catch (error) {
     console.error('Failed to hydrate the camp stash:', error);
     return null;
@@ -60,8 +67,7 @@ export function readSavedStash(): SavedStash | null {
 
 export function writeSavedStash(stash: SavedStash): void {
   try {
-    const payload = { version: 2, contentVersion: CONTENT_VERSION, ...stash };
-    localStorage.setItem(STASH_STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(STASH_STORAGE_KEY, JSON.stringify(stashPayload(stash)));
   } catch (error) {
     console.error('Failed to persist the camp stash:', error);
   }

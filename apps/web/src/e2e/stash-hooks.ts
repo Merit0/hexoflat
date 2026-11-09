@@ -2,9 +2,10 @@ import { getMeta, getPrototype } from '@hexoflat/engine';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { STASH_CAPACITY } from '@hexoflat/engine/inventory/stash-constants';
-import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
+import { BAG_SLOT_KEYS } from '@hexoflat/engine/inventory/bag-layout';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
-import { bagSlotKeys, toAggregate } from '@/services/inventory/inventory-aggregate';
+import { toAggregate } from '@/services/inventory/inventory-aggregate';
 
 interface FixtureCell {
   key: string;
@@ -34,7 +35,7 @@ function fixtureItem(cell: FixtureCell, slotKey: string): InventoryItem {
 }
 
 function slotKeys(): string[] {
-  return bagSlotKeys(useHeroInventoryStore().grid, WILL_SLOT_KEY);
+  return [...BAG_SLOT_KEYS];
 }
 
 export const stashTestFixtures = {

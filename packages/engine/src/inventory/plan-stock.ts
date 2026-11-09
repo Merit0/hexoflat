@@ -46,12 +46,6 @@ function newItem(
   };
 }
 
-/**
- * Adds `amount` of `key` as the hero picks it up: tops up unfinished stacks (bag first, then
- * the hands), then fills free bag cells in order. Atomic: when the weight limit or the room
- * runs out nothing changes at all (the legacy store could leave half a stack behind). A
- * non-stackable item arrives one piece per cell.
- */
 export function planGrant(
   agg: IInventoryAggregate,
   key: THexobjectKey,
@@ -116,7 +110,6 @@ export function countItem(agg: IInventoryAggregate, key: THexobjectKey): number 
   return held.reduce((sum, item) => (item?.key === key ? sum + item.amount : sum), 0);
 }
 
-/** Takes `amount` of `key` from the bag first, then the hands; an emptied stack leaves its cell. */
 export function planConsume(
   agg: IInventoryAggregate,
   key: THexobjectKey,

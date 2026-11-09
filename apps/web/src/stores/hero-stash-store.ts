@@ -7,7 +7,10 @@ import {
 } from '@hexoflat/engine/inventory/stash-constants';
 import type { StashFilter } from '@/composables/stash-filter';
 import type { StashCells } from '@/services/persistence/stash-storage';
-import { readSavedStash, writeSavedStash } from '@/services/persistence/stash-storage';
+import {
+  patchInventoryRecord,
+  readInventoryRecord,
+} from '@/services/persistence/inventory-record-storage';
 import { grantStarterGear } from '@/services/inventory/starter-stash';
 
 function pad(cells: StashCells): StashCells {
@@ -50,7 +53,7 @@ export const useHeroStashStore = defineStore('heroStash', {
   actions: {
     hydrate() {
       if (this.isHydrated) return;
-      const saved = readSavedStash();
+      const saved = readInventoryRecord().stash;
       if (saved) {
         this.cells = saved.cells;
         this.chests = saved.chests;
@@ -95,10 +98,8 @@ export const useHeroStashStore = defineStore('heroStash', {
     },
 
     persist() {
-      writeSavedStash({
-        chests: this.chests,
-        starterGiven: this.starterGiven,
-        cells: this.cells,
+      patchInventoryRecord({
+        stash: { chests: this.chests, starterGiven: this.starterGiven, cells: this.cells },
       });
     },
   },

@@ -4,30 +4,25 @@ import {
   EHexobjectGroup,
   type TEquipSlot,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { getPrototype, getMeta } from '@hexoflat/engine';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
-import {
-  calculateCarriedWeightKg,
-  canFitAdditionalWeight,
-  getItemUnitWeightKg,
-  mergeItemStacks,
-} from '@hexoflat/engine/utils/inventory/traits-resolver';
-import { pickRandom } from '@hexoflat/engine/utils/random';
-import { getStream } from '@/services/rng/world-rng';
+import { migrateLegacyInventory } from '@hexoflat/engine/inventory/inventory-migration';
+import { calculateCarriedWeightKg } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { randomTokenRotationDeg } from '@/render/token-utils';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { bindInventoryHandsGate, moveBySlot } from '@/services/inventory/inventory-moves';
 import {
-  clearSavedInventory,
-  readSavedInventory,
-  writeSavedInventory,
-} from '@/services/persistence/inventory-storage';
+  bagItemsOf,
+  consumeItem,
+  grantItem,
+  LOCAL_HERO_ID,
+} from '@/services/inventory/inventory-store-io';
+import {
+  clearInventoryRecord,
+  patchInventoryRecord,
+  readInventoryRecord,
+} from '@/services/persistence/inventory-record-storage';
 
-export type InventoryHandsGate = () => boolean;
-
-let handsGate: InventoryHandsGate | null = null;
-
-export function bindInventoryHandsGate(gate: InventoryHandsGate | null): void {
-  handsGate = gate;
-}
+export { bindInventoryHandsGate };
 
 export type { TEquipSlot };
 export type { InventoryItem };
@@ -46,31 +41,7 @@ export function equipSlotKey(slot: TEquipSlot) {
   return `eq:${slot}`;
 }
 
-function parseEquipSlotKey(value: string | null | undefined): TEquipSlot | null {
-  if (!value) return null;
-  if (!value.startsWith('eq:')) return null;
-
-  const slot = value.slice(3) as TEquipSlot;
-
-  if (
-    slot === 'weapon' ||
-    slot === 'shield' ||
-    slot === 'armor' ||
-    slot === 'gloves' ||
-    slot === 'helm' ||
-    slot === 'boots' ||
-    slot === 'ring' ||
-    slot === 'amulet'
-  ) {
-    return slot;
-  }
-
-  return null;
-}
-
 export const WILL_SLOT_KEY = slotKey(0, 0);
-
-const STARTER_SCROLL_COUNT = 50;
 
 function isBlocked(r: number, c: number, cfg: GridConfig) {
   const { x, y, w, h } = cfg.blockedRect;
@@ -165,56 +136,38 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     hydrate() {
       if (this.isHydrated) return;
 
-      const saved = readSavedInventory();
+      const saved = readInventoryRecord().bag;
+      const legacy = saved ? { items: saved.items, carryCapacityKg: saved.carryCapacityKg } : null;
+      const { state } = migrateLegacyInventory(LOCAL_HERO_ID, legacy, null);
+      const before = new Map((saved?.items ?? []).map((item) => [item.id, item]));
+      this.items = bagItemsOf(state, before).map((item) => ({
+        ...item,
+        isNew: before.get(item.id)?.isNew ?? false,
+      }));
       if (saved) {
-        this.items = saved.items;
         this.rotationsById = saved.rotationsById;
         this.carryCapacityKg = saved.carryCapacityKg;
       }
-
-      const squatter = this.items.find((i) => i.slotKey === WILL_SLOT_KEY);
-      const relocated = squatter ? this.freeSlotKeys[0] : undefined;
-      if (squatter && relocated) squatter.slotKey = relocated;
+      for (const item of this.items) this.ensureRotation(item.id);
 
       this.fillEmptySlotsWithHands();
-      if (!saved) this.grantStarterScrolls();
+      if (!saved) this.persist();
       this.selectedItemId = null;
       this.isHydrated = true;
     },
 
-    grantStarterScrolls() {
-      const key = HEXOBJECT_KEYS.RETURN_SCROLL;
-      const stackSize = getMeta(key).traits?.maxStack ?? STARTER_SCROLL_COUNT;
-      const stacks = Math.ceil(STARTER_SCROLL_COUNT / stackSize);
-      const slots = this.freeSlotKeys.slice(-stacks);
-
-      slots.forEach((slot, index) => {
-        const amount = Math.min(stackSize, STARTER_SCROLL_COUNT - index * stackSize);
-        const id = crypto.randomUUID();
-        this.items.push({
-          id,
-          key,
-          type: EHexobjectGroup.LOOT,
-          stackKey: key,
-          amount,
-          slotKey: slot,
-          isNew: false,
-        });
-        this.ensureRotation(id);
-      });
-      this.persist();
-    },
-
     persist() {
-      writeSavedInventory({
-        items: this.items,
-        rotationsById: this.rotationsById,
-        carryCapacityKg: this.carryCapacityKg,
+      patchInventoryRecord({
+        bag: {
+          items: this.items,
+          rotationsById: this.rotationsById,
+          carryCapacityKg: this.carryCapacityKg,
+        },
       });
     },
 
     clearPersistence() {
-      clearSavedInventory();
+      clearInventoryRecord();
     },
 
     rerollRotation(id: string) {
@@ -228,93 +181,11 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       const target = this.freeSlotKeys[0];
       if (!target) return false;
       this.moveItemToSlot(item.id, target);
-      return true;
+      return this.equippedItems[slot]?.id !== item.id;
     },
 
     moveItemToSlot(itemId: string, targetSlotKey: string) {
-      const gate = handsGate;
-      if (!gate) {
-        this.applyMoveToSlot(itemId, targetSlotKey);
-        return;
-      }
-      const handKeys = () =>
-        `${this.equippedItems.weapon?.key ?? ''}|${this.equippedItems.shield?.key ?? ''}`;
-      const before = handKeys();
-      const snapshot = JSON.parse(JSON.stringify(this.items)) as InventoryItem[];
-      this.applyMoveToSlot(itemId, targetSlotKey);
-      if (handKeys() === before || gate()) return;
-      this.items = snapshot;
-      this.persist();
-    },
-
-    applyMoveToSlot(itemId: string, targetSlotKey: string) {
-      const fromItem = this.items.find((i) => i.id === itemId);
-      if (!fromItem) return;
-
-      if (fromItem.slotKey === targetSlotKey || targetSlotKey === WILL_SLOT_KEY) return;
-
-      if (fromItem.key === HEXOBJECT_KEYS.HAND) {
-        return;
-      }
-
-      const targetItem = this.items.find((i) => i.slotKey === targetSlotKey);
-
-      if (targetItem && targetItem.key === HEXOBJECT_KEYS.HAND) {
-        const idx = this.items.findIndex((i) => i.id === targetItem.id);
-        if (idx !== -1) {
-          this.items.splice(idx, 1);
-          delete this.rotationsById[targetItem.id];
-        }
-
-        fromItem.slotKey = targetSlotKey;
-        this.rerollRotation(fromItem.id);
-
-        this.fillEmptySlotsWithHands();
-        this.persist();
-        return;
-      }
-
-      if (!targetItem) {
-        fromItem.slotKey = targetSlotKey;
-        this.rerollRotation(fromItem.id);
-
-        this.fillEmptySlotsWithHands();
-        this.persist();
-        return;
-      }
-
-      const targetEquip = parseEquipSlotKey(targetSlotKey);
-
-      if (!targetEquip) {
-        const merged = mergeItemStacks(targetItem, fromItem);
-
-        if (merged) {
-          targetItem.isNew = true;
-          this.rerollRotation(targetItem.id);
-
-          if (fromItem.amount <= 0) {
-            const idx = this.items.findIndex((i) => i.id === fromItem.id);
-            if (idx !== -1) this.items.splice(idx, 1);
-            delete this.rotationsById[fromItem.id];
-          } else {
-            this.rerollRotation(fromItem.id);
-          }
-
-          this.fillEmptySlotsWithHands();
-          this.persist();
-          return;
-        }
-      }
-
-      const oldSlot = fromItem.slotKey;
-      fromItem.slotKey = targetSlotKey;
-      targetItem.slotKey = oldSlot;
-
-      this.rerollRotation(fromItem.id);
-      this.rerollRotation(targetItem.id);
-
-      this.fillEmptySlotsWithHands();
-      this.persist();
+      moveBySlot({ inventory: this, stash: useHeroStashStore() }, itemId, targetSlotKey);
     },
 
     isCellBlocked(r: number, c: number) {
@@ -342,94 +213,8 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
       this.selectedItemId = null;
     },
 
-    pickFreeSlot(): string | null {
-      return pickRandom(this.freeSlotKeys, getStream('inventory'));
-    },
-
     putToInventory(key: THexobjectKey, amount = 1) {
-      if (key === HEXOBJECT_KEYS.HAND) {
-        return { ok: false, message: 'Hand cannot be added to inventory.' };
-      }
-
-      const proto = getPrototype(key);
-      if (!proto) {
-        return { ok: false, message: `Unknown hexobject prototype: ${key}` };
-      }
-
-      const incomingWeightKg = getItemUnitWeightKg(key) * amount;
-      if (!canFitAdditionalWeight(this.carriedWeightKg, this.carryCapacityKg, incomingWeightKg)) {
-        console.warn('Carry limit exceeded:', incomingWeightKg, 'kg');
-        return {
-          ok: false,
-          message: `Too heavy! Carry limit: ${this.carryCapacityKg} kg`,
-        };
-      }
-
-      const meta = getMeta(key);
-      const stackable = !!meta?.traits?.stackable;
-      const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
-      const maxStack = meta?.traits?.maxStack ?? null;
-
-      let left = amount;
-
-      if (stackable && stackKey) {
-        const stacks = this.items.filter((i) => i.stackKey === stackKey);
-
-        for (const s of stacks) {
-          if (left <= 0) break;
-
-          if (!maxStack) {
-            s.amount += left;
-            s.isNew = true;
-            this.rerollRotation(s.id);
-            this.persist();
-            return { ok: true };
-          }
-
-          const canAdd = Math.max(0, maxStack - s.amount);
-          if (canAdd <= 0) continue;
-
-          const add = Math.min(canAdd, left);
-          s.amount += add;
-          s.isNew = true;
-          left -= add;
-          this.rerollRotation(s.id);
-        }
-
-        if (left <= 0) {
-          this.persist();
-          return { ok: true };
-        }
-      }
-
-      while (left > 0) {
-        const free = this.pickFreeSlot();
-        if (!free) return { ok: false, message: 'Inventory is full!' };
-
-        const id = crypto.randomUUID();
-        const addNow = !stackable || !maxStack ? left : Math.min(left, maxStack);
-
-        const item: InventoryItem = {
-          id,
-          key,
-          type: proto.groupType,
-          stackKey: stackable ? stackKey : undefined,
-          amount: stackable ? addNow : 1,
-          equipSlot: undefined,
-          slotKey: free,
-          isNew: true,
-        };
-
-        this.items.push(item);
-        this.ensureRotation(id);
-
-        left -= addNow;
-
-        if (!stackable) break;
-      }
-
-      this.persist();
-      return { ok: true };
+      return grantItem({ inventory: this, stash: useHeroStashStore() }, key, amount, 'pickup');
     },
 
     countItem(key: THexobjectKey): number {
@@ -437,28 +222,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     },
 
     takeFromInventory(key: THexobjectKey, amount: number) {
-      if (this.countItem(key) < amount) return { ok: false };
-
-      let left = amount;
-      for (const item of this.items.filter((candidate) => candidate.key === key)) {
-        const taken = Math.min(item.amount, left);
-        item.amount -= taken;
-        left -= taken;
-        if (item.amount <= 0) this.removeItem(item.id);
-        if (left <= 0) break;
-      }
-      this.persist();
-      return { ok: true };
-    },
-
-    removeItem(id: string) {
-      const idx = this.items.findIndex((i) => i.id === id);
-      if (idx !== -1) this.items.splice(idx, 1);
-      if (this.selectedItemId === id) this.selectedItemId = null;
-      delete this.rotationsById[id];
-
-      this.fillEmptySlotsWithHands();
-      this.persist();
+      return consumeItem({ inventory: this, stash: useHeroStashStore() }, key, amount);
     },
 
     fillEmptySlotsWithHands() {

@@ -105,22 +105,27 @@ describe('legacy inventory characterization: applyMoveToSlot', () => {
     expect(JSON.stringify(inventory.items)).toBe(before);
   });
 
-  it('does not check slot compatibility (legacy; the engine plan does)', () => {
+  it('refuses a wrong slot now that the engine checks compatibility (was allowed before I4)', () => {
     const inventory = freshStore();
     inventory.putToInventory(POTION, 1);
     const potion = inventory.items.find((i) => i.key === POTION)!;
+    const slotBefore = potion.slotKey;
 
     inventory.moveItemToSlot(potion.id, 'eq:helm');
 
-    expect(inventory.equippedItems.helm?.id).toBe(potion.id);
+    expect(inventory.equippedItems.helm).toBeNull();
+    expect(inventory.items.find((i) => i.id === potion.id)?.slotKey).toBe(slotBefore);
   });
 });
 
 describe('legacy inventory characterization: putToInventory', () => {
-  it('refuses the hand and throws on an unknown key (the engine grant must reject instead)', () => {
+  it('refuses the hand and an unknown key with a message instead of throwing', () => {
     const inventory = freshStore();
     expect(inventory.putToInventory(HEXOBJECT_KEYS.HAND).ok).toBe(false);
-    expect(() => inventory.putToInventory('no-such-key' as never)).toThrow(/Unknown Hexobject key/);
+    expect(inventory.putToInventory('no-such-key' as never)).toEqual({
+      ok: false,
+      message: 'Unknown hexobject prototype: no-such-key',
+    });
   });
 
   it('merges into an existing stack and sets isNew', () => {

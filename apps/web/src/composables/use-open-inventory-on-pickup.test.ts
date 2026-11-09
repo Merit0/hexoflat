@@ -40,8 +40,8 @@ describe('useOpenInventoryOnPickup', () => {
     effectScope().run(() => useOpenInventoryOnPickup(onPickup));
 
     const axe = inventory.items.find((item) => item.key === HEXOBJECT_KEYS.AXE)!;
-    axe.slotKey = 'r0c3';
-    inventory.removeItem(axe.id);
+    inventory.moveItemToSlot(axe.id, 'r0c3');
+    inventory.takeFromInventory(HEXOBJECT_KEYS.AXE, 1);
 
     expect(onPickup).not.toHaveBeenCalled();
   });

@@ -153,12 +153,6 @@ function applyUnlock(state: InventoryState): InventoryApplyResult {
   return commit(state, applyAggregate(state, result.next), state.idSeq, [event]);
 }
 
-/**
- * Pure orchestration: checks the hero and revision, then asks the matching `plan*` rule. A
- * refusal returns the very same state plus one `ITEM_TRANSFER_REJECTED`; a success bumps the
- * revision and emits the specific event followed by `INVENTORY_CHANGED`. A `noop` plan changes
- * nothing, so the revision stays.
- */
 export function applyInventoryCommand(
   state: InventoryState | undefined,
   command: InventoryCommand,

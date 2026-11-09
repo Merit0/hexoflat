@@ -26,7 +26,6 @@ export interface LegacyStash {
 
 export interface MigratedInventory {
   state: InventoryState;
-  /** Valid items that fitted nowhere (bag and open chests full); empty in practice. */
   overflow: InventoryStateItem[];
 }
 
@@ -103,13 +102,6 @@ function placeStashItems(state: InventoryState, stash: LegacyStash, seen: Set<st
   }
 }
 
-/**
- * Turns the two legacy saves (bag + hands, camp stash) into one `InventoryState`. Pure: the
- * inputs are never changed. `null` for a save means "never saved", which grants the starter
- * set exactly as the legacy hydrate did. Hand placeholders are dropped (an empty hand is
- * `null`), items on the Will cell or on a taken/unknown cell move to the first free cell,
- * unknown keys, bad amounts and repeated ids are discarded.
- */
 export function migrateLegacyInventory(
   heroId: string,
   legacyBag: LegacyBag | null,

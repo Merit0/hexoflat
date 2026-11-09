@@ -7,7 +7,6 @@ import { inventoryStateSchema } from '@hexoflat/engine/inventory/inventory-state
 import { migrateLegacyInventory } from '@hexoflat/engine/inventory/inventory-migration';
 import { useHeroInventoryStore, WILL_SLOT_KEY } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
-import { bagSlotKeys } from './inventory-aggregate';
 
 function migrateFromStores() {
   const inventory = useHeroInventoryStore();
@@ -33,7 +32,11 @@ describe('InventoryState reads the same picture as the legacy stores', () => {
 
   it('shares the bag cell order with the web grid', () => {
     const { inventory } = migrateFromStores();
-    expect(bagSlotKeys(inventory.grid, WILL_SLOT_KEY)).toEqual([...BAG_SLOT_KEYS]);
+    const addressable = inventory.allSlotKeys.filter((key) => {
+      const [, row, col] = /^r(\d+)c(\d+)$/.exec(key)!.map(Number);
+      return key !== WILL_SLOT_KEY && !inventory.isCellBlocked(row, col);
+    });
+    expect(addressable).toEqual([...BAG_SLOT_KEYS]);
   });
 
   it('matches cell by cell for a new hero', () => {

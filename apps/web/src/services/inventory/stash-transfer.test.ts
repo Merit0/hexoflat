@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
-import { readSavedStash } from '@/services/persistence/stash-storage';
+import { readInventoryRecord } from '@/services/persistence/inventory-record-storage';
 import {
   autoPlaceItem,
   moveItem,
@@ -51,7 +51,7 @@ describe('stash transfers on the real stores', () => {
     expect(inventory.countItem(K.HEALTH_BOTTLE)).toBe(0);
     expect(stash.cells[5]).toMatchObject({ id, amount: 3, slotKey: 'stash:5' });
     expect(occurrences(id)).toBe(1);
-    expect(readSavedStash()?.cells[5]?.id).toBe(id);
+    expect(readInventoryRecord().stash?.cells[5]?.id).toBe(id);
   });
 
   it('refuses while the stash is closed and leaves both stores alone', () => {
@@ -142,7 +142,7 @@ describe('stash transfers on the real stores', () => {
     expect(stash.ownedCells).toHaveLength(42);
     expect(inventory.equippedItems.weapon).toMatchObject({ key: K.COINS, amount: 40 });
     expect(stash.activeChest).toBe(0);
-    expect(readSavedStash()?.chests).toBe(1);
+    expect(readInventoryRecord().stash?.chests).toBe(1);
   });
 
   it('keeps the starter gear of a locked first chest when it is paid for before the stash was ever opened', () => {
@@ -157,7 +157,7 @@ describe('stash transfers on the real stores', () => {
 
     const keys = stash.ownedCells.flatMap((cell) => (cell ? [cell.key] : []));
     expect(keys.sort()).toEqual([K.AXE, K.PICKAXE, K.SHIELD, K.SWORD].sort());
-    expect(readSavedStash()?.cells.filter(Boolean)).toHaveLength(4);
+    expect(readInventoryRecord().stash?.cells.filter(Boolean)).toHaveLength(4);
   });
 
   it('gives the bare hand back when the stack is exactly the price', () => {

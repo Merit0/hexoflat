@@ -14,7 +14,6 @@ function slim(item: InventoryItem | null): InventoryStateItem | null {
   return { id, key, type, ...(stackKey ? { stackKey } : {}), amount };
 }
 
-/** The rules' view: the stash holds only the cells of the chests that are open. */
 export function toAggregate(state: InventoryState): IInventoryAggregate {
   const equip = {} as TEquipment;
   for (const slot of EQUIP_SLOTS) equip[slot] = widen(state.equip[slot]);
@@ -25,11 +24,6 @@ export function toAggregate(state: InventoryState): IInventoryAggregate {
   };
 }
 
-/**
- * Writes the rules' result back. Cells of chests that were closed before the command keep what
- * they held (the starter gear waits in the locked first chest), so only the open cells are
- * replaced. Pure: `state` is not touched.
- */
 export function applyAggregate(state: InventoryState, agg: IInventoryAggregate): InventoryState {
   const equip = {} as InventoryState['equip'];
   for (const slot of EQUIP_SLOTS) equip[slot] = slim(agg.equip[slot]);

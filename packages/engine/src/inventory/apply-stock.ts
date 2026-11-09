@@ -7,11 +7,6 @@ import { countItem, planConsume, planGrant } from './plan-stock';
 
 export type GrantSource = GrantItemCommand['payload']['source'];
 
-/**
- * What an action finisher sees instead of an inventory port: the hero's state and the events
- * the finisher produced. `applyCommand` fills it from `HexEngineState.inventory` and writes the
- * result back, so a pickup or a spent scroll is one more validated change of the same state.
- */
 export interface IInventoryDraft {
   current: InventoryState | undefined;
   events: DomainEvent[];
@@ -122,7 +117,6 @@ function checked(
   };
 }
 
-/** The public `GRANT_ITEM`: same rule as a pickup, but the caller states the revision it saw. */
 export function applyGrantItem(state: InventoryState | undefined, command: GrantItemCommand) {
   const { key, amount, source } = command.payload;
   const early = checked(state, command.payload, 'ITEM_GRANT_REJECTED', key);

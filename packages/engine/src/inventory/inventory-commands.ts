@@ -111,7 +111,6 @@ export type InventoryCommand =
   | SortStashCommand
   | UnlockStashChestCommand;
 
-/** Supplied by the state owner, never taken from a player's command payload. */
 export interface InventoryContext {
   stashOpen: boolean;
   battleOpen: boolean;

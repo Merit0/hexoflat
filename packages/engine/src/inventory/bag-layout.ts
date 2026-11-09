@@ -21,7 +21,6 @@ function buildBagSlotKeys(): readonly string[] {
   return keys;
 }
 
-/** The addressable bag cells in reading order; the index in this list is the cell index in `InventoryState.bag`. */
 export const BAG_SLOT_KEYS: readonly string[] = buildBagSlotKeys();
 export const BAG_CAPACITY = BAG_SLOT_KEYS.length;
 

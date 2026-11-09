@@ -157,6 +157,7 @@ export function applyCommand(
 
     case 'BATTLE':
       events.push(...applyBattleState(state, parsed));
+      draft.current = state.inventory;
       break;
 
     case 'MOVE_ITEM':

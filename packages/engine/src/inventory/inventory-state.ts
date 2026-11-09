@@ -76,7 +76,6 @@ export function nextItemId(state: Pick<InventoryState, 'heroId' | 'idSeq'>): str
   return `${state.heroId}:${state.idSeq}`;
 }
 
-/** Builds a fresh item with a deterministic id and bumps `idSeq` on the (draft) state. */
 export function mintItem(
   state: Pick<InventoryState, 'heroId' | 'idSeq'>,
   key: THexobjectKey,
@@ -110,7 +109,6 @@ export function emptyInventoryState(heroId: string): InventoryState {
   };
 }
 
-/** The starter Return Scrolls: stacks filled from the end of the bag, like the legacy hero. */
 export function grantStarterScrolls(state: InventoryState): void {
   const key = HEXOBJECT_KEYS.RETURN_SCROLL;
   const stackSize = getMeta(key)?.traits?.maxStack ?? STARTER_SCROLL_COUNT;
@@ -122,12 +120,23 @@ export function grantStarterScrolls(state: InventoryState): void {
   });
 }
 
-/** The starter gear in the first free cells of the first chest; marks the gift as given. */
-export function grantStarterGear(state: InventoryState, firstChestCells: number): void {
+export function placeStarterGear<T>(
+  cells: readonly (T | null)[],
+  firstChestCells: number,
+  make: (key: THexobjectKey, index: number) => T,
+): (T | null)[] {
+  const next = cells.slice();
   for (const key of STARTER_STASH_ITEMS) {
-    const free = state.stash.cells.slice(0, firstChestCells).findIndex((cell) => cell === null);
-    if (free !== -1) state.stash.cells[free] = mintItem(state, key, 1);
+    const free = next.slice(0, firstChestCells).findIndex((cell) => cell === null);
+    if (free !== -1) next[free] = make(key, free);
   }
+  return next;
+}
+
+export function grantStarterGear(state: InventoryState, firstChestCells: number): void {
+  state.stash.cells = placeStarterGear(state.stash.cells, firstChestCells, (key) =>
+    mintItem(state, key, 1),
+  );
   state.stash.starterGiven = true;
 }
 
