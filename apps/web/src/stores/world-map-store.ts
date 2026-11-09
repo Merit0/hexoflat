@@ -40,6 +40,7 @@ import {
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
 import { getStream, getWorldSeed, reseedWorld } from '@/services/rng/world-rng';
 import { worldLoop } from '@/services/world/world-loop';
+
 import {
   initFog as initMapFog,
   revealAroundHero as revealFogAroundHero,

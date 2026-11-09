@@ -248,6 +248,46 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     ).toBe(true);
   });
 
+  it('builds a location on request without moving the hero, and keeps it', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const a = (await world.ensure(userId, heroId, 'silesia')) as { mapId: string };
+    const b = (await world.ensure(userId, heroId, 'silesia')) as { mapId: string };
+    expect(b.mapId).toBe(a.mapId);
+    const presence = (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+      presence: unknown;
+    };
+    expect(presence.presence).toBeNull();
+    await expect(world.ensure(randomUUID(), heroId, 'silesia')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+  });
+
+  it('adopts a world the client changed, only outside production, and replaces the old map of the location', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const built = (await world.ensure(userId, heroId, 'camping')) as Record<string, unknown>;
+    const changed = { ...built, mapId: randomUUID() };
+    await world.adopt(userId, heroId, changed);
+    const again = (await world.ensure(userId, heroId, 'camping')) as { mapId: string };
+    expect(again.mapId).toBe(changed.mapId);
+    const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+    expect(
+      await readServerDocument(kit.db, expeditionId, `srv-world:${built.mapId as string}`),
+    ).toBeNull();
+
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      await expect(world.adopt(userId, heroId, changed)).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+    } finally {
+      process.env.NODE_ENV = previous;
+    }
+    await expect(world.adopt(userId, heroId, { nonsense: true })).rejects.toMatchObject({
+      code: 'INVALID_COMMAND',
+    });
+  });
+
   it('refuses unknown fields and other accounts', async () => {
     const mine = await kit.newPlayer();
     const other = await kit.newPlayer();

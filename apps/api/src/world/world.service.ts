@@ -9,6 +9,7 @@ import {
   deserializeWorld,
   isWorldCommandType,
   serializeWorld,
+  serializedWorldSchema,
   stepWorld,
   tickWorld,
   type DomainEvent,
@@ -22,6 +23,7 @@ import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
 import {
+  deleteServerDocument,
   ensureExpedition,
   expeditionSeed,
   lockExpedition,
@@ -51,6 +53,7 @@ export interface WorldResponse {
   replayed?: boolean;
   events: DomainEvent[];
   tileDiffs: TileDiff[];
+  engagement?: unknown;
   hero: {
     locationKey: string;
     mapId: string;
@@ -302,6 +305,7 @@ export class WorldService {
       result: 'applied',
       events: outcome.events,
       tileDiffs: outcome.tileDiffs,
+      engagement: outcome.world.engagement,
       hero: {
         locationKey: outcome.world.locationKey,
         mapId: outcome.world.mapId,
@@ -309,6 +313,74 @@ export class WorldService {
       },
       aggregates: { inventory: projectAggregate(inventory), ...aggregates },
     };
+  }
+
+  /**
+   * The map of a location, built on first use and kept. Does not move the hero, so a client can
+   * fetch every location it may walk into before it needs one (it loads synchronously).
+   */
+  async ensure(userId: string, heroId: string, locationKey: LocationKey): Promise<unknown> {
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    const expeditionId = await ensureExpedition(this.db, userId, heroId);
+    return this.db.transaction(async (tx) => {
+      await lockExpedition(tx, expeditionId);
+      const index = await readIndex(tx, expeditionId);
+      const known = index[locationKey];
+      const existing = known ? await readServerDocument(tx, expeditionId, worldKey(known)) : null;
+      if (existing) return JSON.parse(existing) as unknown;
+      const mapId = randomUUID();
+      const created = createServerWorld(
+        locationKey,
+        mapId,
+        await expeditionSeed(tx, expeditionId),
+        heroId,
+      );
+      await saveWorld(tx, expeditionId, created);
+      index[locationKey] = mapId;
+      await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
+      return serializeWorld(created);
+    });
+  }
+
+  /**
+   * Dev and sandbox only, temporary until D4b-3 and D4b-4: the world changes that still happen on
+   * the client (a portal, a crossing, a respawn, the dev tools) hand the server the map they made.
+   * A production server refuses it, so those changes only work where the dev commands do.
+   */
+  async adopt(userId: string, heroId: string, raw: unknown): Promise<void> {
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    if (process.env.NODE_ENV === 'production' && !hero.isSandbox) {
+      throw new PlayerCommandError('FORBIDDEN');
+    }
+    const parsed = serializedWorldSchema.safeParse(raw);
+    if (!parsed.success) throw new PlayerCommandError('INVALID_COMMAND');
+    const expeditionId = await ensureExpedition(this.db, userId, heroId);
+    await this.db.transaction(async (tx) => {
+      await createInitialAggregates(tx, heroId);
+      const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      await lockExpedition(tx, expeditionId);
+      const index = await readIndex(tx, expeditionId);
+      const { locationKey, mapId } = parsed.data;
+      const previous = index[locationKey];
+      index[locationKey] = mapId;
+      await writeServerDocument(tx, expeditionId, worldKey(mapId), JSON.stringify(parsed.data));
+      await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
+      if (previous && previous !== mapId) {
+        await deleteServerDocument(tx, expeditionId, worldKey(previous));
+      }
+      const progress = loaded.progress;
+      if (progress && parsed.data.heroCoordinates) {
+        const next = structuredClone(progress.state);
+        next.presence = {
+          locationKey,
+          mapId,
+          coordinates: { ...parsed.data.heroCoordinates },
+        };
+        await saveAggregate(tx, heroId, 'progress', progress.revision, next);
+      }
+    });
   }
 
   /** The whole map the hero is on, for the client to draw. Never changes anything. */

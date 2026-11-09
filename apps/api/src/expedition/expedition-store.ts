@@ -99,6 +99,17 @@ export async function writeServerDocument(
     });
 }
 
+export async function deleteServerDocument(
+  tx: Tx,
+  expeditionId: string,
+  key: string,
+): Promise<void> {
+  if (!SERVER_KEY_PATTERN.test(key)) throw new ExpeditionError('BAD_KEY');
+  await tx
+    .delete(expeditionBlobs)
+    .where(and(eq(expeditionBlobs.expeditionId, expeditionId), eq(expeditionBlobs.key, key)));
+}
+
 export async function lockExpedition(tx: Tx, expeditionId: string): Promise<void> {
   await tx
     .select({ id: expeditions.id })

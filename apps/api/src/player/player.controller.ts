@@ -1,7 +1,23 @@
-import { Controller, ForbiddenException, Get, Inject, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  ConflictException,
+  Controller,
+  ForbiddenException,
+  Get,
+  Headers,
+  Inject,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { z } from 'zod';
+import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
 import { JwtAuthGuard, type AuthenticatedRequest } from '../auth/jwt-auth.guard';
 import { HeroesService } from '../heroes/heroes.service';
 import { WorldService } from '../world/world.service';
+import { HERO_SESSIONS, type HeroSessions } from './hero-sessions';
 import { PlayerCommandService } from './player-command.service';
 import { PlayerCommandError } from './player-command.types';
 
@@ -12,6 +28,7 @@ export class PlayerController {
     @Inject(PlayerCommandService) private readonly commands: PlayerCommandService,
     @Inject(HeroesService) private readonly heroes: HeroesService,
     @Inject(WorldService) private readonly world: WorldService,
+    @Inject(HERO_SESSIONS) private readonly sessions: HeroSessions,
   ) {}
 
   @Post('dev/reset')
@@ -32,6 +49,47 @@ export class PlayerController {
       return await this.world.snapshot(request.user.sub, hero.id);
     } catch (error) {
       if (error instanceof PlayerCommandError) throw new ForbiddenException({ code: error.code });
+      throw error;
+    }
+  }
+
+  @Post('world/ensure')
+  async ensureWorld(
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-player-session') sessionToken: string | undefined,
+    @Body() body: unknown,
+  ) {
+    const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
+    if (!this.sessions.isValidToken(hero.id, sessionToken)) {
+      throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
+    }
+    const parsed = z
+      .object({ locationKey: z.enum(LOCATION_KEYS) })
+      .strict()
+      .safeParse(body);
+    if (!parsed.success) throw new BadRequestException({ code: 'INVALID_COMMAND' });
+    return this.world.ensure(request.user.sub, hero.id, parsed.data.locationKey);
+  }
+
+  @Put('world')
+  async adoptWorld(
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-player-session') sessionToken: string | undefined,
+    @Body() body: unknown,
+  ) {
+    const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
+    if (!this.sessions.isValidToken(hero.id, sessionToken)) {
+      throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
+    }
+    try {
+      await this.world.adopt(request.user.sub, hero.id, body);
+      return { ok: true };
+    } catch (error) {
+      if (error instanceof PlayerCommandError) {
+        throw error.code === 'FORBIDDEN'
+          ? new ForbiddenException({ code: error.code })
+          : new BadRequestException({ code: error.code });
+      }
       throw error;
     }
   }
