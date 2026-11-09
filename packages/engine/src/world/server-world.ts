@@ -59,7 +59,7 @@ export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   return {
     locationKey: parsed.locationKey,
     mapId: parsed.mapId,
-    map: HexMapModel.fromJSON(parsed.map, now),
+    map: HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true }),
     descriptor: parsed.descriptor as BoardDescriptor | null,
     heroCoordinates: parsed.heroCoordinates,
     worldSeed: parsed.worldSeed,

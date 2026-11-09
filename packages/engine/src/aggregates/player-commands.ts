@@ -72,14 +72,6 @@ export const SpendWillCommandSchema = z.object({
     heroId: z.string().min(1),
     revision: z.number().int().nonnegative(),
     spend: z.discriminatedUnion('kind', [
-      z.object({
-        kind: z.literal('action'),
-        hexobjectKey: z
-          .string()
-          .refine((key) => key !== 'hand' && KNOWN_KEYS.has(key), 'unknown hexobject key'),
-        actionType: z.enum(EHexActionType),
-        coordinates: coordinatesSchema,
-      }),
       z.object({ kind: z.literal('portal'), target: coordinatesSchema }),
     ]),
   }),

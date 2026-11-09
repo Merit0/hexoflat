@@ -18,6 +18,10 @@ const clientHint = z
           .string()
           .refine((key) => KNOWN_KEYS.has(key), 'unknown tool')
           .nullable(),
+        durability: z
+          .object({ current: z.number().min(0).max(100000), max: z.number().min(0).max(100000) })
+          .strict()
+          .optional(),
       })
       .strict(),
     health: z

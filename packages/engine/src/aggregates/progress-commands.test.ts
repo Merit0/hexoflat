@@ -49,12 +49,18 @@ const step = (revision: number, columnIndex: number, rowIndex: number) =>
   });
 
 function run(aggregates: PlayerAggregates, command: PlayerCommand) {
-  const outcome = executePlayerCommand(aggregates, command, CTX);
+  const ctx = command.type === 'ARRIVE' ? { ...CTX, devGrantAllowed: true } : CTX;
+  const outcome = executePlayerCommand(aggregates, command, ctx);
   if (!outcome.ok) return { outcome, aggregates };
   return { outcome, aggregates: { ...aggregates, ...outcome.changed } };
 }
 
 describe('ARRIVE and steps', () => {
+  it('is a dev fixture: a player context refuses to be told where the hero stands', () => {
+    const outcome = executePlayerCommand(fresh(), arrive('silesia', 3, 4), CTX);
+    expect(outcome).toMatchObject({ ok: false, code: 'FORBIDDEN' });
+  });
+
   it('remembers where the hero stands', () => {
     const { aggregates } = run(fresh(), arrive('silesia', 5, 5));
     expect(aggregates.progress.presence).toMatchObject({
@@ -253,20 +259,6 @@ describe('skills on the server', () => {
 });
 
 describe('SPEND_WILL: the price comes from content and the location, never from the player', () => {
-  const spendAction = (revision: number, hexobjectKey: string, actionType: string) =>
-    parse({
-      type: 'SPEND_WILL',
-      payload: {
-        heroId: HERO,
-        revision,
-        spend: {
-          kind: 'action',
-          hexobjectKey,
-          actionType,
-          coordinates: { columnIndex: 4, rowIndex: 4 },
-        },
-      },
-    });
   const spendPortal = (revision: number) =>
     parse({
       type: 'SPEND_WILL',
@@ -277,56 +269,6 @@ describe('SPEND_WILL: the price comes from content and the location, never from 
       },
     });
   const inSilesia = () => run(fresh(), arrive('silesia', 4, 5)).aggregates;
-
-  it('charges the 2 Will printed on the cave entrance where Will is charged', () => {
-    const { outcome, aggregates } = run(inSilesia(), spendAction(0, 'cave-entrance', 'ENTER'));
-    expect(outcome.ok && outcome.events.map((e) => e.type)).toEqual(['WILL_SPENT']);
-    expect(outcome.ok && outcome.events[0].payload).toMatchObject({ amount: 2, reason: 'entry' });
-    expect(aggregates.progress.knowledge.current).toBe(18);
-    expect(aggregates.progress.knowledge.revision).toBe(1);
-  });
-
-  it('charges nothing in the camp, and nothing for an action that is free', () => {
-    const camp = run(fresh(), arrive('camping', 4, 5)).aggregates;
-    expect(
-      run(camp, spendAction(0, 'cave-entrance', 'ENTER')).aggregates.progress.knowledge.current,
-    ).toBe(20);
-    expect(
-      run(inSilesia(), spendAction(0, 'camping-entrance', 'ENTER')).aggregates.progress.knowledge
-        .current,
-    ).toBe(20);
-  });
-
-  it('refuses with too little Will and keeps the Will', () => {
-    const state = inSilesia();
-    state.progress.knowledge.current = 1;
-    const { outcome, aggregates } = run(state, spendAction(0, 'cave-entrance', 'ENTER'));
-    expect(outcome).toMatchObject({ ok: false, code: 'INSUFFICIENT_WILL' });
-    expect(aggregates.progress.knowledge.current).toBe(1);
-  });
-
-  it('refuses a stale revision, an unknown key and an unknown action at the schema', () => {
-    expect(run(inSilesia(), spendAction(9, 'cave-entrance', 'ENTER')).outcome).toMatchObject({
-      ok: false,
-    });
-    const bad = (key: string, actionType: string) => ({
-      type: 'SPEND_WILL',
-      payload: {
-        heroId: HERO,
-        revision: 0,
-        spend: {
-          kind: 'action',
-          hexobjectKey: key,
-          actionType,
-          coordinates: { columnIndex: 1, rowIndex: 1 },
-        },
-      },
-    });
-    expect(PLAYER_COMMAND_SCHEMAS.SPEND_WILL.safeParse(bad('laser', 'ENTER')).success).toBe(false);
-    expect(PLAYER_COMMAND_SCHEMAS.SPEND_WILL.safeParse(bad('cave-entrance', 'FLY')).success).toBe(
-      false,
-    );
-  });
 
   it('prices a portal by the Teleport skill alone: refused without it, 10 at rank 1', () => {
     expect(run(inSilesia(), spendPortal(0)).outcome).toMatchObject({

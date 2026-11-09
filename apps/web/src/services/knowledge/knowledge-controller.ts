@@ -1,4 +1,4 @@
-import { applyCommand, type HexEngineActionContext, type HexEngineState } from '@hexoflat/engine';
+import type { HexEngineActionContext, HexEngineState } from '@hexoflat/engine';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
@@ -13,6 +13,12 @@ import type { PortalLocation } from '@hexoflat/engine/portal/portal-rules';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { ensurePresence, sendProgress } from '@/services/inventory/inventory-sync';
+import { actOnServerWorld } from '@/services/world/served-world';
+import { getMeta } from '@hexoflat/engine';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
+import { closePortalIfOpen } from '@hexoflat/engine/portal/apply-portal';
+import type { WorldClientHint } from '@hexoflat/engine/world/server-ports';
+import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import { inventorySession, type ServerPresence } from '@/services/inventory/inventory-session';
 
 export { canReachBook as isAtKnowledgeBook } from '@hexoflat/engine/knowledge/camp-book';
@@ -26,6 +32,8 @@ export interface KnowledgeHost {
   hero: HeroState;
   location: PortalLocation;
   isCurrent(): boolean;
+  clientHint(): WorldClientHint;
+  applyWorldResult(result: WorldCommandResult): void;
 }
 
 function presenceOf(host: Omit<KnowledgeHost, 'state'>): ServerPresence | null {
@@ -74,42 +82,73 @@ export interface SquadHostState {
   engagement?: Engagement;
 }
 
+function blockedGate(
+  host: Omit<KnowledgeHost, 'state'>,
+  command: StartHexActionCommand,
+): DomainEvent | null {
+  const { coordinates, actionType } = command.payload;
+  if (actionType !== EHexActionType.ENTER) return null;
+  const key = host.map.tiles.find(
+    (tile) =>
+      tile.coordinates.columnIndex === coordinates.columnIndex &&
+      tile.coordinates.rowIndex === coordinates.rowIndex,
+  )?.hexobject?.hexobjectKey;
+  const enter = key ? getMeta(key)?.enter : undefined;
+  if (enter?.type !== 'WORLD') return null;
+  const world = host.engineContext.worldMap;
+  const rejected = (message: string): DomainEvent => ({
+    type: 'HEX_ACTION_START_REJECTED',
+    payload: { coordinates, actionType, message },
+  });
+  if (world.combatActive) return rejected('Cannot leave the map during combat!');
+  if (!world.isLocationRespawning(enter.locationKey)) return null;
+  const seconds = Math.ceil(world.getLocationRespawnRemainingMs(enter.locationKey) / 1000);
+  return rejected(`Opens in ${seconds}s`);
+}
+
+function enteredGate(host: Omit<KnowledgeHost, 'state'>, command: StartHexActionCommand) {
+  const { coordinates } = command.payload;
+  const key = host.map.tiles.find(
+    (tile) =>
+      tile.coordinates.columnIndex === coordinates.columnIndex &&
+      tile.coordinates.rowIndex === coordinates.rowIndex,
+  )?.hexobject?.hexobjectKey;
+  const enter = key ? getMeta(key)?.enter : undefined;
+  return enter?.type === 'WORLD' ? enter.locationKey : null;
+}
+
 export async function dispatchHexAction(
   host: Omit<KnowledgeHost, 'state'>,
   command: StartHexActionCommand,
   held: SquadHostState = {},
 ) {
-  let events: DomainEvent[] = [];
-  let after: SquadHostState = held;
   const known = inventorySession.knowledge;
-  if (!known || !host.isCurrent()) return { state: known, events, hero: host.hero, held: after };
+  if (!known || !host.isCurrent()) return { state: known, events: [], hero: host.hero, held };
+  const blocked = blockedGate(host, command);
+  if (blocked) return { state: known, events: [blocked], hero: host.hero, held };
 
-  await ensurePresence(presenceOf(host));
-  const { coordinates, actionType } = command.payload;
-  const hexobjectKey = host.map.tiles.find(
-    (tile) =>
-      tile.coordinates.columnIndex === coordinates.columnIndex &&
-      tile.coordinates.rowIndex === coordinates.rowIndex,
-  )?.hexobject?.hexobjectKey;
+  const { coordinates, actionType, toolKey } = command.payload;
+  const from = host.context.coordinates ?? host.hero.coordinates;
+  const result = await actOnServerWorld(
+    { locationKey: host.context.locationKey as LocationKey, mapId: host.context.mapId, from },
+    { coordinates, actionType, toolKey },
+    host.clientHint(),
+  );
+  const stale = !host.isCurrent();
+  const gate = actionType === EHexActionType.ENTER ? enteredGate(host, command) : null;
+  if (!stale) host.applyWorldResult(result);
 
-  const working = structuredClone(inventorySession.knowledge ?? known);
-  const world: HexEngineState = {
-    map: host.map,
-    heroes: { [host.hero.id]: host.hero },
-    knowledge: working,
-    knowledgeContext: host.context,
-    location: host.location,
-    battle: held.battle,
-    engagement: held.engagement,
-  };
-  events = applyCommand(world, command, host.engineContext).events;
-  after = { battle: world.battle, engagement: world.engagement };
-
-  if (events.some((event) => event.type === 'WILL_SPENT') && hexobjectKey) {
-    const result = await sendProgress('SPEND_WILL', {
-      spend: { kind: 'action', hexobjectKey, actionType, coordinates: { ...coordinates } },
-    });
-    return { state: result.knowledge, events, hero: host.hero, held: after };
+  const events = [...result.events];
+  const started = events.some((event) => event.type === 'HEX_ACTION_STARTED');
+  if (started && gate && !stale) {
+    const world: HexEngineState = { map: host.map, heroes: { [host.hero.id]: host.hero } };
+    events.push(...closePortalIfOpen(world, host.hero.id, { kind: 'GATE' }));
+    host.engineContext.worldMap.goToLocation(gate);
+    host.engineContext.navigate?.(gate);
   }
+  const engaged = events.some((event) => event.type === 'BATTLE_REQUESTED');
+  const after: SquadHostState = engaged
+    ? { battle: held.battle, engagement: result.engagement ?? undefined }
+    : held;
   return { state: inventorySession.knowledge, events, hero: host.hero, held: after };
 }

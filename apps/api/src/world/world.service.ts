@@ -278,7 +278,7 @@ export class WorldService {
           : tickWorld(run);
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
-      return respond('rejected', outcome.code, outcome.events, [], world);
+      return respond('rejected', outcome.code, outcome.events, [], world, outcome.effects);
     }
 
     const saved = await saveAggregate(tx, heroId, 'progress', progress.revision, outcome.progress);

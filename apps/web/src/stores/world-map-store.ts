@@ -9,7 +9,8 @@ import {
   rememberServerWorld,
 } from '@/services/player/world-sync';
 import type { ServerWorld } from '@hexoflat/engine/world/server-world';
-import { readCachedWorld, serverWorldJson, stepOnServerWorld } from '@/services/world/served-world';
+import { readCachedWorld } from '@/services/world/served-world';
+import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { installCampBook } from '@hexoflat/engine/knowledge/camp-book';
 import { defineStore } from 'pinia';
@@ -34,7 +35,7 @@ import {
   routeToLocation,
 } from '@/services/world/location-navigator';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
-import { CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
+import { CONTENT_VERSION } from '@hexoflat/engine';
 import type { HexEngineActionContext } from '@hexoflat/engine';
 import type { IWorldMapPort } from '@hexoflat/engine/abstraction/abstract-action';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -87,6 +88,12 @@ import {
   devRegenerateDungeon as devRegenerateDungeonAction,
   type DevRecipeParams,
 } from '@/stores/dev-board-panel-actions';
+import {
+  applyWorldResultAction,
+  serverTickAction,
+  serverWorldJsonOfHost,
+  stepOnServerAction,
+} from '@/stores/server-world-actions';
 import { placeHeroOnArrivalAction } from '@/stores/arrival-action';
 import { respawnHeroAtCampingAction } from '@/stores/camp-respawn-action';
 import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
@@ -406,33 +413,19 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     serverWorldJson(engagement?: Engagement | null): string | null {
-      if (!this.map || !this.currentMapId) return null;
-      return serverWorldJson({
-        locationKey: this.currentLocationKey,
-        mapId: this.currentMapId,
-        map: this.map as HexMapModel,
-        descriptor: this.descriptor,
-        heroCoordinates: useHeroStore().heroCoordinates,
-        worldSeed: getWorldSeed(),
-        engagement: engagement === undefined ? (useBattleStore().engagement ?? null) : engagement,
-      });
+      const held = engagement === undefined ? (useBattleStore().engagement ?? null) : engagement;
+      return serverWorldJsonOfHost(this, useHeroStore().heroCoordinates, held);
     },
 
     queueServerWorld(force = false) {
-      if (!isServerWorldMode() || !this.currentMapId) return;
       const json = this.serverWorldJson();
-      if (json) queueWorldPush(this.currentLocationKey, this.currentMapId, json, { force });
+      if (json && isServerWorldMode() && this.currentMapId) {
+        queueWorldPush(this.currentLocationKey, this.currentMapId, json, { force });
+      }
     },
 
-    async stepOnServer(coordinates: IHexCoordinates) {
-      const from = useHeroStore().heroCoordinates;
-      if (!this.map || !this.currentMapId || !from) {
-        return { ok: false, code: 'NO_WORLD', ambush: null, changed: [] };
-      }
-      const at = { locationKey: this.currentLocationKey, mapId: this.currentMapId, from };
-      const outcome = await stepOnServerWorld({ ...at, map: this.map as HexMapModel }, coordinates);
-      this.markTilesDirty(outcome.changed);
-      return outcome;
+    stepOnServer(coordinates: IHexCoordinates) {
+      return stepOnServerAction(this, useHeroStore(), coordinates);
     },
 
     rebuildStaticIfDrawingChanged(locationKey: LocationKey, mapId: string) {
@@ -486,12 +479,9 @@ export const useWorldMapStore = defineStore('world-map-store', {
         const hydratedMap = this.map as HexMapModel;
         this.hydrateResourcesFromConfig();
 
-        const changed = runWorldTick(
-          hydratedMap,
-          loadedAt,
-          this.buildEngineContext(),
-          useHeroStore().hero.id,
-        );
+        const changed =
+          !served &&
+          runWorldTick(hydratedMap, loadedAt, this.buildEngineContext(), useHeroStore().hero.id);
         if (changed) this.markAllTilesDirty();
       } else {
         this.map = null;
@@ -549,9 +539,18 @@ export const useWorldMapStore = defineStore('world-map-store', {
       }
     },
 
+    applyWorldResult(result: WorldCommandResult) {
+      applyWorldResultAction(this, useHeroStore(), result);
+    },
+
+    serverTick() {
+      return serverTickAction(this, useHeroStore());
+    },
+
     startWorldLoop() {
       worldLoop.start(() => {
         if (!this.map || !this.currentMapId) return;
+        if (isServerWorldMode()) return void this.serverTick();
         const changed = runWorldTick(
           this.map as HexMapModel,
           Date.now(),

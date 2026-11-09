@@ -191,7 +191,11 @@ export default class HexMapModel implements IWorldMap {
     };
   }
 
-  public static fromJSON(raw: ISerializedHexMap, now: number): HexMapModel {
+  public static fromJSON(
+    raw: ISerializedHexMap,
+    now: number,
+    options: { keepUseActions?: boolean } = {},
+  ): HexMapModel {
     const map = new HexMapModel();
     map.name = raw.name;
     map.width = raw.width;
@@ -221,7 +225,7 @@ export default class HexMapModel implements IWorldMap {
     // resources whose respawn timer already elapsed while the map was unloaded.
     for (const tile of map.tiles) {
       const action = tile.pendingAction;
-      if (action?.type === EHexActionType.USE) {
+      if (action?.type === EHexActionType.USE && !options.keepUseActions) {
         tile.pendingAction = null;
       }
 

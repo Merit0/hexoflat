@@ -8,7 +8,14 @@ import {
   type PlayerAggregates,
   type PlayerCommand,
 } from '@hexoflat/engine';
-import { deserializeWorld, stepWorld, type ServerWorld } from '@hexoflat/engine';
+import {
+  actWorld,
+  deserializeWorld,
+  stepWorld,
+  tickWorld,
+  type ServerWorld,
+  type WorldClientHint,
+} from '@hexoflat/engine';
 import type {
   HeroSnapshot,
   PlayerCommandResponse,
@@ -157,21 +164,39 @@ function handleWorld(envelope: PlayerEnvelope) {
       aggregates: snapshot().aggregates,
     };
   }
-  const payload = envelope.command.payload as { target: { columnIndex: number; rowIndex: number } };
-  const outcome = stepWorld(
-    {
-      world,
-      progress: s.progress.state,
-      inventory: s.inventory.state,
-      heroId: s.heroId,
-      now: Date.now(),
-    },
-    payload.target,
-  );
+  const payload = envelope.command.payload as {
+    target: { columnIndex: number; rowIndex: number };
+    coordinates: { columnIndex: number; rowIndex: number };
+    actionType: never;
+    toolKey: string;
+    client?: WorldClientHint;
+  };
+  const run = {
+    world,
+    progress: s.progress.state,
+    inventory: s.inventory.state,
+    heroId: s.heroId,
+    now: Date.now(),
+    client: payload.client,
+  };
+  const type = envelope.command.type;
+  const outcome =
+    type === 'WORLD_STEP'
+      ? stepWorld(run, payload.target)
+      : type === 'WORLD_ACTION'
+        ? actWorld(run, {
+            heroId: s.heroId,
+            coordinates: payload.coordinates,
+            actionType: payload.actionType,
+            toolKey: payload.toolKey,
+            now: run.now,
+          })
+        : tickWorld(run);
   if (!outcome.ok) {
     return {
       ...base,
       events: outcome.events,
+      effects: outcome.effects,
       result: 'rejected' as const,
       code: outcome.code,
       hero: null,
@@ -180,10 +205,14 @@ function handleWorld(envelope: PlayerEnvelope) {
   }
   world = outcome.world;
   s.progress = { revision: s.progress.revision + 1, state: outcome.progress };
+  if (outcome.inventory !== s.inventory.state) {
+    s.inventory = { revision: s.inventory.revision + 1, state: outcome.inventory };
+  }
   return {
     ...base,
     events: outcome.events,
     tileDiffs: outcome.tileDiffs,
+    effects: outcome.effects,
     engagement: outcome.world.engagement,
     result: 'applied' as const,
     hero: null,

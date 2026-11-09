@@ -36,7 +36,7 @@ export type WorldOutcome =
       tileDiffs: TileDiff[];
       effects: WorldEffect[];
     }
-  | { ok: false; code: string; events: DomainEvent[] };
+  | { ok: false; code: string; events: DomainEvent[]; effects: WorldEffect[] };
 
 function heroOf(run: WorldRun): HeroState | null {
   const { heroCoordinates } = run.world;
@@ -50,8 +50,12 @@ function heroOf(run: WorldRun): HeroState | null {
   };
 }
 
-function refuse(code: string, events: DomainEvent[] = []): WorldOutcome {
-  return { ok: false, code, events };
+function refuse(
+  code: string,
+  events: DomainEvent[] = [],
+  effects: WorldEffect[] = [],
+): WorldOutcome {
+  return { ok: false, code, events, effects };
 }
 
 function locationOf(world: ServerWorld) {
@@ -174,7 +178,7 @@ export function actWorld(run: WorldRun, command: StartHexActionCommand['payload'
     ctx,
   );
   if (events.some((event) => event.type === 'HEX_ACTION_START_REJECTED')) {
-    return refuse('ACTION_REJECTED', events);
+    return refuse('ACTION_REJECTED', events, effects);
   }
   world.engagement = state.engagement ?? world.engagement;
   return {

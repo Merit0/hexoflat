@@ -3,7 +3,7 @@ import type { DomainEvent } from '../commands/types';
 import type { THeroToolKey } from '../content/equipment.content';
 import type { TGameEventType } from '../abstraction/abstract-action';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
-import type { THexobjectKey } from '../registry/hexobjects-registry';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 
 export type WorldEffect =
   | { kind: 'lockTool'; coordinates: IHexCoordinates; endsAt: number }
@@ -19,7 +19,12 @@ export type WorldEffect =
   | { kind: 'heal'; amount: number };
 
 export interface WorldClientHint {
-  tool: { dragging: boolean; hover: IHexCoordinates | null; active: THeroToolKey | null };
+  tool: {
+    dragging: boolean;
+    hover: IHexCoordinates | null;
+    active: THeroToolKey | null;
+    durability?: { current: number; max: number };
+  };
   health: { current: number; max: number };
 }
 
@@ -35,6 +40,7 @@ export function createRecordingPorts(hint: WorldClientHint = NO_HINT): {
   const effects: WorldEffect[] = [];
   const health = { ...hint.health };
   let activeTool = hint.tool.active;
+  const durability = hint.tool.durability ? { ...hint.tool.durability } : null;
   const ctx: HexEngineActionContext = {
     heroToolStore: {
       isLocked: true,
@@ -50,7 +56,14 @@ export function createRecordingPorts(hint: WorldClientHint = NO_HINT): {
       },
       consumeDurability: (pct: number) => {
         effects.push({ kind: 'consumeDurability', pct });
-        return true;
+        if (!durability || !activeTool || activeTool === HEXOBJECT_KEYS.HAND) return true;
+        if (!Number.isFinite(pct) || pct <= 0) return true;
+        if (durability.max <= 0 || durability.current <= 0) return false;
+        durability.current = Math.max(
+          0,
+          durability.current - Math.max(1, Math.ceil(durability.max * pct)),
+        );
+        return durability.current > 0;
       },
       lockTool: (tile, endsAt) => {
         effects.push({ kind: 'lockTool', coordinates: { ...tile.coordinates }, endsAt });

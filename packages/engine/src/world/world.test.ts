@@ -248,3 +248,25 @@ describe('applying tile diffs to a client copy', () => {
     expect(withoutImages({ ...outcome.world, map: copy.map })).toBe(withoutImages(outcome.world));
   });
 });
+
+describe('a rest at a fire across commands', () => {
+  it('keeps the pending USE action when the world is saved and loaded', () => {
+    const world = createServerWorld('camping', 'map-rest', SEED, HERO);
+    const tile = world.map.tiles.find((t) => t.isRevealed && !t.hexobject)!;
+    tile.pendingAction = {
+      type: EHexActionType.USE,
+      startedAt: 1,
+      endsAt: 2,
+      hexobjectKey: HEXOBJECT_KEYS.FIREPLACE,
+      cancelled: false,
+      meta: { healAmount: 1 },
+    };
+    const loaded = deserializeWorld(serializeWorld(world), 0);
+    const same = loaded.map.tiles.find(
+      (t) =>
+        t.coordinates.columnIndex === tile.coordinates.columnIndex &&
+        t.coordinates.rowIndex === tile.coordinates.rowIndex,
+    );
+    expect(same?.pendingAction?.type).toBe(EHexActionType.USE);
+  });
+});

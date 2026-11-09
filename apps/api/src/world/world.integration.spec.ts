@@ -284,6 +284,31 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(full).toMatchObject({ result: 'rejected', effects: [] });
   });
 
+  it('reports the wear of a tool that breaks on this use even though the action is refused', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.TREE);
+    const refused = await send(userId, heroId, 'WORLD_ACTION', {
+      coordinates: spot,
+      actionType: EHexActionTypeForTests.CUT,
+      toolKey: HEXOBJECT_KEYS.AXE,
+      client: {
+        tool: {
+          dragging: true,
+          hover: spot,
+          active: HEXOBJECT_KEYS.AXE,
+          durability: { current: 1, max: 100 },
+        },
+        health: { current: 3, max: 3 },
+      },
+    });
+    expect(refused).toMatchObject({ result: 'rejected', code: 'ACTION_REJECTED' });
+    expect(refused.effects.map((effect) => effect.kind)).toEqual([
+      'consumeDurability',
+      'setActiveTool',
+    ]);
+  });
+
   it('refuses a client hint that carries anything else', async () => {
     const { userId, heroId } = await kit.newPlayer();
     await enter(userId, heroId, 'camping');

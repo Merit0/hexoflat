@@ -152,7 +152,67 @@ describe('what an action asks the client to replay', () => {
   it('records no effects for a refused action', () => {
     const { world, spot } = setup(HEXOBJECT_KEYS.TREE);
     const refused = act(world, spot, EHexActionType.CUT, HEXOBJECT_KEYS.HAND);
-    expect(refused).toMatchObject({ ok: false });
-    expect(refused).not.toHaveProperty('effects');
+    expect(refused).toMatchObject({ ok: false, effects: [] });
+  });
+
+  it('refuses a tool that breaks on this use, and still reports the wear and the fall back to the hand', () => {
+    const { world, spot } = setup(HEXOBJECT_KEYS.TREE);
+    const worn: WorldClientHint = {
+      tool: {
+        dragging: true,
+        hover: spot,
+        active: HEXOBJECT_KEYS.AXE,
+        durability: { current: 1, max: 100 },
+      },
+      health: { current: 3, max: 3 },
+    };
+    const refused = act(world, spot, EHexActionType.CUT, HEXOBJECT_KEYS.AXE, worn);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.code).toBe('ACTION_REJECTED');
+    expect(kinds(refused.effects)).toEqual(['consumeDurability', 'setActiveTool']);
+    expect(refused.effects[1]).toMatchObject({ key: HEXOBJECT_KEYS.HAND });
+  });
+});
+
+describe('what an action costs, from content and the location only', () => {
+  function atCave(key: THexobjectKey) {
+    const world = createServerWorld('silesia', 'map-cost', 'seed', HERO);
+    const spot = getHexNeighbors(world.heroCoordinates!).find((hex) => {
+      const tile = world.map.tiles.find(
+        (t) =>
+          t.coordinates.columnIndex === hex.columnIndex && t.coordinates.rowIndex === hex.rowIndex,
+      );
+      return !!tile && !tile.hexobject && tile.terrain === 'ground';
+    })!;
+    const tile = world.map.tiles.find(
+      (t) =>
+        t.coordinates.columnIndex === spot.columnIndex && t.coordinates.rowIndex === spot.rowIndex,
+    )!;
+    tile.hexobject = HexObjectFactory.create(key, spot);
+    tile.isRevealed = true;
+    return { world, spot };
+  }
+
+  it('charges the 2 Will printed on the cave entrance, together with the action', () => {
+    const { world, spot } = atCave(HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const outcome = act(world, spot, EHexActionType.ENTER, HEXOBJECT_KEYS.HAND);
+    if (!outcome.ok) throw new Error(outcome.code);
+    expect(outcome.progress.knowledge.current).toBe(18);
+  });
+
+  it('refuses with too little Will and changes nothing', () => {
+    const { world, spot } = atCave(HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const poor = run(world, 1_000);
+    poor.progress.knowledge.current = 1;
+    const outcome = actWorld(poor, {
+      heroId: HERO,
+      coordinates: spot,
+      actionType: EHexActionType.ENTER,
+      toolKey: HEXOBJECT_KEYS.HAND,
+      now: 1_000,
+    });
+    expect(outcome).toMatchObject({ ok: false, code: 'ACTION_REJECTED', effects: [] });
+    expect(poor.progress.knowledge.current).toBe(1);
   });
 });

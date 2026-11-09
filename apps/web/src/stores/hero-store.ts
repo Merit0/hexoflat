@@ -50,6 +50,8 @@ import {
   startPlayerSession,
 } from '@/services/inventory/inventory-sync';
 import { inventorySession } from '@/services/inventory/inventory-session';
+import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
+import { buildClientHint } from '@/services/world/served-world';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
@@ -150,6 +152,8 @@ export const useHeroStore = defineStore('hero', {
           atBook: isAtKnowledgeBook(world.map as HexMapModel, this.heroCoordinates),
         },
         engineContext: world.buildEngineContext(),
+        clientHint: () => buildClientHint(useHeroToolStore(), this.hero),
+        applyWorldResult: (result: WorldCommandResult) => world.applyWorldResult(result),
         hero: this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }),
         location: portalLocation(world.currentLocationKey, world.currentMapId),
         isCurrent: () =>

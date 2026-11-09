@@ -53,6 +53,7 @@ export function applyTileDiffs(
         tiles: [diff.tile],
       },
       now,
+      { keepUseActions: true },
     ).tiles;
     target.isRevealed = restored.isRevealed;
     target.hexBackgroundImagePath = restored.hexBackgroundImagePath;

@@ -68,27 +68,15 @@ function spendFor(
 ): ProgressOutcome {
   const { heroId, revision, spend } = command.payload;
   const { knowledge } = progress;
-  const ref =
-    spend.kind === 'action'
-      ? `${spend.actionType}:${spend.coordinates.columnIndex}:${spend.coordinates.rowIndex}`
-      : `portal:${spend.target.columnIndex}:${spend.target.rowIndex}`;
+  const ref = `portal:${spend.target.columnIndex}:${spend.target.rowIndex}`;
   if (heroId !== knowledge.heroId) return refuse(heroId, 'WRONG_HERO', ref);
   if (revision !== knowledge.revision) return refuse(heroId, 'STALE_REVISION', ref);
 
-  let cost: number;
-  let reason: 'action' | 'entry';
-  if (spend.kind === 'action') {
-    const price =
-      getMeta(spend.hexobjectKey as THexobjectKey).actions?.[spend.actionType]?.willCost ?? 0;
-    cost = price > 0 && willZoneCharges(ctx) ? price : 0;
-    reason = spend.actionType === EHexActionType.ENTER ? 'entry' : 'action';
-  } else {
-    if (ctx.locationKey === 'camping') return refuse(heroId, 'IN_CAMPING', ref);
-    const ability = getPortalAbility(knowledge.skills);
-    if (!ability.unlocked) return refuse(heroId, 'NOT_AN_ANGEL', ref);
-    cost = ability.willCost;
-    reason = 'action';
-  }
+  if (ctx.locationKey === 'camping') return refuse(heroId, 'IN_CAMPING', ref);
+  const ability = getPortalAbility(knowledge.skills);
+  if (!ability.unlocked) return refuse(heroId, 'NOT_AN_ANGEL', ref);
+  const cost = ability.willCost;
+  const reason = 'action';
   if (cost === 0) return { ok: true, progress, events: [] };
 
   const spent = spendWill(knowledge, cost, reason, ref);
@@ -107,6 +95,7 @@ export function executeProgressCommand(
   let events: DomainEvent[];
   switch (command.type) {
     case 'ARRIVE': {
+      if (!devAllowed) return { ok: false, code: 'FORBIDDEN', events: [] };
       const { locationKey, mapId, coordinates } = command.payload;
       next.presence = { locationKey, mapId, coordinates };
       return {

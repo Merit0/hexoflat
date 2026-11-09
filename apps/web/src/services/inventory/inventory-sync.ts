@@ -6,6 +6,7 @@ import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { TileDiff } from '@hexoflat/engine/world/tile-diff';
+import type { WorldEffect } from '@hexoflat/engine/world/server-ports';
 import { i18n } from '@/i18n';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
@@ -349,33 +350,37 @@ export function flushWorld(): Promise<void> {
 
 bindWorldFlusher(flushWorld);
 
-export interface WorldStepResult {
+export interface WorldCommandResult {
   ok: boolean;
   code?: string;
   tileDiffs: TileDiff[];
   events: DomainEvent[];
+  effects: WorldEffect[];
   engagement: Engagement | null;
 }
 
-export function sendWorldStep(target: {
-  columnIndex: number;
-  rowIndex: number;
-}): Promise<WorldStepResult> {
-  const failed = (code: string): WorldStepResult => ({
+export type WorldStepResult = WorldCommandResult;
+
+export function sendWorldCommand(
+  type: 'WORLD_STEP' | 'WORLD_ACTION' | 'WORLD_TICK',
+  payload: Record<string, unknown>,
+): Promise<WorldCommandResult> {
+  const failed = (code: string): WorldCommandResult => ({
     ok: false,
     code,
     tileDiffs: [],
     events: [],
+    effects: [],
     engagement: null,
   });
   if (inventorySession.status !== 'live') return Promise.resolve(failed('OFFLINE'));
-  return enqueue(async (): Promise<WorldStepResult> => {
+  return enqueue(async (): Promise<WorldCommandResult> => {
     const env: PlayerEnvelope = {
       commandId: crypto.randomUUID(),
       heroId: inventorySession.heroId,
       aggregate: 'progress',
       expectedRevision: inventorySession.progressRevision,
-      command: { type: 'WORLD_STEP', payload: { heroId: inventorySession.heroId, target } },
+      command: { type, payload: { heroId: inventorySession.heroId, ...payload } },
     };
     let response: WorldCommandResponse;
     try {
@@ -385,15 +390,27 @@ export function sendWorldStep(target: {
       return failed(error instanceof PlayerSocketError ? error.code : 'OFFLINE');
     }
     applyProgress(response.aggregates.progress);
+    const inventory = response.aggregates.inventory;
+    if (inventory && inventory.revision !== inventorySession.revision) applyInventory(inventory);
     if (response.result === 'conflict') warn(i18n.global.t('player.sync.restored'));
-    if (response.result !== 'applied') return failed(response.code ?? response.result);
-    return {
-      ok: true,
+    const common = {
       tileDiffs: response.tileDiffs as TileDiff[],
       events: response.events as DomainEvent[],
+      effects: response.effects as WorldEffect[],
       engagement: (response.engagement as Engagement | null | undefined) ?? null,
     };
+    if (response.result !== 'applied') {
+      return { ...common, ok: false, code: response.code ?? response.result };
+    }
+    return { ...common, ok: true };
   });
+}
+
+export function sendWorldStep(target: {
+  columnIndex: number;
+  rowIndex: number;
+}): Promise<WorldCommandResult> {
+  return sendWorldCommand('WORLD_STEP', { target });
 }
 
 export function pushKnowledgeFixture(knowledge: KnowledgeState): void {
