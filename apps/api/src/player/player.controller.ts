@@ -82,8 +82,8 @@ export class PlayerController {
       throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
     }
     try {
-      await this.world.adopt(request.user.sub, hero.id, body);
-      return { ok: true };
+      const aggregates = await this.world.adopt(request.user.sub, hero.id, body);
+      return { ok: true, aggregates };
     } catch (error) {
       if (error instanceof PlayerCommandError) {
         throw error.code === 'FORBIDDEN'

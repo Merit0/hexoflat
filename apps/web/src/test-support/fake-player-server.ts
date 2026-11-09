@@ -8,6 +8,7 @@ import {
   type PlayerAggregates,
   type PlayerCommand,
 } from '@hexoflat/engine';
+import { deserializeWorld, stepWorld, type ServerWorld } from '@hexoflat/engine';
 import type {
   HeroSnapshot,
   PlayerCommandResponse,
@@ -21,6 +22,7 @@ interface Store {
 }
 
 let store: Store | null = null;
+let world: ServerWorld | null = null;
 export const sentCommands: PlayerEnvelope[] = [];
 
 export function resetFakePlayerServer(
@@ -35,6 +37,7 @@ export function resetFakePlayerServer(
     progress: { revision: 0, state: progress },
   };
   sentCommands.length = 0;
+  world = null;
 }
 
 export function snapshot(): HeroSnapshot {
@@ -118,7 +121,72 @@ export function fakePlayerSocketModule() {
     send(envelope: PlayerEnvelope) {
       return Promise.resolve(handle(envelope));
     }
+    sendWorld(envelope: PlayerEnvelope) {
+      return Promise.resolve(handleWorld(envelope));
+    }
     close() {}
   }
   return { PlayerSocket, PlayerSocketError };
+}
+
+export function adoptFakeWorld(json: string): { ok: true; aggregates: HeroSnapshot['aggregates'] } {
+  const s = store!;
+  world = deserializeWorld(JSON.parse(json), 0);
+  const next = structuredClone(s.progress.state);
+  if (world.heroCoordinates) {
+    next.presence = {
+      locationKey: world.locationKey,
+      mapId: world.mapId,
+      coordinates: { ...world.heroCoordinates },
+    };
+  }
+  s.progress = { revision: s.progress.revision + 1, state: next };
+  return { ok: true, aggregates: { progress: { revision: s.progress.revision, state: next } } };
+}
+
+function handleWorld(envelope: PlayerEnvelope) {
+  sentCommands.push(envelope);
+  const s = store!;
+  const base = { commandId: envelope.commandId, tileDiffs: [], effects: [], events: [] };
+  if (s.progress.revision !== envelope.expectedRevision || !world) {
+    return {
+      ...base,
+      result: world ? ('conflict' as const) : ('rejected' as const),
+      code: world ? 'REVISION_CONFLICT' : 'NO_WORLD',
+      hero: null,
+      aggregates: snapshot().aggregates,
+    };
+  }
+  const payload = envelope.command.payload as { target: { columnIndex: number; rowIndex: number } };
+  const outcome = stepWorld(
+    {
+      world,
+      progress: s.progress.state,
+      inventory: s.inventory.state,
+      heroId: s.heroId,
+      now: Date.now(),
+    },
+    payload.target,
+  );
+  if (!outcome.ok) {
+    return {
+      ...base,
+      events: outcome.events,
+      result: 'rejected' as const,
+      code: outcome.code,
+      hero: null,
+      aggregates: snapshot().aggregates,
+    };
+  }
+  world = outcome.world;
+  s.progress = { revision: s.progress.revision + 1, state: outcome.progress };
+  return {
+    ...base,
+    events: outcome.events,
+    tileDiffs: outcome.tileDiffs,
+    engagement: outcome.world.engagement,
+    result: 'applied' as const,
+    hero: null,
+    aggregates: snapshot().aggregates,
+  };
 }

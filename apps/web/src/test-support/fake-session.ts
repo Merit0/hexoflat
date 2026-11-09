@@ -2,7 +2,10 @@ import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import { setAuthToken } from '@/api/auth-token';
 import { inventorySession, resetInventorySession } from '@/services/inventory/inventory-session';
 import { applyProgress } from '@/services/inventory/inventory-sync';
-import { resetFakePlayerServer, snapshot } from './fake-player-server';
+import { vi } from 'vitest';
+import { apiClient } from '@/api/client';
+import { enableServerWorlds, resetWorldSync } from '@/services/player/world-sync';
+import { adoptFakeWorld, resetFakePlayerServer, snapshot } from './fake-player-server';
 
 export function seedFakeSession(
   heroId: string,
@@ -13,6 +16,12 @@ export function seedFakeSession(
     if (start.skills) progress.knowledge.skills = start.skills;
   });
   setAuthToken('token');
+  resetWorldSync();
+  enableServerWorlds();
+  vi.spyOn(apiClient, 'putJson').mockImplementation((_path: string, json: string) =>
+    Promise.resolve(adoptFakeWorld(json) as never),
+  );
+  vi.spyOn(apiClient, 'post').mockResolvedValue({});
   resetInventorySession();
   inventorySession.heroId = heroId;
   inventorySession.status = 'live';

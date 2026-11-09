@@ -37,6 +37,7 @@ export const serializedWorldSchema = z.object({
     .nullable(),
   worldSeed: z.string().min(1),
   engagement: engagementSchema.nullable().default(null),
+  current: z.boolean().optional(),
 });
 export type SerializedWorld = z.infer<typeof serializedWorldSchema>;
 

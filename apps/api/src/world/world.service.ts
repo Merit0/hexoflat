@@ -350,7 +350,7 @@ export class WorldService {
     });
   }
 
-  async adopt(userId: string, heroId: string, raw: unknown): Promise<void> {
+  async adopt(userId: string, heroId: string, raw: unknown): Promise<ProjectedAggregates> {
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
     if (process.env.NODE_ENV === 'production' && !hero.isSandbox) {
@@ -359,7 +359,7 @@ export class WorldService {
     const parsed = serializedWorldSchema.safeParse(raw);
     if (!parsed.success) throw new PlayerCommandError('INVALID_COMMAND');
     const expeditionId = await ensureExpedition(this.db, userId, heroId);
-    await this.db.transaction(async (tx) => {
+    return this.db.transaction(async (tx) => {
       await createInitialAggregates(tx, heroId);
       const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
       await lockExpedition(tx, expeditionId);
@@ -373,15 +373,17 @@ export class WorldService {
         await deleteServerDocument(tx, expeditionId, worldKey(previous));
       }
       const progress = loaded.progress;
-      if (progress && parsed.data.heroCoordinates) {
+      if (progress && parsed.data.heroCoordinates && parsed.data.current) {
         const next = structuredClone(progress.state);
         next.presence = {
           locationKey,
           mapId,
           coordinates: { ...parsed.data.heroCoordinates },
         };
-        await saveAggregate(tx, heroId, 'progress', progress.revision, next);
+        const revision = await saveAggregate(tx, heroId, 'progress', progress.revision, next);
+        return { progress: projectAggregate({ kind: 'progress', revision, state: next }) };
       }
+      return progress ? { progress: projectAggregate(progress) } : {};
     });
   }
 

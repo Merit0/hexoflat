@@ -22,6 +22,17 @@ export interface PlayerCommandResponse {
   aggregates: HeroSnapshot['aggregates'];
 }
 
+export interface WorldCommandResponse extends PlayerCommandResponse {
+  tileDiffs: { coordinates: { columnIndex: number; rowIndex: number }; tile: unknown }[];
+  effects: { kind: string; [field: string]: unknown }[];
+  engagement?: unknown;
+  hero: {
+    locationKey: string;
+    mapId: string;
+    coordinates: { columnIndex: number; rowIndex: number } | null;
+  } | null;
+}
+
 export interface PlayerEnvelope {
   commandId: string;
   heroId: string;
@@ -73,6 +84,11 @@ export class PlayerSocket {
         this.pending.delete(response.commandId);
         waiting?.resolve(response);
       });
+      socket.on('world:result', (response: PlayerCommandResponse) => {
+        const waiting = this.pending.get(response.commandId);
+        this.pending.delete(response.commandId);
+        waiting?.resolve(response);
+      });
       socket.on('hero:error', (payload: { code: string; commandId?: string }) => {
         if (payload.code === 'SESSION_TAKEN_OVER' && !payload.commandId) {
           this.failAll('SESSION_TAKEN_OVER');
@@ -111,6 +127,15 @@ export class PlayerSocket {
     return new Promise((resolve, reject) => {
       this.pending.set(envelope.commandId, { resolve, reject });
       socket.emit('hero:command', envelope);
+    });
+  }
+
+  sendWorld(envelope: PlayerEnvelope): Promise<WorldCommandResponse> {
+    const socket = this.socket;
+    if (!socket?.connected) return Promise.reject(new PlayerSocketError('DISCONNECTED'));
+    return new Promise((resolve, reject) => {
+      this.pending.set(envelope.commandId, { resolve: resolve as never, reject });
+      socket.emit('world:command', envelope);
     });
   }
 

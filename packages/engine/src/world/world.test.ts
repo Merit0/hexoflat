@@ -10,6 +10,7 @@ import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { getHexNeighbors } from '../utils/hex-utils';
 import {
   actWorld,
+  applyTileDiffs,
   createServerWorld,
   deserializeWorld,
   serializeWorld,
@@ -225,5 +226,25 @@ describe('an action on the server map', () => {
     const { world, spot } = worldWithBottle();
     const outcome = actWorld(run(world), { ...take(spot), actionType: EHexActionType.MINE });
     expect(outcome).toMatchObject({ ok: false });
+  });
+});
+
+describe('applying tile diffs to a client copy', () => {
+  it('makes a copy of the map equal to the server map after a step', () => {
+    const world = createServerWorld('silesia', 'map-diff', SEED, HERO);
+    const copy = deserializeWorld(serializeWorld(world), 0);
+    const target = neighbours(world).find((hex) => {
+      const tile = world.map.tiles.find(
+        (t) =>
+          t.coordinates.columnIndex === hex.columnIndex && t.coordinates.rowIndex === hex.rowIndex,
+      );
+      return !!tile && tile.isRevealed && !tile.hexobject && tile.terrain === 'ground';
+    });
+    expect(target).toBeDefined();
+    const outcome = stepWorld(run(world), target!);
+    if (!outcome.ok) throw new Error(outcome.code);
+    const changed = applyTileDiffs(copy.map, outcome.tileDiffs, 0);
+    expect(changed.length).toBe(outcome.tileDiffs.length);
+    expect(withoutImages({ ...outcome.world, map: copy.map })).toBe(withoutImages(outcome.world));
   });
 });

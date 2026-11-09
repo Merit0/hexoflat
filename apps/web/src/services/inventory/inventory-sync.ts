@@ -1,6 +1,11 @@
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { getAuthToken } from '@/api/auth-token';
+import { ApiError, apiClient } from '@/api/client';
+import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
+import type { Engagement } from '@hexoflat/engine/squads/engagement';
+import type { DomainEvent } from '@hexoflat/engine/commands/types';
+import type { TileDiff } from '@hexoflat/engine/world/tile-diff';
 import { i18n } from '@/i18n';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
@@ -12,7 +17,17 @@ import {
   type PlayerCommandResponse,
   type PlayerEnvelope,
   type ProjectedAggregate,
+  type WorldCommandResponse,
 } from '@/services/player/player-socket';
+import {
+  bindWorldFlusher,
+  cacheServerWorld,
+  enableServerWorlds,
+  pushSucceeded,
+  resetWorldSync,
+  snapshotWorld,
+  takePendingPushes,
+} from '@/services/player/world-sync';
 import {
   flushExpedition,
   onExpeditionTakenOver,
@@ -177,6 +192,7 @@ export async function startPlayerSession(heroId: string): Promise<boolean> {
     applySnapshot(snapshot.aggregates);
     inventorySession.sessionToken = snapshot.sessionToken ?? null;
     await startExpeditionSync();
+    await loadWorldCache();
     inventorySession.status = 'live';
     onExpeditionTakenOver(() => lost(new PlayerSocketError('SESSION_TAKEN_OVER')));
     return true;
@@ -189,12 +205,15 @@ export async function startPlayerSession(heroId: string): Promise<boolean> {
 export function endPlayerSession(): void {
   epoch += 1;
   stopExpeditionSync();
+  resetWorldSync();
   socket.close();
   resetInventorySession();
 }
 
 export function settleInventorySync(): Promise<void> {
-  return chain.then(() => flushExpedition());
+  return flushWorld()
+    .then(() => chain)
+    .then(() => flushExpedition());
 }
 
 export function pushInventoryFixture(): void {
@@ -287,8 +306,94 @@ function samePresence(known: ServerPresence | null, now: ServerPresence): boolea
 }
 
 export async function ensurePresence(now: ServerPresence | null): Promise<void> {
-  if (!now || samePresence(inventorySession.presence, now)) return;
-  await sendProgress('ARRIVE', { ...now }, { withKnowledgeRevision: false });
+  if (!now) return;
+  snapshotWorld(!samePresence(inventorySession.presence, now));
+  await flushWorld();
+}
+
+async function loadWorldCache(): Promise<void> {
+  const headers = { 'X-Player-Session': inventorySession.sessionToken ?? '' };
+  for (const locationKey of LOCATION_KEYS) {
+    const world = await apiClient.post<unknown>(
+      '/player/world/ensure',
+      { locationKey },
+      { headers },
+    );
+    cacheServerWorld(locationKey, (world as { mapId: string }).mapId, JSON.stringify(world));
+  }
+  enableServerWorlds();
+}
+
+export function flushWorld(): Promise<void> {
+  const pushes = takePendingPushes();
+  if (pushes.length === 0) return Promise.resolve();
+  return enqueue(async () => {
+    for (const push of pushes) {
+      if (inventorySession.status !== 'live') return;
+      try {
+        const body = await apiClient.putJson<{ aggregates?: { progress?: ProjectedAggregate } }>(
+          '/player/world',
+          push.json,
+          { headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' } },
+        );
+        pushSucceeded(push);
+        applyProgress(body.aggregates?.progress);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 409) {
+          lost(new PlayerSocketError('SESSION_TAKEN_OVER'));
+        }
+      }
+    }
+  });
+}
+
+bindWorldFlusher(flushWorld);
+
+export interface WorldStepResult {
+  ok: boolean;
+  code?: string;
+  tileDiffs: TileDiff[];
+  events: DomainEvent[];
+  engagement: Engagement | null;
+}
+
+export function sendWorldStep(target: {
+  columnIndex: number;
+  rowIndex: number;
+}): Promise<WorldStepResult> {
+  const failed = (code: string): WorldStepResult => ({
+    ok: false,
+    code,
+    tileDiffs: [],
+    events: [],
+    engagement: null,
+  });
+  if (inventorySession.status !== 'live') return Promise.resolve(failed('OFFLINE'));
+  return enqueue(async (): Promise<WorldStepResult> => {
+    const env: PlayerEnvelope = {
+      commandId: crypto.randomUUID(),
+      heroId: inventorySession.heroId,
+      aggregate: 'progress',
+      expectedRevision: inventorySession.progressRevision,
+      command: { type: 'WORLD_STEP', payload: { heroId: inventorySession.heroId, target } },
+    };
+    let response: WorldCommandResponse;
+    try {
+      response = await socket.sendWorld(env);
+    } catch (error) {
+      lost(error);
+      return failed(error instanceof PlayerSocketError ? error.code : 'OFFLINE');
+    }
+    applyProgress(response.aggregates.progress);
+    if (response.result === 'conflict') warn(i18n.global.t('player.sync.restored'));
+    if (response.result !== 'applied') return failed(response.code ?? response.result);
+    return {
+      ok: true,
+      tileDiffs: response.tileDiffs as TileDiff[],
+      events: response.events as DomainEvent[],
+      engagement: (response.engagement as Engagement | null | undefined) ?? null,
+    };
+  });
 }
 
 export function pushKnowledgeFixture(knowledge: KnowledgeState): void {

@@ -311,11 +311,30 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     });
   });
 
+  it('keeps the hero where he is when a world that is not his current one is adopted', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    const before = (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+      presence: { mapId: string };
+    };
+    const other = (await world.ensure(userId, heroId, 'silesia')) as Record<string, unknown>;
+    const adopted = await world.adopt(userId, heroId, { ...other, current: false });
+    expect(adopted.progress).toBeDefined();
+    const after = (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+      presence: { mapId: string };
+    };
+    expect(after.presence.mapId).toBe(before.presence.mapId);
+  });
+
   it('adopts a world the client changed, only outside production, and replaces the old map of the location', async () => {
     const { userId, heroId } = await kit.newPlayer();
     const built = (await world.ensure(userId, heroId, 'camping')) as Record<string, unknown>;
-    const changed = { ...built, mapId: randomUUID() };
-    await world.adopt(userId, heroId, changed);
+    const changed = { ...built, mapId: randomUUID(), current: true };
+    const adopted = await world.adopt(userId, heroId, changed);
+    expect(adopted.progress?.revision).toBe(await progressRevision(userId, heroId));
+    expect((adopted.progress?.state as { presence: { mapId: string } }).presence.mapId).toBe(
+      changed.mapId,
+    );
     const again = (await world.ensure(userId, heroId, 'camping')) as { mapId: string };
     expect(again.mapId).toBe(changed.mapId);
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);

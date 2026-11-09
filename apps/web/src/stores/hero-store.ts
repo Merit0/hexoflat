@@ -496,22 +496,33 @@ export const useHeroStore = defineStore('hero', {
 
       try {
         await executeMovementRoute(route, async (coord) => {
-          if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
-            heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'), 'will');
+          const stepped = await worldStore.stepOnServer(coord);
+          if (!stepped.ok) {
+            const blocked = ['BLOCKED', 'INVALID_STEP', 'UNREACHABLE', 'NO_WORLD'];
+            heroToolStore.setActionMessage(
+              i18n.global.t(
+                blocked.includes(stepped.code ?? '')
+                  ? 'moveBlocked.blockedTile'
+                  : 'moveBlocked.noWill',
+              ),
+              blocked.includes(stepped.code ?? '') ? null : 'will',
+            );
             return false;
           }
+          this.knowledge = inventorySession.knowledge;
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;
           this.hero?.makeStep();
           this.saveProgressToStorage();
 
-          worldStore.revealAroundHero();
           const spotted =
-            !!plan.ambush &&
-            coord.columnIndex === ambushAt?.columnIndex &&
-            coord.rowIndex === ambushAt.rowIndex;
-          if (spotted) this.engageAmbush(plan.ambush!);
-          worldStore.saveToStorage();
+            !!stepped.ambush ||
+            (!!plan.ambush &&
+              coord.columnIndex === ambushAt?.columnIndex &&
+              coord.rowIndex === ambushAt.rowIndex);
+          const engagement = stepped.ambush ?? plan.ambush;
+          if (spotted && engagement) this.engageAmbush(engagement);
+          worldStore.saveToStorage(undefined, { synced: true });
 
           if (worldStore.currentMapId && this.heroCoordinates) {
             this.rememberPosition(worldStore.currentMapId, this.heroCoordinates);

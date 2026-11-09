@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
 import { emptyInventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { setAuthToken } from '@/api/auth-token';
+import { apiClient } from '@/api/client';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -84,6 +85,7 @@ async function live() {
 
 describe('inventory sync with the server', () => {
   beforeEach(() => {
+    vi.spyOn(apiClient, 'post').mockResolvedValue({});
     endPlayerSession();
     resetInventorySession();
   });
