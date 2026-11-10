@@ -87,11 +87,12 @@ export function gradeTask(
   creatureId: string,
   option: number | null,
   atMs: number,
+  graceMs = 0,
 ): TaskGrade | BattleRejection {
   const task = state.task;
   if (!task) return reject('NO_TASK');
   if (task.creatureId !== creatureId) return reject('NOT_YOUR_TURN');
-  const late = atMs > task.deadlineMs;
+  const late = atMs > task.deadlineMs + graceMs;
   const picked = option === null ? null : task.options[option];
   state.task = undefined;
   return { task, late, correct: !late && picked === task.answer };

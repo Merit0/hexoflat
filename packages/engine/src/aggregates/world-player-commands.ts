@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { EHexActionType } from '../enums/hex-action-type';
 import { LOCATION_KEYS } from '../registry/location-key';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { battleActionSchema } from '../battle/battle-commands';
 
 const coordinates = z.object({
   columnIndex: z.number().int().min(0).max(255),
@@ -80,6 +81,18 @@ export const WORLD_COMMAND_SCHEMAS = {
     .strict(),
   WORLD_PORTAL_CLOSE: z
     .object({ type: z.literal('WORLD_PORTAL_CLOSE'), payload: z.object(base).strict() })
+    .strict(),
+  WORLD_BATTLE: z
+    .object({
+      type: z.literal('WORLD_BATTLE'),
+      payload: z.discriminatedUnion('kind', [
+        z.object({ kind: z.literal('start'), ...base }).strict(),
+        z.object({ kind: z.literal('hero'), ...base, action: battleActionSchema }).strict(),
+        z.object({ kind: z.literal('run-enemy-turn'), ...base }).strict(),
+        z.object({ kind: z.literal('close'), ...base }).strict(),
+        z.object({ kind: z.literal('sync'), ...base }).strict(),
+      ]),
+    })
     .strict(),
   WORLD_TICK: z
     .object({

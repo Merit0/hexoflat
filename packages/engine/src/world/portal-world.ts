@@ -29,6 +29,7 @@ function reasonOf(events: DomainEvent[], type: string): string {
 }
 
 export function openPortalWorld(run: WorldRun, target: IHexCoordinates): WorldOutcome {
+  if (run.world.battle) return refuse('BATTLE_OPEN');
   const hero = heroOf(run);
   if (!hero) return refuse('NO_POSITION');
   const world: ServerWorld = { ...run.world };
@@ -62,6 +63,7 @@ export function enterPortalWorld(run: PortalRun): TravelOutcome {
   const progress = structuredClone(run.progress);
   const hero = heroOf({ ...run, progress });
   if (!hero) return { ok: false, code: 'NO_POSITION', events: [], effects: [] };
+  if (world.battle) return { ok: false, code: 'BATTLE_OPEN', events: [], effects: [] };
   const state: HexEngineState = {
     map: world.map,
     heroes: { [run.heroId]: hero },

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BATTLE_RULES } from './battle-content';
 import type { BattleState } from './battle-state';
 import {
   battleWith,
@@ -158,7 +159,7 @@ describe('REQ-BTL-006 block window: who may act and until when', () => {
 
   it('refuses shields and the aim once the five seconds are over (REQ-BTL-022)', () => {
     const battle = heroUnderAttack();
-    const late = battle.reaction!.deadlineMs + 1;
+    const late = battle.reaction!.deadlineMs + BATTLE_RULES.networkGraceMs + 1;
     expect(
       rejectionOf(heroDoes(battle, { kind: 'place-shield', hex: EAST }, 'hero', late).events),
     ).toBe('WINDOW_CLOSED');
@@ -169,7 +170,7 @@ describe('REQ-BTL-006 block window: who may act and until when', () => {
 
     const placed = heroDoes(battle, { kind: 'place-shield', hex: EAST }, 'hero', 100).battle;
     const aiming = heroDoes(placed, { kind: 'reaction-timeout' }, 'hero', 100).battle;
-    const lateAim = aiming.reaction!.deadlineMs + 1;
+    const lateAim = aiming.reaction!.deadlineMs + BATTLE_RULES.networkGraceMs + 1;
     expect(rejectionOf(enemyDoes(aiming, { kind: 'aim', hex: SOUTH }, 's1', lateAim).events)).toBe(
       'WINDOW_CLOSED',
     );

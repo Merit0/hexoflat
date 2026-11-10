@@ -566,4 +566,11 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       send(mine.userId, mine.heroId, 'WORLD_ENTER', { locationKey: 'mars' }),
     ).rejects.toMatchObject({ code: 'INVALID_COMMAND' });
   });
+
+  it('does not serve the battle command until the server runs battles', async () => {
+    const mine = await kit.newPlayer();
+    await expect(
+      send(mine.userId, mine.heroId, 'WORLD_BATTLE', { kind: 'start' }),
+    ).rejects.toMatchObject({ code: 'UNKNOWN_COMMAND' });
+  });
 });

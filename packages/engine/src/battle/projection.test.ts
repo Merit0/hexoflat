@@ -3,6 +3,7 @@ import { BATTLE_RULES } from './battle-content';
 import { battleWith, giveTurn, hero, skeleton, strikeOpened } from './battle-test-setup';
 import { projectBattleEvent, projectBattleForViewer } from './projection';
 import { nextEnemyAction } from './ai/enemy-ai';
+import { issueTask } from './timed-task';
 
 function heroStruckSkeleton() {
   const battle = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]), [
@@ -42,5 +43,33 @@ describe('REQ-BTL-013 projection hides the side of strikes', () => {
     const a = nextEnemyAction(projectBattleForViewer(battle, 'enemies'), BATTLE_RULES);
     const b = nextEnemyAction(projectBattleForViewer(twin, 'enemies'), BATTLE_RULES);
     expect(a).toEqual(b);
+  });
+});
+
+describe('the projection keeps secrets of the server out of the client', () => {
+  it('hides the answer of a task, the seed, the history, the wounds and the enemy bag', () => {
+    const base = battleWith([
+      hero({ q: 0, r: 0 }),
+      skeleton('s1', { q: 1, r: 0 }, { bag: [{ key: 'health-potion', usePrice: 2, heal: 2 }] }),
+    ]);
+    const battle = {
+      ...base,
+      taskHistory: { saw: [true] },
+      wounds: { hero: [{ q: 1, r: 0 }] },
+      turnClockMs: 9,
+    };
+    issueTask(battle, 'saw', 'hero', 1000, BATTLE_RULES);
+    battle.task!.answer = 4242;
+    const seen = projectBattleForViewer(battle, 'heroes');
+    const text = JSON.stringify(seen);
+    expect(seen.task?.answer).toBe(0);
+    expect(text).not.toContain('4242');
+    expect(text).not.toContain(battle.seed);
+    expect(seen).not.toHaveProperty('seed');
+    expect(seen).not.toHaveProperty('taskHistory');
+    expect(seen).not.toHaveProperty('wounds');
+    expect(seen).not.toHaveProperty('turnClockMs');
+    expect(seen.creatures.find((c) => c.id === 's1')!.bag).toEqual([]);
+    expect(projectBattleForViewer(battle, 'enemies').creatures[0].bag).toEqual([]);
   });
 });

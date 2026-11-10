@@ -115,7 +115,9 @@ export class WorldService {
     const envelope = PlayerCommandEnvelopeSchema.safeParse(raw);
     if (!envelope.success) throw new PlayerCommandError('INVALID_ENVELOPE');
     const { commandId, heroId, expectedRevision, command: sent } = envelope.data;
-    if (!isWorldCommandType(sent.type)) throw new PlayerCommandError('UNKNOWN_COMMAND');
+    if (!isWorldCommandType(sent.type) || sent.type === 'WORLD_BATTLE') {
+      throw new PlayerCommandError('UNKNOWN_COMMAND');
+    }
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
     const parsed = WORLD_COMMAND_SCHEMAS[sent.type].safeParse(sent);

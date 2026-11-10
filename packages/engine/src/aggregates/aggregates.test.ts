@@ -64,6 +64,13 @@ describe('aggregate registry', () => {
     ).toEqual(current);
   });
 
+  it('upcasts a stored v4 progress document with a zero kill count', () => {
+    const { kills: _kills, ...v4 } = emptyProgressState(HERO);
+    const upcast = upcastAggregate('progress', 4, JSON.parse(JSON.stringify(v4)), { heroId: HERO });
+    expect(upcast.kills).toBe(0);
+    expect(upcast).toEqual(emptyProgressState(HERO));
+  });
+
   it('keeps inventory v1 valid after a round trip through JSON', () => {
     const inventory = AGGREGATES.inventory.createInitial({ heroId: HERO });
     const stored: unknown = JSON.parse(JSON.stringify(inventory));

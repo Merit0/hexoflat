@@ -6,3 +6,5 @@ export * from './hero-placement';
 export * from './travel';
 export * from './world-leave';
 export * from './portal-world';
+export * from './battle-world';
+export * from './client-projection';

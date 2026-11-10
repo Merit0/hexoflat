@@ -133,6 +133,7 @@ export const battleStateSchema = z.object({
   advantage: battleSideSchema.optional(),
   outcome: battleOutcomeSchema.optional(),
   taskHistory: z.record(z.string(), z.array(z.boolean())).optional(),
+  turnClockMs: z.number().int().min(0).optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
 

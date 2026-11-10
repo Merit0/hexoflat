@@ -116,6 +116,7 @@ export function stepWorld(
   run: WorldRun,
   target: { columnIndex: number; rowIndex: number },
 ): WorldOutcome {
+  if (run.world.battle) return refuse('BATTLE_OPEN');
   const hero = heroOf(run);
   if (!hero) return refuse('NO_POSITION');
   if (hexDistance(hero.coordinates, target) !== 1) return refuse('INVALID_STEP');
@@ -170,6 +171,7 @@ export function stepWorld(
 }
 
 export function actWorld(run: WorldRun, command: StartHexActionCommand['payload']): WorldOutcome {
+  if (run.world.battle) return refuse('BATTLE_OPEN');
   const hero = heroOf(run);
   if (!hero) return refuse('NO_POSITION');
   if (hexDistance(hero.coordinates, command.coordinates) > 1) return refuse('TOO_FAR');

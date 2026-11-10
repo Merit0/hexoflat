@@ -39,6 +39,7 @@ function guard(
   actor: BattleCreature,
   action: BattleAction,
   atMs: number,
+  rules: BattleRules,
 ): BattleRejection | null {
   if (state.phase === 'ended') return reject('BATTLE_ENDED');
   if (TASK_ACTIONS.has(action.kind)) return state.task ? null : reject('NO_TASK');
@@ -48,7 +49,11 @@ function guard(
     return reject('AIM_PENDING');
   if (action.kind === 'aim' && state.reaction?.stage !== 'aim') return reject('WRONG_PHASE');
   if (!phaseAllows(state, action)) return reject('WRONG_PHASE');
-  if (state.reaction && atMs > state.reaction.deadlineMs && WINDOW_TIMED_ACTIONS.has(action.kind))
+  if (
+    state.reaction &&
+    atMs > state.reaction.deadlineMs + rules.networkGraceMs &&
+    WINDOW_TIMED_ACTIONS.has(action.kind)
+  )
     return reject('WINDOW_CLOSED');
   return null;
 }
@@ -76,7 +81,7 @@ export function performAction(
   atMs: number,
   rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
-  const refused = guard(state, actor, action, atMs);
+  const refused = guard(state, actor, action, atMs, rules);
   if (refused) return refused;
 
   switch (action.kind) {

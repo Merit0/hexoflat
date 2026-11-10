@@ -35,6 +35,7 @@ export const progressStateSchema = z
     sealedUntil: z.partialRecord(z.enum(LOCATION_KEYS), z.number().int().nonnegative()),
     portal: portalLinkSchema.nullable(),
     health: heroHealthSchema,
+    kills: z.number().int().nonnegative(),
   })
   .strict();
 export type ProgressState = z.infer<typeof progressStateSchema>;
@@ -48,5 +49,6 @@ export function emptyProgressState(heroId: string): ProgressState {
     sealedUntil: {},
     portal: null,
     health: { current: HERO_BASE_HEALTH, bonus: 0, debt: 0 },
+    kills: 0,
   };
 }

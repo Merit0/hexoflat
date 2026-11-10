@@ -11,6 +11,7 @@ import type { BoardDescriptor } from '../boards/board-descriptors';
 import { deriveStream } from '../utils/random-seeded';
 import { applyCommand } from '../commands/apply-command';
 import { engagementSchema, type Engagement } from '../squads/engagement';
+import { battleStateSchema, type BattleState } from '../battle/battle-state';
 import { createRecordingPorts } from './server-ports';
 import { findEntryHex } from './hero-placement';
 
@@ -22,6 +23,7 @@ export interface ServerWorld {
   heroCoordinates: IHexCoordinates | null;
   worldSeed: string;
   engagement: Engagement | null;
+  battle: BattleState | null;
 }
 
 const MAP_ORIGIN: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
@@ -37,6 +39,7 @@ export const serializedWorldSchema = z.object({
     .nullable(),
   worldSeed: z.string().min(1),
   engagement: engagementSchema.nullable().default(null),
+  battle: battleStateSchema.nullable().default(null),
   current: z.boolean().optional(),
 });
 export type SerializedWorld = z.infer<typeof serializedWorldSchema>;
@@ -51,6 +54,7 @@ export function serializeWorld(world: ServerWorld): SerializedWorld {
     heroCoordinates: world.heroCoordinates,
     worldSeed: world.worldSeed,
     engagement: world.engagement,
+    battle: world.battle,
   };
 }
 
@@ -64,6 +68,7 @@ export function deserializeWorld(raw: unknown, now: number): ServerWorld {
     heroCoordinates: parsed.heroCoordinates,
     worldSeed: parsed.worldSeed,
     engagement: parsed.engagement,
+    battle: parsed.battle,
   };
 }
 
@@ -105,5 +110,6 @@ export function createServerWorld(
     heroCoordinates: entry,
     worldSeed,
     engagement: null,
+    battle: null,
   };
 }

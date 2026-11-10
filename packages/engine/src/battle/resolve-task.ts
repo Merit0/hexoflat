@@ -47,7 +47,7 @@ export function settleTask(
   atMs: number,
   rules: BattleRules,
 ): DomainEvent[] | BattleRejection {
-  const graded = gradeTask(state, actor.id, option, atMs);
+  const graded = gradeTask(state, actor.id, option, atMs, rules.networkGraceMs);
   if (isRejection(graded)) return graded;
   const { task, correct, late } = graded;
   const resolved: DomainEvent = {

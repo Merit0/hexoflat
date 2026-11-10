@@ -53,6 +53,7 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
   const { world, now } = run;
   const position = world.heroCoordinates;
   if (!position) return refuse('NO_POSITION');
+  if (world.battle) return refuse('BATTLE_OPEN');
   let progress = structuredClone(run.progress);
   let inventory = run.inventory;
   let events: DomainEvent[] = [];
