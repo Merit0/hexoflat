@@ -33,6 +33,8 @@ import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import { inventorySession, resetInventorySession, type ServerPresence } from './inventory-session';
 import { readInventoryState, writeInventoryState } from './inventory-store-io';
+import { applyTraderProjection, resetTraderProjection } from '@/services/trade/trader-projection';
+import type { TraderProjection } from '@/services/trade/trader-projection';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
 
@@ -90,7 +92,8 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     portal?: PortalLink | null;
     health?: { current: number; bonus: number; debt: number };
     kills?: number;
-  };
+  } & Partial<TraderProjection>;
+  applyTraderProjection(progress);
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
   inventorySession.progressRevision = projection.revision;
   inventorySession.knowledge = progress.knowledge ?? null;
@@ -228,6 +231,7 @@ export function endPlayerSession(): void {
   resetWorldSync();
   socket.close();
   resetInventorySession();
+  resetTraderProjection();
 }
 
 export function settleInventorySync(): Promise<void> {
@@ -243,31 +247,50 @@ export function pushInventoryFixture(): void {
 
 export type ClaimOutcome = { ok: true } | { ok: false; code: string };
 
-export function claimCampChest(): Promise<ClaimOutcome> {
-  if (inventorySession.claimedRewards.includes(CAMP_FIRST_CHEST_REWARD)) {
-    return Promise.resolve({ ok: true });
+export interface InventoryCommandResult {
+  ok: boolean;
+  code?: string;
+  events: PlayerCommandResponse['events'];
+}
+
+export function sendInventoryCommand(
+  type: string,
+  payload: Record<string, unknown>,
+): Promise<InventoryCommandResult> {
+  if (inventorySession.status !== 'live') {
+    return Promise.resolve({ ok: false, code: 'OFFLINE', events: [] });
   }
-  if (inventorySession.status !== 'live') return Promise.resolve({ ok: false, code: 'OFFLINE' });
-  return enqueue(async (): Promise<ClaimOutcome> => {
+  return enqueue(async (): Promise<InventoryCommandResult> => {
     try {
-      const response = await socket.send(
-        envelope('CLAIM_CAMP_CHEST', {}, inventorySession.revision),
-      );
+      const response = await socket.send(envelope(type, payload, inventorySession.revision));
       applySnapshot(response.aggregates);
-      return response.result === 'applied' || response.code === 'ALREADY_CLAIMED'
-        ? { ok: true }
-        : { ok: false, code: response.code ?? response.result };
+      const ok = response.result === 'applied';
+      return {
+        ok,
+        ...(ok ? {} : { code: response.code ?? response.result }),
+        events: response.events,
+      };
     } catch (error) {
       lost(error);
-      return { ok: false, code: error instanceof PlayerSocketError ? error.code : 'OFFLINE' };
+      const code = error instanceof PlayerSocketError ? error.code : 'OFFLINE';
+      return { ok: false, code, events: [] };
     }
   });
+}
+
+export async function claimCampChest(): Promise<ClaimOutcome> {
+  if (inventorySession.claimedRewards.includes(CAMP_FIRST_CHEST_REWARD)) return { ok: true };
+  const answer = await sendInventoryCommand('CLAIM_CAMP_CHEST', {});
+  return answer.ok || answer.code === 'ALREADY_CLAIMED'
+    ? { ok: true }
+    : { ok: false, code: answer.code ?? 'REJECTED' };
 }
 
 export interface ProgressResult {
   ok: boolean;
   code?: string;
   knowledge: KnowledgeState | null;
+  events?: PlayerCommandResponse['events'];
 }
 
 export function sendProgress(
@@ -309,6 +332,7 @@ export function sendProgress(
       ok: response.result === 'applied',
       ...(response.result === 'applied' ? {} : { code: response.code ?? response.result }),
       knowledge: inventorySession.knowledge,
+      events: response.events,
     };
   });
 }

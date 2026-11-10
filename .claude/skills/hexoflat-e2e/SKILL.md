@@ -106,6 +106,11 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - After a fixture hook (`setWill`, `setSkillRank`, `prepareKnowledgeWorld`, `grantInventoryItem`, `setBag`...) the server learns of it asynchronously: wait with `settleInventorySync()` before `page.goto` or a reload, or the reload shows the old state. Return Scrolls are not a starter item any more: use `VerifyInventoryFeature.givenItem`.
 - The world (maps, fog, the hero's place, a battle) is on the server as well: reload features first wait for it (`settleInventorySync()` includes the expedition flush). `freshHero` also wipes the world, so every test starts in a new world. `HeroPersistenceFeature.wipeEverythingTheBrowserKeeps` proves it by clearing the browser storage before the reload.
 
+## Shop hooks (SH3, 2026-11-10)
+
+- `apps/web/src/e2e/shop-hooks.ts` (spread into `createTestApi`): `getTrader(key = 'ilva')` returns `{ key, serial, trips, goods, buyback, refreshPrice }` read from the served projection, `getOpenTrader()` the key of the open shop board or `null`, `getWalletCoins()` coins in the bag plus the hands (engine `walletCoins`), and `setTrader({ goods?, buyback?, trips? })` which first waits for `settleInventorySync()`, then posts `/player/dev/trader-fixture` with `X-Player-Session` and applies the returned `aggregates.progress`. The API must run with `HEXOFLAT_E2E_FIXTURES=1`. Goods are never rolled in the page: arrange them with `setTrader`, give coins with `grantInventoryItem`.
+- The trader is served only to a hero beside the stall: walk there for real (`MoveHeroFeature.moveAdjacentTo`) and OPEN it with the hand, as the stash specs do. The visible board, its components and `e2e/hero/shop.spec.ts` come in SH4–SH6.
+
 ## Cleaning test users
 
 Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm --filter @hexoflat/api e2e-cleanup` deletes them (heroes, expeditions, journal cascade): default is users older than 24 h, `--older-than-hours N`, `--all`, `--dry-run`. It is refused in production.

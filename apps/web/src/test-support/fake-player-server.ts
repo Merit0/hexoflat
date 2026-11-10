@@ -8,7 +8,6 @@ import {
   serverInventoryContext,
   serverTradeContext,
   type PlayerAggregates,
-  type PlayerCommand,
 } from '@hexoflat/engine';
 import {
   actWorld,
@@ -161,6 +160,10 @@ export function fakePlayerSocketModule() {
     close() {}
   }
   return { PlayerSocket, PlayerSocketError };
+}
+
+export function fakeProgressRow(): Store['progress'] {
+  return store!.progress;
 }
 
 export function fakeStoredWorld(mapId: string): ServerWorld | null {

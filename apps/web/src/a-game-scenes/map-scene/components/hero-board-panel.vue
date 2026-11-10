@@ -100,6 +100,7 @@ import { useI18n } from 'vue-i18n';
 import KnowledgeBoard from './knowledge-board.vue';
 import StashBoard from './stash/stash-board.vue';
 import { useStashSession } from '@/composables/use-stash-session';
+import { useShopSession } from '@/composables/use-shop-session';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -134,6 +135,7 @@ const activeTab = ref<HeroBoardTab>('hero');
 const battleStore = useBattleStore();
 const stashStore = useHeroStashStore();
 useStashSession();
+useShopSession();
 const tabs = computed(() =>
   battleStore.isOpen ? [...TABS, { id: 'battle' as const, label: 'Battle' }] : TABS,
 );

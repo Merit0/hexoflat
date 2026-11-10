@@ -1,4 +1,5 @@
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
+import type { Presence } from '@hexoflat/engine';
 import { setAuthToken } from '@/api/auth-token';
 import { inventorySession, resetInventorySession } from '@/services/inventory/inventory-session';
 import { applyProgress } from '@/services/inventory/inventory-sync';
@@ -15,14 +16,16 @@ import {
   resetFakePlayerServer,
   snapshot,
 } from './fake-player-server';
+import { fakeTraderFixture } from './fake-trader-fixture';
 
 export function seedFakeSession(
   heroId: string,
-  start: { will?: number; skills?: KnowledgeState['skills'] } = {},
+  start: { will?: number; skills?: KnowledgeState['skills']; presence?: Presence } = {},
 ): void {
   resetFakePlayerServer(heroId, (progress) => {
     if (start.will !== undefined) progress.knowledge.current = start.will;
     if (start.skills) progress.knowledge.skills = start.skills;
+    if (start.presence) progress.presence = start.presence;
   });
   setAuthToken('token');
   resetWorldSync();
@@ -33,7 +36,9 @@ export function seedFakeSession(
     Promise.resolve(
       (path === '/player/world/ensure'
         ? fakeEnsureWorld((body as { locationKey: string }).locationKey)
-        : {}) as never,
+        : path === '/player/dev/trader-fixture'
+          ? fakeTraderFixture(body)
+          : {}) as never,
     ),
   );
   for (const locationKey of LOCATION_KEYS) {

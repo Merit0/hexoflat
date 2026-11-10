@@ -24,6 +24,22 @@ export interface TestPortalPreview {
   reason: string | null;
 }
 
+export interface TestTrader {
+  key: string;
+  serial: number;
+  trips: number;
+  goods: ({ key: string; amount: number } | null)[];
+  buyback: ({ key: string; amount: number; unitPrice: number } | null)[];
+  refreshPrice: number;
+}
+
+export interface TestTraderFixture {
+  trader?: string;
+  goods?: ({ key: string; amount: number } | null)[];
+  buyback?: ({ key: string; amount: number; unitPrice: number } | null)[];
+  trips?: number;
+}
+
 export interface HexoflatTestApi {
   getKnowledge(): {
     current: number;
@@ -118,4 +134,9 @@ export interface HexoflatTestApi {
   getBattleHexPoint(q: number, r: number): { x: number; y: number } | null;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
+
+  getTrader(key?: string): TestTrader | null;
+  getOpenTrader(): string | null;
+  getWalletCoins(): number;
+  setTrader(fixture: TestTraderFixture): Promise<void>;
 }

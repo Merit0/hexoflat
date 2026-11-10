@@ -386,13 +386,40 @@ commandId, застаріла ревізія, NOT_AT_TRADER, BATTLE_OPEN, PRICE_
 Не зупиняй dev-стек. Не комітити; наприкінці — commit message, запис у «Прогрес», скіли й CLAUDE.md.
 ```
 
-### SH3 — стан web
+### SH3 — стан web [DONE — 2026-11-10]
 
 `trader-store`, `trade-commands.ts`, `trade-preview.ts`, `use-shop-session.ts`, `use-shop-opening.ts`, OPEN рукою в `tool-hex-tile.vue`, взаємовиключність дошок, тест-хуки. Без видимої дошки.
+
+```
+Старт чату SH3: скіли hexoflat-phase, hexoflat-web-state (і hexoflat-e2e лише для тест-хука). Читай лише шматки (Read з offset/limit):
+docs/shop/SHOP-PLAN.md — розд. 7 (~247–261), 9 (~286–299), 11 (~316–325), «Прогрес» SH2 (~488–497).
+Код-зразки (grep, не весь файл): composables/use-stash-session.ts, use-stash-opening.ts, stores/hero-stash-store.ts,
+services/inventory/inventory-sync.ts (sendProgress / як шлють SHOP_* і застосовують aggregates), tool-hex-tile.vue (OPEN по скрині),
+apps/web/src/e2e/ (як зроблено хук battle/world-fixture), test-support/fake-player-server.ts.
+Зроби SH3 (без видимої дошки): stores/trader-store.ts (view з progress.traders, isOpen, open/close, без правил),
+services/trade/trade-commands.ts (SHOP_BUY/SELL/REFRESH через шлях sendProgress, чекати відповідь, не передбачати),
+services/trade/trade-preview.ts (planBuy/planSell на проєкції; rollGoods/traderView/tradersForClient клієнт не викликає;
+ціна оновлення — refreshPrice), use-shop-session.ts і use-shop-opening.ts (OPEN рукою по ятці; закриття: ×, Esc, відхід,
+зміна локації, бій, відкриття схованки чи Книги — дошки взаємовиключні), e2e-хук setTrader → POST /player/dev/trader-fixture
+з X-Player-Session і застосування aggregates.progress. Юніт-тести на фейковому сервері (FAKE_RNG_SEED). pnpm build в engine,
+якщо чіпаєш engine. Не зупиняй dev-стек. Не комітити; наприкінці — commit message, запис у «Прогрес», скіли й CLAUDE.md.
+```
 
 ### SH4 — розкладка
 
 `shop-board.vue` і компоненти розд. 8, спільний BAG без змін поведінки схованки, тултіп з цінами. Без drag. Олег перевіряє вигляд.
+
+```
+Старт чату SH4: скіли hexoflat-phase, hexoflat-web-state. Читай лише шматки (Read з offset/limit):
+docs/shop/SHOP-PLAN.md — розд. 7 (~247–261), 8 (~265–283), 10–11 (~300–325), «Прогрес» SH3 (кінець файлу).
+Код-зразки (grep, не весь файл): a-game-scenes/map-scene/components/stash/stash-board.vue і stash-bag-pane.vue,
+hero-board-panel.vue (як підключено stash-board), stores/trader-store.ts, services/trade/trade-preview.ts,
+composables/use-shop-board.ts, components/gui/item-tooltip/.
+Зроби SH4 (без drag): shop-board.vue і компоненти розд. 8 у components/shop/, v-if="traderStore.isOpen" у hero-board-panel
+поряд зі схованкою й Книгою (клас is-knowledge теж), × → closeShopBoard(); спільний BAG без зміни поведінки схованки
+(тести схованки не змінюються); ціни лише з previewBuy/previewSell/previewRefresh; testid розд. 11; i18n shop.* (en/uk).
+Олег перевіряє вигляд до SH5. Не зупиняй dev-стек. Не комітити; наприкінці — commit message, «Прогрес», скіли й CLAUDE.md.
+```
 
 ### SH5 — взаємодія
 
@@ -480,3 +507,14 @@ D19–D21: сокира й кайло по 50, меч 500; спрайти ятк
 - **Тести.** Engine: `server-trade-context.test.ts` (шість сусідів ятки → `ilva`; гекс ятки, відстань 2, інша локація, `null` → `null`; проєкція заповнює незачепленого торговця = `traderView`, збережений не змінює, сіда в JSON нема, без сіда — помилка), `trader-fixture.test.ts`. API на реальному Postgres, `shop.integration.spec.ts` (11): купівля (події, сумка, клітинка GOODS стала `null`, рядок журналу з новою ревізією, два рядки леджера `shop` з балансами), продаж (BUYBACK за ціною продажу, леджер), повтор `commandId` (`replayed`, один рядок журналу, ті самі 2 рядки леджера, ревізія +1 один раз), `REVISION_CONFLICT` і `STALE_REVISION` (ревізія знань), `NOT_AT_TRADER` далеко (знімок без змін, журнал, без леджера), `BATTLE_OPEN` для купівлі й оновлення (документ `srv-world:<mapId>` з `battle`), `PRICE_CHANGED` (з реальною ціною в події), оновлення за 20 Волі (50 → 30, серія 1, наступна ціна вже 40), незачеплений торговець = `traderView` з сідом із БД і сіда нема в жодній відповіді (знімок, купівля, оновлення, фікстура), старий рядок без сіда отримує його один раз і той самий товар, фікстура (ряди доповнено, монети відмовлено, без прапора `FORBIDDEN`). Мутацією перевірено: без `SHOP_REFRESH` у `guarded` падає тест `BATTLE_OPEN`. Web: `fake-player-server.test.ts` (+2: товар без сіда в знімку, купівля біля ятки / `NOT_AT_TRADER` далеко).
 - **Підсумок:** engine 1090 (було 1082), web 2327 (2325), API 184 (173) — зелені; `pnpm lint`, `pnpm typecheck` зелені; `pnpm build` у `packages/engine` зроблено; `CONTENT_VERSION` не змінено; пороги ESLint не чіпали. E2E не запускали (UI не змінювався; клієнт тепер отримує в `progress.traders` усіх торговців — адитивно).
 - **Для SH3.** Клієнт читає готові `progress.traders.<key>` (goods/buyback/serial/trip/paidRefreshes) і ціну оновлення рахує `refreshPrice(state, progress.trips, TRADERS[key])` — ця функція чиста й без сіда; `rollGoods`/`traderView`/`tradersForClient` клієнт не викликає. E2E-хук фікстури має слати `POST /player/dev/trader-fixture` з `X-Player-Session` і застосувати відповідь `aggregates.progress`.
+
+### SH3 — стан web [DONE — 2026-11-10]
+
+- **Стан.** `services/trade/trader-projection.ts`: модульний `shallowRef` `traderProjection` `{ traders, trips }`; його заповнює `applyProgress` у `inventory-sync.ts` з кожної відповіді `progress` (`applyTraderProjection`), `endPlayerSession` скидає (`resetTraderProjection`). Не Pinia, бо `applyProgress` викликається й поза активною Pinia (тести, фікстури). `stores/trader-store.ts` (setup-стор): `traderKey`, `isOpen`, `trips`, `view` (стан відкритого торговця з проєкції), `open(key)`/`close()`; правил нема.
+- **Команди.** `inventory-sync.ts`: нова `sendInventoryCommand(type, payload)` — у ту саму чергу, що решта, конверт `inventory` з ревізією `inventorySession.revision`, чекає відповідь і застосовує `aggregates` (і відмову, і успіх), повертає `{ ok, code, events }`; `claimCampChest` тепер теж іде через неї (поведінка та сама). `sendProgress` додатково повертає `events`. `services/trade/trade-commands.ts`: `buyFromTrader(key, from, to, split)`, `sellToTrader(key, bagIndex, split)` (через `sendInventoryCommand`), `refreshTrader(key)` (через `sendProgress`, ревізія знань); `expectedPrice` бере з прев'ю, стан до відповіді не змінює; локально відмовляє лише тоді, коли ціни нема взагалі (`EMPTY_SOURCE`, `NOT_TRADEABLE`, нема торговця), усе інше (монети, місце, вага, близькість) вирішує сервер. Результат `{ ok: true } | { ok: false, reason, price }` — причина й ціна з події `TRADE_REJECTED`, інакше `code` відповіді (`BATTLE_OPEN`, `REVISION_CONFLICT`, `OFFLINE`).
+- **Прев'ю.** `services/trade/trade-preview.ts`: `previewBuy`/`previewSell` викликають `planBuy`/`planSell` на проєкції двічі: з `expectedPrice: 0` (engine відповідає `PRICE_CHANGED` зі справжньою ціною), потім із цією ціною — так ціну рахує лише engine. Тип відмови розділено на `price: number` / `price: null`. `previewRefresh(key, state, trips, will)` → `{ price, affordable }` через `refreshPrice`. `rollGoods`/`traderView`/`tradersForClient` web не імпортує.
+- **Відкриття / закриття.** `composables/use-shop-board.ts`: `openShopBoard(key)` закриває схованку й Книгу, відкриває торговця, розгортає панель героя; `closeShopBoard()` (для × у SH4). Окремо від сесії, щоб `close-hero-overlays.ts` (бій) імпортував його без циклу. `composables/use-shop-session.ts` (`useShopSession`, у `hero-board-panel.vue` поряд із `useStashSession`): закриває при зміні гекса героя, локації, `battle.inBattle`, відкритті схованки (`stash.isOpen` → true), Книги (`knowledgePanelMode` → не `null`) і на Esc. Слухачі реагують лише на відкриття іншої дошки, бо `openShopBoard` сам закриває Книгу і без цього закрив би себе. `composables/use-shop-opening.ts`: `traderAtStall(hexobjectKey)` (через `TRADERS[*].stallHexobjectKey`) і `useShopOpening(activeTool)` (рука «працює» на гексі ятки, як у схованки; закриття зупиняє інструмент). `tool-hex-tile.vue`: OPEN рукою по ятці викликає `openShopBoard`, а не серверну дію; якір і «working» як у схованки. `use-tile-click.ts`: при відкритій крамниці клік по мапі веде героя (як при схованці). `close-hero-overlays.ts` закриває й крамницю. Видимої дошки ще нема.
+- **Тест-хуки.** `apps/web/src/e2e/shop-hooks.ts` у `createTestApi`: `getTrader(key?)` (`key`, `serial`, `trips`, `goods`, `buyback`, `refreshPrice`), `getOpenTrader()`, `getWalletCoins()` (сумка + руки), `setTrader({ trader?, goods?, buyback?, trips? })` → спершу `settleInventorySync`, потім `POST /player/dev/trader-fixture` з `X-Player-Session`, відповідь `aggregates.progress` через `applyProgress`; гард `VITE_E2E_HOOKS` інлайн. Типи `TestTrader`/`TestTraderFixture` у `test-api.types.ts`. Playwright-компонентів ще нема (SH6).
+- **Фейковий сервер.** `seedFakeSession(heroId, { presence })` ставить героя (напр. біля ятки); `test-support/fake-trader-fixture.ts` (`fakeTraderFixture`, через `fakeProgressRow()`) відповідає на `POST /player/dev/trader-fixture` у моку `apiClient.post`; винесено окремо, бо `fake-player-server.ts` упирався в `max-lines` (заодно прибрано невикористаний імпорт `PlayerCommand`).
+- **Тести (39 нових у web).** `trade-preview.test.ts` (ціна й кількість цілого стека й половини, відмова з ціною, порожня клітинка без ціни, зайнята клітинка, продаж за курсом, монети не продаються, оновлення 20/40 і скидання після вилазки), `trade-commands.test.ts` на фейковому сервері з `FAKE_RNG_SEED` (товар з проєкції; купівля за ціною engine і нічого не змінено до відповіді; відмова `NOT_ENOUGH_COINS` з ціною без змін; `NOT_AT_TRADER` далеко; порожня клітинка нічого не шле; застарілий товар → `PRICE_CHANGED` і серверний стан повертається; продаж → монети за курсом і BUYBACK; оновлення 50 → 30 Волі, серія 1, далі `WILL_REJECTED` з ціною 40), `use-shop-session.test.ts` (усі причини закриття, взаємовиключність зі схованкою й Книгою, `closeHeroOverlays`), `use-shop-opening.test.ts`, `tool-hex-tile.test.ts` (OPEN рукою по ятці відкриває `ilva`; мутацією перевірено, що без гілки падає), `e2e/shop-hooks.test.ts` (читання, фікстура з заголовком і застосуванням, гаманець, відкритий торговець).
+- **Підсумок:** web 2366 (було 2327) — зелені; `pnpm lint` (0 помилок, нових циклів нема), `pnpm typecheck` зелені; engine і API не змінювались (1090 / 184 з SH2); `world-map-store.ts` не змінено; пороги ESLint не піднімались. E2E не запускали: видимого UI нема, а OPEN по ятці тепер лише відкриває невидиму дошку (наступна SH4).
