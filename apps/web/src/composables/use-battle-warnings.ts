@@ -42,9 +42,9 @@ export function useBattleWarnings() {
     return true;
   }
 
-  function send(run: () => boolean): boolean {
+  async function send(run: () => Promise<boolean>): Promise<boolean> {
     const before = store.lastHeroEvents;
-    const accepted = run();
+    const accepted = await run();
     if (accepted || store.lastHeroEvents === before) return accepted;
     const warning = rejectionWarning(store.lastHeroEvents);
     if (warning) warn(warning.code, warning.cost);

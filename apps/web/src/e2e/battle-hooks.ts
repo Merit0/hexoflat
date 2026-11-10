@@ -7,34 +7,14 @@ import { controlledHero } from '@/composables/battle-board-tap';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
 import { useBattleStore } from '@/stores/battle-store';
 
-export function finishOpenBattle(outcome: 'victory' | 'defeat'): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const loser = outcome === 'victory' ? 'enemies' : 'heroes';
-  for (const creature of battle.creatures) if (creature.side === loser) creature.hp = 0;
-  battle.outcome = outcome;
-  battle.phase = 'ended';
-  store.battle = battle;
+const SERVER_FIXTURE = 'Battle fixtures move to the server in B5';
+
+export function finishOpenBattle(_outcome: 'victory' | 'defeat'): void {
+  throw new Error(SERVER_FIXTURE);
 }
 
-export function giveHeroTheTurn(willPerTurn: number): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
-  if (!hero) throw new Error('No hero in the battle');
-  battle.order = [hero.id, ...battle.order.filter((id) => id !== hero.id)];
-  battle.turnIndex = 0;
-  battle.activeId = hero.id;
-  battle.phase = 'act';
-  battle.turnWill = willPerTurn;
-  battle.pending = [];
-  battle.reaction = undefined;
-  battle.placedShields = [];
-  battle.undo = [];
-  battle.wounds = {};
-  store.battle = battle;
+export function giveHeroTheTurn(_willPerTurn: number): void {
+  throw new Error(SERVER_FIXTURE);
 }
 
 export interface BattleHexPoint {
@@ -69,66 +49,16 @@ export interface BattleSnapshot {
   aimOptions: { q: number; r: number }[];
 }
 
-export function crowdTheHero(adjacent = 2, far = 0): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
-  if (!hero) throw new Error('No hero in the battle');
-  const enemies = battle.creatures.filter((c) => c.side === 'enemies' && c.hp > 0);
-  const floor = Object.keys(battle.board)
-    .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
-    .filter((hex) => battle.board[hexKey(hex)] === 'floor');
-  const place = (enemy: (typeof enemies)[number], distance: number) => {
-    const spot = floor.find(
-      (hex) => battleDistance(hex, hero.pos) === distance && isFreeHex(battle, hex),
-    );
-    if (spot) enemy.pos = spot;
-  };
-  enemies.slice(0, adjacent).forEach((enemy) => place(enemy, 1));
-  enemies.slice(adjacent, adjacent + far).forEach((enemy) => place(enemy, 2));
-  store.battle = battle;
+export function crowdTheHero(_adjacent = 2, _far = 0): void {
+  throw new Error(SERVER_FIXTURE);
 }
 
-export function holdTheWindowOpen(extraMs: number): void {
-  const store = useBattleStore();
-  if (!store.battle?.reaction) throw new Error('No block window is open');
-  const battle = structuredClone(toRaw(store.battle));
-  battle.reaction!.deadlineMs += extraMs;
-  store.battle = battle;
+export function holdTheWindowOpen(_extraMs: number): void {
+  throw new Error(SERVER_FIXTURE);
 }
 
-export function giveEnemyTheTurn(willPerTurn: number): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const living = battle.creatures.filter(
-    (creature) => creature.side === 'enemies' && creature.hp > 0,
-  );
-  const enemy = living.find((creature) => creature.kind === 'skeleton-warrior') ?? living[0];
-  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
-  if (!enemy || !hero) throw new Error('No living enemy or hero in the battle');
-  const spot = Object.keys(battle.board)
-    .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
-    .find(
-      (hex) =>
-        battle.board[hexKey(hex)] === 'floor' &&
-        battleDistance(hex, hero.pos) === 2 &&
-        isFreeHex(battle, hex),
-    );
-  if (spot) enemy.pos = spot;
-  battle.order = [enemy.id, ...battle.order.filter((id) => id !== enemy.id)];
-  battle.turnIndex = 0;
-  battle.activeId = enemy.id;
-  battle.phase = 'act';
-  battle.turnWill = willPerTurn;
-  battle.pending = [];
-  battle.reaction = undefined;
-  battle.placedShields = [];
-  battle.struckHands = [];
-  battle.undo = [];
-  battle.wounds = {};
-  store.battle = battle;
+export function giveEnemyTheTurn(_willPerTurn: number): void {
+  throw new Error(SERVER_FIXTURE);
 }
 
 function heroDistanceTo(
@@ -161,9 +91,9 @@ function terrainCounts(battle: BattleState): Record<string, number> {
 
 export function readBattleSnapshot(): BattleSnapshot | null {
   const store = useBattleStore();
-  const battle = store.battle;
   const view = store.projection;
-  if (!battle || !view) return null;
+  if (!view) return null;
+  const battle = view as unknown as BattleState;
   const hero = controlledHero(view, store.localHeroIds);
   const strike = hero ? view.pending.find((s) => s.attackerId === hero.id) : undefined;
   const options =
@@ -177,11 +107,11 @@ export function readBattleSnapshot(): BattleSnapshot | null {
     order: [...battle.order],
     draws: { ...battle.draws },
     turnWill: battle.turnWill,
-    reaction: battle.reaction
+    reaction: view.reaction
       ? {
-          stage: battle.reaction.stage,
-          attackerId: battle.reaction.attackerId,
-          defenderId: battle.reaction.defenderId,
+          stage: view.reaction.stage,
+          attackerId: view.reaction.attackerId,
+          defenderId: view.reaction.defenderId,
         }
       : null,
     creatures: battle.creatures.map((c) => ({
@@ -192,7 +122,7 @@ export function readBattleSnapshot(): BattleSnapshot | null {
       q: c.pos.q,
       r: c.pos.r,
     })),
-    wounds: structuredClone(toRaw(battle.wounds)),
+    wounds: {},
     heroDistances: Object.fromEntries(
       battle.creatures
         .filter((c) => c.side === 'enemies')
@@ -215,7 +145,7 @@ export interface BattleHandsSnapshot {
 }
 
 export function readBattleHands(): BattleHandsSnapshot | null {
-  const battle = useBattleStore().battle;
+  const battle = useBattleStore().projection;
   const hero = battle?.creatures.find((creature) => creature.side === 'heroes');
   if (!battle || !hero) return null;
   return {

@@ -1,17 +1,17 @@
 import { worldStorage } from '@/test-support/world-storage-shim';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { applyCommand, CONTENT_VERSION } from '@hexoflat/engine';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { heroBattleCreature } from '@hexoflat/engine/squads/squad-battle';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { useWorldMapStore } from './world-map-store';
 import { useBattleStore } from './battle-store';
 import { useHeroStore } from './hero-store';
+import { useGameEventsStore } from './game-events-store';
+import { i18n } from '@/i18n';
 
 /**
  * Characterization tests for the save/load path, written BEFORE the G2
@@ -69,22 +69,7 @@ function openBattle(name: string) {
     },
     worldStore.buildEngineContext(),
   );
-  const creature = heroBattleCreature({
-    id: hero.hero.id,
-    hearts: 3,
-    weapon: null,
-    shield: null,
-    bag: [],
-  });
-  applyCommand(
-    state,
-    {
-      type: 'BATTLE',
-      payload: { kind: 'start', heroId: hero.hero.id, atMs: 0, heroes: [creature] },
-    },
-    worldStore.buildEngineContext(),
-  );
-  useBattleStore().restore({ engagement: state.engagement!, battle: state.battle! });
+  useBattleStore().restore(state.engagement!, null);
   return state;
 }
 
@@ -142,10 +127,10 @@ describe('world persistence: saveToStorage (characterization)', () => {
       expect(written.map.tiles).toHaveLength(4);
     });
 
-    it('folds the battle snapshot into the same state blob as heroCoordinates', () => {
+    it('keeps heroCoordinates in the state blob and no battle snapshot', () => {
       const worldStore = useWorldMapStore();
       worldStore.currentMapId = 'map-c';
-      const opened = openBattle('battle-blob');
+      openBattle('battle-blob');
 
       worldStore.saveToStorage();
       vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
@@ -157,9 +142,7 @@ describe('world persistence: saveToStorage (characterization)', () => {
 
       expect(state.contentVersion).toBe(CONTENT_VERSION);
       expect(state.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 2 });
-      expect(state.battle).toEqual(
-        JSON.parse(JSON.stringify({ engagement: opened.engagement, battle: opened.battle })),
-      );
+      expect(state.battle).toBeUndefined();
     });
 
     it('snapshots state at call time, not at flush time', () => {
@@ -244,48 +227,45 @@ describe('world persistence: saveToStorage (characterization)', () => {
   });
 });
 
-describe('world persistence: battle autosave', () => {
+describe('world persistence: battle is server-held', () => {
   useIsolatedWorld();
 
-  describe('battle autosave', () => {
-    it('persists a battle change without battle-store asking for a save', async () => {
-      const worldStore = useWorldMapStore();
-      worldStore.currentMapId = 'map-auto';
-      worldStore.enableBattleAutosave();
+  it('does not write a battle into the saved world state', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.currentMapId = 'map-nobattle';
+    openBattle('nobattle');
+    worldStore.saveToStorage();
+    vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+    const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-nobattle'))!) as Record<
+      string,
+      unknown
+    >;
+    expect(state.battle).toBeUndefined();
+  });
 
-      const opened = openBattle('autosave');
-      await nextTick();
-      vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+  it('dismisses a battle saved by an older version and tells the player (REQ-B4-LEG-001)', () => {
+    const worldStore = useWorldMapStore();
+    worldStore.map = buildMap('legacy-battle');
+    worldStore.currentMapId = 'map-legacy-battle';
+    useHeroStore().heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+    worldStore.saveToStorage();
+    vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+    const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-legacy-battle'))!) as Record<
+      string,
+      unknown
+    >;
+    worldStorage.setItem(
+      STATE_KEY('map-legacy-battle'),
+      JSON.stringify({ ...state, battle: { engagement: { squadId: 'x' }, battle: { id: 'old' } } }),
+    );
 
-      const state = JSON.parse(worldStorage.getItem(STATE_KEY('map-auto'))!) as Record<
-        string,
-        unknown
-      >;
+    setActivePinia(createPinia());
+    useWorldMapStore().loadFromStorage('map-legacy-battle');
 
-      expect((state.battle as { engagement: { squadId: string } }).engagement.squadId).toBe(
-        opened.engagement!.squadId,
-      );
-    });
-
-    it('does not write anything back while loadFromStorage is hydrating a battle', async () => {
-      const worldStore = useWorldMapStore();
-      worldStore.currentMapId = 'map-load';
-      openBattle('no-write-on-load');
-      worldStore.saveToStorage();
-      vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
-
-      setActivePinia(createPinia());
-      const reloaded = useWorldMapStore();
-      reloaded.currentMapId = 'map-load';
-      reloaded.enableBattleAutosave();
-
-      worldStorage.removeItem(STATE_KEY('map-load'));
-      reloaded.loadFromStorage('map-load');
-      await nextTick();
-      vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
-
-      expect(useBattleStore().inBattle).toBe(false);
-    });
+    expect(useBattleStore().inBattle).toBe(false);
+    expect(useGameEventsStore().events.map((e) => e.message)).toContain(
+      i18n.global.t('battle.legacyDismissed'),
+    );
   });
 });
 
@@ -303,15 +283,12 @@ describe('world persistence: loadFromStorage (characterization)', () => {
 
       setActivePinia(createPinia());
       const reloadedWorld = useWorldMapStore();
-      const reloadedBattle = useBattleStore();
       const reloadedHero = useHeroStore();
       reloadedWorld.currentMapId = 'map-rt';
       reloadedWorld.loadFromStorage('map-rt');
 
       expect(reloadedHero.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 2 });
       expect(reloadedWorld.map?.tiles).toHaveLength(25);
-      expect(reloadedBattle.engagement?.squadId).toBe(opened.engagement!.squadId);
-      expect(reloadedBattle.battle?.id).toBe(opened.battle!.id);
     });
 
     it('ignores the old combat fields of a save written before B6', () => {

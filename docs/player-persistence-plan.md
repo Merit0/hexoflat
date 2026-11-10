@@ -920,3 +920,26 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 **Пропущені тести (для звіту).** `balance.test.ts`: два `it.skip` (рядки 28 і 35). Інтеграційні набори API цього разу виконано (Postgres працює), пропусків через БД немає.
 
 **Лишилося до B4.** Клієнт: міст бою (`send`/`start`/`leave`) через `world:command`, відповіді `steps` у `absorb`, зсув годинника за `serverNowMs`, відновлення бою з `GET /player/world` (`battleView`), респавн із `travel`, прибрати `DEV_SET_HEALTH`/`DEV_SET_INVENTORY`/`PUT /player/world` з шляхів бою, `kills` з `progress`, м'яке повідомлення про відкинутий старий локальний бій, зсув годинника в таймерах вікна й завдання, `needsEnemyTurn` не шле другий `run-enemy-turn`, поки перший без відповіді.
+
+## Результати D4b-4, крок B4 (2026-11-10): клієнтський міст бою
+
+**Зроблено (apps/web; engine і API без змін).**
+
+- **Транспорт.** `sendWorldCommand` приймає `WORLD_BATTLE`, результат несе `steps`, `serverNowMs`, `code` і для `applied` (відмова після ліниво виконаних кроків); розрив сокета дає `CONNECTION_LOST`. `services/battle/battle-server.ts`: `sendBattle`, `loadServerBattleView` (GET `/player/world`), `takeServerBattleView`.
+- **Годинник.** `services/battle/battle-clock.ts` (зсув з відповідей, береться вимір з найменшим RTT, застарілий вимір замінюється). За ним рахують `use-battle-reaction`, `battle-timed-task.vue`, `battle-hero-controls.vue`. `reaction-timeout` і `task-timeout`: `TOO_EARLY` → повтор через 250 мс, до 20 разів, кожен повтор нова команда (новий `commandId`).
+- **Стор.** `battle-store`: `projection` замість `battle`, `act`/`actAll`/`start`/`leave`/`runEnemyTurn` async, `waiting` (індикатор `data-testid="battle-waiting"` у BATTLE-табі, дії неактивні), `connectionLost`, один `run-enemy-turn` без відповіді, відмовлений хід не повторюється, доки проєкція та сама. Прибрано локальний `applyCommand`, `engineState`, `runLifecycle`, `followBattleHealth`, `closeOut`, `snapshot`, автозбереження бою (`enableBattleAutosave`).
+- **Відновлення.** `loadServerBattleView()` після `startPlayerSession`, `battleStore.restore(engagement, view)` у `loadFromStorage`; `start` з `BATTLE_OPEN` бере `battleView`. Старий локальний бій (`battle`/`engagement` у документі стану) відкидається, у журнал іде `battle.legacyDismissed` (uk і en).
+- **Респавн.** `respawnHeroAtCampingAction(host, result, deps)`: закрити бій, `installTravelledWorlds`, `goToLocation(…, true)`. Локальне закриття порталу, очищення карти, `reviveAtOneHp` прибрано (`reviveAtOneHp` видалено). Перемога: `applyWorldResult` з `tileDiffs` відповіді.
+- **Вбивства.** `progress.kills` → `inventorySession.kills` → `hero.setKills` (`bindKillsListener`); `addKilled` і `saveProgressToStorage` для вбивств прибрано.
+- **Руки.** Гейт рук повертає `false` одразу й шле `set-hands`; інвентар оновлюється з `aggregates` відповіді.
+- **Захист від PUT.** `bindPushBlocker`: поки відкритий бій, `queueWorldPush` і `takePendingPushes` відкидають пуші карти (інакше PUT стер би `battle` на сервері).
+- **Dev-сторінка.** `/dev/battlefield` лише під `import.meta.env.DEV` (імпорт теж), локальний рушій у `dev-battle-bridge.ts`; **відхилення від відповіді Олега:** вона користується тим самим `battleStore` як контейнером стану UI (інакше довелось би дублювати всі composables); сервера, світу й інвентаря не торкається. Тест `router/dev-route.test.ts`: у production-режимі маршруту немає.
+- **Фейковий сервер** виконує `WORLD_BATTLE` справжнім `battleWorld` (разом із респавном), `GET /player/world` замінено на `fakeWorldSnapshot`.
+
+**Тести.** Web 2328 (було 2307), typecheck і lint без помилок, пороги ESLint не піднімали (довелось винести три чисті функції зі стору, щоб вкластися в 197 рядків), нових циклів немає. Нові: `battle-clock.test.ts` (зсув, мін. RTT, відлік), `battle-store.server.test.ts` (відновлення з `battleView`, один запит на `run-enemy-turn`, відмовлений хід, `CONNECTION_LOST`), `world-server-paths.test.ts` (поразка з респавном із `travel`, перемога; тест-шпигун: жодного `DEV_*`, бій і респавн не шлють PUT поза пушем карти табору при приході), `world-map-persistence.test.ts` (бою немає в збереженні, старий бій відкинуто), `router/dev-route.test.ts`. `battle-animation-*` без змін.
+
+**Навмисно зламані e2e (до B5).** Усі хуки `e2e/battle-hooks.ts`, що писали в `store.battle` (`finishBattle`, `giveHeroTheTurn`, `crowdTheHero`, `holdTheWindowOpen`, `giveEnemyTheTurn`), кидають помилку `Battle fixtures move to the server in B5`; отже ламаються `apps/playwright/e2e/world/battle-flow.spec.ts` та ті специфікації `squad-actions`, що завершують бій хуком. Читальні хуки (`getBattleSnapshot`, `getBattleHands`) працюють із проєкції, поле `wounds` порожнє. e2e не запускали.
+
+**Відомі залишки.** (1) Прихід у табір після респавну пушить карту табору через міст `PUT /player/world` (загальний шлях завантаження локації, не бій); зникне в B6. (2) Автоматичного перепідключення сокета немає (`reconnection: false`): після `CONNECTION_LOST` стан відновиться при новій сесії через `battleView`. (3) `reportHealth`/`DEV_SET_HEALTH` лишились лише для dev-кнопки й e2e-хука, B6 їх видаляє.
+
+**Пропущені тести.** `balance.test.ts`: два `it.skip` (рядки 28 і 35). Набори API з `describe.skipIf(!dbAvailable)` не запускались у цьому кроці (API не чіпали).

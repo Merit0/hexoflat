@@ -55,9 +55,15 @@ import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-
 import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vue';
 import { resetBattleUi } from '@/composables/use-battle-view';
 import { useBattleStore } from '@/stores/battle-store';
+import { createDevBattleBridge } from '@/a-game-scenes/battle-scene/dev-battle-bridge';
 import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
 
 const store = useBattleStore();
+const bridge = createDevBattleBridge(
+  () => store.deploy?.setup ?? null,
+  () => store.close(),
+);
+store.bindBridge(bridge);
 useBattleEnemyDriver();
 
 const seed = ref('bone-crypt-1');
@@ -77,6 +83,7 @@ function prepare() {
       withFriend: withFriend.value,
     });
     resetBattleUi();
+    bridge.reset();
     store.prepare(deploy, heroIds);
     error.value = '';
   } catch (failure) {
@@ -86,11 +93,14 @@ function prepare() {
 }
 
 watch([seed, approach, squad, ambush, withFriend], () => {
-  if (!store.battle) prepare();
+  if (!store.projection) prepare();
 });
 
 onMounted(prepare);
-onBeforeUnmount(() => store.close());
+onBeforeUnmount(() => {
+  store.close();
+  store.bindBridge(null);
+});
 </script>
 
 <style scoped>

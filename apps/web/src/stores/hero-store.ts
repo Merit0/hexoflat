@@ -46,11 +46,13 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
   bindHealthListener,
+  bindKillsListener,
   bindKnowledgeListener,
   bindPortalListener,
   endPlayerSession,
   startPlayerSession,
 } from '@/services/inventory/inventory-sync';
+import { loadServerBattleView } from '@/services/battle/battle-server';
 import { healthReportsPending, reportHealthToServer } from '@/services/inventory/health-report';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
@@ -133,7 +135,11 @@ export const useHeroStore = defineStore('hero', {
       bindHealthListener((health) => {
         if (!healthReportsPending()) this.hero.restoreHealth(health);
       });
+      bindKillsListener((kills) => {
+        this.hero.setKills(kills);
+      });
       if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
+      this.hero.setKills(inventorySession.kills);
       this.portal = inventorySession.portal;
       this.knowledge = inventorySession.knowledge;
       this.knowledgeError = !this.knowledge;
@@ -260,7 +266,7 @@ export const useHeroStore = defineStore('hero', {
       try {
         const battleStore = useBattleStore();
         const held = {
-          battle: battleStore.battle ?? undefined,
+          battle: undefined,
           engagement: battleStore.engagement ?? undefined,
         };
         const result = await dispatchHexAction(this.knowledgeHost(world), command, held);
@@ -372,6 +378,7 @@ export const useHeroStore = defineStore('hero', {
 
         this.hero.id = hero.id;
         await startPlayerSession(hero.id);
+        await loadServerBattleView();
         this.restoreFromExpedition();
         this.hero.id = hero.id;
         this.loadKnowledge();
@@ -421,10 +428,6 @@ export const useHeroStore = defineStore('hero', {
       this.reportHealth((this.hero.currentHealth ?? 0) - Math.max(0, damage));
     },
 
-    reviveAtOneHp(): void {
-      this.reportHealth(1);
-    },
-
     resetHero(): void {
       console.log('Resetting hero state');
       this.hero = new HeroModel();
@@ -436,6 +439,7 @@ export const useHeroStore = defineStore('hero', {
       bindKnowledgeListener(null);
       bindPortalListener(null);
       bindHealthListener(null);
+      bindKillsListener(null);
       endPlayerSession();
       useHeroInventoryStore().reset();
       useHeroStashStore().reset();
@@ -466,7 +470,6 @@ export const useHeroStore = defineStore('hero', {
       const planned: HexEngineState = {
         map,
         heroes: { [heroState.id]: heroState },
-        battle: battleStore.battle ?? undefined,
         engagement: battleStore.engagement ?? undefined,
       };
 

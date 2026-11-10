@@ -6,6 +6,7 @@ import { enemyCreature } from '@hexoflat/engine/battle/battle-catalogue';
 import { hero, skeleton } from '@hexoflat/engine/battle/battle-test-setup';
 import { hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
 import { createSeededRandom } from '@hexoflat/engine/utils/random-seeded';
+import { localBattle } from '@/test-support/local-battle';
 import { useBattleStore } from '@/stores/battle-store';
 import { testDeploy } from '@/stores/battle-store.fixture';
 import { battleTapActions } from './battle-board-tap';
@@ -15,7 +16,7 @@ import type { BattleUiState } from './battle-view-types';
 const NAMES: Record<string, string> = { hero: 'Merito' };
 
 function view(ui: BattleUiState) {
-  const store = useBattleStore();
+  const store = localBattle().store;
   return buildBattleView({
     deploy: store.deploy,
     projection: store.projection,
@@ -53,12 +54,12 @@ function checkView(built: ReturnType<typeof view>, will: number): string[] {
 describe('battle view model under random play', () => {
   beforeEach(() => setActivePinia(createPinia()));
 
-  it('builds every card, tool hex, overlay and cost without throwing or showing nonsense', () => {
+  it('builds every card, tool hex, overlay and cost without throwing or showing nonsense', async () => {
     const problems: string[] = [];
     for (let n = 0; n < 60; n++) {
       setActivePinia(createPinia());
       const rng = createSeededRandom({ seed: `view-fuzz-${n}`, counter: 0 });
-      const store = useBattleStore();
+      const store = localBattle().store;
       store.prepare(
         testDeploy([
           hero({ q: 0, r: 0 }, { hp: 12, maxHp: 12 }),
@@ -68,8 +69,8 @@ describe('battle view model under random play', () => {
         ]),
         ['hero'],
       );
-      store.start();
-      for (let step = 0; step < 160 && store.battle?.phase !== 'ended'; step++) {
+      await store.start();
+      for (let step = 0; step < 160 && localBattle().state()?.phase !== 'ended'; step++) {
         const projection = store.projection!;
         const me = projection.creatures.find((c) => c.id === 'hero')!;
         const around = hexNeighbours(me.pos);
@@ -96,10 +97,11 @@ describe('battle view model under random play', () => {
           hex: around[Math.floor(rng() * 6)],
           rules: BATTLE_RULES,
         });
-        if (actions.length) store.actAll(actions, step * 300);
-        else if (store.needsEnemyTurn) store.runEnemyTurn(step * 300);
-        else if (rng() < 0.3) store.act({ kind: 'end-turn' }, step * 300);
-        else if (store.projection?.reaction) store.act({ kind: 'reaction-timeout' }, step * 300);
+        if (actions.length) await localBattle().actAll(actions, step * 300);
+        else if (store.needsEnemyTurn) await localBattle().runEnemyTurn(step * 300);
+        else if (rng() < 0.3) await localBattle().act({ kind: 'end-turn' }, step * 300);
+        else if (store.projection?.reaction)
+          await localBattle().act({ kind: 'reaction-timeout' }, step * 300);
         store.setAnimating(false);
       }
     }

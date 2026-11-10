@@ -1,24 +1,13 @@
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef } from 'vue';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import { applyBattleCommand } from '@hexoflat/engine/battle/apply-battle';
-import {
-  BattleCommandSchema,
-  isFightCommand,
-  type BattleAction,
-  type BattleCommand,
-} from '@hexoflat/engine/battle/battle-commands';
-import type {
-  BattleHex,
-  BattleSetupInput,
-  BattleState,
-} from '@hexoflat/engine/battle/battle-state';
+import type { BattleAction } from '@hexoflat/engine/battle/battle-commands';
+import type { BattleHex, BattleSetupInput } from '@hexoflat/engine/battle/battle-state';
+import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import type { BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
-import { creatureById } from '@hexoflat/engine/battle/battle-board';
-import { projectBattleEvent, projectBattleForViewer } from '@hexoflat/engine/battle/projection';
-import { startBattle } from '@hexoflat/engine/battle/start-battle';
 import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
+import type { BattleReply, BattleRequest } from '@/services/battle/battle-server';
 
 export interface BattleDeploy {
   setup: BattleSetupInput;
@@ -33,122 +22,143 @@ export interface BattleDeploy {
 export type BattleBatchSource = 'hero' | 'enemy';
 
 export interface BattleStep {
-  battle: BattleState | null;
+  battle: BattleProjection | null;
   events: DomainEvent[];
 }
 
-export interface BattleEngineBridge {
-  send(command: BattleCommand): BattleStep;
-  start(): BattleStep;
-  leave(): void;
+export interface BattleServerBridge {
+  request(request: BattleRequest): Promise<BattleReply>;
+  onStep(step: BattleStep): void;
+  closed(reply: BattleReply): Promise<void>;
+  restore(): Promise<BattleProjection | null>;
 }
 
-export interface BattleSnapshot {
-  engagement: Engagement | null;
-  battle: BattleState | null;
-}
-
-let bridge: BattleEngineBridge | null = null;
+let bridge: BattleServerBridge | null = null;
 
 const REVEAL_MS = 2500;
 
 const TASK_ACTIONS = new Set<BattleAction['kind']>(['answer-task', 'task-timeout']);
 
+function animatesForeignCreature(
+  events: DomainEvent[],
+  isLocalHero: (id: string | undefined) => boolean,
+): boolean {
+  return events.some((event) => {
+    const payload = event.payload as { creatureId?: string; attackerId?: string };
+    if (event.type === 'CREATURE_MOVED') return !isLocalHero(payload.creatureId);
+    if (event.type === 'STRIKE_LANDED') return !isLocalHero(payload.attackerId);
+    return false;
+  });
+}
+
+function burnedShieldsOf(events: DomainEvent[]): BattleHex[] | null {
+  const resolved = [...events].reverse().find((e) => e.type === 'STRIKES_RESOLVED');
+  if (!resolved) return null;
+  const { burnedShields } = resolved.payload as { burnedShields: BattleHex[] };
+  return burnedShields.map((hex) => ({ q: hex.q, r: hex.r }));
+}
+
+function actorFor(
+  current: BattleProjection | null,
+  action: BattleAction,
+  isLocalHero: (id: string | undefined) => boolean,
+): string | null {
+  if (!current) return null;
+  const owner = TASK_ACTIONS.has(action.kind) ? current.task?.creatureId : current.activeId;
+  return isLocalHero(owner) ? owner! : null;
+}
+
+function noBridgeReply(): BattleReply {
+  return { ok: false, code: 'NO_BATTLE', steps: [], events: [], closed: false, result: null };
+}
+
 export const useBattleStore = defineStore('battle-store', () => {
   const deploy = shallowRef<BattleDeploy | null>(null);
   const engagement = shallowRef<Engagement | null>(null);
-  const battle = shallowRef<BattleState | null>(null);
+  const projection = shallowRef<BattleProjection | null>(null);
   const localHeroIds = ref<string[]>([]);
   const lastHeroEvents = shallowRef<DomainEvent[]>([]);
   const turnStartWill = ref(0);
   const queue = shallowRef<DomainEvent[]>([]);
   const animating = ref(false);
   const enemyTurnPlaying = ref(false);
+  const waiting = ref(false);
+  const connectionLost = ref(false);
+  const refusedEnemyTurn = shallowRef<BattleProjection | null>(null);
   const revealedShields = shallowRef<BattleHex[]>([]);
   let revealTimer: ReturnType<typeof setTimeout> | null = null;
 
   const inputLocked = computed(() => animating.value && enemyTurnPlaying.value);
   const isOpen = computed(() => deploy.value !== null);
   const inBattle = computed(() => engagement.value !== null || deploy.value !== null);
-  const projection = computed(() =>
-    battle.value ? projectBattleForViewer(battle.value, 'heroes') : null,
-  );
 
-  function animatesForeignCreature(events: DomainEvent[]): boolean {
-    return events.some((event) => {
-      const payload = event.payload as { creatureId?: string; attackerId?: string };
-      if (event.type === 'CREATURE_MOVED') return !isLocalHero(payload.creatureId);
-      if (event.type === 'STRIKE_LANDED') return !isLocalHero(payload.attackerId);
-      return false;
-    });
+  function isLocalHero(id: string | undefined): boolean {
+    return !!id && localHeroIds.value.includes(id);
   }
 
   function revealShields(events: DomainEvent[]) {
-    const resolved = [...events].reverse().find((e) => e.type === 'STRIKES_RESOLVED');
-    if (!resolved) return;
-    const { burnedShields } = resolved.payload as { burnedShields: BattleHex[] };
+    const burned = burnedShieldsOf(events);
+    if (!burned) return;
     if (revealTimer) clearTimeout(revealTimer);
-    revealedShields.value = burnedShields.map((hex) => ({ q: hex.q, r: hex.r }));
+    revealedShields.value = burned;
     revealTimer = setTimeout(() => {
       revealedShields.value = [];
       revealTimer = null;
     }, REVEAL_MS);
   }
 
-  function absorb(next: BattleState | null, events: DomainEvent[]) {
-    battle.value = next;
+  function absorb(next: BattleProjection | null, events: DomainEvent[]) {
+    projection.value = next;
     revealShields(events);
-    if (animatesForeignCreature(events)) enemyTurnPlaying.value = true;
+    if (animatesForeignCreature(events, isLocalHero)) enemyTurnPlaying.value = true;
     for (const event of events) {
       if (event.type === 'TURN_STARTED')
         turnStartWill.value = (event.payload as { will: number }).will;
     }
-    const visible = next ? events.map((e) => projectBattleEvent(next, e, 'heroes')) : events;
-    queue.value = [...queue.value, ...visible];
+    queue.value = [...queue.value, ...events];
   }
 
-  function isLocalHero(id: string | undefined): boolean {
-    return !!id && localHeroIds.value.includes(id);
-  }
-
-  function actorFor(action: BattleAction): string | null {
-    const current = battle.value;
-    if (!current) return null;
-    if (TASK_ACTIONS.has(action.kind)) {
-      const owner = current.task?.creatureId;
-      return isLocalHero(owner) ? owner! : null;
+  async function run(request: BattleRequest): Promise<BattleReply> {
+    const current = bridge;
+    if (!current) return noBridgeReply();
+    waiting.value = true;
+    let reply: BattleReply;
+    try {
+      reply = await current.request(request);
+    } finally {
+      waiting.value = false;
     }
-    return isLocalHero(current.activeId) ? current.activeId : null;
+    connectionLost.value = reply.code === 'CONNECTION_LOST';
+    for (const step of reply.steps) {
+      absorb(step.battle, step.events);
+      current.onStep(step);
+    }
+    if (reply.closed) await current.closed(reply);
+    return reply;
   }
 
-  function send(command: BattleCommand): DomainEvent[] {
-    const parsed = BattleCommandSchema.parse(command);
-    const result = bridge
-      ? bridge.send(parsed)
-      : isFightCommand(parsed)
-        ? applyBattleCommand(battle.value ?? undefined, parsed)
-        : null;
-    if (!result) return [];
-    absorb(result.battle ?? null, result.events);
-    return result.events;
-  }
-
-  function prepare(next: BattleDeploy, heroes: string[], resumed: BattleState | null = null) {
+  function prepare(next: BattleDeploy, heroes: string[], resumed: BattleProjection | null = null) {
     deploy.value = next;
     localHeroIds.value = [...heroes];
-    battle.value = resumed;
+    projection.value = resumed;
     lastHeroEvents.value = [];
     queue.value = [];
     turnStartWill.value = resumed?.turnWill ?? 0;
   }
 
-  function start() {
-    if (!deploy.value || battle.value) return;
-    const result = bridge ? bridge.start() : startBattle(deploy.value.setup);
-    absorb(result.battle, result.events);
+  async function start(): Promise<boolean> {
+    if (!deploy.value || projection.value || waiting.value) return false;
+    const reply = await run({ kind: 'start' });
+    if (reply.ok) return true;
+    if (reply.code !== 'BATTLE_OPEN' || !bridge) return false;
+    const view = await bridge.restore();
+    if (!view) return false;
+    projection.value = view;
+    turnStartWill.value = view.turnWill;
+    return true;
   }
 
-  function bindBridge(next: BattleEngineBridge | null) {
+  function bindBridge(next: BattleServerBridge | null) {
     bridge = next;
   }
 
@@ -156,54 +166,57 @@ export const useBattleStore = defineStore('battle-store', () => {
     engagement.value = next;
   }
 
-  function restore(saved: BattleSnapshot) {
+  function restore(saved: Engagement | null, view: BattleProjection | null) {
     close();
-    engagement.value = saved.engagement;
-    battle.value = saved.battle;
+    engagement.value = saved;
+    projection.value = saved ? view : null;
   }
 
-  function snapshot(): BattleSnapshot {
-    return { engagement: engagement.value, battle: battle.value };
+  async function leave(): Promise<boolean> {
+    if (!projection.value?.outcome) return false;
+    const reply = await run({ kind: 'close' });
+    return reply.ok;
   }
 
-  function leave() {
-    if (bridge) bridge.leave();
-    else close();
-  }
-
-  function act(action: BattleAction, atMs: number = Date.now()): boolean {
+  async function act(action: BattleAction): Promise<boolean> {
+    if (waiting.value) return false;
     if (inputLocked.value && !TASK_ACTIONS.has(action.kind)) return false;
     if (!animating.value) enemyTurnPlaying.value = false;
-    const heroId = actorFor(action);
-    if (!heroId) return false;
-    const events = send({ type: 'BATTLE', payload: { kind: 'hero', heroId, atMs, action } });
-    lastHeroEvents.value = events;
-    return !events.some((e) => e.type === 'BATTLE_REJECTED');
+    if (!actorFor(projection.value, action, isLocalHero)) return false;
+    const reply = await run({ kind: 'hero', action });
+    lastHeroEvents.value = reply.events;
+    return reply.ok && !reply.events.some((e) => e.type === 'BATTLE_REJECTED');
   }
 
-  function actAll(actions: BattleAction[], atMs: number = Date.now()): boolean {
+  async function actAll(actions: BattleAction[]): Promise<boolean> {
     const collected: DomainEvent[] = [];
     let accepted = actions.length > 0;
     for (const action of actions) {
-      accepted = act(action, atMs);
+      accepted = await act(action);
       collected.push(...lastHeroEvents.value);
-      if (!accepted || battle.value?.task) break;
+      if (!accepted || projection.value?.task) break;
     }
     lastHeroEvents.value = collected;
     return accepted;
   }
 
   const needsEnemyTurn = computed(() => {
-    const current = battle.value;
-    if (!current || current.phase === 'ended' || current.task || animating.value) return false;
-    return creatureById(current, current.activeId)?.side === 'enemies';
+    const current = projection.value;
+    if (!current || current.phase === 'ended' || current.task) return false;
+    if (current.reaction?.stage === 'block') return false;
+    if (animating.value || waiting.value || refusedEnemyTurn.value === current) return false;
+    return current.creatures.find((c) => c.id === current.activeId)?.side === 'enemies';
   });
 
-  function runEnemyTurn(atMs: number = Date.now()) {
+  async function runEnemyTurn(): Promise<void> {
     if (!needsEnemyTurn.value) return;
+    const before = projection.value;
     lastHeroEvents.value = [];
     enemyTurnPlaying.value = true;
-    send({ type: 'BATTLE', payload: { kind: 'run-enemy-turn', atMs } });
+    const reply = await run({ kind: 'run-enemy-turn' });
+    if (reply.ok || projection.value !== before) return;
+    refusedEnemyTurn.value = before;
+    if (!animating.value) enemyTurnPlaying.value = false;
   }
 
   function takeEvents(): DomainEvent[] {
@@ -223,9 +236,12 @@ export const useBattleStore = defineStore('battle-store', () => {
     revealedShields.value = [];
     animating.value = false;
     enemyTurnPlaying.value = false;
+    waiting.value = false;
+    connectionLost.value = false;
+    refusedEnemyTurn.value = null;
     deploy.value = null;
     engagement.value = null;
-    battle.value = null;
+    projection.value = null;
     localHeroIds.value = [];
     lastHeroEvents.value = [];
     queue.value = [];
@@ -235,17 +251,18 @@ export const useBattleStore = defineStore('battle-store', () => {
   return {
     deploy,
     engagement,
-    battle,
+    projection,
     localHeroIds,
     lastHeroEvents,
     turnStartWill,
     queue,
     animating,
+    waiting,
+    connectionLost,
     inputLocked,
     revealedShields,
     isOpen,
     inBattle,
-    projection,
     needsEnemyTurn,
     prepare,
     start,
@@ -259,6 +276,5 @@ export const useBattleStore = defineStore('battle-store', () => {
     bindBridge,
     engage,
     restore,
-    snapshot,
   };
 });

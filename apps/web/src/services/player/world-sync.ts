@@ -15,6 +15,11 @@ let enabled = false;
 let flusher: (() => Promise<void>) | null = null;
 let currentMapId: (() => string | null) | null = null;
 let snapshotter: ((force: boolean) => void) | null = null;
+let pushBlocker: (() => boolean) | null = null;
+
+export function bindPushBlocker(next: (() => boolean) | null): void {
+  pushBlocker = next;
+}
 
 export function bindWorldFlusher(next: (() => Promise<void>) | null): void {
   flusher = next;
@@ -93,6 +98,10 @@ export function queueWorldPush(
   options: { force?: boolean } = {},
 ): void {
   setDocument(locationKey, mapId, json);
+  if (pushBlocker?.()) {
+    pending.delete(mapId);
+    return;
+  }
   if (!options.force && serverCopies.get(mapId) === json) {
     pending.delete(mapId);
     return;
@@ -110,6 +119,10 @@ export function takePendingPushes(): WorldPush[] {
   if (timer !== null) {
     window.clearTimeout(timer);
     timer = null;
+  }
+  if (pushBlocker?.()) {
+    pending.clear();
+    return [];
   }
   const taken = [...pending.values()];
   pending.clear();

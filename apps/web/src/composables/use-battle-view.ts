@@ -63,6 +63,9 @@ export function useBattleText() {
   return { t, text };
 }
 
+const TIMEOUT_RETRIES = 20;
+const TIMEOUT_RETRY_MS = 250;
+
 export function useBattleView() {
   const store = useBattleStore();
   const { warn, send, lockedWarning } = useBattleWarnings();
@@ -102,7 +105,7 @@ export function useBattleView() {
     return controlledHero(store.projection, store.localHeroIds);
   }
 
-  function act(action: BattleAction): boolean {
+  function act(action: BattleAction): Promise<boolean> {
     return send(() => store.act(action));
   }
 
@@ -113,7 +116,7 @@ export function useBattleView() {
     ui.toolAt = null;
   }
 
-  function tapHex(hex: BattleHex) {
+  async function tapHex(hex: BattleHex) {
     if (lockedWarning()) return;
     const moving = ui.stage === 'action' && ui.mode === 'strike';
     const actions = battleTapActions({
@@ -131,7 +134,7 @@ export function useBattleView() {
     }
     ui.hover = null;
     if (moving) goStage('move');
-    const accepted = send(() => store.actAll(actions));
+    const accepted = await send(() => store.actAll(actions));
     if (accepted && ui.mode !== 'move' && ui.mode !== 'swap') resetBattleUi();
   }
 
@@ -174,7 +177,7 @@ export function useBattleView() {
       return;
     }
     if (hero.hands[hand]?.usePrice) {
-      act({ kind: 'use-item', hand });
+      void act({ kind: 'use-item', hand });
       resetBattleUi();
       return;
     }
@@ -206,22 +209,22 @@ export function useBattleView() {
     ui.hand = BATTLE_HANDS[(at + direction + BATTLE_HANDS.length) % BATTLE_HANDS.length];
   }
 
-  function swapFrom(bagIndex: number) {
-    if (act({ kind: 'swap-item', hand: ui.swapHand, bagIndex })) resetBattleUi();
+  async function swapFrom(bagIndex: number) {
+    if (await act({ kind: 'swap-item', hand: ui.swapHand, bagIndex })) resetBattleUi();
   }
 
-  function endTurn() {
-    if (act({ kind: 'end-turn' })) resetBattleUi();
+  async function endTurn() {
+    if (await act({ kind: 'end-turn' })) resetBattleUi();
   }
 
   function start() {
     resetBattleUi();
-    store.start();
+    return store.start();
   }
 
   function leave() {
     resetBattleUi();
-    store.leave();
+    return store.leave();
   }
 
   function hoverHex(hex: BattleHex | null) {
@@ -236,18 +239,27 @@ export function useBattleView() {
     if (weaponHandsLeft(projection, hero).length === 0) goStage('move');
   }
 
-  function actWithTool() {
+  async function actWithTool(): Promise<boolean> {
     if (lockedWarning()) return false;
     const tool = view.value.board?.tool;
     if (!tool?.action) return false;
     if (tool.action === 'attack' && tool.targetId) {
-      const struck = act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
+      const struck = await act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
       if (struck) hideToolWhenNoWeaponLeft();
       return struck;
     }
     if (tool.action === 'block') return act({ kind: 'place-shield', hex: tool.at });
     if (tool.action === 'use') return act({ kind: 'use-item', hand: tool.hand });
     return act({ kind: 'remove-shield', hex: tool.at });
+  }
+
+  async function taskTimeout(): Promise<boolean> {
+    for (let attempt = 0; attempt <= TIMEOUT_RETRIES; attempt += 1) {
+      if (await act({ kind: 'task-timeout' })) return true;
+      if (!store.projection?.task) return false;
+      await new Promise((resolve) => setTimeout(resolve, TIMEOUT_RETRY_MS));
+    }
+    return false;
   }
 
   return {
@@ -269,6 +281,6 @@ export function useBattleView() {
     undo: () => act({ kind: 'undo-step' }),
     takeHit: () => act({ kind: 'take-hit' }),
     answer: (option: number) => act({ kind: 'answer-task', option }),
-    timeout: () => act({ kind: 'task-timeout' }),
+    timeout: taskTimeout,
   };
 }

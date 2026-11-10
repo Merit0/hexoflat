@@ -2,6 +2,7 @@ import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { recoverStepPosition } from '@/services/knowledge/step-recovery';
 import {
   bindCurrentMapId,
+  bindPushBlocker,
   bindWorldSnapshotter,
   forgetAllServerWorlds,
   forgetServerWorld,
@@ -10,7 +11,13 @@ import {
   rememberServerWorld,
 } from '@/services/player/world-sync';
 import type { ServerWorld } from '@hexoflat/engine/world/server-world';
-import { queueFreshServedWorld, readCachedWorld } from '@/services/world/served-world';
+import {
+  installTravelledWorlds,
+  queueFreshServedWorld,
+  readCachedWorld,
+} from '@/services/world/served-world';
+import { i18n } from '@/i18n';
+import { takeServerBattleView } from '@/services/battle/battle-server';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { installCampBook } from '@hexoflat/engine/knowledge/camp-book';
@@ -73,13 +80,12 @@ import {
 } from '@/services/world/respawn-schedule';
 import { useBattleStore } from '@/stores/battle-store';
 import {
-  isCurrentlyHydratingFromStorage,
   initialLocationKey,
   MAP_ORIGIN,
   requireWorldSeed,
   runWorldTick,
-  readBattleSnapshot,
-  withoutBattleAutosave,
+  hasLegacyBattle,
+  servedEngagement,
   type TWorldState,
 } from '@/stores/world-map-store-helpers';
 
@@ -104,8 +110,7 @@ export { runWorldTick };
 
 bindWorldSnapshotter((force) => useWorldMapStore().queueServerWorld(force));
 bindCurrentMapId(() => useWorldMapStore().currentMapId);
-
-let battleAutosaveStop: (() => void) | null = null;
+bindPushBlocker(() => useBattleStore().inBattle);
 
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
@@ -289,27 +294,18 @@ export const useWorldMapStore = defineStore('world-map-store', {
       useHeroStore().heroCoordinates = spawn;
     },
 
-    async respawnHeroAtCamping() {
-      await respawnHeroAtCampingAction(this, {
-        hero: useHeroStore(),
+    async respawnHeroAtCamping(result: WorldCommandResult) {
+      await respawnHeroAtCampingAction(this, result, {
         events: useGameEventsStore(),
         battle: useBattleStore(),
+        installTravel: installTravelledWorlds,
         isViewingOtherWorldLocation,
         routeToLocation,
       });
     },
 
-    enableBattleAutosave() {
-      if (battleAutosaveStop) return;
-      battleAutosaveStop = useBattleStore().$subscribe(() => {
-        if (isCurrentlyHydratingFromStorage()) return;
-        this.saveToStorage();
-      });
-    },
-
     bootstrapWorld() {
       const heroStore = useHeroStore();
-      this.enableBattleAutosave();
 
       const locationKey = heroStore.nav.locationKey;
       const mapId = heroStore.nav.locationMapId ?? undefined;
@@ -477,13 +473,17 @@ export const useWorldMapStore = defineStore('world-map-store', {
           const recovered = recoverStepPosition(heroStore.knowledge, mapId, raw.knowledgeRevision);
           if (recovered) heroStore.rememberPosition(mapId, (heroStore.heroCoordinates = recovered));
         }
-        withoutBattleAutosave(() =>
-          battleStore.restore(readBattleSnapshot(raw?.battle, this.map as HexMapModel | null)),
+        if (hasLegacyBattle(raw?.battle)) {
+          useGameEventsStore().push('Battle', i18n.global.t('battle.legacyDismissed'), 'BATTLE');
+        }
+        battleStore.restore(
+          servedEngagement(served?.engagement, this.map as HexMapModel | null),
+          takeServerBattleView(),
         );
       } else {
         heroStore.heroCoordinates = null;
         this.woodCollected = 0;
-        withoutBattleAutosave(() => battleStore.close());
+        battleStore.close();
       }
 
       if (!this.map) return;
@@ -509,7 +509,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
         knowledgeRevision: useHeroStore().knowledge?.revision,
         worldSeed: getWorldSeed() ?? undefined,
         descriptor: this.descriptor,
-        battle: useBattleStore().snapshot(),
       };
       scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
       if (!serverMode || targetMapId !== this.currentMapId) return;

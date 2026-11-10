@@ -1,5 +1,4 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import type { BattleState } from '@hexoflat/engine/battle/battle-state';
 import { i18n } from '@/i18n';
 import { useBattleStore } from '@/stores/battle-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
@@ -9,7 +8,9 @@ interface Resolved {
   results: { attackerId: string; outcome: 'blocked' | 'hit' | 'dodged'; damage: number }[];
 }
 
-function nameResolver(battle: BattleState | null) {
+type NamedBattle = { creatures: { id: string; kind: string }[] };
+
+function nameResolver(battle: NamedBattle | null) {
   const names = useBattleStore().deploy?.names ?? {};
   return (id: string): string => {
     if (names[id]) return names[id];
@@ -18,7 +19,7 @@ function nameResolver(battle: BattleState | null) {
   };
 }
 
-export function logBattleEvents(events: DomainEvent[], battle: BattleState | null): void {
+export function logBattleEvents(events: DomainEvent[], battle: NamedBattle | null): void {
   const log = useGameEventsStore();
   const t = i18n.global.t;
   const nameOf = nameResolver(battle);

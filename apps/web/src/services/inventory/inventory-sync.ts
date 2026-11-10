@@ -36,6 +36,7 @@ import {
   startExpeditionSync,
   stopExpeditionSync,
 } from '@/services/player/expedition-sync';
+import { observeServerClock } from '@/services/battle/battle-clock';
 import { bindInventoryMirror } from './inventory-mirror';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
@@ -73,6 +74,12 @@ export function bindHealthListener(listener: typeof healthListener): void {
   healthListener = listener;
 }
 
+let killsListener: ((kills: number) => void) | null = null;
+
+export function bindKillsListener(listener: typeof killsListener): void {
+  killsListener = listener;
+}
+
 export function bindPortalListener(listener: typeof portalListener): void {
   portalListener = listener;
 }
@@ -91,6 +98,7 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     sealedUntil?: Record<string, number>;
     portal?: PortalLink | null;
     health?: { current: number; bonus: number; debt: number };
+    kills?: number;
   };
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
   inventorySession.progressRevision = projection.revision;
@@ -100,6 +108,8 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
   inventorySession.sealedUntil = progress.sealedUntil ?? {};
   inventorySession.portal = progress.portal ?? null;
   portalListener?.(inventorySession.portal);
+  inventorySession.kills = progress.kills ?? 0;
+  killsListener?.(inventorySession.kills);
   inventorySession.health = progress.health ?? null;
   if (inventorySession.health) healthListener?.(inventorySession.health);
   knowledgeListener?.(inventorySession.knowledge);
@@ -382,6 +392,8 @@ export interface WorldCommandResult {
   engagement: Engagement | null;
   travel?: WorldCommandResponse['travel'];
   touched?: WorldCommandResponse['touched'];
+  steps: NonNullable<WorldCommandResponse['steps']>;
+  serverNowMs: number | null;
 }
 
 export type WorldStepResult = WorldCommandResult;
@@ -394,7 +406,8 @@ export function sendWorldCommand(
     | 'WORLD_TRAVEL'
     | 'WORLD_PORTAL_OPEN'
     | 'WORLD_PORTAL_ENTER'
-    | 'WORLD_PORTAL_CLOSE',
+    | 'WORLD_PORTAL_CLOSE'
+    | 'WORLD_BATTLE',
   payload: Record<string, unknown>,
 ): Promise<WorldCommandResult> {
   const failed = (code: string): WorldCommandResult => ({
@@ -404,6 +417,8 @@ export function sendWorldCommand(
     events: [],
     effects: [],
     engagement: null,
+    steps: [],
+    serverNowMs: null,
   });
   if (inventorySession.status !== 'live') return Promise.resolve(failed('OFFLINE'));
   return enqueue(async (): Promise<WorldCommandResult> => {
@@ -415,11 +430,16 @@ export function sendWorldCommand(
       command: { type, payload: { heroId: inventorySession.heroId, ...payload } },
     };
     let response: WorldCommandResponse;
+    const sentAt = Date.now();
     try {
       response = await socket.sendWorld(env);
     } catch (error) {
       lost(error);
-      return failed(error instanceof PlayerSocketError ? error.code : 'OFFLINE');
+      const code = error instanceof PlayerSocketError ? error.code : 'OFFLINE';
+      return failed(code === 'DISCONNECTED' ? 'CONNECTION_LOST' : code);
+    }
+    if (typeof response.serverNowMs === 'number') {
+      observeServerClock(response.serverNowMs, sentAt, Date.now());
     }
     applyProgress(response.aggregates.progress);
     const inventory = response.aggregates.inventory;
@@ -432,11 +452,13 @@ export function sendWorldCommand(
       engagement: (response.engagement as Engagement | null | undefined) ?? null,
       travel: response.travel,
       touched: response.touched,
+      steps: response.steps ?? [],
+      serverNowMs: response.serverNowMs ?? null,
     };
     if (response.result !== 'applied') {
       return { ...common, ok: false, code: response.code ?? response.result };
     }
-    return { ...common, ok: true };
+    return { ...common, ok: true, ...(response.code ? { code: response.code } : {}) };
   });
 }
 

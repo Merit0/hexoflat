@@ -5,7 +5,12 @@ import { applyProgress } from '@/services/inventory/inventory-sync';
 import { vi } from 'vitest';
 import { apiClient } from '@/api/client';
 import { enableServerWorlds, resetWorldSync } from '@/services/player/world-sync';
-import { adoptFakeWorld, resetFakePlayerServer, snapshot } from './fake-player-server';
+import {
+  adoptFakeWorld,
+  fakeWorldSnapshot,
+  resetFakePlayerServer,
+  snapshot,
+} from './fake-player-server';
 
 export function seedFakeSession(
   heroId: string,
@@ -20,6 +25,9 @@ export function seedFakeSession(
   enableServerWorlds();
   vi.spyOn(apiClient, 'putJson').mockImplementation((_path: string, json: string) =>
     Promise.resolve(adoptFakeWorld(json) as never),
+  );
+  vi.spyOn(apiClient, 'get').mockImplementation(() =>
+    Promise.resolve(fakeWorldSnapshot() as never),
   );
   vi.spyOn(apiClient, 'post').mockResolvedValue({});
   resetInventorySession();

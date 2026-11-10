@@ -10,6 +10,7 @@ import {
 } from '@hexoflat/engine';
 import {
   actWorld,
+  battleWorld,
   closePortalWorld,
   enterPortalWorld,
   openPortalWorld,
@@ -22,6 +23,9 @@ import {
   type ServerWorld,
   type WorldClientHint,
 } from '@hexoflat/engine';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import type {
   HeroSnapshot,
   PlayerCommandResponse,
@@ -213,6 +217,7 @@ function handleWorld(envelope: PlayerEnvelope) {
   };
   const type = envelope.command.type;
   const finders = fakeFinders(run.world);
+  if (type === 'WORLD_BATTLE') return battleFake(envelope, base, { ...run, ...finders });
   if (type === 'WORLD_TRAVEL' || type === 'WORLD_PORTAL_ENTER') {
     return travelFake(envelope, base, { ...run, ...finders });
   }
@@ -330,4 +335,102 @@ function travelFake(
     },
     aggregates: snapshot().aggregates,
   };
+}
+
+function battleFake(
+  envelope: PlayerEnvelope,
+  base: { commandId: string; tileDiffs: never[]; effects: never[]; events: never[] },
+  run: Parameters<typeof tickWorld>[0] & ReturnType<typeof fakeFinders>,
+) {
+  const s = store!;
+  const payload = envelope.command.payload as Parameters<typeof battleWorld>[1];
+  const outcome = battleWorld(run, payload);
+  if (!outcome.ok) {
+    return {
+      ...base,
+      events: outcome.events,
+      result: 'rejected' as const,
+      code: outcome.code,
+      hero: null,
+      aggregates: snapshot().aggregates,
+    };
+  }
+  let nextWorld = outcome.world;
+  const respawn = outcome.respawn;
+  let travel: { locationKey: string; world: unknown; refreshed: unknown } | undefined;
+  let touched: { locationKey: string; world: unknown }[] = [];
+  if (respawn) {
+    const { origin, destination, replaced } = respawn;
+    for (const [mapId, held] of storedWorlds) {
+      if (held.locationKey === origin.locationKey) storedWorlds.delete(mapId);
+    }
+    storedWorlds.set((replaced ?? origin).mapId, replaced ?? origin);
+    storedWorlds.set(destination.mapId, destination);
+    for (const other of respawn.touched) storedWorlds.set(other.mapId, other);
+    nextWorld = destination;
+    travel = {
+      locationKey: destination.locationKey,
+      world: serializeWorld(destination),
+      refreshed: replaced
+        ? { locationKey: replaced.locationKey, world: serializeWorld(replaced) }
+        : null,
+    };
+    touched = respawn.touched.map((other) => ({
+      locationKey: other.locationKey,
+      world: serializeWorld(other),
+    }));
+  } else {
+    storedWorlds.set(outcome.world.mapId, outcome.world);
+  }
+  world = nextWorld;
+  s.progress = { revision: s.progress.revision + 1, state: respawn?.progress ?? outcome.progress };
+  const inventory = respawn?.inventory ?? outcome.inventory;
+  if (inventory !== s.inventory.state) {
+    s.inventory = { revision: s.inventory.revision + 1, state: inventory };
+  }
+  return {
+    ...base,
+    events: outcome.events,
+    tileDiffs: outcome.tileDiffs,
+    steps: outcome.steps,
+    serverNowMs: outcome.serverNowMs,
+    engagement: outcome.world.engagement,
+    ...(outcome.rejected ? { code: outcome.rejected } : {}),
+    ...(travel ? { travel, touched } : {}),
+    result: 'applied' as const,
+    hero: null,
+    aggregates: snapshot().aggregates,
+  };
+}
+
+export function fakeWorldSnapshot() {
+  const held = world?.battle ?? null;
+  return {
+    battleView: held ? projectBattleForViewer(held, 'heroes') : null,
+    serverNowMs: Date.now(),
+  };
+}
+
+export function fakeEngageSquad(at: { columnIndex: number; rowIndex: number }) {
+  const held = world!;
+  const tile = held.map.tiles.find(
+    (t) => t.coordinates.columnIndex === at.columnIndex && t.coordinates.rowIndex === at.rowIndex,
+  )!;
+  tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETON_PACK, tile.coordinates);
+  held.engagement = {
+    squadId: `${at.columnIndex}:${at.rowIndex}:skeleton-pack`,
+    ambush: false,
+    heroAt: { ...held.heroCoordinates! },
+    heroIds: [store!.heroId],
+    startItems: {},
+  };
+  return held.engagement;
+}
+
+export function fakeEndBattle(outcome: 'victory' | 'defeat') {
+  const battle = world!.battle!;
+  const loser = outcome === 'victory' ? 'enemies' : 'heroes';
+  for (const creature of battle.creatures) if (creature.side === loser) creature.hp = 0;
+  battle.outcome = outcome;
+  battle.phase = 'ended';
 }

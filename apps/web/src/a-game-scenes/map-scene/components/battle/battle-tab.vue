@@ -1,5 +1,13 @@
 <template>
   <section class="battle-tab" data-testid="battle-tab">
+    <div
+      v-if="battleStore.waiting || battleStore.connectionLost"
+      class="battle-tab__status"
+      data-testid="battle-waiting"
+      role="status"
+    >
+      {{ battleStore.connectionLost ? t('battle.connectionLost') : t('battle.waiting') }}
+    </div>
     <template v-if="view.stage !== 'deploy'">
       <battle-initiative-strip :round="view.round" :chips="view.chips" />
 
@@ -41,14 +49,21 @@ import BattleInitiativeStrip from './battle-initiative-strip.vue';
 import { useBattleReaction } from '@/composables/use-battle-reaction';
 import BattleHeroControls from './battle-hero-controls.vue';
 import BattleCreatureRow from './battle-creature-row.vue';
+import { useBattleStore } from '@/stores/battle-store';
 
 const { t } = useI18n();
+const battleStore = useBattleStore();
 const { view, ui, selectEnemy, takeHit, pickHand, pickAction, swapFrom, undo, endTurn, leave } =
   useBattleView();
 useBattleReaction();
 </script>
 
 <style scoped>
+.battle-tab__status {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
 .battle-tab {
   display: grid;
   align-content: start;

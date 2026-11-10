@@ -12,13 +12,13 @@ export function useBattleEnemyDriver(delayMs: number = BATTLE_TIMING.enemyTurnDe
   }
 
   watch(
-    () => (store.needsEnemyTurn ? store.battle : null),
+    () => (store.needsEnemyTurn ? store.projection : null),
     (pending) => {
       stop();
       if (!pending) return;
       timer = setTimeout(() => {
         timer = null;
-        store.runEnemyTurn();
+        void store.runEnemyTurn();
       }, delayMs);
     },
     { immediate: true },

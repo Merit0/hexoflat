@@ -352,6 +352,9 @@
     }
   },
   "battle": {
+    "legacyDismissed": "A battle from an older version was dismissed.",
+    "waiting": "Waiting for the server…",
+    "connectionLost": "Connection lost. The battle resumes when you reconnect.",
     "banner": {
       "round": "{place} · Round {round}",
       "willLeft": "{actor} · {will} Will left"

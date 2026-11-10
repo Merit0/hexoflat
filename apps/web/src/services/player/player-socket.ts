@@ -26,6 +26,8 @@ export interface WorldCommandResponse extends PlayerCommandResponse {
   tileDiffs: { coordinates: { columnIndex: number; rowIndex: number }; tile: unknown }[];
   effects: { kind: string; [field: string]: unknown }[];
   engagement?: unknown;
+  steps?: { events: { type: string; payload?: unknown }[]; battle: unknown }[];
+  serverNowMs?: number;
   touched?: { locationKey: string; world: unknown }[];
   travel?: {
     locationKey: string;

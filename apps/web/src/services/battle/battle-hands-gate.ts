@@ -3,12 +3,12 @@ import { useBattleStore } from '@/stores/battle-store';
 import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
 
 export interface HandsGateDeps {
-  send: (run: () => boolean) => boolean;
+  send: (run: () => Promise<boolean>) => Promise<boolean>;
   lockedWarning: () => boolean;
 }
 
 function isOpen(): boolean {
-  const battle = useBattleStore().battle;
+  const battle = useBattleStore().projection;
   return !!battle && battle.phase !== 'ended';
 }
 
@@ -23,6 +23,7 @@ export function bindBattleHandsGate({ send, lockedWarning }: HandsGateDeps): voi
     if (lockedWarning()) return false;
     const right = battleKey(hands.weapon);
     const left = battleKey(hands.shield);
-    return send(() => battle.act({ kind: 'set-hands', right, left }));
+    void send(() => battle.act({ kind: 'set-hands', right, left }));
+    return false;
   }, isOpen);
 }
