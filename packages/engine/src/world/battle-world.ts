@@ -16,7 +16,9 @@ import {
 } from '../battle/projection';
 import type { SquadWorld } from '../squads/squad-actions';
 import { beginBattle, closeBattle, heroBattleCreature } from '../squads/squad-battle';
-import { heroModelOf, heroOf, type WorldRun } from './world-commands';
+import { heroModelOf, heroOf } from './world-commands';
+import { respawnWorld } from './respawn-world';
+import type { TravelOutcome, TravelRun } from './travel';
 import { syncHandsToInventory } from './battle-hands-sync';
 import type { ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
@@ -39,11 +41,12 @@ export type BattleWorldOutcome =
       tileDiffs: TileDiff[];
       serverNowMs: number;
       rejected: string | null;
+      respawn: Extract<TravelOutcome, { ok: true }> | null;
     }
   | { ok: false; code: string; events: DomainEvent[] };
 
 interface Session {
-  run: WorldRun;
+  run: TravelRun;
   world: ServerWorld;
   progress: ProgressState;
   inventory: InventoryState;
@@ -147,6 +150,7 @@ function finish(
     tileDiffs: before ? diffTiles(before, world.map) : [],
     serverNowMs: session.run.now,
     rejected,
+    respawn: null,
   };
 }
 
@@ -199,7 +203,22 @@ function closeBattleWorld(session: Session): BattleWorldOutcome {
   session.progress.kills += kills;
   session.events.push(...outcome.events);
   session.steps.push({ events: outcome.events, battle: null });
-  return finish(session, before, null);
+  const done = finish(session, before, null);
+  const defeated = (closed?.payload as { outcome?: string } | undefined)?.outcome === 'defeat';
+  if (!defeated || !done.ok) return done;
+  const respawn = respawnWorld({
+    ...session.run,
+    world: session.world,
+    progress: session.progress,
+    inventory: session.inventory,
+  });
+  if (!respawn.ok) return { ok: false, code: respawn.code, events: respawn.events };
+  return {
+    ...done,
+    progress: respawn.progress,
+    events: [...done.events, ...respawn.events],
+    respawn,
+  };
 }
 
 function fightBattleWorld(session: Session, payload: BattlePayload): BattleWorldOutcome {
@@ -233,7 +252,7 @@ function fightBattleWorld(session: Session, payload: BattlePayload): BattleWorld
 }
 
 export function battleWorld(
-  run: WorldRun,
+  run: TravelRun,
   payload: BattlePayload,
   rules: BattleRules = BATTLE_RULES,
 ): BattleWorldOutcome {

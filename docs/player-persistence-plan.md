@@ -888,3 +888,15 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 **Пропущені тести (для звіту).** `balance.test.ts`: два `it.skip` (рядки 28 і 35), не чіпали. `describe.skipIf(!dbAvailable)` у 6 наборах API пропустилися в цьому прогоні через відсутній Postgres (85 тестів).
 
 **Лишилося до B2/B3.** Відповіді на «проєкція карти в API», порядок блокувань `world → progress → inventory`, прапор `HEXOFLAT_E2E_FIXTURES`, дроп інвентарних команд під час бою (`BATTLE_OPEN`), `GET /player/world` з проєкцією бою.
+
+## Результати D4b-4, крок B2 (2026-11-10): респавн після поразки на сервері (engine)
+
+**Зроблено.**
+
+- **`respawnWorld(run: TravelRun)`** (`world/respawn-world.ts`), та сама форма результату, що в `travelWorld` (`origin`, `destination`, `replaced`, `touched`, `progress`, `inventory`, `events`): закриває відкритий портал (`closePortalIfOpen` з причиною `DEATH`, `progress.portal = null`, відповідні гекси порталів видаляються, а карти, змінені поза `origin`/`destination`, повертаються в `touched`); очищає `battle` та `engagement` покараної карти; підземелля замінюється свіжою картою (`replaced`, як при виході), статична локація лишається; `destination` це табір (збережений або створений; героя в таборі не копіює); `progress.health.current = 1` (одне серце, як `reviveAtOneHp`), `presence` у таборі; Воля, навички й `sealedUntil` не змінюються. Події: `PORTAL_CLOSED` (якщо був портал) і `HERO_RESPAWNED { heroId, from, to }`.
+- **`battleWorld` викликає його сам** у відповіді на `close` з поразкою: тип першого аргументу став `TravelRun` (потрібні `loadStored`/`loadById`/`create`, API їх уже має для `WORLD_TRAVEL`); у результаті нове поле `respawn` (повна форма `TravelOutcome`, або `null` при перемозі). `progress` у відповіді вже з одним серцем і табором; `kills` при поразці не зростає, `attempts` на загоні зростає як і раніше. Позицію героя в таборі беремо з документа табору (де він стояв), а не перераховуємо.
+- **Що не змінилося:** клієнтський `respawnHeroAtCamping` ще працює локально, він замінюється в B4 переходом на `respawn` з відповіді.
+
+**Тести.** Engine 967 (+6): `world/respawn-world.test.ts` (REQ-SRV-RSP-001: портал закрито й карта підземелля свіжа, герой у таборі з одним серцем; статична локація, Воля, навички й `sealedUntil` без змін; табір будується, якщо його ще нема; у таборі не переміщує на копію), `battle-world.test.ts` (респавн у тій самій відповіді при поразці, без респавну при перемозі). API/web typecheck зелені, web 2307.
+
+**Не робилося:** API-інтеграційні тести (Postgres `127.0.0.1:5433` не запущено). **Лишилося для B3:** відповідь `WORLD_BATTLE` має зберегти `respawn.origin`/`replaced`/`destination`/`touched` як серверні документи (так само, як `WORLD_TRAVEL`), узяти з `respawn.destination` карту табору для клієнта й застосувати проєкцію карти.

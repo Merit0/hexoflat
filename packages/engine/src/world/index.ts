@@ -8,3 +8,4 @@ export * from './world-leave';
 export * from './portal-world';
 export * from './battle-world';
 export * from './client-projection';
+export * from './respawn-world';

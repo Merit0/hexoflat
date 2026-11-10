@@ -11,6 +11,7 @@ import { findSquad } from '../squads/squad-state';
 import { HERO, hexAction, idAt, squadWorld } from '../squads/squad-test-setup';
 import {
   battleWorld,
+  createServerWorld,
   diffTiles,
   projectDiffsForClient,
   projectTileForClient,
@@ -20,6 +21,7 @@ import {
   stepWorld,
   type BattleWorldOutcome,
   type ServerWorld,
+  type TravelRun,
   type WorldRun,
 } from './index';
 
@@ -35,7 +37,10 @@ function inventory(): InventoryState {
   return inv;
 }
 
-function engaged(seed = 'seed-1'): WorldRun {
+const camps = new Map<string, ServerWorld>();
+
+function engaged(seed = 'seed-1'): TravelRun {
+  camps.clear();
   const state = squadWorld({
     squads: [{ key: HEXOBJECT_KEYS.SKELETON_PACK, at: SQUAD_AT }],
     hero: HERO_AT,
@@ -57,6 +62,13 @@ function engaged(seed = 'seed-1'): WorldRun {
     inventory: inventory(),
     heroId: HERO,
     now: 10_000,
+    loadStored: (key) => (key === 'camping' ? (camps.get('camping') ?? null) : null),
+    loadById: () => null,
+    create: (key) => {
+      const created = createServerWorld(key, `fresh-${key}`, 'expedition', HERO);
+      if (key === 'camping') camps.set('camping', created);
+      return created;
+    },
   };
 }
 
@@ -68,8 +80,8 @@ function ok(outcome: BattleWorldOutcome) {
 }
 
 class Table {
-  run: WorldRun;
-  constructor(run: WorldRun) {
+  run: TravelRun;
+  constructor(run: TravelRun) {
     this.run = run;
   }
   send(payload: Payload, at: number = this.run.now): BattleWorldOutcome {
@@ -303,6 +315,29 @@ describe('REQ-SRV-BTL-004 closing the battle', () => {
     const squad = findSquad(table.run.world.map, PACK)!;
     expect(squad.squad.creature.attempts).toBe(1);
     expect(table.run.progress.kills).toBe(0);
+  });
+
+  it('respawns the hero in the camp on a defeat, in the same answer', () => {
+    const table = started();
+    const battle = structuredClone(table.battle);
+    creatureById(battle, HERO)!.hp = 0;
+    battle.outcome = 'defeat';
+    battle.phase = 'ended';
+    table.run = { ...table.run, world: { ...table.run.world, battle } };
+    const out = ok(table.send({ kind: 'close', heroId: HERO }));
+    expect(out.respawn?.destination.locationKey).toBe('camping');
+    expect(out.respawn?.replaced?.locationKey).toBe('cave');
+    expect(out.progress.health.current).toBe(1);
+    expect(out.progress.presence?.locationKey).toBe('camping');
+    expect(out.events.map((event) => event.type)).toContain('HERO_RESPAWNED');
+  });
+
+  it('does not respawn after a victory', () => {
+    const table = started();
+    won(table);
+    const out = ok(table.send({ kind: 'close', heroId: HERO }));
+    expect(out.respawn).toBeNull();
+    expect(out.progress.health.current).not.toBe(1);
   });
 });
 
