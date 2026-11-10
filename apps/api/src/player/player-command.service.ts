@@ -13,6 +13,7 @@ import {
   grantItemServerSide,
   isPlayerCommandType,
   replaceInventory,
+  serverInventoryContext,
   type DomainEvent,
   type PlayerAggregates,
   type PlayerCommandOutcome,
@@ -145,7 +146,7 @@ export class PlayerCommandService {
         run: (aggregates) =>
           executePlayerCommand(aggregates, command, {
             devGrantAllowed,
-            inventory: { stashOpen: true, battleOpen: false },
+            inventory: serverInventoryContext(aggregates.progress.presence),
           }),
       }),
     );

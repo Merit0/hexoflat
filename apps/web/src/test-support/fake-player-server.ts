@@ -5,6 +5,7 @@ import {
   PLAYER_COMMAND_SCHEMAS,
   executePlayerCommand,
   isPlayerCommandType,
+  serverInventoryContext,
   type PlayerAggregates,
   type PlayerCommand,
 } from '@hexoflat/engine';
@@ -102,7 +103,7 @@ function handle(envelope: PlayerEnvelope): PlayerCommandResponse {
   const outcome = executePlayerCommand(
     { inventory: s.inventory.state, progress: s.progress.state },
     command,
-    { devGrantAllowed: true, inventory: { stashOpen: true, battleOpen: false } },
+    { devGrantAllowed: true, inventory: serverInventoryContext(s.progress.state.presence) },
   );
   if (!outcome.ok) return respond('rejected', outcome.code, outcome.events);
   const changed: HeroSnapshot['aggregates'] = {};

@@ -41,6 +41,20 @@ describe('UNLOCK_STASH_CHEST', () => {
     expect(run(world(inv), unlock(0)).state.inventory!.equip.shield).toBeNull();
   });
 
+  it('refuses with STASH_LOCKED away from the chest and keeps the coins, the chests and the revision', () => {
+    const inv = fresh(1);
+    give(inv, hand('weapon'), HEXOBJECT_KEYS.COINS, 130);
+    const before = structuredClone(inv);
+    const { state, events } = run(world(inv, { stashOpen: false, battleOpen: false }), unlock(0));
+    expect(state.inventory).toEqual(before);
+    expect(events).toEqual([
+      {
+        type: 'ITEM_TRANSFER_REJECTED',
+        payload: { heroId: HERO, command: 'UNLOCK_STASH_CHEST', reason: 'STASH_LOCKED' },
+      },
+    ]);
+  });
+
   it('keeps items that wait in a locked chest when another command runs', () => {
     const inv = emptyInventoryState(HERO);
     give(inv, stash(0), HEXOBJECT_KEYS.SWORD);

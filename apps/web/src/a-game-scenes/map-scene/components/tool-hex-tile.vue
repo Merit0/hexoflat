@@ -299,7 +299,11 @@ function flashDenied() {
 }
 
 function unlockWithCoins() {
-  const result = unlockNextChest();
+  const result = unlockNextChest(
+    heroStore.heroCoordinates
+      ? { locationKey: worldMapStore.currentLocationKey, coordinates: heroStore.heroCoordinates }
+      : null,
+  );
   if (result.ok) {
     heroToolStore.setActionMessage(t('stash.pay.unlocked'), null, null, 'success');
     return;
@@ -307,6 +311,10 @@ function unlockWithCoins() {
   flashDenied();
   if (result.reason === 'CAMP_CHEST_NOT_CLAIMED') {
     heroToolStore.setActionMessage(t('stash.pay.openFirst'));
+    return;
+  }
+  if (result.reason === 'STASH_LOCKED') {
+    heroToolStore.setActionMessage(t('stash.error.STASH_LOCKED'));
     return;
   }
   heroToolStore.setActionMessage(t('stash.pay.notEnough'), 'coins', result.price);
