@@ -7,3 +7,6 @@ export { planBuy } from './plan-buy';
 export { planSell } from './plan-sell';
 export { planRefresh } from './plan-refresh';
 export type { IRefreshOptions, TRefreshResult } from './plan-refresh';
+export { tradersForClient } from './trader-view';
+export { applyTraderFixture, traderFixtureSchema } from './trader-fixture';
+export type { TraderFixture } from './trader-fixture';

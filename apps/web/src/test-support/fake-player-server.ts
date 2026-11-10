@@ -6,6 +6,7 @@ import {
   executePlayerCommand,
   isPlayerCommandType,
   serverInventoryContext,
+  serverTradeContext,
   type PlayerAggregates,
   type PlayerCommand,
 } from '@hexoflat/engine';
@@ -39,6 +40,8 @@ interface Store {
   progress: { revision: number; state: PlayerAggregates['progress'] };
 }
 
+export const FAKE_RNG_SEED = 'fake-player-server-rng-seed';
+
 let store: Store | null = null;
 let world: ServerWorld | null = null;
 const storedWorlds = new Map<string, ServerWorld>();
@@ -60,13 +63,20 @@ export function resetFakePlayerServer(
   storedWorlds.clear();
 }
 
+function projectProgress(progress: Store['progress']) {
+  return {
+    revision: progress.revision,
+    state: AGGREGATES.progress.project(progress.state, { rngSeed: FAKE_RNG_SEED }),
+  };
+}
+
 export function snapshot(): HeroSnapshot {
   const s = store!;
   return {
     heroId: s.heroId,
     aggregates: {
       inventory: { revision: s.inventory.revision, state: s.inventory.state },
-      progress: { revision: s.progress.revision, state: s.progress.state },
+      progress: projectProgress(s.progress),
     },
   };
 }
@@ -103,7 +113,11 @@ function handle(envelope: PlayerEnvelope): PlayerCommandResponse {
   const outcome = executePlayerCommand(
     { inventory: s.inventory.state, progress: s.progress.state },
     command,
-    { devGrantAllowed: true, inventory: serverInventoryContext(s.progress.state.presence) },
+    {
+      devGrantAllowed: true,
+      inventory: serverInventoryContext(s.progress.state.presence),
+      trade: serverTradeContext(s.progress.state.presence, FAKE_RNG_SEED),
+    },
   );
   if (!outcome.ok) return respond('rejected', outcome.code, outcome.events);
   const changed: HeroSnapshot['aggregates'] = {};
@@ -113,7 +127,7 @@ function handle(envelope: PlayerEnvelope): PlayerCommandResponse {
   }
   if (outcome.changed.progress) {
     s.progress = { revision: s.progress.revision + 1, state: outcome.changed.progress };
-    changed.progress = { revision: s.progress.revision, state: s.progress.state };
+    changed.progress = projectProgress(s.progress);
   }
   return {
     commandId: envelope.commandId,

@@ -1,7 +1,7 @@
 import { EQUIP_SLOTS } from '../abstraction/hexobject-abstraction';
 import { coinPriceOf } from '../content/content-accessors';
 import type { TTraderDefinition } from '../content/content-schema';
-import { TRADERS, type TTraderKey } from '../content/traders.content';
+import { TRADERS, TRADER_KEYS, type TTraderKey } from '../content/traders.content';
 import type { InventoryState } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { deriveStream } from '../utils/random-seeded';
@@ -48,4 +48,13 @@ export function walletCoins(inventory: Pick<InventoryState, 'bag' | 'equip'>): n
     (sum, item) => (item?.key === HEXOBJECT_KEYS.COINS ? sum + item.amount : sum),
     0,
   );
+}
+
+export function tradersForClient(
+  progress: Pick<ProgressState, 'traders' | 'trips'>,
+  rngSeed: string,
+): Record<TTraderKey, TraderState> {
+  return Object.fromEntries(
+    TRADER_KEYS.map((key) => [key, traderView(progress, key, rngSeed)]),
+  ) as Record<TTraderKey, TraderState>;
 }

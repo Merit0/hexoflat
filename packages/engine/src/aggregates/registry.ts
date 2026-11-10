@@ -4,6 +4,16 @@ import type { InventoryState } from '../inventory/inventory-state';
 import type { TAggregateKind } from './aggregate-kinds';
 import { createKnowledgeState } from '../knowledge/state';
 import { emptyProgressState, progressStateSchema, type ProgressState } from './progress-state';
+import { tradersForClient } from '../trade/trader-view';
+
+export interface AggregateServerState {
+  rngSeed?: string;
+}
+
+function projectProgress(state: ProgressState, server: AggregateServerState): ProgressState {
+  if (!server.rngSeed) throw new Error(`Progress of ${state.knowledge.heroId} has no rngSeed`);
+  return { ...state, traders: tradersForClient(state, server.rngSeed) };
+}
 
 export interface IAggregateDefinition<TState> {
   kind: TAggregateKind;
@@ -11,7 +21,7 @@ export interface IAggregateDefinition<TState> {
   schema: z.ZodType<TState>;
   upcasters: Record<number, (old: unknown, ctx: { heroId: string }) => unknown>;
   createInitial(ctx: { heroId: string }): TState;
-  project(state: TState): unknown;
+  project(state: TState, server: AggregateServerState): unknown;
 }
 
 const inventoryDefinition: IAggregateDefinition<InventoryState> = {
@@ -40,7 +50,7 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
     5: (old) => ({ ...(old as object), trips: 0, traders: {} }),
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
-  project: (state) => state,
+  project: projectProgress,
 };
 
 export interface AggregateStates {
