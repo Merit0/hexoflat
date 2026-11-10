@@ -1077,6 +1077,8 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 
 **Тести.** Web 2294 (103 файли), API 166, engine 979 (2 `it.skip` у `balance.test.ts`, не чіпав), typecheck і lint без помилок. Файли без сесії переведено на `seedFakeSession`/`fakePlaceHero`: `use-board-crossing`, `use-board-model-draft` (перегляд моделі спершу перебудовує карту через `devRebuildFromRecipe`, бо сервер будує карту зі свого seed), `use-portal` (серверні карти через `fakeStoredWorldOf`), `world-map-store`, `world-map-store.descriptor`, `world-map-persistence` (переписано: завантаження серверного документа, `cacheServedWorld`, відновлення engagement). Видалено тести локальної генерації й збереження, `runWorldTick`, бриджа тіка (`inventory-bridge`), `withStoreInventory` (`inventory-sync`), `applyPortalRemovals`, `findArrivalHex`, `respawn-schedule` (розкладка), `world-storage`, `step-recovery`.
 
-**Пропущені тести:** `balance.test.ts`, два `it.skip` (щити). e2e не запускали (за командою Олега): групи `board`, `hero`, `camp`, `combat`, `auth`, `shell`; найімовірніші місця — перехід краєм дошки та портал (позиція героя тепер лише серверна), блок помилки завантаження світу.
+**Пропущені тести:** `balance.test.ts`, два `it.skip` (щити).
+
+**e2e (2026-11-10, API на :3101 з `HEXOFLAT_E2E_FIXTURES=1`):** `board` 12/12, `hero` 61/61, `camp`+`combat`+`auth`+`shell` одним прогоном 75/75; разом 148/148, жодного падіння й перезапуску. Перехід краєм дошки (`board-exit`) і збереження місця після перезавантаження пройшли. Блок помилки завантаження світу e2e не покриває (сервер завжди доступний), покритий лише юніт-тестом `retryWorldLoad`.
 
 **Не зроблено / ризики.** Dev-кнопки перегенерації підземелля й редактор статичної дошки працюють лише як перегляд у пам'яті до серверної dev-команди (D6/Creator). `revealTile` і клієнтські `revealAroundHero`/`revealEntryTile` у `goToLocation` лишились клієнтськими (пункт 5 рішень Олега).
