@@ -34,6 +34,8 @@ import {
 } from '@hexoflat/engine';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
+import { applyBattleFixture, battleFixtureSchema } from '@hexoflat/engine/battle/battle-fixtures';
+import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
 import {
@@ -690,6 +692,27 @@ export class WorldService {
         battleView: world.battle ? projectBattleForViewer(world.battle, 'heroes') : null,
         serverNowMs: now,
       };
+    });
+  }
+
+  async battleFixture(userId: string, heroId: string, raw: unknown): Promise<unknown> {
+    if (!e2eFixturesEnabled()) throw new PlayerCommandError('FORBIDDEN');
+    const fixture = battleFixtureSchema.safeParse(raw);
+    if (!fixture.success) throw new PlayerCommandError('INVALID_COMMAND');
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    const expeditionId = await ensureExpedition(this.db, userId, heroId);
+    return this.db.transaction(async (tx) => {
+      await lockExpedition(tx, expeditionId);
+      const { progress } = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      const mapId = progress?.state.presence?.mapId;
+      const now = Date.now();
+      const world = mapId ? await loadWorld(tx, expeditionId, mapId, now) : null;
+      if (!world?.battle) throw new PlayerCommandError('INVALID_COMMAND');
+      world.battle = applyBattleFixture(world.battle, fixture.data);
+      world.battle.turnClockMs = now;
+      await saveWorld(tx, expeditionId, world);
+      return { battleView: projectBattleForViewer(world.battle, 'heroes'), serverNowMs: now };
     });
   }
 }

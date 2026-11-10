@@ -750,6 +750,30 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(JSON.stringify(closed)).not.toContain(battle.seed);
   });
 
+  it('moves a battle with a fixture only when the e2e flag is on (REQ-B5-FIX-001)', async () => {
+    const { userId, heroId, expeditionId, mapId } = await openBattle();
+    delete process.env.HEXOFLAT_E2E_FIXTURES;
+    await expect(
+      world.battleFixture(userId, heroId, { kind: 'hero-turn', will: 9 }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    process.env.HEXOFLAT_E2E_FIXTURES = '1';
+    try {
+      await expect(
+        world.battleFixture(userId, heroId, { kind: 'hero-turn', will: 99 }),
+      ).rejects.toMatchObject({ code: 'INVALID_COMMAND' });
+      const view = (await world.battleFixture(userId, heroId, { kind: 'hero-turn', will: 9 })) as {
+        battleView: { activeId: string; turnWill: number; viewer: string };
+      };
+      expect(view.battleView).toMatchObject({ viewer: 'heroes', turnWill: 9 });
+      const held = await storedWorld(expeditionId, mapId);
+      expect(held.battle!.activeId).toBe(view.battleView.activeId);
+      expect(JSON.stringify(view)).not.toContain(held.battle!.seed);
+    } finally {
+      delete process.env.HEXOFLAT_E2E_FIXTURES;
+    }
+  });
+
   it('hides the members and the loot of an unscouted squad in every map the client gets', async () => {
     const { userId, heroId } = await kit.newPlayer();
     await enter(userId, heroId, 'cave');

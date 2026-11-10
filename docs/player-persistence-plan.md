@@ -938,8 +938,21 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 
 **Тести.** Web 2328 (було 2307), typecheck і lint без помилок, пороги ESLint не піднімали (довелось винести три чисті функції зі стору, щоб вкластися в 197 рядків), нових циклів немає. Нові: `battle-clock.test.ts` (зсув, мін. RTT, відлік), `battle-store.server.test.ts` (відновлення з `battleView`, один запит на `run-enemy-turn`, відмовлений хід, `CONNECTION_LOST`), `world-server-paths.test.ts` (поразка з респавном із `travel`, перемога; тест-шпигун: жодного `DEV_*`, бій і респавн не шлють PUT поза пушем карти табору при приході), `world-map-persistence.test.ts` (бою немає в збереженні, старий бій відкинуто), `router/dev-route.test.ts`. `battle-animation-*` без змін.
 
-**Навмисно зламані e2e (до B5).** Усі хуки `e2e/battle-hooks.ts`, що писали в `store.battle` (`finishBattle`, `giveHeroTheTurn`, `crowdTheHero`, `holdTheWindowOpen`, `giveEnemyTheTurn`), кидають помилку `Battle fixtures move to the server in B5`; отже ламаються `apps/playwright/e2e/world/battle-flow.spec.ts` та ті специфікації `squad-actions`, що завершують бій хуком. Читальні хуки (`getBattleSnapshot`, `getBattleHands`) працюють із проєкції, поле `wounds` порожнє. e2e не запускали.
+**Навмисно зламані e2e (до B5; виправлено в «B5, фундамент» нижче).** Усі хуки `e2e/battle-hooks.ts`, що писали в `store.battle` (`finishBattle`, `giveHeroTheTurn`, `crowdTheHero`, `holdTheWindowOpen`, `giveEnemyTheTurn`), кидають помилку `Battle fixtures move to the server in B5`; отже ламаються `apps/playwright/e2e/world/battle-flow.spec.ts` та ті специфікації `squad-actions`, що завершують бій хуком. Читальні хуки (`getBattleSnapshot`, `getBattleHands`) працюють із проєкції, поле `wounds` порожнє. e2e не запускали.
 
 **Відомі залишки.** (1) Прихід у табір після респавну пушить карту табору через міст `PUT /player/world` (загальний шлях завантаження локації, не бій); зникне в B6. (2) Автоматичного перепідключення сокета немає (`reconnection: false`): після `CONNECTION_LOST` стан відновиться при новій сесії через `battleView`. (3) `reportHealth`/`DEV_SET_HEALTH` лишились лише для dev-кнопки й e2e-хука, B6 їх видаляє.
 
 **Пропущені тести.** `balance.test.ts`: два `it.skip` (рядки 28 і 35). Набори API з `describe.skipIf(!dbAvailable)` не запускались у цьому кроці (API не чіпали).
+
+## Результати D4b-4, крок B5, фундамент (2026-11-10): серверні фікстури бою
+
+**Зроблено.** Хуки e2e більше не пишуть у стан бою браузера, вони просять сервер.
+
+- **Engine:** `battle/battle-fixtures.ts` (`battleFixtureSchema` strict, `applyBattleFixture` чиста над копією): `hero-turn {will}`, `enemy-turn {will}`, `crowd {adjacent, far}`, `hold-window {extraMs}`, `finish {outcome}`. Логіка перенесена з веб-хуків.
+- **API:** `POST /player/dev/battle-fixture` (потрібен `X-Player-Session`), `WorldService.battleFixture`: відмовляє `FORBIDDEN`, якщо `e2eFixturesEnabled()` хибне (прапор `HEXOFLAT_E2E_FIXTURES=1` і не production), блокує експедицію, змінює `world.battle`, ставить `turnClockMs`, повертає `battleView` і `serverNowMs`. Нових методів і заголовків для CORS немає (POST).
+- **Web:** `e2e/battle-hooks.ts` викликає ендпойнт і кладе `battleView` у `battleStore.projection`; хуки в `test-api.types.ts` тепер `Promise<void>` (Feature-класи вже їх `await`-ять).
+- **Запуск e2e:** API має стартувати з `HEXOFLAT_E2E_FIXTURES=1` (`scripts/pre-push-e2e.sh`, `.github/workflows/e2e-tests.yml`, README playwright).
+
+**Тести.** Engine 973 (+6 `battle-fixtures.test.ts`), API 165 на реальному Postgres (+1: фікстура працює лише з прапором, невалідна відхиляється, секрети не йдуть у відповідь), web 2328, playwright typecheck, lint без помилок.
+
+**Не зроблено (B5a–c).** Жодної e2e-специфікації не запускали (за вашою командою): `battle-flow.spec.ts`, `squad-actions.spec.ts`, `dungeon-fog.spec.ts` ще не перевірені проти серверного бою. Ймовірні місця для правок: спеки, що очікували миттєвого локального бою, і читальний хук `wounds` (тепер порожній).

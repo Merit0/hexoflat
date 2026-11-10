@@ -1,20 +1,54 @@
-import { toRaw } from 'vue';
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleDistance, hexKey } from '@hexoflat/engine/battle/hex-battle-geom';
 import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { controlledHero } from '@/composables/battle-board-tap';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
+import type { BattleProjection } from '@hexoflat/engine/battle/projection';
+import { apiClient } from '@/api/client';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import { observeServerClock } from '@/services/battle/battle-clock';
 import { useBattleStore } from '@/stores/battle-store';
 
-const SERVER_FIXTURE = 'Battle fixtures move to the server in B5';
-
-export function finishOpenBattle(_outcome: 'victory' | 'defeat'): void {
-  throw new Error(SERVER_FIXTURE);
+interface FixtureAnswer {
+  battleView: BattleProjection | null;
+  serverNowMs: number;
 }
 
-export function giveHeroTheTurn(_willPerTurn: number): void {
-  throw new Error(SERVER_FIXTURE);
+async function serverFixture(body: Record<string, unknown>): Promise<void> {
+  const sentAt = Date.now();
+  let answer: FixtureAnswer;
+  try {
+    answer = await apiClient.post<FixtureAnswer>('/player/dev/battle-fixture', body, {
+      headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' },
+    });
+  } catch (error) {
+    throw new Error(
+      `Battle fixture refused (start the API with HEXOFLAT_E2E_FIXTURES=1): ${String(error)}`,
+    );
+  }
+  observeServerClock(answer.serverNowMs, sentAt, Date.now());
+  useBattleStore().projection = answer.battleView;
+}
+
+export function finishOpenBattle(outcome: 'victory' | 'defeat'): Promise<void> {
+  return serverFixture({ kind: 'finish', outcome });
+}
+
+export function giveHeroTheTurn(willPerTurn: number): Promise<void> {
+  return serverFixture({ kind: 'hero-turn', will: willPerTurn });
+}
+
+export function crowdTheHero(adjacent = 2, far = 0): Promise<void> {
+  return serverFixture({ kind: 'crowd', adjacent, far });
+}
+
+export function holdTheWindowOpen(extraMs: number): Promise<void> {
+  return serverFixture({ kind: 'hold-window', extraMs });
+}
+
+export function giveEnemyTheTurn(willPerTurn: number): Promise<void> {
+  return serverFixture({ kind: 'enemy-turn', will: willPerTurn });
 }
 
 export interface BattleHexPoint {
@@ -47,18 +81,6 @@ export interface BattleSnapshot {
   terrain: Record<string, number>;
   terrainByHex: Record<string, string>;
   aimOptions: { q: number; r: number }[];
-}
-
-export function crowdTheHero(_adjacent = 2, _far = 0): void {
-  throw new Error(SERVER_FIXTURE);
-}
-
-export function holdTheWindowOpen(_extraMs: number): void {
-  throw new Error(SERVER_FIXTURE);
-}
-
-export function giveEnemyTheTurn(_willPerTurn: number): void {
-  throw new Error(SERVER_FIXTURE);
 }
 
 function heroDistanceTo(
@@ -164,28 +186,28 @@ export function battleTestHooks() {
     getBattleSnapshot(): BattleSnapshot | null {
       return readBattleSnapshot();
     },
-    holdTheWindowOpen(extraMs: number): void {
+    async holdTheWindowOpen(extraMs: number): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      holdTheWindowOpen(extraMs);
+      await holdTheWindowOpen(extraMs);
     },
-    crowdTheHero(adjacent?: number, far?: number): void {
+    async crowdTheHero(adjacent?: number, far?: number): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      crowdTheHero(adjacent, far);
+      await crowdTheHero(adjacent, far);
     },
-    giveEnemyTheTurn(): void {
+    async giveEnemyTheTurn(): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      giveEnemyTheTurn(20);
+      await giveEnemyTheTurn(20);
     },
     getBattleHexPoint(q: number, r: number): BattleHexPoint | null {
       return hexPointProbe ? hexPointProbe({ q, r }) : null;
     },
-    giveHeroTheTurn(will = 20): void {
+    async giveHeroTheTurn(will = 20): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      giveHeroTheTurn(will);
+      await giveHeroTheTurn(will);
     },
-    finishBattle(outcome: 'victory' | 'defeat'): void {
+    async finishBattle(outcome: 'victory' | 'defeat'): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      finishOpenBattle(outcome);
+      await finishOpenBattle(outcome);
     },
   };
 }

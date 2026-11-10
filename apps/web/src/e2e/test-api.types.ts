@@ -85,8 +85,8 @@ export interface HexoflatTestApi {
   setHeroHealth(current: number): void;
   placeHexobjectNextToHero(key: string): TestHexCoordinates;
   isBattleEngaged(): boolean;
-  finishBattle(outcome: 'victory' | 'defeat'): void;
-  giveHeroTheTurn(will?: number): void;
+  finishBattle(outcome: 'victory' | 'defeat'): Promise<void>;
+  giveHeroTheTurn(will?: number): Promise<void>;
   getBattleHands(): {
     right: string | null;
     left: string | null;
@@ -112,9 +112,9 @@ export interface HexoflatTestApi {
     terrainByHex: Record<string, string>;
     aimOptions: { q: number; r: number }[];
   } | null;
-  giveEnemyTheTurn(): void;
-  crowdTheHero(adjacent?: number, far?: number): void;
-  holdTheWindowOpen(extraMs: number): void;
+  giveEnemyTheTurn(): Promise<void>;
+  crowdTheHero(adjacent?: number, far?: number): Promise<void>;
+  holdTheWindowOpen(extraMs: number): Promise<void>;
   getBattleHexPoint(q: number, r: number): { x: number; y: number } | null;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;

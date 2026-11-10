@@ -13,7 +13,7 @@ Same as the rest of the repo (see the [root README](../../README.md)):
 - `apps/api` schema pushed and the server running:
   ```bash
   pnpm --filter @hexoflat/api db:push
-  pnpm --filter @hexoflat/api start:dev
+  HEXOFLAT_E2E_FIXTURES=1 pnpm --filter @hexoflat/api start:dev   # battle fixtures (giveHeroTheTurn, finishBattle, …) call the API; it refuses them without this flag
   ```
 
 Playwright itself starts and stops `apps/web` for you (see [Building the app under test](#building-the-app-under-test-vite_e2e_hooks) below) — you don't need `pnpm run start:client` running separately, and having one already on port 5173 will actively get in the way (see [Troubleshooting](#troubleshooting)).

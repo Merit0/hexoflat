@@ -61,6 +61,8 @@ jobs:
         run: pnpm --filter @hexoflat/api db:push
 
       - name: Start apps/api
+        env:
+          HEXOFLAT_E2E_FIXTURES: '1'
         run: nohup pnpm --filter @hexoflat/api start > /tmp/api.log 2>&1 &
 
       - name: Wait for apps/api health check
