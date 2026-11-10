@@ -1,6 +1,6 @@
 ---
 name: hexoflat-phase
-description: How work is executed in this repo — one planned phase per chat, dedicated branch, characterization tests before refactoring, ask before every commit, and record progress back into the plan doc. Use at the start of any task that references a phase from docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md, docs/MIGRATION-PLAN.md, docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md or docs/WORLD-MAP-BOARDS-PLAN.md or docs/BOARD-GENERATOR-PLAN.md, or any multi-step refactoring or feature task in this repo.
+description: How work is executed in this repo — one planned phase per chat, dedicated branch, characterization tests before refactoring, ask before every commit, and record progress back into the plan doc. Use at the start of any task that references a phase from docs/GAMEPLAY-VERTICAL-SLICE-PLAN.md, docs/MIGRATION-PLAN.md, docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md or docs/WORLD-MAP-BOARDS-PLAN.md or docs/BOARD-GENERATOR-PLAN.md or docs/shop/SHOP-PLAN.md, or any multi-step refactoring or feature task in this repo.
 ---
 
 # How work is run in hexoflat
@@ -16,6 +16,8 @@ description: How work is executed in this repo — one planned phase per chat, d
 | `docs/SKILL-TREE-V2-PLAN.md`                     | Skill tree v2: three schools, Will sacrifice into skill bars, Teleport skill — S1–S5 done                                                                                                                                      |
 | `docs/BATTLE-SYSTEM-PLAN.md`                     | Battle system v2.1 pilot: squads as creature tokens on the dungeon map (B6b: `docs/battle-system/B6B-SQUADS-AS-TOKENS-PLAN.md`), generated battlefield, engine battle — phases B0–B8 (audit: `docs/battle-system/B0-AUDIT.md`) |
 | `docs/MIGRATION-PLAN.md`                         | Infrastructure phases (1–10 done; 11–12 deliberately paused)                                                                                                                                                                   |
+| `docs/shop/SHOP-PLAN.md`                         | Camp trader shop: server-held buy/sell/buyback with coins, Will-priced goods refresh, board = unique trader top + the stash BAG — phase SG (server stash proximity bug) then SH0–SH6 (planned)                                 |
+| `docs/stash/stash-board-spec-doc-ref.md`         | Hero stash board (done S1–S6) — the reference for any board that replaces the right panel                                                                                                                                      |
 | `docs/design/*.md`                               | Scout reports — design inspiration only, never a source of copied names/text/art/balance                                                                                                                                       |
 
 ## The rules
