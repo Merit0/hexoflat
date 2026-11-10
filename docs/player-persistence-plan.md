@@ -933,7 +933,7 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 - **Вбивства.** `progress.kills` → `inventorySession.kills` → `hero.setKills` (`bindKillsListener`); `addKilled` і `saveProgressToStorage` для вбивств прибрано.
 - **Руки.** Гейт рук повертає `false` одразу й шле `set-hands`; інвентар оновлюється з `aggregates` відповіді.
 - **Захист від PUT.** `bindPushBlocker`: поки відкритий бій, `queueWorldPush` і `takePendingPushes` відкидають пуші карти (інакше PUT стер би `battle` на сервері).
-- **Dev-сторінка.** `/dev/battlefield` лише під `import.meta.env.DEV` (імпорт теж), локальний рушій у `dev-battle-bridge.ts`; **відхилення від відповіді Олега:** вона користується тим самим `battleStore` як контейнером стану UI (інакше довелось би дублювати всі composables); сервера, світу й інвентаря не торкається. Тест `router/dev-route.test.ts`: у production-режимі маршруту немає.
+- **Dev-сторінка.** `/dev/battlefield` лише під `import.meta.env.DEV` (імпорт теж), локальний рушій у `dev-battle-bridge.ts`; **відхилення знято в B4.1** (нижче). Тест `router/dev-route.test.ts`: у production-режимі маршруту немає.
 - **Фейковий сервер** виконує `WORLD_BATTLE` справжнім `battleWorld` (разом із респавном), `GET /player/world` замінено на `fakeWorldSnapshot`.
 
 **Тести.** Web 2328 (було 2307), typecheck і lint без помилок, пороги ESLint не піднімали (довелось винести три чисті функції зі стору, щоб вкластися в 197 рядків), нових циклів немає. Нові: `battle-clock.test.ts` (зсув, мін. RTT, відлік), `battle-store.server.test.ts` (відновлення з `battleView`, один запит на `run-enemy-turn`, відмовлений хід, `CONNECTION_LOST`), `world-server-paths.test.ts` (поразка з респавном із `travel`, перемога; тест-шпигун: жодного `DEV_*`, бій і респавн не шлють PUT поза пушем карти табору при приході), `world-map-persistence.test.ts` (бою немає в збереженні, старий бій відкинуто), `router/dev-route.test.ts`. `battle-animation-*` без змін.
@@ -956,3 +956,13 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 **Тести.** Engine 973 (+6 `battle-fixtures.test.ts`), API 165 на реальному Postgres (+1: фікстура працює лише з прапором, невалідна відхиляється, секрети не йдуть у відповідь), web 2328, playwright typecheck, lint без помилок.
 
 **Не зроблено (B5a–c).** Жодної e2e-специфікації не запускали (за вашою командою): `battle-flow.spec.ts`, `squad-actions.spec.ts`, `dungeon-fog.spec.ts` ще не перевірені проти серверного бою. Ймовірні місця для правок: спеки, що очікували миттєвого локального бою, і читальний хук `wounds` (тепер порожній).
+
+## Результати D4b-4, крок B4.1 (2026-11-10): ізоляція dev-battlefield
+
+- `stores/battle-store.ts`: `createBattleStore(id)` (міст тепер у замиканні кожного екземпляра, не в модулі), `useBattleStore = createBattleStore('battle-store')`, тип `BattleStoreInstance`.
+- `composables/battle-store-context.ts`: `BATTLE_STORE_KEY` і `useBattleStoreContext()` (`inject` із запасним `useBattleStore()`). Через нього працюють `use-battle-view`, `use-battle-warnings`, `use-battle-reaction`, `use-battle-enemy-driver` (приймає стор другим аргументом), `battle-board-area`, `battle-tab`.
+- `dev-battlefield-page.vue` створює власний екземпляр `createBattleStore('dev-battle-store')()` і провайдить його вниз; гру, світ, інвентар і сервер не імпортує (типи відповіді винесено в `services/battle/battle-reply.ts`, щоб міст не тягнув `battle-server`).
+- Окремий `createPinia()` не брали: виклик дії стору іншого pinia робить його активним глобально.
+- Тест `dev-battlefield-isolation.test.ts`: у сторінки, мосту й `dev-battlefield.ts` немає імпортів світу/інвентаря/сервера/`@/api/client`; повний бій у dev-екземплярі не чіпає `useBattleStore()` і `apiClient`. Маршрут і імпорт лише під `import.meta.env.DEV`, тест `router/dev-route.test.ts` (з B4).
+- Залишок: UI-стан (`ui` у `use-battle-view`, режим, обрана рука) лишається модульним `reactive`, спільним для гри й dev-сторінки; це лише вигляд, не стан бою.
+- Web 2332 тести, typecheck і lint без помилок.

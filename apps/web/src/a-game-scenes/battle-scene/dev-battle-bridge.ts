@@ -4,7 +4,7 @@ import { isFightCommand, type BattleCommand } from '@hexoflat/engine/battle/batt
 import type { BattleSetupInput, BattleState } from '@hexoflat/engine/battle/battle-state';
 import { projectBattleEvent, projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
-import type { BattleReply, BattleRequest } from '@/services/battle/battle-server';
+import type { BattleReply, BattleRequest } from '@/services/battle/battle-reply';
 import type { BattleServerBridge } from '@/stores/battle-store';
 
 export interface DevBattleBridge extends BattleServerBridge {

@@ -9,7 +9,7 @@ import {
   type BattleHex,
 } from '@hexoflat/engine/battle/battle-state';
 import { creatureById, isAlive, livingCreatureAt } from '@hexoflat/engine/battle/battle-board';
-import { useBattleStore } from '@/stores/battle-store';
+import { useBattleStoreContext } from '@/composables/battle-store-context';
 import { battleMovePreview, battleTapActions, controlledHero } from './battle-board-tap';
 import { useBattleWarnings } from './use-battle-warnings';
 import type { BattleMessage } from './battle-hint';
@@ -67,7 +67,7 @@ const TIMEOUT_RETRIES = 20;
 const TIMEOUT_RETRY_MS = 250;
 
 export function useBattleView() {
-  const store = useBattleStore();
+  const store = useBattleStoreContext();
   const { warn, send, lockedWarning } = useBattleWarnings();
   const { t } = useI18n();
 

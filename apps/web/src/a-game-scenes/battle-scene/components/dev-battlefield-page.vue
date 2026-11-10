@@ -44,7 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
+import { BATTLE_STORE_KEY } from '@/composables/battle-store-context';
 import {
   DEV_APPROACHES as APPROACHES,
   DEV_SQUADS as SQUADS,
@@ -54,17 +55,18 @@ import {
 import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
 import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vue';
 import { resetBattleUi } from '@/composables/use-battle-view';
-import { useBattleStore } from '@/stores/battle-store';
+import { createBattleStore } from '@/stores/battle-store';
 import { createDevBattleBridge } from '@/a-game-scenes/battle-scene/dev-battle-bridge';
 import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
 
-const store = useBattleStore();
+const store = createBattleStore('dev-battle-store')();
+provide(BATTLE_STORE_KEY, store);
 const bridge = createDevBattleBridge(
   () => store.deploy?.setup ?? null,
   () => store.close(),
 );
 store.bindBridge(bridge);
-useBattleEnemyDriver();
+useBattleEnemyDriver(undefined, store);
 
 const seed = ref('bone-crypt-1');
 const approach = ref('west');

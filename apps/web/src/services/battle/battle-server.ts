@@ -1,22 +1,12 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import type { BattleAction } from '@hexoflat/engine/battle/battle-commands';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { apiClient } from '@/api/client';
-import { sendWorldCommand, type WorldCommandResult } from '@/services/inventory/inventory-sync';
+import { sendWorldCommand } from '@/services/inventory/inventory-sync';
 import type { BattleStep } from '@/stores/battle-store';
+import type { BattleReply, BattleRequest } from './battle-reply';
 import { observeServerClock } from './battle-clock';
 
-export type BattleRequest =
-  { kind: 'start' | 'run-enemy-turn' | 'close' | 'sync' } | { kind: 'hero'; action: BattleAction };
-
-export interface BattleReply {
-  ok: boolean;
-  code: string | null;
-  steps: BattleStep[];
-  events: DomainEvent[];
-  closed: boolean;
-  result: WorldCommandResult | null;
-}
+export type { BattleReply, BattleRequest } from './battle-reply';
 
 export async function sendBattle(request: BattleRequest): Promise<BattleReply> {
   const result = await sendWorldCommand('WORLD_BATTLE', request);

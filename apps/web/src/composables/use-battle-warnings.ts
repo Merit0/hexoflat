@@ -1,12 +1,12 @@
 import { useI18n } from 'vue-i18n';
 import type { BattleRejectionCode } from '@hexoflat/engine/battle/battle-rejection';
-import { useBattleStore } from '@/stores/battle-store';
+import { useBattleStoreContext } from '@/composables/battle-store-context';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { controlledHero } from './battle-board-tap';
 import { rejectionWarning } from './battle-warning';
 
 export function useBattleWarnings() {
-  const store = useBattleStore();
+  const store = useBattleStoreContext();
   const heroToolStore = useHeroToolStore();
   const { t } = useI18n();
 

@@ -49,10 +49,10 @@ import BattleInitiativeStrip from './battle-initiative-strip.vue';
 import { useBattleReaction } from '@/composables/use-battle-reaction';
 import BattleHeroControls from './battle-hero-controls.vue';
 import BattleCreatureRow from './battle-creature-row.vue';
-import { useBattleStore } from '@/stores/battle-store';
+import { useBattleStoreContext } from '@/composables/battle-store-context';
 
 const { t } = useI18n();
-const battleStore = useBattleStore();
+const battleStore = useBattleStoreContext();
 const { view, ui, selectEnemy, takeHit, pickHand, pickAction, swapFrom, undo, endTurn, leave } =
   useBattleView();
 useBattleReaction();
