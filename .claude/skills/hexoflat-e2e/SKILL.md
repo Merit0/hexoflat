@@ -104,3 +104,7 @@ E2E runs in CI after lint/typecheck/build/unit-tests pass, and publishes an Allu
 - Persistence specs: `e2e/hero/hero-persistence.spec.ts` through `HeroPersistenceFeature` (reload, forged browser storage, a second tab taking the hero over).
 - After a fixture hook (`setWill`, `setSkillRank`, `prepareKnowledgeWorld`, `grantInventoryItem`, `setBag`...) the server learns of it asynchronously: wait with `settleInventorySync()` before `page.goto` or a reload, or the reload shows the old state. Return Scrolls are not a starter item any more: use `VerifyInventoryFeature.givenItem`.
 - The world (maps, fog, the hero's place, a battle) is on the server as well: reload features first wait for it (`settleInventorySync()` includes the expedition flush). `freshHero` also wipes the world, so every test starts in a new world. `HeroPersistenceFeature.wipeEverythingTheBrowserKeeps` proves it by clearing the browser storage before the reload.
+
+## Cleaning test users
+
+Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm --filter @hexoflat/api e2e-cleanup` deletes them (heroes, expeditions, journal cascade): default is users older than 24 h, `--older-than-hours N`, `--all`, `--dry-run`. It is refused in production.

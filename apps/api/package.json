@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate",
     "seed-hero": "tsx src/cli/seed-hero.ts",
     "hero-history": "tsx src/cli/hero-history.ts",
+    "e2e-cleanup": "tsx src/cli/e2e-cleanup.ts",
     "hero-rollback": "tsx src/cli/hero-rollback.ts"
   },
   "dependencies": {
