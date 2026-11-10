@@ -16,6 +16,11 @@ import { knowledgeStateSchema } from '../knowledge/state';
 import { LOCATION_KEYS } from '../registry/location-key';
 import { inventoryStateSchema } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import {
+  ShopBuyCommandSchema,
+  ShopRefreshCommandSchema,
+  ShopSellCommandSchema,
+} from '../trade/trade-commands';
 import type { TAggregateKind } from './aggregate-kinds';
 
 const base = { heroId: z.string().min(1), revision: z.number().int().nonnegative() };
@@ -124,6 +129,9 @@ export const PLAYER_COMMAND_SCHEMAS = {
   SPEND_WILL: strict(SpendWillCommandSchema),
   DEV_GRANT_WILL: strict(DevGrantWillCommandSchema),
   DEV_SET_KNOWLEDGE: strict(DevSetKnowledgeCommandSchema),
+  SHOP_BUY: strict(ShopBuyCommandSchema),
+  SHOP_SELL: strict(ShopSellCommandSchema),
+  SHOP_REFRESH: strict(ShopRefreshCommandSchema),
 } as const;
 
 export type TPlayerCommandType = keyof typeof PLAYER_COMMAND_SCHEMAS;
@@ -147,6 +155,9 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   SPEND_WILL: ['progress'],
   DEV_GRANT_WILL: ['progress'],
   DEV_SET_KNOWLEDGE: ['progress'],
+  SHOP_BUY: ['inventory', 'progress'],
+  SHOP_SELL: ['inventory', 'progress'],
+  SHOP_REFRESH: ['progress'],
 };
 
 export const PLAYER_COMMAND_REVISION: Record<
@@ -170,6 +181,9 @@ export const PLAYER_COMMAND_REVISION: Record<
   SPEND_WILL: 'knowledge',
   DEV_GRANT_WILL: 'knowledge',
   DEV_SET_KNOWLEDGE: 'knowledge',
+  SHOP_BUY: 'aggregate',
+  SHOP_SELL: 'aggregate',
+  SHOP_REFRESH: 'knowledge',
 };
 
 export function isPlayerCommandType(type: string): type is TPlayerCommandType {

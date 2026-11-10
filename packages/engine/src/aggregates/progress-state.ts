@@ -3,6 +3,7 @@ import { createKnowledgeState, knowledgeStateSchema } from '../knowledge/state';
 import { LOCATION_KEYS } from '../registry/location-key';
 import { HERO_BASE_HEALTH } from '../models/hero-model';
 import { portalLinkSchema } from '../portal/portal-state';
+import { tradersStateSchema } from '../trade/trade-state';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
 
@@ -36,6 +37,8 @@ export const progressStateSchema = z
     portal: portalLinkSchema.nullable(),
     health: heroHealthSchema,
     kills: z.number().int().nonnegative(),
+    trips: z.number().int().nonnegative(),
+    traders: tradersStateSchema,
   })
   .strict();
 export type ProgressState = z.infer<typeof progressStateSchema>;
@@ -50,5 +53,7 @@ export function emptyProgressState(heroId: string): ProgressState {
     portal: null,
     health: { current: HERO_BASE_HEALTH, bonus: 0, debt: 0 },
     kills: 0,
+    trips: 0,
+    traders: {},
   };
 }

@@ -11,6 +11,7 @@ import { countItem } from '../inventory/plan-stock';
 import { replaceInventory } from './replace-inventory';
 import { executeProgressCommand } from './execute-progress-command';
 import { claimCampChest } from './claim-camp-chest';
+import { applyTradeCommand, type TradeContext } from './apply-trade-command';
 import type { PlayerCommand } from './player-commands';
 import type { ProgressState } from './progress-state';
 
@@ -22,6 +23,7 @@ export interface PlayerAggregates {
 export interface PlayerCommandContext {
   devGrantAllowed: boolean;
   inventory: InventoryContext;
+  trade?: TradeContext;
 }
 
 export type PlayerCommandOutcome =
@@ -33,6 +35,7 @@ const REJECTION_TYPES: ReadonlySet<string> = new Set([
   'ITEM_GRANT_REJECTED',
   'ITEM_CONSUME_REJECTED',
   'REWARD_REJECTED',
+  'TRADE_REJECTED',
 ]);
 
 function rejectionOf(events: readonly DomainEvent[]): PlayerCommandOutcome | null {
@@ -134,6 +137,14 @@ function executeCore(
       return outcome.ok
         ? { ok: true, changed: { progress: outcome.progress }, events: outcome.events }
         : outcome;
+    }
+    case 'SHOP_BUY':
+    case 'SHOP_SELL':
+    case 'SHOP_REFRESH': {
+      const result = applyTradeCommand(aggregates, command, ctx);
+      return (
+        rejectionOf(result.events) ?? { ok: true, changed: result.changed, events: result.events }
+      );
     }
     default: {
       const result = applyInventoryCommand(inventory, command, ctx.inventory);

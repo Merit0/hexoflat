@@ -10,3 +10,4 @@ export { createSeededRandom, deriveStream } from './utils/random-seeded';
 export type { RngState, SeededRandom } from './utils/random-seeded';
 export * from './aggregates';
 export * from './world';
+export * from './trade';

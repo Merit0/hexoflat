@@ -66,6 +66,7 @@ describe('a crossing of the board edge on the server', () => {
     });
     expect(outcome.destination.map.tiles.some((t) => t.isRevealed)).toBe(true);
     expect(outcome.replaced).toBeNull();
+    expect(outcome.progress.trips).toBe(0);
     expect(outcome.events.map((e) => e.type)).toContain('WORLD_TRAVELLED');
   });
 
@@ -110,6 +111,25 @@ describe('a gate on the server', () => {
     expect(outcome.progress.knowledge.current).toBe(48);
     expect(outcome.destination.mapId).toBe('cave-1');
     expect(outcome.replaced).toBeNull();
+  });
+
+  it('counts a trip each time the hero enters the cave, and never when he leaves it', () => {
+    const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
+    const spot = placeBeside(origin, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const run = runOf(origin, { cave: createServerWorld('cave', 'cave-1', SEED, HERO) });
+    run.progress.trips = 3;
+    const entered = travelWorld(run, { kind: 'gate', coordinates: spot });
+    if (!entered.ok) throw new Error(entered.code);
+    expect(entered.progress.trips).toBe(4);
+    expect(run.progress.trips).toBe(3);
+
+    const cave = createServerWorld('cave', 'cave-2', SEED, HERO);
+    const exit = placeBeside(cave, HEXOBJECT_KEYS.CAMPING_ENTRANCE);
+    const back = runOf(cave);
+    back.progress.trips = 4;
+    const left = travelWorld(back, { kind: 'gate', coordinates: exit });
+    if (!left.ok) throw new Error(left.code);
+    expect(left.progress.trips).toBe(4);
   });
 
   it('refuses with too little Will, a hex that is no gate, a gate that is too far and a sealed one', () => {

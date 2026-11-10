@@ -540,6 +540,8 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       sealedUntil: {},
       portal: null,
       health: { current: 3, bonus: 0, debt: 0 },
+      trips: 0,
+      traders: {},
     });
     expect(knowledgeOf(progress.state).current).toBe(50);
     const arrived = await kit.service.execute(
@@ -551,7 +553,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       .select()
       .from(heroAggregates)
       .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
-    expect(row.schemaVersion).toBe(5);
+    expect(row.schemaVersion).toBe(6);
   });
 
   it('takes a snapshot every 50 revisions', async () => {
