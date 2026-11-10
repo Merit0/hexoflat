@@ -212,7 +212,7 @@ describe('travel through the server', () => {
     expect(outcome.ok).toBe(true);
     expect(world.currentLocationKey).toBe('cave');
     expect(sentCommands.map((c) => c.command.type)).toContain('WORLD_TRAVEL');
-    expect(hero.knowledge!.current).toBe(18);
+    expect(hero.knowledge!.current).toBe(48);
     expect(fakePresence()).toMatchObject({ locationKey: 'cave', mapId: world.currentMapId });
     expect(fakeStoredWorld(world.currentMapId!)).not.toBeNull();
   });

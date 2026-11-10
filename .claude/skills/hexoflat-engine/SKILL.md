@@ -51,6 +51,8 @@ Current commands, for reference: `START_HEX_ACTION`, `FINISH_PENDING_ACTIONS`, `
 
 Skills and portals follow the same recipe: pure rules in `src/skills/` and `src/portal/` (e.g. `resolvePortalCost`, `applySacrifice`, `getSacrificeOptions`), amounts and prices are computed by the engine from state and **never** read from the command payload. Additive `KnowledgeState` fields (like `skillProgress`) use `.default(...)` and need no `CONTENT_VERSION` bump.
 
+Will capacity (W0, 2026-11-10): a new hero starts full at 50/50 (`KNOWLEDGE_RULES.startingWill`/`capacity`). Capacity is stored per hero in `knowledge.capacity` and computed only by `willCapacityOf(modifiers)` (`knowledge/math.ts`, base + modifiers); a future gear or skill source passes its modifier there and must not refill Will on a raise (clamp `current` on a drop, like `HeroModel.setMaxHealthBonus`). Tests that count Will down from a fresh hero start at 50; `boards/will-budget.test.ts` (REQ-BOARD-008) guards that a cave round trip (up to 38) fits the capacity.
+
 ## Item rarity
 
 Rarity is `{ kind: ERarityKind, boss }` printed on tool/equipment/loot content. Read it through `DEFAULT_RARITY` and `rarityTone()` in `src/content/rarity-rules.ts` — never re-declare a fallback. Write rarity explicitly on every new item.

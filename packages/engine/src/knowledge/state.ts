@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { KNOWLEDGE_RULES, effectiveWillCapacity } from './math';
+import { KNOWLEDGE_RULES, willCapacityOf } from './math';
 import { skillIdSchema, type SkillId } from '../skills/skill-content';
 import { getNextRankCost } from '../skills/skill-rules';
 
@@ -112,7 +112,7 @@ export function createKnowledgeState(heroId: string): KnowledgeState {
     heroId,
     revision: 0,
     current: KNOWLEDGE_RULES.startingWill,
-    capacity: effectiveWillCapacity(KNOWLEDGE_RULES.capacity),
+    capacity: willCapacityOf(),
     sequence: 0,
     session: null,
     lastStep: null,

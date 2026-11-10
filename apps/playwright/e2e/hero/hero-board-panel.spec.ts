@@ -100,7 +100,7 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
     await new SwitchHeroBoardTabFeature().switchTo('path');
 
     const verifyBoard = new VerifyHeroBoardFeature();
-    await verifyBoard.sacrificeToSkill('b_strike', 'all', 3);
+    await verifyBoard.sacrificeToSkill('b_strike', 'all', 6);
     await verifyBoard.verifySkillTreeWill(0);
     await verifyBoard.verifySacrificeUnavailable('b_strike');
     await verifyBoard.verifySacrificeUnavailable('b_guard');
@@ -128,7 +128,7 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
 
     const verifyBoard = new VerifyHeroBoardFeature();
     await verifyBoard.verifyResetUnavailable();
-    await verifyBoard.sacrificeToSkill('b_strike', 'all', 3);
+    await verifyBoard.sacrificeToSkill('b_strike', 'all', 6);
     await verifyBoard.resetAllSkills();
     await verifyBoard.verifySkillNodeRankIs('b_strike', 0);
     await verifyBoard.verifySkillTreeWill(0);

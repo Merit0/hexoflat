@@ -4,7 +4,7 @@ import { willZoneCharges, type WillZoneContext } from './will-zone';
 
 /** Candidate balance; deliberately separate from progression and equipment. */
 export const KNOWLEDGE_RULES = {
-  startingWill: 20,
+  startingWill: 50,
   capacity: 50,
   hallAnswerReward: 1,
   hallFastReward: 2,
@@ -92,7 +92,6 @@ export interface WillCapacityModifier {
   additionalCapacity: number;
 }
 
-/** Named future equipment seam; no items grant modifiers in this feature. */
 export function effectiveWillCapacity(
   base: number,
   modifiers: readonly WillCapacityModifier[] = [],
@@ -104,6 +103,10 @@ export function effectiveWillCapacity(
   )
     throw new Error('Invalid Will capacity');
   return base + modifiers.reduce((sum, modifier) => sum + modifier.additionalCapacity, 0);
+}
+
+export function willCapacityOf(modifiers: readonly WillCapacityModifier[] = []): number {
+  return effectiveWillCapacity(KNOWLEDGE_RULES.capacity, modifiers);
 }
 
 export function stepCost(ctx: WillZoneContext): number {

@@ -420,7 +420,7 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 
 - **API:** `starterHeroData()`: 3/3 здоров'я, attack 1, defense 1, coins 0, kills 0, energy 100/100.
 - **Інвентар (web/engine):** `createInitial` в `inventory-state.ts` кладе у першу (заблоковану) скриню `STARTER_STASH_ITEMS` = меч, сокира, щит, кирка (`starterGiven`) **і ще 50 Return Scroll** (`STARTER_SCROLL_COUNT`, `grantStarterGear`). Це суперечить §1.3а («порожньо»): рішення Олега потрібне — прибрати і сувої теж? (див. питання нижче).
-- **Воля:** старт 20, ємність 50 — у `KNOWLEDGE_RULES` (`knowledge/math.ts`), тобто вже в engine-контенті, захардкоджених значень в API немає.
+- **Воля:** старт 50, ємність 50 (W0, 2026-11-10; до того старт 20) — у `KNOWLEDGE_RULES` (`knowledge/math.ts`), тобто вже в engine-контенті, захардкоджених значень в API немає.
 - **«Рука»:** `HEXOBJECT_KEYS.HAND` — це **інструмент** (`tools.content.ts`, `HERO_TOOL_TYPE.HAND`), який герой тримає за замовчуванням, а не предмет у сумці/екіпіровці: `toolKeyOfItem` повертає `HAND` для порожньої руки. Зробити «руку» неінвентарною не потрібно, лише перевірити в D1 тестом, що `createInitial` не кладе `hand` у `bag/equip/stash`.
 
 ### D0.7 Джерела предметів і монет

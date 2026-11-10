@@ -163,7 +163,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       knowledge: { current: number };
     };
     expect(progress.steps).toBe(1);
-    expect(progress.knowledge.current).toBe(19);
+    expect(progress.knowledge.current).toBe(49);
     expect(progress.presence.coordinates).toEqual(target);
     const snapshot = (await world.snapshot(userId, heroId)) as { heroCoordinates: unknown };
     expect(snapshot.heroCoordinates).toEqual(target);
@@ -379,7 +379,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(travelled.travel?.locationKey).toBe('cave');
     const after = await presenceOf(userId, heroId);
     expect(after.presence).toMatchObject({ locationKey: 'cave' });
-    expect(after.knowledge.current).toBe(18);
+    expect(after.knowledge.current).toBe(48);
     expect(travelled.hero).toMatchObject({ locationKey: 'cave' });
   });
 

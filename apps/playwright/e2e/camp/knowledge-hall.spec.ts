@@ -7,7 +7,8 @@ test.describe('knowledge hall', { tag: ['@camp'] }, () => {
     await new OpenCampingMapFeature().open();
     const knowledge = new KnowledgeHallFeature();
     await knowledge.openHall();
-    await knowledge.verifyStartingWill();
+    await knowledge.verifyNewHeroStartsFull();
+    await knowledge.spendAllWill();
     await knowledge.earnWillInHall(6, 1, true);
     await knowledge.fillToCapacity();
   });
@@ -16,6 +17,7 @@ test.describe('knowledge hall', { tag: ['@camp'] }, () => {
     await new OpenCampingMapFeature().open();
     const knowledge = new KnowledgeHallFeature();
     await knowledge.openHall();
+    await knowledge.spendAllWill();
     await knowledge.startHall();
     await knowledge.answerQuestions(3);
     await knowledge.interruptWithEscape();

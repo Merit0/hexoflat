@@ -99,7 +99,7 @@ describe('a step on the server map', () => {
     if (!outcome.ok) throw new Error(outcome.code);
     expect(outcome.world.heroCoordinates).toEqual(target);
     expect(outcome.progress.steps).toBe(1);
-    expect(outcome.progress.knowledge.current).toBe(19);
+    expect(outcome.progress.knowledge.current).toBe(49);
     expect(outcome.tileDiffs.length).toBeGreaterThan(0);
     expect(outcome.tileDiffs.length).toBeLessThan(outcome.world.map.tiles.length / 4);
     expect(outcome.tileDiffs.every((diff) => diff.tile.isRevealed)).toBe(true);
@@ -110,7 +110,7 @@ describe('a step on the server map', () => {
     const target = free(world)!;
     const outcome = stepWorld(run(world), target);
     if (!outcome.ok) throw new Error(outcome.code);
-    expect(outcome.progress.knowledge.current).toBe(20);
+    expect(outcome.progress.knowledge.current).toBe(50);
   });
 
   it.each([

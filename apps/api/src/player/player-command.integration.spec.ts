@@ -499,7 +499,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       revision = result.aggregates.progress!.revision;
     }
     const reloaded = await progressOf(userId, heroId);
-    expect(knowledgeOf(reloaded.state).current).toBe(17);
+    expect(knowledgeOf(reloaded.state).current).toBe(47);
     expect((reloaded.state as { steps: number }).steps).toBe(3);
   });
 
@@ -511,7 +511,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       stepTo(heroId, arrived.aggregates.progress!.revision, 0, 9, 9),
     );
     expect(jump).toMatchObject({ result: 'rejected', code: 'INVALID_STEP' });
-    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(20);
+    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(50);
   });
 
   it('lets only one of ten parallel steps from the same place through, and never overspends', async () => {
@@ -524,7 +524,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       ),
     );
     expect(results.filter((r) => r.result === 'applied')).toHaveLength(1);
-    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(19);
+    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(49);
   });
 
   it('upgrades a hero stored before Will lived on the server, keeping what he had claimed', async () => {
@@ -541,7 +541,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       portal: null,
       health: { current: 3, bonus: 0, debt: 0 },
     });
-    expect(knowledgeOf(progress.state).current).toBe(20);
+    expect(knowledgeOf(progress.state).current).toBe(50);
     const arrived = await kit.service.execute(
       userId,
       arrive(heroId, progress.revision, 'camping', 1, 1),

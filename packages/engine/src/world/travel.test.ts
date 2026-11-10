@@ -107,7 +107,7 @@ describe('a gate on the server', () => {
       coordinates: spot,
     });
     if (!outcome.ok) throw new Error(outcome.code);
-    expect(outcome.progress.knowledge.current).toBe(18);
+    expect(outcome.progress.knowledge.current).toBe(48);
     expect(outcome.destination.mapId).toBe('cave-1');
     expect(outcome.replaced).toBeNull();
   });
@@ -139,7 +139,7 @@ describe('a gate on the server', () => {
     expect(grave).toBeDefined();
     const outcome = travelWorld(runOf(cave), { kind: 'gate', coordinates: spot });
     if (!outcome.ok) throw new Error(outcome.code);
-    expect(outcome.progress.knowledge.current).toBe(20);
+    expect(outcome.progress.knowledge.current).toBe(50);
     expect(outcome.destination.locationKey).toBe('camping');
     expect(outcome.replaced?.locationKey).toBe('cave');
     expect(outcome.replaced?.mapId).not.toBe('cave-1');
