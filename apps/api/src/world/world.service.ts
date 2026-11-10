@@ -608,6 +608,57 @@ export class WorldService {
     });
   }
 
+  async settleDefeat(userId: string, heroId: string): Promise<void> {
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    const expeditionId = await ensureExpedition(this.db, userId, heroId);
+    await this.db.transaction(async (tx) => {
+      await lockExpedition(tx, expeditionId);
+      await createInitialAggregates(tx, heroId);
+      const { progress, inventory } = await loadAggregatesForUpdate(tx, heroId, AGGREGATE_KINDS);
+      const mapId = progress?.state.presence?.mapId;
+      if (!progress || !inventory || !mapId) return;
+      const now = Date.now();
+      const world = await loadWorld(tx, expeditionId, mapId, now);
+      if (world?.battle?.phase !== 'ended' || world.battle.outcome !== 'defeat') return;
+      const index = await readIndex(tx, expeditionId);
+      const stored: Partial<Record<LocationKey, ServerWorld>> = {};
+      const byMap = new Map<string, ServerWorld>();
+      for (const [key, otherId] of Object.entries(index) as [LocationKey, string][]) {
+        const held =
+          otherId === world.mapId ? null : await loadWorld(tx, expeditionId, otherId, now);
+        if (held) {
+          stored[key] = held;
+          byMap.set(otherId, held);
+        }
+      }
+      const seed = await expeditionSeed(tx, expeditionId);
+      const fought = battleWorld(
+        {
+          world,
+          progress: structuredClone(progress.state),
+          inventory: structuredClone(inventory.state),
+          heroId,
+          now,
+          loadStored: (key: LocationKey) => stored[key] ?? null,
+          loadById: (id: string) => byMap.get(id) ?? null,
+          create: (key: LocationKey) => createServerWorld(key, randomUUID(), seed, heroId),
+        },
+        { kind: 'close', heroId },
+      );
+      if (!fought.ok) return;
+      await this.commitBattle(tx, {
+        expeditionId,
+        heroId,
+        commandId: null,
+        index,
+        progress,
+        inventory,
+        fought,
+      });
+    });
+  }
+
   async snapshot(userId: string, heroId: string): Promise<unknown> {
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');

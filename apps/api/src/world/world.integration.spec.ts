@@ -705,6 +705,42 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(JSON.stringify(closed)).not.toContain(battle.seed);
   });
 
+  it('sends the hero home when he comes back to a lost battle he never left', async () => {
+    const { userId, heroId, expeditionId, mapId } = await openBattle();
+    const held = await storedWorld(expeditionId, mapId);
+    held.battle!.creatures.find((c) => c.side === 'heroes')!.hp = 0;
+    held.battle!.outcome = 'defeat';
+    held.battle!.phase = 'ended';
+    await kit.db.transaction((tx) =>
+      writeServerDocument(
+        tx,
+        expeditionId,
+        `srv-world:${mapId}`,
+        JSON.stringify(serializeWorld(held)),
+      ),
+    );
+    await world.settleDefeat(userId, heroId);
+    const snapshot = (await world.snapshot(userId, heroId)) as {
+      locationKey: string;
+      battleView: unknown;
+    };
+    expect(snapshot.locationKey).toBe('camping');
+    expect(snapshot.battleView).toBeNull();
+    expect(await readServerDocument(kit.db, expeditionId, `srv-world:${mapId}`)).toBeNull();
+    await world.settleDefeat(userId, heroId);
+  });
+
+  it('leaves a battle that is still going alone when the player comes back', async () => {
+    const { userId, heroId } = await openBattle();
+    await world.settleDefeat(userId, heroId);
+    const snapshot = (await world.snapshot(userId, heroId)) as {
+      locationKey: string;
+      battleView: unknown;
+    };
+    expect(snapshot.locationKey).toBe('cave');
+    expect(snapshot.battleView).not.toBeNull();
+  });
+
   it('moves a battle with a fixture only when the e2e flag is on (REQ-B5-FIX-001)', async () => {
     const { userId, heroId, expeditionId, mapId } = await openBattle();
     delete process.env.HEXOFLAT_E2E_FIXTURES;

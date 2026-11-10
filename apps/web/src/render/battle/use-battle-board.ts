@@ -170,6 +170,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
         tileHeight: HEX_WORLD_HEIGHT,
       },
       tokens,
+      overlay,
       fx,
       damage,
       onBusyChange: (busy) => options.onAnimating?.(busy),

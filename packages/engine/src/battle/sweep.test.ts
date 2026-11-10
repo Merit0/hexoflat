@@ -84,8 +84,8 @@ describe('melee sweep (the weapon on its way hits everyone it passes)', () => {
     );
     let opened = strikeOpened(battle, 's1', 'hero');
     opened = heroDoes(opened, { kind: 'take-hit' }).battle;
-    expect(opened.creatures.find((c) => c.id === 'hero')!.hp).toBe(11);
-    expect(opened.creatures.find((c) => c.id === 'friend')!.hp).toBe(11);
+    expect(opened.creatures.find((c) => c.id === 'hero')!.hp).toBe(10);
+    expect(opened.creatures.find((c) => c.id === 'friend')!.hp).toBe(10);
     expect(opened.wounds.friend).toHaveLength(1);
   });
 

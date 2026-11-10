@@ -108,6 +108,10 @@ export class BattleTabComponent extends BaseComponent {
     await expect(this.toolHex.getByTestId('tool-action-button')).toHaveText(label);
   }
 
+  async verifyToolHexHidden(): Promise<void> {
+    await expect(this.toolHex).toBeHidden();
+  }
+
   async pressToolHexAction(): Promise<void> {
     await this.toolHex.getByTestId('tool-action-button').click();
   }

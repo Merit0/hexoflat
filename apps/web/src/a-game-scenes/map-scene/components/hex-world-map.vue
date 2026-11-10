@@ -116,10 +116,6 @@ import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert
 import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
-import { EHexCollision } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
-import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -276,47 +272,6 @@ watch(
 
 const movePreview = useMovePreview({ hoveredTileCoord, getTileByCoord });
 
-const activeCampfireActionTile = computed(() => {
-  if (!worldStore.map) return null;
-
-  return (
-    worldStore.map.tiles.find(
-      (tile) =>
-        tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE &&
-        tile.pendingAction?.type === EHexActionType.USE &&
-        (tile.pendingAction.endsAt ?? 0) > healTickerNow.value,
-    ) ?? null
-  );
-});
-
-const isCampfireHealActive = computed(() => Boolean(activeCampfireActionTile.value?.pendingAction));
-
-const campHealEffectCoord = computed(() => {
-  if (!isCampfireHealActive.value || !heroStore.heroCoordinates) return null;
-
-  const neighborTiles = (
-    getHexNeighbors(heroStore.heroCoordinates)
-      .map((coord) => getTileByCoord(coord))
-      .filter(Boolean) as IHexTile[]
-  )
-    .filter((tile) => tile.isRevealed)
-    .filter((tile) => tile.hexobject?.collision !== EHexCollision.SOLID);
-
-  const emptyTile = neighborTiles.find((tile) => !tile.hexobject);
-  if (emptyTile) return emptyTile.coordinates;
-
-  const nonFireplaceTile = neighborTiles.find(
-    (tile) => tile.hexobject?.hexobjectKey !== HEXOBJECT_KEYS.FIREPLACE,
-  );
-  return nonFireplaceTile?.coordinates ?? null;
-});
-
-const campHealInfoLabel = computed(() => {
-  const maxHp = Math.max(1, heroStore.heroHpMax);
-  const percentPerTick = Math.round((1 / maxHp) * 100);
-  return `${percentPerTick}%/10с`;
-});
-
 useHexBoard({
   canvasRef: boardCanvasRef,
   canvasSize,
@@ -328,11 +283,6 @@ useHexBoard({
   healTickerNow,
   movePreview,
   squadWatched: squadViews.watched,
-  campHeal: {
-    coord: campHealEffectCoord,
-    active: isCampfireHealActive,
-    label: campHealInfoLabel,
-  },
   onTileHover: handleTileHover,
   onTileMove: (_tile, point) => hexHoverInfo.move(point.anchor),
   onTileLeave: () => hexHoverInfo.hide(),

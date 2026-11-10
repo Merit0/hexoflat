@@ -13,7 +13,6 @@ import {
   type MovePreviewSyncParams,
 } from '@/render/layers/move-preview-layer';
 import { createSquadWatchLayer, type SquadWatchLayer } from '@/render/layers/squad-watch-layer';
-import { createCampHealLayer, type CampHealLayer } from '@/render/layers/camp-heal-layer';
 import { createPortalLayer, type PortalLayer } from '@/render/layers/portal-layer';
 import { registerPortalFx } from '@/render/portal-fx';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -41,11 +40,6 @@ export interface UseHexBoardOptions {
     markerKind: ComputedRef<'move' | 'seen'>;
   };
   squadWatched: ComputedRef<IHexCoordinates[]>;
-  campHeal: {
-    coord: ComputedRef<IHexCoordinates | null>;
-    active: ComputedRef<boolean>;
-    label: ComputedRef<string>;
-  };
   onTileHover: (tile: IHexTile, point: TilePointer) => void;
   onTileMove?: (tile: IHexTile, point: TilePointer) => void;
   onTileLeave?: (tile: IHexTile) => void;
@@ -97,7 +91,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
   let unregisterPortalFx: (() => void) | null = null;
   let movePreviewLayer: MovePreviewLayer | null = null;
   let squadWatchLayer: SquadWatchLayer | null = null;
-  let campHealLayer: CampHealLayer | null = null;
   let stopWatchers: Array<() => void> = [];
   let cancelled = false;
 
@@ -152,11 +145,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     });
 
     movePreviewLayer = createMovePreviewLayer({
-      worldContainer: board.worldContainer,
-      getTileSize,
-    });
-
-    campHealLayer = createCampHealLayer({
       worldContainer: board.worldContainer,
       getTileSize,
     });
@@ -239,20 +227,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       watch(opts.squadWatched, (next) => squadWatchLayer?.sync(next), { immediate: true }),
     );
 
-    stopWatchers.push(
-      watch(
-        [opts.campHeal.coord, opts.campHeal.active, opts.campHeal.label],
-        () => {
-          campHealLayer?.sync({
-            coord: opts.campHeal.coord.value,
-            active: opts.campHeal.active.value,
-            label: opts.campHeal.label.value,
-          });
-        },
-        { immediate: true, deep: true },
-      ),
-    );
-
     // Registered after every layer's `immediate: true` watcher has already
     // run, so the frame this waits on is a fully populated one.
     board.onFirstFramePresented(() => {
@@ -271,7 +245,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     heroLayer?.destroy();
     movePreviewLayer?.destroy();
     squadWatchLayer?.destroy();
-    campHealLayer?.destroy();
     board?.destroy();
     board = null;
     tilesLayer = null;
@@ -279,6 +252,5 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     heroLayer = null;
     movePreviewLayer = null;
     squadWatchLayer = null;
-    campHealLayer = null;
   });
 }

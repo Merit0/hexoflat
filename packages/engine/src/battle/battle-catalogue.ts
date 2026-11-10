@@ -68,7 +68,7 @@ export const BATTLE_ITEMS: Record<string, BattleItemDef> = byId(battleItemDefSch
     usePrice: requiredUsePrice(HEXOBJECT_KEYS.HEALTH_BOTTLE),
     ...texts('health-potion'),
   },
-  { id: 'bone-blade', power: 1, ...texts('bone-blade') },
+  { id: 'bone-blade', power: 2, ...texts('bone-blade') },
   { id: 'bone-buckler', shieldCapacity: 1, ...texts('bone-buckler') },
   { id: 'king-cleaver', power: 1, ...texts('king-cleaver') },
   { id: 'king-shield', shieldCapacity: 2, ...texts('king-shield') },

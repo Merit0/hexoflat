@@ -64,7 +64,7 @@ export function skeleton(
     maxHp: 3,
     weight: 1,
     force: 1,
-    hands: { right: { key: 'bone-blade', power: 1 }, left: null },
+    hands: { right: { key: 'bone-blade', power: 2 }, left: null },
     bag: [],
     ...overrides,
   };

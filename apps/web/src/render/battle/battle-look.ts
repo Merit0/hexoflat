@@ -52,6 +52,7 @@ export type BattleOverlayTone =
   | 'target'
   | 'selected'
   | 'shield'
+  | 'decoy'
   | 'blocked'
   | 'hit'
   | 'dodged';

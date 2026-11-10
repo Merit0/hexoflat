@@ -71,7 +71,7 @@ describe('REQ-BTL-006 block window', () => {
     battle = heroDoes(battle, { kind: 'place-shield', hex: EAST }).battle;
     const aiming = heroDoes(battle, { kind: 'reaction-timeout' }).battle;
     const { battle: after, events } = aimAt(aiming, SOUTH);
-    expect(after.creatures[0].hp).toBe(5);
+    expect(after.creatures[0].hp).toBe(4);
     expect(after.creatures[1].pos).toEqual(SOUTH);
     expect(eventTypes(events)).toContain('CREATURE_MOVED');
   });
@@ -88,7 +88,7 @@ describe('REQ-BTL-006 block window', () => {
   it('hits at once, from where the enemy stands, when the hero takes the hit without a shield', () => {
     const battle = heroUnderAttack();
     const { battle: after, events } = heroDoes(battle, { kind: 'take-hit' });
-    expect(after.creatures[0].hp).toBe(5);
+    expect(after.creatures[0].hp).toBe(4);
     expect(after.activeId).toBe('s1');
     expect(after.phase).toBe('act');
     expect(eventTypes(events)).toContain('STRIKES_RESOLVED');
@@ -96,7 +96,7 @@ describe('REQ-BTL-006 block window', () => {
 
   it('counts the shields standing when the five seconds run out, and takes the hit if there are none', () => {
     const idle = heroDoes(heroUnderAttack(), { kind: 'reaction-timeout' }, 'hero', 5000).battle;
-    expect(idle.creatures[0].hp).toBe(5);
+    expect(idle.creatures[0].hp).toBe(4);
 
     const shielded = heroDoes(heroUnderAttack(), { kind: 'place-shield', hex: EAST }).battle;
     const aiming = heroDoes(shielded, { kind: 'reaction-timeout' }, 'hero', 5000).battle;
@@ -166,7 +166,7 @@ describe('REQ-BTL-006 block window: who may act and until when', () => {
     expect(
       heroDoes(battle, { kind: 'reaction-timeout' }, 'hero', late).battle.reaction,
     ).toBeUndefined();
-    expect(heroDoes(battle, { kind: 'take-hit' }, 'hero', late).battle.creatures[0].hp).toBe(5);
+    expect(heroDoes(battle, { kind: 'take-hit' }, 'hero', late).battle.creatures[0].hp).toBe(4);
 
     const placed = heroDoes(battle, { kind: 'place-shield', hex: EAST }, 'hero', 100).battle;
     const aiming = heroDoes(placed, { kind: 'reaction-timeout' }, 'hero', 100).battle;
