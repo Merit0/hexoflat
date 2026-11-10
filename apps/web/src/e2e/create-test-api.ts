@@ -1,7 +1,11 @@
 import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
 import { KNOWLEDGE_RULES } from '@hexoflat/engine/knowledge/math';
-import { pushHealthFixture, pushKnowledgeFixture } from '@/services/inventory/inventory-sync';
+import {
+  ensurePresence,
+  pushHealthFixture,
+  pushKnowledgeFixture,
+} from '@/services/inventory/inventory-sync';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import {
   tileWorldCenter,
@@ -32,6 +36,32 @@ import type {
   TestPortalPreview,
   TestTileFraction,
 } from '@/e2e/test-api.types';
+
+async function placeHexobjectOnServer(
+  worldStore: ReturnType<typeof useWorldMapStore>,
+  key: string,
+): Promise<TestHexCoordinates> {
+  if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('Test hooks are off');
+  const map = worldStore.map as HexMapModel | null;
+  if (!map || !worldStore.currentMapId) throw new Error('No map');
+  await ensurePresence({
+    locationKey: worldStore.currentLocationKey,
+    mapId: worldStore.currentMapId,
+  });
+  const placed = await apiClient.post<{
+    coordinates: TestHexCoordinates;
+    tileDiffs: TileDiff[];
+  }>(
+    '/player/dev/world-fixture',
+    { kind: 'place-hexobject', key },
+    { headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' } },
+  );
+  for (const coordinates of applyTileDiffs(map, placed.tileDiffs, Date.now())) {
+    worldStore.markTileDirty(coordinates);
+  }
+  worldStore.saveToStorage(undefined, { synced: true });
+  return placed.coordinates;
+}
 
 export interface CreateTestApiOptions {
   getCamera(): BoardCamera;
@@ -235,24 +265,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       heroStore.hero.adjustHealthOnStatChange();
       void pushHealthFixture(current);
     },
-    async placeHexobjectNextToHero(key: string): Promise<TestHexCoordinates> {
-      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('Test hooks are off');
-      const map = worldStore.map as HexMapModel | null;
-      if (!map) throw new Error('No map');
-      const placed = await apiClient.post<{
-        coordinates: TestHexCoordinates;
-        tileDiffs: TileDiff[];
-      }>(
-        '/player/dev/world-fixture',
-        { kind: 'place-hexobject', key },
-        { headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' } },
-      );
-      for (const coordinates of applyTileDiffs(map, placed.tileDiffs, Date.now())) {
-        worldStore.markTileDirty(coordinates);
-      }
-      worldStore.saveToStorage(undefined, { synced: true });
-      return placed.coordinates;
-    },
+    placeHexobjectNextToHero: (key: string) => placeHexobjectOnServer(worldStore, key),
     isBattleEngaged(): boolean {
       return useBattleStore().engagement !== null;
     },
