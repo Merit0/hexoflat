@@ -1,8 +1,3 @@
-import {
-  newMapId,
-  readLocationMapIndex,
-  writeLocationMapIndex,
-} from '@/services/persistence/world-storage';
 import { reseedWorld } from '@/services/rng/world-rng';
 import {
   MapRegistry,
@@ -22,8 +17,7 @@ export interface DevBoardPanelHost {
   currentLocationKey: LocationKey;
   currentMapId: string | null;
   descriptor: BoardDescriptor | null;
-  clearStoredLocation(locationKey: LocationKey, mapId: string): void;
-  applyFreshBoard(created: CreatedBoard, mapId: string): void;
+  applyFreshBoard(created: CreatedBoard): void;
   placeHeroAtEntry(locationKey: LocationKey): void;
   revealAroundHero(): void;
   markAllTilesDirty(): void;
@@ -37,23 +31,15 @@ function finishRebuild(host: DevBoardPanelHost, locationKey: LocationKey, mapId:
   host.setHeroLocation(locationKey, mapId);
 }
 
-/** Dev board panel's "Regenerate": discards the current DUNGEON board and builds a new one under a fresh mapId/seed, as if the hero had just entered. */
+/** Dev board panel's "Regenerate": rebuilds the current DUNGEON board in memory under a fresh seed (preview only, the server map is untouched). */
 export function devRegenerateDungeon(host: DevBoardPanelHost, params: DevRecipeParams): void {
   const locationKey = host.currentLocationKey;
   const def = MapRegistry.get(locationKey);
   if (def.boardKind !== 'DUNGEON' || !host.currentMapId) return;
 
-  host.clearStoredLocation(locationKey, host.currentMapId);
-
-  const mapId = newMapId();
-  const index = readLocationMapIndex();
-  index[locationKey] = mapId;
-  writeLocationMapIndex(index);
-  host.currentMapId = mapId;
-
   reseedWorld(crypto.randomUUID());
-  host.applyFreshBoard(def.create({ seed: requireWorldSeed(), params: { ...params } }), mapId);
-  finishRebuild(host, locationKey, mapId);
+  host.applyFreshBoard(def.create({ seed: requireWorldSeed(), params: { ...params } }));
+  finishRebuild(host, locationKey, host.currentMapId);
 }
 
 /** Dev board panel's "Next seed": rebuilds the current DUNGEON board under the same mapId, for quickly cycling through variety. */
@@ -64,7 +50,7 @@ export function devNextSeed(host: DevBoardPanelHost, params: DevRecipeParams): v
 
   nextSeedCounter += 1;
   const seed = `${requireWorldSeed()}:panel:next:${nextSeedCounter}`;
-  host.applyFreshBoard(def.create({ seed, params: { ...params } }), host.currentMapId);
+  host.applyFreshBoard(def.create({ seed, params: { ...params } }));
   finishRebuild(host, locationKey, host.currentMapId);
 }
 
@@ -77,6 +63,6 @@ export function devRebuildFromRecipe(
   if (descriptor?.kind !== 'RECIPE' || !host.currentMapId) return;
 
   const created = runBoardPipeline(recipe, { seed: descriptor.seed, params: { ...params } });
-  host.applyFreshBoard(created, host.currentMapId);
+  host.applyFreshBoard(created);
   finishRebuild(host, host.currentLocationKey, host.currentMapId);
 }

@@ -34,6 +34,17 @@
         class="battle-pane"
         :reference-frame="boardFrame"
       />
+      <div
+        v-if="worldStore.worldLoadFailed"
+        class="world-load-error"
+        role="alert"
+        data-testid="world-load-error"
+      >
+        <p>{{ t('world.loadError') }}</p>
+        <button type="button" data-testid="world-load-retry" @click="worldStore.retryWorldLoad()">
+          {{ t('world.retry') }}
+        </button>
+      </div>
       <div ref="containerRef" class="hex-map" data-testid="hex-map">
         <canvas
           ref="boardCanvasRef"
@@ -74,6 +85,7 @@
 import { closeKnowledgePanel, knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useSquadFlow } from '@/services/squads/squad-flow';
@@ -121,6 +133,7 @@ const props = defineProps<{
 }>();
 
 const { handleTileClick } = useTileClick();
+const { t } = useI18n();
 const worldStore = useWorldMapStore();
 const battleStore = useBattleStore();
 useSquadFlow();
@@ -348,7 +361,6 @@ function openSettings() {
 function onHide() {
   if (heroToolStore.isLocked) {
     heroToolStore.cancelLockedAction('HIDE');
-    worldMapStore.saveToStorage();
   }
   heroToolStore.stopTool();
 }
@@ -450,6 +462,21 @@ onBeforeUnmount(() => {
 .icon-btn--logout:hover {
   border-color: rgba(255, 197, 197, 0.6);
   background: rgba(255, 197, 197, 0.1);
+}
+
+.world-load-error {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: center;
+  background: rgba(10, 8, 6, 0.85);
+  color: #f2e6cf;
 }
 
 .hex-map {

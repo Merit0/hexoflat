@@ -1,6 +1,7 @@
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
+import { StashBoardFeature } from '@features/world/stash-board.feature';
 import { MoveHeroFeature } from '@features/world/move-hero.feature';
 import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { UseEquippedToolFeature } from '@features/world/use-equipped-tool.feature';
@@ -14,6 +15,9 @@ export class UnlockStashChestFeature extends BaseFeature {
 
   async holdCoinsInHand(amount: number): Promise<void> {
     await this.step(`Hold ${amount} coins in a hand`, async () => {
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+      await stash.close();
       await new MoveHeroFeature().moveAdjacentTo('stashChest');
       await this.page.evaluate(
         (n) => window.__HEXOFLAT_TEST__!.grantInventoryItem('coins', n),

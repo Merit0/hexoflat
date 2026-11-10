@@ -5,14 +5,14 @@ import { createContext } from '../commands/command-test-context';
 import { deserializeState, serializeState } from '../commands/snapshot';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { createInventoryState } from './inventory-state';
+import { emptyInventoryState } from './inventory-state';
 
 const HERO = 'h1';
 const bag = (index: number) => ({ container: 'bag' as const, index });
 
 function start(): HexEngineState {
   const map = new HexMapBuilder().name('replay').width(2).height(2).build();
-  const inventory = createInventoryState(HERO);
+  const inventory = emptyInventoryState(HERO);
   inventory.capacityKg = 1000;
   inventory.stash.chests = 1;
   return { map, heroes: {}, inventory, inventoryContext: { stashOpen: true, battleOpen: false } };
@@ -24,18 +24,19 @@ function script(): HexEngineCommand[] {
     payload: { heroId: HERO, revision, key, amount, source: 'pickup' },
   });
   return [
-    grant(0, HEXOBJECT_KEYS.HEALTH_BOTTLE, 5),
-    grant(1, HEXOBJECT_KEYS.SWORD, 1),
+    grant(0, HEXOBJECT_KEYS.RETURN_SCROLL, 5),
+    grant(1, HEXOBJECT_KEYS.HEALTH_BOTTLE, 5),
+    grant(2, HEXOBJECT_KEYS.SWORD, 1),
     {
       type: 'MOVE_ITEM',
-      payload: { heroId: HERO, revision: 2, from: bag(0), to: bag(3), split: true },
+      payload: { heroId: HERO, revision: 3, from: bag(0), to: bag(3), split: true },
     },
     {
       type: 'CONSUME_ITEM',
-      payload: { heroId: HERO, revision: 3, key: HEXOBJECT_KEYS.RETURN_SCROLL, amount: 2 },
+      payload: { heroId: HERO, revision: 4, key: HEXOBJECT_KEYS.RETURN_SCROLL, amount: 2 },
     },
-    { type: 'STORE_RESOURCES', payload: { heroId: HERO, revision: 4 } },
-    { type: 'SORT_STASH', payload: { heroId: HERO, revision: 5 } },
+    { type: 'STORE_RESOURCES', payload: { heroId: HERO, revision: 5 } },
+    { type: 'SORT_STASH', payload: { heroId: HERO, revision: 6 } },
   ];
 }
 
@@ -70,10 +71,10 @@ describe('inventory replay', () => {
 
     const first = start();
     const commands = script();
-    play(first, commands.slice(0, 3));
+    play(first, commands.slice(0, 4));
     const restored = deserializeState(serializeState(first), 0);
     restored.inventoryContext = first.inventoryContext;
-    play(restored, commands.slice(3));
+    play(restored, commands.slice(4));
 
     expect(restored.inventory).toEqual(whole.inventory);
   });

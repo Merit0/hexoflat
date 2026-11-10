@@ -30,7 +30,7 @@ describe('useStashSession', () => {
     mountSession();
     useHeroStore().heroCoordinates = { columnIndex: 3, rowIndex: 4 };
     await nextTick();
-    openStashBoard();
+    await openStashBoard();
   });
   afterEach(() => app.unmount());
 

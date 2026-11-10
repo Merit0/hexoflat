@@ -1,40 +1,54 @@
-import { toRaw } from 'vue';
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleDistance, hexKey } from '@hexoflat/engine/battle/hex-battle-geom';
 import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { controlledHero } from '@/composables/battle-board-tap';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
+import type { BattleProjection } from '@hexoflat/engine/battle/projection';
+import { apiClient } from '@/api/client';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import { observeServerClock } from '@/services/battle/battle-clock';
 import { useBattleStore } from '@/stores/battle-store';
 
-export function finishOpenBattle(outcome: 'victory' | 'defeat'): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const loser = outcome === 'victory' ? 'enemies' : 'heroes';
-  for (const creature of battle.creatures) if (creature.side === loser) creature.hp = 0;
-  battle.outcome = outcome;
-  battle.phase = 'ended';
-  store.battle = battle;
+interface FixtureAnswer {
+  battleView: BattleProjection | null;
+  serverNowMs: number;
 }
 
-export function giveHeroTheTurn(willPerTurn: number): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
-  if (!hero) throw new Error('No hero in the battle');
-  battle.order = [hero.id, ...battle.order.filter((id) => id !== hero.id)];
-  battle.turnIndex = 0;
-  battle.activeId = hero.id;
-  battle.phase = 'act';
-  battle.turnWill = willPerTurn;
-  battle.pending = [];
-  battle.reaction = undefined;
-  battle.placedShields = [];
-  battle.undo = [];
-  battle.wounds = {};
-  store.battle = battle;
+async function serverFixture(body: Record<string, unknown>): Promise<void> {
+  const sentAt = Date.now();
+  let answer: FixtureAnswer;
+  try {
+    answer = await apiClient.post<FixtureAnswer>('/player/dev/battle-fixture', body, {
+      headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' },
+    });
+  } catch (error) {
+    throw new Error(
+      `Battle fixture refused (start the API with HEXOFLAT_E2E_FIXTURES=1): ${String(error)}`,
+    );
+  }
+  observeServerClock(answer.serverNowMs, sentAt, Date.now());
+  useBattleStore().projection = answer.battleView;
+}
+
+export function finishOpenBattle(outcome: 'victory' | 'defeat'): Promise<void> {
+  return serverFixture({ kind: 'finish', outcome });
+}
+
+export function giveHeroTheTurn(willPerTurn: number): Promise<void> {
+  return serverFixture({ kind: 'hero-turn', will: willPerTurn });
+}
+
+export function crowdTheHero(adjacent = 2, far = 0): Promise<void> {
+  return serverFixture({ kind: 'crowd', adjacent, far });
+}
+
+export function holdTheWindowOpen(extraMs: number): Promise<void> {
+  return serverFixture({ kind: 'hold-window', extraMs });
+}
+
+export function giveEnemyTheTurn(willPerTurn: number): Promise<void> {
+  return serverFixture({ kind: 'enemy-turn', will: willPerTurn });
 }
 
 export interface BattleHexPoint {
@@ -69,68 +83,6 @@ export interface BattleSnapshot {
   aimOptions: { q: number; r: number }[];
 }
 
-export function crowdTheHero(adjacent = 2, far = 0): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
-  if (!hero) throw new Error('No hero in the battle');
-  const enemies = battle.creatures.filter((c) => c.side === 'enemies' && c.hp > 0);
-  const floor = Object.keys(battle.board)
-    .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
-    .filter((hex) => battle.board[hexKey(hex)] === 'floor');
-  const place = (enemy: (typeof enemies)[number], distance: number) => {
-    const spot = floor.find(
-      (hex) => battleDistance(hex, hero.pos) === distance && isFreeHex(battle, hex),
-    );
-    if (spot) enemy.pos = spot;
-  };
-  enemies.slice(0, adjacent).forEach((enemy) => place(enemy, 1));
-  enemies.slice(adjacent, adjacent + far).forEach((enemy) => place(enemy, 2));
-  store.battle = battle;
-}
-
-export function holdTheWindowOpen(extraMs: number): void {
-  const store = useBattleStore();
-  if (!store.battle?.reaction) throw new Error('No block window is open');
-  const battle = structuredClone(toRaw(store.battle));
-  battle.reaction!.deadlineMs += extraMs;
-  store.battle = battle;
-}
-
-export function giveEnemyTheTurn(willPerTurn: number): void {
-  const store = useBattleStore();
-  if (!store.battle) throw new Error('No battle is open');
-  const battle = structuredClone(toRaw(store.battle));
-  const living = battle.creatures.filter(
-    (creature) => creature.side === 'enemies' && creature.hp > 0,
-  );
-  const enemy = living.find((creature) => creature.kind === 'skeleton-warrior') ?? living[0];
-  const hero = battle.creatures.find((creature) => creature.side === 'heroes');
-  if (!enemy || !hero) throw new Error('No living enemy or hero in the battle');
-  const spot = Object.keys(battle.board)
-    .map((key) => ({ q: Number(key.split(',')[0]), r: Number(key.split(',')[1]) }))
-    .find(
-      (hex) =>
-        battle.board[hexKey(hex)] === 'floor' &&
-        battleDistance(hex, hero.pos) === 2 &&
-        isFreeHex(battle, hex),
-    );
-  if (spot) enemy.pos = spot;
-  battle.order = [enemy.id, ...battle.order.filter((id) => id !== enemy.id)];
-  battle.turnIndex = 0;
-  battle.activeId = enemy.id;
-  battle.phase = 'act';
-  battle.turnWill = willPerTurn;
-  battle.pending = [];
-  battle.reaction = undefined;
-  battle.placedShields = [];
-  battle.struckHands = [];
-  battle.undo = [];
-  battle.wounds = {};
-  store.battle = battle;
-}
-
 function heroDistanceTo(
   battle: { creatures: { side: string; pos: { q: number; r: number } }[] },
   pos: { q: number; r: number },
@@ -161,9 +113,9 @@ function terrainCounts(battle: BattleState): Record<string, number> {
 
 export function readBattleSnapshot(): BattleSnapshot | null {
   const store = useBattleStore();
-  const battle = store.battle;
   const view = store.projection;
-  if (!battle || !view) return null;
+  if (!view) return null;
+  const battle = view as unknown as BattleState;
   const hero = controlledHero(view, store.localHeroIds);
   const strike = hero ? view.pending.find((s) => s.attackerId === hero.id) : undefined;
   const options =
@@ -177,11 +129,11 @@ export function readBattleSnapshot(): BattleSnapshot | null {
     order: [...battle.order],
     draws: { ...battle.draws },
     turnWill: battle.turnWill,
-    reaction: battle.reaction
+    reaction: view.reaction
       ? {
-          stage: battle.reaction.stage,
-          attackerId: battle.reaction.attackerId,
-          defenderId: battle.reaction.defenderId,
+          stage: view.reaction.stage,
+          attackerId: view.reaction.attackerId,
+          defenderId: view.reaction.defenderId,
         }
       : null,
     creatures: battle.creatures.map((c) => ({
@@ -192,7 +144,7 @@ export function readBattleSnapshot(): BattleSnapshot | null {
       q: c.pos.q,
       r: c.pos.r,
     })),
-    wounds: structuredClone(toRaw(battle.wounds)),
+    wounds: {},
     heroDistances: Object.fromEntries(
       battle.creatures
         .filter((c) => c.side === 'enemies')
@@ -215,7 +167,7 @@ export interface BattleHandsSnapshot {
 }
 
 export function readBattleHands(): BattleHandsSnapshot | null {
-  const battle = useBattleStore().battle;
+  const battle = useBattleStore().projection;
   const hero = battle?.creatures.find((creature) => creature.side === 'heroes');
   if (!battle || !hero) return null;
   return {
@@ -234,28 +186,28 @@ export function battleTestHooks() {
     getBattleSnapshot(): BattleSnapshot | null {
       return readBattleSnapshot();
     },
-    holdTheWindowOpen(extraMs: number): void {
+    async holdTheWindowOpen(extraMs: number): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      holdTheWindowOpen(extraMs);
+      await holdTheWindowOpen(extraMs);
     },
-    crowdTheHero(adjacent?: number, far?: number): void {
+    async crowdTheHero(adjacent?: number, far?: number): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      crowdTheHero(adjacent, far);
+      await crowdTheHero(adjacent, far);
     },
-    giveEnemyTheTurn(): void {
+    async giveEnemyTheTurn(): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      giveEnemyTheTurn(20);
+      await giveEnemyTheTurn(20);
     },
     getBattleHexPoint(q: number, r: number): BattleHexPoint | null {
       return hexPointProbe ? hexPointProbe({ q, r }) : null;
     },
-    giveHeroTheTurn(will = 20): void {
+    async giveHeroTheTurn(will = 20): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      giveHeroTheTurn(will);
+      await giveHeroTheTurn(will);
     },
-    finishBattle(outcome: 'victory' | 'defeat'): void {
+    async finishBattle(outcome: 'victory' | 'defeat'): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-      finishOpenBattle(outcome);
+      await finishOpenBattle(outcome);
     },
   };
 }

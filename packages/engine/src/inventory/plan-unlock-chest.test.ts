@@ -24,8 +24,8 @@ describe('stash chests', () => {
     expect(STASH_CAPACITY).toBe(210);
   });
 
-  it('costs 100 coins for the first chest and 1000 for each next one', () => {
-    expect([0, 1, 2, 3, 4].map(stashChestPrice)).toEqual([100, 1000, 1000, 1000, 1000]);
+  it('is free for the camp chest, then 100 coins and 1000 for each next one', () => {
+    expect([0, 1, 2, 3, 4].map(stashChestPrice)).toEqual([0, 100, 1000, 1000, 1000]);
     expect(STASH_CHEST_PRICES).toHaveLength(STASH_MAX_CHESTS);
     expect(stashChestPrice(5)).toBeNull();
     expect(stashChestPrice(-1)).toBeNull();
@@ -43,9 +43,9 @@ describe('planUnlockStashChest', () => {
   const holding = (coins: number, slot: 'weapon' | 'shield' = 'weapon') =>
     aggregate({ worn: { [slot]: item(K.COINS, coins, 'hand-coins') }, stashSize: 0 });
 
-  it('takes exactly 100 from the hand for the first chest and leaves the rest there', () => {
-    const done = unlocked(planUnlockStashChest(holding(140), 0, 'weapon'));
-    expect(done.chests).toBe(1);
+  it('takes exactly 100 from the hand for the second chest and leaves the rest there', () => {
+    const done = unlocked(planUnlockStashChest(holding(140), 1, 'weapon'));
+    expect(done.chests).toBe(2);
     expect(done.price).toBe(100);
     expect(done.next.equip.weapon).toMatchObject({ id: 'hand-coins', amount: 40 });
     expect(done.next.stash).toHaveLength(42);
@@ -53,24 +53,24 @@ describe('planUnlockStashChest', () => {
   });
 
   it('empties the hand slot when the stack is exactly the price', () => {
-    const done = unlocked(planUnlockStashChest(holding(100), 0, 'weapon'));
+    const done = unlocked(planUnlockStashChest(holding(100), 1, 'weapon'));
     expect(done.next.equip.weapon).toBeNull();
   });
 
   it('refuses 90 coins for a 100 coin chest and reports the price', () => {
-    expect(planUnlockStashChest(holding(90), 0, 'weapon')).toEqual({
+    expect(planUnlockStashChest(holding(90), 1, 'weapon')).toEqual({
       ok: false,
       reason: 'NOT_ENOUGH_COINS',
       price: 100,
     });
   });
 
-  it('charges 1000 for the second chest and keeps what the first chest holds', () => {
+  it('charges 1000 for the third chest and keeps what the first chest holds', () => {
     const agg = {
       ...holding(1500),
       stash: Array.from({ length: 42 }, (_, i) => (i === 3 ? item(K.SWORD, 1, 'kept') : null)),
     };
-    const done = unlocked(planUnlockStashChest(agg, 1, 'weapon'));
+    const done = unlocked(planUnlockStashChest(agg, 2, 'weapon'));
     expect(done.price).toBe(1000);
     expect(done.next.equip.weapon?.amount).toBe(500);
     expect(done.next.stash).toHaveLength(84);
@@ -78,7 +78,7 @@ describe('planUnlockStashChest', () => {
   });
 
   it('works from the shield hand as well', () => {
-    const done = unlocked(planUnlockStashChest(holding(150, 'shield'), 0, 'shield'));
+    const done = unlocked(planUnlockStashChest(holding(150, 'shield'), 1, 'shield'));
     expect(done.next.equip.shield?.amount).toBe(50);
   });
 
@@ -88,7 +88,7 @@ describe('planUnlockStashChest', () => {
       stash: { 0: item(K.COINS, 5000) },
       worn: { weapon: item(K.COINS, 99) },
     });
-    expect(planUnlockStashChest(agg, 0, 'weapon')).toMatchObject({
+    expect(planUnlockStashChest(agg, 1, 'weapon')).toMatchObject({
       ok: false,
       reason: 'NOT_ENOUGH_COINS',
     });
@@ -96,12 +96,12 @@ describe('planUnlockStashChest', () => {
 
   it('refuses a hand that does not hold coins', () => {
     const agg = aggregate({ worn: { weapon: item(K.SWORD) }, bag: { 0: item(K.COINS, 500) } });
-    expect(planUnlockStashChest(agg, 0, 'weapon')).toEqual({
+    expect(planUnlockStashChest(agg, 1, 'weapon')).toEqual({
       ok: false,
       reason: 'NO_COINS_IN_HAND',
       price: 100,
     });
-    expect(planUnlockStashChest(agg, 0, 'shield')).toMatchObject({ reason: 'NO_COINS_IN_HAND' });
+    expect(planUnlockStashChest(agg, 1, 'shield')).toMatchObject({ reason: 'NO_COINS_IN_HAND' });
   });
 
   it('refuses once all five chests are unlocked', () => {
@@ -115,8 +115,19 @@ describe('planUnlockStashChest', () => {
   it('does not change the aggregate it was given', () => {
     const agg = holding(500);
     const before = JSON.stringify(agg);
-    planUnlockStashChest(agg, 0, 'weapon');
+    planUnlockStashChest(agg, 1, 'weapon');
     expect(JSON.stringify(agg)).toBe(before);
+  });
+});
+
+describe('the camp chest', () => {
+  it('cannot be bought: chest 1 only comes from the free camp claim', () => {
+    const agg = aggregate({ worn: { weapon: item(K.COINS, 5000) } });
+    expect(planUnlockStashChest(agg, 0, 'weapon')).toEqual({
+      ok: false,
+      reason: 'CAMP_CHEST_NOT_CLAIMED',
+      price: 0,
+    });
   });
 });
 

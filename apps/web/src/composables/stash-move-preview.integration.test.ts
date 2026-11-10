@@ -52,9 +52,9 @@ describe('the walking route preview (real stores, no mocks)', () => {
     expect(ctx.preview.segments.value).toHaveLength(0);
   });
 
-  it('shows the route while the stash is open, because the hero can walk away from it', () => {
+  it('shows the route while the stash is open, because the hero can walk away from it', async () => {
     ctx.tool.useTool(K.HAND, START);
-    openStashBoard();
+    await openStashBoard();
     expect(ctx.preview.segments.value.length).toBeGreaterThan(0);
     expect(ctx.preview.markerCoord.value).toEqual(FAR);
   });

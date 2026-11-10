@@ -3,7 +3,8 @@ import type { BattleHex, BattleSide, BattleState, PendingStrike } from './battle
 import { creatureById } from './battle-board';
 
 export type ProjectedStrike = Omit<PendingStrike, 'fromHex'> & { fromHex: BattleHex | null };
-export type BattleProjection = Omit<BattleState, 'pending' | 'seed' | 'reaction'> & {
+type HiddenFields = 'pending' | 'seed' | 'reaction' | 'taskHistory' | 'wounds' | 'turnClockMs';
+export type BattleProjection = Omit<BattleState, HiddenFields> & {
   viewer: BattleSide;
   pending: ProjectedStrike[];
   shieldsRaised: boolean;
@@ -29,13 +30,20 @@ function projectStrike(
   return { ...strike, fromHex: own ? { ...strike.fromHex } : null };
 }
 
-function publicPart(state: BattleState): Omit<BattleState, 'pending' | 'seed' | 'reaction'> {
+function publicPart(state: BattleState, viewer: BattleSide): Omit<BattleState, HiddenFields> {
   const copy: Partial<BattleState> = structuredClone(state);
   delete copy.seed;
   delete copy.pending;
   delete copy.reaction;
+  delete copy.taskHistory;
+  delete copy.wounds;
+  delete copy.turnClockMs;
   if (copy.task) copy.task = { ...copy.task, answer: 0 };
-  return copy as Omit<BattleState, 'pending' | 'seed' | 'reaction'>;
+  copy.creatures = copy.creatures?.map((creature) =>
+    creature.side === viewer ? creature : { ...creature, bag: [] },
+  );
+  if (creatureById(state, state.activeId)?.side !== viewer) copy.undo = [];
+  return copy as Omit<BattleState, HiddenFields>;
 }
 
 function hidesActiveShields(state: BattleState, viewer: BattleSide): boolean {
@@ -64,7 +72,7 @@ export function projectBattleForViewer(state: BattleState, viewer: BattleSide): 
       }
     : undefined;
   const view = {
-    ...publicPart(state),
+    ...publicPart(state, viewer),
     viewer,
     pending,
     reaction,

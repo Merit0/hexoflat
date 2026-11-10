@@ -3,6 +3,19 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import { getPrototype } from '../content/content-accessors';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 
+export const CAMP_BOOK_HEX: IHexCoordinates = { columnIndex: 10, rowIndex: 10 };
+
+/** The server has no map yet: it knows the camp is a fixed drawing with the Book at this hex. */
+export function standsAtCampBook(
+  locationKey: string,
+  coordinates: IHexCoordinates | null,
+): boolean {
+  if (locationKey !== 'camping' || !coordinates) return false;
+  return getHexNeighbors(coordinates).some(
+    (hex) => coordinateKey(hex) === coordinateKey(CAMP_BOOK_HEX),
+  );
+}
+
 /** Additive facility migration: never rebuild the Camp or replace an occupied tile. */
 export function installCampBook(map: HexMapModel, hero: IHexCoordinates | null) {
   if (map.tiles.some((t) => t.hexobject?.hexobjectKey === 'knowledge-book')) return;

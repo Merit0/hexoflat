@@ -1,6 +1,10 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import { recoverStepPosition } from '@/services/persistence/knowledge-storage';
-import { installCampBook } from '@hexoflat/engine/knowledge/camp-book';
+import { forgetAllServerWorlds, cacheServerWorld } from '@/services/player/world-sync';
+import type { ServerWorld } from '@hexoflat/engine/world/server-world';
+import { reloadWorldCache, type WorldCommandResult } from '@/services/inventory/inventory-sync';
+import { installTravelledWorlds, readCachedWorld } from '@/services/world/served-world';
+import { takeServerBattleView } from '@/services/battle/battle-server';
+import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { defineStore } from 'pinia';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
@@ -23,51 +27,27 @@ import {
   routeToLocation,
 } from '@/services/world/location-navigator';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
-import { CONTENT_VERSION, applyCommand } from '@hexoflat/engine';
 import type { HexEngineActionContext } from '@hexoflat/engine';
 import type { IWorldMapPort } from '@hexoflat/engine/abstraction/abstract-action';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
-import {
-  clearLocationMapIndex,
-  newMapId,
-  readLocationMapIndex,
-  readSavedMap,
-  readSavedWorldState,
-  removeSavedWorld,
-  scheduleWorldSave,
-  writeLocationMapIndex,
-} from '@/services/persistence/world-storage';
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
-import { getStream, getWorldSeed, reseedWorld } from '@/services/rng/world-rng';
+import { getStream, reseedWorld } from '@/services/rng/world-rng';
 import { worldLoop } from '@/services/world/world-loop';
+
 import {
   initFog as initMapFog,
   revealAroundHero as revealFogAroundHero,
   revealEntryTile as revealMapEntryTile,
   revealTileNextToHero,
 } from '@hexoflat/engine/map/fog-service';
-import { findTilesMissingSpawners } from '@hexoflat/engine/map/resource-hydration';
-import type { ExitSide } from '@hexoflat/engine/boards/exits';
-import { findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
-import { findArrivalHex, findEntryHex } from '@/services/world/hero-placement';
+import { hydrateSpawners } from '@/services/world/hydrate-spawners';
+import { findEntryHex } from '@/services/world/hero-placement';
 import {
-  clearLocationRespawn as clearRespawn,
-  consumeDueLocationRespawn,
   getLocationRespawnRemainingMs as getRespawnRemainingMs,
   isLocationRespawning as isRespawning,
-  scheduleLocationRespawn as scheduleRespawn,
 } from '@/services/world/respawn-schedule';
 import { useBattleStore } from '@/stores/battle-store';
-import {
-  isCurrentlyHydratingFromStorage,
-  initialLocationKey,
-  MAP_ORIGIN,
-  requireWorldSeed,
-  runWorldTick,
-  readBattleSnapshot,
-  withoutBattleAutosave,
-  type TWorldState,
-} from '@/stores/world-map-store-helpers';
+import { initialLocationKey, MAP_ORIGIN, servedEngagement } from '@/stores/world-map-store-helpers';
 
 import {
   devNextSeed as devNextSeedAction,
@@ -75,22 +55,25 @@ import {
   devRegenerateDungeon as devRegenerateDungeonAction,
   type DevRecipeParams,
 } from '@/stores/dev-board-panel-actions';
-import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } from '@/services/world/static-board-rebuild';
-
-export { runWorldTick };
-
-let battleAutosaveStop: (() => void) | null = null;
+import {
+  applyWorldResultAction,
+  serverTickAction,
+  serverWorldJsonOfHost,
+  stepOnServerAction,
+} from '@/stores/server-world-actions';
+import { leaveCurrentLocationAction } from '@/stores/leave-location-action';
+import { placeHeroOnArrivalAction } from '@/stores/arrival-action';
+import { respawnHeroAtCampingAction } from '@/stores/camp-respawn-action';
 
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
     map: null as HexMapModel | null,
     descriptor: null as BoardDescriptor | null,
     woodCollected: 0,
-    pendingCampingRespawn: false,
 
     currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
-    pendingArrivalSide: null as ExitSide | null,
+    worldLoadFailed: false,
 
     // Bumped whenever dirtyTileIds gains entries — the render layer watches
     // this (cheap, shallow) instead of deep-watching the tiles array itself.
@@ -194,38 +177,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       );
     },
 
-    clearStoredLocation(locationKey: LocationKey, mapId: string) {
-      const heroStore = useHeroStore();
-      const index = readLocationMapIndex();
-
-      removeSavedWorld(mapId);
-
-      if (index[locationKey] === mapId) {
-        delete index[locationKey];
-        writeLocationMapIndex(index);
-      }
-
-      heroStore.forgetPosition(mapId);
-    },
-
-    forgetStoredLocationPosition(locationKey: LocationKey) {
-      const heroStore = useHeroStore();
-      const index = readLocationMapIndex();
-      const mapId = index[locationKey];
-
-      if (!mapId) return;
-
-      heroStore.forgetPosition(mapId);
-    },
-
-    scheduleLocationRespawn(locationKey: LocationKey, delayMs: number) {
-      scheduleRespawn(locationKey, delayMs);
-    },
-
-    clearLocationRespawn(locationKey: LocationKey) {
-      clearRespawn(locationKey);
-    },
-
     getLocationRespawnRemainingMs(locationKey: LocationKey) {
       return getRespawnRemainingMs(locationKey);
     },
@@ -234,90 +185,40 @@ export const useWorldMapStore = defineStore('world-map-store', {
       return isRespawning(locationKey);
     },
 
-    syncLocationRespawn(locationKey: LocationKey) {
-      if (!consumeDueLocationRespawn(locationKey)) return;
-
-      const mapId = readLocationMapIndex()[locationKey];
-      if (mapId) {
-        this.clearStoredLocation(locationKey, mapId);
-      }
-    },
-
     hasGraveMarker() {
       if (!this.map) return false;
       const map = this.map as HexMapModel;
       return map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE);
     },
 
-    placeHeroAtCampfire() {
-      if (!this.map) return;
-
-      const spawn = findFreeHexNearObject(this.map as HexMapModel, HEXOBJECT_KEYS.FIREPLACE);
-      if (!spawn) {
-        this.placeHeroAtEntry('camping');
-        return;
-      }
-
-      useHeroStore().heroCoordinates = spawn;
-    },
-
-    async respawnHeroAtCamping() {
-      const heroStore = useHeroStore();
-      const events = useGameEventsStore();
-      const defeatedLocationKey = this.currentLocationKey;
-      const defeatedMapId = this.currentMapId;
-
-      useBattleStore().close();
-      heroStore.closePortalOnDeath();
-      if (defeatedMapId) {
-        this.clearStoredLocation(defeatedLocationKey, defeatedMapId);
-      }
-      this.forgetStoredLocationPosition('silesia');
-
-      this.stopWorldLoop();
-      this.pendingCampingRespawn = true;
-      heroStore.heroCoordinates = null;
-      this.currentMapId = null;
-      heroStore.setPendingLocation('camping');
-      heroStore.reviveAtOneHp();
-      events.push('Battle', 'hero was defeated and returned to camping', 'BATTLE');
-
-      if (isViewingOtherWorldLocation('camping')) {
-        await routeToLocation('camping');
-        return;
-      }
-
-      this.goToLocation('camping');
-    },
-
-    enableBattleAutosave() {
-      if (battleAutosaveStop) return;
-      battleAutosaveStop = useBattleStore().$subscribe(() => {
-        if (isCurrentlyHydratingFromStorage()) return;
-        this.saveToStorage();
+    async respawnHeroAtCamping(result: WorldCommandResult) {
+      await respawnHeroAtCampingAction(this, result, {
+        events: useGameEventsStore(),
+        battle: useBattleStore(),
+        installTravel: installTravelledWorlds,
+        isViewingOtherWorldLocation,
+        routeToLocation,
       });
     },
 
     bootstrapWorld() {
       const heroStore = useHeroStore();
-      this.enableBattleAutosave();
 
       const locationKey = heroStore.nav.locationKey;
-      const mapId = heroStore.nav.locationMapId ?? undefined;
 
-      this.goToLocation(locationKey, mapId);
+      this.goToLocation(locationKey);
 
       if (this.currentMapId) {
         const remembered = heroStore.nav.positionByMapId[this.currentMapId];
         if (remembered) {
           heroStore.heroCoordinates = { ...remembered };
           this.revealAroundHero();
-          this.saveToStorage(this.currentMapId);
+          this.cacheServedWorld();
         }
       }
     },
 
-    goToLocation(locationKey: LocationKey, preferredMapId?: string) {
+    goToLocation(locationKey: LocationKey) {
       if (locationKey !== this.currentLocationKey && this.isLocationRespawning(locationKey)) {
         useGameEventsStore().push(
           'World',
@@ -327,61 +228,23 @@ export const useWorldMapStore = defineStore('world-map-store', {
         return;
       }
 
-      this.leaveCurrentLocation(locationKey);
-      this.loadLocationMap(locationKey, preferredMapId);
+      this.leaveCurrentLocation();
+      this.loadLocationMap(locationKey);
 
       if (!this.currentMapId) return;
 
       this.placeHeroOnArrival(locationKey);
       this.revealAroundHero();
       this.revealEntryTile();
-      this.saveToStorage(this.currentMapId);
+      this.cacheServedWorld();
     },
 
-    leaveCurrentLocation(nextLocationKey: LocationKey) {
-      const leavingKey = this.currentLocationKey;
-      const leavingDef = MapRegistry.get(leavingKey);
-      const respawnDelayMs = leavingDef.respawnAfterClearedMs;
-      const isLeavingToElsewhere = nextLocationKey !== leavingKey;
-
-      if (isLeavingToElsewhere && respawnDelayMs && this.hasGraveMarker()) {
-        this.scheduleLocationRespawn(leavingKey, respawnDelayMs);
-      }
-
-      if (this.currentMapId) {
-        const heroCoordinates = useHeroStore().heroCoordinates;
-        if (heroCoordinates) {
-          useHeroStore().rememberPosition(this.currentMapId, heroCoordinates);
-        }
-
-        if (isLeavingToElsewhere && leavingDef.boardKind === 'DUNGEON') {
-          this.clearStoredLocation(leavingKey, this.currentMapId);
-        } else {
-          this.saveToStorage(this.currentMapId);
-        }
-      }
-
-      this.stopWorldLoop();
+    leaveCurrentLocation() {
+      leaveCurrentLocationAction(this, useHeroStore());
     },
 
     placeHeroOnArrival(locationKey: LocationKey) {
-      const heroStore = useHeroStore();
-      const remembered = this.currentMapId
-        ? heroStore.nav.positionByMapId[this.currentMapId]
-        : null;
-
-      if (this.pendingCampingRespawn && locationKey === 'camping') {
-        this.placeHeroAtCampfire();
-      } else {
-        const spot =
-          findArrivalHex(this.map as HexMapModel, this.pendingArrivalSide, getStream('world')) ??
-          (remembered ? { ...remembered } : null);
-        if (spot) heroStore.heroCoordinates = spot;
-        else this.placeHeroAtEntry(locationKey);
-      }
-
-      this.pendingCampingRespawn = false;
-      this.pendingArrivalSide = null;
+      placeHeroOnArrivalAction(this, useHeroStore(), locationKey);
     },
 
     revealEntryTile() {
@@ -391,47 +254,47 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (revealed) this.markTileDirty(revealed);
     },
 
-    loadLocationMap(locationKey: LocationKey, preferredMapId?: string) {
-      const heroStore = useHeroStore();
-
-      this.syncLocationRespawn(locationKey);
-
-      const index = readLocationMapIndex();
-      const mapId = preferredMapId ?? index[locationKey] ?? newMapId();
-
-      if (!index[locationKey]) {
-        index[locationKey] = mapId;
-        writeLocationMapIndex(index);
-      }
-
+    loadLocationMap(locationKey: LocationKey) {
+      const cached = readCachedWorld(locationKey);
       this.currentLocationKey = locationKey;
-      this.currentMapId = mapId;
 
-      this.loadFromStorage(mapId);
-      this.rebuildStaticIfDrawingChanged(locationKey, mapId);
-
-      if (!this.map) {
-        const def = MapRegistry.get(locationKey);
-        this.applyFreshBoard(def.create({ seed: requireWorldSeed() }), mapId);
+      if (!cached) {
+        this.stopWorldLoop();
+        this.map = null;
+        this.descriptor = null;
+        this.currentMapId = null;
+        this.worldLoadFailed = true;
+        return;
       }
-      if (locationKey === 'camping' && this.map)
-        installCampBook(this.map as HexMapModel, heroStore.heroCoordinates);
+
+      this.worldLoadFailed = false;
+      this.currentMapId = cached.mapId;
+      this.installServedWorld(cached);
       this.markAllTilesDirty();
 
       this.startWorldLoop();
-      heroStore.setLocation(locationKey, mapId);
+      useHeroStore().setLocation(locationKey, cached.mapId);
     },
 
-    rebuildStaticIfDrawingChanged(locationKey: LocationKey, mapId: string) {
-      rebuildStaticIfDrawingChangedAction(this, locationKey, mapId, !!this.map, this.descriptor);
+    async retryWorldLoad() {
+      await reloadWorldCache();
+      this.goToLocation(this.currentLocationKey);
     },
 
-    applyFreshBoard(created: CreatedBoard, mapId: string) {
+    serverWorldJson(engagement?: Engagement | null): string | null {
+      const held = engagement === undefined ? (useBattleStore().engagement ?? null) : engagement;
+      return serverWorldJsonOfHost(this, useHeroStore().heroCoordinates, held);
+    },
+
+    stepOnServer(coordinates: IHexCoordinates) {
+      return stepOnServerAction(this, useHeroStore(), coordinates);
+    },
+
+    applyFreshBoard(created: CreatedBoard) {
       this.map = created.map;
       this.descriptor = created.descriptor;
       this.initFog();
       this.hydrateResourcesFromConfig();
-      this.saveToStorage(mapId);
     },
 
     setHeroLocation(locationKey: LocationKey, mapId: string) {
@@ -450,90 +313,40 @@ export const useWorldMapStore = defineStore('world-map-store', {
       devRebuildFromRecipeAction(this, recipe, params);
     },
 
-    loadFromStorage(mapId: string) {
+    installServedWorld(served: ServerWorld) {
       const heroStore = useHeroStore();
-      const battleStore = useBattleStore();
 
-      const savedMap = readSavedMap(mapId);
-      this.descriptor = readSavedWorldState<TWorldState>(mapId)?.descriptor ?? null;
-
-      if (savedMap) {
-        const loadedAt = Date.now();
-        const hydratedMap = HexMapModel.fromJSON(savedMap, loadedAt);
-        this.map = hydratedMap;
-        this.hydrateResourcesFromConfig();
-
-        const changed = runWorldTick(
-          hydratedMap,
-          loadedAt,
-          this.buildEngineContext(),
-          useHeroStore().hero.id,
-        );
-        if (changed) this.markAllTilesDirty();
-      } else {
-        this.map = null;
-      }
-
-      const raw = readSavedWorldState<TWorldState>(mapId);
-      reseedWorld(raw?.worldSeed ?? crypto.randomUUID());
-
-      if (raw) {
-        heroStore.heroCoordinates = raw.heroCoordinates ?? null;
-        const recovered = recoverStepPosition(heroStore.knowledge, mapId, raw.knowledgeRevision);
-        if (recovered) heroStore.rememberPosition(mapId, (heroStore.heroCoordinates = recovered));
-        withoutBattleAutosave(() =>
-          battleStore.restore(readBattleSnapshot(raw.battle, this.map as HexMapModel | null)),
-        );
-      } else {
-        heroStore.heroCoordinates = null;
-        this.woodCollected = 0;
-        withoutBattleAutosave(() => battleStore.close());
-      }
-
-      if (!this.map) return;
-
-      if (!heroStore.heroCoordinates) {
-        this.placeHeroAtEntry(this.currentLocationKey);
-
-        this.revealAroundHero();
-        this.saveToStorage(mapId);
-        return;
-      }
-
-      this.revealAroundHero();
-      this.saveToStorage(mapId);
+      this.descriptor = served.descriptor;
+      this.map = served.map;
+      heroStore.heroCoordinates = served.heroCoordinates;
+      this.cacheServedWorld(served.engagement);
+      this.hydrateResourcesFromConfig();
+      reseedWorld(served.worldSeed ?? crypto.randomUUID());
+      useBattleStore().restore(
+        servedEngagement(served.engagement, this.map as HexMapModel | null),
+        takeServerBattleView(),
+      );
+      if (!heroStore.heroCoordinates) this.placeHeroAtEntry(this.currentLocationKey);
     },
 
-    saveToStorage(mapId?: string) {
-      const targetMapId = mapId ?? this.currentMapId;
-      if (!targetMapId) return;
-      const mapSnapshot = this.map
-        ? JSON.stringify({ contentVersion: CONTENT_VERSION, map: this.map })
-        : null;
-      const state: TWorldState = {
-        contentVersion: CONTENT_VERSION,
-        heroCoordinates: useHeroStore().heroCoordinates,
-        knowledgeRevision: useHeroStore().knowledge?.revision,
-        worldSeed: getWorldSeed() ?? undefined,
-        descriptor: this.descriptor,
-        battle: useBattleStore().snapshot(),
-      };
-      scheduleWorldSave(targetMapId, mapSnapshot, JSON.stringify(state));
+    cacheServedWorld(engagement?: Engagement | null) {
+      if (!this.currentMapId) return;
+      const json = this.serverWorldJson(engagement);
+      if (json) cacheServerWorld(this.currentLocationKey, json);
+    },
+
+    applyWorldResult(result: WorldCommandResult) {
+      applyWorldResultAction(this, useHeroStore(), result);
+    },
+
+    serverTick() {
+      return serverTickAction(this, useHeroStore());
     },
 
     startWorldLoop() {
       worldLoop.start(() => {
         if (!this.map || !this.currentMapId) return;
-        const changed = runWorldTick(
-          this.map as HexMapModel,
-          Date.now(),
-          this.buildEngineContext(),
-          useHeroStore().hero.id,
-        );
-        if (changed) {
-          this.markAllTilesDirty();
-          this.saveToStorage(this.currentMapId);
-        }
+        void this.serverTick();
       });
     },
 
@@ -574,44 +387,28 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!revealed) return;
 
       this.markTileDirty(revealed);
-      this.saveToStorage();
     },
 
     hydrateResourcesFromConfig() {
       if (!this.map) return;
-      const map = this.map as HexMapModel;
-
-      for (const { tile, hexobject } of findTilesMissingSpawners(map)) {
-        applyCommand(
-          { map, heroes: {} },
-          {
-            type: 'ADD_RESOURCE_SPAWNER',
-            payload: {
-              heroId: useHeroStore().hero.id,
-              coordinates: tile.coordinates,
-              hexobject,
-            },
-          },
-          this.buildEngineContext(),
-        );
-        this.markTileDirty(tile.coordinates);
-      }
+      hydrateSpawners(
+        this.map as HexMapModel,
+        useHeroStore().hero.id,
+        this.buildEngineContext(),
+        (coordinates) => this.markTileDirty(coordinates),
+      );
     },
 
     clearAllWorlds() {
       this.stopWorldLoop();
 
-      const index = readLocationMapIndex();
-      for (const mapId of Object.values(index)) {
-        removeSavedWorld(mapId);
-      }
-
-      clearLocationMapIndex();
+      forgetAllServerWorlds();
 
       this.map = null;
       this.descriptor = null;
       useHeroStore().heroCoordinates = null;
       this.currentMapId = null;
+      this.worldLoadFailed = false;
       this.currentLocationKey = 'camping';
       useBattleStore().close();
     },

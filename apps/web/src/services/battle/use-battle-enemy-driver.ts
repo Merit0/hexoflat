@@ -1,9 +1,12 @@
 import { onBeforeUnmount, watch } from 'vue';
-import { useBattleStore } from '@/stores/battle-store';
+import { useBattleStoreContext } from '@/composables/battle-store-context';
+import type { BattleStoreInstance } from '@/stores/battle-store';
 import { BATTLE_TIMING } from '@/render/battle/battle-timing';
 
-export function useBattleEnemyDriver(delayMs: number = BATTLE_TIMING.enemyTurnDelayMs): void {
-  const store = useBattleStore();
+export function useBattleEnemyDriver(
+  delayMs: number = BATTLE_TIMING.enemyTurnDelayMs,
+  store: BattleStoreInstance = useBattleStoreContext(),
+): void {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   function stop() {
@@ -12,13 +15,13 @@ export function useBattleEnemyDriver(delayMs: number = BATTLE_TIMING.enemyTurnDe
   }
 
   watch(
-    () => (store.needsEnemyTurn ? store.battle : null),
+    () => (store.needsEnemyTurn ? store.projection : null),
     (pending) => {
       stop();
       if (!pending) return;
       timer = setTimeout(() => {
         timer = null;
-        store.runEnemyTurn();
+        void store.runEnemyTurn();
       }, delayMs);
     },
     { immediate: true },

@@ -8,6 +8,8 @@ import { validateContent } from '@hexoflat/engine/content/validate-content';
 import { queryClient } from './api/query-client';
 import { useUserStore } from './stores/user-store';
 import { i18n } from './i18n';
+import { writeBlob } from './services/persistence/world-blob-store';
+import { HERO_STORE_BLOB } from './stores/hero-store-blob';
 
 if (import.meta.env.DEV) {
   validateContent();
@@ -16,52 +18,27 @@ if (import.meta.env.DEV) {
 const pinia = createPinia();
 
 /**
- * Persists only the `hero` store to localStorage — world-map-store isn't
- * included because it has its own storage system (hexoflat:world:*). Never
- * persist the `user` store: it carries the JWT accessToken, and an
- * XSS-readable localStorage token is a full session hijack. The token still
- * only ever lives in memory (api/auth-token.ts). A page refresh instead
- * survives via a silent `GET /auth/session` call against an httpOnly,
- * JS-unreadable cookie set at login/register (see user-store.ts's
- * `restoreSession`) — the raw token never touches localStorage either way.
+ * The `hero` store (where the hero stands, his health, the portal link) belongs to his expedition,
+ * so it is kept with the server's copy of the world (`world-blob-store`, key `hero-store`) and
+ * restored by `hero-store.getHero()` once the expedition is loaded. Never persist the `user`
+ * store: it carries the JWT accessToken, which only ever lives in memory (api/auth-token.ts); a
+ * page refresh survives via a silent `GET /auth/session` call against an httpOnly cookie.
  */
 pinia.use((context) => {
-  const serializer = {
-    serialize: JSON.stringify,
-    deserialize: JSON.parse,
-  };
-
-  const storeId = context.store.$id;
-
-  const PERSIST_STORES = new Set<string>(['hero']);
-
-  if (!PERSIST_STORES.has(storeId)) return;
-
-  try {
-    const raw = window.localStorage.getItem(storeId);
-    if (raw) {
-      const fromLocalStorage: unknown = serializer.deserialize(raw);
-      if (fromLocalStorage && typeof fromLocalStorage === 'object') {
-        context.store.$patch(fromLocalStorage as Partial<typeof context.store.$state>);
-      }
-    }
-  } catch (e) {
-    console.warn(`[pinia-persist] failed to hydrate "${storeId}"`, e);
-    window.localStorage.removeItem(storeId);
-  }
+  if (context.store.$id !== 'hero') return;
 
   context.store.$subscribe((_, state) => {
     try {
-      window.localStorage.setItem(
-        storeId,
-        serializer.serialize(
+      writeBlob(
+        HERO_STORE_BLOB,
+        JSON.stringify(
           Object.fromEntries(
             Object.entries(state).filter(([key]) => !['knowledge', 'knowledgeError'].includes(key)),
           ),
         ),
       );
     } catch (e) {
-      console.warn(`[pinia-persist] failed to persist "${storeId}"`, e);
+      console.warn('[pinia-persist] failed to persist "hero"', e);
     }
   });
 });

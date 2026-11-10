@@ -109,8 +109,8 @@ describe('snapshot: serializeState / deserializeState', () => {
 
 describe('snapshot: inventory', () => {
   it('round-trips the inventory state and keeps old payloads without it loadable', async () => {
-    const { createInventoryState } = await import('../inventory/inventory-state');
-    const state = { ...buildState(), inventory: createInventoryState('hero-1') };
+    const { emptyInventoryState } = await import('../inventory/inventory-state');
+    const state = { ...buildState(), inventory: emptyInventoryState('hero-1') };
     const back = deserializeState(serializeState(state), 0);
     expect(back.inventory).toEqual(state.inventory);
 
@@ -120,8 +120,8 @@ describe('snapshot: inventory', () => {
   });
 
   it('detects a tampered inventory through the checksum', async () => {
-    const { createInventoryState } = await import('../inventory/inventory-state');
-    const payload = serializeState({ ...buildState(), inventory: createInventoryState('hero-1') });
+    const { emptyInventoryState } = await import('../inventory/inventory-state');
+    const payload = serializeState({ ...buildState(), inventory: emptyInventoryState('hero-1') });
     const tampered = { ...payload, inventory: { ...payload.inventory!, revision: 9 } };
     expect(() => deserializeState(tampered, 0)).toThrow(SnapshotChecksumError);
   });

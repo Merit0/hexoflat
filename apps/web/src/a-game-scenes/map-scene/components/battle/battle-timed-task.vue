@@ -39,6 +39,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { BattleTaskView } from '@/composables/battle-view';
+import { serverNow } from '@/services/battle/battle-clock';
 
 const TICK_MS = 100;
 
@@ -46,7 +47,7 @@ const props = defineProps<{ task: BattleTaskView }>();
 const emit = defineEmits<{ answer: [option: number]; timeout: [] }>();
 const { t } = useI18n();
 
-const now = ref(Date.now());
+const now = ref(serverNow());
 const settled = ref(false);
 let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -64,7 +65,7 @@ function pick(index: number) {
 }
 
 function tick() {
-  now.value = Date.now();
+  now.value = serverNow();
   if (left.value > 0 || settled.value) return;
   settled.value = true;
   emit('timeout');
@@ -74,7 +75,7 @@ watch(
   () => props.task.deadlineMs,
   () => {
     settled.value = false;
-    now.value = Date.now();
+    now.value = serverNow();
   },
 );
 

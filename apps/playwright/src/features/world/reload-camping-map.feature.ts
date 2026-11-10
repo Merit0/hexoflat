@@ -6,6 +6,7 @@ export class ReloadCampingMapFeature extends BaseFeature {
 
   async reload(): Promise<void> {
     await this.step('Reload the camping map', async () => {
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
       await this.campingMap.reload();
       await this.campingMap.waitUntilReady();
     });

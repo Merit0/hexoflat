@@ -73,7 +73,7 @@ describe('timed task', () => {
       battle,
       { kind: 'answer-task', option: rightAnswer(battle) },
       'hero',
-      T0 + BATTLE_RULES.taskMs + 1,
+      T0 + BATTLE_RULES.taskMs + BATTLE_RULES.networkGraceMs + 1,
     );
     expect(events[0].payload).toMatchObject({ correct: false, late: true });
   });
@@ -89,5 +89,31 @@ describe('timed task', () => {
     expect(wrong.events[0].payload).toMatchObject({ correct: false });
     const timeout = heroDoes(battle, { kind: 'task-timeout' }, 'hero', T0 + 9_000);
     expect(timeout.events[0].payload).toMatchObject({ correct: false });
+  });
+});
+
+describe('the network grace of a task', () => {
+  it('still counts a right answer that arrives within the grace after the deadline', () => {
+    const battle = pushing();
+    const { events } = heroDoes(
+      battle,
+      { kind: 'answer-task', option: rightAnswer(battle) },
+      'hero',
+      T0 + BATTLE_RULES.taskMs + BATTLE_RULES.networkGraceMs,
+    );
+    expect(events[0].payload).toMatchObject({ correct: true, late: false });
+  });
+});
+
+describe('the network grace of a task', () => {
+  it('still counts a right answer that arrives within the grace after the deadline', () => {
+    const battle = pushing();
+    const { events } = heroDoes(
+      battle,
+      { kind: 'answer-task', option: rightAnswer(battle) },
+      'hero',
+      T0 + BATTLE_RULES.taskMs + BATTLE_RULES.networkGraceMs,
+    );
+    expect(events[0].payload).toMatchObject({ correct: true, late: false });
   });
 });

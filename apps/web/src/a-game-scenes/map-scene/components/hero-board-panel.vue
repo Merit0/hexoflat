@@ -110,8 +110,8 @@ import { isHeroBoardOpen, toggleHeroBoardOpen } from '@/composables/use-hero-boa
 import GameEventsLogger from '@/a-game-scenes/game-events-logger/components/game-events-logger.vue';
 import InventoryBoardGrid from '@/a-game-scenes/inventory-scene/components/inventory-board-grid.vue';
 import HeroEquipBoard from '@/a-game-scenes/inventory-scene/components/hero-equip-board.vue';
-import { useOpenInventoryOnPickup } from '@/composables/use-open-inventory-on-pickup';
 import { useEquipmentHealthSync } from '@/composables/use-equipment-health-sync';
+import { useOpenInventoryOnPickup } from '@/composables/use-open-inventory-on-pickup';
 import { useEscapeClearsItemSelection } from '@/composables/use-escape-clears-item-selection';
 import HeroPathBoard from '@/a-game-scenes/map-scene/components/hero-details/hero-path-board.vue';
 import HeroDetailsBoard from '@/a-game-scenes/map-scene/components/hero-details/hero-details-board.vue';

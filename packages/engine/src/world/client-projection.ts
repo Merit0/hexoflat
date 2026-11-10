@@ -1,0 +1,52 @@
+import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { sha256Hex } from '../utils/hash/sha256';
+import type { SerializedWorld } from './server-world';
+import type { TileDiff } from './tile-diff';
+
+interface SquadBlock {
+  members: string[];
+  loot: string;
+}
+
+function squadOf(tile: object): { creature: Record<string, unknown>; squad: SquadBlock } | null {
+  const creature = (
+    (tile as { hexobject?: unknown }).hexobject as { creature?: Record<string, unknown> } | null
+  )?.creature;
+  const squad = creature?.squad as SquadBlock | undefined;
+  return creature && squad && Array.isArray(squad.members) ? { creature, squad } : null;
+}
+
+export function projectTileForClient<T extends object>(tile: T): T {
+  const found = squadOf(tile);
+  if (!found || found.creature.scouted === true || found.squad.members.length <= 1) return tile;
+  const copy = structuredClone(tile);
+  const hidden = squadOf(copy)!.squad;
+  const leader = hidden.members[0];
+  hidden.members = hidden.members.map(() => leader);
+  hidden.loot = HEXOBJECT_KEYS.HAND;
+  return copy;
+}
+
+export function projectDiffsForClient(diffs: readonly TileDiff[]): TileDiff[] {
+  return diffs.map((diff) => ({ ...diff, tile: projectTileForClient(diff.tile) }));
+}
+
+export function cosmeticSeedFor(serverSeed: string): string {
+  return sha256Hex(`cosmetic:${serverSeed}`);
+}
+
+function projectDescriptorForClient(descriptor: unknown): unknown {
+  if (!descriptor || typeof descriptor !== 'object' || !('seed' in descriptor)) return descriptor;
+  const { seed } = descriptor;
+  return typeof seed === 'string' ? { ...descriptor, seed: cosmeticSeedFor(seed) } : descriptor;
+}
+
+export function projectWorldForClient(world: SerializedWorld): SerializedWorld {
+  return {
+    ...world,
+    worldSeed: cosmeticSeedFor(world.worldSeed),
+    descriptor: projectDescriptorForClient(world.descriptor),
+    map: { ...world.map, tiles: world.map.tiles.map(projectTileForClient) },
+    battle: null,
+  };
+}

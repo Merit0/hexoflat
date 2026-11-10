@@ -3,8 +3,9 @@ import { useUserStore } from '@/stores/user-store';
 
 const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-view.vue');
 const HexWorldMap = () => import('@/a-game-scenes/map-scene/components/hex-world-map.vue');
-const DevBattlefieldPage = () =>
-  import('@/a-game-scenes/battle-scene/components/dev-battlefield-page.vue');
+const DevBattlefieldPage = import.meta.env.DEV
+  ? () => import('@/a-game-scenes/battle-scene/components/dev-battlefield-page.vue')
+  : null;
 
 export const ROUTES = {
   LOGIN: 'login',
@@ -14,16 +15,17 @@ export const ROUTES = {
   DEV_BATTLEFIELD: 'dev-battlefield',
 } as const;
 
-const DEV_ROUTES: RouteRecordRaw[] = import.meta.env.DEV
-  ? [
-      {
-        path: '/dev/battlefield',
-        name: ROUTES.DEV_BATTLEFIELD,
-        component: DevBattlefieldPage,
-        meta: { requiresAuth: false },
-      },
-    ]
-  : [];
+const DEV_ROUTES: RouteRecordRaw[] =
+  import.meta.env.DEV && DevBattlefieldPage
+    ? [
+        {
+          path: '/dev/battlefield',
+          name: ROUTES.DEV_BATTLEFIELD,
+          component: DevBattlefieldPage,
+          meta: { requiresAuth: false },
+        },
+      ]
+    : [];
 
 const routes: RouteRecordRaw[] = [
   {

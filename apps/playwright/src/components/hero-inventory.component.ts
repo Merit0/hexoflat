@@ -211,4 +211,13 @@ export class HeroInventoryComponent extends BaseComponent {
   async verifyTooltipHidden(): Promise<void> {
     await expect(this.tooltip).toBeHidden();
   }
+
+  async verifyServerSessionIs(status: string): Promise<void> {
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getInventorySyncStatus()), {
+        timeout: INVENTORY_POLL_TIMEOUT_MS,
+        intervals: POLL_INTERVALS_MS,
+      })
+      .toBe(status);
+  }
 }

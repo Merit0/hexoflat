@@ -193,6 +193,7 @@ import BattleHexToken from './battle-hex-token.vue';
 import BattleHearts from './battle-hearts.vue';
 import BattleHandRow from './battle-hand-row.vue';
 import BattleActionButtons from './battle-action-buttons.vue';
+import { msUntilServerTime } from '@/services/battle/battle-clock';
 
 const props = defineProps<{ card: BattleHeroCard; swapping: boolean }>();
 const emit = defineEmits<{
@@ -207,7 +208,7 @@ const emit = defineEmits<{
 const { t, text } = useBattleText();
 
 function timerStyle(deadlineMs: number) {
-  return { animationDuration: `${Math.max(0, deadlineMs - Date.now())}ms` };
+  return { animationDuration: `${msUntilServerTime(deadlineMs)}ms` };
 }
 
 const willPercent = computed(() =>

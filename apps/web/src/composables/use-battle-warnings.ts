@@ -1,12 +1,12 @@
 import { useI18n } from 'vue-i18n';
 import type { BattleRejectionCode } from '@hexoflat/engine/battle/battle-rejection';
-import { useBattleStore } from '@/stores/battle-store';
+import { useBattleStoreContext } from '@/composables/battle-store-context';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { controlledHero } from './battle-board-tap';
 import { rejectionWarning } from './battle-warning';
 
 export function useBattleWarnings() {
-  const store = useBattleStore();
+  const store = useBattleStoreContext();
   const heroToolStore = useHeroToolStore();
   const { t } = useI18n();
 
@@ -42,9 +42,9 @@ export function useBattleWarnings() {
     return true;
   }
 
-  function send(run: () => boolean): boolean {
+  async function send(run: () => Promise<boolean>): Promise<boolean> {
     const before = store.lastHeroEvents;
-    const accepted = run();
+    const accepted = await run();
     if (accepted || store.lastHeroEvents === before) return accepted;
     const warning = rejectionWarning(store.lastHeroEvents);
     if (warning) warn(warning.code, warning.cost);

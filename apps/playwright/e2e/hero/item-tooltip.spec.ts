@@ -26,6 +26,7 @@ test.describe('item tooltip', { tag: ['@hero'] }, () => {
   test('The Return Scroll tooltip shows it needs Teleport, then its Will price once learned', async () => {
     await new OpenCampingMapFeature().open();
     const verifyInventory = new VerifyInventoryFeature();
+    await verifyInventory.givenItem(HexobjectKeys.returnScroll, 5);
     await verifyInventory.verifyContainsItem(HexobjectKeys.returnScroll);
     await new SwitchHeroBoardTabFeature().switchTo('inventory');
 

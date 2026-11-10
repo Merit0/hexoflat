@@ -40,7 +40,7 @@ import BattleHexInfoTooltip from '@/components/gui/hex-info/battle-hex-info-tool
 import { useBattleHexHover } from '@/composables/use-battle-hex-hover';
 import BattleBoardLegend from '@/components/battle/battle-board-legend.vue';
 import { useBattleView } from '@/composables/use-battle-view';
-import { useBattleStore } from '@/stores/battle-store';
+import { useBattleStoreContext } from '@/composables/battle-store-context';
 import {
   frameWorldRect,
   tileScreenSize,
@@ -55,7 +55,7 @@ import { BATTLEFIELD_BIOMES } from '@hexoflat/engine/battle/battlefield';
 
 defineProps<{ referenceFrame: BoardFrame | null }>();
 
-const store = useBattleStore();
+const store = useBattleStoreContext();
 const camera = ref<BoardCamera | null>(null);
 const frame = computed(() => {
   const biome = view.value.board?.scene.biome;

@@ -1,0 +1,188 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createApp } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import { i18n } from '@/i18n';
+import { useBattleStore } from '@/stores/battle-store';
+import { useSquadFlow } from '@/services/squads/squad-flow';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
+import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import {
+  fakePresence,
+  sentCommands,
+  fakeStoredWorldOf,
+  fakeEngageSquad,
+  fakeEndBattle,
+  fakeWorldSnapshot,
+} from '@/test-support/fake-player-server';
+import { seedFakeSession } from '@/test-support/fake-session';
+import { ensurePresence, settleInventorySync } from '@/services/inventory/inventory-sync';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroStore } from '@/stores/hero-store';
+import { useWorldMapStore } from '@/stores/world-map-store';
+import { usePortal } from './use-portal';
+
+vi.mock('@/services/player/player-socket', async () =>
+  (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
+);
+vi.mock('@/services/world/location-navigator', () => ({
+  navigateToLocation: vi.fn(),
+  isViewingOtherWorldLocation: vi.fn(() => false),
+  routeToLocation: vi.fn(async () => {}),
+}));
+
+const PORTAL = HEXOBJECT_KEYS.RETURN_PORTAL;
+
+function portalKeys(map: HexMapModel) {
+  return map.tiles
+    .filter((tile) => tile.hexobject?.hexobjectKey === PORTAL)
+    .map((tile) => coordinateKey(tile.coordinates));
+}
+
+function start(location: 'silesia' | 'cave') {
+  const hero = useHeroStore();
+  const world = useWorldMapStore();
+  const inventory = useHeroInventoryStore();
+  hero.hero.id = 'hero-1';
+  seedFakeSession('hero-1', { will: 20, skills: { a_crest: 1, a_teleport: 6 } });
+  hero.loadKnowledge();
+  inventory.hydrate();
+  inventory.putToInventory(HEXOBJECT_KEYS.RETURN_SCROLL, 2);
+  world.goToLocation(location);
+  const map = world.map as HexMapModel;
+  const target = getHexNeighbors(hero.heroCoordinates!).find((c) => {
+    const tile = map.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(c));
+    return tile?.terrain === 'ground' && !tile.hexobject && !tile.exit;
+  })!;
+  return { hero, world, target };
+}
+
+describe('the world paths reach the server through commands only', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
+  });
+
+  it('keeps the portal hexes and the hero place on the server through a portal trip', async () => {
+    const { hero, world, target } = start('silesia');
+    const portal = usePortal();
+    await portal.openPortal(target);
+    await portal.enterPortal();
+    await settleInventorySync();
+
+    expect(world.currentLocationKey).toBe('camping');
+    expect(fakePresence()).toMatchObject({ locationKey: 'camping', mapId: world.currentMapId });
+    expect(portalKeys(fakeStoredWorldOf('camping')!.map)).toEqual(
+      portalKeys(world.map as HexMapModel),
+    );
+    expect(portalKeys(fakeStoredWorldOf('silesia')!.map)).toEqual([coordinateKey(target)]);
+
+    await portal.enterPortal();
+    await settleInventorySync();
+
+    expect(world.currentLocationKey).toBe('silesia');
+    expect(fakePresence()).toMatchObject({ locationKey: 'silesia', mapId: world.currentMapId });
+    expect(portalKeys(fakeStoredWorldOf('silesia')!.map)).toEqual([]);
+    expect(hero.portal).toBeNull();
+  });
+
+  it('opens and walks a portal through server commands only, with the scroll taken from the server inventory', async () => {
+    const { hero, target } = start('silesia');
+    const before = useHeroInventoryStore().countItem(HEXOBJECT_KEYS.RETURN_SCROLL);
+    await settleInventorySync();
+    sentCommands.length = 0;
+    const portal = usePortal();
+    expect(await portal.openPortal(target)).toEqual({ ok: true });
+    expect(hero.portal).toMatchObject({ originLocationKey: 'silesia' });
+    expect(useHeroInventoryStore().countItem(HEXOBJECT_KEYS.RETURN_SCROLL)).toBe(before - 1);
+    await portal.enterPortal();
+    await settleInventorySync();
+    const types = sentCommands.map((c) => c.command.type);
+    expect(types).toEqual(expect.arrayContaining(['WORLD_PORTAL_OPEN', 'WORLD_PORTAL_ENTER']));
+    expect(types.some((type) => type.startsWith('DEV_'))).toBe(false);
+    expect(types).not.toContain('SPEND_WILL');
+    await portal.enterPortal();
+    expect(hero.portal).toBeNull();
+  });
+
+  it('plays a lost battle on the server and lands the hero at the camp without any dev path (REQ-B4-RSP-002)', async () => {
+    const { hero, world } = start('silesia');
+    const oldMapId = world.currentMapId!;
+    await ensurePresence({ locationKey: world.currentLocationKey, mapId: oldMapId });
+    const at = getHexNeighbors(hero.heroCoordinates!).find((c) => {
+      const tile = (world.map as HexMapModel).tiles.find(
+        (t) => coordinateKey(t.coordinates) === coordinateKey(c),
+      );
+      return tile?.terrain === 'ground' && !tile.hexobject && !tile.exit;
+    })!;
+    const tile = (world.map as HexMapModel).tiles.find(
+      (t) => coordinateKey(t.coordinates) === coordinateKey(at),
+    )!;
+    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETON_PACK, tile.coordinates);
+    const engagement = fakeEngageSquad(at);
+    const battle = useBattleStore();
+    createApp({
+      setup() {
+        useSquadFlow();
+        return () => null;
+      },
+    })
+      .use(i18n)
+      .mount(document.createElement('div'));
+    sentCommands.length = 0;
+    battle.engage(engagement);
+
+    await vi.waitFor(() => expect(battle.projection).not.toBeNull());
+    fakeEndBattle('defeat');
+    battle.projection = fakeWorldSnapshot().battleView;
+    await battle.leave();
+    await settleInventorySync();
+
+    expect(world.currentLocationKey).toBe('camping');
+    expect(battle.inBattle).toBe(false);
+    expect(fakeStoredWorldOf('silesia')!.mapId).toBe(oldMapId);
+    expect(fakePresence()).toMatchObject({ locationKey: 'camping', mapId: world.currentMapId });
+    expect(hero.heroCoordinates).not.toBeNull();
+    expect(hero.hero.currentHealth).toBe(1);
+    const types = sentCommands.map((c) => c.command.type);
+    expect(types).toEqual(['WORLD_BATTLE', 'WORLD_BATTLE']);
+  });
+
+  it('keeps no battle path on the dev commands while a fight is open and won (REQ-B4-SPY-001)', async () => {
+    const { hero, world } = start('silesia');
+    await ensurePresence({ locationKey: world.currentLocationKey, mapId: world.currentMapId! });
+    const at = getHexNeighbors(hero.heroCoordinates!).find((c) => {
+      const t = (world.map as HexMapModel).tiles.find(
+        (x) => coordinateKey(x.coordinates) === coordinateKey(c),
+      );
+      return t?.terrain === 'ground' && !t.hexobject && !t.exit;
+    })!;
+    const tile = (world.map as HexMapModel).tiles.find(
+      (t) => coordinateKey(t.coordinates) === coordinateKey(at),
+    )!;
+    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETON_PACK, tile.coordinates);
+    const engagement = fakeEngageSquad(at);
+    const battle = useBattleStore();
+    createApp({
+      setup() {
+        useSquadFlow();
+        return () => null;
+      },
+    })
+      .use(i18n)
+      .mount(document.createElement('div'));
+    sentCommands.length = 0;
+    battle.engage(engagement);
+    await vi.waitFor(() => expect(battle.projection).not.toBeNull());
+    fakeEndBattle('victory');
+    battle.projection = fakeWorldSnapshot().battleView;
+    await battle.leave();
+    await settleInventorySync();
+
+    expect(battle.inBattle).toBe(false);
+    expect(world.currentLocationKey).toBe('silesia');
+    const types = sentCommands.map((c) => c.command.type);
+    expect(types.some((type) => type.startsWith('DEV_'))).toBe(false);
+  });
+});

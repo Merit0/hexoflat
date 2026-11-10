@@ -10,7 +10,6 @@ import { readInventoryAggregate } from '@/services/inventory/stash-transfer';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { stashErrorText, stashNothingToStoreText } from '@/composables/stash-messages';
-import { writeSavedStash } from '@/services/persistence/stash-storage';
 import StashBoard from './stash-board.vue';
 
 let app: App | null = null;
@@ -32,7 +31,6 @@ async function mountBoard() {
   const pinia = createPinia();
   setActivePinia(pinia);
   localStorage.clear();
-  writeSavedStash({ chests: 0, starterGiven: true, cells: [] });
   useHeroToolStore().clearActionMessage();
   const inventory = useHeroInventoryStore();
   inventory.hydrate();
@@ -85,7 +83,7 @@ describe('stash board layout', () => {
 
   it('lists every bag item first, sorted by category, rarity and key, free cells after them', async () => {
     const inventory = useHeroInventoryStore();
-    for (const key of [K.COINS, K.SWORD, K.HEALTH_BOTTLE, K.AXE, K.SHIELD]) {
+    for (const key of [K.COINS, K.SWORD, K.HEALTH_BOTTLE, K.AXE, K.SHIELD, K.RETURN_SCROLL]) {
       inventory.putToInventory(key, key === K.COINS ? 5 : 1);
     }
     await nextTick();
@@ -127,19 +125,19 @@ describe('stash board layout', () => {
     expect(style).toContain('--stash-pad');
   });
 
-  describe('before the first chest is bought', () => {
-    it('offers five tabs, the first one selected, and the first chest for 100 coins', () => {
+  describe('before the camp chest is opened', () => {
+    it('offers five tabs, the first one selected, and the free camp chest', () => {
       expect(all('stash-tab-')).toHaveLength(5);
       expect(byId('stash-tab-1')?.getAttribute('aria-selected')).toBe('true');
       expect(byId('stash-tab-1')?.dataset.state).toBe('locked');
       expect(byId('stash-chest-grid')).toBeNull();
       expect(byId('stash-shop')).not.toBeNull();
-      expect(byId('stash-price')?.querySelector('.cost')?.textContent).toBe('100');
+      expect(byId('stash-price')?.querySelector('.cost')?.textContent).toBe('0');
     });
 
     it('shows only the chest and the price with the coin sprite, no button and no extra text', () => {
       const shop = byId('stash-shop')!;
-      expect(shop.textContent?.trim()).toBe('100');
+      expect(shop.textContent?.trim()).toBe('0');
       expect(byId('stash-price')?.querySelector('img.coin')?.getAttribute('src')).toContain('coin');
       expect(byId('stash-buy-chest')).toBeNull();
       expect(shop.querySelector('button')).toBeNull();
@@ -197,10 +195,10 @@ describe('stash board layout', () => {
       expect(byId('stash-count')?.textContent).toContain('2 / 42');
     });
 
-    it('offers the next chest for 1000 and keeps the later ones behind it', async () => {
+    it('offers the next chest for 100 and keeps the later ones behind it', async () => {
       byId('stash-tab-2')!.click();
       await nextTick();
-      expect(byId('stash-price')?.textContent).toContain('1000');
+      expect(byId('stash-price')?.textContent).toContain('100');
 
       byId('stash-tab-3')!.click();
       await nextTick();
@@ -387,6 +385,7 @@ describe('stash filters, actions and the bag overflow button', () => {
         K.COINS,
         K.BONE_CHARM,
         K.CROWN_SHARD,
+        K.RETURN_SCROLL,
       ]) {
         inventory.putToInventory(key, 1);
       }

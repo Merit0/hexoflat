@@ -6,6 +6,7 @@ import { DbModule } from './db/db.module';
 import { GameModule } from './game/game.module';
 import { HealthModule } from './health/health.module';
 import { HeroesModule } from './heroes/heroes.module';
+import { PlayerModule } from './player/player.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { HeroesModule } from './heroes/heroes.module';
     ContentModule,
     GameModule,
     HeroesModule,
+    PlayerModule,
     HealthModule,
   ],
 })

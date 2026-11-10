@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { getMeta } from '../content/content-accessors';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { BAG_CAPACITY, BAG_SLOT_KEYS, BAG_WILL_SLOT_KEY, bagIndexOfSlotKey } from './bag-layout';
-import {
-  createInventoryState,
-  emptyInventoryState,
-  inventoryStateSchema,
-  STARTER_SCROLL_COUNT,
-} from './inventory-state';
-import { STARTER_STASH_ITEMS } from './stash-constants';
+import { emptyInventoryState, inventoryStateSchema } from './inventory-state';
 
 describe('bag layout', () => {
   it('has 53 addressable cells without the Will cell and the blocked centre', () => {
@@ -23,7 +16,7 @@ describe('bag layout', () => {
 describe('InventoryState schema', () => {
   it('accepts an empty and a fresh state', () => {
     expect(inventoryStateSchema.safeParse(emptyInventoryState('h1')).success).toBe(true);
-    expect(inventoryStateSchema.safeParse(createInventoryState('h1')).success).toBe(true);
+    expect(inventoryStateSchema.safeParse(emptyInventoryState('h1')).success).toBe(true);
   });
 
   it('fills the defaults for revision, capacity and idSeq', () => {
@@ -38,7 +31,7 @@ describe('InventoryState schema', () => {
   });
 
   it('rejects a wrong bag length, an unknown key, a bad amount and a repeated id', () => {
-    const base = createInventoryState('h1');
+    const base = emptyInventoryState('h1');
     expect(inventoryStateSchema.safeParse({ ...base, bag: base.bag.slice(1) }).success).toBe(false);
 
     const item = { id: 'x', key: HEXOBJECT_KEYS.SWORD, type: 'tool', amount: 1 };
@@ -57,32 +50,19 @@ describe('InventoryState schema', () => {
   });
 });
 
-describe('createInventoryState', () => {
-  it('gives 50 Return Scrolls at the end of the bag and the starter gear in the first chest', () => {
-    const state = createInventoryState('h1');
-    const scrolls = state.bag.filter((item) => item?.key === HEXOBJECT_KEYS.RETURN_SCROLL);
-    const total = scrolls.reduce((sum, item) => sum + (item?.amount ?? 0), 0);
-    expect(total).toBe(STARTER_SCROLL_COUNT);
-    const maxStack =
-      getMeta(HEXOBJECT_KEYS.RETURN_SCROLL)?.traits?.maxStack ?? STARTER_SCROLL_COUNT;
-    const stacks = Math.ceil(STARTER_SCROLL_COUNT / maxStack);
-    expect(state.bag.slice(-stacks).every((item) => item !== null)).toBe(true);
-    expect(state.bag.slice(0, BAG_CAPACITY - stacks).every((item) => item === null)).toBe(true);
-
-    expect(state.stash.cells.slice(0, STARTER_STASH_ITEMS.length).map((c) => c?.key)).toEqual([
-      ...STARTER_STASH_ITEMS,
-    ]);
+describe('emptyInventoryState', () => {
+  it('is a hero with nothing: empty bag, hands and stash, no chest unlocked, no coins', () => {
+    const state = emptyInventoryState('h1');
+    expect(state.bag.every((cell) => cell === null)).toBe(true);
+    expect(state.stash.cells.every((cell) => cell === null)).toBe(true);
     expect(state.stash.chests).toBe(0);
-    expect(state.stash.starterGiven).toBe(true);
     expect(Object.values(state.equip).every((slot) => slot === null)).toBe(true);
+    expect(state.idSeq).toBe(0);
+    expect(state.revision).toBe(0);
     expect(state.capacityKg).toBe(10);
   });
 
-  it('is deterministic: ids come from idSeq, not from randomness', () => {
-    const a = createInventoryState('h1');
-    const b = createInventoryState('h1');
-    expect(a).toEqual(b);
-    expect(a.bag.at(-1)?.id).toMatch(/^h1:\d+$/);
-    expect(a.idSeq).toBeGreaterThan(0);
+  it('is deterministic', () => {
+    expect(emptyInventoryState('h1')).toEqual(emptyInventoryState('h1'));
   });
 });

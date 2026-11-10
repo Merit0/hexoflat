@@ -183,7 +183,7 @@ export function useHeroDetails() {
       steps: hero.heroSteps,
       currentHealth: hero.currentHealth,
       maxHealth: hero.getEffectiveMaxHealth(),
-      coins: hero.coins,
+      coins: inventory.countItem(HEXOBJECT_KEYS.COINS),
       kills: hero.kills,
       carriedKg: inventory.carriedWeightKg,
       capacityKg: inventory.carryCapacityKg,

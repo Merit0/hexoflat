@@ -23,6 +23,7 @@ export class VerifyReturnPortalFeature extends BaseFeature {
 
   private async startInCamp(): Promise<void> {
     await new OpenCampingMapFeature().open();
+    await new VerifyInventoryFeature().givenItem(HexobjectKeys.returnScroll, 5);
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
   }
 
@@ -38,6 +39,7 @@ export class VerifyReturnPortalFeature extends BaseFeature {
       (current) => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(current),
       WILL_FOR_THE_TRIP,
     );
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
     await this.page.goto('/world/silesia');
     await this.map.hexBoard.waitForReady();
   }
@@ -120,6 +122,8 @@ export class VerifyReturnPortalFeature extends BaseFeature {
         await this.map.hexBoard.verifyHeroBesideTile(target);
         await this.map.hexBoard.verifyTileCountWithKey(HexobjectKeys.returnPortal, 0);
 
+        await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
+
         await this.page.goto('/world/camping');
         await this.map.hexBoard.waitForReady();
         await this.map.hexBoard.verifyTileCountWithKey(HexobjectKeys.returnPortal, 0);
@@ -139,6 +143,8 @@ export class VerifyReturnPortalFeature extends BaseFeature {
       await this.map.verifyUrlMatches(/\/world\/silesia/);
       await this.map.hexBoard.waitForReady();
       await this.map.hexBoard.verifyTileCountWithKey(HexobjectKeys.returnPortal, 0);
+
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
 
       await this.page.goto('/world/camping');
       await this.map.hexBoard.waitForReady();

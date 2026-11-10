@@ -1,9 +1,14 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { holdLocalWorld, seedFakeSession } from '@/test-support/fake-session';
 import { useHeroStore } from './hero-store';
+
+vi.mock('@/services/player/player-socket', async () =>
+  (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
+);
 import { useWorldMapStore } from './world-map-store';
 
 function buildRevealedMap(width = 3, height = 3) {
@@ -27,10 +32,18 @@ describe('useHeroStore', () => {
       const worldStore = useWorldMapStore();
       const heroStore = useHeroStore();
       heroStore.hero.id = 'hero-1';
+      seedFakeSession('hero-1');
+      heroStore.loadKnowledge();
       const map = buildRevealedMap();
       worldStore.map = map;
       worldStore.currentMapId = 'move-test-map';
       heroStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      holdLocalWorld({
+        locationKey: worldStore.currentLocationKey,
+        mapId: 'move-test-map',
+        map,
+        heroCoordinates: heroStore.heroCoordinates,
+      });
 
       const moved = await heroStore.moveHeroTo({ columnIndex: 1, rowIndex: 0 });
 
@@ -43,6 +56,8 @@ describe('useHeroStore', () => {
       const worldStore = useWorldMapStore();
       const heroStore = useHeroStore();
       heroStore.hero.id = 'hero-1';
+      seedFakeSession('hero-1');
+      heroStore.loadKnowledge();
       const map = new HexMapBuilder().name('fog-test').width(3).height(3).build();
       for (const tile of map.tiles) tile.isRevealed = false;
       map.tiles[0].isRevealed = true;
@@ -61,6 +76,8 @@ describe('useHeroStore', () => {
       const worldStore = useWorldMapStore();
       const heroStore = useHeroStore();
       heroStore.hero.id = 'hero-1';
+      seedFakeSession('hero-1');
+      heroStore.loadKnowledge();
       const map = buildRevealedMap();
       worldStore.map = map;
       worldStore.currentMapId = 'blocked-test-map';
@@ -84,6 +101,8 @@ describe('useHeroStore', () => {
       const worldStore = useWorldMapStore();
       const heroStore = useHeroStore();
       heroStore.hero.id = 'hero-1';
+      seedFakeSession('hero-1');
+      heroStore.loadKnowledge();
       worldStore.map = buildRevealedMap();
       worldStore.currentMapId = 'busy-test-map';
       heroStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };

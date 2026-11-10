@@ -7,7 +7,6 @@ export interface IHero {
   maxHealth: number;
   attack: number;
   defense: number;
-  coins: number;
   kills: number;
   currentEnergy: number;
   maxEnergy: number;

@@ -9,7 +9,6 @@ import { readInventoryAggregate } from '@/services/inventory/stash-transfer';
 import { resetStashDrag, stashDrag } from '@/composables/stash-drag-state';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { quickMove } from '@/composables/use-stash-drag';
-import { writeSavedStash } from '@/services/persistence/stash-storage';
 import StashBoard from './stash-board.vue';
 
 let app: App;
@@ -26,7 +25,6 @@ async function mountBoard() {
   const pinia = createPinia();
   setActivePinia(pinia);
   localStorage.clear();
-  writeSavedStash({ chests: 0, starterGiven: true, cells: [] });
   resetStashDrag();
   useHeroToolStore().clearActionMessage();
   const inventory = useHeroInventoryStore();

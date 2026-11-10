@@ -1,10 +1,9 @@
 import { travelStepBudget } from '@hexoflat/engine/knowledge/math';
-import { willZoneCharges, type WillZoneContext } from '@hexoflat/engine/knowledge/will-zone';
+import type { WillZoneContext } from '@hexoflat/engine/knowledge/will-zone';
 import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import type { KnowledgeAction } from '@hexoflat/engine/knowledge/commands';
-import { readKnowledge } from '@/services/persistence/knowledge-storage';
 import {
   dispatchHexAction,
   dispatchDevWillGrant,
@@ -31,17 +30,27 @@ import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { isEnterableTile } from '@hexoflat/engine/hero-movement/move-planner';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { portalLinkSchema, type PortalLink } from '@hexoflat/engine/portal/portal-state';
-import {
-  applyPortalClosedOnHost,
-  closePortalForDeath,
-  portalClosedEvents,
-  portalLocation,
-  type PortalClosedPayload,
-} from '@/services/world/portal-service';
+import { portalLocation } from '@/services/world/portal-service';
 import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
+import { readBlob, writeBlob } from '@/services/persistence/world-blob-store';
+import { HERO_STORE_BLOB } from '@/stores/hero-store-blob';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import {
+  bindHealthListener,
+  bindKillsListener,
+  bindKnowledgeListener,
+  bindPortalListener,
+  endPlayerSession,
+  startPlayerSession,
+} from '@/services/inventory/inventory-sync';
+import { loadServerBattleView } from '@/services/battle/battle-server';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
+import { buildClientHint } from '@/services/world/served-world';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -70,8 +79,8 @@ function defaultNav(): HeroNavState {
   };
 }
 
-const HERO_NAV_KEY = 'hexoflat:heroNav:v1';
-const HERO_PROGRESS_KEY = 'hexoflat:heroProgress:v1';
+const HERO_NAV_KEY = 'nav';
+const HERO_PROGRESS_KEY = 'progress';
 
 export const useHeroStore = defineStore('hero', {
   state: () => ({
@@ -79,10 +88,6 @@ export const useHeroStore = defineStore('hero', {
     knowledge: null as KnowledgeState | null,
     knowledgeError: false,
     nav: defaultNav(),
-    // Where the hero stands on the currently loaded map, and whether it is
-    // mid-step. Persisted inside world-map-store's per-map state blob (the
-    // same seam the battle snapshot uses) — see
-    // world-map-store.ts's saveToStorage()/loadFromStorage().
     heroCoordinates: null as IHexCoordinates | null,
     isHeroMoving: false,
     extraShields: 0,
@@ -90,7 +95,7 @@ export const useHeroStore = defineStore('hero', {
   }),
 
   getters: {
-    coins: (s) => s.hero.coins,
+    coins: () => useHeroInventoryStore().countItem(HEXOBJECT_KEYS.COINS),
     isAlive: (s) => s.hero.getHealth() > 0,
     heroHp: (s) => s.hero.currentHealth,
     heroHpMax: (s) => s.hero.getEffectiveMaxHealth(),
@@ -105,12 +110,34 @@ export const useHeroStore = defineStore('hero', {
 
   actions: {
     loadKnowledge() {
+      bindKnowledgeListener((knowledge) => {
+        if (knowledge && knowledge.heroId === this.hero.id) this.knowledge = knowledge;
+      });
+      bindPortalListener((portal) => {
+        this.portal = portal;
+      });
+      bindHealthListener((health) => {
+        this.hero.restoreHealth(health);
+      });
+      bindKillsListener((kills) => {
+        this.hero.setKills(kills);
+      });
+      if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
+      this.hero.setKills(inventorySession.kills);
+      this.portal = inventorySession.portal;
+      this.knowledge = inventorySession.knowledge;
+      this.knowledgeError = !this.knowledge;
+    },
+
+    /** Where the hero stands, his health and the portal link come from the server's copy of his world. */
+    restoreFromExpedition() {
+      const raw = readBlob(HERO_STORE_BLOB);
+      if (!raw) return;
       try {
-        this.knowledge = readKnowledge(this.hero.id);
-        this.knowledgeError = false;
-      } catch {
-        this.knowledge = null;
-        this.knowledgeError = true;
+        const saved = JSON.parse(raw) as Record<string, unknown>;
+        if (saved && typeof saved === 'object') this.$patch(saved as never);
+      } catch (error) {
+        console.warn('Could not restore the hero from the saved expedition', error);
       }
     },
 
@@ -131,6 +158,9 @@ export const useHeroStore = defineStore('hero', {
           atBook: isAtKnowledgeBook(world.map as HexMapModel, this.heroCoordinates),
         },
         engineContext: world.buildEngineContext(),
+        clientHint: () => buildClientHint(useHeroToolStore()),
+        applyWorldResult: (result: WorldCommandResult) => world.applyWorldResult(result),
+        travelTo: (locationKey: LocationKey) => world.goToLocation(locationKey),
         hero: this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }),
         location: portalLocation(world.currentLocationKey, world.currentMapId),
         isCurrent: () =>
@@ -172,8 +202,8 @@ export const useHeroStore = defineStore('hero', {
     async devGrantWill(amount: number): Promise<void> {
       if (!import.meta.env.DEV || !this.knowledge) return;
       const heroId = this.hero.id;
-      const state = await dispatchDevWillGrant(heroId, amount);
-      if (heroId === this.hero.id) this.knowledge = state;
+      const state = await dispatchDevWillGrant(amount);
+      if (heroId === this.hero.id && state) this.knowledge = state;
     },
 
     async sacrificeToSkill(skillId: SkillId, option: SacrificeOptionId): Promise<boolean> {
@@ -220,7 +250,7 @@ export const useHeroStore = defineStore('hero', {
       try {
         const battleStore = useBattleStore();
         const held = {
-          battle: battleStore.battle ?? undefined,
+          battle: undefined,
           engagement: battleStore.engagement ?? undefined,
         };
         const result = await dispatchHexAction(this.knowledgeHost(world), command, held);
@@ -229,9 +259,7 @@ export const useHeroStore = defineStore('hero', {
         }
         if (heroId === this.hero.id) {
           this.knowledge = result.state;
-          this.setPortal(result.hero.portal ?? null);
         }
-        this.applyPortalClosures(portalClosedEvents(result.events));
         return result.events;
       } catch {
         this.knowledgeError = true;
@@ -240,23 +268,7 @@ export const useHeroStore = defineStore('hero', {
     },
 
     saveNavToStorage() {
-      localStorage.setItem(HERO_NAV_KEY, JSON.stringify(this.nav));
-    },
-
-    applyPortalClosures(closures: PortalClosedPayload[]) {
-      const world = useWorldMapStore();
-      applyPortalClosedOnHost(world, world.map as HexMapModel | null, closures);
-    },
-
-    closePortalOnDeath() {
-      const world = useWorldMapStore();
-      const hero = this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 });
-      if (closePortalForDeath(world, world.map as HexMapModel | null, hero)) this.setPortal(null);
-    },
-
-    setPortal(portal: PortalLink | null) {
-      this.portal = portal;
-      this.saveProgressToStorage();
+      writeBlob(HERO_NAV_KEY, JSON.stringify(this.nav));
     },
 
     saveProgressToStorage() {
@@ -267,11 +279,11 @@ export const useHeroStore = defineStore('hero', {
         extraShields: this.extraShields,
         portal: this.portal,
       };
-      localStorage.setItem(HERO_PROGRESS_KEY, JSON.stringify(progress));
+      writeBlob(HERO_PROGRESS_KEY, JSON.stringify(progress));
     },
 
     hydrateProgressFromStorage() {
-      const raw = localStorage.getItem(HERO_PROGRESS_KEY);
+      const raw = readBlob(HERO_PROGRESS_KEY);
       if (!raw) return;
 
       const progress = JSON.parse(raw) as Partial<HeroProgressState>;
@@ -308,18 +320,14 @@ export const useHeroStore = defineStore('hero', {
       this.saveNavToStorage();
     },
 
-    forgetPosition(mapId: string) {
-      delete this.nav.positionByMapId[mapId];
-      if (this.nav.locationMapId === mapId) {
-        this.nav.locationMapId = null;
-      }
-      this.saveNavToStorage();
-    },
-
     async getHero(): Promise<boolean> {
       try {
         const hero = await fetchHero();
 
+        this.hero.id = hero.id;
+        await startPlayerSession(hero.id);
+        await loadServerBattleView();
+        this.restoreFromExpedition();
         this.hero.id = hero.id;
         this.loadKnowledge();
 
@@ -329,13 +337,14 @@ export const useHeroStore = defineStore('hero', {
           .setHealth(hero.currentHealth)
           .setAttack(hero.attack)
           .setDefense(hero.defense)
-          .setCoins(hero.coins)
           .setKills(hero.kills)
           .setCurrentEnergy(hero.currentEnergy)
           .setMaxEnergy(hero.maxEnergy)
           .setSteps(hero.heroSteps);
 
         this.hydrateProgressFromStorage();
+        if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
+        this.hero.setSteps(inventorySession.steps);
 
         return true;
       } catch (error) {
@@ -354,24 +363,6 @@ export const useHeroStore = defineStore('hero', {
       this.saveProgressToStorage();
     },
 
-    takeDamage(damage: number): void {
-      this.hero.takeDamage(Math.max(0, damage));
-      this.saveProgressToStorage();
-    },
-
-    reviveAtOneHp(): void {
-      this.hero.setHealth(1);
-      this.saveProgressToStorage();
-    },
-
-    pay(coins: number): void {
-      this.hero.coins -= coins;
-    },
-
-    collect(coins: number): void {
-      this.hero.coins += coins;
-    },
-
     resetHero(): void {
       console.log('Resetting hero state');
       this.hero = new HeroModel();
@@ -380,8 +371,13 @@ export const useHeroStore = defineStore('hero', {
       this.extraShields = 0;
       this.portal = null;
       this.nav = defaultNav();
-      localStorage.removeItem(HERO_NAV_KEY);
-      localStorage.removeItem(HERO_PROGRESS_KEY);
+      bindKnowledgeListener(null);
+      bindPortalListener(null);
+      bindHealthListener(null);
+      bindKillsListener(null);
+      endPlayerSession();
+      useHeroInventoryStore().reset();
+      useHeroStashStore().reset();
     },
 
     /**
@@ -409,7 +405,6 @@ export const useHeroStore = defineStore('hero', {
       const planned: HexEngineState = {
         map,
         heroes: { [heroState.id]: heroState },
-        battle: battleStore.battle ?? undefined,
         engagement: battleStore.engagement ?? undefined,
       };
 
@@ -473,31 +468,39 @@ export const useHeroStore = defineStore('hero', {
 
       if (heroToolStore.isLocked) {
         heroToolStore.cancelLockedAction('MOVE');
-        worldStore.saveToStorage();
       }
 
       this.isHeroMoving = true;
 
       try {
         await executeMovementRoute(route, async (coord) => {
-          if (willZoneCharges(this.willZoneContext)) {
-            if (!(await this.knowledgeAction({ kind: 'step', target: coord }))) {
-              heroToolStore.setActionMessage(i18n.global.t('moveBlocked.noWill'), 'will');
-              return false;
-            }
+          const stepped = await worldStore.stepOnServer(coord);
+          if (!stepped.ok) {
+            const blocked = ['BLOCKED', 'INVALID_STEP', 'UNREACHABLE', 'NO_WORLD'];
+            heroToolStore.setActionMessage(
+              i18n.global.t(
+                blocked.includes(stepped.code ?? '')
+                  ? 'moveBlocked.blockedTile'
+                  : 'moveBlocked.noWill',
+              ),
+              blocked.includes(stepped.code ?? '') ? null : 'will',
+            );
+            return false;
           }
+          this.knowledge = inventorySession.knowledge;
           this.heroCoordinates = { ...coord };
           stepsTaken += 1;
           this.hero?.makeStep();
           this.saveProgressToStorage();
 
-          worldStore.revealAroundHero();
           const spotted =
-            !!plan.ambush &&
-            coord.columnIndex === ambushAt?.columnIndex &&
-            coord.rowIndex === ambushAt.rowIndex;
-          if (spotted) this.engageAmbush(plan.ambush!);
-          worldStore.saveToStorage();
+            !!stepped.ambush ||
+            (!!plan.ambush &&
+              coord.columnIndex === ambushAt?.columnIndex &&
+              coord.rowIndex === ambushAt.rowIndex);
+          const engagement = stepped.ambush ?? plan.ambush;
+          if (spotted && engagement) this.engageAmbush(engagement);
+          worldStore.cacheServedWorld();
 
           if (worldStore.currentMapId && this.heroCoordinates) {
             this.rememberPosition(worldStore.currentMapId, this.heroCoordinates);

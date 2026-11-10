@@ -53,6 +53,7 @@ describe('counter chip in the Inventory grid', () => {
   it('shows a chip on potions and scrolls and none on a sword', async () => {
     inventory.putToInventory(K.HEALTH_BOTTLE, 1);
     inventory.putToInventory(K.SWORD, 1);
+    inventory.putToInventory(K.RETURN_SCROLL, 1);
     app!.mount(host);
     await nextTick();
     const bottle = inventory.items.find((item) => item.key === K.HEALTH_BOTTLE)!;

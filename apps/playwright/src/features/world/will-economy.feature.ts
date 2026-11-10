@@ -16,6 +16,7 @@ export class WillEconomyFeature extends BaseFeature {
       (current) => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(current),
       will,
     );
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
     await this.page.goto('/world/silesia');
     await this.map.hexBoard.waitForReady();
   }

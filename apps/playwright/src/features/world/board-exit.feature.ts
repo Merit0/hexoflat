@@ -14,6 +14,7 @@ export class BoardExitFeature extends BaseFeature {
       (current) => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(current),
       WILL_FOR_THE_WALK,
     );
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
     await this.page.goto('/world/silesia');
     await this.map.hexBoard.waitForReady();
   }
@@ -24,6 +25,7 @@ export class BoardExitFeature extends BaseFeature {
   }
 
   private async reloadBoard(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
     await this.map.reload();
     await this.map.hexBoard.waitForReady();
   }

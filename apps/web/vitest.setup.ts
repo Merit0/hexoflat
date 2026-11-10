@@ -36,3 +36,11 @@ Object.defineProperty(globalThis, 'localStorage', {
   writable: true,
   configurable: true,
 });
+
+import { beforeEach } from 'vitest';
+import { inventorySession } from './src/services/inventory/inventory-session';
+
+// Unit tests run without a server: the camp chest counts as already opened, so the stash board opens.
+beforeEach(() => {
+  inventorySession.claimedRewards = ['camp-first-chest'];
+});

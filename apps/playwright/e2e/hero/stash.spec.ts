@@ -24,20 +24,37 @@ test.describe('stash', { tag: ['@hero'] }, () => {
   });
 
   test.describe('opening and closing', () => {
-    test('Verify OPEN by hand on the stash chest opens the board with five locked tabs and a priced first chest', async () => {
+    test('Verify OPEN by hand opens the free camp chest once, with the camp gear in it and the next chest for sale', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
 
       await stash.openByHand();
 
-      await stash.verifyTabStates(['locked', 'locked', 'locked', 'locked', 'locked']);
+      await stash.verifyTabStates(['owned', 'locked', 'locked', 'locked', 'locked']);
+      await stash.verifyStashFirstKeys([K.sword, K.axe, K.shield, K.pickaxe, NONE]);
+      await stash.selectChest(2);
       await stash.verifyFirstChestIsForSale(100);
+    });
+
+    test('Verify the camp chest cannot be opened twice: the gear taken out stays out after reopening', async () => {
+      await new OpenCampingMapFeature().open();
+      const stash = new StashBoardFeature();
+      await stash.openByHand();
+      await stash.quickMoveStashItem(0);
+      await stash.verifyStashCell(0, NONE);
+      await stash.close();
+
+      await stash.openByHand();
+
+      await stash.verifyStashCell(0, NONE);
+      await stash.verifyBagAmount(K.sword, 1);
     });
 
     test('Verify hovering the price explains how to pay, through the hero message', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
       await stash.openByHand();
+      await stash.selectChest(2);
 
       await stash.hoverThePrice();
 
@@ -257,6 +274,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
       await stash.openByHand();
+      await stash.givenChests(0);
       await stash.givenBag([{ key: K.coins, amount: 5 }]);
 
       await stash.storeResources();
@@ -269,6 +287,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
       await stash.openByHand();
+      await stash.givenChests(0);
 
       await stash.sort();
 
@@ -310,19 +329,19 @@ test.describe('stash', { tag: ['@hero'] }, () => {
   });
 
   test.describe('unlocking chests with coins from the hand', () => {
-    test('Verify 140 coins in a hand pay exactly 100 for the first chest and 40 stay in the hand', async () => {
+    test('Verify 140 coins in a hand pay exactly 100 for the second chest and 40 stay in the hand', async () => {
       await new OpenCampingMapFeature().open();
       const unlock = new UnlockStashChestFeature();
       await unlock.holdCoinsInHand(140);
 
       await unlock.useCoinsOnTheChest();
 
-      await new StashBoardFeature().verifyChests(1);
+      await new StashBoardFeature().verifyChests(2);
       await unlock.verifyCoinsLeftInHand(40);
       await new VerifyActionAlertFeature().verifyIsShownMatching(/unlock|відімкнув/i);
     });
 
-    test('Verify 90 coins cannot pay for the first chest: a warning shows the price and nothing changes', async () => {
+    test('Verify 90 coins cannot pay for the second chest: a warning shows the price and nothing changes', async () => {
       await new OpenCampingMapFeature().open();
       const unlock = new UnlockStashChestFeature();
       await unlock.holdCoinsInHand(90);
@@ -330,22 +349,22 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await unlock.useCoinsOnTheChest();
 
       await new VerifyActionAlertFeature().verifyIsShownMatching(/100/);
-      await new StashBoardFeature().verifyChests(0);
+      await new StashBoardFeature().verifyChests(1);
       await unlock.verifyCoinsLeftInHand(90);
     });
 
-    test('Verify the second chest costs 1000 coins', async () => {
+    test('Verify the third chest costs 1000 coins', async () => {
       await new OpenCampingMapFeature().open();
       const stash = new StashBoardFeature();
       await stash.openByHand();
-      await stash.givenChests(1);
+      await stash.givenChests(2);
       await stash.close();
       const unlock = new UnlockStashChestFeature();
       await unlock.holdCoinsInHand(1200);
 
       await unlock.useCoinsOnTheChest();
 
-      await stash.verifyChests(2);
+      await stash.verifyChests(3);
       await unlock.verifyCoinsLeftInHand(200);
     });
   });

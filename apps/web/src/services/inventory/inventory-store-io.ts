@@ -1,18 +1,22 @@
-import { EQUIP_SLOTS } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { EQUIP_SLOTS, type TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { HEX_ENGINE_COMMAND_SCHEMAS } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import { applyConsumeItem, applyGrantItem } from '@hexoflat/engine/inventory/apply-stock';
 import { applyInventoryCommand } from '@hexoflat/engine/inventory/apply-inventory';
-import { BAG_SLOT_KEYS } from '@hexoflat/engine/inventory/bag-layout';
+import { BAG_SLOT_KEYS, bagIndexOfSlotKey } from '@hexoflat/engine/inventory/bag-layout';
 import type { InventoryContext } from '@hexoflat/engine/inventory/inventory-commands';
-import { migrateLegacyInventory } from '@hexoflat/engine/inventory/inventory-migration';
-import type {
-  InventoryState,
-  InventoryStateItem,
+import {
+  emptyInventoryState,
+  inventoryItemSchema,
+  type InventoryState,
+  type InventoryStateItem,
 } from '@hexoflat/engine/inventory/inventory-state';
-import { patchInventoryRecord } from '@/services/persistence/inventory-record-storage';
+import { STASH_CAPACITY } from '@hexoflat/engine/inventory/stash-constants';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { inventorySession, LOCAL_HERO_ID } from './inventory-session';
+import { mirrorLocalCommand } from './inventory-mirror';
 import type { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import type { useHeroStashStore } from '@/stores/hero-stash-store';
 
@@ -21,7 +25,7 @@ export interface InventoryStores {
   stash: ReturnType<typeof useHeroStashStore>;
 }
 
-export const LOCAL_HERO_ID = 'hero';
+export { LOCAL_HERO_ID };
 
 const STASH_PREFIX = 'stash:';
 
@@ -33,19 +37,57 @@ function nextIdSeq(heroId: string, items: readonly (InventoryItem | null)[]): nu
   return used.length ? Math.max(...used) + 1 : 0;
 }
 
+const EQUIP_PREFIX = 'eq:';
+
+function slim(item: InventoryItem): InventoryStateItem | null {
+  const parsed = inventoryItemSchema.safeParse({
+    id: item.id,
+    key: item.key,
+    type: item.type,
+    stackKey: item.stackKey,
+    amount: item.amount,
+  });
+  return parsed.success ? (parsed.data as InventoryStateItem) : null;
+}
+
+function equipSlotOf(slotKey: string): TEquipSlot | null {
+  if (!slotKey.startsWith(EQUIP_PREFIX)) return null;
+  const slot = slotKey.slice(EQUIP_PREFIX.length);
+  return (EQUIP_SLOTS as readonly string[]).includes(slot) ? (slot as TEquipSlot) : null;
+}
+
 export function readInventoryState(
   stores: InventoryStores,
-  heroId = LOCAL_HERO_ID,
+  heroId = inventorySession.heroId,
 ): InventoryState {
   const { inventory, stash } = stores;
   inventory.hydrate();
   stash.hydrate();
-  const { state } = migrateLegacyInventory(
-    heroId,
-    { items: inventory.items, carryCapacityKg: inventory.carryCapacityKg },
-    { chests: stash.chests, starterGiven: stash.starterGiven, cells: stash.cells },
+  const state = emptyInventoryState(heroId);
+  state.capacityKg = inventory.carryCapacityKg;
+  state.revision = inventorySession.revision;
+  for (const raw of inventory.items) {
+    if (raw.key === HEXOBJECT_KEYS.HAND) continue;
+    const item = slim(raw);
+    if (!item) continue;
+    const worn = equipSlotOf(raw.slotKey);
+    if (worn) {
+      state.equip[worn] = item;
+      continue;
+    }
+    const index = bagIndexOfSlotKey(raw.slotKey);
+    if (index !== -1) state.bag[index] = item;
+  }
+  state.stash.chests = stash.chests;
+  for (let index = 0; index < STASH_CAPACITY; index += 1) {
+    const raw = stash.cells[index];
+    const item = raw ? slim(raw) : null;
+    if (item) state.stash.cells[index] = item;
+  }
+  state.idSeq = Math.max(
+    inventorySession.idSeq,
+    nextIdSeq(heroId, [...inventory.items, ...stash.cells]),
   );
-  state.idSeq = nextIdSeq(heroId, [...inventory.items, ...stash.cells]);
   return state;
 }
 
@@ -109,14 +151,8 @@ export function writeInventoryState(stores: InventoryStores, state: InventorySta
   }
   if (inventory.selectedItemId && !kept.has(inventory.selectedItemId)) inventory.clearSelection();
   inventory.fillEmptySlotsWithHands();
-  patchInventoryRecord({
-    bag: {
-      items: inventory.items,
-      rotationsById: inventory.rotationsById,
-      carryCapacityKg: inventory.carryCapacityKg,
-    },
-    stash: { chests: stash.chests, starterGiven: stash.starterGiven, cells: stash.cells },
-  });
+  inventorySession.revision = state.revision;
+  inventorySession.idSeq = state.idSeq;
 }
 
 export interface DispatchOptions {
@@ -173,7 +209,10 @@ export function dispatchInventory(
   if (!result) return { ok: false, events: [], before, after: before, reason: 'UNSUPPORTED' };
   const rejected = result.events.find((event) => REJECTED.has(event.type));
   const after = result.inventory ?? before;
-  if (options.commit !== false && !rejected && after !== before) writeInventoryState(stores, after);
+  if (options.commit !== false && !rejected && after !== before) {
+    writeInventoryState(stores, after);
+    mirrorLocalCommand(parsed.data, before);
+  }
   return {
     ok: !rejected,
     events: result.events,
@@ -207,7 +246,7 @@ export function grantItem(
   stores: InventoryStores,
   key: string,
   amount: number,
-  source: 'pickup' | 'loot' | 'starter' | 'dev',
+  source: 'pickup' | 'loot' | 'reward' | 'dev',
 ): StockOutcome {
   const result = dispatchInventory(
     stores,

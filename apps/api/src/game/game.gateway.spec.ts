@@ -98,7 +98,6 @@ function buildHero(overrides: Partial<IHero>): IHero {
     maxHealth: 10,
     attack: 1,
     defense: 1,
-    coins: 0,
     kills: 0,
     currentEnergy: 100,
     maxEnergy: 100,

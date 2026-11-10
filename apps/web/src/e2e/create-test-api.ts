@@ -1,7 +1,11 @@
 import { findShortestPath } from '@hexoflat/engine/hero-movement/pathfinding-service';
 import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
 import { KNOWLEDGE_RULES } from '@hexoflat/engine/knowledge/math';
-import { writeKnowledge } from '@/services/persistence/knowledge-storage';
+import {
+  ensurePresence,
+  pushHealthFixture,
+  pushKnowledgeFixture,
+} from '@/services/inventory/inventory-sync';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import {
   tileWorldCenter,
@@ -16,8 +20,9 @@ import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { skillIdSchema } from '@hexoflat/engine/skills/skill-content';
 import { usePortal } from '@/composables/use-portal';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
-import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
-import { isEnterableTile } from '@hexoflat/engine/hero-movement/move-planner';
+import { applyTileDiffs, type TileDiff } from '@hexoflat/engine/world/tile-diff';
+import { apiClient } from '@/api/client';
+import { inventorySession } from '@/services/inventory/inventory-session';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useBattleStore } from '@/stores/battle-store';
 import { battleTestHooks } from './battle-hooks';
@@ -31,6 +36,32 @@ import type {
   TestPortalPreview,
   TestTileFraction,
 } from '@/e2e/test-api.types';
+
+async function placeHexobjectOnServer(
+  worldStore: ReturnType<typeof useWorldMapStore>,
+  key: string,
+): Promise<TestHexCoordinates> {
+  if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('Test hooks are off');
+  const map = worldStore.map as HexMapModel | null;
+  if (!map || !worldStore.currentMapId) throw new Error('No map');
+  await ensurePresence({
+    locationKey: worldStore.currentLocationKey,
+    mapId: worldStore.currentMapId,
+  });
+  const placed = await apiClient.post<{
+    coordinates: TestHexCoordinates;
+    tileDiffs: TileDiff[];
+  }>(
+    '/player/dev/world-fixture',
+    { kind: 'place-hexobject', key },
+    { headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' } },
+  );
+  for (const coordinates of applyTileDiffs(map, placed.tileDiffs, Date.now())) {
+    worldStore.markTileDirty(coordinates);
+  }
+  worldStore.cacheServedWorld();
+  return placed.coordinates;
+}
 
 export interface CreateTestApiOptions {
   getCamera(): BoardCamera;
@@ -86,7 +117,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       )
         throw new Error('Invalid fixture');
       const state = { ...heroStore.knowledge, current, session: null };
-      writeKnowledge(state);
+      pushKnowledgeFixture(state);
       heroStore.loadKnowledge();
       worldStore.goToLocation('silesia');
     },
@@ -94,7 +125,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
       if (!heroStore.knowledge || !Number.isInteger(current) || current < 0)
         throw new Error('Invalid fixture');
-      writeKnowledge({ ...heroStore.knowledge, current });
+      pushKnowledgeFixture({ ...heroStore.knowledge, current });
       heroStore.loadKnowledge();
     },
     setSkillRank(skillId: string, rank: number) {
@@ -103,7 +134,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       if (!heroStore.knowledge || !parsed.success || !Number.isInteger(rank) || rank < 0)
         throw new Error('Invalid fixture');
       const skills = { ...heroStore.knowledge.skills, [parsed.data]: rank };
-      writeKnowledge({ ...heroStore.knowledge, skills });
+      pushKnowledgeFixture({ ...heroStore.knowledge, skills });
       heroStore.loadKnowledge();
     },
     getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null {
@@ -232,21 +263,9 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       if (!Number.isFinite(current) || current < 0) throw new Error('Invalid fixture');
       heroStore.hero.setHealth(current);
       heroStore.hero.adjustHealthOnStatChange();
-      heroStore.saveProgressToStorage();
+      void pushHealthFixture(current);
     },
-    placeHexobjectNextToHero(key: string): TestHexCoordinates {
-      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('Test hooks are off');
-      const map = worldStore.map as HexMapModel | null;
-      const at = heroStore.heroCoordinates;
-      const spot =
-        map && at ? getHexNeighbors(at).find((coord) => isEnterableTile(map, coord)) : null;
-      const tile = spot ? findTile(spot) : undefined;
-      if (!spot || !tile) throw new Error('No free hex next to the hero');
-      tile.hexobject = HexObjectFactory.create(key as THexobjectKey, spot);
-      worldStore.markTileDirty(spot);
-      worldStore.saveToStorage();
-      return { columnIndex: spot.columnIndex, rowIndex: spot.rowIndex };
-    },
+    placeHexobjectNextToHero: (key: string) => placeHexobjectOnServer(worldStore, key),
     isBattleEngaged(): boolean {
       return useBattleStore().engagement !== null;
     },

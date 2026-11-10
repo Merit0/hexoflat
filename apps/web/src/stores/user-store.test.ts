@@ -24,7 +24,6 @@ const FAKE_HERO: IHero = {
   maxHealth: 100,
   attack: 1,
   defense: 1,
-  coins: 0,
   kills: 0,
   currentEnergy: 1,
   maxEnergy: 1,

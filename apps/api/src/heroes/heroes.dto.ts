@@ -5,7 +5,6 @@ export const HeroDataSchema = z.object({
   maxHealth: z.number(),
   attack: z.number(),
   defense: z.number(),
-  coins: z.number(),
   kills: z.number(),
   currentEnergy: z.number(),
   maxEnergy: z.number(),

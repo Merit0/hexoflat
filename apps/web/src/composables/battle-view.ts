@@ -204,7 +204,7 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
   return {
     scene: {
       biome: deploy.biome,
-      board: deploy.setup.board,
+      board: view?.board ?? deploy.setup.board,
       boulders: view?.boulders ?? deploy.setup.boulders ?? [],
       creatures,
       activeId: view && view.phase !== 'ended' ? view.activeId : null,

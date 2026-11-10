@@ -65,6 +65,7 @@ export class SquadActionsFeature extends BaseFeature {
       await new OpenCampingMapFeature().open();
       this.campingMap.pageErrors.watch();
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(40));
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
       await this.page.goto('/world/cave');
       await this.campingMap.hexBoard.waitForReady();
     });

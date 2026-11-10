@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/main.ts",
-    "start:dev": "tsx watch src/main.ts",
+    "start:dev": "HEXOFLAT_E2E_FIXTURES=1 tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -13,7 +13,11 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "seed-hero": "tsx src/cli/seed-hero.ts",
+    "hero-history": "tsx src/cli/hero-history.ts",
+    "e2e-cleanup": "tsx src/cli/e2e-cleanup.ts",
+    "hero-rollback": "tsx src/cli/hero-rollback.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

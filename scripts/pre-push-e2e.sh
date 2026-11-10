@@ -11,6 +11,7 @@ E2E_WEB_PORT="${E2E_WEB_PORT:-5273}"
 
 export DATABASE_URL='postgresql://hexoflat:hexoflat@localhost:5433/hexoflat'
 export NODE_ENV=development
+export HEXOFLAT_E2E_FIXTURES=1
 export PORT="$E2E_API_PORT"
 export CORS_ORIGIN="http://localhost:$E2E_WEB_PORT"
 export E2E_API_URL="http://127.0.0.1:$E2E_API_PORT"

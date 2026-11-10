@@ -87,7 +87,6 @@ const HERO: IHero = {
   maxHealth: 10,
   attack: 2,
   defense: 1,
-  coins: 0,
   kills: 0,
   currentEnergy: 100,
   maxEnergy: 100,
