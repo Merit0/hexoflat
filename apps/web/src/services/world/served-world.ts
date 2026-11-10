@@ -6,7 +6,6 @@ import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { deserializeWorld, type ServerWorld } from '@hexoflat/engine/world/server-world';
 import { applyTileDiffs } from '@hexoflat/engine/world/tile-diff';
-import { healthCapOf } from '@hexoflat/engine/utils/combat/health-format';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
@@ -96,7 +95,7 @@ export interface ReplayDeps {
   };
   gathering: { add(key: THexobjectKey, amount: number): void };
   events: { push(source: string, text: string, type?: 'ACTION'): void };
-  hero: { healHero(amount: number): void; hero: { name: string } };
+  hero: { hero: { name: string } };
   tileAt(coordinates: IHexCoordinates): HexTileModel | null;
 }
 
@@ -136,7 +135,6 @@ export function replayEffects(effects: WorldCommandResult['effects'], deps: Repl
         deps.events.push(effect.source || deps.hero.hero.name || 'Hero', effect.text, 'ACTION');
         break;
       case 'heal':
-        deps.hero.healHero(effect.amount);
         break;
     }
   }
@@ -152,16 +150,13 @@ export function applyWorldResult(
   return changed;
 }
 
-export function buildClientHint(
-  tool: {
-    isDragging: boolean;
-    hover: IHexCoordinates | null;
-    activeTool: THeroToolKey | null;
-    durability: number;
-    durabilityMax: number;
-  },
-  hero: { currentHealth: number; maxHealth: number },
-): WorldClientHint {
+export function buildClientHint(tool: {
+  isDragging: boolean;
+  hover: IHexCoordinates | null;
+  activeTool: THeroToolKey | null;
+  durability: number;
+  durabilityMax: number;
+}): WorldClientHint {
   return {
     tool: {
       dragging: tool.isDragging,
@@ -171,7 +166,6 @@ export function buildClientHint(
       active: tool.activeTool,
       durability: { current: tool.durability, max: tool.durabilityMax },
     },
-    health: { current: hero.currentHealth, max: healthCapOf(hero) },
   };
 }
 

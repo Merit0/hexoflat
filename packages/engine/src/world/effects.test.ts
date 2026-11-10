@@ -35,10 +35,17 @@ function setup(key: THexobjectKey) {
   return { world, spot };
 }
 
-function run(world: ServerWorld, now: number, client?: WorldClientHint): WorldRun {
+function run(
+  world: ServerWorld,
+  now: number,
+  client?: WorldClientHint,
+  health?: { current: number; bonus: number; debt: number },
+): WorldRun {
+  const progress = emptyProgressState(HERO);
+  if (health) progress.health = health;
   return {
     world,
-    progress: emptyProgressState(HERO),
+    progress,
     inventory: emptyInventoryState(HERO),
     heroId: HERO,
     now,
@@ -52,8 +59,9 @@ function act(
   actionType: EHexActionType,
   toolKey: string,
   client?: WorldClientHint,
+  health?: { current: number; bonus: number; debt: number },
 ) {
-  return actWorld(run(world, 1_000, client), {
+  return actWorld(run(world, 1_000, client, health), {
     heroId: HERO,
     coordinates: spot,
     actionType,
@@ -107,12 +115,11 @@ describe('what an action asks the client to replay', () => {
 
   it('resting at a fire heals while the client says the hand still rests there, and stops when it does not', () => {
     const { world, spot } = setup(HEXOBJECT_KEYS.FIREPLACE);
-    const hurt = { current: 1, max: 3 };
+    const hurt = { current: 1, bonus: 0, debt: 0 };
     const resting: WorldClientHint = {
       tool: { dragging: true, hover: spot, active: HEXOBJECT_KEYS.HAND },
-      health: hurt,
     };
-    const started = act(world, spot, EHexActionType.USE, HEXOBJECT_KEYS.HAND, resting);
+    const started = act(world, spot, EHexActionType.USE, HEXOBJECT_KEYS.HAND, resting, hurt);
     if (!started.ok) throw new Error(started.code);
     expect(kinds(started.effects)).toEqual(['lockTool']);
 
@@ -123,12 +130,12 @@ describe('what an action asks the client to replay', () => {
     if (!tick.ok) throw new Error(tick.code);
     expect(kinds(tick.effects)).toEqual(['heal', 'log', 'unlockTool', 'lockTool']);
     expect(tick.effects[0]).toMatchObject({ amount: 1 });
+    expect(tick.progress.health.current).toBe(2);
     const next = tick.effects[3];
     expect(next).toMatchObject({ kind: 'lockTool', coordinates: spot });
 
     const left: WorldClientHint = {
       tool: { dragging: false, hover: null, active: HEXOBJECT_KEYS.HAND },
-      health: hurt,
     };
     const stopped = tickWorld({
       ...run(tick.world, 40_000, left),
@@ -136,13 +143,13 @@ describe('what an action asks the client to replay', () => {
     });
     if (!stopped.ok) throw new Error(stopped.code);
     expect(kinds(stopped.effects)).toEqual(['heal', 'log', 'unlockTool']);
+    expect(stopped.progress.health.current).toBe(3);
   });
 
   it('stops healing a hero who is already full', () => {
     const { world, spot } = setup(HEXOBJECT_KEYS.FIREPLACE);
     const full: WorldClientHint = {
       tool: { dragging: true, hover: spot, active: HEXOBJECT_KEYS.HAND },
-      health: { current: 3, max: 3 },
     };
     expect(act(world, spot, EHexActionType.USE, HEXOBJECT_KEYS.HAND, full)).toMatchObject({
       ok: false,
@@ -164,7 +171,6 @@ describe('what an action asks the client to replay', () => {
         active: HEXOBJECT_KEYS.AXE,
         durability: { current: 1, max: 100 },
       },
-      health: { current: 3, max: 3 },
     };
     const refused = act(world, spot, EHexActionType.CUT, HEXOBJECT_KEYS.AXE, worn);
     expect(refused.ok).toBe(false);

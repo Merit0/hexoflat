@@ -1,5 +1,6 @@
 import type { HexEngineActionContext } from '../commands/apply-command';
 import type { DomainEvent } from '../commands/types';
+import { HeroModel } from '../models/hero-model';
 import type { THeroToolKey } from '../content/equipment.content';
 import type { TGameEventType } from '../abstraction/abstract-action';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
@@ -25,20 +26,20 @@ export interface WorldClientHint {
     active: THeroToolKey | null;
     durability?: { current: number; max: number };
   };
-  health: { current: number; max: number };
 }
 
 const NO_HINT: WorldClientHint = {
   tool: { dragging: false, hover: null, active: null },
-  health: { current: 0, max: 0 },
 };
 
-export function createRecordingPorts(hint: WorldClientHint = NO_HINT): {
+export function createRecordingPorts(
+  hint: WorldClientHint = NO_HINT,
+  heroModel: HeroModel = new HeroModel(),
+): {
   ctx: HexEngineActionContext;
   effects: WorldEffect[];
 } {
   const effects: WorldEffect[] = [];
-  const health = { ...hint.health };
   let activeTool = hint.tool.active;
   const durability = hint.tool.durability ? { ...hint.tool.durability } : null;
   const ctx: HexEngineActionContext = {
@@ -85,17 +86,10 @@ export function createRecordingPorts(hint: WorldClientHint = NO_HINT): {
       },
     },
     hero: {
-      hero: {
-        name: '',
-        get maxHealth() {
-          return health.max;
-        },
-        get currentHealth() {
-          return health.current;
-        },
-      },
+      hero: heroModel,
       healHero: (amount: number) => {
-        health.current = Math.min(health.max, health.current + amount);
+        heroModel.setHealth(heroModel.currentHealth + amount);
+        heroModel.adjustHealthOnStatChange();
         effects.push({ kind: 'heal', amount });
       },
     },

@@ -4,6 +4,7 @@ import { createServerWorld, serializeWorld } from '@hexoflat/engine';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
+import { applyProgress, settleInventorySync } from '@/services/inventory/inventory-sync';
 import { useHeroInventoryStore } from './hero-inventory-store';
 import { useHeroToolStore } from './hero-tool-store';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
@@ -154,8 +155,9 @@ describe('actions and ticks through the server', () => {
     const { hero, world, tile, spot } = withBottle();
     tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.FIREPLACE, spot);
     const tool = useHeroToolStore();
-    hero.hero.maxHealth = 5;
-    hero.hero.currentHealth = 2;
+    hero.hero.maxHealth = 3;
+    hero.reportHealth(1);
+    await settleInventorySync();
     tool.activeTool = HEXOBJECT_KEYS.HAND;
     tool.isDragging = true;
     tool.hover = { ...spot };
@@ -163,12 +165,12 @@ describe('actions and ticks through the server', () => {
     expect(started.ok).toBe(true);
     tile.pendingAction!.endsAt = Date.now() - 1;
     await world.serverTick();
-    expect(hero.hero.currentHealth).toBe(3);
+    expect(hero.hero.currentHealth).toBe(2);
     expect(tool.isLocked).toBe(true);
     tool.isDragging = false;
     tile.pendingAction!.endsAt = Date.now() - 1;
     await world.serverTick();
-    expect(hero.hero.currentHealth).toBe(4);
+    expect(hero.hero.currentHealth).toBe(3);
     expect(tool.isLocked).toBe(false);
   });
 });
@@ -211,5 +213,38 @@ describe('travel through the server', () => {
     expect(hero.knowledge!.current).toBe(18);
     expect(fakePresence()).toMatchObject({ locationKey: 'cave', mapId: world.currentMapId });
     expect(fakeStoredWorld(world.currentMapId!)).not.toBeNull();
+  });
+});
+
+describe('the hero health lives on the server', () => {
+  it('sends a reported health to the server and shows what the server answers', async () => {
+    setActivePinia(createPinia());
+    const hero = useHeroStore();
+    hero.hero.id = HERO;
+    seedFakeSession(HERO);
+    hero.loadKnowledge();
+    hero.hero.maxHealth = 3;
+    hero.reportHealth(1);
+    await settleInventorySync();
+    expect(sentCommands.some((c) => c.command.type === 'DEV_SET_HEALTH')).toBe(true);
+    expect(hero.hero.currentHealth).toBe(1);
+    hero.reportHealth(9);
+    await settleInventorySync();
+    expect(hero.hero.currentHealth).toBe(3);
+  });
+
+  it('follows a maximum the server raised for an equipped shield', () => {
+    setActivePinia(createPinia());
+    const hero = useHeroStore();
+    hero.hero.id = HERO;
+    seedFakeSession(HERO);
+    hero.loadKnowledge();
+    hero.hero.maxHealth = 3;
+    applyProgress({
+      revision: 5,
+      state: { health: { current: 4, bonus: 1, debt: 0 } },
+    });
+    expect(hero.hero.getEffectiveMaxHealth()).toBe(4);
+    expect(hero.hero.currentHealth).toBe(4);
   });
 });

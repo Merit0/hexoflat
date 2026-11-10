@@ -77,6 +77,11 @@ export const SpendWillCommandSchema = z.object({
   }),
 });
 
+export const DevSetHealthCommandSchema = z.object({
+  type: z.literal('DEV_SET_HEALTH'),
+  payload: z.object({ heroId: z.string().min(1), current: z.number().min(0).max(10) }),
+});
+
 export const DevGrantWillCommandSchema = z.object({
   type: z.literal('DEV_GRANT_WILL'),
   payload: z.object({
@@ -115,6 +120,7 @@ export const PLAYER_COMMAND_SCHEMAS = {
   SACRIFICE_TO_SKILL: strict(SacrificeToSkillCommandSchema),
   RESET_SKILLS: strict(ResetSkillsCommandSchema),
   ARRIVE: strict(ArriveCommandSchema),
+  DEV_SET_HEALTH: strict(DevSetHealthCommandSchema),
   SPEND_WILL: strict(SpendWillCommandSchema),
   DEV_GRANT_WILL: strict(DevGrantWillCommandSchema),
   DEV_SET_KNOWLEDGE: strict(DevSetKnowledgeCommandSchema),
@@ -124,19 +130,20 @@ export type TPlayerCommandType = keyof typeof PLAYER_COMMAND_SCHEMAS;
 export type PlayerCommand = z.infer<(typeof PLAYER_COMMAND_SCHEMAS)[TPlayerCommandType]>;
 
 export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAggregateKind[]> = {
-  MOVE_ITEM: ['inventory'],
-  AUTO_PLACE_ITEM: ['inventory'],
-  STORE_RESOURCES: ['inventory'],
-  SORT_STASH: ['inventory'],
-  UNLOCK_STASH_CHEST: ['inventory'],
+  MOVE_ITEM: ['inventory', 'progress'],
+  AUTO_PLACE_ITEM: ['inventory', 'progress'],
+  STORE_RESOURCES: ['inventory', 'progress'],
+  SORT_STASH: ['inventory', 'progress'],
+  UNLOCK_STASH_CHEST: ['inventory', 'progress'],
   CLAIM_CAMP_CHEST: ['inventory', 'progress'],
-  DEV_GRANT_ITEM: ['inventory'],
-  DEV_CONSUME_ITEM: ['inventory'],
-  DEV_SET_INVENTORY: ['inventory'],
+  DEV_GRANT_ITEM: ['inventory', 'progress'],
+  DEV_CONSUME_ITEM: ['inventory', 'progress'],
+  DEV_SET_INVENTORY: ['inventory', 'progress'],
   KNOWLEDGE: ['progress'],
   SACRIFICE_TO_SKILL: ['progress'],
   RESET_SKILLS: ['progress'],
   ARRIVE: ['progress'],
+  DEV_SET_HEALTH: ['progress'],
   SPEND_WILL: ['progress'],
   DEV_GRANT_WILL: ['progress'],
   DEV_SET_KNOWLEDGE: ['progress'],
@@ -159,6 +166,7 @@ export const PLAYER_COMMAND_REVISION: Record<
   SACRIFICE_TO_SKILL: 'knowledge',
   RESET_SKILLS: 'knowledge',
   ARRIVE: 'none',
+  DEV_SET_HEALTH: 'none',
   SPEND_WILL: 'knowledge',
   DEV_GRANT_WILL: 'knowledge',
   DEV_SET_KNOWLEDGE: 'knowledge',

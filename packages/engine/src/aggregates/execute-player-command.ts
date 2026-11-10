@@ -1,3 +1,5 @@
+import { sumHeartPoints } from '../combat/heart-points';
+import { HERO_BASE_HEALTH, HeroModel } from '../models/hero-model';
 import type { DomainEvent } from '../commands/types';
 import { applyConsumeItem, applyGrantItem } from '../inventory/apply-stock';
 import { applyInventoryCommand } from '../inventory/apply-inventory';
@@ -56,6 +58,26 @@ export function executePlayerCommand(
   command: PlayerCommand,
   ctx: PlayerCommandContext,
 ): PlayerCommandOutcome {
+  const outcome = executeCore(aggregates, command, ctx);
+  if (!outcome.ok || !outcome.changed.inventory) return outcome;
+  const progress = outcome.changed.progress ?? aggregates.progress;
+  const bonus = sumHeartPoints(
+    Object.values(outcome.changed.inventory.equip).map((cell) => cell?.key as THexobjectKey),
+  );
+  if (bonus === progress.health.bonus) return outcome;
+  const model = new HeroModel().setMaxHealth(HERO_BASE_HEALTH).restoreHealth(progress.health);
+  model.setMaxHealthBonus(bonus);
+  return {
+    ...outcome,
+    changed: { ...outcome.changed, progress: { ...progress, health: model.healthState() } },
+  };
+}
+
+function executeCore(
+  aggregates: PlayerAggregates,
+  command: PlayerCommand,
+  ctx: PlayerCommandContext,
+): PlayerCommandOutcome {
   const { inventory, progress } = aggregates;
   switch (command.type) {
     case 'CLAIM_CAMP_CHEST': {
@@ -103,6 +125,7 @@ export function executePlayerCommand(
     case 'SACRIFICE_TO_SKILL':
     case 'RESET_SKILLS':
     case 'ARRIVE':
+    case 'DEV_SET_HEALTH':
     case 'SPEND_WILL':
     case 'DEV_GRANT_WILL':
     case 'DEV_SET_KNOWLEDGE': {

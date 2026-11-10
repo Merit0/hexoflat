@@ -1,3 +1,4 @@
+import { HERO_BASE_HEALTH, HeroModel } from '../models/hero-model';
 import type { DomainEvent } from '../commands/types';
 import { applyKnowledgeCommand } from '../knowledge/reducer';
 import type { KnowledgeContext } from '../knowledge/commands';
@@ -104,6 +105,17 @@ export function executeProgressCommand(
         events: [
           { type: 'HERO_ARRIVED', payload: { heroId: command.payload.heroId, locationKey, mapId } },
         ],
+      };
+    }
+    case 'DEV_SET_HEALTH': {
+      if (!devAllowed) return { ok: false, code: 'FORBIDDEN', events: [] };
+      const model = new HeroModel().setMaxHealth(HERO_BASE_HEALTH).restoreHealth(next.health);
+      model.setHealth(command.payload.current).adjustHealthOnStatChange();
+      next.health = model.healthState();
+      return {
+        ok: true,
+        progress: next,
+        events: [{ type: 'HERO_HEALTH_SET', payload: { heroId: command.payload.heroId } }],
       };
     }
     case 'KNOWLEDGE': {

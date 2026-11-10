@@ -45,11 +45,13 @@ import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
+  bindHealthListener,
   bindKnowledgeListener,
   bindPortalListener,
   endPlayerSession,
   startPlayerSession,
 } from '@/services/inventory/inventory-sync';
+import { healthReportsPending, reportHealthToServer } from '@/services/inventory/health-report';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import { isServerWorldMode } from '@/services/player/world-sync';
@@ -128,6 +130,10 @@ export const useHeroStore = defineStore('hero', {
       bindPortalListener((portal) => {
         this.portal = portal;
       });
+      bindHealthListener((health) => {
+        if (!healthReportsPending()) this.hero.restoreHealth(health);
+      });
+      if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
       this.portal = inventorySession.portal;
       this.knowledge = inventorySession.knowledge;
       this.knowledgeError = !this.knowledge;
@@ -162,7 +168,7 @@ export const useHeroStore = defineStore('hero', {
           atBook: isAtKnowledgeBook(world.map as HexMapModel, this.heroCoordinates),
         },
         engineContext: world.buildEngineContext(),
-        clientHint: () => buildClientHint(useHeroToolStore(), this.hero),
+        clientHint: () => buildClientHint(useHeroToolStore()),
         applyWorldResult: (result: WorldCommandResult) => world.applyWorldResult(result),
         travelTo: (locationKey: LocationKey) => world.goToLocation(locationKey, undefined, true),
         hero: this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }),
@@ -382,6 +388,7 @@ export const useHeroStore = defineStore('hero', {
           .setSteps(hero.heroSteps);
 
         this.hydrateProgressFromStorage();
+        if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
         this.hero.setSteps(inventorySession.steps);
 
         return true;
@@ -401,14 +408,21 @@ export const useHeroStore = defineStore('hero', {
       this.saveProgressToStorage();
     },
 
-    takeDamage(damage: number): void {
-      this.hero.takeDamage(Math.max(0, damage));
+    reportHealth(current: number): void {
+      this.hero.setHealth(current);
+      this.hero.adjustHealthOnStatChange();
       this.saveProgressToStorage();
+      reportHealthToServer(this.hero.currentHealth, () => {
+        if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
+      });
+    },
+
+    takeDamage(damage: number): void {
+      this.reportHealth((this.hero.currentHealth ?? 0) - Math.max(0, damage));
     },
 
     reviveAtOneHp(): void {
-      this.hero.setHealth(1);
-      this.saveProgressToStorage();
+      this.reportHealth(1);
     },
 
     resetHero(): void {
@@ -421,6 +435,7 @@ export const useHeroStore = defineStore('hero', {
       this.nav = defaultNav();
       bindKnowledgeListener(null);
       bindPortalListener(null);
+      bindHealthListener(null);
       endPlayerSession();
       useHeroInventoryStore().reset();
       useHeroStashStore().reset();

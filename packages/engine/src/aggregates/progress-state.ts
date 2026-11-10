@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createKnowledgeState, knowledgeStateSchema } from '../knowledge/state';
 import { LOCATION_KEYS } from '../registry/location-key';
+import { HERO_BASE_HEALTH } from '../models/hero-model';
 import { portalLinkSchema } from '../portal/portal-state';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
@@ -17,6 +18,14 @@ export const presenceSchema = z
   .strict();
 export type Presence = z.infer<typeof presenceSchema>;
 
+export const heroHealthSchema = z
+  .object({
+    current: z.number().min(0).max(10),
+    bonus: z.number().min(0).max(10),
+    debt: z.number().min(0).max(10),
+  })
+  .strict();
+
 export const progressStateSchema = z
   .object({
     claimedRewards: z.array(z.string().min(1)).max(1000),
@@ -25,6 +34,7 @@ export const progressStateSchema = z
     steps: z.number().int().nonnegative(),
     sealedUntil: z.partialRecord(z.enum(LOCATION_KEYS), z.number().int().nonnegative()),
     portal: portalLinkSchema.nullable(),
+    health: heroHealthSchema,
   })
   .strict();
 export type ProgressState = z.infer<typeof progressStateSchema>;
@@ -37,5 +47,6 @@ export function emptyProgressState(heroId: string): ProgressState {
     steps: 0,
     sealedUntil: {},
     portal: null,
+    health: { current: HERO_BASE_HEALTH, bonus: 0, debt: 0 },
   };
 }

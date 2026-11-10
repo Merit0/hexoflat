@@ -17,6 +17,7 @@ export const inventorySession = {
   steps: 0,
   sealedUntil: {} as Record<string, number>,
   portal: null as PortalLink | null,
+  health: null as { current: number; bonus: number; debt: number } | null,
   sessionToken: null as string | null,
 };
 
@@ -38,5 +39,6 @@ export function resetInventorySession(): void {
   inventorySession.steps = 0;
   inventorySession.sealedUntil = {};
   inventorySession.portal = null;
+  inventorySession.health = null;
   inventorySession.sessionToken = null;
 }

@@ -25,7 +25,6 @@ let serverTickPausedUntil = 0;
 
 export type ServerWorldHero = ReplayDeps['hero'] & {
   heroCoordinates: IHexCoordinates | null;
-  hero: ReplayDeps['hero']['hero'] & { currentHealth: number; maxHealth: number };
 };
 
 export interface ServerWorldHost {
@@ -62,7 +61,7 @@ export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldH
   const mapId = host.currentMapId;
   try {
     const at = { locationKey: host.currentLocationKey, mapId, from };
-    const result = await tickServerWorld(at, buildClientHint(useHeroToolStore(), hero.hero));
+    const result = await tickServerWorld(at, buildClientHint(useHeroToolStore()));
     if (!result.ok) serverTickPausedUntil = Date.now() + SERVER_TICK_BACKOFF_MS;
     else if (host.currentMapId === mapId) {
       applyWorldResultAction(host, hero, result);

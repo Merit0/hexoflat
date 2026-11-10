@@ -67,6 +67,12 @@ let knowledgeListener: KnowledgeListener | null = null;
 
 let portalListener: ((portal: PortalLink | null) => void) | null = null;
 
+let healthListener: ((health: NonNullable<typeof inventorySession.health>) => void) | null = null;
+
+export function bindHealthListener(listener: typeof healthListener): void {
+  healthListener = listener;
+}
+
 export function bindPortalListener(listener: typeof portalListener): void {
   portalListener = listener;
 }
@@ -84,6 +90,7 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     steps?: number;
     sealedUntil?: Record<string, number>;
     portal?: PortalLink | null;
+    health?: { current: number; bonus: number; debt: number };
   };
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
   inventorySession.progressRevision = projection.revision;
@@ -93,6 +100,8 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
   inventorySession.sealedUntil = progress.sealedUntil ?? {};
   inventorySession.portal = progress.portal ?? null;
   portalListener?.(inventorySession.portal);
+  inventorySession.health = progress.health ?? null;
+  if (inventorySession.health) healthListener?.(inventorySession.health);
   knowledgeListener?.(inventorySession.knowledge);
 }
 
@@ -145,6 +154,7 @@ async function sendMirrored(env: PlayerEnvelope, jobEpoch: number): Promise<void
     return;
   }
   if (jobEpoch !== epoch) return;
+  applyProgress(response.aggregates.progress);
   const confirmed = response.aggregates.inventory?.revision;
   if (response.result === 'applied' && confirmed === env.expectedRevision + 1) return;
   epoch += 1;

@@ -230,9 +230,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     setHeroHealth(current: number) {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
       if (!Number.isFinite(current) || current < 0) throw new Error('Invalid fixture');
-      heroStore.hero.setHealth(current);
-      heroStore.hero.adjustHealthOnStatChange();
-      heroStore.saveProgressToStorage();
+      heroStore.reportHealth(current);
     },
     placeHexobjectNextToHero(key: string): TestHexCoordinates {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('Test hooks are off');

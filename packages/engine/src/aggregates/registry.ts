@@ -25,7 +25,7 @@ const inventoryDefinition: IAggregateDefinition<InventoryState> = {
 
 const progressDefinition: IAggregateDefinition<ProgressState> = {
   kind: 'progress',
-  schemaVersion: 3,
+  schemaVersion: 4,
   schema: progressStateSchema,
   upcasters: {
     1: (old, { heroId }) => ({
@@ -35,6 +35,7 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
       steps: 0,
     }),
     2: (old) => ({ ...(old as object), sealedUntil: {}, portal: null }),
+    3: (old) => ({ ...(old as object), health: { current: 3, bonus: 0, debt: 0 } }),
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
   project: (state) => state,

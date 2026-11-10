@@ -10,6 +10,7 @@ import {
 } from '../aggregates/execute-progress-command';
 import type { PlayerCommand } from '../aggregates/player-commands';
 import type { ProgressState } from '../aggregates/progress-state';
+import { HERO_BASE_HEALTH, HeroModel } from '../models/hero-model';
 import { revealAroundHero } from '../map/fog-service';
 import { MapRegistry } from '../registry/world-map-registry';
 import { hexDistance } from '../utils/hex-utils';
@@ -38,6 +39,10 @@ export type WorldOutcome =
       touched?: ServerWorld[];
     }
   | { ok: false; code: string; events: DomainEvent[]; effects: WorldEffect[] };
+
+export function heroModelOf(progress: ProgressState): HeroModel {
+  return new HeroModel().setMaxHealth(HERO_BASE_HEALTH).restoreHealth(progress.health);
+}
 
 export function heroOf(run: WorldRun): HeroState | null {
   const { heroCoordinates } = run.world;
@@ -92,8 +97,10 @@ export function tickWorld(run: WorldRun): WorldOutcome {
   const progress = structuredClone(run.progress);
   const before = snapshotTiles(world.map);
   const state = stateOf({ ...run, world, progress }, hero);
-  const { ctx, effects } = createRecordingPorts(run.client);
+  const model = heroModelOf(progress);
+  const { ctx, effects } = createRecordingPorts(run.client, model);
   const { events } = applyCommand(state, { type: 'WORLD_TICK', payload: { now: run.now } }, ctx);
+  progress.health = model.healthState();
   return {
     ok: true,
     world,
@@ -172,7 +179,8 @@ export function actWorld(run: WorldRun, command: StartHexActionCommand['payload'
   const inventory = structuredClone(run.inventory);
   const before = snapshotTiles(world.map);
   const state = stateOf({ ...run, world, progress, inventory }, hero);
-  const { ctx, effects } = createRecordingPorts(run.client);
+  const model = heroModelOf(progress);
+  const { ctx, effects } = createRecordingPorts(run.client, model);
   const { events } = applyCommand(
     state,
     { type: 'START_HEX_ACTION', payload: { ...command, heroId: run.heroId, now: run.now } },
@@ -182,6 +190,7 @@ export function actWorld(run: WorldRun, command: StartHexActionCommand['payload'
     return refuse('ACTION_REJECTED', events, effects);
   }
   world.engagement = state.engagement ?? world.engagement;
+  progress.health = model.healthState();
   return {
     ok: true,
     world,

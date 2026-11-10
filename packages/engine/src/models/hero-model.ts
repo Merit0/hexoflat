@@ -3,6 +3,13 @@ import { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { normalizeHealthValue, roundToSingleDecimal } from '../utils/combat/health-format';
 
 export const MAX_HERO_HEALTH = 10;
+export const HERO_BASE_HEALTH = 3;
+
+export interface HeroHealthState {
+  current: number;
+  bonus: number;
+  debt: number;
+}
 
 export class HeroModel implements IHero {
   id = '';
@@ -24,6 +31,21 @@ export class HeroModel implements IHero {
     this.maxHealth = 100;
     this.maxEnergy = 100;
     this.heroSteps = 0;
+  }
+
+  public restoreHealth(state: HeroHealthState): HeroModel {
+    this.currentHealth = state.current;
+    this.maxHealthBonus = state.bonus;
+    this.bonusHealthDebt = state.debt;
+    return this;
+  }
+
+  public healthState(): HeroHealthState {
+    return {
+      current: this.currentHealth,
+      bonus: this.maxHealthBonus,
+      debt: this.bonusHealthDebt,
+    };
   }
 
   public getName(): string {

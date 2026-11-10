@@ -60,7 +60,7 @@ function closeOut(closed: ClosedPayload) {
   const heroStore = useHeroStore();
   const mine = closed.heroes.find((h) => h.id === heroStore.hero.id);
   if (mine) {
-    heroStore.hero.setHealth(mine.hearts);
+    heroStore.reportHealth(mine.hearts);
   }
   for (let i = 0; i < closed.kills; i += 1) heroStore.hero.addKilled();
   heroStore.saveProgressToStorage();
@@ -139,8 +139,7 @@ function followBattleHealth(battle: BattleState | null | undefined): void {
   const heroStore = useHeroStore();
   const hero = battle?.creatures.find((creature) => creature.id === heroStore.hero.id);
   if (!hero || heroStore.hero.currentHealth === hero.hp / 2) return;
-  heroStore.hero.setHealth(hero.hp / 2);
-  heroStore.saveProgressToStorage();
+  heroStore.reportHealth(hero.hp / 2);
 }
 
 function bridgeStep(state: HexEngineState, events: DomainEvent[]): BattleStep {

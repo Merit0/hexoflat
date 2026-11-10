@@ -248,14 +248,53 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     ).toBe(true);
   });
 
+  async function setHealth(userId: string, heroId: string, current: number) {
+    const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
+    await kit.service.execute(userId, {
+      commandId: randomUUID(),
+      heroId,
+      aggregate: 'progress',
+      expectedRevision: progress.revision,
+      command: { type: 'DEV_SET_HEALTH', payload: { heroId, current } },
+    });
+  }
+
+  it('raises the stored maximum when a shield is put in the hand, and keeps a full hero full', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const before = (await kit.service.snapshot(userId, heroId)).aggregates;
+    const inventory = structuredClone(before.inventory!.state) as {
+      equip: Record<string, unknown>;
+      idSeq: number;
+    };
+    inventory.equip.shield = {
+      id: `${heroId}:0`,
+      key: HEXOBJECT_KEYS.SHIELD,
+      type: 'equipment',
+      amount: 1,
+    };
+    inventory.idSeq = 1;
+    const result = await kit.service.execute(userId, {
+      commandId: randomUUID(),
+      heroId,
+      aggregate: 'inventory',
+      expectedRevision: before.inventory!.revision,
+      command: {
+        type: 'DEV_SET_INVENTORY',
+        payload: { heroId, revision: before.inventory!.revision, inventory },
+      },
+    });
+    expect(result.result).toBe('applied');
+    const after = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
+    expect((after.state as { health: unknown }).health).toEqual({ current: 4, bonus: 1, debt: 0 });
+    expect(after.revision).toBeGreaterThan(before.progress!.revision);
+  });
+
   it('answers an action with the effects the client replays, and a refusal with none', async () => {
     const { userId, heroId } = await kit.newPlayer();
     await enter(userId, heroId, 'camping');
     const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.FIREPLACE);
-    const hint = {
-      tool: { dragging: true, hover: spot, active: HEXOBJECT_KEYS.HAND },
-      health: { current: 1, max: 3 },
-    };
+    const hint = { tool: { dragging: true, hover: spot, active: HEXOBJECT_KEYS.HAND } };
+    await setHealth(userId, heroId, 1);
     const started = await send(userId, heroId, 'WORLD_ACTION', {
       coordinates: spot,
       actionType: EHexActionTypeForTests.USE,
@@ -275,11 +314,12 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     });
     expect(refused).toMatchObject({ result: 'rejected', effects: [] });
 
+    await setHealth(userId, heroId, 3);
     const full = await send(userId, heroId, 'WORLD_ACTION', {
       coordinates: spot,
       actionType: EHexActionTypeForTests.USE,
       toolKey: HEXOBJECT_KEYS.HAND,
-      client: { ...hint, health: { current: 3, max: 3 } },
+      client: hint,
     });
     expect(full).toMatchObject({ result: 'rejected', effects: [] });
   });
@@ -299,7 +339,6 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
           active: HEXOBJECT_KEYS.AXE,
           durability: { current: 1, max: 100 },
         },
-        health: { current: 3, max: 3 },
       },
     });
     expect(refused).toMatchObject({ result: 'rejected', code: 'ACTION_REJECTED' });
@@ -316,7 +355,6 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       send(userId, heroId, 'WORLD_TICK', {
         client: {
           tool: { dragging: false, hover: null, active: null, extra: 1 },
-          health: { current: 1, max: 3 },
         },
       }),
     ).rejects.toBeDefined();

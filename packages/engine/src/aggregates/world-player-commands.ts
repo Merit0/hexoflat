@@ -24,9 +24,6 @@ const clientHint = z
           .optional(),
       })
       .strict(),
-    health: z
-      .object({ current: z.number().min(0).max(1000), max: z.number().min(0).max(1000) })
-      .strict(),
   })
   .strict();
 const base = { heroId: z.string().min(1) };
