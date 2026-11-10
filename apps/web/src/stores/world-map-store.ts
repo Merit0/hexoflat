@@ -1,21 +1,13 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { recoverStepPosition } from '@/services/knowledge/step-recovery';
 import {
-  bindCurrentMapId,
-  bindPushBlocker,
-  bindWorldSnapshotter,
   forgetAllServerWorlds,
   forgetServerWorld,
   isServerWorldMode,
-  queueWorldPush,
   rememberServerWorld,
 } from '@/services/player/world-sync';
 import type { ServerWorld } from '@hexoflat/engine/world/server-world';
-import {
-  installTravelledWorlds,
-  queueFreshServedWorld,
-  readCachedWorld,
-} from '@/services/world/served-world';
+import { installTravelledWorlds, readCachedWorld } from '@/services/world/served-world';
 import { i18n } from '@/i18n';
 import { takeServerBattleView } from '@/services/battle/battle-server';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
@@ -69,7 +61,6 @@ import {
 } from '@hexoflat/engine/map/fog-service';
 import { hydrateSpawners } from '@/services/world/hydrate-spawners';
 import type { ExitSide } from '@hexoflat/engine/boards/exits';
-import { findFreeHexNearObject } from '@hexoflat/engine/map/free-hex-finder';
 import { findEntryHex } from '@/services/world/hero-placement';
 import {
   clearLocationRespawn as clearRespawn,
@@ -108,16 +99,11 @@ import { rebuildStaticIfDrawingChanged as rebuildStaticIfDrawingChangedAction } 
 
 export { runWorldTick };
 
-bindWorldSnapshotter((force) => useWorldMapStore().queueServerWorld(force));
-bindCurrentMapId(() => useWorldMapStore().currentMapId);
-bindPushBlocker(() => useBattleStore().inBattle);
-
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
     map: null as HexMapModel | null,
     descriptor: null as BoardDescriptor | null,
     woodCollected: 0,
-    pendingCampingRespawn: false,
 
     currentLocationKey: initialLocationKey(),
     currentMapId: null as string | null,
@@ -231,7 +217,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
       removeSavedWorld(mapId);
       forgetServerWorld(locationKey);
-      if (isServerWorldMode()) queueFreshServedWorld(locationKey, heroStore.hero.id);
 
       if (index[locationKey] === mapId) {
         delete index[locationKey];
@@ -280,18 +265,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!this.map) return false;
       const map = this.map as HexMapModel;
       return map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE);
-    },
-
-    placeHeroAtCampfire() {
-      if (!this.map) return;
-
-      const spawn = findFreeHexNearObject(this.map as HexMapModel, HEXOBJECT_KEYS.FIREPLACE);
-      if (!spawn) {
-        this.placeHeroAtEntry('camping');
-        return;
-      }
-
-      useHeroStore().heroCoordinates = spawn;
     },
 
     async respawnHeroAtCamping(result: WorldCommandResult) {
@@ -393,13 +366,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
     serverWorldJson(engagement?: Engagement | null): string | null {
       const held = engagement === undefined ? (useBattleStore().engagement ?? null) : engagement;
       return serverWorldJsonOfHost(this, useHeroStore().heroCoordinates, held);
-    },
-
-    queueServerWorld(force = false) {
-      const json = this.serverWorldJson();
-      if (json && isServerWorldMode() && this.currentMapId) {
-        queueWorldPush(this.currentLocationKey, this.currentMapId, json, { force });
-      }
     },
 
     stepOnServer(coordinates: IHexCoordinates) {
@@ -515,8 +481,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (options.synced) {
         const json = this.serverWorldJson();
         if (json) rememberServerWorld(this.currentLocationKey, targetMapId, json);
-      } else {
-        this.queueServerWorld();
       }
     },
 

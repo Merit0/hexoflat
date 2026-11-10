@@ -15,7 +15,6 @@ import {
   enterPortalWorld,
   openPortalWorld,
   createServerWorld,
-  deserializeWorld,
   serializeWorld,
   travelWorld,
   stepWorld,
@@ -26,6 +25,7 @@ import {
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
+import { projectWorldForClient } from '@hexoflat/engine/world/client-projection';
 import type {
   HeroSnapshot,
   PlayerCommandResponse,
@@ -160,34 +160,68 @@ export function fakePresence() {
   return store!.progress.state.presence;
 }
 
-export function adoptFakeWorld(json: string): { ok: true; aggregates: HeroSnapshot['aggregates'] } {
-  const s = store!;
-  const adopted = deserializeWorld(JSON.parse(json), 0);
-  const current = (JSON.parse(json) as { current?: boolean }).current === true;
+export function fakePlaceHero(at: { columnIndex: number; rowIndex: number }): void {
+  const held = world!;
+  held.heroCoordinates = { ...at };
+  const { presence } = store!.progress.state;
+  if (presence) presence.coordinates = { ...at };
+}
+
+export function fakeStoreWorld(held: ServerWorld): void {
   for (const [mapId, stored] of storedWorlds) {
-    if (stored.locationKey === adopted.locationKey) storedWorlds.delete(mapId);
+    if (stored.locationKey === held.locationKey) storedWorlds.delete(mapId);
   }
-  storedWorlds.set(adopted.mapId, adopted);
-  if (!current) {
+  storedWorlds.set(held.mapId, held);
+}
+
+export function fakeEnsureWorld(locationKey: string) {
+  const known = [...storedWorlds.values()].find((stored) => stored.locationKey === locationKey);
+  const held =
+    known ??
+    createServerWorld(
+      locationKey as Parameters<typeof createServerWorld>[0],
+      crypto.randomUUID(),
+      'fake-seed',
+      store!.heroId,
+    );
+  storedWorlds.set(held.mapId, held);
+  return projectWorldForClient(serializeWorld(held));
+}
+
+function enterFake(envelope: PlayerEnvelope) {
+  sentCommands.push(envelope);
+  const s = store!;
+  const locationKey = (envelope.command.payload as { locationKey: string }).locationKey;
+  const base = { commandId: envelope.commandId, tileDiffs: [], effects: [], events: [] };
+  if (s.progress.revision !== envelope.expectedRevision) {
     return {
-      ok: true,
-      aggregates: { progress: { revision: s.progress.revision, state: s.progress.state } },
+      ...base,
+      result: 'conflict' as const,
+      code: 'REVISION_CONFLICT',
+      hero: null,
+      aggregates: snapshot().aggregates,
     };
   }
-  world = adopted;
+  fakeEnsureWorld(locationKey);
+  const entered = [...storedWorlds.values()].find((stored) => stored.locationKey === locationKey)!;
+  world = entered;
   const next = structuredClone(s.progress.state);
-  if (adopted.heroCoordinates) {
-    next.presence = {
-      locationKey: adopted.locationKey,
-      mapId: adopted.mapId,
-      coordinates: { ...adopted.heroCoordinates },
-    };
-  }
+  next.presence = {
+    locationKey: entered.locationKey,
+    mapId: entered.mapId,
+    coordinates: { ...(entered.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }) },
+  };
   s.progress = { revision: s.progress.revision + 1, state: next };
-  return { ok: true, aggregates: { progress: { revision: s.progress.revision, state: next } } };
+  return {
+    ...base,
+    result: 'applied' as const,
+    hero: null,
+    aggregates: snapshot().aggregates,
+  };
 }
 
 function handleWorld(envelope: PlayerEnvelope) {
+  if (envelope.command.type === 'WORLD_ENTER') return enterFake(envelope);
   sentCommands.push(envelope);
   const s = store!;
   const base = { commandId: envelope.commandId, tileDiffs: [], effects: [], events: [] };

@@ -981,3 +981,49 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 ## Результати D4b-4, крок B5c (2026-11-10)
 
 Регресія `e2e/board`, `e2e/hero`, `e2e/camp`: **86 з 86**, 4.3 хв, без правок. Разом із B5a (22) і B5b (5) усі бойові й суміжні групи зелені проти серверного бою. Не запускались: `e2e/shell`, `e2e/auth`, `e2e/world` (його немає як окремої групи; `combat` і `board` покриті). Перед пушем на `main` CI проганяє все.
+
+## Старт чату: D4b-5 (B6), прибрати тимчасові шляхи
+
+Прочитай: цей документ (розділи «Результати D4b-4, B1–B5c», «D4b-A кроки 2–5», «D4b-3 частини 1–3»), `docs/battle-system/BATTLE-HANDOFF.md`, `CLAUDE.md`, скіли `hexoflat-phase`, `hexoflat-engine`, `hexoflat-web-state`, `hexoflat-e2e`. Гілка `player-persistent-data-implement`. Українською. Не комітити (наприкінці повідомлення для коміту й звіт). Без `git stash`/`checkout`/`reset`. Коментарі в код не додавати. e2e лише за прямою командою Олега, по групах, перезапускати тільки впалі.
+
+**Стан:** бій, респавн, світ, портал, здоров'я, Воля, навички, інвентар серверні. Клієнт бою на `WORLD_BATTLE` (B4), dev-battlefield ізольований (B4.1), e2e-фікстури бою серверні (B5, всі групи зелені).
+
+**Що ще тимчасове й має зникнути:**
+
+1. `DEV_SET_HEALTH`: `hero-store.reportHealth`, `takeDamage` (dev-кнопка в `settings-overlay.vue`), `e2e/create-test-api.ts:233`, `services/inventory/health-report.ts`, `healthReportsPending`.
+2. `DEV_SET_INVENTORY`: портальний сувій і бій (`inventory-mirror`, `bindInventoryMirror.world`); перевірити, чи лишилось інше.
+3. `PUT /player/world` і весь міст: `flushWorld`, `worldBody`, `queueWorldPush`/`takePendingPushes`/`bindPushBlocker`, `queueServerWorld`, `queueFreshServedWorld`, `adopt` в API, `adoptFakeWorld` у фейковому сервері. Разом зникне PUT карти табору після респавну (загальний шлях завантаження локації). Туман війни й будь-які локальні зміни карти мають піти серверними командами або перестати бути клієнтськими.
+4. Решта `DEV_*` (`DEV_GRANT_ITEM`, `DEV_CONSUME_ITEM`, `DEV_SET_KNOWLEDGE`, `pushInventoryFixture`, `pushKnowledgeFixture`) переходять під `e2eFixturesEnabled()` (`HEXOFLAT_E2E_FIXTURES=1`, не production), гейт зараз лише `NODE_ENV`.
+5. Знахідка з B3: клієнт бачить `worldSeed` (і `descriptor.seed`), з якого сервер виводить лут/засідку/прихід через `deriveStream`; клієнт читає його для косметики (`reseedWorld`). Відокремити косметичний seed від серверного (`projectWorldForClient` віддає похідне значення, серверні кидки беруть seed з експедиції). Це чекліст для S2.
+6. Невикористане після B4: `closePortalOnDeath` у hero-store, `pendingCampingRespawn` у world-map-store, `isServerWorldMode` гілки «не серверний режим», `readBattleSnapshot`-залишки, `health-report`.
+
+**Обмеження й нагадування:** будь-який новий метод чи заголовок браузера додавати в `apps/api/src/cors.ts`; після змін engine `pnpm --filter @hexoflat/engine build`; Postgres `docker compose -f docker-compose.dev.yml up -d postgres` (порт 5433); пороги ESLint не піднімати; нових циклів немає; `balance.test.ts` два `it.skip` не чіпати (у кожному звіті перелічити пропущені тести, плюс `describe.skipIf(!dbAvailable)` у 6 наборах API, якщо база не піднята).
+
+**Критерій готовності:** тест-шпигун: жоден ігровий шлях не викликає `DEV_*` і `PUT /player/world`; `DEV_*` у production-режимі відмовляє, у не-production без прапора фікстур теж; API, engine, web юніт-тести, typecheck, lint зелені; e2e груп `board`, `hero`, `camp`, `combat`, `auth`, `shell` за командою Олега.
+
+**Спершу** прочитай і покажи короткий план файлів і порядок кроків (що міняється й у якому порядку), потім працюй. Наприкінці онови розділ «Результати D4b-5», скіли й `CLAUDE.md`.
+
+## Результати D4b-5 (B6, 2026-11-10): тимчасові шляхи прибрано
+
+**Зроблено.**
+
+1. **Гейт `DEV_*`.** `PlayerCommandService` дозволяє `DEV_*` лише при `e2eFixturesEnabled()` (прапор `HEXOFLAT_E2E_FIXTURES=1` і не production); виняток для sandbox-героя прибрано. `apps/api/vitest.config.ts` вмикає прапор для тестів; тест перевіряє відмову у production (навіть з прапором) і без прапора. `start:dev` в API ставить прапор, щоб dev-кнопки (монети, Воля) працювали.
+2. **Здоров'я.** Видалено `heroStore.reportHealth`/`takeDamage`, dev-кнопку «−0.5 здоров'я» (+ ключ `devCutHealth`), `services/inventory/health-report.ts`, `healthReportsPending`. e2e-хук `setHeroHealth` лишився, але шле `DEV_SET_HEALTH` через `pushHealthFixture` (під гейтом). Відхилення від списку Олега: хук не видалено, бо його потребують `shield-max-health` і `battle-flow`.
+3. **`DEV_SET_INVENTORY`.** Видалено `mirrorWorldChange`/`world` у `inventory-mirror`, виклик у `withStoreInventory`; команда лишилась лише як фікстура `pushInventoryFixture`.
+4. **Міст.** Видалено `PUT /player/world`, `WorldService.adopt`, `apiClient.putJson`, `flushWorld`, `worldBody`, `queueWorldPush`, `takePendingPushes`, `bindPushBlocker`, `bindWorldFlusher/Snapshotter/CurrentMapId`, `queueFreshServedWorld`, `queueServerWorld`, `adoptFakeWorld`; CORS без `PUT`. `world-sync.ts` тепер лише кеш документів. Місце героя: `ensurePresence({locationKey, mapId})` шле `WORLD_ENTER`, якщо сервер знає іншу карту; координати завжди серверні. `updateSavedMap` у серверному режимі нічого не робить (портал серверний).
+5. **Фікстура світу.** `POST /player/dev/world-fixture` (`WorldService.worldFixture`, engine `world/world-fixtures.ts`, `place-hexobject`) замінила локальну правку карти хуком `placeHexobjectNextToHero` (тепер async, віддає `tileDiffs`).
+6. **Seed.** `projectWorldForClient` віддає `cosmeticSeedFor(worldSeed)` і так само `descriptor.seed` (хеш); сервер далі кидає з власного seed.
+7. **Невикористане.** `closePortalOnDeath`, `pendingCampingRespawn`, `placeHeroAtCampfire`.
+
+**Тест-шпигун:** `services/inventory/no-temporary-paths.test.ts` (жоден файл не згадує `putJson`/функції моста, `DEV_*` лише у `inventory-sync.ts` і `knowledge-controller.ts`), плюс перевірки «без DEV_» у `world-server-paths.test.ts`.
+
+**Тести.** Engine 976+ (+`client-projection.test`, `world-fixtures.test`), API 165+ (відмови `DEV_*`, `worldFixture`), web 2329, typecheck і lint зелені, пороги ESLint не чіпав. Видалено тести моста (`adopt` ×4 в API, «replaces a left dungeon», порядок пушів, `DEV_SET_INVENTORY` з `withStoreInventory`, `closePortalOnDeath`). У фейковому сервері тепер `fakeEnsureWorld`, `holdServedWorld`, `holdLocalWorld`, `fakePlaceHero`.
+
+**Пропущені тести.** `balance.test.ts`: два `it.skip`. Набори API з `describe.skipIf(!dbAvailable)` виконалися (Postgres піднятий).
+
+**Не зроблено / ризики.**
+
+- Гілки `isServerWorldMode()` «не серверний режим» (`hero-store`, `world-map-store`, `use-board-crossing`, `respawn-schedule`) лишились: на них спираються юніт-тести без сесії й офлайн-запуск; видаляти разом із переходом тестів на фейковий сервер.
+- Dev-інструменти, що правили серверну карту з клієнта (перегенерація підземелля, редактор статичної дошки, `clearStoredLocation` у серверному режимі), у живій сесії більше не доходять до сервера.
+- `revealTile` (клік по прихованому гексу) лишився локальним і не зберігається; сервер відкриває туман кроком.
+- Нічого з e2e не запускали: треба прогін груп `board`, `hero`, `camp`, `combat`, `auth`, `shell`; найімовірніші місця — `placeHexobjectNextToHero` (async + серверна фікстура), `setHeroHealth`, перший `WORLD_ENTER` у новому герої, `goToLocation` у хуку `setWill`/`setSkillRank` (через `ensurePresence`).

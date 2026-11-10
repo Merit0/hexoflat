@@ -336,19 +336,32 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     expect(coinsHeld(await inventoryOf(heroId))).toBe(0);
   });
 
-  it('refuses DEV_GRANT_ITEM in production for an ordinary hero, but not for a sandbox hero', async () => {
+  it.each([
+    [
+      'production, even with the fixtures flag',
+      { NODE_ENV: 'production', HEXOFLAT_E2E_FIXTURES: '1' },
+    ],
+    [
+      'a non-production build without the fixtures flag',
+      { NODE_ENV: 'development', HEXOFLAT_E2E_FIXTURES: '' },
+    ],
+  ])('refuses DEV_GRANT_ITEM in %s, also for a sandbox hero', async (_name, env) => {
     const { userId, heroId } = await kit.newPlayer();
-    vi.stubEnv('NODE_ENV', 'production');
+    await kit.db.update(heroes).set({ isSandbox: true }).where(eq(heroes.id, heroId));
+    for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
     try {
       expect(await kit.service.execute(userId, devGrant(heroId, 0, 5))).toMatchObject({
         result: 'rejected',
         code: 'FORBIDDEN',
       });
-      await kit.db.update(heroes).set({ isSandbox: true }).where(eq(heroes.id, heroId));
-      expect((await kit.service.execute(userId, devGrant(heroId, 0, 5))).result).toBe('applied');
     } finally {
       vi.unstubAllEnvs();
     }
+  });
+
+  it('accepts a DEV_* command when the fixtures flag is on and the build is not production', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    expect((await kit.service.execute(userId, devGrant(heroId, 0, 5))).result).toBe('applied');
   });
 
   it('writes nothing when the journal cannot be written', async () => {

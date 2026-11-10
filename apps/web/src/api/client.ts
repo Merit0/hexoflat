@@ -73,9 +73,4 @@ export const apiClient = {
       body: body === undefined ? undefined : JSON.stringify(body),
       headers: options.headers,
     }),
-  putJson: <T>(
-    path: string,
-    json: string,
-    options: { headers?: Record<string, string> } = {},
-  ): Promise<T> => request<T>(path, { method: 'PUT', body: json, headers: options.headers }),
 };

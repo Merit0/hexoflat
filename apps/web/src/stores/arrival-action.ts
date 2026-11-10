@@ -8,9 +8,7 @@ import { findArrivalHex } from '@/services/world/hero-placement';
 export interface ArrivalHost {
   map: unknown;
   currentMapId: string | null;
-  pendingCampingRespawn: boolean;
   pendingArrivalSide: ExitSide | null;
-  placeHeroAtCampfire(): void;
   placeHeroAtEntry(locationKey: LocationKey): void;
 }
 
@@ -26,17 +24,12 @@ export function placeHeroOnArrivalAction(
 ): void {
   const remembered = host.currentMapId ? hero.nav.positionByMapId[host.currentMapId] : null;
 
-  if (host.pendingCampingRespawn && locationKey === 'camping') {
-    host.placeHeroAtCampfire();
-  } else {
-    const spot =
-      findArrivalHex(host.map as HexMapModel, host.pendingArrivalSide, getStream('world')) ??
-      (hero.heroCoordinates ? { ...hero.heroCoordinates } : null) ??
-      (remembered ? { ...remembered } : null);
-    if (spot) hero.heroCoordinates = spot;
-    else host.placeHeroAtEntry(locationKey);
-  }
+  const spot =
+    findArrivalHex(host.map as HexMapModel, host.pendingArrivalSide, getStream('world')) ??
+    (hero.heroCoordinates ? { ...hero.heroCoordinates } : null) ??
+    (remembered ? { ...remembered } : null);
+  if (spot) hero.heroCoordinates = spot;
+  else host.placeHeroAtEntry(locationKey);
 
-  host.pendingCampingRespawn = false;
   host.pendingArrivalSide = null;
 }

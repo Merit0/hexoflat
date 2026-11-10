@@ -38,6 +38,7 @@ import {
   ensureExpedition,
   readServerDocument,
 } from '../expedition/expedition-store';
+import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { ledgerEntriesFor } from './item-ledger';
 import {
   MAX_COMMAND_BYTES,
@@ -125,7 +126,7 @@ export class PlayerCommandService {
       throw new PlayerCommandError('INVALID_COMMAND');
     }
 
-    const devGrantAllowed = process.env.NODE_ENV !== 'production' || hero.isSandbox;
+    const devGrantAllowed = e2eFixturesEnabled();
     const guarded = kinds.includes('inventory') || command.type === 'DEV_SET_HEALTH';
     const expeditionId = guarded ? await ensureExpedition(this.db, userId, heroId) : null;
     return this.db.transaction((tx) =>

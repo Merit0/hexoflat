@@ -67,16 +67,6 @@
       >
         {{ t('settings.devAddCoins') }}
       </button>
-
-      <button
-        v-if="isDev"
-        class="dev-btn"
-        data-testid="settings-dev-cut-health-button"
-        type="button"
-        @click="heroStore.takeDamage(DEV_HEALTH_CUT)"
-      >
-        {{ t('settings.devCutHealth') }}
-      </button>
     </div>
   </div>
 </template>
@@ -104,7 +94,6 @@ const heroToolStore = useHeroToolStore();
 
 const isDev = import.meta.env.DEV;
 const DEV_WILL_GRANT = 50;
-const DEV_HEALTH_CUT = 0.5;
 const DEV_COINS_GRANT = 500;
 
 function addCoins() {

@@ -48,7 +48,6 @@ describe('the dev battlefield is isolated from the game (REQ-B41-ISO-001)', () =
     const spies = [
       vi.spyOn(apiClient, 'get'),
       vi.spyOn(apiClient, 'post'),
-      vi.spyOn(apiClient, 'putJson'),
       vi.spyOn(apiClient, 'patch'),
     ];
     const devStore = createBattleStore('dev-battle-store')();

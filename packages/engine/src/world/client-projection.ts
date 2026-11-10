@@ -1,4 +1,5 @@
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { sha256Hex } from '../utils/hash/sha256';
 import type { SerializedWorld } from './server-world';
 import type { TileDiff } from './tile-diff';
 
@@ -30,9 +31,21 @@ export function projectDiffsForClient(diffs: readonly TileDiff[]): TileDiff[] {
   return diffs.map((diff) => ({ ...diff, tile: projectTileForClient(diff.tile) }));
 }
 
+export function cosmeticSeedFor(serverSeed: string): string {
+  return sha256Hex(`cosmetic:${serverSeed}`);
+}
+
+function projectDescriptorForClient(descriptor: unknown): unknown {
+  if (!descriptor || typeof descriptor !== 'object' || !('seed' in descriptor)) return descriptor;
+  const { seed } = descriptor;
+  return typeof seed === 'string' ? { ...descriptor, seed: cosmeticSeedFor(seed) } : descriptor;
+}
+
 export function projectWorldForClient(world: SerializedWorld): SerializedWorld {
   return {
     ...world,
+    worldSeed: cosmeticSeedFor(world.worldSeed),
+    descriptor: projectDescriptorForClient(world.descriptor),
     map: { ...world.map, tiles: world.map.tiles.map(projectTileForClient) },
     battle: null,
   };

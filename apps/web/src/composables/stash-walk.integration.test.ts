@@ -10,7 +10,7 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
-import { seedFakeSession } from '@/test-support/fake-session';
+import { holdLocalWorld, seedFakeSession } from '@/test-support/fake-session';
 
 vi.mock('@/services/player/player-socket', async () =>
   (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
@@ -33,6 +33,12 @@ function setup() {
   world.map = map;
   world.currentMapId = 'walk-test-map';
   hero.heroCoordinates = { ...START };
+  holdLocalWorld({
+    locationKey: world.currentLocationKey,
+    mapId: 'walk-test-map',
+    map,
+    heroCoordinates: hero.heroCoordinates,
+  });
   const target = map.tiles.find(
     (t) =>
       t.coordinates.columnIndex === TARGET.columnIndex &&

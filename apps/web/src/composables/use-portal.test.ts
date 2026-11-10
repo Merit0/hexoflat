@@ -6,6 +6,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { coordinateKey, getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
+import { fakePlaceHero, fakeStoredWorldOf } from '@/test-support/fake-player-server';
 import { seedFakeSession } from '@/test-support/fake-session';
 import { readLocationMapIndex, readSavedMap } from '@/services/persistence/world-storage';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -180,15 +181,13 @@ describe('usePortal', () => {
     const { hero, world, target, origin } = startInSilesia();
     const portal = usePortal();
     await portal.openPortal(target);
-    world.goToLocation('camping');
-    const camp = world.map as HexMapModel;
+    const camp = fakeStoredWorldOf('camping')!.map;
     const spotTile = camp.tiles.find(
       (t) => coordinateKey(t.coordinates) === coordinateKey(CAMP_PORTAL_SPOT),
     )!;
     spotTile.hexobject = {
       ...camp.tiles.find((t) => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE)!.hexobject!,
     };
-    world.goToLocation('silesia');
     hero.heroCoordinates = { ...origin };
 
     await portal.enterPortal();
@@ -199,25 +198,13 @@ describe('usePortal', () => {
     expect(portalHexes(world.map as HexMapModel)).toEqual([coordinateKey(campHex)]);
   });
 
-  it('closes the pair on death and removes the stored origin portal', async () => {
-    const { hero, world, target } = startInSilesia();
-    const portal = usePortal();
-    await portal.openPortal(target);
-    await portal.enterPortal();
-
-    await hero.closePortalOnDeath();
-
-    expect(hero.portal).toBeNull();
-    expect(portalHexes(world.map as HexMapModel)).toEqual([]);
-    expect(storedPortalHexes('silesia')).toBe(0);
-  });
-
   it('another transition (crossing an atlas exit) closes the pair and removes the origin portal', async () => {
     const { hero, world, target } = startInSilesia();
     await usePortal().openPortal(target);
     const exit = (world.map as HexMapModel).tiles.find((tile) => tile.exit === 'N')!;
     hero.heroCoordinates = { ...exit.coordinates };
 
+    fakePlaceHero(exit.coordinates);
     const crossed = await crossExitIfStanding();
 
     expect(crossed).toBe(true);

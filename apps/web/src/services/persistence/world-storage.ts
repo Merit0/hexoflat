@@ -1,11 +1,7 @@
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { ISerializedHexMap } from '@hexoflat/engine/map/models/hex-map-model';
 import { CONTENT_VERSION } from '@hexoflat/engine';
-import {
-  cachedWorldJsonByMap,
-  isServerWorldMode,
-  queueWorldPush,
-} from '@/services/player/world-sync';
+import { cachedWorldJsonByMap, isServerWorldMode } from '@/services/player/world-sync';
 import { readBlob, removeBlob, writeBlob } from './world-blob-store';
 
 /**
@@ -115,14 +111,7 @@ export function updateSavedMap(
   mapId: string,
   mutate: (map: ISerializedHexMap) => boolean,
 ): boolean {
-  if (isServerWorldMode()) {
-    const held = cachedWorldJsonByMap(mapId);
-    if (!held) return false;
-    const doc = JSON.parse(held.json) as { map: ISerializedHexMap };
-    if (!mutate(doc.map)) return false;
-    queueWorldPush(held.locationKey, mapId, JSON.stringify(doc));
-    return true;
-  }
+  if (isServerWorldMode()) return false;
   const map = readSavedMap(mapId);
   if (!map || !mutate(map)) return false;
 

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { seedFakeSession } from '@/test-support/fake-session';
+import { holdLocalWorld, seedFakeSession } from '@/test-support/fake-session';
 import { useHeroStore } from './hero-store';
 
 vi.mock('@/services/player/player-socket', async () =>
@@ -38,6 +38,12 @@ describe('useHeroStore', () => {
       worldStore.map = map;
       worldStore.currentMapId = 'move-test-map';
       heroStore.heroCoordinates = { columnIndex: 0, rowIndex: 0 };
+      holdLocalWorld({
+        locationKey: worldStore.currentLocationKey,
+        mapId: 'move-test-map',
+        map,
+        heroCoordinates: heroStore.heroCoordinates,
+      });
 
       const moved = await heroStore.moveHeroTo({ columnIndex: 1, rowIndex: 0 });
 

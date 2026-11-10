@@ -35,6 +35,7 @@ import {
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { applyBattleFixture, battleFixtureSchema } from '@hexoflat/engine/battle/battle-fixtures';
+import { applyWorldFixture, worldFixtureSchema } from '@hexoflat/engine/world/world-fixtures';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
@@ -607,43 +608,6 @@ export class WorldService {
     });
   }
 
-  async adopt(userId: string, heroId: string, raw: unknown): Promise<ProjectedAggregates> {
-    const hero = await this.heroes.findOwned(heroId, userId);
-    if (!hero) throw new PlayerCommandError('FORBIDDEN');
-    if (process.env.NODE_ENV === 'production' && !hero.isSandbox) {
-      throw new PlayerCommandError('FORBIDDEN');
-    }
-    const parsed = serializedWorldSchema.safeParse(raw);
-    if (!parsed.success) throw new PlayerCommandError('INVALID_COMMAND');
-    const expeditionId = await ensureExpedition(this.db, userId, heroId);
-    return this.db.transaction(async (tx) => {
-      await lockExpedition(tx, expeditionId);
-      await createInitialAggregates(tx, heroId);
-      const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
-      const index = await readIndex(tx, expeditionId);
-      const { locationKey, mapId } = parsed.data;
-      const previous = index[locationKey];
-      index[locationKey] = mapId;
-      await writeServerDocument(tx, expeditionId, worldKey(mapId), JSON.stringify(parsed.data));
-      await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
-      if (previous && previous !== mapId) {
-        await deleteServerDocument(tx, expeditionId, worldKey(previous));
-      }
-      const progress = loaded.progress;
-      if (progress && parsed.data.heroCoordinates && parsed.data.current) {
-        const next = structuredClone(progress.state);
-        next.presence = {
-          locationKey,
-          mapId,
-          coordinates: { ...parsed.data.heroCoordinates },
-        };
-        const revision = await saveAggregate(tx, heroId, 'progress', progress.revision, next);
-        return { progress: projectAggregate({ kind: 'progress', revision, state: next }) };
-      }
-      return progress ? { progress: projectAggregate(progress) } : {};
-    });
-  }
-
   async snapshot(userId: string, heroId: string): Promise<unknown> {
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
@@ -713,6 +677,26 @@ export class WorldService {
       world.battle.turnClockMs = now;
       await saveWorld(tx, expeditionId, world);
       return { battleView: projectBattleForViewer(world.battle, 'heroes'), serverNowMs: now };
+    });
+  }
+
+  async worldFixture(userId: string, heroId: string, raw: unknown): Promise<unknown> {
+    if (!e2eFixturesEnabled()) throw new PlayerCommandError('FORBIDDEN');
+    const fixture = worldFixtureSchema.safeParse(raw);
+    if (!fixture.success) throw new PlayerCommandError('INVALID_COMMAND');
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    const expeditionId = await ensureExpedition(this.db, userId, heroId);
+    return this.db.transaction(async (tx) => {
+      await lockExpedition(tx, expeditionId);
+      const { progress } = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      const mapId = progress?.state.presence?.mapId;
+      const world = mapId ? await loadWorld(tx, expeditionId, mapId, Date.now()) : null;
+      if (!world || world.battle) throw new PlayerCommandError('INVALID_COMMAND');
+      const placed = applyWorldFixture(world, fixture.data);
+      if (!placed) throw new PlayerCommandError('INVALID_COMMAND');
+      await saveWorld(tx, expeditionId, world);
+      return placed;
     });
   }
 }

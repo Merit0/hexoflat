@@ -170,7 +170,7 @@ describe('inventory sync with the server', () => {
     expect(sent).toHaveLength(1);
   });
 
-  it('sends a world change (a pickup or a spent scroll) as the new whole inventory', async () => {
+  it('sends nothing for a change the client made to the inventory outside a command', async () => {
     const { inventory } = await live();
     inventory.putToInventory(K.HEALTH_BOTTLE, 2);
     await settleInventorySync();
@@ -186,9 +186,7 @@ describe('inventory sync with the server', () => {
     });
     await settleInventorySync();
 
-    expect(sent).toHaveLength(1);
-    expect(sent[0].command.type).toBe('DEV_SET_INVENTORY');
-    expect(sent[0].expectedRevision).toBe(1);
+    expect(sent).toHaveLength(0);
   });
 
   it('stops saving and says so when another tab takes the hero over', async () => {

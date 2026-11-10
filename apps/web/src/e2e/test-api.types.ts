@@ -83,7 +83,7 @@ export interface HexoflatTestApi {
   settleInventorySync(): Promise<void>;
   getInventorySyncStatus(): string;
   setHeroHealth(current: number): void;
-  placeHexobjectNextToHero(key: string): TestHexCoordinates;
+  placeHexobjectNextToHero(key: string): Promise<TestHexCoordinates>;
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): Promise<void>;
   giveHeroTheTurn(will?: number): Promise<void>;

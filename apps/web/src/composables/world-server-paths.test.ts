@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
-import { apiClient } from '@/api/client';
 import { i18n } from '@/i18n';
 import { useBattleStore } from '@/stores/battle-store';
 import { useSquadFlow } from '@/services/squads/squad-flow';
@@ -12,15 +11,13 @@ import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils
 import {
   fakePresence,
   sentCommands,
-  fakeStoredWorld,
   fakeStoredWorldOf,
   fakeEngageSquad,
   fakeEndBattle,
   fakeWorldSnapshot,
 } from '@/test-support/fake-player-server';
 import { seedFakeSession } from '@/test-support/fake-session';
-import { flushWorld, settleInventorySync } from '@/services/inventory/inventory-sync';
-import { queueWorldPush, takePendingPushes } from '@/services/player/world-sync';
+import { ensurePresence, settleInventorySync } from '@/services/inventory/inventory-sync';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -61,7 +58,7 @@ function start(location: 'silesia' | 'cave') {
   return { hero, world, target };
 }
 
-describe('the temporary world paths reach the server through PUT /player/world', () => {
+describe('the world paths reach the server through commands only', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
@@ -72,7 +69,7 @@ describe('the temporary world paths reach the server through PUT /player/world',
     const portal = usePortal();
     await portal.openPortal(target);
     await portal.enterPortal();
-    await flushWorld();
+    await settleInventorySync();
 
     expect(world.currentLocationKey).toBe('camping');
     expect(fakePresence()).toMatchObject({ locationKey: 'camping', mapId: world.currentMapId });
@@ -82,7 +79,7 @@ describe('the temporary world paths reach the server through PUT /player/world',
     expect(portalKeys(fakeStoredWorldOf('silesia')!.map)).toEqual([coordinateKey(target)]);
 
     await portal.enterPortal();
-    await flushWorld();
+    await settleInventorySync();
 
     expect(world.currentLocationKey).toBe('silesia');
     expect(fakePresence()).toMatchObject({ locationKey: 'silesia', mapId: world.currentMapId });
@@ -100,7 +97,7 @@ describe('the temporary world paths reach the server through PUT /player/world',
     expect(hero.portal).toMatchObject({ originLocationKey: 'silesia' });
     expect(useHeroInventoryStore().countItem(HEXOBJECT_KEYS.RETURN_SCROLL)).toBe(before - 1);
     await portal.enterPortal();
-    await flushWorld();
+    await settleInventorySync();
     const types = sentCommands.map((c) => c.command.type);
     expect(types).toEqual(expect.arrayContaining(['WORLD_PORTAL_OPEN', 'WORLD_PORTAL_ENTER']));
     expect(types.some((type) => type.startsWith('DEV_'))).toBe(false);
@@ -109,25 +106,10 @@ describe('the temporary world paths reach the server through PUT /player/world',
     expect(hero.portal).toBeNull();
   });
 
-  it('replaces a left dungeon on the server with a fresh map, so a reload cannot bring it back', async () => {
-    const { world } = start('cave');
-    const oldMapId = world.currentMapId!;
-    await flushWorld();
-    expect(fakeStoredWorld(oldMapId)).not.toBeNull();
-
-    world.goToLocation('camping');
-    await flushWorld();
-
-    expect(fakeStoredWorld(oldMapId)).toBeNull();
-    const fresh = fakeStoredWorldOf('cave')!;
-    expect(fresh.mapId).not.toBe(oldMapId);
-    expect(fakePresence()).toMatchObject({ locationKey: 'camping' });
-  });
-
   it('plays a lost battle on the server and lands the hero at the camp without any dev path (REQ-B4-RSP-002)', async () => {
     const { hero, world } = start('silesia');
     const oldMapId = world.currentMapId!;
-    await flushWorld();
+    await ensurePresence({ locationKey: world.currentLocationKey, mapId: oldMapId });
     const at = getHexNeighbors(hero.heroCoordinates!).find((c) => {
       const tile = (world.map as HexMapModel).tiles.find(
         (t) => coordinateKey(t.coordinates) === coordinateKey(c),
@@ -148,7 +130,6 @@ describe('the temporary world paths reach the server through PUT /player/world',
     })
       .use(i18n)
       .mount(document.createElement('div'));
-    vi.mocked(apiClient.putJson).mockClear();
     sentCommands.length = 0;
     battle.engage(engagement);
 
@@ -156,7 +137,7 @@ describe('the temporary world paths reach the server through PUT /player/world',
     fakeEndBattle('defeat');
     battle.projection = fakeWorldSnapshot().battleView;
     await battle.leave();
-    await flushWorld();
+    await settleInventorySync();
 
     expect(world.currentLocationKey).toBe('camping');
     expect(battle.inBattle).toBe(false);
@@ -166,17 +147,11 @@ describe('the temporary world paths reach the server through PUT /player/world',
     expect(hero.hero.currentHealth).toBe(1);
     const types = sentCommands.map((c) => c.command.type);
     expect(types).toEqual(['WORLD_BATTLE', 'WORLD_BATTLE']);
-    const pushed = vi
-      .mocked(apiClient.putJson)
-      .mock.calls.map(
-        (call) => (JSON.parse(String(call[1])) as { locationKey: string }).locationKey,
-      );
-    expect(pushed.every((key) => key === 'camping')).toBe(true);
   });
 
   it('keeps no battle path on the dev commands while a fight is open and won (REQ-B4-SPY-001)', async () => {
     const { hero, world } = start('silesia');
-    await flushWorld();
+    await ensurePresence({ locationKey: world.currentLocationKey, mapId: world.currentMapId! });
     const at = getHexNeighbors(hero.heroCoordinates!).find((c) => {
       const t = (world.map as HexMapModel).tiles.find(
         (x) => coordinateKey(x.coordinates) === coordinateKey(c),
@@ -197,26 +172,17 @@ describe('the temporary world paths reach the server through PUT /player/world',
     })
       .use(i18n)
       .mount(document.createElement('div'));
-    vi.mocked(apiClient.putJson).mockClear();
     sentCommands.length = 0;
     battle.engage(engagement);
     await vi.waitFor(() => expect(battle.projection).not.toBeNull());
     fakeEndBattle('victory');
     battle.projection = fakeWorldSnapshot().battleView;
     await battle.leave();
-    await flushWorld();
+    await settleInventorySync();
 
     expect(battle.inBattle).toBe(false);
     expect(world.currentLocationKey).toBe('silesia');
     const types = sentCommands.map((c) => c.command.type);
     expect(types.some((type) => type.startsWith('DEV_'))).toBe(false);
-    expect(vi.mocked(apiClient.putJson)).not.toHaveBeenCalled();
-  });
-
-  it('pushes the maps in the order they were last changed, so the last one is where the hero is', () => {
-    queueWorldPush('silesia', 'a', '{"n":1}');
-    queueWorldPush('camping', 'b', '{"n":2}');
-    queueWorldPush('silesia', 'a', '{"n":3}');
-    expect(takePendingPushes().map((push) => push.mapId)).toEqual(['b', 'a']);
   });
 });

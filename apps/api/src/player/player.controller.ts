@@ -8,7 +8,6 @@ import {
   Headers,
   Inject,
   Post,
-  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -60,6 +59,24 @@ export class PlayerController {
     }
   }
 
+  @Post('dev/world-fixture')
+  async worldFixture(
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-player-session') sessionToken: string | undefined,
+    @Body() body: unknown,
+  ) {
+    const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
+    if (!this.sessions.isValidToken(hero.id, sessionToken)) {
+      throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
+    }
+    try {
+      return await this.world.worldFixture(request.user.sub, hero.id, body);
+    } catch (error) {
+      if (error instanceof PlayerCommandError) throw new ForbiddenException({ code: error.code });
+      throw error;
+    }
+  }
+
   @Get('world')
   async worldSnapshot(@Req() request: AuthenticatedRequest) {
     const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
@@ -87,29 +104,6 @@ export class PlayerController {
       .safeParse(body);
     if (!parsed.success) throw new BadRequestException({ code: 'INVALID_COMMAND' });
     return this.world.ensure(request.user.sub, hero.id, parsed.data.locationKey);
-  }
-
-  @Put('world')
-  async adoptWorld(
-    @Req() request: AuthenticatedRequest,
-    @Headers('x-player-session') sessionToken: string | undefined,
-    @Body() body: unknown,
-  ) {
-    const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
-    if (!this.sessions.isValidToken(hero.id, sessionToken)) {
-      throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
-    }
-    try {
-      const aggregates = await this.world.adopt(request.user.sub, hero.id, body);
-      return { ok: true, aggregates };
-    } catch (error) {
-      if (error instanceof PlayerCommandError) {
-        throw error.code === 'FORBIDDEN'
-          ? new ForbiddenException({ code: error.code })
-          : new BadRequestException({ code: error.code });
-      }
-      throw error;
-    }
   }
 
   @Get('snapshot')

@@ -32,7 +32,6 @@ import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { portalLinkSchema, type PortalLink } from '@hexoflat/engine/portal/portal-state';
 import {
   applyPortalClosedOnHost,
-  closePortalForDeath,
   portalClosedEvents,
   portalLocation,
   type PortalClosedPayload,
@@ -53,15 +52,10 @@ import {
   startPlayerSession,
 } from '@/services/inventory/inventory-sync';
 import { loadServerBattleView } from '@/services/battle/battle-server';
-import { healthReportsPending, reportHealthToServer } from '@/services/inventory/health-report';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import { isServerWorldMode } from '@/services/player/world-sync';
-import {
-  buildClientHint,
-  installTravelledWorlds,
-  portalCommandOnServer,
-} from '@/services/world/served-world';
+import { buildClientHint } from '@/services/world/served-world';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
@@ -133,7 +127,7 @@ export const useHeroStore = defineStore('hero', {
         this.portal = portal;
       });
       bindHealthListener((health) => {
-        if (!healthReportsPending()) this.hero.restoreHealth(health);
+        this.hero.restoreHealth(health);
       });
       bindKillsListener((kills) => {
         this.hero.setKills(kills);
@@ -294,22 +288,6 @@ export const useHeroStore = defineStore('hero', {
       applyPortalClosedOnHost(world, world.map as HexMapModel | null, closures);
     },
 
-    async closePortalOnDeath() {
-      const world = useWorldMapStore();
-      const from = this.heroCoordinates;
-      if (isServerWorldMode()) {
-        if (!this.portal || !from || !world.currentMapId) return;
-        const at = { locationKey: world.currentLocationKey, mapId: world.currentMapId, from };
-        const result = await portalCommandOnServer(at, 'WORLD_PORTAL_CLOSE');
-        if (!result.ok) return;
-        installTravelledWorlds(result);
-        world.applyWorldResult(result);
-        return;
-      }
-      const hero = this.engineHeroState(from ?? { columnIndex: 0, rowIndex: 0 });
-      if (closePortalForDeath(world, world.map as HexMapModel | null, hero)) this.setPortal(null);
-    },
-
     setPortal(portal: PortalLink | null) {
       this.portal = portal;
       this.saveProgressToStorage();
@@ -413,19 +391,6 @@ export const useHeroStore = defineStore('hero', {
       this.hero.setHealth((this.hero.currentHealth ?? 0) + health);
       this.hero.adjustHealthOnStatChange();
       this.saveProgressToStorage();
-    },
-
-    reportHealth(current: number): void {
-      this.hero.setHealth(current);
-      this.hero.adjustHealthOnStatChange();
-      this.saveProgressToStorage();
-      reportHealthToServer(this.hero.currentHealth, () => {
-        if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
-      });
-    },
-
-    takeDamage(damage: number): void {
-      this.reportHealth((this.hero.currentHealth ?? 0) - Math.max(0, damage));
     },
 
     resetHero(): void {

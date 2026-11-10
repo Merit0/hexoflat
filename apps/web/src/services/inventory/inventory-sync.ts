@@ -1,7 +1,7 @@
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { getAuthToken } from '@/api/auth-token';
-import { ApiError, apiClient } from '@/api/client';
+import { apiClient } from '@/api/client';
 import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
@@ -20,16 +20,7 @@ import {
   type ProjectedAggregate,
   type WorldCommandResponse,
 } from '@/services/player/player-socket';
-import {
-  bindWorldFlusher,
-  cacheServerWorld,
-  enableServerWorlds,
-  pushSucceeded,
-  resetWorldSync,
-  snapshotWorld,
-  takePendingPushes,
-  worldBody,
-} from '@/services/player/world-sync';
+import { cacheServerWorld, enableServerWorlds, resetWorldSync } from '@/services/player/world-sync';
 import {
   flushExpedition,
   onExpeditionTakenOver,
@@ -205,11 +196,6 @@ bindInventoryMirror({
     const mapped = mapCommand(command);
     send(mapped.type, mapped.payload, before.revision);
   },
-  world(before, after) {
-    if (inventorySession.status !== 'live') return;
-    inventorySession.revision = before.revision + 1;
-    send('DEV_SET_INVENTORY', { inventory: after }, before.revision);
-  },
 });
 
 export async function startPlayerSession(heroId: string): Promise<boolean> {
@@ -245,9 +231,7 @@ export function endPlayerSession(): void {
 }
 
 export function settleInventorySync(): Promise<void> {
-  return flushWorld()
-    .then(() => chain)
-    .then(() => flushExpedition());
+  return chain.then(() => flushExpedition());
 }
 
 export function pushInventoryFixture(): void {
@@ -329,20 +313,13 @@ export function sendProgress(
   });
 }
 
-function samePresence(known: ServerPresence | null, now: ServerPresence): boolean {
-  return (
-    !!known &&
-    known.locationKey === now.locationKey &&
-    known.mapId === now.mapId &&
-    known.coordinates.columnIndex === now.coordinates.columnIndex &&
-    known.coordinates.rowIndex === now.coordinates.rowIndex
-  );
-}
-
-export async function ensurePresence(now: ServerPresence | null): Promise<void> {
+export async function ensurePresence(
+  now: { locationKey: string; mapId: string } | null,
+): Promise<void> {
   if (!now) return;
-  snapshotWorld(!samePresence(inventorySession.presence, now));
-  await flushWorld();
+  const known = inventorySession.presence;
+  if (known && known.locationKey === now.locationKey && known.mapId === now.mapId) return;
+  await sendWorldCommand('WORLD_ENTER', { locationKey: now.locationKey });
 }
 
 async function loadWorldCache(): Promise<void> {
@@ -357,31 +334,6 @@ async function loadWorldCache(): Promise<void> {
   }
   enableServerWorlds();
 }
-
-export function flushWorld(): Promise<void> {
-  const pushes = takePendingPushes();
-  if (pushes.length === 0) return Promise.resolve();
-  return enqueue(async () => {
-    for (const push of pushes) {
-      if (inventorySession.status !== 'live') return;
-      try {
-        const body = await apiClient.putJson<{ aggregates?: { progress?: ProjectedAggregate } }>(
-          '/player/world',
-          worldBody(push),
-          { headers: { 'X-Player-Session': inventorySession.sessionToken ?? '' } },
-        );
-        pushSucceeded(push);
-        applyProgress(body.aggregates?.progress);
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 409) {
-          lost(new PlayerSocketError('SESSION_TAKEN_OVER'));
-        }
-      }
-    }
-  });
-}
-
-bindWorldFlusher(flushWorld);
 
 export interface WorldCommandResult {
   ok: boolean;
@@ -400,6 +352,7 @@ export type WorldStepResult = WorldCommandResult;
 
 export function sendWorldCommand(
   type:
+    | 'WORLD_ENTER'
     | 'WORLD_STEP'
     | 'WORLD_ACTION'
     | 'WORLD_TICK'
@@ -467,6 +420,10 @@ export function sendWorldStep(target: {
   rowIndex: number;
 }): Promise<WorldCommandResult> {
   return sendWorldCommand('WORLD_STEP', { target });
+}
+
+export function pushHealthFixture(current: number): Promise<ProgressResult> {
+  return sendProgress('DEV_SET_HEALTH', { current }, { withKnowledgeRevision: false });
 }
 
 export function pushKnowledgeFixture(knowledge: KnowledgeState): void {

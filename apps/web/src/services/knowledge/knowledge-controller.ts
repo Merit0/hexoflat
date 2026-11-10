@@ -22,7 +22,7 @@ import { getMeta } from '@hexoflat/engine';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import type { WorldClientHint } from '@hexoflat/engine/world/server-ports';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
-import { inventorySession, type ServerPresence } from '@/services/inventory/inventory-session';
+import { inventorySession } from '@/services/inventory/inventory-session';
 
 export { canReachBook as isAtKnowledgeBook } from '@hexoflat/engine/knowledge/camp-book';
 
@@ -40,18 +40,14 @@ export interface KnowledgeHost {
   travelTo(locationKey: LocationKey): void;
 }
 
-function presenceOf(host: Omit<KnowledgeHost, 'state'>): ServerPresence | null {
-  const { coordinates, locationKey, mapId } = host.context;
-  return coordinates ? { locationKey, mapId, coordinates: { ...coordinates } } : null;
-}
-
 async function viaServer(
   host: Omit<KnowledgeHost, 'state'>,
   type: string,
   payload: Record<string, unknown>,
 ) {
   if (!host.isCurrent()) return { state: inventorySession.knowledge, accepted: false };
-  await ensurePresence(presenceOf(host));
+  const { coordinates, locationKey, mapId } = host.context;
+  if (coordinates) await ensurePresence({ locationKey, mapId });
   const result = await sendProgress(type, payload);
   return { state: result.knowledge, accepted: result.ok && host.isCurrent() };
 }

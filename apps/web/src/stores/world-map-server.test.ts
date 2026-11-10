@@ -1,16 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { createServerWorld, serializeWorld } from '@hexoflat/engine';
+import { createServerWorld } from '@hexoflat/engine';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
-import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
-import { applyProgress, settleInventorySync } from '@/services/inventory/inventory-sync';
+import {
+  applyProgress,
+  pushHealthFixture,
+  settleInventorySync,
+} from '@/services/inventory/inventory-sync';
 import { useHeroInventoryStore } from './hero-inventory-store';
 import { useHeroToolStore } from './hero-tool-store';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { fakePresence, fakeStoredWorld, sentCommands } from '@/test-support/fake-player-server';
-import { seedFakeSession } from '@/test-support/fake-session';
-import { cacheServerWorld } from '@/services/player/world-sync';
+import { holdServedWorld, seedFakeSession } from '@/test-support/fake-session';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from './world-map-store';
 
@@ -32,7 +35,7 @@ function setup() {
   seedFakeSession(HERO);
   hero.loadKnowledge();
   const served = createServerWorld('silesia', 'served-map', 'expedition-seed', HERO);
-  cacheServerWorld('silesia', served.mapId, JSON.stringify(serializeWorld(served)));
+  holdServedWorld(served);
   return { hero, world: useWorldMapStore(), served };
 }
 
@@ -92,7 +95,7 @@ describe('actions and ticks through the server', () => {
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
   });
 
-  function withBottle() {
+  function withBottle(key: string = HEXOBJECT_KEYS.HEALTH_BOTTLE) {
     setActivePinia(createPinia());
     const hero = useHeroStore();
     hero.hero.id = HERO;
@@ -110,9 +113,9 @@ describe('actions and ticks through the server', () => {
       (t) =>
         t.coordinates.columnIndex === spot.columnIndex && t.coordinates.rowIndex === spot.rowIndex,
     )!;
-    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.HEALTH_BOTTLE, spot);
+    tile.hexobject = HexObjectFactory.create(key as THexobjectKey, spot);
     tile.isRevealed = true;
-    cacheServerWorld('camping', served.mapId, JSON.stringify(serializeWorld(served)));
+    holdServedWorld(served);
     const world = useWorldMapStore();
     world.goToLocation('camping');
     return { hero, world, tile: world.getTileAt(spot)!, spot };
@@ -152,11 +155,10 @@ describe('actions and ticks through the server', () => {
   });
 
   it('heals at a fire from the recorded heal effect while the hand still rests on it', async () => {
-    const { hero, world, tile, spot } = withBottle();
-    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.FIREPLACE, spot);
+    const { hero, world, tile, spot } = withBottle(HEXOBJECT_KEYS.FIREPLACE);
     const tool = useHeroToolStore();
     hero.hero.maxHealth = 3;
-    hero.reportHealth(1);
+    await pushHealthFixture(1);
     await settleInventorySync();
     tool.activeTool = HEXOBJECT_KEYS.HAND;
     tool.isDragging = true;
@@ -200,7 +202,7 @@ describe('travel through the server', () => {
     )!;
     gate.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CAVE_ENTRANCE, spot);
     gate.isRevealed = true;
-    cacheServerWorld('silesia', silesia.mapId, JSON.stringify(serializeWorld(silesia)));
+    holdServedWorld(silesia);
     const world = useWorldMapStore();
     world.goToLocation('silesia');
     const tile = world.getTileAt(spot)!;
@@ -224,11 +226,11 @@ describe('the hero health lives on the server', () => {
     seedFakeSession(HERO);
     hero.loadKnowledge();
     hero.hero.maxHealth = 3;
-    hero.reportHealth(1);
+    await pushHealthFixture(1);
     await settleInventorySync();
     expect(sentCommands.some((c) => c.command.type === 'DEV_SET_HEALTH')).toBe(true);
     expect(hero.hero.currentHealth).toBe(1);
-    hero.reportHealth(9);
+    await pushHealthFixture(9);
     await settleInventorySync();
     expect(hero.hero.currentHealth).toBe(3);
   });

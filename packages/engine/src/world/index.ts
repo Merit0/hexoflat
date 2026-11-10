@@ -9,3 +9,4 @@ export * from './portal-world';
 export * from './battle-world';
 export * from './client-projection';
 export * from './respawn-world';
+export * from './world-fixtures';
