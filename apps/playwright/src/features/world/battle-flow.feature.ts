@@ -628,6 +628,37 @@ export class BattleFlowFeature extends BaseFeature {
     });
   }
 
+  async fallInBattleAndReloadWithoutLeaving(): Promise<void> {
+    await this.step(
+      'Lose the battle and reload the page without pressing LEAVE BATTLE',
+      async () => {
+        await this.campingMap.hexBoard.finishBattle('defeat');
+        await new ReloadCampingMapFeature().reload();
+      },
+    );
+  }
+
+  async leaveTheBattleAfterTheDefeat(): Promise<void> {
+    await this.step('Press LEAVE BATTLE', async () => {
+      await this.campingMap.battleTab.leaveBattle();
+    });
+  }
+
+  async fallInBattleWithTheToolHexOpen(): Promise<void> {
+    await this.step('Lose the battle while the weapon tool hex is open', async () => {
+      await this.hoverTheNearestEnemyWithTheWeapon();
+      await this.campingMap.hexBoard.finishBattle('defeat');
+    });
+  }
+
+  async verifyTheDefeatClosedTheToolHexAndEveryPanel(): Promise<void> {
+    await this.step('No tool hex, stash or Book of Will is left after the defeat', async () => {
+      await this.campingMap.battleTab.verifyToolHexHidden();
+      await this.campingMap.stashBoard.verifyIsClosed();
+      await this.campingMap.knowledge.verifyClosed();
+    });
+  }
+
   async verifyTheDefeatSentTheHeroHome(): Promise<void> {
     await this.step('The battle is closed and the hero is back alive at the camp', async () => {
       await this.campingMap.battleTab.verifyBoardClosed();

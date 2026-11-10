@@ -6,7 +6,7 @@ import {
   type BattleItem,
 } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
-import { livingCreatureAt, terrainAt } from '@hexoflat/engine/battle/battle-board';
+import { isAlive, livingCreatureAt, terrainAt } from '@hexoflat/engine/battle/battle-board';
 import { shieldCapacity } from '@hexoflat/engine/battle/defend';
 import { hexNeighbours, isAdjacentHex, sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
 import { reachRefusal, strikingItem } from '@hexoflat/engine/battle/strike';
@@ -171,7 +171,13 @@ export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null
   const view = input.projection;
   const self = controlledHero(view, input.localHeroIds);
   const blocking = view?.phase === 'defend' && view.reaction?.stage === 'block';
-  if (!view || !self || (view.phase !== 'act' && !blocking) || input.ui.stage !== 'action')
+  if (
+    !view ||
+    !self ||
+    !isAlive(self) ||
+    (view.phase !== 'act' && !blocking) ||
+    input.ui.stage !== 'action'
+  )
     return null;
   const hand = input.ui.hand;
   if (!hand) return null;

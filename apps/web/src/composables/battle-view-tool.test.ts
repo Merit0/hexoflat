@@ -221,7 +221,11 @@ describe('auto-selecting the closest foe', () => {
       targetId: 's1',
       at: { q: 1, r: 0 },
     });
-    expect(view.board?.overlay.marks).toContainEqual({ hex: { q: 1, r: 0 }, tone: 'selected' });
+    expect(view.board?.overlay.marks).toContainEqual({
+      hex: { q: 1, r: 0 },
+      tone: 'selected',
+      followId: 's1',
+    });
   });
 
   it('lets the hero reselect another foe', async () => {
@@ -279,7 +283,7 @@ describe('decoy shields around the selected foe', () => {
     skeleton('s1', { q: 2, r: 0 }, { hands: { right: null, left: battleItem('wooden-shield') } });
   const decoys = (ui: BattleUiState) =>
     viewOf(ui)
-      .board!.overlay.marks.filter((m) => m.tone === 'shield')
+      .board!.overlay.marks.filter((m) => m.tone === 'decoy')
       .map((m) => `${m.hex.q},${m.hex.r}`)
       .sort();
 

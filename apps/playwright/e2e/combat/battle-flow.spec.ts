@@ -223,4 +223,24 @@ test.describe('battle flow', { tag: ['@combat'] }, () => {
     await battle.loseTheBattleAndLeave();
     await battle.verifyTheDefeatSentTheHeroHome();
   });
+
+  test('Verify a hero who fell and left the game without LEAVE BATTLE wakes up at the camp', async () => {
+    const battle = new BattleFlowFeature();
+
+    await battle.startBattleNextToTheSquad();
+    await battle.fallInBattleAndReloadWithoutLeaving();
+    await battle.verifyTheDefeatSentTheHeroHome();
+  });
+
+  test('Verify the hero falling closes the tool hex and every panel before he goes home', async () => {
+    const battle = new BattleFlowFeature();
+
+    await battle.startBattleNextToTheSquad();
+    await battle.giveHeroTheTurn();
+    await battle.fallInBattleWithTheToolHexOpen();
+    await battle.verifyTheDefeatClosedTheToolHexAndEveryPanel();
+    await battle.leaveTheBattleAfterTheDefeat();
+    await battle.verifyTheDefeatSentTheHeroHome();
+    await battle.verifyTheDefeatClosedTheToolHexAndEveryPanel();
+  });
 });

@@ -55,7 +55,7 @@
       },
       "bone-blade": {
         "title": "Bone Blade",
-        "tableRule": "Enemy weapon. Deals half a heart."
+        "tableRule": "Enemy weapon. Deals a full heart."
       },
       "bone-buckler": {
         "title": "Bone Buckler",

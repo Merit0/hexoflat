@@ -38,6 +38,7 @@ export function battleAssetPaths(biome: BattlefieldBiome): string[] {
     battleObjectSprite('wall'),
     battleObjectSprite('boulder'),
     battleShieldSprite(),
+    '/board-assets/hero-board/cracker-heart-icon.png',
     ...Object.values(BATTLE_TERRAIN_TOKENS),
     ...Object.values(CREATURE_SPRITES),
     ...Object.values(BATTLE_GRAVE_SPRITES),
@@ -51,6 +52,7 @@ export type BattleOverlayTone =
   | 'target'
   | 'selected'
   | 'shield'
+  | 'decoy'
   | 'blocked'
   | 'hit'
   | 'dodged';

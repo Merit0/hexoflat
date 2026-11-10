@@ -79,6 +79,7 @@ export class PlayerGateway implements OnGatewayInit, OnGatewayDisconnect {
     }
     try {
       const heroId = parsed.data.heroId ?? (await this.heroes.findOrCreateByUserId(userId)).id;
+      await this.world.settleDefeat(userId, heroId);
       const snapshot = await this.commands.snapshot(userId, heroId);
       const replaced = this.sessions.claim(heroId, client.id);
       if (replaced) this.takeOver(replaced);

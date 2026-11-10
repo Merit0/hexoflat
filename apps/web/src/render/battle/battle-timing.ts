@@ -24,7 +24,7 @@ export const BATTLE_MOTION = {
   fallShakeTiles: 0.1,
   softShakeTiles: 0.035,
   shakeWaves: 3,
-  damageStartX: 0.3,
+  damageStartX: 0,
   damageStartY: -0.36,
   damageRiseTiles: 0.55,
   damageFadeFrom: 0.6,
