@@ -147,12 +147,13 @@ export default tseslint.config(
       // G6 ratchet (docs/refactoring/GOD-CLASS-REFACTORING-PLAN.md): pinned
       // to the measured 12.08.2026 maximum in apps/web/src after G1-G5.
       // max-lines dropped 703 -> 528 (combat-store.ts, the new largest
-      // file). max-lines-per-function bumped 186 -> 197 on 18.09.2026 —
+      // file), then 528 -> 469 on 10.11.2026 (D4b-6: hero-store.ts is the
+      // largest after the offline world paths were deleted). max-lines-per-function bumped 186 -> 197 on 18.09.2026 —
       // createTilesLayer (tiles-layer.ts) overtook combat-store.test.ts
       // after gaining the rarity-frame render layer. complexity/max-depth
       // are unchanged from G0's baseline (use-move-preview.ts at complexity
       // 39, locale-keys.ts at depth 4) — not room this refactor could close.
-      'max-lines': ['error', { max: 528, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['error', { max: 469, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 197, skipBlankLines: true, skipComments: true }],
       complexity: ['error', { max: 39 }],
       'max-depth': ['error', { max: 4 }],

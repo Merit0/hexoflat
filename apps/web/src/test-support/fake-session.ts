@@ -7,7 +7,7 @@ import { apiClient } from '@/api/client';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { serializeWorld, type ServerWorld } from '@hexoflat/engine/world/server-world';
 import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
-import { cacheServerWorld, enableServerWorlds, resetWorldSync } from '@/services/player/world-sync';
+import { cacheServerWorld, resetWorldSync } from '@/services/player/world-sync';
 import {
   fakeEnsureWorld,
   fakeStoreWorld,
@@ -26,7 +26,6 @@ export function seedFakeSession(
   });
   setAuthToken('token');
   resetWorldSync();
-  enableServerWorlds();
   vi.spyOn(apiClient, 'get').mockImplementation(() =>
     Promise.resolve(fakeWorldSnapshot() as never),
   );
@@ -39,7 +38,7 @@ export function seedFakeSession(
   );
   for (const locationKey of LOCATION_KEYS) {
     const world = fakeEnsureWorld(locationKey);
-    cacheServerWorld(locationKey, world.mapId, JSON.stringify(world));
+    cacheServerWorld(locationKey, JSON.stringify(world));
   }
   resetInventorySession();
   inventorySession.heroId = heroId;
@@ -51,7 +50,7 @@ export function seedFakeSession(
 
 export function holdServedWorld(served: ServerWorld): void {
   fakeStoreWorld(served);
-  cacheServerWorld(served.locationKey, served.mapId, JSON.stringify(serializeWorld(served)));
+  cacheServerWorld(served.locationKey, JSON.stringify(serializeWorld(served)));
 }
 
 export function holdLocalWorld(held: {

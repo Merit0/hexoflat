@@ -1038,3 +1038,45 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 - **4. Dev-інструменти.** Перегенерація підземелля стає серверною dev-командою (прапор фікстур І не production, лише для поточного героя, із записом у журнал). Редактор статичної дошки зберігає результат як контент (файл дошки), а не змінює карту гравця; побачити його можна перегенерацією. У D6 обидва переходять у пісочницю Creator. Офлайн-режим не лишаємо.
 - **5. `revealTile`** стає серверним, як частина результату `MOVE` (радіус огляду / «Світло»). У D4b (чекліст S2) додати: проєкція карти не віддає вміст невідкритих гексів (скрині, лут, вороги), інакше туман видно в DevTools.
 - `it.skip` у `balance.test.ts` не чіпати до дизайну щитів.
+
+## Старт чату: D4b-6, прибрати `isServerWorldMode()` (гра лише онлайн)
+
+Прочитай: цей документ (розділи «Результати D4b-5», «e2e після B6 і рішення Олега», «D4b-A кроки 2–4»), `CLAUDE.md`, скіли `hexoflat-phase`, `hexoflat-web-state`, `hexoflat-e2e`. Гілка `player-persistent-data-implement`. Українською. Не комітити (наприкінці повідомлення для коміту й звіт). Без `git stash`/`checkout`/`reset`. Коментарі в код не додавати. e2e лише за прямою командою Олега, по групах, перезапускати тільки впалі.
+
+**Рішення Олега:** гра лише онлайн, офлайн-шляху не лишаємо. Без сесії з сервером світу немає (вхід у гру вимагає `startPlayerSession`).
+
+**Що прибрати (`apps/web/src`, не тести):**
+
+1. `services/player/world-sync.ts`: `enableServerWorlds`, `isServerWorldMode`, прапор `enabled`; кеш документів лишається.
+2. `stores/world-map-store.ts` (≈467, 498): локальна генерація карти `loadLocationMap`, локальний `runWorldTick` у `startWorldLoop`, `saveToStorage` з локальним `mapSnapshot` (`readSavedMap` з blob `map:<id>`), `installCampBook` і перше розкриття на клієнті. Карта лише з кешу сервера (`readCachedWorld`); немає документа означає помилку завантаження з екраном повтору, а не тиху генерацію.
+3. `stores/hero-store.ts` (≈272–274): гілки `setPortal`/`applyPortalClosures` «не серверний режим».
+4. `composables/use-board-crossing.ts`: локальне закриття порталу й `pendingArrivalSide` для не-серверного режиму; перехід лише через `travelOnServer`.
+5. `services/world/respawn-schedule.ts`: уся локальна розкладка відродження (запечатування читається з `inventorySession.sealedUntil`); файл, ймовірно, зникає, перевір споживачів.
+6. `services/persistence/world-storage.ts`: гілки `map:`/`state:` blob для карт (залишити лише те, що ще потрібне: `index`, `nav`, `progress`), `updateSavedMap`, `readSavedMap` з CONTENT_VERSION-гейтом, якщо більше не потрібні.
+7. Мертвий код, що стане недосяжним: `runWorldTick`/`world-map-store-helpers` (локальний тік, `withStoreInventory`), `portal-service` локальні частини, `leave-location-action` гілка не `serverTravelled`, `scheduleLocationRespawn` у клієнті, `hexobject`-мутації для локальних дій (`START_HEX_ACTION` локально).
+
+**Тести (головний обсяг):** ≈12 файлів web-тестів не використовують `seedFakeSession` і працюють у локальному режимі (`stores/*`, `composables/*`, `services/*`). Їх треба перевести на `seedFakeSession` + `holdServedWorld`/`holdLocalWorld`/`fakeStoredWorldOf`/`fakePlaceHero` (`test-support/fake-session.ts`, `fake-player-server.ts`), а тести локальної генерації/збереження карти видалити разом з кодом. Перед видаленням запусти `pnpm --filter @hexoflat/web test` і склади список тестів, що падають, за файлами.
+
+**Порядок:** (1) список усіх викликів і файлів, показати план; (2) перевести тести без сесії на фейковий сервер, поки код ще стоїть; (3) прибрати споживачів `isServerWorldMode()` по одному (`respawn-schedule`, `world-storage`, `use-board-crossing`, `hero-store`, `world-map-store`); (4) прибрати `enableServerWorlds`/`isServerWorldMode`; (5) прибрати мертвий код (`knip`/`tsc` `noUnusedLocals`, пошук експортів без імпортів); (6) `world-map-store.ts` піде нижче `max-lines`: понизити ліміт у `eslint.config.js` до нового виміряного максимуму (рачет вниз).
+
+**Обмеження:** новий метод чи заголовок браузера додавати в `apps/api/src/cors.ts`; після змін engine `pnpm --filter @hexoflat/engine build`; Postgres `docker compose -f docker-compose.dev.yml up -d postgres`; нових циклів немає; `balance.test.ts` два `it.skip` не чіпати (у звіті перелічити пропущені тести).
+
+**Критерій готовності:** у `apps/web/src` немає `isServerWorldMode`/`enableServerWorlds`; без сесії застосунок показує помилку підключення, а не локальну гру; `no-temporary-paths.test.ts` зелений; web/api/engine тести, typecheck, lint зелені; e2e груп `board`, `hero`, `camp`, `combat`, `auth`, `shell` за командою Олега. Наприкінці онови розділ «Результати D4b-6», скіли й `CLAUDE.md`.
+
+**Після D4b-6 (рішення Олега):** (4) перегенерація підземелля стає серверною dev-командою (прапор фікстур і не production, лише поточний герой, запис у журнал), редактор статичної дошки зберігає результат як контент (файл дошки), обидва потім у пісочницю Creator (D6); (5) `revealTile` серверний як частина результату `MOVE` (радіус огляду / «Світло»), плюс у чекліст S2: проєкція карти не віддає вміст невідкритих гексів (скрині, лут, вороги).
+
+## Результати D4b-6 (2026-11-10): `isServerWorldMode()` прибрано, гра лише онлайн
+
+**Зроблено (`apps/web/src`).**
+
+1. `world-sync.ts` — лише кеш документів: `cacheServerWorld(locationKey, json)`, `cachedWorldJson`, `forgetServerWorld`, `forgetAllServerWorlds`, `resetWorldSync`. `enableServerWorlds`, `isServerWorldMode`, `rememberServerWorld`, `cachedWorldJsonByMap` видалено.
+2. `world-map-store`: `loadLocationMap(locationKey)` бере карту лише з кешу сервера (`readCachedWorld`). Немає документа означає `worldLoadFailed = true`, `map = null`, `currentMapId = null`; `hex-world-map.vue` показує блок `world-load-error` з кнопкою `world-load-retry` (`retryWorldLoad`: `reloadWorldCache()` із `inventory-sync` і `goToLocation`). Локальної генерації, `installCampBook`, локального тіка, `loadFromStorage`/`saveToStorage` (тепер `installServedWorld(served)` і `cacheServedWorld()`), `clearStoredLocation`, розкладки відродження, `pendingArrivalSide`, `preferredMapId` і прапорця `serverTravelled` у `goToLocation` більше немає. `devNextSeed`/`devRegenerateDungeon`/`devRebuildFromRecipe` лишились як перегляд у пам'яті (серверна карта не змінюється; серверні dev-команди окремо, див. «Після D4b-6»).
+3. `respawn-schedule.ts` — лише `getLocationRespawnRemainingMs`/`isLocationRespawning` з `inventorySession.sealedUntil`. `world-storage.ts` (і `map:`/`state:`/`index`/`respawn` блоби), `static-board-rebuild.ts`, `step-recovery.ts`, `world-storage-shim.ts` видалено.
+4. `hero-store`: без `setPortal`/`applyPortalClosures`/`forgetPosition`; `use-board-crossing` лише через `travelOnServer`; `leave-location-action` лише запам'ятовує позицію й зупиняє цикл; `arrival-action` без сторони прибуття; `portal-service` лише `portalLocation` (+ реекспорт `findPortalSpot`/`placeReturnPortal`); `findArrivalHex`, `runWorldTick`, `withStoreInventory`, `hasLegacyBattle`, `TWorldState`, ключ `battle.legacyDismissed` видалено. Нові ключі `world.loadError`, `world.retry`.
+5. `max-lines` у `eslint.config.js` понижено 528 -> 469 (найбільший тепер `hero-store.ts`); `world-map-store.ts` 339 рядків. Інші пороги не чіпав, нових циклів і записів у `KNOWN_CYCLE_FILES` немає (попереджень lint 33 -> 28).
+
+**Тести.** Web 2294 (103 файли), API 166, engine 979 (2 `it.skip` у `balance.test.ts`, не чіпав), typecheck і lint без помилок. Файли без сесії переведено на `seedFakeSession`/`fakePlaceHero`: `use-board-crossing`, `use-board-model-draft` (перегляд моделі спершу перебудовує карту через `devRebuildFromRecipe`, бо сервер будує карту зі свого seed), `use-portal` (серверні карти через `fakeStoredWorldOf`), `world-map-store`, `world-map-store.descriptor`, `world-map-persistence` (переписано: завантаження серверного документа, `cacheServedWorld`, відновлення engagement). Видалено тести локальної генерації й збереження, `runWorldTick`, бриджа тіка (`inventory-bridge`), `withStoreInventory` (`inventory-sync`), `applyPortalRemovals`, `findArrivalHex`, `respawn-schedule` (розкладка), `world-storage`, `step-recovery`.
+
+**Пропущені тести:** `balance.test.ts`, два `it.skip` (щити). e2e не запускали (за командою Олега): групи `board`, `hero`, `camp`, `combat`, `auth`, `shell`; найімовірніші місця — перехід краєм дошки та портал (позиція героя тепер лише серверна), блок помилки завантаження світу.
+
+**Не зроблено / ризики.** Dev-кнопки перегенерації підземелля й редактор статичної дошки працюють лише як перегляд у пам'яті до серверної dev-команди (D6/Creator). `revealTile` і клієнтські `revealAroundHero`/`revealEntryTile` у `goToLocation` лишились клієнтськими (пункт 5 рішень Олега).

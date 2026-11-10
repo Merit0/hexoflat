@@ -1,13 +1,13 @@
-import { worldStorage } from '@/test-support/world-storage-shim';
+import { seedFakeSession } from '@/test-support/fake-session';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import { forgetAllServerWorlds, forgetServerWorld } from '@/services/player/world-sync';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
-import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import type { HexEngineActionContext } from '@hexoflat/engine';
 import { BOARD_MODELS } from '@hexoflat/engine/content/boards/models/index';
 import { adjustRuleCount } from '@hexoflat/engine/boards/board-model-edit';
-import { useWorldMapStore, runWorldTick } from './world-map-store';
+import { useWorldMapStore } from './world-map-store';
 import { useHeroStore } from './hero-store';
 
 function buildRevealedMap(width = 3, height = 3) {
@@ -16,173 +16,41 @@ function buildRevealedMap(width = 3, height = 3) {
   return map;
 }
 
-function createEngineContext(
-  overrides: Partial<HexEngineActionContext> = {},
-): HexEngineActionContext {
-  return {
-    heroToolStore: {
-      isLocked: false,
-      isDragging: false,
-      activeTool: null,
-      hover: null,
-      consumeDurability: vi.fn(() => true),
-      lockTool: vi.fn(),
-      unlockTool: vi.fn(),
-      clearResolvedActions: vi.fn(),
-      stopTool: vi.fn(),
-    },
-    hero: {
-      hero: { name: 'Hero', maxHealth: 100, currentHealth: 100 },
-      healHero: vi.fn(),
-    },
-    gathering: { add: vi.fn() },
-    events: { push: vi.fn() },
-    worldMap: {
-      combatActive: false,
-      isLocationRespawning: vi.fn(() => false),
-      getLocationRespawnRemainingMs: vi.fn(() => 0),
-      goToLocation: vi.fn(),
-    },
-    ...overrides,
-  };
-}
-
 describe('useWorldMapStore: leaveCurrentLocation', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    worldStorage.clear();
+    seedFakeSession('hero-wm');
   });
 
-  function buildClearedMap(name: string) {
-    const map = buildRevealedMap();
-    const tile = map.tiles[0];
-    tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.GRAVE, tile.coordinates);
-    map.name = name;
-    return map;
-  }
-
-  it('seals a cleared location that declares a respawn delay', () => {
+  it('remembers where the hero stood and stops the world loop', () => {
     const worldStore = useWorldMapStore();
-    worldStore.map = buildClearedMap('cave-map');
+    const hero = useHeroStore();
+    worldStore.map = buildRevealedMap();
     worldStore.currentLocationKey = 'cave';
     worldStore.currentMapId = 'cave-map-id';
+    hero.heroCoordinates = { columnIndex: 1, rowIndex: 1 };
+    const stopSpy = vi.spyOn(worldStore, 'stopWorldLoop');
 
-    worldStore.leaveCurrentLocation('camping');
+    worldStore.leaveCurrentLocation();
+
+    expect(hero.nav.positionByMapId['cave-map-id']).toEqual({ columnIndex: 1, rowIndex: 1 });
+    expect(stopSpy).toHaveBeenCalled();
+  });
+
+  it('reads the seal of a location from the server progress', () => {
+    const worldStore = useWorldMapStore();
+    inventorySession.sealedUntil = { cave: Date.now() + 60_000 };
 
     expect(worldStore.isLocationRespawning('cave')).toBe(true);
-  });
-
-  it('leaves a location alone when its definition declares no respawn delay', () => {
-    const worldStore = useWorldMapStore();
-    worldStore.map = buildClearedMap('camping-map');
-    worldStore.currentLocationKey = 'camping';
-    worldStore.currentMapId = 'camping-map-id';
-
-    worldStore.leaveCurrentLocation('cave');
-
     expect(worldStore.isLocationRespawning('camping')).toBe(false);
-  });
-
-  it('does not seal the location the hero is staying in', () => {
-    const worldStore = useWorldMapStore();
-    worldStore.map = buildClearedMap('cave-map');
-    worldStore.currentLocationKey = 'cave';
-    worldStore.currentMapId = 'cave-map-id';
-
-    worldStore.leaveCurrentLocation('cave');
-
-    expect(worldStore.isLocationRespawning('cave')).toBe(false);
-  });
-
-  it('does not seal a location that has not been cleared', () => {
-    const worldStore = useWorldMapStore();
-    worldStore.map = buildRevealedMap();
-    worldStore.currentLocationKey = 'cave';
-    worldStore.currentMapId = 'cave-map-id';
-
-    worldStore.leaveCurrentLocation('camping');
-
-    expect(worldStore.isLocationRespawning('cave')).toBe(false);
-  });
-
-  it('discards a DUNGEON board on the way to a different location, instead of saving it', () => {
-    const worldStore = useWorldMapStore();
-    worldStore.map = buildRevealedMap();
-    worldStore.currentLocationKey = 'cave';
-    worldStore.currentMapId = 'cave-map-id';
-    const clearSpy = vi.spyOn(worldStore, 'clearStoredLocation');
-    const saveSpy = vi.spyOn(worldStore, 'saveToStorage');
-
-    worldStore.leaveCurrentLocation('silesia');
-
-    expect(clearSpy).toHaveBeenCalledWith('cave', 'cave-map-id');
-    expect(saveSpy).not.toHaveBeenCalled();
-  });
-
-  it('saves a DUNGEON board instead of discarding it when staying on the same location', () => {
-    const worldStore = useWorldMapStore();
-    worldStore.map = buildRevealedMap();
-    worldStore.currentLocationKey = 'cave';
-    worldStore.currentMapId = 'cave-map-id';
-    const clearSpy = vi.spyOn(worldStore, 'clearStoredLocation');
-    const saveSpy = vi.spyOn(worldStore, 'saveToStorage');
-
-    worldStore.leaveCurrentLocation('cave');
-
-    expect(clearSpy).not.toHaveBeenCalled();
-    expect(saveSpy).toHaveBeenCalledWith('cave-map-id');
-  });
-
-  it('saves a STATIC board rather than discarding it on the way to a different location', () => {
-    const worldStore = useWorldMapStore();
-    worldStore.map = buildRevealedMap();
-    worldStore.currentLocationKey = 'silesia';
-    worldStore.currentMapId = 'silesia-map-id';
-    const clearSpy = vi.spyOn(worldStore, 'clearStoredLocation');
-    const saveSpy = vi.spyOn(worldStore, 'saveToStorage');
-
-    worldStore.leaveCurrentLocation('cave');
-
-    expect(clearSpy).not.toHaveBeenCalled();
-    expect(saveSpy).toHaveBeenCalledWith('silesia-map-id');
+    expect(worldStore.getLocationRespawnRemainingMs('cave')).toBeGreaterThan(0);
   });
 });
 
 describe('useWorldMapStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    worldStorage.clear();
-  });
-
-  describe('runWorldTick', () => {
-    it('finishes a due pending action and reports changed:true', () => {
-      const map = buildRevealedMap(2, 1);
-      const tile = map.tiles[0];
-      tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.TREE, tile.coordinates);
-      tile.pendingAction = {
-        type: 'CUT' as never,
-        startedAt: 0,
-        endsAt: 1000,
-        hexobjectKey: HEXOBJECT_KEYS.TREE,
-        cancelled: false,
-      };
-      const ctx = createEngineContext();
-
-      const changed = runWorldTick(map, 1000, ctx);
-
-      expect(changed).toBe(true);
-      expect(tile.pendingAction).toBeNull();
-      expect(tile.hexobject).toBeNull();
-    });
-
-    it('reports changed:false when nothing is due', () => {
-      const map = buildRevealedMap(2, 1);
-      const ctx = createEngineContext();
-
-      const changed = runWorldTick(map, 0, ctx);
-
-      expect(changed).toBe(false);
-    });
+    seedFakeSession('hero-wm');
   });
 
   describe('dirty-tile tracking', () => {
@@ -266,22 +134,23 @@ describe('useWorldMapStore', () => {
   });
 });
 
-describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
+describe('useWorldMapStore: maps come from the server', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    worldStorage.clear();
+    seedFakeSession('hero-wm');
   });
 
-  it('builds silesia as a STATIC board via MapRegistry', () => {
+  it('shows silesia as the STATIC board the server built', () => {
     const worldStore = useWorldMapStore();
 
     worldStore.loadLocationMap('silesia');
 
     expect(worldStore.descriptor).toMatchObject({ kind: 'STATIC', id: 'silesia' });
     expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
+    expect(worldStore.worldLoadFailed).toBe(false);
   });
 
-  it('builds cave as a RECIPE board via MapRegistry', () => {
+  it('shows cave as the RECIPE board the server built', () => {
     const worldStore = useWorldMapStore();
 
     worldStore.loadLocationMap('cave');
@@ -290,70 +159,59 @@ describe('useWorldMapStore: board creation (C1/C2 wiring)', () => {
     expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
   });
 
-  it('rebuilds a saved STATIC board once its drawing hash no longer matches', () => {
-    const staleMapId = 'stale-silesia-id';
-    const staleTile = {
-      coordinates: { columnIndex: 0, rowIndex: 0 },
-      isRevealed: true,
-      hexobject: null,
-      resourceSpawner: null,
-      pendingAction: null,
-    };
-    worldStorage.setItem('hexoflat:world:index:v1', JSON.stringify({ silesia: staleMapId }));
-    worldStorage.setItem(
-      'hexoflat:world:map:v1:' + staleMapId,
-      JSON.stringify({
-        contentVersion: 1,
-        map: { name: 'stale', width: 1, height: 1, complexity: 0, config: [], tiles: [staleTile] },
-      }),
-    );
-    worldStorage.setItem(
-      'hexoflat:world:state:v1:' + staleMapId,
-      JSON.stringify({
-        contentVersion: 1,
-        heroCoordinates: null,
-        descriptor: { kind: 'STATIC', id: 'silesia', drawingHash: 'stale-hash' },
-      }),
-    );
-
-    const worldStore = useWorldMapStore();
-    worldStore.loadLocationMap('silesia', staleMapId);
-
-    expect(worldStore.descriptor).toMatchObject({ kind: 'STATIC', id: 'silesia' });
-    expect((worldStore.descriptor as { drawingHash?: string })?.drawingHash).not.toBe('stale-hash');
-    expect(worldStore.map?.tiles.length).toBeGreaterThan(1);
-  });
-
-  it('a reload inside the cave (bootstrapWorld with the saved mapId) gives the same board back', () => {
+  it('gives the same board back when the cave is loaded again', () => {
     const worldStore = useWorldMapStore();
 
     worldStore.loadLocationMap('cave');
-    const mapId = worldStore.currentMapId as string;
-    const descriptorAfterFirstLoad = worldStore.descriptor;
-
+    const mapId = worldStore.currentMapId;
+    const descriptor = worldStore.descriptor;
     worldStore.map = null;
     worldStore.descriptor = null;
-    worldStore.loadLocationMap('cave', mapId);
+    worldStore.loadLocationMap('cave');
 
-    expect(worldStore.descriptor).toEqual(descriptorAfterFirstLoad);
+    expect(worldStore.currentMapId).toBe(mapId);
+    expect(worldStore.descriptor).toEqual(descriptor);
+  });
+
+  it('never generates a map locally: no server document means a load failure and no map', () => {
+    const worldStore = useWorldMapStore();
+    forgetServerWorld('cave');
+
+    worldStore.loadLocationMap('cave');
+
+    expect(worldStore.worldLoadFailed).toBe(true);
+    expect(worldStore.map).toBeNull();
+    expect(worldStore.currentMapId).toBeNull();
+  });
+
+  it('retryWorldLoad fetches the documents again and loads the map', async () => {
+    const worldStore = useWorldMapStore();
+    forgetAllServerWorlds();
+    worldStore.loadLocationMap('camping');
+    expect(worldStore.worldLoadFailed).toBe(true);
+
+    await worldStore.retryWorldLoad();
+
+    expect(worldStore.worldLoadFailed).toBe(false);
+    expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
   });
 });
 
-describe('useWorldMapStore: dev board panel actions', () => {
+describe('useWorldMapStore: dev board panel actions (in-memory preview)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    worldStorage.clear();
+    seedFakeSession('hero-wm');
   });
 
-  it('devRegenerateDungeon discards the old mapId and builds a different board under a new one', () => {
+  it('devRegenerateDungeon builds a different board under the same server mapId', () => {
     const worldStore = useWorldMapStore();
     worldStore.loadLocationMap('cave');
-    const oldMapId = worldStore.currentMapId;
+    const mapId = worldStore.currentMapId;
     const oldDescriptor = worldStore.descriptor;
 
     worldStore.devRegenerateDungeon();
 
-    expect(worldStore.currentMapId).not.toBe(oldMapId);
+    expect(worldStore.currentMapId).toBe(mapId);
     expect(worldStore.descriptor).not.toEqual(oldDescriptor);
     expect(worldStore.map?.tiles.length).toBeGreaterThan(0);
   });
@@ -447,6 +305,6 @@ describe('respawnHeroAtCampingAction: the server already moved the hero', () => 
         },
       },
     );
-    expect(calls).toEqual(['close', 'install', 'go:camping,,true', 'log', 'route']);
+    expect(calls).toEqual(['close', 'install', 'go:camping', 'log', 'route']);
   });
 });

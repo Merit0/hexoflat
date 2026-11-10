@@ -16,11 +16,7 @@ import {
   sendWorldStep,
   type WorldCommandResult,
 } from '@/services/inventory/inventory-sync';
-import {
-  cachedWorldJson,
-  forgetServerWorld,
-  rememberServerWorld,
-} from '@/services/player/world-sync';
+import { cachedWorldJson, forgetServerWorld, cacheServerWorld } from '@/services/player/world-sync';
 
 export function readCachedWorld(locationKey: LocationKey): ServerWorld | null {
   const json = cachedWorldJson(locationKey);
@@ -222,8 +218,7 @@ export function installTravelledWorlds(result: WorldCommandResult): LocationKey 
   const entries = [travel, travel?.refreshed, ...(result.touched ?? [])];
   for (const entry of entries) {
     if (!entry) continue;
-    const world = entry.world as { mapId: string };
-    rememberServerWorld(entry.locationKey, world.mapId, JSON.stringify(entry.world));
+    cacheServerWorld(entry.locationKey, JSON.stringify(entry.world));
   }
   return travel ? (travel.locationKey as LocationKey) : null;
 }

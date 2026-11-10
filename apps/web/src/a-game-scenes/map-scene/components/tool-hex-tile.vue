@@ -376,9 +376,7 @@ async function executeAction() {
   const res = await worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
   const squadRejection = onSquad ? applySquadEvents(res.events) : null;
 
-  if (res.ok) {
-    worldMapStore.saveToStorage();
-  } else if (squadRejection ?? res.message) {
+  if (!res.ok && (squadRejection ?? res.message)) {
     flashDenied();
     heroToolStore.setActionMessage(squadRejection ?? res.message ?? '');
   }

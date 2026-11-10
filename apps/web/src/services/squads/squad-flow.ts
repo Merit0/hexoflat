@@ -52,7 +52,6 @@ export function applySquadEvents(events: DomainEvent[]): string | null {
   for (const event of events) rejection = applySquadEvent(event) ?? rejection;
   const world = useWorldMapStore();
   world.markAllTilesDirty();
-  world.saveToStorage();
   return rejection;
 }
 

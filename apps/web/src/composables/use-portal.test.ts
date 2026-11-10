@@ -1,4 +1,3 @@
-import { worldStorage } from '@/test-support/world-storage-shim';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { CAMP_PORTAL_SPOT } from '@hexoflat/engine/content/boards/camp-portal-spot';
@@ -8,7 +7,6 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { coordinateKey, getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { fakePlaceHero, fakeStoredWorldOf } from '@/test-support/fake-player-server';
 import { seedFakeSession } from '@/test-support/fake-session';
-import { readLocationMapIndex, readSavedMap } from '@/services/persistence/world-storage';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -34,15 +32,13 @@ function portalHexes(map: HexMapModel) {
 }
 
 function storedPortalHexes(locationKey: 'camping' | 'silesia') {
-  const mapId = readLocationMapIndex()[locationKey]!;
-  const saved = readSavedMap(mapId)!;
+  const saved = fakeStoredWorldOf(locationKey)!.map;
   return saved.tiles.filter((tile) => tile.hexobject?.hexobjectKey === PORTAL).length;
 }
 
 describe('usePortal', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    worldStorage.clear();
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
   });
 

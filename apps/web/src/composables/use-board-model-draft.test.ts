@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
+import { seedFakeSession } from '@/test-support/fake-session';
+import { BOARD_MODELS } from '@hexoflat/engine/content/boards/models/index';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useBoardModelDraft } from './use-board-model-draft';
 
 describe('useBoardModelDraft', () => {
   beforeEach(() => {
-    localStorage.clear();
     setActivePinia(createPinia());
+    seedFakeSession('hero-draft');
     useWorldMapStore().loadLocationMap('cave');
   });
 
@@ -64,9 +66,9 @@ describe('useBoardModelDraft', () => {
     const rockKey = model.rules.value.find((rule) => rule.ruleId === 'rocks');
     expect(rockKey?.placed).toBeGreaterThan(0);
 
-    const hovered = useWorldMapStore().map?.tiles.find(
-      (tile) => tile.hexobject?.hexobjectKey === 'rock',
-    );
+    const world = useWorldMapStore();
+    world.devRebuildFromRecipe(BOARD_MODELS.cave, panelStore.params);
+    const hovered = world.map?.tiles.find((tile) => tile.hexobject?.hexobjectKey === 'rock');
     panelStore.inspect(hovered!.coordinates);
 
     const stages = model.inspectedEntries.value.map((entry) => entry.stage);

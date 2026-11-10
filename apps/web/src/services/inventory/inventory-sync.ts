@@ -20,7 +20,7 @@ import {
   type ProjectedAggregate,
   type WorldCommandResponse,
 } from '@/services/player/player-socket';
-import { cacheServerWorld, enableServerWorlds, resetWorldSync } from '@/services/player/world-sync';
+import { cacheServerWorld, resetWorldSync } from '@/services/player/world-sync';
 import {
   flushExpedition,
   onExpeditionTakenOver,
@@ -330,10 +330,11 @@ async function loadWorldCache(): Promise<void> {
       { locationKey },
       { headers },
     );
-    cacheServerWorld(locationKey, (world as { mapId: string }).mapId, JSON.stringify(world));
+    cacheServerWorld(locationKey, JSON.stringify(world));
   }
-  enableServerWorlds();
 }
+
+export const reloadWorldCache = loadWorldCache;
 
 export interface WorldCommandResult {
   ok: boolean;

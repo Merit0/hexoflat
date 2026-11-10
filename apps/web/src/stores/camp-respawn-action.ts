@@ -2,7 +2,7 @@ import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 
 export interface CampRespawnHost {
-  goToLocation(locationKey: LocationKey, preferredMapId?: string, serverTravelled?: boolean): void;
+  goToLocation(locationKey: LocationKey): void;
 }
 
 export interface CampRespawnDeps {
@@ -20,7 +20,7 @@ export async function respawnHeroAtCampingAction(
 ): Promise<void> {
   deps.battle.close();
   const destination = deps.installTravel(result) ?? 'camping';
-  host.goToLocation(destination, undefined, true);
+  host.goToLocation(destination);
   deps.events.push('Battle', 'hero was defeated and returned to camping', 'BATTLE');
   if (deps.isViewingOtherWorldLocation(destination)) await deps.routeToLocation(destination);
 }

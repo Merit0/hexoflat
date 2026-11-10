@@ -94,7 +94,7 @@ export function usePortal() {
     if (!result.ok) return { ok: false, reason: result.code ?? 'NO_LOCATION' };
     worldStore.applyWorldResult(result);
     heroStore.knowledge = inventorySession.knowledge;
-    worldStore.saveToStorage(undefined, { synced: true });
+    worldStore.cacheServedWorld();
     useGameEventsStore().push(heroStore.hero.name, 'opened a portal', 'MAP');
     heroToolStore.stopTool();
     return { ok: true };
@@ -126,7 +126,7 @@ export function usePortal() {
       const result = await portalCommandOnServer(at, 'WORLD_PORTAL_ENTER');
       if (!result.ok) return { ok: false, reason: result.code ?? 'NO_PORTAL' };
       installTravelledWorlds(result);
-      worldStore.goToLocation(destination.to, undefined, true);
+      worldStore.goToLocation(destination.to);
       await routeToLocation(destination.to);
       const anchor = inventorySession.portal?.campHex ?? destination.arrivalNear;
       if (anchor) await playPortalExit(anchor);

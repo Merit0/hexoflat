@@ -4,7 +4,14 @@ import { coordinateKey, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useBattleStore } from '@/stores/battle-store';
+import { seedFakeSession } from '@/test-support/fake-session';
+import { fakePlaceHero } from '@/test-support/fake-player-server';
+import { ensurePresence } from '@/services/inventory/inventory-sync';
 import { crossExitIfStanding } from './use-board-crossing';
+
+vi.mock('@/services/player/player-socket', async () =>
+  (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
+);
 
 const { routeToLocationMock } = vi.hoisted(() => ({ routeToLocationMock: vi.fn() }));
 
@@ -20,11 +27,19 @@ function exitTile(side: 'N' | 'S') {
   return tile;
 }
 
+async function standOn(side: 'N' | 'S') {
+  const world = useWorldMapStore();
+  const at = { ...exitTile(side).coordinates };
+  await ensurePresence({ locationKey: world.currentLocationKey, mapId: world.currentMapId! });
+  fakePlaceHero(at);
+  useHeroStore().heroCoordinates = at;
+}
+
 describe('crossExitIfStanding', () => {
   beforeEach(() => {
-    localStorage.clear();
     routeToLocationMock.mockReset();
     setActivePinia(createPinia());
+    seedFakeSession('hero-cross');
     useWorldMapStore().loadLocationMap('silesia');
   });
 
@@ -38,7 +53,7 @@ describe('crossExitIfStanding', () => {
 
   it('carries a hero standing on the north exit to silesia-north, beside its south exit', async () => {
     const world = useWorldMapStore();
-    useHeroStore().heroCoordinates = { ...exitTile('N').coordinates };
+    await standOn('N');
 
     expect(await crossExitIfStanding()).toBe(true);
 
@@ -46,21 +61,20 @@ describe('crossExitIfStanding', () => {
     expect(routeToLocationMock).toHaveBeenCalledWith('silesia-north');
     const hero = useHeroStore().heroCoordinates!;
     expect(hexDistance(hero, exitTile('S').coordinates)).toBe(1);
-    expect(world.pendingArrivalSide).toBeNull();
   });
 
   it('brings the hero back beside the north exit and remembers the way it left', async () => {
     const world = useWorldMapStore();
     const hero = useHeroStore();
-    hero.heroCoordinates = { ...exitTile('N').coordinates };
+    await standOn('N');
     await crossExitIfStanding();
 
-    hero.heroCoordinates = { ...exitTile('S').coordinates };
+    await standOn('S');
     expect(await crossExitIfStanding()).toBe(true);
 
     expect(world.currentLocationKey).toBe('silesia');
-    expect(hexDistance(hero.heroCoordinates, exitTile('N').coordinates)).toBe(1);
-    expect(coordinateKey(hero.heroCoordinates)).not.toBe(coordinateKey(exitTile('N').coordinates));
+    expect(hexDistance(hero.heroCoordinates!, exitTile('N').coordinates)).toBe(1);
+    expect(coordinateKey(hero.heroCoordinates!)).not.toBe(coordinateKey(exitTile('N').coordinates));
   });
 
   it('keeps the hero in place while a battle is open', async () => {
@@ -78,7 +92,7 @@ describe('crossExitIfStanding', () => {
     expect(world.currentLocationKey).toBe('silesia');
   });
 
-  it('a sealed neighbour changes nothing: hero stays on the exit, no arrival side, no routing', async () => {
+  it('a sealed neighbour changes nothing: hero stays on the exit, no routing', async () => {
     const world = useWorldMapStore();
     const hero = useHeroStore();
     const onExit = { ...exitTile('N').coordinates };
@@ -88,7 +102,6 @@ describe('crossExitIfStanding', () => {
     expect(await crossExitIfStanding()).toBe(false);
 
     expect(hero.heroCoordinates).toEqual(onExit);
-    expect(world.pendingArrivalSide).toBeNull();
     expect(world.currentLocationKey).toBe('silesia');
     expect(routeToLocationMock).not.toHaveBeenCalled();
   });

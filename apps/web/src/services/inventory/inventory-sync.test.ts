@@ -9,7 +9,7 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type { PlayerCommandResponse, PlayerEnvelope } from '@/services/player/player-socket';
 import { inventorySession, resetInventorySession } from './inventory-session';
-import { inventoryStateFromStores, withStoreInventory } from './inventory-bridge';
+import { inventoryStateFromStores } from './inventory-bridge';
 import { moveItem } from './stash-transfer';
 
 vi.mock('@/services/player/expedition-sync', () => ({
@@ -168,25 +168,6 @@ describe('inventory sync with the server', () => {
     inventory.putToInventory(K.AXE, 1);
     await settleInventorySync();
     expect(sent).toHaveLength(1);
-  });
-
-  it('sends nothing for a change the client made to the inventory outside a command', async () => {
-    const { inventory } = await live();
-    inventory.putToInventory(K.HEALTH_BOTTLE, 2);
-    await settleInventorySync();
-    sent.length = 0;
-
-    const state = {} as never;
-    withStoreInventory(HERO, state, (s) => {
-      s.inventory = {
-        ...s.inventory!,
-        revision: s.inventory!.revision + 3,
-        bag: s.inventory!.bag.map((cell, i) => (i === 0 ? null : cell)),
-      };
-    });
-    await settleInventorySync();
-
-    expect(sent).toHaveLength(0);
   });
 
   it('stops saving and says so when another tab takes the hero over', async () => {

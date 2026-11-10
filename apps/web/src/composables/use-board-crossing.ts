@@ -1,8 +1,7 @@
 import { applyCommand } from '@hexoflat/engine';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { BoardCrossing } from '@hexoflat/engine/hero-movement/board-crossing';
-import { portalClosedEvents, portalLocation } from '@/services/world/portal-service';
-import { isServerWorldMode } from '@/services/player/world-sync';
+import { portalLocation } from '@/services/world/portal-service';
 import { installTravelledWorlds, travelOnServer } from '@/services/world/served-world';
 import { routeToLocation } from '@/services/world/location-navigator';
 import { useHeroStore } from '@/stores/hero-store';
@@ -29,26 +28,18 @@ export async function crossExitIfStanding(): Promise<boolean> {
   if (!exited) return false;
 
   const crossing = exited.payload as BoardCrossing;
-  const serverMode = isServerWorldMode();
-  if (serverMode) {
-    const result = await travelOnServer(
-      {
-        locationKey: worldStore.currentLocationKey,
-        mapId: worldStore.currentMapId ?? '',
-        from: position,
-      },
-      { kind: 'exit' },
-    );
-    if (!result.ok) return false;
-    installTravelledWorlds(result);
-  }
-  if (!serverMode) {
-    heroStore.setPortal(hero.portal ?? null);
-    heroStore.applyPortalClosures(portalClosedEvents(events));
-  }
+  const result = await travelOnServer(
+    {
+      locationKey: worldStore.currentLocationKey,
+      mapId: worldStore.currentMapId ?? '',
+      from: position,
+    },
+    { kind: 'exit' },
+  );
+  if (!result.ok) return false;
+  installTravelledWorlds(result);
   heroStore.heroCoordinates = { ...hero.coordinates };
-  worldStore.pendingArrivalSide = serverMode ? null : crossing.arrivalSide;
-  worldStore.goToLocation(crossing.to, undefined, serverMode);
+  worldStore.goToLocation(crossing.to);
   await routeToLocation(crossing.to);
   return true;
 }

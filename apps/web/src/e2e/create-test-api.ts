@@ -59,7 +59,7 @@ async function placeHexobjectOnServer(
   for (const coordinates of applyTileDiffs(map, placed.tileDiffs, Date.now())) {
     worldStore.markTileDirty(coordinates);
   }
-  worldStore.saveToStorage(undefined, { synced: true });
+  worldStore.cacheServedWorld();
   return placed.coordinates;
 }
 

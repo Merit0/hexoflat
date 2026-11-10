@@ -30,12 +30,7 @@ import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import { isEnterableTile } from '@hexoflat/engine/hero-movement/move-planner';
 import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import { portalLinkSchema, type PortalLink } from '@hexoflat/engine/portal/portal-state';
-import {
-  applyPortalClosedOnHost,
-  portalClosedEvents,
-  portalLocation,
-  type PortalClosedPayload,
-} from '@/services/world/portal-service';
+import { portalLocation } from '@/services/world/portal-service';
 import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { readBlob, writeBlob } from '@/services/persistence/world-blob-store';
@@ -54,7 +49,6 @@ import {
 import { loadServerBattleView } from '@/services/battle/battle-server';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
-import { isServerWorldMode } from '@/services/player/world-sync';
 import { buildClientHint } from '@/services/world/served-world';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useGameEventsStore } from '@/stores/game-events-store';
@@ -94,10 +88,6 @@ export const useHeroStore = defineStore('hero', {
     knowledge: null as KnowledgeState | null,
     knowledgeError: false,
     nav: defaultNav(),
-    // Where the hero stands on the currently loaded map, and whether it is
-    // mid-step. Persisted inside world-map-store's per-map state blob (the
-    // same seam the battle snapshot uses) — see
-    // world-map-store.ts's saveToStorage()/loadFromStorage().
     heroCoordinates: null as IHexCoordinates | null,
     isHeroMoving: false,
     extraShields: 0,
@@ -170,7 +160,7 @@ export const useHeroStore = defineStore('hero', {
         engineContext: world.buildEngineContext(),
         clientHint: () => buildClientHint(useHeroToolStore()),
         applyWorldResult: (result: WorldCommandResult) => world.applyWorldResult(result),
-        travelTo: (locationKey: LocationKey) => world.goToLocation(locationKey, undefined, true),
+        travelTo: (locationKey: LocationKey) => world.goToLocation(locationKey),
         hero: this.engineHeroState(this.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }),
         location: portalLocation(world.currentLocationKey, world.currentMapId),
         isCurrent: () =>
@@ -269,9 +259,7 @@ export const useHeroStore = defineStore('hero', {
         }
         if (heroId === this.hero.id) {
           this.knowledge = result.state;
-          if (!isServerWorldMode()) this.setPortal(result.hero.portal ?? null);
         }
-        if (!isServerWorldMode()) this.applyPortalClosures(portalClosedEvents(result.events));
         return result.events;
       } catch {
         this.knowledgeError = true;
@@ -281,16 +269,6 @@ export const useHeroStore = defineStore('hero', {
 
     saveNavToStorage() {
       writeBlob(HERO_NAV_KEY, JSON.stringify(this.nav));
-    },
-
-    applyPortalClosures(closures: PortalClosedPayload[]) {
-      const world = useWorldMapStore();
-      applyPortalClosedOnHost(world, world.map as HexMapModel | null, closures);
-    },
-
-    setPortal(portal: PortalLink | null) {
-      this.portal = portal;
-      this.saveProgressToStorage();
     },
 
     saveProgressToStorage() {
@@ -339,14 +317,6 @@ export const useHeroStore = defineStore('hero', {
 
     rememberPosition(mapId: string, pos: IHexCoordinates) {
       this.nav.positionByMapId[mapId] = { ...pos };
-      this.saveNavToStorage();
-    },
-
-    forgetPosition(mapId: string) {
-      delete this.nav.positionByMapId[mapId];
-      if (this.nav.locationMapId === mapId) {
-        this.nav.locationMapId = null;
-      }
       this.saveNavToStorage();
     },
 
@@ -498,7 +468,6 @@ export const useHeroStore = defineStore('hero', {
 
       if (heroToolStore.isLocked) {
         heroToolStore.cancelLockedAction('MOVE');
-        worldStore.saveToStorage();
       }
 
       this.isHeroMoving = true;
@@ -531,7 +500,7 @@ export const useHeroStore = defineStore('hero', {
               coord.rowIndex === ambushAt.rowIndex);
           const engagement = stepped.ambush ?? plan.ambush;
           if (spotted && engagement) this.engageAmbush(engagement);
-          worldStore.saveToStorage(undefined, { synced: true });
+          worldStore.cacheServedWorld();
 
           if (worldStore.currentMapId && this.heroCoordinates) {
             this.rememberPosition(worldStore.currentMapId, this.heroCoordinates);

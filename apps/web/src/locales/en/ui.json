@@ -350,8 +350,11 @@
       "NOT_YOUR_PORTAL": "This portal belongs to another hero"
     }
   },
+  "world": {
+    "loadError": "Could not load the world from the server. Check the connection and try again.",
+    "retry": "Try again"
+  },
   "battle": {
-    "legacyDismissed": "A battle from an older version was dismissed.",
     "waiting": "Waiting for the server…",
     "connectionLost": "Connection lost. The battle resumes when you reconnect.",
     "banner": {

@@ -33,7 +33,7 @@ export interface ServerWorldHost {
   currentLocationKey: LocationKey;
   getTileAt(coordinates: IHexCoordinates): HexTileModel | null;
   markTilesDirty(coordinates: IHexCoordinates[]): void;
-  saveToStorage(mapId?: string, options?: { synced?: boolean }): void;
+  cacheServedWorld(): void;
 }
 
 export function applyWorldResultAction(
@@ -65,7 +65,7 @@ export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldH
     if (!result.ok) serverTickPausedUntil = Date.now() + SERVER_TICK_BACKOFF_MS;
     else if (host.currentMapId === mapId) {
       applyWorldResultAction(host, hero, result);
-      host.saveToStorage(undefined, { synced: true });
+      host.cacheServedWorld();
     }
   } finally {
     serverTicking = false;
