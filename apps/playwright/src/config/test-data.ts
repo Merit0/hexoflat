@@ -29,6 +29,7 @@ export const HexobjectKeys = {
   pickaxe: 'pickaxe',
   shield: 'shield',
   fireplace: 'fireplace',
+  traderStall: 'trader-stall',
   returnPortal: 'return-portal',
   skeletonPack: 'skeleton-pack',
   boneCourt: 'bone-court',

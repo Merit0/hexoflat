@@ -78,6 +78,7 @@ const baseContentFields = {
   // rest-and-heal flow — see action-starters/finishers-registry.ts's USE
   // handlers. No hexobjectKey check needed to add a new one.
   heal: healSchema.optional(),
+  coinPrice: z.number().int().positive().optional(),
 };
 
 const resourceSchema = z.object({
@@ -227,6 +228,37 @@ export const ContentDefinitionSchema = z.discriminatedUnion('groupType', [
 ]);
 
 export type TContentDefinition = z.infer<typeof ContentDefinitionSchema>;
+
+const traderStockRangeSchema = z
+  .object({
+    key: hexobjectKeySchema,
+    min: z.number().int().positive(),
+    max: z.number().int().positive(),
+  })
+  .strict();
+
+export const traderDefinitionSchema = z
+  .object({
+    key: z.string().regex(/^[a-z0-9-]+$/),
+    title: z.string(),
+    line: z.string(),
+    portraitPath: z.string(),
+    stallHexobjectKey: hexobjectKeySchema,
+    sellRate: z
+      .object({ num: z.number().int().positive(), den: z.number().int().positive() })
+      .strict(),
+    goodsSlots: z.number().int().positive(),
+    buybackSlots: z.number().int().positive(),
+    refresh: z
+      .object({ baseWill: z.number().int().positive(), factor: z.number().int().min(1) })
+      .strict(),
+    guaranteed: z.array(traderStockRangeSchema),
+    pool: z.array(traderStockRangeSchema.extend({ weight: z.number().int().positive() }).strict()),
+    rolls: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type TTraderDefinition = z.infer<typeof traderDefinitionSchema>;
 
 export type THexYieldKey = 'wood' | 'coins' | 'stone';
 export type THexYields = Partial<Record<THexYieldKey, number>> & {

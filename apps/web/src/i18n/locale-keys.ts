@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { CONTENT } from '@hexoflat/engine';
+import { CONTENT, TRADERS } from '@hexoflat/engine';
 import { SKILL_BRANCHES, SKILL_IDS } from '@hexoflat/engine/skills/skill-content';
 import {
   BATTLE_CREATURES,
@@ -49,6 +49,11 @@ export function collectContentLocaleKeys(): string[] {
         if (action.label.startsWith(CONTENT_KEY_PREFIX)) keys.add(action.label);
       }
     }
+  }
+
+  for (const trader of Object.values(TRADERS)) {
+    keys.add(trader.title);
+    keys.add(trader.line);
   }
 
   const battleDefs: { title: string; tableRule: string; id: string }[] = [

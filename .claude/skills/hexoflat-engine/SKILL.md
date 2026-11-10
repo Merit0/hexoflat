@@ -57,6 +57,12 @@ Will capacity (W0, 2026-11-10): a new hero starts full at 50/50 (`KNOWLEDGE_RULE
 
 Rarity is `{ kind: ERarityKind, boss }` printed on tool/equipment/loot content. Read it through `DEFAULT_RARITY` and `rarityTone()` in `src/content/rarity-rules.ts` — never re-declare a fallback. Write rarity explicitly on every new item.
 
+## Coin prices and traders (SH0 of `docs/shop/SHOP-PLAN.md`, 2026-11-10)
+
+- `coinPrice` (int ≥ 1) is a top-level content field, read only through `coinPriceOf(key)` (`null` = not for sale). It is Coins, `usePrice` is Will — never mix them. Every LOOT/TOOL/EQUIPMENT key has a price except `coins` and `hand`, nothing outside those groups has one, and **every price is divisible by 4** (future ½ and ¼ discounts); `content/coin-price.test.ts` pins this and the approved table, so a new bag item needs a price.
+- `TRADERS` (`content/traders.content.ts`, `TTraderKey`, `TRADER_KEYS`) is data: i18n `title`/`line` (`content.traders.<key>.*`, collected by web `collectContentLocaleKeys`), `stallHexobjectKey` (the only link stall → trader), `sellRate: { num, den }` integers (sell = `max(1, floor(price × num / den))`, no floats), goods/buyback slots, `refresh: { baseWill, factor }`, `guaranteed` + weighted `pool` + `rolls`. `validateContent` also runs `traderFailures` (strict schema, unique keys, prices, `min ≤ max ≤ maxStack`, `guaranteed + rolls ≤ goodsSlots`, `rolls ≤ pool`).
+- Camp objects `trader-stall` (OPEN with the hand, 0 Will) and `training-grounds` (not interactable, `isLocked`, no actions) are drawn in `CAMPING_BOARD` (`S` r09 c10, `R` r05 c10). The server has **no** drawing-hash rebuild of a stored static map (B11 died with the client `world-storage.ts`), so `deserializeWorld` calls `installCampFacilities(map, hero)` (`world/camp-facilities.ts`) for `camping`: each key in `CAMP_FACILITY_KEYS` missing from the map is placed on its drawn hex when that hex is empty and the hero is not on it (additive, like `installCampBook`; same `mapId`). A new camp object that old saves must get goes into `CAMP_FACILITY_KEYS`.
+
 ## Randomness
 
 `Math.random()` is banned in engine rules. Rules take an injected generator:

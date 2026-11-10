@@ -12,7 +12,6 @@ import {
   projectDiffsForClient,
   projectWorldForClient,
   serializeWorld,
-  serializedWorldSchema,
   stepWorld,
   tickWorld,
   type BattleStep,
@@ -590,10 +589,8 @@ export class WorldService {
       await lockExpedition(tx, expeditionId);
       const index = await readIndex(tx, expeditionId);
       const known = index[locationKey];
-      const existing = known ? await readServerDocument(tx, expeditionId, worldKey(known)) : null;
-      if (existing) {
-        return projectWorldForClient(serializedWorldSchema.parse(JSON.parse(existing)));
-      }
+      const existing = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
+      if (existing) return clientWorld(existing);
       const mapId = randomUUID();
       const created = createServerWorld(
         locationKey,

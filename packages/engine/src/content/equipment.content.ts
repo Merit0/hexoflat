@@ -21,6 +21,7 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
     title: 'Guard Sword',
     subtitle: 'Weapon',
     description: 'Guard Sword. A balanced melee weapon for close combat.',
+    coinPrice: 500,
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/sword-hex.png',
     equipment: {
@@ -46,6 +47,7 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
     title: 'Field Shield',
     subtitle: 'Shield',
     description: 'Field Shield. Meant to catch and redirect a hit in melee.',
+    coinPrice: 40,
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-equipment/hex-weapons/hex-shield/shield-token-image.png',
     equipment: {

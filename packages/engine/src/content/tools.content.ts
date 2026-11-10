@@ -14,6 +14,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
     subtitle: 'Tool',
     description:
       'This is the Axe! Use it to cut the trees. This tool can make damage! It is very durable.',
+    coinPrice: 48,
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/axe-token.png',
     tool: {
@@ -34,6 +35,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
     subtitle: 'Tool',
     description:
       'This is the Pickaxe! Use it to mine the resources. This tool can make damage! It is very durable.',
+    coinPrice: 48,
     collision: EHexCollision.SOLID,
     spritePath: `/hex-assets/hex-tools/${HEXOBJECT_KEYS.PICKAXE}-token-image.png`,
     tool: {

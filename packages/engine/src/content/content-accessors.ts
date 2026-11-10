@@ -93,6 +93,12 @@ export function usePriceOf(key: THexobjectKey): number | null {
   return content.actions?.[EHexActionType.USE]?.willCost ?? null;
 }
 
+export function coinPriceOf(key: THexobjectKey): number | null {
+  const content = CONTENT[key];
+  if (!content) throw new Error(`Unknown Hexobject key: [ ${key} ]`);
+  return content.coinPrice ?? null;
+}
+
 export function getTags(key: THexobjectKey): readonly ObjectTag[] {
   return CONTENT[key]?.tags ?? [];
 }
