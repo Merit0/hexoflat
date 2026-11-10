@@ -966,3 +966,10 @@ Gateway тримає `heroId → connectionId`. Нове підключення 
 - Тест `dev-battlefield-isolation.test.ts`: у сторінки, мосту й `dev-battlefield.ts` немає імпортів світу/інвентаря/сервера/`@/api/client`; повний бій у dev-екземплярі не чіпає `useBattleStore()` і `apiClient`. Маршрут і імпорт лише під `import.meta.env.DEV`, тест `router/dev-route.test.ts` (з B4).
 - Залишок: UI-стан (`ui` у `use-battle-view`, режим, обрана рука) лишається модульним `reactive`, спільним для гри й dev-сторінки; це лише вигляд, не стан бою.
 - Web 2332 тести, typecheck і lint без помилок.
+
+## Результати D4b-4, крок B5a (2026-11-10): `combat/battle-flow.spec.ts`
+
+- Перший прогін (серверні фікстури): 18 з 22 зелених, 4 падіння з одної причини: `getBattleSnapshot().wounds` тепер порожній (проєкція ховає `wounds`, це дані рушія, вони й раніше не малювались).
+- Виправлено у `BattleFlowFeature` (`apps/playwright/src/features/world/battle-flow.feature.ts`), без змін застосунку: перевірки «рана на герої» і «наслідок збігається з раною» замінено на видиму зміну здоров'я (`hp` героя впав, `lost >= 0`, ворог не здоровіший за початок). **Слабшає одна перевірка:** раніше тест зв'язував «є рана» з «втрачено здоров'я» (`wounds.length === 0 ? lost === 0 : lost > 0`), тепер лише `lost >= 0`; точну перевірку блоку можна повернути, якщо додати в проєкцію видиме поле (рішення Олега).
+- Повторний прогін: **22 з 22**, 1.5 хв (`E2E_PRE_PUSH=1 sh scripts/pre-push-e2e.sh e2e/combat/battle-flow.spec.ts`, окремий API на 3101 з `HEXOFLAT_E2E_FIXTURES=1`).
+- Лишається B5b (`squad-actions.spec.ts`, `dungeon-fog.spec.ts`) і B5c (`board`, `hero`, `camp` як регресія); у цьому чаті не запускались.

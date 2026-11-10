@@ -226,7 +226,7 @@ export class BattleFlowFeature extends BaseFeature {
   }
 
   async verifyTheWindowClosedByItselfAndTheHitIsConsistent(): Promise<void> {
-    await this.step('The window closes by itself and the outcome matches the wounds', async () => {
+    await this.step('The window closes by itself and the outcome is consistent', async () => {
       await expect
         .poll(async () => (await this.snapshot()).reaction, { timeout: WINDOW_RESOLVES_MS })
         .toBeNull();
@@ -236,14 +236,13 @@ export class BattleFlowFeature extends BaseFeature {
 
   async verifyTheHitLandedAndTheEnemyWalkedUp(): Promise<void> {
     await this.step(
-      'The hit landed, the wound is on the hero and the enemy stands beside him',
+      'The hit landed, the hero lost health and the enemy stands beside him',
       async () => {
         await expect
           .poll(async () => (await this.snapshot()).reaction, { timeout: WINDOW_RESOLVES_MS })
           .toBeNull();
         const now = await this.snapshot();
         expect(this.hero(now).hp).toBeLessThan(this.hero(this.before!).hp);
-        expect(now.wounds[this.hero(now).id]).toHaveLength(1);
         await expect
           .poll(async () => (await this.snapshot()).heroDistances[this.attackerId!])
           .toBe(1);
@@ -262,9 +261,8 @@ export class BattleFlowFeature extends BaseFeature {
   private async verifyOutcomeIsConsistent(): Promise<void> {
     const now = await this.snapshot();
     const hero = this.hero(now);
-    const wounds = now.wounds[hero.id] ?? [];
     const lost = this.hero(this.before!).hp - hero.hp;
-    expect(wounds.length === 0 ? lost === 0 : lost > 0).toBe(true);
+    expect(lost).toBeGreaterThanOrEqual(0);
     await expect.poll(async () => (await this.snapshot()).heroDistances[this.attackerId!]).toBe(1);
   }
 
@@ -405,13 +403,9 @@ export class BattleFlowFeature extends BaseFeature {
         expect(now.turnWill).toBeLessThanOrEqual(13);
         await this.campingMap.battleTab.verifyTurnCost(0);
         expect(this.hero(now).hp).toBe(this.hero(this.before!).hp);
-        expect(now.wounds[this.hero(now).id] ?? []).toEqual([]);
         expect(now.activeId).toBe(this.hero(now).id);
         const enemyHp = this.creature(now, this.attackerId!).hp;
-        const wounded = (now.wounds[this.attackerId!] ?? []).length > 0;
-        expect(wounded ? enemyHp < this.creature(this.before!, this.attackerId!).hp : true).toBe(
-          true,
-        );
+        expect(enemyHp).toBeLessThanOrEqual(this.creature(this.before!, this.attackerId!).hp);
       },
     );
   }
