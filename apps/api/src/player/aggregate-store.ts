@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import {
   AGGREGATES,
   AGGREGATE_KINDS,
@@ -56,6 +56,10 @@ function toLoaded(rows: readonly (typeof heroAggregates.$inferSelect)[]): Loaded
   return loaded;
 }
 
+function lockOrder() {
+  return sql`case ${heroAggregates.kind} when 'progress' then 0 when 'inventory' then 1 else 2 end`;
+}
+
 export async function loadAggregatesForUpdate(
   tx: Tx,
   heroId: string,
@@ -65,7 +69,7 @@ export async function loadAggregatesForUpdate(
     .select()
     .from(heroAggregates)
     .where(and(eq(heroAggregates.heroId, heroId), inArray(heroAggregates.kind, [...kinds])))
-    .orderBy(asc(heroAggregates.kind))
+    .orderBy(lockOrder())
     .for('update');
   return toLoaded(rows);
 }

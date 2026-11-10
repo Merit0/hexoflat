@@ -6,8 +6,10 @@ import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
 import { AppModule } from './app.module';
 import { corsOptions } from './cors';
+import { assertE2eFixturesSafe } from './common/e2e-fixtures';
 
 async function bootstrap() {
+  assertE2eFixturesSafe();
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ bodyLimit: 8 * 1024 * 1024 }),

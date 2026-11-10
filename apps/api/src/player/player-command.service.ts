@@ -33,7 +33,11 @@ import {
   type LoadedAggregates,
   type Tx,
 } from './aggregate-store';
-import { clearExpeditionBlobs } from '../expedition/expedition-store';
+import {
+  clearExpeditionBlobs,
+  ensureExpedition,
+  readServerDocument,
+} from '../expedition/expedition-store';
 import { ledgerEntriesFor } from './item-ledger';
 import {
   MAX_COMMAND_BYTES,
@@ -54,6 +58,15 @@ interface LockedRun {
   expectedRevision: number | null;
   kinds: readonly TAggregateKind[];
   run: (aggregates: PlayerAggregates) => PlayerCommandOutcome;
+  blockedBy?: (tx: Tx, loaded: LoadedAggregates) => Promise<string | null>;
+}
+
+async function battleOpen(tx: Tx, expeditionId: string, loaded: LoadedAggregates) {
+  const mapId = loaded.progress?.state.presence?.mapId;
+  if (!mapId) return null;
+  const raw = await readServerDocument(tx, expeditionId, `srv-world:${mapId}`);
+  const held = raw ? (JSON.parse(raw) as { battle?: unknown }) : null;
+  return held?.battle ? 'BATTLE_OPEN' : null;
 }
 
 function projectAll(loaded: LoadedAggregates): ProjectedAggregates {
@@ -113,6 +126,8 @@ export class PlayerCommandService {
     }
 
     const devGrantAllowed = process.env.NODE_ENV !== 'production' || hero.isSandbox;
+    const guarded = kinds.includes('inventory') || command.type === 'DEV_SET_HEALTH';
+    const expeditionId = guarded ? await ensureExpedition(this.db, userId, heroId) : null;
     return this.db.transaction((tx) =>
       this.runLocked(tx, {
         userId,
@@ -123,6 +138,9 @@ export class PlayerCommandService {
         aggregateKind: aggregate,
         expectedRevision,
         kinds,
+        blockedBy: expeditionId
+          ? (locked, loaded) => battleOpen(locked, expeditionId, loaded)
+          : undefined,
         run: (aggregates) =>
           executePlayerCommand(aggregates, command, {
             devGrantAllowed,
@@ -287,6 +305,18 @@ export class PlayerCommandService {
         commandId,
         result: 'conflict',
         code: 'REVISION_CONFLICT',
+        events: [],
+        aggregates: projectAll(loaded),
+      };
+    }
+
+    const blocked = await input.blockedBy?.(tx, loaded);
+    if (blocked) {
+      await journal('rejected', [], blocked, null);
+      return {
+        commandId,
+        result: 'rejected',
+        code: blocked,
         events: [],
         aggregates: projectAll(loaded),
       };

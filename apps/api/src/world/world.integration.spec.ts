@@ -14,7 +14,7 @@ import {
   readServerDocument,
   writeServerDocument,
 } from '../expedition/expedition-store';
-import { createTestKit, type TestKit } from '../player/player-test-kit';
+import { createTestKit, envelope, type TestKit } from '../player/player-test-kit';
 import { WorldService, type WorldResponse } from './world.service';
 
 const dbAvailable = inject('dbAvailable');
@@ -567,10 +567,216 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     ).rejects.toMatchObject({ code: 'INVALID_COMMAND' });
   });
 
-  it('does not serve the battle command until the server runs battles', async () => {
-    const mine = await kit.newPlayer();
-    await expect(
-      send(mine.userId, mine.heroId, 'WORLD_BATTLE', { kind: 'start' }),
-    ).rejects.toMatchObject({ code: 'UNKNOWN_COMMAND' });
+  async function openBattle() {
+    const { userId, heroId } = await kit.newPlayer();
+    await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
+    await enter(userId, heroId, 'cave');
+    const { spot, expeditionId, mapId } = await placeBesideHero(
+      userId,
+      heroId,
+      HEXOBJECT_KEYS.SKELETON_PACK,
+    );
+    const attack = await send(userId, heroId, 'WORLD_ACTION', {
+      coordinates: spot,
+      actionType: EHexActionTypeForTests.ATTACK,
+      toolKey: HEXOBJECT_KEYS.HAND,
+    });
+    expect(attack.result).toBe('applied');
+    const start = await send(userId, heroId, 'WORLD_BATTLE', { kind: 'start' });
+    return { userId, heroId, expeditionId, mapId, attack, start };
+  }
+
+  const storedWorld = async (expeditionId: string, mapId: string) =>
+    deserializeWorld(
+      JSON.parse((await readServerDocument(kit.db, expeditionId, `srv-world:${mapId}`))!),
+      0,
+    );
+
+  it('starts a battle on the server and never sends its secrets to the client', async () => {
+    const { start, expeditionId, mapId } = await openBattle();
+    expect(start.result).toBe('applied');
+    expect(start.steps).toHaveLength(1);
+    expect(start.steps![0].battle).toMatchObject({ viewer: 'heroes' });
+    const text = JSON.stringify(start);
+    for (const secret of ['"seed"', '"taskHistory"', '"wounds"', '"turnClockMs"']) {
+      expect(text).not.toContain(secret);
+    }
+    const held = await storedWorld(expeditionId, mapId);
+    expect(held.battle).not.toBeNull();
+    expect(held.battle!.seed.length).toBeGreaterThan(0);
+  });
+
+  it('resumes a battle after a reload and shows only the projection', async () => {
+    const { userId, heroId, start, expeditionId, mapId } = await openBattle();
+    const held = await storedWorld(expeditionId, mapId);
+    const snap = (await world.snapshot(userId, heroId)) as {
+      battle: unknown;
+      battleView: { activeId: string; viewer: string } | null;
+      serverNowMs: number;
+    };
+    expect(snap.battle).toBeNull();
+    expect(snap.battleView?.viewer).toBe('heroes');
+    expect(snap.battleView?.activeId).toBe(start.steps![0].battle!.activeId);
+    expect(snap.serverNowMs).toBeGreaterThan(0);
+    expect(JSON.stringify(snap)).not.toContain(held.battle!.seed);
+  });
+
+  it('answers a repeated command from the journal and refuses a hero action in an enemy turn', async () => {
+    const { userId, heroId } = await openBattle();
+    let view = ((await world.snapshot(userId, heroId)) as { battleView: { activeId: string } })
+      .battleView;
+    for (let i = 0; i < 30 && !view.activeId.startsWith('skeleton'); i += 1) {
+      await send(userId, heroId, 'WORLD_BATTLE', {
+        kind: 'hero',
+        action: { kind: 'end-turn' },
+      });
+      view = ((await world.snapshot(userId, heroId)) as { battleView: { activeId: string } })
+        .battleView;
+    }
+    const refused = await send(userId, heroId, 'WORLD_BATTLE', {
+      kind: 'hero',
+      action: { kind: 'end-turn' },
+    });
+    expect(refused).toMatchObject({ result: 'rejected', code: 'NOT_YOUR_TURN' });
+
+    const commandId = randomUUID();
+    const revision = await progressRevision(userId, heroId);
+    const first = await send(
+      userId,
+      heroId,
+      'WORLD_BATTLE',
+      { kind: 'run-enemy-turn' },
+      { commandId, revision },
+    );
+    expect(first.result).toBe('applied');
+    const again = await send(
+      userId,
+      heroId,
+      'WORLD_BATTLE',
+      { kind: 'run-enemy-turn' },
+      { commandId, revision },
+    );
+    expect(again.replayed).toBe(true);
+    const later = (await world.snapshot(userId, heroId)) as {
+      battleView: { activeId: string; round: number };
+    };
+    const once = first.steps!.at(-1)!.battle!;
+    expect(later.battleView.round).toBeGreaterThanOrEqual(once.round);
+  });
+
+  it('plays an overdue enemy turn exactly once when the player comes back', async () => {
+    const { userId, heroId, expeditionId, mapId } = await openBattle();
+    for (let i = 0; i < 30; i += 1) {
+      const view = ((await world.snapshot(userId, heroId)) as { battleView: { activeId: string } })
+        .battleView;
+      if (view.activeId.startsWith('skeleton')) break;
+      await send(userId, heroId, 'WORLD_BATTLE', { kind: 'hero', action: { kind: 'end-turn' } });
+    }
+    const held = await storedWorld(expeditionId, mapId);
+    expect(held.battle!.activeId.startsWith('skeleton')).toBe(true);
+    held.battle!.turnClockMs = 1;
+    await kit.db.transaction((tx) =>
+      writeServerDocument(
+        tx,
+        expeditionId,
+        `srv-world:${mapId}`,
+        JSON.stringify(serializeWorld(held)),
+      ),
+    );
+    const before = await progressRevision(userId, heroId);
+    const first = (await world.snapshot(userId, heroId)) as { serverNowMs: number };
+    const played = await progressRevision(userId, heroId);
+    expect(played).toBe(before + 1);
+    const after = await storedWorld(expeditionId, mapId);
+    expect(after.battle!.turnClockMs).toBeGreaterThanOrEqual(first.serverNowMs - 5_000);
+    await world.snapshot(userId, heroId);
+    expect(await progressRevision(userId, heroId)).toBe(played);
+  });
+
+  it('keeps the inventory and the health away from the browser while a battle is open', async () => {
+    const { userId, heroId } = await openBattle();
+    const snapshot = await kit.service.snapshot(userId, heroId);
+    const inventoryRevision = snapshot.aggregates.inventory!.revision;
+    const sorted = await kit.service.execute(
+      userId,
+      envelope(heroId, 'SORT_STASH', {}, inventoryRevision),
+    );
+    expect(sorted).toMatchObject({ result: 'rejected', code: 'BATTLE_OPEN' });
+    const health = await kit.service.execute(userId, {
+      commandId: randomUUID(),
+      heroId,
+      aggregate: 'progress',
+      expectedRevision: snapshot.aggregates.progress!.revision,
+      command: { type: 'DEV_SET_HEALTH', payload: { heroId, current: 3 } },
+    });
+    expect(health).toMatchObject({ result: 'rejected', code: 'BATTLE_OPEN' });
+  });
+
+  it('refuses the world commands while a battle is open', async () => {
+    const { userId, heroId } = await openBattle();
+    const step = await send(userId, heroId, 'WORLD_STEP', {
+      target: { columnIndex: 0, rowIndex: 0 },
+    });
+    expect(step).toMatchObject({ result: 'rejected', code: 'BATTLE_OPEN' });
+  });
+
+  it('respawns the hero in the camp when a lost battle is closed, with a fresh dungeon', async () => {
+    const { userId, heroId, expeditionId, mapId } = await openBattle();
+    const held = await storedWorld(expeditionId, mapId);
+    const battle = held.battle!;
+    battle.creatures.find((c) => c.side === 'heroes')!.hp = 0;
+    battle.outcome = 'defeat';
+    battle.phase = 'ended';
+    await kit.db.transaction((tx) =>
+      writeServerDocument(
+        tx,
+        expeditionId,
+        `srv-world:${mapId}`,
+        JSON.stringify(serializeWorld(held)),
+      ),
+    );
+    const closed = await send(userId, heroId, 'WORLD_BATTLE', { kind: 'close' });
+    expect(closed.result).toBe('applied');
+    expect(closed.travel?.locationKey).toBe('camping');
+    expect(closed.travel?.refreshed?.locationKey).toBe('cave');
+    expect(closed.events.map((event) => event.type)).toContain('HERO_RESPAWNED');
+    const progress = closed.aggregates.progress!.state as {
+      presence: { locationKey: string };
+      health: { current: number };
+    };
+    expect(progress.presence.locationKey).toBe('camping');
+    expect(progress.health.current).toBe(1);
+    expect(await readServerDocument(kit.db, expeditionId, `srv-world:${mapId}`)).toBeNull();
+    expect(JSON.stringify(closed)).not.toContain(battle.seed);
+  });
+
+  it('hides the members and the loot of an unscouted squad in every map the client gets', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'cave');
+    await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.SKELETON_PACK);
+    const ensured = JSON.stringify(await world.ensure(userId, heroId, 'cave'));
+    expect(ensured).not.toContain('"loot":"sword"');
+    expect(ensured).toContain('skeleton-pack');
+    const snap = JSON.stringify(await world.snapshot(userId, heroId));
+    expect(snap).not.toContain('"loot":"sword"');
+  });
+
+  it('does not deadlock when world commands and inventory commands race on one hero', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    const results = await Promise.allSettled(
+      Array.from({ length: 40 }, async (_, i) => {
+        if (i % 2 === 0) {
+          return send(userId, heroId, 'WORLD_TICK', {}, { revision: undefined });
+        }
+        const revision = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!
+          .revision;
+        return kit.service.execute(userId, envelope(heroId, 'SORT_STASH', {}, revision));
+      }),
+    );
+    const failures = results.flatMap((entry) =>
+      entry.status === 'rejected' ? [String((entry.reason as Error).message ?? entry.reason)] : [],
+    );
+    expect(failures.filter((message) => /deadlock/i.test(message))).toEqual([]);
   });
 });

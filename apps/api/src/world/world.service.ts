@@ -5,13 +5,18 @@ import {
   AGGREGATE_KINDS,
   WORLD_COMMAND_SCHEMAS,
   actWorld,
+  battleWorld,
   createServerWorld,
   deserializeWorld,
   isWorldCommandType,
+  projectDiffsForClient,
+  projectWorldForClient,
   serializeWorld,
   serializedWorldSchema,
   stepWorld,
   tickWorld,
+  type BattleStep,
+  type BattleWorldOutcome,
   type DomainEvent,
   type ServerWorld,
   type TileDiff,
@@ -28,6 +33,7 @@ import {
   travelWorld,
 } from '@hexoflat/engine';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
+import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
 import {
@@ -43,6 +49,7 @@ import {
   createInitialAggregates,
   loadAggregatesForUpdate,
   projectAggregate,
+  type LoadedAggregate,
   saveAggregate,
   type Tx,
 } from '../player/aggregate-store';
@@ -69,6 +76,8 @@ export interface WorldResponse {
     refreshed: { locationKey: LocationKey; world: unknown } | null;
   };
   engagement?: unknown;
+  steps?: BattleStep[];
+  serverNowMs?: number;
   hero: {
     locationKey: string;
     mapId: string;
@@ -101,6 +110,10 @@ async function saveWorld(tx: Tx, expeditionId: string, world: ServerWorld): Prom
   );
 }
 
+function clientWorld(world: ServerWorld) {
+  return projectWorldForClient(serializeWorld(world));
+}
+
 @Injectable()
 export class WorldService {
   constructor(
@@ -115,9 +128,7 @@ export class WorldService {
     const envelope = PlayerCommandEnvelopeSchema.safeParse(raw);
     if (!envelope.success) throw new PlayerCommandError('INVALID_ENVELOPE');
     const { commandId, heroId, expectedRevision, command: sent } = envelope.data;
-    if (!isWorldCommandType(sent.type) || sent.type === 'WORLD_BATTLE') {
-      throw new PlayerCommandError('UNKNOWN_COMMAND');
-    }
+    if (!isWorldCommandType(sent.type)) throw new PlayerCommandError('UNKNOWN_COMMAND');
     const hero = await this.heroes.findOwned(heroId, userId);
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
     const parsed = WORLD_COMMAND_SCHEMAS[sent.type].safeParse(sent);
@@ -125,8 +136,9 @@ export class WorldService {
     const command = parsed.data;
     if (command.payload.heroId !== heroId) throw new PlayerCommandError('FORBIDDEN');
 
+    const expeditionId = await ensureExpedition(this.db, userId, heroId);
     return this.db.transaction((tx) =>
-      this.run(tx, { userId, heroId, commandId, expectedRevision, command }),
+      this.run(tx, { userId, heroId, commandId, expectedRevision, command, expeditionId }),
     );
   }
 
@@ -138,9 +150,11 @@ export class WorldService {
       commandId: string;
       expectedRevision: number;
       command: WorldPlayerCommand;
+      expeditionId: string;
     },
   ): Promise<WorldResponse> {
-    const { userId, heroId, commandId, expectedRevision, command } = input;
+    const { userId, heroId, commandId, expectedRevision, command, expeditionId } = input;
+    await lockExpedition(tx, expeditionId);
     await createInitialAggregates(tx, heroId);
     const loaded = await loadAggregatesForUpdate(tx, heroId, AGGREGATE_KINDS);
     const { inventory, progress } = loaded;
@@ -218,8 +232,6 @@ export class WorldService {
       return respond('conflict', 'REVISION_CONFLICT', [], [], null);
     }
 
-    const expeditionId = await ensureExpedition(this.db, userId, heroId);
-    await lockExpedition(tx, expeditionId);
     const index = await readIndex(tx, expeditionId);
     const now = Date.now();
 
@@ -281,7 +293,8 @@ export class WorldService {
     const needsFinders =
       command.type === 'WORLD_TRAVEL' ||
       command.type === 'WORLD_PORTAL_ENTER' ||
-      command.type === 'WORLD_PORTAL_CLOSE';
+      command.type === 'WORLD_PORTAL_CLOSE' ||
+      (command.type === 'WORLD_BATTLE' && command.payload.kind === 'close');
     const stored: Partial<Record<LocationKey, ServerWorld>> = {};
     const byMap = new Map<string, ServerWorld>();
     if (needsFinders) {
@@ -354,17 +367,35 @@ export class WorldService {
         ...respond('applied', undefined, travelled.events, [], destination, travelled.effects),
         touched: [...(replaced ? [] : [origin]), ...touched].map((other) => ({
           locationKey: other.locationKey,
-          world: serializeWorld(other),
+          world: clientWorld(other),
         })),
         travel: {
           locationKey: destination.locationKey,
-          world: serializeWorld(destination),
+          world: clientWorld(destination),
           refreshed: replaced
-            ? { locationKey: replaced.locationKey, world: serializeWorld(replaced) }
+            ? { locationKey: replaced.locationKey, world: clientWorld(replaced) }
             : null,
         },
         aggregates: { inventory: projectAggregate(inventory), ...travelAggregates },
       };
+    }
+    if (command.type === 'WORLD_BATTLE') {
+      const fought = battleWorld({ ...run, ...finders }, command.payload);
+      if (!fought.ok) {
+        await journal('rejected', fought.events, fought.code, null);
+        return respond('rejected', fought.code, fought.events, [], world);
+      }
+      const committed = await this.commitBattle(tx, {
+        expeditionId,
+        heroId,
+        commandId,
+        index,
+        progress,
+        inventory,
+        fought,
+      });
+      await journal('applied', fought.events, null, committed.progressRevision);
+      return { commandId, ...committed.response };
     }
     const outcome: WorldOutcome =
       command.type === 'WORLD_STEP'
@@ -421,11 +452,11 @@ export class WorldService {
       commandId,
       result: 'applied',
       events: outcome.events,
-      tileDiffs: outcome.tileDiffs,
+      tileDiffs: projectDiffsForClient(outcome.tileDiffs),
       effects: outcome.effects,
       touched: (outcome.touched ?? []).map((other) => ({
         locationKey: other.locationKey,
-        world: serializeWorld(other),
+        world: clientWorld(other),
       })),
       engagement: outcome.world.engagement,
       hero: {
@@ -434,6 +465,117 @@ export class WorldService {
         coordinates: outcome.world.heroCoordinates,
       },
       aggregates: { inventory: projectAggregate(inventory), ...aggregates },
+    };
+  }
+
+  private async commitBattle(
+    tx: Tx,
+    input: {
+      expeditionId: string;
+      heroId: string;
+      commandId: string | null;
+      index: Index;
+      progress: LoadedAggregate<'progress'>;
+      inventory: LoadedAggregate<'inventory'>;
+      fought: Extract<BattleWorldOutcome, { ok: true }>;
+    },
+  ): Promise<{ progressRevision: number; response: Omit<WorldResponse, 'commandId'> }> {
+    const { expeditionId, heroId, commandId, index, progress, inventory, fought } = input;
+    const progressRevision = await saveAggregate(
+      tx,
+      heroId,
+      'progress',
+      progress.revision,
+      fought.progress,
+    );
+    const aggregates: ProjectedAggregates = {
+      progress: projectAggregate({
+        kind: 'progress',
+        revision: progressRevision,
+        state: fought.progress,
+      }),
+    };
+    const inventoryChanged = JSON.stringify(fought.inventory) !== JSON.stringify(inventory.state);
+    if (inventoryChanged) {
+      const revision = await saveAggregate(
+        tx,
+        heroId,
+        'inventory',
+        inventory.revision,
+        fought.inventory,
+      );
+      aggregates.inventory = projectAggregate({
+        kind: 'inventory',
+        revision,
+        state: fought.inventory,
+      });
+      const entries = ledgerEntriesFor(fought.events, inventory.state);
+      if (commandId && entries.length > 0) {
+        await tx
+          .insert(itemLedger)
+          .values(entries.map((entry) => ({ heroId, commandId, ...entry })));
+      }
+    } else {
+      aggregates.inventory = projectAggregate(inventory);
+    }
+
+    const { respawn } = fought;
+    let current = fought.world;
+    const touched: ServerWorld[] = [];
+    if (respawn) {
+      for (const other of respawn.touched) await saveWorld(tx, expeditionId, other);
+      if (respawn.replaced) {
+        await deleteServerDocument(tx, expeditionId, worldKey(respawn.origin.mapId));
+        await saveWorld(tx, expeditionId, respawn.replaced);
+        index[respawn.replaced.locationKey] = respawn.replaced.mapId;
+      } else {
+        await saveWorld(tx, expeditionId, respawn.origin);
+        touched.push(respawn.origin);
+      }
+      await saveWorld(tx, expeditionId, respawn.destination);
+      index[respawn.destination.locationKey] = respawn.destination.mapId;
+      await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
+      touched.push(...respawn.touched);
+      current = respawn.destination;
+    } else {
+      await saveWorld(tx, expeditionId, fought.world);
+    }
+    return {
+      progressRevision,
+      response: {
+        result: 'applied',
+        ...(fought.rejected ? { code: fought.rejected } : {}),
+        events: fought.events,
+        tileDiffs: projectDiffsForClient(fought.tileDiffs),
+        effects: [],
+        steps: fought.steps,
+        serverNowMs: fought.serverNowMs,
+        engagement: fought.world.engagement,
+        touched: touched.map((other) => ({
+          locationKey: other.locationKey,
+          world: clientWorld(other),
+        })),
+        ...(respawn
+          ? {
+              travel: {
+                locationKey: respawn.destination.locationKey,
+                world: clientWorld(respawn.destination),
+                refreshed: respawn.replaced
+                  ? {
+                      locationKey: respawn.replaced.locationKey,
+                      world: clientWorld(respawn.replaced),
+                    }
+                  : null,
+              },
+            }
+          : {}),
+        hero: {
+          locationKey: current.locationKey,
+          mapId: current.mapId,
+          coordinates: current.heroCoordinates,
+        },
+        aggregates,
+      },
     };
   }
 
@@ -446,7 +588,9 @@ export class WorldService {
       const index = await readIndex(tx, expeditionId);
       const known = index[locationKey];
       const existing = known ? await readServerDocument(tx, expeditionId, worldKey(known)) : null;
-      if (existing) return JSON.parse(existing) as unknown;
+      if (existing) {
+        return projectWorldForClient(serializedWorldSchema.parse(JSON.parse(existing)));
+      }
       const mapId = randomUUID();
       const created = createServerWorld(
         locationKey,
@@ -457,7 +601,7 @@ export class WorldService {
       await saveWorld(tx, expeditionId, created);
       index[locationKey] = mapId;
       await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
-      return serializeWorld(created);
+      return clientWorld(created);
     });
   }
 
@@ -471,9 +615,9 @@ export class WorldService {
     if (!parsed.success) throw new PlayerCommandError('INVALID_COMMAND');
     const expeditionId = await ensureExpedition(this.db, userId, heroId);
     return this.db.transaction(async (tx) => {
+      await lockExpedition(tx, expeditionId);
       await createInitialAggregates(tx, heroId);
       const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
-      await lockExpedition(tx, expeditionId);
       const index = await readIndex(tx, expeditionId);
       const { locationKey, mapId } = parsed.data;
       const previous = index[locationKey];
@@ -503,12 +647,49 @@ export class WorldService {
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
     const expeditionId = await ensureExpedition(this.db, userId, heroId);
     return this.db.transaction(async (tx) => {
+      await lockExpedition(tx, expeditionId);
       await createInitialAggregates(tx, heroId);
-      const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
-      const mapId = loaded.progress?.state.presence?.mapId;
-      if (!mapId) return null;
-      const raw = await readServerDocument(tx, expeditionId, worldKey(mapId));
-      return raw ? (JSON.parse(raw) as unknown) : null;
+      const loaded = await loadAggregatesForUpdate(tx, heroId, AGGREGATE_KINDS);
+      const { progress, inventory } = loaded;
+      const mapId = progress?.state.presence?.mapId;
+      if (!progress || !inventory || !mapId) return null;
+      const now = Date.now();
+      let world = await loadWorld(tx, expeditionId, mapId, now);
+      if (!world) return null;
+      if (world.battle) {
+        const settled = battleWorld(
+          {
+            world,
+            progress: structuredClone(progress.state),
+            inventory: structuredClone(inventory.state),
+            heroId,
+            now,
+            loadStored: () => null,
+            loadById: () => null,
+            create: () => {
+              throw new Error('A settle never builds a map');
+            },
+          },
+          { kind: 'sync', heroId },
+        );
+        if (settled.ok) {
+          await this.commitBattle(tx, {
+            expeditionId,
+            heroId,
+            commandId: null,
+            index: await readIndex(tx, expeditionId),
+            progress,
+            inventory,
+            fought: settled,
+          });
+          world = settled.world;
+        }
+      }
+      return {
+        ...clientWorld(world),
+        battleView: world.battle ? projectBattleForViewer(world.battle, 'heroes') : null,
+        serverNowMs: now,
+      };
     });
   }
 }
