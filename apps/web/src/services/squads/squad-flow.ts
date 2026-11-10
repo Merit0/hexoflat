@@ -18,6 +18,7 @@ import {
   type BattleReply,
 } from '@/services/battle/battle-server';
 import { useBattleWarnings } from '@/composables/use-battle-warnings';
+import { closeHeroOverlays } from './close-hero-overlays';
 
 export function squadLoadoutSource(): LoadoutSource {
   const heroStore = useHeroStore();
@@ -86,6 +87,7 @@ async function settleClosed(reply: BattleReply): Promise<void> {
   const closed = reply.events.find((event) => event.type === 'BATTLE_CLOSED');
   const outcome = (closed?.payload as { outcome?: string } | undefined)?.outcome;
   const result = reply.result;
+  closeHeroOverlays();
   if (outcome === 'defeat' && result?.travel) {
     await world.respawnHeroAtCamping(result);
     return;
@@ -111,6 +113,13 @@ export function useSquadFlow() {
 
   bindBattleBridge();
   bindBattleHandsGate(useBattleWarnings());
+
+  watch(
+    () => battleStore.projection?.outcome,
+    (outcome) => {
+      if (outcome === 'defeat') closeHeroOverlays();
+    },
+  );
 
   watch(
     () => [battleStore.engagement, battleStore.deploy, world.map] as const,

@@ -1,4 +1,5 @@
-import { Container, Text, type Ticker } from 'pixi.js';
+import { Container, Sprite, Text, type Ticker } from 'pixi.js';
+import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { BATTLE_MOTION, BATTLE_TIMING } from '@/render/battle/battle-timing';
 import type { DamageNumber } from '@/render/battle/battle-animation-sample';
 import type { BattleLayerDeps } from './battle-board-layer';
@@ -9,13 +10,16 @@ export interface BattleDamageLayer {
 }
 
 interface Popup {
-  text: Text;
+  text: Text | Sprite;
   startX: number;
   startY: number;
   ageMs: number;
 }
 
 const DAMAGE_COLOR = 0xff5a4a;
+export const HALF_HEART_SPRITE = '/board-assets/hero-board/cracker-heart-icon.png';
+const MINIMUM_DAMAGE = 1;
+const HALF_HEART_TILES = 0.5;
 
 export function createBattleDamageLayer(deps: BattleLayerDeps): BattleDamageLayer {
   const { w, h } = deps.tileSize;
@@ -54,18 +58,38 @@ export function createBattleDamageLayer(deps: BattleLayerDeps): BattleDamageLaye
     deps.ticker.remove(onTick);
   }
 
+  function halfHeart(): Sprite {
+    const sprite = new Sprite(getTexture(HALF_HEART_SPRITE));
+    const stopWatch = onTextureReady(HALF_HEART_SPRITE, () => {
+      sprite.texture = getTexture(HALF_HEART_SPRITE);
+      const side = h * HALF_HEART_TILES;
+      sprite.width = side;
+      sprite.height = side;
+      stopWatch?.();
+    });
+    const side = h * HALF_HEART_TILES;
+    sprite.width = side;
+    sprite.height = side;
+    return sprite;
+  }
+
+  function damageNode(damage: number): Text | Sprite {
+    if (damage === MINIMUM_DAMAGE) return halfHeart();
+    return new Text({
+      text: String(damage / 2),
+      style: {
+        fontFamily: 'sans-serif',
+        fontWeight: '800',
+        fontSize: h * BATTLE_MOTION.damageFontTiles,
+        fill: DAMAGE_COLOR,
+        stroke: { color: 0x1a0d0a, width: Math.max(2, h * 0.05) },
+      },
+    });
+  }
+
   function spawn(numbers: DamageNumber[]) {
     for (const { at, damage } of numbers) {
-      const text = new Text({
-        text: String(damage),
-        style: {
-          fontFamily: 'sans-serif',
-          fontWeight: '800',
-          fontSize: h * BATTLE_MOTION.damageFontTiles,
-          fill: DAMAGE_COLOR,
-          stroke: { color: 0x1a0d0a, width: Math.max(2, h * 0.05) },
-        },
-      });
+      const text = damageNode(damage);
       text.anchor.set(0.5);
       container.addChild(text);
       const popup = {
