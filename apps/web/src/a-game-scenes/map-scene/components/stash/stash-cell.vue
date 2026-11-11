@@ -32,8 +32,8 @@ import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstr
 import type { TItemLocation } from '@hexoflat/engine/inventory/item-location';
 import { getObjectRarityTone } from '@/render/rarity';
 import { showsCounter } from '@/composables/item-counter';
-import { locationKey, stashDrag, stashFx } from '@/composables/stash-drag-state';
-import { isGridNavKey, nextCellIndex } from '@/composables/stash-grid-nav';
+import { locationKey, stashFx } from '@/composables/stash-drag-state';
+import { moveGridFocus } from '@/composables/stash-grid-nav';
 import { BOARD_CELL_CONTEXT, STASH_CELL_CONTEXT } from '@/composables/board-cell-context';
 import StashItemToken from './stash-item-token.vue';
 
@@ -62,26 +62,16 @@ const label = computed(() => {
   return i18n.te(title) ? i18n.t(title) : title;
 });
 
-const isTarget = computed(
-  () =>
-    stashDrag.active &&
-    stashDrag.target?.kind === 'cell' &&
-    locationKey(stashDrag.target.at) === key.value,
-);
-const isLifted = computed(
-  () => stashDrag.active && !!stashDrag.from && locationKey(stashDrag.from) === key.value,
-);
-const isNext = computed(
-  () => stashDrag.active && !!stashDrag.nextHint && locationKey(stashDrag.nextHint) === key.value,
-);
+const state = computed(() => context.stateOf(props.location));
+const isLifted = computed(() => state.value.lifted);
 
 const classes = computed(() => ({
   'cursor-grab': !!props.item,
-  'is-lifted': isLifted.value,
+  'is-lifted': state.value.lifted,
   'is-dim': !!props.dim,
-  'is-next': isNext.value && !isTarget.value,
-  'is-valid': isTarget.value && !!stashDrag.preview?.ok && stashDrag.preview.kind !== 'noop',
-  'is-invalid': isTarget.value && stashDrag.preview?.ok === false,
+  'is-next': state.value.next,
+  'is-valid': state.value.valid,
+  'is-invalid': state.value.invalid,
   'is-landed': stashFx.landed === key.value,
   'is-shake': stashFx.shake === key.value,
 }));
@@ -91,15 +81,7 @@ function onPointerDown(event: PointerEvent) {
 }
 
 function onNavigate(event: KeyboardEvent) {
-  if (!isGridNavKey(event.key)) return;
-  const current = event.currentTarget as HTMLElement;
-  const grid = current.closest<HTMLElement>('[data-cell-grid]');
-  if (!grid) return;
-  const cells = [...grid.querySelectorAll<HTMLElement>('[data-drop-container]')];
-  const columns = Number(grid.dataset.columns) || 1;
-  const target = nextCellIndex(cells.indexOf(current), event.key, columns, cells.length);
-  event.preventDefault();
-  if (target !== null) cells[target].focus();
+  moveGridFocus(event, '[data-drop-container]');
 }
 
 function onQuickMove(event: MouseEvent | KeyboardEvent) {

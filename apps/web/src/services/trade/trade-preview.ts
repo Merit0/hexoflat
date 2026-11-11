@@ -53,6 +53,24 @@ export function previewSell(
   );
 }
 
+export function previewBuyLanding(
+  inventory: InventoryState,
+  trader: ITraderRef,
+  from: ITradeSource,
+  split: boolean,
+): number | null {
+  const preview = previewBuy(inventory, trader, from, 'auto', split);
+  if (!preview.ok) return null;
+  const result = planBuy(inventory, trader, from, 'auto', { split, expectedPrice: preview.price });
+  if (!result.ok) return null;
+  const index = result.inventory.bag.findIndex((cell, at) => {
+    const before = inventory.bag[at];
+    if (!cell || cell.key !== result.key) return false;
+    return !before || before.key !== cell.key || before.amount < cell.amount;
+  });
+  return index === -1 ? null : index;
+}
+
 export interface RefreshPreview {
   price: number;
   affordable: boolean;

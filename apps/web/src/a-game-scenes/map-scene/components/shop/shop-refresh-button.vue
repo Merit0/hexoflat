@@ -1,10 +1,14 @@
 <template>
   <button
+    ref="button"
     type="button"
     class="refresh"
-    :class="{ 'is-short': !affordable }"
+    :class="{ 'is-short': !affordable, 'is-confirm': refreshConfirming }"
     :data-affordable="affordable"
+    :data-confirm="refreshConfirming"
+    :disabled="refreshSending"
     data-testid="shop-refresh"
+    @click="onClick"
   >
     <span class="text">{{ t('shop.refresh') }}</span>
     <span class="price" data-testid="shop-refresh-price" :data-price="price">
@@ -15,12 +19,21 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { clickRefresh, refreshConfirming, refreshSending } from '@/composables/use-shop-refresh';
 
 const WILL_ICON = '/board-assets/will-icon-image.png';
 
-defineProps<{ price: number; affordable: boolean }>();
+const props = defineProps<{ price: number; affordable: boolean; losesBuyback: boolean }>();
 const { t } = useI18n();
+const button = ref<HTMLElement | null>(null);
+
+function onClick() {
+  if (!button.value) return;
+  const refresh = { price: props.price, affordable: props.affordable };
+  void clickRefresh(refresh, props.losesBuyback, button.value);
+}
 </script>
 
 <style scoped>
@@ -63,6 +76,14 @@ const { t } = useI18n();
   width: 16px;
   height: 16px;
   object-fit: contain;
+}
+.refresh.is-confirm {
+  border-color: #ffe98a;
+  background: rgba(255, 220, 150, 0.2);
+  box-shadow: 0 0 10px rgba(255, 220, 150, 0.45);
+}
+.refresh:disabled {
+  opacity: 0.6;
 }
 .refresh.is-short .price {
   color: #ff9d9d;

@@ -7,6 +7,17 @@
   background: rgba(0, 0, 0, 0.35);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
+.pane.zone-ok {
+  box-shadow:
+    0 0 0 2px rgba(255, 200, 120, 0.5) inset,
+    0 0 16px rgba(255, 200, 120, 0.45),
+    0 0 30px rgba(255, 200, 120, 0.25);
+}
+.pane.zone-bad {
+  box-shadow:
+    0 0 0 2px rgba(255, 120, 120, 0.5) inset,
+    0 0 16px rgba(255, 80, 80, 0.4);
+}
 .pane.is-buyback {
   background: rgba(0, 0, 0, 0.22);
 }

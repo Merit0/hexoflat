@@ -31,3 +31,15 @@ export function nextCellIndex(
   }[key];
   return target >= 0 && target < count && target !== current ? target : null;
 }
+
+export function moveGridFocus(event: KeyboardEvent, cellSelector: string): void {
+  if (!isGridNavKey(event.key)) return;
+  const current = event.currentTarget as HTMLElement;
+  const grid = current.closest<HTMLElement>('[data-cell-grid]');
+  if (!grid) return;
+  const cells = [...grid.querySelectorAll<HTMLElement>(cellSelector)];
+  const columns = Number(grid.dataset.columns) || 1;
+  const target = nextCellIndex(cells.indexOf(current), event.key, columns, cells.length);
+  event.preventDefault();
+  if (target !== null) cells[target].focus();
+}

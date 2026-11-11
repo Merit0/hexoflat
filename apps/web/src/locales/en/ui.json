@@ -726,13 +726,41 @@
     "sellRate": "Sell rate {percent}%",
     "coins": "Coins",
     "refresh": "New goods",
+    "refreshConfirm": "Pay {price} Will for new goods? Click again to confirm.",
+    "refreshLosesBuyback": "The buyback row will be lost.",
+    "refreshNoWill": "New goods cost {price} Will. Not enough Will.",
     "hint": {
-      "idle": "Drag goods into the bag to buy, drag bag items onto the trader to sell. Shift takes half a stack."
+      "idle": "Drag goods into the bag to buy, drag bag items onto the trader to sell. Shift takes half a stack.",
+      "drag": "Release over a bag cell to buy, or over the trader to sell. Esc cancels.",
+      "split": "Trading half of the stack. Esc cancels."
     },
     "price": {
       "buy": "Price",
       "sell": "Sells for",
       "buyback": "Buy back for"
+    },
+    "drop": {
+      "buy": "Buy · {price}",
+      "buySplit": "Buy {n} · {price}",
+      "sell": "Sell +{price}",
+      "buyback": "Buy back · {price}",
+      "cantAfford": "Can't afford",
+      "notInterested": "Not interested",
+      "cant": "Can't drop"
+    },
+    "error": {
+      "EMPTY_SOURCE": "There is nothing in that cell.",
+      "PRICE_CHANGED": "The price has changed. Look again.",
+      "NOT_ENOUGH_COINS": "Not enough coins.",
+      "NOT_TRADEABLE": "The trader is not interested in that.",
+      "NOT_AT_TRADER": "Stand next to the stall to trade.",
+      "STACK_FULL": "That stack is already full.",
+      "SPLIT_TARGET_TAKEN": "Split onto an empty cell or the same stack.",
+      "CONTAINER_FULL": "There is no room in the bag.",
+      "OVERWEIGHT": "The bag cannot carry that much weight.",
+      "WILL_REJECTED": "Not enough Will.",
+      "BATTLE_OPEN": "No trading during a battle.",
+      "REJECTED": "The deal did not go through."
     }
   },
   "player": {

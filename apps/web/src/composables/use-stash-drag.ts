@@ -18,35 +18,27 @@ import {
   type StashDropTarget,
 } from './stash-drag-state';
 import { stashErrorText, warnHero } from './stash-messages';
+import {
+  flashFor,
+  setGrabbing,
+  startEdgeScroll,
+  trackPointerDrag,
+  type DragPoint,
+} from './board-drag-core';
 
-const DRAG_THRESHOLD_PX = 4;
-const EDGE_BAND_PX = 40;
-const MAX_SCROLL_STEP_PX = 14;
-const FX_MS = 320;
 const BLINK_MS = 1000;
-const GRABBING_CLASS = 'is-grabbing';
 
-export interface DragPoint {
-  x: number;
-  y: number;
-  offsetX: number;
-  offsetY: number;
-  width: number;
-  height: number;
-}
+export type { DragPoint };
 
 let targetKey = '';
-let scrollFrame: number | null = null;
+let stopScroll: (() => void) | null = null;
 let stopListening: (() => void) | null = null;
 
 function flash(slot: 'landed' | 'shake', key: string): void {
-  stashFx[slot] = key;
-  setTimeout(() => {
-    if (stashFx[slot] === key) stashFx[slot] = null;
-  }, FX_MS);
+  flashFor(stashFx, slot, key);
 }
 
-function blinkWeight(): void {
+export function blinkWeight(): void {
   stashFx.blinkWeight = true;
   setTimeout(() => (stashFx.blinkWeight = false), BLINK_MS);
 }
@@ -104,7 +96,7 @@ export function dragBegin(
     preview: null,
     nextHint: findNextHint(from, split),
   });
-  document.documentElement.classList.add(GRABBING_CLASS);
+  setGrabbing(true);
 }
 
 export function dragMoveTo(target: StashDropTarget | null): void {
@@ -116,12 +108,12 @@ export function dragMoveTo(target: StashDropTarget | null): void {
 }
 
 export function dragCancel(): void {
-  if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
-  scrollFrame = null;
+  stopScroll?.();
+  stopScroll = null;
   stopListening?.();
   stopListening = null;
   targetKey = '';
-  document.documentElement.classList.remove(GRABBING_CLASS);
+  setGrabbing(false);
   resetStashDrag();
 }
 
@@ -164,22 +156,8 @@ function pointedTarget(x: number, y: number): StashDropTarget | null {
   return resolveDropTarget(document.elementsFromPoint(x, y));
 }
 
-function scrollNearEdges(): void {
-  if (!stashDrag.active) return;
-  for (const box of document.querySelectorAll<HTMLElement>('[data-scroller]')) {
-    const rect = box.getBoundingClientRect();
-    if (stashDrag.x < rect.left || stashDrag.x > rect.right) continue;
-    const fromTop = stashDrag.y - rect.top;
-    const fromBottom = rect.bottom - stashDrag.y;
-    let step = 0;
-    if (fromTop >= 0 && fromTop < EDGE_BAND_PX) step = -Math.ceil((EDGE_BAND_PX - fromTop) / 4);
-    else if (fromBottom >= 0 && fromBottom < EDGE_BAND_PX)
-      step = Math.ceil((EDGE_BAND_PX - fromBottom) / 4);
-    if (step === 0) continue;
-    box.scrollTop += Math.max(-MAX_SCROLL_STEP_PX, Math.min(MAX_SCROLL_STEP_PX, step));
-    dragMoveTo(pointedTarget(stashDrag.x, stashDrag.y));
-  }
-  scrollFrame = requestAnimationFrame(scrollNearEdges);
+function draggedPointer(): { x: number; y: number } | null {
+  return stashDrag.active ? { x: stashDrag.x, y: stashDrag.y } : null;
 }
 
 export function beginStashDrag(
@@ -188,61 +166,20 @@ export function beginStashDrag(
   item: InventoryItem,
 ): void {
   if (event.button !== 0 || stashDrag.active) return;
-  const startX = event.clientX;
-  const startY = event.clientY;
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
   const split = event.shiftKey;
-  let started = false;
-
-  const onMove = (move: PointerEvent) => {
-    if (!started) {
-      const far =
-        Math.abs(move.clientX - startX) > DRAG_THRESHOLD_PX ||
-        Math.abs(move.clientY - startY) > DRAG_THRESHOLD_PX;
-      if (!far) return;
-      started = true;
-      dragBegin(
-        from,
-        item,
-        {
-          x: startX,
-          y: startY,
-          offsetX: startX - rect.left,
-          offsetY: startY - rect.top,
-          width: rect.width,
-          height: rect.height,
-        },
-        split,
+  stopListening = trackPointerDrag(event, {
+    start: (point) => {
+      dragBegin(from, item, point, split);
+      stopScroll = startEdgeScroll(draggedPointer, () =>
+        dragMoveTo(pointedTarget(stashDrag.x, stashDrag.y)),
       );
-      scrollFrame = requestAnimationFrame(scrollNearEdges);
-    }
-    stashDrag.x = move.clientX;
-    stashDrag.y = move.clientY;
-    dragMoveTo(pointedTarget(move.clientX, move.clientY));
-  };
-  const onUp = () => {
-    const wasDragging = started;
-    detach();
-    if (wasDragging) dragRelease();
-  };
-  const onCancel = () => {
-    detach();
-    if (started) dragCancel();
-  };
-  const onKey = (key: KeyboardEvent) => {
-    if (key.key === 'Escape') onCancel();
-  };
-  const detach = () => {
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    window.removeEventListener('pointercancel', onCancel);
-    window.removeEventListener('keydown', onKey);
-    stopListening = null;
-  };
-
-  stopListening = detach;
-  window.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', onUp);
-  window.addEventListener('pointercancel', onCancel);
-  window.addEventListener('keydown', onKey);
+    },
+    move: (x, y) => {
+      stashDrag.x = x;
+      stashDrag.y = y;
+      dragMoveTo(pointedTarget(x, y));
+    },
+    release: dragRelease,
+    cancel: dragCancel,
+  });
 }

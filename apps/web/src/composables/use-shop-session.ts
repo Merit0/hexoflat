@@ -1,6 +1,8 @@
 import { onBeforeUnmount, onMounted, watch } from 'vue';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { closeShopBoard } from '@/composables/use-shop-board';
+import { shopDrag } from '@/composables/shop-drag-state';
+import { refreshConfirming } from '@/composables/use-shop-refresh';
 import { useBattleStore } from '@/stores/battle-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroStore } from '@/stores/hero-store';
@@ -35,7 +37,8 @@ export function useShopSession() {
   watch(knowledgePanelMode, (mode) => mode && closeIfOpen());
 
   function onKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') closeIfOpen();
+    if (event.key !== 'Escape' || shopDrag.active || refreshConfirming.value) return;
+    closeIfOpen();
   }
 
   onMounted(() => window.addEventListener('keydown', onKeydown));

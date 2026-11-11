@@ -40,18 +40,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStashBoardData } from '@/composables/use-stash-board-data';
 import { stashFx } from '@/composables/stash-drag-state';
-import { useStashZoneClass } from '@/composables/use-stash-zone-class';
+import { BOARD_CELL_CONTEXT, STASH_CELL_CONTEXT } from '@/composables/board-cell-context';
 import StashCell from './stash-cell.vue';
 import StashScrollBox from './stash-scroll-box.vue';
 
 const { t } = useI18n();
 const { bagView, carried, capacity, loadRatio, isHeavy, isOver } = useStashBoardData();
 const loadWidth = computed(() => `${Math.round(loadRatio.value * 100)}%`);
-const zoneClass = useStashZoneClass('bag');
+const context = inject(BOARD_CELL_CONTEXT, STASH_CELL_CONTEXT);
+const zoneClass = computed(() => context.zoneClassOf('bag'));
 </script>
 
 <style scoped>
