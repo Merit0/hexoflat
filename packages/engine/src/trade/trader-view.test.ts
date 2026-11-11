@@ -4,6 +4,7 @@ import { coinPriceOf } from '../content/content-accessors';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { deriveStream } from '../utils/random-seeded';
 import { rollGoods } from './roll-goods';
+import { rollTraderGoods } from './trader-view';
 import { refreshPrice, sellUnitPrice, traderView, walletCoins } from './trader-view';
 import { COINS, HERO, ILVA, SEED, inventoryWith } from './trade-test-setup';
 
@@ -125,7 +126,7 @@ describe('traderView', () => {
       serial: 0,
       trip: 2,
       paidRefreshes: 0,
-      goods: rollGoods(ILVA, deriveStream(SEED, 'trader:ilva:0')),
+      goods: rollTraderGoods(ILVA, SEED, 'ilva', 0),
       buyback: Array.from({ length: ILVA.buybackSlots }, () => null),
     });
     expect(traderView(progress, 'ilva', SEED)).toEqual(view);

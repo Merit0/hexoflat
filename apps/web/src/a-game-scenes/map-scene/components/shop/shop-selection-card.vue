@@ -22,7 +22,20 @@
               <span v-else-if="note" data-testid="shop-card-note">{{ note }}</span>
             </p>
           </div>
-          <div v-if="view.maxQty > 1 || qty > 1" class="qty">
+          <label v-if="view.discountPercent !== null" class="guess">
+            <span>{{ t('shop.card.yourPrice') }}</span>
+            <input
+              v-model="shopGuess"
+              type="text"
+              inputmode="numeric"
+              maxlength="3"
+              data-testid="shop-card-price-input"
+              :placeholder="t('shop.card.pricePlaceholder')"
+              :aria-label="t('shop.card.yourPrice')"
+              @keydown.enter.prevent="onAction"
+            />
+          </label>
+          <div v-else-if="view.maxQty > 1 || qty > 1" class="qty">
             <div class="stepper">
               <button
                 type="button"
@@ -66,7 +79,7 @@
             class="action"
             :class="{ 'is-trade': view.mode === 'trading' }"
             data-testid="shop-card-action"
-            :disabled="!view.preview.ok"
+            :disabled="actionDisabled"
             @click="onAction"
           >
             {{ actionLabel }}
@@ -87,8 +100,14 @@ import { useI18n } from 'vue-i18n';
 import { getPrototype } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
-import { clearShopSelection, shopQty, shopSelection } from '@/composables/shop-selection';
+import {
+  clearShopSelection,
+  shopGuess,
+  shopQty,
+  shopSelection,
+} from '@/composables/shop-selection';
 import { useShopCard } from '@/composables/use-shop-card';
+import { parseGuess, submitDeal } from '@/composables/use-shop-deal';
 import { quickTrade } from '@/composables/use-shop-drag';
 
 const COIN_SRC = getPrototype(HEXOBJECT_KEYS.COINS).spritePath ?? '';
@@ -153,9 +172,24 @@ const note = computed(() => {
   return '';
 });
 
+const actionDisabled = computed(() => {
+  const current = view.value;
+  if (!current) return true;
+  if (current.discountPercent !== null) return parseGuess(shopGuess.value) === null;
+  return !current.preview.ok;
+});
+
 function onAction(): void {
   const current = view.value;
-  if (!current || !current.preview.ok) return;
+  if (!current) return;
+  if (current.discountPercent !== null) {
+    const guess = parseGuess(shopGuess.value);
+    if (guess !== null && current.source.kind === 'trade') {
+      void submitDeal(current.source.index, current.key, guess);
+    }
+    return;
+  }
+  if (!current.preview.ok) return;
   void quickTrade(current.source, false, qty.value);
 }
 </script>
@@ -290,6 +324,28 @@ h4 {
   justify-content: center;
   gap: 5px;
   padding: 6px;
+}
+.guess {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+.guess input {
+  box-sizing: border-box;
+  width: 64px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #e3c27a;
+  border-radius: 8px;
+  background: rgba(10, 5, 2, 0.55);
+  color: #f0e4c4;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .qty {
   flex: none;

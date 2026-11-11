@@ -24,6 +24,7 @@ export const TRADERS = {
       { key: HEXOBJECT_KEYS.RETURN_SCROLL, weight: 1, min: 1, max: 1 },
     ],
     rolls: 7,
+    discounts: { chancePct: 30, percents: [10, 20, 25, 50], maxGoods: 3 },
   },
 } as const satisfies Record<string, TTraderDefinition>;
 

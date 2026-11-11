@@ -742,7 +742,9 @@
       "OVERWEIGHT": "The bag cannot carry that much weight.",
       "WILL_REJECTED": "Not enough Will.",
       "BATTLE_OPEN": "No trading during a battle.",
-      "REJECTED": "The deal did not go through."
+      "REJECTED": "The deal did not go through.",
+      "NEEDS_DEAL": "Enter your price first.",
+      "NOT_DISCOUNTED": "That item has no discount."
     },
     "tab": {
       "goods": "Goods",
@@ -773,10 +775,13 @@
         "lastOne": "Last one in stock.",
         "samePrice": "Back for the same price Ilva paid you."
       },
-      "priceLabel": "Price"
+      "priceLabel": "Price",
+      "yourPrice": "Your price",
+      "pricePlaceholder": "?"
     },
     "status": {
-      "soldOut": "Sold"
+      "soldOut": "Sold",
+      "wasted": "Wasted"
     },
     "block": {
       "OVERWEIGHT": "Too heavy for your bag.",
@@ -791,7 +796,10 @@
       "bought": "Bought {name} · −{price} coins",
       "sold": "Sold {name} · +{price} coins",
       "boughtBack": "Bought back {name} · −{price} coins",
-      "undo": "Undo"
+      "undo": "Undo",
+      "dealExact": "Exact! {name} · −{price} coins, you saved {saved}",
+      "dealWasted": "Not quite. {name} is put away: wasted.",
+      "dealShort": "Right price, but you are short of coins."
     },
     "price": {
       "buy": "Price",
@@ -799,7 +807,10 @@
       "buyback": "Buy back for"
     },
     "description": "Ilva buys and sells. She pays {percent}% of an item's price; sold items wait in Buyback until new goods. Refreshing costs Will and doubles each time.",
-    "help": "About the stall"
+    "help": "About the stall",
+    "badge": {
+      "percent": "−{p}%"
+    }
   },
   "player": {
     "sync": {

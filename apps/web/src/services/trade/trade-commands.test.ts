@@ -44,7 +44,7 @@ async function heroWithCoins(coins: number, presence: Presence = AT_STALL, will?
 
 function firstGood() {
   const goods = traderProjection.value.traders.ilva!.goods;
-  const index = goods.findIndex((cell) => cell !== null);
+  const index = goods.findIndex((cell) => cell !== null && !cell.discountPercent);
   return { index, good: goods[index]! };
 }
 

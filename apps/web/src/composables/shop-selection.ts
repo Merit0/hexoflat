@@ -11,13 +11,17 @@ export interface ShopSelection {
 
 export const shopSelection = reactive<ShopSelection>({ list: null, index: -1, key: '' });
 export const shopQty = ref(1);
+export const shopGuess = ref('');
 
 function select(list: ShopSelectionList, index: number, key: string): void {
   const same = shopSelection.list === list && shopSelection.index === index;
   shopSelection.list = list;
   shopSelection.index = index;
   shopSelection.key = key;
-  if (!same) shopQty.value = 1;
+  if (!same) {
+    shopQty.value = 1;
+    shopGuess.value = '';
+  }
 }
 
 export function selectTradeCell(list: TTradeList, index: number, key: string): void {
@@ -33,6 +37,7 @@ export function clearShopSelection(): void {
   shopSelection.index = -1;
   shopSelection.key = '';
   shopQty.value = 1;
+  shopGuess.value = '';
 }
 
 export function isTradeCellSelected(

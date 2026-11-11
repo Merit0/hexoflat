@@ -70,7 +70,11 @@ export function planBuy(
   if (to !== 'auto' && (to.index < 0 || to.index >= inventory.bag.length)) {
     return refuse('CONTAINER_FULL');
   }
-  const unit = 'unitPrice' in entry ? entry.unitPrice : coinPriceOf(entry.key);
+  if ('discountPercent' in entry && entry.discountPercent && opts.unitOverride === undefined) {
+    return refuse('NEEDS_DEAL');
+  }
+  const unit =
+    opts.unitOverride ?? ('unitPrice' in entry ? entry.unitPrice : coinPriceOf(entry.key));
   if (unit === null) return refuse('NOT_TRADEABLE');
 
   const seq = sequenceOf(inventory);

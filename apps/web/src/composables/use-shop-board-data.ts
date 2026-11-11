@@ -23,6 +23,8 @@ export interface ShopTradeCell {
   price: number | null;
   affordable: boolean;
   sold: boolean;
+  wasted: boolean;
+  discountPercent: number | null;
 }
 
 export function tradeItemOf(
@@ -43,7 +45,7 @@ export function tradeItemOf(
 function pricedCell(index: number, item: InventoryItem | null, preview: TradePreview | null) {
   const price = preview?.price ?? null;
   const affordable = !preview || preview.ok || preview.reason !== 'NOT_ENOUGH_COINS';
-  return { index, item, price, affordable, sold: false };
+  return { index, item, price, affordable, sold: false, wasted: false, discountPercent: null };
 }
 
 export function useShopBoardData() {
@@ -68,8 +70,13 @@ export function useShopBoardData() {
       if ('sold' in entry && entry.sold) {
         return { ...pricedCell(index, tradeItemOf(list, index, entry), null), sold: true };
       }
+      const item = tradeItemOf(list, index, entry);
+      if ('wasted' in entry && entry.wasted) {
+        return { ...pricedCell(index, item, null), wasted: true };
+      }
       const preview = previewBuy(inventory.value, ref, { list, index }, 'auto', false);
-      return pricedCell(index, tradeItemOf(list, index, entry), preview);
+      const percent = 'discountPercent' in entry ? (entry.discountPercent ?? null) : null;
+      return { ...pricedCell(index, item, preview), discountPercent: percent };
     });
   }
 

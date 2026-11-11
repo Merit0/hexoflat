@@ -34,6 +34,10 @@ export function shopErrorText(reason: string): string {
       return t('shop.error.OVERWEIGHT');
     case 'WILL_REJECTED':
       return t('shop.error.WILL_REJECTED');
+    case 'NEEDS_DEAL':
+      return t('shop.error.NEEDS_DEAL');
+    case 'NOT_DISCOUNTED':
+      return t('shop.error.NOT_DISCOUNTED');
     case 'BATTLE_OPEN':
       return t('shop.error.BATTLE_OPEN');
     default:
@@ -74,7 +78,7 @@ export function shopDropText(label: ShopDropLabel): string {
   }
 }
 
-function itemName(key: THexobjectKey): string {
+export function itemName(key: THexobjectKey): string {
   const title = getMeta(key).title;
   return i18n.global.te(title) ? i18n.global.t(title) : title;
 }

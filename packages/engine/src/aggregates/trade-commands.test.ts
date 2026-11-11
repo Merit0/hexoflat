@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { deriveStream } from '../utils/random-seeded';
 import { rollGoods } from '../trade/roll-goods';
+import { rollTraderGoods } from '../trade/trader-view';
 import { traderView, walletCoins } from '../trade/trader-view';
 import { ILVA, inventoryWith } from '../trade/trade-test-setup';
 import {
@@ -128,9 +129,7 @@ describe('SHOP_BUY and SHOP_SELL', () => {
       amount: 1,
       unitPrice: 19,
     });
-    expect(sold.progress.traders.ilva?.goods).toEqual(
-      rollGoods(ILVA, deriveStream(SEED, 'trader:ilva:0')),
-    );
+    expect(sold.progress.traders.ilva?.goods).toEqual(rollTraderGoods(ILVA, SEED, 'ilva', 0));
     const back = apply(sold, buy(sold, 19, { from: { list: 'buyback', index: 0 } }));
     expect(walletCoins(back.inventory)).toBe(1000);
   });
@@ -204,9 +203,7 @@ describe('SHOP_REFRESH', () => {
   it('rolls the goods of the next serial and wipes BUYBACK', () => {
     const sold = apply(rich(), sell(rich(), 19));
     const fresh = apply(sold, refresh(sold, 20));
-    expect(fresh.progress.traders.ilva?.goods).toEqual(
-      rollGoods(ILVA, deriveStream(SEED, 'trader:ilva:1')),
-    );
+    expect(fresh.progress.traders.ilva?.goods).toEqual(rollTraderGoods(ILVA, SEED, 'ilva', 1));
     expect(fresh.progress.traders.ilva?.buyback.every((cell) => cell === null)).toBe(true);
     expect(fresh.inventory).toBe(sold.inventory);
   });

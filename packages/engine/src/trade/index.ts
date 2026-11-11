@@ -10,3 +10,7 @@ export type { IRefreshOptions, TRefreshResult } from './plan-refresh';
 export { tradersForClient } from './trader-view';
 export { applyTraderFixture, traderFixtureSchema } from './trader-fixture';
 export type { TraderFixture } from './trader-fixture';
+export { planDeal } from './plan-deal';
+export type { TDealResult } from './plan-deal';
+export { discountedUnit, applyDiscounts } from './discount-math';
+export { rollTraderGoods } from './trader-view';

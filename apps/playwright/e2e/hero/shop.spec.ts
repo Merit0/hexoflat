@@ -107,6 +107,60 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
     });
   });
 
+  test.describe('discounted goods', () => {
+    const HALF = Price.axe / 2;
+    const discounted = [{ key: K.axe, amount: 1, discountPercent: 50 }];
+
+    test('Verify an exact own price buys the discounted good and the toast reports the saving', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods(discounted);
+      await shop.givenBag([{ key: K.coins, amount: 100 }]);
+      await shop.verifyOfferBadge(0, 50);
+
+      await shop.selectGoods(0);
+      await shop.enterOwnPrice(String(HALF));
+      await shop.pressBuy();
+
+      await shop.verifyWalletCoins(100 - HALF);
+      await shop.verifyBagAmount(K.axe, 1);
+      await shop.verifyToastText(new RegExp(`${HALF}.*${HALF}`));
+    });
+
+    test('Verify a wrong own price wastes the good: coins stay whole and the cell reads Wasted, not Sold out', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods(discounted);
+      await shop.givenBag([{ key: K.coins, amount: 100 }]);
+
+      await shop.selectGoods(0);
+      await shop.enterOwnPrice('30');
+      await shop.pressBuy();
+
+      await shop.verifyWalletCoins(100);
+      await shop.verifyBagAmount(K.axe, 0);
+      await shop.verifyOfferWasted(0);
+      await shop.selectGoods(0);
+      await shop.verifyNoSelection();
+    });
+
+    test('Verify Buy waits for a number and neither the card nor the cell ever shows the discounted price', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods(discounted);
+      await shop.givenBag([{ key: K.coins, amount: 10 }]);
+
+      await shop.selectGoods(0);
+      await shop.verifyPriceInputShown(true);
+      await shop.verifyBuyDisabled(true);
+      await shop.verifyCardHidesPrice(HALF);
+      await shop.enterOwnPrice(String(HALF));
+      await shop.verifyBuyDisabled(false);
+      await shop.pressBuy();
+
+      await shop.verifyToastText(/short of coins|не вистачає монет/i);
+      await shop.verifyWalletCoins(10);
+      await shop.verifyOfferBadge(0, 50);
+    });
+  });
+
   test.describe('buying', () => {
     test('Verify dragging goods onto a bag cell buys them: the price is paid, the item lands in the bag, the cell stays as sold out on the server', async () => {
       const { shop } = await openStall();

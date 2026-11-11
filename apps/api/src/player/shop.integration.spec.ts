@@ -294,6 +294,60 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
     });
   });
 
+  describe('discounted goods', () => {
+    const HALF = SWORD_PRICE / 2;
+    const deal = (heroId: string, revision: number, guess: number) =>
+      envelope(heroId, 'SHOP_DEAL', { trader: 'ilva', index: 0, guess, to: 'auto' }, revision);
+
+    async function heroWithDiscount() {
+      const hero = await heroInCamp(NEAR);
+      await kit.service.traderFixture(hero.userId, hero.heroId, {
+        trader: 'ilva',
+        goods: [{ key: SWORD, amount: 1, discountPercent: 50 }],
+      });
+      return hero;
+    }
+
+    it('buys at the discounted price on an exact guess and reports what was saved', async () => {
+      const { userId, heroId } = await heroWithDiscount();
+      const { revision } = await inventoryOf(userId, heroId);
+
+      const answer = await kit.service.execute(userId, deal(heroId, revision, HALF));
+
+      expect(answer.result).toBe('applied');
+      expect(answer.events[0]).toMatchObject({
+        type: 'ITEM_BOUGHT',
+        payload: { price: HALF, saved: HALF, discounted: true },
+      });
+      expect(bagAmount(await inventoryOf(userId, heroId), COINS)).toBe(START_COINS - HALF);
+    });
+
+    it('wastes the offer on a wrong guess, keeps the coins and persists the status', async () => {
+      const { userId, heroId } = await heroWithDiscount();
+      const { revision } = await inventoryOf(userId, heroId);
+
+      const answer = await kit.service.execute(userId, deal(heroId, revision, HALF + 1));
+
+      expect(answer.result).toBe('applied');
+      expect(answer.events[0]).toMatchObject({ type: 'DEAL_WASTED' });
+      expect(bagAmount(await inventoryOf(userId, heroId), COINS)).toBe(START_COINS);
+      const goods = ((await progressOf(userId, heroId)).state as ProgressState).traders.ilva!.goods;
+      expect(goods[0]).toMatchObject({ key: SWORD, wasted: true });
+      const next = await inventoryOf(userId, heroId);
+      const again = await kit.service.execute(userId, deal(heroId, next.revision, HALF));
+      expect(again.result).toBe('rejected');
+    });
+
+    it('refuses a plain purchase of a discounted offer with NEEDS_DEAL', async () => {
+      const { userId, heroId } = await heroWithDiscount();
+      const { revision } = await inventoryOf(userId, heroId);
+
+      const answer = await kit.service.execute(userId, buy(heroId, revision, 0, SWORD_PRICE));
+
+      expect(answer).toMatchObject({ result: 'rejected', code: 'NEEDS_DEAL' });
+    });
+  });
+
   it('refreshes the goods for Will next to the stall, doubling the next price', async () => {
     const { userId, heroId } = await heroInCamp(NEAR);
     const answer = await kit.service.execute(userId, await refresh(userId, heroId, 20));
@@ -320,7 +374,9 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
     const progress = snapshot.aggregates.progress!.state as ProgressState;
     expect(progress.traders.ilva).toEqual(traderView({ ...progress, traders: {} }, 'ilva', seed));
 
-    const first = progress.traders.ilva!.goods.findIndex((cell) => cell !== null);
+    const first = progress.traders.ilva!.goods.findIndex(
+      (cell) => cell !== null && !cell.discountPercent,
+    );
     const good = progress.traders.ilva!.goods[first]!;
     const bought = await kit.service.execute(
       userId,

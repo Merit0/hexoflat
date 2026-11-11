@@ -6,11 +6,23 @@ import type { InventoryState } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { deriveStream } from '../utils/random-seeded';
 import type { ProgressState } from '../aggregates/progress-state';
+import { applyDiscounts } from './discount-math';
 import { emptyBuyback, rollGoods } from './roll-goods';
-import type { TraderState } from './trade-state';
+import type { TraderGood, TraderState } from './trade-state';
 
 export function goodsStreamLabel(trader: TTraderKey, serial: number): string {
   return `trader:${trader}:${serial}`;
+}
+
+export function rollTraderGoods(
+  def: TTraderDefinition,
+  rngSeed: string,
+  key: TTraderKey,
+  serial: number,
+): (TraderGood | null)[] {
+  const label = goodsStreamLabel(key, serial);
+  const goods = rollGoods(def, deriveStream(rngSeed, label));
+  return applyDiscounts(def, goods, deriveStream(rngSeed, `${label}:deals`));
 }
 
 export function traderView(
@@ -25,7 +37,7 @@ export function traderView(
     serial: 0,
     trip: progress.trips,
     paidRefreshes: 0,
-    goods: rollGoods(def, deriveStream(rngSeed, goodsStreamLabel(key, 0))),
+    goods: rollTraderGoods(def, rngSeed, key, 0),
     buyback: emptyBuyback(def),
   };
 }

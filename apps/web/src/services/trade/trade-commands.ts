@@ -46,10 +46,42 @@ export async function buyFromTrader(
 ): Promise<TradeOutcome> {
   const trader = traderRef(key);
   if (!trader) return NO_TRADER;
+  const entry = from.list === 'goods' ? trader.state.goods[from.index] : null;
+  if (entry?.discountPercent) return { ok: false, reason: 'NEEDS_DEAL', price: null };
   const preview = previewBuy(currentInventory(), trader, from, to, split, amount);
   if (preview.price === null) return { ok: false, reason: preview.reason, price: null };
   const payload = { trader: key, from, to, split, amount, expectedPrice: preview.price };
   return outcomeOf(await sendInventoryCommand('SHOP_BUY', payload));
+}
+
+export type DealOutcome =
+  | { kind: 'bought'; price: number; saved: number }
+  | { kind: 'wasted' }
+  | { kind: 'refused'; reason: string; price: number | null };
+
+export async function dealWithTrader(
+  key: TTraderKey,
+  index: number,
+  guess: number,
+): Promise<DealOutcome> {
+  if (!traderRef(key)) return { kind: 'refused', reason: 'NOT_AT_TRADER', price: null };
+  const answer = await sendInventoryCommand('SHOP_DEAL', {
+    trader: key,
+    index,
+    guess,
+    to: 'auto',
+  });
+  const wasted = answer.events.some((event) => event.type === 'DEAL_WASTED');
+  if (answer.ok && wasted) return { kind: 'wasted' };
+  const bought = answer.events.find((event) => event.type === 'ITEM_BOUGHT');
+  if (answer.ok && bought) {
+    const payload = bought.payload as { price: number; saved?: number };
+    return { kind: 'bought', price: payload.price, saved: payload.saved ?? 0 };
+  }
+  const failed = outcomeOf(answer);
+  return failed.ok
+    ? { kind: 'refused', reason: 'REJECTED', price: null }
+    : { kind: 'refused', reason: failed.reason, price: failed.price };
 }
 
 export async function sellToTrader(

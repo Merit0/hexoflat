@@ -2,10 +2,9 @@ import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { TRADERS, type TTraderKey } from '../content/traders.content';
 import { spendWill } from '../knowledge/will';
-import { deriveStream } from '../utils/random-seeded';
-import { emptyBuyback, rollGoods } from './roll-goods';
+import { emptyBuyback } from './roll-goods';
 import type { TTradeError } from './trade-types';
-import { goodsStreamLabel, refreshPrice, traderView } from './trader-view';
+import { goodsStreamLabel, refreshPrice, rollTraderGoods, traderView } from './trader-view';
 
 export interface IRefreshOptions {
   rngSeed: string;
@@ -41,7 +40,7 @@ export function planRefresh(
     serial,
     trip: progress.trips,
     paidRefreshes: paid + 1,
-    goods: rollGoods(def, deriveStream(opts.rngSeed, goodsStreamLabel(trader, serial))),
+    goods: rollTraderGoods(def, opts.rngSeed, trader, serial),
     buyback: emptyBuyback(def),
   };
   return { ok: true, progress: next, serial, price, events: spent.events };

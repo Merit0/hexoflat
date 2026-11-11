@@ -7,6 +7,8 @@ export const traderGoodSchema = z
     key: hexobjectKeySchema,
     amount: z.number().int().positive(),
     sold: z.literal(true).optional(),
+    discountPercent: z.number().int().min(1).max(99).optional(),
+    wasted: z.literal(true).optional(),
   })
   .strict();
 export type TraderGood = z.infer<typeof traderGoodSchema>;

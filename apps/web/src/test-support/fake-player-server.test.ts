@@ -107,7 +107,7 @@ describe('the fake player server runs the trader like the real one', () => {
     });
     await inventoryCommand('DEV_GRANT_ITEM', { key: K.COINS, amount: 2000 });
     const goods = (snapshot().aggregates.progress!.state as ProgressState).traders.ilva!.goods;
-    const index = goods.findIndex((cell) => cell !== null);
+    const index = goods.findIndex((cell) => cell !== null && !cell.discountPercent);
     const good = goods[index]!;
     return inventoryCommand('SHOP_BUY', {
       trader: 'ilva',

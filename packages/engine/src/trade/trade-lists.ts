@@ -32,7 +32,9 @@ export function readSource(
   from: ITradeSource,
 ): TraderGood | BuybackEntry | null {
   const entry = (from.list === 'goods' ? state.goods : state.buyback)[from.index] ?? null;
-  return entry && 'sold' in entry && entry.sold ? null : entry;
+  if (!entry) return null;
+  if ('unitPrice' in entry) return entry;
+  return entry.sold || entry.wasted ? null : entry;
 }
 
 export function takeFromSource(

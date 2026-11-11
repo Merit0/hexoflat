@@ -255,6 +255,14 @@ export const traderDefinitionSchema = z
     guaranteed: z.array(traderStockRangeSchema),
     pool: z.array(traderStockRangeSchema.extend({ weight: z.number().int().positive() }).strict()),
     rolls: z.number().int().nonnegative(),
+    discounts: z
+      .object({
+        chancePct: z.number().int().min(0).max(100),
+        percents: z.array(z.number().int().min(1).max(99)).min(1),
+        maxGoods: z.number().int().positive(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

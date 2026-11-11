@@ -16,6 +16,7 @@
       :aria-label="label"
       :data-selected="selected"
       :data-sold="cell.sold || undefined"
+      :data-wasted="cell.wasted || undefined"
       @pointerdown.prevent="onPointerDown"
       @click="onSelect"
       @dblclick.prevent="onQuickTrade"
@@ -32,14 +33,23 @@
       />
     </div>
     <span
-      v-if="showsCounter(cell.item) && !lifted && !cell.sold"
+      v-if="showsCounter(cell.item) && !lifted && !cell.sold && !cell.wasted"
       class="amount"
       data-testid="shop-slot-amount"
       >{{ cell.item?.amount }}</span
     >
-    <div v-if="cell.sold || cell.price !== null" class="price-section">
+    <span
+      v-if="cell.discountPercent !== null && !cell.sold && !cell.wasted"
+      class="badge"
+      :data-testid="`shop-offer-badge-${cell.index}`"
+      >{{ i18n.t('shop.badge.percent', { p: cell.discountPercent }) }}</span
+    >
+    <div v-if="cell.sold || cell.wasted || cell.price !== null" class="price-section">
       <span v-if="cell.sold" class="sold-label" data-testid="shop-sold-label">{{
         i18n.t('shop.status.soldOut')
+      }}</span>
+      <span v-else-if="cell.wasted" class="sold-label" data-testid="shop-wasted-label">{{
+        i18n.t('shop.status.wasted')
       }}</span>
       <shop-price-tag
         v-else-if="cell.price !== null"
@@ -86,7 +96,7 @@ const source = computed<ShopDragSource>(() => ({
 }));
 const tilt = computed(() => shopTiltOf(list.value, props.cell.index, props.cell.item?.key ?? ''));
 const lifted = computed(() => isTradeCellLifted(list.value, props.cell.index));
-const usable = computed(() => !!props.cell.item && !props.cell.sold);
+const usable = computed(() => !!props.cell.item && !props.cell.sold && !props.cell.wasted);
 const selected = computed(() =>
   isTradeCellSelected(
     list.value,
@@ -99,7 +109,7 @@ const classes = computed(() => ({
   'cursor-grab': usable.value,
   'is-lifted': lifted.value,
   'is-selected': selected.value,
-  'is-sold': props.cell.sold,
+  'is-sold': props.cell.sold || props.cell.wasted,
   'is-landed': stashFx.landed === key.value,
   'is-shake': stashFx.shake === key.value,
 }));
@@ -209,6 +219,23 @@ function tooltipPrice(): TooltipPrice | null {
   white-space: nowrap;
   text-transform: uppercase;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.trade-slot {
+  position: relative;
+}
+.trade-slot .badge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  z-index: 1;
+  padding: 1px 6px;
+  border: 1px solid #e3c27a;
+  border-radius: 9px;
+  background: #3a2a0c;
+  color: #f0d48a;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
 }
 .trade-slot .amount {
   top: -8px;

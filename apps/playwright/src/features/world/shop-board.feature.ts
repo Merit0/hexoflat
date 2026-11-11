@@ -155,6 +155,48 @@ export class ShopBoardFeature extends BaseFeature {
     );
   }
 
+  async verifyOfferBadge(index: number, percent: number | null): Promise<void> {
+    await this.step(`Verify goods cell ${index} badge is ${percent ?? 'absent'}`, () =>
+      this.board.verifyOfferBadge(index, percent),
+    );
+  }
+
+  async verifyOfferWasted(index: number): Promise<void> {
+    await this.step(`Verify goods cell ${index} is Wasted, not Sold out`, () =>
+      this.board.verifyOfferWasted(index),
+    );
+  }
+
+  async verifyPriceInputShown(shown: boolean): Promise<void> {
+    await this.step(`Verify the own-price field is ${shown ? 'shown' : 'absent'}`, () =>
+      this.board.verifyPriceInputShown(shown),
+    );
+  }
+
+  async enterOwnPrice(price: string): Promise<void> {
+    await this.step(`Type ${price || 'nothing'} as the own price`, () =>
+      this.board.enterOwnPrice(price),
+    );
+  }
+
+  async verifyBuyDisabled(disabled: boolean): Promise<void> {
+    await this.step(`Verify the Buy button is ${disabled ? 'disabled' : 'enabled'}`, () =>
+      this.board.verifyBuyDisabled(disabled),
+    );
+  }
+
+  async verifyToastText(pattern: RegExp): Promise<void> {
+    await this.step(`Verify the toast reads ${String(pattern)}`, () =>
+      this.board.verifyToastText(pattern),
+    );
+  }
+
+  async verifyCardHidesPrice(price: number): Promise<void> {
+    await this.step(`Verify the card never shows ${price}`, () =>
+      this.board.verifyCardHidesPrice(price),
+    );
+  }
+
   async pressBuy(): Promise<void> {
     await this.step('Press the action button on the card', () => this.board.clickBuy());
   }

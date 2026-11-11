@@ -18,6 +18,7 @@ import { inventoryStateSchema } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import {
   ShopBuyCommandSchema,
+  ShopDealCommandSchema,
   ShopRefreshCommandSchema,
   ShopSellCommandSchema,
 } from '../trade/trade-commands';
@@ -131,6 +132,7 @@ export const PLAYER_COMMAND_SCHEMAS = {
   DEV_SET_KNOWLEDGE: strict(DevSetKnowledgeCommandSchema),
   SHOP_BUY: strict(ShopBuyCommandSchema),
   SHOP_SELL: strict(ShopSellCommandSchema),
+  SHOP_DEAL: strict(ShopDealCommandSchema),
   SHOP_REFRESH: strict(ShopRefreshCommandSchema),
 } as const;
 
@@ -157,6 +159,7 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   DEV_SET_KNOWLEDGE: ['progress'],
   SHOP_BUY: ['inventory', 'progress'],
   SHOP_SELL: ['inventory', 'progress'],
+  SHOP_DEAL: ['inventory', 'progress'],
   SHOP_REFRESH: ['progress'],
 };
 
@@ -183,6 +186,7 @@ export const PLAYER_COMMAND_REVISION: Record<
   DEV_SET_KNOWLEDGE: 'knowledge',
   SHOP_BUY: 'aggregate',
   SHOP_SELL: 'aggregate',
+  SHOP_DEAL: 'aggregate',
   SHOP_REFRESH: 'knowledge',
 };
 

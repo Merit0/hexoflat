@@ -32,6 +32,22 @@ export const ShopBuyCommandSchema = z.object({
 });
 export type ShopBuyCommand = z.infer<typeof ShopBuyCommandSchema>;
 
+export const ShopDealCommandSchema = z.object({
+  type: z.literal('SHOP_DEAL'),
+  payload: z.object({
+    heroId: z.string().min(1),
+    revision: z.number().int().nonnegative(),
+    trader: z.enum(TRADER_KEYS),
+    index: z.number().int().min(0).max(63),
+    guess: z.number().int().min(1).max(999),
+    to: z.union([
+      z.literal('auto'),
+      z.object({ container: z.literal('bag'), index: bagIndex }).strict(),
+    ]),
+  }),
+});
+export type ShopDealCommand = z.infer<typeof ShopDealCommandSchema>;
+
 export const ShopSellCommandSchema = z.object({
   type: z.literal('SHOP_SELL'),
   payload: z.object({
@@ -49,4 +65,4 @@ export const ShopRefreshCommandSchema = z.object({
 });
 export type ShopRefreshCommand = z.infer<typeof ShopRefreshCommandSchema>;
 
-export type ShopCommand = ShopBuyCommand | ShopSellCommand | ShopRefreshCommand;
+export type ShopCommand = ShopBuyCommand | ShopDealCommand | ShopSellCommand | ShopRefreshCommand;

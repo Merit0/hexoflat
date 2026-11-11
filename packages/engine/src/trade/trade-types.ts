@@ -6,6 +6,8 @@ import type { TraderState } from './trade-state';
 export type TTradeError =
   | 'EMPTY_SOURCE'
   | 'NOT_TRADEABLE'
+  | 'NEEDS_DEAL'
+  | 'NOT_DISCOUNTED'
   | 'PRICE_CHANGED'
   | 'NOT_ENOUGH_COINS'
   | 'STACK_FULL'
@@ -32,6 +34,7 @@ export interface ITradeOptions {
   split: boolean;
   amount?: number;
   expectedPrice: number;
+  unitOverride?: number;
 }
 
 export interface ITradeDeal {

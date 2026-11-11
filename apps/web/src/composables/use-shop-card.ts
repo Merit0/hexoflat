@@ -23,6 +23,7 @@ export interface ShopCardView {
   preview: TradePreview;
   block: ShopBlock;
   maxQty: number;
+  discountPercent: number | null;
 }
 
 function blockOf(preview: TradePreview): ShopBlock {
@@ -49,7 +50,14 @@ function targetOf(
   return 1;
 }
 
-function locate(): { source: ShopDragSource; key: THexobjectKey; available: number } | null {
+interface Located {
+  source: ShopDragSource;
+  key: THexobjectKey;
+  available: number;
+  discountPercent: number | null;
+}
+
+function locate(): Located | null {
   const list = shopSelection.list;
   if (!list) return null;
   const inventory = currentInventory();
@@ -60,16 +68,19 @@ function locate(): { source: ShopDragSource; key: THexobjectKey; available: numb
       source: { kind: 'bag', index: shopSelection.index },
       key: item.key,
       available: item.amount,
+      discountPercent: null,
     };
   }
   const traderKey = useTraderStore().traderKey;
   const ref = traderKey ? traderRef(traderKey) : null;
   const entry = ref?.state[list][shopSelection.index];
-  if (!entry || entry.key !== shopSelection.key || ('sold' in entry && entry.sold)) return null;
+  if (!entry || entry.key !== shopSelection.key) return null;
+  if ('sold' in entry && (entry.sold || entry.wasted)) return null;
   return {
     source: { kind: 'trade', list, index: shopSelection.index },
     key: entry.key,
     available: entry.amount,
+    discountPercent: 'discountPercent' in entry ? (entry.discountPercent ?? null) : null,
   };
 }
 
@@ -92,7 +103,8 @@ export function useShopCard() {
             false,
             amount,
           );
-    const qty = Math.min(Math.max(shopQty.value, 1), available);
+    const qty =
+      found.discountPercent !== null ? 1 : Math.min(Math.max(shopQty.value, 1), available);
     const preview = price(qty);
     return {
       mode: source.kind === 'bag' ? 'trading' : source.list === 'goods' ? 'buying' : 'buyback',
@@ -107,7 +119,13 @@ export function useShopCard() {
       source,
       preview,
       block: blockOf(preview),
-      maxQty: source.kind === 'bag' ? available : targetOf(source, available, price),
+      maxQty:
+        found.discountPercent !== null
+          ? 1
+          : source.kind === 'bag'
+            ? available
+            : targetOf(source, available, price),
+      discountPercent: found.discountPercent,
     };
   });
 }

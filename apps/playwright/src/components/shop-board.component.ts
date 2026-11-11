@@ -4,7 +4,13 @@ import { pointerDrag } from '@components/pointer-drag';
 
 const POLL = { timeout: 5_000, intervals: [100] };
 
-export type ShopCellContent = { key: string; amount: number; sold?: boolean } | null;
+export type ShopCellContent = {
+  key: string;
+  amount: number;
+  sold?: boolean;
+  discountPercent?: number;
+  wasted?: boolean;
+} | null;
 export type ShopBuybackContent = { key: string; amount: number; unitPrice: number } | null;
 export type ShopTraderFixture = {
   goods?: ShopCellContent[];
@@ -269,6 +275,43 @@ export class ShopBoardComponent extends BaseComponent {
       'data-sum',
       String(pays),
     );
+  }
+
+  async verifyOfferBadge(index: number, percent: number | null): Promise<void> {
+    await this.openTab('goods');
+    const badge = this.page.getByTestId(`shop-offer-badge-${index}`);
+    if (percent === null) await expect(badge).toHaveCount(0);
+    else await expect(badge).toContainText(String(percent));
+  }
+
+  async verifyOfferWasted(index: number): Promise<void> {
+    await this.openTab('goods');
+    const cell = this.goodsCell(index);
+    await expect(cell).toHaveAttribute('data-wasted', 'true');
+    await expect(cell.locator('xpath=..').getByTestId('shop-wasted-label')).toBeVisible();
+    await expect(cell.locator('xpath=..').getByTestId('shop-sold-label')).toHaveCount(0);
+  }
+
+  async verifyPriceInputShown(shown: boolean): Promise<void> {
+    await expect(this.page.getByTestId('shop-card-price-input')).toHaveCount(shown ? 1 : 0);
+  }
+
+  async enterOwnPrice(price: string): Promise<void> {
+    await this.page.getByTestId('shop-card-price-input').fill(price);
+  }
+
+  async verifyBuyDisabled(disabled: boolean): Promise<void> {
+    const action = this.page.getByTestId('shop-card-action');
+    if (disabled) await expect(action).toBeDisabled();
+    else await expect(action).toBeEnabled();
+  }
+
+  async verifyToastText(pattern: RegExp): Promise<void> {
+    await expect(this.page.getByTestId('shop-toast-text')).toHaveText(pattern);
+  }
+
+  async verifyCardHidesPrice(price: number): Promise<void> {
+    await expect(this.page.getByTestId('shop-card')).not.toContainText(String(price));
   }
 
   async pressUndoOnToast(): Promise<void> {

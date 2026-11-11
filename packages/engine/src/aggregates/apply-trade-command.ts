@@ -2,6 +2,7 @@ import type { DomainEvent } from '../commands/types';
 import type { TTraderKey } from '../content/traders.content';
 import type { InventoryContext } from '../inventory/inventory-commands';
 import type { InventoryState } from '../inventory/inventory-state';
+import { planDeal } from '../trade/plan-deal';
 import { planBuy } from '../trade/plan-buy';
 import { planRefresh } from '../trade/plan-refresh';
 import { planSell } from '../trade/plan-sell';
@@ -84,6 +85,43 @@ function runRefresh(input: TradeInput & { command: { type: 'SHOP_REFRESH' } }): 
   return { changed: { progress: result.progress }, events: [...result.events, refreshed] };
 }
 
+function runDeal(input: TradeInput & { command: { type: 'SHOP_DEAL' } }): TradeApplyResult {
+  const { command, inventory, progress, trade } = input;
+  const { heroId, trader, index, guess, to } = command.payload;
+  const ref = { key: trader, state: traderView(progress, trader, trade.rngSeed) };
+  const deal = planDeal(inventory, ref, index, to, guess);
+  if (deal.kind === 'refused') return rejected(command, deal.result.reason, deal.result.price);
+  const revision = inventory.revision + 1;
+  const changedInventory = {
+    ...(deal.kind === 'bought' ? deal.result.inventory : inventory),
+    revision,
+  };
+  const nextTrader = deal.kind === 'bought' ? deal.result.trader : deal.trader;
+  const outcome: DomainEvent =
+    deal.kind === 'bought'
+      ? {
+          type: 'ITEM_BOUGHT',
+          payload: {
+            heroId,
+            trader,
+            key: deal.result.key,
+            amount: deal.result.amount,
+            price: deal.result.price,
+            from: 'goods',
+            discounted: true,
+            saved: deal.saved,
+          },
+        }
+      : { type: 'DEAL_WASTED', payload: { heroId, trader, key: deal.key, index } };
+  return {
+    changed: {
+      inventory: changedInventory,
+      progress: { ...progress, traders: { ...progress.traders, [trader]: nextTrader } },
+    },
+    events: [outcome, { type: 'INVENTORY_CHANGED', payload: { heroId, revision } }],
+  };
+}
+
 export function applyTradeCommand(
   aggregates: { inventory: InventoryState; progress: ProgressState },
   command: ShopCommand,
@@ -94,6 +132,7 @@ export function applyTradeCommand(
   const refusal = guardRefusal(input, ctx.inventory);
   if (refusal) return rejected(command, refusal);
   if (command.type === 'SHOP_REFRESH') return runRefresh({ ...input, command });
+  if (command.type === 'SHOP_DEAL') return runDeal({ ...input, command });
 
   const { trader, expectedPrice, split, amount } = command.payload;
   const ref = { key: trader, state: traderView(input.progress, trader, trade.rngSeed) };
