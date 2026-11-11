@@ -1,6 +1,11 @@
+import { getMeta } from '@hexoflat/engine';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { i18n } from '@/i18n';
+import type { TradePreview } from '@/services/trade/trade-preview';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import type { ShopDragSource } from './shop-drag-state';
 import type { ShopDropLabel } from './shop-drop';
+import { showShopToast } from './shop-toast';
 
 const t = (key: string, params?: Record<string, unknown>): string =>
   i18n.global.t(key, params ?? {});
@@ -69,16 +74,27 @@ export function shopDropText(label: ShopDropLabel): string {
   }
 }
 
-export function shopHintText(dragging: boolean, split: boolean): string {
-  if (!dragging) return t('shop.hint.idle');
-  return split ? t('shop.hint.split') : t('shop.hint.drag');
+function itemName(key: THexobjectKey): string {
+  const title = getMeta(key).title;
+  return i18n.global.te(title) ? i18n.global.t(title) : title;
 }
 
-export function refreshConfirmText(price: number, losesBuyback: boolean): string {
-  const confirm = t('shop.refreshConfirm', { price });
-  return losesBuyback ? `${confirm} ${t('shop.refreshLosesBuyback')}` : confirm;
-}
-
-export function warnRefreshNoWill(price: number): void {
-  useHeroToolStore().setActionMessage(t('shop.refreshNoWill', { price }), 'will', price, 'warn');
+export function announceDeal(
+  source: ShopDragSource,
+  key: THexobjectKey,
+  preview: TradePreview,
+  undoSale: (key: THexobjectKey, amount: number) => void,
+): void {
+  if (!preview.ok) return;
+  const name = itemName(key);
+  const { amount, price } = preview;
+  if (source.kind === 'bag') {
+    showShopToast(t('shop.toast.sold', { name, price }), () => undoSale(key, amount));
+    return;
+  }
+  showShopToast(
+    source.list === 'buyback'
+      ? t('shop.toast.boughtBack', { name, price })
+      : t('shop.toast.bought', { name, price }),
+  );
 }

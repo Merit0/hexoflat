@@ -30,6 +30,7 @@ export interface ITraderRef {
 
 export interface ITradeOptions {
   split: boolean;
+  amount?: number;
   expectedPrice: number;
 }
 

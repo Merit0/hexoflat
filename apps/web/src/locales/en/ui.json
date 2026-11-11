@@ -720,28 +720,7 @@
   "shop": {
     "title": "Trader's Stall",
     "close": "Close the stall",
-    "goods": "Goods",
-    "buyback": "Buyback",
-    "buybackHint": "Sold — buy back until new goods",
-    "sellRate": "Sell rate {percent}%",
     "coins": "Coins",
-    "soldOut": "Sold out",
-    "buy": "Buy",
-    "buyBack": "Buy back",
-    "refresh": "Refresh",
-    "refreshConfirm": "Pay {price} Will for new goods? Click again to confirm.",
-    "refreshLosesBuyback": "The buyback row will be lost.",
-    "refreshNoWill": "New goods cost {price} Will. Not enough Will.",
-    "hint": {
-      "idle": "Drag goods into the bag to buy, drag bag items onto the trader to sell. Shift takes half a stack.",
-      "drag": "Release over a bag cell to buy, or over the trader to sell. Esc cancels.",
-      "split": "Trading half of the stack. Esc cancels."
-    },
-    "price": {
-      "buy": "Price",
-      "sell": "Sells for",
-      "buyback": "Buy back for"
-    },
     "drop": {
       "buy": "Buy · {price}",
       "buySplit": "Buy {n} · {price}",
@@ -764,6 +743,61 @@
       "WILL_REJECTED": "Not enough Will.",
       "BATTLE_OPEN": "No trading during a battle.",
       "REJECTED": "The deal did not go through."
+    },
+    "tab": {
+      "goods": "Goods",
+      "buyback": "Buyback"
+    },
+    "refresh": {
+      "aria": "Refresh goods"
+    },
+    "merchant": {
+      "paysRate": "Pays {percent}% of price"
+    },
+    "card": {
+      "empty": {
+        "title": "Pick an item",
+        "hint": "Tap goods to buy, tap bag items to trade."
+      },
+      "buy": "Buy",
+      "trade": "Trade",
+      "buyBack": "Buy back · {price}",
+      "max": "Max",
+      "all": "All",
+      "dec": "Less",
+      "inc": "More",
+      "inBag": "In bag: {n}",
+      "notInBag": "Not in bag",
+      "paysLabel": "Ilva pays",
+      "note": {
+        "inStock": "{n} in stock.",
+        "lastOne": "Last one in stock.",
+        "samePrice": "Back for the same price Ilva paid you.",
+        "tradeRate": "{percent}% of the price. Buy back anytime until new goods."
+      }
+    },
+    "status": {
+      "soldOut": "Sold out"
+    },
+    "block": {
+      "OVERWEIGHT": "Too heavy for your bag.",
+      "BAG_FULL": "No room in your bag.",
+      "NOT_SELLABLE": "Ilva will not take this."
+    },
+    "buyback": {
+      "emptyTitle": "Nothing to buy back",
+      "emptyHint": "Items you sell wait here at the price Ilva paid, until she gets new goods."
+    },
+    "toast": {
+      "bought": "Bought {name} · −{price} coins",
+      "sold": "Sold {name} · +{price} coins",
+      "boughtBack": "Bought back {name} · −{price} coins",
+      "undo": "Undo"
+    },
+    "price": {
+      "buy": "Price",
+      "sell": "Sells for",
+      "buyback": "Buy back for"
     }
   },
   "player": {

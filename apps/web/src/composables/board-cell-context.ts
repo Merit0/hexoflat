@@ -14,6 +14,10 @@ export interface BoardCellContext {
   stateOf: (location: TItemLocation) => BoardCellState;
   zoneClassOf: (zone: 'bag') => string;
   priceOf?: (location: TItemLocation) => TooltipPrice | null;
+  select?: (location: TItemLocation, item: InventoryItem) => void;
+  isSelected?: (location: TItemLocation, item: InventoryItem) => boolean;
+  sumOf?: (location: TItemLocation) => number | null;
+  forecastKg?: () => string | null;
 }
 
 export const BOARD_CELL_CONTEXT: InjectionKey<BoardCellContext> = Symbol('board-cell-context');

@@ -1,19 +1,16 @@
 <template>
   <section class="banner" :class="zoneClass" data-zone="trader" data-testid="shop-trader-banner">
-    <img class="portrait" :src="definition.portraitPath" alt="" aria-hidden="true" />
     <div class="who">
       <h3 data-testid="shop-trader-name">{{ t(definition.title) }}</h3>
-      <p>{{ t(definition.line) }}</p>
-    </div>
-    <div class="purse">
-      <span class="coins" :title="t('shop.coins')" data-testid="shop-coins" :data-coins="coins">
-        <img :src="COIN_SRC" alt="" aria-hidden="true" />
-        {{ coins }}
-      </span>
       <span class="rate" data-testid="shop-sell-rate">{{
-        t('shop.sellRate', { percent: sellRatePercent })
+        t('shop.merchant.paysRate', { percent: sellRatePercent })
       }}</span>
     </div>
+    <span class="glow" aria-hidden="true"></span>
+    <span class="coins" :title="t('shop.coins')" data-testid="shop-coins" :data-coins="coins">
+      <img :src="COIN_SRC" alt="" aria-hidden="true" />
+      {{ coins }}
+    </span>
   </section>
 </template>
 
@@ -36,10 +33,10 @@ const zoneClass = computed(() => shopZoneClass('trader'));
 .banner {
   flex: none;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 10px;
-  padding: 8px var(--stash-pad);
+  gap: 14px;
+  padding: 10px var(--stash-pad);
   background: rgba(0, 0, 0, 0.35);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
@@ -53,59 +50,53 @@ const zoneClass = computed(() => shopZoneClass('trader'));
     0 0 0 2px rgba(255, 120, 120, 0.5) inset,
     0 0 16px rgba(255, 80, 80, 0.4);
 }
-.portrait {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.7));
-  pointer-events: none;
-}
 .who {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 h3 {
   margin: 0;
-  overflow: hidden;
   font-family: var(--font-main, serif), serif;
-  font-size: 1rem;
+  font-size: 26px;
   font-weight: 700;
-  font-variant: small-caps;
-  letter-spacing: 0.05em;
-  color: #ffe98a;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.1;
+  color: #f0e4c4;
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
 }
-p {
-  margin: 2px 0 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.78rem;
-  font-style: italic;
+.rate {
+  padding: 2px 9px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
-.purse {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+.glow {
+  width: 2px;
+  height: 56px;
+  background: linear-gradient(180deg, transparent, #f0d48a, transparent);
+  box-shadow:
+    0 0 8px 1px rgba(240, 212, 138, 0.55),
+    0 0 18px 3px rgba(227, 194, 122, 0.22);
 }
 .coins {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  color: #ffe98a;
-  font-size: 1rem;
-  font-weight: 800;
+  gap: 6px;
+  color: #f0d48a;
+  font-family: var(--font-main, serif), serif;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 .coins img {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
-}
-.rate {
-  color: rgba(255, 236, 186, 0.8);
-  font-size: 0.72rem;
-  font-weight: 700;
-  white-space: nowrap;
 }
 </style>

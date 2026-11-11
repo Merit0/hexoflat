@@ -57,5 +57,6 @@ h3 {
 }
 .grid.is-goods {
   --shop-tag-scale: 1.8;
+  --shop-slot-ratio: 1.35;
   grid-template-columns: repeat(4, calc((7 * var(--stash-cell) + 3 * var(--stash-gap)) / 4));
 }

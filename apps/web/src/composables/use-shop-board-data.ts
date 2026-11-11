@@ -76,10 +76,12 @@ export function useShopBoardData() {
   const goods = computed(() => cellsOf('goods'));
   const buyback = computed(() => cellsOf('buyback'));
 
+  const will = computed(() => heroStore.knowledge?.current ?? 0);
+
   const refresh = computed(() => {
     const ref = trader.value;
     if (!ref) return null;
-    return previewRefresh(ref.key, ref.state, traderStore.trips, heroStore.knowledge?.current ?? 0);
+    return previewRefresh(ref.key, ref.state, traderStore.trips, will.value);
   });
 
   function sellPriceOf(location: TItemLocation): TooltipPrice | null {
@@ -99,7 +101,7 @@ export function useShopBoardData() {
     ),
     goods,
     buyback,
-    hasBuyback: computed(() => buyback.value.some((cell) => cell.item !== null)),
+    will,
     refresh,
     sellPriceOf,
   };

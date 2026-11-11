@@ -18,42 +18,51 @@
         :coins="coins"
         :sell-rate-percent="sellRatePercent"
       />
-      <shop-goods-pane :goods="goods" :refresh="refresh" :loses-buyback="hasBuyback" />
-      <shop-selection-card :goods="goods" :buyback="buyback" />
-      <shop-buyback-row v-if="hasBuyback" :buyback="buyback" />
+      <shop-goods-pane :goods="goods" :buyback="buyback" :refresh="refresh" />
+      <shop-selection-card :sell-rate-percent="sellRatePercent" />
     </template>
-    <stash-bag-pane />
+    <stash-bag-pane :rows="2" />
     <shop-drag-ghost />
-
-    <p class="foot" data-testid="shop-hint">{{ hint }}</p>
+    <shop-toast />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, provide, ref } from 'vue';
+import { provide, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BoardCloseButton from '@/components/gui/board/board-close-button.vue';
 import { BOARD_CELL_CONTEXT } from '@/composables/board-cell-context';
 import { useInventoryCellSize } from '@/composables/use-inventory-cell-size';
 import { closeShopBoard } from '@/composables/use-shop-board';
-import { shopBagCellState, shopDrag, shopZoneClass } from '@/composables/shop-drag-state';
-import { shopHintText } from '@/composables/shop-messages';
+import { shopBagCellState, shopZoneClass } from '@/composables/shop-drag-state';
+import { isTradeCellSelected, selectBagCell } from '@/composables/shop-selection';
+import { useShopCard } from '@/composables/use-shop-card';
+import { formatKg } from '@/composables/use-stash-board-data';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { beginShopDrag, quickTrade } from '@/composables/use-shop-drag';
 import { useShopBoardData } from '@/composables/use-shop-board-data';
 import StashBagPane from '../stash/stash-bag-pane.vue';
-import ShopBuybackRow from './shop-buyback-row.vue';
 import ShopDragGhost from './shop-drag-ghost.vue';
 import ShopGoodsPane from './shop-goods-pane.vue';
 import ShopSelectionCard from './shop-selection-card.vue';
+import ShopToast from './shop-toast.vue';
 import ShopTraderBanner from './shop-trader-banner.vue';
 
 const { t } = useI18n();
 const board = ref<HTMLElement | null>(null);
 const { style: cellStyle } = useInventoryCellSize(board);
-const { definition, coins, sellRatePercent, goods, buyback, hasBuyback, refresh, sellPriceOf } =
+const { definition, coins, sellRatePercent, goods, buyback, refresh, sellPriceOf } =
   useShopBoardData();
+const card = useShopCard();
+const inventory = useHeroInventoryStore();
 
-const hint = computed(() => shopHintText(shopDrag.active, shopDrag.split));
+function forecastKg(): string | null {
+  const view = card.value;
+  if (!view || !view.preview.ok) return null;
+  const delta = view.unitWeightKg * view.preview.amount;
+  const next = view.mode === 'trading' ? -delta : delta;
+  return formatKg(Math.max(0, inventory.carriedWeightKg + next));
+}
 
 provide(BOARD_CELL_CONTEXT, {
   begin: (event, location, item) => {
@@ -67,6 +76,13 @@ provide(BOARD_CELL_CONTEXT, {
   stateOf: shopBagCellState,
   zoneClassOf: shopZoneClass,
   priceOf: sellPriceOf,
+  select: (location, item) => {
+    if (location.container === 'bag') selectBagCell(location.index, item.key);
+  },
+  isSelected: (location, item) =>
+    location.container === 'bag' && isTradeCellSelected('bag', location.index, item.key),
+  sumOf: (location) => sellPriceOf(location)?.coins ?? null,
+  forecastKg,
 });
 </script>
 
@@ -118,13 +134,5 @@ h2 {
   height: 9px;
   border: 1px solid rgba(255, 220, 150, 0.55);
   transform: rotate(45deg);
-}
-.foot {
-  margin: 0;
-  padding: 2px 10px 6px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-align: center;
 }
 </style>

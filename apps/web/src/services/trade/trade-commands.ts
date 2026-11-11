@@ -42,12 +42,13 @@ export async function buyFromTrader(
   from: ITradeSource,
   to: TBuyTarget,
   split = false,
+  amount?: number,
 ): Promise<TradeOutcome> {
   const trader = traderRef(key);
   if (!trader) return NO_TRADER;
-  const preview = previewBuy(currentInventory(), trader, from, to, split);
+  const preview = previewBuy(currentInventory(), trader, from, to, split, amount);
   if (preview.price === null) return { ok: false, reason: preview.reason, price: null };
-  const payload = { trader: key, from, to, split, expectedPrice: preview.price };
+  const payload = { trader: key, from, to, split, amount, expectedPrice: preview.price };
   return outcomeOf(await sendInventoryCommand('SHOP_BUY', payload));
 }
 
@@ -55,13 +56,14 @@ export async function sellToTrader(
   key: TTraderKey,
   fromBagIndex: number,
   split = false,
+  amount?: number,
 ): Promise<TradeOutcome> {
   const trader = traderRef(key);
   if (!trader) return NO_TRADER;
-  const preview = previewSell(currentInventory(), trader, fromBagIndex, split);
+  const preview = previewSell(currentInventory(), trader, fromBagIndex, split, amount);
   if (preview.price === null) return { ok: false, reason: preview.reason, price: null };
   const from = { container: 'bag', index: fromBagIndex };
-  const payload = { trader: key, from, split, expectedPrice: preview.price };
+  const payload = { trader: key, from, split, amount, expectedPrice: preview.price };
   return outcomeOf(await sendInventoryCommand('SHOP_SELL', payload));
 }
 

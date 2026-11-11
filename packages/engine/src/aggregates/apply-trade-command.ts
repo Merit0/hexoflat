@@ -95,9 +95,9 @@ export function applyTradeCommand(
   if (refusal) return rejected(command, refusal);
   if (command.type === 'SHOP_REFRESH') return runRefresh({ ...input, command });
 
-  const { trader, expectedPrice, split } = command.payload;
+  const { trader, expectedPrice, split, amount } = command.payload;
   const ref = { key: trader, state: traderView(input.progress, trader, trade.rngSeed) };
-  const opts = { split, expectedPrice };
+  const opts = { split, expectedPrice, amount };
   const result =
     command.type === 'SHOP_BUY'
       ? planBuy(input.inventory, ref, command.payload.from, command.payload.to, opts)

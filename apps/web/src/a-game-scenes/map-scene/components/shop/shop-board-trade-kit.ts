@@ -11,8 +11,9 @@ import { i18n } from '@/i18n';
 import { hideItemTooltip } from '@/composables/use-item-tooltip';
 import { resetShopDrag } from '@/composables/shop-drag-state';
 import { clearShopSelection } from '@/composables/shop-selection';
+import { shopTab } from '@/composables/shop-tab';
+import { clearShopToast } from '@/composables/shop-toast';
 import { settleShopDeal } from '@/composables/use-shop-drag';
-import { cancelRefreshConfirm } from '@/composables/use-shop-refresh';
 import {
   applyProgress,
   bindKnowledgeListener,
@@ -86,6 +87,8 @@ export async function mountShop(
   localStorage.clear();
   resetShopDrag();
   clearShopSelection();
+  clearShopToast();
+  shopTab.value = 'goods';
   sentCommands.length = 0;
   seedFakeSession(HERO, { presence: AT_STALL, will: options.will ?? 50 });
   useHeroToolStore().clearActionMessage();
@@ -134,7 +137,7 @@ export async function drop() {
 export function registerShopCleanup(): void {
   afterEach(() => {
     bindKnowledgeListener(null);
-    cancelRefreshConfirm();
+    clearShopToast();
     hideItemTooltip();
     view.app?.unmount();
     view.app = null;
@@ -142,4 +145,9 @@ export function registerShopCleanup(): void {
     view.pointed = [];
     vi.useRealTimers();
   });
+}
+
+export async function openBuybackTab(): Promise<void> {
+  byId('shop-tab-buyback').click();
+  await nextTick();
 }

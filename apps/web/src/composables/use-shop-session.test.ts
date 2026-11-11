@@ -13,7 +13,6 @@ import { openStashBoard } from './use-stash-board';
 import { closeShopBoard, openShopBoard } from './use-shop-board';
 import { useShopSession } from './use-shop-session';
 import { shopDrag } from './shop-drag-state';
-import { refreshConfirming } from './use-shop-refresh';
 
 let app: App;
 
@@ -103,23 +102,17 @@ describe('useShopSession', () => {
     expect(shopOpen()).toBe(false);
   });
 
-  it('Escape during a drag or a New goods confirmation leaves the shop open', () => {
+  it('Escape during a drag leaves the shop open', () => {
     shopDrag.active = true;
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(shopOpen()).toBe(true);
     shopDrag.active = false;
-    refreshConfirming.value = true;
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    expect(shopOpen()).toBe(true);
-    refreshConfirming.value = false;
   });
 
-  it('closing the board drops a drag and a pending confirmation', () => {
+  it('closing the board drops a drag', () => {
     shopDrag.active = true;
-    refreshConfirming.value = true;
     closeShopBoard();
     expect(shopDrag.active).toBe(false);
-    expect(refreshConfirming.value).toBe(false);
   });
 });
 

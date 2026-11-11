@@ -30,17 +30,16 @@
         :rotation-deg="tilt"
         :price="tooltipPrice"
       />
-      <span v-if="showsCounter(cell.item) && !lifted" class="amount">{{ cell.item?.amount }}</span>
       <span v-if="cell.sold" class="sold-label" data-testid="shop-sold-label">{{
-        i18n.t('shop.soldOut')
+        i18n.t('shop.status.soldOut')
       }}</span>
     </div>
-    <shop-price-tag
-      v-if="cell.price !== null"
-      :price="cell.price"
-      :affordable="cell.affordable"
-      :testid="priceTestid"
-    />
+    <span v-if="showsCounter(cell.item) && !lifted" class="amount" data-testid="shop-slot-amount">{{
+      cell.item?.amount
+    }}</span>
+    <div v-if="!cell.sold && cell.price !== null" class="price-section">
+      <shop-price-tag :price="cell.price" :affordable="cell.affordable" :testid="priceTestid" />
+    </div>
   </div>
 </template>
 
@@ -137,21 +136,51 @@ function tooltipPrice(): TooltipPrice | null {
 
 <style scoped>
 .trade-slot {
+  position: relative;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 3px;
+  align-items: stretch;
+  gap: 5px;
   min-width: 0;
+  padding: 6px;
+  border: 1px solid rgba(227, 194, 122, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(34, 44, 54, 0.9), rgba(14, 18, 24, 0.9));
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 10px rgba(0, 0, 0, 0.35);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.trade-slot:hover {
+  border-color: rgba(227, 194, 122, 0.55);
+}
+.trade-slot:has(.cell.is-selected) {
+  border-color: #e6f1fb;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(230, 241, 251, 0.55),
+    0 0 14px rgba(207, 228, 248, 0.5);
+}
+.trade-slot:has(.cell.is-sold) {
+  opacity: 0.8;
+}
+.price-section {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 0;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .trade-slot .cell {
   width: 100%;
-}
-.trade-slot .cell.is-selected {
-  border: 1px solid #f5c26b;
-  background: rgba(122, 141, 160, 0.34);
-  box-shadow:
-    0 0 0 2px rgba(245, 194, 107, 0.55) inset,
-    0 0 12px rgba(122, 141, 160, 0.55);
+  aspect-ratio: var(--shop-slot-ratio, 1);
 }
 .trade-slot .cell.is-sold {
   cursor: default;
@@ -175,6 +204,20 @@ function tooltipPrice(): TooltipPrice | null {
   pointer-events: none;
 }
 .trade-slot .amount {
-  font-size: calc(11px * var(--shop-tag-scale, 1));
+  top: -8px;
+  right: -8px;
+  bottom: auto;
+  z-index: 1;
+  min-width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  border: 1px solid #6b7684;
+  border-radius: 10px;
+  background: #12161b;
+  font-size: 12px;
+  font-weight: 600;
 }
 </style>

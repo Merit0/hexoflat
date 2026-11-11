@@ -38,8 +38,11 @@ export function previewBuy(
   from: ITradeSource,
   to: TBuyTarget,
   split: boolean,
+  amount?: number,
 ): TradePreview {
-  return settle((expectedPrice) => planBuy(inventory, trader, from, to, { split, expectedPrice }));
+  return settle((expectedPrice) =>
+    planBuy(inventory, trader, from, to, { split, amount, expectedPrice }),
+  );
 }
 
 export function previewSell(
@@ -47,9 +50,10 @@ export function previewSell(
   trader: ITraderRef,
   fromBagIndex: number,
   split: boolean,
+  amount?: number,
 ): TradePreview {
   return settle((expectedPrice) =>
-    planSell(inventory, trader, fromBagIndex, { split, expectedPrice }),
+    planSell(inventory, trader, fromBagIndex, { split, amount, expectedPrice }),
   );
 }
 

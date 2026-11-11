@@ -8,6 +8,7 @@ import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { TraderState } from '@hexoflat/engine/trade/trade-state';
 import { sellUnitPrice } from '@hexoflat/engine/trade/trader-view';
+import { shopTab } from '@/composables/shop-tab';
 import { hideItemTooltip, useItemTooltip } from '@/composables/use-item-tooltip';
 import { applyTraderProjection, resetTraderProjection } from '@/services/trade/trader-projection';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -45,6 +46,7 @@ async function mountShop(options: { coins?: number; will?: number; state?: Trade
   const pinia = createPinia();
   setActivePinia(pinia);
   localStorage.clear();
+  shopTab.value = 'goods';
   const inventory = useHeroInventoryStore();
   inventory.hydrate();
   inventory.carryCapacityKg = 10;
@@ -76,12 +78,12 @@ afterEach(() => {
 describe('shop board layout', () => {
   beforeEach(() => mountShop({ coins: 100 }));
 
-  it('stacks the header, trader, goods, bag and hint in that order', () => {
+  it('stacks the header, trader, goods, card and bag in that order', () => {
     expect(byId('shop-board')).not.toBeNull();
     expect(follows('shop-close', 'shop-trader-banner')).toBe(true);
     expect(follows('shop-trader-banner', 'shop-goods-pane')).toBe(true);
-    expect(follows('shop-goods-pane', 'stash-bag-pane')).toBe(true);
-    expect(follows('stash-bag-pane', 'shop-hint')).toBe(true);
+    expect(follows('shop-goods-pane', 'shop-card')).toBe(true);
+    expect(follows('shop-card', 'stash-bag-pane')).toBe(true);
   });
 
   it('shows eight goods cells with the item and its stack price', () => {
@@ -107,12 +109,18 @@ describe('shop board layout', () => {
     const banner = byId('shop-trader-banner')!;
     expect(byId('shop-trader-name')!.textContent).toBe('Ilva the Pedlar');
     expect(byId('shop-coins')!.textContent.trim()).toBe('100');
-    expect(byId('shop-sell-rate')!.textContent).toBe('Sell rate 40%');
+    expect(byId('shop-sell-rate')!.textContent).toBe('Pays 40% of price');
     expect(banner.textContent).not.toContain('kg');
   });
 
-  it('hides the buyback row while nothing was sold', () => {
+  it('shows the Buyback tab with a zero count while nothing was sold', () => {
+    expect(byId('shop-tab-buyback')!.dataset.count).toBe('0');
     expect(byId('shop-buyback-pane')).toBeNull();
+  });
+
+  it('keeps the card at 160px with the empty hint before anything is picked', () => {
+    expect(byId('shop-card')!.dataset.itemKey).toBeUndefined();
+    expect(byId('shop-card')!.textContent).toContain('Pick an item');
   });
 
   it('reuses the stash bag with the same cells', () => {
@@ -128,38 +136,66 @@ describe('shop board layout', () => {
 });
 
 describe('shop board buyback and refresh', () => {
-  it('lists sold items at the price they were sold for', async () => {
+  it('lists sold items on the Buyback tab at the price they were sold for', async () => {
     const buyback = [{ key: K.SWORD, amount: 1, unitPrice: 200 }, ...EMPTY_ROW].slice(0, 7);
     await mountShop({ coins: 10, state: trader({ buyback }) });
+    expect(byId('shop-tab-buyback')!.dataset.count).toBe('1');
+    byId('shop-tab-buyback')!.click();
+    await nextTick();
     expect(all('shop-buyback-cell-')).toHaveLength(7);
     expect(byId('shop-buyback-cell-0')!.dataset.itemKey).toBe(K.SWORD);
     expect(byId('shop-buyback-price-0')!.textContent.trim()).toBe('200');
     expect(byId('shop-buyback-price-0')!.classList.contains('is-short')).toBe(true);
-    expect(follows('shop-goods-pane', 'shop-buyback-pane')).toBe(true);
-    expect(follows('shop-buyback-pane', 'stash-bag-pane')).toBe(true);
+    expect(byId('shop-goods-pane')).toBeNull();
   });
 
-  it('prices New goods at 20 Will and turns red when the Will is short', async () => {
+  it('shows the empty Buyback state', async () => {
+    await mountShop();
+    byId('shop-tab-buyback')!.click();
+    await nextTick();
+    expect(byId('shop-buyback-empty')!.textContent).toContain('Nothing to buy back');
+  });
+
+  async function hoverTip() {
+    byId('shop-refresh')!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    return byId('shop-refresh-price')!;
+  }
+
+  it('shows the cost with the Will icon in a tooltip, 20 Will at the start', async () => {
+    await mountShop({ will: 50 });
+    const tip = await hoverTip();
+    expect(tip.dataset.price).toBe('20');
+    expect(tip.querySelector('img')).not.toBeNull();
+    expect(tip.textContent).toContain('20');
+    expect(byId('shop-refresh')!.nextElementSibling).toBe(tip);
+  });
+
+  it('marks the tooltip red when the Will is short', async () => {
     await mountShop({ will: 19 });
-    expect(byId('shop-refresh-price')!.dataset.price).toBe('20');
-    expect(byId('shop-refresh')!.classList.contains('is-short')).toBe(true);
+    expect(byId('shop-refresh')!.dataset.affordable).toBe('false');
+    expect((await hoverTip()).classList.contains('is-short')).toBe(true);
   });
 
-  it('doubles the refresh price after a paid refresh on the same trip', async () => {
+  it('doubles the price after a paid refresh on the same trip', async () => {
     await mountShop({ will: 50, state: trader({ paidRefreshes: 1 }) });
-    expect(byId('shop-refresh-price')!.dataset.price).toBe('40');
-    expect(byId('shop-refresh')!.classList.contains('is-short')).toBe(false);
+    expect((await hoverTip()).dataset.price).toBe('40');
+    expect(byId('shop-refresh')!.dataset.affordable).toBe('true');
   });
 
-  it('names the button Refresh and keeps the Will icon and cost in a tooltip beside it', async () => {
+  it('is an icon button named Refresh goods', async () => {
     await mountShop({ will: 50 });
     const button = byId('shop-refresh')!;
-    expect(button.textContent.trim()).toBe('Refresh');
-    expect(button.querySelector('img')).toBeNull();
-    const tip = byId('shop-refresh-price')!;
-    expect(tip.querySelector('img')).not.toBeNull();
-    expect(tip.textContent.trim()).toBe('20');
-    expect(button.nextElementSibling).toBe(tip);
+    expect(button.getAttribute('aria-label')).toBe('Refresh goods');
+    expect(button.textContent.trim()).toBe('');
+  });
+
+  it('has no confirmation row any more', async () => {
+    await mountShop({ will: 50 });
+    byId('shop-refresh')!.click();
+    await nextTick();
+    expect(byId('shop-refresh-confirm-row')).toBeNull();
+    expect(byId('shop-tab-goods')).not.toBeNull();
   });
 });
 

@@ -25,7 +25,12 @@ export function planSell(
   const def = TRADERS[trader.key];
   const unit = sellUnitPrice(def, item.key);
   if (unit === null) return refuse('NOT_TRADEABLE');
-  const amount = opts.split && canSplit(item) ? halfOf(item) : item.amount;
+  const amount =
+    opts.amount !== undefined
+      ? Math.min(item.amount, opts.amount)
+      : opts.split && canSplit(item)
+        ? halfOf(item)
+        : item.amount;
   const price = unit * amount;
   if (price !== opts.expectedPrice) return refuse('PRICE_CHANGED', price);
 

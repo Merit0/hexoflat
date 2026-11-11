@@ -5,14 +5,12 @@ import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-regist
 import { sellUnitPrice } from '@hexoflat/engine/trade/trader-view';
 import { shopDrag } from '@/composables/shop-drag-state';
 import { settleShopDeal } from '@/composables/use-shop-drag';
-import { REFRESH_CONFIRM_MS } from '@/composables/use-shop-refresh';
 import { settleInventorySync } from '@/services/inventory/inventory-sync';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useTraderStore } from '@/stores/trader-store';
 import {
-  view,
   byId,
   ghostBadge,
   coins,
@@ -23,6 +21,7 @@ import {
   pointer,
   bagCell,
   bagCellWith,
+  openBuybackTab,
   mountShop,
   drag,
   drop,
@@ -47,7 +46,6 @@ describe('buying with the pointer', () => {
     expect(byId('shop-goods-cell-0').classList.contains('is-lifted')).toBe(true);
     expect(bagCell(5).classList.contains('is-valid')).toBe(true);
     expect(ghostBadge()?.textContent).toBe(`Buy 4 · ${POTION_PRICE * 4}`);
-    expect(byId('shop-hint').textContent).toContain('Release over a bag cell');
 
     window.dispatchEvent(pointer('pointerup', { clientX: 60, clientY: 80 }));
     expect(coins()).toBe(1000);
@@ -60,7 +58,6 @@ describe('buying with the pointer', () => {
     expect(coins()).toBe(1000 - POTION_PRICE * 4);
     expect(ilva().goods[0]).toEqual({ key: K.HEALTH_BOTTLE, amount: 4, sold: true });
     expect(bagCell(5).classList.contains('is-landed')).toBe(true);
-    expect(byId('shop-hint').textContent).toContain('Drag goods into the bag');
   });
 
   it('buys into the first free cell when dropped on the bag panel and lights that cell first', async () => {
@@ -79,7 +76,6 @@ describe('buying with the pointer', () => {
   it('takes half of the stack when Shift is held at the press', async () => {
     await drag(byId('shop-goods-cell-0'), [byId('stash-bag-pane')], { shift: true });
     expect(ghostBadge()?.textContent).toBe(`Buy 2 · ${POTION_PRICE * 2}`);
-    expect(byId('shop-hint').textContent).toContain('half of the stack');
 
     await drop();
     expect(coins()).toBe(1000 - POTION_PRICE * 2);
@@ -160,7 +156,8 @@ describe('selling and buying back', () => {
     expect(shopCommands()).toEqual(['SHOP_SELL']);
     expect(coins()).toBe(10 + sale);
     expect(bagCellWith(K.SWORD)).toBeNull();
-    expect(byId('shop-buyback-cell-0').dataset.itemKey).toBe(K.SWORD);
+    expect(ilva().buyback[0]).toMatchObject({ key: K.SWORD, unitPrice: sale });
+    expect(byId('shop-tab-buyback').dataset.count).toBe('1');
   });
 
   it('sells onto the goods and the buyback rows too', async () => {
@@ -178,13 +175,14 @@ describe('selling and buying back', () => {
     await nextTick();
     expect(coins()).toBe(10 + sellUnitPrice(TRADERS.ilva, K.SWORD)!);
 
+    await openBuybackTab();
     byId('shop-buyback-cell-0').dispatchEvent(pointer('dblclick', {}));
     await settleShopDeal();
     await nextTick();
     expect(shopCommands()).toEqual(['SHOP_SELL', 'SHOP_BUY']);
     expect(coins()).toBe(10);
     expect(bagCellWith(K.SWORD)).not.toBeNull();
-    expect(view.host!.querySelector('[data-testid="shop-buyback-pane"]')).toBeNull();
+    expect(byId('shop-tab-buyback').dataset.count).toBe('0');
   });
 
   it('drags a BUYBACK item back into the bag with its own label', async () => {
@@ -194,6 +192,7 @@ describe('selling and buying back', () => {
     await nextTick();
     const sale = sellUnitPrice(TRADERS.ilva, K.SWORD)!;
 
+    await openBuybackTab();
     await drag(byId('shop-buyback-cell-0'), [byId('stash-bag-pane')]);
     expect(ghostBadge()?.textContent).toBe(`Buy back · ${sale}`);
     await drop();
@@ -249,69 +248,29 @@ describe('quick buy from the keyboard and the right button', () => {
   });
 });
 
-describe('New goods asks for a second click', () => {
-  const refresh = () => byId('shop-refresh');
+describe('New goods refresh at once', () => {
   const will = () => inventorySession.knowledge?.current;
 
-  it('the first click only asks, the second pays the Will and rolls new goods', async () => {
+  it('one click pays the Will and rolls new goods, and the price doubles', async () => {
     await mountShop({ will: 50 });
     const serial = ilva().serial;
 
-    refresh().click();
-    await nextTick();
-    expect(refresh().dataset.confirm).toBe('true');
-    expect(message()).toBe('Pay 20 Will for new goods? Click again to confirm.');
-    expect(shopCommands()).toEqual([]);
-
-    refresh().click();
+    byId('shop-refresh').click();
     await vi.waitFor(() => expect(shopCommands()).toEqual(['SHOP_REFRESH']));
     await settleInventorySync();
     await nextTick();
+
     expect(will()).toBe(30);
     expect(ilva().serial).toBe(serial + 1);
-    expect(refresh().dataset.confirm).toBe('false');
     expect(byId('shop-refresh-price').dataset.price).toBe('40');
   });
 
-  it('warns that the buyback row will be lost only when it is not empty', async () => {
-    await mountShop({ will: 50, buyback: [{ key: K.SWORD, amount: 1, unitPrice: 200 }] });
-    refresh().click();
-    await nextTick();
-    expect(message()).toBe(
-      'Pay 20 Will for new goods? Click again to confirm. The buyback row will be lost.',
-    );
-  });
-
-  it('goes back after 3 seconds, Escape or a click elsewhere', async () => {
-    vi.useFakeTimers();
-    await mountShop({ will: 50 });
-
-    refresh().click();
-    await nextTick();
-    vi.advanceTimersByTime(REFRESH_CONFIRM_MS);
-    await nextTick();
-    expect(refresh().dataset.confirm).toBe('false');
-
-    refresh().click();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    await nextTick();
-    expect(refresh().dataset.confirm).toBe('false');
-    expect(useTraderStore().isOpen).toBe(true);
-
-    refresh().click();
-    byId('shop-trader-banner').dispatchEvent(pointer('pointerdown', { button: 0 }));
-    await nextTick();
-    expect(refresh().dataset.confirm).toBe('false');
-    expect(shopCommands()).toEqual([]);
-  });
-
-  it('with too little Will it refuses at once without asking', async () => {
+  it('with too little Will it refuses with a message and sends nothing', async () => {
     await mountShop({ will: 19 });
-    refresh().click();
+    byId('shop-refresh').click();
     await nextTick();
-    expect(refresh().dataset.confirm).toBe('false');
-    expect(message()).toBe('New goods cost 20 Will. Not enough Will.');
-    expect(useHeroToolStore().actionMessageIcon).toBe('will');
     expect(shopCommands()).toEqual([]);
+    expect(message()).toBe('Not enough Will.');
+    expect(useHeroToolStore().actionMessageIcon).toBe('will');
   });
 });

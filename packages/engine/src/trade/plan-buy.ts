@@ -20,7 +20,13 @@ import { walletCoins } from './trader-view';
 
 type TPlaced = { cells: TItemCells } | { error: TTradeError };
 
-function wanted(amount: number, piece: InventoryItem, split: boolean): number {
+function wanted(
+  amount: number,
+  piece: InventoryItem,
+  opts: Pick<ITradeOptions, 'split' | 'amount'>,
+): number {
+  if (opts.amount !== undefined) return Math.min(amount, opts.amount);
+  const split = opts.split;
   return split && amount > 1 && stackLimit(piece) !== null ? halfOf({ ...piece, amount }) : amount;
 }
 
@@ -70,7 +76,7 @@ export function planBuy(
   const seq = sequenceOf(inventory);
   const sample = freshPiece({ ...seq }, entry.key, 1);
   const agg: IInventoryAggregate = toAggregate(inventory);
-  const want = wanted(entry.amount, sample, opts.split);
+  const want = wanted(entry.amount, sample, opts);
   const room = roomAt(agg.bag, to, sample);
   const amount = room !== null && room > 0 ? Math.min(room, want) : want;
   const price = unit * amount;

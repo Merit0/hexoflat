@@ -27,6 +27,7 @@ export const ShopBuyCommandSchema = z.object({
       z.object({ container: z.literal('bag'), index: bagIndex }).strict(),
     ]),
     split: z.boolean().default(false),
+    amount: z.number().int().min(1).max(9999).optional(),
   }),
 });
 export type ShopBuyCommand = z.infer<typeof ShopBuyCommandSchema>;
@@ -37,6 +38,7 @@ export const ShopSellCommandSchema = z.object({
     ...base,
     from: z.object({ container: z.literal('bag'), index: bagIndex }).strict(),
     split: z.boolean().default(false),
+    amount: z.number().int().min(1).max(9999).optional(),
   }),
 });
 export type ShopSellCommand = z.infer<typeof ShopSellCommandSchema>;

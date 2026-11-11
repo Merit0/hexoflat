@@ -12,7 +12,7 @@
         class="load"
         :class="{ 'is-heavy': isHeavy, 'is-over': isOver }"
         data-testid="stash-load-value"
-        >{{ t('stash.weight', { current: carried, max: capacity }) }}</span
+        >{{ weightText }}</span
       >
     </header>
     <div class="loadbar" aria-hidden="true">
@@ -23,6 +23,7 @@
     </div>
     <stash-scroll-box
       class="bag-scroll"
+      :style="props.rows ? { '--bag-rows': props.rows } : undefined"
       more-selector="[data-item-key]"
       more-testid="stash-more-bag"
     >
@@ -49,9 +50,17 @@ import StashCell from './stash-cell.vue';
 import StashScrollBox from './stash-scroll-box.vue';
 
 const { t } = useI18n();
-const { bagView, carried, capacity, loadRatio, isHeavy, isOver } = useStashBoardData();
-const loadWidth = computed(() => `${Math.round(loadRatio.value * 100)}%`);
 const context = inject(BOARD_CELL_CONTEXT, STASH_CELL_CONTEXT);
+const props = defineProps<{ rows?: number }>();
+const { bagView, carried, capacity, loadRatio, isHeavy, isOver } = useStashBoardData();
+const weightText = computed(() => {
+  const next = context.forecastKg?.() ?? null;
+  if (next === null || next === carried.value) {
+    return t('stash.weight', { current: carried.value, max: capacity.value });
+  }
+  return `${carried.value} → ${next} / ${capacity.value} kg`;
+});
+const loadWidth = computed(() => `${Math.round(loadRatio.value * 100)}%`);
 const zoneClass = computed(() => context.zoneClassOf('bag'));
 </script>
 
@@ -136,7 +145,8 @@ h3 {
   }
 }
 .bag-scroll {
-  flex: 0 1 calc(6 * var(--stash-cell) + 5 * var(--stash-gap));
+  flex: 0 1
+    calc(var(--bag-rows, 6) * var(--stash-cell) + (var(--bag-rows, 6) - 1) * var(--stash-gap));
 }
 .grid {
   display: grid;

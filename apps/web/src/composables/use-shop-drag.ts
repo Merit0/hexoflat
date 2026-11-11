@@ -1,4 +1,5 @@
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { ITraderRef, TBuyTarget } from '@hexoflat/engine/trade/trade-types';
 import {
   buyFromTrader,
@@ -33,7 +34,8 @@ import {
   type ShopDragSource,
   type ShopDropTarget,
 } from './shop-drag-state';
-import { warnTrade } from './shop-messages';
+import { announceDeal, warnTrade } from './shop-messages';
+import { readSourceItemKey } from './shop-announce';
 
 let targetKey = '';
 let stopScroll: (() => void) | null = null;
@@ -108,12 +110,24 @@ function refuse(reason: string, price: number | null, home: string): void {
   if (reason === 'OVERWEIGHT') blinkWeight();
 }
 
-function send(source: ShopDragSource, to: TBuyTarget, split: boolean): Promise<TradeOutcome> {
+function undoSale(key: THexobjectKey, amount: number): void {
+  const trader = activeTrader();
+  const index = trader?.state.buyback.findIndex((entry) => entry?.key === key) ?? -1;
+  if (index < 0) return;
+  void quickTrade({ kind: 'trade', list: 'buyback', index }, false, amount);
+}
+
+function send(
+  source: ShopDragSource,
+  to: TBuyTarget,
+  split: boolean,
+  amount?: number,
+): Promise<TradeOutcome> {
   const key = useTraderStore().traderKey;
   if (!key) return Promise.resolve({ ok: false, reason: 'NOT_AT_TRADER', price: null });
   return source.kind === 'trade'
-    ? buyFromTrader(key, { list: source.list, index: source.index }, to, split)
-    : sellToTrader(key, source.index, split);
+    ? buyFromTrader(key, { list: source.list, index: source.index }, to, split, amount)
+    : sellToTrader(key, source.index, split, amount);
 }
 
 function deal(
@@ -122,14 +136,19 @@ function deal(
   split: boolean,
   preview: TradePreview,
   home: string,
+  amount?: number,
 ): Promise<void> {
   if (!preview.ok) {
     refuse(preview.reason, preview.price, home);
     return Promise.resolve();
   }
-  const run = send(source, to, split).then((outcome) => {
+  const key = readSourceItemKey(source);
+  const run = send(source, to, split, amount).then((outcome) => {
     if (!outcome.ok) refuse(outcome.reason, outcome.price, home);
-    else if (to !== 'auto') flashFor(stashFx, 'landed', `bag:${to.index}`);
+    else {
+      if (to !== 'auto') flashFor(stashFx, 'landed', `bag:${to.index}`);
+      if (key) announceDeal(source, key, preview, undoSale);
+    }
   });
   pending = run.finally(() => {
     pending = null;
@@ -146,17 +165,36 @@ export function shopDragRelease(): Promise<void> {
   return to ? deal(source, to, split, plan.preview, home) : Promise.resolve();
 }
 
-function quickPreview(trader: ITraderRef, source: ShopDragSource, split: boolean): TradePreview {
+function quickPreview(
+  trader: ITraderRef,
+  source: ShopDragSource,
+  split: boolean,
+  amount?: number,
+): TradePreview {
   const inventory = currentInventory();
   return source.kind === 'trade'
-    ? previewBuy(inventory, trader, { list: source.list, index: source.index }, 'auto', split)
-    : previewSell(inventory, trader, source.index, split);
+    ? previewBuy(
+        inventory,
+        trader,
+        { list: source.list, index: source.index },
+        'auto',
+        split,
+        amount,
+      )
+    : previewSell(inventory, trader, source.index, split, amount);
 }
 
-export function quickTrade(source: ShopDragSource, split = false): Promise<void> {
+export function quickTrade(source: ShopDragSource, split = false, amount?: number): Promise<void> {
   const trader = activeTrader();
   if (!trader || pending) return Promise.resolve();
-  return deal(source, 'auto', split, quickPreview(trader, source, split), shopSourceKey(source));
+  return deal(
+    source,
+    'auto',
+    split,
+    quickPreview(trader, source, split, amount),
+    shopSourceKey(source),
+    amount,
+  );
 }
 
 function pointedTarget(x: number, y: number): ShopDropTarget | null {

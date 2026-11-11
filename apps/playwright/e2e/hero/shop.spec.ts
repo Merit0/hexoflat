@@ -17,11 +17,9 @@ const emptyGoods = (...first: { key: string; amount: number; sold?: boolean }[])
   ...Array.from({ length: 8 - first.length }, () => NONE),
 ];
 const NOT_ENOUGH_COINS = /not enough coins|не вистачає монет/i;
+const NOT_ENOUGH_WILL = /not enough will|волі замало/i;
 const TOO_HEAVY = /cannot carry that much weight|не витримає такої ваги/i;
 const NOT_INTERESTED = /not interested|не цікавить/i;
-const NOT_ENOUGH_WILL = /not enough will|волі замало/i;
-const ASKS_TO_CONFIRM = /click again|клацніть ще раз/i;
-const BUYBACK_LOST = /buyback row will be lost|ряд викупу зникне/i;
 
 async function openStall() {
   await new OpenCampingMapFeature().open();
@@ -286,12 +284,28 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.verifyBagAmount(K.healthBottle, 0);
     });
 
-    test('Verify the Buy button buys the whole stack, pays the price and clears the card', async () => {
+    test('Verify the Buy button buys one unit by default and leaves the rest on the shelf', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([{ key: K.healthBottle, amount: 3 }]);
+      await shop.givenBag([{ key: K.coins, amount: 100 }]);
+      await shop.selectGoods(0);
+      await shop.verifyQuantity(1);
+
+      await shop.pressBuy();
+
+      await shop.verifyBagAmount(K.healthBottle, 1);
+      await shop.verifyWalletCoins(100 - Price.healthBottle);
+      await shop.verifyTraderGoods(emptyGoods({ key: K.healthBottle, amount: 2 }));
+    });
+
+    test('Verify Max then Buy takes the whole stack, pays the price and clears the card', async () => {
       const { shop } = await openStall();
       await shop.givenGoods([{ key: K.healthBottle, amount: 3 }]);
       await shop.givenBag([{ key: K.coins, amount: 100 }]);
       await shop.selectGoods(0);
 
+      await shop.pickMaxQuantity();
+      await shop.verifyQuantity(3);
       await shop.pressBuy();
 
       await shop.verifyBagAmount(K.healthBottle, 3);
@@ -316,29 +330,22 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.verifyGoodsCellSelected(1, true);
     });
 
-    test('Verify a good that costs too much shows its price as unaffordable and Buy is refused with the price', async () => {
+    test('Verify a good that costs too much leaves Buy disabled with no reason text and nothing spent', async () => {
       const { shop } = await openStall();
       await shop.givenGoods([{ key: K.shield, amount: 1 }]);
       await shop.givenBag([{ key: K.coins, amount: Price.shield - 1 }]);
+
       await shop.selectGoods(0);
+
       await shop.verifySelection({
         list: 'goods',
         key: K.shield,
         price: Price.shield,
         affordable: false,
       });
-
-      await shop.pressBuy();
-
-      await new VerifyActionAlertFeature().verifyIsShownMatching(NOT_ENOUGH_COINS);
+      await shop.verifyNoReason();
       await shop.verifyWalletCoins(Price.shield - 1);
       await shop.verifyBagAmount(K.shield, 0);
-      await shop.verifySelection({
-        list: 'goods',
-        key: K.shield,
-        price: Price.shield,
-        affordable: false,
-      });
     });
 
     test('Verify a buyback item is selected the same way and its button buys it back at the sale price', async () => {
@@ -368,7 +375,6 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.givenWill(REFRESH_BASE_WILL);
       await shop.selectGoods(0);
       await shop.pressNewGoods();
-      await shop.pressNewGoods();
 
       await shop.verifyGoodsSerial(1);
       await shop.verifyNoSelection();
@@ -383,7 +389,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
           { key: K.axe, amount: 1 },
           { key: K.coins, amount: 100 },
         ]);
-        await shop.verifyBuybackRowHidden();
+        await shop.verifyBuybackCount(0);
 
         await shop.sellByDragging(K.axe, target);
 
@@ -398,7 +404,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
           NONE,
           NONE,
         ]);
-        await shop.verifyBuybackRowShown();
+        await shop.verifyBuybackCount(1);
         await shop.verifyBuybackCell(0, { key: K.axe, amount: 1, price: SellValues.axe });
       });
     }
@@ -472,7 +478,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.verifyBagAmount(K.axe, 1);
       await shop.verifyWalletCoins(100);
       await shop.verifyTraderBuyback([NONE, NONE, NONE, NONE, NONE, NONE, NONE]);
-      await shop.verifyBuybackRowHidden();
+      await shop.verifyBuybackCount(0);
     });
 
     test('Verify a right click on the buyback row buys the item back', async () => {
@@ -500,14 +506,57 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
     });
   });
 
-  test.describe('new goods', () => {
-    test('Verify the button is named Refresh with no icon and a hover tooltip above it shows the Will icon and cost', async () => {
+  test.describe('trading by tap', () => {
+    test('Verify tapping a bag item shows Trading with the sum Ilva pays, Trade sells it and Undo buys it back', async () => {
       const { shop } = await openStall();
+      await shop.givenBag([
+        { key: K.axe, amount: 1 },
+        { key: K.coins, amount: 100 },
+      ]);
 
-      await shop.verifyRefreshButtonShowsCostOnHover(REFRESH_BASE_WILL);
+      await shop.selectBagItem(K.axe);
+      await shop.verifyTradingCard(K.axe, SellValues.axe);
+      await shop.pressBuy();
+
+      await shop.verifyBagAmount(K.axe, 0);
+      await shop.verifyWalletCoins(100 + SellValues.axe);
+      await shop.verifyBuybackCount(1);
+
+      await shop.pressUndoOnToast();
+
+      await shop.verifyBagAmount(K.axe, 1);
+      await shop.verifyWalletCoins(100);
+      await shop.verifyBuybackCount(0);
     });
 
-    test('Verify one Will short refuses at once, with no confirmation step and nothing spent', async () => {
+    test('Verify Trade with All sells the whole stack and the default sells one unit', async () => {
+      const { shop } = await openStall();
+      await shop.givenBag([{ key: K.healthBottle, amount: 3 }]);
+
+      await shop.selectBagItem(K.healthBottle);
+      await shop.verifyQuantity(1);
+      await shop.pressBuy();
+      await shop.verifyBagAmount(K.healthBottle, 2);
+      await shop.verifyWalletCoins(SellValues.healthBottle);
+
+      await shop.selectBagItem(K.healthBottle);
+      await shop.pickMaxQuantity();
+      await shop.verifyQuantity(2);
+      await shop.pressBuy();
+      await shop.verifyBagAmount(K.healthBottle, 0);
+      await shop.verifyWalletCoins(3 * SellValues.healthBottle);
+    });
+  });
+
+  test.describe('new goods', () => {
+    test('Verify Refresh is an icon button and hovering it shows the Will icon and the cost', async () => {
+      const { shop } = await openStall();
+
+      await shop.verifyRefreshIsAnIconButton();
+      await shop.verifyRefreshTooltipShowsCost(REFRESH_BASE_WILL);
+    });
+
+    test('Verify one Will short refuses with a message and nothing is spent', async () => {
       const { shop } = await openStall();
       await shop.givenWill(REFRESH_BASE_WILL - 1);
       await shop.verifyNewGoodsAffordable(false);
@@ -515,92 +564,36 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.pressNewGoods();
 
       await new VerifyActionAlertFeature().verifyIsShownMatching(NOT_ENOUGH_WILL);
-      await new VerifyActionAlertFeature().verifyIsShownMatching(
-        new RegExp(String(REFRESH_BASE_WILL)),
-      );
-      await shop.verifyNewGoodsAsksForConfirmation(false);
       await shop.verifyWill(REFRESH_BASE_WILL - 1);
       await shop.verifyGoodsSerial(0);
     });
 
-    test('Verify the first click only asks to confirm and spends nothing', async () => {
-      const { shop } = await openStall();
-      await shop.givenWill(REFRESH_BASE_WILL);
-      await shop.givenGoods([{ key: K.axe, amount: 1 }]);
-
-      await shop.pressNewGoods();
-
-      await shop.verifyNewGoodsAsksForConfirmation(true);
-      await new VerifyActionAlertFeature().verifyIsShownMatching(ASKS_TO_CONFIRM);
-      await shop.verifyWill(REFRESH_BASE_WILL);
-      await shop.verifyGoodsSerial(0);
-      await shop.verifyTraderGoods(emptyGoods({ key: K.axe, amount: 1 }));
-    });
-
-    test('Verify the second click pays the Will and brings the next series of goods', async () => {
+    test('Verify one click pays the Will at once and brings the next series of goods', async () => {
       const { shop } = await openStall();
       await shop.givenWill(REFRESH_BASE_WILL);
 
-      await shop.pressNewGoods();
       await shop.pressNewGoods();
 
       await shop.verifyWill(0);
       await shop.verifyGoodsSerial(1);
-      await shop.verifyNewGoodsAsksForConfirmation(false);
       await shop.verifyServedGoods();
     });
 
-    test('Verify Escape takes back the confirmation and keeps the board open', async () => {
-      const { stall, shop } = await openStall();
-      await shop.givenWill(REFRESH_BASE_WILL);
-      await shop.pressNewGoods();
-      await shop.verifyNewGoodsAsksForConfirmation(true);
-
-      await shop.pressEscape();
-
-      await shop.verifyNewGoodsAsksForConfirmation(false);
-      await stall.verifyIsOpen();
-      await shop.verifyWill(REFRESH_BASE_WILL);
-      await shop.verifyGoodsSerial(0);
-    });
-
-    test('Verify the buyback row is announced as lost only when something is on it', async () => {
+    test('Verify a paid refresh clears the buyback list', async () => {
       const { shop } = await openStall();
       await shop.givenWill(REFRESH_BASE_WILL);
       await shop.givenTrader({ buyback: [{ key: K.axe, amount: 1, unitPrice: SellValues.axe }] });
+      await shop.verifyBuybackCount(1);
 
-      await shop.pressNewGoods();
-
-      await new VerifyActionAlertFeature().verifyIsShownMatching(BUYBACK_LOST);
-    });
-
-    test('Verify an empty buyback row is not mentioned in the confirmation', async () => {
-      const { shop } = await openStall();
-      await shop.givenWill(REFRESH_BASE_WILL);
-
-      await shop.pressNewGoods();
-
-      await new VerifyActionAlertFeature().verifyIsShownMatching(ASKS_TO_CONFIRM);
-      await new VerifyActionAlertFeature().verifyIsNotShownMatching(BUYBACK_LOST);
-    });
-
-    test('Verify a paid refresh clears the buyback row', async () => {
-      const { shop } = await openStall();
-      await shop.givenWill(REFRESH_BASE_WILL);
-      await shop.givenTrader({ buyback: [{ key: K.axe, amount: 1, unitPrice: SellValues.axe }] });
-      await shop.verifyBuybackRowShown();
-
-      await shop.pressNewGoods();
       await shop.pressNewGoods();
 
       await shop.verifyTraderBuyback([NONE, NONE, NONE, NONE, NONE, NONE, NONE]);
-      await shop.verifyBuybackRowHidden();
+      await shop.verifyBuybackCount(0);
     });
 
     test('Verify every paid refresh doubles the price, and exactly that much Will is enough', async () => {
       const { shop } = await openStall();
       await shop.givenWill(50);
-      await shop.pressNewGoods();
       await shop.pressNewGoods();
       await shop.verifyWill(50 - REFRESH_BASE_WILL);
       await shop.verifyNewGoodsPrice(2 * REFRESH_BASE_WILL);
@@ -608,13 +601,9 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
 
       await shop.pressNewGoods();
       await new VerifyActionAlertFeature().verifyIsShownMatching(NOT_ENOUGH_WILL);
-      await new VerifyActionAlertFeature().verifyIsShownMatching(
-        new RegExp(String(2 * REFRESH_BASE_WILL)),
-      );
       await shop.verifyGoodsSerial(1);
       await shop.givenWill(2 * REFRESH_BASE_WILL);
       await shop.verifyNewGoodsAffordable(true);
-      await shop.pressNewGoods();
       await shop.pressNewGoods();
 
       await shop.verifyWill(0);
@@ -625,7 +614,6 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
     test('Verify the price falls back to the base after a trip to the cave', async () => {
       const { shop } = await openStall();
       await shop.givenWill(50);
-      await shop.pressNewGoods();
       await shop.pressNewGoods();
       await shop.verifyNewGoodsPrice(2 * REFRESH_BASE_WILL);
 
@@ -667,7 +655,6 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
     test('Verify paid new goods survive a reload: the same series, the lower Will and the higher price', async () => {
       const { stall, shop } = await openStall();
       await shop.givenWill(50);
-      await shop.pressNewGoods();
       await shop.pressNewGoods();
       await shop.verifyGoodsSerial(1);
 

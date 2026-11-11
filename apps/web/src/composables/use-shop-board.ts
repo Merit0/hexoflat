@@ -6,7 +6,6 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useTraderStore } from '@/stores/trader-store';
 import { shopDragCancel } from '@/composables/use-shop-drag';
 import { clearShopSelection } from '@/composables/shop-selection';
-import { cancelRefreshConfirm } from '@/composables/use-shop-refresh';
 
 export function openShopBoard(key: TTraderKey): void {
   if (useHeroStashStore().isOpen) closeStashBoard();
@@ -18,6 +17,5 @@ export function openShopBoard(key: TTraderKey): void {
 export function closeShopBoard(): void {
   clearShopSelection();
   shopDragCancel();
-  cancelRefreshConfirm();
   useTraderStore().close();
 }

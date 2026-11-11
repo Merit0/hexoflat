@@ -38,6 +38,29 @@ describe('planSell', () => {
     expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 2, unitPrice: 4 });
   });
 
+  it('sells exactly the amount asked for and keeps the rest', () => {
+    const inventory = inventoryWith({ 2: [HEALTH_BOTTLE, 5] });
+    const result = planSell(inventory, traderWith([]), 2, {
+      split: false,
+      amount: 2,
+      expectedPrice: 8,
+    });
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.inventory.bag[2]).toMatchObject({ key: HEALTH_BOTTLE, amount: 3 });
+    expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 2, unitPrice: 4 });
+  });
+
+  it('never sells more than the stack holds', () => {
+    const inventory = inventoryWith({ 2: [HEALTH_BOTTLE, 5] });
+    const result = planSell(inventory, traderWith([]), 2, {
+      split: false,
+      amount: 99,
+      expectedPrice: 20,
+    });
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.amount).toBe(5);
+  });
+
   it('gives back exactly the coins it paid when the same stack is bought back', () => {
     const inventory = inventoryWith({ 0: [COINS, 50], 1: [SWORD, 1], 2: [MANA_BOTTLE, 4] });
     let trader = traderWith([]);

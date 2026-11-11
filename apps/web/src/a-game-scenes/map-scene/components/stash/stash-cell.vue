@@ -12,7 +12,9 @@
     :tabindex="item ? 0 : -1"
     :role="item ? 'button' : undefined"
     :aria-label="label"
+    :data-selected="selected || undefined"
     @pointerdown.prevent="onPointerDown"
+    @click="onSelect"
     @dblclick.prevent="onQuickMove"
     @contextmenu.prevent="onQuickMove"
     @keydown.enter.prevent="onQuickMove"
@@ -21,6 +23,9 @@
     <slot name="placeholder" />
     <stash-item-token v-if="item && !isLifted" :item="item" :price="tooltipPrice" />
     <span v-if="showsCounter(item) && !isLifted" class="amount">{{ item?.amount }}</span>
+    <span v-if="sum !== null && !isLifted" class="sum" data-testid="shop-bag-sum" :data-sum="sum">{{
+      sum
+    }}</span>
   </div>
 </template>
 
@@ -62,6 +67,10 @@ const label = computed(() => {
   return i18n.te(title) ? i18n.t(title) : title;
 });
 
+const sum = computed(() => (props.item ? (context.sumOf?.(props.location) ?? null) : null));
+const selected = computed(() =>
+  props.item ? (context.isSelected?.(props.location, props.item) ?? false) : false,
+);
 const state = computed(() => context.stateOf(props.location));
 const isLifted = computed(() => state.value.lifted);
 
@@ -69,6 +78,7 @@ const classes = computed(() => ({
   'cursor-grab': !!props.item,
   'is-lifted': state.value.lifted,
   'is-dim': !!props.dim,
+  'is-selected': selected.value,
   'is-next': state.value.next,
   'is-valid': state.value.valid,
   'is-invalid': state.value.invalid,
@@ -78,6 +88,10 @@ const classes = computed(() => ({
 
 function onPointerDown(event: PointerEvent) {
   if (props.item) context.begin(event, props.location, props.item);
+}
+
+function onSelect() {
+  if (props.item) context.select?.(props.location, props.item);
 }
 
 function onNavigate(event: KeyboardEvent) {
@@ -90,3 +104,22 @@ function onQuickMove(event: MouseEvent | KeyboardEvent) {
 </script>
 
 <style scoped src="../../../../components/gui/board/board-cell.css"></style>
+
+<style scoped>
+.sum {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  color: #cfe4f8;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+.cell.is-selected {
+  border-color: #7fb4e8;
+  box-shadow: 0 0 0 2px rgba(127, 180, 232, 0.5) inset;
+}
+</style>

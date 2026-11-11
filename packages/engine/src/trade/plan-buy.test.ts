@@ -196,3 +196,31 @@ describe('planBuy: a bought-out good stays on the shelf as sold', () => {
     expect(result.trader.goods[0]).toEqual({ key: HEALTH_BOTTLE, amount: 3, sold: true });
   });
 });
+
+describe('planBuy with an exact amount', () => {
+  it('buys exactly the amount asked for (2 of 7) and leaves the rest on sale', () => {
+    const inventory = inventoryWith({ 0: [COINS, 100] });
+    const trader = traderWith([[HEALTH_BOTTLE, 7]]);
+    const result = planBuy(inventory, trader, GOODS_0, 'auto', {
+      split: false,
+      amount: 2,
+      expectedPrice: 24,
+    });
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.amount).toBe(2);
+    expect(bagAmount(result.inventory, HEALTH_BOTTLE)).toBe(2);
+    expect(result.trader.goods[0]).toEqual({ key: HEALTH_BOTTLE, amount: 5 });
+  });
+
+  it('never buys more than the stock holds', () => {
+    const inventory = inventoryWith({ 0: [COINS, 100] });
+    const trader = traderWith([[HEALTH_BOTTLE, 3]]);
+    const result = planBuy(inventory, trader, GOODS_0, 'auto', {
+      split: false,
+      amount: 50,
+      expectedPrice: 36,
+    });
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.amount).toBe(3);
+  });
+});

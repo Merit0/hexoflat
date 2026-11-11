@@ -156,7 +156,7 @@ export class ShopBoardFeature extends BaseFeature {
   }
 
   async pressBuy(): Promise<void> {
-    await this.step('Press the Buy button on the selection card', () => this.board.clickBuy());
+    await this.step('Press the action button on the card', () => this.board.clickBuy());
   }
 
   async verifySelection(expected: {
@@ -259,24 +259,25 @@ export class ShopBoardFeature extends BaseFeature {
     );
   }
 
-  async verifyBuybackRowHidden(): Promise<void> {
-    await this.step('Verify the buyback row is hidden while it is empty', () =>
-      this.board.verifyBuybackRowHidden(),
+  async verifyBuybackCount(count: number): Promise<void> {
+    await this.step(`Verify the Buyback tab counts ${count}`, () =>
+      this.board.verifyBuybackCount(count),
     );
   }
 
-  async verifyBuybackRowShown(): Promise<void> {
-    await this.step('Verify the buyback row is shown', () => this.board.verifyBuybackRowShown());
-  }
-
   async pressNewGoods(): Promise<void> {
-    await this.step('Press Refresh', () => this.board.clickRefresh());
+    await this.step('Press the Refresh icon', () => this.board.clickRefresh());
   }
 
-  async verifyRefreshButtonShowsCostOnHover(cost: number): Promise<void> {
-    await this.step(
-      `Verify the button says Refresh and a hover tooltip above it shows the Will icon and ${cost}`,
-      () => this.board.verifyRefreshReadsAndHoverShowsTheCost(/^\s*(refresh|оновити)\s*$/i, cost),
+  async verifyRefreshIsAnIconButton(): Promise<void> {
+    await this.step('Verify Refresh is an icon button with no price on it', () =>
+      this.board.verifyRefreshIsAnIconButton(),
+    );
+  }
+
+  async verifyRefreshTooltipShowsCost(cost: number): Promise<void> {
+    await this.step(`Verify hovering Refresh shows the Will icon and ${cost}`, () =>
+      this.board.verifyRefreshTooltipShowsCost(cost),
     );
   }
 
@@ -292,10 +293,30 @@ export class ShopBoardFeature extends BaseFeature {
     );
   }
 
-  async verifyNewGoodsAsksForConfirmation(asking: boolean): Promise<void> {
-    await this.step(`Verify Refresh is ${asking ? '' : 'not '}waiting for the second click`, () =>
-      this.board.verifyRefreshAsksForConfirmation(asking),
+  async verifyNoReason(): Promise<void> {
+    await this.step('Verify the card gives no reason text', () => this.board.verifyNoReason());
+  }
+
+  async pickMaxQuantity(): Promise<void> {
+    await this.step('Press Max on the card counter', () => this.board.pickMaxQuantity());
+  }
+
+  async verifyQuantity(qty: number): Promise<void> {
+    await this.step(`Verify the card counter shows ${qty}`, () => this.board.verifyQuantity(qty));
+  }
+
+  async selectBagItem(itemKey: string): Promise<void> {
+    await this.step(`Tap "${itemKey}" in the bag`, () => this.board.selectBagItem(itemKey));
+  }
+
+  async verifyTradingCard(key: string, pays: number): Promise<void> {
+    await this.step(`Verify the card trades "${key}" and Ilva pays ${pays}`, () =>
+      this.board.verifyTradingCard(key, pays),
     );
+  }
+
+  async pressUndoOnToast(): Promise<void> {
+    await this.step('Press Undo on the toast', () => this.board.pressUndoOnToast());
   }
 
   async verifyServerRefreshPrice(price: number): Promise<void> {
