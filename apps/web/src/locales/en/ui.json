@@ -776,7 +776,7 @@
       "priceLabel": "Price"
     },
     "status": {
-      "soldOut": "Sold out"
+      "soldOut": "Sold"
     },
     "block": {
       "OVERWEIGHT": "Too heavy for your bag.",

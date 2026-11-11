@@ -23,7 +23,6 @@
     </div>
     <stash-scroll-box
       class="bag-scroll"
-      :style="props.rows ? { '--bag-rows': props.rows } : undefined"
       more-selector="[data-item-key]"
       more-testid="stash-more-bag"
     >
@@ -51,7 +50,6 @@ import StashScrollBox from './stash-scroll-box.vue';
 
 const { t } = useI18n();
 const context = inject(BOARD_CELL_CONTEXT, STASH_CELL_CONTEXT);
-const props = defineProps<{ rows?: number }>();
 const { bagView, carried, capacity, loadRatio, isHeavy, isOver } = useStashBoardData();
 const weightText = computed(() => {
   const next = context.forecastKg?.() ?? null;
@@ -145,8 +143,7 @@ h3 {
   }
 }
 .bag-scroll {
-  flex: 0 1
-    calc(var(--bag-rows, 6) * var(--stash-cell) + (var(--bag-rows, 6) - 1) * var(--stash-gap));
+  flex: 0 1 calc(6 * var(--stash-cell) + 5 * var(--stash-gap));
 }
 .grid {
   display: grid;

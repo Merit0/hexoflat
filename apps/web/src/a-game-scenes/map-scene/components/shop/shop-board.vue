@@ -21,7 +21,7 @@
       <shop-goods-pane :goods="goods" :buyback="buyback" :refresh="refresh" />
       <shop-selection-card />
     </template>
-    <stash-bag-pane :rows="2" />
+    <stash-bag-pane />
     <shop-drag-ghost />
     <shop-toast />
   </section>

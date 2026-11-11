@@ -138,8 +138,9 @@ export class ShopBoardComponent extends BaseComponent {
     const cell = this.goodsCell(index);
     await expect(cell).toHaveAttribute('data-sold', 'true');
     await expect(cell).toHaveAttribute('data-item-key', key);
-    await expect(cell.getByTestId('shop-sold-label')).toBeVisible();
-    await expect(cell.getByTestId('shop-sold-label')).toHaveText(/sold out|продано/i);
+    const label = cell.locator('xpath=..').getByTestId('shop-sold-label');
+    await expect(label).toBeVisible();
+    await expect(label).toHaveText(/^\s*(sold|продано)\s*$/i);
     await expect(this.page.getByTestId(`shop-price-${index}`)).toHaveCount(0);
     await expect(cell).not.toHaveAttribute('role', 'button');
   }
@@ -147,7 +148,7 @@ export class ShopBoardComponent extends BaseComponent {
   async verifyGoodsCellDimmed(index: number): Promise<void> {
     await this.openTab('goods');
     const opacity = await this.goodsCell(index)
-      .locator('> :not([data-testid="shop-sold-label"])')
+      .locator('> *')
       .first()
       .evaluate((node) => getComputedStyle(node).opacity);
     expect(Number(opacity)).toBeCloseTo(0.3, 2);

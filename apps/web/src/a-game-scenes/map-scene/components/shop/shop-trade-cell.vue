@@ -30,15 +30,23 @@
         :rotation-deg="tilt"
         :price="tooltipPrice"
       />
+    </div>
+    <span
+      v-if="showsCounter(cell.item) && !lifted && !cell.sold"
+      class="amount"
+      data-testid="shop-slot-amount"
+      >{{ cell.item?.amount }}</span
+    >
+    <div v-if="cell.sold || cell.price !== null" class="price-section">
       <span v-if="cell.sold" class="sold-label" data-testid="shop-sold-label">{{
         i18n.t('shop.status.soldOut')
       }}</span>
-    </div>
-    <span v-if="showsCounter(cell.item) && !lifted" class="amount" data-testid="shop-slot-amount">{{
-      cell.item?.amount
-    }}</span>
-    <div v-if="!cell.sold && cell.price !== null" class="price-section">
-      <shop-price-tag :price="cell.price" :affordable="cell.affordable" :testid="priceTestid" />
+      <shop-price-tag
+        v-else-if="cell.price !== null"
+        :price="cell.price"
+        :affordable="cell.affordable"
+        :testid="priceTestid"
+      />
     </div>
   </div>
 </template>
@@ -169,7 +177,10 @@ function tooltipPrice(): TooltipPrice | null {
   opacity: 0.8;
 }
 .price-section {
+  box-sizing: border-box;
   width: 100%;
+  min-height: calc(14px * var(--shop-tag-scale, 1) + 8px);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,23 +196,19 @@ function tooltipPrice(): TooltipPrice | null {
 .trade-slot .cell.is-sold {
   cursor: default;
 }
-.trade-slot .cell.is-sold > :not(.sold-label) {
+.trade-slot .cell.is-sold > * {
   opacity: 0.3;
   pointer-events: none;
 }
 .sold-label {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
   color: #ff9d9d;
-  font-size: calc(0.72rem * var(--shop-tag-scale, 1) * 0.75);
+  font-size: calc(0.72rem * var(--shop-tag-scale, 1) * 0.8);
   font-weight: 800;
-  letter-spacing: 0.06em;
+  line-height: 1;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   text-transform: uppercase;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
-  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 .trade-slot .amount {
   top: -8px;

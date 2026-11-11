@@ -224,9 +224,9 @@ describe('a bought-out good stays on the shelf as Sold out', () => {
     expect(cell.dataset.sold).toBe('true');
     expect(cell.dataset.itemKey).toBe(K.HEALTH_BOTTLE);
     expect(cell.classList.contains('is-sold')).toBe(true);
-    expect(cell.querySelector('[data-testid="shop-sold-label"]')?.textContent?.trim()).toBe(
-      'Sold out',
-    );
+    expect(
+      cell.parentElement?.querySelector('[data-testid="shop-sold-label"]')?.textContent?.trim(),
+    ).toBe('Sold');
     expect(view.host!.querySelector('[data-testid="shop-price-0"]')).toBeNull();
     expect(cell.getAttribute('tabindex')).toBe('-1');
     expect(cell.getAttribute('role')).toBeNull();
