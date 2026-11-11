@@ -21,21 +21,21 @@ const whole = (expectedPrice: number) => ({ split: false, expectedPrice });
 describe('planSell', () => {
   it('takes the stack, pays coins into the bag and lists it in BUYBACK at the sell price', () => {
     const inventory = inventoryWith({ 0: [COINS, 5], 3: [HEALTH_BOTTLE, 3] });
-    const result = planSell(inventory, traderWith([]), 3, whole(12));
+    const result = planSell(inventory, traderWith([]), 3, whole(24));
     if (!result.ok) throw new Error(result.reason);
-    expect(result).toMatchObject({ key: HEALTH_BOTTLE, amount: 3, price: 12 });
+    expect(result).toMatchObject({ key: HEALTH_BOTTLE, amount: 3, price: 24 });
     expect(result.inventory.bag[3]).toBeNull();
-    expect(result.inventory.bag[0]).toMatchObject({ key: COINS, amount: 17 });
-    expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 3, unitPrice: 4 });
+    expect(result.inventory.bag[0]).toMatchObject({ key: COINS, amount: 29 });
+    expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 3, unitPrice: 8 });
   });
 
   it('sells half a stack with Shift', () => {
     const inventory = inventoryWith({ 2: [HEALTH_BOTTLE, 5] });
-    const result = planSell(inventory, traderWith([]), 2, { split: true, expectedPrice: 8 });
+    const result = planSell(inventory, traderWith([]), 2, { split: true, expectedPrice: 16 });
     if (!result.ok) throw new Error(result.reason);
     expect(result.inventory.bag[2]).toMatchObject({ key: HEALTH_BOTTLE, amount: 3 });
-    expect(bagAmount(result.inventory, COINS)).toBe(8);
-    expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 2, unitPrice: 4 });
+    expect(bagAmount(result.inventory, COINS)).toBe(16);
+    expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 2, unitPrice: 8 });
   });
 
   it('sells exactly the amount asked for and keeps the rest', () => {
@@ -43,11 +43,11 @@ describe('planSell', () => {
     const result = planSell(inventory, traderWith([]), 2, {
       split: false,
       amount: 2,
-      expectedPrice: 8,
+      expectedPrice: 16,
     });
     if (!result.ok) throw new Error(result.reason);
     expect(result.inventory.bag[2]).toMatchObject({ key: HEALTH_BOTTLE, amount: 3 });
-    expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 2, unitPrice: 4 });
+    expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 2, unitPrice: 8 });
   });
 
   it('never sells more than the stack holds', () => {
@@ -55,7 +55,7 @@ describe('planSell', () => {
     const result = planSell(inventory, traderWith([]), 2, {
       split: false,
       amount: 99,
-      expectedPrice: 20,
+      expectedPrice: 40,
     });
     if (!result.ok) throw new Error(result.reason);
     expect(result.amount).toBe(5);
@@ -67,10 +67,10 @@ describe('planSell', () => {
     const soldSword = planSell(inventory, trader, 1, whole(200));
     if (!soldSword.ok) throw new Error(soldSword.reason);
     trader = { ...trader, state: soldSword.trader };
-    const soldMana = planSell(soldSword.inventory, trader, 2, whole(16));
+    const soldMana = planSell(soldSword.inventory, trader, 2, whole(32));
     if (!soldMana.ok) throw new Error(soldMana.reason);
     trader = { ...trader, state: soldMana.trader };
-    expect(walletCoins(soldMana.inventory)).toBe(266);
+    expect(walletCoins(soldMana.inventory)).toBe(282);
 
     const backSword = planBuy(
       soldMana.inventory,
@@ -86,7 +86,7 @@ describe('planSell', () => {
       trader,
       { list: 'buyback', index: 0 },
       'auto',
-      whole(16),
+      whole(32),
     );
     if (!backMana.ok) throw new Error(backMana.reason);
     expect(walletCoins(backMana.inventory)).toBe(50);
@@ -115,29 +115,29 @@ describe('planSell', () => {
 
   it('refuses a price that is not the one the client saw', () => {
     const inventory = inventoryWith({ 0: [AXE, 1] });
-    expect(planSell(inventory, traderWith([]), 0, whole(20))).toEqual({
+    expect(planSell(inventory, traderWith([]), 0, whole(25))).toEqual({
       ok: false,
       reason: 'PRICE_CHANGED',
-      price: 19,
+      price: 24,
     });
   });
 
   it('pays into a full bag only when the sold stack frees its cell or coins can join a stack', () => {
     const full = fullBag(MANA_BOTTLE);
     full.bag[4] = mintItem(full, HEALTH_BOTTLE, 4);
-    expect(planSell(full, traderWith([]), 4, { split: true, expectedPrice: 8 })).toEqual({
+    expect(planSell(full, traderWith([]), 4, { split: true, expectedPrice: 16 })).toEqual({
       ok: false,
       reason: 'CONTAINER_FULL',
-      price: 8,
+      price: 16,
     });
-    const all = planSell(full, traderWith([]), 4, whole(16));
+    const all = planSell(full, traderWith([]), 4, whole(32));
     if (!all.ok) throw new Error(all.reason);
-    expect(all.inventory.bag[4]).toMatchObject({ key: COINS, amount: 16 });
+    expect(all.inventory.bag[4]).toMatchObject({ key: COINS, amount: 32 });
 
     full.bag[9] = mintItem(full, COINS, 3);
-    const joined = planSell(full, traderWith([]), 4, { split: true, expectedPrice: 8 });
+    const joined = planSell(full, traderWith([]), 4, { split: true, expectedPrice: 16 });
     if (!joined.ok) throw new Error(joined.reason);
-    expect(joined.inventory.bag[9]).toMatchObject({ key: COINS, amount: 11 });
+    expect(joined.inventory.bag[9]).toMatchObject({ key: COINS, amount: 19 });
   });
 });
 
@@ -151,8 +151,8 @@ describe('BUYBACK after a sale', () => {
     });
     let trader = traderWith([]);
     for (const [index, price] of [
-      [0, 8],
-      [1, 12],
+      [0, 16],
+      [1, 24],
       [2, 16],
       [3, 16],
     ] as const) {
@@ -162,7 +162,7 @@ describe('BUYBACK after a sale', () => {
       trader = { ...trader, state: sold.trader };
     }
     expect(trader.state.buyback.slice(0, 4)).toEqual([
-      { key: HEALTH_BOTTLE, amount: 5, unitPrice: 4 },
+      { key: HEALTH_BOTTLE, amount: 5, unitPrice: 8 },
       { key: SHIELD, amount: 1, unitPrice: 16 },
       { key: SHIELD, amount: 1, unitPrice: 16 },
       null,
@@ -183,10 +183,10 @@ describe('BUYBACK after a sale', () => {
       ],
     );
     const inventory = inventoryWith({ 0: [MANA_BOTTLE, 1] });
-    const result = planSell(inventory, trader, 0, whole(4));
+    const result = planSell(inventory, trader, 0, whole(8));
     if (!result.ok) throw new Error(result.reason);
     expect(result.trader.buyback).toHaveLength(7);
     expect(result.trader.buyback[0]).toEqual({ key: SHIELD, amount: 1, unitPrice: 16 });
-    expect(result.trader.buyback[6]).toEqual({ key: MANA_BOTTLE, amount: 1, unitPrice: 4 });
+    expect(result.trader.buyback[6]).toEqual({ key: MANA_BOTTLE, amount: 1, unitPrice: 8 });
   });
 });

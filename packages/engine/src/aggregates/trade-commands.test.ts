@@ -76,7 +76,7 @@ const refresh = (aggregates: PlayerAggregates, expectedPrice: number) =>
 
 function firstGoodsPrice(aggregates: PlayerAggregates): number {
   const good = traderView(aggregates.progress, 'ilva', SEED).goods[0]!;
-  return good.amount * 12;
+  return good.amount * 20;
 }
 
 function apply(aggregates: PlayerAggregates, command: PlayerCommand): PlayerAggregates {
@@ -123,20 +123,20 @@ describe('SHOP_BUY and SHOP_SELL', () => {
   });
 
   it('sells into BUYBACK, which the next command reads back', () => {
-    const sold = apply(rich(), sell(rich(), 19));
+    const sold = apply(rich(), sell(rich(), 24));
     expect(sold.progress.traders.ilva?.buyback[0]).toEqual({
       key: HEXOBJECT_KEYS.AXE,
       amount: 1,
-      unitPrice: 19,
+      unitPrice: 24,
     });
     expect(sold.progress.traders.ilva?.goods).toEqual(rollTraderGoods(ILVA, SEED, 'ilva', 0));
-    const back = apply(sold, buy(sold, 19, { from: { list: 'buyback', index: 0 } }));
+    const back = apply(sold, buy(sold, 24, { from: { list: 'buyback', index: 0 } }));
     expect(walletCoins(back.inventory)).toBe(1000);
   });
 
   it('refuses away from the stall, without a trade context, in a battle and with a stale revision', () => {
     const state = rich();
-    const command = sell(state, 19);
+    const command = sell(state, 24);
     const away = { ...AT_ILVA, trade: { atTrader: null, rngSeed: SEED } };
     expect(executePlayerCommand(state, command, away)).toMatchObject({
       ok: false,
@@ -162,7 +162,7 @@ describe('SHOP_BUY and SHOP_SELL', () => {
     const outcome = executePlayerCommand(poor, buy(poor, price), AT_ILVA);
     expect(outcome).toMatchObject({ ok: false, code: 'NOT_ENOUGH_COINS' });
     expect(outcome.events[0].payload).toMatchObject({ price });
-    expect(executePlayerCommand(rich(), sell(rich(), 18), AT_ILVA)).toMatchObject({
+    expect(executePlayerCommand(rich(), sell(rich(), 23), AT_ILVA)).toMatchObject({
       code: 'PRICE_CHANGED',
     });
   });
@@ -201,7 +201,7 @@ describe('SHOP_REFRESH', () => {
   });
 
   it('rolls the goods of the next serial and wipes BUYBACK', () => {
-    const sold = apply(rich(), sell(rich(), 19));
+    const sold = apply(rich(), sell(rich(), 24));
     const fresh = apply(sold, refresh(sold, 20));
     expect(fresh.progress.traders.ilva?.goods).toEqual(rollTraderGoods(ILVA, SEED, 'ilva', 1));
     expect(fresh.progress.traders.ilva?.buyback.every((cell) => cell === null)).toBe(true);

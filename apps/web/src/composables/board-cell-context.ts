@@ -16,7 +16,6 @@ export interface BoardCellContext {
   priceOf?: (location: TItemLocation) => TooltipPrice | null;
   select?: (location: TItemLocation, item: InventoryItem) => void;
   isSelected?: (location: TItemLocation, item: InventoryItem) => boolean;
-  sumOf?: (location: TItemLocation) => number | null;
   forecastKg?: () => string | null;
 }
 

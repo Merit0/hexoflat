@@ -57,6 +57,14 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.verifyGoodsCell(3, NONE);
     });
 
+    test('Verify both tab texts are bold, whichever tab is active', async () => {
+      const { shop } = await openStall();
+
+      await shop.verifyTabTextIsBold();
+      await shop.openBuybackTab();
+      await shop.verifyTabTextIsBold();
+    });
+
     test('Verify the cross closes the board', async () => {
       const { stall } = await openStall();
 
@@ -132,7 +140,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.givenBag([{ key: K.coins, amount: 100 }]);
 
       await shop.selectGoods(0);
-      await shop.enterOwnPrice('30');
+      await shop.enterOwnPrice('25');
       await shop.pressBuy();
 
       await shop.verifyWalletCoins(100);

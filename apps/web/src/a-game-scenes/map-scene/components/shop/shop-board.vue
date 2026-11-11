@@ -89,7 +89,6 @@ provide(BOARD_CELL_CONTEXT, {
   },
   isSelected: (location, item) =>
     location.container === 'bag' && isTradeCellSelected('bag', location.index, item.key),
-  sumOf: (location) => sellPriceOf(location)?.coins ?? null,
   forecastKg,
 });
 </script>

@@ -271,10 +271,23 @@ export class ShopBoardComponent extends BaseComponent {
       'data-price',
       String(pays),
     );
-    await expect(this.bagCellWith(key).getByTestId('shop-bag-sum')).toHaveAttribute(
-      'data-sum',
-      String(pays),
-    );
+    await expect(this.bagCellWith(key).getByTestId('shop-bag-sum')).toHaveCount(0);
+  }
+
+  async openBuybackTab(): Promise<void> {
+    await this.openTab('buyback');
+  }
+
+  async verifyTabTextIsBold(): Promise<void> {
+    for (const tab of ['goods', 'buyback'] as const) {
+      const label = this.page.getByTestId(`shop-tab-${tab}`).locator('.label');
+      await expect
+        .poll(
+          async () => Number(await label.evaluate((node) => getComputedStyle(node).fontWeight)),
+          POLL,
+        )
+        .toBeGreaterThanOrEqual(700);
+    }
   }
 
   async verifyOfferBadge(index: number, percent: number | null): Promise<void> {

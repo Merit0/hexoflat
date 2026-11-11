@@ -9,13 +9,13 @@ import { refreshPrice, sellUnitPrice, traderView, walletCoins } from './trader-v
 import { COINS, HERO, ILVA, SEED, inventoryWith } from './trade-test-setup';
 
 const APPROVED_SELL_PRICES: Partial<Record<THexobjectKey, number>> = {
-  [HEXOBJECT_KEYS.HEALTH_BOTTLE]: 4,
-  [HEXOBJECT_KEYS.ENERGY_BOTTLE]: 4,
-  [HEXOBJECT_KEYS.MANA_BOTTLE]: 4,
-  [HEXOBJECT_KEYS.BONE_CHARM]: 9,
+  [HEXOBJECT_KEYS.HEALTH_BOTTLE]: 8,
+  [HEXOBJECT_KEYS.ENERGY_BOTTLE]: 8,
+  [HEXOBJECT_KEYS.MANA_BOTTLE]: 8,
+  [HEXOBJECT_KEYS.BONE_CHARM]: 16,
   [HEXOBJECT_KEYS.SHIELD]: 16,
-  [HEXOBJECT_KEYS.AXE]: 19,
-  [HEXOBJECT_KEYS.PICKAXE]: 19,
+  [HEXOBJECT_KEYS.AXE]: 24,
+  [HEXOBJECT_KEYS.PICKAXE]: 24,
   [HEXOBJECT_KEYS.RETURN_SCROLL]: 24,
   [HEXOBJECT_KEYS.CROWN_SHARD]: 32,
   [HEXOBJECT_KEYS.SWORD]: 200,
@@ -39,7 +39,7 @@ describe('sellUnitPrice', () => {
     expect(sellUnitPrice(stingy, HEXOBJECT_KEYS.HEALTH_BOTTLE)).toBe(1);
     const third = { ...ILVA, sellRate: { num: 1, den: 3 } };
     expect(sellUnitPrice(third, HEXOBJECT_KEYS.RETURN_SCROLL)).toBe(20);
-    expect(sellUnitPrice(third, HEXOBJECT_KEYS.BONE_CHARM)).toBe(8);
+    expect(sellUnitPrice(third, HEXOBJECT_KEYS.BONE_CHARM)).toBe(13);
   });
 });
 

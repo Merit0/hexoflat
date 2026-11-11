@@ -40,7 +40,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Health Potion',
     subtitle: 'Restores health',
     description: 'Bottle of Health potion!',
-    coinPrice: 12,
+    coinPrice: 20,
     collision: EHexCollision.SOLID,
     spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_BOTTLE}-token-image.png`,
     loot: {
@@ -64,7 +64,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Energy Potion',
     subtitle: 'Restores energy',
     description: 'Bottle of Energy potion!',
-    coinPrice: 12,
+    coinPrice: 20,
     collision: EHexCollision.SOLID,
     spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_BOTTLE}-token-image.png`,
     loot: {
@@ -87,7 +87,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Mana Potion',
     subtitle: 'Restores mana',
     description: 'Bottle of Mana potion!',
-    coinPrice: 12,
+    coinPrice: 20,
     collision: EHexCollision.SOLID,
     spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_BOTTLE}-token-image.png`,
     loot: {
@@ -141,7 +141,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Bone Charm',
     subtitle: 'Carved from a fallen guard',
     description: 'A small charm of bone, still cold from the crypt.',
-    coinPrice: 24,
+    coinPrice: 40,
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/bone-charm-token.svg',
     loot: {

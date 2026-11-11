@@ -76,18 +76,18 @@ export const GUARDIAN_EMAIL = 'grown-up@example.com';
  * the trader specs instead of being read back from the game. Sale value is floor(price * 2 / 5).
  */
 export const CoinPrices = {
-  healthBottle: 12,
+  healthBottle: 20,
   shield: 40,
-  axe: 48,
-  pickaxe: 48,
+  axe: 60,
+  pickaxe: 60,
   returnScroll: 60,
   sword: 500,
 } as const;
 
 export const SellValues = {
-  healthBottle: 4,
+  healthBottle: 8,
   shield: 16,
-  axe: 19,
+  axe: 24,
   sword: 200,
 } as const;
 

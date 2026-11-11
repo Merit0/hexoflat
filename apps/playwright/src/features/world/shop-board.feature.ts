@@ -155,6 +155,16 @@ export class ShopBoardFeature extends BaseFeature {
     );
   }
 
+  async openBuybackTab(): Promise<void> {
+    await this.step('Open the Buyback tab', () => this.board.openBuybackTab());
+  }
+
+  async verifyTabTextIsBold(): Promise<void> {
+    await this.step('Verify the Goods and Buyback tab texts are bold', () =>
+      this.board.verifyTabTextIsBold(),
+    );
+  }
+
   async verifyOfferBadge(index: number, percent: number | null): Promise<void> {
     await this.step(`Verify goods cell ${index} badge is ${percent ?? 'absent'}`, () =>
       this.board.verifyOfferBadge(index, percent),

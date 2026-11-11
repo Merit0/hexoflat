@@ -157,7 +157,7 @@ describe('selecting a good and pressing Buy', () => {
     expect(byId('shop-card').dataset.mode).toBe('trading');
     expect(byId('shop-card-trade-price').textContent).toContain('Price');
     expect(byId('shop-card-action').textContent?.trim()).toBe('Trade');
-    expect(bagCellWith(K.SWORD).querySelector('[data-testid="shop-bag-sum"]')).not.toBeNull();
+    expect(bagCellWith(K.SWORD).querySelector('[data-testid="shop-bag-sum"]')).toBeNull();
 
     byId('shop-card-action').click();
     await settleShopDeal();
