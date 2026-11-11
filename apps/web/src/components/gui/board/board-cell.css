@@ -1,0 +1,87 @@
+.cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: rgba(120, 160, 170, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  touch-action: none;
+  user-select: none;
+  outline: none;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    opacity 0.12s ease;
+}
+.cell:hover {
+  background: rgba(138, 173, 180, 0.3);
+}
+.cell:focus-visible {
+  border-color: rgba(255, 220, 150, 0.7);
+}
+.cell.is-next {
+  border: 1px dashed rgba(255, 220, 150, 0.5);
+}
+.cell.is-valid {
+  border-color: rgba(255, 220, 150, 0.55);
+  box-shadow:
+    0 0 0 2px rgba(255, 200, 120, 0.5) inset,
+    0 0 16px rgba(255, 200, 120, 0.45),
+    0 0 30px rgba(255, 200, 120, 0.25),
+    0 6px 14px rgba(0, 0, 0, 0.3);
+}
+.cell.is-invalid {
+  border-color: rgba(255, 120, 120, 0.6);
+  box-shadow:
+    0 0 0 2px rgba(255, 120, 120, 0.5) inset,
+    0 0 16px rgba(255, 80, 80, 0.4),
+    0 6px 14px rgba(0, 0, 0, 0.3);
+}
+.cell.is-landed {
+  animation: cell-land 0.28s ease-out;
+}
+.cell.is-shake {
+  animation: cell-shake 0.3s ease-in-out;
+}
+@keyframes cell-land {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes cell-shake {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell.is-landed,
+  .cell.is-shake {
+    animation: none;
+  }
+}
+.cell.is-dim > :not(.slot) {
+  opacity: 0.18;
+}
+.amount {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 900;
+  font-size: 11px;
+  pointer-events: none;
+}

@@ -7,6 +7,7 @@
       :style="{ left: `${position.left}px`, top: `${position.top}px` }"
     >
       <item-tooltip :view="view" />
+      <item-tooltip-price v-if="price" :price="price" />
     </div>
   </Teleport>
 </template>
@@ -14,9 +15,10 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue';
 import ItemTooltip from './item-tooltip.vue';
+import ItemTooltipPrice from './item-tooltip-price.vue';
 import { computeTooltipPosition, useItemTooltip } from '@/composables/use-item-tooltip';
 
-const { target, view } = useItemTooltip();
+const { target, view, price } = useItemTooltip();
 const layer = ref<HTMLElement | null>(null);
 const position = ref({ left: 0, top: 0 });
 

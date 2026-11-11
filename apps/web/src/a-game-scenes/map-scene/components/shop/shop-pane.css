@@ -1,0 +1,46 @@
+.pane {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px var(--stash-pad) 8px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+.pane.is-buyback {
+  background: rgba(0, 0, 0, 0.22);
+}
+.pane.is-buyback .grid {
+  opacity: 0.78;
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+h3 {
+  margin: 0;
+  font-family: var(--font-main, serif), serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: rgba(255, 236, 186, 0.95);
+}
+.note {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, var(--stash-cell));
+  gap: var(--stash-gap);
+  justify-content: start;
+}

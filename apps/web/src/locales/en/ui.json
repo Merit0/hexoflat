@@ -717,6 +717,24 @@
     "nothingToStore": "No resources or consumables in the bag.",
     "lockedChest": "Unlock Chest {prev} first."
   },
+  "shop": {
+    "title": "Trader's Stall",
+    "close": "Close the stall",
+    "goods": "Goods",
+    "buyback": "Buyback",
+    "buybackHint": "Sold — buy back until new goods",
+    "sellRate": "Sell rate {percent}%",
+    "coins": "Coins",
+    "refresh": "New goods",
+    "hint": {
+      "idle": "Drag goods into the bag to buy, drag bag items onto the trader to sell. Shift takes half a stack."
+    },
+    "price": {
+      "buy": "Price",
+      "sell": "Sells for",
+      "buyback": "Buy back for"
+    }
+  },
   "player": {
     "sync": {
       "restored": "The server restored your bag to the saved state.",
