@@ -61,7 +61,11 @@ export type ShopSellCommand = z.infer<typeof ShopSellCommandSchema>;
 
 export const ShopRefreshCommandSchema = z.object({
   type: z.literal('SHOP_REFRESH'),
-  payload: z.object(base),
+  payload: z.object({
+    ...base,
+    expectedPrice: z.number().int().nonnegative(),
+    free: z.boolean().optional(),
+  }),
 });
 export type ShopRefreshCommand = z.infer<typeof ShopRefreshCommandSchema>;
 

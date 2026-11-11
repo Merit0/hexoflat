@@ -38,6 +38,16 @@
         </select>
       </label>
 
+      <label v-if="isDev" class="setting-row">
+        <input
+          data-testid="settings-free-shop-refresh-checkbox"
+          :checked="uiSettings.freeShopRefresh"
+          type="checkbox"
+          @change="uiSettings.setFreeShopRefresh(($event.target as HTMLInputElement).checked)"
+        />
+        <span>{{ t('settings.freeShopRefresh') }}</span>
+      </label>
+
       <button
         v-if="isDev"
         class="dev-btn"

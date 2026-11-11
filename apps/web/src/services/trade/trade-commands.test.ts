@@ -11,6 +11,7 @@ import { inventorySession } from '@/services/inventory/inventory-session';
 import { settleInventorySync } from '@/services/inventory/inventory-sync';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useTraderStore } from '@/stores/trader-store';
+import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { sentCommands } from '@/test-support/fake-player-server';
 import { seedFakeSession } from '@/test-support/fake-session';
 import { buyFromTrader, currentInventory, refreshTrader, sellToTrader } from './trade-commands';
@@ -171,5 +172,18 @@ describe('trade commands go to the server and wait for its answer', () => {
     });
     expect(inventorySession.knowledge?.current).toBe(30);
     expect(trader.view?.serial).toBe(1);
+  });
+
+  it('refreshes for nothing while the free refresh setting is on, keeping the price', async () => {
+    const trader = await heroWithCoins(0, AT_STALL, 0);
+    useUiSettingsStore().setFreeShopRefresh(true);
+
+    expect(await refreshTrader('ilva')).toEqual({ ok: true });
+    expect(lastSent()).toMatchObject({
+      command: { type: 'SHOP_REFRESH', payload: { expectedPrice: 0, free: true } },
+    });
+    expect(inventorySession.knowledge?.current).toBe(0);
+    expect(trader.view?.serial).toBe(1);
+    expect(trader.view?.paidRefreshes).toBe(0);
   });
 });

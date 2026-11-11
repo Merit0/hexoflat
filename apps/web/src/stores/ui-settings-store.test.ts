@@ -113,7 +113,18 @@ describe('useUiSettingsStore', () => {
       store.hydrateFromStorage();
 
       expect(store.showHeroMoveTrail).toBe(true);
+      expect(store.freeShopRefresh).toBe(false);
       expect(store.locale).toBe('uk');
+    });
+
+    it('keeps the free shop refresh flag across a reload', () => {
+      useUiSettingsStore().setFreeShopRefresh(true);
+      setActivePinia(createPinia());
+
+      const store = useUiSettingsStore();
+      store.hydrateFromStorage();
+
+      expect(store.freeShopRefresh).toBe(true);
     });
   });
 });

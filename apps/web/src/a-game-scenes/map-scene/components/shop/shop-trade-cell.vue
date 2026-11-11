@@ -225,12 +225,15 @@ function tooltipPrice(): TooltipPrice | null {
 }
 .trade-slot .badge {
   position: absolute;
-  top: -8px;
-  left: -8px;
+  top: 0;
+  left: 0;
+  pointer-events: none;
   z-index: 1;
   padding: 1px 6px;
-  border: 1px solid #e3c27a;
-  border-radius: 9px;
+  border-width: 0 1px 1px 0;
+  border-style: solid;
+  border-color: #e3c27a;
+  border-radius: 7px 0 7px 0;
   background: #3a2a0c;
   color: #f0d48a;
   font-size: 12px;

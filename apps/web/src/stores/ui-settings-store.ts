@@ -5,6 +5,7 @@ import { detectBrowserLocale, isSupportedLocale, type TLocale } from '@/i18n/loc
 type UiSettingsState = {
   showHeroMoveTrail: boolean;
   locale: TLocale;
+  freeShopRefresh: boolean;
 };
 
 const UI_SETTINGS_KEY = 'hexoflat:ui-settings:v1';
@@ -13,6 +14,7 @@ function defaultState(): UiSettingsState {
   return {
     showHeroMoveTrail: true,
     locale: detectBrowserLocale(),
+    freeShopRefresh: false,
   };
 }
 
@@ -26,6 +28,7 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
 
       const parsed = JSON.parse(raw) as Partial<UiSettingsState>;
       this.showHeroMoveTrail = parsed.showHeroMoveTrail ?? true;
+      this.freeShopRefresh = parsed.freeShopRefresh === true;
       this.locale = isSupportedLocale(parsed.locale) ? parsed.locale : detectBrowserLocale();
       i18n.global.locale.value = this.locale;
     },
@@ -36,6 +39,7 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
         JSON.stringify({
           showHeroMoveTrail: this.showHeroMoveTrail,
           locale: this.locale,
+          freeShopRefresh: this.freeShopRefresh,
         } satisfies UiSettingsState),
       );
     },
@@ -47,6 +51,11 @@ export const useUiSettingsStore = defineStore('ui-settings-store', {
 
     setHeroMoveTrail(value: boolean) {
       this.showHeroMoveTrail = value;
+      this.saveToStorage();
+    },
+
+    setFreeShopRefresh(value: boolean) {
+      this.freeShopRefresh = value;
       this.saveToStorage();
     },
 

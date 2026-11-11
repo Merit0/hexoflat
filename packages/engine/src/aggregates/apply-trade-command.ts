@@ -74,8 +74,8 @@ function dealOutcome(input: TradeInput, result: TTradeResult): TradeApplyResult 
 
 function runRefresh(input: TradeInput & { command: { type: 'SHOP_REFRESH' } }): TradeApplyResult {
   const { command, progress, trade } = input;
-  const { heroId, trader, expectedPrice } = command.payload;
-  const result = planRefresh(progress, trader, { rngSeed: trade.rngSeed, expectedPrice });
+  const { heroId, trader, expectedPrice, free } = command.payload;
+  const result = planRefresh(progress, trader, { rngSeed: trade.rngSeed, expectedPrice, free });
   if (!result.ok) return rejected(command, result.reason, result.price);
   result.progress.knowledge.revision += 1;
   const refreshed: DomainEvent = {
@@ -125,12 +125,15 @@ function runDeal(input: TradeInput & { command: { type: 'SHOP_DEAL' } }): TradeA
 export function applyTradeCommand(
   aggregates: { inventory: InventoryState; progress: ProgressState },
   command: ShopCommand,
-  ctx: { inventory: InventoryContext; trade?: TradeContext },
+  ctx: { inventory: InventoryContext; trade?: TradeContext; devGrantAllowed?: boolean },
 ): TradeApplyResult {
   const trade = ctx.trade ?? { atTrader: null, rngSeed: '' };
   const input: TradeInput = { ...aggregates, command, trade };
   const refusal = guardRefusal(input, ctx.inventory);
   if (refusal) return rejected(command, refusal);
+  if (command.type === 'SHOP_REFRESH' && command.payload.free && !ctx.devGrantAllowed) {
+    return rejected(command, 'FREE_REFRESH_NOT_ALLOWED');
+  }
   if (command.type === 'SHOP_REFRESH') return runRefresh({ ...input, command });
   if (command.type === 'SHOP_DEAL') return runDeal({ ...input, command });
 

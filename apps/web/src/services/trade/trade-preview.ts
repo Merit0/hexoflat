@@ -88,7 +88,8 @@ export function previewRefresh(
   state: TraderState,
   trips: number,
   will: number,
+  free = false,
 ): RefreshPreview {
-  const price = refreshPrice(state, trips, TRADERS[key]);
+  const price = free ? 0 : refreshPrice(state, trips, TRADERS[key]);
   return { price, affordable: will >= price };
 }

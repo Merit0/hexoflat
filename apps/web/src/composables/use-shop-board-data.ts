@@ -14,6 +14,7 @@ import {
   type TradePreview,
 } from '@/services/trade/trade-preview';
 import { useHeroStore } from '@/stores/hero-store';
+import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useTraderStore } from '@/stores/trader-store';
 import type { TooltipPrice } from './use-item-tooltip';
 
@@ -51,6 +52,7 @@ function pricedCell(index: number, item: InventoryItem | null, preview: TradePre
 export function useShopBoardData() {
   const traderStore = useTraderStore();
   const heroStore = useHeroStore();
+  const uiSettings = useUiSettingsStore();
 
   const definition = computed(() =>
     traderStore.traderKey ? TRADERS[traderStore.traderKey] : null,
@@ -88,7 +90,13 @@ export function useShopBoardData() {
   const refresh = computed(() => {
     const ref = trader.value;
     if (!ref) return null;
-    return previewRefresh(ref.key, ref.state, traderStore.trips, will.value);
+    return previewRefresh(
+      ref.key,
+      ref.state,
+      traderStore.trips,
+      will.value,
+      uiSettings.freeShopRefresh,
+    );
   });
 
   function sellPriceOf(location: TItemLocation): TooltipPrice | null {

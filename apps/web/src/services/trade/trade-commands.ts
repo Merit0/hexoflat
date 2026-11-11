@@ -9,6 +9,7 @@ import {
   type InventoryCommandResult,
 } from '@/services/inventory/inventory-sync';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { previewBuy, previewRefresh, previewSell } from './trade-preview';
 import { traderProjection } from './trader-projection';
@@ -103,7 +104,18 @@ export async function refreshTrader(key: TTraderKey): Promise<TradeOutcome> {
   const trader = traderRef(key);
   if (!trader) return NO_TRADER;
   const will = inventorySession.knowledge?.current ?? 0;
-  const { price } = previewRefresh(key, trader.state, traderProjection.value.trips, will);
-  const answer = await sendProgress('SHOP_REFRESH', { trader: key, expectedPrice: price });
+  const { price } = previewRefresh(
+    key,
+    trader.state,
+    traderProjection.value.trips,
+    will,
+    useUiSettingsStore().freeShopRefresh,
+  );
+  const free = useUiSettingsStore().freeShopRefresh;
+  const answer = await sendProgress('SHOP_REFRESH', {
+    trader: key,
+    expectedPrice: price,
+    ...(free ? { free: true } : {}),
+  });
   return outcomeOf({ ...answer, events: answer.events ?? [] });
 }

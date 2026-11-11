@@ -208,6 +208,31 @@ describe('SHOP_REFRESH', () => {
     expect(fresh.inventory).toBe(sold.inventory);
   });
 
+  it('refreshes for free only when dev tools are allowed: no Will spent, the price does not double', () => {
+    const state = rich();
+    state.progress.knowledge.current = 0;
+    const free = (aggregates: PlayerAggregates) =>
+      parse({
+        type: 'SHOP_REFRESH',
+        payload: {
+          heroId: HERO,
+          revision: aggregates.progress.knowledge.revision,
+          trader: 'ilva',
+          expectedPrice: 0,
+          free: true,
+        },
+      });
+    expect(executePlayerCommand(state, free(state), AT_ILVA)).toMatchObject({
+      ok: false,
+      code: 'FREE_REFRESH_NOT_ALLOWED',
+    });
+    const outcome = executePlayerCommand(state, free(state), { ...AT_ILVA, devGrantAllowed: true });
+    if (!outcome.ok) throw new Error(outcome.code);
+    const next = outcome.changed.progress!;
+    expect(next.knowledge.current).toBe(0);
+    expect(next.traders.ilva).toMatchObject({ serial: 1, paidRefreshes: 0 });
+  });
+
   it('refuses with too little Will or a stale knowledge revision and changes nothing', () => {
     const state = rich();
     state.progress.knowledge.current = 19;
