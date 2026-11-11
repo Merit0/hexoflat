@@ -115,8 +115,9 @@ function setTab(tab: TTradeList): void {
   color: rgba(243, 232, 210, 0.62);
   font-family: var(--font-main, serif), serif;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.08em;
+  -webkit-text-stroke: 0.4px currentColor;
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;

@@ -117,13 +117,15 @@ provide(BOARD_CELL_CONTEXT, {
 }
 h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   font-weight: 700;
   font-variant: small-caps;
   letter-spacing: 0.05em;
   text-align: center;
-  color: rgba(255, 236, 186, 0.95);
-  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+  color: #ffe98a;
+  text-shadow:
+    0 0 12px rgba(255, 233, 138, 0.4),
+    0 2px 3px rgba(0, 0, 0, 0.8);
 }
 .ornament {
   display: flex;

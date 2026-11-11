@@ -286,7 +286,7 @@ export class ShopBoardComponent extends BaseComponent {
           async () => Number(await label.evaluate((node) => getComputedStyle(node).fontWeight)),
           POLL,
         )
-        .toBeGreaterThanOrEqual(700);
+        .toBeGreaterThanOrEqual(900);
     }
   }
 
