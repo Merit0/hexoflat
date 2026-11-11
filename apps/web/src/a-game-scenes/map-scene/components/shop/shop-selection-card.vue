@@ -8,53 +8,42 @@
   >
     <template v-if="view">
       <div class="body">
-        <div class="info">
-          <div class="top">
-            <div class="icon" :style="iconStyle" aria-hidden="true"></div>
-            <div class="text">
-              <div class="line">
-                <h4 data-testid="shop-card-name">{{ view.name }}</h4>
-                <span
-                  v-if="view.mode === 'trading'"
-                  class="pays"
-                  data-testid="shop-card-trade-price"
-                >
-                  {{ t('shop.card.paysLabel') }}
-                  <img :src="COIN_SRC" alt="" aria-hidden="true" />
-                  <b :data-price="view.preview.price ?? undefined">{{ view.preview.price ?? 0 }}</b>
-                </span>
-              </div>
-              <p class="meta" data-testid="shop-card-meta">{{ meta }}</p>
-            </div>
-          </div>
-          <p class="note" :class="{ 'is-reason': !!reason }">
-            <span v-if="reason" data-testid="shop-card-reason" :data-reason="view.block">{{
-              reason
-            }}</span>
-            <span v-else data-testid="shop-card-note">{{ note }}</span>
-          </p>
+        <div class="art">
+          <div class="icon" :style="iconStyle" aria-hidden="true"></div>
         </div>
-        <div class="controls">
+        <div class="info">
+          <div class="text">
+            <h4 data-testid="shop-card-name">{{ view.name }}</h4>
+            <p class="meta" data-testid="shop-card-meta">{{ meta }}</p>
+            <p class="note" :class="{ 'is-reason': !!reason }">
+              <span v-if="reason" data-testid="shop-card-reason" :data-reason="view.block">{{
+                reason
+              }}</span>
+              <span v-else-if="note" data-testid="shop-card-note">{{ note }}</span>
+            </p>
+          </div>
           <div v-if="view.maxQty > 1 || qty > 1" class="qty">
-            <button
-              type="button"
-              data-testid="shop-qty-dec"
-              :disabled="qty <= 1"
-              :aria-label="t('shop.card.dec')"
-              @click="shopQty = qty - 1"
-            >
-              −
-            </button>
-            <span data-testid="shop-qty-value" :data-qty="qty">{{ qty }}</span>
-            <button
-              type="button"
-              data-testid="shop-qty-inc"
-              :disabled="qty >= view.maxQty"
-              :aria-label="t('shop.card.inc')"
-              @click="shopQty = qty + 1"
-            >
-              +
-            </button>
+            <div class="stepper">
+              <button
+                type="button"
+                data-testid="shop-qty-dec"
+                :disabled="qty <= 1"
+                :aria-label="t('shop.card.dec')"
+                @click="shopQty = qty - 1"
+              >
+                −
+              </button>
+              <span data-testid="shop-qty-value" :data-qty="qty">{{ qty }}</span>
+              <button
+                type="button"
+                data-testid="shop-qty-inc"
+                :disabled="qty >= view.maxQty"
+                :aria-label="t('shop.card.inc')"
+                @click="shopQty = qty + 1"
+              >
+                +
+              </button>
+            </div>
             <button
               type="button"
               class="max"
@@ -65,6 +54,13 @@
               {{ view.mode === 'trading' ? t('shop.card.all') : t('shop.card.max') }}
             </button>
           </div>
+        </div>
+        <div class="controls">
+          <span v-if="view.mode === 'trading'" class="pays" data-testid="shop-card-trade-price">
+            {{ t('shop.card.priceLabel') }}
+            <img :src="COIN_SRC" alt="" aria-hidden="true" />
+            <b :data-price="view.preview.price ?? undefined">{{ view.preview.price ?? 0 }}</b>
+          </span>
           <button
             type="button"
             class="action"
@@ -97,7 +93,6 @@ import { quickTrade } from '@/composables/use-shop-drag';
 
 const COIN_SRC = getPrototype(HEXOBJECT_KEYS.COINS).spritePath ?? '';
 
-const props = defineProps<{ sellRatePercent: number }>();
 const { t } = useI18n();
 const view = useShopCard();
 
@@ -155,7 +150,7 @@ const note = computed(() => {
       : t('shop.card.note.lastOne');
   }
   if (current.mode === 'buyback') return t('shop.card.note.samePrice');
-  return t('shop.card.note.tradeRate', { percent: props.sellRatePercent });
+  return '';
 });
 
 function onAction(): void {
@@ -169,18 +164,21 @@ function onAction(): void {
 .card {
   flex: none;
   box-sizing: border-box;
-  height: 100px;
+  height: 108px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   margin: 0 var(--stash-pad);
-  padding: 8px 10px;
-  border: 1px solid rgba(227, 194, 122, 0.3);
+  padding: 6px;
+  border: 1px solid rgba(227, 194, 122, 0.4);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(34, 44, 54, 0.9), rgba(14, 18, 24, 0.9));
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #2e1d12, #170d06);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 214, 160, 0.1),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
 .card.is-empty {
@@ -199,31 +197,30 @@ function onAction(): void {
   min-height: 0;
   display: flex;
   align-items: stretch;
-  gap: 10px;
+  gap: 6px;
+}
+.art {
+  flex: none;
+  width: 76px;
+  display: grid;
+  place-items: center;
 }
 .info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   gap: 4px;
-}
-.top {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  gap: 10px;
+  padding: 2px 4px;
 }
 .icon {
-  flex: none;
-  width: 44px;
-  height: 44px;
-  align-self: center;
+  width: 64px;
+  height: 64px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.55));
 }
 .text {
   flex: 1;
@@ -233,18 +230,12 @@ function onAction(): void {
   justify-content: center;
   gap: 2px;
 }
-.line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
 h4 {
   margin: 0;
   min-width: 0;
   overflow: hidden;
   font-family: var(--font-main, serif), serif;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 700;
   line-height: 1.15;
   color: #f0e4c4;
@@ -255,35 +246,37 @@ h4 {
 .meta {
   margin: 0;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 11px;
+  font-size: 13px;
 }
 .pays {
   flex: none;
   display: inline-flex;
+  justify-content: center;
   align-items: center;
   gap: 4px;
   padding: 0 6px;
   border: 1px solid rgba(227, 194, 122, 0.45);
   border-radius: 5px;
-  background: rgba(0, 0, 0, 0.35);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 10px;
-  line-height: 18px;
+  background: rgba(20, 10, 4, 0.55);
+  color: rgba(255, 240, 220, 0.75);
+  font-size: 12px;
+  line-height: 22px;
 }
 .pays img {
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
   object-fit: contain;
 }
 .pays b {
   color: #f0d48a;
   font-family: var(--font-main, serif), serif;
-  font-size: 13px;
+  font-size: 16px;
 }
+
 .note {
   margin: 0;
   color: rgba(255, 255, 255, 0.55);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.2;
 }
 .note.is-reason {
@@ -296,40 +289,79 @@ h4 {
   align-items: stretch;
   justify-content: center;
   gap: 5px;
+  padding: 6px;
 }
 .qty {
+  flex: none;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 3px;
+  gap: 6px;
 }
-.qty button {
-  min-width: 26px;
-  height: 26px;
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  height: 30px;
+  border: 1px solid rgba(227, 194, 122, 0.5);
+  border-radius: 15px;
+  background: rgba(10, 5, 2, 0.55);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.stepper button {
+  width: 32px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.35);
-  color: #f3e8d2;
-  font-size: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #f0d48a;
+  font-size: 19px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
+  transition: background 0.1s ease;
 }
-.qty button:disabled {
-  opacity: 0.4;
+.stepper button:not(:disabled):hover {
+  background: rgba(227, 194, 122, 0.18);
+}
+.stepper button:not(:disabled):active {
+  background: rgba(227, 194, 122, 0.3);
+}
+.stepper button:disabled {
+  opacity: 0.35;
   cursor: default;
 }
-.qty span {
-  min-width: 24px;
-  text-align: center;
+.stepper span {
+  min-width: 36px;
+  display: grid;
+  place-items: center;
+  border-left: 1px solid rgba(227, 194, 122, 0.25);
+  border-right: 1px solid rgba(227, 194, 122, 0.25);
   color: #f0e4c4;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 .qty .max {
-  padding: 0 6px;
-  font-size: 11px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(227, 194, 122, 0.5);
+  border-radius: 15px;
+  background: transparent;
+  box-shadow: none;
+  color: #f0d48a;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.qty .max:not(:disabled):hover {
+  background: rgba(227, 194, 122, 0.18);
+}
+.qty .max:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 .action {
   min-width: 124px;
@@ -340,14 +372,26 @@ h4 {
   background: #e3c27a;
   color: #2a1d06;
   font-family: var(--font-main, serif), serif;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 700;
   cursor: pointer;
 }
 .action.is-trade {
-  border-color: #7fb4e8;
-  background: transparent;
-  color: #cfe4f8;
+  border: 2px solid #d9985a;
+  background: linear-gradient(180deg, rgba(217, 152, 90, 0.28), rgba(120, 66, 30, 0.35));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 180, 0.25),
+    0 0 10px rgba(217, 152, 90, 0.25);
+  color: #ffe2bd;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.action.is-trade:not(:disabled):hover {
+  border-color: #f0b476;
+  background: linear-gradient(180deg, rgba(240, 180, 118, 0.38), rgba(140, 78, 36, 0.45));
+}
+.action.is-trade:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 .action:disabled {
   opacity: 0.45;

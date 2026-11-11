@@ -310,7 +310,7 @@ export class ShopBoardFeature extends BaseFeature {
   }
 
   async verifyTradingCard(key: string, pays: number): Promise<void> {
-    await this.step(`Verify the card trades "${key}" and Ilva pays ${pays}`, () =>
+    await this.step(`Verify the card trades "${key}" and the price ${pays}`, () =>
       this.board.verifyTradingCard(key, pays),
     );
   }

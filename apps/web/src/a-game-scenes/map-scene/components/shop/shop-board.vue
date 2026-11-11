@@ -19,7 +19,7 @@
         :sell-rate-percent="sellRatePercent"
       />
       <shop-goods-pane :goods="goods" :buyback="buyback" :refresh="refresh" />
-      <shop-selection-card :sell-rate-percent="sellRatePercent" />
+      <shop-selection-card />
     </template>
     <stash-bag-pane :rows="2" />
     <shop-drag-ghost />

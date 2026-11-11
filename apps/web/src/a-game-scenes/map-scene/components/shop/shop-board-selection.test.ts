@@ -146,7 +146,7 @@ describe('selecting a good and pressing Buy', () => {
     expect(coins()).toBe(100);
   });
 
-  it('tapping a bag item opens Trading with the sum Ilva pays, and Trade sells it with an Undo toast', async () => {
+  it('tapping a bag item opens Trading with the price, and Trade sells it with an Undo toast', async () => {
     await mountShop({ coins: 10 });
     useHeroInventoryStore().putToInventory(K.SWORD, 1);
     await settleInventorySync();
@@ -155,7 +155,7 @@ describe('selecting a good and pressing Buy', () => {
     bagCellWith(K.SWORD).dispatchEvent(pointer('click', {}));
     await nextTick();
     expect(byId('shop-card').dataset.mode).toBe('trading');
-    expect(byId('shop-card-trade-price').textContent).toContain('Ilva pays');
+    expect(byId('shop-card-trade-price').textContent).toContain('Price');
     expect(byId('shop-card-action').textContent?.trim()).toBe('Trade');
     expect(bagCellWith(K.SWORD).querySelector('[data-testid="shop-bag-sum"]')).not.toBeNull();
 

@@ -507,7 +507,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
   });
 
   test.describe('trading by tap', () => {
-    test('Verify tapping a bag item shows Trading with the sum Ilva pays, Trade sells it and Undo buys it back', async () => {
+    test('Verify tapping a bag item shows Trading with the price, Trade sells it and Undo buys it back', async () => {
       const { shop } = await openStall();
       await shop.givenBag([
         { key: K.axe, amount: 1 },

@@ -768,13 +768,12 @@
       "inc": "More",
       "inBag": "In bag: {n}",
       "notInBag": "Not in bag",
-      "paysLabel": "Ilva pays",
       "note": {
         "inStock": "{n} in stock.",
         "lastOne": "Last one in stock.",
-        "samePrice": "Back for the same price Ilva paid you.",
-        "tradeRate": "{percent}% of the price. Buy back anytime until new goods."
-      }
+        "samePrice": "Back for the same price Ilva paid you."
+      },
+      "priceLabel": "Price"
     },
     "status": {
       "soldOut": "Sold out"
