@@ -28,14 +28,14 @@ export interface TestTrader {
   key: string;
   serial: number;
   trips: number;
-  goods: ({ key: string; amount: number } | null)[];
+  goods: ({ key: string; amount: number; sold?: boolean } | null)[];
   buyback: ({ key: string; amount: number; unitPrice: number } | null)[];
   refreshPrice: number;
 }
 
 export interface TestTraderFixture {
   trader?: string;
-  goods?: ({ key: string; amount: number } | null)[];
+  goods?: ({ key: string; amount: number; sold?: boolean } | null)[];
   buyback?: ({ key: string; amount: number; unitPrice: number } | null)[];
   trips?: number;
 }

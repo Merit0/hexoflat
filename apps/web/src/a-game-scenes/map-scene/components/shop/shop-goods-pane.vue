@@ -15,7 +15,7 @@
         :loses-buyback="losesBuyback"
       />
     </header>
-    <div class="grid" data-cell-grid data-columns="7">
+    <div class="grid is-goods" data-cell-grid data-columns="4">
       <shop-trade-cell
         v-for="cell in goods"
         :key="cell.index"

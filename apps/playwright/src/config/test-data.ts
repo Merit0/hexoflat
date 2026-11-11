@@ -91,6 +91,6 @@ export const SellValues = {
   sword: 200,
 } as const;
 
-export const TRADER_GOODS_SLOTS = 7;
+export const TRADER_GOODS_SLOTS = 8;
 export const GUARANTEED_GOOD = { key: 'health-bottle', min: 2, max: 5 } as const;
 export const REFRESH_BASE_WILL = 20;

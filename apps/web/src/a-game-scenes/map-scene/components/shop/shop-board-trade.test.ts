@@ -1,143 +1,41 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApp, nextTick, type App } from 'vue';
-import { createPinia, setActivePinia } from 'pinia';
-import type { Presence } from '@hexoflat/engine';
-import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
-import { coinPriceOf } from '@hexoflat/engine/content/content-accessors';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { TRADERS } from '@hexoflat/engine/content/traders.content';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
-import type { BuybackEntry, TraderGood } from '@hexoflat/engine/trade/trade-state';
 import { sellUnitPrice } from '@hexoflat/engine/trade/trader-view';
-import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
-import { i18n } from '@/i18n';
-import { hideItemTooltip } from '@/composables/use-item-tooltip';
-import { resetShopDrag, shopDrag } from '@/composables/shop-drag-state';
+import { shopDrag } from '@/composables/shop-drag-state';
 import { settleShopDeal } from '@/composables/use-shop-drag';
-import { cancelRefreshConfirm, REFRESH_CONFIRM_MS } from '@/composables/use-shop-refresh';
-import {
-  applyProgress,
-  bindKnowledgeListener,
-  settleInventorySync,
-} from '@/services/inventory/inventory-sync';
+import { REFRESH_CONFIRM_MS } from '@/composables/use-shop-refresh';
+import { settleInventorySync } from '@/services/inventory/inventory-sync';
 import { inventorySession } from '@/services/inventory/inventory-session';
-import { currentInventory } from '@/services/trade/trade-commands';
-import { traderProjection } from '@/services/trade/trader-projection';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
-import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useTraderStore } from '@/stores/trader-store';
-import { sentCommands } from '@/test-support/fake-player-server';
-import { seedFakeSession } from '@/test-support/fake-session';
-import { fakeTraderFixture } from '@/test-support/fake-trader-fixture';
-import ShopBoard from './shop-board.vue';
+import {
+  view,
+  byId,
+  ghostBadge,
+  coins,
+  ilva,
+  bagKeys,
+  message,
+  shopCommands,
+  pointer,
+  bagCell,
+  bagCellWith,
+  mountShop,
+  drag,
+  drop,
+  registerShopCleanup,
+  POTION_PRICE,
+  SWORD_PRICE,
+} from './shop-board-trade-kit';
 
 vi.mock('@/services/player/player-socket', async () =>
   (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
 );
 
-const HERO = 'hero-shop';
-const [STALL] = campObjectSpots(K.TRADER_STALL);
-const AT_STALL: Presence = {
-  locationKey: 'camping',
-  mapId: 'camping-1',
-  coordinates: getHexNeighbors(STALL)[0],
-};
-const POTION_PRICE = coinPriceOf(K.HEALTH_BOTTLE)!;
-const SWORD_PRICE = coinPriceOf(K.SWORD)!;
-
-let app: App | null = null;
-let host: HTMLElement;
-let pointed: Element[] = [];
-
-const byId = (id: string) => host.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
-const ghostBadge = () => document.querySelector<HTMLElement>('[data-testid="shop-drag-badge"]');
-const coins = () => useHeroInventoryStore().countItem(K.COINS);
-const ilva = () => traderProjection.value.traders.ilva!;
-const bagKeys = () => currentInventory().bag.map((cell) => cell && `${cell.key}x${cell.amount}`);
-const message = () => useHeroToolStore().actionMessage;
-const shopCommands = () =>
-  sentCommands.filter((sent) => sent.command.type.startsWith('SHOP_')).map((s) => s.command.type);
-
-function pointer(type: string, init: MouseEventInit) {
-  return new MouseEvent(type, { bubbles: true, cancelable: true, ...init });
-}
-
-function bagCell(index: number): HTMLElement {
-  return host.querySelector<HTMLElement>(
-    `[data-drop-container="bag"][data-drop-index="${index}"]`,
-  )!;
-}
-
-function bagCellWith(key: string): HTMLElement {
-  return host.querySelector<HTMLElement>(`[data-drop-container="bag"][data-item-key="${key}"]`)!;
-}
-
-async function mountShop(
-  options: {
-    coins?: number;
-    will?: number;
-    goods?: (TraderGood | null)[];
-    buyback?: (BuybackEntry | null)[];
-  } = {},
-) {
-  const pinia = createPinia();
-  setActivePinia(pinia);
-  localStorage.clear();
-  resetShopDrag();
-  sentCommands.length = 0;
-  seedFakeSession(HERO, { presence: AT_STALL, will: options.will ?? 50 });
-  useHeroToolStore().clearActionMessage();
-  const inventory = useHeroInventoryStore();
-  inventory.carryCapacityKg = 50;
-  if (options.coins) inventory.putToInventory(K.COINS, options.coins);
-  await settleInventorySync();
-  const hero = useHeroStore();
-  hero.knowledge = inventorySession.knowledge;
-  bindKnowledgeListener((knowledge) => (hero.knowledge = knowledge));
-  const fixture = {
-    trader: 'ilva',
-    goods: options.goods ?? [
-      { key: K.HEALTH_BOTTLE, amount: 4 },
-      { key: K.SWORD, amount: 1 },
-    ],
-    buyback: options.buyback ?? [],
-  };
-  applyProgress(fakeTraderFixture(fixture).aggregates.progress);
-  useTraderStore().open('ilva');
-  sentCommands.length = 0;
-  host = document.createElement('div');
-  document.body.appendChild(host);
-  app = createApp(ShopBoard).use(pinia).use(i18n);
-  app.mount(host);
-  await nextTick();
-  (document as unknown as { elementsFromPoint: () => Element[] }).elementsFromPoint = () => pointed;
-}
-
-async function drag(from: HTMLElement, over: Element[], options: { shift?: boolean } = {}) {
-  from.dispatchEvent(
-    pointer('pointerdown', { button: 0, clientX: 10, clientY: 10, shiftKey: !!options.shift }),
-  );
-  pointed = over;
-  window.dispatchEvent(pointer('pointermove', { clientX: 60, clientY: 80 }));
-  await nextTick();
-}
-
-async function drop() {
-  window.dispatchEvent(pointer('pointerup', { clientX: 60, clientY: 80 }));
-  await settleShopDeal();
-  await nextTick();
-}
-
-afterEach(() => {
-  bindKnowledgeListener(null);
-  cancelRefreshConfirm();
-  hideItemTooltip();
-  app?.unmount();
-  app = null;
-  host?.remove();
-  pointed = [];
-  vi.useRealTimers();
-});
+registerShopCleanup();
 
 describe('buying with the pointer', () => {
   beforeEach(() => mountShop({ coins: 1000 }));
@@ -160,7 +58,7 @@ describe('buying with the pointer', () => {
     expect(shopCommands()).toEqual(['SHOP_BUY']);
     expect(bagKeys()[5]).toBe(`${K.HEALTH_BOTTLE}x4`);
     expect(coins()).toBe(1000 - POTION_PRICE * 4);
-    expect(ilva().goods[0]).toBeNull();
+    expect(ilva().goods[0]).toEqual({ key: K.HEALTH_BOTTLE, amount: 4, sold: true });
     expect(bagCell(5).classList.contains('is-landed')).toBe(true);
     expect(byId('shop-hint').textContent).toContain('Drag goods into the bag');
   });
@@ -286,7 +184,7 @@ describe('selling and buying back', () => {
     expect(shopCommands()).toEqual(['SHOP_SELL', 'SHOP_BUY']);
     expect(coins()).toBe(10);
     expect(bagCellWith(K.SWORD)).not.toBeNull();
-    expect(host.querySelector('[data-testid="shop-buyback-pane"]')).toBeNull();
+    expect(view.host!.querySelector('[data-testid="shop-buyback-pane"]')).toBeNull();
   });
 
   it('drags a BUYBACK item back into the bag with its own label', async () => {
@@ -326,7 +224,7 @@ describe('quick buy from the keyboard and the right button', () => {
     expect(shopCommands()).toEqual(['SHOP_BUY']);
   });
 
-  it('arrow keys move focus along the goods row and Home/End jump to its ends', () => {
+  it('arrow keys move focus through the two rows of four and Home/End jump to the ends', () => {
     byId('shop-goods-cell-0').focus();
     byId('shop-goods-cell-0').dispatchEvent(
       new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
@@ -335,7 +233,19 @@ describe('quick buy from the keyboard and the right button', () => {
     byId('shop-goods-cell-1').dispatchEvent(
       new KeyboardEvent('keydown', { key: 'End', bubbles: true }),
     );
-    expect(document.activeElement).toBe(byId('shop-goods-cell-6'));
+    expect(document.activeElement).toBe(byId('shop-goods-cell-7'));
+  });
+
+  it('ArrowDown moves to the cell below in the second row and ArrowUp comes back', () => {
+    byId('shop-goods-cell-1').focus();
+    byId('shop-goods-cell-1').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+    );
+    expect(document.activeElement).toBe(byId('shop-goods-cell-5'));
+    byId('shop-goods-cell-5').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
+    );
+    expect(document.activeElement).toBe(byId('shop-goods-cell-1'));
   });
 });
 

@@ -112,7 +112,7 @@ describe('rollGoods', () => {
     const small = { ...ILVA, pool: ILVA.pool.slice(0, 2), rolls: 2 };
     const goods = rollGoods(small, deriveStream(SEED, 'small'));
     expect(goods.filter(Boolean)).toHaveLength(3);
-    expect(goods.slice(3)).toEqual([null, null, null, null]);
+    expect(goods.slice(3)).toEqual(Array.from({ length: ILVA.goodsSlots - 3 }, () => null));
   });
 });
 

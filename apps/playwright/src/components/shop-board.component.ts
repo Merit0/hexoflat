@@ -4,7 +4,7 @@ import { pointerDrag } from '@components/pointer-drag';
 
 const POLL = { timeout: 5_000, intervals: [100] };
 
-export type ShopCellContent = { key: string; amount: number } | null;
+export type ShopCellContent = { key: string; amount: number; sold?: boolean } | null;
 export type ShopBuybackContent = { key: string; amount: number; unitPrice: number } | null;
 export type ShopTraderFixture = {
   goods?: ShopCellContent[];
@@ -105,6 +105,24 @@ export class ShopBoardComponent extends BaseComponent {
     await expect(this.page.getByTestId(`shop-price-${index}`)).toHaveText(String(expected.price));
   }
 
+  async verifyGoodsCellSoldOut(index: number, key: string): Promise<void> {
+    const cell = this.goodsCell(index);
+    await expect(cell).toHaveAttribute('data-sold', 'true');
+    await expect(cell).toHaveAttribute('data-item-key', key);
+    await expect(cell.getByTestId('shop-sold-label')).toBeVisible();
+    await expect(cell.getByTestId('shop-sold-label')).toHaveText(/sold out|продано/i);
+    await expect(this.page.getByTestId(`shop-price-${index}`)).toHaveCount(0);
+    await expect(cell).not.toHaveAttribute('role', 'button');
+  }
+
+  async verifyGoodsCellDimmed(index: number): Promise<void> {
+    const opacity = await this.goodsCell(index)
+      .locator('> :not([data-testid="shop-sold-label"])')
+      .first()
+      .evaluate((node) => getComputedStyle(node).opacity);
+    expect(Number(opacity)).toBeCloseTo(0.3, 2);
+  }
+
   async verifyGoodsPriceAffordable(index: number, affordable: boolean): Promise<void> {
     await expect(this.page.getByTestId(`shop-price-${index}`)).toHaveAttribute(
       'data-affordable',
@@ -151,6 +169,52 @@ export class ShopBoardComponent extends BaseComponent {
     await pointerDrag(this.page, this.bagCellWith(itemKey), this.sellTarget(target), { shift });
   }
 
+  async selectGoods(index: number): Promise<void> {
+    await this.goodsCell(index).click();
+  }
+
+  async selectBuyback(index: number): Promise<void> {
+    await this.buybackCell(index).click();
+  }
+
+  async clickBuy(): Promise<void> {
+    await this.page.getByTestId('shop-buy').click();
+  }
+
+  async verifySelectionShows(expected: {
+    list: 'goods' | 'buyback';
+    key: string;
+    price: number;
+    affordable: boolean;
+    amount?: number;
+  }): Promise<void> {
+    const card = this.page.getByTestId('shop-selection');
+    await expect(card).toBeVisible();
+    await expect(card).toHaveAttribute('data-list', expected.list);
+    await expect(card).toHaveAttribute('data-item-key', expected.key);
+    await expect(this.page.getByTestId('shop-selection-name')).toHaveText(/\S+/);
+    const price = this.page.getByTestId('shop-selection-price');
+    await expect(price).toHaveAttribute('data-price', String(expected.price));
+    await expect(price).toHaveAttribute('data-affordable', String(expected.affordable));
+    if (expected.amount !== undefined && expected.amount > 1) {
+      await expect(this.page.getByTestId('shop-selection-amount')).toContainText(
+        String(expected.amount),
+      );
+    }
+  }
+
+  async verifyBuyButtonReads(pattern: RegExp): Promise<void> {
+    await expect(this.page.getByTestId('shop-buy')).toHaveText(pattern);
+  }
+
+  async verifyNoSelection(): Promise<void> {
+    await expect(this.page.getByTestId('shop-selection')).toHaveCount(0);
+  }
+
+  async verifyGoodsCellSelected(index: number, selected: boolean): Promise<void> {
+    await expect(this.goodsCell(index)).toHaveAttribute('data-selected', String(selected));
+  }
+
   async doubleClickGoods(index: number): Promise<void> {
     await this.goodsCell(index).dblclick();
   }
@@ -182,6 +246,30 @@ export class ShopBoardComponent extends BaseComponent {
 
   async clickRefresh(): Promise<void> {
     await this.refreshButton.click();
+  }
+
+  async verifyRefreshReadsAndHoverShowsTheCost(label: RegExp, cost: number): Promise<void> {
+    const tip = this.page.getByTestId('shop-refresh-price');
+    await this.page.mouse.move(5, 5);
+    await expect(tip).toBeHidden();
+    await expect(this.refreshButton).toHaveText(label);
+    await expect(this.refreshButton.locator('img')).toHaveCount(0);
+    await this.refreshButton.hover();
+    await expect(tip).toBeVisible();
+    await expect(tip).toHaveText(String(cost));
+    await expect(tip.locator('img')).toBeVisible();
+    await this.verifyTipAboveTheButton();
+    await this.page.mouse.move(5, 5);
+    await expect(tip).toBeHidden();
+  }
+
+  private async verifyTipAboveTheButton(): Promise<void> {
+    const [tip, button] = await Promise.all([
+      this.page.getByTestId('shop-refresh-price').boundingBox(),
+      this.refreshButton.boundingBox(),
+    ]);
+    if (!tip || !button) throw new Error('The tooltip or the button has no bounding box.');
+    expect(tip.y + tip.height).toBeLessThanOrEqual(button.y);
   }
 
   async verifyRefreshPrice(price: number): Promise<void> {
@@ -232,7 +320,7 @@ export class ShopBoardComponent extends BaseComponent {
   async verifyTraderGoods(goods: ShopCellContent[]): Promise<void> {
     await expect
       .poll(
-        () => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getTrader()?.goods.slice(0, 7)),
+        () => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getTrader()?.goods.slice(0, 8)),
         POLL,
       )
       .toEqual(goods);

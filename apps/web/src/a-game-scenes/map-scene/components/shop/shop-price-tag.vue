@@ -25,19 +25,19 @@ defineProps<{ price: number; affordable: boolean; testid: string }>();
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: calc(2px * var(--shop-tag-scale, 1));
   min-width: 0;
   max-width: 100%;
   color: #ffe98a;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--shop-tag-scale, 1));
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 .tag img {
-  width: 14px;
-  height: 14px;
+  width: calc(14px * var(--shop-tag-scale, 1));
+  height: calc(14px * var(--shop-tag-scale, 1));
   object-fit: contain;
   flex: none;
 }

@@ -21,7 +21,7 @@ describe('TRADERS content', () => {
 
   it('sells at 2/5 of the price in whole numbers and fills one row of seven goods', () => {
     expect(ilva.sellRate).toEqual({ num: 2, den: 5 });
-    expect(ilva.goodsSlots).toBe(7);
+    expect(ilva.goodsSlots).toBe(8);
     expect(ilva.guaranteed.length + ilva.rolls).toBe(ilva.goodsSlots);
   });
 
@@ -44,7 +44,7 @@ describe('traderProblems', () => {
   });
 
   it('refuses more goods than the row holds', () => {
-    expect(traderProblems('ilva', variant({ rolls: 7 }))).toContain(
+    expect(traderProblems('ilva', variant({ rolls: 8 }))).toContain(
       'guaranteed + rolls exceed goodsSlots',
     );
   });

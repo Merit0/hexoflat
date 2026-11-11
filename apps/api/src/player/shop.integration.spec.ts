@@ -126,7 +126,8 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
     expect(bagAmount(after, COINS)).toBe(START_COINS - SWORD_PRICE);
     expect(bagAmount(after, SWORD)).toBe(1);
     const goods = ((await progressOf(userId, heroId)).state as ProgressState).traders.ilva!.goods;
-    expect(goods.slice(0, 2)).toEqual([null, { key: HEALTH_BOTTLE, amount: 5 }]);
+    expect(goods[0]).toMatchObject({ key: SWORD, amount: 1, sold: true });
+    expect(goods[1]).toEqual({ key: HEALTH_BOTTLE, amount: 5 });
     expect(await journalRow(command.commandId)).toMatchObject({
       result: 'applied',
       commandType: 'SHOP_BUY',
@@ -375,7 +376,7 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
       trips: 3,
       traders: {
         ilva: {
-          goods: [null, { key: SWORD, amount: 1 }, null, null, null, null, null],
+          goods: [null, { key: SWORD, amount: 1 }, ...Array.from({ length: 6 }, () => null)],
           buyback: [
             { key: HEALTH_BOTTLE, amount: 2, unitPrice: 4 },
             null,

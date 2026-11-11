@@ -117,7 +117,7 @@ describe('SHOP_BUY and SHOP_SELL', () => {
     });
     expect(outcome.changed.inventory?.revision).toBe(1);
     expect(walletCoins(outcome.changed.inventory!)).toBe(1000 - price);
-    expect(outcome.changed.progress?.traders.ilva?.goods[0]).toBeNull();
+    expect(outcome.changed.progress?.traders.ilva?.goods[0]).toMatchObject({ sold: true });
     expect(before.progress.traders).toEqual({});
   });
 

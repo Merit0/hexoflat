@@ -22,6 +22,7 @@ export interface ShopTradeCell {
   item: InventoryItem | null;
   price: number | null;
   affordable: boolean;
+  sold: boolean;
 }
 
 export function tradeItemOf(
@@ -42,7 +43,7 @@ export function tradeItemOf(
 function pricedCell(index: number, item: InventoryItem | null, preview: TradePreview | null) {
   const price = preview?.price ?? null;
   const affordable = !preview || preview.ok || preview.reason !== 'NOT_ENOUGH_COINS';
-  return { index, item, price, affordable };
+  return { index, item, price, affordable, sold: false };
 }
 
 export function useShopBoardData() {
@@ -64,6 +65,9 @@ export function useShopBoardData() {
     if (!ref) return [];
     return ref.state[list].map((entry, index) => {
       if (!entry) return pricedCell(index, null, null);
+      if ('sold' in entry && entry.sold) {
+        return { ...pricedCell(index, tradeItemOf(list, index, entry), null), sold: true };
+      }
       const preview = previewBuy(inventory.value, ref, { list, index }, 'auto', false);
       return pricedCell(index, tradeItemOf(list, index, entry), preview);
     });

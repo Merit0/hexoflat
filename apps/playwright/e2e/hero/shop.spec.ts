@@ -12,6 +12,10 @@ import {
 } from '@config/test-data';
 
 const NONE = null;
+const emptyGoods = (...first: { key: string; amount: number; sold?: boolean }[]) => [
+  ...first,
+  ...Array.from({ length: 8 - first.length }, () => NONE),
+];
 const NOT_ENOUGH_COINS = /not enough coins|не вистачає монет/i;
 const TOO_HEAVY = /cannot carry that much weight|не витримає такої ваги/i;
 const NOT_INTERESTED = /not interested|не цікавить/i;
@@ -101,12 +105,12 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.verifyNoDragGhost();
       await shop.verifyWalletCoins(100);
       await shop.verifyBagAmount(K.axe, 0);
-      await shop.verifyTraderGoods([{ key: K.axe, amount: 1 }, NONE, NONE, NONE, NONE, NONE, NONE]);
+      await shop.verifyTraderGoods(emptyGoods({ key: K.axe, amount: 1 }));
     });
   });
 
   test.describe('buying', () => {
-    test('Verify dragging goods onto a bag cell buys them: the price is paid, the item lands in the bag, the cell empties on the server', async () => {
+    test('Verify dragging goods onto a bag cell buys them: the price is paid, the item lands in the bag, the cell stays as sold out on the server', async () => {
       const { shop } = await openStall();
       await shop.givenGoods([{ key: K.axe, amount: 1 }]);
       await shop.givenBag([{ key: K.coins, amount: 100 }]);
@@ -115,9 +119,39 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
 
       await shop.verifyBagAmount(K.axe, 1);
       await shop.verifyWalletCoins(100 - Price.axe);
-      await shop.verifyTraderGoods([NONE, NONE, NONE, NONE, NONE, NONE, NONE]);
-      await shop.verifyGoodsCell(0, NONE);
+      await shop.verifyTraderGoods(emptyGoods({ key: K.axe, amount: 1, sold: true }));
+      await shop.verifyGoodsCellSoldOut(0, K.axe);
       await shop.verifyCoinsOnBanner(100 - Price.axe);
+    });
+
+    test('Verify a bought-out good stays on the shelf at 30% with a Sold out label and no price, and cannot be bought again', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([{ key: K.axe, amount: 1 }]);
+      await shop.givenBag([{ key: K.coins, amount: 200 }]);
+      await shop.buyByDraggingToABagCell(0);
+      await shop.verifyWalletCoins(200 - Price.axe);
+
+      await shop.verifyGoodsCellSoldOut(0, K.axe);
+      await shop.selectGoods(0);
+      await shop.verifyNoSelection();
+      await shop.buyByDoubleClick(0);
+
+      await shop.verifyWalletCoins(200 - Price.axe);
+      await shop.verifyBagAmount(K.axe, 1);
+    });
+
+    test('Verify half of a stack bought with Shift does not mark the good sold out', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([{ key: K.healthBottle, amount: 5 }]);
+      await shop.givenBag([{ key: K.coins, amount: 100 }]);
+
+      await shop.buyHalfByDraggingToABagCell(0);
+
+      await shop.verifyGoodsCell(0, {
+        key: K.healthBottle,
+        amount: 3,
+        price: 3 * Price.healthBottle,
+      });
     });
 
     test('Verify having exactly the price is enough: the shield is bought and the purse is empty', async () => {
@@ -143,15 +177,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await new VerifyActionAlertFeature().verifyIsShownMatching(new RegExp(String(Price.shield)));
       await shop.verifyWalletCoins(Price.shield - 1);
       await shop.verifyBagAmount(K.shield, 0);
-      await shop.verifyTraderGoods([
-        { key: K.shield, amount: 1 },
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-      ]);
+      await shop.verifyTraderGoods(emptyGoods({ key: K.shield, amount: 1 }));
     });
 
     test('Verify the drag label warns that the goods cannot be afforded before the pointer is released', async () => {
@@ -189,15 +215,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
 
       await shop.verifyBagAmount(K.healthBottle, 2);
       await shop.verifyWalletCoins(100 - 2 * Price.healthBottle);
-      await shop.verifyTraderGoods([
-        { key: K.healthBottle, amount: 3 },
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-      ]);
+      await shop.verifyTraderGoods(emptyGoods({ key: K.healthBottle, amount: 3 }));
     });
 
     test('Verify a double click buys the whole stack', async () => {
@@ -239,15 +257,121 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await new VerifyActionAlertFeature().verifyIsShownMatching(TOO_HEAVY);
       await shop.verifyBagAmount(K.shield, 1);
       await shop.verifyWalletCoins(100);
-      await shop.verifyTraderGoods([
-        { key: K.shield, amount: 1 },
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-        NONE,
-        NONE,
+      await shop.verifyTraderGoods(emptyGoods({ key: K.shield, amount: 1 }));
+    });
+  });
+
+  test.describe('selecting a good and pressing Buy', () => {
+    test('Verify clicking a good highlights it and shows its name, stack and stack price on a card, buying nothing yet', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([
+        { key: K.healthBottle, amount: 3 },
+        { key: K.axe, amount: 1 },
       ]);
+      await shop.givenBag([{ key: K.coins, amount: 100 }]);
+      await shop.verifyNoSelection();
+
+      await shop.selectGoods(0);
+
+      await shop.verifySelection({
+        list: 'goods',
+        key: K.healthBottle,
+        price: 3 * Price.healthBottle,
+        affordable: true,
+        amount: 3,
+      });
+      await shop.verifyGoodsCellSelected(0, true);
+      await shop.verifyBuyButtonReads(/^\s*(buy|купити)\s*$/i);
+      await shop.verifyWalletCoins(100);
+      await shop.verifyBagAmount(K.healthBottle, 0);
+    });
+
+    test('Verify the Buy button buys the whole stack, pays the price and clears the card', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([{ key: K.healthBottle, amount: 3 }]);
+      await shop.givenBag([{ key: K.coins, amount: 100 }]);
+      await shop.selectGoods(0);
+
+      await shop.pressBuy();
+
+      await shop.verifyBagAmount(K.healthBottle, 3);
+      await shop.verifyWalletCoins(100 - 3 * Price.healthBottle);
+      await shop.verifyTraderGoods(emptyGoods({ key: K.healthBottle, amount: 3, sold: true }));
+      await shop.verifyNoSelection();
+    });
+
+    test('Verify selecting another good moves the card and the highlight to it', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([
+        { key: K.healthBottle, amount: 3 },
+        { key: K.axe, amount: 1 },
+      ]);
+      await shop.givenBag([{ key: K.coins, amount: 100 }]);
+      await shop.selectGoods(0);
+
+      await shop.selectGoods(1);
+
+      await shop.verifySelection({ list: 'goods', key: K.axe, price: Price.axe, affordable: true });
+      await shop.verifyGoodsCellSelected(0, false);
+      await shop.verifyGoodsCellSelected(1, true);
+    });
+
+    test('Verify a good that costs too much shows its price as unaffordable and Buy is refused with the price', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([{ key: K.shield, amount: 1 }]);
+      await shop.givenBag([{ key: K.coins, amount: Price.shield - 1 }]);
+      await shop.selectGoods(0);
+      await shop.verifySelection({
+        list: 'goods',
+        key: K.shield,
+        price: Price.shield,
+        affordable: false,
+      });
+
+      await shop.pressBuy();
+
+      await new VerifyActionAlertFeature().verifyIsShownMatching(NOT_ENOUGH_COINS);
+      await shop.verifyWalletCoins(Price.shield - 1);
+      await shop.verifyBagAmount(K.shield, 0);
+      await shop.verifySelection({
+        list: 'goods',
+        key: K.shield,
+        price: Price.shield,
+        affordable: false,
+      });
+    });
+
+    test('Verify a buyback item is selected the same way and its button buys it back at the sale price', async () => {
+      const { shop } = await openStall();
+      await shop.givenTrader({
+        buyback: [{ key: K.sword, amount: 1, unitPrice: SellValues.sword }],
+      });
+      await shop.givenBag([{ key: K.coins, amount: SellValues.sword }]);
+      await shop.selectBuyback(0);
+
+      await shop.verifySelection({
+        list: 'buyback',
+        key: K.sword,
+        price: SellValues.sword,
+        affordable: true,
+      });
+      await shop.verifyBuyButtonReads(/buy back|викупити/i);
+      await shop.pressBuy();
+
+      await shop.verifyBagAmount(K.sword, 1);
+      await shop.verifyWalletCoins(0);
+      await shop.verifyNoSelection();
+    });
+
+    test('Verify paid new goods clear the selection', async () => {
+      const { shop } = await openStall();
+      await shop.givenWill(REFRESH_BASE_WILL);
+      await shop.selectGoods(0);
+      await shop.pressNewGoods();
+      await shop.pressNewGoods();
+
+      await shop.verifyGoodsSerial(1);
+      await shop.verifyNoSelection();
     });
   });
 
@@ -360,6 +484,12 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
   });
 
   test.describe('new goods', () => {
+    test('Verify the button is named Refresh with no icon and a hover tooltip above it shows the Will icon and cost', async () => {
+      const { shop } = await openStall();
+
+      await shop.verifyRefreshButtonShowsCostOnHover(REFRESH_BASE_WILL);
+    });
+
     test('Verify one Will short refuses at once, with no confirmation step and nothing spent', async () => {
       const { shop } = await openStall();
       await shop.givenWill(REFRESH_BASE_WILL - 1);
@@ -387,7 +517,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await new VerifyActionAlertFeature().verifyIsShownMatching(ASKS_TO_CONFIRM);
       await shop.verifyWill(REFRESH_BASE_WILL);
       await shop.verifyGoodsSerial(0);
-      await shop.verifyTraderGoods([{ key: K.axe, amount: 1 }, NONE, NONE, NONE, NONE, NONE, NONE]);
+      await shop.verifyTraderGoods(emptyGoods({ key: K.axe, amount: 1 }));
     });
 
     test('Verify the second click pays the Will and brings the next series of goods', async () => {
@@ -490,7 +620,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
   });
 
   test.describe('the server keeps the deals', () => {
-    test('Verify a purchase survives a reload: the item, the purse and the emptied shelf', async () => {
+    test('Verify a purchase survives a reload: the item, the purse and the sold-out cell', async () => {
       const { stall, shop } = await openStall();
       await shop.givenGoods([{ key: K.axe, amount: 1 }]);
       await shop.givenBag([{ key: K.coins, amount: 100 }]);
@@ -501,7 +631,7 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
 
       await shop.verifyBagAmount(K.axe, 1);
       await shop.verifyWalletCoins(100 - Price.axe);
-      await shop.verifyGoodsCell(0, NONE);
+      await shop.verifyGoodsCellSoldOut(0, K.axe);
       await shop.verifyCoinsOnBanner(100 - Price.axe);
     });
 

@@ -9,7 +9,7 @@ export const TRADERS = {
     portraitPath: '/hex-assets/hex-constructs/camping/shop-hex.png',
     stallHexobjectKey: HEXOBJECT_KEYS.TRADER_STALL,
     sellRate: { num: 2, den: 5 },
-    goodsSlots: 7,
+    goodsSlots: 8,
     buybackSlots: 7,
     refresh: { baseWill: 20, factor: 2 },
     guaranteed: [{ key: HEXOBJECT_KEYS.HEALTH_BOTTLE, min: 2, max: 5 }],
@@ -23,7 +23,7 @@ export const TRADERS = {
       { key: HEXOBJECT_KEYS.SHIELD, weight: 1, min: 1, max: 1 },
       { key: HEXOBJECT_KEYS.RETURN_SCROLL, weight: 1, min: 1, max: 1 },
     ],
-    rolls: 6,
+    rolls: 7,
   },
 } as const satisfies Record<string, TTraderDefinition>;
 

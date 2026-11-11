@@ -3,7 +3,11 @@ import { hexobjectKeySchema } from '../content/content-schema';
 import { TRADER_KEYS } from '../content/traders.content';
 
 export const traderGoodSchema = z
-  .object({ key: hexobjectKeySchema, amount: z.number().int().positive() })
+  .object({
+    key: hexobjectKeySchema,
+    amount: z.number().int().positive(),
+    sold: z.literal(true).optional(),
+  })
   .strict();
 export type TraderGood = z.infer<typeof traderGoodSchema>;
 

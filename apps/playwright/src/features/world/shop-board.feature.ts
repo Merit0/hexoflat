@@ -43,7 +43,7 @@ export class ShopBoardFeature extends BaseFeature {
   }
 
   async verifyServedGoods(): Promise<void> {
-    await this.step('Verify the server stocked the guaranteed item in seven slots', async () => {
+    await this.step('Verify the server stocked the guaranteed item in eight slots', async () => {
       await this.board.verifyGoodsCellCount(TRADER_GOODS_SLOTS);
       await this.board.verifyServedGoodsHoldTheGuaranteedItem(
         GUARANTEED_GOOD.key,
@@ -58,6 +58,13 @@ export class ShopBoardFeature extends BaseFeature {
     await this.step(`Verify goods cell ${index} shows ${JSON.stringify(expected)}`, () =>
       this.board.verifyGoodsCellShows(index, expected),
     );
+  }
+
+  async verifyGoodsCellSoldOut(index: number, key: string): Promise<void> {
+    await this.step(`Verify goods cell ${index} shows "${key}" as sold out at 30%`, async () => {
+      await this.board.verifyGoodsCellSoldOut(index, key);
+      await this.board.verifyGoodsCellDimmed(index);
+    });
   }
 
   async verifyGoodsPriceAffordable(index: number, affordable: boolean): Promise<void> {
@@ -120,6 +127,48 @@ export class ShopBoardFeature extends BaseFeature {
   async buyByDroppingOnTheBag(index: number): Promise<void> {
     await this.step(`Drop goods cell ${index} on the bag panel`, () =>
       this.board.dragGoodsToBagPane(index),
+    );
+  }
+
+  async selectGoods(index: number): Promise<void> {
+    await this.step(`Click goods cell ${index} to select it`, () => this.board.selectGoods(index));
+  }
+
+  async selectBuyback(index: number): Promise<void> {
+    await this.step(`Click buyback cell ${index} to select it`, () =>
+      this.board.selectBuyback(index),
+    );
+  }
+
+  async pressBuy(): Promise<void> {
+    await this.step('Press the Buy button on the selection card', () => this.board.clickBuy());
+  }
+
+  async verifySelection(expected: {
+    list: 'goods' | 'buyback';
+    key: string;
+    price: number;
+    affordable: boolean;
+    amount?: number;
+  }): Promise<void> {
+    await this.step(`Verify the selection card shows ${JSON.stringify(expected)}`, () =>
+      this.board.verifySelectionShows(expected),
+    );
+  }
+
+  async verifyBuyButtonReads(pattern: RegExp): Promise<void> {
+    await this.step(`Verify the button reads ${pattern}`, () =>
+      this.board.verifyBuyButtonReads(pattern),
+    );
+  }
+
+  async verifyNoSelection(): Promise<void> {
+    await this.step('Verify nothing is selected', () => this.board.verifyNoSelection());
+  }
+
+  async verifyGoodsCellSelected(index: number, selected: boolean): Promise<void> {
+    await this.step(`Verify goods cell ${index} is ${selected ? '' : 'not '}highlighted`, () =>
+      this.board.verifyGoodsCellSelected(index, selected),
     );
   }
 
@@ -206,29 +255,36 @@ export class ShopBoardFeature extends BaseFeature {
   }
 
   async pressNewGoods(): Promise<void> {
-    await this.step('Press New goods', () => this.board.clickRefresh());
+    await this.step('Press Refresh', () => this.board.clickRefresh());
+  }
+
+  async verifyRefreshButtonShowsCostOnHover(cost: number): Promise<void> {
+    await this.step(
+      `Verify the button says Refresh and a hover tooltip above it shows the Will icon and ${cost}`,
+      () => this.board.verifyRefreshReadsAndHoverShowsTheCost(/^\s*(refresh|оновити)\s*$/i, cost),
+    );
   }
 
   async verifyNewGoodsPrice(price: number): Promise<void> {
-    await this.step(`Verify New goods costs ${price} Will`, () =>
+    await this.step(`Verify Refresh costs ${price} Will`, () =>
       this.board.verifyRefreshPrice(price),
     );
   }
 
   async verifyNewGoodsAffordable(affordable: boolean): Promise<void> {
-    await this.step(`Verify New goods is ${affordable ? '' : 'not '}affordable`, () =>
+    await this.step(`Verify Refresh is ${affordable ? '' : 'not '}affordable`, () =>
       this.board.verifyRefreshAffordable(affordable),
     );
   }
 
   async verifyNewGoodsAsksForConfirmation(asking: boolean): Promise<void> {
-    await this.step(`Verify New goods is ${asking ? '' : 'not '}waiting for the second click`, () =>
+    await this.step(`Verify Refresh is ${asking ? '' : 'not '}waiting for the second click`, () =>
       this.board.verifyRefreshAsksForConfirmation(asking),
     );
   }
 
   async verifyServerRefreshPrice(price: number): Promise<void> {
-    await this.step(`Verify the server projection prices New goods at ${price}`, () =>
+    await this.step(`Verify the server projection prices Refresh at ${price}`, () =>
       this.board.verifyTraderRefreshPrice(price),
     );
   }

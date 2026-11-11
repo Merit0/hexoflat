@@ -3,6 +3,7 @@ import { refreshTrader } from '@/services/trade/trade-commands';
 import type { RefreshPreview } from '@/services/trade/trade-preview';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useTraderStore } from '@/stores/trader-store';
+import { clearShopSelection } from './shop-selection';
 import { refreshConfirmText, warnRefreshNoWill, warnTrade } from './shop-messages';
 
 export const REFRESH_CONFIRM_MS = 3000;
@@ -51,6 +52,7 @@ async function sendRefresh(): Promise<void> {
   refreshSending.value = true;
   try {
     const outcome = await refreshTrader(key);
+    if (outcome.ok) clearShopSelection();
     if (!outcome.ok) warnTrade(outcome.reason, outcome.price);
   } finally {
     refreshSending.value = false;

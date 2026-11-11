@@ -55,3 +55,7 @@ h3 {
   gap: var(--stash-gap);
   justify-content: start;
 }
+.grid.is-goods {
+  --shop-tag-scale: 1.8;
+  grid-template-columns: repeat(4, calc((7 * var(--stash-cell) + 3 * var(--stash-gap)) / 4));
+}

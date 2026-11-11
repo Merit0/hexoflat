@@ -81,7 +81,7 @@ describe('trade commands go to the server and wait for its answer', () => {
     });
     expect(coins()).toBe(2000 - price);
     expect(useHeroInventoryStore().countItem(good.key)).toBe(good.amount);
-    expect(trader.view?.goods[index]).toBeNull();
+    expect(trader.view?.goods[index]).toEqual({ ...good, sold: true });
   });
 
   it('lets the server refuse a purchase it cannot pay and keeps the state', async () => {

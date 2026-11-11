@@ -22,7 +22,7 @@ vi.mock('@/composables/use-stash-drag', async (importOriginal) => ({
   beginStashDrag: vi.fn(),
 }));
 
-const EMPTY_ROW = Array.from({ length: 7 }, () => null);
+const EMPTY_ROW = Array.from({ length: 8 }, () => null);
 
 function trader(overrides: Partial<TraderState> = {}): TraderState {
   return {
@@ -31,9 +31,9 @@ function trader(overrides: Partial<TraderState> = {}): TraderState {
     paidRefreshes: 0,
     goods: [{ key: K.HEALTH_BOTTLE, amount: 3 }, { key: K.SWORD, amount: 1 }, ...EMPTY_ROW].slice(
       0,
-      7,
+      8,
     ),
-    buyback: [...EMPTY_ROW],
+    buyback: EMPTY_ROW.slice(0, 7),
     ...overrides,
   };
 }
@@ -84,8 +84,8 @@ describe('shop board layout', () => {
     expect(follows('stash-bag-pane', 'shop-hint')).toBe(true);
   });
 
-  it('shows one row of seven goods cells with the item and its stack price', () => {
-    expect(all('shop-goods-cell-')).toHaveLength(7);
+  it('shows eight goods cells with the item and its stack price', () => {
+    expect(all('shop-goods-cell-')).toHaveLength(8);
     const potion = byId('shop-goods-cell-0')!;
     expect(potion.dataset.itemKey).toBe(K.HEALTH_BOTTLE);
     expect(potion.dataset.itemAmount).toBe('3');
@@ -141,14 +141,25 @@ describe('shop board buyback and refresh', () => {
 
   it('prices New goods at 20 Will and turns red when the Will is short', async () => {
     await mountShop({ will: 19 });
-    expect(byId('shop-refresh-price')!.textContent.trim()).toBe('20');
+    expect(byId('shop-refresh-price')!.dataset.price).toBe('20');
     expect(byId('shop-refresh')!.classList.contains('is-short')).toBe(true);
   });
 
   it('doubles the refresh price after a paid refresh on the same trip', async () => {
     await mountShop({ will: 50, state: trader({ paidRefreshes: 1 }) });
-    expect(byId('shop-refresh-price')!.textContent.trim()).toBe('40');
+    expect(byId('shop-refresh-price')!.dataset.price).toBe('40');
     expect(byId('shop-refresh')!.classList.contains('is-short')).toBe(false);
+  });
+
+  it('names the button Refresh and keeps the Will icon and cost in a tooltip beside it', async () => {
+    await mountShop({ will: 50 });
+    const button = byId('shop-refresh')!;
+    expect(button.textContent.trim()).toBe('Refresh');
+    expect(button.querySelector('img')).toBeNull();
+    const tip = byId('shop-refresh-price')!;
+    expect(tip.querySelector('img')).not.toBeNull();
+    expect(tip.textContent.trim()).toBe('20');
+    expect(button.nextElementSibling).toBe(tip);
   });
 });
 

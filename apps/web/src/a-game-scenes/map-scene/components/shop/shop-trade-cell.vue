@@ -11,10 +11,13 @@
       :data-item-amount="cell.item?.amount"
       :data-rarity="rarity"
       :data-price="cell.price ?? undefined"
-      :tabindex="cell.item ? 0 : -1"
-      :role="cell.item ? 'button' : undefined"
+      :tabindex="usable ? 0 : -1"
+      :role="usable ? 'button' : undefined"
       :aria-label="label"
+      :data-selected="selected"
+      :data-sold="cell.sold || undefined"
       @pointerdown.prevent="onPointerDown"
+      @click="onSelect"
       @dblclick.prevent="onQuickTrade"
       @contextmenu.prevent="onQuickTrade"
       @keydown.enter.prevent="onQuickTrade"
@@ -27,6 +30,9 @@
         :price="tooltipPrice"
       />
       <span v-if="showsCounter(cell.item) && !lifted" class="amount">{{ cell.item?.amount }}</span>
+      <span v-if="cell.sold" class="sold-label" data-testid="shop-sold-label">{{
+        i18n.t('shop.soldOut')
+      }}</span>
     </div>
     <shop-price-tag
       v-if="cell.price !== null"
@@ -47,6 +53,7 @@ import { showsCounter } from '@/composables/item-counter';
 import type { TooltipPrice } from '@/composables/use-item-tooltip';
 import { stashFx } from '@/composables/stash-drag-state';
 import { isTradeCellLifted, type ShopDragSource } from '@/composables/shop-drag-state';
+import { isTradeCellSelected, selectTradeCell } from '@/composables/shop-selection';
 import { moveGridFocus } from '@/composables/stash-grid-nav';
 import { beginShopDrag, quickTrade } from '@/composables/use-shop-drag';
 import type { ShopTradeCell } from '@/composables/use-shop-board-data';
@@ -69,10 +76,20 @@ const source = computed<ShopDragSource>(() => ({
   index: props.cell.index,
 }));
 const lifted = computed(() => isTradeCellLifted(list.value, props.cell.index));
+const usable = computed(() => !!props.cell.item && !props.cell.sold);
+const selected = computed(() =>
+  isTradeCellSelected(
+    list.value,
+    props.cell.index,
+    usable.value ? (props.cell.item?.key ?? null) : null,
+  ),
+);
 
 const classes = computed(() => ({
-  'cursor-grab': !!props.cell.item,
+  'cursor-grab': usable.value,
   'is-lifted': lifted.value,
+  'is-selected': selected.value,
+  'is-sold': props.cell.sold,
   'is-landed': stashFx.landed === key.value,
   'is-shake': stashFx.shake === key.value,
 }));
@@ -90,11 +107,17 @@ const label = computed(() => {
 });
 
 function onPointerDown(event: PointerEvent) {
-  if (props.cell.item) beginShopDrag(event, source.value, props.cell.item);
+  if (props.cell.item && usable.value) beginShopDrag(event, source.value, props.cell.item);
+}
+
+function onSelect() {
+  if (props.cell.item && usable.value) {
+    selectTradeCell(list.value, props.cell.index, props.cell.item.key);
+  }
 }
 
 function onQuickTrade(event: MouseEvent | KeyboardEvent) {
-  if (props.cell.item) void quickTrade(source.value, event.shiftKey);
+  if (usable.value) void quickTrade(source.value, event.shiftKey);
 }
 
 function onNavigate(event: KeyboardEvent) {
@@ -119,5 +142,36 @@ function tooltipPrice(): TooltipPrice | null {
 }
 .trade-slot .cell {
   width: 100%;
+}
+.trade-slot .cell.is-selected {
+  border: 1px solid #f5c26b;
+  background: rgba(122, 141, 160, 0.34);
+  box-shadow:
+    0 0 0 2px rgba(245, 194, 107, 0.55) inset,
+    0 0 12px rgba(122, 141, 160, 0.55);
+}
+.trade-slot .cell.is-sold {
+  cursor: default;
+}
+.trade-slot .cell.is-sold > :not(.sold-label) {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.sold-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ff9d9d;
+  font-size: calc(0.72rem * var(--shop-tag-scale, 1) * 0.75);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+}
+.trade-slot .amount {
+  font-size: calc(11px * var(--shop-tag-scale, 1));
 }
 </style>

@@ -31,8 +31,8 @@ export function readSource(
   state: TraderState,
   from: ITradeSource,
 ): TraderGood | BuybackEntry | null {
-  const list = from.list === 'goods' ? state.goods : state.buyback;
-  return list[from.index] ?? null;
+  const entry = (from.list === 'goods' ? state.goods : state.buyback)[from.index] ?? null;
+  return entry && 'sold' in entry && entry.sold ? null : entry;
 }
 
 export function takeFromSource(
@@ -44,8 +44,11 @@ export function takeFromSource(
   if (from.list === 'goods') {
     const goods = state.goods.slice();
     const good = goods[from.index];
-    goods[from.index] =
-      good && good.amount > amount ? { ...good, amount: good.amount - amount } : null;
+    goods[from.index] = !good
+      ? null
+      : good.amount > amount
+        ? { ...good, amount: good.amount - amount }
+        : { ...good, sold: true };
     return { ...state, goods };
   }
   const buyback = state.buyback.slice();

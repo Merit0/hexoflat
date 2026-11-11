@@ -18,7 +18,7 @@ const GOODS_0 = { list: 'goods', index: 0 } as const;
 const whole = (expectedPrice: number) => ({ split: false, expectedPrice });
 
 describe('planBuy from GOODS', () => {
-  it('pays the coin price, puts the item into the first free cell and empties the goods cell', () => {
+  it('pays the coin price, puts the item into the first free cell and marks the goods cell sold', () => {
     const inventory = inventoryWith({ 0: [COINS, 100] });
     const result = planBuy(inventory, traderWith([[AXE, 1]]), GOODS_0, 'auto', whole(48));
     if (!result.ok) throw new Error(result.reason);
@@ -26,7 +26,7 @@ describe('planBuy from GOODS', () => {
     expect(walletCoins(result.inventory)).toBe(52);
     expect(result.inventory.bag[1]).toMatchObject({ key: AXE, amount: 1, id: 'hero-1:1' });
     expect(result.inventory.idSeq).toBe(2);
-    expect(result.trader.goods[0]).toBeNull();
+    expect(result.trader.goods[0]).toEqual({ key: AXE, amount: 1, sold: true });
     expect(inventory.bag[1]).toBeNull();
   });
 
@@ -168,5 +168,31 @@ describe('planBuy from BUYBACK', () => {
     expect(result.trader.buyback[0]).toEqual({ key: HEALTH_BOTTLE, amount: 2, unitPrice: 4 });
     expect(result.trader.buyback[1]).toBeNull();
     expect(result.trader.buyback).toHaveLength(7);
+  });
+});
+
+describe('planBuy: a bought-out good stays on the shelf as sold', () => {
+  it('refuses a sold-out cell as an empty source, so it cannot be bought twice', () => {
+    const inventory = inventoryWith({ 0: [COINS, 500] });
+    const shelf = traderWith([[AXE, 1]]);
+    const first = planBuy(inventory, shelf, GOODS_0, 'auto', whole(48));
+    if (!first.ok) throw new Error(first.reason);
+
+    const second = planBuy(
+      first.inventory,
+      { ...shelf, state: first.trader },
+      GOODS_0,
+      'auto',
+      whole(48),
+    );
+
+    expect(second).toMatchObject({ ok: false, reason: 'EMPTY_SOURCE' });
+  });
+
+  it('keeps the original stack on a sold-out cell so the shelf can still show what it was', () => {
+    const inventory = inventoryWith({ 0: [COINS, 100] });
+    const result = planBuy(inventory, traderWith([[HEALTH_BOTTLE, 3]]), GOODS_0, 'auto', whole(36));
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.trader.goods[0]).toEqual({ key: HEALTH_BOTTLE, amount: 3, sold: true });
   });
 });

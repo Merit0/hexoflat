@@ -19,6 +19,7 @@
         :sell-rate-percent="sellRatePercent"
       />
       <shop-goods-pane :goods="goods" :refresh="refresh" :loses-buyback="hasBuyback" />
+      <shop-selection-card :goods="goods" :buyback="buyback" />
       <shop-buyback-row v-if="hasBuyback" :buyback="buyback" />
     </template>
     <stash-bag-pane />
@@ -43,6 +44,7 @@ import StashBagPane from '../stash/stash-bag-pane.vue';
 import ShopBuybackRow from './shop-buyback-row.vue';
 import ShopDragGhost from './shop-drag-ghost.vue';
 import ShopGoodsPane from './shop-goods-pane.vue';
+import ShopSelectionCard from './shop-selection-card.vue';
 import ShopTraderBanner from './shop-trader-banner.vue';
 
 const { t } = useI18n();

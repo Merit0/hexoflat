@@ -26,7 +26,7 @@ describe('shop test hooks', () => {
     const trader = shopTestApi.getTrader();
 
     expect(trader).toMatchObject({ key: 'ilva', serial: 0, trips: 0, refreshPrice: 20 });
-    expect(trader!.goods).toHaveLength(7);
+    expect(trader!.goods).toHaveLength(8);
   });
 
   it('sets the trader through the server fixture and shows the answer', async () => {
