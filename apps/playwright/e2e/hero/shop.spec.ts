@@ -421,6 +421,23 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       ]);
     });
 
+    test('Verify selling does not animate the goods: every icon in the goods grid keeps its tilt', async () => {
+      const { shop } = await openStall();
+      await shop.givenGoods([
+        { key: K.healthBottle, amount: 3 },
+        { key: K.axe, amount: 1 },
+        { key: K.sword, amount: 1 },
+        { key: K.shield, amount: 1 },
+      ]);
+      await shop.givenBag([{ key: K.axe, amount: 1 }]);
+      await shop.rememberGoodsTilt();
+
+      await shop.sellByRightClick(K.axe);
+
+      await shop.verifyWalletCoins(SellValues.axe);
+      await shop.verifyGoodsTiltIsUnchanged();
+    });
+
     test('Verify a Shift-drag sells half of an odd stack and keeps the rest', async () => {
       const { shop } = await openStall();
       await shop.givenBag([{ key: K.healthBottle, amount: 5 }]);

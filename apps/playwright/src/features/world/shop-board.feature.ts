@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { GUARANTEED_GOOD, TRADER_GOODS_SLOTS } from '@config/test-data';
@@ -58,6 +59,20 @@ export class ShopBoardFeature extends BaseFeature {
     await this.step(`Verify goods cell ${index} shows ${JSON.stringify(expected)}`, () =>
       this.board.verifyGoodsCellShows(index, expected),
     );
+  }
+
+  private tilts: string[] = [];
+
+  async rememberGoodsTilt(): Promise<void> {
+    await this.step('Remember how every goods icon is tilted', async () => {
+      this.tilts = await this.board.readGoodsIconTilts();
+    });
+  }
+
+  async verifyGoodsTiltIsUnchanged(): Promise<void> {
+    await this.step('Verify no goods icon changed its tilt', async () => {
+      expect(await this.board.readGoodsIconTilts()).toEqual(this.tilts);
+    });
   }
 
   async verifyGoodsCellSoldOut(index: number, key: string): Promise<void> {

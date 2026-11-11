@@ -105,6 +105,26 @@ export class ShopBoardComponent extends BaseComponent {
     await expect(this.page.getByTestId(`shop-price-${index}`)).toHaveText(String(expected.price));
   }
 
+  async readGoodsIconTilts(): Promise<string[]> {
+    await expect
+      .poll(
+        () =>
+          this.page.evaluate(() =>
+            Array.from(document.querySelectorAll('[data-testid^="shop-goods-cell-"] .icon')).some(
+              (icon) => icon.getAnimations().length > 0,
+            ),
+          ),
+        POLL,
+      )
+      .toBe(false);
+    return this.page.evaluate(() =>
+      Array.from(document.querySelectorAll('[data-testid^="shop-goods-cell-"]')).map((cell) => {
+        const icon = cell.querySelector('.icon');
+        return icon ? getComputedStyle(icon).transform : 'none';
+      }),
+    );
+  }
+
   async verifyGoodsCellSoldOut(index: number, key: string): Promise<void> {
     const cell = this.goodsCell(index);
     await expect(cell).toHaveAttribute('data-sold', 'true');

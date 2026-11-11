@@ -27,11 +27,12 @@ const props = defineProps<{
   item: InventoryItem;
   ghost?: boolean;
   standalone?: boolean;
+  rotationDeg?: number;
   price?: () => TooltipPrice | null;
 }>();
 
 const inventory = useHeroInventoryStore();
-const rotation = computed(() => inventory.ensureRotation(props.item.id));
+const rotation = computed(() => props.rotationDeg ?? inventory.ensureRotation(props.item.id));
 const iconStyle = computed(() => {
   const path = resolveInventoryView(props.item.key).iconPath;
   return { backgroundImage: path ? `url("${path}")` : 'none' };

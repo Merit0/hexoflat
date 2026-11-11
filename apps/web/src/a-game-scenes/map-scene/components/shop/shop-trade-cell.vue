@@ -27,6 +27,7 @@
         v-if="cell.item && !lifted"
         :item="cell.item"
         standalone
+        :rotation-deg="tilt"
         :price="tooltipPrice"
       />
       <span v-if="showsCounter(cell.item) && !lifted" class="amount">{{ cell.item?.amount }}</span>
@@ -54,6 +55,7 @@ import type { TooltipPrice } from '@/composables/use-item-tooltip';
 import { stashFx } from '@/composables/stash-drag-state';
 import { isTradeCellLifted, type ShopDragSource } from '@/composables/shop-drag-state';
 import { isTradeCellSelected, selectTradeCell } from '@/composables/shop-selection';
+import { shopTiltOf } from '@/composables/shop-tilt';
 import { moveGridFocus } from '@/composables/stash-grid-nav';
 import { beginShopDrag, quickTrade } from '@/composables/use-shop-drag';
 import type { ShopTradeCell } from '@/composables/use-shop-board-data';
@@ -75,6 +77,7 @@ const source = computed<ShopDragSource>(() => ({
   list: list.value,
   index: props.cell.index,
 }));
+const tilt = computed(() => shopTiltOf(list.value, props.cell.index, props.cell.item?.key ?? ''));
 const lifted = computed(() => isTradeCellLifted(list.value, props.cell.index));
 const usable = computed(() => !!props.cell.item && !props.cell.sold);
 const selected = computed(() =>
