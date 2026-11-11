@@ -348,6 +348,78 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
     });
   });
 
+  describe('own listings', () => {
+    const list = (heroId: string, revision: number, index: number, unitPrice: number) =>
+      envelope(
+        heroId,
+        'SHOP_LIST',
+        { trader: 'ilva', from: { container: 'bag', index }, unitPrice },
+        revision,
+      );
+    const unlist = (heroId: string, revision: number, slot: number) =>
+      envelope(heroId, 'SHOP_UNLIST', { trader: 'ilva', slot }, revision);
+
+    async function heroWithSword() {
+      const hero = await heroInCamp(NEAR);
+      const current = (await inventoryOf(hero.userId, hero.heroId)).revision;
+      const granted = await kit.service.execute(
+        hero.userId,
+        envelope(hero.heroId, 'DEV_GRANT_ITEM', { key: SWORD, amount: 1 }, current),
+      );
+      expect(granted.result).toBe('applied');
+      const inventory = await inventoryOf(hero.userId, hero.heroId);
+      const index = (inventory.state as InventoryState).bag.findIndex(
+        (cell) => cell?.key === SWORD,
+      );
+      return { ...hero, index };
+    }
+
+    it('lists a bag item into a slot, writes the ledger and keeps the slot through a reload', async () => {
+      const { userId, heroId, index } = await heroWithSword();
+      const { revision } = await inventoryOf(userId, heroId);
+      const command = list(heroId, revision, index, 300);
+
+      const answer = await kit.service.execute(userId, command);
+
+      expect(answer.result).toBe('applied');
+      expect(answer.events[0]).toMatchObject({
+        type: 'ITEM_LISTED',
+        payload: { key: SWORD, amount: 1, unitPrice: 300, slot: 0 },
+      });
+      expect(bagAmount(await inventoryOf(userId, heroId), SWORD)).toBe(0);
+      const listings = ((await progressOf(userId, heroId)).state as ProgressState).listings;
+      expect(listings[0]).toEqual({ key: SWORD, amount: 1, unitPrice: 300 });
+      const ledger = await ledgerRows(command.commandId);
+      expect(ledger).toHaveLength(1);
+      expect(ledger[0]).toMatchObject({ itemKey: SWORD, delta: -1, reason: 'listing' });
+    });
+
+    it('takes the slot back into the bag and refuses to list away from the stall', async () => {
+      const { userId, heroId, index } = await heroWithSword();
+      let { revision } = await inventoryOf(userId, heroId);
+      expect((await kit.service.execute(userId, list(heroId, revision, index, 300))).result).toBe(
+        'applied',
+      );
+      ({ revision } = await inventoryOf(userId, heroId));
+
+      const back = await kit.service.execute(userId, unlist(heroId, revision, 0));
+
+      expect(back.result).toBe('applied');
+      expect(bagAmount(await inventoryOf(userId, heroId), SWORD)).toBe(1);
+      const listings = ((await progressOf(userId, heroId)).state as ProgressState).listings;
+      expect(listings.every((cell) => cell === null)).toBe(true);
+
+      const far = await heroWithSword();
+      await arrive(far.userId, far.heroId, randomUUID(), FAR);
+      const farRevision = (await inventoryOf(far.userId, far.heroId)).revision;
+      const refused = await kit.service.execute(
+        far.userId,
+        list(far.heroId, farRevision, far.index, 300),
+      );
+      expect(refused).toMatchObject({ result: 'rejected', code: 'NOT_AT_TRADER' });
+    });
+  });
+
   it('refreshes the goods for Will next to the stall, doubling the next price', async () => {
     const { userId, heroId } = await heroInCamp(NEAR);
     const answer = await kit.service.execute(userId, await refresh(userId, heroId, 20));

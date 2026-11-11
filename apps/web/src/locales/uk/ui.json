@@ -750,11 +750,14 @@
       "BATTLE_OPEN": "Під час бою не торгують.",
       "REJECTED": "Угода не відбулась.",
       "NEEDS_DEAL": "Спершу введи свою ціну.",
-      "NOT_DISCOUNTED": "На цей товар немає знижки."
+      "NOT_DISCOUNTED": "На цей товар немає знижки.",
+      "TRADE_SLOTS_FULL": "Усі слоти обміну зайняті.",
+      "BAD_PRICE": "Ціна має бути від 1 до 999."
     },
     "tab": {
       "goods": "Товар",
-      "buyback": "Викуп"
+      "buyback": "Викуп",
+      "trade": "Обмін"
     },
     "refresh": {
       "aria": "Оновити товар"
@@ -783,7 +786,10 @@
       },
       "priceLabel": "Ціна",
       "yourPrice": "Твоя ціна",
-      "pricePlaceholder": "?"
+      "pricePlaceholder": "?",
+      "list": "Виставити",
+      "takeBack": "Забрати",
+      "setPrice": "Зберегти"
     },
     "status": {
       "soldOut": "Продано",
@@ -792,7 +798,8 @@
     "block": {
       "OVERWEIGHT": "Занадто важко для сумки.",
       "BAG_FULL": "У сумці немає місця.",
-      "NOT_SELLABLE": "Ілва цього не візьме."
+      "NOT_SELLABLE": "Ілва цього не візьме.",
+      "TRADE_SLOTS_FULL": "Усі слоти обміну зайняті."
     },
     "buyback": {
       "emptyTitle": "Нічого викупати",
@@ -805,7 +812,11 @@
       "undo": "Скасувати",
       "dealExact": "Точно! {name} · −{price} монет, ти заощадив {saved}",
       "dealWasted": "Не зовсім. {name} прибрано: змарновано.",
-      "dealShort": "Ціна правильна, але не вистачає монет."
+      "dealShort": "Ціна правильна, але не вистачає монет.",
+      "listed": "Виставлено {name} за {price} монет",
+      "listedMany": "Виставлено {name} ×{n} по {price}",
+      "tookBack": "Забрано {name}",
+      "repriced": "{name} тепер коштує {price} монет"
     },
     "price": {
       "buy": "Ціна",

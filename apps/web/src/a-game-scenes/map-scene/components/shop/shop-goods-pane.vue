@@ -3,11 +3,21 @@
     class="pane"
     :class="zoneClass"
     :data-zone="shopTab"
-    :data-testid="shopTab === 'goods' ? 'shop-goods-pane' : 'shop-buyback-pane'"
-    :aria-label="t(shopTab === 'goods' ? 'shop.tab.goods' : 'shop.tab.buyback')"
+    :data-testid="`shop-${shopTab}-pane`"
+    :aria-label="t(`shop.tab.${shopTab}`)"
   >
-    <shop-tabs-row :buyback-count="buybackCount" :refresh="refresh" />
-    <div v-if="shopTab === 'goods'" class="grid is-goods" data-cell-grid data-columns="4">
+    <shop-tabs-row :buyback-count="buybackCount" :trade-count="tradeCount" :refresh="refresh" />
+    <div v-if="shopTab === 'trade'" class="grid is-goods" data-cell-grid data-columns="4">
+      <shop-trade-cell
+        v-for="cell in own"
+        :key="`own-${cell.index}`"
+        :cell="cell"
+        kind="own"
+        :testid="`shop-own-cell-${cell.index}`"
+        :price-testid="`shop-own-price-${cell.index}`"
+      />
+    </div>
+    <div v-else-if="shopTab === 'goods'" class="grid is-goods" data-cell-grid data-columns="4">
       <shop-trade-cell
         v-for="cell in goods"
         :key="`goods-${cell.index}`"
@@ -49,10 +59,12 @@ import ShopTradeCell from './shop-trade-cell.vue';
 const props = defineProps<{
   goods: TradeCell[];
   buyback: TradeCell[];
+  own: TradeCell[];
   refresh: RefreshPreview | null;
 }>();
 const { t } = useI18n();
-const zoneClass = computed(() => shopZoneClass(shopTab.value));
+const zoneClass = computed(() => (shopTab.value === 'trade' ? '' : shopZoneClass(shopTab.value)));
+const tradeCount = computed(() => props.own.filter((cell) => cell.item !== null).length);
 const buybackCount = computed(() => props.buyback.filter((cell) => cell.item !== null).length);
 </script>
 

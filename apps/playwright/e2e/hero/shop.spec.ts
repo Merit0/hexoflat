@@ -65,6 +65,16 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.verifyTabTextIsBold();
     });
 
+    test('Verify Refresh works only on the Goods tab and is disabled on Buyback and Trade', async () => {
+      const { shop } = await openStall();
+      await shop.verifyRefreshEnabled(true);
+
+      await shop.openBuybackTab();
+      await shop.verifyRefreshEnabled(false);
+      await shop.openTradeTab();
+      await shop.verifyRefreshEnabled(false);
+    });
+
     test('Verify the cross closes the board', async () => {
       const { stall } = await openStall();
 
@@ -166,6 +176,126 @@ test.describe('trader stall', { tag: ['@hero'] }, () => {
       await shop.verifyToastText(/short of coins|не вистачає монет/i);
       await shop.verifyWalletCoins(10);
       await shop.verifyOfferBadge(0, 50);
+    });
+  });
+
+  test.describe('own trade slots', () => {
+    const SLOTS_TAKEN = /slots are taken|слоти обміну зайняті/i;
+    const eightAxes = Array.from({ length: 8 }, () => ({
+      key: K.axe,
+      amount: 1,
+      unitPrice: 30,
+    }));
+
+    test('Verify List waits for a price, then lifts the item out of the bag into the first slot and counts it on the tab', async () => {
+      const { shop } = await openStall();
+      await shop.givenBag([{ key: K.axe, amount: 1 }]);
+      await shop.openTradeTab();
+      await shop.verifyOwnSlot(0, null);
+
+      await shop.selectBagItem(K.axe);
+      await shop.verifyBuyDisabled(true);
+      await shop.enterOwnPrice('30');
+      await shop.verifyBuyDisabled(false);
+      await shop.pressBuy();
+
+      await shop.verifyBagAmount(K.axe, 0);
+      await shop.verifyOwnSlot(0, { key: K.axe, amount: 1, price: 30 });
+      await shop.verifyTradeCount(1);
+      await shop.verifyListingsOnServer([
+        { key: K.axe, amount: 1, unitPrice: 30 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ]);
+      await shop.verifyToastText(/30/);
+    });
+
+    test('Verify a stack is listed whole at the price per unit', async () => {
+      const { shop } = await openStall();
+      await shop.givenBag([{ key: K.healthBottle, amount: 3 }]);
+      await shop.openTradeTab();
+
+      await shop.selectBagItem(K.healthBottle);
+      await shop.pickMaxQuantity();
+      await shop.enterOwnPrice('14');
+      await shop.pressBuy();
+
+      await shop.verifyOwnSlot(0, { key: K.healthBottle, amount: 3, price: 14 });
+      await shop.verifyBagAmount(K.healthBottle, 0);
+    });
+
+    test('Verify a listed slot can be repriced and then taken back into the bag', async () => {
+      const { shop } = await openStall();
+      await shop.givenBag([{ key: K.axe, amount: 1 }]);
+      await shop.openTradeTab();
+      await shop.selectBagItem(K.axe);
+      await shop.enterOwnPrice('30');
+      await shop.pressBuy();
+
+      await shop.selectOwnSlot(0);
+      await shop.enterOwnPrice('35');
+      await shop.pressSetPrice();
+      await shop.verifyOwnSlot(0, { key: K.axe, amount: 1, price: 35 });
+
+      await shop.selectOwnSlot(0);
+      await shop.pressBuy();
+
+      await shop.verifyOwnSlot(0, null);
+      await shop.verifyBagAmount(K.axe, 1);
+      await shop.verifyTradeCount(0);
+    });
+
+    test('Verify with all eight slots taken List is disabled with a reason', async () => {
+      const { shop } = await openStall();
+      await shop.givenTrader({ listings: eightAxes });
+      await shop.givenBag([{ key: K.sword, amount: 1 }]);
+      await shop.openTradeTab();
+      await shop.verifyTradeCount(8);
+
+      await shop.selectBagItem(K.sword);
+      await shop.enterOwnPrice('300');
+
+      await shop.verifyBuyDisabled(true);
+      await shop.verifyCardReason(SLOTS_TAKEN);
+    });
+
+    test('Verify paid new goods leave the own slots untouched', async () => {
+      const { shop } = await openStall();
+      await shop.givenTrader({ listings: [eightAxes[0], ...eightAxes.slice(1).map(() => null)] });
+      await shop.givenWill(REFRESH_BASE_WILL);
+
+      await shop.pressNewGoods();
+
+      await shop.verifyOwnSlot(0, { key: K.axe, amount: 1, price: 30 });
+      await shop.verifyTradeCount(1);
+    });
+
+    test('Verify a listed item survives a reload', async () => {
+      const { stall, shop } = await openStall();
+      await shop.givenBag([{ key: K.axe, amount: 1 }]);
+      await shop.openTradeTab();
+      await shop.selectBagItem(K.axe);
+      await shop.enterOwnPrice('30');
+      await shop.pressBuy();
+      await shop.verifyOwnSlot(0, { key: K.axe, amount: 1, price: 30 });
+
+      await stall.openAfterReload();
+
+      await shop.verifyListingsOnServer([
+        { key: K.axe, amount: 1, unitPrice: 30 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ]);
     });
   });
 

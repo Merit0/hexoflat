@@ -19,6 +19,9 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import {
   ShopBuyCommandSchema,
   ShopDealCommandSchema,
+  ShopListCommandSchema,
+  ShopRepriceCommandSchema,
+  ShopUnlistCommandSchema,
   ShopRefreshCommandSchema,
   ShopSellCommandSchema,
 } from '../trade/trade-commands';
@@ -133,6 +136,9 @@ export const PLAYER_COMMAND_SCHEMAS = {
   SHOP_BUY: strict(ShopBuyCommandSchema),
   SHOP_SELL: strict(ShopSellCommandSchema),
   SHOP_DEAL: strict(ShopDealCommandSchema),
+  SHOP_LIST: strict(ShopListCommandSchema),
+  SHOP_UNLIST: strict(ShopUnlistCommandSchema),
+  SHOP_REPRICE: strict(ShopRepriceCommandSchema),
   SHOP_REFRESH: strict(ShopRefreshCommandSchema),
 } as const;
 
@@ -160,6 +166,9 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   SHOP_BUY: ['inventory', 'progress'],
   SHOP_SELL: ['inventory', 'progress'],
   SHOP_DEAL: ['inventory', 'progress'],
+  SHOP_LIST: ['inventory', 'progress'],
+  SHOP_UNLIST: ['inventory', 'progress'],
+  SHOP_REPRICE: ['inventory', 'progress'],
   SHOP_REFRESH: ['progress'],
 };
 
@@ -187,6 +196,9 @@ export const PLAYER_COMMAND_REVISION: Record<
   SHOP_BUY: 'aggregate',
   SHOP_SELL: 'aggregate',
   SHOP_DEAL: 'aggregate',
+  SHOP_LIST: 'aggregate',
+  SHOP_UNLIST: 'aggregate',
+  SHOP_REPRICE: 'aggregate',
   SHOP_REFRESH: 'knowledge',
 };
 

@@ -7,10 +7,18 @@ import type {
   ShopBuybackContent,
   ShopCellContent,
   ShopCellShows,
+  ShopListingContent,
   ShopTraderFixture,
 } from '@components/shop-board.component';
 
-export type { SellTarget, ShopBuybackContent, ShopCellContent, ShopCellShows, ShopTraderFixture };
+export type {
+  SellTarget,
+  ShopBuybackContent,
+  ShopCellContent,
+  ShopCellShows,
+  ShopListingContent,
+  ShopTraderFixture,
+};
 
 /** What a player does and sees on the open trader board: buying, selling, buyback, new goods. */
 export class ShopBoardFeature extends BaseFeature {
@@ -152,6 +160,43 @@ export class ShopBoardFeature extends BaseFeature {
   async selectBuyback(index: number): Promise<void> {
     await this.step(`Click buyback cell ${index} to select it`, () =>
       this.board.selectBuyback(index),
+    );
+  }
+
+  async openTradeTab(): Promise<void> {
+    await this.step('Open the Trade tab', () => this.board.openTradeTab());
+  }
+
+  async selectOwnSlot(index: number): Promise<void> {
+    await this.step(`Click own slot ${index}`, () => this.board.selectOwnSlot(index));
+  }
+
+  async pressSetPrice(): Promise<void> {
+    await this.step('Press Set price on the card', () => this.board.clickReprice());
+  }
+
+  async verifyOwnSlot(
+    index: number,
+    expected: { key: string; amount: number; price: number } | null,
+  ): Promise<void> {
+    await this.step(`Verify own slot ${index}`, () => this.board.verifyOwnSlot(index, expected));
+  }
+
+  async verifyTradeCount(count: number): Promise<void> {
+    await this.step(`Verify the Trade tab counts ${count}`, () =>
+      this.board.verifyTradeCount(count),
+    );
+  }
+
+  async verifyCardReason(pattern: RegExp): Promise<void> {
+    await this.step(`Verify the card reason ${String(pattern)}`, () =>
+      this.board.verifyCardReason(pattern),
+    );
+  }
+
+  async verifyListingsOnServer(expected: ShopListingContent[]): Promise<void> {
+    await this.step('Verify the listings the server holds', () =>
+      this.board.verifyListingsOnServer(expected),
     );
   }
 
@@ -314,6 +359,12 @@ export class ShopBoardFeature extends BaseFeature {
   async verifyBuybackCount(count: number): Promise<void> {
     await this.step(`Verify the Buyback tab counts ${count}`, () =>
       this.board.verifyBuybackCount(count),
+    );
+  }
+
+  async verifyRefreshEnabled(enabled: boolean): Promise<void> {
+    await this.step(`Verify the Refresh button is ${enabled ? 'enabled' : 'disabled'}`, () =>
+      this.board.verifyRefreshEnabled(enabled),
     );
   }
 

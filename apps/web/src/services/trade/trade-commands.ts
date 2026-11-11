@@ -85,6 +85,32 @@ export async function dealWithTrader(
     : { kind: 'refused', reason: failed.reason, price: failed.price };
 }
 
+export async function listOwnItem(
+  key: TTraderKey,
+  bagIndex: number,
+  unitPrice: number,
+  amount?: number,
+): Promise<TradeOutcome> {
+  if (!traderRef(key)) return NO_TRADER;
+  const from = { container: 'bag', index: bagIndex };
+  const payload = { trader: key, from, unitPrice, ...(amount === undefined ? {} : { amount }) };
+  return outcomeOf(await sendInventoryCommand('SHOP_LIST', payload));
+}
+
+export async function unlistOwnItem(key: TTraderKey, slot: number): Promise<TradeOutcome> {
+  if (!traderRef(key)) return NO_TRADER;
+  return outcomeOf(await sendInventoryCommand('SHOP_UNLIST', { trader: key, slot }));
+}
+
+export async function repriceOwnItem(
+  key: TTraderKey,
+  slot: number,
+  unitPrice: number,
+): Promise<TradeOutcome> {
+  if (!traderRef(key)) return NO_TRADER;
+  return outcomeOf(await sendInventoryCommand('SHOP_REPRICE', { trader: key, slot, unitPrice }));
+}
+
 export async function sellToTrader(
   key: TTraderKey,
   fromBagIndex: number,

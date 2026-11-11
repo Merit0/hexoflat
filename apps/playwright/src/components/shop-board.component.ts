@@ -12,8 +12,10 @@ export type ShopCellContent = {
   wasted?: boolean;
 } | null;
 export type ShopBuybackContent = { key: string; amount: number; unitPrice: number } | null;
+export type ShopListingContent = { key: string; amount: number; unitPrice: number } | null;
 export type ShopTraderFixture = {
   goods?: ShopCellContent[];
+  listings?: ShopListingContent[];
   buyback?: ShopBuybackContent[];
   trips?: number;
 };
@@ -66,7 +68,7 @@ export class ShopBoardComponent extends BaseComponent {
     return this.page.getByTestId(ids[target]);
   }
 
-  private async openTab(tab: 'goods' | 'buyback'): Promise<void> {
+  private async openTab(tab: 'goods' | 'buyback' | 'trade'): Promise<void> {
     const button = this.page.getByTestId(`shop-tab-${tab}`);
     if ((await button.getAttribute('aria-selected')) !== 'true') await button.click();
     await expect(button).toHaveAttribute('aria-selected', 'true');
@@ -274,6 +276,52 @@ export class ShopBoardComponent extends BaseComponent {
     await expect(this.bagCellWith(key).getByTestId('shop-bag-sum')).toHaveCount(0);
   }
 
+  async openTradeTab(): Promise<void> {
+    await this.openTab('trade');
+  }
+
+  async selectOwnSlot(index: number): Promise<void> {
+    await this.openTab('trade');
+    await this.page.getByTestId(`shop-own-cell-${index}`).click();
+  }
+
+  async clickReprice(): Promise<void> {
+    await this.page.getByTestId('shop-card-reprice').click();
+  }
+
+  async verifyOwnSlot(
+    index: number,
+    expected: { key: string; amount: number; price: number } | null,
+  ): Promise<void> {
+    await this.openTab('trade');
+    const cell = this.page.getByTestId(`shop-own-cell-${index}`);
+    if (!expected) {
+      await expect(cell).not.toHaveAttribute('data-item-key', /.+/);
+      await expect(cell).toHaveAttribute('data-own-empty', 'true');
+      return;
+    }
+    await expect(cell).toHaveAttribute('data-item-key', expected.key);
+    await expect(cell).toHaveAttribute('data-item-amount', String(expected.amount));
+    await expect(cell).toHaveAttribute('data-price', String(expected.price));
+  }
+
+  async verifyTradeCount(count: number): Promise<void> {
+    await expect(this.page.getByTestId('shop-tab-trade')).toHaveAttribute(
+      'data-count',
+      String(count),
+    );
+  }
+
+  async verifyCardReason(pattern: RegExp): Promise<void> {
+    await expect(this.page.getByTestId('shop-card-reason')).toHaveText(pattern);
+  }
+
+  async verifyListingsOnServer(expected: ShopListingContent[]): Promise<void> {
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getListings()), POLL)
+      .toEqual(expected);
+  }
+
   async openBuybackTab(): Promise<void> {
     await this.openTab('buyback');
   }
@@ -407,6 +455,11 @@ export class ShopBoardComponent extends BaseComponent {
       'data-price',
       String(price),
     );
+  }
+
+  async verifyRefreshEnabled(enabled: boolean): Promise<void> {
+    if (enabled) await expect(this.refreshButton).toBeEnabled();
+    else await expect(this.refreshButton).toBeDisabled();
   }
 
   async verifyRefreshAffordable(affordable: boolean): Promise<void> {

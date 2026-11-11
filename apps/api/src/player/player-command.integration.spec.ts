@@ -553,7 +553,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       .select()
       .from(heroAggregates)
       .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
-    expect(row.schemaVersion).toBe(6);
+    expect(row.schemaVersion).toBe(7);
   });
 
   it('takes a snapshot every 50 revisions', async () => {

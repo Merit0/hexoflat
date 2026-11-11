@@ -2,6 +2,7 @@ import type { DomainEvent } from '../commands/types';
 import type { TTraderKey } from '../content/traders.content';
 import type { InventoryContext } from '../inventory/inventory-commands';
 import type { InventoryState } from '../inventory/inventory-state';
+import { planList, planReprice, planUnlist } from '../trade/plan-listing';
 import { planDeal } from '../trade/plan-deal';
 import { planBuy } from '../trade/plan-buy';
 import { planRefresh } from '../trade/plan-refresh';
@@ -122,6 +123,59 @@ function runDeal(input: TradeInput & { command: { type: 'SHOP_DEAL' } }): TradeA
   };
 }
 
+function runListing(
+  input: TradeInput & { command: { type: 'SHOP_LIST' | 'SHOP_UNLIST' | 'SHOP_REPRICE' } },
+): TradeApplyResult {
+  const { command, inventory, progress } = input;
+  const { heroId, trader } = command.payload;
+  const revision = inventory.revision + 1;
+  const store = (next: Partial<ProgressState>, nextInventory = inventory) => ({
+    inventory: { ...nextInventory, revision },
+    progress: { ...progress, ...next },
+  });
+  const tail: DomainEvent = { type: 'INVENTORY_CHANGED', payload: { heroId, revision } };
+
+  if (command.type === 'SHOP_REPRICE') {
+    const { slot, unitPrice } = command.payload;
+    const result = planReprice(progress.listings, slot, unitPrice);
+    if (!result.ok) return rejected(command, result.reason);
+    const key = progress.listings[slot]!.key;
+    const event: DomainEvent = {
+      type: 'LISTING_REPRICED',
+      payload: { heroId, trader, slot, key, unitPrice },
+    };
+    return { changed: store({ listings: result.listings }), events: [event, tail] };
+  }
+
+  const result =
+    command.type === 'SHOP_LIST'
+      ? planList(
+          inventory,
+          progress.listings,
+          command.payload.from.index,
+          command.payload.unitPrice,
+          command.payload.amount,
+        )
+      : planUnlist(inventory, progress.listings, command.payload.slot);
+  if (!result.ok) return rejected(command, result.reason);
+  const payload = {
+    heroId,
+    trader,
+    slot: result.slot,
+    key: result.key,
+    amount: result.amount,
+    unitPrice: result.unitPrice,
+  };
+  const event: DomainEvent = {
+    type: command.type === 'SHOP_LIST' ? 'ITEM_LISTED' : 'ITEM_UNLISTED',
+    payload,
+  };
+  return {
+    changed: store({ listings: result.listings }, result.inventory),
+    events: [event, tail],
+  };
+}
+
 export function applyTradeCommand(
   aggregates: { inventory: InventoryState; progress: ProgressState },
   command: ShopCommand,
@@ -136,6 +190,13 @@ export function applyTradeCommand(
   }
   if (command.type === 'SHOP_REFRESH') return runRefresh({ ...input, command });
   if (command.type === 'SHOP_DEAL') return runDeal({ ...input, command });
+  if (
+    command.type === 'SHOP_LIST' ||
+    command.type === 'SHOP_UNLIST' ||
+    command.type === 'SHOP_REPRICE'
+  ) {
+    return runListing({ ...input, command });
+  }
 
   const { trader, expectedPrice, split, amount } = command.payload;
   const ref = { key: trader, state: traderView(input.progress, trader, trade.rngSeed) };

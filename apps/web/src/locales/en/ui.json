@@ -745,11 +745,14 @@
       "BATTLE_OPEN": "No trading during a battle.",
       "REJECTED": "The deal did not go through.",
       "NEEDS_DEAL": "Enter your price first.",
-      "NOT_DISCOUNTED": "That item has no discount."
+      "NOT_DISCOUNTED": "That item has no discount.",
+      "TRADE_SLOTS_FULL": "All trade slots are taken.",
+      "BAD_PRICE": "Price must be 1 to 999."
     },
     "tab": {
       "goods": "Goods",
-      "buyback": "Buyback"
+      "buyback": "Buyback",
+      "trade": "Trade"
     },
     "refresh": {
       "aria": "Refresh goods"
@@ -778,7 +781,10 @@
       },
       "priceLabel": "Price",
       "yourPrice": "Your price",
-      "pricePlaceholder": "?"
+      "pricePlaceholder": "?",
+      "list": "List",
+      "takeBack": "Take back",
+      "setPrice": "Save"
     },
     "status": {
       "soldOut": "Sold",
@@ -787,7 +793,8 @@
     "block": {
       "OVERWEIGHT": "Too heavy for your bag.",
       "BAG_FULL": "No room in your bag.",
-      "NOT_SELLABLE": "Ilva will not take this."
+      "NOT_SELLABLE": "Ilva will not take this.",
+      "TRADE_SLOTS_FULL": "All trade slots are taken."
     },
     "buyback": {
       "emptyTitle": "Nothing to buy back",
@@ -800,7 +807,11 @@
       "undo": "Undo",
       "dealExact": "Exact! {name} · −{price} coins, you saved {saved}",
       "dealWasted": "Not quite. {name} is put away: wasted.",
-      "dealShort": "Right price, but you are short of coins."
+      "dealShort": "Right price, but you are short of coins.",
+      "listed": "Listed {name} for {price} coins",
+      "listedMany": "Listed {name} ×{n} at {price} each",
+      "tookBack": "Took back {name}",
+      "repriced": "{name} now costs {price} coins"
     },
     "price": {
       "buy": "Price",

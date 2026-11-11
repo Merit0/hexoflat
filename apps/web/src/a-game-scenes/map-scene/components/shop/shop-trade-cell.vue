@@ -17,6 +17,7 @@
       :data-selected="selected"
       :data-sold="cell.sold || undefined"
       :data-wasted="cell.wasted || undefined"
+      :data-own-empty="(own && !cell.item) || undefined"
       @pointerdown.prevent="onPointerDown"
       @click="onSelect"
       @dblclick.prevent="onQuickTrade"
@@ -71,7 +72,7 @@ import { showsCounter } from '@/composables/item-counter';
 import type { TooltipPrice } from '@/composables/use-item-tooltip';
 import { stashFx } from '@/composables/stash-drag-state';
 import { isTradeCellLifted, type ShopDragSource } from '@/composables/shop-drag-state';
-import { isTradeCellSelected, selectTradeCell } from '@/composables/shop-selection';
+import { isTradeCellSelected, selectOwnCell, selectTradeCell } from '@/composables/shop-selection';
 import { shopTiltOf } from '@/composables/shop-tilt';
 import { moveGridFocus } from '@/composables/stash-grid-nav';
 import { beginShopDrag, quickTrade } from '@/composables/use-shop-drag';
@@ -81,25 +82,26 @@ import ShopPriceTag from './shop-price-tag.vue';
 
 const props = defineProps<{
   cell: ShopTradeCell;
-  kind: 'buy' | 'buyback';
+  kind: 'buy' | 'buyback' | 'own';
   testid: string;
   priceTestid: string;
 }>();
 
 const i18n = useI18n();
-const list = computed<TTradeList>(() => (props.kind === 'buy' ? 'goods' : 'buyback'));
-const key = computed(() => `${list.value}:${props.cell.index}`);
+const own = computed(() => props.kind === 'own');
+const list = computed<TTradeList>(() => (props.kind === 'buyback' ? 'buyback' : 'goods'));
+const key = computed(() => `${props.kind}:${props.cell.index}`);
 const source = computed<ShopDragSource>(() => ({
   kind: 'trade',
   list: list.value,
   index: props.cell.index,
 }));
 const tilt = computed(() => shopTiltOf(list.value, props.cell.index, props.cell.item?.key ?? ''));
-const lifted = computed(() => isTradeCellLifted(list.value, props.cell.index));
+const lifted = computed(() => !own.value && isTradeCellLifted(list.value, props.cell.index));
 const usable = computed(() => !!props.cell.item && !props.cell.sold && !props.cell.wasted);
 const selected = computed(() =>
   isTradeCellSelected(
-    list.value,
+    own.value ? 'own' : list.value,
     props.cell.index,
     usable.value ? (props.cell.item?.key ?? null) : null,
   ),
@@ -127,17 +129,18 @@ const label = computed(() => {
 });
 
 function onPointerDown(event: PointerEvent) {
+  if (own.value) return;
   if (props.cell.item && usable.value) beginShopDrag(event, source.value, props.cell.item);
 }
 
 function onSelect() {
-  if (props.cell.item && usable.value) {
-    selectTradeCell(list.value, props.cell.index, props.cell.item.key);
-  }
+  if (!props.cell.item || !usable.value) return;
+  if (own.value) selectOwnCell(props.cell.index, props.cell.item.key, props.cell.price);
+  else selectTradeCell(list.value, props.cell.index, props.cell.item.key);
 }
 
 function onQuickTrade(event: MouseEvent | KeyboardEvent) {
-  if (usable.value) void quickTrade(source.value, event.shiftKey);
+  if (usable.value && !own.value) void quickTrade(source.value, event.shiftKey);
 }
 
 function onNavigate(event: KeyboardEvent) {
@@ -146,7 +149,9 @@ function onNavigate(event: KeyboardEvent) {
 
 function tooltipPrice(): TooltipPrice | null {
   const { price, affordable } = props.cell;
-  return price === null ? null : { kind: props.kind, coins: price, affordable };
+  return price === null
+    ? null
+    : { kind: props.kind === 'own' ? 'sell' : props.kind, coins: price, affordable };
 }
 </script>
 
@@ -198,6 +203,16 @@ function tooltipPrice(): TooltipPrice | null {
   border-radius: 5px;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.trade-slot .cell[data-own-empty]::before {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(243, 232, 210, 0.35);
+  font-size: 28px;
+  font-weight: 700;
 }
 .trade-slot .cell {
   width: 100%;

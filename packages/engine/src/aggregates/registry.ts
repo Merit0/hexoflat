@@ -3,6 +3,7 @@ import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventor
 import type { InventoryState } from '../inventory/inventory-state';
 import type { TAggregateKind } from './aggregate-kinds';
 import { createKnowledgeState } from '../knowledge/state';
+import { emptyListings } from '../trade/listing-state';
 import { emptyProgressState, progressStateSchema, type ProgressState } from './progress-state';
 import { tradersForClient } from '../trade/trader-view';
 
@@ -35,7 +36,7 @@ const inventoryDefinition: IAggregateDefinition<InventoryState> = {
 
 const progressDefinition: IAggregateDefinition<ProgressState> = {
   kind: 'progress',
-  schemaVersion: 6,
+  schemaVersion: 7,
   schema: progressStateSchema,
   upcasters: {
     1: (old, { heroId }) => ({
@@ -48,6 +49,7 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
     3: (old) => ({ ...(old as object), health: { current: 3, bonus: 0, debt: 0 } }),
     4: (old) => ({ ...(old as object), kills: 0 }),
     5: (old) => ({ ...(old as object), trips: 0, traders: {} }),
+    6: (old) => ({ ...(old as object), listings: emptyListings() }),
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
   project: projectProgress,

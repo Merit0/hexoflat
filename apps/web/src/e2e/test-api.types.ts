@@ -50,6 +50,7 @@ export interface TestTraderFixture {
   } | null)[];
   buyback?: ({ key: string; amount: number; unitPrice: number } | null)[];
   trips?: number;
+  listings?: ({ key: string; amount: number; unitPrice: number } | null)[];
 }
 
 export interface HexoflatTestApi {
@@ -148,6 +149,7 @@ export interface HexoflatTestApi {
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 
   getTrader(key?: string): TestTrader | null;
+  getListings(): ({ key: string; amount: number; unitPrice: number } | null)[];
   getOpenTrader(): string | null;
   getWalletCoins(): number;
   setTrader(fixture: TestTraderFixture): Promise<void>;

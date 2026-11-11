@@ -141,6 +141,9 @@ function executeCore(
     case 'SHOP_BUY':
     case 'SHOP_SELL':
     case 'SHOP_DEAL':
+    case 'SHOP_LIST':
+    case 'SHOP_UNLIST':
+    case 'SHOP_REPRICE':
     case 'SHOP_REFRESH': {
       const result = applyTradeCommand(aggregates, command, ctx);
       return (

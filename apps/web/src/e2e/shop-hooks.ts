@@ -54,6 +54,9 @@ export const shopTestApi = {
     const state = traderProjection.value.traders[traderKey];
     return state ? testTrader(traderKey, state) : null;
   },
+  getListings() {
+    return traderProjection.value.listings.map((cell) => (cell ? { ...cell } : null));
+  },
   getOpenTrader(): string | null {
     return useTraderStore().traderKey;
   },

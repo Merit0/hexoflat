@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { coinPriceOf } from '../content/content-accessors';
 import { TRADERS, TRADER_KEYS } from '../content/traders.content';
 import type { ProgressState } from '../aggregates/progress-state';
+import { listingsSchema } from './listing-state';
 import { buybackEntrySchema, traderGoodSchema } from './trade-state';
 import { traderView } from './trader-view';
 
@@ -11,6 +12,7 @@ export const traderFixtureSchema = z
     goods: z.array(traderGoodSchema.nullable()).optional(),
     buyback: z.array(buybackEntrySchema.nullable()).optional(),
     trips: z.number().int().nonnegative().optional(),
+    listings: listingsSchema.optional(),
   })
   .strict();
 export type TraderFixture = z.infer<typeof traderFixtureSchema>;
@@ -38,5 +40,10 @@ export function applyTraderFixture(
     goods: goods ? padded(goods, def.goodsSlots) : current.goods,
     buyback: buyback ? padded(buyback, def.buybackSlots) : current.buyback,
   };
-  return { ...progress, trips, traders: { ...progress.traders, [fixture.trader]: trader } };
+  return {
+    ...progress,
+    trips,
+    listings: fixture.listings ?? progress.listings,
+    traders: { ...progress.traders, [fixture.trader]: trader },
+  };
 }

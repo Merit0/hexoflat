@@ -34,6 +34,10 @@ export function shopErrorText(reason: string): string {
       return t('shop.error.OVERWEIGHT');
     case 'WILL_REJECTED':
       return t('shop.error.WILL_REJECTED');
+    case 'TRADE_SLOTS_FULL':
+      return t('shop.error.TRADE_SLOTS_FULL');
+    case 'BAD_PRICE':
+      return t('shop.error.BAD_PRICE');
     case 'NEEDS_DEAL':
       return t('shop.error.NEEDS_DEAL');
     case 'NOT_DISCOUNTED':

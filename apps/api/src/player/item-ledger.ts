@@ -29,6 +29,11 @@ function movementsOf(event: DomainEvent): Movement[] {
       { itemKey: key, delta: sign * amount, reason: 'shop' },
     ];
   }
+  if (event.type === 'ITEM_LISTED' || event.type === 'ITEM_UNLISTED') {
+    const { key, amount } = event.payload as { key: string; amount: number };
+    const sign = event.type === 'ITEM_LISTED' ? -1 : 1;
+    return [{ itemKey: key, delta: sign * amount, reason: 'listing' }];
+  }
   const single = movementOf(event);
   return single ? [single] : [];
 }

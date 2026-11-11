@@ -7,6 +7,8 @@ export type TTradeError =
   | 'EMPTY_SOURCE'
   | 'NOT_TRADEABLE'
   | 'NEEDS_DEAL'
+  | 'BAD_PRICE'
+  | 'TRADE_SLOTS_FULL'
   | 'NOT_DISCOUNTED'
   | 'PRICE_CHANGED'
   | 'NOT_ENOUGH_COINS'

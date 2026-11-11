@@ -13,6 +13,7 @@ import {
   previewSell,
   type TradePreview,
 } from '@/services/trade/trade-preview';
+import { traderProjection } from '@/services/trade/trader-projection';
 import { useHeroStore } from '@/stores/hero-store';
 import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useTraderStore } from '@/stores/trader-store';
@@ -82,6 +83,26 @@ export function useShopBoardData() {
     });
   }
 
+  const own = computed<ShopTradeCell[]>(() =>
+    traderProjection.value.listings.map((listing, slot) => ({
+      index: slot,
+      item: listing
+        ? {
+            id: `shop-own-${slot}`,
+            key: listing.key,
+            type: getPrototype(listing.key).groupType,
+            amount: listing.amount,
+            slotKey: '',
+            isNew: false,
+          }
+        : null,
+      price: listing?.unitPrice ?? null,
+      affordable: true,
+      sold: false,
+      wasted: false,
+      discountPercent: null,
+    })),
+  );
   const goods = computed(() => cellsOf('goods'));
   const buyback = computed(() => cellsOf('buyback'));
 
@@ -116,6 +137,7 @@ export function useShopBoardData() {
     ),
     goods,
     buyback,
+    own,
     will,
     refresh,
     sellPriceOf,

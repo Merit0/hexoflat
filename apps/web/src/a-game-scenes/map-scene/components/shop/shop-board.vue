@@ -25,7 +25,7 @@
         :sell-rate-percent="sellRatePercent"
       />
       <div class="ornament is-aligned" aria-hidden="true"><span></span><i></i><span></span></div>
-      <shop-goods-pane :goods="goods" :buyback="buyback" :refresh="refresh" />
+      <shop-goods-pane :goods="goods" :buyback="buyback" :own="own" :refresh="refresh" />
       <shop-selection-card />
     </template>
     <stash-bag-pane />
@@ -59,7 +59,7 @@ import ShopTraderBanner from './shop-trader-banner.vue';
 const { t } = useI18n();
 const board = ref<HTMLElement | null>(null);
 const { style: cellStyle } = useInventoryCellSize(board);
-const { definition, coins, sellRatePercent, goods, buyback, refresh, sellPriceOf } =
+const { definition, coins, sellRatePercent, goods, buyback, own, refresh, sellPriceOf } =
   useShopBoardData();
 const card = useShopCard();
 const inventory = useHeroInventoryStore();
@@ -68,7 +68,7 @@ function forecastKg(): string | null {
   const view = card.value;
   if (!view || !view.preview.ok) return null;
   const delta = view.unitWeightKg * view.preview.amount;
-  const next = view.mode === 'trading' ? -delta : delta;
+  const next = view.mode === 'trading' || view.mode === 'listing' ? -delta : delta;
   return formatKg(Math.max(0, inventory.carriedWeightKg + next));
 }
 

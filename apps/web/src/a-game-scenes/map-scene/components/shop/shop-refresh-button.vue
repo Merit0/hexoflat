@@ -4,7 +4,7 @@
       type="button"
       class="refresh"
       :class="{ 'is-short': !affordable }"
-      :disabled="sending"
+      :disabled="sending || !enabled"
       :aria-label="t('shop.refresh.aria')"
       :data-affordable="affordable"
       data-testid="shop-refresh"
@@ -39,7 +39,7 @@ import type { RefreshPreview } from '@/services/trade/trade-preview';
 
 const WILL_ICON = '/board-assets/will-icon-image.png';
 
-const props = defineProps<{ price: number; affordable: boolean }>();
+const props = defineProps<{ price: number; affordable: boolean; enabled: boolean }>();
 const { t } = useI18n();
 
 function onClick(): void {

@@ -36,19 +36,37 @@
         buybackCount
       }}</span>
     </button>
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      :class="{ 'is-active': shopTab === 'trade' }"
+      :aria-selected="shopTab === 'trade'"
+      data-testid="shop-tab-trade"
+      :data-count="tradeCount"
+      @click="setTab('trade')"
+    >
+      <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9h13l-3-3" />
+        <path d="M20 15H7l3 3" />
+      </svg>
+      <span class="label">{{ t('shop.tab.trade') }}</span>
+      <span v-if="tradeCount > 0" class="badge" data-testid="shop-tab-trade-badge">{{
+        tradeCount
+      }}</span>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import type { TTradeList } from '@hexoflat/engine/trade/trade-types';
 import { clearShopSelection } from '@/composables/shop-selection';
-import { shopTab } from '@/composables/shop-tab';
+import { shopTab, type ShopTabKey } from '@/composables/shop-tab';
 
-defineProps<{ buybackCount: number }>();
+defineProps<{ buybackCount: number; tradeCount: number }>();
 const { t } = useI18n();
 
-function setTab(tab: TTradeList): void {
+function setTab(tab: ShopTabKey): void {
   if (shopTab.value === tab) return;
   shopTab.value = tab;
   clearShopSelection();
@@ -62,11 +80,11 @@ function setTab(tab: TTradeList): void {
   isolation: isolate;
   flex: 1 1 auto;
   min-width: 0;
-  max-width: 380px;
+  max-width: 520px;
   box-sizing: border-box;
   height: 52px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--gap);
   padding: var(--gap);
   border: 2px solid transparent;
@@ -84,7 +102,7 @@ function setTab(tab: TTradeList): void {
   top: var(--gap);
   bottom: var(--gap);
   left: var(--gap);
-  width: calc((100% - 3 * var(--gap)) / 2);
+  width: calc((100% - 4 * var(--gap)) / 3);
   border-radius: 9px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 50%),
@@ -99,6 +117,9 @@ function setTab(tab: TTradeList): void {
 .bar[data-active='buyback'] .thumb {
   transform: translateX(calc(100% + var(--gap)));
 }
+.bar[data-active='trade'] .thumb {
+  transform: translateX(calc(200% + 2 * var(--gap)));
+}
 .tab {
   position: relative;
   z-index: 1;
@@ -106,7 +127,7 @@ function setTab(tab: TTradeList): void {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 5px;
   padding: 0;
   border: 0;
   border-radius: 9px;
@@ -114,9 +135,9 @@ function setTab(tab: TTradeList): void {
   box-shadow: none;
   color: rgba(243, 232, 210, 0.62);
   font-family: var(--font-main, serif), serif;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   -webkit-text-stroke: 0.4px currentColor;
   text-transform: uppercase;
   white-space: nowrap;
@@ -150,8 +171,8 @@ function setTab(tab: TTradeList): void {
 }
 .glyph {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;

@@ -275,3 +275,68 @@ describe('progress v6', () => {
     ).toThrow();
   });
 });
+
+describe('own listings (SHOP_LIST, SHOP_REPRICE, SHOP_UNLIST)', () => {
+  const listCommand = (state: PlayerAggregates, extra = {}) =>
+    parse({
+      type: 'SHOP_LIST',
+      payload: {
+        heroId: HERO,
+        revision: state.inventory.revision,
+        trader: 'ilva',
+        from: { container: 'bag', index: 1 },
+        unitPrice: 30,
+        ...extra,
+      },
+    });
+  const slotCommand = (state: PlayerAggregates, type: 'SHOP_UNLIST' | 'SHOP_REPRICE', extra = {}) =>
+    parse({
+      type,
+      payload: {
+        heroId: HERO,
+        revision: state.inventory.revision,
+        trader: 'ilva',
+        slot: 0,
+        ...extra,
+      },
+    });
+
+  it('lifts the item into a slot, reprices it and takes it back, bumping the revision each time', () => {
+    const start = rich();
+    const listed = apply(start, listCommand(start));
+    expect(listed.progress.listings[0]).toEqual({
+      key: HEXOBJECT_KEYS.AXE,
+      amount: 1,
+      unitPrice: 30,
+    });
+    expect(listed.inventory.bag[1]).toBeNull();
+    expect(listed.inventory.revision).toBe(start.inventory.revision + 1);
+
+    const repriced = apply(listed, slotCommand(listed, 'SHOP_REPRICE', { unitPrice: 35 }));
+    expect(repriced.progress.listings[0]?.unitPrice).toBe(35);
+
+    const back = apply(repriced, slotCommand(repriced, 'SHOP_UNLIST'));
+    expect(back.progress.listings[0]).toBeNull();
+    expect(back.inventory.bag.some((cell) => cell?.key === HEXOBJECT_KEYS.AXE)).toBe(true);
+  });
+
+  it('refuses away from the trader and a bad price, changing nothing', () => {
+    const state = rich();
+    expect(
+      executePlayerCommand(state, listCommand(state), {
+        ...AT_ILVA,
+        trade: { atTrader: null, rngSeed: SEED },
+      }),
+    ).toMatchObject({ ok: false, code: 'NOT_AT_TRADER' });
+    expect(() => listCommand(state, { unitPrice: 1000 })).toThrow();
+    expect(state.progress.listings.every((cell) => cell === null)).toBe(true);
+  });
+
+  it('keeps the listings through a paid refresh of the goods', () => {
+    const start = rich();
+    const listed = apply(start, listCommand(start));
+    listed.progress.knowledge.current = 50;
+    const fresh = apply(listed, refresh(listed, 20));
+    expect(fresh.progress.listings[0]).toMatchObject({ key: HEXOBJECT_KEYS.AXE, unitPrice: 30 });
+  });
+});
