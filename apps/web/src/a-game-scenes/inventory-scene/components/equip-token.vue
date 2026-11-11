@@ -208,6 +208,7 @@ function onPointerDown(e: PointerEvent) {
 
 .amount {
   position: absolute;
+  z-index: 10;
   left: 50%;
   bottom: 14%;
   transform: translateX(-50%) rotate(calc(var(--rot) * -1));

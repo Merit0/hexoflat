@@ -228,7 +228,7 @@ function tooltipPrice(): TooltipPrice | null {
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 10;
   padding: 1px 6px;
   border-width: 0 1px 1px 0;
   border-style: solid;
@@ -244,7 +244,7 @@ function tooltipPrice(): TooltipPrice | null {
   top: -8px;
   right: -8px;
   bottom: auto;
-  z-index: 1;
+  z-index: 10;
   min-width: 20px;
   height: 20px;
   box-sizing: border-box;

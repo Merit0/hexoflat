@@ -365,6 +365,7 @@ const centerHoleStyle = computed(() => {
 
 .amount {
   position: absolute;
+  z-index: 10;
   bottom: 0;
   right: 0;
 
