@@ -54,54 +54,80 @@ function onClick(): void {
   display: inline-flex;
 }
 .refresh {
+  --face: linear-gradient(180deg, #3d4d5c, #2a3744);
+  --edge: linear-gradient(180deg, #7a8da0, #1b2630 60%, #46586a);
+  position: relative;
+  isolation: isolate;
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   padding: 0;
   display: grid;
   place-items: center;
-  border: 1px solid #3a4450;
-  border-radius: 10px;
-  background: #232b34;
+  border: 0;
+  color: #f3e8d2;
   cursor: pointer;
-  transition:
-    transform 0.06s ease,
-    background 0.12s ease,
-    border-color 0.12s ease,
-    box-shadow 0.12s ease;
+  background: var(--edge);
+  clip-path: polygon(
+    14px 0,
+    calc(100% - 14px) 0,
+    100% 14px,
+    100% calc(100% - 14px),
+    calc(100% - 14px) 100%,
+    14px 100%,
+    0 calc(100% - 14px),
+    0 14px
+  );
+  transition: transform 0.06s ease;
 }
-.refresh:not(:disabled):hover {
-  border-color: rgba(227, 194, 122, 0.6);
-  background: #2c3641;
-}
-.refresh:not(:disabled):active {
-  background: #151a20;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
-  transform: translateY(1px) scale(0.94);
-}
-.refresh:not(:disabled):active svg {
-  transform: rotate(60deg);
+.refresh::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: var(--face);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  clip-path: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
 }
 .refresh svg {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   fill: none;
-  stroke: #e8e2d2;
+  stroke: currentColor;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
   transition: transform 0.18s ease;
 }
+.refresh:not(:disabled):hover {
+  --face: linear-gradient(180deg, #4a5d6e, #34444f);
+}
+.refresh:not(:disabled):active {
+  --face: linear-gradient(180deg, #1f2a34, #2a3744);
+  transform: translateY(1px) scale(0.95);
+}
+.refresh:not(:disabled):active svg {
+  transform: rotate(60deg);
+}
 .refresh:focus-visible {
-  outline: 2px solid #e3c27a;
-  outline-offset: 2px;
+  outline: 3px solid #f5c26b;
+  outline-offset: 3px;
 }
 .refresh:disabled {
   opacity: 0.5;
 }
 .refresh.is-short svg {
-  stroke: rgba(232, 226, 210, 0.55);
+  opacity: 0.55;
 }
 .tip {
   position: absolute;

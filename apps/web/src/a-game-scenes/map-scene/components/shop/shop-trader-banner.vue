@@ -1,16 +1,19 @@
 <template>
   <section class="banner" :class="zoneClass" data-zone="trader" data-testid="shop-trader-banner">
+    <div class="left">
+      <img class="coin-icon" :src="COIN_SRC" alt="" aria-hidden="true" />
+      <p class="figures" :title="t('shop.coins')" data-testid="shop-coins" :data-coins="coins">
+        <span class="figures__label">{{ t('shop.coins') }}</span>
+        <span class="figures__value">{{ coins }}</span>
+      </p>
+    </div>
+    <i class="divider" aria-hidden="true"></i>
     <div class="who">
       <h3 data-testid="shop-trader-name">{{ t(definition.title) }}</h3>
-      <span class="rate" data-testid="shop-sell-rate">{{
-        t('shop.merchant.paysRate', { percent: sellRatePercent })
-      }}</span>
+      <p class="rate" data-testid="shop-sell-rate">
+        {{ t('shop.merchant.paysRate', { percent: sellRatePercent }) }}
+      </p>
     </div>
-    <span class="glow" aria-hidden="true"></span>
-    <span class="coins" :title="t('shop.coins')" data-testid="shop-coins" :data-coins="coins">
-      <img :src="COIN_SRC" alt="" aria-hidden="true" />
-      {{ coins }}
-    </span>
   </section>
 </template>
 
@@ -28,75 +31,117 @@ defineProps<{ definition: TTraderDefinition; coins: number; sellRatePercent: num
 const { t } = useI18n();
 const zoneClass = computed(() => shopZoneClass('trader'));
 </script>
-
 <style scoped>
 .banner {
+  --diamond: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5 0L10 5L5 10L0 5Z' fill='%23b8864a'/></svg>");
+  position: relative;
+  isolation: isolate;
   flex: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
-  padding: 10px var(--stash-pad);
-  background: rgba(0, 0, 0, 0.35);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  gap: 10px;
+  box-sizing: border-box;
+  height: 68px;
+  margin: 0 var(--stash-pad);
+  padding: 4px 12px;
+  color: #f1e4cc;
+  background: linear-gradient(180deg, #5a6d7e, #202b36);
+  clip-path: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
+}
+.banner::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: linear-gradient(180deg, #1a2029, #10151c);
+  clip-path: polygon(
+    10px 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0 calc(100% - 10px),
+    0 10px
+  );
 }
 .banner.zone-ok {
-  box-shadow:
-    0 0 0 2px rgba(255, 200, 120, 0.5) inset,
-    0 0 16px rgba(255, 200, 120, 0.45);
+  background: linear-gradient(180deg, #f5c26b, #8a6a2a);
 }
 .banner.zone-bad {
-  box-shadow:
-    0 0 0 2px rgba(255, 120, 120, 0.5) inset,
-    0 0 16px rgba(255, 80, 80, 0.4);
+  background: linear-gradient(180deg, #ff9d9d, #8a2a2a);
+}
+p {
+  margin: 0;
+}
+.left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  gap: 8px;
+}
+.coin-icon {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.6));
+}
+.figures {
+  display: grid;
+  gap: 2px;
+  white-space: nowrap;
+}
+.figures__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f3e8d2;
+}
+.figures__value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f3e8d2;
+  font-variant-numeric: tabular-nums;
+}
+.divider {
+  align-self: stretch;
+  background:
+    var(--diamond) center / 11px 11px no-repeat,
+    linear-gradient(180deg, transparent, #b8864a 20%, #b8864a 80%, transparent) center / 1px 100%
+      no-repeat;
 }
 .who {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  text-align: center;
 }
 h3 {
   margin: 0;
-  font-family: var(--font-main, serif), serif;
-  font-size: 26px;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.1;
-  color: #f0e4c4;
-  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+  color: #f3e8d2;
+  text-wrap: balance;
 }
 .rate {
-  padding: 2px 9px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.glow {
-  width: 2px;
-  height: 56px;
-  background: linear-gradient(180deg, transparent, #f0d48a, transparent);
-  box-shadow:
-    0 0 8px 1px rgba(240, 212, 138, 0.55),
-    0 0 18px 3px rgba(227, 194, 122, 0.22);
-}
-.coins {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #f0d48a;
-  font-family: var(--font-main, serif), serif;
-  font-size: 20px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-}
-.coins img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
+  font-size: 0.8rem;
+  line-height: 1.15;
+  font-weight: 600;
+  color: rgba(243, 232, 210, 0.82);
 }
 </style>

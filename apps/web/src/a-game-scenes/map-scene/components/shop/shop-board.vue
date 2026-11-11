@@ -8,6 +8,12 @@
   >
     <header class="top">
       <h2>{{ t('shop.title') }}</h2>
+      <knowledge-help
+        :title="t('shop.title')"
+        :text="t('shop.description', { percent: sellRatePercent })"
+        :label="t('shop.help')"
+        testid="shop-help"
+      />
       <board-close-button testid="shop-close" :label="t('shop.close')" @close="closeShopBoard()" />
     </header>
     <div class="ornament" aria-hidden="true"><span></span><i></i><span></span></div>
@@ -30,6 +36,7 @@
 <script setup lang="ts">
 import { provide, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import KnowledgeHelp from '../knowledge-help.vue';
 import BoardCloseButton from '@/components/gui/board/board-close-button.vue';
 import { BOARD_CELL_CONTEXT } from '@/composables/board-cell-context';
 import { useInventoryCellSize } from '@/composables/use-inventory-cell-size';

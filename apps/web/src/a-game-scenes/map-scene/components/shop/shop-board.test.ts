@@ -108,7 +108,8 @@ describe('shop board layout', () => {
   it('shows the trader, the coins of the bag and the sell rate, but no weight', () => {
     const banner = byId('shop-trader-banner')!;
     expect(byId('shop-trader-name')!.textContent).toBe('Ilva the Pedlar');
-    expect(byId('shop-coins')!.textContent.trim()).toBe('100');
+    expect(byId('shop-coins')!.dataset.coins).toBe('100');
+    expect(byId('shop-coins')!.textContent).toContain('100');
     expect(byId('shop-sell-rate')!.textContent).toBe('Pays 40% of price');
     expect(banner.textContent).not.toContain('kg');
   });

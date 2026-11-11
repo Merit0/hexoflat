@@ -65,6 +65,7 @@ function setTab(tab: TTradeList): void {
 }
 .push {
   margin-left: auto;
+  margin-right: calc(10px - 2 * var(--stash-pad, 0px));
 }
 .tab {
   position: relative;

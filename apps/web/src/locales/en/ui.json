@@ -797,7 +797,9 @@
       "buy": "Price",
       "sell": "Sells for",
       "buyback": "Buy back for"
-    }
+    },
+    "description": "Ilva buys and sells. She pays {percent}% of an item's price; sold items wait in Buyback until new goods. Refreshing costs Will and doubles each time.",
+    "help": "About the stall"
   },
   "player": {
     "sync": {
