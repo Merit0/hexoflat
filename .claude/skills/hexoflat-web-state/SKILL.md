@@ -189,3 +189,7 @@ Health comes from the server: `bindHealthListener` restores `hero` from every `p
 - **Messages.** `composables/shop-messages.ts` (`shopErrorText`, `warnTrade`, `shopDropText`, `shopHintText`, `refreshConfirmText`, `warnRefreshNoWill`); `OFFLINE`/`SESSION_TAKEN_OVER` are left to the sync warning. Unknown codes show `shop.error.REJECTED`.
 - **Escape.** `useShopSession` closes the board on Esc only when no drag and no New goods confirmation is running; `closeShopBoard()` cancels both.
 - **Tests.** `shop/shop-board-trade.test.ts` mounts the board on the fake server and sets goods with `applyProgress(fakeTraderFixture({...}).aggregates.progress)`; bind `bindKnowledgeListener` to the hero store so the refresh price sees the Will.
+
+## Walking closes the boards (SH6, 2026-11-11)
+
+- `heroStore.moveHeroTo` calls `closeBoardsForWalk()` (`services/hero-movement/close-boards-for-walk.ts`): when the stash OR the shop is open it closes both and stops the tool before the step, because a working hand (`heroToolStore.isDragging`) makes `moveHeroTo` return `false` silently. Every new board that replaces the right panel and keeps the hand "working" must be added there (and get a no-mock test like `shop-walk.integration.test.ts` / `stash-walk.integration.test.ts`); `hero-store.ts` is at its `max-lines` ratchet (469), so put such logic in a service, not in the store.

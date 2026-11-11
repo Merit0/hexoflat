@@ -8,6 +8,7 @@ export const MapTokens = {
   formerShieldSpot: { columnIndex: 11, rowIndex: 8 },
   formerPickaxeSpot: { columnIndex: 10, rowIndex: 9 },
   formerCoinsSpot: { columnIndex: 8, rowIndex: 7 },
+  traderStall: { columnIndex: 10, rowIndex: 9 },
   caveEntrance: { columnIndex: 10, rowIndex: 3 },
   homelandGate: { columnIndex: 7, rowIndex: 4 },
 } as const satisfies Record<string, TestHexCoordinates>;
@@ -69,3 +70,27 @@ export const AuthText = {
 
 export const NEW_HERO_PASSWORD = 'Strong-pass-1';
 export const GUARDIAN_EMAIL = 'grown-up@example.com';
+
+/**
+ * Coin prices approved in docs/shop/SHOP-PLAN.md (D19/D24), kept here as the independent oracle for
+ * the trader specs instead of being read back from the game. Sale value is floor(price * 2 / 5).
+ */
+export const CoinPrices = {
+  healthBottle: 12,
+  shield: 40,
+  axe: 48,
+  pickaxe: 48,
+  returnScroll: 60,
+  sword: 500,
+} as const;
+
+export const SellValues = {
+  healthBottle: 4,
+  shield: 16,
+  axe: 19,
+  sword: 200,
+} as const;
+
+export const TRADER_GOODS_SLOTS = 7;
+export const GUARANTEED_GOOD = { key: 'health-bottle', min: 2, max: 5 } as const;
+export const REFRESH_BASE_WILL = 20;

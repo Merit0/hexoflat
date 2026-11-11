@@ -37,6 +37,7 @@ import { readBlob, writeBlob } from '@/services/persistence/world-blob-store';
 import { HERO_STORE_BLOB } from '@/stores/hero-store-blob';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { closeBoardsForWalk } from '@/services/hero-movement/close-boards-for-walk';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
   bindHealthListener,
@@ -446,11 +447,7 @@ export const useHeroStore = defineStore('hero', {
       };
       if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
       if (portalFxBusy.value) return false;
-      const stash = useHeroStashStore();
-      if (stash.isOpen) {
-        stash.close();
-        heroToolStore.stopTool();
-      }
+      closeBoardsForWalk();
       if (heroToolStore.isDragging) return false;
       if (this.isHeroMoving) return warn(i18n.global.t('moveBlocked.moving'));
       if (battleStore.inBattle) return warn(i18n.global.t('moveBlocked.inBattle'));
