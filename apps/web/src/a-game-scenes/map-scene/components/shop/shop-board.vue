@@ -24,6 +24,7 @@
         :coins="coins"
         :sell-rate-percent="sellRatePercent"
       />
+      <div class="ornament is-aligned" aria-hidden="true"><span></span><i></i><span></span></div>
       <shop-goods-pane :goods="goods" :buyback="buyback" :refresh="refresh" />
       <shop-selection-card />
     </template>
@@ -130,6 +131,9 @@ h2 {
   align-items: center;
   gap: 8px;
   padding: 0 12px;
+}
+.ornament.is-aligned {
+  padding: 0 var(--stash-pad);
 }
 .ornament span {
   flex: 1;

@@ -3,9 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 8px var(--stash-pad) 8px;
-  background: rgba(0, 0, 0, 0.35);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  padding: 0 var(--stash-pad) 8px;
 }
 .pane.zone-ok {
   box-shadow:
@@ -17,9 +15,6 @@
   box-shadow:
     0 0 0 2px rgba(255, 120, 120, 0.5) inset,
     0 0 16px rgba(255, 80, 80, 0.4);
-}
-.pane.is-buyback {
-  background: rgba(0, 0, 0, 0.22);
 }
 .pane.is-buyback .grid {
   opacity: 0.78;
