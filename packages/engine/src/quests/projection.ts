@@ -6,6 +6,7 @@ export interface QuestProjection {
   offerId: string;
   phase: QuestRun['phase'];
   outcome: SeekerOutcome | null;
+  start: IHexCoordinates;
   position: IHexCoordinates;
   path: { hex: IHexCoordinates; number: number }[];
   opened: { hex: IHexCoordinates; number: number; footprint: boolean }[];
@@ -29,6 +30,7 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
     offerId: run.offerId,
     phase: run.phase,
     outcome: run.outcome,
+    start: run.start,
     position: positionOf(run),
     path: run.path.map((step) => ({ hex: step.hex, number: step.number })),
     opened: Object.entries(run.revealed)

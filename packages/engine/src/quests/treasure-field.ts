@@ -4,7 +4,7 @@ import { axialToOffset, coordinateKey, hexDistance } from '../utils/hex-utils';
 import type { SeekerBoard } from './quest-state';
 
 export const FIELD_RADIUS = 6;
-const CENTER = { q: 12, r: 12 };
+export const FIELD_CENTER = { q: 12, r: 12 };
 const EDGE_GAP_CHANCE = 0.35;
 
 export interface TreasureField extends SeekerBoard {
@@ -13,13 +13,13 @@ export interface TreasureField extends SeekerBoard {
 
 export function createTreasureField(seed: string): TreasureField {
   const random = deriveStream(seed, 'quest:field');
-  const center = axialToOffset(CENTER);
+  const center = axialToOffset(FIELD_CENTER);
   const all: IHexCoordinates[] = [];
   for (let dq = -FIELD_RADIUS; dq <= FIELD_RADIUS; dq += 1) {
     const from = Math.max(-FIELD_RADIUS, -dq - FIELD_RADIUS);
     const to = Math.min(FIELD_RADIUS, -dq + FIELD_RADIUS);
     for (let dr = from; dr <= to; dr += 1) {
-      all.push(axialToOffset({ q: CENTER.q + dq, r: CENTER.r + dr }));
+      all.push(axialToOffset({ q: FIELD_CENTER.q + dq, r: FIELD_CENTER.r + dr }));
     }
   }
   const floor = all.filter(

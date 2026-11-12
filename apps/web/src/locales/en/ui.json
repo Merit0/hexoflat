@@ -835,7 +835,6 @@
     }
   },
   "quest": {
-    "tab": "Quests",
     "boardTitle": "Quest Board",
     "close": "Close the quest board",
     "slots": "Quests taken: {used} / {max}",
@@ -870,7 +869,17 @@
       "AUTO_TURN_IN": "This quest is handed in by itself.",
       "BAG_FULL": "Your bag is too full for the reward.",
       "NO_INVENTORY": "Your bag is not available.",
-      "OTHER": "The quest board refused this."
+      "OTHER": "The quest board refused this.",
+      "QUEST_IN_PROGRESS": "You are already on a trail.",
+      "NOT_ADJACENT": "Too far away.",
+      "HEX_NOT_REVEALED": "That hex is hidden.",
+      "USE_STEP_BACK": "Use the step back.",
+      "NOTHING_TO_STEP_BACK": "Nothing to go back to.",
+      "NO_CHEST": "There is no chest yet.",
+      "WRONG_PHASE": "Not now.",
+      "BATTLE_OPEN": "Finish the battle first.",
+      "NO_RUN": "No trail is open.",
+      "OFFLINE": "No connection to the server."
     },
     "woodcutter": {
       "name": "Woodcutter",
@@ -897,6 +906,56 @@
       "stones": "stones",
       "answers": "correct answers",
       "skeletons": "skeletons"
+    },
+    "start": "Start",
+    "enter": "Enter",
+    "lockedBy": "Find the chest of {name} first.",
+    "seekerHow": "The first steps glow gold. After that you choose alone. The fog never tells you if you were wrong.",
+    "chip": {
+      "entry": "Entry {n}",
+      "steps": "{n} steps",
+      "stepPrice": "Step {n}",
+      "backPrice": "Step back {n}"
+    },
+    "run": {
+      "step": "Step {n} / {total}",
+      "trail": "Your trail",
+      "collect": "The chest is open. Take what you can.",
+      "ambush": "Something is wrong with this chest.",
+      "chestSeen": "A chest stands nearby. Open it.",
+      "return": "Return to camp",
+      "giveUp": "Give up",
+      "giveUpConfirm": "Yes, give up",
+      "giveUpCancel": "Stay"
+    },
+    "tip": {
+      "chest": "A chest. Open it with your hand.",
+      "step": "Step: {n} Will",
+      "back": "Step back: {n} Will"
+    },
+    "result": {
+      "treasure": "You found the treasure.",
+      "ambushWon": "You won the ambush.",
+      "defeat": "The ambush defeated you.",
+      "stranded": "Your Will ran out. You are stranded.",
+      "left": "You left the trail.",
+      "review": "First wrong turn: you chose {took}, the rule gave {rule}.",
+      "dismiss": "Back to the board"
+    },
+    "seeker-1": {
+      "name": "I · First Trail",
+      "desc": "Follow the numbers through the fog to the chest.",
+      "table": "Find the chest at the end of the trail."
+    },
+    "seeker-2": {
+      "name": "II · Leaping Trail",
+      "desc": "The numbers jump. Find the pattern.",
+      "table": "Find the chest at the end of the trail."
+    },
+    "seeker-3": {
+      "name": "III · Cunning Trail",
+      "desc": "Every step costs more. Choose carefully.",
+      "table": "Find the chest at the end of the trail."
     }
   }
 }

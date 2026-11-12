@@ -13,14 +13,21 @@
         @close="closeKnowledgePanel()"
       />
     </header>
-    <p class="slots" data-testid="quest-slots">
-      {{ t('quest.slots', { used: slotLine.used, max: slotLine.max }) }}
-    </p>
-    <div class="cards">
-      <quest-card v-for="card in cards" :key="card.quest.id" :card="card" />
-    </div>
-    <hr />
-    <quest-tracker />
+    <quest-run-panel v-if="run || result" />
+    <template v-else>
+      <p class="slots" data-testid="quest-slots">
+        {{ t('quest.slots', { used: slotLine.used, max: slotLine.max }) }}
+      </p>
+      <div class="cards">
+        <quest-card v-for="card in cards" :key="card.quest.id" :card="card" />
+      </div>
+      <p v-if="startMessage" role="alert" class="start-message" data-testid="quest-start-message">
+        {{ startMessage }}
+      </p>
+      <hr />
+      <quest-tracker />
+      <p class="how">{{ t('quest.seekerHow') }}</p>
+    </template>
   </section>
 </template>
 
@@ -31,9 +38,14 @@ import { useQuestView } from '@/composables/use-quest-view';
 import BoardCloseButton from '@/components/gui/board/board-close-button.vue';
 import QuestCard from './quest-card.vue';
 import QuestTracker from './quest-tracker.vue';
+import QuestRunPanel from './quest-run-panel.vue';
+import { useQuestRunView } from '@/composables/use-quest-run-view';
+import { useQuestRunActions } from '@/composables/use-quest-run-actions';
 
 const { t } = useI18n();
 const { cards, slotLine } = useQuestView();
+const { run, result } = useQuestRunView();
+const { message: startMessage } = useQuestRunActions();
 </script>
 
 <style scoped>
@@ -74,6 +86,16 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+.start-message {
+  margin: 0;
+  color: #ff9d8a;
+  font-size: 0.85rem;
+}
+.how {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
 }
 hr {
   width: 100%;

@@ -34,6 +34,7 @@
         class="battle-pane"
         :reference-frame="boardFrame"
       />
+      <quest-field-area v-if="questStore.inRun" class="battle-pane" />
       <div
         v-if="worldStore.worldLoadFailed"
         class="world-load-error"
@@ -108,6 +109,8 @@ import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
 import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
+import QuestFieldArea from '@/components/quest/quest-field-area.vue';
+import { useQuestStore } from '@/stores/quest-store';
 import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
 import HexInfoTooltip from '@/components/gui/hex-info/hex-info-tooltip.vue';
 import { useHexHoverInfo } from '@/composables/use-hex-hover-info';
@@ -132,6 +135,7 @@ const { handleTileClick } = useTileClick();
 const { t } = useI18n();
 const worldStore = useWorldMapStore();
 const battleStore = useBattleStore();
+const questStore = useQuestStore();
 useSquadFlow();
 const squadViews = useSquadViews();
 const heroToolStore = useHeroToolStore();

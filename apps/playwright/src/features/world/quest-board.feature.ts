@@ -2,7 +2,6 @@ import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { MoveHeroFeature } from '@features/world/move-hero.feature';
 import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feature';
-import { SwitchHeroBoardTabFeature } from '@features/world/switch-hero-board-tab.feature';
 import { UseHeroToolFeature } from '@features/world/use-hero-tool.feature';
 import { Tool } from '@config/hero-tool';
 import { tokenCoordinates } from '@config/test-data';
@@ -34,25 +33,6 @@ export class QuestBoardFeature extends BaseFeature {
       await this.board.verifyIsClosed();
       await this.open();
     });
-  }
-
-  async claimAwayFromTheBoard(questId: string): Promise<void> {
-    await this.step(
-      `Walk away from the board and claim "${questId}" from the QUESTS tab`,
-      async () => {
-        await this.board.close();
-        await this.board.verifyIsClosed();
-        await new MoveHeroFeature().moveAwayFrom('questBoard');
-        await new SwitchHeroBoardTabFeature().switchTo('quests');
-        await this.board.claim(questId);
-      },
-    );
-  }
-
-  async verifyReadyMarkOnTab(shown: boolean): Promise<void> {
-    await this.step(`Verify the QUESTS tab ready mark is ${shown ? 'shown' : 'hidden'}`, () =>
-      this.board.verifyReadyMarkOnTab(shown),
-    );
   }
 
   async accept(questId: string): Promise<void> {

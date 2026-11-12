@@ -17,7 +17,21 @@ export function questRefusalText(reason: string): string {
     BAG_FULL: () => t('quest.refusal.BAG_FULL'),
     NO_INVENTORY: () => t('quest.refusal.NO_INVENTORY'),
   };
+  const seeker: Record<string, () => string> = {
+    QUEST_IN_PROGRESS: () => t('quest.refusal.QUEST_IN_PROGRESS'),
+    NOT_ADJACENT: () => t('quest.refusal.NOT_ADJACENT'),
+    HEX_NOT_REVEALED: () => t('quest.refusal.HEX_NOT_REVEALED'),
+    USE_STEP_BACK: () => t('quest.refusal.USE_STEP_BACK'),
+    NOTHING_TO_STEP_BACK: () => t('quest.refusal.NOTHING_TO_STEP_BACK'),
+    NO_CHEST: () => t('quest.refusal.NO_CHEST'),
+    WRONG_PHASE: () => t('quest.refusal.WRONG_PHASE'),
+    BATTLE_OPEN: () => t('quest.refusal.BATTLE_OPEN'),
+    NO_RUN: () => t('quest.refusal.NO_RUN'),
+    OFFLINE: () => t('quest.refusal.OFFLINE'),
+  };
   return (
-    (known as Record<string, (() => string) | undefined>)[reason]?.() ?? t('quest.refusal.OTHER')
+    seeker[reason]?.() ??
+    (known as Record<string, (() => string) | undefined>)[reason]?.() ??
+    t('quest.refusal.OTHER')
   );
 }

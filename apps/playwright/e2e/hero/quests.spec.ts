@@ -4,7 +4,6 @@ import { QuestBoardFeature } from '@features/world/quest-board.feature';
 import { HexobjectKeys as K } from '@config/test-data';
 
 const NO_FREE_SLOTS = /no free quest slots|вільних місць/i;
-const NOT_AT_BOARD = /next to the quest board|до дошки квестів/i;
 const START_WILL = 50;
 const SECOND_SLOT = 5;
 const THIRD_SLOT = 10;
@@ -65,20 +64,6 @@ test.describe('quest board', { tag: ['@hero'] }, () => {
     await quests.verifyBagAmount(K.shield, 1);
     await quests.verifyDoneCount('bone-hunter', 1);
     await quests.verifyCardNotOnBoard('bone-hunter');
-  });
-
-  test('Verify a claim away from the board is refused and the quest stays ready', async () => {
-    const quests = await openBoard();
-
-    await quests.givenQuests({ active: [{ questId: 'woodcutter', progress: 10, state: 'ready' }] });
-    await quests.verifyReady('woodcutter', true);
-
-    await quests.claimAwayFromTheBoard('woodcutter');
-    await quests.verifyRefusal(NOT_AT_BOARD);
-    await quests.verifyReadyMarkOnTab(true);
-
-    await quests.verifyBagAmount(K.axe, 0);
-    await quests.verifyReady('woodcutter', true);
   });
 
   test('Verify taken quests and their counters survive a reload', async () => {

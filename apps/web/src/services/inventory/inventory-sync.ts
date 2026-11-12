@@ -1,5 +1,11 @@
 import type { QuestLog } from '@hexoflat/engine/quests/quest-log-state';
 import { applyQuestProjection, resetQuestProjection } from '@/services/quests/quest-projection';
+import { resetQuestRun } from '@/services/quests/quest-run-projection';
+import {
+  restoreQuestRun,
+  runQuestCommand,
+  type QuestRunAnswer,
+} from '@/services/quests/quest-run-transport';
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { getAuthToken } from '@/api/auth-token';
@@ -220,6 +226,7 @@ export async function startPlayerSession(heroId: string): Promise<boolean> {
     inventorySession.sessionToken = snapshot.sessionToken ?? null;
     await startExpeditionSync();
     await loadWorldCache();
+    await restoreQuestRun();
     inventorySession.status = 'live';
     onExpeditionTakenOver(() => lost(new PlayerSocketError('SESSION_TAKEN_OVER')));
     return true;
@@ -237,6 +244,7 @@ export function endPlayerSession(): void {
   resetInventorySession();
   resetTraderProjection();
   resetQuestProjection();
+  resetQuestRun();
 }
 
 export function settleInventorySync(): Promise<void> {
@@ -340,6 +348,28 @@ export function sendProgress(
       events: response.events,
     };
   });
+}
+
+export function sendQuestCommand(
+  type: string,
+  payload: Record<string, unknown>,
+): Promise<QuestRunAnswer> {
+  if (inventorySession.status !== 'live') {
+    return Promise.resolve({ ok: false, code: 'OFFLINE', events: [] });
+  }
+  return enqueue(() =>
+    runQuestCommand(
+      {
+        socket,
+        heroId: inventorySession.heroId,
+        progressRevision: inventorySession.progressRevision,
+        applyProgress,
+        lost,
+      },
+      type,
+      payload,
+    ),
+  );
 }
 
 export async function ensurePresence(

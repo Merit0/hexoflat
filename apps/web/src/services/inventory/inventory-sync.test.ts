@@ -86,6 +86,7 @@ async function live() {
 describe('inventory sync with the server', () => {
   beforeEach(() => {
     vi.spyOn(apiClient, 'post').mockResolvedValue({});
+    vi.spyOn(apiClient, 'get').mockResolvedValue({ quest: null });
     endPlayerSession();
     resetInventorySession();
   });

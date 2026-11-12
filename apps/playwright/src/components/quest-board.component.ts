@@ -8,7 +8,7 @@ export type QuestFixture = { active?: QuestFixtureEntry[]; done?: Record<string,
 
 /**
  * The quest board that replaces the hero panel after OPEN (the eye) with the hand on the board
- * hex (apps/web's quest-board.vue), plus the QUESTS tab mark. Stored state is read, and quests
+ * hex (apps/web's quest-board.vue). Stored state is read, and quests
  * are arranged, through the app's test hooks.
  */
 export class QuestBoardComponent extends BaseComponent {
@@ -45,10 +45,6 @@ export class QuestBoardComponent extends BaseComponent {
 
   async abandon(questId: string): Promise<void> {
     await this.page.getByTestId(`quest-abandon-${questId}`).click();
-  }
-
-  async verifyReadyMarkOnTab(shown: boolean): Promise<void> {
-    await expect(this.page.getByTestId('quests-tab-mark')).toHaveCount(shown ? 1 : 0);
   }
 
   async verifyCardOnBoard(questId: string): Promise<void> {

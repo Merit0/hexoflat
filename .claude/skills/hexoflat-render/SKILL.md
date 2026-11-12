@@ -53,6 +53,10 @@ Every creature (hero on the map, squads on the dungeon map, heroes and enemies o
 - **Every creature walks the same way:** each `CREATURE_MOVED` (hero or enemy) is one `walk` step of `BATTLE_TIMING.stepMs` (190 ms, easeOutCubic — the Silesia hero step). A strike is one `strike` step of `BATTLE_TIMING.strikeMs` (2000 ms, a deliberate pause): the sword flies from the attacker's own hex to the target with the ring lit, then the hit shake. Oleh asked to see enemy moves and hits (2026-10-29), so the old hidden enemy path (`vanish`/`appear`) is gone.
 - **Input lock:** the board emits `animating` → `battleStore.setAnimating`; `act` refuses everything except `answer-task`/`task-timeout`, and `needsEnemyTurn` is false, so `use-battle-enemy-driver` starts its pause only after the animation ends. `battle-board` exposes `data-animating` for e2e.
 
+## The quest field (Q4)
+
+`render/quest/use-quest-board.ts` is a third seam (like the battle board): it fits a fixed radius-6 hexagon (`fieldWorldRect`) and syncs one layer, `layers/quest-numbers-layer.ts` (fog, floor, numbers, gold hint, footprints, blue step frames with a hover price, path line, chest, hero token). It redraws everything from the pure `QuestFieldModel`; never read stores in the layer. Add new always-needed sprites to `questLayerAssetPaths`.
+
 ## The contract
 
 `useHexBoard(options)` takes reactive inputs (`ComputedRef`/`Ref`) and callbacks — never raw values. Adding a visual feature means:

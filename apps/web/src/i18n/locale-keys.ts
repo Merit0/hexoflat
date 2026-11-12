@@ -7,7 +7,7 @@ import {
   BATTLE_ITEMS,
   BATTLE_OBJECTS,
 } from '@hexoflat/engine/battle/battle-catalogue';
-import { BOARD_QUESTS } from '@hexoflat/engine/quests/quests.content';
+import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
 import { SQUAD_REJECTIONS } from '@hexoflat/engine/squads/engagement';
 import { THREATS } from '@hexoflat/engine/battle/threat';
 import ukUi from '@/locales/uk/ui.json';
@@ -112,12 +112,20 @@ export function collectSkillTreeLocaleKeys(): string[] {
 }
 
 export function questLocaleKeys(): string[] {
-  return BOARD_QUESTS.flatMap((quest) => [
-    quest.nameKey,
-    quest.descKey,
-    quest.tableRule,
-    ...(quest.objective.kind === 'count' ? [quest.objective.unitKey] : []),
-  ]);
+  const tips = ['chest', 'step', 'back'].map((tip) => `quest.tip.${tip}`);
+  const results = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'].map(
+    (outcome) => `quest.result.${outcome}`,
+  );
+  return [
+    ...tips,
+    ...results,
+    ...Object.values(ALL_QUESTS).flatMap((quest) => [
+      quest.nameKey,
+      quest.descKey,
+      quest.tableRule,
+      ...(quest.objective.kind === 'count' ? [quest.objective.unitKey] : []),
+    ]),
+  ];
 }
 
 const SCAN_EXTENSIONS = new Set(['.vue', '.ts']);
