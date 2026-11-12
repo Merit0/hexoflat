@@ -108,4 +108,41 @@ export class QuestBoardFeature extends BaseFeature {
   async verifyIsClosed(): Promise<void> {
     await this.step('Verify the quest board is closed', () => this.board.verifyIsClosed());
   }
+
+  async verifyChips(questId: string, chips: string[]): Promise<void> {
+    await this.step(`Verify "${questId}" shows the chips ${chips.join(', ')}`, () =>
+      this.board.verifyChips(questId, chips),
+    );
+  }
+
+  async verifyCardText(questId: string, pattern: RegExp): Promise<void> {
+    await this.step(`Verify the "${questId}" card says ${pattern}`, () =>
+      this.board.verifyCardText(questId, pattern),
+    );
+  }
+
+  async verifyCardTextAbsent(questId: string, pattern: RegExp): Promise<void> {
+    await this.step(`Verify the "${questId}" card never says ${pattern}`, () =>
+      this.board.verifyCardTextAbsent(questId, pattern),
+    );
+  }
+
+  async verifyNoStartButton(questId: string): Promise<void> {
+    await this.step(`Verify "${questId}" has no start button`, () =>
+      this.board.verifyNoStartButton(questId),
+    );
+  }
+
+  async verifyStartDisabled(questId: string, disabled: boolean): Promise<void> {
+    await this.step(`Verify START of "${questId}" is ${disabled ? 'disabled' : 'enabled'}`, () =>
+      this.board.verifyStartDisabled(questId, disabled),
+    );
+  }
+
+  async verifyShortOfWillReason(questId: string, shown: boolean): Promise<void> {
+    await this.step(
+      `Verify the short-of-Will reason of "${questId}" is ${shown ? 'shown' : 'hidden'}`,
+      () => this.board.verifyShortOfWillReason(questId, shown),
+    );
+  }
 }

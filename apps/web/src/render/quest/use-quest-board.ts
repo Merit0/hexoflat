@@ -17,6 +17,8 @@ import {
   questLayerAssetPaths,
   type QuestNumbersLayer,
 } from '@/render/layers/quest-numbers-layer';
+import { registerQuestHexProbe } from '@/e2e/quest-hooks';
+import { tileWorldCenter, worldToScreen } from '@/render/board-camera';
 import { fieldHexagon, type QuestFieldModel } from '@/services/quests/quest-field-model';
 
 export interface UseQuestBoardOptions {
@@ -51,6 +53,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
   let layer: QuestNumbersLayer | null = null;
   let observer: ResizeObserver | null = null;
   let destroyed = false;
+  let currentCamera: BoardCamera | null = null;
   const frameRect = fieldWorldRect();
 
   function fit(width: number, height: number) {
@@ -58,6 +61,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
     pixi.resize(width, height);
     const camera = fitBoardCamera({ frameRect, pane: { width, height } });
     pixi.setCamera(camera);
+    currentCamera = camera;
     options.onCamera?.(camera);
     pixi.renderNow();
   }
@@ -92,6 +96,11 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
     });
     layer.sync(options.model.value);
     fit(width, height);
+    if (import.meta.env.VITE_E2E_HOOKS === 'true') {
+      registerQuestHexProbe((hex) =>
+        currentCamera ? worldToScreen(currentCamera, tileWorldCenter(hex)) : null,
+      );
+    }
     app.onFirstFramePresented(() => options.onReady?.());
   }
 
@@ -111,6 +120,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
 
   onBeforeUnmount(() => {
     destroyed = true;
+    if (import.meta.env.VITE_E2E_HOOKS === 'true') registerQuestHexProbe(null);
     observer?.disconnect();
     layer?.destroy();
     pixi?.destroy();

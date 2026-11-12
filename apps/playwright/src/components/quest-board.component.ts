@@ -125,4 +125,73 @@ export class QuestBoardComponent extends BaseComponent {
       )
       .toBe(amount);
   }
+
+  async start(questId: string): Promise<void> {
+    await this.page.getByTestId(`quest-start-${questId}`).click();
+  }
+
+  async verifyStartDisabled(questId: string, disabled: boolean): Promise<void> {
+    const button = this.page.getByTestId(`quest-start-${questId}`);
+    if (disabled) await expect(button).toBeDisabled();
+    else await expect(button).toBeEnabled();
+  }
+
+  async verifyShortOfWillReason(questId: string, shown: boolean): Promise<void> {
+    await expect(this.page.getByTestId(`quest-short-${questId}`)).toHaveCount(shown ? 1 : 0);
+  }
+
+  async verifyNoStartButton(questId: string): Promise<void> {
+    await expect(this.page.getByTestId(`quest-start-${questId}`)).toHaveCount(0);
+  }
+
+  async verifyCardText(questId: string, pattern: RegExp): Promise<void> {
+    await expect(this.card(questId)).toContainText(pattern);
+  }
+
+  async verifyCardTextAbsent(questId: string, pattern: RegExp): Promise<void> {
+    await expect(this.card(questId)).not.toContainText(pattern);
+  }
+
+  async verifyChips(questId: string, chips: string[]): Promise<void> {
+    const row = this.page.getByTestId(`quest-chips-${questId}`);
+    for (const chip of chips) await expect(row).toContainText(chip);
+  }
+
+  async verifyRunCard(): Promise<void> {
+    await expect(this.page.getByTestId('quest-run-card')).toBeVisible();
+  }
+
+  async verifyRunStep(text: RegExp): Promise<void> {
+    await expect(this.page.getByTestId('quest-run-step')).toHaveText(text);
+  }
+
+  async verifyTrail(numbers: number[]): Promise<void> {
+    const expected = numbers.length ? numbers.join(' · ') : '—';
+    await expect(this.page.getByTestId('quest-trail-row')).toContainText(expected);
+  }
+
+  async verifyRunPhase(phase: string): Promise<void> {
+    await expect(this.page.getByTestId('quest-run-card')).toHaveAttribute('data-phase', phase);
+  }
+
+  async returnToCamp(): Promise<void> {
+    await this.page.getByTestId('quest-return-to-camp').click();
+  }
+
+  async giveUp(): Promise<void> {
+    await this.page.getByTestId('quest-give-up').click();
+    await this.page.getByTestId('quest-give-up-confirm').click();
+  }
+
+  async verifyResult(outcome: string): Promise<void> {
+    await expect(this.page.getByTestId('quest-result')).toHaveAttribute('data-outcome', outcome);
+  }
+
+  async dismissResult(): Promise<void> {
+    await this.page.getByTestId('quest-result-dismiss').click();
+  }
+
+  async verifyRunGone(): Promise<void> {
+    await expect(this.page.getByTestId('quest-run-card')).toHaveCount(0);
+  }
 }

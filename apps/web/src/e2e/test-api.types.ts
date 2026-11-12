@@ -63,6 +63,25 @@ export interface TestQuests {
   done: Record<string, number>;
 }
 
+export interface TestQuestField {
+  phase: string;
+  outcome: string | null;
+  position: TestHexCoordinates;
+  path: number[];
+  pathHexes: TestHexCoordinates[];
+  hintHex: TestHexCoordinates | null;
+  chest: TestHexCoordinates | null;
+  stepCost: number;
+  backCost: number;
+  hexes: {
+    hex: TestHexCoordinates;
+    number: number | null;
+    hint: boolean;
+    footprint: boolean;
+    step: { cost: number; back: boolean } | null;
+  }[];
+}
+
 export interface HexoflatTestApi {
   getKnowledge(): {
     current: number;
@@ -166,4 +185,6 @@ export interface HexoflatTestApi {
   getQuests(): TestQuests;
   getOpenQuestBoard(): boolean;
   setQuests(fixture: TestQuestFixture): Promise<void>;
+  getQuestField(): TestQuestField | null;
+  getQuestHexPoint(columnIndex: number, rowIndex: number): { x: number; y: number } | null;
 }

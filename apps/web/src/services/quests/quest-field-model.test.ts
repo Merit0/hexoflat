@@ -81,15 +81,25 @@ describe('quest field model', () => {
     const free = getHexNeighbors(a).find(
       (hex) => ![START, b].some((other) => coordinateKey(other) === coordinateKey(hex)),
     )!;
-    expect(resolveFieldClick(run, free)).toMatchObject({ kind: 'step' });
+    expect(resolveFieldClick({ ...run, chest: null }, free)).toMatchObject({ kind: 'step' });
+    expect(resolveFieldClick(run, free)).toBeNull();
     expect(resolveFieldClick({ ...run, phase: 'collect' }, b)).toBeNull();
+  });
+
+  it('offers no steps while a chest stands on the field', () => {
+    const [, b] = getHexNeighbors(START);
+    const model = buildQuestField(projection({ chest: { hex: b } }));
+    expect(model.hexes.filter((cell) => cell.step && !cell.step.back)).toHaveLength(0);
   });
 
   it('explains a step, a step back and the chest on hover', () => {
     const [a, b] = getHexNeighbors(START);
-    const model = buildQuestField(projection({ chest: { hex: b } }));
+    const model = buildQuestField(projection());
     expect(buildQuestHexTip(model, a)).toEqual({ key: 'quest.tip.step', params: { n: 1 } });
-    expect(buildQuestHexTip(model, b)).toEqual({ key: 'quest.tip.chest', params: {} });
+    expect(buildQuestHexTip(buildQuestField(projection({ chest: { hex: b } })), b)).toEqual({
+      key: 'quest.tip.chest',
+      params: {},
+    });
     expect(buildQuestHexTip(model, { columnIndex: 0, rowIndex: 0 })).toBeNull();
   });
 });

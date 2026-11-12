@@ -63,7 +63,8 @@ export function buildQuestField(run: QuestProjection): QuestFieldModel {
     if (seen.has(key)) return;
     seen.add(key);
     const isBack = key === backKey;
-    const reachable = walking && key !== here && key !== chestKey && (near.has(key) || isBack);
+    const reachable =
+      walking && key !== here && key !== chestKey && (isBack || (!run.chest && near.has(key)));
     hexes.push({
       hex,
       number: run.phase === 'collect' ? null : number,
@@ -96,5 +97,6 @@ export function resolveFieldClick(run: QuestProjection, hex: IHexCoordinates): F
   if (run.chest && key === coordinateKey(run.chest.hex)) return { kind: 'chest' };
   const back = previousHex(run);
   if (back && key === coordinateKey(back)) return { kind: 'back' };
+  if (run.chest) return null;
   return { kind: 'step', hex };
 }
