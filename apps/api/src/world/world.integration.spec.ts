@@ -163,7 +163,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       knowledge: { current: number };
     };
     expect(progress.steps).toBe(1);
-    expect(progress.knowledge.current).toBe(19);
+    expect(progress.knowledge.current).toBe(49);
     expect(progress.presence.coordinates).toEqual(target);
     const snapshot = (await world.snapshot(userId, heroId)) as { heroCoordinates: unknown };
     expect(snapshot.heroCoordinates).toEqual(target);
@@ -379,7 +379,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(travelled.travel?.locationKey).toBe('cave');
     const after = await presenceOf(userId, heroId);
     expect(after.presence).toMatchObject({ locationKey: 'cave' });
-    expect(after.knowledge.current).toBe(18);
+    expect(after.knowledge.current).toBe(48);
     expect(travelled.hero).toMatchObject({ locationKey: 'cave' });
   });
 
@@ -506,6 +506,54 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     await expect(world.ensure(randomUUID(), heroId, 'silesia')).rejects.toMatchObject({
       code: 'FORBIDDEN',
     });
+  });
+
+  it('adds the trader stall and Training Grounds to a camp saved before them, on the same map', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const before = (await world.ensure(userId, heroId, 'camping')) as { mapId: string };
+    const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+    const docKey = `srv-world:${before.mapId}`;
+    const stored = deserializeWorld(
+      JSON.parse((await readServerDocument(kit.db, expeditionId, docKey))!),
+      0,
+    );
+    const facilities: string[] = [HEXOBJECT_KEYS.TRADER_STALL, HEXOBJECT_KEYS.TRAINING_GROUNDS];
+    const old = serializeWorld(stored) as {
+      map: { tiles: { hexobject: { hexobjectKey: string } | null }[] };
+    };
+    for (const tile of old.map.tiles) {
+      if (tile.hexobject && facilities.includes(tile.hexobject.hexobjectKey)) tile.hexobject = null;
+    }
+    await kit.db.transaction((tx) =>
+      writeServerDocument(tx, expeditionId, docKey, JSON.stringify(old)),
+    );
+
+    type Tile = {
+      coordinates: { columnIndex: number; rowIndex: number };
+      hexobject: { hexobjectKey: string } | null;
+    };
+    const where = (tiles: Tile[], key: string) =>
+      tiles.filter((tile) => tile.hexobject?.hexobjectKey === key).map((tile) => tile.coordinates);
+    const served = (await world.ensure(userId, heroId, 'camping')) as {
+      mapId: string;
+      map: { tiles: Tile[] };
+    };
+    expect(served.mapId).toBe(before.mapId);
+    expect(where(served.map.tiles, HEXOBJECT_KEYS.TRADER_STALL)).toEqual([
+      { columnIndex: 10, rowIndex: 9 },
+    ]);
+    expect(where(served.map.tiles, HEXOBJECT_KEYS.TRAINING_GROUNDS)).toEqual([
+      { columnIndex: 10, rowIndex: 5 },
+    ]);
+
+    const entered = await enter(userId, heroId, 'camping');
+    expect(entered.hero!.mapId).toBe(before.mapId);
+    const saved = JSON.parse((await readServerDocument(kit.db, expeditionId, docKey))!) as {
+      map: { tiles: Tile[] };
+    };
+    expect(where(saved.map.tiles, HEXOBJECT_KEYS.TRADER_STALL)).toEqual([
+      { columnIndex: 10, rowIndex: 9 },
+    ]);
   });
 
   it('refuses unknown fields and other accounts', async () => {

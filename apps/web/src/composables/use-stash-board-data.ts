@@ -6,7 +6,7 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { toAggregate } from '@/services/inventory/inventory-aggregate';
 
-function formatKg(value: number): string {
+export function formatKg(value: number): string {
   return String(Number(value.toFixed(1)));
 }
 

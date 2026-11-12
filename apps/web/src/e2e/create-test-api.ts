@@ -27,6 +27,7 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { useBattleStore } from '@/stores/battle-store';
 import { battleTestHooks } from './battle-hooks';
 import { stashTestApi } from './stash-hooks';
+import { shopTestApi } from './shop-hooks';
 import { inventoryTestApi } from './inventory-hooks';
 import type {
   HexoflatTestApi,
@@ -258,12 +259,13 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
 
     ...inventoryTestApi,
     ...stashTestApi,
-    setHeroHealth(current: number) {
+    ...shopTestApi,
+    async setHeroHealth(current: number): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
       if (!Number.isFinite(current) || current < 0) throw new Error('Invalid fixture');
       heroStore.hero.setHealth(current);
       heroStore.hero.adjustHealthOnStatChange();
-      void pushHealthFixture(current);
+      await pushHealthFixture(current);
     },
     placeHexobjectNextToHero: (key: string) => placeHexobjectOnServer(worldStore, key),
     isBattleEngaged(): boolean {

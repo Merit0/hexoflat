@@ -7,3 +7,6 @@ export * from './registry';
 export * from './replace-inventory';
 export * from './execute-progress-command';
 export * from './world-player-commands';
+export * from './server-inventory-context';
+export * from './apply-trade-command';
+export * from './server-trade-context';

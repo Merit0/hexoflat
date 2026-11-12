@@ -15,6 +15,8 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.GRAVE
   | typeof HEXOBJECT_KEYS.CHEST
   | typeof HEXOBJECT_KEYS.STASH_CHEST
+  | typeof HEXOBJECT_KEYS.TRADER_STALL
+  | typeof HEXOBJECT_KEYS.TRAINING_GROUNDS
   | typeof HEXOBJECT_KEYS.STONE_WALL
   | typeof HEXOBJECT_KEYS.RETURN_PORTAL;
 
@@ -220,6 +222,37 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         willCost: 0,
       },
     },
+  },
+
+  [HEXOBJECT_KEYS.TRADER_STALL]: {
+    hexobjectKey: HEXOBJECT_KEYS.TRADER_STALL,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'content.traderStall.title',
+    subtitle: 'content.traderStall.subtitle',
+    description: 'content.traderStall.description',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-constructs/camping/shop-hex.png',
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.OPEN]: {
+        label: 'Open',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
+    },
+  },
+
+  [HEXOBJECT_KEYS.TRAINING_GROUNDS]: {
+    hexobjectKey: HEXOBJECT_KEYS.TRAINING_GROUNDS,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: false,
+    title: 'content.trainingGrounds.title',
+    subtitle: 'content.trainingGrounds.subtitle',
+    description: 'content.trainingGrounds.description',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-constructs/camping/training-grounds-hex.png',
+    construction: { integrity: 1000, isLocked: true },
   },
 
   [HEXOBJECT_KEYS.STONE_WALL]: {

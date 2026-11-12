@@ -6,7 +6,9 @@
     "language": "Language",
     "devAddWill": "Dev: +50 Will",
     "devAddShield": "Dev: +1 shield",
-    "devAddCoins": "Dev: +500 coins"
+    "freeShopRefresh": "Dev: free shop refresh",
+    "devAddCoins": "Dev: +500 coins",
+    "tradeTab": "Enable the Trade tab (experimental)"
   },
   "hexInfo": {
     "tags": {
@@ -716,6 +718,113 @@
     "moreBelow": "{n} more below",
     "nothingToStore": "No resources or consumables in the bag.",
     "lockedChest": "Unlock Chest {prev} first."
+  },
+  "shop": {
+    "title": "Trader's Stall",
+    "close": "Close the stall",
+    "coins": "Coins",
+    "drop": {
+      "buy": "Buy · {price}",
+      "buySplit": "Buy {n} · {price}",
+      "sell": "Sell +{price}",
+      "buyback": "Buy back · {price}",
+      "cantAfford": "Can't afford",
+      "notInterested": "Not interested",
+      "cant": "Can't drop"
+    },
+    "error": {
+      "EMPTY_SOURCE": "There is nothing in that cell.",
+      "PRICE_CHANGED": "The price has changed. Look again.",
+      "NOT_ENOUGH_COINS": "Not enough coins.",
+      "NOT_TRADEABLE": "The trader is not interested in that.",
+      "NOT_AT_TRADER": "Stand next to the stall to trade.",
+      "STACK_FULL": "That stack is already full.",
+      "SPLIT_TARGET_TAKEN": "Split onto an empty cell or the same stack.",
+      "CONTAINER_FULL": "There is no room in the bag.",
+      "OVERWEIGHT": "The bag cannot carry that much weight.",
+      "WILL_REJECTED": "Not enough Will.",
+      "BATTLE_OPEN": "No trading during a battle.",
+      "REJECTED": "The deal did not go through.",
+      "NEEDS_DEAL": "Enter your price first.",
+      "NOT_DISCOUNTED": "That item has no discount.",
+      "TRADE_SLOTS_FULL": "All trade slots are taken.",
+      "BAD_PRICE": "Price must be 1 to 999."
+    },
+    "tab": {
+      "goods": "Goods",
+      "buyback": "Buyback",
+      "trade": "Trade",
+      "tradeLocked": "Trade is not available yet"
+    },
+    "refresh": {
+      "aria": "Refresh goods"
+    },
+    "merchant": {
+      "paysRate": "Pays {percent}% of price"
+    },
+    "card": {
+      "empty": {
+        "title": "Pick an item",
+        "hint": "Tap goods to buy, tap bag items to trade."
+      },
+      "buy": "Buy",
+      "trade": "Trade",
+      "buyBack": "Buy back · {price}",
+      "max": "Max",
+      "all": "All",
+      "dec": "Less",
+      "inc": "More",
+      "inBag": "In bag: {n}",
+      "notInBag": "Not in bag",
+      "note": {
+        "inStock": "{n} in stock.",
+        "lastOne": "Last one in stock.",
+        "samePrice": "Back for the same price Ilva paid you."
+      },
+      "priceLabel": "Price",
+      "yourPrice": "Your price",
+      "pricePlaceholder": "?",
+      "list": "List",
+      "takeBack": "Take back",
+      "setPrice": "Save"
+    },
+    "status": {
+      "soldOut": "Sold",
+      "wasted": "Wasted"
+    },
+    "block": {
+      "OVERWEIGHT": "Too heavy for your bag.",
+      "BAG_FULL": "No room in your bag.",
+      "NOT_SELLABLE": "Ilva will not take this.",
+      "TRADE_SLOTS_FULL": "All trade slots are taken."
+    },
+    "buyback": {
+      "emptyTitle": "Nothing to buy back",
+      "emptyHint": "Items you sell wait here at the price Ilva paid, until she gets new goods."
+    },
+    "toast": {
+      "bought": "Bought {name} · −{price} coins",
+      "sold": "Sold {name} · +{price} coins",
+      "boughtBack": "Bought back {name} · −{price} coins",
+      "undo": "Undo",
+      "dealExact": "Exact! {name} · −{price} coins, you saved {saved}",
+      "dealWasted": "Not quite. {name} is put away: wasted.",
+      "dealShort": "Right price, but you are short of coins.",
+      "listed": "Listed {name} for {price} coins",
+      "listedMany": "Listed {name} ×{n} at {price} each",
+      "tookBack": "Took back {name}",
+      "repriced": "{name} now costs {price} coins"
+    },
+    "price": {
+      "buy": "Price",
+      "sell": "Sells for",
+      "buyback": "Buy back for"
+    },
+    "description": "Ilva buys and sells. She pays {percent}% of an item's price; sold items wait in Buyback until new goods. Refreshing costs Will and doubles each time.",
+    "help": "About the stall",
+    "badge": {
+      "percent": "−{p}%"
+    }
   },
   "player": {
     "sync": {

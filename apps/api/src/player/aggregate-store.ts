@@ -1,10 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import {
   AGGREGATES,
   AGGREGATE_KINDS,
   CONTENT_VERSION,
   upcastAggregate,
+  type AggregateServerState,
   type AggregateStates,
   type TAggregateKind,
 } from '@hexoflat/engine';
@@ -20,9 +22,14 @@ export interface LoadedAggregate<K extends TAggregateKind = TAggregateKind> {
   kind: K;
   revision: number;
   state: AggregateStates[K];
+  serverState: AggregateServerState;
 }
 
 export type LoadedAggregates = { [K in TAggregateKind]?: LoadedAggregate<K> };
+
+function newRngSeed(): string {
+  return randomBytes(16).toString('hex');
+}
 
 export async function createInitialAggregates(exec: Executor, heroId: string): Promise<void> {
   const rows = AGGREGATE_KINDS.map((kind) => ({
@@ -32,9 +39,37 @@ export async function createInitialAggregates(exec: Executor, heroId: string): P
     schemaVersion: AGGREGATES[kind].schemaVersion,
     contentVersion: String(CONTENT_VERSION),
     state: AGGREGATES[kind].createInitial({ heroId }),
-    serverState: kind === 'progress' ? { rngSeed: randomBytes(16).toString('hex') } : {},
+    serverState: kind === 'progress' ? { rngSeed: newRngSeed() } : {},
   }));
   await exec.insert(heroAggregates).values(rows).onConflictDoNothing();
+}
+
+async function ensureRngSeed(
+  exec: Executor,
+  heroId: string,
+  kinds: readonly TAggregateKind[],
+): Promise<void> {
+  if (!kinds.includes('progress')) return;
+  const seed = JSON.stringify({ rngSeed: newRngSeed() });
+  await exec
+    .update(heroAggregates)
+    .set({
+      serverState: sql`coalesce(${heroAggregates.serverState}, '{}'::jsonb) || ${seed}::jsonb`,
+    })
+    .where(
+      and(
+        eq(heroAggregates.heroId, heroId),
+        eq(heroAggregates.kind, 'progress'),
+        sql`coalesce(${heroAggregates.serverState}->>'rngSeed', '') = ''`,
+      ),
+    );
+}
+
+const serverStateSchema = z.object({ rngSeed: z.string().min(1).optional() });
+
+function serverStateOf(raw: unknown): AggregateServerState {
+  const parsed = serverStateSchema.safeParse(raw ?? {});
+  return parsed.success && parsed.data.rngSeed ? { rngSeed: parsed.data.rngSeed } : {};
 }
 
 function loadOne<K extends TAggregateKind>(
@@ -43,7 +78,7 @@ function loadOne<K extends TAggregateKind>(
 ): LoadedAggregate<K> {
   const state = upcastAggregate(kind, row.schemaVersion, row.state, { heroId: row.heroId });
   if (kind === 'inventory') (state as AggregateStates['inventory']).revision = row.revision;
-  return { kind, revision: row.revision, state };
+  return { kind, revision: row.revision, state, serverState: serverStateOf(row.serverState) };
 }
 
 function toLoaded(rows: readonly (typeof heroAggregates.$inferSelect)[]): LoadedAggregates {
@@ -65,6 +100,7 @@ export async function loadAggregatesForUpdate(
   heroId: string,
   kinds: readonly TAggregateKind[],
 ): Promise<LoadedAggregates> {
+  await ensureRngSeed(tx, heroId, kinds);
   const rows = await tx
     .select()
     .from(heroAggregates)
@@ -79,6 +115,7 @@ export async function loadAggregates(
   heroId: string,
   kinds: readonly TAggregateKind[] = AGGREGATE_KINDS,
 ): Promise<LoadedAggregates> {
+  await ensureRngSeed(exec, heroId, kinds);
   const rows = await exec
     .select()
     .from(heroAggregates)
@@ -130,8 +167,13 @@ export async function saveAggregate<K extends TAggregateKind>(
 export function projectAggregate<K extends TAggregateKind>(
   loaded: LoadedAggregate<K>,
 ): { revision: number; state: unknown } {
-  const definition: { project(state: AggregateStates[K]): unknown } = AGGREGATES[kindOf(loaded)];
-  return { revision: loaded.revision, state: definition.project(loaded.state) };
+  const definition: {
+    project(state: AggregateStates[K], server: AggregateServerState): unknown;
+  } = AGGREGATES[kindOf(loaded)];
+  return {
+    revision: loaded.revision,
+    state: definition.project(loaded.state, loaded.serverState),
+  };
 }
 
 function kindOf<K extends TAggregateKind>(loaded: LoadedAggregate<K>): K {

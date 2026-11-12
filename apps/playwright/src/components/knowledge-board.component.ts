@@ -17,10 +17,11 @@ export class KnowledgeBoardComponent extends BaseComponent {
   private async capacity(): Promise<number> {
     return (await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledgeRules())).capacity;
   }
-  async verifyStartingWill(): Promise<void> {
+  async verifyStartsFull(): Promise<void> {
     const rules = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledgeRules());
+    expect(rules.startingWill).toBe(rules.capacity);
     await this.verifyWill(rules.startingWill);
-    await expect(this.page.getByTestId('knowledge-start')).toBeEnabled();
+    await this.verifyFull();
   }
   async verifyFull(): Promise<void> {
     await expect(this.page.getByTestId('knowledge-start')).toBeDisabled();

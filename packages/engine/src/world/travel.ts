@@ -9,7 +9,7 @@ import type { ProgressState } from '../aggregates/progress-state';
 import { revealAroundHero, revealEntryTile } from '../map/fog-service';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
-import type { LocationKey } from '../registry/world-map-registry';
+import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
 import { deriveStream } from '../utils/random-seeded';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { findArrivalHex } from './hero-placement';
@@ -135,6 +135,7 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
   revealAroundHero(destination.map, destination.heroCoordinates);
   revealEntryTile(destination.map);
 
+  if (MapRegistry.get(to).boardKind === 'DUNGEON') progress.trips += 1;
   progress.presence = {
     locationKey: to,
     mapId: destination.mapId,

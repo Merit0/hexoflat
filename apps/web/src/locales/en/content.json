@@ -20,6 +20,22 @@
       "subtitle": "Source of Will",
       "description": "Focus your mind on the numbers and earn the Will to travel the world."
     },
+    "traderStall": {
+      "title": "Trader's Stall",
+      "subtitle": "Trade",
+      "description": "Ilva keeps her wares here. She sells what the road needs and buys almost anything you carry."
+    },
+    "trainingGrounds": {
+      "title": "Training Grounds",
+      "subtitle": "Not open yet",
+      "description": "A ring of posts and straw dummies. The gate is shut for now."
+    },
+    "traders": {
+      "ilva": {
+        "title": "Ilva the Pedlar",
+        "line": "Buys almost anything."
+      }
+    },
     "battle": {
       "hero": {
         "title": "Hero",

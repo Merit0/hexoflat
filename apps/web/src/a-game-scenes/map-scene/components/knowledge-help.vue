@@ -3,14 +3,14 @@
     <button
       type="button"
       class="help-btn"
-      :aria-label="t('knowledge.help')"
-      aria-describedby="knowledge-help-tip"
-      data-testid="knowledge-help"
+      :aria-label="label ?? t('knowledge.help')"
+      :aria-describedby="`${testid}-tip`"
+      :data-testid="testid"
     >
       ?
     </button>
-    <div id="knowledge-help-tip" class="help-tip" role="tooltip" data-testid="knowledge-help-tip">
-      <b>{{ t('knowledge.title') }}</b>
+    <div :id="`${testid}-tip`" class="help-tip" role="tooltip" :data-testid="`${testid}-tip`">
+      <b>{{ title ?? t('knowledge.title') }}</b>
       <span>{{ text }}</span>
     </div>
   </div>
@@ -19,7 +19,15 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 
-defineProps<{ text: string }>();
+withDefaults(
+  defineProps<{
+    text: string;
+    title?: string;
+    label?: string;
+    testid?: string;
+  }>(),
+  { title: undefined, label: undefined, testid: 'knowledge-help' },
+);
 const { t } = useI18n();
 </script>
 

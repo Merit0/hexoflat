@@ -5,6 +5,8 @@ import {
   AGGREGATES,
   AGGREGATE_KINDS,
   PLAYER_COMMAND_AGGREGATES,
+  applyTraderFixture,
+  traderFixtureSchema,
   PLAYER_COMMAND_REVISION,
   PLAYER_COMMAND_SCHEMAS,
   consumeItemServerSide,
@@ -13,6 +15,8 @@ import {
   grantItemServerSide,
   isPlayerCommandType,
   replaceInventory,
+  serverInventoryContext,
+  serverTradeContext,
   type DomainEvent,
   type PlayerAggregates,
   type PlayerCommandOutcome,
@@ -58,7 +62,7 @@ interface LockedRun {
   aggregateKind: TAggregateKind;
   expectedRevision: number | null;
   kinds: readonly TAggregateKind[];
-  run: (aggregates: PlayerAggregates) => PlayerCommandOutcome;
+  run: (aggregates: PlayerAggregates, loaded: LoadedAggregates) => PlayerCommandOutcome;
   blockedBy?: (tx: Tx, loaded: LoadedAggregates) => Promise<string | null>;
 }
 
@@ -77,6 +81,12 @@ function projectAll(loaded: LoadedAggregates): ProjectedAggregates {
     if (entry) Object.assign(projected, { [kind]: projectAggregate(entry) });
   }
   return projected;
+}
+
+function rngSeedOf(loaded: LoadedAggregates): string {
+  const seed = loaded.progress?.serverState.rngSeed;
+  if (!seed) throw new Error('Progress has no rngSeed');
+  return seed;
 }
 
 function asAggregates(heroId: string, loaded: LoadedAggregates): PlayerAggregates {
@@ -127,7 +137,10 @@ export class PlayerCommandService {
     }
 
     const devGrantAllowed = e2eFixturesEnabled();
-    const guarded = kinds.includes('inventory') || command.type === 'DEV_SET_HEALTH';
+    const guarded =
+      kinds.includes('inventory') ||
+      command.type === 'DEV_SET_HEALTH' ||
+      command.type === 'SHOP_REFRESH';
     const expeditionId = guarded ? await ensureExpedition(this.db, userId, heroId) : null;
     return this.db.transaction((tx) =>
       this.runLocked(tx, {
@@ -142,10 +155,13 @@ export class PlayerCommandService {
         blockedBy: expeditionId
           ? (locked, loaded) => battleOpen(locked, expeditionId, loaded)
           : undefined,
-        run: (aggregates) =>
+        run: (aggregates, loaded) =>
           executePlayerCommand(aggregates, command, {
             devGrantAllowed,
-            inventory: { stashOpen: true, battleOpen: false },
+            inventory: serverInventoryContext(aggregates.progress.presence),
+            ...(command.type.startsWith('SHOP_')
+              ? { trade: serverTradeContext(aggregates.progress.presence, rngSeedOf(loaded)) }
+              : {}),
           }),
       }),
     );
@@ -204,6 +220,41 @@ export class PlayerCommandService {
       }
     });
     return this.snapshot(userId, heroId);
+  }
+
+  async traderFixture(
+    userId: string,
+    heroId: string,
+    raw: unknown,
+  ): Promise<{ aggregates: ProjectedAggregates }> {
+    if (!e2eFixturesEnabled()) throw new PlayerCommandError('FORBIDDEN');
+    const fixture = traderFixtureSchema.safeParse(raw);
+    if (!fixture.success) throw new PlayerCommandError('INVALID_COMMAND');
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    return this.db.transaction(async (tx) => {
+      await createInitialAggregates(tx, heroId);
+      const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      const progress = loaded.progress;
+      if (!progress) throw new Error(`Hero ${heroId} has no progress aggregate`);
+      const next = applyTraderFixture(progress.state, rngSeedOf(loaded), fixture.data);
+      if (!next) throw new PlayerCommandError('INVALID_COMMAND');
+      const revision = await saveAggregate(tx, heroId, 'progress', progress.revision, next);
+      await tx.insert(commandJournal).values({
+        commandId: randomUUID(),
+        userId,
+        heroId,
+        aggregateKind: 'progress',
+        commandType: 'DEV_TRADER_FIXTURE',
+        payload: fixture.data,
+        expectedRevision: null,
+        result: 'applied',
+        reason: null,
+        events: [],
+        newRevision: revision,
+      });
+      return { aggregates: { progress: projectAggregate({ ...progress, revision, state: next }) } };
+    });
   }
 
   async consumeItem(
@@ -323,7 +374,7 @@ export class PlayerCommandService {
       };
     }
 
-    const outcome = input.run(asAggregates(heroId, loaded));
+    const outcome = input.run(asAggregates(heroId, loaded), loaded);
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
       return {
@@ -350,7 +401,7 @@ export class PlayerCommandService {
         outcome.changed[kind] as never,
       );
       Object.assign(aggregates, {
-        [kind]: projectAggregate({ kind, revision, state: outcome.changed[kind] as never }),
+        [kind]: projectAggregate({ ...before, revision, state: outcome.changed[kind] as never }),
       });
     }
 

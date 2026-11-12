@@ -21,6 +21,19 @@ function movementsOf(event: DomainEvent): Movement[] {
     const deltas = (event.payload as { deltas: { key: string; delta: number }[] }).deltas;
     return deltas.map(({ key, delta }) => ({ itemKey: key, delta, reason: 'dev_set' }));
   }
+  if (event.type === 'ITEM_BOUGHT' || event.type === 'ITEM_SOLD') {
+    const { key, amount, price } = event.payload as { key: string; amount: number; price: number };
+    const sign = event.type === 'ITEM_BOUGHT' ? 1 : -1;
+    return [
+      { itemKey: HEXOBJECT_KEYS.COINS, delta: -sign * price, reason: 'shop' },
+      { itemKey: key, delta: sign * amount, reason: 'shop' },
+    ];
+  }
+  if (event.type === 'ITEM_LISTED' || event.type === 'ITEM_UNLISTED') {
+    const { key, amount } = event.payload as { key: string; amount: number };
+    const sign = event.type === 'ITEM_LISTED' ? -1 : 1;
+    return [{ itemKey: key, delta: sign * amount, reason: 'listing' }];
+  }
   const single = movementOf(event);
   return single ? [single] : [];
 }

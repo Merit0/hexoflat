@@ -15,7 +15,18 @@ const SHOW_DELAY_MS = 120;
 const SIDE_GAP_PX = 16;
 const EDGE_MARGIN_PX = 24;
 
-export interface TooltipTarget {
+export interface TooltipPrice {
+  kind: 'buy' | 'sell' | 'buyback';
+  coins: number;
+  affordable: boolean;
+}
+
+export interface TooltipExtra {
+  item?: InventoryItem;
+  price?: TooltipPrice | null;
+}
+
+export interface TooltipTarget extends TooltipExtra {
   itemId: string;
   rect: DOMRect;
 }
@@ -66,13 +77,13 @@ function isTooltipSuppressed(): boolean {
   );
 }
 
-export function showItemTooltip(itemId: string, element: HTMLElement) {
+export function showItemTooltip(itemId: string, element: HTMLElement, extra: TooltipExtra = {}) {
   clearShowTimer();
   if (isTooltipSuppressed()) return;
   showTimer = window.setTimeout(() => {
     showTimer = null;
     if (isTooltipSuppressed()) return;
-    target.value = { itemId, rect: element.getBoundingClientRect() };
+    target.value = { ...extra, itemId, rect: element.getBoundingClientRect() };
   }, SHOW_DELAY_MS);
 }
 
@@ -97,6 +108,7 @@ export function useItemTooltip() {
     if (!target.value) return null;
     const id = target.value.itemId;
     const item =
+      target.value.item ??
       inventory.items.find((entry) => entry.id === id) ??
       stash.cells.find((cell) => cell?.id === id);
     return item ? resolveInventoryItemTooltip(inventory, item, heroStore.knowledge?.skills) : null;
@@ -109,5 +121,7 @@ export function useItemTooltip() {
     },
   );
 
-  return { target, view };
+  const price = computed(() => (view.value ? (target.value?.price ?? null) : null));
+
+  return { target, view, price };
 }

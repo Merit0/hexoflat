@@ -40,6 +40,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Health Potion',
     subtitle: 'Restores health',
     description: 'Bottle of Health potion!',
+    coinPrice: 20,
     collision: EHexCollision.SOLID,
     spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.HEALTH_BOTTLE}-token-image.png`,
     loot: {
@@ -63,6 +64,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Energy Potion',
     subtitle: 'Restores energy',
     description: 'Bottle of Energy potion!',
+    coinPrice: 20,
     collision: EHexCollision.SOLID,
     spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.ENERGY_BOTTLE}-token-image.png`,
     loot: {
@@ -85,6 +87,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Mana Potion',
     subtitle: 'Restores mana',
     description: 'Bottle of Mana potion!',
+    coinPrice: 20,
     collision: EHexCollision.SOLID,
     spritePath: `/hex-assets/hex-loot/${HEXOBJECT_KEYS.MANA_BOTTLE}-token-image.png`,
     loot: {
@@ -108,6 +111,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Return Scroll',
     subtitle: 'Opens a portal home',
     description: 'A one-use scroll. Use it next to you to open a portal to the camp.',
+    coinPrice: 60,
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/teleport-scroll-token.png',
     actions: {
@@ -137,6 +141,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Bone Charm',
     subtitle: 'Carved from a fallen guard',
     description: 'A small charm of bone, still cold from the crypt.',
+    coinPrice: 40,
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/bone-charm-token.svg',
     loot: {
@@ -160,6 +165,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     title: 'Crown Shard',
     subtitle: 'A piece of a broken crown',
     description: 'A shard of the crown worn by the king of the crypt.',
+    coinPrice: 80,
     collision: EHexCollision.SOLID,
     spritePath: '/enemy-assets/boss-hex-images/emitter-token-image.png',
     loot: {

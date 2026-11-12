@@ -88,7 +88,7 @@ describe('ARRIVE and steps', () => {
     const state = run(fresh(), arrive('silesia', 5, 5)).aggregates;
     const { outcome, aggregates } = run(state, step(0, 5, 6));
     expect(outcome.ok).toBe(true);
-    expect(aggregates.progress.knowledge.current).toBe(19);
+    expect(aggregates.progress.knowledge.current).toBe(49);
     expect(aggregates.progress.presence?.coordinates).toEqual({ columnIndex: 5, rowIndex: 6 });
     expect(aggregates.progress.steps).toBe(1);
     expect(aggregates.progress.knowledge.revision).toBe(1);
@@ -101,7 +101,7 @@ describe('ARRIVE and steps', () => {
   it('does not charge in the camp, but still moves the hero', () => {
     const state = run(fresh(), arrive('camping', 3, 3)).aggregates;
     const { aggregates } = run(state, step(0, 3, 4));
-    expect(aggregates.progress.knowledge.current).toBe(20);
+    expect(aggregates.progress.knowledge.current).toBe(50);
     expect(aggregates.progress.presence?.coordinates).toEqual({ columnIndex: 3, rowIndex: 4 });
   });
 
@@ -147,7 +147,7 @@ describe('ARRIVE and steps', () => {
       expect(result.outcome.ok).toBe(true);
       state = result.aggregates;
     });
-    expect(state.progress.knowledge.current).toBe(16);
+    expect(state.progress.knowledge.current).toBe(46);
     expect(state.progress.steps).toBe(4);
   });
 });
@@ -286,7 +286,7 @@ describe('SPEND_WILL: the price comes from content and the location, never from 
       },
     }) as PlayerCommand;
     const { aggregates } = run(angel, lying);
-    expect(aggregates.progress.knowledge.current).toBe(10);
+    expect(aggregates.progress.knowledge.current).toBe(40);
     const camp = run(fresh(), arrive('camping', 4, 5)).aggregates;
     camp.progress.knowledge.skills = { a_crest: 1, a_teleport: 1 };
     expect(run(camp, spendPortal(0)).outcome).toMatchObject({ ok: false, code: 'IN_CAMPING' });

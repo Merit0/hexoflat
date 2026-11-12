@@ -7,7 +7,7 @@ import {
 import { serializeState, deserializeState, SnapshotChecksumError } from '../commands/snapshot';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
 import { createKnowledgeState } from './state';
-import { KNOWLEDGE_RULES, effectiveWillCapacity, travelStepBudget } from './math';
+import { KNOWLEDGE_RULES, effectiveWillCapacity, travelStepBudget, willCapacityOf } from './math';
 
 function stateFixture(): HexEngineState {
   const map = new HexMapBuilder().name('world').width(3).height(3).build();
@@ -66,6 +66,19 @@ describe('knowledge engine integration', () => {
     expect(deserializeState(snapshot, 0).knowledge).toEqual(state.knowledge);
     snapshot.knowledge = { ...snapshot.knowledge!, current: 10 };
     expect(() => deserializeState(snapshot, 0)).toThrow(SnapshotChecksumError);
+  });
+  it('starts every hero full at the base capacity of 50', () => {
+    expect(KNOWLEDGE_RULES.startingWill).toBeLessThanOrEqual(KNOWLEDGE_RULES.capacity);
+    const knowledge = createKnowledgeState('hero');
+    expect({ current: knowledge.current, capacity: knowledge.capacity }).toEqual({
+      current: 50,
+      capacity: 50,
+    });
+  });
+  it('computes capacity as the base plus modifiers in one place', () => {
+    expect(willCapacityOf()).toBe(KNOWLEDGE_RULES.capacity);
+    expect(willCapacityOf([{ source: 'future-item', additionalCapacity: 10 }])).toBe(60);
+    expect(() => willCapacityOf([{ source: 'bad', additionalCapacity: -1 }])).toThrow();
   });
   it('uses capacity and actual Will for travel', () => {
     expect(effectiveWillCapacity(50, [{ source: 'future-item', additionalCapacity: 10 }])).toBe(60);

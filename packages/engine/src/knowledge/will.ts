@@ -6,7 +6,8 @@ import type { KnowledgeState } from './state';
 
 export type WillSource =
   { kind: 'hall'; ref: string } | { kind: 'item'; ref: string } | { kind: 'dev'; ref: string };
-export type WillSpendReason = 'step' | 'action' | 'entry' | 'combat-boost' | 'skill';
+export type WillSpendReason =
+  'step' | 'action' | 'entry' | 'combat-boost' | 'skill' | 'trader-refresh';
 export type WillRejectReason = 'INSUFFICIENT_WILL' | 'NO_WILL_STATE';
 
 export function grantWill(

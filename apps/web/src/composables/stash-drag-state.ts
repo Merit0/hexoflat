@@ -55,3 +55,26 @@ export function resetStashDrag(): void {
 export function locationKey(at: TItemLocation): string {
   return at.container === 'equip' ? `equip:${at.slot}` : `${at.container}:${at.index}`;
 }
+
+export interface BoardCellState {
+  lifted: boolean;
+  next: boolean;
+  valid: boolean;
+  invalid: boolean;
+}
+
+export function stashCellState(at: TItemLocation): BoardCellState {
+  const key = locationKey(at);
+  const isTarget =
+    stashDrag.active &&
+    stashDrag.target?.kind === 'cell' &&
+    locationKey(stashDrag.target.at) === key;
+  const lifted = stashDrag.active && !!stashDrag.from && locationKey(stashDrag.from) === key;
+  const next = stashDrag.active && !!stashDrag.nextHint && locationKey(stashDrag.nextHint) === key;
+  return {
+    lifted,
+    next: next && !isTarget,
+    valid: isTarget && !!stashDrag.preview?.ok && stashDrag.preview.kind !== 'noop',
+    invalid: isTarget && stashDrag.preview?.ok === false,
+  };
+}

@@ -168,7 +168,12 @@ export function applyInventoryCommand(
   if (context.battleOpen && touchesHands(command)) {
     return { inventory: state, events: [rejected(heroId, command.type, 'HANDS_LOCKED')] };
   }
-  if (command.type === 'UNLOCK_STASH_CHEST') return applyUnlock(state);
+  if (command.type === 'UNLOCK_STASH_CHEST') {
+    if (!context.stashOpen) {
+      return { inventory: state, events: [rejected(heroId, command.type, 'STASH_LOCKED')] };
+    }
+    return applyUnlock(state);
+  }
 
   const seq = { next: state.idSeq };
   const result = plan(command, state, toAggregate(state), context, seq);

@@ -38,6 +38,26 @@
         </select>
       </label>
 
+      <label class="setting-row">
+        <input
+          data-testid="settings-trade-tab-checkbox"
+          :checked="uiSettings.tradeTabEnabled"
+          type="checkbox"
+          @change="uiSettings.setTradeTabEnabled(($event.target as HTMLInputElement).checked)"
+        />
+        <span>{{ t('settings.tradeTab') }}</span>
+      </label>
+
+      <label v-if="isDev" class="setting-row">
+        <input
+          data-testid="settings-free-shop-refresh-checkbox"
+          :checked="uiSettings.freeShopRefresh"
+          type="checkbox"
+          @change="uiSettings.setFreeShopRefresh(($event.target as HTMLInputElement).checked)"
+        />
+        <span>{{ t('settings.freeShopRefresh') }}</span>
+      </label>
+
       <button
         v-if="isDev"
         class="dev-btn"

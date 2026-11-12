@@ -66,7 +66,7 @@ describe('a portal on the server', () => {
       originMapId: 'silesia-1',
     });
     expect(countItem(toAggregate(opened.inventory), HEXOBJECT_KEYS.RETURN_SCROLL)).toBe(1);
-    expect(opened.progress.knowledge.current).toBe(15);
+    expect(opened.progress.knowledge.current).toBe(45);
     expect(opened.tileDiffs.length).toBeGreaterThan(0);
   });
 

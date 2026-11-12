@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
+import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
+import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import {
@@ -11,6 +13,13 @@ import {
   sortStash,
   storeResources,
 } from './stash-transfer';
+
+const [CHEST] = campObjectSpots(K.STASH_CHEST);
+const AT_CHEST = { locationKey: 'camping', coordinates: getHexNeighbors(CHEST)[0] };
+const FAR_FROM_CHEST = {
+  locationKey: 'camping',
+  coordinates: { columnIndex: CHEST.columnIndex + 2, rowIndex: CHEST.rowIndex },
+};
 
 function setup() {
   setActivePinia(createPinia());
@@ -131,7 +140,7 @@ describe('stash transfers on the real stores', () => {
     stash.open();
     const inventory = holdCoins(140);
 
-    const unlocked = unlockNextChest();
+    const unlocked = unlockNextChest(AT_CHEST);
 
     expect(unlocked.ok && unlocked.price).toBe(100);
     expect(stash.chests).toBe(2);
@@ -145,7 +154,7 @@ describe('stash transfers on the real stores', () => {
     stash.setChests(0);
     holdCoins(5000);
 
-    expect(unlockNextChest()).toEqual({
+    expect(unlockNextChest(AT_CHEST)).toEqual({
       ok: false,
       reason: 'CAMP_CHEST_NOT_CLAIMED',
       price: 0,
@@ -156,7 +165,7 @@ describe('stash transfers on the real stores', () => {
   it('gives the bare hand back when the stack is exactly the price', () => {
     setup();
     const inventory = holdCoins(100);
-    expect(unlockNextChest().ok).toBe(true);
+    expect(unlockNextChest(AT_CHEST).ok).toBe(true);
     expect(inventory.equippedItems.weapon?.key).toBe(K.HAND);
     expect(inventory.countItem(K.COINS)).toBe(0);
   });
@@ -164,7 +173,11 @@ describe('stash transfers on the real stores', () => {
   it('refuses 90 coins, reports the price and changes nothing', () => {
     const { stash } = setup();
     const inventory = holdCoins(90);
-    expect(unlockNextChest()).toEqual({ ok: false, reason: 'NOT_ENOUGH_COINS', price: 100 });
+    expect(unlockNextChest(AT_CHEST)).toEqual({
+      ok: false,
+      reason: 'NOT_ENOUGH_COINS',
+      price: 100,
+    });
     expect(stash.chests).toBe(1);
     expect(inventory.equippedItems.weapon?.amount).toBe(90);
   });
@@ -172,7 +185,11 @@ describe('stash transfers on the real stores', () => {
   it('does not count coins that stay in the bag', () => {
     const { inventory, stash } = setup();
     inventory.putToInventory(K.COINS, 5000);
-    expect(unlockNextChest()).toEqual({ ok: false, reason: 'NO_COINS_IN_HAND', price: 100 });
+    expect(unlockNextChest(AT_CHEST)).toEqual({
+      ok: false,
+      reason: 'NO_COINS_IN_HAND',
+      price: 100,
+    });
     expect(stash.chests).toBe(1);
   });
 
@@ -180,7 +197,7 @@ describe('stash transfers on the real stores', () => {
     const { stash } = setup();
     stash.setChests(2);
     holdCoins(1200, 'shield');
-    const unlocked = unlockNextChest();
+    const unlocked = unlockNextChest(AT_CHEST);
     expect(unlocked.ok && unlocked.price).toBe(1000);
     expect(stash.chests).toBe(3);
     expect(stash.activeChest).toBe(2);
@@ -191,7 +208,22 @@ describe('stash transfers on the real stores', () => {
     const { stash } = setup();
     stash.close();
     holdCoins(100);
-    expect(unlockNextChest().ok).toBe(true);
+    expect(unlockNextChest(AT_CHEST).ok).toBe(true);
+  });
+
+  it('refuses away from the chest with STASH_LOCKED and changes nothing', () => {
+    const { stash } = setup();
+    stash.open();
+    const inventory = holdCoins(140);
+
+    expect(unlockNextChest(FAR_FROM_CHEST)).toEqual({
+      ok: false,
+      reason: 'STASH_LOCKED',
+      price: 100,
+    });
+    expect(unlockNextChest(null)).toMatchObject({ ok: false, reason: 'STASH_LOCKED' });
+    expect(stash.chests).toBe(1);
+    expect(inventory.equippedItems.weapon?.amount).toBe(140);
   });
 
   it('puts an item into the chest on view first', () => {

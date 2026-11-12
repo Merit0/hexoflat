@@ -255,6 +255,38 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async stepAwayFrom(target: TestHexCoordinates): Promise<TestHexCoordinates> {
+    const from = await this.requireHeroCoordinates();
+    const fromKey = coordinateKey(from);
+    const candidates = await this.page.evaluate(
+      ({ from, target }) => {
+        const api = window.__HEXOFLAT_TEST__!;
+        return api
+          .getNeighbors(from)
+          .filter(
+            (candidate) =>
+              api.getTileHexobjectKey(candidate) === null &&
+              !api.isTileImpassableTerrain(candidate),
+          )
+          .map((candidate) => ({ candidate, distance: api.getDistance(candidate, target) }))
+          .sort((a, b) => b.distance - a.distance)
+          .map((entry) => entry.candidate);
+      },
+      { from, target },
+    );
+    for (const candidate of candidates) {
+      await this.clickTile(candidate);
+      try {
+        return await this.waitForHeroCoordinates(
+          (coordinates) => coordinateKey(coordinates) !== fromKey,
+        );
+      } catch {}
+    }
+    throw new Error(
+      `Hero at (${from.columnIndex}, ${from.rowIndex}) found no free hex to step to.`,
+    );
+  }
+
   async hoverNeighborWithKey(hexobjectKey: string): Promise<void> {
     const from = await this.requireHeroCoordinates();
     for (const candidate of await this.getNeighbors(from)) {

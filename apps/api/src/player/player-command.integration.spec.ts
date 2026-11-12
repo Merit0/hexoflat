@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 import { CAMP_CHEST_ITEMS } from '@hexoflat/engine/inventory/stash-constants';
+import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
+import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import type { Db } from '../db/db.module';
@@ -36,6 +38,17 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
   };
   const devGrant = (heroId: string, revision: number, amount: number, commandId?: string) =>
     envelope(heroId, 'DEV_GRANT_ITEM', { key: COINS, amount }, revision, { commandId });
+  const arrive = (heroId: string, revision: number, locationKey: string, c: number, r: number) => {
+    const e = envelope(
+      heroId,
+      'ARRIVE',
+      { locationKey, mapId: randomUUID(), coordinates: { columnIndex: c, rowIndex: r } },
+      revision,
+      { aggregate: 'progress' },
+    );
+    delete (e.command.payload as { revision?: number }).revision;
+    return e;
+  };
 
   it('creates a hero with every aggregate empty and hides the server secrets', async () => {
     const { userId, heroId } = await kit.newPlayer();
@@ -176,6 +189,12 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
 
   it('keeps the ledger equal to the balance across grants, a split move and a chest purchase', async () => {
     const { userId, heroId } = await kit.newPlayer();
+    const [chest] = campObjectSpots(HEXOBJECT_KEYS.STASH_CHEST);
+    const beside = getHexNeighbors(chest)[0];
+    await kit.service.execute(
+      userId,
+      arrive(heroId, 0, 'camping', beside.columnIndex, beside.rowIndex),
+    );
     await kit.service.execute(userId, envelope(heroId, 'CLAIM_CAMP_CHEST', {}, 0));
     await kit.service.execute(userId, devGrant(heroId, 1, 150));
     const inventory = await inventoryOf(heroId);
@@ -242,6 +261,11 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
 
   it('refuses buying the first chest before the camp chest is claimed', async () => {
     const { userId, heroId } = await kit.newPlayer();
+    const beside = getHexNeighbors(campObjectSpots(HEXOBJECT_KEYS.STASH_CHEST)[0])[0];
+    await kit.service.execute(
+      userId,
+      arrive(heroId, 0, 'camping', beside.columnIndex, beside.rowIndex),
+    );
     const result = await kit.service.execute(userId, envelope(heroId, 'UNLOCK_STASH_CHEST', {}, 0));
     expect(result).toMatchObject({ result: 'rejected', code: 'CAMP_CHEST_NOT_CLAIMED' });
   });
@@ -446,17 +470,6 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
   const knowledgeOf = (state: unknown) =>
     (state as { knowledge: { current: number; revision: number } }).knowledge;
-  const arrive = (heroId: string, revision: number, locationKey: string, c: number, r: number) => {
-    const e = envelope(
-      heroId,
-      'ARRIVE',
-      { locationKey, mapId: `${locationKey}-1`, coordinates: { columnIndex: c, rowIndex: r } },
-      revision,
-      { aggregate: 'progress' },
-    );
-    delete (e.command.payload as { revision?: number }).revision;
-    return e;
-  };
   const stepTo = (
     heroId: string,
     revision: number,
@@ -486,7 +499,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       revision = result.aggregates.progress!.revision;
     }
     const reloaded = await progressOf(userId, heroId);
-    expect(knowledgeOf(reloaded.state).current).toBe(17);
+    expect(knowledgeOf(reloaded.state).current).toBe(47);
     expect((reloaded.state as { steps: number }).steps).toBe(3);
   });
 
@@ -498,7 +511,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       stepTo(heroId, arrived.aggregates.progress!.revision, 0, 9, 9),
     );
     expect(jump).toMatchObject({ result: 'rejected', code: 'INVALID_STEP' });
-    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(20);
+    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(50);
   });
 
   it('lets only one of ten parallel steps from the same place through, and never overspends', async () => {
@@ -511,7 +524,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       ),
     );
     expect(results.filter((r) => r.result === 'applied')).toHaveLength(1);
-    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(19);
+    expect(knowledgeOf((await progressOf(userId, heroId)).state).current).toBe(49);
   });
 
   it('upgrades a hero stored before Will lived on the server, keeping what he had claimed', async () => {
@@ -527,8 +540,10 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       sealedUntil: {},
       portal: null,
       health: { current: 3, bonus: 0, debt: 0 },
+      trips: 0,
+      traders: {},
     });
-    expect(knowledgeOf(progress.state).current).toBe(20);
+    expect(knowledgeOf(progress.state).current).toBe(50);
     const arrived = await kit.service.execute(
       userId,
       arrive(heroId, progress.revision, 'camping', 1, 1),
@@ -538,7 +553,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       .select()
       .from(heroAggregates)
       .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
-    expect(row.schemaVersion).toBe(5);
+    expect(row.schemaVersion).toBe(7);
   });
 
   it('takes a snapshot every 50 revisions', async () => {

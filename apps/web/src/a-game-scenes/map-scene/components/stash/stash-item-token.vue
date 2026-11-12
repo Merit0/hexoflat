@@ -16,13 +16,23 @@ import { computed, onBeforeUnmount } from 'vue';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { rarityFrameUrlForKey } from '@/render/rarity';
-import { hideItemTooltip, showItemTooltip } from '@/composables/use-item-tooltip';
+import {
+  hideItemTooltip,
+  showItemTooltip,
+  type TooltipPrice,
+} from '@/composables/use-item-tooltip';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 
-const props = defineProps<{ item: InventoryItem; ghost?: boolean }>();
+const props = defineProps<{
+  item: InventoryItem;
+  ghost?: boolean;
+  standalone?: boolean;
+  rotationDeg?: number;
+  price?: () => TooltipPrice | null;
+}>();
 
 const inventory = useHeroInventoryStore();
-const rotation = computed(() => inventory.ensureRotation(props.item.id));
+const rotation = computed(() => props.rotationDeg ?? inventory.ensureRotation(props.item.id));
 const iconStyle = computed(() => {
   const path = resolveInventoryView(props.item.key).iconPath;
   return { backgroundImage: path ? `url("${path}")` : 'none' };
@@ -33,7 +43,11 @@ const glowStyle = computed(() => {
 });
 
 function onEnter(event: MouseEvent) {
-  if (!props.ghost) showItemTooltip(props.item.id, event.currentTarget as HTMLElement);
+  if (props.ghost) return;
+  showItemTooltip(props.item.id, event.currentTarget as HTMLElement, {
+    item: props.standalone ? props.item : undefined,
+    price: props.price?.() ?? null,
+  });
 }
 
 onBeforeUnmount(hideItemTooltip);

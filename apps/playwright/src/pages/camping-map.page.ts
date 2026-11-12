@@ -13,6 +13,7 @@ import { BattleTabComponent } from '@components/battle-tab.component';
 import { HexInfoTooltipComponent } from '@components/hex-info-tooltip.component';
 import { PageErrorsComponent } from '@components/page-errors.component';
 import { StashBoardComponent } from '@components/stash-board.component';
+import { ShopBoardComponent } from '@components/shop-board.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
@@ -28,6 +29,7 @@ export class CampingMapPage extends BasePage {
   readonly battleTab = new BattleTabComponent();
   readonly hexInfoTooltip = new HexInfoTooltipComponent();
   readonly stashBoard = new StashBoardComponent();
+  readonly shopBoard = new ShopBoardComponent();
   readonly pageErrors = new PageErrorsComponent();
 
   async goto(): Promise<void> {

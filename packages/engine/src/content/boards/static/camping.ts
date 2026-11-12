@@ -6,6 +6,8 @@ export const CAMPING_BOARD = {
   legend: {
     F: { hexobjectKey: 'fireplace' },
     G: { hexobjectKey: 'homeland-gate' },
+    R: { hexobjectKey: 'training-grounds' },
+    S: { hexobjectKey: 'trader-stall' },
     T: { hexobjectKey: 'stash-chest' },
     W: { hexobjectKey: 'wood-and-leaves' },
   },
@@ -16,11 +18,11 @@ export const CAMPING_BOARD = {
     '~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~', // r02
     ' ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~', // r03
     '~ ~ ~ ~ ~ ~ ~ G W W W W ~ ~ ~ ~ ~ ~', // r04
-    ' ~ ~ ~ ~ ~ ~ W . . . . W ~ ~ ~ ~ ~ ~', // r05
+    ' ~ ~ ~ ~ ~ ~ W . . . R W ~ ~ ~ ~ ~ ~', // r05
     '~ ~ ~ ~ ~ ~ W . . . . . W ~ ~ ~ ~ ~', // r06
     ' ~ ~ ~ ~ ~ W . . . . . . W ~ ~ ~ ~ ~', // r07
     '~ ~ ~ ~ ~ W . . . F . . . W ~ ~ ~ ~', // r08
-    ' ~ ~ ~ ~ ~ W . . T . . . W ~ ~ ~ ~ ~', // r09
+    ' ~ ~ ~ ~ ~ W . . T . S . W ~ ~ ~ ~ ~', // r09
     '~ ~ ~ ~ ~ ~ W . . . . . W ~ ~ ~ ~ ~', // r10
     ' ~ ~ ~ ~ ~ ~ W . . . . W ~ ~ ~ ~ ~ ~', // r11
     '~ ~ ~ ~ ~ ~ ~ W W W W W ~ ~ ~ ~ ~ ~', // r12

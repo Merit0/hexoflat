@@ -12,7 +12,6 @@ import {
   projectDiffsForClient,
   projectWorldForClient,
   serializeWorld,
-  serializedWorldSchema,
   stepWorld,
   tickWorld,
   type BattleStep,
@@ -270,7 +269,7 @@ export class WorldService {
         ...respond('applied', undefined, events, [], world),
         aggregates: {
           inventory: projectAggregate(inventory),
-          progress: projectAggregate({ kind: 'progress', revision: saved, state: progressState }),
+          progress: projectAggregate({ ...progress, revision: saved, state: progressState }),
         },
       };
     }
@@ -346,7 +345,7 @@ export class WorldService {
       );
       const travelAggregates: ProjectedAggregates = {
         progress: projectAggregate({
-          kind: 'progress',
+          ...progress,
           revision: savedProgress,
           state: travelled.progress,
         }),
@@ -360,7 +359,7 @@ export class WorldService {
           travelled.inventory,
         );
         travelAggregates.inventory = projectAggregate({
-          kind: 'inventory',
+          ...inventory,
           revision,
           state: travelled.inventory,
         });
@@ -423,7 +422,7 @@ export class WorldService {
 
     const saved = await saveAggregate(tx, heroId, 'progress', progress.revision, outcome.progress);
     const aggregates: ProjectedAggregates = {
-      progress: projectAggregate({ kind: 'progress', revision: saved, state: outcome.progress }),
+      progress: projectAggregate({ ...progress, revision: saved, state: outcome.progress }),
     };
     if (
       outcome.inventory !== inventory.state &&
@@ -437,7 +436,7 @@ export class WorldService {
         outcome.inventory,
       );
       aggregates.inventory = projectAggregate({
-        kind: 'inventory',
+        ...inventory,
         revision,
         state: outcome.inventory,
       });
@@ -493,7 +492,7 @@ export class WorldService {
     );
     const aggregates: ProjectedAggregates = {
       progress: projectAggregate({
-        kind: 'progress',
+        ...progress,
         revision: progressRevision,
         state: fought.progress,
       }),
@@ -508,7 +507,7 @@ export class WorldService {
         fought.inventory,
       );
       aggregates.inventory = projectAggregate({
-        kind: 'inventory',
+        ...inventory,
         revision,
         state: fought.inventory,
       });
@@ -590,10 +589,8 @@ export class WorldService {
       await lockExpedition(tx, expeditionId);
       const index = await readIndex(tx, expeditionId);
       const known = index[locationKey];
-      const existing = known ? await readServerDocument(tx, expeditionId, worldKey(known)) : null;
-      if (existing) {
-        return projectWorldForClient(serializedWorldSchema.parse(JSON.parse(existing)));
-      }
+      const existing = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
+      if (existing) return clientWorld(existing);
       const mapId = randomUUID();
       const created = createServerWorld(
         locationKey,

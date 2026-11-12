@@ -30,6 +30,40 @@ function deploy(seed: string, ambush: boolean, direction = FROM_WEST) {
 const centre = { q: 0, r: 0 };
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
+describe('hero landing hex', () => {
+  const DIRECTIONS: Vector[] = [
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+    { x: 0.5, y: 0.87 },
+    { x: -0.5, y: 0.87 },
+    { x: 0.5, y: -0.87 },
+    { x: -0.5, y: -0.87 },
+  ];
+
+  it('is always an empty floor hex: never a saw, a wall or a boulder, for 300 seeds in every direction', () => {
+    for (let n = 0; n < 300; n += 1) {
+      for (const direction of DIRECTIONS) {
+        for (const ambush of [false, true]) {
+          const field = generateBattlefield('crypt', battlefieldSeed(`landing-${n}`, 0));
+          const { setup } = deployBattle({
+            battleId: 'b',
+            field,
+            heroes: [hero({ q: 0, r: 0 }, { id: 'h1' })],
+            members: ['skeleton-warrior', 'skeleton-warrior'],
+            direction,
+            ambush,
+          });
+          const spot = setup.creatures.find((creature) => creature.id === 'h1')!.pos;
+          expect(setup.board[hexKey(spot)]).toBe('floor');
+          expect((setup.boulders ?? []).some((b) => b.pos.q === spot.q && b.pos.r === spot.r)).toBe(
+            false,
+          );
+        }
+      }
+    }
+  });
+});
+
 describe('REQ-ENC-005 deployment', () => {
   it('points the approach from the squad towards the hero', () => {
     const d = approachDirection({ columnIndex: 5, rowIndex: 4 }, { columnIndex: 3, rowIndex: 4 });

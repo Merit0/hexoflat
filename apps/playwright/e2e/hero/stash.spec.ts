@@ -18,7 +18,7 @@ test.describe('stash', { tag: ['@hero'] }, () => {
       await new VerifyMapTileFeature('formerSwordSpot').verifyCleared();
       await new VerifyMapTileFeature('formerAxeSpot').verifyCleared();
       await new VerifyMapTileFeature('formerShieldSpot').verifyCleared();
-      await new VerifyMapTileFeature('formerPickaxeSpot').verifyCleared();
+      await new VerifyMapTileFeature('formerPickaxeSpot').verifyHoldsObject(K.traderStall);
       await new VerifyMapTileFeature('formerCoinsSpot').verifyCleared();
     });
   });

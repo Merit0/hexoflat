@@ -204,7 +204,7 @@ describe('what an action costs, from content and the location only', () => {
     const { world, spot } = atCave(HEXOBJECT_KEYS.CAVE_ENTRANCE);
     const outcome = act(world, spot, EHexActionType.ENTER, HEXOBJECT_KEYS.HAND);
     if (!outcome.ok) throw new Error(outcome.code);
-    expect(outcome.progress.knowledge.current).toBe(18);
+    expect(outcome.progress.knowledge.current).toBe(48);
   });
 
   it('refuses with too little Will and changes nothing', () => {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { CONTENT_VERSION } from '../content/content-version';
 import { initFog, revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { installCampBook } from '../knowledge/camp-book';
+import { installCampFacilities } from './camp-facilities';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
 import { findTilesMissingSpawners } from '../map/resource-hydration';
@@ -60,10 +61,12 @@ export function serializeWorld(world: ServerWorld): SerializedWorld {
 
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   const parsed = serializedWorldSchema.parse(raw);
+  const map = HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true });
+  if (parsed.locationKey === 'camping') installCampFacilities(map, parsed.heroCoordinates);
   return {
     locationKey: parsed.locationKey,
     mapId: parsed.mapId,
-    map: HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true }),
+    map,
     descriptor: parsed.descriptor as BoardDescriptor | null,
     heroCoordinates: parsed.heroCoordinates,
     worldSeed: parsed.worldSeed,

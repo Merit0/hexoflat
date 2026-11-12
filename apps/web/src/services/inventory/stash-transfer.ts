@@ -8,6 +8,11 @@ import type {
 import type { TUnlockChestError } from '@hexoflat/engine/inventory/plan-unlock-chest';
 import { toAggregate as stateToAggregate } from '@hexoflat/engine/inventory/inventory-adapter';
 import { stashChestPrice } from '@hexoflat/engine/inventory/stash-constants';
+import {
+  standsNextToCampObject,
+  type CampPlace,
+} from '@hexoflat/engine/content/boards/camp-object-spot';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { battleOpen } from './inventory-moves';
@@ -15,9 +20,11 @@ import { dispatchInventory, readInventoryState, type DispatchResult } from './in
 
 type TBase = { heroId: string; revision: number };
 
+export type TUnlockRefusal = TUnlockChestError | 'STASH_LOCKED';
+
 export type TUnlockOutcome =
   | { ok: true; next: IInventoryAggregate; chests: number; price: number }
-  | { ok: false; reason: TUnlockChestError; price: number | null };
+  | { ok: false; reason: TUnlockRefusal; price: number | null };
 
 function stores() {
   return { inventory: useHeroInventoryStore(), stash: useHeroStashStore() };
@@ -27,14 +34,12 @@ export function readInventoryAggregate(): IInventoryAggregate {
   return stateToAggregate(readInventoryState(stores()));
 }
 
-function send(build: (base: TBase) => HexEngineCommand, commit: boolean): DispatchResult {
-  const { stash } = stores();
-  return dispatchInventory(
-    stores(),
-    build,
-    { stashOpen: stash.isOpen, battleOpen: battleOpen() },
-    { commit },
-  );
+function send(
+  build: (base: TBase) => HexEngineCommand,
+  commit: boolean,
+  stashOpen = stores().stash.isOpen,
+): DispatchResult {
+  return dispatchInventory(stores(), build, { stashOpen, battleOpen: battleOpen() }, { commit });
 }
 
 function asTransfer(result: DispatchResult): TTransferResult {
@@ -90,7 +95,7 @@ export function autoPlaceItem(from: TItemLocation, toContainer: 'bag' | 'stash',
   return asTransfer(send(autoPlaceCommand(from, toContainer, split, chest), true));
 }
 
-export function unlockNextChest(): TUnlockOutcome {
+export function unlockNextChest(place: CampPlace | null): TUnlockOutcome {
   const stash = useHeroStashStore();
   const result = send(
     ({ heroId, revision }) => ({
@@ -98,6 +103,7 @@ export function unlockNextChest(): TUnlockOutcome {
       payload: { heroId, revision },
     }),
     true,
+    standsNextToCampObject(place, HEXOBJECT_KEYS.STASH_CHEST),
   );
   const unlocked = result.events.find((event) => event.type === 'STASH_CHEST_UNLOCKED');
   if (result.ok && unlocked) {
@@ -106,7 +112,7 @@ export function unlockNextChest(): TUnlockOutcome {
     return { ok: true, next: stateToAggregate(result.after), chests, price };
   }
   const rejected = result.events.find((event) => event.type === 'ITEM_TRANSFER_REJECTED');
-  const payload = rejected?.payload as { reason: TUnlockChestError; price?: number | null };
+  const payload = rejected?.payload as { reason: TUnlockRefusal; price?: number | null };
   return {
     ok: false,
     reason: payload?.reason ?? 'NO_COINS_IN_HAND',

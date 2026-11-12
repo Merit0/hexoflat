@@ -19,7 +19,7 @@
       @hide="emit('hide')"
     />
     <div
-      v-if="isWorking && !isReading && !isOpeningStash"
+      v-if="isWorking && !isReading && !isOpeningStash && !isOpeningShop"
       class="time-chip label"
       data-testid="tool-working-timer"
     >
@@ -55,6 +55,8 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { toolKeyOfItem } from '@/composables/hand-tools';
 import { useBookReading } from '@/composables/use-book-reading';
 import { useStashOpening } from '@/composables/use-stash-opening';
+import { traderAtStall, useShopOpening } from '@/composables/use-shop-opening';
+import { openShopBoard } from '@/composables/use-shop-board';
 import { usePortal } from '@/composables/use-portal';
 import { portalRefusalText } from '@/composables/use-portal-messages';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -99,7 +101,14 @@ const hoveredTile = computed<HexTileModel | null>(() => {
 
 const { isReading, anchor: bookAnchor } = useBookReading(activeToolKey);
 const { isOpening: isOpeningStash, anchor: stashAnchor } = useStashOpening(activeToolKey);
-const anchor = computed(() => (isOpeningStash.value ? stashAnchor.value : bookAnchor.value));
+const { isOpening: isOpeningShop, anchor: shopAnchor } = useShopOpening(activeToolKey);
+const anchor = computed(() =>
+  isOpeningStash.value
+    ? stashAnchor.value
+    : isOpeningShop.value
+      ? shopAnchor.value
+      : bookAnchor.value,
+);
 
 const toolIconPath = computed(
   () => getPrototype(activeToolKey.value ?? HEXOBJECT_KEYS.HAND).spritePath ?? '',
@@ -263,7 +272,7 @@ onBeforeUnmount(() => {
 });
 
 const isWorking = computed(() => {
-  if (isReading.value || isOpeningStash.value) return true;
+  if (isReading.value || isOpeningStash.value || isOpeningShop.value) return true;
   const a = pendingAction.value;
   if (!a?.endsAt) return false;
 
@@ -299,7 +308,11 @@ function flashDenied() {
 }
 
 function unlockWithCoins() {
-  const result = unlockNextChest();
+  const result = unlockNextChest(
+    heroStore.heroCoordinates
+      ? { locationKey: worldMapStore.currentLocationKey, coordinates: heroStore.heroCoordinates }
+      : null,
+  );
   if (result.ok) {
     heroToolStore.setActionMessage(t('stash.pay.unlocked'), null, null, 'success');
     return;
@@ -307,6 +320,10 @@ function unlockWithCoins() {
   flashDenied();
   if (result.reason === 'CAMP_CHEST_NOT_CLAIMED') {
     heroToolStore.setActionMessage(t('stash.pay.openFirst'));
+    return;
+  }
+  if (result.reason === 'STASH_LOCKED') {
+    heroToolStore.setActionMessage(t('stash.error.STASH_LOCKED'));
     return;
   }
   heroToolStore.setActionMessage(t('stash.pay.notEnough'), 'coins', result.price);
@@ -369,6 +386,12 @@ async function executeAction() {
 
   if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.STASH_CHEST) {
     await openStashBoard();
+    return;
+  }
+
+  const stallTrader = traderAtStall(tile.hexobject?.hexobjectKey);
+  if (stallTrader) {
+    openShopBoard(stallTrader);
     return;
   }
 

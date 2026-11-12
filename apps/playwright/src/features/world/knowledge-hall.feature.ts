@@ -16,10 +16,17 @@ export class KnowledgeHallFeature extends BaseFeature {
       await this.camp.toolActionOverlay.triggerAction();
     });
   }
-  async verifyStartingWill(): Promise<void> {
-    await this.step('Verify a new hero starts below capacity and may open the Hall', () =>
-      this.camp.knowledge.verifyStartingWill(),
+  async verifyNewHeroStartsFull(): Promise<void> {
+    await this.step('Verify a new hero starts with full Will and the Hall cannot be started', () =>
+      this.camp.knowledge.verifyStartsFull(),
     );
+  }
+  async spendAllWill(): Promise<void> {
+    await this.step('Spend all Will, and the Hall can be started again', async () => {
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.setWill(0));
+      await this.camp.knowledge.verifyWill(0);
+      await this.camp.knowledge.verifyFreshStart();
+    });
   }
   async verifyFull(): Promise<void> {
     await this.step('Verify full Will disables Hall and explains why', () =>

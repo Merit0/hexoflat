@@ -24,6 +24,35 @@ export interface TestPortalPreview {
   reason: string | null;
 }
 
+export interface TestTrader {
+  key: string;
+  serial: number;
+  trips: number;
+  goods: ({
+    key: string;
+    amount: number;
+    sold?: boolean;
+    discountPercent?: number;
+    wasted?: boolean;
+  } | null)[];
+  buyback: ({ key: string; amount: number; unitPrice: number } | null)[];
+  refreshPrice: number;
+}
+
+export interface TestTraderFixture {
+  trader?: string;
+  goods?: ({
+    key: string;
+    amount: number;
+    sold?: boolean;
+    discountPercent?: number;
+    wasted?: boolean;
+  } | null)[];
+  buyback?: ({ key: string; amount: number; unitPrice: number } | null)[];
+  trips?: number;
+  listings?: ({ key: string; amount: number; unitPrice: number } | null)[];
+}
+
 export interface HexoflatTestApi {
   getKnowledge(): {
     current: number;
@@ -82,7 +111,7 @@ export interface HexoflatTestApi {
   setBag(cells: ({ key: string; amount: number } | null)[]): void;
   settleInventorySync(): Promise<void>;
   getInventorySyncStatus(): string;
-  setHeroHealth(current: number): void;
+  setHeroHealth(current: number): Promise<void>;
   placeHexobjectNextToHero(key: string): Promise<TestHexCoordinates>;
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): Promise<void>;
@@ -118,4 +147,10 @@ export interface HexoflatTestApi {
   getBattleHexPoint(q: number, r: number): { x: number; y: number } | null;
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
+
+  getTrader(key?: string): TestTrader | null;
+  getListings(): ({ key: string; amount: number; unitPrice: number } | null)[];
+  getOpenTrader(): string | null;
+  getWalletCoins(): number;
+  setTrader(fixture: TestTraderFixture): Promise<void>;
 }

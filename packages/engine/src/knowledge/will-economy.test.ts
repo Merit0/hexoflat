@@ -78,10 +78,10 @@ function actionState(key: THexobjectKey, will: number, context: KnowledgeContext
 }
 
 describe('Will economy', () => {
-  it('starts a fresh hero with the starting Will, below capacity', () => {
+  it('starts a fresh hero full: the starting Will equals the capacity', () => {
     const fresh = createKnowledgeState('hero');
     expect(fresh.current).toBe(KNOWLEDGE_RULES.startingWill);
-    expect(fresh.current).toBeLessThan(fresh.capacity);
+    expect(fresh.current).toBe(fresh.capacity);
   });
 
   it('charges steps in paid zones only, never in free zones or combat', () => {
@@ -203,6 +203,7 @@ describe('Will-priced actions', () => {
 describe('stale Hall lessons', () => {
   it('drops a Hall lesson bound to a rebuilt camp map when the book is opened again', () => {
     const state = createKnowledgeState('hero');
+    state.current = 10;
     const camp: KnowledgeContext = {
       ...paid,
       locationKey: 'camping',

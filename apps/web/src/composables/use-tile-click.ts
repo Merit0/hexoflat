@@ -6,6 +6,7 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { useTraderStore } from '@/stores/trader-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { crossExitIfStanding } from '@/composables/use-board-crossing';
 
@@ -52,6 +53,7 @@ export function useTileClick() {
   const heroToolStore = useHeroToolStore();
   const heroStore = useHeroStore();
   const stashStore = useHeroStashStore();
+  const traderStore = useTraderStore();
 
   async function handleTileClick(tile: IHexTile) {
     logTileClick(tile);
@@ -61,7 +63,7 @@ export function useTileClick() {
       return;
     }
 
-    if (knowledgePanelMode.value || stashStore.isOpen) {
+    if (knowledgePanelMode.value || stashStore.isOpen || traderStore.isOpen) {
       await heroStore.moveHeroTo(tile.coordinates);
       return;
     }

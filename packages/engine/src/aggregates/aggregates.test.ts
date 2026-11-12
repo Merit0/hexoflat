@@ -45,7 +45,8 @@ describe('aggregate registry', () => {
     expect(countItem(toAggregate(inventory), HEXOBJECT_KEYS.COINS)).toBe(0);
     expect(inventory.stash.chests).toBe(0);
     expect(progress.claimedRewards).toEqual([]);
-    expect(progress.knowledge.current).toBe(20);
+    expect(progress.knowledge.current).toBe(50);
+    expect(progress.knowledge.capacity).toBe(50);
     expect(progress.presence).toBeNull();
   });
 

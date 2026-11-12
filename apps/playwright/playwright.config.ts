@@ -92,7 +92,7 @@ export default defineConfig({
     // silently falls back to its default port (4173) — `exec` invokes vite
     // directly, no script-argument indirection involved.
     command:
-      'VITE_E2E_HOOKS=true VITE_AUTH_HERO_CODE=true VITE_AUTH_PASSKEY=true ' +
+      'VITE_E2E_HOOKS=true VITE_SHOP_TRADE_TAB=true VITE_AUTH_HERO_CODE=true VITE_AUTH_PASSKEY=true ' +
       'VITE_AUTH_GUARDIAN_SIGNUP=true VITE_AUTH_PLACEHOLDER_LINKS=true ' +
       'pnpm --filter @hexoflat/web run build && ' +
       `pnpm --filter @hexoflat/web exec vite preview --port ${WEB_PORT} --strictPort`,
