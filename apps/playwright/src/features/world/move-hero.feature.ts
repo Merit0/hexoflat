@@ -49,6 +49,12 @@ export class MoveHeroFeature extends BaseFeature {
     );
   }
 
+  async moveAwayFrom(token: MapToken): Promise<void> {
+    await this.step(`Walk the hero away from "${token}" until it is out of reach`, () =>
+      this.campingMap.hexBoard.moveAwayFrom(tokenCoordinates(token)),
+    );
+  }
+
   async moveAdjacentTo(token: MapToken): Promise<void> {
     await this.step(`Walk the hero next to "${token}"`, () =>
       this.campingMap.hexBoard.moveAdjacentTo(tokenCoordinates(token)),

@@ -14,6 +14,7 @@ import { HexInfoTooltipComponent } from '@components/hex-info-tooltip.component'
 import { PageErrorsComponent } from '@components/page-errors.component';
 import { StashBoardComponent } from '@components/stash-board.component';
 import { ShopBoardComponent } from '@components/shop-board.component';
+import { QuestBoardComponent } from '@components/quest-board.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
@@ -30,6 +31,7 @@ export class CampingMapPage extends BasePage {
   readonly hexInfoTooltip = new HexInfoTooltipComponent();
   readonly stashBoard = new StashBoardComponent();
   readonly shopBoard = new ShopBoardComponent();
+  readonly questBoard = new QuestBoardComponent();
   readonly pageErrors = new PageErrorsComponent();
 
   async goto(): Promise<void> {

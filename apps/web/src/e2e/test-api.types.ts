@@ -53,6 +53,16 @@ export interface TestTraderFixture {
   listings?: ({ key: string; amount: number; unitPrice: number } | null)[];
 }
 
+export interface TestQuestFixture {
+  active?: { questId: string; progress: number; state: 'active' | 'ready' }[];
+  done?: Record<string, number>;
+}
+
+export interface TestQuests {
+  active: { questId: string; progress: number; state: 'active' | 'ready' }[];
+  done: Record<string, number>;
+}
+
 export interface HexoflatTestApi {
   getKnowledge(): {
     current: number;
@@ -153,4 +163,7 @@ export interface HexoflatTestApi {
   getOpenTrader(): string | null;
   getWalletCoins(): number;
   setTrader(fixture: TestTraderFixture): Promise<void>;
+  getQuests(): TestQuests;
+  getOpenQuestBoard(): boolean;
+  setQuests(fixture: TestQuestFixture): Promise<void>;
 }

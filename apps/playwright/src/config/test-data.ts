@@ -9,6 +9,7 @@ export const MapTokens = {
   formerPickaxeSpot: { columnIndex: 10, rowIndex: 9 },
   formerCoinsSpot: { columnIndex: 8, rowIndex: 7 },
   traderStall: { columnIndex: 10, rowIndex: 9 },
+  questBoard: { columnIndex: 8, rowIndex: 6 },
   caveEntrance: { columnIndex: 10, rowIndex: 3 },
   homelandGate: { columnIndex: 7, rowIndex: 4 },
 } as const satisfies Record<string, TestHexCoordinates>;
@@ -31,6 +32,7 @@ export const HexobjectKeys = {
   shield: 'shield',
   fireplace: 'fireplace',
   traderStall: 'trader-stall',
+  questBoard: 'quest-board',
   returnPortal: 'return-portal',
   skeletonPack: 'skeleton-pack',
   boneCourt: 'bone-court',

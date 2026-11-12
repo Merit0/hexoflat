@@ -5,7 +5,9 @@ import {
   AGGREGATES,
   AGGREGATE_KINDS,
   PLAYER_COMMAND_AGGREGATES,
+  applyQuestFixture,
   applyTraderFixture,
+  questFixtureSchema,
   traderFixtureSchema,
   PLAYER_COMMAND_REVISION,
   PLAYER_COMMAND_SCHEMAS,
@@ -250,6 +252,41 @@ export class PlayerCommandService {
         heroId,
         aggregateKind: 'progress',
         commandType: 'DEV_TRADER_FIXTURE',
+        payload: fixture.data,
+        expectedRevision: null,
+        result: 'applied',
+        reason: null,
+        events: [],
+        newRevision: revision,
+      });
+      return { aggregates: { progress: projectAggregate({ ...progress, revision, state: next }) } };
+    });
+  }
+
+  async questFixture(
+    userId: string,
+    heroId: string,
+    raw: unknown,
+  ): Promise<{ aggregates: ProjectedAggregates }> {
+    if (!e2eFixturesEnabled()) throw new PlayerCommandError('FORBIDDEN');
+    const fixture = questFixtureSchema.safeParse(raw);
+    if (!fixture.success) throw new PlayerCommandError('INVALID_COMMAND');
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    return this.db.transaction(async (tx) => {
+      await createInitialAggregates(tx, heroId);
+      const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      const progress = loaded.progress;
+      if (!progress) throw new Error(`Hero ${heroId} has no progress aggregate`);
+      const next = applyQuestFixture(progress.state, fixture.data);
+      if (!next) throw new PlayerCommandError('INVALID_COMMAND');
+      const revision = await saveAggregate(tx, heroId, 'progress', progress.revision, next);
+      await tx.insert(commandJournal).values({
+        commandId: randomUUID(),
+        userId,
+        heroId,
+        aggregateKind: 'progress',
+        commandType: 'DEV_QUEST_FIXTURE',
         payload: fixture.data,
         expectedRevision: null,
         result: 'applied',
