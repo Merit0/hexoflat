@@ -837,23 +837,14 @@
   "quest": {
     "boardTitle": "Quest Board",
     "close": "Close the quest board",
-    "slots": "Quests taken: {used} / {max}",
-    "myQuests": "My quests",
-    "noneActive": "No active quests.",
     "claim": "Claim",
-    "abandon": "Drop",
-    "accept": "Accept",
-    "taken": "Taken",
     "locked": "Locked",
     "once": "One-time",
     "repeatable": "Repeatable",
-    "goal": "Goal",
     "price": {
-      "free": "Free",
       "will": "{n} Will"
     },
     "reward": {
-      "label": "Reward",
       "will": "{n} Will"
     },
     "refusal": {
@@ -910,7 +901,6 @@
     "start": "Start",
     "enter": "Enter",
     "lockedBy": "Find the chest of {name} first.",
-    "seekerHow": "The first steps glow gold. After that you choose alone. The fog never tells you if you were wrong.",
     "chip": {
       "entry": "Entry {n}",
       "steps": "{n} steps",
@@ -956,6 +946,76 @@
       "name": "III · Cunning Trail",
       "desc": "Every step costs more. Choose carefully.",
       "table": "Find the chest at the end of the trail."
+    },
+    "board": {
+      "will": "Will",
+      "coins": "Coins",
+      "hint": "Hover a quest to see its details. On touch screens, tap it.",
+      "rowLabel": "{name}, {meta}. Show details.",
+      "takeFor": "Take {name} for {n} Will",
+      "detailsLabel": "{name} details",
+      "detailsClose": "Close details",
+      "abandon": "Abandon",
+      "claimReward": "Claim reward",
+      "enterTrail": "Enter the trail",
+      "expeditionNote": "Count the Will for the whole trail before you enter.",
+      "takenNote": "In your quests. Abandoning gives no Will back.",
+      "filter": {
+        "label": "Filter quests",
+        "all": "All",
+        "gather": "Gathering",
+        "combat": "Combat",
+        "learn": "Learning",
+        "exp": "Expedition"
+      },
+      "group": {
+        "active": "My quests",
+        "slots": "{used} / {max} slots",
+        "available": "On the board",
+        "locked": "Locked"
+      },
+      "empty": {
+        "active": "No quest taken yet. Take one below — it moves up here with its counter.",
+        "available": "Nothing new for this filter."
+      },
+      "label": {
+        "goal": "Goal",
+        "requires": "Requires",
+        "reward": "Reward",
+        "toTake": "To take",
+        "taken": "Taken"
+      },
+      "meta": {
+        "goal": "Goal: {n} {unit}",
+        "progress": "{done} / {n} {unit}",
+        "ready": "Goal reached — claim it",
+        "onTrail": "On the trail — enter it"
+      },
+      "reason": {
+        "will": "Not enough Will",
+        "slots": "All quest slots are in use",
+        "slotsFull": "All {max} quest slots are in use. Finish or abandon a quest first.",
+        "willNeed": "Not enough Will: you need {need}, you have {have}."
+      },
+      "cost": {
+        "free": "Free",
+        "entry": "Entry {n}",
+        "slot": "Quest slot {slot} +{n}"
+      },
+      "status": {
+        "taken": "Taken: {name} · −{n} Will",
+        "takenFree": "Taken: {name}",
+        "claimed": "Reward: {reward} · quest is back on the board",
+        "abandoned": "Abandoned: {name} · no Will back"
+      },
+      "help": {
+        "title": "How the quest board works",
+        "take": "Take a quest and it moves to My quests. Its counter grows as you play — every tree, stone or enemy counts.",
+        "slots": "Up to 3 quests at once. The first slot is free, the second costs +{first} Will, the third +{second}. Take quests you can do on the same road.",
+        "claim": "Claim the reward when the goal is reached. Repeatable quests (⟳) come back to the board; one-time quests (1×) close for good.",
+        "expedition": "Expeditions cost Will to enter and for every step. Count the Will for the whole trail before you go.",
+        "abandon": "Abandon frees the slot, but the Will you paid is not returned."
+      }
     }
   }
 }

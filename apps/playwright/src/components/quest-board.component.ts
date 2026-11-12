@@ -44,6 +44,7 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async abandon(questId: string): Promise<void> {
+    await this.page.getByTestId(`quest-row-${questId}`).click();
     await this.page.getByTestId(`quest-abandon-${questId}`).click();
   }
 
@@ -137,6 +138,7 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async verifyShortOfWillReason(questId: string, shown: boolean): Promise<void> {
+    if (shown) await this.page.getByTestId(`quest-row-${questId}`).hover();
     await expect(this.page.getByTestId(`quest-short-${questId}`)).toHaveCount(shown ? 1 : 0);
   }
 

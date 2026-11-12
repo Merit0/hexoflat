@@ -8,6 +8,7 @@ import {
   BATTLE_OBJECTS,
 } from '@hexoflat/engine/battle/battle-catalogue';
 import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
+import { QUEST_CATEGORIES } from '@/services/quests/quest-board-model';
 import { SQUAD_REJECTIONS } from '@hexoflat/engine/squads/engagement';
 import { THREATS } from '@hexoflat/engine/battle/threat';
 import ukUi from '@/locales/uk/ui.json';
@@ -116,9 +117,11 @@ export function questLocaleKeys(): string[] {
   const results = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'].map(
     (outcome) => `quest.result.${outcome}`,
   );
+  const filters = ['all', ...QUEST_CATEGORIES].map((filter) => `quest.board.filter.${filter}`);
   return [
     ...tips,
     ...results,
+    ...filters,
     ...Object.values(ALL_QUESTS).flatMap((quest) => [
       quest.nameKey,
       quest.descKey,

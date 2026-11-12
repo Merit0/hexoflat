@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick, type App } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { i18n } from '@/i18n';
+import { useQuestDetails } from '@/composables/use-quest-details';
 import { resetQuestProjection } from '@/services/quests/quest-projection';
 import { applyQuestRun, resetQuestRun } from '@/services/quests/quest-run-projection';
 import { dismissQuestResult } from '@/services/quests/quest-result';
@@ -38,6 +39,7 @@ describe('quest board: Treasure Seeker cards and run', () => {
     dismissQuestResult();
   });
   afterEach(() => {
+    useQuestDetails().close();
     app?.unmount();
     host.remove();
     app = null;
@@ -60,10 +62,12 @@ describe('quest board: Treasure Seeker cards and run', () => {
     expect(byId('quest-card-seeker-2')!.textContent).toContain('First Trail');
   });
 
-  it('disables START and says why when the Will is below the entry', () => {
+  it('disables START and says why when the Will is below the entry', async () => {
     mount();
     expect((byId('quest-start-seeker-1') as HTMLButtonElement).disabled).toBe(true);
-    expect(byId('quest-short-seeker-1')).not.toBeNull();
+    byId('quest-row-seeker-1')!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    expect(document.querySelector('[data-testid="quest-short-seeker-1"]')).not.toBeNull();
   });
 
   it('shows the run card with the trail row and asks before giving up', async () => {

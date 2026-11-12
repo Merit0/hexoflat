@@ -5,6 +5,8 @@ import { i18n } from '@/i18n';
 import { applyQuestProjection, resetQuestProjection } from '@/services/quests/quest-projection';
 import { acceptQuest, claimQuest } from '@/services/quests/quest-commands';
 import { useQuestActions } from '@/composables/use-quest-actions';
+import { useQuestDetails } from '@/composables/use-quest-details';
+import { useQuestBoardView } from '@/composables/use-quest-board-view';
 import QuestBoard from './quest-board.vue';
 
 vi.mock('@/services/quests/quest-commands', () => ({
@@ -33,6 +35,8 @@ describe('quest board panel', () => {
     useQuestActions().clearMessage();
   });
   afterEach(() => {
+    useQuestDetails().close();
+    useQuestBoardView().filter.value = 'all';
     app?.unmount();
     host.remove();
     app = null;
@@ -47,13 +51,15 @@ describe('quest board panel', () => {
     expect(acceptQuest).toHaveBeenCalledWith('woodcutter');
   });
 
-  it('shows progress of a taken quest with a drop button and no claim before it is ready', () => {
+  it('shows progress of a taken quest with a drop button and no claim before it is ready', async () => {
     applyQuestProjection({
       quests: { active: [{ questId: 'woodcutter', progress: 3, state: 'active' }], done: {} },
     });
     mount();
     expect(byId('quest-progress-woodcutter')!.textContent?.trim()).toBe('3 / 10');
-    expect(byId('quest-abandon-woodcutter')).not.toBeNull();
+    byId('quest-row-woodcutter')!.click();
+    await nextTick();
+    expect(document.querySelector('[data-testid="quest-abandon-woodcutter"]')).not.toBeNull();
     expect(byId('quest-claim-woodcutter')).toBeNull();
     expect(byId('quest-accept-woodcutter')).toBeNull();
   });
@@ -77,5 +83,76 @@ describe('quest board panel', () => {
     mount();
     expect(byId('quest-card-bone-hunter')).toBeNull();
     expect(byId('quest-card-woodcutter')).not.toBeNull();
+  });
+});
+
+describe('quest board layout and details', () => {
+  beforeEach(() => {
+    resetQuestProjection();
+    useQuestActions().clearMessage();
+  });
+  afterEach(() => {
+    useQuestDetails().close();
+    useQuestBoardView().filter.value = 'all';
+    app?.unmount();
+    host.remove();
+    app = null;
+    vi.clearAllMocks();
+  });
+
+  it('groups quests into my quests, on the board and shows the slot line', () => {
+    applyQuestProjection({
+      quests: { active: [{ questId: 'woodcutter', progress: 1, state: 'active' }], done: {} },
+    });
+    mount();
+    expect(
+      byId('quest-group-active')!.querySelector('[data-testid="quest-card-woodcutter"]'),
+    ).not.toBeNull();
+    expect(
+      byId('quest-group-available')!.querySelector('[data-testid="quest-card-stonebreaker"]'),
+    ).not.toBeNull();
+    expect(byId('quest-slots')!.textContent).toContain('1 / 3');
+  });
+
+  it('shows the empty hint when nothing is taken', () => {
+    mount();
+    expect(byId('quest-tracker-empty')).not.toBeNull();
+  });
+
+  it('filters every group by category and counts the chips', async () => {
+    mount();
+    expect(byId('quest-filter-all')!.textContent).toContain('7');
+    byId('quest-filter-combat')!.click();
+    await nextTick();
+    expect(byId('quest-card-bone-hunter')).not.toBeNull();
+    expect(byId('quest-card-woodcutter')).toBeNull();
+  });
+
+  it('puts only the price on the take button, never the word Take', () => {
+    mount();
+    const button = byId('quest-accept-bone-hunter')!;
+    expect(button.textContent?.trim()).toBe('5');
+    expect(button.getAttribute('aria-label')).toContain('5');
+  });
+
+  it('opens the details on hover, pins them on click and closes on Escape', async () => {
+    mount();
+    byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).not.toBeNull();
+    byId('quest-row-woodcutter')!.click();
+    await nextTick();
+    byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseleave'));
+    expect(document.querySelector('[data-testid="quest-details-woodcutter-close"]')).not.toBeNull();
+    byId('quest-board')!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    await nextTick();
+    expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).toBeNull();
+  });
+
+  it('never prints a raw translation key', () => {
+    mount();
+    expect(host.textContent).not.toMatch(/\bquest\.[a-z-]+\.[A-Za-z.-]+/);
   });
 });

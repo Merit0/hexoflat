@@ -129,7 +129,7 @@ Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm 
 
 ## Quest specs (QB3, 2026-11-12)
 
-- `e2e/hero/quests.spec.ts` through `QuestBoardFeature` (open = real walk + the hand's Read on the board) and `QuestBoardComponent`; ids `quest-board`, `quest-card-<id>` (`data-state`), `quest-accept|claim|abandon-<id>`, `quest-progress-<id>`, `quest-tracked-<id>` (`data-ready`), `quest-message`, `quest-slots`, `quests-tab-mark`. Hooks: `getQuests`, `getOpenQuestBoard`, `setQuests` (progress is set by the fixture; a real CUT needs an axe in the hand). The hero may already stand beside the board at the start, so `moveAdjacentTo` does not move; use `moveAwayFrom` to leave its reach.
+- `e2e/hero/quests.spec.ts` through `QuestBoardFeature` (open = real walk + the hand's Read on the board) and `QuestBoardComponent`; ids `quest-board`, `quest-card-<id>` (`data-state`), `quest-accept|claim|abandon-<id>` (abandon only exists inside the pinned details card: the component clicks `quest-row-<id>` first; the price button of a seeker card is `quest-start-<id>`, `quest-short-<id>` appears in the hover card), `quest-progress-<id>`, `quest-tracked-<id>` (`data-ready`), `quest-message`, `quest-slots`, `quests-tab-mark`. Hooks: `getQuests`, `getOpenQuestBoard`, `setQuests` (progress is set by the fixture; a real CUT needs an axe in the hand). The hero may already stand beside the board at the start, so `moveAdjacentTo` does not move; use `moveAwayFrom` to leave its reach.
 
 ## Treasure Seeker e2e (Q6)
 
