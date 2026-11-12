@@ -210,3 +210,5 @@ Health is in `progress.health` (`{ current, bonus, debt }`, base `HERO_BASE_HEAL
 - `questContentFailures` enforces R-Q-12: a repeatable quest with a reward must carry `maxSellValue` and the reward's sell value (`sellUnitPrice(TRADERS.ilva, key) × amount`, coins at face value, Will 0) must not exceed it.
 
 - **Quest commands (QB2).** `QUEST_ACCEPT|ABANDON|CLAIM` are player commands (`aggregates/apply-quest-command.ts`, context `serverQuestContext` = beside `quest-board`). Any new progress-changing server path must pass its events through `foldQuestEvents` (`quests/quest-hook.ts`) or quests will not count them; `executePlayerCommand` and `world.service.ts` already do.
+
+- **Seeker walk (Q2).** `quests/seeker-actions.ts` + `numbers.ts` are pure: a `QuestRun` lives outside `progress` (Q3 puts it in the server expedition document). A number on a ring is a pure function of (seed, path, hex) and its decoys must respect `lookAhead` (the known true trail) and the already open neighbours; change `numbers.ts` only with the 300-seed ring test in `seeker-actions.test.ts` green. New rule kinds are registry entries (`RULES`), passed as `options.registry`.
