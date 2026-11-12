@@ -34,25 +34,24 @@
         <span class="text">
           <span class="title-line">
             <span class="name">{{ t(row.quest.nameKey) }}</span>
-            <quest-tip v-if="row.repeat === 'repeatable'" :text="t('quest.board.tag.repeatable')">
-              <svg
-                class="repeat"
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                role="img"
-                :aria-label="t('quest.board.tag.repeatable')"
-                :data-testid="`quest-repeat-${row.quest.id}`"
-              >
-                <path d="M20 11a8 8 0 0 0-14.500-3.500M4 4v4h4" />
-                <path d="M4 13a8 8 0 0 0 14.500 3.500M20 20v-4h-4" />
-              </svg>
-            </quest-tip>
+            <svg
+              v-if="row.repeat === 'repeatable'"
+              class="repeat"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              role="img"
+              :aria-label="t('quest.board.tag.repeatable')"
+              :data-testid="`quest-repeat-${row.quest.id}`"
+            >
+              <path d="M20 11a8 8 0 0 0-14.500-3.500M4 4v4h4" />
+              <path d="M4 13a8 8 0 0 0 14.500 3.500M20 20v-4h-4" />
+            </svg>
           </span>
           <span
             class="meta"
