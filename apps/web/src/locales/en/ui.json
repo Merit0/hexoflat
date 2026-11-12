@@ -835,7 +835,7 @@
     }
   },
   "quest": {
-    "boardTitle": "Quest Board",
+    "boardTitle": "Quests",
     "close": "Close the quest board",
     "claim": "Claim",
     "locked": "Locked",

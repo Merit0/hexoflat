@@ -108,16 +108,16 @@
         >
           {{ row.progress }} / {{ row.target }}
         </quest-gold-button>
-        <quest-gold-button
-          v-else
-          :testid="row.seeker ? `quest-start-${row.quest.id}` : `quest-accept-${row.quest.id}`"
-          :disabled="busy || row.reason === 'will'"
-          :title="reasonText ?? undefined"
-          :aria-label="t('quest.board.takeFor', { name: t(row.quest.nameKey), n: row.price })"
-          @click="actions.take(row)"
-        >
-          <i class="gem" aria-hidden="true"></i>{{ row.price }}
-        </quest-gold-button>
+        <quest-tip v-else :text="reasonText">
+          <quest-gold-button
+            :testid="row.seeker ? `quest-start-${row.quest.id}` : `quest-accept-${row.quest.id}`"
+            :disabled="busy || row.reason === 'will'"
+            :aria-label="t('quest.board.takeFor', { name: t(row.quest.nameKey), n: row.price })"
+            @click="actions.take(row)"
+          >
+            <i class="gem" aria-hidden="true"></i>{{ row.price }}
+          </quest-gold-button>
+        </quest-tip>
       </div>
     </div>
   </li>
@@ -132,6 +132,7 @@ import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestEmblem from './quest-emblem.vue';
 import QuestGoldButton from './quest-gold-button.vue';
+import QuestTip from './quest-tip.vue';
 import QuestRewardIcon from './quest-reward-icon.vue';
 
 const props = defineProps<{ row: QuestRowView }>();

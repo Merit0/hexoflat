@@ -44,15 +44,19 @@
           <b>{{ slots.used }} / {{ slots.max }}</b>
         </span>
         <span class="sep" aria-hidden="true"></span>
-        <span class="part gold" data-testid="quest-board-coins" :title="t('quest.board.coins')">
-          <i class="coin" aria-hidden="true"></i><b>{{ coins }}</b>
-        </span>
+        <quest-tip :text="t('quest.board.coins')">
+          <span class="part gold" data-testid="quest-board-coins">
+            <i class="coin" aria-hidden="true"></i><b>{{ coins }}</b>
+          </span>
+        </quest-tip>
         <span class="sep" aria-hidden="true"></span>
-        <span class="part" data-testid="quest-board-will" :title="t('quest.board.will')">
-          <i class="gem" aria-hidden="true"></i>
-          <b><will-number :current="will.value" /></b>
-          <small>/ {{ will.cap }}</small>
-        </span>
+        <quest-tip :text="t('quest.board.will')">
+          <span class="part" data-testid="quest-board-will">
+            <i class="gem" aria-hidden="true"></i>
+            <b><will-number :current="will.value" /></b>
+            <small>/ {{ will.cap }}</small>
+          </span>
+        </quest-tip>
       </div>
       <quest-filter-chips />
       <div class="groups" @scroll.passive="details.close()">
@@ -139,6 +143,7 @@ import QuestRunPanel from './quest-run-panel.vue';
 import KnowledgeHelp from '../knowledge-help.vue';
 import BoardCloseButton from '@/components/gui/board/board-close-button.vue';
 import QuestFilterChips from './quest-filter-chips.vue';
+import QuestTip from './quest-tip.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
 
 const { t } = useI18n();

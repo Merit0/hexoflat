@@ -219,7 +219,8 @@ header {
 }
 h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: inherit;
+  font-weight: 700;
   font-variant: small-caps;
   letter-spacing: 0.04em;
   color: #ffe98a;
