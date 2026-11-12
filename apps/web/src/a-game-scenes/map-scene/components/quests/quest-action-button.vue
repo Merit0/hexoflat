@@ -19,28 +19,48 @@ defineOptions({ inheritAttrs: false });
 withDefaults(
   defineProps<{
     testid: string;
-    variant?: 'gold' | 'claim' | 'counter' | 'main';
+    variant?: 'steel' | 'claim' | 'counter' | 'main';
     disabled?: boolean;
   }>(),
-  { variant: 'gold', disabled: false },
+  { variant: 'steel', disabled: false },
 );
 </script>
 
 <style scoped>
 .shape {
+  --face: linear-gradient(180deg, #3d4d5c, #2a3744);
+  --edge: linear-gradient(180deg, #7a8da0, #1b2630 60%, #46586a);
+  --ink: #f3e8d2;
   display: inline-block;
   width: 104px;
-  height: 40px;
+  height: 44px;
 }
 .shape.v-main {
   width: auto;
   min-width: 132px;
-  height: 42px;
+  height: 46px;
+}
+.shape.v-claim {
+  --face: linear-gradient(180deg, #e8bc5e, #b5863a);
+  --edge: linear-gradient(180deg, #ffe7a3, #8a6420 60%, #c9a04e);
+  --ink: #2a1e0a;
+}
+.shape.v-counter {
+  --face: linear-gradient(180deg, #1b2630, #121a21);
+  --edge: linear-gradient(180deg, #46586a, #1b2630);
+  --ink: #ffe98a;
+}
+.shape.is-disabled {
+  --face: linear-gradient(180deg, #34383d, #26292d);
+  --edge: linear-gradient(180deg, #4a4f55, #2a2d31);
+  --ink: #a3a8ae;
 }
 .shape:focus-within {
-  filter: drop-shadow(0 0 2px #ffe7a8) drop-shadow(0 0 6px #c9a04e);
+  filter: drop-shadow(0 0 2px #ffe7a8) drop-shadow(0 0 6px #f5c26b);
 }
 .face {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -50,42 +70,54 @@ withDefaults(
   min-height: 0;
   height: 100%;
   padding: 0 14px;
-  font-family: var(--q-display);
-  font-size: 19px;
+  font-family: inherit;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1;
-  color: #2a1e0a;
-  background: linear-gradient(180deg, #f6dc93, #d9ae55 48%, #b5863a);
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  background: var(--edge);
   border: 0;
   clip-path: polygon(
-    11px 0,
-    calc(100% - 11px) 0,
-    100% 50%,
-    calc(100% - 11px) 100%,
-    11px 100%,
-    0 50%
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
   );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
-.v-main .face {
-  font-size: 21px;
+.face::before {
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  content: '';
+  background: var(--face);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  clip-path: polygon(
+    10px 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0 calc(100% - 10px),
+    0 10px
+  );
 }
-.v-claim .face {
-  background: linear-gradient(180deg, #ffe7a3, #e8bc5e, #c08f3c);
+button.face:not(:disabled):hover {
+  --face: linear-gradient(180deg, #4a5d6e, #34444f);
 }
-.v-counter .face {
-  color: #e9c77b;
-  background: #15181b;
-  box-shadow: inset 0 0 0 1px #4a5057;
+.v-claim button.face:not(:disabled):hover {
+  --face: linear-gradient(180deg, #f1c96d, #c19240);
+}
+span.face {
   cursor: default;
 }
-.is-disabled .face {
-  color: #a3a8ae;
-  background: linear-gradient(180deg, #4a4f55, #33373c);
-  box-shadow: none;
+button.face:disabled {
   cursor: not-allowed;
 }
 </style>

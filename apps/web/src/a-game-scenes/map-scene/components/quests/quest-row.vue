@@ -24,13 +24,35 @@
         @blur="details.leave()"
         @click="onToggle"
       >
-        <quest-emblem :icon="row.icon" />
+        <img
+          class="sprite"
+          :src="row.sprite"
+          alt=""
+          aria-hidden="true"
+          :data-testid="`quest-sprite-${row.quest.id}`"
+        />
         <span class="text">
           <span class="title-line">
             <span class="name">{{ t(row.quest.nameKey) }}</span>
-            <span class="tag">{{
-              row.repeat === 'once' ? t('quest.board.tag.once') : t('quest.board.tag.repeatable')
-            }}</span>
+            <quest-tip v-if="row.repeat === 'repeatable'" :text="t('quest.board.tag.repeatable')">
+              <svg
+                class="repeat"
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                role="img"
+                :aria-label="t('quest.board.tag.repeatable')"
+                :data-testid="`quest-repeat-${row.quest.id}`"
+              >
+                <path d="M20 11a8 8 0 0 0-14.500-3.500M4 4v4h4" />
+                <path d="M4 13a8 8 0 0 0 14.500 3.500M20 20v-4h-4" />
+              </svg>
+            </quest-tip>
           </span>
           <span
             v-if="row.seeker && row.state === 'open'"
@@ -47,6 +69,7 @@
             class="meta"
             :class="{
               'is-gold': row.ready,
+              'is-goal': isGoalText,
               'is-locked': row.state === 'locked',
               'is-danger': row.reason === 'will' && !row.seeker,
             }"
@@ -84,7 +107,7 @@
           </svg>
           {{ t('quest.board.lockedTag') }}
         </span>
-        <quest-gold-button
+        <quest-action-button
           v-else-if="row.ready"
           variant="claim"
           :testid="`quest-claim-${row.quest.id}`"
@@ -92,31 +115,31 @@
           @click="actions.claim(row)"
         >
           {{ t('quest.claim') }}
-        </quest-gold-button>
-        <quest-gold-button
+        </quest-action-button>
+        <quest-action-button
           v-else-if="row.taken && row.seeker"
           :testid="`quest-start-${row.quest.id}`"
           :disabled="busy"
           @click="actions.enter(row)"
         >
           {{ t('quest.enter') }}
-        </quest-gold-button>
-        <quest-gold-button
+        </quest-action-button>
+        <quest-action-button
           v-else-if="row.taken"
           variant="counter"
           :testid="`quest-progress-${row.quest.id}`"
         >
           {{ row.progress }} / {{ row.target }}
-        </quest-gold-button>
+        </quest-action-button>
         <quest-tip v-else :text="reasonText">
-          <quest-gold-button
+          <quest-action-button
             :testid="row.seeker ? `quest-start-${row.quest.id}` : `quest-accept-${row.quest.id}`"
             :disabled="busy || row.reason === 'will'"
             :aria-label="t('quest.board.takeFor', { name: t(row.quest.nameKey), n: row.price })"
             @click="actions.take(row)"
           >
             <i class="gem" aria-hidden="true"></i>{{ row.price }}
-          </quest-gold-button>
+          </quest-action-button>
         </quest-tip>
       </div>
     </div>
@@ -130,8 +153,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
-import QuestEmblem from './quest-emblem.vue';
-import QuestGoldButton from './quest-gold-button.vue';
+import QuestActionButton from './quest-action-button.vue';
 import QuestTip from './quest-tip.vue';
 import QuestRewardIcon from './quest-reward-icon.vue';
 
@@ -154,6 +176,10 @@ const rewardValue = computed(() => {
   if (reward.kind === 'item' && reward.itemKey !== HEXOBJECT_KEYS.COINS) return `×${reward.amount}`;
   return String(reward.amount);
 });
+
+const isGoalText = computed(
+  () => props.row.state === 'open' && !props.row.seeker && props.row.reason !== 'will',
+);
 
 const reasonText = computed(() => {
   if (props.row.reason === 'will') return t('quest.board.reason.will');
@@ -224,7 +250,7 @@ function onHover() {
 }
 .body {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) 58px;
+  grid-template-columns: 52px minmax(0, 1fr) 58px;
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -241,6 +267,12 @@ function onHover() {
 .body:focus-visible {
   outline: 2px solid #c9a04e;
   outline-offset: -3px;
+}
+.sprite {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
 }
 .text {
   display: flex;
@@ -264,24 +296,19 @@ function onHover() {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.tag {
-  flex: none;
-  padding: 0 6px;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 18px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--q-label);
-  border: 1px solid #4a5057;
-  border-radius: 9px;
-}
 .meta {
   overflow: hidden;
   font-size: 14px;
   color: var(--q-label);
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.meta.is-goal {
+  color: #8fcb9a;
+}
+.repeat {
+  flex: none;
+  color: var(--q-label);
 }
 .meta.is-gold {
   color: #f0c060;
@@ -346,8 +373,8 @@ function onHover() {
 .gem {
   width: 9px;
   height: 9px;
-  background: #4a2fc0;
-  border: 1px solid #2a1a70;
+  background: #5b3fe0;
+  border: 1px solid #b89bff;
   transform: rotate(45deg);
 }
 .locked-mark {

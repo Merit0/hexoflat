@@ -5,12 +5,11 @@ import { walletCoins } from '@hexoflat/engine/trade/trader-view';
 import { currentInventory } from '@/services/trade/trade-commands';
 import {
   categoryOf,
-  iconOf,
+  spritePathOf,
   filterCounts,
   matchesFilter,
   reasonOf,
   type QuestCategory,
-  type QuestIcon,
   type QuestFilter,
   type QuestReason,
 } from '@/services/quests/quest-board-model';
@@ -20,7 +19,7 @@ import { useQuestView, type QuestCardView } from '@/composables/use-quest-view';
 
 export interface QuestRowView extends QuestCardView {
   category: QuestCategory;
-  icon: QuestIcon;
+  sprite: string;
   timesDone: number;
   progress: number;
   ready: boolean;
@@ -48,7 +47,7 @@ export function useQuestBoardView() {
       return {
         ...card,
         category: categoryOf(card.quest),
-        icon: iconOf(card.quest),
+        sprite: spritePathOf(card.quest),
         timesDone: store.log.done[card.quest.id] ?? 0,
         progress: entry?.progress ?? 0,
         ready: entry?.ready ?? false,

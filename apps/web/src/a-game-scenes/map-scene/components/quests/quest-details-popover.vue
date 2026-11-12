@@ -46,9 +46,11 @@
             <span class="bar" aria-hidden="true"><i :style="{ width: `${percent}%` }"></i></span>
             <span>{{ row.progress }} / {{ row.target }} {{ t(row.unitKey) }}</span>
           </template>
-          <template v-else>{{
-            t('quest.board.meta.goal', { n: row.target, unit: t(row.unitKey) })
-          }}</template>
+          <template v-else
+            ><span class="goal">{{
+              t('quest.board.meta.goal', { n: row.target, unit: t(row.unitKey) })
+            }}</span></template
+          >
         </dd>
         <template v-if="row.lockedByKey && row.state === 'locked'">
           <dt>{{ t('quest.board.label.requires') }}</dt>
@@ -88,7 +90,7 @@
         >
           {{ t('quest.board.abandon') }}
         </button>
-        <quest-gold-button
+        <quest-action-button
           v-if="row.ready"
           variant="main"
           :testid="`quest-details-${row.quest.id}-claim`"
@@ -96,8 +98,8 @@
           @click="actions.claim(row)"
         >
           {{ t('quest.board.claimReward') }}
-        </quest-gold-button>
-        <quest-gold-button
+        </quest-action-button>
+        <quest-action-button
           v-else-if="row.taken && row.seeker"
           variant="main"
           :testid="`quest-details-${row.quest.id}-enter`"
@@ -105,8 +107,8 @@
           @click="actions.enter(row)"
         >
           {{ t('quest.board.enterTrail') }}
-        </quest-gold-button>
-        <quest-gold-button
+        </quest-action-button>
+        <quest-action-button
           v-else-if="row.state === 'open'"
           variant="main"
           :testid="`quest-details-${row.quest.id}-start`"
@@ -114,7 +116,7 @@
           @click="actions.take(row)"
         >
           {{ t('quest.start') }}
-        </quest-gold-button>
+        </quest-action-button>
       </footer>
     </section>
   </teleport>
@@ -128,7 +130,7 @@ import { useHeroStore } from '@/stores/hero-store';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
-import QuestGoldButton from './quest-gold-button.vue';
+import QuestActionButton from './quest-action-button.vue';
 import QuestRewardIcon from './quest-reward-icon.vue';
 import { rewardText } from './quest-reward-text';
 
@@ -274,6 +276,9 @@ dd {
   gap: 4px;
   margin: 0;
 }
+.goal {
+  color: #8fcb9a;
+}
 dd.bad {
   color: #f2b3a2;
 }
@@ -327,7 +332,7 @@ dd.bad {
 footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 10px;
   margin-top: 12px;
 }

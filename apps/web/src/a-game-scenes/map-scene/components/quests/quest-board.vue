@@ -6,33 +6,28 @@
     :aria-label="t('quest.boardTitle')"
     @keydown.esc="onEscape"
   >
-    <knowledge-help
-      testid="quest-board-help"
-      :title="t('quest.board.help.title')"
-      :label="t('quest.board.help.title')"
-      :text="t('quest.board.help.text', { first: extra[0] ?? 0, second: extra[1] ?? 0 })"
+    <board-header
+      class="header"
+      :title="t('quest.boardTitle')"
+      :help-title="t('quest.board.help.title')"
+      :help-text="t('quest.board.help.text', { first: extra[0] ?? 0, second: extra[1] ?? 0 })"
+      help-testid="quest-board-help"
+      close-testid="quest-board-close"
+      :close-label="t('quest.close')"
+      @close="closeKnowledgePanel()"
     />
-    <header class="top">
-      <h2>
-        <span>{{ t('quest.boardTitle') }}</span>
-      </h2>
-      <board-close-button
-        testid="quest-board-close"
-        :label="t('quest.close')"
-        @close="closeKnowledgePanel()"
-      />
-    </header>
     <quest-run-panel v-if="run || result" />
     <template v-else>
-      <div class="pill" data-testid="quest-board-resources">
-        <span class="part" data-testid="quest-slots">
+      <div class="banner" data-testid="quest-board-resources">
+        <span class="cell" data-testid="quest-slots">
           <svg
+            class="icon"
             viewBox="0 0 24 24"
-            width="18"
-            height="18"
+            width="34"
+            height="34"
             fill="none"
-            stroke="#c9a04e"
-            stroke-width="1.8"
+            stroke="#f5c26b"
+            stroke-width="1.6"
             stroke-linecap="round"
             stroke-linejoin="round"
             aria-hidden="true"
@@ -40,21 +35,29 @@
             <rect x="5" y="4" width="14" height="17" rx="2" />
             <path d="M9 4V3h6v1M9 13l2 2 4-4" />
           </svg>
-          <small>{{ t('quest.board.pill.taken') }}</small>
-          <b>{{ slots.used }} / {{ slots.max }}</b>
+          <span class="figures">
+            <span class="label">{{ t('quest.board.pill.taken') }}</span>
+            <span class="value">{{ slots.used }} / {{ slots.max }}</span>
+          </span>
         </span>
-        <span class="sep" aria-hidden="true"></span>
+        <i class="divider" aria-hidden="true"></i>
         <quest-tip :text="t('quest.board.coins')">
-          <span class="part gold" data-testid="quest-board-coins">
-            <i class="coin" aria-hidden="true"></i><b>{{ coins }}</b>
+          <span class="cell" data-testid="quest-board-coins">
+            <img class="icon" :src="COIN_SRC" alt="" aria-hidden="true" />
+            <span class="figures">
+              <span class="label">{{ t('quest.board.coins') }}</span>
+              <span class="value">{{ coins }}</span>
+            </span>
           </span>
         </quest-tip>
-        <span class="sep" aria-hidden="true"></span>
+        <i class="divider" aria-hidden="true"></i>
         <quest-tip :text="t('quest.board.will')">
-          <span class="part" data-testid="quest-board-will">
-            <i class="gem" aria-hidden="true"></i>
-            <b><will-number :current="will.value" /></b>
-            <small>/ {{ will.cap }}</small>
+          <span class="cell" data-testid="quest-board-will">
+            <i class="gem icon" aria-hidden="true"></i>
+            <span class="figures">
+              <span class="label">{{ t('quest.board.will') }}</span>
+              <span class="value"><will-number :current="will.value" /> / {{ will.cap }}</span>
+            </span>
           </span>
         </quest-tip>
       </div>
@@ -130,6 +133,8 @@ import '@fontsource/alegreya-sans/400.css';
 import '@fontsource/alegreya-sans/700.css';
 import { computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { getPrototype } from '@hexoflat/engine';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useQuestBoardView } from '@/composables/use-quest-board-view';
@@ -140,8 +145,7 @@ import { useQuestRunActions } from '@/composables/use-quest-run-actions';
 import WillNumber from '@/components/gui/will-number.vue';
 import QuestRow from './quest-row.vue';
 import QuestRunPanel from './quest-run-panel.vue';
-import KnowledgeHelp from '../knowledge-help.vue';
-import BoardCloseButton from '@/components/gui/board/board-close-button.vue';
+import BoardHeader from '../board-header.vue';
 import QuestFilterChips from './quest-filter-chips.vue';
 import QuestTip from './quest-tip.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
@@ -151,6 +155,7 @@ const { active, available, locked, lockedCount, lockedOpen, rowById, will, coins
   useQuestBoardView();
 const details = useQuestDetails();
 const extra = QUEST_SLOTS.extraCost;
+const COIN_SRC = getPrototype(HEXOBJECT_KEYS.COINS).spritePath ?? '';
 const { run, result } = useQuestRunView();
 const { message: startMessage } = useQuestRunActions();
 const { message, status } = useQuestActions();
@@ -178,6 +183,7 @@ onBeforeUnmount(() => {
   --q-body: 'Alegreya Sans', system-ui, sans-serif;
   position: relative;
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
@@ -190,92 +196,101 @@ onBeforeUnmount(() => {
   border: 1px solid var(--q-line);
   border-radius: 12px;
 }
-.top {
+.header {
+  margin: -16px -16px 0;
+}
+.banner {
+  --diamond: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5 0L10 5L5 10L0 5Z' fill='%23b8864a'/></svg>");
+  position: relative;
+  isolation: isolate;
+  flex: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  height: 50px;
-}
-h2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  font-family: var(--q-display);
-  font-size: 38px;
-  font-weight: 700;
-  line-height: 1;
-  color: #e9c77b;
-  text-shadow: 0 1px 0 #6b4f1c;
-}
-h2::before,
-h2::after {
-  flex: 1;
-  max-width: 90px;
-  height: 1px;
-  content: '';
-}
-h2::before {
-  margin-left: auto;
-  background: linear-gradient(90deg, transparent, #b8913f);
-}
-h2::after {
-  margin-right: auto;
-  background: linear-gradient(90deg, #b8913f, transparent);
-}
-.pill {
-  display: flex;
-  align-items: center;
-  align-self: center;
-  gap: 14px;
-  height: 40px;
-  padding: 0 18px;
-  background: #15181b;
-  border: 1px solid var(--q-line);
-  border-radius: 20px;
-}
-.part {
-  display: inline-flex;
+  grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr) 11px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  color: var(--q-muted);
-}
-.part b {
-  font-family: var(--q-display);
-  font-size: 20px;
-  color: var(--q-text);
-}
-.part.gold b {
-  color: #e9c77b;
-}
-.part small {
-  font-size: 13px;
-  color: var(--q-label);
-}
-.sep {
-  width: 1px;
-  height: 20px;
-  background: var(--q-line);
-}
-.coin {
-  width: 12px;
-  height: 12px;
-  background: #7a5a1e;
-  border: 2px solid #f0c060;
-  border-radius: 50%;
   box-sizing: border-box;
+  height: 68px;
+  padding: 4px 12px;
+  color: #f1e4cc;
+  background: linear-gradient(180deg, #5a6d7e, #202b36);
+  clip-path: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
+}
+.banner::before {
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  content: '';
+  background: linear-gradient(180deg, #1a2029, #10151c);
+  clip-path: polygon(
+    10px 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0 calc(100% - 10px),
+    0 10px
+  );
+}
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+.icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.6));
+}
+.figures {
+  display: grid;
+  gap: 2px;
+  white-space: nowrap;
+}
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(243, 232, 210, 0.82);
+}
+.value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f3e8d2;
+  font-variant-numeric: tabular-nums;
+}
+.divider {
+  align-self: stretch;
+  background:
+    var(--diamond) center / 11px 11px no-repeat,
+    linear-gradient(180deg, transparent, #b8864a 20%, #b8864a 80%, transparent) center / 1px 100%
+      no-repeat;
 }
 .gem {
-  width: 10px;
-  height: 10px;
+  width: 18px;
+  height: 18px;
+  margin: 0 11px;
   background: #5b3fe0;
   border: 1px solid #b89bff;
   transform: rotate(45deg);
+  filter: none;
 }
 .groups {
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
   flex-direction: column;
   gap: 14px;
   min-height: 0;

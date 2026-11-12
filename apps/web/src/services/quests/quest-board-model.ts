@@ -1,3 +1,5 @@
+import { CONTENT } from '@hexoflat/engine';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { QuestDefinition } from '@hexoflat/engine/quests/quest-definition';
 
 export const QUEST_CATEGORIES = ['gather', 'combat', 'learn', 'exp'] as const;
@@ -12,24 +14,26 @@ export function categoryOf(quest: QuestDefinition): QuestCategory {
   return 'gather';
 }
 
-export type QuestIcon = 'axes' | 'stones' | 'book' | 'skull' | 'compass' | 'leaf';
-
-const ICON_BY_ID: Readonly<Record<string, QuestIcon>> = {
-  woodcutter: 'axes',
-  stonebreaker: 'stones',
-  scholar: 'book',
-  'bone-hunter': 'skull',
+const SPRITE_KEY_BY_ID: Readonly<Record<string, THexobjectKey>> = {
+  woodcutter: HEXOBJECT_KEYS.TREE,
+  stonebreaker: HEXOBJECT_KEYS.ROCK,
+  scholar: HEXOBJECT_KEYS.KNOWLEDGE_BOOK,
+  'bone-hunter': HEXOBJECT_KEYS.LONE_SKELETON,
 };
 
-const ICON_BY_CATEGORY: Readonly<Record<QuestCategory, QuestIcon>> = {
-  gather: 'leaf',
-  combat: 'skull',
-  learn: 'book',
-  exp: 'compass',
+const SPRITE_KEY_BY_CATEGORY: Readonly<Record<QuestCategory, THexobjectKey>> = {
+  gather: HEXOBJECT_KEYS.TREE,
+  combat: HEXOBJECT_KEYS.LONE_SKELETON,
+  learn: HEXOBJECT_KEYS.KNOWLEDGE_BOOK,
+  exp: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
 };
 
-export function iconOf(quest: QuestDefinition): QuestIcon {
-  return ICON_BY_ID[quest.id] ?? ICON_BY_CATEGORY[categoryOf(quest)];
+export function spriteKeyOf(quest: QuestDefinition): THexobjectKey {
+  return SPRITE_KEY_BY_ID[quest.id] ?? SPRITE_KEY_BY_CATEGORY[categoryOf(quest)];
+}
+
+export function spritePathOf(quest: QuestDefinition): string {
+  return CONTENT[spriteKeyOf(quest)].spritePath ?? '';
 }
 
 export function matchesFilter(category: QuestCategory, filter: QuestFilter): boolean {
