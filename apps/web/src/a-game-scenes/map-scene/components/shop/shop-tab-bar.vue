@@ -40,15 +40,23 @@
       type="button"
       role="tab"
       class="tab"
-      :class="{ 'is-active': shopTab === 'trade' }"
+      :class="{ 'is-active': shopTab === 'trade', 'is-locked': !tradeEnabled }"
       :aria-selected="shopTab === 'trade'"
+      :aria-disabled="!tradeEnabled"
+      :title="tradeEnabled ? undefined : t('shop.tab.tradeLocked')"
       data-testid="shop-tab-trade"
       :data-count="tradeCount"
+      :data-locked="!tradeEnabled || undefined"
       @click="setTab('trade')"
     >
-      <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
+      <svg v-if="tradeEnabled" class="glyph" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 9h13l-3-3" />
         <path d="M20 15H7l3 3" />
+      </svg>
+      <svg v-else class="glyph is-ice" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="9.5" rx="2" />
+        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+        <path d="M12 14.5v2.5" />
       </svg>
       <span class="label">{{ t('shop.tab.trade') }}</span>
       <span v-if="tradeCount > 0" class="badge" data-testid="shop-tab-trade-badge">{{
@@ -59,14 +67,19 @@
 </template>
 
 <script setup lang="ts">
+import { watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { clearShopSelection } from '@/composables/shop-selection';
 import { shopTab, type ShopTabKey } from '@/composables/shop-tab';
+import { leaveLockedTradeTab, useTradeTabEnabled } from '@/composables/use-trade-tab-flag';
 
 defineProps<{ buybackCount: number; tradeCount: number }>();
 const { t } = useI18n();
+const tradeEnabled = useTradeTabEnabled();
+watchEffect(() => leaveLockedTradeTab(tradeEnabled.value));
 
 function setTab(tab: ShopTabKey): void {
+  if (tab === 'trade' && !tradeEnabled.value) return;
   if (shopTab.value === tab) return;
   shopTab.value = tab;
   clearShopSelection();
@@ -165,6 +178,13 @@ function setTab(tab: ShopTabKey): void {
 .tab.is-active .glyph {
   color: #0f1620;
 }
+.tab.is-locked {
+  cursor: not-allowed;
+}
+.tab.is-locked:hover {
+  background: transparent;
+  color: rgba(243, 232, 210, 0.62);
+}
 .tab:focus-visible {
   outline: 2px solid #e6f1fb;
   outline-offset: -2px;
@@ -179,6 +199,17 @@ function setTab(tab: ShopTabKey): void {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.tab:not(.is-active) .glyph.is-ice {
+  color: #9fd4ff;
+  filter: drop-shadow(0 0 4px rgba(159, 212, 255, 0.55));
+}
+
+.tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .label {
   overflow: hidden;
   text-overflow: ellipsis;

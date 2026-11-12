@@ -7,7 +7,8 @@
     "devAddWill": "Dev: +50 Will",
     "devAddShield": "Dev: +1 shield",
     "freeShopRefresh": "Dev: free shop refresh",
-    "devAddCoins": "Dev: +500 coins"
+    "devAddCoins": "Dev: +500 coins",
+    "tradeTab": "Enable the Trade tab (experimental)"
   },
   "hexInfo": {
     "tags": {
@@ -752,7 +753,8 @@
     "tab": {
       "goods": "Goods",
       "buyback": "Buyback",
-      "trade": "Trade"
+      "trade": "Trade",
+      "tradeLocked": "Trade is not available yet"
     },
     "refresh": {
       "aria": "Refresh goods"
