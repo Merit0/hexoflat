@@ -9,21 +9,25 @@ export function useBookReading(activeTool: ComputedRef<unknown>) {
   const worldStore = useWorldMapStore();
   const heroToolStore = useHeroToolStore();
 
-  const isReading = computed(() => knowledgePanelMode.value === 'hall' && !!activeTool.value);
+  const isReading = computed(() => !!knowledgePanelMode.value && !!activeTool.value);
 
-  const bookCoordinates = computed<IHexCoordinates | null>(
-    () =>
-      worldStore.map?.tiles.find(
-        (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.KNOWLEDGE_BOOK,
-      )?.coordinates ?? null,
-  );
+  const bookCoordinates = computed<IHexCoordinates | null>(() => {
+    const key =
+      knowledgePanelMode.value === 'quests'
+        ? HEXOBJECT_KEYS.QUEST_BOARD
+        : HEXOBJECT_KEYS.KNOWLEDGE_BOOK;
+    return (
+      worldStore.map?.tiles.find((tile) => tile.hexobject?.hexobjectKey === key)?.coordinates ??
+      null
+    );
+  });
 
   const anchor = computed<IHexCoordinates | null>(() =>
     isReading.value && bookCoordinates.value ? bookCoordinates.value : heroToolStore.hover,
   );
 
   watch(knowledgePanelMode, (now, previous) => {
-    if (previous === 'hall' && !now) heroToolStore.stopTool();
+    if (previous && !now) heroToolStore.stopTool();
   });
 
   return { isReading, anchor };

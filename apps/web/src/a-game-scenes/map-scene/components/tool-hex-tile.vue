@@ -209,7 +209,8 @@ const bestAction = computed<ResolvedAction | null>(() => {
 
 const isReadAction = computed(
   () =>
-    hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.KNOWLEDGE_BOOK &&
+    (hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.KNOWLEDGE_BOOK ||
+      hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.QUEST_BOARD) &&
     activeToolKey.value === HEXOBJECT_KEYS.HAND,
 );
 const bestActionLabel = computed(() => {
@@ -381,6 +382,11 @@ async function executeAction() {
       flashDenied();
       heroToolStore.setActionMessage(t('moveBlocked.hallUnavailable'));
     }
+    return;
+  }
+
+  if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.QUEST_BOARD) {
+    openKnowledgePanel('quests');
     return;
   }
 

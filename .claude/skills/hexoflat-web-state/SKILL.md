@@ -209,3 +209,5 @@ Health comes from the server: `bindHealthListener` restores `hero` from every `p
 - Card: `shop-selection-card.vue` (108 px, three sections). Toast: `shop-toast.ts` + `shop-toast.vue`. Slot: `shop-trade-cell.vue` (holder with item cell, price section, badge; `--shop-slot-ratio` on the goods grid). Goods icon tilt: `shop-tilt.ts` (never the inventory store).
 - Bag: the stash's own `stash-bag-pane.vue` (six rows). `BOARD_CELL_CONTEXT` adds optional `select`, `isSelected`, `forecastKg` (the sale price is shown only in the hover tooltip, never on the cell) (the shop provides them, the stash does not).
 - The global `button` rule pads `0.55rem 1.1rem`; icon buttons must set `padding: 0` or the icon is pushed off centre.
+
+- **Quest board (QB2).** Right-panel only. Opens like the Book of Will through `knowledgePanelMode` (`'hall' | 'quests'`); state is the `progress.quests` projection (`services/quests/quest-projection.ts`, filled in `applyProgress`), commands in `services/quests/quest-commands.ts`, view model `composables/use-quest-view.ts` (no rules). Per-quest i18n keys are dynamic, so `questLocaleKeys()` in `i18n/locale-keys.ts` must list them.

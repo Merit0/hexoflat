@@ -16,6 +16,7 @@ import {
   isPlayerCommandType,
   replaceInventory,
   serverInventoryContext,
+  serverQuestContext,
   serverTradeContext,
   type DomainEvent,
   type PlayerAggregates,
@@ -161,6 +162,9 @@ export class PlayerCommandService {
             inventory: serverInventoryContext(aggregates.progress.presence),
             ...(command.type.startsWith('SHOP_')
               ? { trade: serverTradeContext(aggregates.progress.presence, rngSeedOf(loaded)) }
+              : {}),
+            ...(command.type.startsWith('QUEST_')
+              ? { quest: serverQuestContext(aggregates.progress.presence) }
               : {}),
           }),
       }),

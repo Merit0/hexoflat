@@ -22,7 +22,8 @@
     <div v-show="isHeroBoardOpen" class="hero-board-content">
       <stash-board v-if="stashStore.isOpen" />
       <shop-board v-else-if="traderStore.isOpen" />
-      <knowledge-board v-else-if="knowledgePanelMode" />
+      <knowledge-board v-else-if="knowledgePanelMode === 'hall'" />
+      <quest-board v-else-if="knowledgePanelMode === 'quests'" />
       <div v-else class="hero-board-body">
         <header class="board-top">
           <div class="tabs" :style="{ '--tab-count': tabs.length }">
@@ -37,6 +38,15 @@
               @click="activeTab = tab.id"
             >
               <template v-if="tab.id === 'battle'">{{ t('battle.tab') }}</template>
+              <template v-else-if="tab.id === 'quests'">
+                {{ t('quest.tab') }}
+                <span
+                  v-if="questStore.readyCount > 0"
+                  class="quest-mark"
+                  data-testid="quests-tab-mark"
+                  >★</span
+                >
+              </template>
               <template v-else>{{ tab.label }}</template>
             </button>
           </div>
@@ -47,6 +57,10 @@
         <hero-details-board v-else-if="activeTab === 'hero'" />
 
         <hero-path-board v-else-if="activeTab === 'path'" />
+
+        <section v-else-if="activeTab === 'quests'" class="tab-panel quests-panel">
+          <quest-tracker />
+        </section>
 
         <section v-else-if="activeTab === 'inventory'" class="tab-panel board-body">
           <div ref="boardFitWrapperRef" class="board-body-frame">
@@ -101,6 +115,9 @@ import { useI18n } from 'vue-i18n';
 import KnowledgeBoard from './knowledge-board.vue';
 import StashBoard from './stash/stash-board.vue';
 import ShopBoard from './shop/shop-board.vue';
+import QuestBoard from './quests/quest-board.vue';
+import QuestTracker from './quests/quest-tracker.vue';
+import { useQuestStore } from '@/stores/quest-store';
 import { useStashSession } from '@/composables/use-stash-session';
 import { useShopSession } from '@/composables/use-shop-session';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
@@ -125,12 +142,13 @@ import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vu
 import { useBattleStore } from '@/stores/battle-store';
 import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
 
-type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events' | 'battle';
+type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'quests' | 'events' | 'battle';
 
 const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
   { id: 'hero', label: 'Hero' },
   { id: 'inventory', label: 'Inventory' },
   { id: 'path', label: 'Path' },
+  { id: 'quests', label: 'Quests' },
   { id: 'events', label: 'Events' },
 ];
 
@@ -138,6 +156,7 @@ const activeTab = ref<HeroBoardTab>('hero');
 const battleStore = useBattleStore();
 const stashStore = useHeroStashStore();
 const traderStore = useTraderStore();
+const questStore = useQuestStore();
 useStashSession();
 useShopSession();
 const tabs = computed(() =>
@@ -189,6 +208,14 @@ watch(
 </script>
 
 <style scoped>
+.quest-mark {
+  margin-left: 0.25em;
+  color: #ffe98a;
+}
+.quests-panel {
+  padding: 12px;
+  overflow: auto;
+}
 @media (max-width: 760px) {
   .hero-board-panel.is-knowledge {
     position: fixed;

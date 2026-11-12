@@ -833,5 +833,70 @@
       "offline": "No connection to the server. Changes are not saved.",
       "claimFailed": "Could not open the chest. Try again."
     }
+  },
+  "quest": {
+    "tab": "Quests",
+    "boardTitle": "Quest Board",
+    "close": "Close the quest board",
+    "slots": "Quests taken: {used} / {max}",
+    "myQuests": "My quests",
+    "noneActive": "No active quests.",
+    "claim": "Claim",
+    "abandon": "Drop",
+    "accept": "Accept",
+    "taken": "Taken",
+    "locked": "Locked",
+    "once": "One-time",
+    "repeatable": "Repeatable",
+    "goal": "Goal",
+    "price": {
+      "free": "Free",
+      "will": "{n} Will"
+    },
+    "reward": {
+      "label": "Reward",
+      "will": "{n} Will"
+    },
+    "refusal": {
+      "UNKNOWN_QUEST": "This quest does not exist.",
+      "NOT_AT_BOARD": "Stand next to the quest board first.",
+      "QUEST_ALREADY_ACTIVE": "You already took this quest.",
+      "REQUIREMENTS_NOT_MET": "This quest is not available to you.",
+      "QUEST_SLOTS_FULL": "No free quest slots left.",
+      "INSUFFICIENT_WILL": "Not enough Will.",
+      "INSUFFICIENT_ITEMS": "You do not hold the required items.",
+      "NOT_ACTIVE": "This quest is not active.",
+      "NOT_READY": "This quest is not finished yet.",
+      "AUTO_TURN_IN": "This quest is handed in by itself.",
+      "BAG_FULL": "Your bag is too full for the reward.",
+      "NO_INVENTORY": "Your bag is not available.",
+      "OTHER": "The quest board refused this."
+    },
+    "woodcutter": {
+      "name": "Woodcutter",
+      "desc": "The camp needs timber. Cut trees in the wild.",
+      "table": "Cut 10 trees, get 5 axes."
+    },
+    "stonebreaker": {
+      "name": "Stonebreaker",
+      "desc": "Break stone for the camp walls.",
+      "table": "Mine 8 stones, get 30 coins."
+    },
+    "scholar": {
+      "name": "Scholar",
+      "desc": "Sharpen your mind in the Book of Will.",
+      "table": "Answer 15 questions correctly, get 20 coins."
+    },
+    "bone-hunter": {
+      "name": "Bone Hunter",
+      "desc": "The crypt is full of walking bones. Thin them out.",
+      "table": "Defeat 3 skeletons in battles, get a wooden shield."
+    },
+    "unit": {
+      "trees": "trees",
+      "stones": "stones",
+      "answers": "correct answers",
+      "skeletons": "skeletons"
+    }
   }
 }

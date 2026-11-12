@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { EHexActionTypeForTests, deserializeWorld, serializeWorld } from './world-test-support';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
-import { commandJournal, expeditionBlobs, itemLedger } from '../db/schema';
+import { commandJournal, expeditionBlobs, heroAggregates, itemLedger } from '../db/schema';
 import {
   ensureExpedition,
   patchBlobs,
@@ -247,6 +247,46 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       journal.some((row) => row.commandType === 'WORLD_ACTION' && row.result === 'applied'),
     ).toBe(true);
   });
+
+  it('counts a tree cut on the server for an active quest and marks it ready at the target', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    await kit.db
+      .update(heroAggregates)
+      .set({
+        state: sql`jsonb_set(state, '{quests,active}', '[{"questId":"woodcutter","progress":9,"state":"active"}]'::jsonb)`,
+      })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.TREE);
+    const started = await send(userId, heroId, 'WORLD_ACTION', {
+      coordinates: spot,
+      actionType: EHexActionTypeForTests.CUT,
+      toolKey: HEXOBJECT_KEYS.AXE,
+      client: {
+        tool: {
+          dragging: true,
+          hover: spot,
+          active: HEXOBJECT_KEYS.AXE,
+          durability: { current: 50, max: 100 },
+        },
+      },
+    });
+    expect(started.result).toBe('applied');
+
+    let ready = false;
+    for (let i = 0; i < 40 && !ready; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const ticked = await send(userId, heroId, 'WORLD_TICK', {});
+      ready = ticked.events.some((event) => event.type === 'QUEST_READY');
+    }
+    expect(ready).toBe(true);
+    const quests = (
+      (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+        quests: { active: unknown[] };
+      }
+    ).quests;
+    expect(quests.active).toEqual([{ questId: 'woodcutter', progress: 10, state: 'ready' }]);
+  }, 20000);
 
   async function setHealth(userId: string, heroId: string, current: number) {
     const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;

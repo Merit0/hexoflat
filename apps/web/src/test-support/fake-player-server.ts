@@ -6,6 +6,7 @@ import {
   executePlayerCommand,
   isPlayerCommandType,
   serverInventoryContext,
+  serverQuestContext,
   serverTradeContext,
   type PlayerAggregates,
 } from '@hexoflat/engine';
@@ -116,6 +117,7 @@ function handle(envelope: PlayerEnvelope): PlayerCommandResponse {
       devGrantAllowed: true,
       inventory: serverInventoryContext(s.progress.state.presence),
       trade: serverTradeContext(s.progress.state.presence, FAKE_RNG_SEED),
+      quest: serverQuestContext(s.progress.state.presence),
     },
   );
   if (!outcome.ok) return respond('rejected', outcome.code, outcome.events);

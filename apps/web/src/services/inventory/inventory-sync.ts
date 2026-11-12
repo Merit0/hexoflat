@@ -1,3 +1,5 @@
+import type { QuestLog } from '@hexoflat/engine/quests/quest-log-state';
+import { applyQuestProjection, resetQuestProjection } from '@/services/quests/quest-projection';
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { getAuthToken } from '@/api/auth-token';
@@ -92,8 +94,10 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     portal?: PortalLink | null;
     health?: { current: number; bonus: number; debt: number };
     kills?: number;
+    quests?: QuestLog;
   } & Partial<TraderProjection>;
   applyTraderProjection(progress);
+  applyQuestProjection(progress);
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
   inventorySession.progressRevision = projection.revision;
   inventorySession.knowledge = progress.knowledge ?? null;
@@ -232,6 +236,7 @@ export function endPlayerSession(): void {
   socket.close();
   resetInventorySession();
   resetTraderProjection();
+  resetQuestProjection();
 }
 
 export function settleInventorySync(): Promise<void> {

@@ -17,6 +17,8 @@ import {
   type BattleStep,
   type BattleWorldOutcome,
   type DomainEvent,
+  type ProgressState,
+  foldQuestEvents,
   type ServerWorld,
   type TileDiff,
   type WorldClientHint,
@@ -92,6 +94,11 @@ const INDEX_KEY = 'srv-index';
 const worldKey = (mapId: string) => `srv-world:${mapId}`;
 
 type Index = Partial<Record<LocationKey, string>>;
+
+function foldWorldQuests<T extends { ok: boolean; events: DomainEvent[] }>(outcome: T): T {
+  if (!outcome.ok || !('progress' in outcome)) return outcome;
+  return foldQuestEvents(outcome as T & { progress: ProgressState });
+}
 
 async function readIndex(tx: Tx, expeditionId: string): Promise<Index> {
   const raw = await readServerDocument(tx, expeditionId, INDEX_KEY);
@@ -382,7 +389,7 @@ export class WorldService {
       };
     }
     if (command.type === 'WORLD_BATTLE') {
-      const fought = battleWorld({ ...run, ...finders }, command.payload);
+      const fought = foldWorldQuests(battleWorld({ ...run, ...finders }, command.payload));
       if (!fought.ok) {
         await journal('rejected', fought.events, fought.code, null);
         return respond('rejected', fought.code, fought.events, [], world);
@@ -399,7 +406,7 @@ export class WorldService {
       await journal('applied', fought.events, null, committed.progressRevision);
       return { commandId, ...committed.response };
     }
-    const outcome: WorldOutcome =
+    const outcome: WorldOutcome = foldWorldQuests(
       command.type === 'WORLD_STEP'
         ? stepWorld(run, command.payload.target)
         : command.type === 'WORLD_ACTION'
@@ -414,7 +421,8 @@ export class WorldService {
             ? openPortalWorld(run, command.payload.target)
             : command.type === 'WORLD_PORTAL_CLOSE'
               ? closePortalWorld({ ...run, ...finders })
-              : tickWorld(run);
+              : tickWorld(run),
+    );
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
       return respond('rejected', outcome.code, outcome.events, [], world, outcome.effects);

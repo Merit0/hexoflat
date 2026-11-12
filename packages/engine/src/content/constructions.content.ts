@@ -259,13 +259,20 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
   [HEXOBJECT_KEYS.QUEST_BOARD]: {
     hexobjectKey: HEXOBJECT_KEYS.QUEST_BOARD,
     groupType: EHexobjectGroup.CONSTRUCTION,
-    isInteractable: false,
+    isInteractable: true,
     title: 'content.questBoard.title',
     subtitle: 'content.questBoard.subtitle',
     description: 'content.questBoard.description',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-constructs/camping/quests-hex.png',
     construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.USE]: {
+        label: 'tool.read',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
+    },
   },
 
   [HEXOBJECT_KEYS.STONE_WALL]: {

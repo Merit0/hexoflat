@@ -10,3 +10,5 @@ export * from './quest-log-state';
 export * from './quest-log';
 export * from './objectives';
 export * from './quests.content';
+export * from './quest-commands';
+export * from './quest-hook';
