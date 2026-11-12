@@ -31,6 +31,7 @@ export const HEXOBJECT_KEYS = {
   STASH_CHEST: 'stash-chest',
   TRADER_STALL: 'trader-stall',
   TRAINING_GROUNDS: 'training-grounds',
+  QUEST_BOARD: 'quest-board',
   STONE_WALL: 'stone-wall',
   RETURN_SCROLL: 'return-scroll',
   RETURN_PORTAL: 'return-portal',

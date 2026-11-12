@@ -8,6 +8,7 @@ import { createServerWorld, deserializeWorld, serializeWorld } from './server-wo
 
 const STALL_HEX = { columnIndex: 10, rowIndex: 9 };
 const GROUNDS_HEX = { columnIndex: 10, rowIndex: 5 };
+const BOARD_HEX = { columnIndex: 8, rowIndex: 6 };
 
 function campBeforeTheShop() {
   const world = createServerWorld('camping', 'camp-map', 'seed', 'hero-1');
@@ -31,8 +32,9 @@ function countOf(map: HexMapModel, key: THexobjectKey) {
 describe('installCampFacilities', () => {
   it('places the stall and Training Grounds on their drawn hexes in a camp saved before them', () => {
     const { map } = campBeforeTheShop();
-    expect(installCampFacilities(map, null)).toEqual([STALL_HEX, GROUNDS_HEX]);
+    expect(installCampFacilities(map, null)).toEqual([STALL_HEX, GROUNDS_HEX, BOARD_HEX]);
     expect(keyAt(map, STALL_HEX)).toBe(HEXOBJECT_KEYS.TRADER_STALL);
+    expect(keyAt(map, BOARD_HEX)).toBe(HEXOBJECT_KEYS.QUEST_BOARD);
     expect(keyAt(map, GROUNDS_HEX)).toBe(HEXOBJECT_KEYS.TRAINING_GROUNDS);
   });
 
@@ -40,7 +42,7 @@ describe('installCampFacilities', () => {
     const fresh = createServerWorld('camping', 'fresh', 'seed', 'hero-1').map;
     const { map } = campBeforeTheShop();
     installCampFacilities(map, null);
-    for (const hex of [STALL_HEX, GROUNDS_HEX]) {
+    for (const hex of [STALL_HEX, GROUNDS_HEX, BOARD_HEX]) {
       const installed = map.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(hex));
       const built = fresh.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(hex));
       expect(installed?.hexobject).toEqual(built?.hexobject);
@@ -56,7 +58,7 @@ describe('installCampFacilities', () => {
 
   it('never builds on the hero', () => {
     const { map } = campBeforeTheShop();
-    expect(installCampFacilities(map, STALL_HEX)).toEqual([GROUNDS_HEX]);
+    expect(installCampFacilities(map, STALL_HEX)).toEqual([GROUNDS_HEX, BOARD_HEX]);
     expect(keyAt(map, STALL_HEX)).toBeUndefined();
     expect(installCampFacilities(map, null)).toEqual([STALL_HEX]);
   });

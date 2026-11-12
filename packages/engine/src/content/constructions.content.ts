@@ -17,6 +17,7 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.STASH_CHEST
   | typeof HEXOBJECT_KEYS.TRADER_STALL
   | typeof HEXOBJECT_KEYS.TRAINING_GROUNDS
+  | typeof HEXOBJECT_KEYS.QUEST_BOARD
   | typeof HEXOBJECT_KEYS.STONE_WALL
   | typeof HEXOBJECT_KEYS.RETURN_PORTAL;
 
@@ -253,6 +254,18 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-constructs/camping/training-grounds-hex.png',
     construction: { integrity: 1000, isLocked: true },
+  },
+
+  [HEXOBJECT_KEYS.QUEST_BOARD]: {
+    hexobjectKey: HEXOBJECT_KEYS.QUEST_BOARD,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: false,
+    title: 'content.questBoard.title',
+    subtitle: 'content.questBoard.subtitle',
+    description: 'content.questBoard.description',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-constructs/camping/quests-hex.png',
+    construction: { integrity: 1000, isLocked: false },
   },
 
   [HEXOBJECT_KEYS.STONE_WALL]: {
