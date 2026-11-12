@@ -86,9 +86,11 @@ export class BattleFlowFeature extends BaseFeature {
 
   async verifyTheBattleHeartsMatchTheHeroBoard(): Promise<void> {
     await this.step('The hero hearts in the battle equal the hero board hearts', async () => {
-      const board = await this.campingMap.heroBoardPanel.getHeroHealth();
-      const hero = this.hero(await this.snapshot());
-      expect([hero.hp, hero.maxHp]).toEqual([board.current * 2, board.max * 2]);
+      await expect(async () => {
+        const board = await this.campingMap.heroBoardPanel.getHeroHealth();
+        const hero = this.hero(await this.snapshot());
+        expect([hero.hp, hero.maxHp]).toEqual([board.current * 2, board.max * 2]);
+      }).toPass();
     });
   }
 

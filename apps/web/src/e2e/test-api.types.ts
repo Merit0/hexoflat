@@ -111,7 +111,7 @@ export interface HexoflatTestApi {
   setBag(cells: ({ key: string; amount: number } | null)[]): void;
   settleInventorySync(): Promise<void>;
   getInventorySyncStatus(): string;
-  setHeroHealth(current: number): void;
+  setHeroHealth(current: number): Promise<void>;
   placeHexobjectNextToHero(key: string): Promise<TestHexCoordinates>;
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): Promise<void>;

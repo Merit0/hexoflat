@@ -260,12 +260,12 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     ...inventoryTestApi,
     ...stashTestApi,
     ...shopTestApi,
-    setHeroHealth(current: number) {
+    async setHeroHealth(current: number): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
       if (!Number.isFinite(current) || current < 0) throw new Error('Invalid fixture');
       heroStore.hero.setHealth(current);
       heroStore.hero.adjustHealthOnStatChange();
-      void pushHealthFixture(current);
+      await pushHealthFixture(current);
     },
     placeHexobjectNextToHero: (key: string) => placeHexobjectOnServer(worldStore, key),
     isBattleEngaged(): boolean {

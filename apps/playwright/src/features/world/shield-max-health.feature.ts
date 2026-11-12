@@ -26,9 +26,9 @@ export class ShieldMaxHealthFeature extends BaseFeature {
   async startWithShieldInBag(health?: number): Promise<void> {
     await this.step('Start in camp with a shield in the bag', async () => {
       await new OpenCampingMapFeature().open();
-      await this.page.evaluate((current) => {
+      await this.page.evaluate(async (current) => {
         window.__HEXOFLAT_TEST__!.grantInventoryItem('shield', 1);
-        if (current !== undefined) window.__HEXOFLAT_TEST__!.setHeroHealth(current);
+        if (current !== undefined) await window.__HEXOFLAT_TEST__!.setHeroHealth(current);
       }, health);
       await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.shield);
     });
