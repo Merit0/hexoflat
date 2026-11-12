@@ -5,8 +5,6 @@ const CLOSE_DELAY_MS = 140;
 const hoveredId = ref<string | null>(null);
 const pinnedId = ref<string | null>(null);
 const anchor = ref<DOMRect | null>(null);
-const helpHovered = ref(false);
-const helpPinned = ref(false);
 let anchorEl: HTMLElement | null = null;
 let timer: number | null = null;
 
@@ -25,7 +23,6 @@ export function useQuestDetails() {
     openId: computed(() => pinnedId.value ?? hoveredId.value),
     pinned: computed(() => pinnedId.value !== null),
     anchor,
-    helpOpen: computed(() => helpPinned.value || helpHovered.value),
     hover(id: string, el: HTMLElement) {
       cancelClose();
       hoveredId.value = id;
@@ -58,16 +55,6 @@ export function useQuestDetails() {
       cancelClose();
       pinnedId.value = null;
       hoveredId.value = null;
-    },
-    hoverHelp(on: boolean) {
-      helpHovered.value = on;
-    },
-    toggleHelp() {
-      helpPinned.value = !helpPinned.value;
-    },
-    closeHelp() {
-      helpPinned.value = false;
-      helpHovered.value = false;
     },
   };
 }

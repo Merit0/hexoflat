@@ -24,8 +24,12 @@
       </header>
       <p class="tags">
         {{ t(`quest.board.filter.${row.category}`) }} ·
-        {{ row.repeat === 'once' ? t('quest.once') : t('quest.repeatable') }}
+        {{ row.repeat === 'once' ? t('quest.board.tag.once') : t('quest.board.tag.repeatable') }}
+        <template v-if="row.timesDone > 0">
+          · {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
+        </template>
       </p>
+      <i class="line" aria-hidden="true"></i>
       <p class="desc">{{ t(row.quest.descKey) }}</p>
       <dl>
         <dt>{{ t('quest.board.label.goal') }}</dt>
@@ -84,36 +88,33 @@
         >
           {{ t('quest.board.abandon') }}
         </button>
-        <button
+        <quest-gold-button
           v-if="row.ready"
-          type="button"
-          class="main claim"
-          :data-testid="`quest-details-${row.quest.id}-claim`"
+          variant="main"
+          :testid="`quest-details-${row.quest.id}-claim`"
           :disabled="busy"
           @click="actions.claim(row)"
         >
           {{ t('quest.board.claimReward') }}
-        </button>
-        <button
+        </quest-gold-button>
+        <quest-gold-button
           v-else-if="row.taken && row.seeker"
-          type="button"
-          class="main"
-          :data-testid="`quest-details-${row.quest.id}-enter`"
+          variant="main"
+          :testid="`quest-details-${row.quest.id}-enter`"
           :disabled="busy"
           @click="actions.enter(row)"
         >
           {{ t('quest.board.enterTrail') }}
-        </button>
-        <button
+        </quest-gold-button>
+        <quest-gold-button
           v-else-if="row.state === 'open'"
-          type="button"
-          class="main"
-          :data-testid="`quest-details-${row.quest.id}-start`"
+          variant="main"
+          :testid="`quest-details-${row.quest.id}-start`"
           :disabled="busy || row.reason === 'will'"
           @click="actions.take(row)"
         >
           {{ t('quest.start') }}
-        </button>
+        </quest-gold-button>
       </footer>
     </section>
   </teleport>
@@ -127,6 +128,7 @@ import { useHeroStore } from '@/stores/hero-store';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
+import QuestGoldButton from './quest-gold-button.vue';
 import QuestRewardIcon from './quest-reward-icon.vue';
 import { rewardText } from './quest-reward-text';
 
@@ -193,26 +195,21 @@ watch(
 
 <style scoped>
 .details {
-  --q-text: #ede3d2;
-  --q-muted: #cbbfa6;
-  --q-label: #a9a08f;
-  --q-gold: #f0c060;
-  --q-gold-text: #e8d7a8;
-  --q-raised: #262e33;
-  --q-bg: #121517;
-  --q-danger-bg: #2e1f1b;
-  --q-danger-text: #f2b3a2;
+  --q-display: 'Cormorant Garamond', Georgia, serif;
+  --q-label: rgba(241, 228, 204, 0.6);
   position: fixed;
   z-index: 60;
   box-sizing: border-box;
   width: 400px;
   max-width: calc(100vw - 16px);
-  padding: 16px;
-  color: var(--q-text);
-  background: var(--q-raised);
-  border: 1px solid #6b5a33;
-  border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(241, 228, 204, 0.95);
+  background: rgba(14, 11, 9, 0.97);
+  border: 1px solid rgba(122, 141, 160, 0.7);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.65);
 }
 header {
   display: flex;
@@ -222,43 +219,51 @@ header {
 }
 h3 {
   margin: 0;
-  font-family: 'Cinzel', serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--q-gold-text);
+  font-size: 1rem;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  color: #ffe98a;
+  text-shadow:
+    0 0 8px rgba(255, 233, 138, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.8);
 }
 .x {
   width: 32px;
   min-height: 32px;
   height: 32px;
   padding: 0;
-  font-size: 20px;
-  color: var(--q-muted);
+  font-size: 22px;
+  color: rgba(241, 228, 204, 0.8);
   background: none;
   border: 0;
   cursor: pointer;
 }
 .tags {
-  margin: 2px 0 8px;
-  font-size: 13px;
+  margin: 2px 0 6px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--q-label);
 }
+.line {
+  display: block;
+  height: 1px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, rgba(122, 141, 160, 0.7), transparent);
+}
 .desc {
-  margin: 0 0 12px;
-  font-size: 15px;
-  line-height: 1.35;
+  margin: 0 0 10px;
 }
 dl {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr);
-  gap: 10px 8px;
+  gap: 8px;
   margin: 0;
 }
 dt {
   padding-top: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--q-label);
 }
@@ -267,11 +272,9 @@ dd {
   flex-direction: column;
   gap: 4px;
   margin: 0;
-  font-size: 14px;
-  color: var(--q-muted);
 }
 dd.bad {
-  color: var(--q-danger-text);
+  color: #f2b3a2;
 }
 .cells {
   display: flex;
@@ -280,24 +283,24 @@ dd.bad {
 }
 .cells span {
   padding: 2px 8px;
-  border: 1px solid #36424a;
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(122, 141, 160, 0.4);
+  border-radius: 6px;
 }
 .note {
-  font-size: 13px;
   color: var(--q-label);
 }
 .bar {
   display: block;
   height: 6px;
   overflow: hidden;
-  background: var(--q-bg);
+  background: rgba(0, 0, 0, 0.5);
   border-radius: 3px;
 }
 .bar i {
   display: block;
   height: 100%;
-  background: var(--q-gold);
+  background: #ffe98a;
 }
 .rewards {
   flex-direction: column;
@@ -308,48 +311,39 @@ dd.bad {
   gap: 8px;
   min-height: 30px;
   padding: 0 10px;
-  color: var(--q-text);
-  background: var(--q-bg);
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(122, 141, 160, 0.4);
+  border-radius: 6px;
 }
 .reason {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   padding: 8px 10px;
-  font-size: 14px;
-  color: var(--q-danger-text);
-  background: var(--q-danger-bg);
-  border-radius: 8px;
+  color: #f2b3a2;
+  background: #2e1f1b;
+  border: 1px solid #5a3328;
+  border-radius: 6px;
 }
 footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 14px;
-}
-footer button {
-  min-height: 40px;
-  height: 40px;
-  padding: 0 16px;
-  font-weight: 700;
-  border-radius: 10px;
-  cursor: pointer;
-}
-.main {
-  color: var(--q-text);
-  background: #343f46;
-  border: 1px solid #6b5a33;
-}
-.main.claim {
-  color: #1b1408;
-  background: var(--q-gold);
-  border-color: var(--q-gold);
+  gap: 10px;
+  margin-top: 12px;
 }
 .ghost {
-  color: var(--q-muted);
-  background: none;
-  border: 1px solid #36424a;
+  min-height: 42px;
+  height: 42px;
+  padding: 0 16px;
+  font-family: var(--q-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(241, 228, 204, 0.85);
+  background: transparent;
+  border: 1px solid rgba(122, 141, 160, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
 }
-footer button:disabled {
+.ghost:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }

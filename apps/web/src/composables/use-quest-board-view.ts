@@ -5,10 +5,12 @@ import { walletCoins } from '@hexoflat/engine/trade/trader-view';
 import { currentInventory } from '@/services/trade/trade-commands';
 import {
   categoryOf,
+  iconOf,
   filterCounts,
   matchesFilter,
   reasonOf,
   type QuestCategory,
+  type QuestIcon,
   type QuestFilter,
   type QuestReason,
 } from '@/services/quests/quest-board-model';
@@ -18,6 +20,8 @@ import { useQuestView, type QuestCardView } from '@/composables/use-quest-view';
 
 export interface QuestRowView extends QuestCardView {
   category: QuestCategory;
+  icon: QuestIcon;
+  timesDone: number;
   progress: number;
   ready: boolean;
   entry: number;
@@ -28,7 +32,7 @@ export interface QuestRowView extends QuestCardView {
 }
 
 const filter = ref<QuestFilter>('all');
-const lockedOpen = ref(true);
+const lockedOpen = ref(false);
 
 export function useQuestBoardView() {
   const { cards, tracked } = useQuestView();
@@ -44,6 +48,8 @@ export function useQuestBoardView() {
       return {
         ...card,
         category: categoryOf(card.quest),
+        icon: iconOf(card.quest),
+        timesDone: store.log.done[card.quest.id] ?? 0,
         progress: entry?.progress ?? 0,
         ready: entry?.ready ?? false,
         entry: card.quest.accept.kind === 'will' ? card.quest.accept.amount : 0,

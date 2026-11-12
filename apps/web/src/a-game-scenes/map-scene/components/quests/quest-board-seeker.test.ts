@@ -55,8 +55,10 @@ describe('quest board: Treasure Seeker cards and run', () => {
     expect(byId('quest-card-seeker-1')!.textContent).not.toMatch(/total|усього|разом/i);
   });
 
-  it('locks card II behind card I with a reason and no START', () => {
+  it('locks card II behind card I with a reason and no START', async () => {
     mount();
+    byId('quest-group-locked-toggle')!.click();
+    await nextTick();
     expect(byId('quest-card-seeker-2')!.dataset.state).toBe('locked');
     expect(byId('quest-start-seeker-2')).toBeNull();
     expect(byId('quest-card-seeker-2')!.textContent).toContain('First Trail');

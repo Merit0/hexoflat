@@ -6,11 +6,7 @@
   >
     <div
       class="row"
-      :class="[
-        `is-${row.state}`,
-        `cat-${row.category}`,
-        { 'is-ready': row.ready, 'is-open-details': detailsOpen },
-      ]"
+      :class="[`is-${row.state}`, { 'is-ready': row.ready, 'is-open-details': detailsOpen }]"
       :data-testid="`quest-card-${row.quest.id}`"
       :data-state="row.state"
       :data-category="row.category"
@@ -28,15 +24,13 @@
         @blur="details.leave()"
         @click="onToggle"
       >
-        <span class="tile"><quest-category-icon :category="row.category" /></span>
+        <quest-emblem :icon="row.icon" />
         <span class="text">
           <span class="title-line">
             <span class="name">{{ t(row.quest.nameKey) }}</span>
-            <span
-              class="kind"
-              :title="row.repeat === 'once' ? t('quest.once') : t('quest.repeatable')"
-              >{{ row.repeat === 'once' ? '1×' : '⟳' }}</span
-            >
+            <span class="tag">{{
+              row.repeat === 'once' ? t('quest.board.tag.once') : t('quest.board.tag.repeatable')
+            }}</span>
           </span>
           <span
             v-if="row.seeker && row.state === 'open'"
@@ -51,18 +45,26 @@
           <span
             v-else
             class="meta"
-            :class="{ 'is-gold': row.ready, 'is-danger': row.reason === 'will' && !row.seeker }"
+            :class="{
+              'is-gold': row.ready,
+              'is-locked': row.state === 'locked',
+              'is-danger': row.reason === 'will' && !row.seeker,
+            }"
             >{{ metaText }}</span
           >
           <span v-if="showBar" class="bar" aria-hidden="true"
-            ><i :style="{ width: `${percent}%` }"></i
+            ><i :class="{ 'is-full': row.ready }" :style="{ width: `${percent}%` }"></i
           ></span>
         </span>
         <span class="reward" :data-testid="`quest-reward-${row.quest.id}`">
           <template v-if="mainReward">
-            <quest-reward-icon :reward="mainReward" />
-            <b>{{ rewardValue }}</b>
-            <em v-if="row.rewards.length > 1">+{{ row.rewards.length - 1 }}</em>
+            <span class="reward-main">
+              <quest-reward-icon :reward="mainReward" :size="20" />
+              <b>{{ rewardValue }}</b>
+            </span>
+            <em v-if="row.rewards.length > 1">{{
+              t('quest.board.more', { n: row.rewards.length - 1 })
+            }}</em>
           </template>
         </span>
       </button>
@@ -80,43 +82,42 @@
             <rect x="5" y="11" width="14" height="9" rx="2" />
             <path d="M8 11V8a4 4 0 0 1 8 0v3" />
           </svg>
-          {{ t('quest.locked') }}
+          {{ t('quest.board.lockedTag') }}
         </span>
-        <button
+        <quest-gold-button
           v-else-if="row.ready"
-          type="button"
-          class="btn claim"
-          :data-testid="`quest-claim-${row.quest.id}`"
+          variant="claim"
+          :testid="`quest-claim-${row.quest.id}`"
           :disabled="busy"
           @click="actions.claim(row)"
         >
           {{ t('quest.claim') }}
-        </button>
-        <button
+        </quest-gold-button>
+        <quest-gold-button
           v-else-if="row.taken && row.seeker"
-          type="button"
-          class="btn"
-          :data-testid="`quest-start-${row.quest.id}`"
+          :testid="`quest-start-${row.quest.id}`"
           :disabled="busy"
           @click="actions.enter(row)"
         >
           {{ t('quest.enter') }}
-        </button>
-        <span v-else-if="row.taken" class="counter" :data-testid="`quest-progress-${row.quest.id}`"
-          >{{ row.progress }} / {{ row.target }}</span
+        </quest-gold-button>
+        <quest-gold-button
+          v-else-if="row.taken"
+          variant="counter"
+          :testid="`quest-progress-${row.quest.id}`"
         >
-        <button
+          {{ row.progress }} / {{ row.target }}
+        </quest-gold-button>
+        <quest-gold-button
           v-else
-          type="button"
-          class="btn price"
-          :data-testid="row.seeker ? `quest-start-${row.quest.id}` : `quest-accept-${row.quest.id}`"
+          :testid="row.seeker ? `quest-start-${row.quest.id}` : `quest-accept-${row.quest.id}`"
           :disabled="busy || row.reason === 'will'"
           :title="reasonText ?? undefined"
           :aria-label="t('quest.board.takeFor', { name: t(row.quest.nameKey), n: row.price })"
           @click="actions.take(row)"
         >
           <i class="gem" aria-hidden="true"></i>{{ row.price }}
-        </button>
+        </quest-gold-button>
       </div>
     </div>
   </li>
@@ -129,7 +130,8 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
-import QuestCategoryIcon from './quest-category-icon.vue';
+import QuestEmblem from './quest-emblem.vue';
+import QuestGoldButton from './quest-gold-button.vue';
 import QuestRewardIcon from './quest-reward-icon.vue';
 
 const props = defineProps<{ row: QuestRowView }>();
@@ -193,51 +195,35 @@ function onHover() {
 }
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px;
+  grid-template-columns: minmax(0, 1fr) 104px;
   align-items: center;
-  height: 60px;
+  height: 64px;
   padding-right: 10px;
   overflow: hidden;
-  background: var(--q-row);
-  border: 1px solid var(--q-line-soft);
-  border-radius: 12px;
+  background: linear-gradient(180deg, #1e2226, #16191c);
+  border: 1px solid #30353a;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition:
     border-color 0.15s,
-    background 0.15s;
+    box-shadow 0.15s;
 }
 .row.is-taken {
-  background: var(--q-row-active);
-  border-color: var(--q-cat);
+  border-color: #6b5a33;
 }
-.row.is-ready {
-  border-color: var(--q-gold);
-}
+.row.is-ready,
 .row.is-open-details {
-  background: var(--q-raised);
-  border-color: var(--q-gold-dim);
+  border-color: #c9a04e;
+  box-shadow:
+    0 0 0 1px rgba(201, 160, 78, 0.35),
+    0 0 18px rgba(201, 160, 78, 0.18);
 }
-.row.is-locked .body {
-  opacity: 0.62;
-}
-.cat-gather {
-  --q-cat: #7fbf8a;
-  --q-cat-bg: #1e2b22;
-}
-.cat-combat {
-  --q-cat: #e08a74;
-  --q-cat-bg: #2e1f1b;
-}
-.cat-learn {
-  --q-cat: #8db4e8;
-  --q-cat-bg: #1c2533;
-}
-.cat-exp {
-  --q-cat: #e6b85c;
-  --q-cat-bg: #2e2717;
+.row.is-locked {
+  opacity: 0.6;
 }
 .body {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 56px;
+  grid-template-columns: 48px minmax(0, 1fr) 58px;
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -248,21 +234,12 @@ function onHover() {
   text-align: left;
   background: none;
   border: 0;
-  border-radius: 12px 0 0 12px;
+  border-radius: 10px 0 0 10px;
   cursor: pointer;
 }
 .body:focus-visible {
-  outline: 2px solid var(--q-gold);
+  outline: 2px solid #c9a04e;
   outline-offset: -3px;
-}
-.tile {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  color: var(--q-cat);
-  background: var(--q-cat-bg);
-  border-radius: 10px;
 }
 .text {
   display: flex;
@@ -273,34 +250,46 @@ function onHover() {
 .title-line {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 .name {
   overflow: hidden;
-  font-size: 16px;
+  font-family: var(--q-display);
+  font-size: 21px;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.05;
+  color: #f0e4c8;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.kind {
+.tag {
   flex: none;
-  font-size: 12px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--q-label);
+  border: 1px solid #4a5057;
+  border-radius: 9px;
 }
 .meta {
   overflow: hidden;
-  font-size: 13px;
-  color: var(--q-muted);
+  font-size: 14px;
+  color: var(--q-label);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .meta.is-gold {
-  color: var(--q-gold);
+  color: #f0c060;
+}
+.meta.is-locked {
+  color: #c9a27a;
 }
 .meta.is-danger {
-  color: var(--q-danger-text);
+  color: #f2b3a2;
 }
 .chips {
   display: flex;
@@ -314,99 +303,60 @@ function onHover() {
   display: block;
   height: 4px;
   overflow: hidden;
-  background: var(--q-bg);
+  background: #0e1012;
   border-radius: 2px;
 }
 .bar i {
   display: block;
   height: 100%;
-  background: var(--q-cat);
+  background: #c9a04e;
 }
-.row.is-ready .bar i {
-  background: var(--q-gold);
+.bar i.is-full {
+  background: #f0c060;
 }
 .reward {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+  height: 34px;
+  border-left: 1px solid #343a40;
+}
+.reward-main {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
-  font-size: 13px;
-  color: var(--q-muted);
 }
 .reward b {
   font-family: var(--q-display);
-  font-size: 14px;
-  color: var(--q-text);
+  font-size: 19px;
+  color: #efe3c8;
 }
 .reward em {
-  font-size: 11px;
+  font-size: 10px;
   font-style: normal;
+  line-height: 1;
   color: var(--q-label);
 }
 .action {
   display: grid;
   place-items: center end;
 }
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 96px;
-  min-height: 40px;
-  height: 40px;
-  padding: 0;
-  font-family: var(--q-display);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--q-text);
-  background: var(--q-raised);
-  border: 1px solid var(--q-line);
-  border-radius: 10px;
-  cursor: pointer;
-}
-.btn:hover:not(:disabled) {
-  border-color: var(--q-gold-dim);
-}
-.btn:focus-visible {
-  outline: 2px solid var(--q-gold);
-  outline-offset: 2px;
-}
-.btn:disabled {
-  color: var(--q-label);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-.btn.claim {
-  color: #1b1408;
-  background: var(--q-gold);
-  border-color: var(--q-gold);
-}
 .gem {
-  width: 10px;
-  height: 10px;
-  background: #5b3fe0;
-  border: 1px solid #b89bff;
-  border-radius: 2px;
+  width: 9px;
+  height: 9px;
+  background: #4a2fc0;
+  border: 1px solid #2a1a70;
   transform: rotate(45deg);
-}
-.counter {
-  display: grid;
-  place-items: center;
-  width: 96px;
-  height: 40px;
-  font-family: var(--q-display);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--q-text);
-  border: 1px solid var(--q-cat);
-  border-radius: 10px;
 }
 .locked-mark {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  color: var(--q-label);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8f8a80;
 }
 </style>

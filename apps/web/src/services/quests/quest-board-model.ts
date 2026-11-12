@@ -12,6 +12,26 @@ export function categoryOf(quest: QuestDefinition): QuestCategory {
   return 'gather';
 }
 
+export type QuestIcon = 'axes' | 'stones' | 'book' | 'skull' | 'compass' | 'leaf';
+
+const ICON_BY_ID: Readonly<Record<string, QuestIcon>> = {
+  woodcutter: 'axes',
+  stonebreaker: 'stones',
+  scholar: 'book',
+  'bone-hunter': 'skull',
+};
+
+const ICON_BY_CATEGORY: Readonly<Record<QuestCategory, QuestIcon>> = {
+  gather: 'leaf',
+  combat: 'skull',
+  learn: 'book',
+  exp: 'compass',
+};
+
+export function iconOf(quest: QuestDefinition): QuestIcon {
+  return ICON_BY_ID[quest.id] ?? ICON_BY_CATEGORY[categoryOf(quest)];
+}
+
 export function matchesFilter(category: QuestCategory, filter: QuestFilter): boolean {
   return filter === 'all' || filter === category;
 }

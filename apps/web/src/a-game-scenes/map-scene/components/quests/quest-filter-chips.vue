@@ -29,46 +29,36 @@ const items: QuestFilter[] = ['all', ...QUEST_CATEGORIES];
 .chips {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 6px;
 }
 .chip {
-  min-height: 32px;
-  height: 32px;
+  min-height: 30px;
+  height: 30px;
   padding: 0 12px;
-  font-size: 13px;
+  font-family: var(--q-body);
+  font-size: 12px;
   font-weight: 700;
-  color: var(--q-muted);
-  background: var(--q-row);
-  border: 1px solid var(--q-line-soft);
-  border-radius: 16px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--q-label);
+  background: transparent;
+  border: 1px solid var(--q-line);
+  border-radius: 15px;
   cursor: pointer;
 }
 .chip b {
   margin-left: 4px;
-  font-weight: 500;
-  color: var(--q-label);
+  font-weight: 700;
+  opacity: 0.8;
 }
 .chip:focus-visible {
-  outline: 2px solid var(--q-gold);
+  outline: 2px solid #c9a04e;
   outline-offset: 2px;
 }
 .chip[aria-pressed='true'] {
-  color: var(--chip-color);
-  border-color: var(--chip-color);
-}
-.f-all {
-  --chip-color: #e8d7a8;
-}
-.f-gather {
-  --chip-color: #7fbf8a;
-}
-.f-combat {
-  --chip-color: #e08a74;
-}
-.f-learn {
-  --chip-color: #8db4e8;
-}
-.f-exp {
-  --chip-color: #e6b85c;
+  color: #e9c77b;
+  background: rgba(201, 160, 78, 0.14);
+  border-color: #c9a04e;
 }
 </style>
