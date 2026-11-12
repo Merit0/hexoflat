@@ -1,16 +1,19 @@
 <template>
-  <span
+  <img
     v-if="reward.kind === 'will'"
-    class="will-gem"
-    :style="{ width: `${size}px`, height: `${size}px` }"
+    class="will-icon"
+    :src="WILL_ICON_URL"
+    alt=""
     aria-hidden="true"
-  ></span>
+    :style="{ width: `${size}px`, height: `${size}px` }"
+  />
   <span v-else class="item-icon" :style="style" aria-hidden="true"></span>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Reward } from '@hexoflat/engine/quests/quest-definition';
+import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 
 const props = withDefaults(defineProps<{ reward: Reward; size?: number }>(), { size: 18 });
@@ -27,16 +30,13 @@ const style = computed(() => {
 </script>
 
 <style scoped>
-.will-gem,
 .item-icon {
   display: inline-block;
   flex: none;
 }
-.will-gem {
-  background: #5b3fe0;
-  border: 1px solid #b89bff;
-  transform: rotate(45deg) scale(0.62);
-  border-radius: 2px;
+.will-icon {
+  flex: none;
+  object-fit: contain;
 }
 .item-icon {
   background-repeat: no-repeat;

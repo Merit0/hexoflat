@@ -56,14 +56,7 @@ export class QuestBoardComponent extends BaseComponent {
     await expect(this.card(questId)).toHaveCount(0);
   }
 
-  private async expandLocked(): Promise<void> {
-    const toggle = this.page.getByTestId('quest-group-locked-toggle');
-    if ((await toggle.count()) === 0) return;
-    if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
-  }
-
-  async verifyCardState(questId: string, state: 'open' | 'taken' | 'locked'): Promise<void> {
-    if (state === 'locked') await this.expandLocked();
+  async verifyCardState(questId: string, state: 'open' | 'taken'): Promise<void> {
     await expect(this.card(questId)).toHaveAttribute('data-state', state);
   }
 
@@ -150,12 +143,10 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async verifyNoStartButton(questId: string): Promise<void> {
-    await this.expandLocked();
     await expect(this.page.getByTestId(`quest-start-${questId}`)).toHaveCount(0);
   }
 
   async verifyCardText(questId: string, pattern: RegExp): Promise<void> {
-    await this.expandLocked();
     await expect(this.card(questId)).toContainText(pattern);
   }
 

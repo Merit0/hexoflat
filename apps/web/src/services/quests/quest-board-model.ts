@@ -52,14 +52,13 @@ export function filterCounts(categories: readonly QuestCategory[]): Record<Quest
   return counts;
 }
 
-export type QuestReason = 'locked' | 'slots' | 'will' | null;
+export type QuestReason = 'slots' | 'will' | null;
 
 export function reasonOf(input: {
   state: 'open' | 'locked' | 'taken' | 'finished';
   slotsFull: boolean;
   willShort: boolean;
 }): QuestReason {
-  if (input.state === 'locked') return 'locked';
   if (input.state !== 'open') return null;
   if (input.slotsFull) return 'slots';
   return input.willShort ? 'will' : null;

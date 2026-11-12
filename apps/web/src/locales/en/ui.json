@@ -838,7 +838,6 @@
     "boardTitle": "Quests",
     "close": "Close the quest board",
     "claim": "Claim",
-    "locked": "Locked",
     "price": {
       "will": "{n} Will"
     },
@@ -898,7 +897,6 @@
     },
     "start": "Start",
     "enter": "Enter",
-    "lockedBy": "Find the chest of {name} first.",
     "chip": {
       "entry": "Entry {n}",
       "steps": "{n} steps",
@@ -969,7 +967,6 @@
       "group": {
         "active": "My quests",
         "available": "On the board",
-        "locked": "Locked",
         "of": "{used} of {max}",
         "count": "{n, plural, one {# quest} other {# quests}}"
       },
@@ -979,7 +976,6 @@
       },
       "label": {
         "goal": "Goal",
-        "requires": "Requires",
         "reward": "Reward",
         "toTake": "To take",
         "taken": "Taken"
@@ -1020,7 +1016,6 @@
         "repeatable": "Repeatable"
       },
       "more": "+{n} more",
-      "lockedTag": "Locked",
       "doneTimes": "Done {n}×"
     }
   }

@@ -53,20 +53,15 @@
             }}</span></template
           >
         </dd>
-        <template v-if="row.lockedByKey && row.state === 'locked'">
-          <dt>{{ t('quest.board.label.requires') }}</dt>
-          <dd class="bad">✗ {{ t('quest.lockedBy', { name: t(row.lockedByKey) }) }}</dd>
-        </template>
+
         <dt>{{ t('quest.board.label.reward') }}</dt>
         <dd class="rewards">
           <span v-for="(reward, index) in row.rewards" :key="index" class="pill">
             <quest-reward-icon :reward="reward" />{{ rewardText(reward) }}
           </span>
         </dd>
-        <template v-if="row.state !== 'locked'">
-          <dt>{{ row.taken ? t('quest.board.label.taken') : t('quest.board.label.toTake') }}</dt>
-          <dd :data-testid="`quest-details-${row.quest.id}-cost`">{{ costText }}</dd>
-        </template>
+        <dt>{{ row.taken ? t('quest.board.label.taken') : t('quest.board.label.toTake') }}</dt>
+        <dd :data-testid="`quest-details-${row.quest.id}-cost`">{{ costText }}</dd>
       </dl>
       <p
         v-if="reasonText"

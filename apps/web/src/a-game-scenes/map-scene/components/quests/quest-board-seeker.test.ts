@@ -57,13 +57,10 @@ describe('quest board: Treasure Seeker cards and run', () => {
     expect(byId('quest-card-seeker-1')!.textContent).not.toMatch(/total|усього|разом/i);
   });
 
-  it('locks card II behind card I with a reason and no START', async () => {
+  it('keeps card II off the board until card I is done', () => {
     mount();
-    byId('quest-group-locked-toggle')!.click();
-    await nextTick();
-    expect(byId('quest-card-seeker-2')!.dataset.state).toBe('locked');
-    expect(byId('quest-start-seeker-2')).toBeNull();
-    expect(byId('quest-card-seeker-2')!.textContent).toContain('First Trail');
+    expect(byId('quest-card-seeker-2')).toBeNull();
+    expect(byId('quest-card-seeker-1')).not.toBeNull();
   });
 
   it('disables START and says why when the Will is below the entry', async () => {

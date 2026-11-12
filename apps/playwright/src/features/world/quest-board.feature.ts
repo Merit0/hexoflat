@@ -47,7 +47,7 @@ export class QuestBoardFeature extends BaseFeature {
     await this.step('Arrange the hero quest log', () => this.board.givenQuests(fixture));
   }
 
-  async verifyCardState(questId: string, state: 'open' | 'taken' | 'locked'): Promise<void> {
+  async verifyCardState(questId: string, state: 'open' | 'taken'): Promise<void> {
     await this.step(`Verify the "${questId}" card is ${state}`, () =>
       this.board.verifyCardState(questId, state),
     );

@@ -36,12 +36,12 @@ const items: QuestFilter[] = ['all', ...QUEST_CATEGORIES];
   isolation: isolate;
   flex: none;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 4px;
   box-sizing: border-box;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: linear-gradient(180deg, #5a6d7e, #202b36);
   clip-path: polygon(
     12px 0,
@@ -72,23 +72,26 @@ const items: QuestFilter[] = ['all', ...QUEST_CATEGORIES];
   );
 }
 .chip {
-  min-height: 32px;
-  height: 32px;
-  padding: 0 14px;
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 26px;
+  height: 26px;
+  padding: 0 8px;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: rgba(243, 232, 210, 0.75);
   background: linear-gradient(180deg, #2a3744, #1c252e);
   border: 1px solid #46586a;
-  border-radius: 16px;
+  border-radius: 13px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   cursor: pointer;
 }
 .chip b {
-  margin-left: 4px;
+  margin-left: 3px;
   font-weight: 700;
   color: #f5c26b;
 }

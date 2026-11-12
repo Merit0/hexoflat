@@ -1,5 +1,5 @@
 <template>
-  <span class="shape" :class="[`v-${variant}`, { 'is-disabled': disabled }]">
+  <span class="shape" :class="[`v-${variant}`, { 'is-disabled': disabled, 'is-compact': compact }]">
     <button
       v-if="variant !== 'counter'"
       type="button"
@@ -21,8 +21,9 @@ withDefaults(
     testid: string;
     variant?: 'steel' | 'claim' | 'counter' | 'main';
     disabled?: boolean;
+    compact?: boolean;
   }>(),
-  { variant: 'steel', disabled: false },
+  { variant: 'steel', disabled: false, compact: false },
 );
 </script>
 
@@ -119,5 +120,36 @@ span.face {
 }
 button.face:disabled {
   cursor: not-allowed;
+}
+
+.is-compact.shape {
+  width: 80px;
+  height: 34px;
+}
+.is-compact .face {
+  padding: 0 10px;
+  font-size: 1.1rem;
+  background: transparent;
+  clip-path: none;
+}
+.is-compact .face::before {
+  inset: 0;
+  z-index: -1;
+  background: var(--edge);
+  box-shadow: none;
+  clip-path: path(
+    evenodd,
+    'M8 0H72L80 8V26L72 34H8L0 26V8Z M8.6 2H71.4L78 8.6V25.4L71.4 32H8.6L2 25.4V8.6Z'
+  );
+}
+.is-compact.v-claim {
+  --edge: linear-gradient(180deg, #ffe7a3, #c9a04e);
+  --ink: #ffe98a;
+}
+.is-compact.v-counter {
+  --edge: linear-gradient(180deg, #7a8da0, #46586a);
+}
+.is-compact button.face:not(:disabled):hover::before {
+  background: linear-gradient(180deg, #ffe7a3, #f5c26b);
 }
 </style>

@@ -59,7 +59,6 @@
             :class="{
               'is-gold': row.ready,
               'is-goal': isGoalText,
-              'is-locked': row.state === 'locked',
               'is-danger': row.reason === 'will' && !row.seeker,
             }"
             >{{ metaText }}</span
@@ -81,23 +80,9 @@
         </span>
       </button>
       <div class="action">
-        <span v-if="row.state === 'locked'" class="locked-mark">
-          <svg
-            viewBox="0 0 24 24"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            aria-hidden="true"
-          >
-            <rect x="5" y="11" width="14" height="9" rx="2" />
-            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-          </svg>
-          {{ t('quest.board.lockedTag') }}
-        </span>
         <quest-action-button
-          v-else-if="row.ready"
+          v-if="row.ready"
+          compact
           variant="claim"
           :testid="`quest-claim-${row.quest.id}`"
           :disabled="busy"
@@ -107,6 +92,7 @@
         </quest-action-button>
         <quest-action-button
           v-else-if="row.taken && row.seeker"
+          compact
           :testid="`quest-start-${row.quest.id}`"
           :disabled="busy"
           @click="actions.enter(row)"
@@ -115,6 +101,7 @@
         </quest-action-button>
         <quest-action-button
           v-else-if="row.taken"
+          compact
           variant="counter"
           :testid="`quest-progress-${row.quest.id}`"
         >
@@ -122,12 +109,13 @@
         </quest-action-button>
         <quest-tip v-else :text="reasonText">
           <quest-action-button
+            compact
             :testid="row.seeker ? `quest-start-${row.quest.id}` : `quest-accept-${row.quest.id}`"
             :disabled="busy || row.reason === 'will'"
             :aria-label="t('quest.board.takeFor', { name: t(row.quest.nameKey), n: row.price })"
             @click="actions.take(row)"
           >
-            <i class="gem" aria-hidden="true"></i>{{ row.price }}
+            <img class="will-icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" />{{ row.price }}
           </quest-action-button>
         </quest-tip>
       </div>
@@ -140,6 +128,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
+import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
@@ -179,9 +168,6 @@ const reasonText = computed(() => {
 const metaText = computed(() => {
   const row = props.row;
   if (row.ready) return t('quest.board.meta.ready');
-  if (row.state === 'locked') {
-    return row.lockedByKey ? t('quest.lockedBy', { name: t(row.lockedByKey) }) : t('quest.locked');
-  }
   if (row.taken) {
     return row.seeker
       ? t('quest.board.meta.onTrail')
@@ -233,9 +219,6 @@ function onHover() {
   box-shadow:
     0 0 0 1px rgba(201, 160, 78, 0.35),
     0 0 18px rgba(201, 160, 78, 0.18);
-}
-.row.is-locked {
-  opacity: 0.6;
 }
 .body {
   display: grid;
@@ -302,9 +285,6 @@ function onHover() {
 .meta.is-gold {
   color: #f0c060;
 }
-.meta.is-locked {
-  color: #c9a27a;
-}
 .meta.is-danger {
   color: #f2b3a2;
 }
@@ -351,21 +331,9 @@ function onHover() {
   display: grid;
   place-items: center end;
 }
-.gem {
-  width: 9px;
-  height: 9px;
-  background: #5b3fe0;
-  border: 1px solid #b89bff;
-  transform: rotate(45deg);
-}
-.locked-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #8f8a80;
+.will-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 </style>

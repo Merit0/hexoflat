@@ -121,7 +121,7 @@ describe('quest board layout and details', () => {
 
   it('filters every group by category and counts the chips', async () => {
     mount();
-    expect(byId('quest-filter-all')!.textContent).toContain('7');
+    expect(byId('quest-filter-all')!.textContent).toContain('5');
     byId('quest-filter-combat')!.click();
     await nextTick();
     expect(byId('quest-card-bone-hunter')).not.toBeNull();

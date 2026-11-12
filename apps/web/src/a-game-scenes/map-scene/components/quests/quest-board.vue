@@ -53,7 +53,7 @@
         <i class="divider" aria-hidden="true"></i>
         <quest-tip :text="t('quest.board.will')">
           <span class="cell" data-testid="quest-board-will">
-            <i class="gem icon" aria-hidden="true"></i>
+            <img class="icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" />
             <span class="figures">
               <span class="label">{{ t('quest.board.will') }}</span>
               <span class="value"><will-number :current="will.value" /> / {{ will.cap }}</span>
@@ -91,25 +91,6 @@
           </ul>
           <p v-else class="empty">{{ t('quest.board.empty.available') }}</p>
         </section>
-        <section v-if="lockedCount > 0" class="group" data-testid="quest-group-locked">
-          <h3>
-            <button
-              type="button"
-              class="fold"
-              data-testid="quest-group-locked-toggle"
-              :aria-expanded="lockedOpen"
-              @click="lockedOpen = !lockedOpen"
-            >
-              <span class="chev" :class="{ 'is-open': lockedOpen }" aria-hidden="true">›</span>
-              {{ t('quest.board.group.locked') }}
-            </button>
-            <i class="rule" aria-hidden="true"></i>
-            <span class="count">{{ t('quest.board.group.count', { n: locked.length }) }}</span>
-          </h3>
-          <ul v-if="lockedOpen && locked.length > 0">
-            <quest-row v-for="row in locked" :key="row.quest.id" :row="row" />
-          </ul>
-        </section>
       </div>
       <p v-if="startMessage" role="alert" class="alert" data-testid="quest-start-message">
         {{ startMessage }}
@@ -140,6 +121,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useQuestBoardView } from '@/composables/use-quest-board-view';
+import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestActions } from '@/composables/use-quest-actions';
 import { useQuestRunView } from '@/composables/use-quest-run-view';
@@ -154,8 +136,7 @@ import QuestTip from './quest-tip.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
 
 const { t } = useI18n();
-const { active, available, locked, lockedCount, lockedOpen, rowById, will, coins, slots } =
-  useQuestBoardView();
+const { active, available, rowById, will, coins, slots } = useQuestBoardView();
 const details = useQuestDetails();
 const extra = QUEST_SLOTS.extraCost;
 const COIN_SRC = getPrototype(HEXOBJECT_KEYS.COINS).spritePath ?? '';
@@ -282,16 +263,8 @@ onBeforeUnmount(() => {
     linear-gradient(180deg, transparent, #b8864a 20%, #b8864a 80%, transparent) center / 1px 100%
       no-repeat;
 }
-.gem {
-  width: 18px;
-  height: 18px;
-  margin: 0 11px;
-  background: #5b3fe0;
-  border: 1px solid #b89bff;
-  transform: rotate(45deg);
-  filter: none;
-}
 .groups {
+  zoom: 1.2;
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
@@ -340,32 +313,6 @@ ul {
 .dashed {
   border: 1px dashed #4a5057;
   border-radius: 10px;
-}
-.fold {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 0;
-  padding: 0;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  color: inherit;
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-.fold:focus-visible {
-  outline: 2px solid #c9a04e;
-  outline-offset: 2px;
-}
-.chev {
-  display: inline-block;
-  font-size: 16px;
-  transition: transform 0.15s;
-}
-.chev.is-open {
-  transform: rotate(90deg);
 }
 .alert {
   margin: 0;

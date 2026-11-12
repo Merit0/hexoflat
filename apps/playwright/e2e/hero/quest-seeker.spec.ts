@@ -28,11 +28,10 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
     await quest.board.verifyCardTextAbsent('seeker-1', /total|усього|разом/i);
   });
 
-  test('Verify the second trail is locked with a reason and has no start button', async () => {
+  test('Verify the second trail is not on the board until the first is done', async () => {
     const quest = await openBoard();
 
-    await quest.board.verifyCardState('seeker-2', 'locked');
-    await quest.board.verifyCardText('seeker-2', /First Trail|Перший слід/);
+    await quest.board.verifyCardNotOnBoard('seeker-2');
     await quest.board.verifyNoStartButton('seeker-2');
   });
 

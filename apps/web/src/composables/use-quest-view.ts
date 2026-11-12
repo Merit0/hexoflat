@@ -23,7 +23,6 @@ export interface QuestCardView {
   rewards: readonly Reward[];
   repeat: QuestDefinition['repeat'];
   seeker: SeekerChips | null;
-  lockedByKey: string | null;
   willShort: boolean;
 }
 
@@ -61,7 +60,6 @@ export function useQuestView() {
         const base = quest.accept.kind === 'will' ? quest.accept.amount : 0;
         const price = base + surcharge;
         const objective = quest.objective;
-        const required = quest.requires[0];
         return {
           quest,
           state: questBoardState(store.log, quest),
@@ -75,7 +73,6 @@ export function useQuestView() {
                   backCost: objective.params.stepCost * objective.params.backMultiplier,
                 }
               : null,
-          lockedByKey: required ? (ALL_QUESTS[required.questId]?.nameKey ?? null) : null,
           willShort: (hero.knowledge?.current ?? 0) < price,
           itemCost:
             quest.accept.kind === 'item'
