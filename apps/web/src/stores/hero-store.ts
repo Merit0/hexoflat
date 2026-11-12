@@ -445,7 +445,7 @@ export const useHeroStore = defineStore('hero', {
         heroToolStore.setActionMessage(message, icon);
         return false;
       };
-      if (knowledgePanelMode.value) return warn(i18n.global.t('moveBlocked.panel'));
+      if (knowledgePanelMode.value === 'hall') return warn(i18n.global.t('moveBlocked.panel'));
       if (portalFxBusy.value) return false;
       closeBoardsForWalk();
       if (heroToolStore.isDragging) return false;
