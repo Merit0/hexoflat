@@ -19,3 +19,6 @@ export * from './numbers';
 export * from './seeker-actions';
 export * from './projection';
 export * from './seeker-quests';
+export * from './treasure-field';
+export * from './all-quests';
+export * from './seeker-commands';

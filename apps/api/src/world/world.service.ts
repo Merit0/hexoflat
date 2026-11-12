@@ -246,6 +246,10 @@ export class WorldService {
 
     let world: ServerWorld | null;
     const progressState = structuredClone(progress.state);
+    if (await readServerDocument(tx, expeditionId, 'srv-quest')) {
+      await journal('rejected', [], 'QUEST_OPEN', null);
+      return respond('rejected', 'QUEST_OPEN', [], [], null);
+    }
     if (command.type === 'WORLD_ENTER') {
       const { locationKey } = command.payload;
       const known = index[locationKey];

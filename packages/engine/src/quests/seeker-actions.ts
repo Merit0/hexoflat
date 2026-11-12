@@ -83,11 +83,11 @@ export function enterQuest(
   if (!quest || quest.objective.kind !== 'expedition') {
     return reject(progress, input.questId, 'UNKNOWN_QUEST');
   }
+  if (input.hasRun) return reject(progress, input.questId, 'QUEST_IN_PROGRESS');
   if (!input.atBoard) return reject(progress, input.questId, 'NOT_AT_BOARD');
   if (!progress.quests.active.some((entry) => entry.questId === input.questId)) {
     return reject(progress, input.questId, 'NOT_ACTIVE');
   }
-  if (input.hasRun) return reject(progress, input.questId, 'QUEST_IN_PROGRESS');
 
   const params = quest.objective.params;
   const sequence = generateSequence(
@@ -346,7 +346,9 @@ export function seekerStepBack(
 }
 
 export function seekerGiveUp(progress: ProgressState, source: QuestRun): SeekerResult {
-  if (source.phase !== 'walking') return reject(progress, source, 'WRONG_PHASE');
+  if (source.phase !== 'walking' && source.phase !== 'ambush') {
+    return reject(progress, source, 'WRONG_PHASE');
+  }
   const run = structuredClone(source);
   const closing = finish(progress, run, 'left', 'LEFT');
   return { ok: true, progress: closing.progress, run, events: closing.events };

@@ -3,6 +3,7 @@ import { HeroesModule } from '../heroes/heroes.module';
 import { ExpeditionController } from '../expedition/expedition.controller';
 import { HERO_SESSIONS, HeroSessions } from './hero-sessions';
 import { WorldService } from '../world/world.service';
+import { QuestRunService } from '../quests/quest-run.service';
 import { PlayerCommandService } from './player-command.service';
 import { PlayerController } from './player.controller';
 import { PlayerGateway } from './player.gateway';
@@ -13,9 +14,10 @@ import { PlayerGateway } from './player.gateway';
   providers: [
     PlayerCommandService,
     WorldService,
+    QuestRunService,
     PlayerGateway,
     { provide: HERO_SESSIONS, useValue: new HeroSessions() },
   ],
-  exports: [PlayerCommandService, WorldService],
+  exports: [PlayerCommandService, WorldService, QuestRunService],
 })
 export class PlayerModule {}

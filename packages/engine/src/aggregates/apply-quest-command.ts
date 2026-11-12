@@ -2,7 +2,7 @@ import type { DomainEvent } from '../commands/types';
 import type { InventoryState } from '../inventory/inventory-state';
 import { planAbandon, planAccept, planClaim, type QuestPlan } from '../quests/quest-log';
 import type { QuestCommand } from '../quests/quest-commands';
-import { QUESTS } from '../quests/quests.content';
+import { ALL_QUESTS } from '../quests/all-quests';
 import type { ProgressState } from './progress-state';
 
 export interface QuestApplyContext {
@@ -29,7 +29,7 @@ function plan(
 ): QuestPlan {
   const { progress, inventory } = aggregates;
   const questId = command.payload.questId;
-  const context = { catalogue: QUESTS, atBoard: ctx.atBoard };
+  const context = { catalogue: ALL_QUESTS, atBoard: ctx.atBoard };
   if (command.type === 'QUEST_ACCEPT') return planAccept(progress, inventory, questId, context);
   if (command.type === 'QUEST_CLAIM') return planClaim(progress, inventory, questId, context);
   return planAbandon(progress, inventory, questId);
