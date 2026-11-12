@@ -5,3 +5,8 @@ export type { DecoyContext, DecoyCandidates } from './sequences/decoys';
 export { generateSequence, sampleParam } from './sequences/generate';
 export type { GeneratedSequence, SequenceRequest } from './sequences/generate';
 export * from './seeker-content';
+export * from './quest-definition';
+export * from './quest-log-state';
+export * from './quest-log';
+export * from './objectives';
+export * from './quests.content';

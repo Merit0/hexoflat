@@ -1,3 +1,4 @@
+import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type HexMapModel from '../map/models/hex-map-model';
 import type { HexTileModel } from '../map/models/hex-tile-model';
@@ -62,6 +63,7 @@ export interface IActionContext {
   hero: IHeroPort;
   gathering: IGatheringPort;
   inventory: IInventoryDraft;
+  emit?: (event: DomainEvent) => void;
   events: IEventsPort;
   worldMap: IWorldMapPort;
   navigate?: (locationKey: LocationKey) => void;

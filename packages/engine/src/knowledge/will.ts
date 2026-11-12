@@ -5,9 +5,12 @@ import { getMeta } from '../content/content-accessors';
 import type { KnowledgeState } from './state';
 
 export type WillSource =
-  { kind: 'hall'; ref: string } | { kind: 'item'; ref: string } | { kind: 'dev'; ref: string };
+  | { kind: 'hall'; ref: string }
+  | { kind: 'item'; ref: string }
+  | { kind: 'quest'; ref: string }
+  | { kind: 'dev'; ref: string };
 export type WillSpendReason =
-  'step' | 'action' | 'entry' | 'combat-boost' | 'skill' | 'trader-refresh';
+  'step' | 'action' | 'entry' | 'combat-boost' | 'skill' | 'trader-refresh' | 'quest';
 export type WillRejectReason = 'INSUFFICIENT_WILL' | 'NO_WILL_STATE';
 
 export function grantWill(

@@ -87,7 +87,12 @@ export function applyCommand(
   const parsed = schema.parse(command);
   const events: DomainEvent[] = [];
   const draft: IInventoryDraft = { current: state.inventory, events: [] };
-  const bound: BoundActionContext = { ...ctx, inventory: draft };
+  const emitted: DomainEvent[] = [];
+  const bound: BoundActionContext = {
+    ...ctx,
+    inventory: draft,
+    emit: (event) => emitted.push(event),
+  };
 
   switch (parsed.type) {
     case 'KNOWLEDGE':
@@ -187,7 +192,7 @@ export function applyCommand(
   }
 
   if (draft.current !== state.inventory) state.inventory = draft.current;
-  events.push(...draft.events);
+  events.push(...draft.events, ...emitted);
   return { state, events };
 }
 
