@@ -46,9 +46,11 @@ describe('quest board: Treasure Seeker cards and run', () => {
     vi.clearAllMocks();
   });
 
-  it('shows the four chips of card I and never a total', () => {
+  it('shows the four chips of card I in its details and never a total', async () => {
     mount();
-    const chips = byId('quest-chips-seeker-1')!.textContent;
+    byId('quest-row-seeker-1')!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    const chips = document.querySelector('[data-testid="quest-chips-seeker-1"]')!.textContent;
     expect(chips).toContain('20');
     expect(chips).toContain('10');
     expect(chips).toContain('3');

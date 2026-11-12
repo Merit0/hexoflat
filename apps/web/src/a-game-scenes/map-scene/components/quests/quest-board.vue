@@ -61,7 +61,9 @@
           </span>
         </quest-tip>
       </div>
+      <board-ornament />
       <quest-filter-chips />
+      <board-ornament />
       <div class="groups" @scroll.passive="details.close()">
         <section class="group" data-testid="quest-group-active">
           <h3>
@@ -146,6 +148,7 @@ import WillNumber from '@/components/gui/will-number.vue';
 import QuestRow from './quest-row.vue';
 import QuestRunPanel from './quest-run-panel.vue';
 import BoardHeader from '../board-header.vue';
+import BoardOrnament from '../board-ornament.vue';
 import QuestFilterChips from './quest-filter-chips.vue';
 import QuestTip from './quest-tip.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';

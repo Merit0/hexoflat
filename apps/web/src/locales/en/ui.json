@@ -988,7 +988,8 @@
         "goal": "Goal: {n} {unit}",
         "progress": "{done} / {n} {unit}",
         "ready": "Goal reached — claim it",
-        "onTrail": "On the trail — enter it"
+        "onTrail": "On the trail — enter it",
+        "countCost": "Goal: Count steps cost"
       },
       "reason": {
         "will": "Not enough Will",

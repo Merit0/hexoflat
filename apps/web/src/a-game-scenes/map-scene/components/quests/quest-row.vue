@@ -55,17 +55,6 @@
             </quest-tip>
           </span>
           <span
-            v-if="row.seeker && row.state === 'open'"
-            class="meta chips"
-            :data-testid="`quest-chips-${row.quest.id}`"
-          >
-            <span>{{ t('quest.chip.entry', { n: row.seeker.entry }) }}</span>
-            <span>{{ t('quest.chip.steps', { n: row.seeker.steps }) }}</span>
-            <span>{{ t('quest.chip.stepPrice', { n: row.seeker.stepCost }) }}</span>
-            <span>{{ t('quest.chip.backPrice', { n: row.seeker.backCost }) }}</span>
-          </span>
-          <span
-            v-else
             class="meta"
             :class="{
               'is-gold': row.ready,
@@ -178,7 +167,7 @@ const rewardValue = computed(() => {
 });
 
 const isGoalText = computed(
-  () => props.row.state === 'open' && !props.row.seeker && props.row.reason !== 'will',
+  () => props.row.state === 'open' && (!!props.row.seeker || props.row.reason !== 'will'),
 );
 
 const reasonText = computed(() => {
@@ -202,7 +191,7 @@ const metaText = computed(() => {
           unit: t(row.unitKey),
         });
   }
-  if (row.seeker) return '';
+  if (row.seeker) return t('quest.board.meta.countCost');
   if (row.reason === 'will') return t('quest.board.reason.will');
   return t('quest.board.meta.goal', { n: row.target, unit: t(row.unitKey) });
 });
@@ -318,14 +307,6 @@ function onHover() {
 }
 .meta.is-danger {
   color: #f2b3a2;
-}
-.chips {
-  display: flex;
-  gap: 6px;
-}
-.chips span + span::before {
-  margin-right: 6px;
-  content: '·';
 }
 .bar {
   display: block;

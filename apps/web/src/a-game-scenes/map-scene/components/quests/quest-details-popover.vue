@@ -35,7 +35,8 @@
         <dt>{{ t('quest.board.label.goal') }}</dt>
         <dd>
           <template v-if="row.seeker">
-            <span class="cells">
+            <span class="cells" :data-testid="`quest-chips-${row.quest.id}`">
+              <span>{{ t('quest.chip.entry', { n: row.seeker.entry }) }}</span>
               <span>{{ t('quest.chip.steps', { n: row.seeker.steps }) }}</span>
               <span>{{ t('quest.chip.stepPrice', { n: row.seeker.stepCost }) }}</span>
               <span>{{ t('quest.chip.backPrice', { n: row.seeker.backCost }) }}</span>

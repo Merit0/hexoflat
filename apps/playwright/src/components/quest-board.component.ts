@@ -164,6 +164,7 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async verifyChips(questId: string, chips: string[]): Promise<void> {
+    await this.page.getByTestId(`quest-row-${questId}`).hover();
     const row = this.page.getByTestId(`quest-chips-${questId}`);
     for (const chip of chips) await expect(row).toContainText(chip);
   }
