@@ -26,6 +26,7 @@ export function startBattle(
     undo: [],
     strikeSeq: 0,
     taskSeq: 0,
+    ...(rules.graveLootEnabled ? { lootEnabled: true, fallen: [] } : {}),
   };
   const started: DomainEvent = {
     type: 'BATTLE_STARTED',

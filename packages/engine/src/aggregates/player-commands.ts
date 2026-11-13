@@ -114,6 +114,11 @@ export const DevSetKnowledgeCommandSchema = z.object({
   }),
 });
 
+export const AckGraveExitWarningCommandSchema = z.object({
+  type: z.literal('ACK_GRAVE_EXIT_WARNING'),
+  payload: z.object({ heroId: z.string().min(1) }),
+});
+
 function strict<T extends z.ZodLiteral<string>, P extends z.ZodRawShape>(
   schema: z.ZodObject<{ type: T; payload: z.ZodObject<P> }>,
 ) {
@@ -148,6 +153,7 @@ export const PLAYER_COMMAND_SCHEMAS = {
   QUEST_ACCEPT: strict(QuestAcceptCommandSchema),
   QUEST_ABANDON: strict(QuestAbandonCommandSchema),
   QUEST_CLAIM: strict(QuestClaimCommandSchema),
+  ACK_GRAVE_EXIT_WARNING: strict(AckGraveExitWarningCommandSchema),
 } as const;
 
 export type TPlayerCommandType = keyof typeof PLAYER_COMMAND_SCHEMAS;
@@ -181,6 +187,7 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   QUEST_ACCEPT: ['inventory', 'progress'],
   QUEST_ABANDON: ['inventory', 'progress'],
   QUEST_CLAIM: ['inventory', 'progress'],
+  ACK_GRAVE_EXIT_WARNING: ['progress'],
 };
 
 export const PLAYER_COMMAND_REVISION: Record<
@@ -214,6 +221,7 @@ export const PLAYER_COMMAND_REVISION: Record<
   QUEST_ACCEPT: 'aggregate',
   QUEST_ABANDON: 'aggregate',
   QUEST_CLAIM: 'aggregate',
+  ACK_GRAVE_EXIT_WARNING: 'none',
 };
 
 export function isPlayerCommandType(type: string): type is TPlayerCommandType {

@@ -107,6 +107,26 @@ export const reactionSchema = z.object({
 });
 export type BattleReaction = z.infer<typeof reactionSchema>;
 
+export const graveSchema = z.object({
+  hex: axialSchema,
+  tables: z.array(z.string().min(1)),
+  examined: z.boolean(),
+});
+export type Grave = z.infer<typeof graveSchema>;
+
+export const groundItemSchema = z.object({
+  hex: axialSchema,
+  itemKey: z.string().min(1),
+  amount: z.number().int().min(1),
+});
+export type GroundItem = z.infer<typeof groundItemSchema>;
+
+export const collectSchema = z.object({
+  graves: z.array(graveSchema),
+  items: z.array(groundItemSchema),
+});
+export type CollectState = z.infer<typeof collectSchema>;
+
 export const battleStateSchema = z.object({
   id: z.string().min(1),
   seed: z.string().min(1),
@@ -134,6 +154,9 @@ export const battleStateSchema = z.object({
   outcome: battleOutcomeSchema.optional(),
   taskHistory: z.record(z.string(), z.array(z.boolean())).optional(),
   turnClockMs: z.number().int().min(0).optional(),
+  lootEnabled: z.boolean().optional(),
+  fallen: z.array(z.string()).optional(),
+  collect: collectSchema.optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
 

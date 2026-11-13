@@ -2,8 +2,8 @@ import { lootTableOf } from '../content/loot-tables.content';
 import { getPrototype } from '../content/content-accessors';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { isTerrainPassable } from '../boards/terrain';
-import { grantToDraft, type IInventoryDraft } from '../inventory/apply-stock';
-import { lootStreamLabel, placeLoot, rollLoot, type LootDrop } from '../loot';
+import type { IInventoryDraft } from '../inventory/apply-stock';
+import { lootStreamLabel, planLootSpread, rollLoot, type LootDrop } from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type HexMapModel from '../map/models/hex-map-model';
 import type { HexTileModel } from '../map/models/hex-tile-model';
@@ -63,11 +63,6 @@ function neighboursOf(map: HexMapModel, target: Axial) {
   });
 }
 
-function bagTakesAll(draft: IInventoryDraft, drops: readonly LootDrop[]): boolean {
-  const trial: IInventoryDraft = { current: draft.current, events: [] };
-  return drops.every((drop) => grantToDraft(trial, drop.itemKey, drop.amount, 'loot'));
-}
-
 export function planChestLoot(
   map: HexMapModel,
   chest: HexTileModel,
@@ -78,32 +73,23 @@ export function planChestLoot(
   const drops = rollChestLoot(chest, context);
   if (drops.length === 0) return { ok: true, plan: EMPTY_CHEST_LOOT };
   const target = offsetToAxial(chest.coordinates);
-  const result = placeLoot({
+  const spread = planLootSpread({
     target,
     entry: offsetToAxial(entry),
     neighbours: neighboursOf(map, target),
-    drops: [drops],
+    lists: [drops],
+    bag: draft,
   });
-  if (result.kind === 'refused') return { ok: false, reason: result.refusal.reason };
-  if (result.kind === 'to-bag') {
-    if (!bagTakesAll(draft, result.drops)) return { ok: false, reason: 'BAG_FULL' };
-    return {
-      ok: true,
-      plan: {
-        placements: [],
-        toBag: result.drops.map(({ itemKey, amount }) => ({ itemKey, amount })),
-      },
-    };
-  }
+  if (!spread.ok) return spread;
   return {
     ok: true,
     plan: {
-      placements: result.placements.map(({ hex, itemKey, amount }) => ({
+      placements: spread.plan.placements.map(({ hex, itemKey, amount }) => ({
         coordinates: axialToOffset(hex),
         itemKey,
         amount,
       })),
-      toBag: [],
+      toBag: spread.plan.toBag,
     },
   };
 }

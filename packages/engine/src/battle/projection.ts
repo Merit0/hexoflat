@@ -1,11 +1,27 @@
 import type { DomainEvent } from '../commands/types';
-import type { BattleHex, BattleSide, BattleState, PendingStrike } from './battle-state';
+import type { BattleHex, BattleSide, BattleState, GroundItem, PendingStrike } from './battle-state';
+import { lootLeft } from './collect';
 import { creatureById } from './battle-board';
 
 export type ProjectedStrike = Omit<PendingStrike, 'fromHex'> & { fromHex: BattleHex | null };
-type HiddenFields = 'pending' | 'seed' | 'reaction' | 'taskHistory' | 'wounds' | 'turnClockMs';
+type HiddenFields =
+  | 'pending'
+  | 'seed'
+  | 'reaction'
+  | 'taskHistory'
+  | 'wounds'
+  | 'turnClockMs'
+  | 'lootEnabled'
+  | 'fallen'
+  | 'collect';
+export interface ProjectedCollect {
+  graves: { hex: BattleHex; examined: boolean }[];
+  items: GroundItem[];
+}
 export type BattleProjection = Omit<BattleState, HiddenFields> & {
   viewer: BattleSide;
+  collect?: ProjectedCollect;
+  lootLeft?: boolean;
   pending: ProjectedStrike[];
   shieldsRaised: boolean;
   reaction?: {
@@ -38,12 +54,29 @@ function publicPart(state: BattleState, viewer: BattleSide): Omit<BattleState, H
   delete copy.taskHistory;
   delete copy.wounds;
   delete copy.turnClockMs;
+  delete copy.lootEnabled;
+  delete copy.fallen;
+  delete copy.collect;
   if (copy.task) copy.task = { ...copy.task, answer: 0 };
   copy.creatures = copy.creatures?.map((creature) =>
     creature.side === viewer ? creature : { ...creature, bag: [] },
   );
   if (creatureById(state, state.activeId)?.side !== viewer) copy.undo = [];
   return copy as Omit<BattleState, HiddenFields>;
+}
+
+function collectPart(state: BattleState): Pick<BattleProjection, 'collect' | 'lootLeft'> {
+  if (!state.collect) return {};
+  return {
+    collect: {
+      graves: state.collect.graves.map((grave) => ({
+        hex: { ...grave.hex },
+        examined: grave.examined,
+      })),
+      items: state.collect.items.map((item) => ({ ...item, hex: { ...item.hex } })),
+    },
+    lootLeft: lootLeft(state.collect),
+  };
 }
 
 function hidesActiveShields(state: BattleState, viewer: BattleSide): boolean {
@@ -77,6 +110,7 @@ export function projectBattleForViewer(state: BattleState, viewer: BattleSide): 
     pending,
     reaction,
     shieldsRaised: false,
+    ...collectPart(state),
   };
   if (state.reaction?.stage === 'aim') return aimView(state, view, viewer);
   return hidesActiveShields(state, viewer)

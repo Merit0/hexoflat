@@ -35,6 +35,7 @@ import {
 } from '@hexoflat/engine';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
+import { BATTLE_RULES, type BattleRules } from '@hexoflat/engine/battle/battle-content';
 import { applyBattleFixture, battleFixtureSchema } from '@hexoflat/engine/battle/battle-fixtures';
 import { applyWorldFixture, worldFixtureSchema } from '@hexoflat/engine/world/world-fixtures';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
@@ -129,6 +130,8 @@ export class WorldService {
     @Inject(DB) private readonly db: Db,
     @Inject(HeroesService) private readonly heroes: HeroesService,
   ) {}
+
+  battleRules: BattleRules = BATTLE_RULES;
 
   async execute(userId: string, raw: unknown): Promise<WorldResponse> {
     if (JSON.stringify(raw ?? null).length > MAX_COMMAND_BYTES) {
@@ -393,7 +396,9 @@ export class WorldService {
       };
     }
     if (command.type === 'WORLD_BATTLE') {
-      const fought = foldWorldQuests(battleWorld({ ...run, ...finders }, command.payload));
+      const fought = foldWorldQuests(
+        battleWorld({ ...run, ...finders }, command.payload, this.battleRules),
+      );
       if (!fought.ok) {
         await journal('rejected', fought.events, fought.code, null);
         return respond('rejected', fought.code, fought.events, [], world);
@@ -654,6 +659,7 @@ export class WorldService {
           create: (key: LocationKey) => createServerWorld(key, randomUUID(), seed, heroId),
         },
         { kind: 'close', heroId },
+        this.battleRules,
       );
       if (!fought.ok) return;
       await this.commitBattle(tx, {
@@ -697,6 +703,7 @@ export class WorldService {
             },
           },
           { kind: 'sync', heroId },
+          this.battleRules,
         );
         if (settled.ok) {
           await this.commitBattle(tx, {

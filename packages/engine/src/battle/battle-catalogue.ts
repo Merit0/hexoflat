@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { usePriceOf } from '../content/content-accessors';
+import {
+  SKELETON_ARCHER_TABLE_ID,
+  SKELETON_KING_TABLE_ID,
+  SKELETON_WARRIOR_TABLE_ID,
+} from '../content/loot-tables.content';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import type { BattleCreature, BattleHex, BattleItem } from './battle-state';
 
@@ -32,6 +37,7 @@ export const battleCreatureDefSchema = z.object({
   weight: z.number().int().min(0),
   force: z.number().int().min(0),
   hands: z.object({ right: z.string().nullable(), left: z.string().nullable() }),
+  lootTableId: z.string().min(1).optional(),
   title: i18nKey,
   tableRule: i18nKey,
 });
@@ -92,6 +98,7 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
     weight: 1,
     force: 1,
     hands: { right: 'bone-blade', left: 'bone-buckler' },
+    lootTableId: SKELETON_WARRIOR_TABLE_ID,
     ...texts('skeleton-warrior'),
   },
   {
@@ -101,6 +108,7 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
     weight: 3,
     force: 2,
     hands: { right: 'king-cleaver', left: 'king-shield' },
+    lootTableId: SKELETON_KING_TABLE_ID,
     ...texts('skeleton-king'),
   },
   {
@@ -110,6 +118,7 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
     weight: 1,
     force: 1,
     hands: { right: 'bone-bow', left: null },
+    lootTableId: SKELETON_ARCHER_TABLE_ID,
     ...texts('skeleton-archer'),
   },
 ]);
@@ -175,4 +184,8 @@ export function enemyCreature(kind: string, id: string, pos: BattleHex): BattleC
     },
     bag: [],
   };
+}
+
+export function lootTableIdOfKind(kind: string): string | undefined {
+  return BATTLE_CREATURES[kind]?.lootTableId;
 }

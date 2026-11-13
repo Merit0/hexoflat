@@ -11,6 +11,7 @@ import { countItem } from '../inventory/plan-stock';
 import { replaceInventory } from './replace-inventory';
 import { executeProgressCommand } from './execute-progress-command';
 import { claimCampChest } from './claim-camp-chest';
+import { ackGraveExitWarning } from './ack-grave-exit-warning';
 import { applyTradeCommand, type TradeContext } from './apply-trade-command';
 import { applyQuestCommand, type QuestApplyContext } from './apply-quest-command';
 import { foldQuestEvents } from '../quests/quest-hook';
@@ -168,6 +169,10 @@ function executeCore(
       return (
         rejectionOf(result.events) ?? { ok: true, changed: result.changed, events: result.events }
       );
+    }
+    case 'ACK_GRAVE_EXIT_WARNING': {
+      const acknowledged = ackGraveExitWarning(progress);
+      return { ok: true, changed: acknowledged.changed, events: acknowledged.events };
     }
     case 'QUEST_ACCEPT':
     case 'QUEST_ABANDON':

@@ -14,6 +14,7 @@ import {
   type Deployment,
   type Vector,
 } from '../battle/battlefield-setup';
+import { BATTLE_RULES, type BattleRules } from '../battle/battle-content';
 import { startBattle } from '../battle/start-battle';
 import type { Engagement } from './engagement';
 import { findSquad } from './squad-state';
@@ -139,7 +140,11 @@ export function enemiesIn(battle: BattleState): number {
   return battle.creatures.filter((c) => c.side === 'enemies').length;
 }
 
-export function beginBattle(world: SquadWorld, heroes: BattleCreature[]): Outcome {
+export function beginBattle(
+  world: SquadWorld,
+  heroes: BattleCreature[],
+  rules: BattleRules = BATTLE_RULES,
+): Outcome {
   const engagement = world.engagement;
   if (!engagement) return refuse('NO_ENGAGEMENT');
   if (world.battle) return refuse('BATTLE_OPEN');
@@ -147,7 +152,7 @@ export function beginBattle(world: SquadWorld, heroes: BattleCreature[]): Outcom
   const fighters = heroes.map((hero) => withInventoryLoadout(hero, world.inventory));
   const plan = planSquadBattle(world.map, engagement, fighters);
   const setup = { ...plan.deployment.setup, taskHistory: world.knowledge?.history ?? {} };
-  const result = startBattle(setup);
+  const result = startBattle(setup, rules);
   world.battle = result.battle;
   engagement.startItems = startItemsOf(fighters);
   return done(result.events);
