@@ -65,12 +65,12 @@ describe('buildHexInfo broken seal', () => {
     expect(buildHexInfo(chest, 'Structure', t, te).broken).toBe(false);
   });
 
-  it('shows Training Grounds as locked, never broken, with no actions', () => {
+  it('shows Training Grounds without a Locked mark, never broken', () => {
     const view = buildHexInfo(placed('training-grounds'), 'Structure', t, te);
-    expect(view.locked).toBe(true);
+    expect(view.locked).toBe(false);
+    expect(view.tags.map((tag) => tag.id)).not.toContain('locked');
     expect(view.broken).toBe(false);
     expect(view.icon).toBe('tower');
-    expect(view.actions).toEqual([]);
   });
 
   it('shows the trader stall as neither locked nor broken', () => {

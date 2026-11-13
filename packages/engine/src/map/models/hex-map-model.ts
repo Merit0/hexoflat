@@ -57,6 +57,13 @@ export interface ISerializedHexMap {
   fogPolicy?: TFogPolicy;
 }
 
+function savedLock(
+  built: { chestType?: unknown; isLocked?: boolean },
+  saved: { isLocked?: boolean },
+): boolean | undefined {
+  return built.chestType ? (saved.isLocked ?? built.isLocked) : built.isLocked;
+}
+
 export default class HexMapModel implements IWorldMap {
   private _name = '';
   private _width = 0;
@@ -302,7 +309,7 @@ export default class HexMapModel implements IWorldMap {
         if ('construction' in built && 'construction' in saved) {
           built.construction.integrity =
             saved.construction.integrity ?? built.construction.integrity;
-          built.construction.isLocked = saved.construction.isLocked ?? built.construction.isLocked;
+          built.construction.isLocked = savedLock(built.construction, saved.construction);
         }
         break;
       }

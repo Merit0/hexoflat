@@ -222,7 +222,11 @@ const bestActionLabel = computed(() => {
     activeToolKey.value === HEXOBJECT_KEYS.HAND &&
     object?.groupType === EHexobjectGroup.CONSTRUCTION &&
     !getMeta(object.hexobjectKey)?.heal;
-  if (bestAction.value.actioType === 'ENTER') return t('tool.enter');
+  if (
+    bestAction.value.actioType === 'ENTER' ||
+    object?.hexobjectKey === HEXOBJECT_KEYS.TRADER_STALL
+  )
+    return t('tool.enter');
   if (isHandOnBuilding) return t('tool.open');
   const label = bestAction.value.label;
   return i18n.te(label) ? t(label) : label;

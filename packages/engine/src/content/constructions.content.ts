@@ -237,7 +237,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.OPEN]: {
-        label: 'Open',
+        label: 'Enter',
         requiredTool: HEXOBJECT_KEYS.HAND,
         willCost: 0,
       },
@@ -247,13 +247,20 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
   [HEXOBJECT_KEYS.TRAINING_GROUNDS]: {
     hexobjectKey: HEXOBJECT_KEYS.TRAINING_GROUNDS,
     groupType: EHexobjectGroup.CONSTRUCTION,
-    isInteractable: false,
+    isInteractable: true,
     title: 'content.trainingGrounds.title',
     subtitle: 'content.trainingGrounds.subtitle',
     description: 'content.trainingGrounds.description',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-constructs/camping/training-grounds-hex.png',
-    construction: { integrity: 1000, isLocked: true },
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.ENTER]: {
+        label: 'Enter',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
+    },
   },
 
   [HEXOBJECT_KEYS.QUEST_BOARD]: {

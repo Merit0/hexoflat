@@ -122,18 +122,23 @@ describe('trader stall', () => {
 describe('Training Grounds', () => {
   const { tile, hexobject } = tileOf(GROUNDS);
 
-  it('is solid, locked and not interactable', () => {
+  it('is solid, interactable and not marked locked', () => {
     expect(isTraversableTile(tile)).toBe(false);
-    expect(hexobject.isInteractable).toBe(false);
+    expect(hexobject.isInteractable).toBe(true);
     expect(
       hexobject.groupType === EHexobjectGroup.CONSTRUCTION && hexobject.construction.isLocked,
-    ).toBe(true);
+    ).toBe(false);
     expect(hexobject.spritePath).toBe(
       '/hex-assets/hex-constructs/camping/training-grounds-hex.png',
     );
   });
 
-  it('offers no action to any tool', () => {
-    for (const tool of HERO_TOOLS) expect(resolveActions(tool, hexobject)).toEqual([]);
+  it('offers ENTER to the hand only', () => {
+    expect(resolveActions(HEXOBJECT_KEYS.HAND, hexobject).map((a) => a.actioType)).toEqual([
+      EHexActionType.ENTER,
+    ]);
+    for (const tool of HERO_TOOLS.filter((key) => key !== HEXOBJECT_KEYS.HAND)) {
+      expect(resolveActions(tool, hexobject)).toEqual([]);
+    }
   });
 });

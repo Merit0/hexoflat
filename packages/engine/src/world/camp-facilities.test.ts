@@ -1,3 +1,4 @@
+import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { describe, expect, it } from 'vitest';
 import { getPrototype } from '../content/content-accessors';
 import type HexMapModel from '../map/models/hex-map-model';
@@ -98,5 +99,24 @@ describe('deserializeWorld and the camp facilities', () => {
     const loaded = deserializeWorld(serializeWorld(silesia), 0);
     expect(countOf(loaded.map, HEXOBJECT_KEYS.TRADER_STALL)).toBe(0);
     expect(countOf(loaded.map, HEXOBJECT_KEYS.TRAINING_GROUNDS)).toBe(0);
+  });
+});
+
+describe('Training Grounds saved with the old locked mark', () => {
+  it('is not locked after a reload', () => {
+    const old = campBeforeTheShop();
+    installCampFacilities(old.map, null);
+    const grounds = old.map.tiles.find(
+      (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.TRAINING_GROUNDS,
+    )?.hexobject;
+    if (grounds?.groupType !== EHexobjectGroup.CONSTRUCTION) throw new Error('no Training Grounds');
+    grounds.construction.isLocked = true;
+    const loaded = deserializeWorld(JSON.parse(JSON.stringify(serializeWorld(old))), 0);
+    const again = loaded.map.tiles.find(
+      (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.TRAINING_GROUNDS,
+    )?.hexobject;
+    expect(again?.groupType === EHexobjectGroup.CONSTRUCTION && again.construction.isLocked).toBe(
+      false,
+    );
   });
 });

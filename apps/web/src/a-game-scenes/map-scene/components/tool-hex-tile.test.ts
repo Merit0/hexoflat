@@ -47,8 +47,8 @@ describe('the hand tool on the trader stall', () => {
     host.remove();
   });
 
-  it('offers OPEN and opens the shop of that trader without a server action', async () => {
-    expect(actButton()?.textContent?.trim()).toBe(i18n.global.t('tool.open'));
+  it('offers ENTER and opens the shop of that trader without a server action', async () => {
+    expect(actButton()?.textContent?.trim()).toBe(i18n.global.t('tool.enter'));
 
     actButton()!.click();
     await nextTick();
