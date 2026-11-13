@@ -106,3 +106,7 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 - [ ] Hex size comes only from `board-camera.ts`; overlays position through the camera; pane `ResizeObserver` left intact
 - [ ] A new always-needed sprite is in a preload list (`battleAssetPaths` for battle), not left to lazy load
 - [ ] Anything gating on board readiness uses `onBoardReady`, not `onMounted`
+
+## Loot flight (L2c, 2026-11-13)
+
+`layers/loot-flight-layer.ts` is created after the hero layer in `use-hex-board.ts` (tiles -> hero -> loot in flight; `loot-layers.test.ts` pins the order) and fed by the `lootFlight` option. Durations live in `render/loot-timing.ts` (`lootSchedule`, at most 800 ms in all). `tiles-layer.ts` takes `isObjectHidden(key)` (a flying item keeps its tile sprite at alpha 0 until `landLootFlight`) and draws the opened chest (`chest-open`) with `EMPTY_CHEST_ALPHA`. The battle board has its own seam and does not use this layer yet.

@@ -65,6 +65,19 @@ describe('taking a stack from a hex', () => {
     expect(tileOf(done.world, spot).hexobject?.quantity).toBe(7);
   });
 
+  it('REQ-LOOT-070: a refused pickup says BAG_FULL, a successful one says nothing', () => {
+    const full = sceneWith(HEXOBJECT_KEYS.HEALTH_BOTTLE, 7);
+    const refused = takeAll(full.world, full.spot, fullBag(HEXOBJECT_KEYS.SWORD));
+    expect(refused.events).toContainEqual({
+      type: 'LOOT_REJECTED',
+      payload: { heroId: HERO, reason: 'BAG_FULL' },
+    });
+    const room = sceneWith(HEXOBJECT_KEYS.COINS, 7);
+    expect(takeAll(room.world, room.spot).events.some((e) => e.type === 'LOOT_REJECTED')).toBe(
+      false,
+    );
+  });
+
   it('REQ-LOOT-030: a quantity survives a save, an old item without one loads as a single piece', () => {
     const { world, spot } = sceneWith(HEXOBJECT_KEYS.COINS, 7);
     const back = deserializeWorld(JSON.parse(JSON.stringify(serializeWorld(world))), 0);

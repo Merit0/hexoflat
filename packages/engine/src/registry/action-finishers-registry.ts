@@ -106,6 +106,9 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
       (hexobject.groupType === EHexobjectGroup.RESOURCE ? (hexobject.resource?.amount ?? 1) : 1);
 
     if (!grantToDraft(ctx.inventory, hexobject.hexobjectKey, amount, 'pickup')) {
+      if (ctx.heroId) {
+        ctx.emit?.({ type: 'LOOT_REJECTED', payload: { heroId: ctx.heroId, reason: 'BAG_FULL' } });
+      }
       ensureUnlocked(ctx);
       return false;
     }

@@ -82,6 +82,17 @@ export interface TestQuestField {
   }[];
 }
 
+export interface TestGroundItem {
+  coordinates: TestHexCoordinates;
+  itemKey: string;
+  quantity: number;
+}
+
+export interface TestChest {
+  coordinates: TestHexCoordinates;
+  state: 'full' | 'empty';
+}
+
 export interface HexoflatTestApi {
   getKnowledge(): {
     current: number;
@@ -177,6 +188,10 @@ export interface HexoflatTestApi {
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 
+  getGroundItems(): TestGroundItem[];
+  getChests(): TestChest[];
+  isLootFlying(): boolean;
+  tryOpenChest(coordinates: TestHexCoordinates): Promise<void>;
   getTrader(key?: string): TestTrader | null;
   getListings(): ({ key: string; amount: number; unitPrice: number } | null)[];
   getOpenTrader(): string | null;

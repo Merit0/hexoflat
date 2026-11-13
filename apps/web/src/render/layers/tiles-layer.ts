@@ -13,6 +13,7 @@ import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
+export const EMPTY_CHEST_ALPHA = 0.45;
 type WorldStore = ReturnType<typeof useWorldMapStore>;
 
 export interface TileAnchor {
@@ -41,6 +42,8 @@ export interface TilesLayerDeps {
   getZoneTint?(tile: IHexTile): number | null;
   /** How hidden tiles look on the current board: clouds on the world, the mist hex in dungeons. */
   getFogLook?(): FogLook;
+  /** A loot item still flying to this hex keeps its tile sprite hidden until it lands. */
+  isObjectHidden?(key: string): boolean;
 }
 
 interface TileNode {
@@ -111,6 +114,11 @@ function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => v
   node.unsubscribers.push(unsubscribe);
 }
 
+function objectAlpha(tile: IHexTile, deps: TilesLayerDeps): number {
+  if (deps.isObjectHidden?.(coordinateKey(tile.coordinates))) return 0;
+  return tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CHEST_OPEN ? EMPTY_CHEST_ALPHA : 1;
+}
+
 function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
   for (const unsub of node.unsubscribers) unsub();
   node.unsubscribers = [];
@@ -161,6 +169,7 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
   } else {
     node.sprite.texture = Texture.EMPTY;
   }
+  node.sprite.alpha = objectAlpha(tile, deps);
 }
 
 export function createTilesLayer(deps: TilesLayerDeps): TilesLayer {

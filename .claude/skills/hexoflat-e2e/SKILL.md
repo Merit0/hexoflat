@@ -134,3 +134,9 @@ Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm 
 ## Treasure Seeker e2e (Q6)
 
 - Field state and clicks: `QuestFieldComponent` (`getQuestField` snapshot with `hexes`, `pathHexes`, `chest`; `getQuestHexPoint` gives canvas-relative pixels from the quest camera). A run ends the field at once (stranded, give up), so never poll the path after the last step. After ending a run the quest board panel is still open on the cards, do not walk to the board again (the armed hand blocks the hover). Card I numbers are 1,2,3…; pick hexes by number instead of reimplementing the rule.
+
+## Loot chest specs (L2c, 2026-11-13)
+
+- `e2e/hero/loot-chest.spec.ts` (`@hero`, 5 tests) through `LootChestFeature` and `LootBoardComponent` (`loot-board.component.ts`, on `CampingMapPage.lootBoard`). A full chest is put beside the hero with `placeItemNextToHero('chest')` (the cave one is random to reach) and opened with the real OPEN; loot is read with `getGroundItems` (hex, key, quantity), chests with `getChests` (`full`/`empty`), flights with `isLootFlying`; wait for `data-ready` after the open, never for a timer.
+- The hand stays armed after an action and a click on the map is ignored while it is, so press Escape (`putTheHandDown`) before stepping.
+- An opened chest offers no OPEN in the ring, so the `CHEST_EMPTY` text is checked through the hook `tryOpenChest` (real command, real text). The placement hook cannot make stacks: the full-bag test takes an axe.

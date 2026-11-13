@@ -406,6 +406,7 @@ export interface WorldCommandResult {
   touched?: WorldCommandResponse['touched'];
   steps: NonNullable<WorldCommandResponse['steps']>;
   serverNowMs: number | null;
+  replayed?: boolean;
 }
 
 export type WorldStepResult = WorldCommandResult;
@@ -467,6 +468,7 @@ export function sendWorldCommand(
       touched: response.touched,
       steps: response.steps ?? [],
       serverNowMs: response.serverNowMs ?? null,
+      ...(response.replayed ? { replayed: true } : {}),
     };
     if (response.result !== 'applied') {
       return { ...common, ok: false, code: response.code ?? response.result };

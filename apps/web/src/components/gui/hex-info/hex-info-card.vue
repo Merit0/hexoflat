@@ -19,6 +19,7 @@
     </div>
 
     <p v-if="view.description" class="card__flavor">{{ view.description }}</p>
+    <p v-if="view.note" class="card__flavor" data-testid="hex-info-note">{{ view.note }}</p>
 
     <section v-if="hasReadout" class="card__readout" data-testid="hex-info-readout">
       <hex-info-hearts v-if="view.hearts" :hearts="view.hearts" large />
@@ -49,7 +50,10 @@
         :data-state="sealState"
         data-testid="hex-info-seal"
       >
-        <svg v-if="view.broken" viewBox="0 0 24 24" aria-hidden="true">
+        <svg v-if="view.empty" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="7" />
+        </svg>
+        <svg v-else-if="view.broken" viewBox="0 0 24 24" aria-hidden="true">
           <path :d="ICON_PATHS.victory" />
         </svg>
         <svg v-else-if="view.locked" viewBox="0 0 24 24" aria-hidden="true">
@@ -123,16 +127,19 @@ const hasReadout = computed(
 
 const sealState = computed(() => {
   if (props.view.broken) return 'broken';
+  if (props.view.empty) return 'empty';
   return props.view.locked ? 'locked' : 'interactable';
 });
 
 const sealClass = computed(() => {
   if (props.view.broken) return 'is-broken';
+  if (props.view.empty) return 'is-empty';
   return props.view.locked ? 'is-locked' : 'is-open';
 });
 
 const sealLabel = computed(() => {
   if (props.view.broken) return t('hexInfo.tags.broken');
+  if (props.view.empty) return t('hexInfo.tags.empty');
   return props.view.locked ? t('hexInfo.tags.locked') : t('hexInfo.tags.interactable');
 });
 
@@ -297,6 +304,9 @@ const rows = computed(() => {
 }
 .card__seal.is-broken {
   color: #e0705c;
+}
+.card__seal.is-empty {
+  color: #a99a82;
 }
 .card__seal.is-open {
   color: #7bd88f;

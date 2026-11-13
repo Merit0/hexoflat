@@ -13,6 +13,7 @@ import { SQUAD_REJECTIONS } from '@hexoflat/engine/squads/engagement';
 import { THREATS } from '@hexoflat/engine/battle/threat';
 import ukUi from '@/locales/uk/ui.json';
 import { battleLocaleKeys } from '@/composables/battle-hint';
+import { lootLocaleKeys } from '@/services/loot/loot-rejection';
 
 const CONTENT_KEY_PREFIX = 'content.';
 
@@ -179,5 +180,6 @@ export function collectUiTemplateKeys(): string[] {
   for (const key of battleLocaleKeys()) keys.add(key);
   for (const key of squadLocaleKeys()) keys.add(key);
   for (const key of questLocaleKeys()) keys.add(key);
+  for (const key of lootLocaleKeys()) keys.add(key);
   return [...keys].sort();
 }

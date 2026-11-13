@@ -54,6 +54,8 @@ function objectView(
     headline: null,
     locked: false,
     broken: false,
+    empty: false,
+    note: null,
     effect: saw ? { label: t('hexInfo.effects.sawHurts') } : null,
     tags: [],
     stats: [],

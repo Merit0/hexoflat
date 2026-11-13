@@ -51,7 +51,7 @@
           ref="boardCanvasRef"
           class="hex-board-canvas"
           data-testid="hex-board-canvas"
-          :data-ready="isBoardReady ? '1' : undefined"
+          :data-ready="isBoardReady && !lootFlying ? '1' : undefined"
         />
 
         <board-overlay-layer data-testid="hex-map-inner" :camera="camera" :frame-rect="frameRect">
@@ -91,6 +91,7 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useSquadFlow } from '@/services/squads/squad-flow';
 import { useSquadViews } from '@/services/squads/squad-views';
+import { lootFlightRequest, lootFlying } from '@/services/loot/loot-flight-state';
 import { useHexBoard } from '@/render/use-hex-board';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
@@ -199,7 +200,7 @@ onMounted(() => {
     createTestApi({
       getCamera: () => camera.value,
       getCanvasSize: () => canvasSize.value,
-      isBoardReady: () => isBoardReady.value,
+      isBoardReady: () => isBoardReady.value && !lootFlying.value,
     }),
   );
 });
@@ -287,6 +288,7 @@ useHexBoard({
   healTickerNow,
   movePreview,
   squadWatched: squadViews.watched,
+  lootFlight: lootFlightRequest,
   onTileHover: handleTileHover,
   onTileMove: (_tile, point) => hexHoverInfo.move(point.anchor),
   onTileLeave: () => hexHoverInfo.hide(),

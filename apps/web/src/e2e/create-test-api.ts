@@ -29,6 +29,7 @@ import { battleTestHooks } from './battle-hooks';
 import { stashTestApi } from './stash-hooks';
 import { shopTestApi } from './shop-hooks';
 import { questTestApi } from './quest-hooks';
+import { lootTestApi } from './loot-hooks';
 import { inventoryTestApi } from './inventory-hooks';
 import type {
   HexoflatTestApi,
@@ -261,6 +262,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     ...inventoryTestApi,
     ...stashTestApi,
     ...shopTestApi,
+    ...lootTestApi,
     ...questTestApi,
     async setHeroHealth(current: number): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;

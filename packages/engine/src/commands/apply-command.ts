@@ -87,6 +87,11 @@ function findTile(map: HexMapModel, coordinates: IHexCoordinates): HexTileModel 
   );
 }
 
+function soleHeroId(state: HexEngineState): string | undefined {
+  const ids = Object.keys(state.heroes);
+  return ids.length === 1 ? ids[0] : undefined;
+}
+
 export function applyCommand(
   state: HexEngineState,
   command: HexEngineCommand,
@@ -101,6 +106,7 @@ export function applyCommand(
     ...ctx,
     inventory: draft,
     emit: (event) => emitted.push(event),
+    heroId: soleHeroId(state),
   };
 
   switch (parsed.type) {

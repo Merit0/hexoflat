@@ -16,6 +16,7 @@ import {
   sendWorldStep,
   type WorldCommandResult,
 } from '@/services/inventory/inventory-sync';
+import { apiClient } from '@/api/client';
 import { cachedWorldJson, forgetServerWorld, cacheServerWorld } from '@/services/player/world-sync';
 
 export function readCachedWorld(locationKey: LocationKey): ServerWorld | null {
@@ -25,6 +26,18 @@ export function readCachedWorld(locationKey: LocationKey): ServerWorld | null {
     return deserializeWorld(JSON.parse(json), Date.now());
   } catch {
     forgetServerWorld(locationKey);
+    return null;
+  }
+}
+
+export async function refetchServedWorld(locationKey: LocationKey): Promise<ServerWorld | null> {
+  try {
+    const body = await apiClient.get<Record<string, unknown> | null>('/player/world');
+    if (!body) return null;
+    const { battleView: _battleView, serverNowMs: _serverNowMs, ...world } = body;
+    cacheServerWorld(locationKey, JSON.stringify(world));
+    return readCachedWorld(locationKey);
+  } catch {
     return null;
   }
 }

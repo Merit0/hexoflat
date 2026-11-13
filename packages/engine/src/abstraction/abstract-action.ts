@@ -64,6 +64,7 @@ export interface IActionContext {
   gathering: IGatheringPort;
   inventory: IInventoryDraft;
   emit?: (event: DomainEvent) => void;
+  heroId?: string;
   events: IEventsPort;
   worldMap: IWorldMapPort;
   navigate?: (locationKey: LocationKey) => void;

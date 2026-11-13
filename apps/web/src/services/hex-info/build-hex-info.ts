@@ -1,4 +1,5 @@
 import { getMeta } from '@hexoflat/engine';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import {
   EChestType,
@@ -75,6 +76,8 @@ export interface HexInfoView {
   headline: HexInfoHeadline | null;
   locked: boolean;
   broken: boolean;
+  empty: boolean;
+  note: string | null;
   effect: HexInfoEffect | null;
   tags: HexInfoTag[];
   stats: HexInfoStat[];
@@ -171,6 +174,8 @@ interface Part {
   headline?: HexInfoHeadline;
   locked?: boolean;
   broken?: boolean;
+  empty?: boolean;
+  note?: string;
 }
 
 function creatureInfo(
@@ -228,8 +233,9 @@ function lootInfo(ctx: Ctx, obj: Extract<THexobject, { groupType: EHexobjectGrou
   const stats = [
     stat('weight', ctx.t('hexInfo.stats.weight'), `${loot.traits.weightKG} ${ctx.t('hexInfo.kg')}`),
   ];
-  if (loot.amount && loot.amount > 1) {
-    stats.unshift(stat('amount', ctx.t('hexInfo.stats.amount'), loot.amount));
+  const amount = obj.quantity ?? loot.amount;
+  if (amount && amount > 1) {
+    stats.unshift(stat('amount', ctx.t('hexInfo.stats.amount'), amount));
   }
   return { variant: 'item', tags: [], stats };
 }
@@ -242,7 +248,11 @@ function constructionInfo(
   const tags: HexInfoTag[] = [];
   if (construction.isLocked) tags.push(tag('locked', ctx.t('hexInfo.tags.locked'), 'warn'));
   const stats = construction.chestType ? [chestStat(ctx, construction.chestType)] : [];
+  const emptied = obj.hexobjectKey === HEXOBJECT_KEYS.CHEST_OPEN;
+  const holdsLoot = obj.hexobjectKey === HEXOBJECT_KEYS.CHEST;
   return {
+    empty: emptied,
+    note: holdsLoot ? ctx.t('hexInfo.hints.chestLoot') : undefined,
     variant: 'construction',
     tags,
     stats,
@@ -360,6 +370,8 @@ export function buildHexInfo(
     headline: part.headline ?? null,
     locked: part.locked ?? false,
     broken: part.broken ?? false,
+    empty: part.empty ?? false,
+    note: part.note ?? null,
     effect: null,
     tags: part.tags,
     stats: part.stats,
