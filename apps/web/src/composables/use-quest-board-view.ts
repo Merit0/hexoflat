@@ -4,6 +4,7 @@ import { slotSurcharge } from '@hexoflat/engine/quests/quest-log';
 import { walletCoins } from '@hexoflat/engine/trade/trader-view';
 import { currentInventory } from '@/services/trade/trade-commands';
 import {
+  capQuests,
   categoryOf,
   spritePathOf,
   filterCounts,
@@ -41,24 +42,26 @@ export function useQuestBoardView() {
     const progressOf = new Map(tracked.value.map((entry) => [entry.quest.id, entry]));
     const slotsFull = store.activeCount >= QUEST_SLOTS.max;
     const surcharge = slotSurcharge(store.activeCount) ?? 0;
-    return cards.value
-      .filter((card) => card.state !== 'locked')
-      .map((card) => {
-        const entry = progressOf.get(card.quest.id);
-        return {
-          ...card,
-          category: categoryOf(card.quest),
-          sprite: spritePathOf(card.quest),
-          timesDone: store.log.done[card.quest.id] ?? 0,
-          progress: entry?.progress ?? 0,
-          ready: entry?.ready ?? false,
-          entry: card.quest.accept.kind === 'will' ? card.quest.accept.amount : 0,
-          surcharge,
-          slotNumber: store.activeCount + 1,
-          reason: reasonOf({ state: card.state, slotsFull, willShort: card.willShort }),
-          taken: card.state === 'taken',
-        };
-      });
+    return capQuests(
+      cards.value
+        .filter((card) => card.state !== 'locked')
+        .map((card) => {
+          const entry = progressOf.get(card.quest.id);
+          return {
+            ...card,
+            category: categoryOf(card.quest),
+            sprite: spritePathOf(card.quest),
+            timesDone: store.log.done[card.quest.id] ?? 0,
+            progress: entry?.progress ?? 0,
+            ready: entry?.ready ?? false,
+            entry: card.quest.accept.kind === 'will' ? card.quest.accept.amount : 0,
+            surcharge,
+            slotNumber: store.activeCount + 1,
+            reason: reasonOf({ state: card.state, slotsFull, willShort: card.willShort }),
+            taken: card.state === 'taken',
+          };
+        }),
+    );
   });
 
   const counts = computed(() => filterCounts(rows.value.map((row) => row.category)));

@@ -271,8 +271,7 @@ onBeforeUnmount(() => {
   gap: 14px;
   min-height: 0;
   padding: 2px;
-  overflow-y: auto;
-  scrollbar-width: thin;
+  overflow: hidden;
 }
 .group h3 {
   display: flex;

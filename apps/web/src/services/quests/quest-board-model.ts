@@ -63,3 +63,12 @@ export function reasonOf(input: {
   if (input.slotsFull) return 'slots';
   return input.willShort ? 'will' : null;
 }
+
+export const QUEST_BOARD_LIMIT = 5;
+
+export function capQuests<T extends { taken: boolean }>(
+  rows: readonly T[],
+  max: number = QUEST_BOARD_LIMIT,
+): T[] {
+  return [...rows.filter((row) => row.taken), ...rows.filter((row) => !row.taken)].slice(0, max);
+}
