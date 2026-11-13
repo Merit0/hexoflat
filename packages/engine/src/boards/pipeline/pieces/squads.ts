@@ -6,7 +6,8 @@ import { coordinateKey, getHexNeighbors, hexDistance } from '../../../utils/hex-
 import { parseCoordinateKey } from '../../board-cell-map';
 import { isFloor, shuffled } from '../piece-utils';
 import type { BoardDraft, Piece } from '../types';
-import { findEntryCoord, floorStepsFrom } from './rules';
+import { findEntryCoord, floorStepsFrom, openNeighbourCount } from './rules';
+import { CHEST_MIN_OPEN_NEIGHBOURS } from '../../../chests/chest-room';
 import type { SeededRandom } from '../../../utils/random-seeded';
 
 export const SQUAD_SPOTS = ['treasure', 'chokepoint', 'dead-end', 'deep'] as const;
@@ -47,11 +48,21 @@ function fitsSpot(draft: BoardDraft, cell: IHexCoordinates, spot: Spot): boolean
   return true;
 }
 
+function leavesChestRoom(draft: BoardDraft, cell: IHexCoordinates): boolean {
+  const treasure = new Set<string>(objectKeysWithTag('treasure'));
+  return getHexNeighbors(cell).every((neighbor) => {
+    const key = draft.cellMap.get(neighbor)?.hexobject?.hexobjectKey;
+    if (!key || !treasure.has(key)) return true;
+    return openNeighbourCount(draft, neighbor, coordinateKey(cell)) >= CHEST_MIN_OPEN_NEIGHBOURS;
+  });
+}
+
 function freeCells(draft: BoardDraft, steps: Map<string, number>, placement: Placement) {
   return [...draft.cellMap.entries()]
     .filter(([, cell]) => !cell.hexobject)
     .map(([key]) => parseCoordinateKey(key))
     .filter((cell) => isFloor(draft, cell))
+    .filter((cell) => leavesChestRoom(draft, cell))
     .filter((cell) => (steps.get(coordinateKey(cell)) ?? -1) >= placement.minSteps);
 }
 

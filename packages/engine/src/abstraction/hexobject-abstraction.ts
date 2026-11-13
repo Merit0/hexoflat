@@ -48,6 +48,7 @@ export interface IBaseHexobject {
   collision: THexCollision;
   alwaysVisible?: boolean;
   tileBackground?: string;
+  quantity?: number;
 }
 
 export interface IResource extends ITraitable<IResourceTraits> {
@@ -113,6 +114,7 @@ export interface IConstruction {
   integrity: number;
   isLocked?: boolean;
   chestType?: EChestType;
+  lootTableId?: string;
 }
 
 export interface IWeapon {

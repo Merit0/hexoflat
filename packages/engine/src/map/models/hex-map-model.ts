@@ -270,6 +270,8 @@ export default class HexMapModel implements IWorldMap {
   private static hydrateHexobject(saved: THexobject, coord: IHexCoordinates): THexobject {
     const overrides: Record<string, any> = {};
 
+    if (typeof saved.quantity === 'number') overrides.quantity = saved.quantity;
+
     if (saved.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof saved.resource?.regrowMs === 'number')
         overrides.regrowMs = saved.resource.regrowMs;

@@ -156,6 +156,7 @@ const constructionSchema = z.object({
   integrity: z.number(),
   isLocked: z.boolean().optional(),
   chestType: z.enum(EChestType).optional(),
+  lootTableId: z.string().min(1).optional(),
 });
 
 const weaponSchema = z.object({

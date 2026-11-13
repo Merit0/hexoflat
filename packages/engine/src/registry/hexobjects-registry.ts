@@ -28,6 +28,7 @@ export const HEXOBJECT_KEYS = {
   WOOD_AND_LEAVES: 'wood-and-leaves',
   GRAVE: 'grave',
   CHEST: 'chest',
+  CHEST_OPEN: 'chest-open',
   STASH_CHEST: 'stash-chest',
   TRADER_STALL: 'trader-stall',
   TRAINING_GROUNDS: 'training-grounds',

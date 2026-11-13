@@ -2,6 +2,7 @@ import { EChestType, EHexCollision, EHexobjectGroup } from '../abstraction/hexob
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { TContentDefinition } from './content-schema';
+import { CAVE_CHEST_TABLE_ID } from './loot-tables.content';
 
 export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.KNOWLEDGE_BOOK
@@ -14,6 +15,7 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
   | typeof HEXOBJECT_KEYS.GRAVE
   | typeof HEXOBJECT_KEYS.CHEST
+  | typeof HEXOBJECT_KEYS.CHEST_OPEN
   | typeof HEXOBJECT_KEYS.STASH_CHEST
   | typeof HEXOBJECT_KEYS.TRADER_STALL
   | typeof HEXOBJECT_KEYS.TRAINING_GROUNDS
@@ -196,7 +198,12 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     description: 'A locked chest. Someone left it here.',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/chest-token.png',
-    construction: { integrity: 1000, isLocked: false, chestType: EChestType.LOOT },
+    construction: {
+      integrity: 1000,
+      isLocked: false,
+      chestType: EChestType.LOOT,
+      lootTableId: CAVE_CHEST_TABLE_ID,
+    },
     actions: {
       [EHexActionType.OPEN]: {
         label: 'Open',
@@ -204,6 +211,18 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         willCost: 2,
       },
     },
+  },
+
+  [HEXOBJECT_KEYS.CHEST_OPEN]: {
+    hexobjectKey: HEXOBJECT_KEYS.CHEST_OPEN,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: false,
+    title: 'Open Chest',
+    subtitle: 'Empty',
+    description: 'The lid is up and nothing is left inside.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/chest-token.png',
+    construction: { integrity: 1000, isLocked: false, chestType: EChestType.LOOT },
   },
 
   [HEXOBJECT_KEYS.STASH_CHEST]: {

@@ -102,7 +102,8 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     }
 
     const amount =
-      hexobject.groupType === EHexobjectGroup.RESOURCE ? (hexobject.resource?.amount ?? 1) : 1;
+      hexobject.quantity ??
+      (hexobject.groupType === EHexobjectGroup.RESOURCE ? (hexobject.resource?.amount ?? 1) : 1);
 
     if (!grantToDraft(ctx.inventory, hexobject.hexobjectKey, amount, 'pickup')) {
       ensureUnlocked(ctx);

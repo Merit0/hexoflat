@@ -87,6 +87,7 @@ export function stateOf(run: WorldRun, hero: HeroState): HexEngineState {
     inventory: run.inventory,
     inventoryContext: { stashOpen: false, battleOpen: false },
     engagement: run.world.engagement ?? undefined,
+    loot: { seed: run.world.worldSeed, sourceId: run.world.mapId },
   };
 }
 
@@ -176,6 +177,7 @@ export function actWorld(run: WorldRun, command: StartHexActionCommand['payload'
   if (!hero) return refuse('NO_POSITION');
   if (hexDistance(hero.coordinates, command.coordinates) > 1) return refuse('TOO_FAR');
 
+  const from = { ...hero.coordinates };
   const world: ServerWorld = { ...run.world, map: run.world.map };
   const progress = structuredClone(run.progress);
   const inventory = structuredClone(run.inventory);
@@ -192,6 +194,11 @@ export function actWorld(run: WorldRun, command: StartHexActionCommand['payload'
     return refuse('ACTION_REJECTED', events, effects);
   }
   world.engagement = state.engagement ?? world.engagement;
+  const stands = hero.coordinates;
+  if (hexDistance(stands, from) > 0) {
+    world.heroCoordinates = { ...stands };
+    if (progress.presence) progress.presence = { ...progress.presence, coordinates: { ...stands } };
+  }
   progress.health = model.healthState();
   return {
     ok: true,
