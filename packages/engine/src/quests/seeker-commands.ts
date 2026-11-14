@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import type { ProgressState, Presence } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
+import type { InventoryState } from '../inventory/inventory-state';
 import { ALL_QUESTS } from './all-quests';
 import { hexSchema, parseQuestRun, type QuestRun } from './quest-state';
 import {
   enterQuest,
   seekerGiveUp,
   seekerOpenChest,
+  seekerPickup,
   seekerReturn,
   seekerStep,
   seekerStepBack,
@@ -31,6 +33,12 @@ export const QUEST_RUN_COMMAND_SCHEMAS = {
     .strict(),
   QUEST_STEP_BACK: z
     .object({ type: z.literal('QUEST_STEP_BACK'), payload: z.object(hero).strict() })
+    .strict(),
+  QUEST_PICKUP: z
+    .object({
+      type: z.literal('QUEST_PICKUP'),
+      payload: z.object({ ...hero, hex: hexSchema }).strict(),
+    })
     .strict(),
   QUEST_OPEN_CHEST: z
     .object({ type: z.literal('QUEST_OPEN_CHEST'), payload: z.object(hero).strict() })
@@ -61,7 +69,13 @@ export function parseQuestRunDoc(raw: string): QuestRunDoc {
 }
 
 export type QuestRunOutcome =
-  | { ok: true; progress: ProgressState; doc: QuestRunDoc | null; events: DomainEvent[] }
+  | {
+      ok: true;
+      progress: ProgressState;
+      doc: QuestRunDoc | null;
+      events: DomainEvent[];
+      inventory?: InventoryState;
+    }
   | { ok: false; code: string; events: DomainEvent[] };
 
 function settle(
@@ -76,6 +90,7 @@ function settle(
       progress: { ...result.progress, presence: camp },
       doc: null,
       events: result.events,
+      inventory: result.inventory,
     };
   }
   return {
@@ -83,7 +98,13 @@ function settle(
     progress: { ...result.progress, presence: keepPresence },
     doc: { run: result.run, camp },
     events: result.events,
+    inventory: result.inventory,
   };
+}
+
+function chestTableOf(questId: string): string | undefined {
+  const objective = ALL_QUESTS[questId]?.objective;
+  return objective?.kind === 'expedition' ? objective.params.chestLootTableId : undefined;
 }
 
 export function executeQuestRunCommand(input: {
@@ -91,6 +112,7 @@ export function executeQuestRunCommand(input: {
   doc: QuestRunDoc | null;
   command: QuestRunCommand;
   atBoard: boolean;
+  inventory?: InventoryState;
   newSeed: () => string;
 }): QuestRunOutcome {
   const { progress, doc, command } = input;
@@ -128,9 +150,14 @@ export function executeQuestRunCommand(input: {
       : command.type === 'QUEST_STEP_BACK'
         ? seekerStepBack(progress, run, board)
         : command.type === 'QUEST_OPEN_CHEST'
-          ? seekerOpenChest(progress, run)
-          : command.type === 'QUEST_RETURN'
-            ? seekerReturn(progress, run)
-            : seekerGiveUp(progress, run);
+          ? seekerOpenChest(progress, run, board, {
+              inventory: input.inventory,
+              tableId: chestTableOf(run.offerId),
+            })
+          : command.type === 'QUEST_PICKUP'
+            ? seekerPickup(progress, run, command.payload.hex, input.inventory)
+            : command.type === 'QUEST_RETURN'
+              ? seekerReturn(progress, run)
+              : seekerGiveUp(progress, run);
   return settle(result, doc.camp, null);
 }

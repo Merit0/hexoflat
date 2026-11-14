@@ -13,6 +13,7 @@ export function seekerQuestOf(card: SeekerCard): QuestDefinition {
     objective: { kind: 'expedition', expedition: 'treasureSeeker', params: card.params },
     rewards: [],
     turnIn: 'auto',
+    maxSellValue: card.maxSellValue,
     tableRule: card.tableRule,
   };
 }

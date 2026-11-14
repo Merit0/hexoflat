@@ -1,5 +1,16 @@
 import { z } from 'zod';
+import {
+  LOOT_TABLES,
+  SEEKER_1_CHEST_TABLE_ID,
+  SEEKER_2_CHEST_TABLE_ID,
+  SEEKER_3_CHEST_TABLE_ID,
+} from '../content/loot-tables.content';
+import { lootReferenceProblems } from '../content/validate-loot';
 import { KNOWLEDGE_RULES } from '../knowledge/math';
+import { TRADERS } from '../content/traders.content';
+import type { LootEntry, LootTable } from '../loot/loot-table';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import { sellUnitPrice } from '../trade/trader-view';
 import { RulePoolEntrySchema } from './sequences/rules';
 
 export const TreasureSeekerParamsSchema = z
@@ -9,6 +20,7 @@ export const TreasureSeekerParamsSchema = z
     backMultiplier: z.number().int().min(1),
     hintSteps: z.number().int().min(1),
     maxDigits: z.number().int().min(1).max(6),
+    chestLootTableId: z.string().min(1),
     rulePool: z.array(RulePoolEntrySchema).min(1),
   })
   .strict();
@@ -22,6 +34,7 @@ export const SeekerCardSchema = z
     tableRule: z.string().min(1),
     entryWill: z.number().int().min(1),
     requiresCleanOf: z.string().min(1).nullable(),
+    maxSellValue: z.number().int().min(1),
     params: TreasureSeekerParamsSchema,
   })
   .strict();
@@ -39,7 +52,9 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
     tableRule: 'quest.seeker-1.table',
     entryWill: ENTRY_WILL,
     requiresCleanOf: null,
+    maxSellValue: 30,
     params: {
+      chestLootTableId: SEEKER_1_CHEST_TABLE_ID,
       steps: 10,
       stepCost: 1,
       backMultiplier: BACK_MULTIPLIER,
@@ -55,7 +70,9 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
     tableRule: 'quest.seeker-2.table',
     entryWill: ENTRY_WILL,
     requiresCleanOf: 'seeker-1',
+    maxSellValue: 60,
     params: {
+      chestLootTableId: SEEKER_2_CHEST_TABLE_ID,
       steps: 10,
       stepCost: 1,
       backMultiplier: BACK_MULTIPLIER,
@@ -82,7 +99,9 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
     tableRule: 'quest.seeker-3.table',
     entryWill: ENTRY_WILL,
     requiresCleanOf: 'seeker-2',
+    maxSellValue: 130,
     params: {
+      chestLootTableId: SEEKER_3_CHEST_TABLE_ID,
       steps: 8,
       stepCost: 2,
       backMultiplier: BACK_MULTIPLIER,
@@ -127,6 +146,19 @@ export function seekerCleanWill(card: SeekerCard): number {
   return card.entryWill + card.params.steps * card.params.stepCost;
 }
 
+export function lootDropSellValue(itemKey: THexobjectKey, amount: number): number {
+  if (itemKey === HEXOBJECT_KEYS.COINS) return amount;
+  return (sellUnitPrice(TRADERS.ilva, itemKey) ?? 0) * amount;
+}
+
+export function lootTableMaxSellValue(table: LootTable): number {
+  const best = (entries: readonly LootEntry[]) =>
+    entries.map((entry) => lootDropSellValue(entry.itemKey, entry.amount[1]));
+  const guaranteed = best(table.guaranteed ?? []).reduce((sum, value) => sum + value, 0);
+  const top = Math.max(0, ...best(table.entries));
+  return guaranteed + table.rolls[1] * top;
+}
+
 export function seekerCardFailures(
   cards: readonly SeekerCard[] = SEEKER_CARDS,
   capacity: number = KNOWLEDGE_RULES.capacity,
@@ -139,6 +171,18 @@ export function seekerCardFailures(
     if (ids.has(card.id)) failures.push(`${card.id}: duplicate id`);
     ids.add(card.id);
     if (seekerWorstCaseWill(card) > capacity) failures.push(`${card.id}: over Will capacity`);
+    failures.push(
+      ...lootReferenceProblems(
+        [{ owner: `quest:${card.id}`, tableId: card.params.chestLootTableId }],
+        LOOT_TABLES,
+      ),
+    );
+    const table = LOOT_TABLES[card.params.chestLootTableId];
+    if (table && lootTableMaxSellValue(table) > card.maxSellValue) {
+      failures.push(
+        `${card.id}: chest can sell for ${lootTableMaxSellValue(table)} over ${card.maxSellValue}`,
+      );
+    }
     if (card.params.hintSteps > card.params.steps - 2) failures.push(`${card.id}: hint too long`);
     if (card.requiresCleanOf && !cards.some((c) => c.id === card.requiresCleanOf)) {
       failures.push(`${card.id}: unknown requirement ${card.requiresCleanOf}`);

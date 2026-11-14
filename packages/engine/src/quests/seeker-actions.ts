@@ -16,39 +16,14 @@ import {
 import { generateSequence } from './sequences/generate';
 import { RULES, continueFrom, type RuleRegistry } from './sequences/rules';
 import { generateTrail } from './trail';
+import { seekerCollectStep } from './seeker-chest';
+import { reject, type SeekerResult } from './seeker-result';
 
-export const SEEKER_REFUSALS = [
-  'UNKNOWN_QUEST',
-  'NOT_AT_BOARD',
-  'NOT_ACTIVE',
-  'QUEST_IN_PROGRESS',
-  'INSUFFICIENT_WILL',
-  'NOT_ADJACENT',
-  'HEX_NOT_REVEALED',
-  'USE_STEP_BACK',
-  'NOTHING_TO_STEP_BACK',
-  'NO_CHEST',
-  'WRONG_PHASE',
-] as const;
-export type SeekerRefusal = (typeof SEEKER_REFUSALS)[number];
-
-export type SeekerResult =
-  | { ok: true; progress: ProgressState; run: QuestRun; events: DomainEvent[] }
-  | { ok: false; reason: SeekerRefusal; events: DomainEvent[] };
+export { seekerOpenChest, seekerPickup } from './seeker-chest';
+export { SEEKER_REFUSALS, type SeekerRefusal, type SeekerResult } from './seeker-result';
 
 export interface SeekerOptions {
   registry?: RuleRegistry;
-}
-
-function reject(
-  progress: ProgressState,
-  source: QuestRun | string,
-  reason: SeekerRefusal,
-  detail: Record<string, number> = {},
-): SeekerResult {
-  const questId = typeof source === 'string' ? source : source.offerId;
-  const payload = { heroId: progress.knowledge.heroId, questId, reason, ...detail };
-  return { ok: false, reason, events: [{ type: 'QUEST_REJECTED', payload }] };
 }
 
 function revealedEvent(heroId: string, offerId: string, hexes: RevealedHex[]): DomainEvent {
@@ -130,6 +105,7 @@ export function enterQuest(
     revealed: {},
     visited: [coordinateKey(input.start)],
     chest: null,
+    collect: null,
     phase: 'walking',
     outcome: null,
   };
@@ -223,6 +199,7 @@ export function seekerStep(
   options: SeekerOptions = {},
 ): SeekerResult {
   const registry = options.registry ?? RULES;
+  if (source.phase === 'collect') return seekerCollectStep(progress, source, hex, board);
   if (source.phase !== 'walking' || source.chest || source.path.length >= source.terms.length) {
     return reject(progress, source, 'WRONG_PHASE');
   }
@@ -352,39 +329,6 @@ export function seekerGiveUp(progress: ProgressState, source: QuestRun): SeekerR
   const run = structuredClone(source);
   const closing = finish(progress, run, 'left', 'LEFT');
   return { ok: true, progress: closing.progress, run, events: closing.events };
-}
-
-export function seekerOpenChest(progress: ProgressState, source: QuestRun): SeekerResult {
-  if (source.phase !== 'walking') return reject(progress, source, 'WRONG_PHASE');
-  const chest = source.chest;
-  if (!chest) return reject(progress, source, 'NO_CHEST');
-  const near = getHexNeighbors(positionOf(source)).some(
-    (hex) => coordinateKey(hex) === coordinateKey(chest.hex),
-  );
-  if (!near) return reject(progress, source, 'NOT_ADJACENT');
-  const run = structuredClone(source);
-  const heroId = progress.knowledge.heroId;
-  if (chest.kind === 'real') {
-    run.phase = 'collect';
-    return {
-      ok: true,
-      progress,
-      run,
-      events: [{ type: 'CHEST_OPENED', payload: { heroId, questId: run.offerId, hex: chest.hex } }],
-    };
-  }
-  run.phase = 'ambush';
-  return {
-    ok: true,
-    progress,
-    run,
-    events: [
-      {
-        type: 'AMBUSH_SPRUNG',
-        payload: { heroId, questId: run.offerId, deviations: run.lines.length },
-      },
-    ],
-  };
 }
 
 export function seekerReturn(progress: ProgressState, source: QuestRun): SeekerResult {

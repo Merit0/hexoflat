@@ -13,7 +13,7 @@ import {
   type QuestRunDoc,
 } from '@hexoflat/engine';
 import { DB, type Db } from '../db/db.module';
-import { commandJournal } from '../db/schema';
+import { commandJournal, itemLedger } from '../db/schema';
 import {
   deleteServerDocument,
   ensureExpedition,
@@ -30,6 +30,7 @@ import {
   saveAggregate,
   type Tx,
 } from '../player/aggregate-store';
+import { ledgerEntriesFor } from '../player/item-ledger';
 import {
   MAX_COMMAND_BYTES,
   PlayerCommandEnvelopeSchema,
@@ -99,9 +100,10 @@ export class QuestRunService {
     return this.db.transaction(async (tx) => {
       await lockExpedition(tx, expeditionId);
       await createInitialAggregates(tx, heroId);
-      const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      const loaded = await loadAggregatesForUpdate(tx, heroId, ['progress', 'inventory']);
       const progress = loaded.progress;
-      if (!progress) throw new Error(`Hero ${heroId} has no progress aggregate`);
+      const inventory = loaded.inventory;
+      if (!progress || !inventory) throw new Error(`Hero ${heroId} has no aggregates`);
       const doc = await readDoc(tx, expeditionId);
 
       const [prior] = await tx
@@ -116,13 +118,14 @@ export class QuestRunService {
         quest: QuestRunDoc | null,
         state = progress,
         extra: Partial<QuestRunResponse> = {},
+        bag: typeof inventory = inventory,
       ): QuestRunResponse => ({
         commandId,
         result,
         ...(code ? { code } : {}),
         events,
         quest: quest ? projectQuestForClient(quest.run) : null,
-        aggregates: { progress: projectAggregate(state) },
+        aggregates: { progress: projectAggregate(state), inventory: projectAggregate(bag) },
         ...extra,
       });
       if (prior) {
@@ -179,6 +182,7 @@ export class QuestRunService {
         doc,
         command,
         atBoard: serverQuestContext(progress.state.presence).atBoard,
+        inventory: inventory.state,
         newSeed: () => `${seed}:quest:${randomUUID()}`,
       });
       if (!outcome.ok) {
@@ -193,17 +197,38 @@ export class QuestRunService {
         progress.revision,
         outcome.progress,
       );
+      let bag = inventory;
+      if (outcome.inventory && outcome.inventory !== inventory.state) {
+        const bagRevision = await saveAggregate(
+          tx,
+          heroId,
+          'inventory',
+          inventory.revision,
+          outcome.inventory,
+        );
+        bag = { ...inventory, revision: bagRevision, state: outcome.inventory };
+        const entries = ledgerEntriesFor(outcome.events, inventory.state);
+        if (entries.length > 0) {
+          await tx
+            .insert(itemLedger)
+            .values(entries.map((entry) => ({ heroId, commandId, ...entry })));
+        }
+      }
       if (outcome.doc) {
         await writeServerDocument(tx, expeditionId, QUEST_RUN_KEY, JSON.stringify(outcome.doc));
       } else {
         await deleteServerDocument(tx, expeditionId, QUEST_RUN_KEY);
       }
       await journal('applied', outcome.events, null, revision);
-      return respond('applied', outcome.events, undefined, outcome.doc, {
-        ...progress,
-        revision,
-        state: outcome.progress,
-      });
+      return respond(
+        'applied',
+        outcome.events,
+        undefined,
+        outcome.doc,
+        { ...progress, revision, state: outcome.progress },
+        {},
+        bag,
+      );
     });
   }
 }

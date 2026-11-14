@@ -282,6 +282,8 @@ Write the result into "Результати L0", correct assumed names in §1–
 - **Продаж дерева й каменю.** Це лічильники (`yields: { wood: 1 }`, ефекти `treeCut`/`stones`), а не предмети; `coin-price.test.ts` дозволяє ціну лише LOOT/TOOL/EQUIPMENT. Окреме рішення пізніше (рішення Олега Q-3, 2026-11-13: поза межами).
 - **Запечатування очищеного підземелля.** Окрема мала задача поза L-фазами: `world/world-leave.ts:53-57` запечатує печеру (`respawnAfterClearedMs`) за наявністю `HEXOBJECT_KEYS.GRAVE` на карті, але `GRAVE` у виробничому коді ніде не створюється (є лише `constructions.content.ts:298`, `registry/hexobjects-registry.ts:29` і тести), тож запечатування фактично не спрацьовує. Вирішити, за якою подією вважати підземелля очищеним (рішення Олега Q-5, 2026-11-13: окремо від L-фаз).
 
+- **Адаптер здобичі скрині «Шукача скарбів» зроблено (QC1, 2026-11-14):** справжня скриня квесту розкладає здобич тим самим `planLootSpread` на полі квесту (`quests/seeker-chest.ts`); запечатування, продаж дерева й каменю та засідка Q5 лишаються поза межами.
+
 ## Результати L1 (2026-11-13)
 
 Створено (нових файлів, `packages/engine/src/loot/`): `loot-table.ts` (Zod `LootTable`, `LootEntry`, `WeightedLootEntry`, `LootDrop`), `loot-refusal.ts` (`LootRefusal`, `lootRefusal`; `Refusal` у коді не було), `roll-loot.ts` (`rollLoot`, `lootStreamLabel`), `place-loot.ts` (`placeLoot` → `placed` | `to-bag` | `refused`), `index.ts`, фікстури `loot-test-setup.ts` і тести `loot-table.test.ts`, `roll-loot.test.ts`, `place-loot.test.ts`, `loot-sweep.test.ts` (36 тестів). Змінено один наявний файл: рядок `export * from './loot'` у `packages/engine/src/index.ts`. Наявні тести не чіпано.

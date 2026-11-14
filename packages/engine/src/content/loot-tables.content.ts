@@ -6,6 +6,10 @@ export const SKELETON_WARRIOR_TABLE_ID = 'skeleton-warrior-loot';
 export const SKELETON_ARCHER_TABLE_ID = 'skeleton-archer-loot';
 export const SKELETON_KING_TABLE_ID = 'skeleton-king-loot';
 
+export const SEEKER_1_CHEST_TABLE_ID = 'seeker-1-chest-loot';
+export const SEEKER_2_CHEST_TABLE_ID = 'seeker-2-chest-loot';
+export const SEEKER_3_CHEST_TABLE_ID = 'seeker-3-chest-loot';
+
 export const LOOT_ECONOMY_TARGET = {
   gearKey: HEXOBJECT_KEYS.SWORD,
   runsMin: 2,
@@ -22,6 +26,37 @@ const CAVE_CHEST: LootTable = {
     { itemKey: HEXOBJECT_KEYS.SHIELD, weight: 1, amount: [1, 1] },
     { itemKey: HEXOBJECT_KEYS.AXE, weight: 1, amount: [1, 1] },
     { itemKey: HEXOBJECT_KEYS.PICKAXE, weight: 1, amount: [1, 1] },
+  ],
+};
+
+const SEEKER_1_CHEST: LootTable = {
+  id: SEEKER_1_CHEST_TABLE_ID,
+  rolls: [1, 2],
+  entries: [
+    { itemKey: HEXOBJECT_KEYS.COINS, weight: 5, amount: [5, 12] },
+    { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 2, amount: [1, 1] },
+  ],
+};
+
+const SEEKER_2_CHEST: LootTable = {
+  id: SEEKER_2_CHEST_TABLE_ID,
+  rolls: [2, 3],
+  entries: [
+    { itemKey: HEXOBJECT_KEYS.COINS, weight: 6, amount: [8, 20] },
+    { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 3, amount: [1, 1] },
+    { itemKey: HEXOBJECT_KEYS.BONE_CHARM, weight: 1, amount: [1, 1] },
+  ],
+};
+
+const SEEKER_3_CHEST: LootTable = {
+  id: SEEKER_3_CHEST_TABLE_ID,
+  rolls: [3, 4],
+  guaranteed: [{ itemKey: HEXOBJECT_KEYS.COINS, amount: [15, 25] }],
+  entries: [
+    { itemKey: HEXOBJECT_KEYS.COINS, weight: 4, amount: [10, 25] },
+    { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 3, amount: [1, 2] },
+    { itemKey: HEXOBJECT_KEYS.SHIELD, weight: 1, amount: [1, 1] },
+    { itemKey: HEXOBJECT_KEYS.AXE, weight: 1, amount: [1, 1] },
   ],
 };
 
@@ -73,6 +108,9 @@ export const LOOT_TABLES: Readonly<Record<string, LootTable>> = {
   [SKELETON_WARRIOR_TABLE_ID]: lootTableSchema.parse(SKELETON_WARRIOR),
   [SKELETON_ARCHER_TABLE_ID]: lootTableSchema.parse(SKELETON_ARCHER),
   [SKELETON_KING_TABLE_ID]: lootTableSchema.parse(SKELETON_KING),
+  [SEEKER_1_CHEST_TABLE_ID]: lootTableSchema.parse(SEEKER_1_CHEST),
+  [SEEKER_2_CHEST_TABLE_ID]: lootTableSchema.parse(SEEKER_2_CHEST),
+  [SEEKER_3_CHEST_TABLE_ID]: lootTableSchema.parse(SEEKER_3_CHEST),
   [NOTHING_FIXTURE_TABLE_ID]: lootTableSchema.parse(NOTHING_FIXTURE),
 };
 

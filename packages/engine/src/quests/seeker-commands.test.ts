@@ -13,7 +13,7 @@ import {
 } from './seeker-commands';
 import { questBoardState } from './quest-log';
 import { ALL_QUESTS } from './all-quests';
-import { HERO } from './quest-test-setup';
+import { HERO, inventoryWith } from './quest-test-setup';
 
 describe('REQ-QST-006 the trail on the real field', () => {
   for (const card of SEEKER_CARDS) {
@@ -111,7 +111,14 @@ describe('the seeker run commands', () => {
     let { progress, doc } = enter('s3');
     const send = (command: Parameters<typeof executeQuestRunCommand>[0]['command']) => {
       const out = must(
-        executeQuestRunCommand({ progress, doc, command, atBoard: false, newSeed: () => 'x' }),
+        executeQuestRunCommand({
+          progress,
+          doc,
+          command,
+          atBoard: false,
+          inventory: inventoryWith({}),
+          newSeed: () => 'x',
+        }),
       );
       progress = out.progress;
       doc = out.doc;

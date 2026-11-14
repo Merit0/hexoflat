@@ -114,3 +114,7 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 ## Graves and loot in a battle (L3b, 2026-11-14)
 
 `battle-token-layer.sync(creatures, activeId, targets, graves?)` draws graves as hex tokens from `collect.graves` (sprite `BATTLE_GRAVE_SPRITES.enemies` = `grave-hex.png`, `EXAMINED_GRAVE_ALPHA` 0.45); a dead enemy is not drawn as a second grave when `collect` exists and a creature still falling holds its grave back. `layers/battle-loot-layer.ts` draws ground items (skips hexes with a pending flight). `render/battle/grave-flights.ts` plays `GRAVE_LOOTED` through the shared `loot-flight-layer` (≤ 800 ms) and reports busy to `onAnimating`; the sync gate has a `loot` flag. Unit tests: `battle-token-layer.test.ts`, `loot-flight.test.ts` (`gravePlayedOf`).
+
+## Walk onto a grave before the loot flies (L5, 2026-11-14)
+
+`GRAVE_LOOTED` becomes a `walk` step in `battle-animation-plan.ts` (from the entry hex to the grave, `BATTLE_TIMING.stepMs`; none when `nothing: true`, `rewind` puts the hero back on `from`). The flight is shifted by `graveWalkLeadMs` through `lootSchedule(count, leadMs)` / `planLootFlights(played, leadMs)`, so walk plus flight stay inside `LOOT_TIMING.maxTotalMs` (800); items stay hidden from the first frame (`pending`).

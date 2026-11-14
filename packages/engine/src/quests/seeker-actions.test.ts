@@ -7,7 +7,6 @@ import { positionOf } from './quest-state';
 import {
   enterQuest,
   seekerGiveUp,
-  seekerOpenChest,
   seekerReturn,
   seekerStep,
   seekerStepBack,
@@ -17,6 +16,7 @@ import {
   decoyHexAround,
   discBoard,
   followTruth,
+  openChestOf,
   must,
   seekerProgress,
   startQuest,
@@ -276,7 +276,7 @@ describe('REQ-QST-014 the chest', () => {
   it('opening the real chest starts the collect phase, the lure springs an ambush with the count', () => {
     const state = startQuest('seeker-1', 'seed-h');
     const end = followTruth(state, 10);
-    const opened = must(seekerOpenChest(end.progress, end.run));
+    const opened = must(openChestOf(state, end));
     expect(opened.run.phase).toBe('collect');
     const left = must(seekerReturn(opened.progress, opened.run));
     expect(left.run.outcome).toBe('treasure');
@@ -286,18 +286,20 @@ describe('REQ-QST-014 the chest', () => {
     const lured = structuredClone(end.run);
     lured.chest = { ...lured.chest!, kind: 'lure' };
     lured.lines = [{ fromStep: 3, values: [5, 6] }];
-    const sprung = must(seekerOpenChest(end.progress, lured));
+    const sprung = must(openChestOf(state, { progress: end.progress, run: lured }));
     expect(sprung.run.phase).toBe('ambush');
     expect(sprung.events[0]).toMatchObject({ type: 'AMBUSH_SPRUNG', payload: { deviations: 1 } });
   });
 
   it('refuses OPEN without a chest and away from it', () => {
     const state = startQuest('seeker-1', 'seed-h');
-    expect(seekerOpenChest(state.progress, state.run)).toMatchObject({ reason: 'NO_CHEST' });
+    expect(openChestOf(state, state)).toMatchObject({ reason: 'NO_CHEST' });
     const end = followTruth(state, 10);
     const far = structuredClone(end.run);
     far.chest = { ...far.chest!, hex: state.run.start };
-    expect(seekerOpenChest(end.progress, far)).toMatchObject({ reason: 'NOT_ADJACENT' });
+    expect(openChestOf(state, { progress: end.progress, run: far })).toMatchObject({
+      reason: 'NOT_ADJACENT',
+    });
   });
 });
 

@@ -12,6 +12,19 @@ export const hexSchema = z
 
 const stepSchema = z.object({ hex: hexSchema, number: z.number().int() }).strict();
 
+const groundItemSchema = z
+  .object({ hex: hexSchema, itemKey: z.string().min(1), amount: z.number().int().min(1) })
+  .strict();
+
+export const collectSchema = z
+  .object({
+    hero: hexSchema,
+    ground: z.array(groundItemSchema),
+    seen: z.array(z.string()),
+  })
+  .strict();
+export type QuestCollect = z.infer<typeof collectSchema>;
+
 export const SEEKER_OUTCOMES = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'] as const;
 export type SeekerOutcome = (typeof SEEKER_OUTCOMES)[number];
 
@@ -53,12 +66,16 @@ export const QuestRunSchema = z
       })
       .strict()
       .nullable(),
+    collect: collectSchema.nullable().default(null),
     phase: z.enum(['walking', 'collect', 'ambush', 'ended']),
     outcome: z.enum(SEEKER_OUTCOMES).nullable(),
   })
   .strict();
 
-export type QuestRun = Omit<z.infer<typeof QuestRunSchema>, 'rule'> & { rule: SequenceRule };
+export type QuestRun = Omit<z.infer<typeof QuestRunSchema>, 'rule' | 'collect'> & {
+  rule: SequenceRule;
+  collect: QuestCollect | null;
+};
 
 export function parseQuestRun(raw: unknown): QuestRun {
   return QuestRunSchema.parse(raw) as unknown as QuestRun;
@@ -73,5 +90,6 @@ export function floorKeys(board: SeekerBoard): Set<string> {
 }
 
 export function positionOf(run: QuestRun): IHexCoordinates {
+  if (run.collect) return run.collect.hero;
   return run.path.length > 0 ? run.path[run.path.length - 1].hex : run.start;
 }

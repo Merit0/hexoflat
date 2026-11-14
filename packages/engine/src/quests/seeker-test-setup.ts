@@ -1,8 +1,9 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { axialToOffset, coordinateKey, getHexNeighbors } from '../utils/hex-utils';
-import { progressWith } from './quest-test-setup';
-import { enterQuest, seekerStep, type SeekerResult } from './seeker-actions';
+import { HERO, inventoryWith, progressWith } from './quest-test-setup';
+import type { InventoryState } from '../inventory/inventory-state';
+import { enterQuest, seekerOpenChest, seekerStep, type SeekerResult } from './seeker-actions';
 import type { QuestRun, SeekerBoard } from './quest-state';
 import { SEEKER_CATALOGUE } from './seeker-quests';
 import type { QuestCatalogue } from './quest-definition';
@@ -83,3 +84,14 @@ export function decoyHexAround(run: QuestRun): IHexCoordinates {
   if (!found) throw new Error('no decoy hex');
   return found;
 }
+
+export function openChestOf(
+  state: Started,
+  end: { progress: ProgressState; run: QuestRun },
+  inventory: InventoryState = inventoryWith({}),
+  tableId = 'seeker-1-chest-loot',
+): SeekerResult {
+  return seekerOpenChest(end.progress, end.run, state.board, { inventory, tableId });
+}
+
+export { HERO };

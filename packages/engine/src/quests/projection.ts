@@ -11,7 +11,11 @@ export interface QuestProjection {
   path: { hex: IHexCoordinates; number: number }[];
   opened: { hex: IHexCoordinates; number: number; footprint: boolean }[];
   hintHex: IHexCoordinates | null;
-  chest: { hex: IHexCoordinates } | null;
+  chest: { hex: IHexCoordinates; empty?: boolean } | null;
+  collect?: {
+    ground: { hex: IHexCoordinates; itemKey: string; amount: number }[];
+    seen: IHexCoordinates[];
+  } | null;
   stepCost: number;
   backCost: number;
 }
@@ -41,7 +45,13 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
       }))
       .sort((a, b) => coordinateKey(a.hex).localeCompare(coordinateKey(b.hex))),
     hintHex: hintVisible ? hint : null,
-    chest: run.chest ? { hex: run.chest.hex } : null,
+    chest: run.chest ? { hex: run.chest.hex, empty: run.collect !== null } : null,
+    collect: run.collect
+      ? {
+          ground: run.collect.ground.map(({ hex, itemKey, amount }) => ({ hex, itemKey, amount })),
+          seen: run.collect.seen.map(parseKey),
+        }
+      : null,
     stepCost: run.stepCost,
     backCost: run.stepCost * run.backMultiplier,
   };

@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
+import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { eq } from 'drizzle-orm';
+import { itemLedger } from '../db/schema';
 import { ensureExpedition, readServerDocument } from '../expedition/expedition-store';
 import { WorldService } from '../world/world.service';
 import { createTestKit, envelope, type TestKit } from '../player/player-test-kit';
@@ -175,5 +178,115 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     await kit.service.execute(userId, move);
     const refused = await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
     expect(refused).toMatchObject({ result: 'rejected', code: 'NOT_AT_BOARD' });
+  });
+
+  const bagOf = async (userId: string, heroId: string) =>
+    ((await kit.service.snapshot(userId, heroId)).aggregates.inventory!.state as InventoryState)
+      .bag;
+
+  async function atRealChest() {
+    const { userId, heroId } = await heroAt(NEAR);
+    await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
+    const trail = (await trailOf(userId, heroId))!;
+    for (const hex of trail) await send(userId, heroId, 'QUEST_STEP', { hex });
+    return { userId, heroId, trail };
+  }
+
+  it('REQ-QST-023 opens the chest through the loot rule, hides the table and the seed, and lets the hero pick up', async () => {
+    const { userId, heroId } = await atRealChest();
+    const opened = await send(userId, heroId, 'QUEST_OPEN_CHEST');
+    expect(opened.result).toBe('applied');
+    const ground = opened.quest!.collect!.ground;
+    expect(ground.length).toBeGreaterThan(0);
+    expect(opened.quest!.chest).toMatchObject({ empty: true });
+    expect(JSON.stringify(opened)).not.toMatch(/seed|lure|chest-loot|chestLootTableId/i);
+    expect(await bagOf(userId, heroId)).toSatisfy((bag: unknown[]) =>
+      bag.every((cell) => cell === null),
+    );
+
+    const [item] = ground;
+    const taken = await send(userId, heroId, 'QUEST_PICKUP', { hex: item.hex });
+    expect(taken.result).toBe('applied');
+    expect(taken.quest!.collect!.ground).toHaveLength(ground.length - 1);
+    const bag = await bagOf(userId, heroId);
+    expect(bag.some((cell) => cell?.key === item.itemKey)).toBe(true);
+    const rows = await kit.db.select().from(itemLedger).where(eq(itemLedger.heroId, heroId));
+    expect(rows.some((row) => row.itemKey === item.itemKey && row.reason === 'pickup')).toBe(true);
+
+    const again = await send(userId, heroId, 'QUEST_PICKUP', { hex: item.hex });
+    expect(again).toMatchObject({ result: 'rejected', code: 'NO_LOOT_THERE' });
+  });
+
+  it('REQ-QST-018 a repeated OPEN commandId gives one loot set, and two fresh ids at once give one success', async () => {
+    const { userId, heroId } = await atRealChest();
+    const id = randomUUID();
+    const { revision } = await progressOf(userId, heroId);
+    const make = (commandId: string) => {
+      const command = envelope(heroId, 'QUEST_OPEN_CHEST', {}, revision, {
+        aggregate: 'progress',
+        commandId,
+      });
+      delete (command.command.payload as { revision?: number }).revision;
+      return command;
+    };
+    const first = await quests.execute(userId, make(id));
+    const replay = await quests.execute(userId, make(id));
+    expect(first.result).toBe('applied');
+    expect(replay.replayed).toBe(true);
+    expect(replay.quest!.collect!.ground).toEqual(first.quest!.collect!.ground);
+
+    const other = await atRealChest();
+    const at = (await progressOf(other.userId, other.heroId)).revision;
+    const build = () => {
+      const command = envelope(other.heroId, 'QUEST_OPEN_CHEST', {}, at, {
+        aggregate: 'progress',
+        commandId: randomUUID(),
+      });
+      delete (command.command.payload as { revision?: number }).revision;
+      return command;
+    };
+    const settled = await Promise.allSettled([
+      quests.execute(other.userId, build()),
+      quests.execute(other.userId, build()),
+    ]);
+    const applied = settled.filter(
+      (entry) => entry.status === 'fulfilled' && entry.value.result === 'applied',
+    );
+    expect(applied).toHaveLength(1);
+  });
+
+  it('REQ-QST-018 refuses another account on OPEN and PICKUP', async () => {
+    const { userId, heroId } = await atRealChest();
+    const stranger = await kit.newPlayer();
+    const { revision } = await progressOf(userId, heroId);
+    for (const [type, payload] of [
+      ['QUEST_OPEN_CHEST', {}],
+      ['QUEST_PICKUP', { hex: NEAR }],
+    ] as const) {
+      const command = envelope(heroId, type, payload, revision, { aggregate: 'progress' });
+      delete (command.command.payload as { revision?: number }).revision;
+      await expect(quests.execute(stranger.userId, command)).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+    }
+  });
+
+  it('REQ-QST-019 restores the quest on the chest hex and in the collect phase, and return keeps the bag', async () => {
+    const { userId, heroId, trail } = await atRealChest();
+    const opened = await send(userId, heroId, 'QUEST_OPEN_CHEST');
+    expect((await quests.snapshot(userId, heroId)).quest).toEqual(opened.quest);
+    const [item] = opened.quest!.collect!.ground;
+    const taken = await send(userId, heroId, 'QUEST_PICKUP', { hex: item.hex });
+    expect((await quests.snapshot(userId, heroId)).quest).toEqual(taken.quest);
+    const stepped = await send(userId, heroId, 'QUEST_STEP', { hex: trail[trail.length - 1] });
+    expect(stepped.result).toBe('applied');
+    expect((await quests.snapshot(userId, heroId)).quest).toEqual(stepped.quest);
+    const willBefore = (await stateOf(userId, heroId)).knowledge.current;
+
+    const left = await send(userId, heroId, 'QUEST_RETURN');
+    expect(left.result).toBe('applied');
+    expect((await stateOf(userId, heroId)).knowledge.current).toBe(willBefore);
+    expect((await stateOf(userId, heroId)).quests.done['seeker-1']).toBe(1);
+    expect((await bagOf(userId, heroId)).some((cell) => cell?.key === item.itemKey)).toBe(true);
   });
 });
