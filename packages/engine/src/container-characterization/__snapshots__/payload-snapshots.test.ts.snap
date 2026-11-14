@@ -1,0 +1,608 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CH-P0 payload snapshots: grave > every refusal: the BATTLE_REJECTED events 1`] = `
+{
+  "BAG_FULL": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "BAG_FULL",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "GRAVE_EMPTY": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "GRAVE_EMPTY",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "NOT_ADJACENT": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "NOT_ADJACENT",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "NO_GRAVE": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "NO_GRAVE",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "NO_ROOM_FOR_LOOT": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "NO_ROOM_FOR_LOOT",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "STANDING_ON_TARGET": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "STANDING_ON_TARGET",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "WRONG_PHASE": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "WRONG_PHASE",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+}
+`;
+
+exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no room: GRAVE_LOOTED and ITEM_GRANTED 1`] = `
+[
+  {
+    "payload": {
+      "creatureId": "hero",
+      "from": {
+        "q": 0,
+        "r": 0,
+      },
+      "hex": {
+        "q": 1,
+        "r": 0,
+      },
+      "placed": [],
+      "toBag": [
+        {
+          "amount": 33,
+          "itemKey": "coins",
+        },
+        {
+          "amount": 1,
+          "itemKey": "crown-shard",
+        },
+      ],
+    },
+    "type": "GRAVE_LOOTED",
+  },
+  {
+    "payload": {
+      "amount": 33,
+      "heroId": "hero",
+      "key": "coins",
+      "placedAt": [
+        {
+          "container": "bag",
+          "index": 0,
+        },
+      ],
+      "source": "loot",
+    },
+    "type": "ITEM_GRANTED",
+  },
+  {
+    "payload": {
+      "heroId": "hero",
+      "revision": 1,
+    },
+    "type": "INVENTORY_CHANGED",
+  },
+  {
+    "payload": {
+      "amount": 1,
+      "heroId": "hero",
+      "key": "crown-shard",
+      "placedAt": [
+        {
+          "container": "bag",
+          "index": 1,
+        },
+      ],
+      "source": "loot",
+    },
+    "type": "ITEM_GRANTED",
+  },
+  {
+    "payload": {
+      "heroId": "hero",
+      "revision": 2,
+    },
+    "type": "INVENTORY_CHANGED",
+  },
+]
+`;
+
+exports[`CH-P0 payload snapshots: grave > the full loot: GRAVE_LOOTED 1`] = `
+[
+  {
+    "payload": {
+      "creatureId": "hero",
+      "from": {
+        "q": 0,
+        "r": 0,
+      },
+      "hex": {
+        "q": 1,
+        "r": 0,
+      },
+      "placed": [
+        {
+          "amount": 14,
+          "hex": {
+            "q": 1,
+            "r": -1,
+          },
+          "itemKey": "coins",
+        },
+        {
+          "amount": 1,
+          "hex": {
+            "q": 2,
+            "r": -1,
+          },
+          "itemKey": "health-bottle",
+        },
+      ],
+      "toBag": [],
+    },
+    "type": "GRAVE_LOOTED",
+  },
+]
+`;
+
+exports[`CH-P0 payload snapshots: grave > the pickup event and its refusals 1`] = `
+{
+  "BAG_FULL": [
+    {
+      "payload": {
+        "action": "pickup-loot",
+        "rejected": "BAG_FULL",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "LOOT_PICKED": [
+    {
+      "payload": {
+        "amount": 14,
+        "creatureId": "hero",
+        "hex": {
+          "q": 1,
+          "r": -1,
+        },
+        "itemKey": "coins",
+      },
+      "type": "LOOT_PICKED",
+    },
+    {
+      "payload": {
+        "amount": 14,
+        "heroId": "hero",
+        "key": "coins",
+        "placedAt": [
+          {
+            "container": "bag",
+            "index": 0,
+          },
+        ],
+        "source": "pickup",
+      },
+      "type": "ITEM_GRANTED",
+    },
+    {
+      "payload": {
+        "heroId": "hero",
+        "revision": 1,
+      },
+      "type": "INVENTORY_CHANGED",
+    },
+  ],
+  "NOT_ADJACENT": [
+    {
+      "payload": {
+        "action": "pickup-loot",
+        "rejected": "NOT_ADJACENT",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "NO_LOOT_THERE": [
+    {
+      "payload": {
+        "action": "pickup-loot",
+        "rejected": "NO_LOOT_THERE",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+}
+`;
+
+exports[`CH-P0 payload snapshots: quest chest > every refusal: the QUEST_REJECTED events 1`] = `
+{
+  "BAG_FULL": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "BAG_FULL",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "CHEST_EMPTY": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "CHEST_EMPTY",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "NOT_ADJACENT": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "NOT_ADJACENT",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "NO_CHEST": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "NO_CHEST",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "NO_INVENTORY": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "NO_INVENTORY",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "NO_ROOM_FOR_LOOT": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "NO_ROOM_FOR_LOOT",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "STANDING_ON_TARGET": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "STANDING_ON_TARGET",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "WRONG_PHASE": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "WRONG_PHASE",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+}
+`;
+
+exports[`CH-P0 payload snapshots: quest chest > the full opening: CHEST_OPENED 1`] = `
+[
+  {
+    "payload": {
+      "from": {
+        "columnIndex": 13,
+        "rowIndex": 16,
+      },
+      "heroId": "hero-1",
+      "hex": {
+        "columnIndex": 14,
+        "rowIndex": 16,
+      },
+      "placed": [
+        {
+          "amount": 1,
+          "hex": {
+            "columnIndex": 13,
+            "rowIndex": 15,
+          },
+          "itemKey": "sword",
+        },
+        {
+          "amount": 1,
+          "hex": {
+            "columnIndex": 14,
+            "rowIndex": 15,
+          },
+          "itemKey": "shield",
+        },
+        {
+          "amount": 1,
+          "hex": {
+            "columnIndex": 15,
+            "rowIndex": 16,
+          },
+          "itemKey": "health-bottle",
+        },
+        {
+          "amount": 1,
+          "hex": {
+            "columnIndex": 14,
+            "rowIndex": 17,
+          },
+          "itemKey": "mana-bottle",
+        },
+      ],
+      "questId": "seeker-1",
+      "toBag": [],
+    },
+    "type": "CHEST_OPENED",
+  },
+]
+`;
+
+exports[`CH-P0 payload snapshots: quest chest > the pickup event and its refusals 1`] = `
+{
+  "BAG_FULL": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "BAG_FULL",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "NOT_ADJACENT": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "NOT_ADJACENT",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "NO_INVENTORY": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "NO_INVENTORY",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "QUEST_LOOT_TAKEN": [
+    {
+      "payload": {
+        "amount": 1,
+        "heroId": "hero-1",
+        "hex": {
+          "columnIndex": 13,
+          "rowIndex": 15,
+        },
+        "itemKey": "sword",
+        "questId": "seeker-1",
+      },
+      "type": "QUEST_LOOT_TAKEN",
+    },
+    {
+      "payload": {
+        "amount": 1,
+        "heroId": "hero-1",
+        "key": "sword",
+        "placedAt": [
+          {
+            "container": "bag",
+            "index": 0,
+          },
+        ],
+        "source": "pickup",
+      },
+      "type": "ITEM_GRANTED",
+    },
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "revision": 1,
+      },
+      "type": "INVENTORY_CHANGED",
+    },
+  ],
+  "WRONG_PHASE": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "WRONG_PHASE",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+}
+`;
+
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > CHEST_EMPTY 1`] = `
+[
+  {
+    "payload": {
+      "heroId": "hero-1",
+      "reason": "CHEST_EMPTY",
+    },
+    "type": "LOOT_REJECTED",
+  },
+  {
+    "payload": {
+      "actionType": "OPEN",
+      "coordinates": {
+        "columnIndex": 4,
+        "rowIndex": 2,
+      },
+      "message": "Nothing is left in it.",
+    },
+    "type": "HEX_ACTION_START_REJECTED",
+  },
+]
+`;
+
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > NO_ROOM_FOR_LOOT 1`] = `
+[
+  {
+    "payload": {
+      "heroId": "hero-1",
+      "reason": "NO_ROOM_FOR_LOOT",
+    },
+    "type": "LOOT_REJECTED",
+  },
+  {
+    "payload": {
+      "actionType": "OPEN",
+      "coordinates": {
+        "columnIndex": 4,
+        "rowIndex": 2,
+      },
+      "message": "No room around it for the loot.",
+    },
+    "type": "HEX_ACTION_START_REJECTED",
+  },
+]
+`;
+
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > NOT_ADJACENT (the world answers TOO_FAR before the rule is asked) 1`] = `
+{
+  "code": "TOO_FAR",
+  "ok": false,
+}
+`;
+
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > STANDING_ON_TARGET 1`] = `
+[
+  {
+    "payload": {
+      "heroId": "hero-1",
+      "reason": "STANDING_ON_TARGET",
+    },
+    "type": "LOOT_REJECTED",
+  },
+  {
+    "payload": {
+      "actionType": "OPEN",
+      "coordinates": {
+        "columnIndex": 4,
+        "rowIndex": 2,
+      },
+      "message": "Step off first.",
+    },
+    "type": "HEX_ACTION_START_REJECTED",
+  },
+]
+`;
+
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > the full opening: CHEST_OPENED and WILL_SPENT 1`] = `
+[
+  {
+    "payload": {
+      "coordinates": {
+        "columnIndex": 4,
+        "rowIndex": 2,
+      },
+      "from": {
+        "columnIndex": 3,
+        "rowIndex": 2,
+      },
+      "heroId": "hero-1",
+      "placed": [
+        {
+          "amount": 40,
+          "coordinates": {
+            "columnIndex": 3,
+            "rowIndex": 1,
+          },
+          "itemKey": "coins",
+        },
+        {
+          "amount": 2,
+          "coordinates": {
+            "columnIndex": 4,
+            "rowIndex": 1,
+          },
+          "itemKey": "health-bottle",
+        },
+        {
+          "amount": 1,
+          "coordinates": {
+            "columnIndex": 5,
+            "rowIndex": 2,
+          },
+          "itemKey": "health-bottle",
+        },
+      ],
+      "toBag": [],
+    },
+    "type": "CHEST_OPENED",
+  },
+]
+`;
+
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > the full opening: CHEST_OPENED and WILL_SPENT 2`] = `
+[
+  {
+    "payload": {
+      "amount": 2,
+      "balanceAfter": 48,
+      "heroId": "hero-1",
+      "reason": "action",
+      "ref": "OPEN:4:2",
+    },
+    "type": "WILL_SPENT",
+  },
+]
+`;
