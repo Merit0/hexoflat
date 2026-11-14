@@ -10,11 +10,16 @@ import {
   applyWorldResult,
   buildClientHint,
   hasDueWork,
+  refetchServedWorld,
   serverWorldJson,
   stepOnServerWorld,
   tickServerWorld,
   type ReplayDeps,
 } from '@/services/world/served-world';
+import { i18n } from '@/i18n';
+import { chestOpenedOf, planLootFlights } from '@/services/loot/loot-flight';
+import { startLootFlights } from '@/services/loot/loot-flight-state';
+import { lootRefusalText } from '@/services/loot/loot-rejection';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -34,6 +39,7 @@ export interface ServerWorldHost {
   getTileAt(coordinates: IHexCoordinates): HexTileModel | null;
   markTilesDirty(coordinates: IHexCoordinates[]): void;
   cacheServedWorld(): void;
+  refetchWorld(): Promise<void>;
 }
 
 export function applyWorldResultAction(
@@ -42,6 +48,15 @@ export function applyWorldResultAction(
   result: WorldCommandResult,
 ): void {
   if (!host.map) return;
+  if (result.replayed) {
+    void host.refetchWorld();
+    return;
+  }
+  const opened = chestOpenedOf(result.events);
+  if (opened) {
+    startLootFlights(planLootFlights(opened));
+    hero.heroCoordinates = { ...opened.coordinates };
+  }
   const deps: ReplayDeps = {
     tool: useHeroToolStore(),
     gathering: useGatheringStore(),
@@ -50,6 +65,17 @@ export function applyWorldResultAction(
     tileAt: (coordinates) => host.getTileAt(coordinates),
   };
   host.markTilesDirty(applyWorldResult(host.map as HexMapModel, result, deps));
+}
+
+export async function refetchWorldAction(host: ServerWorldHost, hero: ServerWorldHero) {
+  const mapId = host.currentMapId;
+  if (!mapId) return;
+  const served = await refetchServedWorld(host.currentLocationKey);
+  if (!served || served.mapId !== mapId || host.currentMapId !== mapId) return;
+  host.map = served.map;
+  hero.heroCoordinates = served.heroCoordinates;
+  host.cacheServedWorld();
+  host.markTilesDirty(served.map.tiles.map((tile) => tile.coordinates));
 }
 
 export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldHero) {
@@ -66,6 +92,8 @@ export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldH
     else if (host.currentMapId === mapId) {
       applyWorldResultAction(host, hero, result);
       host.cacheServedWorld();
+      const refused = lootRefusalText(result.events, (key) => i18n.global.t(key));
+      if (refused) useHeroToolStore().setActionMessage(refused);
     }
   } finally {
     serverTicking = false;

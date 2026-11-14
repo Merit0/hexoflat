@@ -57,6 +57,7 @@ import {
 } from '@/stores/dev-board-panel-actions';
 import {
   applyWorldResultAction,
+  refetchWorldAction,
   serverTickAction,
   serverWorldJsonOfHost,
   stepOnServerAction,
@@ -333,6 +334,10 @@ export const useWorldMapStore = defineStore('world-map-store', {
       if (!this.currentMapId) return;
       const json = this.serverWorldJson(engagement);
       if (json) cacheServerWorld(this.currentLocationKey, json);
+    },
+
+    refetchWorld() {
+      return refetchWorldAction(this, useHeroStore());
     },
 
     applyWorldResult(result: WorldCommandResult) {

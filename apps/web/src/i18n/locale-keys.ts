@@ -7,10 +7,13 @@ import {
   BATTLE_ITEMS,
   BATTLE_OBJECTS,
 } from '@hexoflat/engine/battle/battle-catalogue';
+import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
+import { QUEST_CATEGORIES } from '@/services/quests/quest-board-model';
 import { SQUAD_REJECTIONS } from '@hexoflat/engine/squads/engagement';
 import { THREATS } from '@hexoflat/engine/battle/threat';
 import ukUi from '@/locales/uk/ui.json';
 import { battleLocaleKeys } from '@/composables/battle-hint';
+import { lootLocaleKeys } from '@/services/loot/loot-rejection';
 
 const CONTENT_KEY_PREFIX = 'content.';
 
@@ -110,6 +113,25 @@ export function collectSkillTreeLocaleKeys(): string[] {
   return keys;
 }
 
+export function questLocaleKeys(): string[] {
+  const tips = ['chest', 'step', 'back'].map((tip) => `quest.tip.${tip}`);
+  const results = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'].map(
+    (outcome) => `quest.result.${outcome}`,
+  );
+  const filters = ['all', ...QUEST_CATEGORIES].map((filter) => `quest.board.filter.${filter}`);
+  return [
+    ...tips,
+    ...results,
+    ...filters,
+    ...Object.values(ALL_QUESTS).flatMap((quest) => [
+      quest.nameKey,
+      quest.descKey,
+      quest.tableRule,
+      ...(quest.objective.kind === 'count' ? [quest.objective.unitKey] : []),
+    ]),
+  ];
+}
+
 const SCAN_EXTENSIONS = new Set(['.vue', '.ts']);
 const SCAN_IGNORE_DIRS = new Set(['node_modules', 'dist']);
 // t('literal.key') / $t('literal.key') — single/double-quoted literal only;
@@ -157,5 +179,7 @@ export function collectUiTemplateKeys(): string[] {
   for (const key of collectSkillTreeLocaleKeys()) keys.add(key);
   for (const key of battleLocaleKeys()) keys.add(key);
   for (const key of squadLocaleKeys()) keys.add(key);
+  for (const key of questLocaleKeys()) keys.add(key);
+  for (const key of lootLocaleKeys()) keys.add(key);
   return [...keys].sort();
 }

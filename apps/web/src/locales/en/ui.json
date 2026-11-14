@@ -22,7 +22,8 @@
       "regrowing": "Regrowing",
       "needsTool": "Needs {tool}",
       "broken": "Broken",
-      "interactable": "Interactable"
+      "interactable": "Interactable",
+      "empty": "Empty"
     },
     "stats": {
       "attack": "Attack",
@@ -42,7 +43,13 @@
       "sawHurts": "Hurts too strong"
     },
     "hints": {
-      "saw": "Answer in 5 s or the saw bites."
+      "saw": "Answer in 5 s or the saw bites.",
+      "chestLoot": "Loot scatters onto the free places around it; in cramped surroundings some of it is lost.",
+      "graveLoot": "Loot scatters onto the free places around it; in cramped surroundings some of it is lost."
+    },
+    "grave": {
+      "title": "Grave",
+      "description": "A fallen enemy rests here."
     },
     "actions": "Actions",
     "free": "Free",
@@ -390,6 +397,9 @@
     "victory": "Victory! All enemies have fallen.",
     "fallen": "Not enough hearts to survive that. {name} has fallen and returns to camp.",
     "leave": "Leave battle",
+    "leaveWarning": "Loot is left on the field. If you leave now, it is lost.",
+    "leaveConfirm": "Leave anyway",
+    "leaveCancel": "Stay",
     "tag": {
       "yourTurn": "Your turn",
       "next": "Next",
@@ -503,7 +513,14 @@
       "NOT_USABLE": "This item cannot be used.",
       "NOT_AN_OPTION": "You cannot strike from that hex.",
       "AIM_PENDING": "Choose the hex of the strike first.",
-      "WINDOW_CLOSED": "The time is up — the window is closed."
+      "WINDOW_CLOSED": "The time is up — the window is closed.",
+      "STANDING_ON_TARGET": "Step off this spot first.",
+      "NO_GRAVE": "There is no grave there.",
+      "GRAVE_EMPTY": "Nothing found!",
+      "NO_LOOT_THERE": "There is nothing to pick up here.",
+      "NO_ROOM_FOR_LOOT": "There is no room around for the loot.",
+      "BAG_FULL": "Your bag is full. Free some space.",
+      "FIGHT_NOT_OVER": "Win the fight first."
     },
     "actionName": {
       "place-shield": "Raising a shield",
@@ -526,7 +543,8 @@
       "attack": "Attack",
       "block": "Block",
       "unblock": "Lift",
-      "use": "Use"
+      "use": "Use",
+      "take": "Take"
     },
     "warn": {
       "enemyTurn": "The enemy is acting — wait for it",
@@ -832,6 +850,200 @@
       "takenOver": "This hero is open somewhere else. Changes here are no longer saved.",
       "offline": "No connection to the server. Changes are not saved.",
       "claimFailed": "Could not open the chest. Try again."
+    }
+  },
+  "loot": {
+    "reject": {
+      "NO_ROOM_FOR_LOOT": "There is no room around for the loot.",
+      "BAG_FULL": "Your bag is full. Free some space.",
+      "STANDING_ON_TARGET": "Step off this spot first.",
+      "CHEST_EMPTY": "The chest is empty.",
+      "NOT_ADJACENT": "Come closer."
+    }
+  },
+  "quest": {
+    "boardTitle": "Quests",
+    "close": "Close the quest board",
+    "claim": "Claim",
+    "price": {
+      "will": "{n} Will"
+    },
+    "reward": {
+      "will": "{n} Will"
+    },
+    "refusal": {
+      "UNKNOWN_QUEST": "This quest does not exist.",
+      "NOT_AT_BOARD": "Stand next to the quest board first.",
+      "QUEST_ALREADY_ACTIVE": "You already took this quest.",
+      "REQUIREMENTS_NOT_MET": "This quest is not available to you.",
+      "QUEST_SLOTS_FULL": "No free quest slots left.",
+      "INSUFFICIENT_WILL": "Not enough Will.",
+      "INSUFFICIENT_ITEMS": "You do not hold the required items.",
+      "NOT_ACTIVE": "This quest is not active.",
+      "NOT_READY": "This quest is not finished yet.",
+      "AUTO_TURN_IN": "This quest is handed in by itself.",
+      "BAG_FULL": "Your bag is too full for the reward.",
+      "NO_INVENTORY": "Your bag is not available.",
+      "OTHER": "The quest board refused this.",
+      "QUEST_IN_PROGRESS": "You are already on a trail.",
+      "NOT_ADJACENT": "Too far away.",
+      "HEX_NOT_REVEALED": "That hex is hidden.",
+      "USE_STEP_BACK": "Use the step back.",
+      "NOTHING_TO_STEP_BACK": "Nothing to go back to.",
+      "NO_CHEST": "There is no chest yet.",
+      "WRONG_PHASE": "Not now.",
+      "BATTLE_OPEN": "Finish the battle first.",
+      "NO_RUN": "No trail is open.",
+      "OFFLINE": "No connection to the server."
+    },
+    "woodcutter": {
+      "name": "Woodcutter",
+      "desc": "The camp needs timber. Cut trees in the wild.",
+      "table": "Cut 10 trees, get 5 axes."
+    },
+    "stonebreaker": {
+      "name": "Stonebreaker",
+      "desc": "Break stone for the camp walls.",
+      "table": "Mine 8 stones, get 30 coins."
+    },
+    "scholar": {
+      "name": "Scholar",
+      "desc": "Sharpen your mind in the Book of Will.",
+      "table": "Answer 15 questions correctly, get 20 coins."
+    },
+    "bone-hunter": {
+      "name": "Bone Hunter",
+      "desc": "The crypt is full of walking bones. Thin them out.",
+      "table": "Defeat 3 skeletons in battles, get a wooden shield."
+    },
+    "unit": {
+      "trees": "trees",
+      "stones": "stones",
+      "answers": "correct answers",
+      "skeletons": "skeletons"
+    },
+    "start": "Start",
+    "enter": "Enter",
+    "chip": {
+      "entry": "Entry {n}",
+      "steps": "{n} steps",
+      "stepPrice": "Step {n}",
+      "backPrice": "Step back {n}"
+    },
+    "run": {
+      "step": "Step {n} / {total}",
+      "trail": "Your trail",
+      "collect": "The chest is open. Take what you can.",
+      "ambush": "Something is wrong with this chest.",
+      "chestSeen": "A chest stands nearby. Open it.",
+      "return": "Return to camp",
+      "giveUp": "Give up",
+      "giveUpConfirm": "Yes, give up",
+      "giveUpCancel": "Stay"
+    },
+    "tip": {
+      "chest": "A chest. Open it with your hand.",
+      "step": "Step: {n} Will",
+      "back": "Step back: {n} Will"
+    },
+    "result": {
+      "treasure": "You found the treasure.",
+      "ambushWon": "You won the ambush.",
+      "defeat": "The ambush defeated you.",
+      "stranded": "Your Will ran out. You are stranded.",
+      "left": "You left the trail.",
+      "review": "First wrong turn: you chose {took}, the rule gave {rule}.",
+      "dismiss": "Back to the board"
+    },
+    "seeker-1": {
+      "name": "I · First Trail",
+      "desc": "Follow the numbers through the fog to the chest.",
+      "table": "Find the chest at the end of the trail."
+    },
+    "seeker-2": {
+      "name": "II · Leaping Trail",
+      "desc": "The numbers jump. Find the pattern.",
+      "table": "Find the chest at the end of the trail."
+    },
+    "seeker-3": {
+      "name": "III · Cunning Trail",
+      "desc": "Every step costs more. Choose carefully.",
+      "table": "Find the chest at the end of the trail."
+    },
+    "board": {
+      "will": "Will",
+      "coins": "Coins",
+      "hint": "Hover a quest to see its details. On touch screens, tap it.",
+      "rowLabel": "{name}, {meta}. Show details.",
+      "takeFor": "Take {name} for {n} Will",
+      "detailsLabel": "{name} details",
+      "detailsClose": "Close details",
+      "abandon": "Abandon",
+      "claimReward": "Claim reward",
+      "enterTrail": "Enter the trail",
+      "expeditionNote": "Count the Will for the whole trail before you enter.",
+      "takenNote": "In your quests. Abandoning gives no Will back.",
+      "filter": {
+        "label": "Filter quests",
+        "all": "All",
+        "gather": "Gathering",
+        "combat": "Combat",
+        "learn": "Learning",
+        "exp": "Expedition"
+      },
+      "group": {
+        "active": "My quests",
+        "available": "On the board",
+        "of": "{used} of {max}",
+        "count": "{n, plural, one {# quest} other {# quests}}"
+      },
+      "empty": {
+        "active": "No quest taken yet. Take one below — it moves up here with its counter.",
+        "available": "Nothing new for this filter."
+      },
+      "label": {
+        "goal": "Goal",
+        "reward": "Reward",
+        "toTake": "To take",
+        "taken": "Taken"
+      },
+      "meta": {
+        "goal": "Goal: {n} {unit}",
+        "progress": "{done} / {n} {unit}",
+        "ready": "Goal reached — claim it",
+        "onTrail": "On the trail — enter it",
+        "countCost": "Goal: Count steps cost"
+      },
+      "reason": {
+        "will": "Not enough Will",
+        "slots": "All quest slots are in use",
+        "slotsFull": "All {max} quest slots are in use. Finish or abandon a quest first.",
+        "willNeed": "Not enough Will: you need {need}, you have {have}."
+      },
+      "cost": {
+        "free": "Free",
+        "entry": "Entry {n}",
+        "slot": "Quest slot {slot} +{n}"
+      },
+      "status": {
+        "taken": "Taken: {name} · −{n} Will",
+        "takenFree": "Taken: {name}",
+        "claimed": "Reward: {reward} · quest is back on the board",
+        "abandoned": "Abandoned: {name} · no Will back"
+      },
+      "help": {
+        "title": "How the quest board works",
+        "text": "Take a quest and fill its counter as you play, then claim the reward. Up to 3 quests at once: the 2nd costs +{first} Will, the 3rd +{second}. Abandoning gives no Will back."
+      },
+      "pill": {
+        "taken": "Quests taken"
+      },
+      "tag": {
+        "once": "One-time",
+        "repeatable": "Repeatable"
+      },
+      "more": "+{n} more",
+      "doneTimes": "Done {n}×"
     }
   }
 }

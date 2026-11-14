@@ -52,7 +52,7 @@ export async function ensureExpedition(db: Db, userId: string, heroId: string): 
   });
 }
 
-export const SERVER_KEY_PATTERN = /^srv-(?:index|world:[0-9a-f-]{36})$/;
+export const SERVER_KEY_PATTERN = /^srv-(?:index|quest|world:[0-9a-f-]{36})$/;
 
 export async function loadBlobs(
   db: Executor,

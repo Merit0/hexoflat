@@ -31,13 +31,23 @@ export const BATTLE_REJECTION_CODES = [
 ] as const;
 export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 
+export const COLLECT_REJECTION_CODES = [
+  'STANDING_ON_TARGET',
+  'NO_GRAVE',
+  'GRAVE_EMPTY',
+  'NO_LOOT_THERE',
+  'NO_ROOM_FOR_LOOT',
+  'BAG_FULL',
+] as const;
+export type CollectRejectionCode = (typeof COLLECT_REJECTION_CODES)[number];
+
 export interface BattleRejection {
-  rejected: BattleRejectionCode;
+  rejected: BattleRejectionCode | CollectRejectionCode;
   cost?: number;
   left?: number;
 }
 
-export function reject(code: BattleRejectionCode): BattleRejection {
+export function reject(code: BattleRejectionCode | CollectRejectionCode): BattleRejection {
   return { rejected: code };
 }
 

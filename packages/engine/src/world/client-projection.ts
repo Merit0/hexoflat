@@ -1,11 +1,9 @@
-import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { sha256Hex } from '../utils/hash/sha256';
 import type { SerializedWorld } from './server-world';
 import type { TileDiff } from './tile-diff';
 
 interface SquadBlock {
   members: string[];
-  loot: string;
 }
 
 function squadOf(tile: object): { creature: Record<string, unknown>; squad: SquadBlock } | null {
@@ -23,7 +21,6 @@ export function projectTileForClient<T extends object>(tile: T): T {
   const hidden = squadOf(copy)!.squad;
   const leader = hidden.members[0];
   hidden.members = hidden.members.map(() => leader);
-  hidden.loot = HEXOBJECT_KEYS.HAND;
   return copy;
 }
 

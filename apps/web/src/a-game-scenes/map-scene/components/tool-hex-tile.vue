@@ -63,6 +63,7 @@ import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstract
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { applySquadEvents } from '@/services/squads/squad-flow';
+import { lootRefusalText } from '@/services/loot/loot-rejection';
 import { asSquad } from '@hexoflat/engine/squads/squad-state';
 
 defineProps<{
@@ -209,7 +210,8 @@ const bestAction = computed<ResolvedAction | null>(() => {
 
 const isReadAction = computed(
   () =>
-    hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.KNOWLEDGE_BOOK &&
+    (hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.KNOWLEDGE_BOOK ||
+      hoveredTile.value?.hexobject?.hexobjectKey === HEXOBJECT_KEYS.QUEST_BOARD) &&
     activeToolKey.value === HEXOBJECT_KEYS.HAND,
 );
 const bestActionLabel = computed(() => {
@@ -221,7 +223,11 @@ const bestActionLabel = computed(() => {
     activeToolKey.value === HEXOBJECT_KEYS.HAND &&
     object?.groupType === EHexobjectGroup.CONSTRUCTION &&
     !getMeta(object.hexobjectKey)?.heal;
-  if (bestAction.value.actioType === 'ENTER') return t('tool.enter');
+  if (
+    bestAction.value.actioType === 'ENTER' ||
+    object?.hexobjectKey === HEXOBJECT_KEYS.TRADER_STALL
+  )
+    return t('tool.enter');
   if (isHandOnBuilding) return t('tool.open');
   const label = bestAction.value.label;
   return i18n.te(label) ? t(label) : label;
@@ -384,6 +390,11 @@ async function executeAction() {
     return;
   }
 
+  if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.QUEST_BOARD) {
+    openKnowledgePanel('quests');
+    return;
+  }
+
   if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.STASH_CHEST) {
     await openStashBoard();
     return;
@@ -398,10 +409,11 @@ async function executeAction() {
   const onSquad = !!asSquad(tile.hexobject);
   const res = await worldMapStore.executeHexAction(tile, actionType, activeToolKey.value);
   const squadRejection = onSquad ? applySquadEvents(res.events) : null;
+  const lootRejection = lootRefusalText(res.events, t);
 
-  if (!res.ok && (squadRejection ?? res.message)) {
+  if (!res.ok && (squadRejection ?? lootRejection ?? res.message)) {
     flashDenied();
-    heroToolStore.setActionMessage(squadRejection ?? res.message ?? '');
+    heroToolStore.setActionMessage(squadRejection ?? lootRejection ?? res.message ?? '');
   }
 }
 </script>

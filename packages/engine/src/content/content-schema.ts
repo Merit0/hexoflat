@@ -117,7 +117,6 @@ export const squadSchema = z.object({
   members: z.array(z.string().regex(/^[a-z0-9-]+$/)).min(1),
   watcher: z.boolean(),
   boss: z.boolean(),
-  loot: hexobjectKeySchema,
   battlefieldBiome: z.enum(['crypt']),
   tableRule: z.string(),
 });
@@ -156,6 +155,7 @@ const constructionSchema = z.object({
   integrity: z.number(),
   isLocked: z.boolean().optional(),
   chestType: z.enum(EChestType).optional(),
+  lootTableId: z.string().min(1).optional(),
 });
 
 const weaponSchema = z.object({

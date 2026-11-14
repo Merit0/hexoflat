@@ -34,6 +34,7 @@
         class="battle-pane"
         :reference-frame="boardFrame"
       />
+      <quest-field-area v-if="questStore.inRun" class="battle-pane" />
       <div
         v-if="worldStore.worldLoadFailed"
         class="world-load-error"
@@ -50,7 +51,7 @@
           ref="boardCanvasRef"
           class="hex-board-canvas"
           data-testid="hex-board-canvas"
-          :data-ready="isBoardReady ? '1' : undefined"
+          :data-ready="isBoardReady && !lootFlying ? '1' : undefined"
         />
 
         <board-overlay-layer data-testid="hex-map-inner" :camera="camera" :frame-rect="frameRect">
@@ -90,6 +91,7 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useSquadFlow } from '@/services/squads/squad-flow';
 import { useSquadViews } from '@/services/squads/squad-views';
+import { lootFlightRequest, lootFlying } from '@/services/loot/loot-flight-state';
 import { useHexBoard } from '@/render/use-hex-board';
 import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import { useTileClick } from '@/composables/use-tile-click';
@@ -108,6 +110,8 @@ import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
 import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
+import QuestFieldArea from '@/components/quest/quest-field-area.vue';
+import { useQuestStore } from '@/stores/quest-store';
 import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
 import HexInfoTooltip from '@/components/gui/hex-info/hex-info-tooltip.vue';
 import { useHexHoverInfo } from '@/composables/use-hex-hover-info';
@@ -132,6 +136,7 @@ const { handleTileClick } = useTileClick();
 const { t } = useI18n();
 const worldStore = useWorldMapStore();
 const battleStore = useBattleStore();
+const questStore = useQuestStore();
 useSquadFlow();
 const squadViews = useSquadViews();
 const heroToolStore = useHeroToolStore();
@@ -195,7 +200,7 @@ onMounted(() => {
     createTestApi({
       getCamera: () => camera.value,
       getCanvasSize: () => canvasSize.value,
-      isBoardReady: () => isBoardReady.value,
+      isBoardReady: () => isBoardReady.value && !lootFlying.value,
     }),
   );
 });
@@ -283,6 +288,7 @@ useHexBoard({
   healTickerNow,
   movePreview,
   squadWatched: squadViews.watched,
+  lootFlight: lootFlightRequest,
   onTileHover: handleTileHover,
   onTileMove: (_tile, point) => hexHoverInfo.move(point.anchor),
   onTileLeave: () => hexHoverInfo.hide(),

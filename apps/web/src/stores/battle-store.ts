@@ -8,6 +8,7 @@ import type { BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
 import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
 import type { BattleReply, BattleRequest } from '@/services/battle/battle-reply';
+import { inCollect } from '@/composables/battle-collect';
 
 export interface BattleDeploy {
   setup: BattleSetupInput;
@@ -62,6 +63,12 @@ function actorFor(
   isLocalHero: (id: string | undefined) => boolean,
 ): string | null {
   if (!current) return null;
+  if (inCollect(current)) {
+    return (
+      current.creatures.find((c) => c.side === 'heroes' && isLocalHero(c.id) && c.hp > 0)?.id ??
+      null
+    );
+  }
   const owner = TASK_ACTIONS.has(action.kind) ? current.task?.creatureId : current.activeId;
   return isLocalHero(owner) ? owner! : null;
 }

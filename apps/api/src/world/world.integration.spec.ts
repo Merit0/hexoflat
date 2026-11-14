@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { EHexActionTypeForTests, deserializeWorld, serializeWorld } from './world-test-support';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
-import { commandJournal, expeditionBlobs, itemLedger } from '../db/schema';
+import { commandJournal, expeditionBlobs, heroAggregates, itemLedger } from '../db/schema';
 import {
   ensureExpedition,
   patchBlobs,
@@ -247,6 +247,46 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       journal.some((row) => row.commandType === 'WORLD_ACTION' && row.result === 'applied'),
     ).toBe(true);
   });
+
+  it('counts a tree cut on the server for an active quest and marks it ready at the target', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    await kit.db
+      .update(heroAggregates)
+      .set({
+        state: sql`jsonb_set(state, '{quests,active}', '[{"questId":"woodcutter","progress":9,"state":"active"}]'::jsonb)`,
+      })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.TREE);
+    const started = await send(userId, heroId, 'WORLD_ACTION', {
+      coordinates: spot,
+      actionType: EHexActionTypeForTests.CUT,
+      toolKey: HEXOBJECT_KEYS.AXE,
+      client: {
+        tool: {
+          dragging: true,
+          hover: spot,
+          active: HEXOBJECT_KEYS.AXE,
+          durability: { current: 50, max: 100 },
+        },
+      },
+    });
+    expect(started.result).toBe('applied');
+
+    let ready = false;
+    for (let i = 0; i < 40 && !ready; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const ticked = await send(userId, heroId, 'WORLD_TICK', {});
+      ready = ticked.events.some((event) => event.type === 'QUEST_READY');
+    }
+    expect(ready).toBe(true);
+    const quests = (
+      (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+        quests: { active: unknown[] };
+      }
+    ).quests;
+    expect(quests.active).toEqual([{ questId: 'woodcutter', progress: 10, state: 'ready' }]);
+  }, 20000);
 
   async function setHealth(userId: string, heroId: string, current: number) {
     const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
@@ -848,6 +888,249 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(ensured).toContain('skeleton-pack');
     const snap = JSON.stringify(await world.snapshot(userId, heroId));
     expect(snap).not.toContain('"loot":"sword"');
+  });
+
+  describe('a loot chest (REQ-LOOT-048…053)', () => {
+    const willOf = (response: WorldResponse) =>
+      (response.aggregates.progress!.state as { knowledge: { current: number } }).knowledge.current;
+
+    const openAt = (
+      userId: string,
+      heroId: string,
+      spot: { columnIndex: number; rowIndex: number },
+      options: { revision?: number; commandId?: string } = {},
+    ) =>
+      send(
+        userId,
+        heroId,
+        'WORLD_ACTION',
+        {
+          coordinates: spot,
+          actionType: EHexActionTypeForTests.OPEN,
+          toolKey: HEXOBJECT_KEYS.HAND,
+        },
+        options,
+      );
+
+    async function scene() {
+      const { userId, heroId } = await kit.newPlayer();
+      await enter(userId, heroId, 'cave');
+      const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CHEST);
+      return { userId, heroId, spot };
+    }
+
+    const viewOf = async (userId: string, heroId: string) =>
+      (await world.snapshot(userId, heroId)) as {
+        heroCoordinates: { columnIndex: number; rowIndex: number };
+        map: {
+          tiles: {
+            coordinates: { columnIndex: number; rowIndex: number };
+            hexobject: { hexobjectKey: string } | null;
+          }[];
+        };
+      };
+
+    it('REQ-LOOT-048: opens through the world command, charges the Will once and puts the hero on the chest hex', async () => {
+      const { userId, heroId, spot } = await scene();
+      const before = willOf(await send(userId, heroId, 'WORLD_TICK', {}));
+      const opened = await openAt(userId, heroId, spot);
+      expect(opened.result).toBe('applied');
+      expect(opened.hero!.coordinates).toEqual(spot);
+      expect(opened.events.filter((event) => event.type === 'CHEST_OPENED')).toHaveLength(1);
+      expect(willOf(opened)).toBe(before - 2);
+      expect(
+        opened.tileDiffs.some((diff) => diff.tile.hexobject?.hexobjectKey === 'chest-open'),
+      ).toBe(true);
+    });
+
+    it('REQ-LOOT-049: a reload returns the hero on the chest hex and the chest empty', async () => {
+      const { userId, heroId, spot } = await scene();
+      await openAt(userId, heroId, spot);
+      const view = await viewOf(userId, heroId);
+      expect(view.heroCoordinates).toEqual(spot);
+      const tile = view.map.tiles.find(
+        (t) =>
+          t.coordinates.columnIndex === spot.columnIndex &&
+          t.coordinates.rowIndex === spot.rowIndex,
+      );
+      expect(tile?.hexobject?.hexobjectKey).toBe('chest-open');
+      const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+        presence: { coordinates: { columnIndex: number; rowIndex: number } };
+      };
+      expect(progress.presence.coordinates).toEqual(spot);
+    });
+
+    it('REQ-LOOT-050: a second OPEN is refused and costs nothing', async () => {
+      const { userId, heroId, spot } = await scene();
+      const opened = await openAt(userId, heroId, spot);
+      const again = await openAt(userId, heroId, spot);
+      expect(again).toMatchObject({ result: 'rejected', code: 'ACTION_REJECTED' });
+      expect(JSON.stringify(again.events)).toContain('STANDING_ON_TARGET');
+      const after = (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+        knowledge: { current: number };
+      };
+      expect(after.knowledge.current).toBe(willOf(opened));
+    });
+
+    it('REQ-LOOT-051: the same commandId twice charges the Will once', async () => {
+      const { userId, heroId, spot } = await scene();
+      const revision = await progressRevision(userId, heroId);
+      const commandId = randomUUID();
+      const first = await openAt(userId, heroId, spot, { revision, commandId });
+      const second = await openAt(userId, heroId, spot, { revision, commandId });
+      expect(first.result).toBe('applied');
+      expect(second).toMatchObject({ result: 'applied', replayed: true });
+      expect(willOf(second)).toBe(willOf(first));
+    });
+
+    it("REQ-LOOT-052: another account cannot open a hero's chest", async () => {
+      const { userId, heroId, spot } = await scene();
+      const other = await kit.newPlayer();
+      await expect(openAt(other.userId, heroId, spot)).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+      const view = await viewOf(userId, heroId);
+      expect(
+        view.map.tiles.find(
+          (t) =>
+            t.coordinates.columnIndex === spot.columnIndex &&
+            t.coordinates.rowIndex === spot.rowIndex,
+        )?.hexobject?.hexobjectKey,
+      ).toBe('chest');
+    });
+
+    const lootAround = (
+      view: Awaited<ReturnType<typeof viewOf>>,
+      spot: { columnIndex: number; rowIndex: number },
+    ) =>
+      getHexNeighbors(spot).flatMap((coord) => {
+        const tile = view.map.tiles.find(
+          (t) =>
+            t.coordinates.columnIndex === coord.columnIndex &&
+            t.coordinates.rowIndex === coord.rowIndex,
+        );
+        const object = tile?.hexobject as {
+          hexobjectKey: string;
+          groupType: string;
+          quantity?: number;
+        } | null;
+        return object && ['loot', 'tool', 'equipment'].includes(object.groupType)
+          ? [
+              `${coord.columnIndex}:${coord.rowIndex}:${object.hexobjectKey}:${object.quantity ?? 1}`,
+            ]
+          : [];
+      });
+
+    async function serverSeed(userId: string, heroId: string) {
+      const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+      const presence = (
+        (await kit.service.snapshot(userId, heroId)).aggregates.progress!.state as {
+          presence: { mapId: string };
+        }
+      ).presence;
+      const raw = await readServerDocument(kit.db, expeditionId, `srv-world:${presence.mapId}`);
+      return (JSON.parse(raw!) as { worldSeed: string }).worldSeed;
+    }
+
+    it('REQ-LOOT-066: the same commandId twice gives one charge and one set of items, and the second answer is marked replayed', async () => {
+      const { userId, heroId, spot } = await scene();
+      const revision = await progressRevision(userId, heroId);
+      const commandId = randomUUID();
+      const first = await openAt(userId, heroId, spot, { revision, commandId });
+      const items = lootAround(await viewOf(userId, heroId), spot);
+      const second = await openAt(userId, heroId, spot, { revision, commandId });
+      expect(items.length).toBeGreaterThan(0);
+      expect(second).toMatchObject({
+        result: 'applied',
+        replayed: true,
+        tileDiffs: [],
+        hero: null,
+      });
+      expect(willOf(second)).toBe(willOf(first));
+      expect(lootAround(await viewOf(userId, heroId), spot)).toEqual(items);
+    });
+
+    it('REQ-LOOT-067: two different commandIds at once let exactly one open the chest and place the items once', async () => {
+      const { userId, heroId, spot } = await scene();
+      const revision = await progressRevision(userId, heroId);
+      const results = await Promise.all([
+        openAt(userId, heroId, spot, { revision }),
+        openAt(userId, heroId, spot, { revision }),
+      ]);
+      expect(results.filter((r) => r.result === 'applied')).toHaveLength(1);
+      const winner = results.find((r) => r.result === 'applied')!;
+      const placed = (
+        winner.events.find((e) => e.type === 'CHEST_OPENED')!.payload as { placed: unknown[] }
+      ).placed.length;
+      expect(lootAround(await viewOf(userId, heroId), spot)).toHaveLength(placed);
+    });
+
+    it('REQ-LOOT-068: no response and no projection carries the seed, a table or a discarded drop', async () => {
+      const { userId, heroId, spot } = await scene();
+      const opened = await openAt(userId, heroId, spot);
+      const seed = await serverSeed(userId, heroId);
+      const texts = [
+        JSON.stringify(opened),
+        JSON.stringify(await viewOf(userId, heroId)),
+        JSON.stringify(await kit.service.snapshot(userId, heroId)),
+      ];
+      const placed = (
+        opened.events.find((e) => e.type === 'CHEST_OPENED')!.payload as { placed: unknown[] }
+      ).placed.length;
+      for (const text of texts) {
+        expect(text).not.toContain(seed);
+        expect(text).not.toContain('"weight"');
+        expect(text).not.toContain('"entries"');
+      }
+      expect(lootAround(await viewOf(userId, heroId), spot)).toHaveLength(placed);
+    });
+
+    it('REQ-LOOT-069: a restored session shows the same items with the same quantities and the hero on the chest hex', async () => {
+      const { userId, heroId, spot } = await scene();
+      const opened = await openAt(userId, heroId, spot);
+      const placed = (
+        opened.events.find((e) => e.type === 'CHEST_OPENED')!.payload as {
+          placed: {
+            coordinates: { columnIndex: number; rowIndex: number };
+            itemKey: string;
+            amount: number;
+          }[];
+        }
+      ).placed;
+      const restored = await viewOf(userId, heroId);
+      expect(restored.heroCoordinates).toEqual(spot);
+      expect(lootAround(restored, spot).sort()).toEqual(
+        placed
+          .map(
+            (p) =>
+              `${p.coordinates.columnIndex}:${p.coordinates.rowIndex}:${p.itemKey}:${p.amount}`,
+          )
+          .sort(),
+      );
+    });
+
+    it('REQ-LOOT-053: too little Will refuses and the chest stays full', async () => {
+      const { userId, heroId, spot } = await scene();
+      const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
+      const knowledge = (progress.state as { knowledge: { revision: number } }).knowledge;
+      await kit.service.execute(userId, {
+        commandId: randomUUID(),
+        heroId,
+        aggregate: 'progress',
+        expectedRevision: progress.revision,
+        command: {
+          type: 'DEV_SET_KNOWLEDGE',
+          payload: {
+            heroId,
+            revision: knowledge.revision,
+            knowledge: { ...knowledge, current: 1 },
+          },
+        },
+      });
+      const refused = await openAt(userId, heroId, spot);
+      expect(refused).toMatchObject({ result: 'rejected', code: 'ACTION_REJECTED' });
+      expect((await viewOf(userId, heroId)).heroCoordinates).not.toEqual(spot);
+    });
   });
 
   it('does not deadlock when world commands and inventory commands race on one hero', async () => {

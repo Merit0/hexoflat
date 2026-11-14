@@ -17,6 +17,8 @@ import {
   type BattleStep,
   type BattleWorldOutcome,
   type DomainEvent,
+  type ProgressState,
+  foldQuestEvents,
   type ServerWorld,
   type TileDiff,
   type WorldClientHint,
@@ -33,6 +35,7 @@ import {
 } from '@hexoflat/engine';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
+import { BATTLE_RULES, type BattleRules } from '@hexoflat/engine/battle/battle-content';
 import { applyBattleFixture, battleFixtureSchema } from '@hexoflat/engine/battle/battle-fixtures';
 import { applyWorldFixture, worldFixtureSchema } from '@hexoflat/engine/world/world-fixtures';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
@@ -93,6 +96,11 @@ const worldKey = (mapId: string) => `srv-world:${mapId}`;
 
 type Index = Partial<Record<LocationKey, string>>;
 
+function foldWorldQuests<T extends { ok: boolean; events: DomainEvent[] }>(outcome: T): T {
+  if (!outcome.ok || !('progress' in outcome)) return outcome;
+  return foldQuestEvents(outcome as T & { progress: ProgressState });
+}
+
 async function readIndex(tx: Tx, expeditionId: string): Promise<Index> {
   const raw = await readServerDocument(tx, expeditionId, INDEX_KEY);
   return raw ? (JSON.parse(raw) as Index) : {};
@@ -122,6 +130,8 @@ export class WorldService {
     @Inject(DB) private readonly db: Db,
     @Inject(HeroesService) private readonly heroes: HeroesService,
   ) {}
+
+  battleRules: BattleRules = BATTLE_RULES;
 
   async execute(userId: string, raw: unknown): Promise<WorldResponse> {
     if (JSON.stringify(raw ?? null).length > MAX_COMMAND_BYTES) {
@@ -239,6 +249,10 @@ export class WorldService {
 
     let world: ServerWorld | null;
     const progressState = structuredClone(progress.state);
+    if (await readServerDocument(tx, expeditionId, 'srv-quest')) {
+      await journal('rejected', [], 'QUEST_OPEN', null);
+      return respond('rejected', 'QUEST_OPEN', [], [], null);
+    }
     if (command.type === 'WORLD_ENTER') {
       const { locationKey } = command.payload;
       const known = index[locationKey];
@@ -382,7 +396,9 @@ export class WorldService {
       };
     }
     if (command.type === 'WORLD_BATTLE') {
-      const fought = battleWorld({ ...run, ...finders }, command.payload);
+      const fought = foldWorldQuests(
+        battleWorld({ ...run, ...finders }, command.payload, this.battleRules),
+      );
       if (!fought.ok) {
         await journal('rejected', fought.events, fought.code, null);
         return respond('rejected', fought.code, fought.events, [], world);
@@ -399,7 +415,7 @@ export class WorldService {
       await journal('applied', fought.events, null, committed.progressRevision);
       return { commandId, ...committed.response };
     }
-    const outcome: WorldOutcome =
+    const outcome: WorldOutcome = foldWorldQuests(
       command.type === 'WORLD_STEP'
         ? stepWorld(run, command.payload.target)
         : command.type === 'WORLD_ACTION'
@@ -414,7 +430,8 @@ export class WorldService {
             ? openPortalWorld(run, command.payload.target)
             : command.type === 'WORLD_PORTAL_CLOSE'
               ? closePortalWorld({ ...run, ...finders })
-              : tickWorld(run);
+              : tickWorld(run),
+    );
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
       return respond('rejected', outcome.code, outcome.events, [], world, outcome.effects);
@@ -642,6 +659,7 @@ export class WorldService {
           create: (key: LocationKey) => createServerWorld(key, randomUUID(), seed, heroId),
         },
         { kind: 'close', heroId },
+        this.battleRules,
       );
       if (!fought.ok) return;
       await this.commitBattle(tx, {
@@ -685,6 +703,7 @@ export class WorldService {
             },
           },
           { kind: 'sync', heroId },
+          this.battleRules,
         );
         if (settled.ok) {
           await this.commitBattle(tx, {

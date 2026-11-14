@@ -22,7 +22,8 @@
     <div v-show="isHeroBoardOpen" class="hero-board-content">
       <stash-board v-if="stashStore.isOpen" />
       <shop-board v-else-if="traderStore.isOpen" />
-      <knowledge-board v-else-if="knowledgePanelMode" />
+      <knowledge-board v-else-if="knowledgePanelMode === 'hall'" />
+      <quest-board v-else-if="knowledgePanelMode === 'quests' || questStore.inRun" />
       <div v-else class="hero-board-body">
         <header class="board-top">
           <div class="tabs" :style="{ '--tab-count': tabs.length }">
@@ -101,6 +102,8 @@ import { useI18n } from 'vue-i18n';
 import KnowledgeBoard from './knowledge-board.vue';
 import StashBoard from './stash/stash-board.vue';
 import ShopBoard from './shop/shop-board.vue';
+import QuestBoard from './quests/quest-board.vue';
+import { useQuestStore } from '@/stores/quest-store';
 import { useStashSession } from '@/composables/use-stash-session';
 import { useShopSession } from '@/composables/use-shop-session';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
@@ -137,6 +140,7 @@ const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
 const activeTab = ref<HeroBoardTab>('hero');
 const battleStore = useBattleStore();
 const stashStore = useHeroStashStore();
+const questStore = useQuestStore();
 const traderStore = useTraderStore();
 useStashSession();
 useShopSession();
@@ -177,7 +181,7 @@ onMounted(() => {
 useEscapeClearsItemSelection();
 useEquipmentHealthSync();
 useOpenInventoryOnPickup(() => {
-  activeTab.value = 'inventory';
+  if (!battleStore.isOpen) activeTab.value = 'inventory';
 });
 watch(
   () => heroStore.knowledgeError,

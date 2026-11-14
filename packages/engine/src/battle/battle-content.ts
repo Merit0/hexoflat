@@ -21,6 +21,7 @@ export const battleRulesSchema = z.object({
   maxShieldSides: z.number().int().min(1).max(6),
   boulderWeight: z.number().int().min(0),
   fallDamage: z.number().int().min(0),
+  graveLootEnabled: z.boolean().default(true),
 });
 export type BattleRules = z.infer<typeof battleRulesSchema>;
 
@@ -40,4 +41,5 @@ export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   maxShieldSides: 6,
   boulderWeight: 2,
   fallDamage: 1,
+  graveLootEnabled: true,
 });

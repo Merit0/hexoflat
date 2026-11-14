@@ -12,7 +12,7 @@
       :flipped="flipped"
       :working="false"
       :label="label"
-      :read="false"
+      :read="tool.action === 'eye'"
       :denied="false"
       :can-afford="tool.canAfford"
       @act="emit('act')"
@@ -49,6 +49,8 @@ const label = computed(() => {
   if (props.tool.action === 'block') return t('battle.tool.block');
   if (props.tool.action === 'unblock') return t('battle.tool.unblock');
   if (props.tool.action === 'use') return t('battle.tool.use');
+  if (props.tool.action === 'eye') return t('tool.read');
+  if (props.tool.action === 'take') return t('battle.tool.take');
   return null;
 });
 </script>

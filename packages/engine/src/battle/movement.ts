@@ -6,6 +6,7 @@ import { hexKey, hexNeighbours, isAdjacentHex, parseHexKey } from './hex-battle-
 import { reject, spendTurnWill, type BattleRejection } from './battle-rejection';
 import { enterSaw } from './hazard';
 import { endTurnIfActiveFell } from './turn';
+import { collectStep, inCollectPhase } from './collect';
 
 export function stepCost(
   state: BattleBoardView,
@@ -29,6 +30,7 @@ export function moveCreature(
 ): DomainEvent[] | BattleRejection {
   if (!isAdjacentHex(mover.pos, hex)) return reject('NOT_ADJACENT');
   if (!isFreeHex(state, hex)) return reject('HEX_BLOCKED');
+  if (inCollectPhase(state)) return collectStep(state, mover, hex);
 
   const cost = stepCost(state, mover.pos, hex, rules);
   const refused = spendTurnWill(state, cost);

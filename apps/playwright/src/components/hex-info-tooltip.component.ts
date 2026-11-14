@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 
-export type HexInfoSealState = 'broken' | 'locked' | 'interactable';
+export type HexInfoSealState = 'broken' | 'locked' | 'interactable' | 'empty';
 
 export class HexInfoTooltipComponent extends BaseComponent {
   private get tooltip() {

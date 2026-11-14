@@ -307,6 +307,8 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
       return { ok: false, message: `Need a tool: ${requiredToolKey}` };
     }
 
+    if (!meta?.enter) return { ok: false, message: 'No training today!' };
+
     heroToolStore.clearResolvedActions();
     heroToolStore.stopTool();
 

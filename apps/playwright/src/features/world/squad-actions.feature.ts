@@ -80,7 +80,7 @@ export class SquadActionsFeature extends BaseFeature {
   async winAndLeaveBattle(): Promise<void> {
     await this.step('Win the battle and press LEAVE BATTLE', async () => {
       await this.campingMap.hexBoard.finishBattle('victory');
-      await this.campingMap.battleTab.leaveBattle();
+      await this.campingMap.battleCollect.leaveConfirmingIfAsked();
     });
   }
 

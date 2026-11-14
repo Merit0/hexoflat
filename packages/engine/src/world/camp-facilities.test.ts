@@ -1,3 +1,4 @@
+import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { describe, expect, it } from 'vitest';
 import { getPrototype } from '../content/content-accessors';
 import type HexMapModel from '../map/models/hex-map-model';
@@ -8,6 +9,7 @@ import { createServerWorld, deserializeWorld, serializeWorld } from './server-wo
 
 const STALL_HEX = { columnIndex: 10, rowIndex: 9 };
 const GROUNDS_HEX = { columnIndex: 10, rowIndex: 5 };
+const BOARD_HEX = { columnIndex: 8, rowIndex: 6 };
 
 function campBeforeTheShop() {
   const world = createServerWorld('camping', 'camp-map', 'seed', 'hero-1');
@@ -31,8 +33,9 @@ function countOf(map: HexMapModel, key: THexobjectKey) {
 describe('installCampFacilities', () => {
   it('places the stall and Training Grounds on their drawn hexes in a camp saved before them', () => {
     const { map } = campBeforeTheShop();
-    expect(installCampFacilities(map, null)).toEqual([STALL_HEX, GROUNDS_HEX]);
+    expect(installCampFacilities(map, null)).toEqual([STALL_HEX, GROUNDS_HEX, BOARD_HEX]);
     expect(keyAt(map, STALL_HEX)).toBe(HEXOBJECT_KEYS.TRADER_STALL);
+    expect(keyAt(map, BOARD_HEX)).toBe(HEXOBJECT_KEYS.QUEST_BOARD);
     expect(keyAt(map, GROUNDS_HEX)).toBe(HEXOBJECT_KEYS.TRAINING_GROUNDS);
   });
 
@@ -40,7 +43,7 @@ describe('installCampFacilities', () => {
     const fresh = createServerWorld('camping', 'fresh', 'seed', 'hero-1').map;
     const { map } = campBeforeTheShop();
     installCampFacilities(map, null);
-    for (const hex of [STALL_HEX, GROUNDS_HEX]) {
+    for (const hex of [STALL_HEX, GROUNDS_HEX, BOARD_HEX]) {
       const installed = map.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(hex));
       const built = fresh.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(hex));
       expect(installed?.hexobject).toEqual(built?.hexobject);
@@ -56,7 +59,7 @@ describe('installCampFacilities', () => {
 
   it('never builds on the hero', () => {
     const { map } = campBeforeTheShop();
-    expect(installCampFacilities(map, STALL_HEX)).toEqual([GROUNDS_HEX]);
+    expect(installCampFacilities(map, STALL_HEX)).toEqual([GROUNDS_HEX, BOARD_HEX]);
     expect(keyAt(map, STALL_HEX)).toBeUndefined();
     expect(installCampFacilities(map, null)).toEqual([STALL_HEX]);
   });
@@ -96,5 +99,24 @@ describe('deserializeWorld and the camp facilities', () => {
     const loaded = deserializeWorld(serializeWorld(silesia), 0);
     expect(countOf(loaded.map, HEXOBJECT_KEYS.TRADER_STALL)).toBe(0);
     expect(countOf(loaded.map, HEXOBJECT_KEYS.TRAINING_GROUNDS)).toBe(0);
+  });
+});
+
+describe('Training Grounds saved with the old locked mark', () => {
+  it('is not locked after a reload', () => {
+    const old = campBeforeTheShop();
+    installCampFacilities(old.map, null);
+    const grounds = old.map.tiles.find(
+      (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.TRAINING_GROUNDS,
+    )?.hexobject;
+    if (grounds?.groupType !== EHexobjectGroup.CONSTRUCTION) throw new Error('no Training Grounds');
+    grounds.construction.isLocked = true;
+    const loaded = deserializeWorld(JSON.parse(JSON.stringify(serializeWorld(old))), 0);
+    const again = loaded.map.tiles.find(
+      (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.TRAINING_GROUNDS,
+    )?.hexobject;
+    expect(again?.groupType === EHexobjectGroup.CONSTRUCTION && again.construction.isLocked).toBe(
+      false,
+    );
   });
 });

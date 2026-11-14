@@ -13,10 +13,11 @@ import { reachRefusal, strikingItem } from '@hexoflat/engine/battle/strike';
 import { hexobjectOfBattleItem } from '@hexoflat/engine/battle/battle-catalogue';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { controlledHero } from './battle-board-tap';
+import { collectHero, collectToolTarget, deadEnemyAt } from './battle-collect';
 import { effectiveTarget } from './battle-target';
 import type { BattleStage } from './battle-stage';
 
-export type BattleToolAction = 'attack' | 'block' | 'unblock' | 'use';
+export type BattleToolAction = 'attack' | 'block' | 'unblock' | 'use' | 'eye' | 'take';
 
 export interface BattleToolHex {
   origin: BattleHex;
@@ -167,8 +168,39 @@ function defaultAnchor(
   return chosen || isAdjacentHex(self.pos, target.pos) ? target.pos : null;
 }
 
+function buildCollectToolHex(input: BattleToolInput): BattleToolHex | null {
+  const view = input.projection;
+  const self = collectHero(view, input.localHeroIds);
+  if (!view || !self || input.ui.stage !== 'action' || !input.ui.hand) return null;
+  const target = collectToolTarget(view, self, input.ui.toolAt);
+  if (!target) return null;
+  return {
+    origin: { ...self.pos },
+    at: target.at,
+    hand: input.ui.hand,
+    toolKey: HEXOBJECT_KEYS.HAND,
+    action: target.action,
+    targetId: null,
+    canAfford: true,
+    price: 0,
+  };
+}
+
+function eyeOverFallen(
+  decision: Decision,
+  view: BattleProjection,
+  at: BattleHex,
+  hand: BattleHand,
+  self: BattleCreature,
+): Decision {
+  const bare = !self.hands[hand]?.shieldCapacity;
+  if (decision.action || !bare || !deadEnemyAt(view, at)) return decision;
+  return { action: 'eye', targetId: null, price: 0 };
+}
+
 export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null {
   const view = input.projection;
+  if (collectHero(view, input.localHeroIds)) return buildCollectToolHex(input);
   const self = controlledHero(view, input.localHeroIds);
   const blocking = view?.phase === 'defend' && view.reaction?.stage === 'block';
   if (
@@ -193,7 +225,13 @@ export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null
   );
   if (!at) return null;
   const chosenId = target && target.id === input.ui.selectedId ? target.id : null;
-  const decision = decide(view, self, hand, at, input.rules, chosenId);
+  const decision = eyeOverFallen(
+    decide(view, self, hand, at, input.rules, chosenId),
+    view,
+    at,
+    hand,
+    self,
+  );
   return {
     origin: { ...self.pos },
     at: { ...at },

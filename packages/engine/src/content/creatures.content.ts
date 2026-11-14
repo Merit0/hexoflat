@@ -1,6 +1,6 @@
 import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
-import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { ISquad } from '../abstraction/hexobject-abstraction';
 import type { TContentDefinition } from './content-schema';
 
@@ -29,7 +29,7 @@ const SQUAD_ACTIONS = {
 function squadContent(
   key: TSquadKeys,
   sprite: keyof typeof SQUAD_SPRITES,
-  squad: Omit<ISquad, 'tableRule' | 'battlefieldBiome' | 'loot'> & { loot: THexobjectKey },
+  squad: Omit<ISquad, 'tableRule' | 'battlefieldBiome'>,
 ): TContentDefinition {
   return {
     hexobjectKey: key,
@@ -57,25 +57,21 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
     members: ['skeleton-warrior'],
     watcher: false,
     boss: false,
-    loot: HEXOBJECT_KEYS.BONE_CHARM,
   }),
   [HEXOBJECT_KEYS.SKELETON_PACK]: squadContent(HEXOBJECT_KEYS.SKELETON_PACK, 'skeleton', {
     members: ['skeleton-warrior', 'skeleton-warrior'],
     watcher: false,
     boss: false,
-    loot: HEXOBJECT_KEYS.SWORD,
   }),
   [HEXOBJECT_KEYS.ARCHER_WATCH]: squadContent(HEXOBJECT_KEYS.ARCHER_WATCH, 'skeleton', {
     members: ['skeleton-archer', 'skeleton-archer'],
     watcher: true,
     boss: false,
-    loot: HEXOBJECT_KEYS.HEALTH_BOTTLE,
   }),
   [HEXOBJECT_KEYS.BONE_COURT]: squadContent(HEXOBJECT_KEYS.BONE_COURT, 'skeletonKing', {
     members: ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior'],
     watcher: false,
     boss: true,
-    loot: HEXOBJECT_KEYS.CROWN_SHARD,
   }),
 
   [HEXOBJECT_KEYS.SKELETOR]: {

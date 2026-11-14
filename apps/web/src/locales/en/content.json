@@ -25,6 +25,11 @@
       "subtitle": "Trade",
       "description": "Ilva keeps her wares here. She sells what the road needs and buys almost anything you carry."
     },
+    "questBoard": {
+      "title": "Quest Board",
+      "subtitle": "Tasks for heroes",
+      "description": "Notices pinned by the gate. Take a task, finish it, come back for the reward."
+    },
     "trainingGrounds": {
       "title": "Training Grounds",
       "subtitle": "Not open yet",

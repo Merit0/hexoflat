@@ -25,6 +25,8 @@ export const battleActionSchema = z.discriminatedUnion('kind', [
     left: z.string().min(1).nullable(),
   }),
   z.object({ kind: z.literal('end-turn') }),
+  z.object({ kind: z.literal('loot-grave'), hex: axialSchema }),
+  z.object({ kind: z.literal('pickup-loot'), hex: axialSchema }),
 ]);
 export type BattleAction = z.infer<typeof battleActionSchema>;
 

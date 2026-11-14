@@ -16,6 +16,7 @@ import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
 import { JwtAuthGuard, type AuthenticatedRequest } from '../auth/jwt-auth.guard';
 import { HeroesService } from '../heroes/heroes.service';
 import { WorldService } from '../world/world.service';
+import { QuestRunService } from '../quests/quest-run.service';
 import { HERO_SESSIONS, type HeroSessions } from './hero-sessions';
 import { PlayerCommandService } from './player-command.service';
 import { PlayerCommandError } from './player-command.types';
@@ -27,6 +28,7 @@ export class PlayerController {
     @Inject(PlayerCommandService) private readonly commands: PlayerCommandService,
     @Inject(HeroesService) private readonly heroes: HeroesService,
     @Inject(WorldService) private readonly world: WorldService,
+    @Inject(QuestRunService) private readonly quests: QuestRunService,
     @Inject(HERO_SESSIONS) private readonly sessions: HeroSessions,
   ) {}
 
@@ -89,6 +91,35 @@ export class PlayerController {
     }
     try {
       return await this.commands.traderFixture(request.user.sub, hero.id, body);
+    } catch (error) {
+      if (error instanceof PlayerCommandError) throw new ForbiddenException({ code: error.code });
+      throw error;
+    }
+  }
+
+  @Post('dev/quest-fixture')
+  async questFixture(
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-player-session') sessionToken: string | undefined,
+    @Body() body: unknown,
+  ) {
+    const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
+    if (!this.sessions.isValidToken(hero.id, sessionToken)) {
+      throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
+    }
+    try {
+      return await this.commands.questFixture(request.user.sub, hero.id, body);
+    } catch (error) {
+      if (error instanceof PlayerCommandError) throw new ForbiddenException({ code: error.code });
+      throw error;
+    }
+  }
+
+  @Get('quest')
+  async questSnapshot(@Req() request: AuthenticatedRequest) {
+    const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
+    try {
+      return await this.quests.snapshot(request.user.sub, hero.id);
     } catch (error) {
       if (error instanceof PlayerCommandError) throw new ForbiddenException({ code: error.code });
       throw error;

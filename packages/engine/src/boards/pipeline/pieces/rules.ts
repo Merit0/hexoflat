@@ -31,6 +31,7 @@ const RuleSchema = z.object({
       region: z.string().optional(),
       steps: intRange(0).optional(),
       spacing: z.number().int().min(0).optional(),
+      freeAround: z.number().int().min(1).max(6).optional(),
       next: z.enum(['mountain', 'water']).optional(),
     })
     .default({}),
@@ -116,6 +117,15 @@ function touchesTerrain(draft: BoardDraft, cell: IHexCoordinates, terrain: Terra
   return getHexNeighbors(cell).some((neighbor) => draft.cellMap.get(neighbor)?.terrain === terrain);
 }
 
+export function openNeighbourCount(draft: BoardDraft, cell: IHexCoordinates, ignore?: string) {
+  return getHexNeighbors(cell).filter(
+    (neighbor) =>
+      coordinateKey(neighbor) !== ignore &&
+      isFloor(draft, neighbor) &&
+      !draft.cellMap.get(neighbor)?.hexobject,
+  ).length;
+}
+
 function eligibleCells(
   draft: BoardDraft,
   rule: Rule,
@@ -129,6 +139,9 @@ function eligibleCells(
   return source
     .filter((cell) => isFloor(draft, cell) && !occupiedAtStart.has(coordinateKey(cell)))
     .filter((cell) => !rule.where.next || touchesTerrain(draft, cell, rule.where.next))
+    .filter(
+      (cell) => !rule.where.freeAround || openNeighbourCount(draft, cell) >= rule.where.freeAround,
+    )
     .filter((cell) => {
       if (!rule.where.steps) return true;
       const distance = steps?.get(coordinateKey(cell));

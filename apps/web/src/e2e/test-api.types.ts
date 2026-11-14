@@ -53,6 +53,46 @@ export interface TestTraderFixture {
   listings?: ({ key: string; amount: number; unitPrice: number } | null)[];
 }
 
+export interface TestQuestFixture {
+  active?: { questId: string; progress: number; state: 'active' | 'ready' }[];
+  done?: Record<string, number>;
+}
+
+export interface TestQuests {
+  active: { questId: string; progress: number; state: 'active' | 'ready' }[];
+  done: Record<string, number>;
+}
+
+export interface TestQuestField {
+  phase: string;
+  outcome: string | null;
+  position: TestHexCoordinates;
+  path: number[];
+  pathHexes: TestHexCoordinates[];
+  hintHex: TestHexCoordinates | null;
+  chest: TestHexCoordinates | null;
+  stepCost: number;
+  backCost: number;
+  hexes: {
+    hex: TestHexCoordinates;
+    number: number | null;
+    hint: boolean;
+    footprint: boolean;
+    step: { cost: number; back: boolean } | null;
+  }[];
+}
+
+export interface TestGroundItem {
+  coordinates: TestHexCoordinates;
+  itemKey: string;
+  quantity: number;
+}
+
+export interface TestChest {
+  coordinates: TestHexCoordinates;
+  state: 'full' | 'empty';
+}
+
 export interface HexoflatTestApi {
   getKnowledge(): {
     current: number;
@@ -123,6 +163,26 @@ export interface HexoflatTestApi {
     will: number;
   } | null;
 
+  getBattleCollect(): {
+    collecting: boolean;
+    outcome: string | null;
+    lootLeft: boolean;
+    heroHex: { q: number; r: number } | null;
+    graves: {
+      q: number;
+      r: number;
+      examined: boolean;
+      standHexes: { q: number; r: number }[];
+    }[];
+    items: {
+      q: number;
+      r: number;
+      itemKey: string;
+      amount: number;
+      standHexes: { q: number; r: number }[];
+    }[];
+  } | null;
+
   getBattleSnapshot(): {
     round: number;
     phase: string;
@@ -148,9 +208,18 @@ export interface HexoflatTestApi {
 
   previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview;
 
+  getGroundItems(): TestGroundItem[];
+  getChests(): TestChest[];
+  isLootFlying(): boolean;
+  tryOpenChest(coordinates: TestHexCoordinates): Promise<void>;
   getTrader(key?: string): TestTrader | null;
   getListings(): ({ key: string; amount: number; unitPrice: number } | null)[];
   getOpenTrader(): string | null;
   getWalletCoins(): number;
   setTrader(fixture: TestTraderFixture): Promise<void>;
+  getQuests(): TestQuests;
+  getOpenQuestBoard(): boolean;
+  setQuests(fixture: TestQuestFixture): Promise<void>;
+  getQuestField(): TestQuestField | null;
+  getQuestHexPoint(columnIndex: number, rowIndex: number): { x: number; y: number } | null;
 }

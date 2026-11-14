@@ -2,6 +2,7 @@ import { EChestType, EHexCollision, EHexobjectGroup } from '../abstraction/hexob
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { TContentDefinition } from './content-schema';
+import { CAVE_CHEST_TABLE_ID } from './loot-tables.content';
 
 export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.KNOWLEDGE_BOOK
@@ -14,9 +15,11 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
   | typeof HEXOBJECT_KEYS.GRAVE
   | typeof HEXOBJECT_KEYS.CHEST
+  | typeof HEXOBJECT_KEYS.CHEST_OPEN
   | typeof HEXOBJECT_KEYS.STASH_CHEST
   | typeof HEXOBJECT_KEYS.TRADER_STALL
   | typeof HEXOBJECT_KEYS.TRAINING_GROUNDS
+  | typeof HEXOBJECT_KEYS.QUEST_BOARD
   | typeof HEXOBJECT_KEYS.STONE_WALL
   | typeof HEXOBJECT_KEYS.RETURN_PORTAL;
 
@@ -195,7 +198,12 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     description: 'A locked chest. Someone left it here.',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-loot/chest-token.png',
-    construction: { integrity: 1000, isLocked: false, chestType: EChestType.LOOT },
+    construction: {
+      integrity: 1000,
+      isLocked: false,
+      chestType: EChestType.LOOT,
+      lootTableId: CAVE_CHEST_TABLE_ID,
+    },
     actions: {
       [EHexActionType.OPEN]: {
         label: 'Open',
@@ -203,6 +211,18 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         willCost: 2,
       },
     },
+  },
+
+  [HEXOBJECT_KEYS.CHEST_OPEN]: {
+    hexobjectKey: HEXOBJECT_KEYS.CHEST_OPEN,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: false,
+    title: 'Open Chest',
+    subtitle: 'Empty',
+    description: 'The lid is up and nothing is left inside.',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-loot/chest-token.png',
+    construction: { integrity: 1000, isLocked: false, chestType: EChestType.LOOT },
   },
 
   [HEXOBJECT_KEYS.STASH_CHEST]: {
@@ -236,7 +256,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
     construction: { integrity: 1000, isLocked: false },
     actions: {
       [EHexActionType.OPEN]: {
-        label: 'Open',
+        label: 'Enter',
         requiredTool: HEXOBJECT_KEYS.HAND,
         willCost: 0,
       },
@@ -246,13 +266,39 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
   [HEXOBJECT_KEYS.TRAINING_GROUNDS]: {
     hexobjectKey: HEXOBJECT_KEYS.TRAINING_GROUNDS,
     groupType: EHexobjectGroup.CONSTRUCTION,
-    isInteractable: false,
+    isInteractable: true,
     title: 'content.trainingGrounds.title',
     subtitle: 'content.trainingGrounds.subtitle',
     description: 'content.trainingGrounds.description',
     collision: EHexCollision.SOLID,
     spritePath: '/hex-assets/hex-constructs/camping/training-grounds-hex.png',
-    construction: { integrity: 1000, isLocked: true },
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.ENTER]: {
+        label: 'Enter',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
+    },
+  },
+
+  [HEXOBJECT_KEYS.QUEST_BOARD]: {
+    hexobjectKey: HEXOBJECT_KEYS.QUEST_BOARD,
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'content.questBoard.title',
+    subtitle: 'content.questBoard.subtitle',
+    description: 'content.questBoard.description',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-constructs/camping/quests-hex.png',
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.USE]: {
+        label: 'tool.read',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+      },
+    },
   },
 
   [HEXOBJECT_KEYS.STONE_WALL]: {

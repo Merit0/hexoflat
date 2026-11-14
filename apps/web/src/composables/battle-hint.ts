@@ -1,5 +1,8 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import { BATTLE_REJECTION_CODES } from '@hexoflat/engine/battle/battle-rejection';
+import {
+  BATTLE_REJECTION_CODES,
+  COLLECT_REJECTION_CODES,
+} from '@hexoflat/engine/battle/battle-rejection';
 import { BATTLE_BEHAVIOURS } from '@hexoflat/engine/battle/battle-catalogue';
 import { BATTLE_HANDS, TASK_KINDS } from '@hexoflat/engine/battle/battle-state';
 import { BATTLE_LEGEND_ITEMS } from '@/render/battle/battle-look';
@@ -65,6 +68,8 @@ export function battleLocaleKeys(): string[] {
     ...ID_DRIVEN_KEYS.map((k) => `battle.${k}`),
     ...BATTLE_HINT_KEYS.map((k) => `battle.hint.${k}`),
     ...BATTLE_REJECTION_CODES.map((c) => `battle.reject.${c}`),
+    ...COLLECT_REJECTION_CODES.map((c) => `battle.reject.${c}`),
+    'battle.reject.FIGHT_NOT_OVER',
     ...BATTLE_ACTION_NAMES.map((a) => `battle.actionName.${a}`),
     ...BATTLE_BEHAVIOURS.flatMap((b) => [`battle.role.${b}`, `battle.roleShort.${b}`]),
     ...BATTLE_HANDS.map((h) => `battle.hand.${h}`),

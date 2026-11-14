@@ -346,16 +346,15 @@ describe('REQ-SRV-BTL-005 the map the client gets hides an unscouted squad', () 
     return serializeWorld(run.world).map.tiles.find((tile) => tile.hexobject)!;
   }
 
-  it('keeps the leader and the count, drops the rest and the loot, until SCOUT', () => {
+  it('keeps the leader and the count, drops the rest, until SCOUT', () => {
     const run = engaged();
     const raw = squadTile(run);
     const seen = projectTileForClient(raw).hexobject as unknown as {
-      creature: { squad: { members: string[]; loot: string } };
+      creature: { squad: { members: string[] } };
     };
     expect(seen.creature.squad.members).toEqual(['skeleton-warrior', 'skeleton-warrior']);
-    expect(seen.creature.squad.loot).not.toBe('sword');
-    const real = raw.hexobject as unknown as { creature: { squad: { loot: string } } };
-    expect(real.creature.squad.loot).toBe('sword');
+    expect(seen.creature.squad).not.toHaveProperty('loot');
+    expect(JSON.stringify(raw.hexobject)).not.toContain('"loot"');
   });
 
   it('hides it in the diffs and in the whole world as well, and shows it once scouted', () => {
@@ -364,10 +363,10 @@ describe('REQ-SRV-BTL-005 the map the client gets hides an unscouted squad', () 
     const found = findSquad(run.world.map, PACK)!;
     found.squad.creature.scouted = true;
     const diffs = diffTiles(before, run.world.map);
-    expect(JSON.stringify(projectDiffsForClient(diffs))).toContain('"sword"');
+    expect(JSON.stringify(projectDiffsForClient(diffs))).toContain('"scouted":true');
     const hidden = engaged();
     const world = projectWorldForClient(serializeWorld(hidden.world));
-    expect(JSON.stringify(world.map.tiles)).not.toContain('"loot":"sword"');
+    expect(JSON.stringify(world.map.tiles)).not.toContain('"scouted":true');
     expect(world.battle).toBeNull();
   });
 });

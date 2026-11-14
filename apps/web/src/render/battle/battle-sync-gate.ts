@@ -5,6 +5,7 @@ export interface BattleSyncDiff {
   board: boolean;
   overlay: boolean;
   tokens: boolean;
+  loot: boolean;
 }
 
 export function createBattleSyncGate() {
@@ -13,6 +14,7 @@ export function createBattleSyncGate() {
   let biome: BattleBoardScene['biome'] | null = null;
   let creatures: BattleBoardScene['creatures'] | null = null;
   let activeId: string | null | undefined;
+  let collect: BattleBoardScene['collect'] | undefined;
   let targets = '';
   let overlayKey = '';
 
@@ -23,7 +25,11 @@ export function createBattleSyncGate() {
       const nextOverlayKey = JSON.stringify(overlay.marks);
       const nextTargets = overlay.targets.join(',');
       const tokensChanged =
-        scene.creatures !== creatures || scene.activeId !== activeId || nextTargets !== targets;
+        scene.creatures !== creatures ||
+        scene.activeId !== activeId ||
+        nextTargets !== targets ||
+        scene.collect !== collect;
+      const lootChanged = scene.collect?.items !== collect?.items;
       const overlayChanged = nextOverlayKey !== overlayKey;
 
       board = scene.board;
@@ -31,9 +37,15 @@ export function createBattleSyncGate() {
       biome = scene.biome;
       creatures = scene.creatures;
       activeId = scene.activeId;
+      collect = scene.collect;
       targets = nextTargets;
       overlayKey = nextOverlayKey;
-      return { board: boardChanged, overlay: overlayChanged, tokens: tokensChanged };
+      return {
+        board: boardChanged,
+        overlay: overlayChanged,
+        tokens: tokensChanged,
+        loot: lootChanged,
+      };
     },
   };
 }

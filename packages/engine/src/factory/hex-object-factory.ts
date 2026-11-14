@@ -8,6 +8,10 @@ import {
 import { getPrototype } from '../content';
 import { THexobjectKey } from '../registry/hexobjects-registry';
 
+function isPieceCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
+}
+
 export class HexObjectFactory {
   static create(
     key: THexobjectKey,
@@ -27,6 +31,8 @@ export class HexObjectFactory {
   }
 
   private static applyOverrides(obj: THexobject, overrides: Record<string, unknown>) {
+    if (isPieceCount(overrides.quantity)) obj.quantity = overrides.quantity;
+
     if (obj.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof overrides.regrowMs === 'number') obj.resource.regrowMs = overrides.regrowMs;
       if (typeof overrides.amount === 'number') obj.resource.amount = overrides.amount;

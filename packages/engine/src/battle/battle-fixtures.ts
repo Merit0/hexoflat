@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { BattleState } from './battle-state';
 import { isFreeHex } from './battle-board';
 import { battleDistance, hexKey } from './hex-battle-geom';
+import { enterCollectPhase } from './collect';
 
 export const battleFixtureSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('hero-turn'), will: z.number().int().min(0).max(50) }).strict(),
@@ -83,6 +84,7 @@ function finish(battle: BattleState, outcome: 'victory' | 'defeat'): void {
   for (const creature of battle.creatures) if (creature.side === loser) creature.hp = 0;
   battle.outcome = outcome;
   battle.phase = 'ended';
+  if (outcome === 'victory' && battle.lootEnabled && !battle.collect) enterCollectPhase(battle);
 }
 
 export function applyBattleFixture(source: BattleState, fixture: BattleFixture): BattleState {

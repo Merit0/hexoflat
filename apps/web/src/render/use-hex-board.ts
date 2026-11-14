@@ -14,6 +14,13 @@ import {
 } from '@/render/layers/move-preview-layer';
 import { createSquadWatchLayer, type SquadWatchLayer } from '@/render/layers/squad-watch-layer';
 import { createPortalLayer, type PortalLayer } from '@/render/layers/portal-layer';
+import { createLootFlightLayer, type LootFlightLayer } from '@/render/layers/loot-flight-layer';
+import type { LootFlightRequest } from '@/services/loot/loot-flight';
+import {
+  finishLootFlights,
+  isLootFlightPending,
+  landLootFlight,
+} from '@/services/loot/loot-flight-state';
 import { registerPortalFx } from '@/render/portal-fx';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HEX_WORLD_SIZE, type BoardCamera, type PaneSize } from '@/render/board-camera';
@@ -40,6 +47,7 @@ export interface UseHexBoardOptions {
     markerKind: ComputedRef<'move' | 'seen'>;
   };
   squadWatched: ComputedRef<IHexCoordinates[]>;
+  lootFlight: ComputedRef<LootFlightRequest | null>;
   onTileHover: (tile: IHexTile, point: TilePointer) => void;
   onTileMove?: (tile: IHexTile, point: TilePointer) => void;
   onTileLeave?: (tile: IHexTile) => void;
@@ -91,6 +99,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
   let unregisterPortalFx: (() => void) | null = null;
   let movePreviewLayer: MovePreviewLayer | null = null;
   let squadWatchLayer: SquadWatchLayer | null = null;
+  let lootFlightLayer: LootFlightLayer | null = null;
   let stopWatchers: Array<() => void> = [];
   let cancelled = false;
 
@@ -117,6 +126,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       onTileLeave: opts.onTileLeave,
       onTileClick: opts.onTileClick,
       isForceRevealed: () => opts.devPanel?.showWholeBoard.value ?? false,
+      isObjectHidden: isLootFlightPending,
       getFogLook: () =>
         fogLookForBoardKind(MapRegistry.get(worldStore.currentLocationKey)?.boardKind),
       getZoneTint: (tile) =>
@@ -142,6 +152,16 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       enter: (portal) => heroLayer?.playPortalEnter(portal) ?? Promise.resolve(),
       exit: (portal) => heroLayer?.playPortalExit(portal) ?? Promise.resolve(),
       release: () => heroLayer?.releasePortal(),
+    });
+
+    lootFlightLayer = createLootFlightLayer({
+      worldContainer: board.worldContainer,
+      getTileSize,
+      onLanded: (flight) => {
+        if (!flight.landingKey || !flight.to) return;
+        landLootFlight(flight.landingKey);
+        worldStore.markTilesDirty([flight.to]);
+      },
     });
 
     movePreviewLayer = createMovePreviewLayer({
@@ -227,6 +247,17 @@ export function useHexBoard(opts: UseHexBoardOptions) {
       watch(opts.squadWatched, (next) => squadWatchLayer?.sync(next), { immediate: true }),
     );
 
+    stopWatchers.push(
+      watch(
+        opts.lootFlight,
+        (request) => {
+          if (!request || !lootFlightLayer) return;
+          void lootFlightLayer.play(request).then(() => finishLootFlights(request.id));
+        },
+        { immediate: true },
+      ),
+    );
+
     // Registered after every layer's `immediate: true` watcher has already
     // run, so the frame this waits on is a fully populated one.
     board.onFirstFramePresented(() => {
@@ -245,6 +276,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     heroLayer?.destroy();
     movePreviewLayer?.destroy();
     squadWatchLayer?.destroy();
+    lootFlightLayer?.destroy();
     board?.destroy();
     board = null;
     tilesLayer = null;
@@ -252,5 +284,6 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     heroLayer = null;
     movePreviewLayer = null;
     squadWatchLayer = null;
+    lootFlightLayer = null;
   });
 }

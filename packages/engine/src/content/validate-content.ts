@@ -2,6 +2,7 @@ import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-regis
 import { coinPriceOf, getMeta } from './content-accessors';
 import { CONTENT } from './content-map';
 import { ContentDefinitionSchema, traderDefinitionSchema } from './content-schema';
+import { lootContentFailures } from './validate-loot';
 import { TRADERS } from './traders.content';
 
 export function validateContent(): void {
@@ -22,6 +23,7 @@ export function validateContent(): void {
   }
 
   failures.push(...traderFailures(TRADERS));
+  failures.push(...lootContentFailures());
 
   if (failures.length > 0) {
     throw new Error(`Hexobject content validation failed:\n${failures.join('\n')}`);

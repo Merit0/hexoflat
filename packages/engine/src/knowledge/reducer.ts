@@ -52,6 +52,7 @@ function answerHall(
   )
     return false;
   const correct = action.answer === question.answer;
+  willEvents.push({ type: 'HALL_ANSWERED', payload: { heroId: state.heroId, correct } });
   const granted = correct
     ? grantWill(state, hallAward(action.elapsedMs), {
         kind: 'hall',

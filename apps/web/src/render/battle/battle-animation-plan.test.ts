@@ -155,3 +155,41 @@ describe('planBattleAnimation', () => {
     expect(planBattleAnimation([ev('PHASE_CHANGED', { phase: 'act' })], [hero])).toEqual([]);
   });
 });
+
+describe('planBattleAnimation: looting a grave', () => {
+  const grave = { q: 1, r: 0 };
+  const entry = { q: 2, r: 0 };
+
+  it('walks the hero from the entry hex onto the grave, and holds him on the entry hex until then', () => {
+    const standing: AnimatedCreature = { id: 'hero', side: 'heroes', pos: grave };
+    const steps = planBattleAnimation(
+      [
+        ev('GRAVE_LOOTED', {
+          creatureId: 'hero',
+          hex: grave,
+          from: entry,
+          placed: [{ hex: { q: 1, r: 1 }, itemKey: 'coins', amount: 5 }],
+          toBag: [],
+        }),
+      ],
+      [standing],
+    );
+    expect(steps).toEqual([
+      {
+        kind: 'walk',
+        creatureId: 'hero',
+        from: entry,
+        to: grave,
+        durationMs: BATTLE_TIMING.stepMs,
+      },
+    ]);
+  });
+
+  it('plays nothing when the grave was empty and the hero stayed where he was', () => {
+    const steps = planBattleAnimation(
+      [ev('GRAVE_LOOTED', { creatureId: 'hero', hex: grave, from: entry, nothing: true })],
+      [{ id: 'hero', side: 'heroes', pos: entry }],
+    );
+    expect(steps).toEqual([]);
+  });
+});

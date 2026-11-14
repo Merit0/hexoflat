@@ -7,7 +7,14 @@ import type {
 } from './battle-state';
 import { hexKey, hexNeighbours, sameHex } from './hex-battle-geom';
 
-export type BattleBoardView = Pick<BattleState, 'board' | 'creatures' | 'boulders'>;
+export interface CollectBlockers {
+  graves: readonly { hex: BattleHex }[];
+  items: readonly { hex: BattleHex }[];
+}
+
+export type BattleBoardView = Pick<BattleState, 'board' | 'creatures' | 'boulders'> & {
+  collect?: CollectBlockers;
+};
 
 const PASSABLE: ReadonlySet<BattleTerrain> = new Set(['floor', 'rubble', 'ledge', 'oil', 'saw']);
 
@@ -40,10 +47,18 @@ export function boulderAt(state: BattleBoardView, hex: BattleHex): Boulder | nul
   return state.boulders.find((b) => sameHex(b.pos, hex)) ?? null;
 }
 
+function collectBlocks(collect: CollectBlockers, hex: BattleHex): boolean {
+  return (
+    collect.graves.some((grave) => sameHex(grave.hex, hex)) ||
+    collect.items.some((item) => sameHex(item.hex, hex))
+  );
+}
+
 export function isFreeHex(state: BattleBoardView, hex: BattleHex, ignoreId?: string): boolean {
   if (!isPassableHex(state, hex)) return false;
   const boulder = boulderAt(state, hex);
   if (boulder && boulder.id !== ignoreId) return false;
+  if (state.collect && collectBlocks(state.collect, hex)) return false;
   const occupant = livingCreatureAt(state, hex);
   return !occupant || occupant.id === ignoreId;
 }

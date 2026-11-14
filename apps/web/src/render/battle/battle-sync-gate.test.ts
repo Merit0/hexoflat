@@ -8,7 +8,15 @@ const boulders: BattleBoardScene['boulders'] = [];
 const creatures = [] as BattleBoardScene['creatures'];
 
 function scene(overrides: Partial<BattleBoardScene> = {}): BattleBoardScene {
-  return { biome: 'crypt', board, boulders, creatures, activeId: 'hero', ...overrides };
+  return {
+    biome: 'crypt',
+    board,
+    boulders,
+    creatures,
+    activeId: 'hero',
+    collect: null,
+    ...overrides,
+  };
 }
 
 function overlay(tone: 'shield' | 'ring' = 'ring', targets: string[] = []): BattleOverlayModel {
@@ -21,13 +29,19 @@ describe('createBattleSyncGate', () => {
       board: true,
       overlay: true,
       tokens: true,
+      loot: false,
     });
   });
 
   it('rebuilds nothing when only the wrappers are new, as on every mouse hover', () => {
     const gate = createBattleSyncGate();
     gate.diff(scene(), overlay());
-    expect(gate.diff(scene(), overlay())).toEqual({ board: false, overlay: false, tokens: false });
+    expect(gate.diff(scene(), overlay())).toEqual({
+      board: false,
+      overlay: false,
+      tokens: false,
+      loot: false,
+    });
   });
 
   it('rebuilds only the part that changed', () => {
@@ -39,17 +53,29 @@ describe('createBattleSyncGate', () => {
       board: true,
       overlay: false,
       tokens: false,
+      loot: false,
     });
     expect(gate.diff(scene({ board: nextBoard }), overlay('shield'))).toEqual({
       board: false,
       overlay: true,
       tokens: false,
+      loot: false,
     });
     expect(
       gate.diff(scene({ board: nextBoard, creatures: nextCreatures }), overlay('shield')),
-    ).toEqual({ board: false, overlay: false, tokens: true });
+    ).toEqual({
+      board: false,
+      overlay: false,
+      tokens: true,
+      loot: false,
+    });
     expect(
       gate.diff(scene({ board: nextBoard, creatures: nextCreatures }), overlay('shield', ['s1'])),
-    ).toEqual({ board: false, overlay: false, tokens: true });
+    ).toEqual({
+      board: false,
+      overlay: false,
+      tokens: true,
+      loot: false,
+    });
   });
 });

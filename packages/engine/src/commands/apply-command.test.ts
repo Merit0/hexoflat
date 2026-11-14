@@ -146,7 +146,13 @@ describe('applyCommand: FINISH_PENDING_ACTIONS', () => {
 
     const result = applyCommand(toState(map), command, ctx);
 
-    expect(result.events).toEqual([{ type: 'HEX_ACTIONS_FINISHED', payload: { changed: true } }]);
+    expect(result.events).toEqual([
+      { type: 'HEX_ACTIONS_FINISHED', payload: { changed: true } },
+      {
+        type: 'RESOURCE_GATHERED',
+        payload: { action: 'CUT', hexobjectKey: HEXOBJECT_KEYS.TREE, amount: 1 },
+      },
+    ]);
     expect(tile.pendingAction).toBeNull();
     expect(tile.hexobject).toBeNull();
     expect(ctx.gathering.add).toHaveBeenCalledWith(HEXOBJECT_KEYS.TREE, 1);
@@ -202,7 +208,13 @@ describe('applyCommand: WORLD_TICK', () => {
 
     const result = applyCommand(toState(map), command, ctx);
 
-    expect(result.events).toEqual([{ type: 'WORLD_TICKED', payload: { changed: true } }]);
+    expect(result.events).toEqual([
+      { type: 'WORLD_TICKED', payload: { changed: true } },
+      {
+        type: 'RESOURCE_GATHERED',
+        payload: { action: 'CUT', hexobjectKey: HEXOBJECT_KEYS.TREE, amount: 1 },
+      },
+    ]);
     expect(tileA.pendingAction).toBeNull();
     expect(tileB.hexobject?.hexobjectKey).toBe(HEXOBJECT_KEYS.ROCK);
     expect(tileB.resourceSpawner?.nextSpawnAt).toBeNull();

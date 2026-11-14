@@ -287,6 +287,15 @@ export class HexBoardComponent extends BaseComponent {
     );
   }
 
+  async moveAwayFrom(target: TestHexCoordinates, minDistance = 2, maxSteps = 6): Promise<void> {
+    for (let step = 0; step < maxSteps; step += 1) {
+      const from = await this.requireHeroCoordinates();
+      if ((await this.getDistance(from, target)) >= minDistance) return;
+      await this.stepAwayFrom(target);
+    }
+    throw new Error(`Hero could not get ${minDistance} hexes away from the target.`);
+  }
+
   async hoverNeighborWithKey(hexobjectKey: string): Promise<void> {
     const from = await this.requireHeroCoordinates();
     for (const candidate of await this.getNeighbors(from)) {

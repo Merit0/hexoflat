@@ -11,10 +11,13 @@ export type { BattleReply, BattleRequest } from './battle-reply';
 export async function sendBattle(request: BattleRequest): Promise<BattleReply> {
   const result = await sendWorldCommand('WORLD_BATTLE', request);
   const code = result.code ?? null;
+  const steps = result.replayed
+    ? [{ battle: await loadServerBattleView(), events: [] }]
+    : (result.steps as unknown as BattleStep[]);
   return {
     ok: result.ok && !code,
     code,
-    steps: result.steps as unknown as BattleStep[],
+    steps,
     events: result.events,
     closed: result.events.some((event) => event.type === 'BATTLE_CLOSED'),
     result,

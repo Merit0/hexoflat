@@ -1,4 +1,4 @@
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import type { BattleAction } from '@hexoflat/engine/battle/battle-commands';
@@ -17,34 +17,13 @@ import type { BattleActionId } from './battle-hero-card';
 import { stageMode, type BattleStage } from './battle-stage';
 import { buildBattleView } from './battle-view';
 import { weaponHandsLeft } from './battle-tool-hex';
-import type { BattleUiState } from './battle-view-types';
+import { actingHero, collectHero } from './battle-collect';
+import { taskTimeout } from './battle-task-timeout';
+import { activateBattleHand, battleUi as ui, resetBattleUi } from './battle-ui-state';
+import { useBattleLeave } from './use-battle-leave';
+import { useBattleCollectTool } from './use-battle-collect-tool';
 
-const ui = reactive<BattleUiState>({
-  stage: 'move',
-  mode: 'move',
-  hand: null,
-  swapHand: 'left',
-  hover: null,
-  toolAt: null,
-  selectedId: null,
-});
-
-export function resetBattleUi(): void {
-  ui.stage = 'move';
-  ui.mode = 'move';
-  ui.hand = null;
-  ui.swapHand = 'left';
-  ui.hover = null;
-  ui.toolAt = null;
-  ui.selectedId = null;
-}
-
-export function activateBattleHand(hand: BattleHand): void {
-  ui.stage = 'action';
-  ui.mode = stageMode('action');
-  ui.hand = hand;
-  ui.toolAt = null;
-}
+export { activateBattleHand, resetBattleUi };
 
 const TRANSLATED_PARAM = /^(battle|content)\./;
 
@@ -63,13 +42,11 @@ export function useBattleText() {
   return { t, text };
 }
 
-const TIMEOUT_RETRIES = 20;
-const TIMEOUT_RETRY_MS = 250;
-
 export function useBattleView() {
   const store = useBattleStoreContext();
   const { warn, send, lockedWarning } = useBattleWarnings();
   const { t } = useI18n();
+  const { leave, confirmLeave, cancelLeave } = useBattleLeave(store);
 
   function creatureOf(id: string): BattleCreature | null {
     const fromBattle = store.projection ? creatureById(store.projection, id) : null;
@@ -101,8 +78,10 @@ export function useBattleView() {
     }),
   );
 
+  const { lootGraveWithTool } = useBattleCollectTool(store, act, warn);
+
   function self(): BattleCreature | null {
-    return controlledHero(store.projection, store.localHeroIds);
+    return actingHero(store.projection, store.localHeroIds, controlledHero);
   }
 
   function act(action: BattleAction): Promise<boolean> {
@@ -127,6 +106,10 @@ export function useBattleView() {
       rules: BATTLE_RULES,
     });
     if (!actions.length) {
+      if (collectHero(store.projection, store.localHeroIds)) {
+        warn('HEX_BLOCKED', null);
+        return;
+      }
       if (selectFoeAt(hex)) return;
       if (store.projection?.phase === 'defend') warn('WRONG_PHASE', null);
       else warnUnaffordable(hex);
@@ -199,7 +182,8 @@ export function useBattleView() {
 
   function cycleHand(direction: 1 | -1) {
     const hero = self();
-    if (!hero || store.projection?.phase !== 'act' || store.inputLocked) return;
+    const collecting = !!collectHero(store.projection, store.localHeroIds);
+    if (!hero || (store.projection?.phase !== 'act' && !collecting) || store.inputLocked) return;
     if (ui.stage !== 'action' || ui.mode !== 'strike') {
       goStage('action');
       ui.hand = BATTLE_HANDS[0];
@@ -222,11 +206,6 @@ export function useBattleView() {
     return store.start();
   }
 
-  function leave() {
-    resetBattleUi();
-    return store.leave();
-  }
-
   function hoverHex(hex: BattleHex | null) {
     ui.hover = hex;
     if (hex && ui.mode === 'strike') ui.toolAt = hex;
@@ -243,6 +222,8 @@ export function useBattleView() {
     if (lockedWarning()) return false;
     const tool = view.value.board?.tool;
     if (!tool?.action) return false;
+    if (tool.action === 'eye') return lootGraveWithTool(tool.at);
+    if (tool.action === 'take') return act({ kind: 'pickup-loot', hex: tool.at });
     if (tool.action === 'attack' && tool.targetId) {
       const struck = await act({ kind: 'strike', targetId: tool.targetId, hand: tool.hand });
       if (struck) hideToolWhenNoWeaponLeft();
@@ -251,15 +232,6 @@ export function useBattleView() {
     if (tool.action === 'block') return act({ kind: 'place-shield', hex: tool.at });
     if (tool.action === 'use') return act({ kind: 'use-item', hand: tool.hand });
     return act({ kind: 'remove-shield', hex: tool.at });
-  }
-
-  async function taskTimeout(): Promise<boolean> {
-    for (let attempt = 0; attempt <= TIMEOUT_RETRIES; attempt += 1) {
-      if (await act({ kind: 'task-timeout' })) return true;
-      if (!store.projection?.task) return false;
-      await new Promise((resolve) => setTimeout(resolve, TIMEOUT_RETRY_MS));
-    }
-    return false;
   }
 
   return {
@@ -278,9 +250,11 @@ export function useBattleView() {
     endTurn,
     start,
     leave,
+    confirmLeave,
+    cancelLeave,
     undo: () => act({ kind: 'undo-step' }),
     takeHit: () => act({ kind: 'take-hit' }),
     answer: (option: number) => act({ kind: 'answer-task', option }),
-    timeout: taskTimeout,
+    timeout: () => taskTimeout(act, () => !!store.projection?.task),
   };
 }

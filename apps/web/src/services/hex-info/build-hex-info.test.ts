@@ -65,12 +65,12 @@ describe('buildHexInfo broken seal', () => {
     expect(buildHexInfo(chest, 'Structure', t, te).broken).toBe(false);
   });
 
-  it('shows Training Grounds as locked, never broken, with no actions', () => {
+  it('shows Training Grounds without a Locked mark, never broken', () => {
     const view = buildHexInfo(placed('training-grounds'), 'Structure', t, te);
-    expect(view.locked).toBe(true);
+    expect(view.locked).toBe(false);
+    expect(view.tags.map((tag) => tag.id)).not.toContain('locked');
     expect(view.broken).toBe(false);
     expect(view.icon).toBe('tower');
-    expect(view.actions).toEqual([]);
   });
 
   it('shows the trader stall as neither locked nor broken', () => {
@@ -85,5 +85,36 @@ describe('buildHexInfo broken seal', () => {
       throw new Error('chest is a construction');
     chest.construction = { ...chest.construction, integrity: 0 };
     expect(buildHexInfo(chest, 'Structure', t, te).broken).toBe(true);
+  });
+});
+
+describe('chest hover card (loot)', () => {
+  const view = (key: THexobjectKey) => buildHexInfo(placed(key), 'Construction', t, te);
+  const wordsOf = (card: ReturnType<typeof view>) =>
+    [card.title, card.subtitle, card.description, card.note, ...card.tags.map((tag) => tag.label)]
+      .concat(card.stats.map((stat) => `${stat.label} ${stat.value}`))
+      .join(' ');
+
+  it('a full chest explains the scatter rule in one sentence and is not stamped empty', () => {
+    const card = view('chest');
+    expect(card.note).toBe('hexInfo.hints.chestLoot');
+    expect(card.empty).toBe(false);
+  });
+
+  it('an opened chest carries the empty stamp and no rule sentence', () => {
+    const card = view('chest-open');
+    expect(card.empty).toBe(true);
+    expect(card.note).toBeNull();
+  });
+
+  it('neither card shows table contents or counts: no digits in what the card says', () => {
+    expect(wordsOf(view('chest'))).not.toMatch(/\d/);
+    expect(wordsOf(view('chest-open'))).not.toMatch(/\d/);
+  });
+
+  it('a stack on the ground shows its quantity', () => {
+    const stack = { ...placed('coins'), quantity: 7 } as THexobject;
+    const card = buildHexInfo(stack, 'Loot', t, te);
+    expect(card.stats.find((stat) => stat.id === 'amount')?.value).toBe('7');
   });
 });

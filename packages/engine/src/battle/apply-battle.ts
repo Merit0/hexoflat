@@ -7,6 +7,7 @@ import { isRejection, reject, type BattleRejection } from './battle-rejection';
 import { performAction } from './perform-action';
 import { projectBattleForViewer } from './projection';
 import { nextEnemyAction } from './ai/enemy-ai';
+import type { CollectContext } from './collect';
 
 const MAX_ENEMY_ACTIONS = 64;
 const MAX_REACTION_ACTIONS = 8;
@@ -26,12 +27,13 @@ function heroAction(
   action: BattleAction,
   atMs: number,
   rules: BattleRules,
+  ctx: CollectContext,
 ): BattleResult {
   const next = structuredClone(battle);
   const actor = creatureById(next, heroId);
   if (!actor || actor.side !== 'heroes')
     return rejected(battle, reject('NOT_YOUR_TURN'), action.kind);
-  const result = performAction(next, actor, action, atMs, rules);
+  const result = performAction(next, actor, action, atMs, rules, ctx);
   if (isRejection(result)) return rejected(battle, result, action.kind);
   return { battle: next, events: [...result, ...enemyReacts(next, atMs, rules)] };
 }
@@ -86,12 +88,13 @@ export function applyBattleCommand(
   battle: BattleState | undefined,
   command: FightCommand,
   rules: BattleRules = BATTLE_RULES,
+  ctx: CollectContext = {},
 ): BattleResult | { battle: undefined; events: DomainEvent[] } {
   if (!battle) {
     return { battle, events: [{ type: 'BATTLE_REJECTED', payload: { rejected: 'NO_BATTLE' } }] };
   }
   const { payload } = command;
   return payload.kind === 'hero'
-    ? heroAction(battle, payload.heroId, payload.action, payload.atMs, rules)
+    ? heroAction(battle, payload.heroId, payload.action, payload.atMs, rules, ctx)
     : enemyTurn(battle, payload.atMs, rules);
 }

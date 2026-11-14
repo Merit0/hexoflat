@@ -1,3 +1,11 @@
+import type { QuestLog } from '@hexoflat/engine/quests/quest-log-state';
+import { applyQuestProjection, resetQuestProjection } from '@/services/quests/quest-projection';
+import { resetQuestRun } from '@/services/quests/quest-run-projection';
+import {
+  restoreQuestRun,
+  runQuestCommand,
+  type QuestRunAnswer,
+} from '@/services/quests/quest-run-transport';
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { getAuthToken } from '@/api/auth-token';
@@ -92,8 +100,11 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     portal?: PortalLink | null;
     health?: { current: number; bonus: number; debt: number };
     kills?: number;
+    graveExitWarningAcknowledged?: boolean;
+    quests?: QuestLog;
   } & Partial<TraderProjection>;
   applyTraderProjection(progress);
+  applyQuestProjection(progress);
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
   inventorySession.progressRevision = projection.revision;
   inventorySession.knowledge = progress.knowledge ?? null;
@@ -102,6 +113,7 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
   inventorySession.sealedUntil = progress.sealedUntil ?? {};
   inventorySession.portal = progress.portal ?? null;
   portalListener?.(inventorySession.portal);
+  inventorySession.graveExitWarningAcknowledged = progress.graveExitWarningAcknowledged ?? false;
   inventorySession.kills = progress.kills ?? 0;
   killsListener?.(inventorySession.kills);
   inventorySession.health = progress.health ?? null;
@@ -216,6 +228,7 @@ export async function startPlayerSession(heroId: string): Promise<boolean> {
     inventorySession.sessionToken = snapshot.sessionToken ?? null;
     await startExpeditionSync();
     await loadWorldCache();
+    await restoreQuestRun();
     inventorySession.status = 'live';
     onExpeditionTakenOver(() => lost(new PlayerSocketError('SESSION_TAKEN_OVER')));
     return true;
@@ -232,6 +245,8 @@ export function endPlayerSession(): void {
   socket.close();
   resetInventorySession();
   resetTraderProjection();
+  resetQuestProjection();
+  resetQuestRun();
 }
 
 export function settleInventorySync(): Promise<void> {
@@ -337,6 +352,28 @@ export function sendProgress(
   });
 }
 
+export function sendQuestCommand(
+  type: string,
+  payload: Record<string, unknown>,
+): Promise<QuestRunAnswer> {
+  if (inventorySession.status !== 'live') {
+    return Promise.resolve({ ok: false, code: 'OFFLINE', events: [] });
+  }
+  return enqueue(() =>
+    runQuestCommand(
+      {
+        socket,
+        heroId: inventorySession.heroId,
+        progressRevision: inventorySession.progressRevision,
+        applyProgress,
+        lost,
+      },
+      type,
+      payload,
+    ),
+  );
+}
+
 export async function ensurePresence(
   now: { locationKey: string; mapId: string } | null,
 ): Promise<void> {
@@ -371,6 +408,7 @@ export interface WorldCommandResult {
   touched?: WorldCommandResponse['touched'];
   steps: NonNullable<WorldCommandResponse['steps']>;
   serverNowMs: number | null;
+  replayed?: boolean;
 }
 
 export type WorldStepResult = WorldCommandResult;
@@ -432,6 +470,7 @@ export function sendWorldCommand(
       touched: response.touched,
       steps: response.steps ?? [],
       serverNowMs: response.serverNowMs ?? null,
+      ...(response.replayed ? { replayed: true } : {}),
     };
     if (response.result !== 'applied') {
       return { ...common, ok: false, code: response.code ?? response.result };

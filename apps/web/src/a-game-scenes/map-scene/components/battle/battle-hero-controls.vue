@@ -169,15 +169,13 @@
         {{ t('battle.victory') }}
       </p>
       <p v-else class="hero-card__text">{{ t('battle.fallen', { name: card.row.name }) }}</p>
-      <button
-        v-if="card.state === 'victory' || card.state === 'defeat'"
-        class="hero-card__btn is-end"
-        type="button"
-        data-testid="battle-leave"
-        @click="emit('leave')"
-      >
-        {{ t('battle.leave') }}
-      </button>
+      <battle-leave-controls
+        :confirming="!!confirming"
+        :can-leave="card.state === 'victory' || card.state === 'defeat'"
+        @leave="emit('leave')"
+        @confirm="emit('leave-confirm')"
+        @cancel="emit('leave-cancel')"
+      />
     </section>
   </div>
 </template>
@@ -193,9 +191,10 @@ import BattleHexToken from './battle-hex-token.vue';
 import BattleHearts from './battle-hearts.vue';
 import BattleHandRow from './battle-hand-row.vue';
 import BattleActionButtons from './battle-action-buttons.vue';
+import BattleLeaveControls from './battle-leave-controls.vue';
 import { msUntilServerTime } from '@/services/battle/battle-clock';
 
-const props = defineProps<{ card: BattleHeroCard; swapping: boolean }>();
+const props = defineProps<{ card: BattleHeroCard; swapping: boolean; confirming?: boolean }>();
 const emit = defineEmits<{
   'take-hit': [];
   'pick-hand': [hand: BattleHand];
@@ -204,6 +203,8 @@ const emit = defineEmits<{
   undo: [];
   'end-turn': [];
   leave: [];
+  'leave-confirm': [];
+  'leave-cancel': [];
 }>();
 const { t, text } = useBattleText();
 

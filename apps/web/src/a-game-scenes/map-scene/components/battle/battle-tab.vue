@@ -16,6 +16,7 @@
         v-if="view.hero"
         :card="view.hero"
         :swapping="ui.mode === 'swap'"
+        :confirming="!!ui.confirmLeave"
         @take-hit="takeHit"
         @pick-hand="pickHand"
         @pick-action="pickAction"
@@ -23,6 +24,8 @@
         @undo="undo"
         @end-turn="endTurn"
         @leave="leave"
+        @leave-confirm="confirmLeave"
+        @leave-cancel="cancelLeave"
       />
       <battle-creature-row v-for="row in view.friends" :key="row.id" :row="row" />
 
@@ -53,8 +56,20 @@ import { useBattleStoreContext } from '@/composables/battle-store-context';
 
 const { t } = useI18n();
 const battleStore = useBattleStoreContext();
-const { view, ui, selectEnemy, takeHit, pickHand, pickAction, swapFrom, undo, endTurn, leave } =
-  useBattleView();
+const {
+  view,
+  ui,
+  selectEnemy,
+  takeHit,
+  pickHand,
+  pickAction,
+  swapFrom,
+  undo,
+  endTurn,
+  leave,
+  confirmLeave,
+  cancelLeave,
+} = useBattleView();
 useBattleReaction();
 </script>
 

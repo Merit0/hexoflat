@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createKnowledgeState, knowledgeStateSchema } from '../knowledge/state';
 import { LOCATION_KEYS } from '../registry/location-key';
 import { HERO_BASE_HEALTH } from '../models/hero-model';
+import { emptyQuestLog, questLogSchema } from '../quests/quest-log-state';
 import { portalLinkSchema } from '../portal/portal-state';
 import { emptyListings, listingsSchema } from '../trade/listing-state';
 import { tradersStateSchema } from '../trade/trade-state';
@@ -41,6 +42,8 @@ export const progressStateSchema = z
     trips: z.number().int().nonnegative(),
     traders: tradersStateSchema,
     listings: listingsSchema,
+    quests: questLogSchema,
+    graveExitWarningAcknowledged: z.boolean(),
   })
   .strict();
 export type ProgressState = z.infer<typeof progressStateSchema>;
@@ -58,5 +61,7 @@ export function emptyProgressState(heroId: string): ProgressState {
     trips: 0,
     traders: {},
     listings: emptyListings(),
+    quests: emptyQuestLog(),
+    graveExitWarningAcknowledged: false,
   };
 }

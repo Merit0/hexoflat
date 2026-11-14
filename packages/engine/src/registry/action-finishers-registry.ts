@@ -53,6 +53,10 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
 
     ctx.gathering.add(action.hexobjectKey, 1);
     logAction(ctx, 'Cut the Tree');
+    ctx.emit?.({
+      type: 'RESOURCE_GATHERED',
+      payload: { action: 'CUT', hexobjectKey: action.hexobjectKey, amount: 1 },
+    });
 
     consumeTileHexobject(tile);
 
@@ -74,6 +78,10 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     const stone = meta?.yields?.stone ?? 0;
     logAction(ctx, `Mine the ${stone} ${tile.hexobject?.hexobjectKey ?? action.hexobjectKey}`);
     ctx.gathering.add(action.hexobjectKey, stone);
+    ctx.emit?.({
+      type: 'RESOURCE_GATHERED',
+      payload: { action: 'MINE', hexobjectKey: action.hexobjectKey, amount: stone },
+    });
 
     if (stone > 0 && ctx.heroToolStore.stoneCollected) {
       ctx.heroToolStore.collectStones?.(stone);
@@ -94,9 +102,13 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     }
 
     const amount =
-      hexobject.groupType === EHexobjectGroup.RESOURCE ? (hexobject.resource?.amount ?? 1) : 1;
+      hexobject.quantity ??
+      (hexobject.groupType === EHexobjectGroup.RESOURCE ? (hexobject.resource?.amount ?? 1) : 1);
 
     if (!grantToDraft(ctx.inventory, hexobject.hexobjectKey, amount, 'pickup')) {
+      if (ctx.heroId) {
+        ctx.emit?.({ type: 'LOOT_REJECTED', payload: { heroId: ctx.heroId, reason: 'BAG_FULL' } });
+      }
       ensureUnlocked(ctx);
       return false;
     }

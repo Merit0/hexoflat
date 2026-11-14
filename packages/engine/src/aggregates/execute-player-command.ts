@@ -11,7 +11,10 @@ import { countItem } from '../inventory/plan-stock';
 import { replaceInventory } from './replace-inventory';
 import { executeProgressCommand } from './execute-progress-command';
 import { claimCampChest } from './claim-camp-chest';
+import { ackGraveExitWarning } from './ack-grave-exit-warning';
 import { applyTradeCommand, type TradeContext } from './apply-trade-command';
+import { applyQuestCommand, type QuestApplyContext } from './apply-quest-command';
+import { foldQuestEvents } from '../quests/quest-hook';
 import type { PlayerCommand } from './player-commands';
 import type { ProgressState } from './progress-state';
 
@@ -24,6 +27,7 @@ export interface PlayerCommandContext {
   devGrantAllowed: boolean;
   inventory: InventoryContext;
   trade?: TradeContext;
+  quest?: QuestApplyContext;
 }
 
 export type PlayerCommandOutcome =
@@ -36,6 +40,7 @@ const REJECTION_TYPES: ReadonlySet<string> = new Set([
   'ITEM_CONSUME_REJECTED',
   'REWARD_REJECTED',
   'TRADE_REJECTED',
+  'QUEST_REJECTED',
 ]);
 
 function rejectionOf(events: readonly DomainEvent[]): PlayerCommandOutcome | null {
@@ -61,7 +66,7 @@ export function executePlayerCommand(
   command: PlayerCommand,
   ctx: PlayerCommandContext,
 ): PlayerCommandOutcome {
-  const outcome = executeCore(aggregates, command, ctx);
+  const outcome = foldQuest(aggregates, executeCore(aggregates, command, ctx));
   if (!outcome.ok || !outcome.changed.inventory) return outcome;
   const progress = outcome.changed.progress ?? aggregates.progress;
   const bonus = sumHeartPoints(
@@ -73,6 +78,21 @@ export function executePlayerCommand(
   return {
     ...outcome,
     changed: { ...outcome.changed, progress: { ...progress, health: model.healthState() } },
+  };
+}
+
+function foldQuest(
+  aggregates: PlayerAggregates,
+  outcome: PlayerCommandOutcome,
+): PlayerCommandOutcome {
+  if (!outcome.ok) return outcome;
+  const progress = outcome.changed.progress ?? aggregates.progress;
+  const folded = foldQuestEvents({ progress, events: outcome.events });
+  if (folded.progress === progress) return outcome;
+  return {
+    ...outcome,
+    changed: { ...outcome.changed, progress: folded.progress },
+    events: folded.events,
   };
 }
 
@@ -146,6 +166,18 @@ function executeCore(
     case 'SHOP_REPRICE':
     case 'SHOP_REFRESH': {
       const result = applyTradeCommand(aggregates, command, ctx);
+      return (
+        rejectionOf(result.events) ?? { ok: true, changed: result.changed, events: result.events }
+      );
+    }
+    case 'ACK_GRAVE_EXIT_WARNING': {
+      const acknowledged = ackGraveExitWarning(progress);
+      return { ok: true, changed: acknowledged.changed, events: acknowledged.events };
+    }
+    case 'QUEST_ACCEPT':
+    case 'QUEST_ABANDON':
+    case 'QUEST_CLAIM': {
+      const result = applyQuestCommand(aggregates, command, ctx.quest ?? { atBoard: false });
       return (
         rejectionOf(result.events) ?? { ok: true, changed: result.changed, events: result.events }
       );

@@ -45,6 +45,12 @@ interface Moved {
   from: BattleHex;
   to: BattleHex;
 }
+interface GraveLooted {
+  creatureId: string;
+  hex: BattleHex;
+  from: BattleHex;
+  nothing?: boolean;
+}
 interface Resolved {
   results: Array<{ attackerId: string; outcome: string; damage: number }>;
 }
@@ -93,6 +99,7 @@ function rewind(events: DomainEvent[], creatures: AnimatedCreature[]): Map<strin
     if (event.type === 'CREATURE_MOVED' || event.type === 'THROWN_CLEAR')
       pos.set(id, copy(p.from!));
     if (event.type === 'MOVE_UNDONE') pos.set(id, copy(p.from!));
+    if (event.type === 'GRAVE_LOOTED') pos.set(id, copy(p.from!));
     if (event.type === 'DISPLACED') pos.set(id, copy(p.from!));
   }
   return pos;
@@ -106,6 +113,7 @@ class Planner {
 
   read(event: DomainEvent, later: DomainEvent[] = []) {
     if (event.type === 'CREATURE_MOVED') this.moved(event.payload as Moved);
+    if (event.type === 'GRAVE_LOOTED') this.graveLooted(event.payload as GraveLooted);
     if (event.type === 'MOVE_UNDONE') this.place((event.payload as Moved).creatureId, event);
     if (event.type === 'STRIKE_LANDED') this.struck(event.payload as Struck, later);
     if (event.type === 'DISPLACED') this.displaced(event.payload as Displaced);
@@ -128,6 +136,11 @@ class Planner {
       durationMs: BATTLE_TIMING.stepMs,
     });
     this.pos.set(creatureId, copy(to));
+  }
+
+  private graveLooted({ creatureId, hex, from, nothing }: GraveLooted) {
+    if (nothing === true || (from.q === hex.q && from.r === hex.r)) return;
+    this.moved({ creatureId, from, to: hex });
   }
 
   private struck({ attackerId, targetId, itemKey, ring }: Struck, later: DomainEvent[]) {

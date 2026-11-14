@@ -166,8 +166,48 @@ describe('Will-priced actions', () => {
   it('does not spend Will when the action itself is refused', () => {
     const { knowledge, start } = actionState(HEXOBJECT_KEYS.CHEST, 5);
     const events = start(EHexActionType.OPEN);
-    expect(events[0].type).toBe('HEX_ACTION_START_REJECTED');
+    expect(events.map((e) => e.type)).toEqual(['LOOT_REJECTED', 'HEX_ACTION_START_REJECTED']);
     expect(knowledge.current).toBe(5);
+  });
+
+  it('does not spend Will when a hero who is not beside the chest tries to open it (REQ-LOOT-065)', () => {
+    const map = new HexMapBuilder().name('far').width(4).height(1).build();
+    const chest = map.tiles[0];
+    chest.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CHEST, chest.coordinates);
+    const knowledge = createKnowledgeState('hero');
+    knowledge.current = 5;
+    const state: HexEngineState = {
+      map,
+      heroes: {
+        hero: {
+          id: 'hero',
+          controlledBy: null,
+          coordinates: map.tiles[3].coordinates,
+          heroSteps: 0,
+          portal: null,
+        },
+      },
+      knowledge,
+      knowledgeContext: paid,
+    };
+    const events = applyCommand(
+      state,
+      {
+        type: 'START_HEX_ACTION',
+        payload: {
+          heroId: 'hero',
+          coordinates: chest.coordinates,
+          actionType: EHexActionType.OPEN,
+          toolKey: HEXOBJECT_KEYS.HAND,
+          now: 0,
+        },
+      },
+      engineCtx(),
+    ).events;
+    expect(events.map((e) => e.type)).toEqual(['LOOT_REJECTED', 'HEX_ACTION_START_REJECTED']);
+    expect(events[0].payload).toMatchObject({ reason: 'NOT_ADJACENT' });
+    expect(knowledge.current).toBe(5);
+    expect(chest.hexobject?.hexobjectKey).toBe(HEXOBJECT_KEYS.CHEST);
   });
 
   it('grants Will only through grantWill, capped by capacity', () => {

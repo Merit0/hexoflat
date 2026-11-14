@@ -27,6 +27,12 @@ import { preloadBloodSplash } from '@/render/blood-splash';
 import { battleAssetPaths } from '@/render/battle/battle-look';
 import { registerBattleHexProbe } from '@/e2e/battle-hooks';
 import { createBattleSyncGate } from '@/render/battle/battle-sync-gate';
+import type { ProjectedCollect } from '@hexoflat/engine/battle/projection';
+import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
+import { createBattleLootLayer, type BattleLootLayer } from '@/render/layers/battle-loot-layer';
+import { createLootFlightLayer, type LootFlightLayer } from '@/render/layers/loot-flight-layer';
+import { isLootFlightPending, landLootFlight } from '@/services/loot/loot-flight-state';
+import { createGraveFlights } from './grave-flights';
 import type { TileAnchor } from '@/render/layers/tiles-layer';
 import { createBattleBoardLayer, type BattleBoardLayer } from '@/render/layers/battle-board-layer';
 import {
@@ -50,6 +56,7 @@ export interface BattleBoardScene {
   boulders: Boulder[];
   creatures: BattleCreature[];
   activeId: string | null;
+  collect: ProjectedCollect | null;
 }
 
 export interface UseBattleBoardOptions {
@@ -71,6 +78,8 @@ export interface UseBattleBoardOptions {
 interface Layers {
   board: BattleBoardLayer;
   tokens: BattleTokenLayer;
+  loot: BattleLootLayer;
+  flight: LootFlightLayer;
   overlay: BattleOverlayLayer;
   preview: MovePreviewLayer;
   fx: BattleFxLayer;
@@ -112,6 +121,12 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
   }
 
   const syncGate = createBattleSyncGate();
+  const offsetOf = (hex: BattleHex) => battleHexToOffset(options.scene.value.biome, hex);
+  const graveFlights = createGraveFlights({
+    offsetOf,
+    flightLayer: () => layers?.flight ?? null,
+    onBusy: (busy) => options.onAnimating?.(busy),
+  });
 
   function syncAll() {
     if (!layers) return;
@@ -123,8 +138,12 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     }
     if (changed.overlay) layers.overlay.sync(overlay);
     syncPreview();
-    if (changed.tokens) layers.tokens.sync(scene.creatures, scene.activeId, overlay.targets);
     const events = options.takeEvents?.() ?? [];
+    graveFlights.start(events);
+    if (changed.loot) layers.loot.sync(scene.collect?.items ?? []);
+    if (changed.tokens) {
+      layers.tokens.sync(scene.creatures, scene.activeId, overlay.targets, scene.collect?.graves);
+    }
     if (events.length) layers.animator.play(events, scene.creatures);
   }
 
@@ -157,6 +176,12 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       worldContainer: app.worldContainer,
       getTileSize: () => ({ w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT }),
     });
+    const loot = createBattleLootLayer({
+      worldContainer: app.worldContainer,
+      tileSize: deps.tileSize,
+      positionOf,
+      isHidden: (hex) => isLootFlightPending(coordinateKey(offsetOf(hex))),
+    });
     const tokens = createBattleTokenLayer(deps);
     const fx = createBattleFxLayer(deps);
     const damage = createBattleDamageLayer(deps);
@@ -173,9 +198,17 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
       overlay,
       fx,
       damage,
-      onBusyChange: (busy) => options.onAnimating?.(busy),
+      onBusyChange: (busy) => graveFlights.setAnimatorBusy(busy),
     });
-    return { board, overlay, preview, tokens, fx, damage, animator };
+    const flight = createLootFlightLayer({
+      worldContainer: app.worldContainer,
+      getTileSize: () => deps.tileSize,
+      onLanded: (landed) => {
+        if (landed.landingKey) landLootFlight(landed.landingKey);
+        loot.refresh();
+      },
+    });
+    return { board, overlay, preview, tokens, loot, flight, fx, damage, animator };
   }
 
   async function start(width: number, height: number) {
@@ -249,6 +282,8 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     layers?.board.destroy();
     layers?.overlay.destroy();
     layers?.tokens.destroy();
+    layers?.loot.destroy();
+    layers?.flight.destroy();
     pixi?.destroy();
     pixi = null;
     layers = null;

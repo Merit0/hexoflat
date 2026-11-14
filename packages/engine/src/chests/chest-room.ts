@@ -1,0 +1,1 @@
+export const CHEST_MIN_OPEN_NEIGHBOURS = 3;

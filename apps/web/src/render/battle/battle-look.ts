@@ -14,10 +14,10 @@ export const BATTLE_TERRAIN_TOKENS: Partial<Record<BattleTerrain, string>> = {
 };
 
 export const BATTLE_GRAVE_SPRITES: Partial<Record<BattleSide, string>> = {
-  enemies: '/hex-assets/hex-constructs/enemy-constructs/skeleton-grave-token.png',
+  enemies: '/hex-assets/hex-constructs/battle/grave-hex.png',
 };
 
-export const BATTLE_GRAVE_SPRITE_FIT = 1.1;
+export const EXAMINED_GRAVE_ALPHA = 0.45;
 
 export function battleFloorSprite(biome: BattlefieldBiome): string {
   return BATTLEFIELD_BIOMES[biome].background;

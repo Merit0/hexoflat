@@ -25,7 +25,7 @@ export const CAVE_MODEL = {
             id: 'treasure',
             pick: { tag: 'treasure' },
             count: 1,
-            where: { region: 'deep', steps: [1, 17] },
+            where: { region: 'deep', steps: [1, 17], freeAround: 3 },
             required: true,
           },
         ],

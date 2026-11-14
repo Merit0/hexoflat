@@ -53,6 +53,10 @@ Every creature (hero on the map, squads on the dungeon map, heroes and enemies o
 - **Every creature walks the same way:** each `CREATURE_MOVED` (hero or enemy) is one `walk` step of `BATTLE_TIMING.stepMs` (190 ms, easeOutCubic — the Silesia hero step). A strike is one `strike` step of `BATTLE_TIMING.strikeMs` (2000 ms, a deliberate pause): the sword flies from the attacker's own hex to the target with the ring lit, then the hit shake. Oleh asked to see enemy moves and hits (2026-10-29), so the old hidden enemy path (`vanish`/`appear`) is gone.
 - **Input lock:** the board emits `animating` → `battleStore.setAnimating`; `act` refuses everything except `answer-task`/`task-timeout`, and `needsEnemyTurn` is false, so `use-battle-enemy-driver` starts its pause only after the animation ends. `battle-board` exposes `data-animating` for e2e.
 
+## The quest field (Q4)
+
+`render/quest/use-quest-board.ts` is a third seam (like the battle board): it fits a fixed radius-6 hexagon (`fieldWorldRect`) and syncs one layer, `layers/quest-numbers-layer.ts` (fog, floor, numbers, gold hint, footprints, blue step frames with a hover price, path line, chest, hero token). It redraws everything from the pure `QuestFieldModel`; never read stores in the layer. Add new always-needed sprites to `questLayerAssetPaths`.
+
 ## The contract
 
 `useHexBoard(options)` takes reactive inputs (`ComputedRef`/`Ref`) and callbacks — never raw values. Adding a visual feature means:
@@ -102,3 +106,15 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 - [ ] Hex size comes only from `board-camera.ts`; overlays position through the camera; pane `ResizeObserver` left intact
 - [ ] A new always-needed sprite is in a preload list (`battleAssetPaths` for battle), not left to lazy load
 - [ ] Anything gating on board readiness uses `onBoardReady`, not `onMounted`
+
+## Loot flight (L2c, 2026-11-13)
+
+`layers/loot-flight-layer.ts` is created after the hero layer in `use-hex-board.ts` (tiles -> hero -> loot in flight; `loot-layers.test.ts` pins the order) and fed by the `lootFlight` option. Durations live in `render/loot-timing.ts` (`lootSchedule`, at most 800 ms in all). `tiles-layer.ts` takes `isObjectHidden(key)` (a flying item keeps its tile sprite at alpha 0 until `landLootFlight`) and draws the opened chest (`chest-open`) with `EMPTY_CHEST_ALPHA`. The battle board has its own seam and does not use this layer yet.
+
+## Graves and loot in a battle (L3b, 2026-11-14)
+
+`battle-token-layer.sync(creatures, activeId, targets, graves?)` draws graves as hex tokens from `collect.graves` (sprite `BATTLE_GRAVE_SPRITES.enemies` = `grave-hex.png`, `EXAMINED_GRAVE_ALPHA` 0.45); a dead enemy is not drawn as a second grave when `collect` exists and a creature still falling holds its grave back. `layers/battle-loot-layer.ts` draws ground items (skips hexes with a pending flight). `render/battle/grave-flights.ts` plays `GRAVE_LOOTED` through the shared `loot-flight-layer` (≤ 800 ms) and reports busy to `onAnimating`; the sync gate has a `loot` flag. Unit tests: `battle-token-layer.test.ts`, `loot-flight.test.ts` (`gravePlayedOf`).
+
+## Walk onto a grave before the loot flies (L5, 2026-11-14)
+
+`GRAVE_LOOTED` becomes a `walk` step in `battle-animation-plan.ts` (from the entry hex to the grave, `BATTLE_TIMING.stepMs`; none when `nothing: true`, `rewind` puts the hero back on `from`). The flight is shifted by `graveWalkLeadMs` through `lootSchedule(count, leadMs)` / `planLootFlights(played, leadMs)`, so walk plus flight stay inside `LOOT_TIMING.maxTotalMs` (800); items stay hidden from the first frame (`pending`).

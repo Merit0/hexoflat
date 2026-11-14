@@ -8,6 +8,7 @@ import { coordinateKey } from '../utils/hex-utils';
 export const CAMP_FACILITY_KEYS: readonly THexobjectKey[] = [
   HEXOBJECT_KEYS.TRADER_STALL,
   HEXOBJECT_KEYS.TRAINING_GROUNDS,
+  HEXOBJECT_KEYS.QUEST_BOARD,
 ];
 
 export function installCampFacilities(

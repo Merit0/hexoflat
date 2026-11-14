@@ -8,6 +8,7 @@ import type { BattleState } from '../battle/battle-state';
 import { creatureById } from '../battle/battle-board';
 import { applyBattleCommand } from '../battle/apply-battle';
 import { performAction } from '../battle/perform-action';
+import type { IInventoryDraft } from '../inventory/apply-stock';
 import { isRejection } from '../battle/battle-rejection';
 import {
   projectBattleEvent,
@@ -181,7 +182,7 @@ function startBattleWorld(session: Session): BattleWorldOutcome {
     shield: null,
     bag: [],
   });
-  const outcome = beginBattle(squadWorld, [hero]);
+  const outcome = beginBattle(squadWorld, [hero], session.rules);
   if (!outcome.ok) return fail(session, outcome.reason);
   const battle = squadWorld.battle!;
   session.world.engagement = squadWorld.engagement ?? null;
@@ -237,9 +238,14 @@ function fightBattleWorld(session: Session, payload: BattlePayload): BattleWorld
   if (payload.kind === 'hero' && tooEarly(battle, payload.action, now)) {
     return fail(session, 'TOO_EARLY');
   }
-  const result = applyBattleCommand(battle, { type: 'BATTLE', payload: fight }, session.rules);
+  const draft: IInventoryDraft = { current: session.inventory, events: [] };
+  const result = applyBattleCommand(battle, { type: 'BATTLE', payload: fight }, session.rules, {
+    inventory: draft,
+  });
   const refused = rejection(result.events);
   if (refused || !result.battle) return fail(session, refused ?? 'NO_BATTLE', result.events);
+  if (draft.current) session.inventory = draft.current;
+  result.events.push(...draft.events);
   if (payload.kind === 'hero' && payload.action.kind === 'set-hands') {
     const before = creatureById(battle, session.run.heroId);
     const after = creatureById(result.battle, session.run.heroId);

@@ -48,6 +48,14 @@ import type { InventoryContext } from '../inventory/inventory-commands';
 import { applyInventoryCommand } from '../inventory/apply-inventory';
 import { applyConsumeItem, applyGrantItem, type IInventoryDraft } from '../inventory/apply-stock';
 import { applySquadLifecycle, isSquadAction, startSquadAction } from '../squads/apply-squad';
+import type { ChestLootContext } from '../chests/plan-chest-loot';
+import {
+  CHEST_REFUSAL_MESSAGES,
+  isChestOpening,
+  openChest,
+  planChestOpening,
+  rejectedLoot,
+} from '../chests/open-chest';
 
 export interface HexEngineState {
   map: HexMapModel;
@@ -60,6 +68,7 @@ export interface HexEngineState {
   engagement?: Engagement;
   inventory?: InventoryState;
   inventoryContext?: InventoryContext;
+  loot?: ChestLootContext;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -78,6 +87,11 @@ function findTile(map: HexMapModel, coordinates: IHexCoordinates): HexTileModel 
   );
 }
 
+function soleHeroId(state: HexEngineState): string | undefined {
+  const ids = Object.keys(state.heroes);
+  return ids.length === 1 ? ids[0] : undefined;
+}
+
 export function applyCommand(
   state: HexEngineState,
   command: HexEngineCommand,
@@ -87,7 +101,13 @@ export function applyCommand(
   const parsed = schema.parse(command);
   const events: DomainEvent[] = [];
   const draft: IInventoryDraft = { current: state.inventory, events: [] };
-  const bound: BoundActionContext = { ...ctx, inventory: draft };
+  const emitted: DomainEvent[] = [];
+  const bound: BoundActionContext = {
+    ...ctx,
+    inventory: draft,
+    emit: (event) => emitted.push(event),
+    heroId: soleHeroId(state),
+  };
 
   switch (parsed.type) {
     case 'KNOWLEDGE':
@@ -187,7 +207,7 @@ export function applyCommand(
   }
 
   if (draft.current !== state.inventory) state.inventory = draft.current;
-  events.push(...draft.events);
+  events.push(...draft.events, ...emitted);
   return { state, events };
 }
 
@@ -222,6 +242,18 @@ function applyStartHexAction(
     return out;
   }
 
+  const chestOpening = isChestOpening(tile, actionType);
+  const chestPlan = chestOpening
+    ? planChestOpening(state, tile, parsed.payload.heroId, ctx.inventory)
+    : null;
+  if (chestPlan && !chestPlan.ok) {
+    out.push(
+      rejectedLoot(parsed.payload.heroId, chestPlan.reason),
+      rejectedStart(coordinates, actionType, CHEST_REFUSAL_MESSAGES[chestPlan.reason]),
+    );
+    return out;
+  }
+
   const cost = actionCharge(state, tile, actionType);
   if (cost > 0) {
     const { knowledge } = state;
@@ -246,9 +278,13 @@ function applyStartHexAction(
   const squadStart = isSquadAction(actionType)
     ? startSquadAction(state, tile, { heroId: parsed.payload.heroId, actionType, now })
     : null;
-  const result =
-    squadStart ??
-    new ExecuteHexActionFeature(tile).execute(actionType, toolKey as THeroToolKey, fullCtx);
+  const chestEvents = chestPlan?.ok
+    ? openChest(state, tile, parsed.payload.heroId, chestPlan.plan, ctx.inventory)
+    : null;
+  const result = chestEvents
+    ? { ok: true as const, endsAt: now }
+    : (squadStart ??
+      new ExecuteHexActionFeature(tile).execute(actionType, toolKey as THeroToolKey, fullCtx));
 
   if (result.ok && cost > 0) {
     const knowledge = state.knowledge!;
@@ -258,6 +294,7 @@ function applyStartHexAction(
     out.push(...spent.events);
   }
 
+  if (chestEvents) out.push(...chestEvents);
   if (squadStart?.ok) out.push(...squadStart.events);
   if (squadStart && !squadStart.ok) {
     out.push({

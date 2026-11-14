@@ -6,10 +6,8 @@ describe('battleAssetPaths', () => {
     expect(battleAssetPaths('crypt')).toContain(BATTLE_GRAVE_SPRITES.enemies);
   });
 
-  it('keeps the grave sprite under the public enemy constructs folder', () => {
-    expect(BATTLE_GRAVE_SPRITES.enemies).toBe(
-      '/hex-assets/hex-constructs/enemy-constructs/skeleton-grave-token.png',
-    );
+  it('uses the grave hex sprite', () => {
+    expect(BATTLE_GRAVE_SPRITES.enemies).toBe('/hex-assets/hex-constructs/battle/grave-hex.png');
   });
 
   it('never lists an empty path', () => {

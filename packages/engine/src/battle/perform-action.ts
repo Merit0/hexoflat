@@ -12,6 +12,7 @@ import { moveCreature, undoStep } from './movement';
 import { settleTask } from './resolve-task';
 import { strike } from './strike';
 import { endTurn } from './turn';
+import { collectRefusal, lootGrave, pickupLoot, type CollectContext } from './collect';
 
 const DEFEND_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
   'place-shield',
@@ -22,6 +23,11 @@ const DEFEND_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
 const AIM_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['aim', 'reaction-timeout']);
 
 const TASK_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set(['answer-task', 'task-timeout']);
+
+const COLLECT_ONLY_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
+  'loot-grave',
+  'pickup-loot',
+]);
 
 const WINDOW_TIMED_ACTIONS: ReadonlySet<BattleAction['kind']> = new Set([
   'place-shield',
@@ -41,7 +47,8 @@ function guard(
   atMs: number,
   rules: BattleRules,
 ): BattleRejection | null {
-  if (state.phase === 'ended') return reject('BATTLE_ENDED');
+  if (state.phase === 'ended') return collectRefusal(state, actor, action);
+  if (COLLECT_ONLY_ACTIONS.has(action.kind)) return reject('WRONG_PHASE');
   if (TASK_ACTIONS.has(action.kind)) return state.task ? null : reject('NO_TASK');
   if (state.task) return reject('TASK_OPEN');
   if (state.activeId !== actor.id) return reject('NOT_YOUR_TURN');
@@ -80,6 +87,7 @@ export function performAction(
   action: BattleAction,
   atMs: number,
   rules: BattleRules,
+  ctx: CollectContext = {},
 ): DomainEvent[] | BattleRejection {
   const refused = guard(state, actor, action, atMs, rules);
   if (refused) return refused;
@@ -115,6 +123,10 @@ export function performAction(
       return setHands(state, actor, { right: action.right, left: action.left }, rules);
     case 'end-turn':
       return endTurn(state, rules);
+    case 'loot-grave':
+      return lootGrave(state, actor, action.hex, ctx);
+    case 'pickup-loot':
+      return pickupLoot(state, actor, action.hex, ctx);
     default:
       return assertNever(action);
   }
