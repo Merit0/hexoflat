@@ -930,7 +930,8 @@
       "trees": "дерев",
       "stones": "каменів",
       "answers": "правильних відповідей",
-      "skeletons": "кістяків"
+      "skeletons": "кістяків",
+      "steps": "кроків"
     },
     "start": "Почати",
     "enter": "Увійти",
@@ -988,7 +989,8 @@
       "takeFor": "Взяти «{name}» за {n} Волі",
       "detailsLabel": "Деталі: {name}",
       "detailsClose": "Закрити деталі",
-      "abandon": "Відмовитись",
+      "return": "Повернути",
+      "returnLabel": "Повернути «{name}» на дошку",
       "claimReward": "Забрати нагороду",
       "enterTrail": "Увійти на слід",
       "expeditionNote": "Порахуйте Волю на весь слід, перш ніж входити.",

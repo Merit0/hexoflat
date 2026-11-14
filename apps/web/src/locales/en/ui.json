@@ -925,7 +925,8 @@
       "trees": "trees",
       "stones": "stones",
       "answers": "correct answers",
-      "skeletons": "skeletons"
+      "skeletons": "skeletons",
+      "steps": "steps"
     },
     "start": "Start",
     "enter": "Enter",
@@ -983,7 +984,8 @@
       "takeFor": "Take {name} for {n} Will",
       "detailsLabel": "{name} details",
       "detailsClose": "Close details",
-      "abandon": "Abandon",
+      "return": "Return",
+      "returnLabel": "Return {name} to the board",
       "claimReward": "Claim reward",
       "enterTrail": "Enter the trail",
       "expeditionNote": "Count the Will for the whole trail before you enter.",

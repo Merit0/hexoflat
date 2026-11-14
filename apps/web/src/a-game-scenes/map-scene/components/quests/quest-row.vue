@@ -6,7 +6,10 @@
   >
     <div
       class="row"
-      :class="[`is-${row.state}`, { 'is-ready': row.ready, 'is-open-details': detailsOpen }]"
+      :class="[
+        `is-${row.state}`,
+        { 'is-ready': row.ready, 'is-open-details': detailsOpen, 'is-draggable': draggable },
+      ]"
       :data-testid="`quest-card-${row.quest.id}`"
       :data-state="row.state"
       :data-category="row.category"
@@ -22,6 +25,7 @@
         @mouseleave="details.leave()"
         @focus="onHover"
         @blur="details.leave()"
+        @pointerdown="onPress"
         @click="onToggle"
       >
         <img
@@ -102,9 +106,17 @@
           v-else-if="row.taken"
           compact
           variant="counter"
+          interactive
           :testid="`quest-progress-${row.quest.id}`"
+          :disabled="busy"
+          :aria-label="t('quest.board.returnLabel', { name: t(row.quest.nameKey) })"
+          @mouseenter="returnHover = true"
+          @mouseleave="returnHover = false"
+          @focus="returnHover = true"
+          @blur="returnHover = false"
+          @click="onReturn"
         >
-          {{ row.progress }} / {{ row.target }}
+          {{ returnHover ? t('quest.board.return') : `${row.progress} / ${row.target}` }}
         </quest-action-button>
         <quest-tip v-else :text="reasonText">
           <quest-action-button
@@ -129,6 +141,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { useQuestDetails } from '@/composables/use-quest-details';
+import { beginQuestPress, consumeQuestDragClick } from '@/composables/use-quest-drag';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
 import QuestTip from './quest-tip.vue';
@@ -141,6 +154,7 @@ const details = useQuestDetails();
 const actions = useQuestRowActions();
 const { busy } = actions;
 const bodyEl = ref<HTMLButtonElement | null>(null);
+const returnHover = ref(false);
 
 const detailsOpen = computed(() => details.openId.value === props.row.quest.id);
 const mainReward = computed(() => props.row.rewards[0] ?? null);
@@ -183,7 +197,35 @@ const metaText = computed(() => {
   return t('quest.board.meta.goal', { n: row.target, unit: t(row.unitKey) });
 });
 
+const draggable = computed(
+  () =>
+    !props.row.seeker &&
+    !props.row.ready &&
+    (props.row.taken || (props.row.state === 'open' && props.row.reason !== 'will')),
+);
+
+function onPress(event: PointerEvent) {
+  if (!draggable.value) return;
+  const row = props.row;
+  details.close();
+  beginQuestPress(event, {
+    questId: row.quest.id,
+    label: t(row.quest.nameKey),
+    from: row.taken ? 'active' : 'available',
+    onDrop: (target) => {
+      if (target === 'active') void actions.take(row);
+      else void actions.abandon(row);
+    },
+  });
+}
+
+async function onReturn() {
+  returnHover.value = false;
+  await actions.abandon(props.row);
+}
+
 function onToggle() {
+  if (consumeQuestDragClick()) return;
   if (bodyEl.value) details.toggle(props.row.quest.id, bodyEl.value);
 }
 
@@ -210,6 +252,10 @@ function onHover() {
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
+}
+.row.is-draggable .body {
+  cursor: grab;
+  touch-action: none;
 }
 .row.is-taken {
   border-color: #6b5a33;

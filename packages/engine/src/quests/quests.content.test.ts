@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { catalogueOf, BOARD_QUESTS, questContentFailures, questSellValue } from './quests.content';
 import { counting } from './quest-test-setup';
+import { validateContent } from '../content/validate-content';
 
 describe('board quest content', () => {
   it('has the four plan quests, valid and unique', () => {
@@ -56,5 +57,20 @@ describe('board quest content', () => {
       expect(quest.tableRule).toBe(`quest.${quest.id}.table`);
     }
     expect(Object.keys(catalogueOf(BOARD_QUESTS))).toHaveLength(BOARD_QUESTS.length);
+  });
+});
+
+describe('quest content in validateContent', () => {
+  it('passes for the shipped quests and Seeker cards', () => {
+    expect(() => validateContent()).not.toThrow();
+  });
+
+  it('is judged by the same failures the validator collects', () => {
+    const broken = counting('no-limit', 'X', 1, {
+      rewards: [{ kind: 'item', itemKey: HEXOBJECT_KEYS.AXE, amount: 1 }],
+    });
+    expect(questContentFailures([...BOARD_QUESTS, broken])).toEqual([
+      'no-limit: repeatable reward without maxSellValue',
+    ]);
   });
 });

@@ -80,7 +80,7 @@
           :disabled="busy"
           @click="onAbandon"
         >
-          {{ t('quest.board.abandon') }}
+          {{ t('quest.board.return') }}
         </button>
         <quest-action-button
           v-if="row.ready"

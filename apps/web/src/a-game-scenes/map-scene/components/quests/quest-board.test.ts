@@ -62,6 +62,20 @@ describe('quest board panel', () => {
     expect(byId('quest-accept-woodcutter')).toBeNull();
   });
 
+  it('swaps the progress counter for Return on hover and back on leave', async () => {
+    applyQuestProjection({
+      quests: { active: [{ questId: 'woodcutter', progress: 3, state: 'active' }], done: {} },
+    });
+    mount();
+    const counter = () => byId('quest-progress-woodcutter')!;
+    counter().dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    expect(counter().textContent?.trim()).toBe('Return');
+    counter().dispatchEvent(new MouseEvent('mouseleave'));
+    await nextTick();
+    expect(counter().textContent?.trim()).toBe('3 / 10');
+  });
+
   it('marks a finished quest and explains a refused claim', async () => {
     applyQuestProjection({
       quests: { active: [{ questId: 'woodcutter', progress: 10, state: 'ready' }], done: {} },

@@ -42,7 +42,12 @@
       <board-ornament />
       <quest-taken-bar />
       <div class="groups" @scroll.passive="details.close()">
-        <section class="group" data-testid="quest-group-active">
+        <section
+          class="group"
+          :class="dropClass('active')"
+          data-quest-group="active"
+          data-testid="quest-group-active"
+        >
           <h3>
             <span>{{ t('quest.board.group.active') }}</span>
             <i class="rule" aria-hidden="true"></i>
@@ -54,7 +59,12 @@
             <quest-row v-for="row in active" :key="row.quest.id" :row="row" />
           </ul>
         </section>
-        <section class="group" data-testid="quest-group-available">
+        <section
+          class="group"
+          :class="dropClass('available')"
+          data-quest-group="available"
+          data-testid="quest-group-available"
+        >
           <h3>
             <span>{{ t('quest.board.group.available') }}</span>
             <i class="rule" aria-hidden="true"></i>
@@ -74,6 +84,7 @@
         {{ status ?? t('quest.board.hint') }}
       </p>
     </template>
+    <quest-drag-ghost />
     <quest-details-popover
       v-if="openRow && anchor && !run && !result"
       :key="openRow.quest.id"
@@ -96,6 +107,7 @@ import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useQuestBoardView } from '@/composables/use-quest-board-view';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
+import { questDrag, targetOf } from '@/composables/use-quest-drag';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestActions } from '@/composables/use-quest-actions';
 import { useQuestRunView } from '@/composables/use-quest-run-view';
@@ -107,6 +119,7 @@ import BoardHeader from '../board-header.vue';
 import BoardOrnament from '../board-ornament.vue';
 import QuestTakenBar from './quest-taken-bar.vue';
 import QuestTip from './quest-tip.vue';
+import QuestDragGhost from './quest-drag-ghost.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
 
 const { t } = useI18n();
@@ -117,6 +130,12 @@ const COIN_SRC = getPrototype(HEXOBJECT_KEYS.COINS).spritePath ?? '';
 const { run, result } = useQuestRunView();
 const { message: startMessage } = useQuestRunActions();
 const { message, status } = useQuestActions();
+
+function dropClass(group: 'active' | 'available') {
+  if (!questDrag.active || !questDrag.from) return {};
+  const valid = targetOf(questDrag.from) === group;
+  return { 'is-drop-target': valid, 'is-drop-over': valid && questDrag.over === group };
+}
 
 const openRow = computed(() => (details.openId.value ? rowById(details.openId.value) : null));
 const anchor = details.anchor;
@@ -246,6 +265,21 @@ onBeforeUnmount(() => {
   min-height: 0;
   padding: 2px;
   overflow: hidden;
+}
+.group {
+  border-radius: 10px;
+  transition:
+    outline-color 0.15s,
+    background 0.15s;
+  outline: 2px dashed transparent;
+  outline-offset: 2px;
+}
+.group.is-drop-target {
+  outline-color: rgba(217, 168, 78, 0.55);
+}
+.group.is-drop-over {
+  background: rgba(217, 168, 78, 0.1);
+  outline-color: #ffe98a;
 }
 .group h3 {
   display: flex;
