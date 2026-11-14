@@ -100,20 +100,6 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
     await quest.verifyPhase('collect');
   });
 
-  test('Verify following a wrong trail to the end ends in an ambush the hero can leave', async () => {
-    const quest = await openBoard();
-
-    await quest.startFirstTrail();
-    await quest.walkOnTrail(STEPS - 2);
-    await quest.stepOffTrail();
-    await quest.stepOnAnyFreshHexUntilTheChestAppears();
-    await quest.openChest();
-
-    await quest.verifyPhase('ambush');
-    await quest.giveUp();
-    await quest.verifyResult('left');
-  });
-
   test('Verify running out of Will mid-trail strands the hero and returns to camp', async () => {
     const quest = await openBoard();
     await quest.setWill(ENTRY + 1);

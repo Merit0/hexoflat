@@ -11,6 +11,11 @@ import {
 } from '../expedition/expedition-store';
 import { createTestKit, envelope, type TestKit } from '../player/player-test-kit';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
+import {
+  LOOT_TABLES,
+  SKELETON_WARRIOR_TABLE_ID,
+} from '@hexoflat/engine/content/loot-tables.content';
+import { lootTableSchema } from '@hexoflat/engine/loot/loot-table';
 import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
 import { itemLedger } from '../db/schema';
@@ -120,12 +125,21 @@ describe.skipIf(!dbAvailable)('battle close and restore as they are (real Postgr
 
   describe('with grave loot on', () => {
     const originalRules = BATTLE_RULES;
+    const tables = LOOT_TABLES as Record<string, unknown>;
+    const realWarriorTable = tables[SKELETON_WARRIOR_TABLE_ID];
 
     beforeAll(() => {
       world.battleRules = { ...originalRules, graveLootEnabled: true };
+      tables[SKELETON_WARRIOR_TABLE_ID] = lootTableSchema.parse({
+        id: SKELETON_WARRIOR_TABLE_ID,
+        rolls: [1, 1],
+        guaranteed: [{ itemKey: HEXOBJECT_KEYS.COINS, amount: [5, 5] }],
+        entries: [{ itemKey: HEXOBJECT_KEYS.COINS, weight: 1, amount: [1, 1] }],
+      });
     });
     afterAll(() => {
       world.battleRules = originalRules;
+      tables[SKELETON_WARRIOR_TABLE_ID] = realWarriorTable;
     });
 
     interface Collected {
