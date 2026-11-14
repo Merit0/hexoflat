@@ -49,13 +49,9 @@ import { applyInventoryCommand } from '../inventory/apply-inventory';
 import { applyConsumeItem, applyGrantItem, type IInventoryDraft } from '../inventory/apply-stock';
 import { applySquadLifecycle, isSquadAction, startSquadAction } from '../squads/apply-squad';
 import type { ChestLootContext } from '../chests/plan-chest-loot';
-import {
-  CHEST_REFUSAL_MESSAGES,
-  isChestOpening,
-  openChest,
-  planChestOpening,
-  rejectedLoot,
-} from '../chests/open-chest';
+import { isChestOpening } from '../chests/open-chest';
+import { worldChestSpace } from '../chests/world-container-space';
+import { openInSpace, type ContainerPrice } from '../containers';
 
 export interface HexEngineState {
   map: HexMapModel;
@@ -242,59 +238,37 @@ function applyStartHexAction(
     return out;
   }
 
-  const chestOpening = isChestOpening(tile, actionType);
-  const chestPlan = chestOpening
-    ? planChestOpening(state, tile, parsed.payload.heroId, ctx.inventory)
-    : null;
-  if (chestPlan && !chestPlan.ok) {
-    out.push(
-      rejectedLoot(parsed.payload.heroId, chestPlan.reason),
-      rejectedStart(coordinates, actionType, CHEST_REFUSAL_MESSAGES[chestPlan.reason]),
+  const cost = actionCharge(state, tile, actionType);
+  const price = willPriceOf(state, parsed.payload, cost);
+  if (isChestOpening(tile, actionType)) {
+    const opened = openInSpace(
+      worldChestSpace(actionType),
+      state,
+      parsed.payload.heroId,
+      coordinates,
+      ctx.inventory,
+      price,
     );
-    return out;
+    if (!opened.ok) return opened.events;
+    return [
+      ...opened.events,
+      { type: 'HEX_ACTION_STARTED', payload: { coordinates, actionType, endsAt: now } },
+    ];
   }
 
-  const cost = actionCharge(state, tile, actionType);
-  if (cost > 0) {
-    const { knowledge } = state;
-    const ref = `${actionType}:${coordinateKey(coordinates)}`;
-    if (!knowledge || knowledge.heroId !== parsed.payload.heroId) {
-      out.push(
-        willRejected(parsed.payload.heroId, 'NO_WILL_STATE', ref),
-        rejectedStart(coordinates, actionType, 'Will is unavailable.'),
-      );
-      return out;
-    }
-    if (knowledge.current < cost) {
-      out.push(
-        willRejected(knowledge.heroId, 'INSUFFICIENT_WILL', ref),
-        rejectedStart(coordinates, actionType, 'Not enough Will.'),
-      );
-      return out;
-    }
-  }
+  const refused = price?.check() ?? null;
+  if (refused) return refused;
 
   const fullCtx: IActionContext = { ...ctx, map: state.map, now };
   const squadStart = isSquadAction(actionType)
     ? startSquadAction(state, tile, { heroId: parsed.payload.heroId, actionType, now })
     : null;
-  const chestEvents = chestPlan?.ok
-    ? openChest(state, tile, parsed.payload.heroId, chestPlan.plan, ctx.inventory)
-    : null;
-  const result = chestEvents
-    ? { ok: true as const, endsAt: now }
-    : (squadStart ??
-      new ExecuteHexActionFeature(tile).execute(actionType, toolKey as THeroToolKey, fullCtx));
+  const result =
+    squadStart ??
+    new ExecuteHexActionFeature(tile).execute(actionType, toolKey as THeroToolKey, fullCtx);
 
-  if (result.ok && cost > 0) {
-    const knowledge = state.knowledge!;
-    const reason = actionType === EHexActionType.ENTER ? 'entry' : 'action';
-    const spent = spendWill(knowledge, cost, reason, `${actionType}:${coordinateKey(coordinates)}`);
-    knowledge.revision++;
-    out.push(...spent.events);
-  }
+  if (result.ok && price) out.push(...price.spend());
 
-  if (chestEvents) out.push(...chestEvents);
   if (squadStart?.ok) out.push(...squadStart.events);
   if (squadStart && !squadStart.ok) {
     out.push({
@@ -319,6 +293,41 @@ function applyStartHexAction(
         },
   );
   return out;
+}
+
+function willPriceOf(
+  state: HexEngineState,
+  payload: { heroId: string; coordinates: IHexCoordinates; actionType: EHexActionType },
+  cost: number,
+): ContainerPrice | undefined {
+  if (cost <= 0) return undefined;
+  const { heroId, coordinates, actionType } = payload;
+  const ref = `${actionType}:${coordinateKey(coordinates)}`;
+  return {
+    check: () => {
+      const { knowledge } = state;
+      if (!knowledge || knowledge.heroId !== heroId) {
+        return [
+          willRejected(heroId, 'NO_WILL_STATE', ref),
+          rejectedStart(coordinates, actionType, 'Will is unavailable.'),
+        ];
+      }
+      if (knowledge.current < cost) {
+        return [
+          willRejected(knowledge.heroId, 'INSUFFICIENT_WILL', ref),
+          rejectedStart(coordinates, actionType, 'Not enough Will.'),
+        ];
+      }
+      return null;
+    },
+    spend: () => {
+      const knowledge = state.knowledge!;
+      const reason = actionType === EHexActionType.ENTER ? 'entry' : 'action';
+      const spent = spendWill(knowledge, cost, reason, ref);
+      knowledge.revision++;
+      return spent.events;
+    },
+  };
 }
 
 function rejectedStart(

@@ -56,7 +56,7 @@ describe('CH-P0 payload snapshots: the whole open event and every refusal event,
     ).toMatchSnapshot();
   });
 
-  it('CHEST_EMPTY', () => {
+  it('CONTAINER_EMPTY', () => {
     expect(
       worldRefusal((scene) => putObject(scene.world, scene.chest, HEXOBJECT_KEYS.CHEST_OPEN)),
     ).toMatchSnapshot();

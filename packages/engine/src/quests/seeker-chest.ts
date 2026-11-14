@@ -1,19 +1,21 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { lootTableOf } from '../content/loot-tables.content';
-import { grantToDraft, type IInventoryDraft } from '../inventory/apply-stock';
+import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
 import {
-  lootStreamLabel,
+  applySpreadPlan,
+  lootNeighbours,
+  offsetPlacement,
+  pickupStack,
   planLootSpread,
-  rollLoot,
+  rollLootList,
   type LootDrop,
   type LootNeighbour,
 } from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import {
-  AXIAL_DIRS,
   axialToOffset,
   coordinateKey,
   getHexNeighbors,
@@ -21,7 +23,6 @@ import {
   offsetToAxial,
   type Axial,
 } from '../utils/hex-utils';
-import { deriveStream } from '../utils/random-seeded';
 import { floorKeys, positionOf, type QuestRun, type SeekerBoard } from './quest-state';
 import { reject, type SeekerResult } from './seeker-result';
 
@@ -35,12 +36,11 @@ export function generateChestDrop(input: {
   chestHex: IHexCoordinates;
   tableId: string | undefined;
 }): LootDrop[] {
-  const table = lootTableOf(input.tableId);
-  if (!table) return [];
-  return rollLoot(
-    table,
-    deriveStream(input.seed, lootStreamLabel(input.seed, coordinateKey(input.chestHex))),
-  );
+  return rollLootList(lootTableOf(input.tableId), {
+    seed: input.seed,
+    sourceId: input.seed,
+    targetKey: coordinateKey(input.chestHex),
+  });
 }
 
 function sameHex(a: IHexCoordinates, b: IHexCoordinates): boolean {
@@ -56,10 +56,9 @@ export function questLootNeighbours(
   const taken = new Set((run.collect?.ground ?? []).map((item) => coordinateKey(item.hex)));
   taken.add(coordinateKey(positionOf(run)));
   if (run.chest) taken.add(coordinateKey(run.chest.hex));
-  return AXIAL_DIRS.flatMap((dir) => {
-    const hex = { q: target.q + dir.q, r: target.r + dir.r };
+  return lootNeighbours(target, (hex) => {
     const key = coordinateKey(axialToOffset(hex));
-    return floor.has(key) ? [{ hex, free: !taken.has(key) }] : [];
+    return floor.has(key) ? !taken.has(key) : null;
   });
 }
 
@@ -91,12 +90,9 @@ function openRealChest(
   });
   if (!spread.ok) return reject(progress, source, spread.reason);
 
-  const placed = spread.plan.placements.map(({ hex, itemKey, amount }) => ({
-    hex: axialToOffset(hex),
-    itemKey,
-    amount,
-  }));
-  for (const drop of spread.plan.toBag) grantToDraft(draft, drop.itemKey, drop.amount, 'loot');
+  const { placed, toBag } = applySpreadPlan(spread.plan, draft, (placement) =>
+    offsetPlacement(placement, 'hex'),
+  );
   const run = structuredClone(source);
   run.phase = 'collect';
   run.collect = {
@@ -113,7 +109,7 @@ function openRealChest(
       hex: chest.hex,
       from: entry,
       placed,
-      toBag: spread.plan.toBag,
+      toBag,
     },
   };
   return { ok: true, progress, run, events: [opened, ...draft.events], inventory: draft.current };
@@ -198,17 +194,18 @@ export function seekerPickup(
   const collect = source.collect;
   if (source.phase !== 'collect' || !collect) return reject(progress, source, 'WRONG_PHASE');
   if (!inventory) return reject(progress, source, 'NO_INVENTORY');
-  if (hexDistance(collect.hero, hex) !== 1) return reject(progress, source, 'NOT_ADJACENT');
-  const item = collect.ground.find((candidate) => sameHex(candidate.hex, hex));
-  if (!item) return reject(progress, source, 'NO_LOOT_THERE');
   const draft: IInventoryDraft = { current: inventory, events: [] };
-  if (!grantToDraft(draft, item.itemKey as THexobjectKey, item.amount, 'pickup')) {
-    return reject(progress, source, 'BAG_FULL');
-  }
+  const picked = pickupStack({
+    stacks: collect.ground,
+    isTarget: (candidate) => sameHex(candidate.hex, hex),
+    adjacent: hexDistance(collect.hero, hex) === 1,
+    order: 'adjacent-first',
+    bag: draft,
+  });
+  if (!picked.ok) return reject(progress, source, picked.reason);
+  const item = picked.stack;
   const run = structuredClone(source);
-  run.collect!.ground = collect.ground.filter(
-    (candidate) => candidate !== item && !sameHex(candidate.hex, hex),
-  );
+  run.collect!.ground = picked.remaining;
   const taken: DomainEvent = {
     type: 'QUEST_LOOT_TAKEN',
     payload: {

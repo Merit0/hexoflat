@@ -1,17 +1,15 @@
 import type { DomainEvent } from '../commands/types';
 import { lootTableOf } from '../content/loot-tables.content';
-import { grantToDraft, type IInventoryDraft } from '../inventory/apply-stock';
+import type { IInventoryDraft } from '../inventory/apply-stock';
 import {
-  bagTakesAll,
-  lootStreamLabel,
+  applySpreadPlan,
+  lootNeighbours,
+  pickupStack,
   planLootSpread,
-  rollLoot,
+  rollLootLists,
   type LootDrop,
   type LootNeighbour,
 } from '../loot';
-import type { THexobjectKey } from '../registry/hexobjects-registry';
-import { AXIAL_DIRS } from '../utils/hex-utils';
-import { deriveStream } from '../utils/random-seeded';
 import { lootTableIdOfKind } from './battle-catalogue';
 import { isAlive, isFreeHex } from './battle-board';
 import type { BattleAction } from './battle-commands';
@@ -67,18 +65,14 @@ export function enterCollectPhase(state: BattleState): DomainEvent[] {
 }
 
 function rollGrave(state: BattleState, grave: Grave): LootDrop[][] {
-  const rng = deriveStream(state.seed, lootStreamLabel(state.id, hexKey(grave.hex)));
-  return grave.tables.flatMap((id) => {
-    const table = lootTableOf(id);
-    return table ? [rollLoot(table, rng)] : [];
-  });
+  return rollLootLists(
+    grave.tables.map((id) => lootTableOf(id)),
+    { seed: state.seed, sourceId: state.id, targetKey: hexKey(grave.hex) },
+  );
 }
 
 function neighboursOf(state: BattleState, target: BattleHex): LootNeighbour[] {
-  return AXIAL_DIRS.map((dir) => {
-    const hex = { q: target.q + dir.q, r: target.r + dir.r };
-    return { hex, free: isFreeHex(state, hex) };
-  });
+  return lootNeighbours(target, (hex) => isFreeHex(state, hex));
 }
 
 function noInventory(): IInventoryDraft {
@@ -127,12 +121,10 @@ export function lootGrave(
   const from = { ...actor.pos };
   grave.examined = true;
   actor.pos = { ...grave.hex };
-  for (const place of spread.plan.placements) {
+  const applied = applySpreadPlan(spread.plan, bag, (place) => {
     collect.items.push({ hex: { ...place.hex }, itemKey: place.itemKey, amount: place.amount });
-  }
-  for (const drop of spread.plan.toBag) {
-    grantToDraft(bag, drop.itemKey, drop.amount, 'loot');
-  }
+    return { hex: { ...place.hex }, itemKey: place.itemKey, amount: place.amount };
+  });
   return [
     {
       type: 'GRAVE_LOOTED',
@@ -140,12 +132,8 @@ export function lootGrave(
         creatureId: actor.id,
         hex: { ...grave.hex },
         from,
-        placed: spread.plan.placements.map(({ hex: at, itemKey, amount }) => ({
-          hex: { ...at },
-          itemKey,
-          amount,
-        })),
-        toBag: spread.plan.toBag.map(({ itemKey, amount }) => ({ itemKey, amount })),
+        placed: applied.placed,
+        toBag: applied.toBag,
       },
     },
   ];
@@ -158,19 +146,16 @@ export function pickupLoot(
   ctx: CollectContext,
 ): DomainEvent[] | BattleRejection {
   const collect = state.collect!;
-  const index = collect.items.findIndex((item) => sameHex(item.hex, hex));
-  if (index < 0) return reject('NO_LOOT_THERE');
-  const item = collect.items[index];
-  if (!isAdjacentHex(actor.pos, item.hex)) return reject('NOT_ADJACENT');
-  const bag = ctx.inventory ?? noInventory();
-  const drop: LootDrop = {
-    itemKey: item.itemKey as THexobjectKey,
-    amount: item.amount,
-    guaranteed: false,
-  };
-  if (!bagTakesAll(bag, [drop])) return reject('BAG_FULL');
-  grantToDraft(bag, drop.itemKey, drop.amount, 'pickup');
-  collect.items.splice(index, 1);
+  const picked = pickupStack({
+    stacks: collect.items,
+    isTarget: (item) => sameHex(item.hex, hex),
+    adjacent: isAdjacentHex(actor.pos, hex),
+    order: 'stack-first',
+    bag: ctx.inventory ?? noInventory(),
+  });
+  if (!picked.ok) return reject(picked.reason);
+  const item = picked.stack;
+  collect.items = picked.remaining;
   return [
     {
       type: 'LOOT_PICKED',

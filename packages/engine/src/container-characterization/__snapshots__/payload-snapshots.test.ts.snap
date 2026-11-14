@@ -470,12 +470,12 @@ exports[`CH-P0 payload snapshots: quest chest > the pickup event and its refusal
 }
 `;
 
-exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > CHEST_EMPTY 1`] = `
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > CONTAINER_EMPTY 1`] = `
 [
   {
     "payload": {
       "heroId": "hero-1",
-      "reason": "CHEST_EMPTY",
+      "reason": "CONTAINER_EMPTY",
     },
     "type": "LOOT_REJECTED",
   },

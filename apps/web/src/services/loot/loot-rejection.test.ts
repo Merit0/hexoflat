@@ -14,6 +14,7 @@ const UK_TEXT = {
   BAG_FULL: 'Сумка повна. Звільни місце.',
   STANDING_ON_TARGET: 'Спершу зійди з цього місця.',
   CHEST_EMPTY: 'Скриня порожня.',
+  CONTAINER_EMPTY: 'Скриня порожня.',
   NOT_ADJACENT: 'Підійди ближче.',
 };
 

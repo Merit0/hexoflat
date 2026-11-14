@@ -313,3 +313,43 @@ export function createContainer(input: {
 - `lootStreamLabel` у W бере `mapId`, у тесті це `map-chest`.
 
 Відкрито: див. §10.4 (викинуті дропи без фікстури, `TAKE`, міграція зі списком у W/G, веб і e2e).
+
+## 13. Журнал CH-P1–P3 (2026-11-15): спільні функції, байт-в-байт той самий вихід
+
+Усі кроки зроблені по одному, після кожного прогін воріт (`container-characterization/`, `content/loot-economy.test.ts`, `chests/`, `loot/`, `battle/collect*`, `quests/` + `tsc`): 351 тест зелений п'ять разів поспіль, нуль правок у тестах.
+
+| Крок            | Додано в `loot/`                                                                                                                           | Замінено                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1. Кидок        | `roll-for.ts` (24 р.): `rollLootLists(tables, {seed, sourceId, targetKey})` (один потік на всі таблиці, як було в могилі) і `rollLootList` | тіла `rollChestLoot`, `rollGrave`, `generateChestDrop` (пара `deriveStream` + `rollLoot` більше не живе поза `loot/`) |
+| 2. Застосування | `apply-spread.ts` (20 р.): `applySpreadPlan(plan, bag, place)`: `placed` через колбек простору, `toBag` через `grantToDraft('loot')`       | цикли в `placeChestLoot`, `lootGrave`, `openRealChest`                                                                |
+| 3. Сусіди       | `neighbours.ts` (13 р.): `lootNeighbours(target, isFree)`, `isFree` повертає `null` для гекса поза полем                                   | три цикли по `AXIAL_DIRS` (три предикати лишились у просторах)                                                        |
+| 4. Конвертація  | `offset-placement.ts` (19 р.): `offsetPlacement(placement, key)`                                                                           | ручні `axialToOffset` на розкладці у W (`coordinates`) і Q (`hex`)                                                    |
+| 5. Підбір стосу | `pickup-stack.ts` (31 р.): `pickupStack({stacks, isTarget, adjacent, order, bag})`                                                         | `pickupLoot` (G) і `seekerPickup` (Q), `TAKE` у світі не чіпав                                                        |
+
+Рядки до/після: `loot/` 265 → 377 (+112, нові файли), `chests/plan-chest-loot.ts` 95 → 89, `chests/place-chest-loot.ts` 31 → 31, `battle/collect.ts` 212 → 197, `quests/seeker-chest.ts` 223 → 220. Прибуток у просторах малий (−24), бо лишились самі правила й предикати; виграш у тому, що правила потоку, розкладки й підбору тепер в одному місці.
+
+Що не вдалося поділити повністю, і чому:
+
+- **Таблиця, а не її id.** Функції кидка беруть уже знайдену `LootTable`, не id: `loot/` не може імпортувати `content/loot-tables.content` (той імпортує `loot/`, вийшов би цикл). Пошук `lootTableOf(id)` лишається у просторі.
+- **Порядок перевірок підбору.** G перевіряє «стос є» перед «поруч», Q навпаки. Щоб не міняти поведінку, `pickupStack` має параметр `order: 'stack-first' | 'adjacent-first'`. Прибрати його можна лише в P4 (єдиний порядок), це змінює відмову.
+- **Видалення стосу.** Q прибирав усі стоси на гексі, G лише перший за індексом; спільна функція повертає `remaining` без усіх стосів гекса. Різниця могла б проявитись тільки при двох стосах на одному гексі, а розкладка таких не робить.
+- **Атомарність сумки.** Спільний підбір спершу перевіряє `bagTakesAll`, потім `grantToDraft`; у Q раніше невдалий `grantToDraft` міг торкнутись чернетки, тепер ні (спостережуваного ефекту нема).
+- **Світовий `TAKE`** лишився окремою hex-дією (рішення 8a).
+- `loot/` як і раніше не імпортує `quests/`, `battle/`, `chests/`, `world/`.
+
+## 14. Журнал CH-P4a (2026-11-15): світова скриня відкривається через `containers/`
+
+Нове: `containers/` (`container.ts`: `ContainerState`, `ContainerRefusal`; `open-container.ts`: чистий `openContainer`/`accessRefusal`; `open-in-space.ts`: `ContainerSpace`, `openInSpace`, `ContainerPrice`), світовий адаптер `chests/world-container-space.ts`, виклик у `commands/apply-command.ts` (`willPriceOf` складає ціну Волі: перевірка після місця, списання перед застосуванням). Подія й поля `CHEST_OPENED` без змін. Видалено `chests/place-chest-loot.ts` і `openChest`/`planChestOpening`. F-S1 закрито: `projectTileForClient` прибирає `construction.lootTableId` (клієнт його не читав, grep порожній). Web: `CONTAINER_EMPTY` у таблиці відмов (uk/en, текст як `CHEST_EMPTY`). Г і К не чіпав.
+
+| Очікування                                              | Було                                       | Стало                                                | Рішення §11                       |
+| ------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------- | --------------------------------- |
+| world-chest: відмова «не повна скриня» перед «не поруч» | `CHEST_EMPTY`                              | `CONTAINER_EMPTY`                                    | 4 (один порядок), 5 (без аліасів) |
+| world-chest: усі коди мають повідомлення                | ключ `CHEST_EMPTY`                         | `CONTAINER_EMPTY`                                    | 5                                 |
+| world-chest: другий OPEN на порожній                    | `CHEST_EMPTY`                              | `CONTAINER_EMPTY`                                    | 5                                 |
+| world-chest: порожній кидок                             | герой ставав на скриню                     | герой лишається на місці, `placed`/`toBag` порожні   | 3                                 |
+| double-conditions (світ): порожня і не поруч            | `CHEST_EMPTY`                              | `CONTAINER_EMPTY`                                    | 5                                 |
+| payload-snapshots (світ): `reason` і назва тесту        | `CHEST_EMPTY`                              | `CONTAINER_EMPTY`                                    | 5                                 |
+| chests/open-chest.test REQ-LOOT-039                     | `CHEST_EMPTY`                              | `CONTAINER_EMPTY`                                    | 5                                 |
+| API container-secrets: F-S1                             | дозвіл і закріплений тест на `lootTableId` | `lootTableId` у маркерах заборони, тест перевертнуто | 1a / F-S1                         |
+
+Рядки `chests/`: `open-chest.ts` 118 → 69, `plan-chest-loot.ts` 89 → 89, `place-chest-loot.ts` 31 → 0, `world-container-space.ts` 0 → 100; `containers/` 0 → 158 (без тестів). Golden-loot, тести G і Q без правок. Перевірки: engine 1518 passed / 2 skipped, api 227, web 3286, lint 0 помилок, typecheck зелений, e2e `loot-chest.spec.ts` 5/5.

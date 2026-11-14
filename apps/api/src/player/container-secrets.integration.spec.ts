@@ -26,14 +26,12 @@ const dbAvailable = inject('dbAvailable');
 const [BOARD] = campObjectSpots(HEXOBJECT_KEYS.QUEST_BOARD);
 const NEAR = getHexNeighbors(BOARD)[0];
 
-// KNOWN FINDING F-S1 (docs/architecture/container-open-audit.md, section 10): a full chest tile in a world
-// snapshot carries hexobject.construction.lootTableId (the table id only, never the seed, rolls
-// or a drop list). The scan ignores that single key; the test below pins it so P6 removes it on purpose.
 const STRUCTURAL_MARKERS = [
   '"guaranteed"',
   '"rolls"',
   '"entries"',
   '"chestLootTableId"',
+  '"lootTableId"',
   '"drop"',
   '"discarded"',
   '"tables"',
@@ -41,9 +39,7 @@ const STRUCTURAL_MARKERS = [
 ];
 
 function expectNoSecrets(label: string, payload: unknown, secrets: string[]) {
-  const text = JSON.stringify(payload, (key, value: unknown): unknown =>
-    key === 'lootTableId' ? undefined : value,
-  );
+  const text = JSON.stringify(payload);
   for (const marker of STRUCTURAL_MARKERS)
     expect(text, `${label} has ${marker}`).not.toContain(marker);
   for (const id of Object.keys(LOOT_TABLES))
@@ -147,12 +143,13 @@ describe.skipIf(!dbAvailable)(
       );
     });
 
-    it('KNOWN FINDING F-S1 (pinned): a world snapshot still names the table id of a full chest in construction.lootTableId', async () => {
+    it('F-S1 fixed: a world snapshot no longer names the table id of a full chest', async () => {
       const { userId, heroId } = await kit.newPlayer();
       await sendWorld(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
       const text = JSON.stringify(await world.snapshot(userId, heroId));
-      expect(text).toContain('"lootTableId":"cave-chest-loot"');
-      expect(text).not.toContain('"drop"');
+      expect(text).not.toContain('lootTableId');
+      expect(text).not.toContain('cave-chest-loot');
+      expect(text).toContain('"chest"');
     });
 
     async function wonGrave() {

@@ -160,7 +160,7 @@ describe('opening a chest', () => {
     const off = applied(stepWorld(afterOutcome(outcome), entry));
     const beside = actWorld(afterOutcome(off), openAction(chest));
     expect(beside).toMatchObject({ ok: false });
-    expect(JSON.stringify(beside.ok ? [] : beside.events)).toContain('CHEST_EMPTY');
+    expect(JSON.stringify(beside.ok ? [] : beside.events)).toContain('CONTAINER_EMPTY');
     expect(off.progress.knowledge.current).toBe(47);
   });
 

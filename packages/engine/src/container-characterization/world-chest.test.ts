@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CHEST_REFUSAL_MESSAGES,
-  chestRefusal,
-  openChest,
-  planChestOpening,
-  type ChestWorld,
-} from '../chests/open-chest';
+import { CHEST_REFUSAL_MESSAGES, chestRefusal, type ChestWorld } from '../chests/open-chest';
 import { planChestLoot, EMPTY_CHEST_LOOT } from '../chests/plan-chest-loot';
+import { worldChestSpace } from '../chests/world-container-space';
+import { openInSpace } from '../containers';
+import { EHexActionType } from '../enums/hex-action-type';
 import {
   blockAround,
   chestScene,
@@ -63,10 +60,10 @@ describe('CH-P0 world chest: check order (matrix row 1)', () => {
     );
   });
 
-  it('"not a full chest" (CHEST_EMPTY) beats "not adjacent"', () => {
+  it('"not a full chest" (CONTAINER_EMPTY) beats "not adjacent"', () => {
     const scene = chestScene('order-c');
     const far = putObject(scene.world, farSpot(scene.world), HEXOBJECT_KEYS.CHEST_OPEN);
-    expect(chestRefusal(worldOf(scene), far, HERO)).toBe('CHEST_EMPTY');
+    expect(chestRefusal(worldOf(scene), far, HERO)).toBe('CONTAINER_EMPTY');
   });
 
   it('a far full chest is NOT_ADJACENT and a near one passes', () => {
@@ -79,7 +76,7 @@ describe('CH-P0 world chest: check order (matrix row 1)', () => {
   it('every refusal code has a message', () => {
     expect(Object.keys(CHEST_REFUSAL_MESSAGES).sort()).toEqual([
       'BAG_FULL',
-      'CHEST_EMPTY',
+      'CONTAINER_EMPTY',
       'NOT_ADJACENT',
       'NO_HERO',
       'NO_ROOM_FOR_LOOT',
@@ -103,7 +100,7 @@ describe('CH-P0 world chest: re-entry ban and empty state', () => {
     ).toBe('STANDING_ON_TARGET');
   });
 
-  it('the emptied chest is the chest-open hexobject and a second OPEN on it is CHEST_EMPTY', () => {
+  it('the emptied chest is the chest-open hexobject and a second OPEN on it is CONTAINER_EMPTY', () => {
     const scene = chestScene('empty-state');
     const outcome = actWorld(runOf(scene.world), openAction(scene.chest));
     if (!outcome.ok) throw new Error(outcome.code);
@@ -113,7 +110,7 @@ describe('CH-P0 world chest: re-entry ban and empty state', () => {
     const next = freeNeighbour(outcome.world, scene.chest);
     outcome.world.heroCoordinates = { ...next };
     const again = actWorld(runOf(outcome.world), openAction(scene.chest));
-    expect(JSON.stringify(again.events)).toContain('CHEST_EMPTY');
+    expect(JSON.stringify(again.events)).toContain('CONTAINER_EMPTY');
   });
 });
 
@@ -188,29 +185,35 @@ describe('CH-P0 world chest: event payload and hero move', () => {
 });
 
 describe('CH-P0 world chest: empty roll (matrix row "empty-roll behaviour")', () => {
-  it('a chest whose roll is empty still opens: the tile becomes chest-open, the hero moves, placed and toBag are empty', () => {
+  it('a chest whose roll is empty still opens, the hero stays where he is, placed and toBag are empty (decision 3)', () => {
     const scene = chestScene('empty-roll');
-    const world = worldOf(scene);
-    const noLoot = { ...world, loot: undefined };
+    const world = { ...worldOf(scene), loot: undefined };
     const draft = { current: emptyInventoryState(HERO), events: [] };
     const tile = tileOf(scene.world, scene.chest);
-    const plan = planChestOpening(noLoot, tile, HERO, draft);
-    expect(plan).toEqual({ ok: true, plan: EMPTY_CHEST_LOOT });
-    const events = openChest(noLoot, tile, HERO, EMPTY_CHEST_LOOT, draft);
+    const opened = openInSpace(
+      worldChestSpace(EHexActionType.OPEN),
+      world,
+      HERO,
+      scene.chest,
+      draft,
+    );
     expect(tile.hexobject?.hexobjectKey).toBe(HEXOBJECT_KEYS.CHEST_OPEN);
-    expect(noLoot.heroes[HERO].coordinates).toEqual(scene.chest);
-    expect(events).toEqual([
-      {
-        type: 'CHEST_OPENED',
-        payload: {
-          heroId: HERO,
-          coordinates: scene.chest,
-          from: scene.entry,
-          placed: [],
-          toBag: [],
+    expect(world.heroes[HERO].coordinates).toEqual(scene.entry);
+    expect(opened).toEqual({
+      ok: true,
+      events: [
+        {
+          type: 'CHEST_OPENED',
+          payload: {
+            heroId: HERO,
+            coordinates: scene.chest,
+            from: scene.entry,
+            placed: [],
+            toBag: [],
+          },
         },
-      },
-    ]);
+      ],
+    });
   });
 
   it('planChestLoot with no loot context rolls nothing, even with no place around', () => {

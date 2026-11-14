@@ -3,3 +3,8 @@ export * from './loot-refusal';
 export * from './roll-loot';
 export * from './place-loot';
 export * from './plan-spread';
+export * from './roll-for';
+export * from './apply-spread';
+export * from './neighbours';
+export * from './offset-placement';
+export * from './pickup-stack';

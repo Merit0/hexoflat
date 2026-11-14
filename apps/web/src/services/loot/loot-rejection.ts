@@ -5,6 +5,7 @@ export const LOOT_REJECT_REASONS = [
   'BAG_FULL',
   'STANDING_ON_TARGET',
   'CHEST_EMPTY',
+  'CONTAINER_EMPTY',
   'NOT_ADJACENT',
 ] as const;
 
