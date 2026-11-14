@@ -2,37 +2,43 @@
   <Teleport to="body">
     <div
       v-if="questDrag.active"
+      ref="host"
       class="ghost"
-      :style="{ left: `${questDrag.x}px`, top: `${questDrag.y}px` }"
+      :style="{
+        left: `${questDrag.x - questDrag.grabX}px`,
+        top: `${questDrag.y - questDrag.grabY}px`,
+        width: `${questDrag.width}px`,
+        height: `${questDrag.height}px`,
+      }"
       data-testid="quest-drag-ghost"
-    >
-      {{ questDrag.label }}
-    </div>
+      aria-hidden="true"
+    ></div>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { questDrag } from '@/composables/use-quest-drag';
+import { nextTick, ref, watch } from 'vue';
+import { questDrag, questDragNode } from '@/composables/use-quest-drag';
+
+const host = ref<HTMLElement | null>(null);
+
+watch(
+  () => questDragNode.value,
+  async (node) => {
+    await nextTick();
+    if (host.value && node) host.value.replaceChildren(node);
+  },
+);
 </script>
 
 <style scoped>
 .ghost {
   position: fixed;
   z-index: 10001;
-  max-width: 220px;
-  padding: 8px 14px;
-  overflow: hidden;
-  font-weight: 700;
-  color: #ffe98a;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   pointer-events: none;
-  background: linear-gradient(180deg, #2a2418, #17140c);
-  border: 1px solid #d9a84e;
-  border-radius: 10px;
-  box-shadow:
-    0 0 12px rgba(245, 194, 107, 0.5),
-    0 8px 18px rgba(0, 0, 0, 0.6);
-  transform: translate(-50%, -50%) rotate(-2deg);
+  opacity: 0.92;
+  filter: drop-shadow(0 0 10px rgba(245, 194, 107, 0.45))
+    drop-shadow(0 10px 16px rgba(0, 0, 0, 0.6));
+  transform: rotate(-1.5deg);
 }
 </style>

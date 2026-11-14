@@ -5,10 +5,16 @@
     :data-ready="row.taken ? String(row.ready) : undefined"
   >
     <div
+      ref="rowEl"
       class="row"
       :class="[
         `is-${row.state}`,
-        { 'is-ready': row.ready, 'is-open-details': detailsOpen, 'is-draggable': draggable },
+        {
+          'is-ready': row.ready,
+          'is-open-details': detailsOpen,
+          'is-draggable': draggable,
+          'is-dragging': questDrag.questId === row.quest.id,
+        },
       ]"
       :data-testid="`quest-card-${row.quest.id}`"
       :data-state="row.state"
@@ -141,7 +147,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { useQuestDetails } from '@/composables/use-quest-details';
-import { beginQuestPress, consumeQuestDragClick } from '@/composables/use-quest-drag';
+import { beginQuestPress, consumeQuestDragClick, questDrag } from '@/composables/use-quest-drag';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
 import QuestTip from './quest-tip.vue';
@@ -154,6 +160,7 @@ const details = useQuestDetails();
 const actions = useQuestRowActions();
 const { busy } = actions;
 const bodyEl = ref<HTMLButtonElement | null>(null);
+const rowEl = ref<HTMLElement | null>(null);
 const returnHover = ref(false);
 
 const detailsOpen = computed(() => details.openId.value === props.row.quest.id);
@@ -205,12 +212,13 @@ const draggable = computed(
 );
 
 function onPress(event: PointerEvent) {
-  if (!draggable.value) return;
+  if (!draggable.value || !rowEl.value) return;
   const row = props.row;
   details.close();
   beginQuestPress(event, {
     questId: row.quest.id,
     label: t(row.quest.nameKey),
+    element: rowEl.value,
     from: row.taken ? 'active' : 'available',
     onDrop: (target) => {
       if (target === 'active') void actions.take(row);
@@ -252,6 +260,9 @@ function onHover() {
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
+}
+.row.is-dragging {
+  opacity: 0.35;
 }
 .row.is-draggable .body {
   cursor: grab;

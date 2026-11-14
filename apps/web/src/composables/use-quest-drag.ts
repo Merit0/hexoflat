@@ -1,4 +1,4 @@
-import { reactive } from 'vue';
+import { reactive, shallowRef } from 'vue';
 import { setGrabbing } from '@/composables/board-drag-core';
 
 const THRESHOLD_PX = 4;
@@ -10,16 +10,26 @@ export interface QuestDragState {
   active: boolean;
   questId: string | null;
   label: string;
+  width: number;
+  height: number;
+  grabX: number;
+  grabY: number;
   from: QuestGroup | null;
   over: QuestGroup | null;
   x: number;
   y: number;
 }
 
+export const questDragNode = shallowRef<HTMLElement | null>(null);
+
 export const questDrag = reactive<QuestDragState>({
   active: false,
   questId: null,
   label: '',
+  width: 0,
+  height: 0,
+  grabX: 0,
+  grabY: 0,
   from: null,
   over: null,
   x: 0,
@@ -44,9 +54,17 @@ function groupAt(x: number, y: number): QuestGroup | null {
   return value === 'active' || value === 'available' ? value : null;
 }
 
+function snapshot(element: HTMLElement): HTMLElement {
+  const copy = element.cloneNode(true) as HTMLElement;
+  copy.removeAttribute('data-testid');
+  for (const node of copy.querySelectorAll('[data-testid]')) node.removeAttribute('data-testid');
+  return copy;
+}
+
 function reset() {
   questDrag.active = false;
   questDrag.questId = null;
+  questDragNode.value = null;
   questDrag.from = null;
   questDrag.over = null;
   setGrabbing(false);
@@ -55,6 +73,7 @@ function reset() {
 export interface QuestDragSource {
   questId: string;
   label: string;
+  element: HTMLElement;
   from: QuestGroup;
   onDrop: (target: QuestGroup) => void;
 }
@@ -72,6 +91,12 @@ export function beginQuestPress(event: PointerEvent, source: QuestDragSource): v
       questDrag.active = true;
       questDrag.questId = source.questId;
       questDrag.label = source.label;
+      const box = source.element.getBoundingClientRect();
+      questDragNode.value = snapshot(source.element);
+      questDrag.width = box.width;
+      questDrag.height = box.height;
+      questDrag.grabX = startX - box.left;
+      questDrag.grabY = startY - box.top;
       questDrag.from = source.from;
       setGrabbing(true);
     }

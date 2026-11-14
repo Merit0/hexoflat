@@ -15,6 +15,7 @@ function press(from: 'active' | 'available', onDrop = vi.fn()) {
   beginQuestPress(new PointerEvent('pointerdown', { clientX: 0, clientY: 0, button: 0 }), {
     questId: 'woodcutter',
     label: 'Woodcutter',
+    element: document.createElement('div'),
     from,
     onDrop,
   });
