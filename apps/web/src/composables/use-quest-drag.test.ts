@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { beginQuestPress, consumeQuestDragClick, questDrag, targetOf } from './use-quest-drag';
+import { beginQuestPress, questDrag, targetOf } from './use-quest-drag';
 
 function fire(type: string, x: number, y: number, init: PointerEventInit = {}) {
   window.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, button: 0, ...init }));
@@ -25,7 +25,6 @@ function press(from: 'active' | 'available', onDrop = vi.fn()) {
 describe('quest drag between sections', () => {
   afterEach(() => {
     fire('pointercancel', 0, 0);
-    consumeQuestDragClick();
   });
 
   it('targets the other section', () => {
@@ -39,10 +38,9 @@ describe('quest drag between sections', () => {
     fire('pointerup', 2, 1);
     expect(questDrag.active).toBe(false);
     expect(onDrop).not.toHaveBeenCalled();
-    expect(consumeQuestDragClick()).toBe(false);
   });
 
-  it('drops into the other section and swallows the click that follows', () => {
+  it('drops into the other section', () => {
     stubGroup('active');
     const onDrop = press('available');
     fire('pointermove', 30, 30);
@@ -51,7 +49,6 @@ describe('quest drag between sections', () => {
     fire('pointerup', 30, 30);
     expect(onDrop).toHaveBeenCalledWith('active');
     expect(questDrag.active).toBe(false);
-    expect(consumeQuestDragClick()).toBe(true);
   });
 
   it('ignores a drop on the section it came from or on empty space', () => {

@@ -36,14 +36,6 @@ export const questDrag = reactive<QuestDragState>({
   y: 0,
 });
 
-let suppressClick = false;
-
-export function consumeQuestDragClick(): boolean {
-  const was = suppressClick;
-  suppressClick = false;
-  return was;
-}
-
 export function targetOf(from: QuestGroup): QuestGroup {
   return from === 'available' ? 'active' : 'available';
 }
@@ -98,6 +90,7 @@ export function beginQuestPress(event: PointerEvent, source: QuestDragSource): v
       questDrag.grabX = startX - box.left;
       questDrag.grabY = startY - box.top;
       questDrag.from = source.from;
+      window.getSelection()?.removeAllRanges();
       setGrabbing(true);
     }
     questDrag.x = next.clientX;
@@ -111,10 +104,6 @@ export function beginQuestPress(event: PointerEvent, source: QuestDragSource): v
     window.removeEventListener('pointercancel', cancel);
     window.removeEventListener('keydown', key);
     if (!dragging) return;
-    suppressClick = true;
-    setTimeout(() => {
-      suppressClick = false;
-    }, 0);
     const over = questDrag.over;
     reset();
     if (apply && over && over !== source.from) source.onDrop(over);

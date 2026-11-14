@@ -55,7 +55,7 @@ describe('quest board panel', () => {
     });
     mount();
     expect(byId('quest-progress-woodcutter')!.textContent?.trim()).toBe('3 / 10');
-    byId('quest-row-woodcutter')!.click();
+    byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseenter'));
     await nextTick();
     expect(document.querySelector('[data-testid="quest-abandon-woodcutter"]')).not.toBeNull();
     expect(byId('quest-claim-woodcutter')).toBeNull();
@@ -137,20 +137,20 @@ describe('quest board layout and details', () => {
     expect(byId('quest-price-bone-hunter')!.classList.contains('is-short')).toBe(true);
   });
 
-  it('opens the details on hover, pins them on click and closes on Escape', async () => {
+  it('opens the details on hover only and closes them after the pointer leaves', async () => {
+    vi.useFakeTimers();
     mount();
+    byId('quest-row-woodcutter')!.click();
+    await nextTick();
+    expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).toBeNull();
     byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseenter'));
     await nextTick();
     expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).not.toBeNull();
-    byId('quest-row-woodcutter')!.click();
-    await nextTick();
     byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseleave'));
-    expect(document.querySelector('[data-testid="quest-details-woodcutter-close"]')).not.toBeNull();
-    byId('quest-board')!.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    );
+    vi.advanceTimersByTime(200);
     await nextTick();
     expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).toBeNull();
+    vi.useRealTimers();
   });
 
   it('never prints a raw translation key', () => {

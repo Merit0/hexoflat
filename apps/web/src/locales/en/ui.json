@@ -965,25 +965,25 @@
       "dismiss": "Back to the board"
     },
     "seeker-1": {
-      "name": "I · First Trail",
+      "name": "First Trail",
       "desc": "Follow the numbers through the fog to the chest.",
       "table": "Find the chest at the end of the trail.",
       "how": "Press Enter on the card.\nStep to the hex whose number continues the pattern.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
       "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Only the real chest ends the quest."
     },
     "seeker-2": {
-      "name": "II · Leaping Trail",
+      "name": "Leaping Trail",
       "desc": "The numbers jump. Find the pattern.",
       "table": "Find the chest at the end of the trail.",
       "how": "Press Enter on the card.\nThe numbers jump: find the rule before you step.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
-      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Card I must be finished first."
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. The First Trail must be finished first."
     },
     "seeker-3": {
-      "name": "III · Cunning Trail",
+      "name": "Cunning Trail",
       "desc": "Every step costs more. Choose carefully.",
       "table": "Find the chest at the end of the trail.",
       "how": "Press Enter on the card.\nEvery step costs more, so plan the path.\nA wrong hex can be left with a step back.\nOpen the chest at the end and take the loot, then return to camp.",
-      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Card II must be finished first."
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. The Leaping Trail must be finished first."
     },
     "board": {
       "will": "Will",
@@ -992,7 +992,6 @@
       "rowLabel": "{name}, {meta}. Show details.",
       "takeFor": "Take {name} for {n} Will",
       "detailsLabel": "{name} details",
-      "detailsClose": "Close details",
       "return": "Return",
       "returnLabel": "Return {name} to the board",
       "claimReward": "Claim reward",

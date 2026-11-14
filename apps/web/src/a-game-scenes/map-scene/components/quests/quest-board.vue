@@ -4,7 +4,6 @@
     tabindex="-1"
     data-testid="quest-board"
     :aria-label="t('quest.boardTitle')"
-    @keydown.esc="onEscape"
   >
     <board-header
       class="header"
@@ -90,7 +89,6 @@
       :key="openRow.quest.id"
       :row="openRow"
       :anchor="anchor"
-      :pinned="details.pinned.value"
     />
   </section>
 </template>
@@ -139,10 +137,6 @@ function dropClass(group: 'active' | 'available') {
 
 const openRow = computed(() => (details.openId.value ? rowById(details.openId.value) : null));
 const anchor = details.anchor;
-
-function onEscape() {
-  if (details.pinned.value) details.closeAndFocusRow();
-}
 
 onBeforeUnmount(() => {
   details.close();

@@ -7,20 +7,10 @@
       :aria-label="t('quest.board.detailsLabel', { name: t(row.quest.nameKey) })"
       :data-testid="`quest-details-${row.quest.id}`"
       @mouseenter="details.keepOpen()"
-      @mouseleave="pinned || details.leave()"
+      @mouseleave="details.leave()"
     >
       <header>
         <h3>{{ t(row.quest.nameKey) }}</h3>
-        <button
-          v-if="pinned"
-          type="button"
-          class="x"
-          :data-testid="`quest-details-${row.quest.id}-close`"
-          :aria-label="t('quest.board.detailsClose')"
-          @click="details.closeAndFocusRow()"
-        >
-          ×
-        </button>
       </header>
       <p v-if="row.timesDone > 0" class="tags">
         {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
@@ -132,7 +122,7 @@ const WIDTH = 400;
 const GAP = 10;
 const MARGIN = 8;
 
-const props = defineProps<{ row: QuestRowView; anchor: DOMRect; pinned: boolean }>();
+const props = defineProps<{ row: QuestRowView; anchor: DOMRect }>();
 const { t } = useI18n();
 const details = useQuestDetails();
 const hero = useHeroStore();
@@ -215,16 +205,6 @@ h3 {
   text-shadow:
     0 0 8px rgba(255, 233, 138, 0.4),
     0 1px 2px rgba(0, 0, 0, 0.8);
-}
-.x {
-  width: 32px;
-  min-height: 32px;
-  height: 32px;
-  padding: 0;
-  font-size: 22px;
-  color: rgba(241, 228, 204, 0.8);
-  background: none;
-  border: 0;
 }
 .tags {
   margin: 2px 0 6px;
@@ -322,8 +302,8 @@ footer {
   gap: 10px;
   margin-top: 12px;
 }
-.details,
-.details :deep(*) {
+html:not(.is-grabbing) .details,
+html:not(.is-grabbing) .details :deep(*) {
   cursor:
     url('/cursors/app-cursor/cursor-default.svg') 3 0,
     auto !important;

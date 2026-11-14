@@ -20,22 +20,20 @@
       :data-state="row.state"
       :data-category="row.category"
     >
-      <button
+      <div
         ref="bodyEl"
-        type="button"
         class="body"
+        :class="{ 'cursor-grab': draggable }"
         :data-testid="`quest-row-${row.quest.id}`"
         :aria-expanded="detailsOpen"
         :aria-label="t('quest.board.rowLabel', { name: t(row.quest.nameKey), meta: metaText })"
         @mouseenter="onHover"
         @mouseleave="details.leave()"
-        @focus="onHover"
-        @blur="details.leave()"
         @pointerdown="onPress"
-        @click="onToggle"
       >
         <img
           class="sprite"
+          draggable="false"
           :src="row.sprite"
           alt=""
           aria-hidden="true"
@@ -76,18 +74,25 @@
             ><i :class="{ 'is-full': row.ready }" :style="{ width: `${percent}%` }"></i
           ></span>
         </span>
-        <span class="reward" :data-testid="`quest-reward-${row.quest.id}`">
-          <template v-if="mainReward">
-            <span class="reward-main">
-              <quest-reward-icon :reward="mainReward" :size="20" />
-              <b v-if="rewardValue">{{ rewardValue }}</b>
-            </span>
-            <em v-if="row.rewards.length > 1">{{
-              t('quest.board.more', { n: row.rewards.length - 1 })
-            }}</em>
-          </template>
-        </span>
-      </button>
+      </div>
+      <div
+        class="reward"
+        :class="{ 'cursor-grab': draggable }"
+        :data-testid="`quest-reward-${row.quest.id}`"
+        @mouseenter="onHover"
+        @mouseleave="details.leave()"
+        @pointerdown="onPress"
+      >
+        <template v-if="mainReward">
+          <span class="reward-main">
+            <quest-reward-icon :reward="mainReward" :size="20" />
+            <b v-if="rewardValue">{{ rewardValue }}</b>
+          </span>
+          <em v-if="row.rewards.length > 1">{{
+            t('quest.board.more', { n: row.rewards.length - 1 })
+          }}</em>
+        </template>
+      </div>
       <div class="action">
         <quest-action-button
           v-if="row.ready"
@@ -152,7 +157,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { useQuestDetails } from '@/composables/use-quest-details';
-import { beginQuestPress, consumeQuestDragClick, questDrag } from '@/composables/use-quest-drag';
+import { beginQuestPress, questDrag } from '@/composables/use-quest-drag';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
 import QuestTip from './quest-tip.vue';
@@ -164,7 +169,7 @@ const { t } = useI18n();
 const details = useQuestDetails();
 const actions = useQuestRowActions();
 const { busy } = actions;
-const bodyEl = ref<HTMLButtonElement | null>(null);
+const bodyEl = ref<HTMLElement | null>(null);
 const rowEl = ref<HTMLElement | null>(null);
 const returnHover = ref(false);
 
@@ -211,7 +216,6 @@ const metaText = computed(() => {
 
 const draggable = computed(
   () =>
-    !props.row.seeker &&
     !props.row.ready &&
     (props.row.taken || (props.row.state === 'open' && props.row.reason !== 'will')),
 );
@@ -226,7 +230,7 @@ function onPress(event: PointerEvent) {
     element: rowEl.value,
     from: row.taken ? 'active' : 'available',
     onDrop: (target) => {
-      if (target === 'active') void actions.take(row);
+      if (target === 'active') void actions.place(row);
       else void actions.abandon(row);
     },
   });
@@ -235,11 +239,6 @@ function onPress(event: PointerEvent) {
 async function onReturn() {
   returnHover.value = false;
   await actions.abandon(props.row);
-}
-
-function onToggle() {
-  if (consumeQuestDragClick()) return;
-  if (bodyEl.value) details.toggle(props.row.quest.id, bodyEl.value);
 }
 
 function onHover() {
@@ -253,7 +252,7 @@ function onHover() {
 }
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 104px;
+  grid-template-columns: minmax(0, 1fr) 58px 92px;
   align-items: center;
   height: 64px;
   padding-right: 10px;
@@ -269,8 +268,11 @@ function onHover() {
 .row.is-dragging {
   opacity: 0.35;
 }
+.row.is-draggable {
+  user-select: none;
+  -webkit-user-select: none;
+}
 .row.is-draggable .body {
-  cursor: grab;
   touch-action: none;
 }
 .row.is-taken {
@@ -285,13 +287,13 @@ function onHover() {
 }
 .body {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) 58px;
+  grid-template-columns: 52px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   width: 100%;
   min-height: 0;
   height: 100%;
-  padding: 0 0 0 10px;
+  padding: 0 12px 0 10px;
   color: var(--q-text);
   text-align: left;
   background: none;
@@ -304,6 +306,8 @@ function onHover() {
   outline-offset: -3px;
 }
 .sprite {
+  user-select: none;
+  -webkit-user-drag: none;
   width: 52px;
   height: 52px;
   object-fit: contain;
@@ -368,6 +372,8 @@ function onHover() {
 }
 .reward {
   display: flex;
+  box-sizing: border-box;
+  cursor: pointer;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -392,7 +398,11 @@ function onHover() {
 }
 .action {
   display: grid;
-  place-items: center end;
+  box-sizing: border-box;
+  height: 34px;
+  padding-left: 10px;
+  place-items: center;
+  border-left: 1px solid #343a40;
 }
 .price {
   font-weight: 700;

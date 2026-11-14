@@ -44,7 +44,7 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async abandon(questId: string): Promise<void> {
-    await this.page.getByTestId(`quest-row-${questId}`).click();
+    await this.page.getByTestId(`quest-row-${questId}`).hover();
     await this.page.getByTestId(`quest-abandon-${questId}`).click();
   }
 

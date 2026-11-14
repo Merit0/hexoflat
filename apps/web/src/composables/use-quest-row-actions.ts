@@ -22,6 +22,14 @@ export function useQuestRowActions() {
           : t('quest.board.status.takenFree', { name: nameOf(row) }),
       );
     },
+    place(row: QuestRowView) {
+      const price = row.price;
+      return actions.accept(row.quest.id, () =>
+        price > 0
+          ? t('quest.board.status.taken', { name: nameOf(row), n: price })
+          : t('quest.board.status.takenFree', { name: nameOf(row) }),
+      );
+    },
     enter: (row: QuestRowView) => run.start(row.quest.id),
     claim: (row: QuestRowView) =>
       actions.claim(row.quest.id, () =>
