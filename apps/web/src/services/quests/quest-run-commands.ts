@@ -41,3 +41,4 @@ export const stepQuestBack = () => send('QUEST_STEP_BACK');
 export const openQuestChest = () => send('QUEST_OPEN_CHEST');
 export const returnFromQuest = () => send('QUEST_RETURN');
 export const giveUpQuest = () => send('QUEST_GIVE_UP');
+export const pickUpQuestLoot = (hex: IHexCoordinates) => send('QUEST_PICKUP', { hex });

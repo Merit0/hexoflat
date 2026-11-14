@@ -118,3 +118,7 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 ## Walk onto a grave before the loot flies (L5, 2026-11-14)
 
 `GRAVE_LOOTED` becomes a `walk` step in `battle-animation-plan.ts` (from the entry hex to the grave, `BATTLE_TIMING.stepMs`; none when `nothing: true`, `rewind` puts the hero back on `from`). The flight is shifted by `graveWalkLeadMs` through `lootSchedule(count, leadMs)` / `planLootFlights(played, leadMs)`, so walk plus flight stay inside `LOOT_TIMING.maxTotalMs` (800); items stay hidden from the first frame (`pending`).
+
+## Loot on the quest field (QC2, 2026-11-14)
+
+`use-quest-board.ts` owns a `loot-flight-layer` (above the quest layer) and plays `lootFlightRequest`; `quest-numbers-layer.ts` takes `isHidden(key)` (`isLootFlightPending`) so landing stacks stay hidden until the flight lands, then `resync()`. Empty chest = `EMPTY_CHEST_ALPHA` (0.45), hero token is added after the chest so it stands above it. The canvas `data-ready` is ANDed with `!lootFlying`.

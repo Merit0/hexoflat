@@ -83,7 +83,7 @@ describe('quest field model', () => {
     )!;
     expect(resolveFieldClick({ ...run, chest: null }, free)).toMatchObject({ kind: 'step' });
     expect(resolveFieldClick(run, free)).toBeNull();
-    expect(resolveFieldClick({ ...run, phase: 'collect' }, b)).toBeNull();
+    expect(resolveFieldClick({ ...run, phase: 'ambush' }, b)).toBeNull();
   });
 
   it('offers no steps while a chest stands on the field', () => {

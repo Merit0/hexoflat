@@ -17,8 +17,16 @@ export interface QuestFieldModel {
   position: IHexCoordinates;
   pathLine: IHexCoordinates[];
   chest: IHexCoordinates | null;
+  chestEmpty: boolean;
+  ground: QuestFieldStack[];
   walking: boolean;
   collect: boolean;
+}
+
+export interface QuestFieldStack {
+  hex: IHexCoordinates;
+  itemKey: string;
+  amount: number;
 }
 
 export const EMPTY_FIELD: QuestFieldModel = {
@@ -27,6 +35,8 @@ export const EMPTY_FIELD: QuestFieldModel = {
   position: { columnIndex: 0, rowIndex: 0 },
   pathLine: [],
   chest: null,
+  chestEmpty: false,
+  ground: [],
   walking: false,
   collect: false,
 };
@@ -50,6 +60,9 @@ export function previousHex(run: QuestProjection): IHexCoordinates | null {
 
 export function buildQuestField(run: QuestProjection): QuestFieldModel {
   const walking = run.phase === 'walking';
+  const collecting = run.phase === 'collect';
+  const ground = run.collect?.ground ?? [];
+  const groundKeys = new Set(ground.map((stack) => coordinateKey(stack.hex)));
   const here = coordinateKey(run.position);
   const near = new Set(getHexNeighbors(run.position).map(coordinateKey));
   const back = previousHex(run);
@@ -65,38 +78,61 @@ export function buildQuestField(run: QuestProjection): QuestFieldModel {
     const isBack = key === backKey;
     const reachable =
       walking && key !== here && key !== chestKey && (isBack || (!run.chest && near.has(key)));
+    const free = collecting && near.has(key) && key !== chestKey && !groundKeys.has(key);
     hexes.push({
       hex,
-      number: run.phase === 'collect' ? null : number,
+      number: collecting ? null : number,
       footprint,
       hint: key === hint,
-      step: reachable ? { cost: isBack ? run.backCost : run.stepCost, back: isBack } : null,
+      step: free
+        ? { cost: 0, back: false }
+        : reachable
+          ? { cost: isBack ? run.backCost : run.stepCost, back: isBack }
+          : null,
     });
   };
   for (const opened of run.opened) add(opened.hex, opened.number, opened.footprint);
   add(run.start, null, false);
   if (run.chest) add(run.chest.hex, null, false);
   add(run.position, null, false);
+  for (const hex of run.collect?.seen ?? []) add(hex, null, false);
+  for (const stack of ground) add(stack.hex, null, false);
   return {
     fog: fieldHexagon().filter((hex) => !seen.has(coordinateKey(hex))),
     hexes,
     position: run.position,
     pathLine: [run.start, ...run.path.map((step) => step.hex)],
     chest: run.chest ? run.chest.hex : null,
+    chestEmpty: run.chest?.empty === true,
+    ground: ground.map((stack) => ({ ...stack, hex: { ...stack.hex } })),
     walking,
-    collect: run.phase === 'collect',
+    collect: collecting,
   };
 }
 
 export type FieldClick =
-  { kind: 'step'; hex: IHexCoordinates } | { kind: 'back' } | { kind: 'chest' } | null;
+  | { kind: 'step'; hex: IHexCoordinates }
+  | { kind: 'back' }
+  | { kind: 'chest' }
+  | { kind: 'pickup'; hex: IHexCoordinates }
+  | null;
 
 export function resolveFieldClick(run: QuestProjection, hex: IHexCoordinates): FieldClick {
-  if (run.phase !== 'walking') return null;
   const key = coordinateKey(hex);
+  if (run.phase === 'collect') return resolveCollectClick(run, hex, key);
+  if (run.phase !== 'walking') return null;
   if (run.chest && key === coordinateKey(run.chest.hex)) return { kind: 'chest' };
   const back = previousHex(run);
   if (back && key === coordinateKey(back)) return { kind: 'back' };
   if (run.chest) return null;
   return { kind: 'step', hex };
+}
+
+function resolveCollectClick(run: QuestProjection, hex: IHexCoordinates, key: string): FieldClick {
+  if (run.chest && key === coordinateKey(run.chest.hex)) return { kind: 'chest' };
+  const ground = run.collect?.ground ?? [];
+  if (ground.some((stack) => coordinateKey(stack.hex) === key)) return { kind: 'pickup', hex };
+  const seen = (run.collect?.seen ?? []).some((candidate) => coordinateKey(candidate) === key);
+  const near = getHexNeighbors(run.position).some((candidate) => coordinateKey(candidate) === key);
+  return seen && near ? { kind: 'step', hex } : null;
 }

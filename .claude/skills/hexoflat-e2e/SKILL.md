@@ -150,3 +150,7 @@ Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm 
 
 - Quest board (2026-11-14): the filter chips are gone (no `quest-filter-*`); `quest-slots` is the «Quests taken» bar; the details card's `quest-abandon-<id>` button reads «Return» and the active row's `quest-progress-<id>` shows «Return» while hovered, so read progress text with the mouse away from it; the quest tracker hex has `quest-tracker*` testids; rows drag between sections (`quest-group-active|available`, ghost `quest-drag-ghost`), not covered by e2e yet.
 - Quest details: `QuestBoardComponent.verifyRule(questId, phrases)` hovers the row and reads `quest-details-<id>-rule` (replaced `verifyChips`, there are no `quest-chips-*` any more); the take price has `quest-price-<id>` and the class `is-short` while Will is too low.
+
+## Seeker chest loot specs (QC2, 2026-11-14)
+
+- `e2e/hero/quest-seeker-loot.spec.ts` (`@hero`, 4 tests) through `QuestRunFeature` (`verifyHeroOnTheEmptiedChest`, `takeEveryStack`, `takeOneStack`, `stepOffTheChest`, `clickTheChest`, `reloadAndVerifyLootKept`, `verifyNextCardOpen`) and `QuestFieldComponent` (`readBagTotals`, `verifyBagTotals`, `verifyChestEmpty`, `verifyGroundCount`). The loot is random, so the tests read the stacks from `getQuestField().ground` (`hex`, `itemKey`, `quantity`; `chestEmpty`) and check the bag by delta, never by a fixed table.

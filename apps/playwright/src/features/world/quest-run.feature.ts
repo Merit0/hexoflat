@@ -110,6 +110,97 @@ export class QuestRunFeature extends BaseFeature {
     });
   }
 
+  async verifyHeroOnTheEmptiedChest(): Promise<void> {
+    await this.step(
+      'Verify the hero stands on the emptied chest and loot lies around',
+      async () => {
+        await this.field.verifyBoardSettled();
+        await this.field.verifyPhase('collect');
+        await this.field.verifyChestEmpty(true);
+        const field = await this.field.read();
+        expect(field.position).toEqual(field.chest);
+        expect(field.ground.length + (await this.countBag())).toBeGreaterThan(0);
+        for (const stack of field.ground) expect(stack.quantity).toBeGreaterThan(0);
+      },
+    );
+  }
+
+  async takeEveryStack(): Promise<void> {
+    await this.step('Take every stack lying on the field', async () => {
+      const before = await this.field.readBagTotals();
+      const { ground } = await this.field.read();
+      const expected = { ...before };
+      for (const stack of ground)
+        expected[stack.itemKey] = (expected[stack.itemKey] ?? 0) + stack.quantity;
+      for (const stack of ground) await this.field.clickHex(stack.hex);
+      await this.field.verifyGroundCount(0);
+      await this.field.verifyBagTotals(expected);
+    });
+  }
+
+  async takeOneStack(): Promise<void> {
+    await this.step('Take one stack and keep the rest on the ground', async () => {
+      const before = await this.field.readBagTotals();
+      const { ground } = await this.field.read();
+      const [first] = ground;
+      if (!first) throw new Error('No loot lies on the field');
+      await this.field.clickHex(first.hex);
+      await this.field.verifyGroundCount(ground.length - 1);
+      await this.field.verifyBagTotals({
+        ...before,
+        [first.itemKey]: (before[first.itemKey] ?? 0) + first.quantity,
+      });
+    });
+  }
+
+  async stepOffTheChest(): Promise<void> {
+    await this.step('Walk to a free neighbour hex for nothing', async () => {
+      const before = await this.field.read();
+      const target = before.hexes.find((cell) => cell.step?.cost === 0);
+      if (!target) throw new Error('No free step is offered');
+      await this.field.clickHex(target.hex);
+      await expect.poll(async () => (await this.field.read()).position).toEqual(target.hex);
+    });
+  }
+
+  async clickTheChest(): Promise<void> {
+    await this.step('Click the opened chest', async () => {
+      const { chest } = await this.field.read();
+      if (!chest) throw new Error('No chest on the field');
+      await this.field.clickHex(chest);
+    });
+  }
+
+  async verifyRefusal(pattern: RegExp): Promise<void> {
+    await this.step(`Verify the refusal reads ${pattern}`, () => this.board.verifyRefusal(pattern));
+  }
+
+  async reloadAndVerifyLootKept(): Promise<void> {
+    await this.step('Reload and see the same loot, hexes and quantities', async () => {
+      const before = await this.field.read();
+      await new ReloadCampingMapFeature().reload();
+      await this.field.waitForReady();
+      const after = await this.field.read();
+      expect(after.phase).toBe(before.phase);
+      expect(after.position).toEqual(before.position);
+      expect(after.chest).toEqual(before.chest);
+      expect(after.chestEmpty).toBe(before.chestEmpty);
+      const byHex = (a: { hex: { columnIndex: number; rowIndex: number } }, b: typeof a) =>
+        a.hex.columnIndex - b.hex.columnIndex || a.hex.rowIndex - b.hex.rowIndex;
+      expect([...after.ground].sort(byHex)).toEqual([...before.ground].sort(byHex));
+    });
+  }
+
+  async verifyNextCardOpen(questId: string): Promise<void> {
+    await this.step(`Verify the card ${questId} is open on the board`, () =>
+      this.board.verifyCardState(questId, 'open'),
+    );
+  }
+
+  private async countBag(): Promise<number> {
+    return Object.keys(await this.field.readBagTotals()).length;
+  }
+
   async verifyPhase(phase: string): Promise<void> {
     await this.step(`Verify the run is in the ${phase} phase`, async () => {
       await this.field.verifyPhase(phase);

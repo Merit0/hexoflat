@@ -4,6 +4,9 @@ import { apiClient } from '@/api/client';
 import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { applyQuestRun } from './quest-run-projection';
+import { startLootFlights } from '@/services/loot/loot-flight-state';
+import { planLootFlights } from '@/services/loot/loot-flight';
+import { questChestOpenedOf } from './quest-loot';
 
 export type QuestRunAnswer =
   { ok: true; events: DomainEvent[] } | { ok: false; code: string; events: DomainEvent[] };
@@ -13,6 +16,7 @@ export interface QuestTransport {
   heroId: string;
   progressRevision: number;
   applyProgress(projection: { revision: number; state: unknown } | undefined): void;
+  applyInventory(projection: { revision: number; state: unknown } | undefined): void;
   lost(error: unknown): void;
 }
 
@@ -31,8 +35,12 @@ export async function runQuestCommand(
   try {
     const response = await transport.socket.sendQuest(envelope);
     transport.applyProgress(response.aggregates.progress);
-    applyQuestRun(response.quest);
+    transport.applyInventory(response.aggregates.inventory);
     const events = response.events as DomainEvent[];
+    const opened = response.replayed ? null : questChestOpenedOf(events);
+    if (opened) startLootFlights(planLootFlights(opened));
+    applyQuestRun(response.quest);
+    if (response.replayed) await restoreQuestRun();
     if (response.result === 'applied') return { ok: true, events };
     return { ok: false, code: response.code ?? response.result, events };
   } catch (error) {

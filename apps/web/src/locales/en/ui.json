@@ -896,6 +896,8 @@
       "WRONG_PHASE": "Not now.",
       "BATTLE_OPEN": "Finish the battle first.",
       "NO_RUN": "No trail is open.",
+      "HEX_BLOCKED": "You cannot step there.",
+      "NO_LOOT_THERE": "Nothing lies there.",
       "OFFLINE": "No connection to the server."
     },
     "woodcutter": {
@@ -953,7 +955,10 @@
     "tip": {
       "chest": "A chest. Open it with your hand.",
       "step": "Step: {n} Will",
-      "back": "Step back: {n} Will"
+      "back": "Step back: {n} Will",
+      "free": "Free step",
+      "chestEmpty": "Empty chest",
+      "stack": "{item} × {n}"
     },
     "result": {
       "treasure": "You found the treasure.",

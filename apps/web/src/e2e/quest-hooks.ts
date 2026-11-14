@@ -57,6 +57,12 @@ export const questTestApi = {
       pathHexes: run.path.map((step) => step.hex),
       hintHex: run.hintHex,
       chest: run.chest ? run.chest.hex : null,
+      chestEmpty: model.chestEmpty,
+      ground: model.ground.map((stack) => ({
+        hex: stack.hex,
+        itemKey: stack.itemKey,
+        quantity: stack.amount,
+      })),
       stepCost: run.stepCost,
       backCost: run.backCost,
       hexes: model.hexes.map((cell) => ({

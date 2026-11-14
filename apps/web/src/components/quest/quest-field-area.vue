@@ -1,6 +1,11 @@
 <template>
   <div class="quest-area" data-testid="quest-field-area">
-    <div ref="pane" class="quest-board" data-testid="quest-field" :data-ready="ready">
+    <div
+      ref="pane"
+      class="quest-board"
+      data-testid="quest-field"
+      :data-ready="ready && !lootFlying"
+    >
       <canvas ref="canvas" class="quest-board__canvas" />
     </div>
     <quest-hex-tip v-if="tip" :tip="tip" />
@@ -17,9 +22,17 @@ import { EMPTY_FIELD, resolveFieldClick } from '@/services/quests/quest-field-mo
 import { buildQuestHexTip } from '@/services/quests/quest-hex-tip';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { TileAnchor } from '@/render/layers/tiles-layer';
+import { getMeta } from '@hexoflat/engine';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { lootFlying } from '@/services/loot/loot-flight-state';
 import QuestHexTip from './quest-hex-tip.vue';
 
-const { t } = useI18n();
+const i18n = useI18n();
+const { t } = i18n;
+function localizedTitle(key: THexobjectKey): string {
+  const title = getMeta(key).title;
+  return i18n.te(title) ? t(title) : title;
+}
 const pane = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const ready = ref(false);
@@ -32,7 +45,9 @@ const tip = computed(() => {
   const current = hover.value;
   if (!current || !field.value) return null;
   const text = buildQuestHexTip(field.value, current.hex);
-  return text ? { ...text, anchor: current.anchor, label: t(text.key, text.params) } : null;
+  if (!text) return null;
+  const item = text.item ? localizedTitle(text.item as THexobjectKey) : '';
+  return { anchor: current.anchor, label: t(text.key, { ...text.params, item }) };
 });
 
 useQuestBoard({

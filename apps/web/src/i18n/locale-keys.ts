@@ -115,7 +115,9 @@ export function collectSkillTreeLocaleKeys(): string[] {
 }
 
 export function questLocaleKeys(): string[] {
-  const tips = ['chest', 'step', 'back'].map((tip) => `quest.tip.${tip}`);
+  const tips = ['chest', 'step', 'back', 'free', 'chestEmpty', 'stack'].map(
+    (tip) => `quest.tip.${tip}`,
+  );
   const results = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'].map(
     (outcome) => `quest.result.${outcome}`,
   );

@@ -17,6 +17,13 @@ import {
   questLayerAssetPaths,
   type QuestNumbersLayer,
 } from '@/render/layers/quest-numbers-layer';
+import { createLootFlightLayer, type LootFlightLayer } from '@/render/layers/loot-flight-layer';
+import {
+  finishLootFlights,
+  isLootFlightPending,
+  landLootFlight,
+  lootFlightRequest,
+} from '@/services/loot/loot-flight-state';
 import { registerQuestHexProbe } from '@/e2e/quest-hooks';
 import { tileWorldCenter, worldToScreen } from '@/render/board-camera';
 import { fieldHexagon, type QuestFieldModel } from '@/services/quests/quest-field-model';
@@ -51,6 +58,7 @@ export function fieldWorldRect(): WorldRect {
 export function useQuestBoard(options: UseQuestBoardOptions): void {
   let pixi: HexBoardApp | null = null;
   let layer: QuestNumbersLayer | null = null;
+  let flightLayer: LootFlightLayer | null = null;
   let observer: ResizeObserver | null = null;
   let destroyed = false;
   let currentCamera: BoardCamera | null = null;
@@ -91,11 +99,22 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
       positionOf: (coordinates) =>
         calcHexPixelPosition({ coordinates }, HEX_WORLD_WIDTH, HEX_WORLD_HEIGHT),
       floorSprite: FLOOR,
+      isHidden: isLootFlightPending,
       onHexTap: options.onHexTap,
       onHexPointer: options.onHexPointer,
     });
     layer.sync(options.model.value);
+    flightLayer = createLootFlightLayer({
+      worldContainer: app.worldContainer,
+      getTileSize: () => ({ w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT }),
+      onLanded: (flight) => {
+        if (flight.landingKey) landLootFlight(flight.landingKey);
+        layer?.resync();
+        pixi?.renderNow();
+      },
+    });
     fit(width, height);
+    playPending(lootFlightRequest.value);
     if (import.meta.env.VITE_E2E_HOOKS === 'true') {
       registerQuestHexProbe((hex) =>
         currentCamera ? worldToScreen(currentCamera, tileWorldCenter(hex)) : null,
@@ -116,15 +135,23 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
     observer.observe(pane);
   });
 
+  function playPending(request: typeof lootFlightRequest.value) {
+    if (!request || !flightLayer) return;
+    void flightLayer.play(request).then(() => finishLootFlights(request.id));
+  }
+
   watch(options.model, sync);
+  watch(lootFlightRequest, playPending);
 
   onBeforeUnmount(() => {
     destroyed = true;
     if (import.meta.env.VITE_E2E_HOOKS === 'true') registerQuestHexProbe(null);
     observer?.disconnect();
+    flightLayer?.destroy();
     layer?.destroy();
     pixi?.destroy();
     pixi = null;
     layer = null;
+    flightLayer = null;
   });
 }

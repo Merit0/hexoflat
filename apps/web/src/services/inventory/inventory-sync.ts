@@ -366,6 +366,11 @@ export function sendQuestCommand(
         heroId: inventorySession.heroId,
         progressRevision: inventorySession.progressRevision,
         applyProgress,
+        applyInventory: (projection) => {
+          if (projection && projection.revision !== inventorySession.revision) {
+            applyInventory(projection);
+          }
+        },
         lost,
       },
       type,

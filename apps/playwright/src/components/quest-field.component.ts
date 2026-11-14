@@ -19,6 +19,8 @@ export type QuestFieldSnapshot = {
   pathHexes: QuestHex[];
   hintHex: QuestHex | null;
   chest: QuestHex | null;
+  chestEmpty: boolean;
+  ground: { hex: QuestHex; itemKey: string; quantity: number }[];
   stepCost: number;
   backCost: number;
   hexes: QuestFieldHex[];
@@ -58,6 +60,32 @@ export class QuestFieldComponent extends BaseComponent {
 
   async verifyChestShown(): Promise<void> {
     await expect.poll(async () => (await this.read()).chest !== null, POLL).toBe(true);
+  }
+
+  async verifyChestEmpty(empty: boolean): Promise<void> {
+    await expect.poll(async () => (await this.read()).chestEmpty, POLL).toBe(empty);
+  }
+
+  async verifyGroundCount(count: number): Promise<void> {
+    await expect.poll(async () => (await this.read()).ground.length, POLL).toBe(count);
+  }
+
+  async verifyBoardSettled(): Promise<void> {
+    await expect(this.field).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
+  }
+
+  async readBagTotals(): Promise<Record<string, number>> {
+    return this.page.evaluate(() => {
+      const totals: Record<string, number> = {};
+      for (const cell of window.__HEXOFLAT_TEST__!.getBag()) {
+        if (cell) totals[cell.key] = (totals[cell.key] ?? 0) + cell.amount;
+      }
+      return totals;
+    });
+  }
+
+  async verifyBagTotals(expected: Record<string, number>): Promise<void> {
+    await expect.poll(() => this.readBagTotals(), POLL).toEqual(expected);
   }
 
   async clickHex(hex: QuestHex): Promise<void> {

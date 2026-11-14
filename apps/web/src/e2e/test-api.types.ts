@@ -71,6 +71,8 @@ export interface TestQuestField {
   pathHexes: TestHexCoordinates[];
   hintHex: TestHexCoordinates | null;
   chest: TestHexCoordinates | null;
+  chestEmpty: boolean;
+  ground: { hex: TestHexCoordinates; itemKey: string; quantity: number }[];
   stepCost: number;
   backCost: number;
   hexes: {

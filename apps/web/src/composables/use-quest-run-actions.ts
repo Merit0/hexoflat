@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import {
   giveUpQuest,
   openQuestChest,
+  pickUpQuestLoot,
   returnFromQuest,
   startSeekerQuest,
   stepQuest,
@@ -44,6 +45,7 @@ export function useQuestRunActions() {
       if (!action) return Promise.resolve(false);
       if (action.kind === 'chest') return run(openQuestChest);
       if (action.kind === 'back') return run(stepQuestBack);
+      if (action.kind === 'pickup') return run(() => pickUpQuestLoot(action.hex));
       return run(() => stepQuest(action.hex satisfies IHexCoordinates));
     },
   };
