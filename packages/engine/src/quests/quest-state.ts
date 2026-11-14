@@ -16,6 +16,18 @@ const groundItemSchema = z
   .object({ hex: hexSchema, itemKey: z.string().min(1), amount: z.number().int().min(1) })
   .strict();
 
+export const chestDropSchema = z
+  .array(
+    z
+      .object({
+        itemKey: z.string().min(1),
+        amount: z.number().int().min(1),
+        guaranteed: z.boolean(),
+      })
+      .strict(),
+  )
+  .min(1);
+
 export const collectSchema = z
   .object({
     hero: hexSchema,
@@ -25,7 +37,14 @@ export const collectSchema = z
   .strict();
 export type QuestCollect = z.infer<typeof collectSchema>;
 
-export const SEEKER_OUTCOMES = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'] as const;
+export const SEEKER_OUTCOMES = [
+  'treasure',
+  'ambushWon',
+  'defeat',
+  'stranded',
+  'left',
+  'lost',
+] as const;
 export type SeekerOutcome = (typeof SEEKER_OUTCOMES)[number];
 
 export const QuestRunSchema = z
@@ -36,6 +55,7 @@ export const QuestRunSchema = z
     terms: z.array(z.number().int()).min(1),
     trail: z.array(hexSchema).min(1),
     chestHex: hexSchema,
+    chestLootTableId: z.string().min(1).optional(),
     start: hexSchema,
     stepCost: z.number().int().min(1),
     backMultiplier: z.number().int().min(1),
@@ -63,11 +83,12 @@ export const QuestRunSchema = z
         hex: hexSchema,
         kind: z.enum(['real', 'lure']),
         appearedAtStep: z.number().int().nonnegative(),
+        drop: chestDropSchema.optional(),
       })
       .strict()
       .nullable(),
     collect: collectSchema.nullable().default(null),
-    phase: z.enum(['walking', 'collect', 'ambush', 'ended']),
+    phase: z.enum(['walking', 'collect', 'ambush', 'lost', 'ended']),
     outcome: z.enum(SEEKER_OUTCOMES).nullable(),
   })
   .strict();

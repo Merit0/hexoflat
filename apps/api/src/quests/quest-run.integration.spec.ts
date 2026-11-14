@@ -4,7 +4,7 @@ import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { eq } from 'drizzle-orm';
 import { itemLedger } from '../db/schema';
 import { ensureExpedition, readServerDocument } from '../expedition/expedition-store';
@@ -215,6 +215,60 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
 
     const again = await send(userId, heroId, 'QUEST_PICKUP', { hex: item.hex });
     expect(again).toMatchObject({ result: 'rejected', code: 'NO_LOOT_THERE' });
+  });
+
+  it('REQ-QST-038 keeps the chest drop out of the projection and the answer at the real chest', async () => {
+    const { userId, heroId } = await atRealChest();
+    const snapshot = await quests.snapshot(userId, heroId);
+    expect(snapshot.quest!.chest).toMatchObject({ empty: false });
+    expect(Object.keys(snapshot.quest!.chest!).sort()).toEqual(['empty', 'hex']);
+    expect(JSON.stringify(snapshot)).not.toMatch(/drop|sword|guaranteed|seed|chest-loot|lure/i);
+  });
+
+  async function runDoc(userId: string, heroId: string) {
+    const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+    return parseQuestRunDoc((await readServerDocument(kit.db, expeditionId, 'srv-quest'))!).run;
+  }
+
+  async function walkIntoLostTreasure(userId: string, heroId: string) {
+    let run = await runDoc(userId, heroId);
+    const trailKeys = new Set(run.trail.map(coordinateKey));
+    const position = (r: typeof run) =>
+      r.path.length > 0 ? r.path[r.path.length - 1].hex : r.start;
+    const decoy = getHexNeighbors(position(run)).find(
+      (hex) => coordinateKey(hex) in run.revealed && !trailKeys.has(coordinateKey(hex)),
+    )!;
+    await send(userId, heroId, 'QUEST_STEP', { hex: decoy });
+    for (let guard = 0; guard < 14; guard += 1) {
+      run = await runDoc(userId, heroId);
+      if (run.phase !== 'walking') break;
+      const line = run.lines[run.lines.length - 1];
+      const next = line.values[run.path.length + 1 - line.fromStep];
+      const hex = getHexNeighbors(position(run)).find(
+        (candidate) => run.revealed[coordinateKey(candidate)]?.number === next,
+      );
+      if (!hex) break;
+      await send(userId, heroId, 'QUEST_STEP', { hex });
+    }
+    return runDoc(userId, heroId);
+  }
+
+  it('REQ-QST-036 a false trail ends in a lost treasure: no chest in the answer, restore keeps the state, leaving frees the slot', async () => {
+    const { userId, heroId } = await heroAt(NEAR);
+    await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
+    const run = await walkIntoLostTreasure(userId, heroId);
+    expect(run.phase).toBe('lost');
+    const snapshot = await quests.snapshot(userId, heroId);
+    expect(snapshot.quest).toMatchObject({ phase: 'lost', chest: null });
+    expect(JSON.stringify(snapshot)).not.toMatch(/drop|seed|chest-loot|lure|trail/i);
+    expect((await send(userId, heroId, 'QUEST_OPEN_CHEST')).result).toBe('rejected');
+    const left = await send(userId, heroId, 'QUEST_GIVE_UP');
+    expect(left.result).toBe('applied');
+    expect(left.quest).toBeNull();
+    const after = await stateOf(userId, heroId);
+    expect(after.quests.active).toEqual([]);
+    expect(after.quests.done['seeker-1']).toBeUndefined();
+    expect(after.presence).toMatchObject({ locationKey: 'camping' });
   });
 
   it('REQ-QST-018 a repeated OPEN commandId gives one loot set, and two fresh ids at once give one success', async () => {

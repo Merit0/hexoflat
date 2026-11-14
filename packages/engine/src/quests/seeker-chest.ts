@@ -3,7 +3,13 @@ import type { DomainEvent } from '../commands/types';
 import { lootTableOf } from '../content/loot-tables.content';
 import { grantToDraft, type IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
-import { lootStreamLabel, planLootSpread, rollLoot, type LootNeighbour } from '../loot';
+import {
+  lootStreamLabel,
+  planLootSpread,
+  rollLoot,
+  type LootDrop,
+  type LootNeighbour,
+} from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import {
@@ -22,6 +28,19 @@ import { reject, type SeekerResult } from './seeker-result';
 export interface QuestChestContext {
   inventory: InventoryState | undefined;
   tableId: string | undefined;
+}
+
+export function generateChestDrop(input: {
+  seed: string;
+  chestHex: IHexCoordinates;
+  tableId: string | undefined;
+}): LootDrop[] {
+  const table = lootTableOf(input.tableId);
+  if (!table) return [];
+  return rollLoot(
+    table,
+    deriveStream(input.seed, lootStreamLabel(input.seed, coordinateKey(input.chestHex))),
+  );
 }
 
 function sameHex(a: IHexCoordinates, b: IHexCoordinates): boolean {
@@ -59,13 +78,9 @@ function openRealChest(
   const chest = source.chest!;
   const entry = positionOf(source);
   const target = offsetToAxial(chest.hex);
-  const table = lootTableOf(context.tableId);
-  const drops = table
-    ? rollLoot(
-        table,
-        deriveStream(source.seed, lootStreamLabel(source.seed, coordinateKey(chest.hex))),
-      )
-    : [];
+  const drops =
+    chest.drop?.map((entry) => ({ ...entry, itemKey: entry.itemKey as THexobjectKey })) ??
+    generateChestDrop({ seed: source.seed, chestHex: chest.hex, tableId: context.tableId });
   const draft: IInventoryDraft = { current: context.inventory, events: [] };
   const spread = planLootSpread({
     target,

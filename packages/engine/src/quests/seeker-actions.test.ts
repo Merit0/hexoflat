@@ -64,7 +64,7 @@ describe('REQ-QST-007 every open ring holds exactly one hex with the next term',
         getHexNeighbors(positionOf(run)).some((hex) => coordinateKey(hex) === k),
       );
       const hits = ring.filter(([, entry]) => entry.number === next);
-      if (run.chest) continue;
+      if (run.chest || run.phase === 'lost') continue;
       expect(hits.length).toBe(1);
       expect(trailKeys.has(hits[0][0])).toBe(false);
       expect(ringOf(run).length).toBeGreaterThan(0);
@@ -240,6 +240,8 @@ describe('REQ-QST-013 stepping back', () => {
   });
 });
 
+const AMBUSH = { ambushEnabled: true };
+
 describe('REQ-QST-014 the chest', () => {
   it('appears on step L of the true trail and of a false one with the same event', () => {
     const state = startQuest('seeker-1', 'seed-h');
@@ -248,7 +250,7 @@ describe('REQ-QST-014 the chest', () => {
     const realEvent = real.events.find((event) => event.type === 'CHEST_APPEARED')!;
 
     let { progress, run } = must(
-      seekerStep(state.progress, state.run, decoyHexAround(state.run), state.board),
+      seekerStep(state.progress, state.run, decoyHexAround(state.run), state.board, AMBUSH),
     );
     let guard = 0;
     while (!run.chest && guard < 12) {
@@ -260,7 +262,7 @@ describe('REQ-QST-014 the chest', () => {
           coordinateKey(candidate) in run.revealed,
       );
       if (!hex) break;
-      ({ progress, run } = must(seekerStep(progress, run, hex, state.board)));
+      ({ progress, run } = must(seekerStep(progress, run, hex, state.board, AMBUSH)));
       guard += 1;
     }
     expect(run.chest).toMatchObject({ kind: 'lure' });

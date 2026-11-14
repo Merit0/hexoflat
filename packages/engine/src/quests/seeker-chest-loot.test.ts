@@ -210,11 +210,15 @@ describe('REQ-QST-028 a chest with no free place', () => {
     const c = crowded('seeker-3-chest-loot');
     const result = must(open(c));
     expect(result.run.collect!.ground).toEqual([]);
-    const coins = result.inventory!.bag.reduce(
-      (sum, item) => (item?.key === HEXOBJECT_KEYS.COINS ? sum + item.amount : sum),
-      0,
+    const kept = result.inventory!.bag.flatMap((item) => (item ? [item.key] : [])).sort();
+    expect(kept).toEqual(
+      [
+        HEXOBJECT_KEYS.SWORD,
+        HEXOBJECT_KEYS.SHIELD,
+        HEXOBJECT_KEYS.HEALTH_BOTTLE,
+        HEXOBJECT_KEYS.MANA_BOTTLE,
+      ].sort(),
     );
-    expect(coins).toBeGreaterThanOrEqual(15);
     expect(result.events.some((event) => event.type === 'ITEM_GRANTED')).toBe(true);
   });
 
@@ -226,8 +230,10 @@ describe('REQ-QST-028 a chest with no free place', () => {
     expect(first.events[0]).toEqual(second.events[0]);
   });
 
-  it('answers NO_ROOM_FOR_LOOT when nothing is guaranteed', () => {
-    expect(open(crowded('seeker-1-chest-loot'))).toMatchObject({
+  it('answers NO_ROOM_FOR_LOOT when nothing is guaranteed (a chest from before the stored drop)', () => {
+    const c = crowded('cave-chest-loot');
+    c.run = { ...c.run, chest: { ...c.run.chest!, drop: undefined } };
+    expect(open(c)).toMatchObject({
       ok: false,
       reason: 'NO_ROOM_FOR_LOOT',
     });

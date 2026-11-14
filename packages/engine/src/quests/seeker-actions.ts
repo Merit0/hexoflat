@@ -16,7 +16,8 @@ import {
 import { generateSequence } from './sequences/generate';
 import { RULES, continueFrom, type RuleRegistry } from './sequences/rules';
 import { generateTrail } from './trail';
-import { seekerCollectStep } from './seeker-chest';
+import { generateChestDrop, seekerCollectStep } from './seeker-chest';
+import { SEEKER_RULES } from './seeker-content';
 import { reject, type SeekerResult } from './seeker-result';
 
 export { seekerOpenChest, seekerPickup } from './seeker-chest';
@@ -24,6 +25,7 @@ export { SEEKER_REFUSALS, type SeekerRefusal, type SeekerResult } from './seeker
 
 export interface SeekerOptions {
   registry?: RuleRegistry;
+  ambushEnabled?: boolean;
 }
 
 function revealedEvent(heroId: string, offerId: string, hexes: RevealedHex[]): DomainEvent {
@@ -90,6 +92,7 @@ export function enterQuest(
     terms: sequence.terms,
     trail: trail.trail,
     chestHex: trail.chestHex,
+    chestLootTableId: params.chestLootTableId,
     start: input.start,
     stepCost: params.stepCost,
     backMultiplier: params.backMultiplier,
@@ -161,7 +164,7 @@ function strandedCheck(
   progress: ProgressState,
   run: QuestRun,
 ): { progress: ProgressState; events: DomainEvent[] } | null {
-  if (run.chest || progress.knowledge.current >= run.stepCost) return null;
+  if (run.chest || run.phase === 'lost' || progress.knowledge.current >= run.stepCost) return null;
   return finish(progress, run, 'stranded', 'STRANDED');
 }
 
@@ -182,12 +185,35 @@ function placeLure(run: QuestRun, board: SeekerBoard): IHexCoordinates | null {
   return options[Math.floor(random() * options.length)];
 }
 
-function showChest(run: QuestRun, board: SeekerBoard, events: DomainEvent[], heroId: string): void {
+function showChest(
+  run: QuestRun,
+  board: SeekerBoard,
+  events: DomainEvent[],
+  heroId: string,
+  ambushEnabled: boolean,
+): void {
   if (run.path.length < run.terms.length && run.lines.length === 0) return;
   const real = run.lines.length === 0;
+  if (!real && !ambushEnabled) {
+    run.phase = 'lost';
+    events.push({
+      type: 'QUEST_LOST',
+      payload: { heroId, questId: run.offerId, reason: 'TREASURE_LOST' },
+    });
+    return;
+  }
   const hex = real ? run.chestHex : placeLure(run, board);
   if (!hex) return;
   run.chest = { hex, kind: real ? 'real' : 'lure', appearedAtStep: run.path.length };
+  if (real && run.chestLootTableId) {
+    const drop = generateChestDrop({
+      seed: run.seed,
+      chestHex: hex,
+      tableId: run.chestLootTableId,
+    });
+    if (drop.length === 0) throw new Error(`CHEST_DROP_EMPTY:${run.chestLootTableId}`);
+    run.chest.drop = drop;
+  }
   events.push({ type: 'CHEST_APPEARED', payload: { heroId, questId: run.offerId, hex } });
 }
 
@@ -251,7 +277,8 @@ export function seekerStep(
   mergeRevealed(run, ring.hexes);
   events.push(revealedEvent(heroId, run.offerId, ring.hexes));
   const falseDeadEnd = run.lines.length > 0 && position < run.terms.length && !ring.continuation;
-  if (falseDeadEnd || position >= run.terms.length) showChest(run, board, events, heroId);
+  if (falseDeadEnd || position >= run.terms.length)
+    showChest(run, board, events, heroId, options.ambushEnabled ?? SEEKER_RULES.ambushEnabled);
   const stranded = strandedCheck(next, run);
   if (stranded)
     return { ok: true, progress: stranded.progress, run, events: [...events, ...stranded.events] };
@@ -323,10 +350,14 @@ export function seekerStepBack(
 }
 
 export function seekerGiveUp(progress: ProgressState, source: QuestRun): SeekerResult {
-  if (source.phase !== 'walking' && source.phase !== 'ambush') {
+  if (source.phase !== 'walking' && source.phase !== 'ambush' && source.phase !== 'lost') {
     return reject(progress, source, 'WRONG_PHASE');
   }
   const run = structuredClone(source);
+  if (run.phase === 'lost') {
+    const lost = finish(progress, run, 'lost', 'TREASURE_LOST');
+    return { ok: true, progress: lost.progress, run, events: lost.events };
+  }
   const closing = finish(progress, run, 'left', 'LEFT');
   return { ok: true, progress: closing.progress, run, events: closing.events };
 }

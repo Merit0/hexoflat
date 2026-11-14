@@ -10,6 +10,12 @@ export const SEEKER_1_CHEST_TABLE_ID = 'seeker-1-chest-loot';
 export const SEEKER_2_CHEST_TABLE_ID = 'seeker-2-chest-loot';
 export const SEEKER_3_CHEST_TABLE_ID = 'seeker-3-chest-loot';
 
+export const SEEKER_CHEST_TABLE_IDS: readonly string[] = [
+  SEEKER_1_CHEST_TABLE_ID,
+  SEEKER_2_CHEST_TABLE_ID,
+  SEEKER_3_CHEST_TABLE_ID,
+];
+
 export const LOOT_ECONOMY_TARGET = {
   gearKey: HEXOBJECT_KEYS.SWORD,
   runsMin: 2,
@@ -29,36 +35,25 @@ const CAVE_CHEST: LootTable = {
   ],
 };
 
-const SEEKER_1_CHEST: LootTable = {
-  id: SEEKER_1_CHEST_TABLE_ID,
-  rolls: [1, 2],
-  entries: [
-    { itemKey: HEXOBJECT_KEYS.COINS, weight: 5, amount: [5, 12] },
-    { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 2, amount: [1, 1] },
-  ],
-};
+const SEEKER_PROVISIONAL_GUARANTEED: LootTable['guaranteed'] = [
+  { itemKey: HEXOBJECT_KEYS.SWORD, amount: [1, 1] },
+  { itemKey: HEXOBJECT_KEYS.SHIELD, amount: [1, 1] },
+  { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, amount: [1, 1] },
+  { itemKey: HEXOBJECT_KEYS.MANA_BOTTLE, amount: [1, 1] },
+];
 
-const SEEKER_2_CHEST: LootTable = {
-  id: SEEKER_2_CHEST_TABLE_ID,
-  rolls: [2, 3],
-  entries: [
-    { itemKey: HEXOBJECT_KEYS.COINS, weight: 6, amount: [8, 20] },
-    { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 3, amount: [1, 1] },
-    { itemKey: HEXOBJECT_KEYS.BONE_CHARM, weight: 1, amount: [1, 1] },
-  ],
-};
+function seekerChestTable(id: string): LootTable {
+  return {
+    id,
+    rolls: [0, 0],
+    guaranteed: SEEKER_PROVISIONAL_GUARANTEED?.map((entry) => ({ ...entry })),
+    entries: [],
+  };
+}
 
-const SEEKER_3_CHEST: LootTable = {
-  id: SEEKER_3_CHEST_TABLE_ID,
-  rolls: [3, 4],
-  guaranteed: [{ itemKey: HEXOBJECT_KEYS.COINS, amount: [15, 25] }],
-  entries: [
-    { itemKey: HEXOBJECT_KEYS.COINS, weight: 4, amount: [10, 25] },
-    { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 3, amount: [1, 2] },
-    { itemKey: HEXOBJECT_KEYS.SHIELD, weight: 1, amount: [1, 1] },
-    { itemKey: HEXOBJECT_KEYS.AXE, weight: 1, amount: [1, 1] },
-  ],
-};
+const SEEKER_1_CHEST = seekerChestTable(SEEKER_1_CHEST_TABLE_ID);
+const SEEKER_2_CHEST = seekerChestTable(SEEKER_2_CHEST_TABLE_ID);
+const SEEKER_3_CHEST = seekerChestTable(SEEKER_3_CHEST_TABLE_ID);
 
 const SKELETON_WARRIOR: LootTable = {
   id: SKELETON_WARRIOR_TABLE_ID,

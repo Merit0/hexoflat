@@ -14,6 +14,7 @@ import {
   CAVE_CHEST_TABLE_ID,
   LOOT_ECONOMY_TARGET,
   LOOT_TABLES,
+  SEEKER_CHEST_TABLE_IDS,
   SKELETON_KING_TABLE_ID,
   lootTableOf,
 } from './loot-tables.content';
@@ -38,9 +39,11 @@ const ROLLS = 10_000;
 const MAX_DISCOUNT = Math.max(...(TRADERS.ilva.discounts?.percents ?? [0]));
 const ITEMS_IN_TABLES = [
   ...new Set(
-    Object.values(LOOT_TABLES).flatMap((table) =>
-      [...(table.guaranteed ?? []), ...table.entries].map((entry) => entry.itemKey),
-    ),
+    Object.values(LOOT_TABLES)
+      .filter((table) => !SEEKER_CHEST_TABLE_IDS.includes(table.id))
+      .flatMap((table) =>
+        [...(table.guaranteed ?? []), ...table.entries].map((entry) => entry.itemKey),
+      ),
   ),
 ];
 
@@ -122,7 +125,7 @@ describe('REQ-LOOT-103 loot content is validated at load', () => {
 });
 
 describe('REQ-LOOT-104 the tables hold what the plan says', () => {
-  it('keeps energy and mana bottles out of every table', () => {
+  it('keeps energy and mana bottles out of every creature and cave chest table', () => {
     expect(ITEMS_IN_TABLES).not.toContain(HEXOBJECT_KEYS.ENERGY_BOTTLE);
     expect(ITEMS_IN_TABLES).not.toContain(HEXOBJECT_KEYS.MANA_BOTTLE);
   });
@@ -166,9 +169,10 @@ describe('REQ-LOOT-104 the tables hold what the plan says', () => {
         neighbours,
         drops: [rollLoot(boss, deriveStream(`boxed-${i}`, 'boss'))],
       });
-      expect(result.kind).toBe('to-bag');
-      if (result.kind !== 'to-bag') continue;
-      expect(result.drops.map((drop) => drop.itemKey).sort()).toEqual(
+      expect(result.kind).toBe('placed');
+      if (result.kind !== 'placed') continue;
+      expect(result.placements).toEqual([]);
+      expect(result.toBag.map((drop) => drop.itemKey).sort()).toEqual(
         [HEXOBJECT_KEYS.COINS, HEXOBJECT_KEYS.CROWN_SHARD].sort(),
       );
     }

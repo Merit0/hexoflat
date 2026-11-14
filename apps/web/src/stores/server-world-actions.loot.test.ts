@@ -177,6 +177,28 @@ describe('a chest answer reaches the client state', () => {
     expect(lootFlightRequest.value!.flights.every((flight) => flight.to === null)).toBe(true);
   });
 
+  it('REQ-LOOT-114 an answer with both placed and toBag updates the map and flies the rest to the bag', () => {
+    const { server, client, entry, chest } = chestScene();
+    const result = resultOf(actWorld(runOn(server), action(chest, EHexActionType.OPEN)));
+    const opened = result.events.find((event) => event.type === 'CHEST_OPENED')!;
+    const payload = opened.payload as {
+      placed: { coordinates: IHexCoordinates; itemKey: string }[];
+      toBag: { itemKey: string; amount: number }[];
+    };
+    payload.toBag = [{ itemKey: 'crown-shard', amount: 1 }];
+    const hero = heroAt(entry);
+
+    applyWorldResultAction(hostOf(client.map).host, hero, result);
+
+    expect(hero.heroCoordinates).toEqual(chest);
+    for (const item of payload.placed) {
+      expect(tileAt(client, item.coordinates).hexobject?.hexobjectKey).toBe(item.itemKey);
+    }
+    const flights = lootFlightRequest.value!.flights;
+    expect(flights.filter((flight) => flight.to !== null)).toHaveLength(payload.placed.length);
+    expect(flights.filter((flight) => flight.to === null)).toHaveLength(1);
+  });
+
   it('a replayed answer refetches the world exactly once and applies nothing else', () => {
     const { client, entry, chest } = chestScene();
     const { host, refetchWorld, markTilesDirty } = hostOf(client.map);

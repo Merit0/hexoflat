@@ -94,7 +94,7 @@ describe('placeLoot', () => {
       neighbours,
       drops: [[drop(SHARD, 1, true), drop(POTION, 1), drop(CHARM, 1)]],
     });
-    expect(result).toEqual({ kind: 'to-bag', drops: [drop(SHARD, 1, true)] });
+    expect(result).toEqual({ kind: 'placed', placements: [], toBag: [drop(SHARD, 1, true)] });
   });
 
   it('REQ-LOOT-014 zero free with two guaranteed entries: both go to the bag', () => {
@@ -104,8 +104,9 @@ describe('placeLoot', () => {
       drops: [[drop(COINS, 12, true), drop(SHARD, 1, true), drop(POTION, 1)]],
     });
     expect(result).toEqual({
-      kind: 'to-bag',
-      drops: [drop(COINS, 12, true), drop(SHARD, 1, true)],
+      kind: 'placed',
+      placements: [],
+      toBag: [drop(COINS, 12, true), drop(SHARD, 1, true)],
     });
   });
 });
