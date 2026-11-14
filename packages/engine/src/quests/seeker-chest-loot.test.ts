@@ -132,7 +132,7 @@ describe('REQ-QST-026 every refusal leaves the state as it was', () => {
     const noChest = structuredClone(end.run);
     noChest.chest = null;
     cases.push([
-      'NO_CHEST',
+      'CONTAINER_EMPTY',
       openChestOf(state, { progress: end.progress, run: noChest }, inventory),
     ]);
     const far = structuredClone(end.run);
@@ -171,7 +171,7 @@ describe('REQ-QST-026 every refusal leaves the state as it was', () => {
     expect(openChestOf(state, { progress: away.progress, run: away.run }, inventory)).toMatchObject(
       {
         ok: false,
-        reason: 'CHEST_EMPTY',
+        reason: 'CONTAINER_EMPTY',
       },
     );
   });

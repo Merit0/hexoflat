@@ -168,9 +168,9 @@ describe('CH-P0 payload snapshots: quest chest', () => {
     const seeker3 = { inventory: inventoryWith({}), tableId: 'seeker-3-chest-loot' };
     expect({
       STANDING_ON_TARGET: openChestOf(state, opened).events,
-      CHEST_EMPTY: openChestOf(state, away).events,
+      CONTAINER_EMPTY_EXAMINED: openChestOf(state, away).events,
       WRONG_PHASE: openChestOf(state, { progress: end.progress, run: ended }).events,
-      NO_CHEST: openChestOf(state, { progress: end.progress, run: noChest }).events,
+      CONTAINER_EMPTY_NO_CHEST: openChestOf(state, { progress: end.progress, run: noChest }).events,
       NOT_ADJACENT: openChestOf(state, { progress: end.progress, run: far }).events,
       NO_INVENTORY: seekerOpenChest(end.progress, end.run, state.board, {
         inventory: undefined,
@@ -199,8 +199,12 @@ describe('CH-P0 payload snapshots: quest chest', () => {
       ).events,
       WRONG_PHASE: seekerPickup(end.progress, end.run, ground[0].hex, inventoryWith({})).events,
       NO_INVENTORY: seekerPickup(opened.progress, opened.run, ground[0].hex, undefined).events,
-      NOT_ADJACENT: seekerPickup(opened.progress, opened.run, state.run.start, inventoryWith({}))
-        .events,
+      NO_LOOT_THERE_FAR: seekerPickup(
+        opened.progress,
+        opened.run,
+        state.run.start,
+        inventoryWith({}),
+      ).events,
       BAG_FULL: seekerPickup(opened.progress, opened.run, ground[0].hex, fullBag()).events,
     }).toMatchSnapshot();
   });

@@ -260,12 +260,22 @@ exports[`CH-P0 payload snapshots: quest chest > every refusal: the QUEST_REJECTE
       "type": "QUEST_REJECTED",
     },
   ],
-  "CHEST_EMPTY": [
+  "CONTAINER_EMPTY_EXAMINED": [
     {
       "payload": {
         "heroId": "hero-1",
         "questId": "seeker-1",
-        "reason": "CHEST_EMPTY",
+        "reason": "CONTAINER_EMPTY",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "CONTAINER_EMPTY_NO_CHEST": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "CONTAINER_EMPTY",
       },
       "type": "QUEST_REJECTED",
     },
@@ -276,16 +286,6 @@ exports[`CH-P0 payload snapshots: quest chest > every refusal: the QUEST_REJECTE
         "heroId": "hero-1",
         "questId": "seeker-1",
         "reason": "NOT_ADJACENT",
-      },
-      "type": "QUEST_REJECTED",
-    },
-  ],
-  "NO_CHEST": [
-    {
-      "payload": {
-        "heroId": "hero-1",
-        "questId": "seeker-1",
-        "reason": "NO_CHEST",
       },
       "type": "QUEST_REJECTED",
     },
@@ -400,22 +400,22 @@ exports[`CH-P0 payload snapshots: quest chest > the pickup event and its refusal
       "type": "QUEST_REJECTED",
     },
   ],
-  "NOT_ADJACENT": [
-    {
-      "payload": {
-        "heroId": "hero-1",
-        "questId": "seeker-1",
-        "reason": "NOT_ADJACENT",
-      },
-      "type": "QUEST_REJECTED",
-    },
-  ],
   "NO_INVENTORY": [
     {
       "payload": {
         "heroId": "hero-1",
         "questId": "seeker-1",
         "reason": "NO_INVENTORY",
+      },
+      "type": "QUEST_REJECTED",
+    },
+  ],
+  "NO_LOOT_THERE_FAR": [
+    {
+      "payload": {
+        "heroId": "hero-1",
+        "questId": "seeker-1",
+        "reason": "NO_LOOT_THERE",
       },
       "type": "QUEST_REJECTED",
     },

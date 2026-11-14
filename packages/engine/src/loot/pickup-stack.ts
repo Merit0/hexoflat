@@ -8,7 +8,6 @@ export interface StackPickupInput<S extends { itemKey: string; amount: number }>
   stacks: readonly S[];
   isTarget: (stack: S) => boolean;
   adjacent: boolean;
-  order: 'stack-first' | 'adjacent-first';
   bag: IInventoryDraft;
 }
 
@@ -19,9 +18,6 @@ export function pickupStack<S extends { itemKey: string; amount: number }>(
   input: StackPickupInput<S>,
 ): StackPickupResult<S> {
   const stack = input.stacks.find(input.isTarget);
-  if (input.order === 'adjacent-first' && !input.adjacent) {
-    return { ok: false, reason: 'NOT_ADJACENT' };
-  }
   if (!stack) return { ok: false, reason: 'NO_LOOT_THERE' };
   if (!input.adjacent) return { ok: false, reason: 'NOT_ADJACENT' };
   const drop = { itemKey: stack.itemKey as THexobjectKey, amount: stack.amount, guaranteed: false };

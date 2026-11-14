@@ -23,7 +23,7 @@ function opened(seed = 'golden-4') {
 }
 
 describe('CH-P0 quest chest: check order (matrix row 1)', () => {
-  it('an already opened chest beats the phase check: on the chest = STANDING_ON_TARGET, away = CHEST_EMPTY', () => {
+  it('an already opened chest beats the phase check: on the chest = STANDING_ON_TARGET, away = CONTAINER_EMPTY', () => {
     const { state, end, result } = opened();
     const onChest = { progress: result.progress, run: result.run };
     expect(openChestOf(state, onChest)).toMatchObject({ reason: 'STANDING_ON_TARGET' });
@@ -37,10 +37,10 @@ describe('CH-P0 quest chest: check order (matrix row 1)', () => {
         state.board,
       ),
     );
-    expect(openChestOf(state, away)).toMatchObject({ reason: 'CHEST_EMPTY' });
+    expect(openChestOf(state, away)).toMatchObject({ reason: 'CONTAINER_EMPTY' });
   });
 
-  it('the phase check comes before "no chest", and "no chest" before "not adjacent"', () => {
+  it('the phase check comes before "no chest" (now CONTAINER_EMPTY), and "no chest" before "not adjacent"', () => {
     const { state, end } = atChest('order-a');
     const wrongPhaseNoChest = structuredClone(end.run);
     wrongPhaseNoChest.phase = 'ended';
@@ -51,7 +51,7 @@ describe('CH-P0 quest chest: check order (matrix row 1)', () => {
     const noChest = structuredClone(end.run);
     noChest.chest = null;
     expect(openChestOf(state, { progress: end.progress, run: noChest })).toMatchObject({
-      reason: 'NO_CHEST',
+      reason: 'CONTAINER_EMPTY',
     });
     const far = structuredClone(end.run);
     far.chest = { ...far.chest!, hex: state.run.start };
@@ -60,13 +60,16 @@ describe('CH-P0 quest chest: check order (matrix row 1)', () => {
     });
   });
 
-  it('"not adjacent" comes before NO_INVENTORY; NO_INVENTORY comes before the room and bag checks', () => {
+  it('NO_INVENTORY (a precondition) comes before "not adjacent"; "not adjacent" comes before the room and bag checks', () => {
     const { state, end } = atChest('order-b');
     const far = structuredClone(end.run);
     far.chest = { ...far.chest!, hex: state.run.start };
     expect(
       seekerOpenChest(end.progress, far, state.board, { inventory: undefined, tableId: TABLE }),
-    ).toMatchObject({ reason: 'NOT_ADJACENT' });
+    ).toMatchObject({ reason: 'NO_INVENTORY' });
+    expect(openChestOf(state, { progress: end.progress, run: far })).toMatchObject({
+      reason: 'NOT_ADJACENT',
+    });
     expect(
       seekerOpenChest(end.progress, end.run, state.board, { inventory: undefined, tableId: TABLE }),
     ).toMatchObject({ reason: 'NO_INVENTORY' });
@@ -81,7 +84,11 @@ describe('CH-P0 quest chest: check order (matrix row 1)', () => {
     expect(refused.events).toEqual([
       {
         type: 'QUEST_REJECTED',
-        payload: { heroId: end.progress.knowledge.heroId, questId: 'seeker-1', reason: 'NO_CHEST' },
+        payload: {
+          heroId: end.progress.knowledge.heroId,
+          questId: 'seeker-1',
+          reason: 'CONTAINER_EMPTY',
+        },
       },
     ]);
   });
@@ -156,7 +163,7 @@ describe('CH-P0 quest chest: empty roll and empty state', () => {
 });
 
 describe('CH-P0 quest chest: pickup order differs from the grave', () => {
-  it('WRONG_PHASE, then NO_INVENTORY, then NOT_ADJACENT, then NO_LOOT_THERE, then BAG_FULL', () => {
+  it('WRONG_PHASE, then NO_INVENTORY, then NO_LOOT_THERE, then NOT_ADJACENT, then BAG_FULL', () => {
     const { state, end, result } = opened('pickup-order');
     const ground = result.run.collect!.ground;
     const near = ground[0].hex;
@@ -169,6 +176,11 @@ describe('CH-P0 quest chest: pickup order differs from the grave', () => {
       reason: 'NO_INVENTORY',
     });
     expect(seekerPickup(result.progress, result.run, farHex, inventoryWith({}))).toMatchObject({
+      reason: 'NO_LOOT_THERE',
+    });
+    const farStack = structuredClone(result.run);
+    farStack.collect!.ground.push({ hex: farHex, itemKey: ground[0].itemKey, amount: 1 });
+    expect(seekerPickup(result.progress, farStack, farHex, inventoryWith({}))).toMatchObject({
       reason: 'NOT_ADJACENT',
     });
     const empty = getHexNeighbors(result.run.collect!.hero).find(

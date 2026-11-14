@@ -80,7 +80,6 @@ export function pickupLoot(
     stacks: collect.items,
     isTarget: (item) => sameHex(item.hex, hex),
     adjacent: isAdjacentHex(actor.pos, hex),
-    order: 'stack-first',
     bag: ctx.inventory ?? noInventory(),
   });
   if (!picked.ok) return reject(picked.reason);

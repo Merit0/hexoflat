@@ -115,7 +115,7 @@ describe('CH-P0 double conditions, quest chest: today the winner is', () => {
     expect(openChestOf(state, opened)).toMatchObject({ reason: 'STANDING_ON_TARGET' });
   });
 
-  it('empty AND not adjacent -> CHEST_EMPTY', () => {
+  it('empty AND not adjacent -> CONTAINER_EMPTY', () => {
     const { state, end } = atChest();
     const opened = must(openChestOf(state, end));
     const away = must(
@@ -127,7 +127,7 @@ describe('CH-P0 double conditions, quest chest: today the winner is', () => {
       ),
     );
     expect(hexDistance(positionOf(away.run), end.run.chest!.hex)).toBe(1);
-    expect(openChestOf(state, away)).toMatchObject({ reason: 'CHEST_EMPTY' });
+    expect(openChestOf(state, away)).toMatchObject({ reason: 'CONTAINER_EMPTY' });
   });
 
   it('not adjacent AND no room -> NOT_ADJACENT', () => {

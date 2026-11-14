@@ -109,6 +109,7 @@ describe('quest refusals reuse the loot texts', () => {
   const reasons = [
     'STANDING_ON_TARGET',
     'CHEST_EMPTY',
+    'CONTAINER_EMPTY',
     'NO_ROOM_FOR_LOOT',
     'BAG_FULL',
     'NOT_ADJACENT',
@@ -128,7 +129,9 @@ describe('quest refusals reuse the loot texts', () => {
 
   it('uses the loot.reject keys for the loot reasons', () => {
     i18n.global.locale.value = 'en';
-    expect(questRefusalText('CHEST_EMPTY')).toBe(String(getByPath(en, 'loot.reject.CHEST_EMPTY')));
+    expect(questRefusalText('CONTAINER_EMPTY')).toBe(
+      String(getByPath(en, 'loot.reject.CONTAINER_EMPTY')),
+    );
     expect(questRefusalText('STANDING_ON_TARGET')).toBe(
       String(getByPath(en, 'loot.reject.STANDING_ON_TARGET')),
     );

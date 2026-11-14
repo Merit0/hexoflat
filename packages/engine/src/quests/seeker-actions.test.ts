@@ -295,7 +295,7 @@ describe('REQ-QST-014 the chest', () => {
 
   it('refuses OPEN without a chest and away from it', () => {
     const state = startQuest('seeker-1', 'seed-h');
-    expect(openChestOf(state, state)).toMatchObject({ reason: 'NO_CHEST' });
+    expect(openChestOf(state, state)).toMatchObject({ reason: 'CONTAINER_EMPTY' });
     const end = followTruth(state, 10);
     const far = structuredClone(end.run);
     far.chest = { ...far.chest!, hex: state.run.start };
