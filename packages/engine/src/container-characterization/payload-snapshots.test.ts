@@ -178,7 +178,7 @@ describe('CH-P0 payload snapshots: quest chest', () => {
       }).events,
       NO_ROOM_FOR_LOOT: seekerOpenChest(
         end.progress,
-        { ...end.run, chest: { ...end.run.chest!, drop: undefined } },
+        { ...end.run, chest: { ...end.run.chest!, drop: undefined, container: undefined } },
         crowdedBoard,
         { inventory: inventoryWith({}), tableId: 'cave-chest-loot' },
       ).events,

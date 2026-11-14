@@ -1,4 +1,6 @@
 import { expect } from 'vitest';
+import { createContainer } from '../containers';
+import { lootTableOf } from '../content/loot-tables.content';
 import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import { emptyInventoryState, type InventoryState } from '../inventory/inventory-state';
@@ -114,4 +116,18 @@ export function expectRefused(
   expect(JSON.stringify(result.inventory)).toBe(bag);
   expect(result.events.filter((event) => event.type.startsWith('ITEM_'))).toEqual([]);
   expect(creatureById(result.battle, 'hero')!.pos).toEqual(creatureById(state, 'hero')!.pos);
+}
+
+export function setGraveTables(state: BattleState, index: number, tables: string[]): void {
+  const grave = state.collect!.graves[index];
+  grave.tables = tables;
+  grave.container = createContainer({
+    id: `${grave.hex.q},${grave.hex.r}`,
+    kind: 'grave',
+    at: grave.hex,
+    tables: tables.map((id) => lootTableOf(id)),
+    seed: state.seed,
+    sourceId: state.id,
+    targetKey: `${grave.hex.q},${grave.hex.r}`,
+  });
 }

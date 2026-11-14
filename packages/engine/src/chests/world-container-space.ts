@@ -1,5 +1,10 @@
 import type { DomainEvent } from '../commands/types';
-import type { ContainerRefusal, ContainerSpace, ContainerState } from '../containers';
+import {
+  emptiedContainer,
+  type ContainerRefusal,
+  type ContainerSpace,
+  type ContainerState,
+} from '../containers';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { applySpreadPlan, offsetPlacement } from '../loot';
@@ -38,12 +43,13 @@ export function worldChestSpace(
     containerAt: (world, target): ContainerState | null => {
       const key = tileAt(world, target)?.hexobject?.hexobjectKey;
       if (key !== HEXOBJECT_KEYS.CHEST && key !== HEXOBJECT_KEYS.CHEST_OPEN) return null;
+      const stored = tileAt(world, target)?.hexobject?.container;
       return {
         id: coordinateKey(target),
         kind: 'chest',
         at: offsetToAxial(target),
-        contents: null,
-        status: key === HEXOBJECT_KEYS.CHEST ? 'full' : 'empty',
+        contents: stored?.contents ?? null,
+        status: stored?.status ?? (key === HEXOBJECT_KEYS.CHEST ? 'full' : 'empty'),
       };
     },
     neighbours: (world, container) => chestNeighbours(world.map, container.at),
@@ -56,7 +62,9 @@ export function worldChestSpace(
       const chest = axialToOffset(container.at);
       const entry = { ...hero.coordinates };
       const tile = tileAt(world, chest)!;
-      tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CHEST_OPEN, chest);
+      tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CHEST_OPEN, chest, {
+        container: emptiedContainer(outcome.container),
+      });
       if (!outcome.nothing) {
         hero.coordinates = { ...chest };
         revealAroundHero(world.map, chest);

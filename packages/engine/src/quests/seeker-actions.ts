@@ -1,9 +1,11 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
+import { createContainer } from '../containers';
+import { lootTableOf } from '../content/loot-tables.content';
 import { spendWill } from '../knowledge/will';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { deriveStream } from '../utils/random-seeded';
-import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, offsetToAxial } from '../utils/hex-utils';
 import { expectedNumber, revealRing, type RevealedHex } from './numbers';
 import type { QuestCatalogue } from './quest-definition';
 import {
@@ -16,7 +18,7 @@ import {
 import { generateSequence } from './sequences/generate';
 import { RULES, continueFrom, type RuleRegistry } from './sequences/rules';
 import { generateTrail } from './trail';
-import { generateChestDrop, seekerCollectStep } from './seeker-chest';
+import { seekerCollectStep } from './seeker-chest';
 import { SEEKER_RULES } from './seeker-content';
 import { reject, type SeekerResult } from './seeker-result';
 
@@ -206,13 +208,19 @@ function showChest(
   if (!hex) return;
   run.chest = { hex, kind: real ? 'real' : 'lure', appearedAtStep: run.path.length };
   if (real && run.chestLootTableId) {
-    const drop = generateChestDrop({
+    const container = createContainer({
+      id: coordinateKey(hex),
+      kind: 'quest-chest',
+      at: offsetToAxial(hex),
+      tables: [lootTableOf(run.chestLootTableId)],
       seed: run.seed,
-      chestHex: hex,
-      tableId: run.chestLootTableId,
+      sourceId: run.seed,
+      targetKey: coordinateKey(hex),
     });
+    const drop = container.contents?.[0] ?? [];
     if (drop.length === 0) throw new Error(`CHEST_DROP_EMPTY:${run.chestLootTableId}`);
     run.chest.drop = drop;
+    run.chest.container = container;
   }
   events.push({ type: 'CHEST_APPEARED', payload: { heroId, questId: run.offerId, hex } });
 }

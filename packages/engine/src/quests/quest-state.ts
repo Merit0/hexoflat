@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { containerStateSchema } from '../containers/container';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
 import type { SequenceRule } from './sequences/rules';
@@ -84,6 +85,7 @@ export const QuestRunSchema = z
         kind: z.enum(['real', 'lure']),
         appearedAtStep: z.number().int().nonnegative(),
         drop: chestDropSchema.optional(),
+        container: containerStateSchema.optional(),
       })
       .strict()
       .nullable(),

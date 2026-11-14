@@ -35,6 +35,10 @@ const STRUCTURAL_MARKERS = [
   '"drop"',
   '"discarded"',
   '"tables"',
+  '"contents"',
+  '"kind":"quest-chest"',
+  '"kind":"grave"',
+  '"status":"full"',
   '"rngSeed"',
 ];
 
@@ -143,6 +147,58 @@ describe.skipIf(!dbAvailable)(
       );
     });
 
+    it('CH-P6 world: a cave chest holds its contents in the server document only; the snapshot before and after OPEN shows none', async () => {
+      const { userId, heroId } = await kit.newPlayer();
+      await sendWorld(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
+      const { expeditionId, docKey, loaded } = await heldWorld(userId, heroId);
+      const stored = loaded.map.tiles.find(
+        (t) => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CHEST && t.hexobject.container,
+      )!;
+      const contents = stored.hexobject!.container!.contents!;
+      expect(contents.length).toBeGreaterThan(0);
+      expect(JSON.stringify(await readServerDocument(kit.db, expeditionId, docKey))).toContain(
+        'contents',
+      );
+      const secrets = [loaded.worldSeed, JSON.stringify(contents)];
+      expectNoSecrets('snapshot before OPEN', await world.snapshot(userId, heroId), secrets);
+      expectNoSecrets(
+        'hero snapshot before OPEN',
+        await kit.service.snapshot(userId, heroId),
+        secrets,
+      );
+      const spot = getHexNeighbors(loaded.heroCoordinates!).find((hex) => {
+        const tile = loaded.map.tiles.find(
+          (t) =>
+            t.coordinates.columnIndex === hex.columnIndex &&
+            t.coordinates.rowIndex === hex.rowIndex,
+        );
+        return !!tile && !tile.hexobject && tile.terrain === 'ground';
+      })!;
+      const next = loaded.map.tiles.find(
+        (t) =>
+          t.coordinates.columnIndex === spot.columnIndex &&
+          t.coordinates.rowIndex === spot.rowIndex,
+      )!;
+      next.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CHEST, spot, {
+        container: stored.hexobject!.container,
+      });
+      next.isRevealed = true;
+      await saveWorld(expeditionId, docKey, loaded);
+      const opened = await sendWorld(userId, heroId, 'WORLD_ACTION', {
+        coordinates: spot,
+        actionType: EHexActionTypeForTests.OPEN,
+        toolKey: HEXOBJECT_KEYS.HAND,
+      });
+      expect(opened.result).toBe('applied');
+      expectNoSecrets('OPEN answer', opened, secrets);
+      expectNoSecrets('snapshot after OPEN', await world.snapshot(userId, heroId), secrets);
+      expectNoSecrets(
+        'hero snapshot after OPEN',
+        await kit.service.snapshot(userId, heroId),
+        secrets,
+      );
+    });
+
     it('F-S1 fixed: a world snapshot no longer names the table id of a full chest', async () => {
       const { userId, heroId } = await kit.newPlayer();
       await sendWorld(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
@@ -195,6 +251,12 @@ describe.skipIf(!dbAvailable)(
     it('grave: the loot answer, the pickup answer, the battle view and the hero snapshot carry no seed, table or drop', async () => {
       const c = await wonGrave();
       const secrets = [c.seed];
+      expectNoSecrets('battle view before loot', await world.snapshot(c.userId, c.heroId), secrets);
+      expectNoSecrets(
+        'hero snapshot before loot',
+        await kit.service.snapshot(c.userId, c.heroId),
+        secrets,
+      );
       const looted = await sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', {
         kind: 'hero',
         action: { kind: 'loot-grave', hex: c.grave },
@@ -261,6 +323,9 @@ describe.skipIf(!dbAvailable)(
       const stored = (await docOf()).run.chest!.drop!;
       expect(stored.length).toBeGreaterThan(0);
       secrets.push(JSON.stringify(stored));
+      expect((await docOf()).run.chest!.container!.contents!.length).toBe(1);
+      answers.push(await quests.snapshot(userId, heroId));
+      answers.push(await kit.service.snapshot(userId, heroId));
       const opened = await sendQuest(userId, heroId, 'QUEST_OPEN_CHEST');
       expect(opened.result).toBe('applied');
       answers.push(opened);

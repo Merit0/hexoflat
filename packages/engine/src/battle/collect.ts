@@ -1,13 +1,14 @@
 import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import { pickupStack } from '../loot';
-import { openInSpace } from '../containers';
+import { createContainer, openInSpace } from '../containers';
+import { lootTableOf } from '../content/loot-tables.content';
 import { lootTableIdOfKind } from './battle-catalogue';
 import { collectActorRefusal, graveAt, graveSpace } from './grave-container-space';
 import { isAlive, isFreeHex } from './battle-board';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleHex, BattleState, CollectState, Grave } from './battle-state';
-import { isAdjacentHex, sameHex } from './hex-battle-geom';
+import { hexKey, isAdjacentHex, sameHex } from './hex-battle-geom';
 import { reject, type BattleRejection } from './battle-rejection';
 
 export { graveAt };
@@ -45,6 +46,17 @@ export function enterCollectPhase(state: BattleState): DomainEvent[] {
     const grave = graves.find((g) => sameHex(g.hex, creature.pos));
     if (grave) grave.tables.push(...tables);
     else graves.push({ hex: { ...creature.pos }, tables, examined: false });
+  }
+  for (const grave of graves) {
+    grave.container = createContainer({
+      id: hexKey(grave.hex),
+      kind: 'grave',
+      at: grave.hex,
+      tables: grave.tables.map((id) => lootTableOf(id)),
+      seed: state.seed,
+      sourceId: state.id,
+      targetKey: hexKey(grave.hex),
+    });
   }
   state.collect = { graves, items: [] };
   return [

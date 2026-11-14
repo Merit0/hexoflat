@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { CONTENT_VERSION } from '../content/content-version';
 import { initFog, revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { installCampBook } from '../knowledge/camp-book';
+import { createChestContainers } from '../chests/create-chest-containers';
 import { installCampFacilities } from './camp-facilities';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
@@ -98,6 +99,7 @@ export function createServerWorld(
     );
   }
   if (locationKey === 'camping') installCampBook(map, null);
+  createChestContainers(map, { seed: worldSeed, sourceId: mapId });
 
   const entry = findEntryHex(map, locationKey, deriveStream(worldSeed, 'world')) ?? {
     ...MAP_ORIGIN,

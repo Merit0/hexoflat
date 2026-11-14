@@ -25,8 +25,16 @@ function withoutLootTable<T extends object>(tile: T): T {
   return copy;
 }
 
+function withoutContainer<T extends object>(tile: T): T {
+  const object = (tile as { hexobject?: unknown }).hexobject as Record<string, unknown> | null;
+  if (!object || !('container' in object)) return tile;
+  const copy = structuredClone(tile);
+  delete (copy as { hexobject: Record<string, unknown> }).hexobject.container;
+  return copy;
+}
+
 export function projectTileForClient<T extends object>(tile: T): T {
-  const clean = withoutLootTable(tile);
+  const clean = withoutContainer(withoutLootTable(tile));
   const found = squadOf(clean);
   if (!found || found.creature.scouted === true || found.squad.members.length <= 1) return clean;
   const copy = structuredClone(clean);

@@ -24,7 +24,12 @@ describe('QC1 characterization: what the quest chest kept and what the loot adap
         hex: end.run.chest!.hex,
       },
     });
-    expect({ ...opened.run, phase: 'walking', collect: null }).toEqual(end.run);
+    expect({
+      ...opened.run,
+      phase: 'walking',
+      collect: null,
+      chest: end.run.chest,
+    }).toEqual(end.run);
   });
 
   it('the collect phase still refuses a step back and giving up; OPEN again is refused on the empty chest', () => {

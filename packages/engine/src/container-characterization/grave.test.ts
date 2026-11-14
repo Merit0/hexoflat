@@ -11,6 +11,7 @@ import {
   king,
   lootAt,
   pickAt,
+  setGraveTables,
   play,
   stepTo,
   warrior,
@@ -79,7 +80,12 @@ describe('CH-P0 grave: price, hero move, room, bag', () => {
     const looted = play(won([warrior('s1', TARGET)], { seed: 'golden-3' }), lootAt(TARGET));
     expect(creatureById(looted.battle, 'hero')!.pos).toEqual(TARGET);
     expect(looted.battle.collect!.graves).toEqual([
-      { hex: TARGET, tables: ['skeleton-warrior-loot'], examined: true },
+      {
+        hex: TARGET,
+        tables: ['skeleton-warrior-loot'],
+        examined: true,
+        container: { id: '1,0', kind: 'grave', at: TARGET, contents: [], status: 'empty' },
+      },
     ]);
     expect(looted.battle.collect!.items.length).toBe(2);
   });
@@ -121,7 +127,7 @@ describe('CH-P0 grave: event name and payload', () => {
 describe('CH-P0 grave: empty roll and empty state', () => {
   function emptyGrave() {
     const state = won([warrior('s1', TARGET)]);
-    state.collect!.graves[0].tables = [NOTHING_FIXTURE_TABLE_ID];
+    setGraveTables(state, 0, [NOTHING_FIXTURE_TABLE_ID]);
     return state;
   }
 

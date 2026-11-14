@@ -1,6 +1,6 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
-import type { ContainerSpace, ContainerState } from '../containers';
+import { emptiedContainer, type ContainerSpace, type ContainerState } from '../containers';
 import type { InventoryState } from '../inventory/inventory-state';
 import { applySpreadPlan, offsetPlacement, type LootDrop, type LootNeighbour } from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
@@ -51,8 +51,8 @@ export function questChestSpace(
         id: coordinateKey(chest.hex),
         kind: 'quest-chest',
         at: offsetToAxial(chest.hex),
-        contents: stored ? [stored] : null,
-        status: state.source.collect ? 'empty' : 'full',
+        contents: chest.container?.contents ?? (stored ? [stored] : null),
+        status: chest.container?.status ?? (state.source.collect ? 'empty' : 'full'),
       };
     },
     neighbours: (state, container) => helpers.neighbours(state.source, state.board, container.at),
@@ -75,6 +75,7 @@ export function questChestSpace(
         offsetPlacement(placement, 'hex'),
       );
       run.phase = 'collect';
+      chest.container = emptiedContainer(outcome.container);
       run.collect = {
         hero: { ...chest.hex },
         ground: placed.map((item) => ({ ...item })),

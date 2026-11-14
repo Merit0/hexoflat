@@ -12,11 +12,12 @@ import {
   stepTo,
   warrior,
   won,
+  setGraveTables,
 } from './collect-test-setup';
 
 function emptyGrave(board = hexagonBoard()) {
   const state = won([warrior('s1', TARGET)], { board });
-  state.collect!.graves[0].tables = [NOTHING_FIXTURE_TABLE_ID];
+  setGraveTables(state, 0, [NOTHING_FIXTURE_TABLE_ID]);
   return state;
 }
 
@@ -52,7 +53,7 @@ describe('REQ-LOOT-100 a grave with an empty loot list', () => {
 
   it('a grave with no table at all gives the same answer', () => {
     const state = emptyGrave();
-    state.collect!.graves[0].tables = [];
+    setGraveTables(state, 0, []);
     const looted = play(state, lootAt(TARGET));
     expect(looted.events[0].payload).toMatchObject({ nothing: true });
   });

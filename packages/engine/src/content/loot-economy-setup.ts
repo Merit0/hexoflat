@@ -148,6 +148,7 @@ interface GravePayload {
 function lootGraves(source: BattleState, runSeed: string, label: string, result: RunResult): void {
   let battle: BattleState = { ...structuredClone(source), seed: `${runSeed}:${label}` };
   for (const grave of battle.collect!.graves) {
+    delete grave.container;
     const rng = deriveStream(battle.seed, lootStreamLabel(battle.id, hexKey(grave.hex)));
     const lists = grave.tables.map((id) => rollLoot(lootTableOf(id)!, rng));
     const rolled = mergedCount(lists);

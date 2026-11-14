@@ -1,5 +1,5 @@
 import type { DomainEvent } from '../commands/types';
-import type { ContainerSpace, ContainerState } from '../containers';
+import { emptiedContainer, type ContainerSpace, type ContainerState } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
 import { applySpreadPlan, lootNeighbours, rollLootLists } from '../loot';
 import { isAlive, isFreeHex } from './battle-board';
@@ -41,8 +41,8 @@ export function graveSpace(): ContainerSpace<BattleState, BattleHex, GraveComman
         id: hexKey(grave.hex),
         kind: 'grave',
         at: { ...grave.hex },
-        contents: null,
-        status: grave.examined ? 'empty' : 'full',
+        contents: grave.container?.contents ?? null,
+        status: grave.container?.status ?? (grave.examined ? 'empty' : 'full'),
       };
     },
     neighbours: (state, container) => lootNeighbours(container.at, (hex) => isFreeHex(state, hex)),
@@ -56,6 +56,7 @@ export function graveSpace(): ContainerSpace<BattleState, BattleHex, GraveComman
       const grave = graveOf(state, container.at)!;
       const from = { ...actor.pos };
       grave.examined = true;
+      grave.container = emptiedContainer(outcome.container);
       if (outcome.nothing) {
         return [
           {

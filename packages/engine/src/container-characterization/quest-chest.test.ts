@@ -142,6 +142,7 @@ describe('CH-P0 quest chest: empty roll and empty state', () => {
     const { state, end } = atChest('empty-open');
     const legacy = structuredClone(end.run);
     delete legacy.chest!.drop;
+    delete legacy.chest!.container;
     const result = must(
       seekerOpenChest(end.progress, legacy, state.board, {
         inventory: inventoryWith({}),

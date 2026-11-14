@@ -271,6 +271,7 @@ export default class HexMapModel implements IWorldMap {
     const overrides: Record<string, any> = {};
 
     if (typeof saved.quantity === 'number') overrides.quantity = saved.quantity;
+    overrides.container = saved.container;
 
     if (saved.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof saved.resource?.regrowMs === 'number')

@@ -232,7 +232,7 @@ describe('REQ-QST-028 a chest with no free place', () => {
 
   it('answers NO_ROOM_FOR_LOOT when nothing is guaranteed (a chest from before the stored drop)', () => {
     const c = crowded('cave-chest-loot');
-    c.run = { ...c.run, chest: { ...c.run.chest!, drop: undefined } };
+    c.run = { ...c.run, chest: { ...c.run.chest!, drop: undefined, container: undefined } };
     expect(open(c)).toMatchObject({
       ok: false,
       reason: 'NO_ROOM_FOR_LOOT',
