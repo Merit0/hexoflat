@@ -31,13 +31,7 @@
         <dt>{{ t('quest.board.label.goal') }}</dt>
         <dd>
           <template v-if="row.seeker">
-            <span class="cells" :data-testid="`quest-chips-${row.quest.id}`">
-              <span>{{ t('quest.chip.entry', { n: row.seeker.entry }) }}</span>
-              <span>{{ t('quest.chip.steps', { n: row.seeker.steps }) }}</span>
-              <span>{{ t('quest.chip.stepPrice', { n: row.seeker.stepCost }) }}</span>
-              <span>{{ t('quest.chip.backPrice', { n: row.seeker.backCost }) }}</span>
-            </span>
-            <span class="note">{{ t('quest.board.expeditionNote') }}</span>
+            <span class="goal">{{ t(row.quest.tableRule) }}</span>
           </template>
           <template v-else-if="row.taken">
             <span class="bar" aria-hidden="true"><i :style="{ width: `${percent}%` }"></i></span>
@@ -56,8 +50,16 @@
             <quest-reward-icon :reward="reward" tooltip />{{ rewardText(reward) }}
           </span>
         </dd>
-        <dt>{{ row.taken ? t('quest.board.label.taken') : t('quest.board.label.toTake') }}</dt>
-        <dd :data-testid="`quest-details-${row.quest.id}-cost`">{{ costText }}</dd>
+        <dt>{{ t('quest.board.label.rule') }}</dt>
+        <dd :data-testid="`quest-details-${row.quest.id}-rule`">{{ ruleText }}</dd>
+        <template v-if="row.taken">
+          <dt>{{ t('quest.board.label.how') }}</dt>
+          <dd :data-testid="`quest-details-${row.quest.id}-how`">
+            <ol class="steps">
+              <li v-for="(step, index) in steps" :key="index">{{ step }}</li>
+            </ol>
+          </dd>
+        </template>
       </dl>
       <p
         v-if="reasonText"
@@ -117,9 +119,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { useHeroStore } from '@/stores/hero-store';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
+import { questRuleParams } from '@/services/quests/quest-rule-params';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
@@ -146,8 +148,6 @@ const percent = computed(() =>
 );
 
 const reasonText = computed(() => {
-  if (props.row.reason === 'slots')
-    return t('quest.board.reason.slotsFull', { max: QUEST_SLOTS.max });
   if (props.row.reason === 'will') {
     return t('quest.board.reason.willNeed', {
       need: props.row.price,
@@ -157,17 +157,11 @@ const reasonText = computed(() => {
   return null;
 });
 
-const costText = computed(() => {
-  const row = props.row;
-  if (row.taken) return t('quest.board.takenNote');
-  if (row.price <= 0) return t('quest.board.cost.free');
-  const parts: string[] = [];
-  if (row.entry > 0) parts.push(t('quest.board.cost.entry', { n: row.entry }));
-  if (row.surcharge > 0) {
-    parts.push(t('quest.board.cost.slot', { slot: row.slotNumber, n: row.surcharge }));
-  }
-  return `${parts.join(' + ')} = ${t('quest.price.will', { n: row.price })}`;
-});
+const ruleText = computed(() =>
+  t(`quest.${props.row.quest.id}.rule`, { ...questRuleParams(props.row.quest) }),
+);
+
+const steps = computed(() => t(`quest.${props.row.quest.id}.how`).split('\n'));
 
 function place() {
   const height = card.value?.getBoundingClientRect().height ?? 0;
@@ -231,7 +225,6 @@ h3 {
   color: rgba(241, 228, 204, 0.8);
   background: none;
   border: 0;
-  cursor: pointer;
 }
 .tags {
   margin: 2px 0 6px;
@@ -252,11 +245,22 @@ h3 {
 dl {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr);
-  gap: 8px;
+  gap: 0 8px;
   margin: 0;
 }
+dl > :nth-child(n + 3) {
+  border-top: 1px solid rgba(122, 141, 160, 0.28);
+}
+dl > dd {
+  padding: 10px 0;
+}
+dl > dt {
+  padding: 14px 0 10px;
+}
+dl > :nth-child(-n + 2) {
+  padding-top: 2px;
+}
 dt {
-  padding-top: 4px;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -274,20 +278,6 @@ dd {
 dd.bad {
   color: #f2b3a2;
 }
-.cells {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.cells span {
-  padding: 2px 8px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(122, 141, 160, 0.4);
-  border-radius: 6px;
-}
-.note {
-  color: var(--q-label);
-}
 .bar {
   display: block;
   height: 6px;
@@ -303,23 +293,27 @@ dd.bad {
 .rewards {
   flex-direction: column;
 }
+.steps {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+.steps li::marker {
+  font-weight: 700;
+  color: #f5c26b;
+}
 .pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-height: 30px;
-  padding: 0 10px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(122, 141, 160, 0.4);
-  border-radius: 6px;
 }
 .reason {
-  margin: 10px 0 0;
-  padding: 8px 10px;
+  margin: 0;
+  padding: 10px 0;
   color: #f2b3a2;
-  background: #2e1f1b;
-  border: 1px solid #5a3328;
-  border-radius: 6px;
+  border-top: 1px solid rgba(122, 141, 160, 0.28);
 }
 footer {
   display: flex;
@@ -328,21 +322,66 @@ footer {
   gap: 10px;
   margin-top: 12px;
 }
+.details,
+.details :deep(*) {
+  cursor:
+    url('/cursors/app-cursor/cursor-default.svg') 3 0,
+    auto !important;
+}
 .ghost {
+  --face: linear-gradient(180deg, #3d4d5c, #2a3744);
+  --edge: linear-gradient(180deg, #7a8da0, #1b2630 60%, #46586a);
+  position: relative;
+  isolation: isolate;
   min-height: 42px;
   height: 42px;
-  padding: 0 16px;
+  padding: 0 22px;
   font-family: var(--q-display);
   font-size: 18px;
   font-weight: 700;
-  color: rgba(241, 228, 204, 0.85);
-  background: transparent;
-  border: 1px solid rgba(122, 141, 160, 0.5);
-  border-radius: 8px;
-  cursor: pointer;
+  letter-spacing: 0.03em;
+  color: #f3e8d2;
+  background: var(--edge);
+  border: 0;
+  clip-path: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
+}
+.ghost::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: var(--face);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  clip-path: polygon(
+    10px 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    0 calc(100% - 10px),
+    0 10px
+  );
+}
+.ghost:not(:disabled):hover {
+  --face: linear-gradient(180deg, #4a5d6e, #34444f);
+}
+.ghost:focus-visible {
+  outline: 3px solid #f5c26b;
+  outline-offset: 3px;
 }
 .ghost:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
+  --face: linear-gradient(180deg, #34383d, #26292d);
+  --edge: linear-gradient(180deg, #4a4f55, #2a2d31);
+  color: #a3a8ae;
 }
 </style>

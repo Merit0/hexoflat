@@ -132,6 +132,11 @@ describe('quest board layout and details', () => {
     expect(button.getAttribute('aria-label')).toContain('5');
   });
 
+  it('paints the price red while the hero has too little Will', () => {
+    mount();
+    expect(byId('quest-price-bone-hunter')!.classList.contains('is-short')).toBe(true);
+  });
+
   it('opens the details on hover, pins them on click and closes on Escape', async () => {
     mount();
     byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseenter'));

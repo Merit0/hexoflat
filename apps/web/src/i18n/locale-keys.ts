@@ -128,6 +128,8 @@ export function questLocaleKeys(): string[] {
       quest.nameKey,
       quest.descKey,
       quest.tableRule,
+      `quest.${quest.id}.how`,
+      `quest.${quest.id}.rule`,
       describeQuest(quest).unitKey,
     ]),
   ];

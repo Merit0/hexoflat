@@ -870,9 +870,6 @@
     },
     "close": "Close the quest board",
     "claim": "Claim",
-    "price": {
-      "will": "{n} Will"
-    },
     "reward": {
       "will": "{n} Will"
     },
@@ -904,22 +901,30 @@
     "woodcutter": {
       "name": "Woodcutter",
       "desc": "The camp needs timber. Cut trees in the wild.",
-      "table": "Cut 10 trees, get 5 axes."
+      "table": "Cut 10 trees, get 5 axes.",
+      "how": "Put an axe in your hand.\nUse it on trees in the wild to cut them.\nCut 10 trees.\nWalk back to the quest board and press Claim.",
+      "rule": "Free to take. Needs an axe in your hand. Every cut costs {will} Will and wears the axe. Only trees you cut count."
     },
     "stonebreaker": {
       "name": "Stonebreaker",
       "desc": "Break stone for the camp walls.",
-      "table": "Mine 8 stones, get 30 coins."
+      "table": "Mine 8 stones, get 30 coins.",
+      "how": "Put a pickaxe in your hand.\nUse it on rocks to mine them.\nMine 8 stones.\nWalk back to the quest board and press Claim.",
+      "rule": "Free to take. Needs a pickaxe in your hand. Every mining costs {will} Will and wears the pickaxe. Only stones you mine count."
     },
     "scholar": {
       "name": "Scholar",
       "desc": "Sharpen your mind in the Book of Will.",
-      "table": "Answer 15 questions correctly, get 20 coins."
+      "table": "Answer 15 questions correctly, get 20 coins.",
+      "how": "Open the Book of Will in the camp.\nAnswer the questions.\nGive 15 correct answers.\nWalk to the quest board and press Claim.",
+      "rule": "Free to take. Only correct answers in the Book of Will count; a wrong answer adds nothing. Each correct answer also gives you Will."
     },
     "bone-hunter": {
       "name": "Bone Hunter",
       "desc": "The crypt is full of walking bones. Thin them out.",
-      "table": "Defeat 3 skeletons in battles, get a wooden shield."
+      "table": "Defeat 3 skeletons in battles, get a wooden shield.",
+      "how": "Take a sword in your hand.\nAttack skeleton squads in the crypt.\nWin battles until 3 skeletons fall.\nWalk back to the quest board and press Claim.",
+      "rule": "Costs {entry} Will to take. Only skeletons you defeat in a battle you win count; a lost battle adds nothing."
     },
     "unit": {
       "trees": "trees",
@@ -931,8 +936,6 @@
     "start": "Start",
     "enter": "Enter",
     "chip": {
-      "entry": "Entry {n}",
-      "steps": "{n} steps",
       "stepPrice": "Step {n}",
       "backPrice": "Step back {n}"
     },
@@ -964,17 +967,23 @@
     "seeker-1": {
       "name": "I · First Trail",
       "desc": "Follow the numbers through the fog to the chest.",
-      "table": "Find the chest at the end of the trail."
+      "table": "Find the chest at the end of the trail.",
+      "how": "Press Enter on the card.\nStep to the hex whose number continues the pattern.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Only the real chest ends the quest."
     },
     "seeker-2": {
       "name": "II · Leaping Trail",
       "desc": "The numbers jump. Find the pattern.",
-      "table": "Find the chest at the end of the trail."
+      "table": "Find the chest at the end of the trail.",
+      "how": "Press Enter on the card.\nThe numbers jump: find the rule before you step.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Card I must be finished first."
     },
     "seeker-3": {
       "name": "III · Cunning Trail",
       "desc": "Every step costs more. Choose carefully.",
-      "table": "Find the chest at the end of the trail."
+      "table": "Find the chest at the end of the trail.",
+      "how": "Press Enter on the card.\nEvery step costs more, so plan the path.\nA wrong hex can be left with a step back.\nOpen the chest at the end and take the loot, then return to camp.",
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Card II must be finished first."
     },
     "board": {
       "will": "Will",
@@ -988,8 +997,6 @@
       "returnLabel": "Return {name} to the board",
       "claimReward": "Claim reward",
       "enterTrail": "Enter the trail",
-      "expeditionNote": "Count the Will for the whole trail before you enter.",
-      "takenNote": "In your quests. Abandoning gives no Will back.",
       "filter": {
         "gather": "Gathering",
         "combat": "Combat",
@@ -1008,8 +1015,8 @@
       "label": {
         "goal": "Goal",
         "reward": "Reward",
-        "toTake": "To take",
-        "taken": "Taken"
+        "how": "How to finish",
+        "rule": "Rule"
       },
       "meta": {
         "goal": "Goal: {n} {unit}",
@@ -1021,13 +1028,7 @@
       "reason": {
         "will": "Not enough Will",
         "slots": "All quest slots are in use",
-        "slotsFull": "All {max} quest slots are in use. Finish or abandon a quest first.",
         "willNeed": "Not enough Will: you need {need}, you have {have}."
-      },
-      "cost": {
-        "free": "Free",
-        "entry": "Entry {n}",
-        "slot": "Quest slot {slot} +{n}"
       },
       "status": {
         "taken": "Taken: {name} · −{n} Will",

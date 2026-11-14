@@ -109,9 +109,9 @@ export class QuestBoardFeature extends BaseFeature {
     await this.step('Verify the quest board is closed', () => this.board.verifyIsClosed());
   }
 
-  async verifyChips(questId: string, chips: string[]): Promise<void> {
-    await this.step(`Verify "${questId}" shows the chips ${chips.join(', ')}`, () =>
-      this.board.verifyChips(questId, chips),
+  async verifyRule(questId: string, phrases: string[]): Promise<void> {
+    await this.step(`Verify the rule of "${questId}" says ${phrases.join(', ')}`, () =>
+      this.board.verifyRule(questId, phrases),
     );
   }
 

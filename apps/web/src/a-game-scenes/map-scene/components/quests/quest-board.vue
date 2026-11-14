@@ -182,7 +182,7 @@ onBeforeUnmount(() => {
   isolation: isolate;
   flex: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr) 11px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   box-sizing: border-box;
@@ -217,6 +217,12 @@ onBeforeUnmount(() => {
     0 calc(100% - 10px),
     0 10px
   );
+}
+.banner :deep(.tip-host) {
+  display: flex;
+  align-self: stretch;
+  justify-content: center;
+  min-width: 0;
 }
 .cell {
   display: flex;

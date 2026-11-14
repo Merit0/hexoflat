@@ -46,14 +46,15 @@ describe('quest board: Treasure Seeker cards and run', () => {
     vi.clearAllMocks();
   });
 
-  it('shows the four chips of card I in its details and never a total', async () => {
+  it('shows the four prices of card I in its rule and never a total', async () => {
     mount();
     byId('quest-row-seeker-1')!.dispatchEvent(new MouseEvent('mouseenter'));
     await nextTick();
-    const chips = document.querySelector('[data-testid="quest-chips-seeker-1"]')!.textContent;
-    expect(chips).toContain('20');
-    expect(chips).toContain('10');
-    expect(chips).toContain('3');
+    const rule = document.querySelector('[data-testid="quest-details-seeker-1-rule"]')!.textContent;
+    expect(rule).toContain('20');
+    expect(rule).toContain('10');
+    expect(rule).toContain('3');
+    expect(document.querySelector('[data-testid="quest-chips-seeker-1"]')).toBeNull();
     expect(byId('quest-card-seeker-1')!.textContent).not.toMatch(/total|усього|разом/i);
   });
 

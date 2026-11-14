@@ -154,10 +154,10 @@ export class QuestBoardComponent extends BaseComponent {
     await expect(this.card(questId)).not.toContainText(pattern);
   }
 
-  async verifyChips(questId: string, chips: string[]): Promise<void> {
+  async verifyRule(questId: string, phrases: string[]): Promise<void> {
     await this.page.getByTestId(`quest-row-${questId}`).hover();
-    const row = this.page.getByTestId(`quest-chips-${questId}`);
-    for (const chip of chips) await expect(row).toContainText(chip);
+    const rule = this.page.getByTestId(`quest-details-${questId}-rule`);
+    for (const phrase of phrases) await expect(rule).toContainText(phrase);
   }
 
   async verifyRunCard(): Promise<void> {

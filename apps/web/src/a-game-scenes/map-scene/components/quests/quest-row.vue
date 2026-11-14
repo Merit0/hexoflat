@@ -132,7 +132,12 @@
             :aria-label="t('quest.board.takeFor', { name: t(row.quest.nameKey), n: row.price })"
             @click="actions.take(row)"
           >
-            <img class="will-icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" />{{ row.price }}
+            <img class="will-icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" /><span
+              class="price"
+              :class="{ 'is-short': row.willShort }"
+              :data-testid="`quest-price-${row.quest.id}`"
+              >{{ row.price }}</span
+            >
           </quest-action-button>
         </quest-tip>
       </div>
@@ -388,6 +393,13 @@ function onHover() {
 .action {
   display: grid;
   place-items: center end;
+}
+.price {
+  font-weight: 700;
+  color: #ffe98a;
+}
+.price.is-short {
+  color: #ff6b5e;
 }
 .will-icon {
   width: 20px;

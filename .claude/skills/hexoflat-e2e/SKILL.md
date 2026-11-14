@@ -147,3 +147,6 @@ Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm 
 - The tool hex covers its own target hex, so hovering that hex is skipped (same rule as `BattleTabComponent.hoverBoardPoint`).
 - Ids: `battle-leave-warning`, `battle-leave-confirm`, `battle-leave-cancel` (the plain `battle-leave` button is hidden while the warning shows).
 - The first look-through in a fresh test was flaky once (passed on retry); wait for `waitForBoardStill` before clicking.
+
+- Quest board (2026-11-14): the filter chips are gone (no `quest-filter-*`); `quest-slots` is the «Quests taken» bar; the details card's `quest-abandon-<id>` button reads «Return» and the active row's `quest-progress-<id>` shows «Return» while hovered, so read progress text with the mouse away from it; the quest tracker hex has `quest-tracker*` testids; rows drag between sections (`quest-group-active|available`, ghost `quest-drag-ghost`), not covered by e2e yet.
+- Quest details: `QuestBoardComponent.verifyRule(questId, phrases)` hovers the row and reads `quest-details-<id>-rule` (replaced `verifyChips`, there are no `quest-chips-*` any more); the take price has `quest-price-<id>` and the class `is-short` while Will is too low.

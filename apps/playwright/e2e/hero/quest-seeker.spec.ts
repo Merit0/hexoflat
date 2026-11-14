@@ -21,10 +21,15 @@ async function walkToTheChest(quest: QuestRunFeature) {
 }
 
 test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
-  test('Verify the First Trail card shows its four prices and no total', async () => {
+  test('Verify the First Trail rule states its four prices and no total', async () => {
     const quest = await openBoard();
 
-    await quest.board.verifyChips('seeker-1', ['Entry 20', '10 steps', 'Step 1', 'Step back 3']);
+    await quest.board.verifyRule('seeker-1', [
+      'Entry costs 20 Will',
+      'Every step costs 1 Will',
+      'step back costs 3',
+      '10 steps long',
+    ]);
     await quest.board.verifyCardTextAbsent('seeker-1', /total|усього|разом/i);
   });
 
