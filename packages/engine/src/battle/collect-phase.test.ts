@@ -191,7 +191,7 @@ describe('REQ-LOOT-086 the projection of a collection phase', () => {
     });
     expect(view.lootLeft).toBe(true);
     const text = JSON.stringify(view);
-    for (const secret of [state.seed, 'tables', 'provisional', 'fallen', 'lootEnabled']) {
+    for (const secret of [state.seed, 'tables', '-loot', 'fallen', 'lootEnabled']) {
       expect(text).not.toContain(secret);
     }
   });

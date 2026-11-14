@@ -2,7 +2,8 @@ import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { LootFlightLayer } from '@/render/layers/loot-flight-layer';
-import { gravePlayedOf, planLootFlights } from '@/services/loot/loot-flight';
+import { gravePlayedOf, graveWalkLeadMs, planLootFlights } from '@/services/loot/loot-flight';
+import { BATTLE_TIMING } from './battle-timing';
 import {
   finishLootFlights,
   lootFlightRequest,
@@ -31,7 +32,7 @@ export function createGraveFlights(deps: GraveFlightsDeps) {
     start(events: DomainEvent[]) {
       const played = gravePlayedOf(events, deps.offsetOf);
       if (!played) return;
-      startLootFlights(planLootFlights(played));
+      startLootFlights(planLootFlights(played, graveWalkLeadMs(events, BATTLE_TIMING.stepMs)));
       const request = lootFlightRequest.value;
       const layer = deps.flightLayer();
       if (!request || !layer) return;

@@ -44,9 +44,9 @@ describe('REQ-LOOT-077 graves appear at the moment of victory', () => {
       state.collect!.graves.map((grave) => [hexKey(grave.hex), grave.tables]),
     );
     expect(tables).toEqual({
-      '1,0': ['skeleton-warrior-provisional'],
-      '-1,1': ['skeleton-warrior-provisional'],
-      '0,2': ['skeleton-king-provisional'],
+      '1,0': ['skeleton-warrior-loot'],
+      '-1,1': ['skeleton-warrior-loot'],
+      '0,2': ['skeleton-king-loot'],
     });
     expect(state.collect!.graves.every((grave) => !grave.examined)).toBe(true);
   });
@@ -105,8 +105,8 @@ describe('REQ-LOOT-078 several deaths on one hex give one grave', () => {
     const state = pile();
     expect(state.collect!.graves).toHaveLength(1);
     expect(state.collect!.graves[0].tables).toEqual([
-      'skeleton-warrior-provisional',
-      'skeleton-king-provisional',
+      'skeleton-warrior-loot',
+      'skeleton-king-loot',
     ]);
   });
 
@@ -126,8 +126,8 @@ describe('REQ-LOOT-078 several deaths on one hex give one grave', () => {
     creatureById(state, 's1')!.pos = { q: 1, r: 0 };
     slay(state, 's1');
     expect(state.collect!.graves[0].tables).toEqual([
-      'skeleton-king-provisional',
-      'skeleton-warrior-provisional',
+      'skeleton-king-loot',
+      'skeleton-warrior-loot',
     ]);
   });
 });
@@ -214,7 +214,7 @@ describe('REQ-LOOT-081 a successful LOOT_GRAVE', () => {
 
   function expected(seed: string, id = 'b1') {
     const rng = deriveStream(seed, lootStreamLabel(id, hexKey(TARGET)));
-    const drops = rollLoot(LOOT_TABLES['skeleton-warrior-provisional'], rng);
+    const drops = rollLoot(LOOT_TABLES['skeleton-warrior-loot'], rng);
     return placeLoot({
       target: TARGET,
       entry: ORIGIN,

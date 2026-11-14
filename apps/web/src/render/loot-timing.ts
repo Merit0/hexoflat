@@ -16,11 +16,20 @@ export interface LootSchedule {
   totalMs: number;
 }
 
-export function lootSchedule(count: number): LootSchedule {
+export function lootSchedule(count: number, leadMs = 0): LootSchedule {
   const { maxTotalMs, flightMs, accentMs, staggerMs } = LOOT_TIMING;
   if (count <= 0) return { delaysMs: [], flightMs, accentMs, totalMs: 0 };
   const own = flightMs + accentMs;
-  const stagger = count > 1 ? Math.min(staggerMs, (maxTotalMs - own) / (count - 1)) : 0;
-  const delaysMs = Array.from({ length: count }, (_, index) => Math.round(index * stagger));
-  return { delaysMs, flightMs, accentMs, totalMs: Math.min(maxTotalMs, delaysMs[count - 1] + own) };
+  const budget = Math.max(own, maxTotalMs - leadMs);
+  const stagger = count > 1 ? Math.min(staggerMs, (budget - own) / (count - 1)) : 0;
+  const delaysMs = Array.from(
+    { length: count },
+    (_, index) => leadMs + Math.round(index * stagger),
+  );
+  return {
+    delaysMs,
+    flightMs,
+    accentMs,
+    totalMs: Math.min(maxTotalMs, delaysMs[count - 1] + own),
+  };
 }

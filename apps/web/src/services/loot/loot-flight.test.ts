@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOOT_TIMING, lootSchedule } from '@/render/loot-timing';
-import { chestOpenedOf, planLootFlights } from './loot-flight';
+import { BATTLE_TIMING } from '@/render/battle/battle-timing';
+import { chestOpenedOf, graveWalkLeadMs, planLootFlights } from './loot-flight';
 import {
   finishLootFlights,
   isLootFlightPending,
@@ -125,5 +126,27 @@ describe('gravePlayedOf', () => {
       (hex) => ({ columnIndex: hex.q, rowIndex: hex.r }),
     );
     expect(planLootFlights(played!).flights).toEqual([]);
+  });
+});
+
+describe('the walk onto a grave comes before the loot flies out', () => {
+  const grave = { q: 1, r: 0 };
+  const event = (payload: Record<string, unknown>) => ({
+    type: 'GRAVE_LOOTED',
+    payload: { creatureId: 'hero', hex: grave, ...payload },
+  });
+
+  it('leads by one step when the hero moves onto the grave, and not at all when he stays', () => {
+    expect(graveWalkLeadMs([event({ from: { q: 2, r: 0 } })], BATTLE_TIMING.stepMs)).toBe(
+      BATTLE_TIMING.stepMs,
+    );
+    expect(graveWalkLeadMs([event({ from: { q: 2, r: 0 }, nothing: true })], 190)).toBe(0);
+    expect(graveWalkLeadMs([], 190)).toBe(0);
+  });
+
+  it.each([1, 3, 6])('keeps walk plus %i flights inside the 800 ms budget', (count) => {
+    const schedule = lootSchedule(count, BATTLE_TIMING.stepMs);
+    expect(Math.min(...schedule.delaysMs)).toBeGreaterThanOrEqual(BATTLE_TIMING.stepMs);
+    expect(schedule.totalMs).toBeLessThanOrEqual(LOOT_TIMING.maxTotalMs);
   });
 });

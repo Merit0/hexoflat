@@ -218,7 +218,7 @@ describe.skipIf(!dbAvailable)('battle close and restore as they are (real Postgr
       const seed = held.battle!.seed;
       for (const text of [JSON.stringify(answer), JSON.stringify(await view(c))]) {
         expect(text).not.toContain(seed);
-        expect(text).not.toContain('provisional');
+        expect(text).not.toContain('-loot');
         expect(text).not.toContain('"guaranteed"');
         expect(text).not.toContain('"rolls"');
         expect(text).not.toContain('"entries"');

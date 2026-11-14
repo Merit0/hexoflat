@@ -1,71 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { emptyInventoryState } from '../inventory/inventory-state';
-import { deriveStream } from '../utils/random-seeded';
 import { applyBattleCommand } from './apply-battle';
 import { isFreeHex, isPassableHex } from './battle-board';
 import { BATTLE_RULES } from './battle-content';
-import { battlefieldSeed, generateBattlefield } from './battlefield';
-import { deployBattle } from './battlefield-setup';
-import { heroBotAction } from './battle-sim';
 import type { BattleState } from './battle-state';
-import { hero } from './battle-test-setup';
+import { playOutSquad } from './collect-playout-setup';
 import { graveAt } from './collect';
 import { hexKey, hexNeighbours } from './hex-battle-geom';
-import { projectBattleForViewer } from './projection';
-import { startBattle } from './start-battle';
 
 const ON = { ...BATTLE_RULES, graveLootEnabled: true };
 const SEEDS = 500;
-const MAX_COMMANDS = 2_000;
 const SQUAD = ['skeleton-king', 'skeleton-warrior', 'skeleton-warrior'];
 
 function playOut(seed: number): BattleState {
-  const { setup } = deployBattle({
-    battleId: `sweep-${seed}`,
-    field: generateBattlefield('crypt', battlefieldSeed(`collect-${seed}`, 0)),
-    heroes: [hero({ q: 0, r: 0 })],
-    members: SQUAD,
-    direction: { x: -1, y: 0 },
-    ambush: false,
-  });
-  const rng = deriveStream(setup.seed, 'sim:answers');
-  let battle = startBattle(setup, ON).battle;
-  for (let i = 0, atMs = 0; i < MAX_COMMANDS && !battle.outcome; i++, atMs += 1_000) {
-    if (battle.round > 30) break;
-    const task = battle.task;
-    const active = battle.creatures.find((c) => c.id === battle.activeId)!;
-    const payload = task
-      ? {
-          kind: 'hero' as const,
-          heroId: task.creatureId,
-          atMs: task.issuedAtMs + 2_000,
-          action: {
-            kind: 'answer-task' as const,
-            option: task.options.findIndex((o) =>
-              rng() < 0.8 ? o === task.answer : o !== task.answer,
-            ),
-          },
-        }
-      : active.side === 'enemies'
-        ? { kind: 'run-enemy-turn' as const, atMs }
-        : {
-            kind: 'hero' as const,
-            heroId: active.id,
-            atMs,
-            action: heroBotAction(projectBattleForViewer(battle, 'heroes'), ON),
-          };
-    const result = applyBattleCommand(battle, { type: 'BATTLE', payload }, ON);
-    const refused = result.events.some((e) => e.type === 'BATTLE_REJECTED');
-    battle =
-      refused && payload.kind === 'hero'
-        ? applyBattleCommand(
-            battle,
-            { type: 'BATTLE', payload: { ...payload, action: { kind: 'end-turn' as const } } },
-            ON,
-          ).battle!
-        : result.battle!;
-  }
-  return battle;
+  return playOutSquad(SQUAD, `sweep-${seed}`, `collect-${seed}`);
 }
 
 describe('REQ-LOOT-087 500 battles played by the hero bot', () => {

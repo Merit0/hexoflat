@@ -128,7 +128,7 @@ describe('REQ-LOOT-088 a victory the server holds with grave loot on', () => {
     expect(before.collect!.items).toEqual([]);
     expect(looted.events.map((e) => e.type)).toContain('GRAVE_LOOTED');
     expect(JSON.stringify(looted.steps)).not.toContain(run.world.battle!.seed);
-    expect(JSON.stringify(looted.steps)).not.toContain('provisional');
+    expect(JSON.stringify(looted.steps)).not.toContain('-loot');
   });
 
   it('refuses a refused loot without touching the bag, the battle or the answer steps', () => {
@@ -238,12 +238,12 @@ describe('REQ-LOOT-090 the exit warning milestone', () => {
 });
 
 describe('REQ-LOOT-091 creature loot content', () => {
-  it('names a real, provisional table for every enemy kind', () => {
+  it('names a real table for every enemy kind', () => {
     for (const def of Object.values(BATTLE_CREATURES)) {
       if (def.behaviour === 'hero') continue;
       expect(def.lootTableId, def.id).toBeDefined();
       expect(lootTableOf(def.lootTableId), def.id).not.toBeNull();
-      expect(def.lootTableId).toMatch(/-provisional$/);
+      expect(def.lootTableId).toMatch(/-loot$/);
     }
     expect(Object.keys(LOOT_TABLES).length).toBeGreaterThanOrEqual(4);
   });

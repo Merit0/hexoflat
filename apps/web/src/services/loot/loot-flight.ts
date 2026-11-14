@@ -37,9 +37,10 @@ export function chestOpenedOf(events: readonly DomainEvent[]): ChestOpened | nul
   };
 }
 
-export function planLootFlights(opened: ChestOpened): Omit<LootFlightRequest, 'id'> {
+export function planLootFlights(opened: ChestOpened, leadMs = 0): Omit<LootFlightRequest, 'id'> {
   const { delaysMs, flightMs, accentMs, totalMs } = lootSchedule(
     opened.placed.length + opened.toBag.length,
+    leadMs,
   );
   const from = opened.coordinates;
   const placed: LootFlight[] = opened.placed.map((item, index) => ({
@@ -61,6 +62,8 @@ export function planLootFlights(opened: ChestOpened): Omit<LootFlightRequest, 'i
 
 interface GravePayload {
   hex: { q: number; r: number };
+  from?: { q: number; r: number };
+  nothing?: boolean;
   placed?: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
   toBag?: { itemKey: string; amount: number }[];
 }
@@ -81,4 +84,12 @@ export function gravePlayedOf(
     })),
     toBag: payload.toBag ?? [],
   };
+}
+
+export function graveWalkLeadMs(events: readonly DomainEvent[], stepMs: number): number {
+  const event = events.find((candidate) => candidate.type === 'GRAVE_LOOTED');
+  if (!event) return 0;
+  const { hex, from, nothing } = event.payload as GravePayload;
+  if (nothing === true || !from || (from.q === hex.q && from.r === hex.r)) return 0;
+  return stepMs;
 }

@@ -1,9 +1,8 @@
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
-import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { coinPriceOf, getMeta } from './content-accessors';
 import { CONTENT } from './content-map';
 import { ContentDefinitionSchema, traderDefinitionSchema } from './content-schema';
-import { LOOT_TABLES, lootTableOf } from './loot-tables.content';
+import { lootContentFailures } from './validate-loot';
 import { TRADERS } from './traders.content';
 
 export function validateContent(): void {
@@ -24,7 +23,7 @@ export function validateContent(): void {
   }
 
   failures.push(...traderFailures(TRADERS));
-  failures.push(...lootTableFailures());
+  failures.push(...lootContentFailures());
 
   if (failures.length > 0) {
     throw new Error(`Hexobject content validation failed:\n${failures.join('\n')}`);
@@ -66,27 +65,4 @@ export function traderFailures(traders: Record<string, unknown>): string[] {
   return Object.entries(traders).flatMap(([key, raw]) =>
     traderProblems(key, raw).map((problem) => `[trader ${key}] ${problem}`),
   );
-}
-
-function lootTableFailures(): string[] {
-  const failures: string[] = [];
-  for (const key of Object.values(HEXOBJECT_KEYS) as THexobjectKey[]) {
-    const entry = CONTENT[key];
-    const tableId =
-      entry?.groupType === EHexobjectGroup.CONSTRUCTION
-        ? entry.construction.lootTableId
-        : undefined;
-    if (tableId && !lootTableOf(tableId)) failures.push(`[${key}] unknown loot table "${tableId}"`);
-  }
-  for (const table of Object.values(LOOT_TABLES)) {
-    const keys = [...(table.guaranteed ?? []), ...table.entries].map((entry) => entry.itemKey);
-    for (const itemKey of keys) {
-      if (itemKey !== HEXOBJECT_KEYS.COINS && coinPriceOf(itemKey) === null) {
-        failures.push(
-          `[loot:${table.id}] ${itemKey} is not an item that can be carried and priced`,
-        );
-      }
-    }
-  }
-  return failures;
 }

@@ -72,7 +72,6 @@ export interface ISquad {
   members: string[];
   watcher: boolean;
   boss: boolean;
-  loot: THexobjectKey;
   battlefieldBiome: 'crypt';
   tableRule: string;
 }
