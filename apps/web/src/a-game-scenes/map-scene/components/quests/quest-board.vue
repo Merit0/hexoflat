@@ -19,28 +19,6 @@
     <quest-run-panel v-if="run || result" />
     <template v-else>
       <div class="banner" data-testid="quest-board-resources">
-        <span class="cell" data-testid="quest-slots">
-          <svg
-            class="icon"
-            viewBox="0 0 24 24"
-            width="34"
-            height="34"
-            fill="none"
-            stroke="#f5c26b"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="5" y="4" width="14" height="17" rx="2" />
-            <path d="M9 4V3h6v1M9 13l2 2 4-4" />
-          </svg>
-          <span class="figures">
-            <span class="label">{{ t('quest.board.pill.taken') }}</span>
-            <span class="value">{{ slots.used }} / {{ slots.max }}</span>
-          </span>
-        </span>
-        <i class="divider" aria-hidden="true"></i>
         <quest-tip :text="t('quest.board.coins')">
           <span class="cell" data-testid="quest-board-coins">
             <img class="icon" :src="COIN_SRC" alt="" aria-hidden="true" />
@@ -62,8 +40,7 @@
         </quest-tip>
       </div>
       <board-ornament />
-      <quest-filter-chips />
-      <board-ornament />
+      <quest-taken-bar />
       <div class="groups" @scroll.passive="details.close()">
         <section class="group" data-testid="quest-group-active">
           <h3>
@@ -76,9 +53,6 @@
           <ul v-if="active.length > 0">
             <quest-row v-for="row in active" :key="row.quest.id" :row="row" />
           </ul>
-          <p v-else class="empty dashed" data-testid="quest-tracker-empty">
-            {{ t('quest.board.empty.active') }}
-          </p>
         </section>
         <section class="group" data-testid="quest-group-available">
           <h3>
@@ -131,7 +105,7 @@ import QuestRow from './quest-row.vue';
 import QuestRunPanel from './quest-run-panel.vue';
 import BoardHeader from '../board-header.vue';
 import BoardOrnament from '../board-ornament.vue';
-import QuestFilterChips from './quest-filter-chips.vue';
+import QuestTakenBar from './quest-taken-bar.vue';
 import QuestTip from './quest-tip.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
 

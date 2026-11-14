@@ -863,6 +863,11 @@
   },
   "quest": {
     "boardTitle": "Quests",
+    "tracker": {
+      "open": "Active quests",
+      "empty": "No active quests",
+      "ready": "Ready to claim"
+    },
     "close": "Close the quest board",
     "claim": "Claim",
     "price": {
@@ -984,8 +989,6 @@
       "expeditionNote": "Count the Will for the whole trail before you enter.",
       "takenNote": "In your quests. Abandoning gives no Will back.",
       "filter": {
-        "label": "Filter quests",
-        "all": "All",
         "gather": "Gathering",
         "combat": "Combat",
         "learn": "Learning",
@@ -998,8 +1001,7 @@
         "count": "{n, plural, one {# quest} other {# quests}}"
       },
       "empty": {
-        "active": "No quest taken yet. Take one below — it moves up here with its counter.",
-        "available": "Nothing new for this filter."
+        "available": "Nothing new on the board."
       },
       "label": {
         "goal": "Goal",
@@ -1039,7 +1041,6 @@
         "taken": "Quests taken"
       },
       "tag": {
-        "once": "One-time",
         "repeatable": "Repeatable"
       },
       "more": "+{n} more",

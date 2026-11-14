@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { slotSurcharge } from '@hexoflat/engine/quests/quest-log';
 import { walletCoins } from '@hexoflat/engine/trade/trader-view';
@@ -7,11 +7,8 @@ import {
   capQuests,
   categoryOf,
   spritePathOf,
-  filterCounts,
-  matchesFilter,
   reasonOf,
   type QuestCategory,
-  type QuestFilter,
   type QuestReason,
 } from '@/services/quests/quest-board-model';
 import { useHeroStore } from '@/stores/hero-store';
@@ -30,8 +27,6 @@ export interface QuestRowView extends QuestCardView {
   reason: QuestReason;
   taken: boolean;
 }
-
-const filter = ref<QuestFilter>('all');
 
 export function useQuestBoardView() {
   const { cards, tracked } = useQuestView();
@@ -64,20 +59,14 @@ export function useQuestBoardView() {
     );
   });
 
-  const counts = computed(() => filterCounts(rows.value.map((row) => row.category)));
-
   const active = computed(() => {
     const order = store.log.active.map((entry) => entry.questId);
     return rows.value
-      .filter((row) => row.taken && matchesFilter(row.category, filter.value))
+      .filter((row) => row.taken)
       .sort((a, b) => order.indexOf(a.quest.id) - order.indexOf(b.quest.id));
   });
-  const available = computed(() =>
-    rows.value.filter((row) => row.state === 'open' && matchesFilter(row.category, filter.value)),
-  );
+  const available = computed(() => rows.value.filter((row) => row.state === 'open'));
   return {
-    filter,
-    counts,
     active,
     available,
     rowById: (id: string) => rows.value.find((row) => row.quest.id === id) ?? null,

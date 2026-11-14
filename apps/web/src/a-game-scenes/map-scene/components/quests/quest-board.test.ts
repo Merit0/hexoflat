@@ -6,7 +6,6 @@ import { applyQuestProjection, resetQuestProjection } from '@/services/quests/qu
 import { acceptQuest, claimQuest } from '@/services/quests/quest-commands';
 import { useQuestActions } from '@/composables/use-quest-actions';
 import { useQuestDetails } from '@/composables/use-quest-details';
-import { useQuestBoardView } from '@/composables/use-quest-board-view';
 import QuestBoard from './quest-board.vue';
 
 vi.mock('@/services/quests/quest-commands', () => ({
@@ -36,7 +35,6 @@ describe('quest board panel', () => {
   });
   afterEach(() => {
     useQuestDetails().close();
-    useQuestBoardView().filter.value = 'all';
     app?.unmount();
     host.remove();
     app = null;
@@ -93,7 +91,6 @@ describe('quest board layout and details', () => {
   });
   afterEach(() => {
     useQuestDetails().close();
-    useQuestBoardView().filter.value = 'all';
     app?.unmount();
     host.remove();
     app = null;
@@ -112,20 +109,6 @@ describe('quest board layout and details', () => {
       byId('quest-group-available')!.querySelector('[data-testid="quest-card-stonebreaker"]'),
     ).not.toBeNull();
     expect(byId('quest-slots')!.textContent).toContain('1 / 3');
-  });
-
-  it('shows the empty hint when nothing is taken', () => {
-    mount();
-    expect(byId('quest-tracker-empty')).not.toBeNull();
-  });
-
-  it('filters every group by category and counts the chips', async () => {
-    mount();
-    expect(byId('quest-filter-all')!.textContent).toContain('5');
-    byId('quest-filter-combat')!.click();
-    await nextTick();
-    expect(byId('quest-card-bone-hunter')).not.toBeNull();
-    expect(byId('quest-card-woodcutter')).toBeNull();
   });
 
   it('puts only the price on the take button, never the word Take', () => {

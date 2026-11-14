@@ -8,6 +8,7 @@
   >
     <div class="map-pane">
       <component :is="DevBoardPanel" v-if="DevBoardPanel" />
+      <quest-tracker-button v-else />
       <action-alert-banner />
       <div class="map-session-controls">
         <button
@@ -106,6 +107,8 @@ import {
   ResolvedAction,
 } from '@hexoflat/engine/game-resolvers/interactions-resolver';
 import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
+import QuestTrackerButton from '@/a-game-scenes/map-scene/components/quests/quest-tracker-button.vue';
+import { devBoardPanelEnabled } from '@/composables/dev-board-panel-flag';
 import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
 import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
 import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
@@ -152,9 +155,10 @@ let healTickerTimer: number | null = null;
 
 const RULE_HIGHLIGHT_TINT = 0xffe66d;
 const SHOW_DEV_TOOLS = import.meta.env.DEV && import.meta.env.VITE_E2E_HOOKS !== 'true';
-const DevBoardPanel = SHOW_DEV_TOOLS
-  ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
-  : null;
+const DevBoardPanel =
+  SHOW_DEV_TOOLS && devBoardPanelEnabled()
+    ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
+    : null;
 const StaticBoardEditorPanel = SHOW_DEV_TOOLS
   ? defineAsyncComponent(() => import('./static-board-editor-panel.vue'))
   : null;

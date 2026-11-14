@@ -70,7 +70,7 @@
           <template v-if="mainReward">
             <span class="reward-main">
               <quest-reward-icon :reward="mainReward" :size="20" />
-              <b>{{ rewardValue }}</b>
+              <b v-if="rewardValue">{{ rewardValue }}</b>
             </span>
             <em v-if="row.rewards.length > 1">{{
               t('quest.board.more', { n: row.rewards.length - 1 })
@@ -133,6 +133,7 @@ import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
 import QuestTip from './quest-tip.vue';
 import QuestRewardIcon from './quest-reward-icon.vue';
+import { isSingleItem } from './quest-reward-text';
 
 const props = defineProps<{ row: QuestRowView }>();
 const { t } = useI18n();
@@ -150,6 +151,7 @@ const percent = computed(() =>
 const rewardValue = computed(() => {
   const reward = mainReward.value;
   if (!reward) return '';
+  if (isSingleItem(reward)) return '';
   if (reward.kind === 'item' && reward.itemKey !== HEXOBJECT_KEYS.COINS) return `×${reward.amount}`;
   return String(reward.amount);
 });

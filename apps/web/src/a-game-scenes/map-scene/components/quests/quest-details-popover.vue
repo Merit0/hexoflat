@@ -22,12 +22,8 @@
           ×
         </button>
       </header>
-      <p class="tags">
-        {{ t(`quest.board.filter.${row.category}`) }} ·
-        {{ row.repeat === 'once' ? t('quest.board.tag.once') : t('quest.board.tag.repeatable') }}
-        <template v-if="row.timesDone > 0">
-          · {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
-        </template>
+      <p v-if="row.timesDone > 0" class="tags">
+        {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
       </p>
       <i class="line" aria-hidden="true"></i>
       <p class="desc">{{ t(row.quest.descKey) }}</p>
@@ -57,7 +53,7 @@
         <dt>{{ t('quest.board.label.reward') }}</dt>
         <dd class="rewards">
           <span v-for="(reward, index) in row.rewards" :key="index" class="pill">
-            <quest-reward-icon :reward="reward" />{{ rewardText(reward) }}
+            <quest-reward-icon :reward="reward" tooltip />{{ rewardText(reward) }}
           </span>
         </dd>
         <dt>{{ row.taken ? t('quest.board.label.taken') : t('quest.board.label.toTake') }}</dt>
@@ -217,7 +213,7 @@ header {
 }
 h3 {
   margin: 0;
-  font-size: inherit;
+  font-size: 1.35em;
   font-weight: 700;
   font-variant: small-caps;
   letter-spacing: 0.04em;
