@@ -187,7 +187,7 @@ describe('refusal texts', () => {
         expect(text, code).toBeTruthy();
       }
     }
-    expect(ukUi.battle.reject.GRAVE_EMPTY).toBe('Нічого не знайдено!');
+    expect(ukUi.battle.reject.CONTAINER_EMPTY).toBe('Нічого не знайдено!');
     expect(ukUi.battle.reject.FIGHT_NOT_OVER).toBe('Спершу переможи.');
   });
 });

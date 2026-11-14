@@ -353,3 +353,22 @@ export function createContainer(input: {
 | API container-secrets: F-S1                             | дозвіл і закріплений тест на `lootTableId` | `lootTableId` у маркерах заборони, тест перевертнуто | 1a / F-S1                         |
 
 Рядки `chests/`: `open-chest.ts` 118 → 69, `plan-chest-loot.ts` 89 → 89, `place-chest-loot.ts` 31 → 0, `world-container-space.ts` 0 → 100; `containers/` 0 → 158 (без тестів). Golden-loot, тести G і Q без правок. Перевірки: engine 1518 passed / 2 skipped, api 227, web 3286, lint 0 помилок, typecheck зелений, e2e `loot-chest.spec.ts` 5/5.
+
+## 15. Журнал CH-P4b (2026-11-15): могила відкривається через `containers/`
+
+Нове: `battle/grave-container-space.ts` (`graveSpace()`: `ContainerSpace` над `BattleState`, `graveAt`, `collectActorRefusal` для умов «фаза, герой живий, свій хід»). `lootGrave` викликає `openInSpace`, ціна 0, потік `loot:<battleId>:<q,r>` і кілька таблиць на одній могилі як було. Порожній кидок (hero stays, `nothing: true`) тепер дає ядро (`outcome.nothing`), у `grave-container-space` лише формування події. `GRAVE_LOOTED` без змін, підбір стосу з параметром `order` не чіпав. Світ і квестова скриня без правок.
+
+**Розширення контракту (одне, і чому).** `ContainerState.contents`, `OpenInput.contents` і `ContainerSpace.rollContents` стали списком списків `LootLists` (було один `LootDrop[]`): могила кидає кілька таблиць, і `planLootSpread` ділить їх за списками, тож злиття в один список змінило б розкладку (golden-loot). Світовий адаптер обгортає свій результат у `[ ... ]`, поведінка світу та його тести не змінились.
+
+Коди відмов: `NO_GRAVE` і `GRAVE_EMPTY` прибрано, обидва стали `CONTAINER_EMPTY` (ядро P4a: відсутній контейнер = порожній; рішення 4, 5). Наслідок для гравця: «Тут немає могили.» зникло, натомість «Нічого не знайдено!» (недосяжно з UI, клік лише на нарисованій могилі).
+
+| Очікування                                                                  | Було                             | Стало                                                                                    | Рішення §11 |
+| --------------------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- | ----------- |
+| grave.test: далека гекса без могили                                         | `NO_GRAVE`                       | `CONTAINER_EMPTY`                                                                        | 4, 5        |
+| grave.test: далека оглянута могила; повторне відкриття                      | `GRAVE_EMPTY`                    | `CONTAINER_EMPTY`                                                                        | 4, 5        |
+| double-conditions (могила): порожня й не поруч                              | `GRAVE_EMPTY`                    | `CONTAINER_EMPTY`                                                                        | 5           |
+| payload-snapshots (могила): ключі `NO_GRAVE`/`GRAVE_EMPTY`, `rejected`      | `NO_GRAVE`, `GRAVE_EMPTY`        | ключі `CONTAINER_EMPTY_NO_GRAVE`/`CONTAINER_EMPTY_EXAMINED`, `rejected: CONTAINER_EMPTY` | 5           |
+| battle/collect.test, collect-nothing.test, world/battle-collect-world.test  | `NO_GRAVE`/`GRAVE_EMPTY`         | `CONTAINER_EMPTY`                                                                        | 4, 5        |
+| web battle-collect.test, ui.json `battle.reject`, `use-battle-collect-tool` | ключ `GRAVE_EMPTY`, є `NO_GRAVE` | ключ `CONTAINER_EMPTY` (текст «Нічого не знайдено!» той самий), `NO_GRAVE` прибрано      | 5           |
+
+`battle/collect.ts` 197 → 127 рядків (+95 у `grave-container-space.ts`). Golden-loot, collect-sweep, loot-economy, світові та квестові файли без правок. Перевірки: lint/typecheck зелені, engine 2 skipped, web 3283, api 227 (один прогін дав збій у `REQ-QST-036`, квест, не грав: окремо 3 з 3 й повний повторний прогін зелені), e2e `battle-collect.spec.ts` 3/3.

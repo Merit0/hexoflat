@@ -1,21 +1,16 @@
 import type { DomainEvent } from '../commands/types';
-import { lootTableOf } from '../content/loot-tables.content';
 import type { IInventoryDraft } from '../inventory/apply-stock';
-import {
-  applySpreadPlan,
-  lootNeighbours,
-  pickupStack,
-  planLootSpread,
-  rollLootLists,
-  type LootDrop,
-  type LootNeighbour,
-} from '../loot';
+import { pickupStack } from '../loot';
+import { openInSpace } from '../containers';
 import { lootTableIdOfKind } from './battle-catalogue';
+import { collectActorRefusal, graveAt, graveSpace } from './grave-container-space';
 import { isAlive, isFreeHex } from './battle-board';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleHex, BattleState, CollectState, Grave } from './battle-state';
-import { hexKey, isAdjacentHex, sameHex } from './hex-battle-geom';
+import { isAdjacentHex, sameHex } from './hex-battle-geom';
 import { reject, type BattleRejection } from './battle-rejection';
+
+export { graveAt };
 
 export interface CollectContext {
   inventory?: IInventoryDraft;
@@ -33,10 +28,6 @@ export function inCollectPhase(state: BattleState): boolean {
 
 export function lootLeft(collect: CollectState): boolean {
   return collect.items.length > 0 || collect.graves.some((grave) => !grave.examined);
-}
-
-export function graveAt(collect: CollectState, hex: BattleHex): Grave | null {
-  return collect.graves.find((grave) => sameHex(grave.hex, hex)) ?? null;
 }
 
 function deathOrder(state: BattleState, dead: BattleCreature[]): BattleCreature[] {
@@ -64,17 +55,6 @@ export function enterCollectPhase(state: BattleState): DomainEvent[] {
   ];
 }
 
-function rollGrave(state: BattleState, grave: Grave): LootDrop[][] {
-  return rollLootLists(
-    grave.tables.map((id) => lootTableOf(id)),
-    { seed: state.seed, sourceId: state.id, targetKey: hexKey(grave.hex) },
-  );
-}
-
-function neighboursOf(state: BattleState, target: BattleHex): LootNeighbour[] {
-  return lootNeighbours(target, (hex) => isFreeHex(state, hex));
-}
-
 function noInventory(): IInventoryDraft {
   return { current: undefined, events: [] };
 }
@@ -85,58 +65,8 @@ export function lootGrave(
   hex: BattleHex,
   ctx: CollectContext,
 ): DomainEvent[] | BattleRejection {
-  const collect = state.collect!;
-  if (graveAt(collect, actor.pos)) return reject('STANDING_ON_TARGET');
-  const grave = graveAt(collect, hex);
-  if (!grave) return reject('NO_GRAVE');
-  if (grave.examined) return reject('GRAVE_EMPTY');
-  if (!isAdjacentHex(actor.pos, grave.hex)) return reject('NOT_ADJACENT');
-  const bag = ctx.inventory ?? noInventory();
-  const spread = planLootSpread({
-    target: grave.hex,
-    entry: actor.pos,
-    neighbours: neighboursOf(state, grave.hex),
-    lists: rollGrave(state, grave),
-    bag,
-  });
-  if (!spread.ok) return reject(spread.reason);
-
-  if (spread.plan.placements.length === 0 && spread.plan.toBag.length === 0) {
-    grave.examined = true;
-    return [
-      {
-        type: 'GRAVE_LOOTED',
-        payload: {
-          creatureId: actor.id,
-          hex: { ...grave.hex },
-          from: { ...actor.pos },
-          placed: [],
-          toBag: [],
-          nothing: true,
-        },
-      },
-    ];
-  }
-
-  const from = { ...actor.pos };
-  grave.examined = true;
-  actor.pos = { ...grave.hex };
-  const applied = applySpreadPlan(spread.plan, bag, (place) => {
-    collect.items.push({ hex: { ...place.hex }, itemKey: place.itemKey, amount: place.amount });
-    return { hex: { ...place.hex }, itemKey: place.itemKey, amount: place.amount };
-  });
-  return [
-    {
-      type: 'GRAVE_LOOTED',
-      payload: {
-        creatureId: actor.id,
-        hex: { ...grave.hex },
-        from,
-        placed: applied.placed,
-        toBag: applied.toBag,
-      },
-    },
-  ];
+  const opened = openInSpace(graveSpace(), state, actor.id, hex, ctx.inventory ?? noInventory());
+  return opened.ok ? opened.events : reject(opened.reason!);
 }
 
 export function pickupLoot(
@@ -191,7 +121,7 @@ export function collectRefusal(
   actor: BattleCreature,
   action: BattleAction,
 ): BattleRejection | null {
-  if (!state.collect || !COLLECT_ACTION_KINDS.has(action.kind)) return reject('BATTLE_ENDED');
-  if (actor.side !== 'heroes' || !isAlive(actor)) return reject('NOT_YOUR_TURN');
-  return null;
+  if (!COLLECT_ACTION_KINDS.has(action.kind)) return reject('BATTLE_ENDED');
+  const refused = collectActorRefusal(state, actor);
+  return refused ? reject(refused) : null;
 }

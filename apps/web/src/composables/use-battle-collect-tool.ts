@@ -19,7 +19,7 @@ export function useBattleCollectTool(
       (event) =>
         event.type === 'GRAVE_LOOTED' && (event.payload as { nothing?: boolean }).nothing === true,
     );
-    if (looted && nothing) warn('GRAVE_EMPTY', null);
+    if (looted && nothing) warn('CONTAINER_EMPTY', null);
     return looted;
   }
 

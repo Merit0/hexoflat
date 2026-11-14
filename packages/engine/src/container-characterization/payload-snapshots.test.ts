@@ -108,8 +108,8 @@ describe('CH-P0 payload snapshots: grave', () => {
       ).events;
     expect({
       STANDING_ON_TARGET: play(looted, lootAt(TARGET)).events,
-      NO_GRAVE: play(lone(), lootAt({ q: 0, r: 1 })).events,
-      GRAVE_EMPTY: play(away, lootAt(TARGET)).events,
+      CONTAINER_EMPTY_NO_GRAVE: play(lone(), lootAt({ q: 0, r: 1 })).events,
+      CONTAINER_EMPTY_EXAMINED: play(away, lootAt(TARGET)).events,
       NOT_ADJACENT: play(
         won([warrior('e1', { q: 2, r: 0 })], { seed: SEED }),
         lootAt({ q: 2, r: 0 }),

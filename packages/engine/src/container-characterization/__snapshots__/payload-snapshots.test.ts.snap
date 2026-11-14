@@ -11,11 +11,20 @@ exports[`CH-P0 payload snapshots: grave > every refusal: the BATTLE_REJECTED eve
       "type": "BATTLE_REJECTED",
     },
   ],
-  "GRAVE_EMPTY": [
+  "CONTAINER_EMPTY_EXAMINED": [
     {
       "payload": {
         "action": "loot-grave",
-        "rejected": "GRAVE_EMPTY",
+        "rejected": "CONTAINER_EMPTY",
+      },
+      "type": "BATTLE_REJECTED",
+    },
+  ],
+  "CONTAINER_EMPTY_NO_GRAVE": [
+    {
+      "payload": {
+        "action": "loot-grave",
+        "rejected": "CONTAINER_EMPTY",
       },
       "type": "BATTLE_REJECTED",
     },
@@ -25,15 +34,6 @@ exports[`CH-P0 payload snapshots: grave > every refusal: the BATTLE_REJECTED eve
       "payload": {
         "action": "loot-grave",
         "rejected": "NOT_ADJACENT",
-      },
-      "type": "BATTLE_REJECTED",
-    },
-  ],
-  "NO_GRAVE": [
-    {
-      "payload": {
-        "action": "loot-grave",
-        "rejected": "NO_GRAVE",
       },
       "type": "BATTLE_REJECTED",
     },

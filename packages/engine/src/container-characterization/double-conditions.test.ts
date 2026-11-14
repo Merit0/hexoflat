@@ -83,9 +83,9 @@ describe('CH-P0 double conditions, grave: today the winner is', () => {
     expectRefused(stoodOn(), lootAt(TARGET), 'STANDING_ON_TARGET');
   });
 
-  it('empty AND not adjacent -> GRAVE_EMPTY', () => {
+  it('empty AND not adjacent -> CONTAINER_EMPTY', () => {
     const away = play(play(stoodOn(), stepTo(ORIGIN)).battle, stepTo({ q: -1, r: 0 })).battle;
-    expectRefused(away, lootAt(TARGET), 'GRAVE_EMPTY');
+    expectRefused(away, lootAt(TARGET), 'CONTAINER_EMPTY');
   });
 
   it('not adjacent AND no room -> NOT_ADJACENT', () => {

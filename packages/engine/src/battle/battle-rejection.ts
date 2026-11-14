@@ -33,8 +33,7 @@ export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 
 export const COLLECT_REJECTION_CODES = [
   'STANDING_ON_TARGET',
-  'NO_GRAVE',
-  'GRAVE_EMPTY',
+  'CONTAINER_EMPTY',
   'NO_LOOT_THERE',
   'NO_ROOM_FOR_LOOT',
   'BAG_FULL',

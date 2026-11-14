@@ -49,7 +49,7 @@ export function worldChestSpace(
     neighbours: (world, container) => chestNeighbours(world.map, container.at),
     rollContents: (world, container) => {
       const tile = tileAt(world, axialToOffset(container.at))!;
-      return rollChestLoot(tile, world.loot);
+      return [rollChestLoot(tile, world.loot)];
     },
     apply: (world, heroId, container, outcome, bag): DomainEvent[] => {
       const hero = world.heroes[heroId];

@@ -37,7 +37,7 @@ function input(patch: Partial<OpenInput> = {}): OpenInput {
     actorAt: HERO,
     standing: false,
     container: chest(),
-    contents: [BOTTLE],
+    contents: [[BOTTLE]],
     neighbours: ring(6),
     bag: { current: emptyInventoryState('h'), events: [] },
     ...patch,
@@ -72,7 +72,7 @@ describe('CH-P4a openContainer: every refusal', () => {
 
   it('BAG_FULL when a guaranteed drop must go to a full bag', () => {
     const bag = { current: fullBag(HEXOBJECT_KEYS.SWORD), events: [] };
-    expect(openContainer(input({ neighbours: ring(0), contents: [COINS], bag }))).toEqual({
+    expect(openContainer(input({ neighbours: ring(0), contents: [[COINS]], bag }))).toEqual({
       ok: false,
       reason: 'BAG_FULL',
     });
@@ -99,7 +99,7 @@ describe('CH-P4a openContainer: double conditions, today the winner is', () => {
 
 describe('CH-P4a openContainer: success shapes', () => {
   it('empty contents: ok, nothing true, an empty plan, the container becomes empty, even with no room', () => {
-    const outcome = openContainer(input({ contents: [], neighbours: ring(0) }));
+    const outcome = openContainer(input({ contents: [[]], neighbours: ring(0) }));
     expect(outcome).toEqual({
       ok: true,
       nothing: true,
@@ -109,7 +109,7 @@ describe('CH-P4a openContainer: success shapes', () => {
   });
 
   it('a roomy opening places the drops and sends nothing to the bag', () => {
-    const outcome = openContainer(input({ contents: [BOTTLE, BOTTLE] }));
+    const outcome = openContainer(input({ contents: [[BOTTLE, BOTTLE]] }));
     if (!outcome.ok) throw new Error(outcome.reason);
     expect(outcome.nothing).toBe(false);
     expect(outcome.plan.placements.length).toBeGreaterThan(0);
@@ -118,7 +118,7 @@ describe('CH-P4a openContainer: success shapes', () => {
   });
 
   it('no place and a guaranteed drop: it goes to the bag', () => {
-    const outcome = openContainer(input({ contents: [COINS], neighbours: ring(0) }));
+    const outcome = openContainer(input({ contents: [[COINS]], neighbours: ring(0) }));
     if (!outcome.ok) throw new Error(outcome.reason);
     expect(outcome.plan.placements).toEqual([]);
     expect(outcome.plan.toBag).toEqual([{ itemKey: HEXOBJECT_KEYS.COINS, amount: 20 }]);
@@ -126,16 +126,22 @@ describe('CH-P4a openContainer: success shapes', () => {
 
   it('one free place, two guaranteed drops: placed and toBag both filled', () => {
     const outcome = openContainer(
-      input({ contents: [COINS, { ...BOTTLE, guaranteed: true }], neighbours: ring(1) }),
+      input({ contents: [[COINS, { ...BOTTLE, guaranteed: true }]], neighbours: ring(1) }),
     );
     if (!outcome.ok) throw new Error(outcome.reason);
     expect(outcome.plan.placements.length).toBe(1);
     expect(outcome.plan.toBag.length).toBe(1);
   });
 
+  it('several loot lists on one container pass through together', () => {
+    const outcome = openContainer(input({ contents: [[BOTTLE], [BOTTLE]] }));
+    if (!outcome.ok) throw new Error(outcome.reason);
+    expect(outcome.plan.placements.length).toBe(2);
+  });
+
   it('is pure: the bag draft is not touched', () => {
     const bag = { current: emptyInventoryState('h'), events: [] as DomainEvent[] };
-    openContainer(input({ contents: [COINS], neighbours: ring(0), bag }));
+    openContainer(input({ contents: [[COINS]], neighbours: ring(0), bag }));
     expect(bag.events).toEqual([]);
     expect(bag.current).toEqual(emptyInventoryState('h'));
   });
@@ -152,7 +158,7 @@ function space(): ContainerSpace<Fake, string, 'NO_HERO'> {
     neighbours: () => ring(6),
     rollContents: (state) => {
       state.log.push('rolled');
-      return [BOTTLE];
+      return [[BOTTLE]];
     },
     apply: (state) => {
       state.log.push('applied');
@@ -198,7 +204,7 @@ describe('CH-P4a openInSpace', () => {
   });
 
   it('stored contents are used and never rolled', () => {
-    const state = { ...base(), container: chest({ contents: [BOTTLE] }) };
+    const state = { ...base(), container: chest({ contents: [[BOTTLE]] }) };
     openInSpace(space(), state, 'h', 'x', bag());
     expect(state.log).toEqual(['applied']);
   });
@@ -248,7 +254,7 @@ describe('CH-P4a openInSpace', () => {
 
   it('a room refusal comes before the price: no room and no money is NO_ROOM_FOR_LOOT', () => {
     const crowded = { ...space(), neighbours: () => ring(0) };
-    const state = { ...base(), container: chest({ contents: [BOTTLE] }) };
+    const state = { ...base(), container: chest({ contents: [[BOTTLE]] }) };
     const price = { check: (): DomainEvent[] => [{ type: 'POOR', payload: {} }], spend: () => [] };
     expect(openInSpace(crowded, state, 'h', 'x', bag(), price)).toMatchObject({
       reason: 'NO_ROOM_FOR_LOOT',

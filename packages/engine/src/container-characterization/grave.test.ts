@@ -44,14 +44,14 @@ describe('CH-P0 grave: check order (matrix row 1)', () => {
     expectRefused(standing, lootAt({ q: -2, r: 0 }), 'STANDING_ON_TARGET');
   });
 
-  it('"no grave there" beats "not adjacent": a far hex without a grave is NO_GRAVE', () => {
-    expectRefused(won([warrior('s1', TARGET)]), lootAt({ q: -3, r: 0 }), 'NO_GRAVE');
+  it('"no grave there" beats "not adjacent": a far hex without a grave is CONTAINER_EMPTY', () => {
+    expectRefused(won([warrior('s1', TARGET)]), lootAt({ q: -3, r: 0 }), 'CONTAINER_EMPTY');
   });
 
-  it('"already examined" beats "not adjacent": a far examined grave is GRAVE_EMPTY', () => {
+  it('"already examined" beats "not adjacent": a far examined grave is CONTAINER_EMPTY', () => {
     const looted = play(won([warrior('s1', TARGET)]), lootAt(TARGET)).battle;
     const away = play(play(looted, stepTo(ORIGIN)).battle, stepTo({ q: -1, r: 0 })).battle;
-    expectRefused(away, lootAt(TARGET), 'GRAVE_EMPTY');
+    expectRefused(away, lootAt(TARGET), 'CONTAINER_EMPTY');
   });
 
   it('"not adjacent" beats the room and bag checks', () => {
@@ -141,10 +141,10 @@ describe('CH-P0 grave: empty roll and empty state', () => {
     expect(lootLeft(looted.battle.collect!)).toBe(false);
   });
 
-  it('an examined grave refuses again with GRAVE_EMPTY and a step back onto it is HEX_BLOCKED', () => {
+  it('an examined grave refuses again with CONTAINER_EMPTY and a step back onto it is HEX_BLOCKED', () => {
     const looted = play(won([warrior('s1', TARGET)], { seed: 'golden-3' }), lootAt(TARGET));
     const away = play(looted.battle, stepTo(ORIGIN)).battle;
-    expectRefused(away, lootAt(TARGET), 'GRAVE_EMPTY');
+    expectRefused(away, lootAt(TARGET), 'CONTAINER_EMPTY');
     const back = play(away, stepTo(TARGET));
     expect(back.refused).toBe('HEX_BLOCKED');
   });

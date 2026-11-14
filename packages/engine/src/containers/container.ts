@@ -1,6 +1,8 @@
 import type { LootDrop } from '../loot';
 import type { Axial } from '../utils/hex-utils';
 
+export type LootLists = readonly (readonly LootDrop[])[];
+
 export type ContainerKind = 'chest' | 'grave' | 'quest-chest';
 export type ContainerStatus = 'full' | 'empty';
 
@@ -8,7 +10,7 @@ export interface ContainerState {
   readonly id: string;
   readonly kind: ContainerKind;
   readonly at: Axial;
-  readonly contents: readonly LootDrop[] | null;
+  readonly contents: LootLists | null;
   readonly status: ContainerStatus;
 }
 

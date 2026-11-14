@@ -41,7 +41,7 @@ describe('REQ-LOOT-100 a grave with an empty loot list', () => {
 
   it('keeps an examined grave non-enterable and refuses a second eye without a change', () => {
     const looted = play(emptyGrave(), lootAt(TARGET));
-    expectRefused(looted.battle, lootAt(TARGET), 'GRAVE_EMPTY');
+    expectRefused(looted.battle, lootAt(TARGET), 'CONTAINER_EMPTY');
     expectRefused(looted.battle, stepTo(TARGET), 'HEX_BLOCKED');
   });
 

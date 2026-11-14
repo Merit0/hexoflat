@@ -1,7 +1,7 @@
 import type { IInventoryDraft } from '../inventory/apply-stock';
-import { planLootSpread, type LootDrop, type LootNeighbour, type LootSpreadPlan } from '../loot';
+import { planLootSpread, type LootNeighbour, type LootSpreadPlan } from '../loot';
 import type { Axial } from '../utils/hex-utils';
-import type { AccessRefusal, ContainerRefusal, ContainerState } from './container';
+import type { AccessRefusal, ContainerRefusal, ContainerState, LootLists } from './container';
 
 export interface AccessInput {
   actorAt: Axial;
@@ -10,7 +10,7 @@ export interface AccessInput {
 }
 
 export interface OpenInput extends AccessInput {
-  contents: readonly LootDrop[];
+  contents: LootLists;
   neighbours: readonly LootNeighbour[];
   bag: IInventoryDraft;
 }
@@ -38,7 +38,7 @@ export function openContainer(input: OpenInput): OpenOutcome {
     target: input.container.at,
     entry: input.actorAt,
     neighbours: input.neighbours,
-    lists: [input.contents],
+    lists: input.contents,
     bag: input.bag,
   });
   if (!spread.ok) return { ok: false, reason: spread.reason };

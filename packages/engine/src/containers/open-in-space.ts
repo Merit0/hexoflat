@@ -1,8 +1,8 @@
 import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
-import type { LootDrop, LootNeighbour } from '../loot';
+import type { LootNeighbour } from '../loot';
 import type { Axial } from '../utils/hex-utils';
-import type { ContainerRefusal, ContainerState } from './container';
+import type { ContainerRefusal, ContainerState, LootLists } from './container';
 import { accessRefusal, openContainer, type OpenOutcome } from './open-container';
 
 export interface ContainerPrice {
@@ -16,7 +16,7 @@ export interface ContainerSpace<S, T, R extends string> {
   standsOnContainer(state: S, actorId: string): boolean;
   containerAt(state: S, target: T): ContainerState | null;
   neighbours(state: S, container: ContainerState): readonly LootNeighbour[];
-  rollContents(state: S, container: ContainerState): LootDrop[];
+  rollContents(state: S, container: ContainerState): LootLists;
   apply(
     state: S,
     actorId: string,
