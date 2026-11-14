@@ -122,6 +122,7 @@ Add future scout/research docs to `docs/design/` and reference them here.
 
 ## Workflow rules
 
+- **Messages about events** (refusals, warnings, results of an action) are shown only by the general warning system (`heroToolStore.setActionMessage` → `action-alert-banner`), never by a board-local message line; e2e asserts on the banner (`QuestBoardFeature.verifyWarning`).
 - Always ask before `git commit` — not just before `git push`.
 - **After every finished feature, update the project skills** (`.claude/skills/*/SKILL.md`) and this file with what the feature taught: new commands/hooks/files, new gotchas, changed rules, new plan docs. A feature is not done until the skills describe the code as it now is (stale skills mislead the next chat).
 - E2E is grouped by feature (`apps/playwright/e2e/<group>/`, tags `@auth @board @camp @combat @hero @shell`, `@smoke` on single tests). `apps/playwright/impact-map.ts` + `scripts/select-e2e*.ts` pick the groups a diff affects: pre-push runs only those (`E2E_ALL=1` / `E2E_SKIP=1` override), the gating PR does the same in the `e2e-plan` job, pushes to `main` and nightly run everything. Plan: `docs/e2e/e2e-impact-selection-plan.md`; new feature folders must be added to a group's `roots`, `pnpm run e2e:map:check` guards the tags.

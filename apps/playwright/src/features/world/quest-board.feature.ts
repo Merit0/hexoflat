@@ -77,6 +77,12 @@ export class QuestBoardFeature extends BaseFeature {
     );
   }
 
+  async verifyWarning(pattern: RegExp): Promise<void> {
+    await this.step('Verify the general warning banner explains the refusal', () =>
+      this.campingMap.actionAlertBanner.verifyIsVisibleMatching(pattern),
+    );
+  }
+
   async verifyRefusal(pattern: RegExp): Promise<void> {
     await this.step('Verify the board explains the refusal', () =>
       this.board.verifyMessage(pattern),

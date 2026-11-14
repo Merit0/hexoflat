@@ -230,3 +230,7 @@ Health comes from the server: `bindHealthListener` restores `hero` from every `p
 
 - `runQuestCommand` (`services/quests/quest-run-transport.ts`) applies the progress AND inventory aggregates of every quest answer (the bag changes on `QUEST_PICKUP` and on a chest that sends drops to the bag), starts the shared loot flight on `CHEST_OPENED` (`quest-loot.ts` `questChestOpenedOf`; offset hexes, no conversion) BEFORE `applyQuestRun`, and on a `replayed` answer refetches `GET /player/quest` once and plays nothing.
 - `quest-field-model.ts` in the collect phase: seen hexes, free steps (cost 0), `ground` stacks, `chestEmpty`; `resolveFieldClick` gives `chest | pickup | step`. The field has no tool ring (hand): chest = click, stack = click. Refusals go through `questRefusalText` (`loot.reject.*` for the loot reasons not already known to `quest.refusal.*`).
+
+## Messages about events (Oleh, 2026-11-14)
+
+Only the general warning system shows messages about any event or refusal: `heroToolStore.setActionMessage(text, icon?, cost?, tone?)` -> `action-alert-banner`. Do not add a local message line to a board or panel (the old `quest-message` is legacy). E2E asserts on the banner.
