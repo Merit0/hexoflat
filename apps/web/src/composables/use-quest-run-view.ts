@@ -22,6 +22,7 @@ export function useQuestRunView() {
       trail: projection.path.map((entry) => entry.number),
       phase: projection.phase,
       canGiveUp: projection.phase === 'walking' || projection.phase === 'ambush',
+      lost: projection.phase === 'lost',
     };
   });
 

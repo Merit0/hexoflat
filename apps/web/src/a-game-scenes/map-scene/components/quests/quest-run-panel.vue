@@ -12,7 +12,11 @@
       <p class="trail" data-testid="quest-trail-row">
         {{ t('quest.run.trail') }}: {{ run.trail.length ? run.trail.join(' · ') : '—' }}
       </p>
-      <p v-if="run.phase === 'collect'" class="note">{{ t('quest.run.collect') }}</p>
+      <template v-if="run.lost">
+        <p class="note" data-testid="quest-run-lost">{{ t('quest.run.lost') }}</p>
+        <p class="note" data-testid="quest-run-lost-hint">{{ t('quest.run.lostHint') }}</p>
+      </template>
+      <p v-else-if="run.phase === 'collect'" class="note">{{ t('quest.run.collect') }}</p>
       <p v-else-if="run.phase === 'ambush'" class="note">{{ t('quest.run.ambush') }}</p>
       <p v-else-if="run.projection.chest" class="note">{{ t('quest.run.chestSeen') }}</p>
       <div class="buttons">
@@ -25,6 +29,16 @@
           @click="giveReturn"
         >
           {{ t('quest.run.return') }}
+        </button>
+        <button
+          v-if="run.lost"
+          type="button"
+          class="primary"
+          data-testid="quest-leave-map"
+          :disabled="busy"
+          @click="leave"
+        >
+          {{ t('quest.run.leaveMap') }}
         </button>
         <template v-if="run.canGiveUp">
           <button

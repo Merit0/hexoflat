@@ -186,6 +186,23 @@ export class QuestBoardComponent extends BaseComponent {
     await this.page.getByTestId('quest-give-up-confirm').click();
   }
 
+  async verifyLostCard(): Promise<void> {
+    await expect(this.page.getByTestId('quest-run-lost')).toBeVisible();
+    await expect(this.page.getByTestId('quest-run-lost-hint')).toBeVisible();
+    await expect(this.page.getByTestId('quest-leave-map')).toBeVisible();
+    await expect(this.page.getByTestId('quest-return-to-camp')).toHaveCount(0);
+  }
+
+  async leaveMap(): Promise<void> {
+    await this.page.getByTestId('quest-leave-map').click();
+  }
+
+  async readWill(): Promise<number> {
+    const will = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.current);
+    if (will === undefined) throw new Error('No Will to read');
+    return will;
+  }
+
   async verifyResult(outcome: string): Promise<void> {
     await expect(this.page.getByTestId('quest-result')).toHaveAttribute('data-outcome', outcome);
   }

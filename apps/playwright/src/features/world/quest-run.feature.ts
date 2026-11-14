@@ -91,6 +91,47 @@ export class QuestRunFeature extends BaseFeature {
     });
   }
 
+  async followAFalseTrailUntilTheTreasureIsLost(): Promise<void> {
+    await this.step('Keep stepping on fresh hexes until the treasure is lost', async () => {
+      for (let guard = 0; guard < 12; guard += 1) {
+        if ((await this.field.read()).phase === 'lost') return;
+        await this.stepOnAnyFreshHex();
+      }
+      await this.field.verifyPhase('lost');
+    });
+  }
+
+  async verifyTheTreasureIsLost(): Promise<void> {
+    await this.step('Verify the treasure is lost: only leaving is offered', async () => {
+      await this.field.verifyPhase('lost');
+      await this.panel.verifyLostCard();
+      await this.field.verifyNothingDrawnOrOffered();
+    });
+  }
+
+  async readWill(): Promise<number> {
+    return this.step('Remember how much Will the hero has', () => this.panel.readWill());
+  }
+
+  async leaveTheLostMap(): Promise<void> {
+    await this.step('Leave the map', async () => {
+      await this.panel.leaveMap();
+      await this.panel.verifyResult('lost');
+    });
+  }
+
+  async readBag(): Promise<Record<string, number>> {
+    return this.step('Remember what the bag holds', () => this.field.readBagTotals());
+  }
+
+  async verifyBagIs(expected: Record<string, number>): Promise<void> {
+    await this.step('Verify the bag is unchanged', () => this.field.verifyBagTotals(expected));
+  }
+
+  async verifyWillIs(will: number): Promise<void> {
+    await this.step(`Verify the Will is still ${will}`, () => this.board.verifyWill(will));
+  }
+
   async stepBack(): Promise<void> {
     await this.step('Step back to the previous hex', async () => {
       const before = await this.field.read();

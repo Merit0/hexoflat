@@ -947,6 +947,9 @@
       "collect": "The chest is open. Take what you can.",
       "ambush": "Something is wrong with this chest.",
       "chestSeen": "A chest stands nearby. Open it.",
+      "lost": "The treasure is lost.",
+      "lostHint": "The trail led nowhere. Leave the map.",
+      "leaveMap": "Leave the map",
       "return": "Return to camp",
       "giveUp": "Give up",
       "giveUpConfirm": "Yes, give up",
@@ -966,6 +969,7 @@
       "defeat": "The ambush defeated you.",
       "stranded": "Your Will ran out. You are stranded.",
       "left": "You left the trail.",
+      "lost": "The treasure is lost.",
       "review": "First wrong turn: you chose {took}, the rule gave {rule}.",
       "dismiss": "Back to the board"
     },

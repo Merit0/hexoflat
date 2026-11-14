@@ -154,3 +154,5 @@ Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm 
 ## Seeker chest loot specs (QC2, 2026-11-14)
 
 - `e2e/hero/quest-seeker-loot.spec.ts` (`@hero`, 4 tests) through `QuestRunFeature` (`verifyHeroOnTheEmptiedChest`, `takeEveryStack`, `takeOneStack`, `stepOffTheChest`, `clickTheChest`, `reloadAndVerifyLootKept`, `verifyNextCardOpen`) and `QuestFieldComponent` (`readBagTotals`, `verifyBagTotals`, `verifyChestEmpty`, `verifyGroundCount`). The loot is random, so the tests read the stacks from `getQuestField().ground` (`hex`, `itemKey`, `quantity`; `chestEmpty`) and check the bag by delta, never by a fixed table.
+
+- Lost treasure (QC2b): `e2e/hero/quest-seeker-lost.spec.ts` through `QuestRunFeature.followAFalseTrailUntilTheTreasureIsLost/verifyTheTreasureIsLost/leaveTheLostMap`; ids `quest-run-lost`, `quest-run-lost-hint`, `quest-leave-map`. The `wrong trail … ambush` test in `quest-seeker.spec.ts` is stale (no chest on a false trail while `ambushEnabled` is off).

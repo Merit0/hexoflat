@@ -118,7 +118,7 @@ export function questLocaleKeys(): string[] {
   const tips = ['chest', 'step', 'back', 'free', 'chestEmpty', 'stack'].map(
     (tip) => `quest.tip.${tip}`,
   );
-  const results = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'].map(
+  const results = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left', 'lost'].map(
     (outcome) => `quest.result.${outcome}`,
   );
   const filters = QUEST_CATEGORIES.map((filter) => `quest.board.filter.${filter}`);

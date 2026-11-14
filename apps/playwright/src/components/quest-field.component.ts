@@ -70,6 +70,13 @@ export class QuestFieldComponent extends BaseComponent {
     await expect.poll(async () => (await this.read()).ground.length, POLL).toBe(count);
   }
 
+  async verifyNothingDrawnOrOffered(): Promise<void> {
+    const field = await this.read();
+    expect(field.chest).toBeNull();
+    expect(field.ground).toHaveLength(0);
+    expect(field.hexes.filter((cell) => cell.step)).toHaveLength(0);
+  }
+
   async verifyBoardSettled(): Promise<void> {
     await expect(this.field).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
   }
