@@ -226,3 +226,9 @@ Health is in `progress.health` (`{ current, bonus, debt }`, base `HERO_BASE_HEAL
 - **Provisional table.** `content/loot-tables.content.ts` has `cave-chest-provisional` (coins, potion, charm, shield, axe, pickaxe), referenced by `construction.lootTableId` on `chest`; real tables come in L5. `validateContent` checks that every table item exists.
 - **Quantity on item instances.** `IHexobject.quantity?` (default 1) is kept by `HexObjectFactory.create` overrides and `hydrateHexobject`; the `TAKE` finisher takes the whole stack (`quantity ?? resource.amount ?? 1`) or nothing.
 - **Web refusal texts** for the loot reasons live under `loot.reject.*` in `apps/web/src/locales/{en,uk}/ui.json` (registered through `lootLocaleKeys()` in `i18n/locale-keys.ts`).
+
+## Graves and the collection phase (L3a/L3b, 2026-11-14)
+
+- `battle/collect.ts` owns the phase: `phase 'ended'` + `outcome 'victory'` + `collect` = collecting. `loot-grave` examines a grave (an empty result is a success with `nothing: true`, nothing placed, the hero stays); `pickup-loot` takes a stack next to the hero. Every `BattleAction` switch must stay exhaustive (`assertNever`).
+- `progress` v9: `graveExitWarningAcknowledged` replaced the `claimedRewards` entry `grave-exit-warning-acknowledged` (upcaster 8 → 9). `graveLootEnabled` in `battle-content.ts` defaults to true; `collect-nothing.test.ts` pins the empty-grave rules and the fixture table `nothing-fixture` (rolls [0, 0]).
+- Web reads `packages/engine/dist`: rebuild with `pnpm build` after flipping a flag or editing the engine, or web tests still see the old rules.

@@ -140,3 +140,10 @@ Each worker registers an `e2e-…` user per run and nothing deletes them. `pnpm 
 - `e2e/hero/loot-chest.spec.ts` (`@hero`, 5 tests) through `LootChestFeature` and `LootBoardComponent` (`loot-board.component.ts`, on `CampingMapPage.lootBoard`). A full chest is put beside the hero with `placeItemNextToHero('chest')` (the cave one is random to reach) and opened with the real OPEN; loot is read with `getGroundItems` (hex, key, quantity), chests with `getChests` (`full`/`empty`), flights with `isLootFlying`; wait for `data-ready` after the open, never for a timer.
 - The hand stays armed after an action and a click on the map is ignored while it is, so press Escape (`putTheHandDown`) before stepping.
 - An opened chest offers no OPEN in the ring, so the `CHEST_EMPTY` text is checked through the hook `tryOpenChest` (real command, real text). The placement hook cannot make stacks: the full-bag test takes an axe.
+
+## Battle collection specs (L3b, 2026-11-14)
+
+- `e2e/combat/battle-collect.spec.ts` (`@combat`, 3 tests) through `BattleCollectFeature` (`winTheBattle` = real battle + `finishBattle('victory')`, `lookThroughEveryGrave`, `pickUpEverythingLyingAround`, `verifyLeavingAsksOnceWhileLootRemains`, reload) and `BattleCollectComponent` (on `CampingMapPage.battleCollect`). State comes from `getBattleCollect()` (`collecting`, `lootLeft`, `heroHex`, graves and items with `standHexes` = free neighbours computed by the engine, never a seed or a table); the hero is walked next to a target by clicking a `standHex`, then the wheel opens the hand tool hex, which sits on the adjacent grave/item by itself; the eye is read from `aria-label` (`Read`/`Читати`) because the button is an icon.
+- The tool hex covers its own target hex, so hovering that hex is skipped (same rule as `BattleTabComponent.hoverBoardPoint`).
+- Ids: `battle-leave-warning`, `battle-leave-confirm`, `battle-leave-cancel` (the plain `battle-leave` button is hidden while the warning shows).
+- The first look-through in a fresh test was flaky once (passed on retry); wait for `waitForBoardStill` before clicking.

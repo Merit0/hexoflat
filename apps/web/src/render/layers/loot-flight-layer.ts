@@ -6,6 +6,11 @@ import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { applyObjectFit } from '@/render/object-fit';
 import { LOOT_TIMING } from '@/render/loot-timing';
 import { easeOutCubic, runTween } from '@/render/tween';
+
+function easeOutBack(t: number): number {
+  const c = 1.4;
+  return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
+}
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import type { LootFlight, LootFlightRequest } from '@/services/loot/loot-flight';
 
@@ -58,25 +63,37 @@ export function createLootFlightLayer(deps: LootFlightLayerDeps): LootFlightLaye
         fit();
       });
     }
-    const from = topLeft(flight.from, w, h);
+    node.pivot.set(w / 2, h / 2);
+    const centre = (hex: IHexCoordinates) => {
+      const corner = topLeft(hex, w, h);
+      return { x: corner.x + w / 2, y: corner.y + h / 2 };
+    };
+    const from = centre(flight.from);
     const to = flight.to
-      ? topLeft(flight.to, w, h)
+      ? centre(flight.to)
       : { x: from.x, y: from.y - h * LOOT_TIMING.bagRiseTiles };
     node.position.set(from.x, from.y);
     container.addChild(node);
     return { flight, node, from, to, toBag: !flight.to, landed: false, unsubscribe };
   }
 
-  function frame(runner: Runner, elapsedMs: number, flightMs: number) {
-    const t = Math.min(1, Math.max(0, (elapsedMs - runner.flight.delayMs) / flightMs));
+  function frame(runner: Runner, elapsedMs: number, request: LootFlightRequest) {
+    const { h } = deps.getTileSize();
+    const local = elapsedMs - runner.flight.delayMs;
+    const t = Math.min(1, Math.max(0, local / request.flightMs));
     const eased = easeOutCubic(t);
+    const lift = Math.sin(Math.PI * t) * h * LOOT_TIMING.arcTiles;
     runner.node.position.set(
       runner.from.x + (runner.to.x - runner.from.x) * eased,
-      runner.from.y + (runner.to.y - runner.from.y) * eased,
+      runner.from.y + (runner.to.y - runner.from.y) * eased - lift,
     );
-    const started = elapsedMs >= runner.flight.delayMs;
-    runner.node.alpha = !started ? 0 : runner.toBag ? 1 - t : 1;
-    if (t >= 1 && !runner.landed) {
+    const accent = runner.toBag
+      ? 0
+      : Math.min(1, Math.max(0, (local - request.flightMs) / request.accentMs));
+    const pop = 1 + (LOOT_TIMING.accentScale - 1) * Math.sin(Math.PI * accent);
+    runner.node.scale.set((0.7 + 0.3 * easeOutBack(t)) * pop);
+    runner.node.alpha = local < 0 ? 0 : runner.toBag ? 1 - t : 1;
+    if (local >= request.flightMs + (runner.toBag ? 0 : request.accentMs) && !runner.landed) {
       runner.landed = true;
       runner.node.visible = false;
       deps.onLanded(runner.flight);
@@ -98,7 +115,7 @@ export function createLootFlightLayer(deps: LootFlightLayerDeps): LootFlightLaye
       const active = runners;
       await runTween(request.totalMs, (progress) => {
         const elapsed = progress * request.totalMs;
-        for (const runner of active) frame(runner, elapsed, request.flightMs);
+        for (const runner of active) frame(runner, elapsed, request);
       }).done;
       for (const runner of active) {
         if (!runner.landed) {

@@ -43,6 +43,7 @@ export const progressStateSchema = z
     traders: tradersStateSchema,
     listings: listingsSchema,
     quests: questLogSchema,
+    graveExitWarningAcknowledged: z.boolean(),
   })
   .strict();
 export type ProgressState = z.infer<typeof progressStateSchema>;
@@ -61,5 +62,6 @@ export function emptyProgressState(heroId: string): ProgressState {
     traders: {},
     listings: emptyListings(),
     quests: emptyQuestLog(),
+    graveExitWarningAcknowledged: false,
   };
 }

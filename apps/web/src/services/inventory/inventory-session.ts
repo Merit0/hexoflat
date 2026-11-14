@@ -16,6 +16,7 @@ export const inventorySession = {
   presence: null as ServerPresence | null,
   steps: 0,
   kills: 0,
+  graveExitWarningAcknowledged: false,
   sealedUntil: {} as Record<string, number>,
   portal: null as PortalLink | null,
   health: null as { current: number; bonus: number; debt: number } | null,
@@ -39,6 +40,7 @@ export function resetInventorySession(): void {
   inventorySession.presence = null;
   inventorySession.steps = 0;
   inventorySession.kills = 0;
+  inventorySession.graveExitWarningAcknowledged = false;
   inventorySession.sealedUntil = {};
   inventorySession.portal = null;
   inventorySession.health = null;

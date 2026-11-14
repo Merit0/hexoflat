@@ -35,9 +35,11 @@ const inventoryDefinition: IAggregateDefinition<InventoryState> = {
   project: (state) => state,
 };
 
+const LEGACY_GRAVE_EXIT_REWARD = 'grave-exit-warning-acknowledged';
+
 const progressDefinition: IAggregateDefinition<ProgressState> = {
   kind: 'progress',
-  schemaVersion: 8,
+  schemaVersion: 9,
   schema: progressStateSchema,
   upcasters: {
     1: (old, { heroId }) => ({
@@ -52,6 +54,14 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
     5: (old) => ({ ...(old as object), trips: 0, traders: {} }),
     6: (old) => ({ ...(old as object), listings: emptyListings() }),
     7: (old) => ({ ...(old as object), quests: emptyQuestLog() }),
+    8: (old) => {
+      const rewards = (old as { claimedRewards: string[] }).claimedRewards;
+      return {
+        ...(old as object),
+        claimedRewards: rewards.filter((reward) => reward !== LEGACY_GRAVE_EXIT_REWARD),
+        graveExitWarningAcknowledged: rewards.includes(LEGACY_GRAVE_EXIT_REWARD),
+      };
+    },
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
   project: projectProgress,

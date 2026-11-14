@@ -21,6 +21,7 @@ export interface LootFlightRequest {
   id: number;
   flights: LootFlight[];
   flightMs: number;
+  accentMs: number;
   totalMs: number;
 }
 
@@ -37,7 +38,9 @@ export function chestOpenedOf(events: readonly DomainEvent[]): ChestOpened | nul
 }
 
 export function planLootFlights(opened: ChestOpened): Omit<LootFlightRequest, 'id'> {
-  const { delaysMs, flightMs, totalMs } = lootSchedule(opened.placed.length + opened.toBag.length);
+  const { delaysMs, flightMs, accentMs, totalMs } = lootSchedule(
+    opened.placed.length + opened.toBag.length,
+  );
   const from = opened.coordinates;
   const placed: LootFlight[] = opened.placed.map((item, index) => ({
     itemKey: item.itemKey,
@@ -53,5 +56,29 @@ export function planLootFlights(opened: ChestOpened): Omit<LootFlightRequest, 'i
     delayMs: delaysMs[opened.placed.length + index],
     landingKey: null,
   }));
-  return { flights: [...placed, ...toBag], flightMs, totalMs };
+  return { flights: [...placed, ...toBag], flightMs, accentMs, totalMs };
+}
+
+interface GravePayload {
+  hex: { q: number; r: number };
+  placed?: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
+  toBag?: { itemKey: string; amount: number }[];
+}
+
+export function gravePlayedOf(
+  events: readonly DomainEvent[],
+  offsetOf: (hex: { q: number; r: number }) => IHexCoordinates,
+): ChestOpened | null {
+  const event = events.find((candidate) => candidate.type === 'GRAVE_LOOTED');
+  if (!event) return null;
+  const payload = event.payload as GravePayload;
+  return {
+    coordinates: offsetOf(payload.hex),
+    placed: (payload.placed ?? []).map((item) => ({
+      coordinates: offsetOf(item.hex),
+      itemKey: item.itemKey,
+      amount: item.amount,
+    })),
+    toBag: payload.toBag ?? [],
+  };
 }

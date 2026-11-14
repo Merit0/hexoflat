@@ -181,7 +181,7 @@ onMounted(() => {
 useEscapeClearsItemSelection();
 useEquipmentHealthSync();
 useOpenInventoryOnPickup(() => {
-  activeTab.value = 'inventory';
+  if (!battleStore.isOpen) activeTab.value = 'inventory';
 });
 watch(
   () => heroStore.knowledgeError,

@@ -6,6 +6,7 @@ import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-batt
 import { cheapestPaths, pathTo, stepCost } from '@hexoflat/engine/battle/movement';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
+import { collectHero, collectRoute } from './battle-collect';
 
 export type BattleUiMode = 'move' | 'strike' | 'push' | 'swap';
 
@@ -76,6 +77,11 @@ function stepsTo(
 
 export function battleMovePreview(input: BattleTapInput): BattleMovePreview | null {
   const view = input.projection;
+  const walker = collectHero(view, input.localHeroIds);
+  if (view && walker) {
+    const path = input.mode === 'move' ? collectRoute(view, walker, input.hex) : [];
+    return path.length ? { path, cost: 0, reachable: true } : null;
+  }
   const self = controlledHero(view, input.localHeroIds);
   if (!view || !self || view.phase !== 'act' || input.mode !== 'move') return null;
   const route = cheapestRoute(view, self, input.hex, input.rules);
@@ -101,6 +107,10 @@ export function aimHexes(
 
 export function battleTapActions(input: BattleTapInput): BattleAction[] {
   const view = input.projection;
+  const walker = collectHero(view, input.localHeroIds);
+  if (view && walker) {
+    return collectRoute(view, walker, input.hex).map((hex) => ({ kind: 'move', hex }));
+  }
   const self = controlledHero(view, input.localHeroIds);
   if (!view || !self) return [];
   if (view.reaction?.stage === 'aim') {

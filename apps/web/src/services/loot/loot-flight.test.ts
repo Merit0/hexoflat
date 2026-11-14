@@ -89,3 +89,41 @@ describe('loot flight state', () => {
     expect(lootFlying.value).toBe(false);
   });
 });
+
+describe('gravePlayedOf', () => {
+  it('turns GRAVE_LOOTED into a flight plan from the grave hex', async () => {
+    const { gravePlayedOf, planLootFlights } = await import('./loot-flight');
+    const offsetOf = (hex: { q: number; r: number }) => ({ columnIndex: hex.q, rowIndex: hex.r });
+    const played = gravePlayedOf(
+      [
+        {
+          type: 'GRAVE_LOOTED',
+          payload: {
+            hex: { q: 2, r: 1 },
+            placed: [{ hex: { q: 3, r: 1 }, itemKey: 'coins', amount: 9 }],
+            toBag: [],
+          },
+        },
+      ],
+      offsetOf,
+    );
+    expect(played?.coordinates).toEqual({ columnIndex: 2, rowIndex: 1 });
+    const plan = planLootFlights(played!);
+    expect(plan.flights).toHaveLength(1);
+    expect(plan.totalMs).toBeLessThanOrEqual(800);
+  });
+
+  it('plays nothing for a grave that held nothing', async () => {
+    const { gravePlayedOf, planLootFlights } = await import('./loot-flight');
+    const played = gravePlayedOf(
+      [
+        {
+          type: 'GRAVE_LOOTED',
+          payload: { hex: { q: 0, r: 0 }, placed: [], toBag: [], nothing: true },
+        },
+      ],
+      (hex) => ({ columnIndex: hex.q, rowIndex: hex.r }),
+    );
+    expect(planLootFlights(played!).flights).toEqual([]);
+  });
+});

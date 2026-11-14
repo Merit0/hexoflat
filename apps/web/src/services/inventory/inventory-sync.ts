@@ -100,6 +100,7 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     portal?: PortalLink | null;
     health?: { current: number; bonus: number; debt: number };
     kills?: number;
+    graveExitWarningAcknowledged?: boolean;
     quests?: QuestLog;
   } & Partial<TraderProjection>;
   applyTraderProjection(progress);
@@ -112,6 +113,7 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
   inventorySession.sealedUntil = progress.sealedUntil ?? {};
   inventorySession.portal = progress.portal ?? null;
   portalListener?.(inventorySession.portal);
+  inventorySession.graveExitWarningAcknowledged = progress.graveExitWarningAcknowledged ?? false;
   inventorySession.kills = progress.kills ?? 0;
   killsListener?.(inventorySession.kills);
   inventorySession.health = progress.health ?? null;

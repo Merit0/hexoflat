@@ -208,6 +208,7 @@ function boardView(input: BattleViewInput): BattleBoardView | null {
       boulders: view?.boulders ?? deploy.setup.boulders ?? [],
       creatures,
       activeId: view && view.phase !== 'ended' ? view.activeId : null,
+      collect: view?.collect ?? null,
     },
     overlay,
     preview: input.ui.hover

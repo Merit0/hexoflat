@@ -107,6 +107,23 @@ export function lootGrave(
   });
   if (!spread.ok) return reject(spread.reason);
 
+  if (spread.plan.placements.length === 0 && spread.plan.toBag.length === 0) {
+    grave.examined = true;
+    return [
+      {
+        type: 'GRAVE_LOOTED',
+        payload: {
+          creatureId: actor.id,
+          hex: { ...grave.hex },
+          from: { ...actor.pos },
+          placed: [],
+          toBag: [],
+          nothing: true,
+        },
+      },
+    ];
+  }
+
   const from = { ...actor.pos };
   grave.examined = true;
   actor.pos = { ...grave.hex };

@@ -1,5 +1,5 @@
 import { useI18n } from 'vue-i18n';
-import type { BattleRejectionCode } from '@hexoflat/engine/battle/battle-rejection';
+import type { BattleWarningCode } from './battle-warning';
 import { useBattleStoreContext } from '@/composables/battle-store-context';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { controlledHero } from './battle-board-tap';
@@ -10,7 +10,7 @@ export function useBattleWarnings() {
   const heroToolStore = useHeroToolStore();
   const { t } = useI18n();
 
-  function warn(code: BattleRejectionCode, cost: number | null) {
+  function warn(code: BattleWarningCode, cost: number | null) {
     if (code === 'INSUFFICIENT_WILL') {
       heroToolStore.setActionMessage(t('knowledge.insufficientWill'), 'will', cost);
       return;

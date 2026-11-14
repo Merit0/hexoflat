@@ -1,6 +1,6 @@
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
-import { battleDistance, hexKey } from '@hexoflat/engine/battle/hex-battle-geom';
+import { battleDistance, hexKey, hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
 import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { controlledHero } from '@/composables/battle-board-tap';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
@@ -178,10 +178,62 @@ export function readBattleHands(): BattleHandsSnapshot | null {
   };
 }
 
+export interface BattleCollectSnapshot {
+  collecting: boolean;
+  outcome: string | null;
+  lootLeft: boolean;
+  heroHex: { q: number; r: number } | null;
+  graves: {
+    q: number;
+    r: number;
+    examined: boolean;
+    standHexes: { q: number; r: number }[];
+  }[];
+  items: {
+    q: number;
+    r: number;
+    itemKey: string;
+    amount: number;
+    standHexes: { q: number; r: number }[];
+  }[];
+}
+
+export function readBattleCollect(): BattleCollectSnapshot | null {
+  const view = useBattleStore().projection;
+  if (!view) return null;
+  const hero = view.creatures.find((creature) => creature.side === 'heroes');
+  return {
+    collecting: !!view.collect && view.phase === 'ended' && view.outcome === 'victory',
+    outcome: view.outcome ?? null,
+    lootLeft: !!view.lootLeft,
+    heroHex: hero ? { q: hero.pos.q, r: hero.pos.r } : null,
+    graves: (view.collect?.graves ?? []).map((grave) => ({
+      q: grave.hex.q,
+      r: grave.hex.r,
+      examined: grave.examined,
+      standHexes: hexNeighbours(grave.hex)
+        .filter((hex) => isFreeHex(view, hex))
+        .map((hex) => ({ q: hex.q, r: hex.r })),
+    })),
+    items: (view.collect?.items ?? []).map((item) => ({
+      q: item.hex.q,
+      r: item.hex.r,
+      itemKey: item.itemKey,
+      amount: item.amount,
+      standHexes: hexNeighbours(item.hex)
+        .filter((hex) => isFreeHex(view, hex))
+        .map((hex) => ({ q: hex.q, r: hex.r })),
+    })),
+  };
+}
+
 export function battleTestHooks() {
   return {
     getBattleHands(): BattleHandsSnapshot | null {
       return readBattleHands();
+    },
+    getBattleCollect(): BattleCollectSnapshot | null {
+      return readBattleCollect();
     },
     getBattleSnapshot(): BattleSnapshot | null {
       return readBattleSnapshot();

@@ -13,6 +13,7 @@ import {
   rejectionOf,
   skeleton,
 } from '../battle/battle-test-setup';
+import { BATTLE_RULES } from '../battle/battle-content';
 import { projectBattleForViewer } from '../battle/projection';
 import { EHexActionType } from '../enums/hex-action-type';
 import { emptyInventoryState, mintItem, type InventoryState } from '../inventory/inventory-state';
@@ -29,6 +30,7 @@ import {
   type TravelRun,
 } from './index';
 
+const OFF = { ...BATTLE_RULES, graveLootEnabled: false };
 const HERO_AT = { columnIndex: 3, rowIndex: 4 };
 const SQUAD_AT = { columnIndex: 4, rowIndex: 4 };
 const PACK = idAt(HEXOBJECT_KEYS.SKELETON_PACK, SQUAD_AT);
@@ -76,7 +78,7 @@ function ok(outcome: BattleWorldOutcome) {
 
 function startedRun(): TravelRun {
   const run = engaged();
-  const started = ok(battleWorld(run, { kind: 'start', heroId: HERO }));
+  const started = ok(battleWorld(run, { kind: 'start', heroId: HERO }, OFF));
   return { ...run, world: started.world, progress: started.progress, inventory: started.inventory };
 }
 
@@ -89,10 +91,10 @@ function ended(run: TravelRun, outcome: 'victory' | 'defeat'): TravelRun {
 }
 
 function duel(): BattleState {
-  return giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]), [
-    'hero',
-    's1',
-  ]);
+  const state = battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]);
+  delete state.lootEnabled;
+  delete state.fallen;
+  return giveTurn(state, ['hero', 's1']);
 }
 
 describe('REQ-LOOT-071 characterization: a won battle without grave loot', () => {
@@ -146,7 +148,7 @@ describe('REQ-LOOT-073 characterization: WORLD_BATTLE close after a victory', ()
   it('removes the squad token, frees its hex, counts the kills and clears the battle', () => {
     const run = ended(startedRun(), 'victory');
     expect(findSquad(run.world.map, PACK)).not.toBeNull();
-    const closed = ok(battleWorld({ ...run, now: 20_000 }, { kind: 'close', heroId: HERO }));
+    const closed = ok(battleWorld({ ...run, now: 20_000 }, { kind: 'close', heroId: HERO }, OFF));
     expect(closed.world.battle).toBeNull();
     expect(closed.world.engagement).toBeNull();
     expect(findSquad(closed.world.map, PACK)).toBeNull();
@@ -170,20 +172,22 @@ describe('REQ-LOOT-073 characterization: WORLD_BATTLE close after a victory', ()
 
   it('is accepted whatever hex the hero stands on and refuses a battle that has not ended', () => {
     const run = startedRun();
-    const early = battleWorld({ ...run, now: 20_000 }, { kind: 'close', heroId: HERO });
+    const early = battleWorld({ ...run, now: 20_000 }, { kind: 'close', heroId: HERO }, OFF);
     expect(early.ok).toBe(false);
     if (!early.ok) expect(early.code).toBe('BATTLE_NOT_ENDED');
     const won = ended(run, 'victory');
     const hero = won.world.battle!.creatures.find((c) => c.side === 'heroes')!;
     hero.pos = { q: hero.pos.q + 1, r: hero.pos.r };
-    expect(battleWorld({ ...won, now: 20_000 }, { kind: 'close', heroId: HERO }).ok).toBe(true);
+    expect(battleWorld({ ...won, now: 20_000 }, { kind: 'close', heroId: HERO }, OFF).ok).toBe(
+      true,
+    );
   });
 });
 
 describe('REQ-LOOT-074 characterization: WORLD_BATTLE close after a defeat', () => {
   it('sends the hero to the camp with a fresh dungeon and keeps the squad token', () => {
     const run = ended(startedRun(), 'defeat');
-    const closed = ok(battleWorld({ ...run, now: 20_000 }, { kind: 'close', heroId: HERO }));
+    const closed = ok(battleWorld({ ...run, now: 20_000 }, { kind: 'close', heroId: HERO }, OFF));
     expect(closed.respawn).not.toBeNull();
     expect(closed.respawn!.destination.locationKey).toBe('camping');
     expect(closed.progress.kills).toBe(0);

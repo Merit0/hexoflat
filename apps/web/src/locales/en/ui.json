@@ -44,7 +44,12 @@
     },
     "hints": {
       "saw": "Answer in 5 s or the saw bites.",
-      "chestLoot": "Loot scatters onto the free places around it; in cramped surroundings some of it is lost."
+      "chestLoot": "Loot scatters onto the free places around it; in cramped surroundings some of it is lost.",
+      "graveLoot": "Loot scatters onto the free places around it; in cramped surroundings some of it is lost."
+    },
+    "grave": {
+      "title": "Grave",
+      "description": "A fallen enemy rests here."
     },
     "actions": "Actions",
     "free": "Free",
@@ -392,6 +397,9 @@
     "victory": "Victory! All enemies have fallen.",
     "fallen": "Not enough hearts to survive that. {name} has fallen and returns to camp.",
     "leave": "Leave battle",
+    "leaveWarning": "Loot is left on the field. If you leave now, it is lost.",
+    "leaveConfirm": "Leave anyway",
+    "leaveCancel": "Stay",
     "tag": {
       "yourTurn": "Your turn",
       "next": "Next",
@@ -505,7 +513,14 @@
       "NOT_USABLE": "This item cannot be used.",
       "NOT_AN_OPTION": "You cannot strike from that hex.",
       "AIM_PENDING": "Choose the hex of the strike first.",
-      "WINDOW_CLOSED": "The time is up — the window is closed."
+      "WINDOW_CLOSED": "The time is up — the window is closed.",
+      "STANDING_ON_TARGET": "Step off this spot first.",
+      "NO_GRAVE": "There is no grave there.",
+      "GRAVE_EMPTY": "Nothing found!",
+      "NO_LOOT_THERE": "There is nothing to pick up here.",
+      "NO_ROOM_FOR_LOOT": "There is no room around for the loot.",
+      "BAG_FULL": "Your bag is full. Free some space.",
+      "FIGHT_NOT_OVER": "Win the fight first."
     },
     "actionName": {
       "place-shield": "Raising a shield",
@@ -528,7 +543,8 @@
       "attack": "Attack",
       "block": "Block",
       "unblock": "Lift",
-      "use": "Use"
+      "use": "Use",
+      "take": "Take"
     },
     "warn": {
       "enemyTurn": "The enemy is acting — wait for it",

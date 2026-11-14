@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ackGraveExitWarning,
-  GRAVE_EXIT_WARNING_MILESTONE,
-} from '../aggregates/ack-grave-exit-warning';
+import { ackGraveExitWarning } from '../aggregates/ack-grave-exit-warning';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { PLAYER_COMMAND_SCHEMAS } from '../aggregates/player-commands';
 import { isFreeHex } from '../battle/battle-board';
@@ -31,6 +28,7 @@ import {
 } from './index';
 
 const ON = { ...BATTLE_RULES, graveLootEnabled: true };
+const OFF = { ...BATTLE_RULES, graveLootEnabled: false };
 const HERO_AT = { columnIndex: 3, rowIndex: 4 };
 const SQUAD_AT = { columnIndex: 4, rowIndex: 4 };
 const PACK = idAt(HEXOBJECT_KEYS.SKELETON_PACK, SQUAD_AT);
@@ -190,13 +188,13 @@ describe('REQ-LOOT-089 leaving the field', () => {
 
   it('is the same close as before when the flag is off', () => {
     const run = engaged();
-    const off = adopt(run, ok(battleWorld(run, { kind: 'start', heroId: HERO })));
+    const off = adopt(run, ok(battleWorld(run, { kind: 'start', heroId: HERO }, OFF)));
     off.world.battle = applyBattleFixture(off.world.battle!, {
       kind: 'finish',
       outcome: 'victory',
     });
     expect(off.world.battle.collect).toBeUndefined();
-    const closed = ok(battleWorld({ ...off, now: 20_000 }, { kind: 'close', heroId: HERO }));
+    const closed = ok(battleWorld({ ...off, now: 20_000 }, { kind: 'close', heroId: HERO }, OFF));
     expect(closed.world.battle).toBeNull();
   });
 
@@ -219,7 +217,8 @@ describe('REQ-LOOT-090 the exit warning milestone', () => {
   it('is set once and a second command changes nothing', () => {
     const progress = emptyProgressState(HERO);
     const first = ackGraveExitWarning(progress);
-    expect(first.changed.progress!.claimedRewards).toEqual([GRAVE_EXIT_WARNING_MILESTONE]);
+    expect(first.changed.progress!.graveExitWarningAcknowledged).toBe(true);
+    expect(first.changed.progress!.claimedRewards).toEqual([]);
     expect(first.events.map((e) => e.type)).toEqual(['GRAVE_EXIT_WARNING_ACKNOWLEDGED']);
     const second = ackGraveExitWarning(first.changed.progress!);
     expect(second.changed).toEqual({});

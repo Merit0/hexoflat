@@ -8,12 +8,18 @@ import type {
   Boulder,
 } from '@hexoflat/engine/battle/battle-state';
 import type { TIconName } from '@/components/gui/icons/item-icons';
-import type { HexInfoTranslate, HexInfoView } from './build-hex-info';
+import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { buildHexInfo, type HexInfoTranslate, type HexInfoView } from './build-hex-info';
 
 export interface BattleHexInfoScene {
   board: Record<string, BattleTerrain>;
   boulders: Boulder[];
   creatures: BattleCreature[];
+  collect?: {
+    graves: { hex: BattleHex; examined: boolean }[];
+    items: { hex: BattleHex; itemKey: string; amount: number }[];
+  } | null;
 }
 
 const OBJECT_ACCENT = '#d1a35f';
@@ -63,6 +69,44 @@ function objectView(
   };
 }
 
+function graveView(examined: boolean, t: HexInfoTranslate): HexInfoView {
+  return {
+    variant: 'construction',
+    key: 'battle-grave',
+    title: t('hexInfo.grave.title'),
+    kind: t('itemTooltip.group.construction'),
+    subtitle: null,
+    description: t('hexInfo.grave.description'),
+    accent: OBJECT_ACCENT,
+    icon: 'skull',
+    rarity: null,
+    hearts: null,
+    supply: null,
+    headline: null,
+    locked: false,
+    broken: false,
+    empty: examined,
+    note: examined ? null : t('hexInfo.hints.graveLoot'),
+    effect: null,
+    tags: [],
+    stats: [],
+    actions: [],
+  };
+}
+
+function groundItemView(
+  item: { hex: BattleHex; itemKey: string; amount: number },
+  t: HexInfoTranslate,
+  te: (key: string) => boolean,
+): HexInfoView {
+  const obj = HexObjectFactory.create(
+    item.itemKey as THexobjectKey,
+    { columnIndex: 0, rowIndex: 0 },
+    { quantity: item.amount },
+  );
+  return buildHexInfo(obj, t(`itemTooltip.group.${obj.groupType}`), t, te);
+}
+
 export function buildBattleHexInfo(
   hex: BattleHex,
   scene: BattleHexInfoScene,
@@ -73,6 +117,10 @@ export function buildBattleHexInfo(
   if (scene.creatures.some((creature) => isAlive(creature) && hexKey(creature.pos) === key)) {
     return null;
   }
+  const grave = scene.collect?.graves.find((candidate) => hexKey(candidate.hex) === key);
+  if (grave) return graveView(grave.examined, t);
+  const item = scene.collect?.items.find((candidate) => hexKey(candidate.hex) === key);
+  if (item) return groundItemView(item, t, te);
   if (scene.boulders.some((boulder) => hexKey(boulder.pos) === key)) {
     return objectView('boulder', t, te);
   }

@@ -39,6 +39,7 @@ export interface BattleUiState {
   hover: BattleHex | null;
   toolAt: BattleHex | null;
   selectedId?: string | null;
+  confirmLeave?: boolean;
 }
 
 export interface BattleViewInput {

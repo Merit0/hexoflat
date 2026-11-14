@@ -75,7 +75,7 @@ describe('REQ-LOOT-077 graves appear at the moment of victory', () => {
         board: hexagonBoard(),
         creatures: [hero(ORIGIN), warrior('s1', { q: 1, r: 0 })],
       },
-      BATTLE_RULES,
+      { ...BATTLE_RULES, graveLootEnabled: false },
     ).battle;
     slay(off, 's1');
     expect(off.phase).toBe('ended');

@@ -9,6 +9,7 @@ import { SettingsOverlayComponent } from '@components/settings-overlay.component
 import { ToolActionOverlayComponent } from '@components/tool-action-overlay.component';
 import { HeroInventoryComponent } from '@components/hero-inventory.component';
 import { ActionAlertBannerComponent } from '@components/action-alert-banner.component';
+import { BattleCollectComponent } from '@components/battle-collect.component';
 import { BattleTabComponent } from '@components/battle-tab.component';
 import { HexInfoTooltipComponent } from '@components/hex-info-tooltip.component';
 import { PageErrorsComponent } from '@components/page-errors.component';
@@ -30,6 +31,7 @@ export class CampingMapPage extends BasePage {
   readonly inventory = new HeroInventoryComponent();
   readonly actionAlertBanner = new ActionAlertBannerComponent();
   readonly battleTab = new BattleTabComponent();
+  readonly battleCollect = new BattleCollectComponent();
   readonly hexInfoTooltip = new HexInfoTooltipComponent();
   readonly stashBoard = new StashBoardComponent();
   readonly shopBoard = new ShopBoardComponent();

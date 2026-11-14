@@ -110,3 +110,7 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 ## Loot flight (L2c, 2026-11-13)
 
 `layers/loot-flight-layer.ts` is created after the hero layer in `use-hex-board.ts` (tiles -> hero -> loot in flight; `loot-layers.test.ts` pins the order) and fed by the `lootFlight` option. Durations live in `render/loot-timing.ts` (`lootSchedule`, at most 800 ms in all). `tiles-layer.ts` takes `isObjectHidden(key)` (a flying item keeps its tile sprite at alpha 0 until `landLootFlight`) and draws the opened chest (`chest-open`) with `EMPTY_CHEST_ALPHA`. The battle board has its own seam and does not use this layer yet.
+
+## Graves and loot in a battle (L3b, 2026-11-14)
+
+`battle-token-layer.sync(creatures, activeId, targets, graves?)` draws graves as hex tokens from `collect.graves` (sprite `BATTLE_GRAVE_SPRITES.enemies` = `grave-hex.png`, `EXAMINED_GRAVE_ALPHA` 0.45); a dead enemy is not drawn as a second grave when `collect` exists and a creature still falling holds its grave back. `layers/battle-loot-layer.ts` draws ground items (skips hexes with a pending flight). `render/battle/grave-flights.ts` plays `GRAVE_LOOTED` through the shared `loot-flight-layer` (≤ 800 ms) and reports busy to `onAnimating`; the sync gate has a `loot` flag. Unit tests: `battle-token-layer.test.ts`, `loot-flight.test.ts` (`gravePlayedOf`).

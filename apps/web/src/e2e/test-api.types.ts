@@ -163,6 +163,26 @@ export interface HexoflatTestApi {
     will: number;
   } | null;
 
+  getBattleCollect(): {
+    collecting: boolean;
+    outcome: string | null;
+    lootLeft: boolean;
+    heroHex: { q: number; r: number } | null;
+    graves: {
+      q: number;
+      r: number;
+      examined: boolean;
+      standHexes: { q: number; r: number }[];
+    }[];
+    items: {
+      q: number;
+      r: number;
+      itemKey: string;
+      amount: number;
+      standHexes: { q: number; r: number }[];
+    }[];
+  } | null;
+
   getBattleSnapshot(): {
     round: number;
     phase: string;

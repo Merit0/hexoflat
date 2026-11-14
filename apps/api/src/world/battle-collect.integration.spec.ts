@@ -338,9 +338,9 @@ describe.skipIf(!dbAvailable)('battle close and restore as they are (real Postgr
       const first = await send();
       expect(first.result).toBe('applied');
       const state = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
-      expect((state.state as { claimedRewards: string[] }).claimedRewards).toContain(
-        'grave-exit-warning-acknowledged',
-      );
+      expect(
+        (state.state as { graveExitWarningAcknowledged: boolean }).graveExitWarningAcknowledged,
+      ).toBe(true);
       const second = await send();
       expect(second.result).toBe('applied');
       const again = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;

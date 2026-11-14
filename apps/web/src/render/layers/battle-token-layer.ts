@@ -1,18 +1,28 @@
-import { Container, Sprite } from 'pixi.js';
-import type { BattleCreature } from '@hexoflat/engine/battle/battle-state';
+import { Container } from 'pixi.js';
+import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-state';
+import { sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
 import { creatureSprite } from '@/render/creature-sprites';
 import { createHexToken, type HexToken } from '@/render/hex-token';
-import { getTexture, onTextureReady } from '@/render/texture-cache';
-import { BATTLE_GRAVE_SPRITES, BATTLE_GRAVE_SPRITE_FIT } from '@/render/battle/battle-look';
+import { BATTLE_GRAVE_SPRITES, EXAMINED_GRAVE_ALPHA } from '@/render/battle/battle-look';
 import { drawBattleGrave } from './battle-grave';
 import type { TokenPose } from '@/render/battle/battle-animation-sample';
 import type { BattleLayerDeps } from './battle-board-layer';
 
 export interface BattleTokenLayer {
-  sync(creatures: BattleCreature[], activeId: string | null, targets?: readonly string[]): void;
+  sync(
+    creatures: BattleCreature[],
+    activeId: string | null,
+    targets?: readonly string[],
+    graves?: readonly BattleGraveMark[] | null,
+  ): void;
   pose(poses: ReadonlyMap<string, TokenPose>): void;
   setDying(ids: ReadonlySet<string>): void;
   destroy(): void;
+}
+
+export interface BattleGraveMark {
+  hex: BattleHex;
+  examined: boolean;
 }
 
 interface PlacedToken {
@@ -31,6 +41,7 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
   container.addChild(graves);
   const placed = new Map<string, PlacedToken>();
   let creatures: BattleCreature[] = [];
+  let graveMarks: readonly BattleGraveMark[] | null = null;
   let dying: ReadonlySet<string> = new Set();
   let poses: ReadonlyMap<string, TokenPose> = new Map();
 
@@ -61,49 +72,69 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
     placed.clear();
   }
 
-  let graveWatchers: Array<() => void> = [];
+  let graveTokens: HexToken[] = [];
 
-  function graveSpriteOf(path: string): Sprite {
-    const sprite = new Sprite(getTexture(path));
-    sprite.anchor.set(0.5);
-    const fit = () => {
-      sprite.texture = getTexture(path);
-      const side = Math.min(w, h) * BATTLE_GRAVE_SPRITE_FIT;
-      sprite.width = side;
-      sprite.height = side;
-    };
-    fit();
-    graveWatchers.push(onTextureReady(path, fit));
-    return sprite;
+  function hexGraveAt(hex: BattleHex, examined: boolean): Container | null {
+    const path = BATTLE_GRAVE_SPRITES.enemies;
+    if (!path) return null;
+    const token = createHexToken(path);
+    token.layout(w, h);
+    token.body.position.set(w / 2, h / 2);
+    token.root.position.set(-w / 2, -h / 2);
+    graveTokens.push(token);
+    const holder = new Container();
+    holder.addChild(token.root);
+    const { x, y } = deps.positionOf(hex);
+    holder.position.set(x + w / 2, y + h / 2);
+    holder.alpha = examined ? EXAMINED_GRAVE_ALPHA : 1;
+    return holder;
   }
 
   function graveOf(creature: BattleCreature): Container {
-    const path = BATTLE_GRAVE_SPRITES[creature.side];
-    const grave = path ? graveSpriteOf(path) : drawBattleGrave(h);
+    if (creature.side === 'enemies') {
+      const grave = hexGraveAt(creature.pos, false);
+      if (grave) return grave;
+    }
+    const grave = drawBattleGrave(h);
     const { x, y } = deps.positionOf(creature.pos);
     grave.position.set(x + w / 2, y + h / 2);
     return grave;
   }
 
+  function clearGraves() {
+    for (const token of graveTokens) token.destroy();
+    graveTokens = [];
+    graves.removeChildren();
+  }
+
   function rebuild() {
     clear();
-    for (const stop of graveWatchers) stop();
-    graveWatchers = [];
-    graves.removeChildren().forEach((child) => child.destroy({ children: true }));
+    clearGraves();
     for (const creature of creatures) {
       if (creature.hp > 0 || dying.has(creature.id)) {
         const entry = holderOf(creature);
         placed.set(creature.id, entry);
         container.addChild(entry.holder);
-      } else {
+      } else if (!graveMarks || creature.side !== 'enemies') {
         graves.addChild(graveOf(creature));
       }
+    }
+    for (const mark of graveMarks ?? []) {
+      const covered = creatures.some((c) => dying.has(c.id) && sameHex(c.pos, mark.hex));
+      const grave = covered ? null : hexGraveAt(mark.hex, mark.examined);
+      if (grave) graves.addChild(grave);
     }
     applyPoses();
   }
 
-  function sync(next: BattleCreature[], _activeId?: string | null, _targets?: readonly string[]) {
+  function sync(
+    next: BattleCreature[],
+    _activeId?: string | null,
+    _targets?: readonly string[],
+    marks?: readonly BattleGraveMark[] | null,
+  ) {
     creatures = next;
+    graveMarks = marks ?? null;
     rebuild();
   }
 
@@ -124,8 +155,7 @@ export function createBattleTokenLayer(deps: Omit<BattleLayerDeps, 'ticker'>): B
     },
     destroy() {
       clear();
-      for (const stop of graveWatchers) stop();
-      graveWatchers = [];
+      clearGraves();
       container.destroy({ children: true });
     },
   };

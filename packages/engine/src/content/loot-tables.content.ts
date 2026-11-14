@@ -55,11 +55,20 @@ const PROVISIONAL_KING: LootTable = {
   ],
 };
 
+export const NOTHING_FIXTURE_TABLE_ID = 'nothing-fixture';
+
+const NOTHING_FIXTURE: LootTable = {
+  id: NOTHING_FIXTURE_TABLE_ID,
+  rolls: [0, 0],
+  entries: [{ itemKey: HEXOBJECT_KEYS.COINS, weight: 1, amount: [1, 1] }],
+};
+
 export const LOOT_TABLES: Readonly<Record<string, LootTable>> = {
   [CAVE_CHEST_TABLE_ID]: lootTableSchema.parse(PROVISIONAL_CAVE_CHEST),
   [SKELETON_WARRIOR_TABLE_ID]: lootTableSchema.parse(PROVISIONAL_WARRIOR),
   [SKELETON_ARCHER_TABLE_ID]: lootTableSchema.parse(PROVISIONAL_ARCHER),
   [SKELETON_KING_TABLE_ID]: lootTableSchema.parse(PROVISIONAL_KING),
+  [NOTHING_FIXTURE_TABLE_ID]: lootTableSchema.parse(NOTHING_FIXTURE),
 };
 
 export function lootTableOf(id: string | undefined): LootTable | null {
