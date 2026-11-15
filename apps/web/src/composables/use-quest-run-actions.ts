@@ -41,11 +41,11 @@ export function useQuestRunActions() {
     },
     giveUp: () => run(giveUpQuest),
     returnToCamp: () => run(returnFromQuest),
+    openChest: () => run(openQuestChest),
+    pickUp: (hex: IHexCoordinates) => run(() => pickUpQuestLoot(hex)),
     click: (action: FieldClick) => {
       if (!action) return Promise.resolve(false);
-      if (action.kind === 'chest') return run(openQuestChest);
       if (action.kind === 'back') return run(stepQuestBack);
-      if (action.kind === 'pickup') return run(() => pickUpQuestLoot(action.hex));
       return run(() => stepQuest(action.hex satisfies IHexCoordinates));
     },
   };

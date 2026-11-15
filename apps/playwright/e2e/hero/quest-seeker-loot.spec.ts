@@ -37,21 +37,10 @@ test.describe('Treasure Seeker chest loot', { tag: ['@hero'] }, () => {
     await quest.reloadAndVerifyLootKept();
   });
 
-  test('Verify clicking the chest while standing on it explains that the hero must step off', async () => {
+  test('Verify an object is used only with the hand, a mouse click on the chest does nothing', async () => {
     const quest = await reachTheOpenedChest();
 
-    await quest.clickTheChest();
-
-    await quest.verifyRefusal(/step off|зійди/i);
-  });
-
-  test('Verify the empty chest is refused once the hero has walked away from it', async () => {
-    const quest = await reachTheOpenedChest();
-
+    await quest.clickTheChestWithTheMouse();
     await quest.takeOneStack();
-    await quest.stepOffTheChest();
-    await quest.clickTheChest();
-
-    await quest.verifyRefusal(/chest is empty|скриня порожня/i);
   });
 });

@@ -169,8 +169,12 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async verifyTrail(numbers: number[]): Promise<void> {
-    const expected = numbers.length ? numbers.join(' · ') : '—';
-    await expect(this.page.getByTestId('quest-trail-row')).toContainText(expected);
+    const row = this.page.getByTestId('quest-trail-row');
+    if (!numbers.length) {
+      await expect(row.getByTestId('quest-trail-empty')).toBeVisible();
+      return;
+    }
+    await expect(row.getByTestId('quest-trail-chip')).toHaveText(numbers.map(String));
   }
 
   async verifyRunPhase(phase: string): Promise<void> {

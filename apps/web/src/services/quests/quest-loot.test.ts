@@ -79,11 +79,11 @@ describe('quest field while collecting', () => {
     expect(stepOf(START)).toBeNull();
   });
 
-  it('resolves clicks: stack takes, seen neighbour walks, chest asks to open, far hex nothing', () => {
+  it('resolves clicks: a seen neighbour walks, the chest, a stack and a far hex do nothing (objects use the tool hex)', () => {
     const run = collecting();
-    expect(resolveFieldClick(run, stackHex)).toEqual({ kind: 'pickup', hex: stackHex });
+    expect(resolveFieldClick(run, stackHex)).toBeNull();
     expect(resolveFieldClick(run, otherHex)).toEqual({ kind: 'step', hex: otherHex });
-    expect(resolveFieldClick(run, START)).toEqual({ kind: 'chest' });
+    expect(resolveFieldClick(run, START)).toBeNull();
     expect(resolveFieldClick(run, { columnIndex: 0, rowIndex: 0 })).toBeNull();
   });
 

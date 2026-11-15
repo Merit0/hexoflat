@@ -147,7 +147,10 @@ export class QuestRunFeature extends BaseFeature {
       await this.field.verifyChestShown();
       const { chest } = await this.field.read();
       if (!chest) throw new Error('No chest on the field');
-      await this.field.clickHex(chest);
+      await this.field.armHand();
+      await this.field.aimHandAt(chest);
+      await this.field.verifyToolHexShown(true);
+      await this.field.pressToolHex();
     });
   }
 
@@ -173,7 +176,12 @@ export class QuestRunFeature extends BaseFeature {
       const expected = { ...before };
       for (const stack of ground)
         expected[stack.itemKey] = (expected[stack.itemKey] ?? 0) + stack.quantity;
-      for (const stack of ground) await this.field.clickHex(stack.hex);
+      await this.field.armHand();
+      for (let taken = 0; taken < ground.length; taken += 1) {
+        await this.field.aimHandAt(ground[taken].hex);
+        await this.field.pressToolHex();
+        await this.field.verifyGroundCount(ground.length - taken - 1);
+      }
       await this.field.verifyGroundCount(0);
       await this.field.verifyBagTotals(expected);
     });
@@ -185,7 +193,9 @@ export class QuestRunFeature extends BaseFeature {
       const { ground } = await this.field.read();
       const [first] = ground;
       if (!first) throw new Error('No loot lies on the field');
-      await this.field.clickHex(first.hex);
+      await this.field.armHand();
+      await this.field.aimHandAt(first.hex);
+      await this.field.pressToolHex();
       await this.field.verifyGroundCount(ground.length - 1);
       await this.field.verifyBagTotals({
         ...before,
@@ -199,16 +209,21 @@ export class QuestRunFeature extends BaseFeature {
       const before = await this.field.read();
       const target = before.hexes.find((cell) => cell.step?.cost === 0);
       if (!target) throw new Error('No free step is offered');
+      await this.field.putTheHandDown();
       await this.field.clickHex(target.hex);
       await expect.poll(async () => (await this.field.read()).position).toEqual(target.hex);
     });
   }
 
-  async clickTheChest(): Promise<void> {
-    await this.step('Click the opened chest', async () => {
-      const { chest } = await this.field.read();
+  async clickTheChestWithTheMouse(): Promise<void> {
+    await this.step('Click the opened chest with the mouse: nothing may change', async () => {
+      const before = await this.field.readBagTotals();
+      const { chest, ground } = await this.field.read();
       if (!chest) throw new Error('No chest on the field');
       await this.field.clickHex(chest);
+      await this.field.verifyPhase('collect');
+      await this.field.verifyGroundCount(ground.length);
+      await this.field.verifyBagTotals(before);
     });
   }
 

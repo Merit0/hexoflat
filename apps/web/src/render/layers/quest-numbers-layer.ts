@@ -31,7 +31,7 @@ export interface QuestNumbersLayer {
 }
 
 const GOLD = 0xffe98a;
-const STEP_BLUE = 0x6fb8ff;
+const HINT_GREEN = 0x6fdc8c;
 export const EMPTY_CHEST_ALPHA = 0.45;
 
 export function questLayerAssetPaths(floorSprite: string): string[] {
@@ -102,8 +102,8 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
         fontFamily: 'Cinzel, serif',
         fontSize: Math.round(h * 0.34),
         fontWeight: '800',
-        fill: hint ? 0x2a1d00 : 0xf5fcff,
-        stroke: { color: hint ? GOLD : 0x0b0d11, width: 5 },
+        fill: hint ? 0x06260f : 0xf5fcff,
+        stroke: { color: hint ? HINT_GREEN : 0x0b0d11, width: 5 },
       },
     });
     text.anchor.set(0.5);
@@ -187,11 +187,10 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     for (const cell of model.hexes) {
       const content: Container[] = [textured(deps.floorSprite)];
       if (cell.footprint) content.push(footprints());
-      if (cell.hint) content.push(outline(GOLD, 6));
+      if (cell.hint) content.push(outline(HINT_GREEN, 6));
       if (cell.number !== null && cell.step === null)
         content.push(numberText(cell.number, cell.hint));
       if (cell.step) {
-        content.push(outline(STEP_BLUE, 4, 0.9));
         if (cell.number !== null) content.push(numberText(cell.number, cell.hint));
       }
       const tile = tileAt(cell.hex, content, cell.step !== null);

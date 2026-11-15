@@ -104,6 +104,50 @@ export class QuestFieldComponent extends BaseComponent {
     await this.canvas.click({ position: point });
   }
 
+  async armHand(): Promise<void> {
+    if (await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.isToolUsed())) return;
+    await this.canvas.hover();
+    await this.page.mouse.wheel(0, 100);
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.isToolUsed()), POLL)
+      .toBe(true);
+  }
+
+  async aimHandAt(hex: QuestHex): Promise<void> {
+    const point = await this.page.evaluate(
+      (target) => window.__HEXOFLAT_TEST__!.getQuestHexPoint(target.columnIndex, target.rowIndex),
+      hex,
+    );
+    if (!point) throw new Error('The quest field has no camera yet');
+    await this.verifyToolHexShown(true);
+    const placed = await this.page.getByTestId('quest-tool-hex').getAttribute('data-at');
+    if (placed === `${hex.columnIndex},${hex.rowIndex}`) return;
+    const box = await this.canvas.boundingBox();
+    if (!box) throw new Error('The quest field is not on screen');
+    await this.page.mouse.move(box.x + point.x, box.y + point.y, { steps: 6 });
+    await expect(this.page.getByTestId('quest-tool-hex')).toHaveAttribute(
+      'data-at',
+      `${hex.columnIndex},${hex.rowIndex}`,
+    );
+  }
+
+  async putTheHandDown(): Promise<void> {
+    await this.page.keyboard.press('Escape');
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.isToolUsed()), POLL)
+      .toBe(false);
+  }
+
+  async pressToolHex(): Promise<void> {
+    await this.page.getByTestId('quest-tool-hex').getByTestId('tool-action-button').click();
+  }
+
+  async verifyToolHexShown(shown: boolean): Promise<void> {
+    const tool = this.page.getByTestId('quest-tool-hex');
+    if (shown) await expect(tool).toBeVisible();
+    else await expect(tool).toHaveCount(0);
+  }
+
   async hoverHex(hex: QuestHex): Promise<void> {
     const point = await this.page.evaluate(
       (target) => window.__HEXOFLAT_TEST__!.getQuestHexPoint(target.columnIndex, target.rowIndex),

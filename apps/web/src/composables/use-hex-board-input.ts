@@ -1,9 +1,12 @@
-import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { toolKeyOfItem } from '@/composables/hand-tools';
+import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { useTraderStore } from '@/stores/trader-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -24,6 +27,12 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
   const heroStore = useHeroStore();
   const heroToolStore = useHeroToolStore();
   const heroInventoryStore = useHeroInventoryStore();
+
+  const stashStore = useHeroStashStore();
+  const traderStore = useTraderStore();
+  const toolIsWorking = computed(
+    () => !!knowledgePanelMode.value || stashStore.isOpen || traderStore.isOpen,
+  );
 
   const activeHandSlot = ref<TEquipSlot>('weapon');
   const lastHandScrollAt = ref(0);
@@ -77,7 +86,7 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
       return;
     }
 
-    if (heroToolStore.isLocked || !heroStore.heroCoordinates) return;
+    if (heroToolStore.isBusy || toolIsWorking.value || !heroStore.heroCoordinates) return;
     if (event.deltaY === 0) return;
 
     event.preventDefault();

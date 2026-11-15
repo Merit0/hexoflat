@@ -5,6 +5,8 @@ import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
 import { i18n } from '@/i18n';
+import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
+import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useTraderStore } from '@/stores/trader-store';
@@ -54,5 +56,56 @@ describe('the hand tool on the trader stall', () => {
     await nextTick();
 
     expect(useTraderStore().traderKey).toBe('ilva');
+  });
+});
+
+describe('the hand reading the quest board', () => {
+  const BOARD_AT = { columnIndex: 1, rowIndex: 0 };
+  const TREE_AT = { columnIndex: 0, rowIndex: 1 };
+
+  beforeEach(async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const map = new HexMapBuilder().name('board-test').width(3).height(3).build();
+    for (const tile of map.tiles) tile.isRevealed = true;
+    const at = (coords: typeof BOARD_AT) =>
+      map.tiles.find(
+        (tile) =>
+          tile.coordinates.columnIndex === coords.columnIndex &&
+          tile.coordinates.rowIndex === coords.rowIndex,
+      )!;
+    at(BOARD_AT).hexobject = HexObjectFactory.create(K.QUEST_BOARD, BOARD_AT);
+    at(TREE_AT).hexobject = HexObjectFactory.create(K.TREE, TREE_AT);
+    useWorldMapStore().map = map;
+    useHeroStore().heroCoordinates = { ...HERO_AT };
+    const inventory = useHeroInventoryStore();
+    inventory.hydrate();
+    inventory.putToInventory(K.PICKAXE, 1);
+    inventory.moveItemToSlot(
+      inventory.items.find((item) => item.key === K.PICKAXE)!.id,
+      'eq:weapon',
+    );
+    useHeroToolStore().useTool(K.HAND, HERO_AT, BOARD_AT);
+    knowledgePanelMode.value = 'quests';
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    app = createApp({ render: () => h(ToolHexTile, { tileWidth: 60, tileHeight: 52 }) })
+      .use(pinia)
+      .use(i18n);
+    app.mount(host);
+    await nextTick();
+  });
+  afterEach(() => {
+    knowledgePanelMode.value = null;
+    app.unmount();
+    host.remove();
+  });
+
+  it('keeps the hand while the board is read, even when the pointer crosses a tree', async () => {
+    const tool = useHeroToolStore();
+    tool.updateHover(TREE_AT);
+    await nextTick();
+
+    expect(tool.activeTool).toBe(K.HAND);
   });
 });

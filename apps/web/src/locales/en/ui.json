@@ -514,11 +514,8 @@
       "NOT_AN_OPTION": "You cannot strike from that hex.",
       "AIM_PENDING": "Choose the hex of the strike first.",
       "WINDOW_CLOSED": "The time is up — the window is closed.",
-      "STANDING_ON_TARGET": "Step off this spot first.",
       "CONTAINER_EMPTY": "Nothing found!",
       "NO_LOOT_THERE": "There is nothing to pick up here.",
-      "NO_ROOM_FOR_LOOT": "There is no room around for the loot.",
-      "BAG_FULL": "Your bag is full. Free some space.",
       "FIGHT_NOT_OVER": "Win the fight first."
     },
     "actionName": {

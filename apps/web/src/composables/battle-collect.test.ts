@@ -16,6 +16,7 @@ import { buildBattleHexInfo } from '@/services/hex-info/build-battle-hex-info';
 import { useBattleStore } from '@/stores/battle-store';
 import { battleMovePreview, battleTapActions } from './battle-board-tap';
 import { collectHero, collectRoute, collectToolTarget } from './battle-collect';
+import { battleRejectKey } from './battle-hint';
 import { buildBattleToolHex } from './battle-tool-hex';
 
 function floor(): BattleState['board'] {
@@ -183,7 +184,10 @@ describe('refusal texts', () => {
   it('has uk and en text for every collect rejection and the fight refusal', () => {
     for (const code of [...COLLECT_REJECTION_CODES, 'FIGHT_NOT_OVER']) {
       for (const ui of [enUi, ukUi]) {
-        const text = (ui.battle.reject as Record<string, string>)[code];
+        const key = battleRejectKey(code);
+        const text = key
+          .split('.')
+          .reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], ui);
         expect(text, code).toBeTruthy();
       }
     }

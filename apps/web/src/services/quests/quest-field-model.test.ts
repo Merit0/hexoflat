@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import { FIELD_CENTER } from '@hexoflat/engine/quests/treasure-field';
 import { axialToOffset, coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
-import { buildQuestField, fieldHexagon, previousHex, resolveFieldClick } from './quest-field-model';
+import {
+  buildQuestField,
+  fieldHexagon,
+  previousHex,
+  questHandAction,
+  questToolHexAt,
+  resolveFieldClick,
+} from './quest-field-model';
 import { buildQuestHexTip } from './quest-hex-tip';
 import { captureQuestResult, questResult, resultFromEvents } from './quest-result';
 
@@ -69,7 +76,7 @@ describe('quest field model', () => {
     expect(model.collect).toBe(true);
   });
 
-  it('resolves a click to step, back, chest or nothing', () => {
+  it('resolves a click to step, back or nothing, never to an object', () => {
     const [a, b] = getHexNeighbors(START);
     const run = projection({
       position: a,
@@ -77,13 +84,38 @@ describe('quest field model', () => {
       chest: { hex: b },
     });
     expect(resolveFieldClick(run, START)).toEqual({ kind: 'back' });
-    expect(resolveFieldClick(run, b)).toEqual({ kind: 'chest' });
+    expect(resolveFieldClick(run, b)).toBeNull();
     const free = getHexNeighbors(a).find(
       (hex) => ![START, b].some((other) => coordinateKey(other) === coordinateKey(hex)),
     )!;
     expect(resolveFieldClick({ ...run, chest: null }, free)).toMatchObject({ kind: 'step' });
     expect(resolveFieldClick(run, free)).toBeNull();
     expect(resolveFieldClick({ ...run, phase: 'ambush' }, b)).toBeNull();
+  });
+
+  it('the hand opens a chest and takes a stack only on an adjacent hex', () => {
+    const [a, b] = getHexNeighbors(START);
+    const run = projection({ chest: { hex: b } });
+    expect(questHandAction(run, b)).toBe('eye');
+    expect(questHandAction(run, a)).toBeNull();
+    const far = getHexNeighbors(getHexNeighbors(getHexNeighbors(START)[0])[0])[0];
+    expect(questHandAction(projection({ chest: { hex: far } }), far)).toBeNull();
+    const collecting = projection({
+      phase: 'collect',
+      chest: { hex: START, empty: true },
+      collect: { ground: [{ hex: b, itemKey: 'coins', amount: 3 }], seen: [a, b] },
+    });
+    expect(questHandAction(collecting, b)).toBe('take');
+    expect(questHandAction(collecting, START)).toBeNull();
+    expect(resolveFieldClick(collecting, b)).toBeNull();
+    expect(questHandAction({ ...collecting, phase: 'lost' }, b)).toBeNull();
+  });
+
+  it('the tool hex snaps to the hero neighbour nearest to the pointer', () => {
+    const [a] = getHexNeighbors(START);
+    expect(questToolHexAt(projection(), a)).toEqual(a);
+    expect(questToolHexAt(projection(), null)).toEqual(getHexNeighbors(START)[0]);
+    expect(questToolHexAt(projection({ phase: 'lost' }), a)).toBeNull();
   });
 
   it('offers no steps while a chest stands on the field', () => {

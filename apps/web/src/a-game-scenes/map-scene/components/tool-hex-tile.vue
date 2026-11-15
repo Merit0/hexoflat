@@ -167,10 +167,19 @@ function topPriority(tool: THeroToolKey, tile: HexTileModel | null): number {
 }
 
 watch(
-  () => [hoveredTile.value, handTools.value, heroToolStore.isDragging] as const,
+  () =>
+    [
+      hoveredTile.value,
+      handTools.value,
+      heroToolStore.isDragging,
+      isReading.value,
+      isOpeningStash.value,
+      isOpeningShop.value,
+    ] as const,
   ([tile, tools, dragging]) => {
     const current = activeToolKey.value;
     if (!dragging || !tile || !current || battleStore.inBattle || heroToolStore.isLocked) return;
+    if (isReading.value || isOpeningStash.value || isOpeningShop.value) return;
 
     let best = current;
     let bestPriority = topPriority(current, tile);

@@ -1,7 +1,12 @@
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import { FIELD_CENTER, FIELD_RADIUS } from '@hexoflat/engine/quests/treasure-field';
-import { axialToOffset, coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import {
+  axialToOffset,
+  coordinateKey,
+  getHexNeighbors,
+  hexDistance,
+} from '@hexoflat/engine/utils/hex-utils';
 
 export interface QuestFieldHex {
   hex: IHexCoordinates;
@@ -110,28 +115,58 @@ export function buildQuestField(run: QuestProjection): QuestFieldModel {
   };
 }
 
-export type FieldClick =
-  | { kind: 'step'; hex: IHexCoordinates }
-  | { kind: 'back' }
-  | { kind: 'chest' }
-  | { kind: 'pickup'; hex: IHexCoordinates }
-  | null;
+export type FieldClick = { kind: 'step'; hex: IHexCoordinates } | { kind: 'back' } | null;
+
+export type QuestHandAction = 'eye' | 'take';
+
+export function questHandAction(run: QuestProjection, at: IHexCoordinates): QuestHandAction | null {
+  const key = coordinateKey(at);
+  const near = new Set(getHexNeighbors(run.position).map(coordinateKey));
+  if (!near.has(key)) return null;
+  if (run.phase === 'walking' && run.chest && coordinateKey(run.chest.hex) === key) return 'eye';
+  if (run.phase !== 'collect') return null;
+  return (run.collect?.ground ?? []).some((stack) => coordinateKey(stack.hex) === key)
+    ? 'take'
+    : null;
+}
+
+export function questToolHexAt(
+  run: QuestProjection,
+  pointer: IHexCoordinates | null,
+): IHexCoordinates | null {
+  if (run.phase !== 'walking' && run.phase !== 'collect') return null;
+  const neighbours = getHexNeighbors(run.position);
+  if (!neighbours.length) return null;
+  if (!pointer) return neighbours[0];
+  let best = neighbours[0];
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const neighbour of neighbours) {
+    const distance = hexDistance(neighbour, pointer);
+    if (distance < bestDistance) {
+      best = neighbour;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
 
 export function resolveFieldClick(run: QuestProjection, hex: IHexCoordinates): FieldClick {
   const key = coordinateKey(hex);
   if (run.phase === 'collect') return resolveCollectClick(run, hex, key);
   if (run.phase !== 'walking') return null;
-  if (run.chest && key === coordinateKey(run.chest.hex)) return { kind: 'chest' };
+  if (run.chest) {
+    const back = previousHex(run);
+    return back && key === coordinateKey(back) ? { kind: 'back' } : null;
+  }
   const back = previousHex(run);
   if (back && key === coordinateKey(back)) return { kind: 'back' };
-  if (run.chest) return null;
   return { kind: 'step', hex };
 }
 
 function resolveCollectClick(run: QuestProjection, hex: IHexCoordinates, key: string): FieldClick {
-  if (run.chest && key === coordinateKey(run.chest.hex)) return { kind: 'chest' };
+  if (run.chest && key === coordinateKey(run.chest.hex)) return null;
   const ground = run.collect?.ground ?? [];
-  if (ground.some((stack) => coordinateKey(stack.hex) === key)) return { kind: 'pickup', hex };
+  if (ground.some((stack) => coordinateKey(stack.hex) === key)) return null;
   const seen = (run.collect?.seen ?? []).some((candidate) => coordinateKey(candidate) === key);
   const near = getHexNeighbors(run.position).some((candidate) => coordinateKey(candidate) === key);
   return seen && near ? { kind: 'step', hex } : null;

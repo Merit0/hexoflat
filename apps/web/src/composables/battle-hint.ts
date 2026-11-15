@@ -5,6 +5,7 @@ import {
 } from '@hexoflat/engine/battle/battle-rejection';
 import { BATTLE_BEHAVIOURS } from '@hexoflat/engine/battle/battle-catalogue';
 import { BATTLE_HANDS, TASK_KINDS } from '@hexoflat/engine/battle/battle-state';
+import { isSharedContainerRefusal, lootRejectKey } from '@/services/loot/loot-rejection';
 import { BATTLE_LEGEND_ITEMS } from '@/render/battle/battle-look';
 
 export interface BattleMessage {
@@ -63,12 +64,16 @@ const ID_DRIVEN_KEYS = [
   'hint.act.swap',
 ];
 
+export function battleRejectKey(code: string): string {
+  return isSharedContainerRefusal(code) ? lootRejectKey(code) : `battle.reject.${code}`;
+}
+
 export function battleLocaleKeys(): string[] {
   return [
     ...ID_DRIVEN_KEYS.map((k) => `battle.${k}`),
     ...BATTLE_HINT_KEYS.map((k) => `battle.hint.${k}`),
-    ...BATTLE_REJECTION_CODES.map((c) => `battle.reject.${c}`),
-    ...COLLECT_REJECTION_CODES.map((c) => `battle.reject.${c}`),
+    ...BATTLE_REJECTION_CODES.map(battleRejectKey),
+    ...COLLECT_REJECTION_CODES.map(battleRejectKey),
     'battle.reject.FIGHT_NOT_OVER',
     ...BATTLE_ACTION_NAMES.map((a) => `battle.actionName.${a}`),
     ...BATTLE_BEHAVIOURS.flatMap((b) => [`battle.role.${b}`, `battle.roleShort.${b}`]),
@@ -92,7 +97,7 @@ function rejection(events: DomainEvent[]): BattleMessage | null {
   );
   if (!refused) return null;
   return {
-    key: `battle.reject.${refused.rejected}`,
+    key: battleRejectKey(refused.rejected),
     params: {
       cost: refused.cost ?? 0,
       left: refused.left ?? 0,
