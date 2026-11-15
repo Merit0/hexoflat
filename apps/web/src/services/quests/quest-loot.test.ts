@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import { FIELD_CENTER } from '@hexoflat/engine/quests/treasure-field';
-import { axialToOffset, coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import {
+  axialToOffset,
+  coordinateKey,
+  getHexNeighbors,
+  offsetToAxial,
+} from '@hexoflat/engine/utils/hex-utils';
 import en from '@/locales/en/ui.json';
 import uk from '@/locales/uk/ui.json';
 import { getByPath } from '@/i18n/locale-keys';
@@ -10,7 +15,6 @@ import { i18n } from '@/i18n';
 import { lootFlightRequest, finishLootFlights } from '@/services/loot/loot-flight-state';
 import { buildQuestField, resolveFieldClick } from './quest-field-model';
 import { buildQuestHexTip } from './quest-hex-tip';
-import { questChestOpenedOf } from './quest-loot';
 import { runQuestCommand, type QuestTransport } from './quest-run-transport';
 import { questRun } from './quest-run-projection';
 
@@ -42,24 +46,18 @@ function collecting(overrides: Partial<QuestProjection> = {}): QuestProjection {
 }
 
 const OPENED = {
-  type: 'CHEST_OPENED',
+  type: 'CONTAINER_OPENED',
   payload: {
-    hex: START,
-    placed: [{ hex: stackHex, itemKey: 'coins', amount: 7 }],
+    actorId: 'hero',
+    containerId: 'chest',
+    kind: 'quest-chest',
+    hex: offsetToAxial(START),
+    from: offsetToAxial(START),
+    nothing: false,
+    placed: [{ hex: offsetToAxial(stackHex), itemKey: 'coins', amount: 7 }],
     toBag: [{ itemKey: 'sword', amount: 1 }],
   },
 };
-
-describe('quest chest opening events', () => {
-  it('turns CHEST_OPENED into a flight plan input with quantities', () => {
-    expect(questChestOpenedOf([OPENED])).toEqual({
-      coordinates: START,
-      placed: [{ coordinates: stackHex, itemKey: 'coins', amount: 7 }],
-      toBag: [{ itemKey: 'sword', amount: 1 }],
-    });
-    expect(questChestOpenedOf([])).toBeNull();
-  });
-});
 
 describe('quest field while collecting', () => {
   it('shows the hero on the emptied chest and the stack with its quantity', () => {
@@ -183,6 +181,14 @@ describe('quest transport and loot flights', () => {
     expect(lootFlightRequest.value?.flights).toHaveLength(2);
     expect(lootFlightRequest.value?.flights[0]).toMatchObject({ itemKey: 'coins', to: stackHex });
     expect(get).not.toHaveBeenCalled();
+  });
+
+  it('a replayed answer that still carries a removed event name does not throw and plays no flight', async () => {
+    get.mockResolvedValue({ quest: collecting() });
+    const old = { type: 'CHEST_OPENED', payload: { hex: START } };
+    const base = withResponse({ events: [old], quest: null, replayed: true });
+    await expect(runQuestCommand(base, 'QUEST_OPEN_CHEST', {})).resolves.toBeDefined();
+    expect(lootFlightRequest.value).toBeNull();
   });
 
   it('a replayed answer refetches the run exactly once and plays no flight', async () => {

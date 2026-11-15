@@ -1,3 +1,4 @@
+import { axialToOffset } from '@hexoflat/engine/utils/hex-utils';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
@@ -17,7 +18,7 @@ import {
   type ReplayDeps,
 } from '@/services/world/served-world';
 import { i18n } from '@/i18n';
-import { chestOpenedOf, planLootFlights } from '@/services/loot/loot-flight';
+import { containerOpenedOf, planLootFlights } from '@/services/loot/loot-flight';
 import { startLootFlights } from '@/services/loot/loot-flight-state';
 import { lootRefusalText } from '@/services/loot/loot-rejection';
 import { useGameEventsStore } from '@/stores/game-events-store';
@@ -52,7 +53,7 @@ export function applyWorldResultAction(
     void host.refetchWorld();
     return;
   }
-  const opened = chestOpenedOf(result.events);
+  const opened = containerOpenedOf(result.events, axialToOffset);
   if (opened) {
     startLootFlights(planLootFlights(opened));
     hero.heroCoordinates = { ...opened.coordinates };

@@ -1,13 +1,13 @@
-import type { DomainEvent } from '../commands/types';
 import {
   emptiedContainer,
   type ContainerRefusal,
   type ContainerSpace,
   type ContainerState,
+  type SpaceApplied,
 } from '../containers';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HexObjectFactory } from '../factory/hex-object-factory';
-import { applySpreadPlan, offsetPlacement } from '../loot';
+import { applySpreadPlan } from '../loot';
 import { revealAroundHero } from '../map/fog-service';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
@@ -57,10 +57,10 @@ export function worldChestSpace(
       const tile = tileAt(world, axialToOffset(container.at))!;
       return [rollChestLoot(tile, world.loot)];
     },
-    apply: (world, heroId, container, outcome, bag): DomainEvent[] => {
+    apply: (world, heroId, container, outcome, bag): SpaceApplied => {
       const hero = world.heroes[heroId];
       const chest = axialToOffset(container.at);
-      const entry = { ...hero.coordinates };
+      const from = offsetToAxial(hero.coordinates);
       const tile = tileAt(world, chest)!;
       tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CHEST_OPEN, chest, {
         container: emptiedContainer(outcome.container),
@@ -71,27 +71,17 @@ export function worldChestSpace(
       }
       const byKey = new Map(world.map.tiles.map((t) => [coordinateKey(t.coordinates), t]));
       const applied = applySpreadPlan(outcome.plan, bag, (placement) => {
-        const placed = offsetPlacement(placement, 'coordinates');
-        const target = byKey.get(coordinateKey(placed.coordinates));
+        const target = byKey.get(coordinateKey(axialToOffset(placement.hex)));
         if (target) {
-          target.hexobject = HexObjectFactory.create(placed.itemKey, placed.coordinates, {
-            quantity: placed.amount,
-          });
+          target.hexobject = HexObjectFactory.create(
+            placement.itemKey,
+            axialToOffset(placement.hex),
+            { quantity: placement.amount },
+          );
         }
-        return placed;
+        return { hex: placement.hex, itemKey: placement.itemKey, amount: placement.amount };
       });
-      return [
-        {
-          type: 'CHEST_OPENED',
-          payload: {
-            heroId,
-            coordinates: chest,
-            from: entry,
-            placed: applied.placed,
-            toBag: applied.toBag,
-          },
-        },
-      ];
+      return { opened: { from, placed: applied.placed, toBag: applied.toBag }, events: [] };
     },
     refusalEvents: (_world, heroId, target, reason: ChestRefusal | ContainerRefusal) => [
       rejectedLoot(heroId, reason),

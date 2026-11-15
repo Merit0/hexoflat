@@ -5,7 +5,7 @@ import { EHexActionTypeForTests, deserializeWorld, serializeWorld } from './worl
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
-import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { axialToOffset, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { commandJournal, expeditionBlobs, heroAggregates, itemLedger } from '../db/schema';
 import {
   ensureExpedition,
@@ -936,7 +936,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       const opened = await openAt(userId, heroId, spot);
       expect(opened.result).toBe('applied');
       expect(opened.hero!.coordinates).toEqual(spot);
-      expect(opened.events.filter((event) => event.type === 'CHEST_OPENED')).toHaveLength(1);
+      expect(opened.events.filter((event) => event.type === 'CONTAINER_OPENED')).toHaveLength(1);
       expect(willOf(opened)).toBe(before - 2);
       expect(
         opened.tileDiffs.some((diff) => diff.tile.hexobject?.hexobjectKey === 'chest-open'),
@@ -1060,7 +1060,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       expect(results.filter((r) => r.result === 'applied')).toHaveLength(1);
       const winner = results.find((r) => r.result === 'applied')!;
       const placed = (
-        winner.events.find((e) => e.type === 'CHEST_OPENED')!.payload as { placed: unknown[] }
+        winner.events.find((e) => e.type === 'CONTAINER_OPENED')!.payload as { placed: unknown[] }
       ).placed.length;
       expect(lootAround(await viewOf(userId, heroId), spot)).toHaveLength(placed);
     });
@@ -1075,7 +1075,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
         JSON.stringify(await kit.service.snapshot(userId, heroId)),
       ];
       const placed = (
-        opened.events.find((e) => e.type === 'CHEST_OPENED')!.payload as { placed: unknown[] }
+        opened.events.find((e) => e.type === 'CONTAINER_OPENED')!.payload as { placed: unknown[] }
       ).placed.length;
       for (const text of texts) {
         expect(text).not.toContain(seed);
@@ -1089,14 +1089,14 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       const { userId, heroId, spot } = await scene();
       const opened = await openAt(userId, heroId, spot);
       const placed = (
-        opened.events.find((e) => e.type === 'CHEST_OPENED')!.payload as {
-          placed: {
-            coordinates: { columnIndex: number; rowIndex: number };
-            itemKey: string;
-            amount: number;
-          }[];
+        opened.events.find((e) => e.type === 'CONTAINER_OPENED')!.payload as {
+          placed: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
         }
-      ).placed;
+      ).placed.map((p) => ({
+        coordinates: axialToOffset(p.hex),
+        itemKey: p.itemKey,
+        amount: p.amount,
+      }));
       const restored = await viewOf(userId, heroId);
       expect(restored.heroCoordinates).toEqual(spot);
       expect(lootAround(restored, spot).sort()).toEqual(

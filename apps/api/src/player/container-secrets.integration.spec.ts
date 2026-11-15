@@ -36,8 +36,8 @@ const STRUCTURAL_MARKERS = [
   '"discarded"',
   '"tables"',
   '"contents"',
-  '"kind":"quest-chest"',
-  '"kind":"grave"',
+  '"kind":"quest-chest","at"',
+  '"kind":"grave","at"',
   '"status":"full"',
   '"rngSeed"',
 ];
@@ -135,7 +135,7 @@ describe.skipIf(!dbAvailable)(
         toolKey: HEXOBJECT_KEYS.HAND,
       });
       expect(opened.result).toBe('applied');
-      expect(opened.events.some((event) => event.type === 'CHEST_OPENED')).toBe(true);
+      expect(opened.events.some((event) => event.type === 'CONTAINER_OPENED')).toBe(true);
       expectNoSecrets('OPEN answer', opened, [loaded.worldSeed]);
       const ticked = await sendWorld(userId, heroId, 'WORLD_TICK', {});
       expectNoSecrets('tick answer', ticked, [loaded.worldSeed]);

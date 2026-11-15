@@ -18,7 +18,7 @@ import {
 } from '../chests/chest-test-setup';
 import { emptyInventoryState } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { hexDistance } from '../utils/hex-utils';
+import { coordinateKey, hexDistance, offsetToAxial } from '../utils/hex-utils';
 import { actWorld, type ServerWorld } from '../world';
 
 function worldOf(scene: ReturnType<typeof chestScene>, hero = scene.entry): ChestWorld {
@@ -149,36 +149,36 @@ describe('CH-P0 world chest: refusal events, price and the order of Will and roo
     expect(text).not.toContain('INSUFFICIENT_WILL');
   });
 
-  it('a successful opening spends exactly the content price (2) with one WILL_SPENT and one CHEST_OPENED', () => {
+  it('a successful opening spends exactly the content price (2) with one WILL_SPENT and one CONTAINER_OPENED', () => {
     const scene = chestScene('price');
     const outcome = actWorld(runOf(scene.world), openAction(scene.chest));
     if (!outcome.ok) throw new Error(outcome.code);
     expect(outcome.progress.knowledge.current).toBe(48);
     expect(outcome.events.filter((event) => event.type === 'WILL_SPENT')).toHaveLength(1);
-    expect(outcome.events.filter((event) => event.type === 'CHEST_OPENED')).toHaveLength(1);
+    expect(outcome.events.filter((event) => event.type === 'CONTAINER_OPENED')).toHaveLength(1);
   });
 });
 
 describe('CH-P0 world chest: event payload and hero move', () => {
-  it('CHEST_OPENED carries exactly heroId, coordinates, from, placed, toBag; placed uses offset coordinates', () => {
+  it('CONTAINER_OPENED carries exactly actorId, containerId, from, hex, kind, nothing, placed, toBag; placed uses axial hexes', () => {
     const scene = chestScene('payload');
     const outcome = actWorld(runOf(scene.world), openAction(scene.chest));
     if (!outcome.ok) throw new Error(outcome.code);
-    const payload = outcome.events.find((event) => event.type === 'CHEST_OPENED')!.payload as {
-      placed: { coordinates: unknown; itemKey: string; amount: number }[];
+    const payload = outcome.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
+      placed: { hex: unknown; itemKey: string; amount: number }[];
     };
     expect(Object.keys(payload).sort()).toEqual([
-      'coordinates',
+      'actorId',
+      'containerId',
       'from',
-      'heroId',
+      'hex',
+      'kind',
+      'nothing',
       'placed',
       'toBag',
     ]);
-    expect(Object.keys(payload.placed[0]).sort()).toEqual(['amount', 'coordinates', 'itemKey']);
-    expect(Object.keys(payload.placed[0].coordinates as object).sort()).toEqual([
-      'columnIndex',
-      'rowIndex',
-    ]);
+    expect(Object.keys(payload.placed[0]).sort()).toEqual(['amount', 'hex', 'itemKey']);
+    expect(Object.keys(payload.placed[0].hex as object).sort()).toEqual(['q', 'r']);
     expect(outcome.world.heroCoordinates).toEqual(scene.chest);
     expect(itemsAround(outcome.world, scene.chest).length).toBe(payload.placed.length);
   });
@@ -203,11 +203,14 @@ describe('CH-P0 world chest: empty roll (matrix row "empty-roll behaviour")', ()
       ok: true,
       events: [
         {
-          type: 'CHEST_OPENED',
+          type: 'CONTAINER_OPENED',
           payload: {
-            heroId: HERO,
-            coordinates: scene.chest,
-            from: scene.entry,
+            actorId: HERO,
+            containerId: coordinateKey(scene.chest),
+            kind: 'chest',
+            hex: offsetToAxial(scene.chest),
+            from: offsetToAxial(scene.entry),
+            nothing: true,
             placed: [],
             toBag: [],
           },

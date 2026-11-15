@@ -1,3 +1,4 @@
+import { axialToOffset } from '../utils/hex-utils';
 import { actWorld } from '../world';
 import { chestScene, openAction, runOf } from '../chests/chest-test-setup';
 import { king, lootAt, play, TARGET, warrior, won } from '../battle/collect-test-setup';
@@ -28,19 +29,15 @@ export function worldChestGolden(seed: string): string {
   const scene = chestScene(seed);
   const outcome = actWorld(runOf(scene.world), openAction(scene.chest));
   if (!outcome.ok) throw new Error(outcome.code);
-  const payload = outcome.events.find((event) => event.type === 'CHEST_OPENED')!.payload as {
-    placed: {
-      coordinates: { columnIndex: number; rowIndex: number };
-      itemKey: string;
-      amount: number;
-    }[];
+  const payload = outcome.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
+    placed: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
     toBag: Stack[];
   };
   return placementsOf(
-    payload.placed.map((item) => ({
-      ...item,
-      at: `${item.coordinates.columnIndex},${item.coordinates.rowIndex}`,
-    })),
+    payload.placed.map((item) => {
+      const at = axialToOffset(item.hex);
+      return { ...item, at: `${at.columnIndex},${at.rowIndex}` };
+    }),
     payload.toBag,
   );
 }
@@ -48,7 +45,7 @@ export function worldChestGolden(seed: string): string {
 export function graveGolden(seed: string, kind: 'warrior' | 'king'): string {
   const enemy = kind === 'king' ? king('e1', TARGET) : warrior('e1', TARGET);
   const played = play(won([enemy], { seed }), lootAt(TARGET));
-  const payload = played.events.find((event) => event.type === 'GRAVE_LOOTED')!.payload as {
+  const payload = played.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
     placed: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
     toBag: Stack[];
     nothing?: boolean;
@@ -66,16 +63,16 @@ export function questChestGolden(seed: string): { stored: string; text: string }
   const stored = listOf(end.run.chest!.drop ?? []);
   const opened = must(openChestOf(state, end));
   const payload = opened.events[0].payload as {
-    placed: { hex: { columnIndex: number; rowIndex: number }; itemKey: string; amount: number }[];
+    placed: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
     toBag: Stack[];
   };
   return {
     stored,
     text: placementsOf(
-      payload.placed.map((item) => ({
-        ...item,
-        at: `${item.hex.columnIndex},${item.hex.rowIndex}`,
-      })),
+      payload.placed.map((item) => {
+        const at = axialToOffset(item.hex);
+        return { ...item, at: `${at.columnIndex},${at.rowIndex}` };
+      }),
       payload.toBag,
     ),
   };

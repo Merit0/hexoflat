@@ -6,7 +6,7 @@ import { findShortestPath } from '../hero-movement/pathfinding-service';
 import { getReachableTileDistances } from '../hero-movement/reachable-range-service';
 import { isEnterableTile } from '../hero-movement/move-planner';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, offsetToAxial } from '../utils/hex-utils';
 import {
   actWorld,
   applyTileDiffs,
@@ -64,12 +64,13 @@ describe('opening a chest', () => {
     expect(outcome.progress.knowledge.current).toBe(48);
     expect(outcome.world.heroCoordinates).toEqual(chest);
     expect(tileOf(outcome.world, chest).hexobject?.hexobjectKey).toBe(HEXOBJECT_KEYS.CHEST_OPEN);
-    const openings = outcome.events.filter((event) => event.type === 'CHEST_OPENED');
+    const openings = outcome.events.filter((event) => event.type === 'CONTAINER_OPENED');
     expect(openings).toHaveLength(1);
     expect(openings[0].payload).toMatchObject({
-      heroId: 'hero-1',
-      coordinates: chest,
-      from: entry,
+      actorId: 'hero-1',
+      kind: 'chest',
+      hex: offsetToAxial(chest),
+      from: offsetToAxial(entry),
       toBag: [],
     });
     expect((openings[0].payload as { placed: unknown[] }).placed.length).toBeGreaterThan(0);

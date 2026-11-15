@@ -28,7 +28,7 @@ describe('REQ-LOOT-100 a grave with an empty loot list', () => {
     expect(creatureById(looted.battle, 'hero')!.pos).toEqual(ORIGIN);
     expect(looted.battle.collect!.graves[0].examined).toBe(true);
     expect(looted.battle.collect!.items).toEqual([]);
-    expect(looted.events.map((event) => event.type)).toEqual(['GRAVE_LOOTED']);
+    expect(looted.events.map((event) => event.type)).toEqual(['CONTAINER_OPENED']);
     expect(looted.events[0].payload).toMatchObject({ placed: [], toBag: [], nothing: true });
     expect(looted.inventory!.revision).toBe(0);
   });

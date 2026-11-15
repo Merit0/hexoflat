@@ -38,11 +38,11 @@ function worldRefusal(setup: (scene: ReturnType<typeof chestScene>) => void) {
 }
 
 describe('CH-P0 payload snapshots: the whole open event and every refusal event, world chest', () => {
-  it('the full opening: CHEST_OPENED and WILL_SPENT', () => {
+  it('the full opening: CONTAINER_OPENED and WILL_SPENT', () => {
     const scene = chestScene(SEED);
     const outcome = actWorld(runOf(scene.world), openAction(scene.chest));
     if (!outcome.ok) throw new Error(outcome.code);
-    expect(outcome.events.filter((event) => event.type === 'CHEST_OPENED')).toMatchSnapshot();
+    expect(outcome.events.filter((event) => event.type === 'CONTAINER_OPENED')).toMatchSnapshot();
     expect(outcome.events.filter((event) => event.type === 'WILL_SPENT')).toMatchSnapshot();
   });
 
@@ -85,11 +85,11 @@ describe('CH-P0 payload snapshots: the whole open event and every refusal event,
 describe('CH-P0 payload snapshots: grave', () => {
   const lone = () => won([warrior('e1', TARGET)], { seed: SEED });
 
-  it('the full loot: GRAVE_LOOTED', () => {
+  it('the full loot: CONTAINER_OPENED', () => {
     expect(play(lone(), lootAt(TARGET)).events).toMatchSnapshot();
   });
 
-  it('the full loot of a boss grave with no room: GRAVE_LOOTED and ITEM_GRANTED', () => {
+  it('the full loot of a boss grave with no room: CONTAINER_OPENED and ITEM_GRANTED', () => {
     const state = won([king('k1', TARGET)], {
       seed: SEED,
       board: hexagonBoard(3, RING_OF_TARGET),
@@ -142,7 +142,7 @@ describe('CH-P0 payload snapshots: quest chest', () => {
     return { state, end: followTruth(state, 10) };
   }
 
-  it('the full opening: CHEST_OPENED', () => {
+  it('the full opening: CONTAINER_OPENED', () => {
     const { state, end } = atChest();
     expect(must(openChestOf(state, end)).events).toMatchSnapshot();
   });

@@ -48,7 +48,7 @@ describe('a chest with no place around it and guaranteed drops', () => {
     expect(itemsAround(outcome.world, chest)).toEqual([]);
     expect(outcome.world.heroCoordinates).toEqual(chest);
     expect(outcome.progress.knowledge.current).toBe(48);
-    const opened = outcome.events.find((e) => e.type === 'CHEST_OPENED')!;
+    const opened = outcome.events.find((e) => e.type === 'CONTAINER_OPENED')!;
     expect(opened.payload).toMatchObject({
       placed: [],
       toBag: [{ itemKey: HEXOBJECT_KEYS.COINS, amount: 20 }],

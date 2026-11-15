@@ -7,6 +7,7 @@ import { playOutSquad } from '../battle/collect-playout-setup';
 import { hexKey, hexNeighbours } from '../battle/hex-battle-geom';
 import { isTerrainPassable } from '../boards/terrain';
 import { planChestLoot, rollChestLoot } from '../chests/plan-chest-loot';
+import { createContainer } from '../containers';
 import { emptyInventoryState } from '../inventory/inventory-state';
 import { lootStreamLabel, rollLoot, type LootDrop } from '../loot';
 import type HexMapModel from '../map/models/hex-map-model';
@@ -148,7 +149,15 @@ interface GravePayload {
 function lootGraves(source: BattleState, runSeed: string, label: string, result: RunResult): void {
   let battle: BattleState = { ...structuredClone(source), seed: `${runSeed}:${label}` };
   for (const grave of battle.collect!.graves) {
-    delete grave.container;
+    grave.container = createContainer({
+      id: hexKey(grave.hex),
+      kind: 'grave',
+      at: grave.hex,
+      tables: grave.tables.map((id) => lootTableOf(id)),
+      seed: battle.seed,
+      sourceId: battle.id,
+      targetKey: hexKey(grave.hex),
+    });
     const rng = deriveStream(battle.seed, lootStreamLabel(battle.id, hexKey(grave.hex)));
     const lists = grave.tables.map((id) => rollLoot(lootTableOf(id)!, rng));
     const rolled = mergedCount(lists);
@@ -178,7 +187,7 @@ function lootGraves(source: BattleState, runSeed: string, label: string, result:
       ON,
       { inventory: { current: emptyInventoryState(player.id), events: [] } },
     );
-    const looted = answer.events.find((event) => event.type === 'GRAVE_LOOTED');
+    const looted = answer.events.find((event) => event.type === 'CONTAINER_OPENED');
     if (!looted) {
       take(result, [], rolled);
       continue;

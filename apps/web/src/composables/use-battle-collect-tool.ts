@@ -17,7 +17,8 @@ export function useBattleCollectTool(
     const looted = await act({ kind: 'loot-grave', hex: at });
     const nothing = store.lastHeroEvents.some(
       (event) =>
-        event.type === 'GRAVE_LOOTED' && (event.payload as { nothing?: boolean }).nothing === true,
+        event.type === 'CONTAINER_OPENED' &&
+        (event.payload as { nothing?: boolean }).nothing === true,
     );
     if (looted && nothing) warn('CONTAINER_EMPTY', null);
     return looted;

@@ -164,8 +164,8 @@ describe('planBattleAnimation: looting a grave', () => {
     const standing: AnimatedCreature = { id: 'hero', side: 'heroes', pos: grave };
     const steps = planBattleAnimation(
       [
-        ev('GRAVE_LOOTED', {
-          creatureId: 'hero',
+        ev('CONTAINER_OPENED', {
+          actorId: 'hero',
           hex: grave,
           from: entry,
           placed: [{ hex: { q: 1, r: 1 }, itemKey: 'coins', amount: 5 }],
@@ -187,7 +187,7 @@ describe('planBattleAnimation: looting a grave', () => {
 
   it('plays nothing when the grave was empty and the hero stayed where he was', () => {
     const steps = planBattleAnimation(
-      [ev('GRAVE_LOOTED', { creatureId: 'hero', hex: grave, from: entry, nothing: true })],
+      [ev('CONTAINER_OPENED', { actorId: 'hero', hex: grave, from: entry, nothing: true })],
       [{ id: 'hero', side: 'heroes', pos: entry }],
     );
     expect(steps).toEqual([]);

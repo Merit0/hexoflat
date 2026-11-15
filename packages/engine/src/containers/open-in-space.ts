@@ -3,6 +3,7 @@ import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { LootNeighbour } from '../loot';
 import type { Axial } from '../utils/hex-utils';
 import type { ContainerRefusal, ContainerState, LootLists } from './container';
+import { CONTAINER_OPENED, type SpaceApplied } from './container-opened';
 import { accessRefusal, openContainer, type OpenOutcome } from './open-container';
 
 export interface ContainerPrice {
@@ -23,7 +24,7 @@ export interface ContainerSpace<S, T, R extends string> {
     container: ContainerState,
     outcome: Extract<OpenOutcome, { ok: true }>,
     bag: IInventoryDraft,
-  ): DomainEvent[];
+  ): SpaceApplied;
   refusalEvents(state: S, actorId: string, target: T, reason: R | ContainerRefusal): DomainEvent[];
 }
 
@@ -78,5 +79,23 @@ export function openInSpace<S, T, R extends string>(
   const refused = price?.check() ?? null;
   if (refused) return { ok: false, reason: null, events: refused };
   const paid = price ? price.spend() : [];
-  return { ok: true, events: [...paid, ...space.apply(state, actorId, container, outcome, bag)] };
+  const applied = space.apply(state, actorId, container, outcome, bag);
+  const opened: DomainEvent[] = applied.opened
+    ? [
+        {
+          type: CONTAINER_OPENED,
+          payload: {
+            actorId,
+            containerId: container.id,
+            kind: container.kind,
+            hex: { ...container.at },
+            from: { ...applied.opened.from },
+            placed: applied.opened.placed,
+            toBag: applied.opened.toBag,
+            nothing: outcome.nothing,
+          },
+        },
+      ]
+    : [];
+  return { ok: true, events: [...paid, ...opened, ...applied.events] };
 }

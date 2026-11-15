@@ -223,7 +223,7 @@ describe('REQ-QST-038 the chest drop is generated once and stays hidden', () => 
         for (const item of opened.run.collect!.ground) {
           expect(floor.has(coordinateKey(item.hex))).toBe(true);
         }
-        const toBag = opened.events.find((event) => event.type === 'CHEST_OPENED')!.payload as {
+        const toBag = opened.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
           toBag: unknown[];
         };
         expect(toBag.toBag, `seed ${i}`).toEqual([]);

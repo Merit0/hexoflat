@@ -7,7 +7,7 @@ import { positionOf } from '../quests/quest-state';
 import { seekerCollectStep, seekerOpenChest, seekerPickup } from '../quests/seeker-chest';
 import { followTruth, must, openChestOf, startQuest } from '../quests/seeker-test-setup';
 import { fullBag } from '../trade/trade-test-setup';
-import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, offsetToAxial } from '../utils/hex-utils';
 
 const TABLE = 'seeker-1-chest-loot';
 
@@ -120,14 +120,27 @@ describe('CH-P0 quest chest: price, hero move, room, bag', () => {
 });
 
 describe('CH-P0 quest chest: event name and payload', () => {
-  it('CHEST_OPENED carries exactly heroId, questId, hex, from, placed, toBag; placed uses offset hexes', () => {
+  it('CONTAINER_OPENED carries exactly actorId, containerId, from, hex, kind, nothing, placed, toBag; placed uses axial hexes', () => {
     const { end, result } = opened('payload');
     const event = result.events[0];
-    expect(event.type).toBe('CHEST_OPENED');
-    expect(keysOf(event.payload)).toEqual(['from', 'heroId', 'hex', 'placed', 'questId', 'toBag']);
+    expect(event.type).toBe('CONTAINER_OPENED');
+    expect(keysOf(event.payload)).toEqual([
+      'actorId',
+      'containerId',
+      'from',
+      'hex',
+      'kind',
+      'nothing',
+      'placed',
+      'toBag',
+    ]);
     const placed = (event.payload as { placed: object[] }).placed;
     expect(Object.keys(placed[0]).sort()).toEqual(['amount', 'hex', 'itemKey']);
-    expect(event.payload).toMatchObject({ hex: end.run.chest!.hex, from: positionOf(end.run) });
+    expect(event.payload).toMatchObject({
+      kind: 'quest-chest',
+      hex: offsetToAxial(end.run.chest!.hex),
+      from: offsetToAxial(positionOf(end.run)),
+    });
   });
 });
 

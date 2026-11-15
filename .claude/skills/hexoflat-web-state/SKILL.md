@@ -234,3 +234,5 @@ Health comes from the server: `bindHealthListener` restores `hero` from every `p
 ## Messages about events (Oleh, 2026-11-14)
 
 Only the general warning system shows messages about any event or refusal: `heroToolStore.setActionMessage(text, icon?, cost?, tone?)` -> `action-alert-banner`. Do not add a local message line to a board or panel (the old `quest-message` is legacy). E2E asserts on the banner.
+
+- **One parser (CH-P5, 2026-11-15).** `services/loot/loot-flight.ts` `containerOpenedOf(events, toBoard)` is the only reader of `CONTAINER_OPENED` (world and quest pass `axialToOffset`, the battle passes `deps.offsetOf`); `chestOpenedOf`, `gravePlayedOf` and `questChestOpenedOf` are deleted, and `battle-animation-plan.ts` reads `actorId`. A replayed answer still refetches before any parsing; an old event name in a journal is simply not found (tests in `loot-flight.test.ts`, `quest-loot.test.ts`, `server-world-actions.loot.test.ts`).

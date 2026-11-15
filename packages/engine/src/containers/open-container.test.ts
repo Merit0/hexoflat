@@ -162,7 +162,7 @@ function space(): ContainerSpace<Fake, string, 'NO_HERO'> {
     },
     apply: (state) => {
       state.log.push('applied');
-      return [{ type: 'OPENED', payload: {} }];
+      return { opened: null, events: [{ type: 'OPENED', payload: {} }] };
     },
     refusalEvents: (_state, _actor, _target, reason) => [{ type: 'REFUSED', payload: { reason } }],
   };

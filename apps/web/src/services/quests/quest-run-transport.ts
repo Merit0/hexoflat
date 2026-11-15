@@ -1,3 +1,4 @@
+import { axialToOffset } from '@hexoflat/engine/utils/hex-utils';
 import type { PlayerSocket, PlayerEnvelope } from '@/services/player/player-socket';
 import { PlayerSocketError } from '@/services/player/player-socket';
 import { apiClient } from '@/api/client';
@@ -5,8 +6,7 @@ import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { applyQuestRun } from './quest-run-projection';
 import { startLootFlights } from '@/services/loot/loot-flight-state';
-import { planLootFlights } from '@/services/loot/loot-flight';
-import { questChestOpenedOf } from './quest-loot';
+import { containerOpenedOf, planLootFlights } from '@/services/loot/loot-flight';
 
 export type QuestRunAnswer =
   { ok: true; events: DomainEvent[] } | { ok: false; code: string; events: DomainEvent[] };
@@ -37,7 +37,7 @@ export async function runQuestCommand(
     transport.applyProgress(response.aggregates.progress);
     transport.applyInventory(response.aggregates.inventory);
     const events = response.events as DomainEvent[];
-    const opened = response.replayed ? null : questChestOpenedOf(events);
+    const opened = response.replayed ? null : containerOpenedOf(events, axialToOffset);
     if (opened) startLootFlights(planLootFlights(opened));
     applyQuestRun(response.quest);
     if (response.replayed) await restoreQuestRun();

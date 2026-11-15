@@ -90,7 +90,7 @@ describe('REQ-QST-023 the real chest spreads loot by the shared rule', () => {
       expect(grounds).not.toContain(coordinateKey(chest));
       expect(grounds).not.toContain(coordinateKey(entry));
       expect(opened.run.collect!.hero).toEqual(chest);
-      expect(opened.events[0].type).toBe('CHEST_OPENED');
+      expect(opened.events[0].type).toBe('CONTAINER_OPENED');
       expect(opened.progress).toEqual(end.progress);
     }
   });

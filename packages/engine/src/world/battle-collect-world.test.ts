@@ -126,7 +126,7 @@ describe('REQ-LOOT-088 a victory the server holds with grave loot on', () => {
     ).toBe(true);
     expect(view.collect!.items.length).toBeGreaterThan(0);
     expect(before.collect!.items).toEqual([]);
-    expect(looted.events.map((e) => e.type)).toContain('GRAVE_LOOTED');
+    expect(looted.events.map((e) => e.type)).toContain('CONTAINER_OPENED');
     expect(JSON.stringify(looted.steps)).not.toContain(run.world.battle!.seed);
     expect(JSON.stringify(looted.steps)).not.toContain('-loot');
   });

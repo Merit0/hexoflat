@@ -46,7 +46,7 @@ interface Moved {
   to: BattleHex;
 }
 interface GraveLooted {
-  creatureId: string;
+  actorId: string;
   hex: BattleHex;
   from: BattleHex;
   nothing?: boolean;
@@ -93,13 +93,18 @@ const copy = (hex: BattleHex): BattleHex => ({ q: hex.q, r: hex.r });
 function rewind(events: DomainEvent[], creatures: AnimatedCreature[]): Map<string, BattleHex> {
   const pos = new Map(creatures.map((c) => [c.id, copy(c.pos)]));
   for (const event of [...events].reverse()) {
-    const p = event.payload as Partial<Moved & Displaced>;
-    const id = event.type === 'DISPLACED' ? p.targetId : p.creatureId;
+    const p = event.payload as Partial<Moved & Displaced & { actorId: string }>;
+    const id =
+      event.type === 'DISPLACED'
+        ? p.targetId
+        : event.type === 'CONTAINER_OPENED'
+          ? p.actorId
+          : p.creatureId;
     if (!id || !pos.has(id)) continue;
     if (event.type === 'CREATURE_MOVED' || event.type === 'THROWN_CLEAR')
       pos.set(id, copy(p.from!));
     if (event.type === 'MOVE_UNDONE') pos.set(id, copy(p.from!));
-    if (event.type === 'GRAVE_LOOTED') pos.set(id, copy(p.from!));
+    if (event.type === 'CONTAINER_OPENED') pos.set(id, copy(p.from!));
     if (event.type === 'DISPLACED') pos.set(id, copy(p.from!));
   }
   return pos;
@@ -113,7 +118,7 @@ class Planner {
 
   read(event: DomainEvent, later: DomainEvent[] = []) {
     if (event.type === 'CREATURE_MOVED') this.moved(event.payload as Moved);
-    if (event.type === 'GRAVE_LOOTED') this.graveLooted(event.payload as GraveLooted);
+    if (event.type === 'CONTAINER_OPENED') this.graveLooted(event.payload as GraveLooted);
     if (event.type === 'MOVE_UNDONE') this.place((event.payload as Moved).creatureId, event);
     if (event.type === 'STRIKE_LANDED') this.struck(event.payload as Struck, later);
     if (event.type === 'DISPLACED') this.displaced(event.payload as Displaced);
@@ -138,9 +143,9 @@ class Planner {
     this.pos.set(creatureId, copy(to));
   }
 
-  private graveLooted({ creatureId, hex, from, nothing }: GraveLooted) {
+  private graveLooted({ actorId, hex, from, nothing }: GraveLooted) {
     if (nothing === true || (from.q === hex.q && from.r === hex.r)) return;
-    this.moved({ creatureId, from, to: hex });
+    this.moved({ creatureId: actorId, from, to: hex });
   }
 
   private struck({ attackerId, targetId, itemKey, ring }: Struck, later: DomainEvent[]) {

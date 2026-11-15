@@ -51,13 +51,9 @@ function expectedPlacements(scene: ReturnType<typeof chestScene>) {
 }
 
 function openedPayload(outcome: Extract<WorldOutcome, { ok: true }>) {
-  const event = outcome.events.find((e) => e.type === 'CHEST_OPENED')!;
+  const event = outcome.events.find((e) => e.type === 'CONTAINER_OPENED')!;
   return event.payload as {
-    placed: {
-      coordinates: { columnIndex: number; rowIndex: number };
-      itemKey: string;
-      amount: number;
-    }[];
+    placed: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
     toBag: unknown[];
   };
 }
@@ -73,7 +69,7 @@ describe('loot from a chest', () => {
     if (expected.result.kind !== 'placed') return;
     expect(payload.placed).toEqual(
       expected.result.placements.map((p) => ({
-        coordinates: axialToOffset(p.hex),
+        hex: p.hex,
         itemKey: p.itemKey,
         amount: p.amount,
       })),

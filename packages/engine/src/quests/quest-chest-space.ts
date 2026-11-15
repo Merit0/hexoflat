@@ -1,11 +1,16 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
-import { emptiedContainer, type ContainerSpace, type ContainerState } from '../containers';
+import {
+  emptiedContainer,
+  type ContainerSpace,
+  type ContainerState,
+  type SpaceApplied,
+} from '../containers';
 import type { InventoryState } from '../inventory/inventory-state';
-import { applySpreadPlan, offsetPlacement, type LootDrop, type LootNeighbour } from '../loot';
+import { applySpreadPlan, type LootDrop, type LootNeighbour } from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
-import { coordinateKey, offsetToAxial, type Axial } from '../utils/hex-utils';
+import { axialToOffset, coordinateKey, offsetToAxial, type Axial } from '../utils/hex-utils';
 import { positionOf, type QuestRun, type SeekerBoard } from './quest-state';
 
 export type QuestChestPrecondition = 'WRONG_PHASE' | 'NO_INVENTORY';
@@ -57,36 +62,40 @@ export function questChestSpace(
     },
     neighbours: (state, container) => helpers.neighbours(state.source, state.board, container.at),
     rollContents: (state) => [helpers.generate(state)],
-    apply: (state, actorId, container, outcome, bag): DomainEvent[] => {
+    apply: (state, actorId, container, outcome, bag): SpaceApplied => {
       const run = structuredClone(state.source);
       state.result = run;
       const chest = run.chest!;
-      const from = positionOf(state.source);
+      const from = offsetToAxial(positionOf(state.source));
       if (chest.kind !== 'real') {
         run.phase = 'ambush';
-        return [
-          {
-            type: 'AMBUSH_SPRUNG',
-            payload: { heroId: actorId, questId: run.offerId, deviations: run.lines.length },
-          },
-        ];
+        return {
+          opened: null,
+          events: [
+            {
+              type: 'AMBUSH_SPRUNG',
+              payload: { heroId: actorId, questId: run.offerId, deviations: run.lines.length },
+            },
+          ],
+        };
       }
-      const { placed, toBag } = applySpreadPlan(outcome.plan, bag, (placement) =>
-        offsetPlacement(placement, 'hex'),
-      );
+      const { placed, toBag } = applySpreadPlan(outcome.plan, bag, (placement) => ({
+        hex: placement.hex,
+        itemKey: placement.itemKey,
+        amount: placement.amount,
+      }));
       run.phase = 'collect';
       chest.container = emptiedContainer(outcome.container);
       run.collect = {
         hero: { ...chest.hex },
-        ground: placed.map((item) => ({ ...item })),
+        ground: placed.map((item) => ({
+          hex: axialToOffset(item.hex),
+          itemKey: item.itemKey,
+          amount: item.amount,
+        })),
         seen: helpers.seen(state.board, chest.hex),
       };
-      return [
-        {
-          type: 'CHEST_OPENED',
-          payload: { heroId: actorId, questId: run.offerId, hex: chest.hex, from, placed, toBag },
-        },
-      ];
+      return { opened: { from, placed, toBag }, events: [] };
     },
     refusalEvents: (state, actorId, _target, reason): DomainEvent[] => [
       {

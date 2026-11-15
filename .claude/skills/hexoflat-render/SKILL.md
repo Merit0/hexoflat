@@ -117,7 +117,7 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 
 ## Walk onto a grave before the loot flies (L5, 2026-11-14)
 
-`GRAVE_LOOTED` becomes a `walk` step in `battle-animation-plan.ts` (from the entry hex to the grave, `BATTLE_TIMING.stepMs`; none when `nothing: true`, `rewind` puts the hero back on `from`). The flight is shifted by `graveWalkLeadMs` through `lootSchedule(count, leadMs)` / `planLootFlights(played, leadMs)`, so walk plus flight stay inside `LOOT_TIMING.maxTotalMs` (800); items stay hidden from the first frame (`pending`).
+`CONTAINER_OPENED` (kind grave, `actorId`) becomes a `walk` step in `battle-animation-plan.ts` (from the entry hex to the grave, `BATTLE_TIMING.stepMs`; none when `nothing: true`, `rewind` puts the hero back on `from`). The flight is shifted by `graveWalkLeadMs` through `lootSchedule(count, leadMs)` / `planLootFlights(played, leadMs)`, so walk plus flight stay inside `LOOT_TIMING.maxTotalMs` (800); items stay hidden from the first frame (`pending`).
 
 ## Loot on the quest field (QC2, 2026-11-14)
 

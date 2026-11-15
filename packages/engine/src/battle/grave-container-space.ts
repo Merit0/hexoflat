@@ -1,5 +1,10 @@
 import type { DomainEvent } from '../commands/types';
-import { emptiedContainer, type ContainerSpace, type ContainerState } from '../containers';
+import {
+  emptiedContainer,
+  type ContainerSpace,
+  type ContainerState,
+  type SpaceApplied,
+} from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
 import { applySpreadPlan, lootNeighbours, rollLootLists } from '../loot';
 import { isAlive, isFreeHex } from './battle-board';
@@ -51,45 +56,20 @@ export function graveSpace(): ContainerSpace<BattleState, BattleHex, GraveComman
         graveOf(state, container.at)!.tables.map((id) => lootTableOf(id)),
         { seed: state.seed, sourceId: state.id, targetKey: hexKey(container.at) },
       ),
-    apply: (state, actorId, container, outcome, bag): DomainEvent[] => {
+    apply: (state, actorId, container, outcome, bag): SpaceApplied => {
       const actor = creatureOf(state, actorId);
       const grave = graveOf(state, container.at)!;
       const from = { ...actor.pos };
       grave.examined = true;
       grave.container = emptiedContainer(outcome.container);
-      if (outcome.nothing) {
-        return [
-          {
-            type: 'GRAVE_LOOTED',
-            payload: {
-              creatureId: actor.id,
-              hex: { ...grave.hex },
-              from,
-              placed: [],
-              toBag: [],
-              nothing: true,
-            },
-          },
-        ];
-      }
+      if (outcome.nothing) return { opened: { from, placed: [], toBag: [] }, events: [] };
       actor.pos = { ...grave.hex };
       const items = state.collect!.items;
       const applied = applySpreadPlan(outcome.plan, bag, (place) => {
         items.push({ hex: { ...place.hex }, itemKey: place.itemKey, amount: place.amount });
         return { hex: { ...place.hex }, itemKey: place.itemKey, amount: place.amount };
       });
-      return [
-        {
-          type: 'GRAVE_LOOTED',
-          payload: {
-            creatureId: actor.id,
-            hex: { ...grave.hex },
-            from,
-            placed: applied.placed,
-            toBag: applied.toBag,
-          },
-        },
-      ];
+      return { opened: { from, placed: applied.placed, toBag: applied.toBag }, events: [] };
     },
     refusalEvents: () => [],
   };

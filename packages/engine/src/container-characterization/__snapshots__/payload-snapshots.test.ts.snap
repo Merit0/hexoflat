@@ -68,11 +68,12 @@ exports[`CH-P0 payload snapshots: grave > every refusal: the BATTLE_REJECTED eve
 }
 `;
 
-exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no room: GRAVE_LOOTED and ITEM_GRANTED 1`] = `
+exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no room: CONTAINER_OPENED and ITEM_GRANTED 1`] = `
 [
   {
     "payload": {
-      "creatureId": "hero",
+      "actorId": "hero",
+      "containerId": "1,0",
       "from": {
         "q": 0,
         "r": 0,
@@ -81,6 +82,8 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
         "q": 1,
         "r": 0,
       },
+      "kind": "grave",
+      "nothing": false,
       "placed": [],
       "toBag": [
         {
@@ -93,7 +96,7 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
         },
       ],
     },
-    "type": "GRAVE_LOOTED",
+    "type": "CONTAINER_OPENED",
   },
   {
     "payload": {
@@ -142,11 +145,12 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
 ]
 `;
 
-exports[`CH-P0 payload snapshots: grave > the full loot: GRAVE_LOOTED 1`] = `
+exports[`CH-P0 payload snapshots: grave > the full loot: CONTAINER_OPENED 1`] = `
 [
   {
     "payload": {
-      "creatureId": "hero",
+      "actorId": "hero",
+      "containerId": "1,0",
       "from": {
         "q": 0,
         "r": 0,
@@ -155,6 +159,8 @@ exports[`CH-P0 payload snapshots: grave > the full loot: GRAVE_LOOTED 1`] = `
         "q": 1,
         "r": 0,
       },
+      "kind": "grave",
+      "nothing": false,
       "placed": [
         {
           "amount": 14,
@@ -175,7 +181,7 @@ exports[`CH-P0 payload snapshots: grave > the full loot: GRAVE_LOOTED 1`] = `
       ],
       "toBag": [],
     },
-    "type": "GRAVE_LOOTED",
+    "type": "CONTAINER_OPENED",
   },
 ]
 `;
@@ -333,57 +339,59 @@ exports[`CH-P0 payload snapshots: quest chest > every refusal: the QUEST_REJECTE
 }
 `;
 
-exports[`CH-P0 payload snapshots: quest chest > the full opening: CHEST_OPENED 1`] = `
+exports[`CH-P0 payload snapshots: quest chest > the full opening: CONTAINER_OPENED 1`] = `
 [
   {
     "payload": {
+      "actorId": "hero-1",
+      "containerId": "14:16",
       "from": {
-        "columnIndex": 13,
-        "rowIndex": 16,
+        "q": 5,
+        "r": 16,
       },
-      "heroId": "hero-1",
       "hex": {
-        "columnIndex": 14,
-        "rowIndex": 16,
+        "q": 6,
+        "r": 16,
       },
+      "kind": "quest-chest",
+      "nothing": false,
       "placed": [
         {
           "amount": 1,
           "hex": {
-            "columnIndex": 13,
-            "rowIndex": 15,
+            "q": 6,
+            "r": 15,
           },
           "itemKey": "sword",
         },
         {
           "amount": 1,
           "hex": {
-            "columnIndex": 14,
-            "rowIndex": 15,
+            "q": 7,
+            "r": 15,
           },
           "itemKey": "shield",
         },
         {
           "amount": 1,
           "hex": {
-            "columnIndex": 15,
-            "rowIndex": 16,
+            "q": 7,
+            "r": 16,
           },
           "itemKey": "health-bottle",
         },
         {
           "amount": 1,
           "hex": {
-            "columnIndex": 14,
-            "rowIndex": 17,
+            "q": 6,
+            "r": 17,
           },
           "itemKey": "mana-bottle",
         },
       ],
-      "questId": "seeker-1",
       "toBag": [],
     },
-    "type": "CHEST_OPENED",
+    "type": "CONTAINER_OPENED",
   },
 ]
 `;
@@ -546,53 +554,56 @@ exports[`CH-P0 payload snapshots: the whole open event and every refusal event, 
 ]
 `;
 
-exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > the full opening: CHEST_OPENED and WILL_SPENT 1`] = `
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > the full opening: CONTAINER_OPENED and WILL_SPENT 1`] = `
 [
   {
     "payload": {
-      "coordinates": {
-        "columnIndex": 4,
-        "rowIndex": 2,
-      },
+      "actorId": "hero-1",
+      "containerId": "4:2",
       "from": {
-        "columnIndex": 3,
-        "rowIndex": 2,
+        "q": 2,
+        "r": 2,
       },
-      "heroId": "hero-1",
+      "hex": {
+        "q": 3,
+        "r": 2,
+      },
+      "kind": "chest",
+      "nothing": false,
       "placed": [
         {
           "amount": 40,
-          "coordinates": {
-            "columnIndex": 3,
-            "rowIndex": 1,
+          "hex": {
+            "q": 3,
+            "r": 1,
           },
           "itemKey": "coins",
         },
         {
           "amount": 2,
-          "coordinates": {
-            "columnIndex": 4,
-            "rowIndex": 1,
+          "hex": {
+            "q": 4,
+            "r": 1,
           },
           "itemKey": "health-bottle",
         },
         {
           "amount": 1,
-          "coordinates": {
-            "columnIndex": 5,
-            "rowIndex": 2,
+          "hex": {
+            "q": 4,
+            "r": 2,
           },
           "itemKey": "health-bottle",
         },
       ],
       "toBag": [],
     },
-    "type": "CHEST_OPENED",
+    "type": "CONTAINER_OPENED",
   },
 ]
 `;
 
-exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > the full opening: CHEST_OPENED and WILL_SPENT 2`] = `
+exports[`CH-P0 payload snapshots: the whole open event and every refusal event, world chest > the full opening: CONTAINER_OPENED and WILL_SPENT 2`] = `
 [
   {
     "payload": {

@@ -244,7 +244,7 @@ describe('REQ-LOOT-081 a successful LOOT_GRAVE', () => {
     expect(looted.battle.collect!.items.some((item) => item.hex.q === 0 && item.hex.r === 0)).toBe(
       false,
     );
-    expect(looted.events.map((event) => event.type)).toEqual(['GRAVE_LOOTED']);
+    expect(looted.events.map((event) => event.type)).toEqual(['CONTAINER_OPENED']);
     expect(looted.inventory!.revision).toBe(0);
   });
 

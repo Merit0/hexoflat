@@ -23,7 +23,7 @@ function worldPayload(withContainer: boolean, seed: string) {
   return {
     scene,
     stored,
-    payload: outcome.events.find((event) => event.type === 'CHEST_OPENED')!.payload,
+    payload: outcome.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload,
   };
 }
 

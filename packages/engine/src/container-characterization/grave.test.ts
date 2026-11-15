@@ -114,13 +114,28 @@ describe('CH-P0 grave: price, hero move, room, bag', () => {
 });
 
 describe('CH-P0 grave: event name and payload', () => {
-  it('GRAVE_LOOTED carries exactly creatureId, hex, from, placed, toBag; placed uses axial hexes', () => {
+  it('CONTAINER_OPENED carries exactly actorId, containerId, from, hex, kind, nothing, placed, toBag; placed uses axial hexes', () => {
     const looted = play(won([warrior('s1', TARGET)], { seed: 'golden-3' }), lootAt(TARGET));
-    const event = looted.events.find((candidate) => candidate.type === 'GRAVE_LOOTED')!;
-    expect(keysOf(event.payload)).toEqual(['creatureId', 'from', 'hex', 'placed', 'toBag']);
+    const event = looted.events.find((candidate) => candidate.type === 'CONTAINER_OPENED')!;
+    expect(keysOf(event.payload)).toEqual([
+      'actorId',
+      'containerId',
+      'from',
+      'hex',
+      'kind',
+      'nothing',
+      'placed',
+      'toBag',
+    ]);
     const placed = (event.payload as { placed: object[] }).placed;
     expect(Object.keys(placed[0]).sort()).toEqual(['amount', 'hex', 'itemKey']);
-    expect(event.payload).toMatchObject({ creatureId: 'hero', hex: TARGET, from: ORIGIN });
+    expect(event.payload).toMatchObject({
+      actorId: 'hero',
+      kind: 'grave',
+      hex: TARGET,
+      from: ORIGIN,
+      nothing: false,
+    });
   });
 });
 
@@ -135,15 +150,8 @@ describe('CH-P0 grave: empty roll and empty state', () => {
     const looted = play(emptyGrave(), lootAt(TARGET));
     expect(creatureById(looted.battle, 'hero')!.pos).toEqual(ORIGIN);
     expect(looted.battle.collect!.graves[0].examined).toBe(true);
-    const event = looted.events.find((candidate) => candidate.type === 'GRAVE_LOOTED')!;
-    expect(keysOf(event.payload)).toEqual([
-      'creatureId',
-      'from',
-      'hex',
-      'nothing',
-      'placed',
-      'toBag',
-    ]);
+    const event = looted.events.find((candidate) => candidate.type === 'CONTAINER_OPENED')!;
+    expect(event.payload).toMatchObject({ nothing: true, placed: [], toBag: [] });
     expect(lootLeft(looted.battle.collect!)).toBe(false);
   });
 
