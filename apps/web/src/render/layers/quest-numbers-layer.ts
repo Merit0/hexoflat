@@ -1,3 +1,4 @@
+import { CREATURE_SPRITES } from '@/render/creature-sprites';
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { getPrototype } from '@hexoflat/engine';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -6,10 +7,9 @@ import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-c
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { QuestFieldModel } from '@/services/quests/quest-field-model';
 import type { TileAnchor } from '@/render/layers/tiles-layer';
-import { buildHexPolygon, createHexHitArea, createHexMask } from '@/render/hex-geometry';
+import { createHexHitArea, createHexMask } from '@/render/hex-geometry';
 import { applyObjectFit } from '@/render/object-fit';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
-import { creatureSprite } from '@/render/creature-sprites';
 import { hiddenTileLook } from '@/render/fog-look';
 
 export const QUEST_CHEST_SPRITE = '/hex-assets/hex-loot/chest-token.png';
@@ -30,12 +30,11 @@ export interface QuestNumbersLayer {
   destroy(): void;
 }
 
-const GOLD = 0xffe98a;
 const HINT_GREEN = 0x6fdc8c;
 export const EMPTY_CHEST_ALPHA = 0.45;
 
 export function questLayerAssetPaths(floorSprite: string): string[] {
-  return [floorSprite, QUEST_CHEST_SPRITE, creatureSprite('heroes'), hiddenTileLook('mist').url];
+  return [floorSprite, QUEST_CHEST_SPRITE, CREATURE_SPRITES.hero, hiddenTileLook('mist').url];
 }
 
 export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer {
@@ -43,9 +42,8 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
   const root = new Container();
   deps.worldContainer.addChild(root);
   const tiles = new Container();
-  const path = new Graphics();
   const marks = new Container();
-  root.addChild(tiles, path, marks);
+  root.addChild(tiles, marks);
   let unsubscribers: Array<() => void> = [];
 
   function textured(url: string, group = EHexobjectGroup.CONSTRUCTION): Sprite {
@@ -111,35 +109,11 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     return text;
   }
 
-  function outline(color: number, width: number, alpha = 1): Graphics {
-    const g = new Graphics();
-    g.poly(buildHexPolygon(w, h).points).stroke({ color, width, alpha });
-    return g;
-  }
-
   function footprints(): Graphics {
     const g = new Graphics();
     g.ellipse(w * 0.4, h * 0.42, w * 0.07, h * 0.1).fill({ color: 0xffffff, alpha: 0.35 });
     g.ellipse(w * 0.6, h * 0.58, w * 0.07, h * 0.1).fill({ color: 0xffffff, alpha: 0.35 });
     return g;
-  }
-
-  function priceLabel(cost: number, back: boolean): Container {
-    const label = new Container();
-    const text = new Text({
-      text: back ? `↩ ${cost}` : String(cost),
-      style: {
-        fontFamily: 'Cinzel, serif',
-        fontSize: Math.round(h * 0.2),
-        fontWeight: '800',
-        fill: 0xf5fcff,
-        stroke: { color: 0x0b2a4a, width: 4 },
-      },
-    });
-    text.anchor.set(0.5);
-    text.position.set(w / 2, h * 0.82);
-    label.addChild(text);
-    return label;
   }
 
   function stackSprite(itemKey: string, amount: number): Container[] {
@@ -169,12 +143,6 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     unsubscribers = [];
     tiles.removeChildren().forEach((child) => child.destroy({ children: true }));
     marks.removeChildren().forEach((child) => child.destroy({ children: true }));
-    path.clear();
-  }
-
-  function centre(hex: IHexCoordinates): { x: number; y: number } {
-    const { x, y } = deps.positionOf(hex);
-    return { x: x + w / 2, y: y + h / 2 };
   }
 
   let last: QuestFieldModel | null = null;
@@ -187,20 +155,12 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     for (const cell of model.hexes) {
       const content: Container[] = [textured(deps.floorSprite)];
       if (cell.footprint) content.push(footprints());
-      if (cell.hint) content.push(outline(HINT_GREEN, 6));
       if (cell.number !== null && cell.step === null)
         content.push(numberText(cell.number, cell.hint));
       if (cell.step) {
         if (cell.number !== null) content.push(numberText(cell.number, cell.hint));
       }
       const tile = tileAt(cell.hex, content, cell.step !== null);
-      if (cell.step) {
-        const label = priceLabel(cell.step.cost, cell.step.back);
-        label.visible = false;
-        tile.addChild(label);
-        tile.on('pointerover', () => (label.visible = true));
-        tile.on('pointerout', () => (label.visible = false));
-      }
       tiles.addChild(tile);
     }
     if (model.chest) {
@@ -211,15 +171,6 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     for (const stack of model.ground) {
       if (deps.isHidden?.(coordinateKey(stack.hex))) continue;
       marks.addChild(tileAt(stack.hex, stackSprite(stack.itemKey, stack.amount), model.collect));
-    }
-    const hero = textured(creatureSprite('heroes'), EHexobjectGroup.CREATURE);
-    const heroTile = tileAt(model.position, [hero], false);
-    marks.addChild(heroTile);
-    const points = model.pathLine.map(centre);
-    if (points.length > 1) {
-      path.moveTo(points[0].x, points[0].y);
-      for (const p of points.slice(1)) path.lineTo(p.x, p.y);
-      path.stroke({ color: GOLD, width: 3, alpha: 0.85 });
     }
   }
 

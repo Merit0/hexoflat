@@ -56,7 +56,6 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
     await quest.verifyHintOnFirstStep();
     await quest.verifyExactlyOneHexContinues();
     await quest.verifyStepPrices(1, BACK_COST);
-    await quest.hoverStepAndVerifyPrice(1);
 
     await walkToTheChest(quest);
     await quest.verifyStepCounter(STEPS, STEPS);

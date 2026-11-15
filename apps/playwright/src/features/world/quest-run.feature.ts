@@ -305,14 +305,6 @@ export class QuestRunFeature extends BaseFeature {
     });
   }
 
-  async hoverStepAndVerifyPrice(price: number): Promise<void> {
-    await this.step(`Hover a reachable hex and see the price ${price}`, async () => {
-      const target = this.forward(await this.field.read())[0];
-      await this.field.hoverHex(target.hex);
-      await this.field.verifyTip(new RegExp(String(price)));
-    });
-  }
-
   async verifyFieldGone(): Promise<void> {
     await this.step('Verify the quest field is gone', async () => {
       await this.field.verifyIsClosed();

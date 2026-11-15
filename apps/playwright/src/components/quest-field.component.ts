@@ -156,8 +156,4 @@ export class QuestFieldComponent extends BaseComponent {
     if (!point) throw new Error('The quest field has no camera yet');
     await this.canvas.hover({ position: point });
   }
-
-  async verifyTip(pattern: RegExp): Promise<void> {
-    await expect(this.page.getByTestId('quest-hex-tip')).toHaveText(pattern);
-  }
 }

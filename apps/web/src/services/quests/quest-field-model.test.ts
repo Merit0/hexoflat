@@ -10,7 +10,7 @@ import {
   questToolHexAt,
   resolveFieldClick,
 } from './quest-field-model';
-import { buildQuestHexTip } from './quest-hex-tip';
+import { questHoverObject } from './quest-hover-object';
 import { captureQuestResult, questResult, resultFromEvents } from './quest-result';
 
 const START = axialToOffset(FIELD_CENTER);
@@ -124,15 +124,15 @@ describe('quest field model', () => {
     expect(model.hexes.filter((cell) => cell.step && !cell.step.back)).toHaveLength(0);
   });
 
-  it('explains a step, a step back and the chest on hover', () => {
+  it('hovering shows the ordinary hexobject card data, nothing about a step', () => {
     const [a, b] = getHexNeighbors(START);
     const model = buildQuestField(projection());
-    expect(buildQuestHexTip(model, a)).toEqual({ key: 'quest.tip.step', params: { n: 1 } });
-    expect(buildQuestHexTip(buildQuestField(projection({ chest: { hex: b } })), b)).toEqual({
-      key: 'quest.tip.chest',
-      params: {},
-    });
-    expect(buildQuestHexTip(model, { columnIndex: 0, rowIndex: 0 })).toBeNull();
+    expect(questHoverObject(model, a)).toBeNull();
+    const withChest = buildQuestField(projection({ chest: { hex: b } }));
+    expect(questHoverObject(withChest, b)?.hexobjectKey).toBe('chest');
+    const emptied = buildQuestField(projection({ chest: { hex: b, empty: true } }));
+    expect(questHoverObject(emptied, b)?.hexobjectKey).toBe('chest-open');
+    expect(questHoverObject(model, { columnIndex: 0, rowIndex: 0 })).toBeNull();
   });
 });
 

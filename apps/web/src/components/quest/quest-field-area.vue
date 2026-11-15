@@ -19,13 +19,12 @@
       @act="actWithTool"
       @hide="heroTool.stopTool()"
     />
-    <quest-hex-tip v-if="tip && !tool" :tip="tip" />
+    <quest-hex-info-tooltip v-if="!tool" :model="model" :hover="hover" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useQuestBoard } from '@/render/quest/use-quest-board';
 import { useQuestRunView } from '@/composables/use-quest-run-view';
 import { useQuestRunActions } from '@/composables/use-quest-run-actions';
@@ -35,25 +34,16 @@ import {
   questToolHexAt,
   resolveFieldClick,
 } from '@/services/quests/quest-field-model';
-import { buildQuestHexTip } from '@/services/quests/quest-hex-tip';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { TileAnchor } from '@/render/layers/tiles-layer';
-import { getMeta } from '@hexoflat/engine';
-import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { lootFlying } from '@/services/loot/loot-flight-state';
 import { questHandDurationMs } from '@/services/quests/quest-hand-duration';
-import QuestHexTip from './quest-hex-tip.vue';
+import QuestHexInfoTooltip from './quest-hex-info-tooltip.vue';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import QuestToolHex from './quest-tool-hex.vue';
 import type { BoardCamera } from '@/render/board-camera';
 
-const i18n = useI18n();
-const { t } = i18n;
-function localizedTitle(key: THexobjectKey): string {
-  const title = getMeta(key).title;
-  return i18n.te(title) ? t(title) : title;
-}
 const pane = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const ready = ref(false);
@@ -64,14 +54,6 @@ const lastPointer = ref<IHexCoordinates | null>(null);
 const hover = ref<{ hex: IHexCoordinates; anchor: TileAnchor } | null>(null);
 const heroTool = useHeroToolStore();
 const model = computed(() => field.value ?? EMPTY_FIELD);
-const tip = computed(() => {
-  const current = hover.value;
-  if (!current || !field.value) return null;
-  const text = buildQuestHexTip(field.value, current.hex);
-  if (!text) return null;
-  const item = text.item ? localizedTitle(text.item as THexobjectKey) : '';
-  return { anchor: current.anchor, label: t(text.key, { ...text.params, item }) };
-});
 const tool = computed(() => {
   const projection = run.value?.projection;
   const toolKey = heroTool.activeTool;

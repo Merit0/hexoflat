@@ -14,7 +14,7 @@ import { questRefusalText } from '@/composables/quest-messages';
 import { i18n } from '@/i18n';
 import { lootFlightRequest, finishLootFlights } from '@/services/loot/loot-flight-state';
 import { buildQuestField, resolveFieldClick } from './quest-field-model';
-import { buildQuestHexTip } from './quest-hex-tip';
+import { questHoverObject } from './quest-hover-object';
 import { runQuestCommand, type QuestTransport } from './quest-run-transport';
 import { questRun } from './quest-run-projection';
 
@@ -87,19 +87,12 @@ describe('quest field while collecting', () => {
     expect(resolveFieldClick(run, { columnIndex: 0, rowIndex: 0 })).toBeNull();
   });
 
-  it('hover: the stack shows its quantity, the chest card has no digits', () => {
+  it('hover: a stack and the emptied chest are the ordinary hexobjects with their quantity', () => {
     const model = buildQuestField(collecting());
-    expect(buildQuestHexTip(model, stackHex)).toEqual({
-      key: 'quest.tip.stack',
-      params: { n: 7 },
-      item: 'coins',
-    });
-    const chest = buildQuestHexTip(model, START)!;
-    expect(chest.key).toBe('quest.tip.chestEmpty');
-    for (const locale of [en, uk]) {
-      expect(String(getByPath(locale, chest.key))).not.toMatch(/\d/);
-      expect(String(getByPath(locale, 'quest.tip.chest'))).not.toMatch(/\d/);
-    }
+    const stack = questHoverObject(model, stackHex);
+    expect(stack?.hexobjectKey).toBe('coins');
+    expect(stack?.quantity).toBe(7);
+    expect(questHoverObject(model, START)?.hexobjectKey).toBe('chest-open');
   });
 });
 

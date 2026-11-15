@@ -20,7 +20,6 @@ export interface QuestFieldModel {
   fog: IHexCoordinates[];
   hexes: QuestFieldHex[];
   position: IHexCoordinates;
-  pathLine: IHexCoordinates[];
   chest: IHexCoordinates | null;
   chestEmpty: boolean;
   ground: QuestFieldStack[];
@@ -38,7 +37,6 @@ export const EMPTY_FIELD: QuestFieldModel = {
   fog: [],
   hexes: [],
   position: { columnIndex: 0, rowIndex: 0 },
-  pathLine: [],
   chest: null,
   chestEmpty: false,
   ground: [],
@@ -106,7 +104,6 @@ export function buildQuestField(run: QuestProjection): QuestFieldModel {
     fog: fieldHexagon().filter((hex) => !seen.has(coordinateKey(hex))),
     hexes,
     position: run.position,
-    pathLine: [run.start, ...run.path.map((step) => step.hex)],
     chest: run.chest ? run.chest.hex : null,
     chestEmpty: run.chest?.empty === true,
     ground: ground.map((stack) => ({ ...stack, hex: { ...stack.hex } })),

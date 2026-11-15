@@ -17,6 +17,7 @@ import {
   questLayerAssetPaths,
   type QuestNumbersLayer,
 } from '@/render/layers/quest-numbers-layer';
+import { createHeroLayer, type HeroLayer } from '@/render/layers/hero-layer';
 import { createLootFlightLayer, type LootFlightLayer } from '@/render/layers/loot-flight-layer';
 import {
   finishLootFlights,
@@ -59,6 +60,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
   let pixi: HexBoardApp | null = null;
   let layer: QuestNumbersLayer | null = null;
   let flightLayer: LootFlightLayer | null = null;
+  let heroLayer: HeroLayer | null = null;
   let observer: ResizeObserver | null = null;
   let destroyed = false;
   let currentCamera: BoardCamera | null = null;
@@ -76,6 +78,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
 
   function sync() {
     layer?.sync(options.model.value);
+    heroLayer?.syncHero(options.model.value.position);
     pixi?.renderNow();
   }
 
@@ -104,6 +107,11 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
       onHexPointer: options.onHexPointer,
     });
     layer.sync(options.model.value);
+    heroLayer = createHeroLayer({
+      worldContainer: app.worldContainer,
+      getTileSize: () => ({ w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT }),
+    });
+    heroLayer.syncHero(options.model.value.position);
     flightLayer = createLootFlightLayer({
       worldContainer: app.worldContainer,
       getTileSize: () => ({ w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT }),
@@ -148,10 +156,12 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
     if (import.meta.env.VITE_E2E_HOOKS === 'true') registerQuestHexProbe(null);
     observer?.disconnect();
     flightLayer?.destroy();
+    heroLayer?.destroy();
     layer?.destroy();
     pixi?.destroy();
     pixi = null;
     layer = null;
     flightLayer = null;
+    heroLayer = null;
   });
 }

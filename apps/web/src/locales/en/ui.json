@@ -952,14 +952,6 @@
       "giveUpConfirm": "Yes, give up",
       "giveUpCancel": "Stay"
     },
-    "tip": {
-      "chest": "A chest. Open it with your hand.",
-      "step": "Step: {n} Will",
-      "back": "Step back: {n} Will",
-      "free": "Free step",
-      "chestEmpty": "Empty chest",
-      "stack": "{item} × {n}"
-    },
     "result": {
       "treasure": "You found the treasure.",
       "ambushWon": "You won the ambush.",
