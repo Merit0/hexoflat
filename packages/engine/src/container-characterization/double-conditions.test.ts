@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { chestRefusal, type ChestWorld } from '../chests/open-chest';
+import type { ChestWorld } from '../chests/open-chest';
 import {
   blockAround,
   chestScene,
   freeNeighbour,
   HERO,
+  openRefusal,
   putObject,
   tileOf,
 } from '../chests/chest-test-setup';
@@ -53,13 +54,13 @@ describe('CH-P0 double conditions, world chest: today the winner is', () => {
       freeNeighbour(scene.world, spot, 1),
       HEXOBJECT_KEYS.CHEST_OPEN,
     );
-    expect(chestRefusal(worldOf(scene, spot), target, HERO)).toBe('STANDING_ON_TARGET');
+    expect(openRefusal(worldOf(scene, spot), target, HERO)).toBe('STANDING_ON_TARGET');
   });
 
   it('empty AND not adjacent -> CONTAINER_EMPTY', () => {
     const scene = chestScene('dc-w2');
     const far = putObject(scene.world, farGround(scene), HEXOBJECT_KEYS.CHEST_OPEN);
-    expect(chestRefusal(worldOf(scene, scene.entry), far, HERO)).toBe('CONTAINER_EMPTY');
+    expect(openRefusal(worldOf(scene, scene.entry), far, HERO)).toBe('CONTAINER_EMPTY');
   });
 
   it('not adjacent AND no room -> NOT_ADJACENT (the room is planned only after the rule)', () => {
@@ -68,7 +69,7 @@ describe('CH-P0 double conditions, world chest: today the winner is', () => {
     const far = putObject(scene.world, farHex, HEXOBJECT_KEYS.CHEST);
     blockAround(scene.world, farHex, scene.entry, 0);
     expect(
-      chestRefusal(worldOf(scene, scene.entry), tileOf(scene.world, far.coordinates), HERO),
+      openRefusal(worldOf(scene, scene.entry), tileOf(scene.world, far.coordinates), HERO),
     ).toBe('NOT_ADJACENT');
   });
 });

@@ -6,8 +6,12 @@ import type { BattleState } from '../battle/battle-state';
 import { playOutSquad } from '../battle/collect-playout-setup';
 import { hexKey, hexNeighbours } from '../battle/hex-battle-geom';
 import { isTerrainPassable } from '../boards/terrain';
-import { planChestLoot, rollChestLoot } from '../chests/plan-chest-loot';
-import { createContainer } from '../containers';
+import type { ChestWorld } from '../chests/open-chest';
+import { rollChestLoot } from '../chests/plan-chest-loot';
+import { worldChestSpace } from '../chests/world-container-space';
+import { createContainer, openInSpace } from '../containers';
+import { EHexActionType } from '../enums/hex-action-type';
+import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { emptyInventoryState } from '../inventory/inventory-state';
 import { lootStreamLabel, rollLoot, type LootDrop } from '../loot';
 import type HexMapModel from '../map/models/hex-map-model';
@@ -15,8 +19,9 @@ import type { HexTileModel } from '../map/models/hex-tile-model';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { MapRegistry } from '../registry/world-map-registry';
 import { sellUnitPrice } from '../trade/trader-view';
-import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, offsetToAxial } from '../utils/hex-utils';
 import { deriveStream } from '../utils/random-seeded';
+import { getPrototype } from './content-accessors';
 import { lootTableOf, SKELETON_KING_TABLE_ID } from './loot-tables.content';
 import { TRADERS } from './traders.content';
 
@@ -128,17 +133,53 @@ function take(
 function lootChest(pool: CavePool, runSeed: string, result: RunResult): void {
   const context = { seed: runSeed, sourceId: `cave-${runSeed}` };
   const rolled = mergedCount([rollChestLoot(pool.chest, context)]);
-  const planned = planChestLoot(pool.map, pool.chest, pool.entry, context, {
-    current: emptyInventoryState('hero'),
-    events: [],
+  const original = pool.chest.hexobject!;
+  const ring = getHexNeighbors(pool.chest.coordinates).map((coords) => tileAt(pool.map, coords));
+  const ringBefore = ring.map((tile) => tile?.hexobject ?? null);
+  const key = coordinateKey(pool.chest.coordinates);
+  pool.chest.hexobject = {
+    ...original,
+    container: createContainer({
+      id: key,
+      kind: 'chest',
+      at: offsetToAxial(pool.chest.coordinates),
+      tables: [lootTableOf(chestTableId(original.hexobjectKey))],
+      seed: context.seed,
+      sourceId: context.sourceId,
+      targetKey: key,
+    }),
+  };
+  const hero = 'economy-hero';
+  const world: ChestWorld = {
+    map: pool.map,
+    heroes: { [hero]: { coordinates: { ...pool.entry } } } as unknown as ChestWorld['heroes'],
+    loot: context,
+  };
+  const opened = openInSpace(
+    worldChestSpace(EHexActionType.OPEN),
+    world,
+    hero,
+    pool.chest.coordinates,
+    { current: emptyInventoryState(hero), events: [] },
+  );
+  const event = opened.events.find((candidate) => candidate.type === 'CONTAINER_OPENED');
+  const payload = event?.payload as GravePayload | undefined;
+  take(result, payload ? [...payload.placed, ...payload.toBag] : [], rolled);
+  pool.chest.hexobject = original;
+  ring.forEach((tile, index) => {
+    if (tile) tile.hexobject = ringBefore[index];
   });
-  const items = planned.ok
-    ? [
-        ...planned.plan.placements.map(({ itemKey, amount }) => ({ itemKey, amount })),
-        ...planned.plan.toBag,
-      ]
-    : [];
-  take(result, items, rolled);
+}
+
+function tileAt(map: HexMapModel, at: IHexCoordinates): HexTileModel | undefined {
+  return map.tiles.find((tile) => coordinateKey(tile.coordinates) === coordinateKey(at));
+}
+
+function chestTableId(hexobjectKey: string): string | undefined {
+  const proto = getPrototype(hexobjectKey as never);
+  return proto.groupType === EHexobjectGroup.CONSTRUCTION
+    ? proto.construction.lootTableId
+    : undefined;
 }
 
 interface GravePayload {
@@ -158,6 +199,9 @@ function lootGraves(source: BattleState, runSeed: string, label: string, result:
       sourceId: battle.id,
       targetKey: hexKey(grave.hex),
     });
+  }
+  for (const { hex, tables } of structuredClone(battle.collect!.graves)) {
+    const grave = { hex, tables };
     const rng = deriveStream(battle.seed, lootStreamLabel(battle.id, hexKey(grave.hex)));
     const lists = grave.tables.map((id) => rollLoot(lootTableOf(id)!, rng));
     const rolled = mergedCount(lists);

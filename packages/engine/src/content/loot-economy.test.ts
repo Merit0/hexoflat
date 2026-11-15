@@ -265,7 +265,8 @@ describe('REQ-LOOT-106 ten thousand cave runs with the real tables and the real 
     const rolled = runs.reduce((sum, run) => sum + run.rolledDrops, 0);
     const lost = runs.reduce((sum, run) => sum + run.lostDrops, 0);
     console.info(`drops lost to cramped surroundings: ${((lost / rolled) * 100).toFixed(1)}%`);
-    expect(lost / rolled).toBeLessThan(0.25);
+    expect(lost / rolled).toBeGreaterThan(0.14);
+    expect(lost / rolled).toBeLessThan(0.17);
   });
 });
 

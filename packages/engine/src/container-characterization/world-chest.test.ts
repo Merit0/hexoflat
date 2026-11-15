@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHEST_REFUSAL_MESSAGES, chestRefusal, type ChestWorld } from '../chests/open-chest';
-import { planChestLoot, EMPTY_CHEST_LOOT } from '../chests/plan-chest-loot';
+import { CHEST_REFUSAL_MESSAGES, type ChestWorld } from '../chests/open-chest';
 import { worldChestSpace } from '../chests/world-container-space';
 import { openInSpace } from '../containers';
 import { EHexActionType } from '../enums/hex-action-type';
@@ -10,6 +9,7 @@ import {
   freeNeighbour,
   HERO,
   itemsAround,
+  openRefusal,
   openAction,
   putObject,
   runOf,
@@ -48,14 +48,14 @@ describe('CH-P0 world chest: check order (matrix row 1)', () => {
   it('NO_HERO comes first, whatever the target is', () => {
     const scene = chestScene('order-a');
     const world = { ...worldOf(scene), heroes: {} };
-    expect(chestRefusal(world, tileOf(scene.world, scene.chest), HERO)).toBe('NO_HERO');
+    expect(openRefusal(world, tileOf(scene.world, scene.chest), HERO)).toBe('NO_HERO');
   });
 
   it('standing on a loot target beats "target is not a full chest" and "not adjacent"', () => {
     const scene = chestScene('order-b');
     standingOn(scene.world, HEXOBJECT_KEYS.CHEST_OPEN);
     const emptyFar = putObject(scene.world, farSpot(scene.world), HEXOBJECT_KEYS.CHEST_OPEN);
-    expect(chestRefusal(worldOf(scene, scene.world.heroCoordinates!), emptyFar, HERO)).toBe(
+    expect(openRefusal(worldOf(scene, scene.world.heroCoordinates!), emptyFar, HERO)).toBe(
       'STANDING_ON_TARGET',
     );
   });
@@ -63,14 +63,14 @@ describe('CH-P0 world chest: check order (matrix row 1)', () => {
   it('"not a full chest" (CONTAINER_EMPTY) beats "not adjacent"', () => {
     const scene = chestScene('order-c');
     const far = putObject(scene.world, farSpot(scene.world), HEXOBJECT_KEYS.CHEST_OPEN);
-    expect(chestRefusal(worldOf(scene), far, HERO)).toBe('CONTAINER_EMPTY');
+    expect(openRefusal(worldOf(scene), far, HERO)).toBe('CONTAINER_EMPTY');
   });
 
   it('a far full chest is NOT_ADJACENT and a near one passes', () => {
     const scene = chestScene('order-d');
     const far = putObject(scene.world, farSpot(scene.world), HEXOBJECT_KEYS.CHEST);
-    expect(chestRefusal(worldOf(scene), far, HERO)).toBe('NOT_ADJACENT');
-    expect(chestRefusal(worldOf(scene), tileOf(scene.world, scene.chest), HERO)).toBeNull();
+    expect(openRefusal(worldOf(scene), far, HERO)).toBe('NOT_ADJACENT');
+    expect(openRefusal(worldOf(scene), tileOf(scene.world, scene.chest), HERO)).toBeNull();
   });
 
   it('every refusal code has a message', () => {
@@ -96,7 +96,7 @@ describe('CH-P0 world chest: re-entry ban and empty state', () => {
     const near = freeNeighbour(scene.world, scene.world.heroCoordinates!);
     putObject(scene.world, near, HEXOBJECT_KEYS.CHEST);
     expect(
-      chestRefusal(worldOf(scene, scene.world.heroCoordinates!), tileOf(scene.world, near), HERO),
+      openRefusal(worldOf(scene, scene.world.heroCoordinates!), tileOf(scene.world, near), HERO),
     ).toBe('STANDING_ON_TARGET');
   });
 
@@ -219,18 +219,19 @@ describe('CH-P0 world chest: empty roll (matrix row "empty-roll behaviour")', ()
     });
   });
 
-  it('planChestLoot with no loot context rolls nothing, even with no place around', () => {
+  it('opening with no loot context rolls nothing and succeeds, even with no place around', () => {
     const scene = chestScene('empty-roll-b');
     blockAround(scene.world, scene.chest, scene.entry, 0);
     const draft = { current: emptyInventoryState(HERO), events: [] };
-    expect(
-      planChestLoot(
-        scene.world.map,
-        tileOf(scene.world, scene.chest),
-        scene.entry,
-        undefined,
-        draft,
-      ),
-    ).toEqual({ ok: true, plan: EMPTY_CHEST_LOOT });
+    const opened = openInSpace(
+      worldChestSpace(EHexActionType.OPEN),
+      { ...worldOf(scene), loot: undefined },
+      HERO,
+      scene.chest,
+      draft,
+    );
+    expect(opened).toMatchObject({ ok: true });
+    expect(opened.events).toHaveLength(1);
+    expect(opened.events[0].payload).toMatchObject({ nothing: true, placed: [], toBag: [] });
   });
 });

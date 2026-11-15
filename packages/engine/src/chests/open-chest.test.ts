@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { chestRefusal } from './open-chest';
 import { ACTION_STARTERS } from '../registry/action-starters-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import { findShortestPath } from '../hero-movement/pathfinding-service';
@@ -20,6 +19,7 @@ import {
   chestScene,
   freeNeighbour,
   openAction,
+  openRefusal,
   putObject,
   runOf,
   snapshotOf,
@@ -144,7 +144,7 @@ describe('opening a chest', () => {
       portal: null,
     };
     expect(
-      chestRefusal({ map: world.map, heroes: { 'hero-1': hero } }, tileOf(world, chest), 'hero-1'),
+      openRefusal({ map: world.map, heroes: { 'hero-1': hero } }, tileOf(world, chest), 'hero-1'),
     ).toBe('NOT_ADJACENT');
     world.heroCoordinates = faraway;
     const before = snapshotOf(world);
