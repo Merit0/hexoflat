@@ -5,6 +5,7 @@ import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { LOOT_TABLES } from '@hexoflat/engine/content/loot-tables.content';
+import { lootStreamLabel } from '@hexoflat/engine/loot/roll-loot';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
@@ -26,26 +27,36 @@ const dbAvailable = inject('dbAvailable');
 const [BOARD] = campObjectSpots(HEXOBJECT_KEYS.QUEST_BOARD);
 const NEAR = getHexNeighbors(BOARD)[0];
 
-const STRUCTURAL_MARKERS = [
-  '"guaranteed"',
-  '"rolls"',
-  '"entries"',
-  '"chestLootTableId"',
-  '"lootTableId"',
-  '"drop"',
-  '"discarded"',
-  '"tables"',
-  '"contents"',
-  '"kind":"quest-chest","at"',
-  '"kind":"grave","at"',
-  '"status":"full"',
-  '"rngSeed"',
+const SECRET_KEYS = [
+  'guaranteed',
+  'rolls',
+  'entries',
+  'chestLootTableId',
+  'lootTableId',
+  'drop',
+  'discarded',
+  'tables',
+  'contents',
+  'sourceId',
+  'rngSeed',
 ];
+
+const SECRET_TEXTS = ['"status":"full"', `"${lootStreamLabel('', '').split(':')[0]}:`];
+
+function secretKeysIn(value: unknown, found = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) value.forEach((item) => secretKeysIn(item, found));
+  else if (value && typeof value === 'object')
+    for (const [key, inner] of Object.entries(value)) {
+      if (SECRET_KEYS.includes(key)) found.add(key);
+      secretKeysIn(inner, found);
+    }
+  return found;
+}
 
 function expectNoSecrets(label: string, payload: unknown, secrets: string[]) {
   const text = JSON.stringify(payload);
-  for (const marker of STRUCTURAL_MARKERS)
-    expect(text, `${label} has ${marker}`).not.toContain(marker);
+  expect([...secretKeysIn(payload)], `${label} has a secret key`).toEqual([]);
+  for (const marker of SECRET_TEXTS) expect(text, `${label} has ${marker}`).not.toContain(marker);
   for (const id of Object.keys(LOOT_TABLES))
     expect(text, `${label} names table ${id}`).not.toContain(id);
   for (const secret of secrets) expect(text, `${label} leaks a secret`).not.toContain(secret);
@@ -320,7 +331,7 @@ describe.skipIf(!dbAvailable)(
       const secrets = [run.seed];
       for (const hex of run.trail)
         answers.push(await sendQuest(userId, heroId, 'QUEST_STEP', { hex }));
-      const stored = (await docOf()).run.chest!.drop!;
+      const stored = (await docOf()).run.chest!.container!.contents![0];
       expect(stored.length).toBeGreaterThan(0);
       secrets.push(JSON.stringify(stored));
       expect((await docOf()).run.chest!.container!.contents!.length).toBe(1);
@@ -341,3 +352,41 @@ describe.skipIf(!dbAvailable)(
     });
   },
 );
+
+describe('CH-P7 the secrets guard fails when a stored container reaches a response', () => {
+  const stored = {
+    id: '3,4',
+    kind: 'quest-chest',
+    at: { q: 1, r: 2 },
+    contents: [[{ itemKey: 'sword', amount: 1 }]],
+    status: 'full',
+  };
+  const reordered = {
+    status: 'full',
+    contents: stored.contents,
+    at: stored.at,
+    kind: stored.kind,
+    id: stored.id,
+  };
+
+  it('clean public data passes', () => {
+    expect(() =>
+      expectNoSecrets('clean', { quest: { chest: { hex: { q: 1, r: 2 }, empty: false } } }, []),
+    ).not.toThrow();
+  });
+
+  it.each([
+    ['in the stored key order', stored],
+    ['in another key order', reordered],
+  ])('a container injected %s is caught', (_name, container) => {
+    expect(() =>
+      expectNoSecrets('answer', { quest: { chest: { hex: { q: 1, r: 2 }, container } } }, []),
+    ).toThrow();
+  });
+
+  it('a bare stream label, a table id and a seed are caught', () => {
+    expect(() => expectNoSecrets('label', { x: lootStreamLabel('seed-a', '3,4') }, [])).toThrow();
+    expect(() => expectNoSecrets('table', { x: Object.keys(LOOT_TABLES)[0] }, [])).toThrow();
+    expect(() => expectNoSecrets('seed', { x: 'seed-abc' }, ['seed-abc'])).toThrow();
+  });
+});

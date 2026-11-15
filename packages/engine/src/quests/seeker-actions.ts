@@ -219,7 +219,6 @@ function showChest(
     });
     const drop = container.contents?.[0] ?? [];
     if (drop.length === 0) throw new Error(`CHEST_DROP_EMPTY:${run.chestLootTableId}`);
-    run.chest.drop = drop;
     run.chest.container = container;
   }
   events.push({ type: 'CHEST_APPEARED', payload: { heroId, questId: run.offerId, hex } });

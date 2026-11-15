@@ -60,7 +60,7 @@ export function graveGolden(seed: string, kind: 'warrior' | 'king'): string {
 export function questChestGolden(seed: string): { stored: string; text: string } {
   const state = startQuest('seeker-1', seed);
   const end = followTruth(state, 10);
-  const stored = listOf(end.run.chest!.drop ?? []);
+  const stored = listOf(end.run.chest!.container?.contents?.[0] ?? end.run.chest!.drop ?? []);
   const opened = must(openChestOf(state, end));
   const payload = opened.events[0].payload as {
     placed: { hex: { q: number; r: number }; itemKey: string; amount: number }[];

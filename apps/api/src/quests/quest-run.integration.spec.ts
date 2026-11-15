@@ -254,8 +254,18 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
   }
 
   it('REQ-QST-036 a false trail ends in a lost treasure: no chest in the answer, restore keeps the state, leaving frees the slot', async () => {
-    const { userId, heroId } = await heroAt(NEAR);
-    await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
+    let entered: { userId: string; heroId: string } | null = null;
+    for (let attempt = 0; attempt < 30 && !entered; attempt += 1) {
+      const candidate = await heroAt(NEAR);
+      await send(candidate.userId, candidate.heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
+      const start = await runDoc(candidate.userId, candidate.heroId);
+      const trailKeys = new Set(start.trail.map(coordinateKey));
+      const hasDecoy = getHexNeighbors(start.start).some(
+        (hex) => coordinateKey(hex) in start.revealed && !trailKeys.has(coordinateKey(hex)),
+      );
+      if (hasDecoy) entered = candidate;
+    }
+    const { userId, heroId } = entered!;
     const run = await walkIntoLostTreasure(userId, heroId);
     expect(run.phase).toBe('lost');
     const snapshot = await quests.snapshot(userId, heroId);

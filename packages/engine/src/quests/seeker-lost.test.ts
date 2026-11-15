@@ -150,20 +150,20 @@ describe('REQ-QST-038 the chest drop is generated once and stays hidden', () => 
 
   it('is stored when the chest appears and is the same before OPEN, after a reload and after a refused OPEN', () => {
     const { state, end } = atChest('drop-a');
-    const stored = JSON.stringify(end.run.chest!.drop);
-    expect(end.run.chest!.drop).toHaveLength(4);
+    const storedOf = (run: typeof end.run) => JSON.stringify(run.chest!.container!.contents);
+    const stored = storedOf(end.run);
+    expect(end.run.chest!.container!.contents![0]).toHaveLength(4);
     const reloaded = parseQuestRun(JSON.parse(JSON.stringify(end.run)));
-    expect(JSON.stringify(reloaded.chest!.drop)).toBe(stored);
+    expect(storedOf(reloaded)).toBe(stored);
     const refused = seekerOpenChest(end.progress, end.run, state.board, {
       inventory: undefined,
       tableId: 'seeker-1-chest-loot',
     });
     expect(refused).toMatchObject({ ok: false, reason: 'NO_INVENTORY' });
-    expect(JSON.stringify(end.run.chest!.drop)).toBe(stored);
+    expect(storedOf(end.run)).toBe(stored);
     const opened = must(openChestOf(state, end));
-    expect(opened.run.chest!.drop).toEqual(end.run.chest!.drop);
     expect([...opened.run.collect!.ground.map((item) => item.itemKey)].sort()).toEqual(
-      end.run.chest!.drop!.map((entry) => entry.itemKey).sort(),
+      end.run.chest!.container!.contents![0].map((entry) => entry.itemKey).sort(),
     );
   });
 
