@@ -14,7 +14,8 @@ import {
   seekerStepBack,
   type SeekerResult,
 } from './seeker-actions';
-import { createTreasureField } from './treasure-field';
+import { createTreasureField, questExitHex } from './treasure-field';
+import { hexDistance } from '../utils/hex-utils';
 
 const hero = { heroId: z.string().min(1) };
 
@@ -24,6 +25,9 @@ export const QUEST_RUN_COMMAND_SCHEMAS = {
       type: z.literal('QUEST_ENTER'),
       payload: z.object({ ...hero, questId: z.string().min(1).max(64) }).strict(),
     })
+    .strict(),
+  QUEST_PAUSE: z
+    .object({ type: z.literal('QUEST_PAUSE'), payload: z.object(hero).strict() })
     .strict(),
   QUEST_STEP: z
     .object({
@@ -61,11 +65,16 @@ export function isQuestRunCommandType(type: string): type is QuestRunCommandType
 export interface QuestRunDoc {
   run: QuestRun;
   camp: Presence | null;
+  suspended?: boolean;
 }
 
 export function parseQuestRunDoc(raw: string): QuestRunDoc {
-  const parsed = JSON.parse(raw) as { run: unknown; camp: Presence | null };
-  return { run: parseQuestRun(parsed.run), camp: parsed.camp };
+  const parsed = JSON.parse(raw) as { run: unknown; camp: Presence | null; suspended?: boolean };
+  return {
+    run: parseQuestRun(parsed.run),
+    camp: parsed.camp,
+    ...(parsed.suspended === undefined ? {} : { suspended: parsed.suspended }),
+  };
 }
 
 export type QuestRunOutcome =
@@ -111,12 +120,27 @@ export function executeQuestRunCommand(input: {
   progress: ProgressState;
   doc: QuestRunDoc | null;
   command: QuestRunCommand;
-  atBoard: boolean;
+  atEntrance: boolean;
   inventory?: InventoryState;
   newSeed: () => string;
 }): QuestRunOutcome {
   const { progress, doc, command } = input;
   if (command.type === 'QUEST_ENTER') {
+    if (doc && !doc.suspended) return { ok: false, code: 'QUEST_IN_PROGRESS', events: [] };
+    if (!input.atEntrance) return { ok: false, code: 'NOT_AT_QUEST_ENTRANCE', events: [] };
+    if (doc?.suspended && doc.run.offerId === command.payload.questId) {
+      return {
+        ok: true,
+        progress: { ...progress, presence: null },
+        doc: { ...doc, suspended: false },
+        events: [
+          {
+            type: 'QUEST_RESUMED',
+            payload: { heroId: progress.knowledge.heroId, questId: doc.run.offerId },
+          },
+        ],
+      };
+    }
     const seed = input.newSeed();
     const field = createTreasureField(seed);
     const entered = enterQuest(progress, {
@@ -125,7 +149,7 @@ export function executeQuestRunCommand(input: {
       seed,
       board: field,
       start: field.start,
-      atBoard: input.atBoard,
+      atBoard: input.atEntrance,
       hasRun: doc !== null,
     });
     return settle(entered, progress.presence, null);
@@ -138,6 +162,23 @@ export function executeQuestRunCommand(input: {
         {
           type: 'QUEST_REJECTED',
           payload: { heroId: progress.knowledge.heroId, questId: '', reason: 'NO_RUN' },
+        },
+      ],
+    };
+  }
+  if (doc.suspended) return { ok: false, code: 'QUEST_SUSPENDED', events: [] };
+  if (command.type === 'QUEST_PAUSE') {
+    const exit = questExitHex(doc.run.start);
+    const position = doc.run.collect?.hero ?? doc.run.path.at(-1)?.hex ?? doc.run.start;
+    if (hexDistance(position, exit) !== 1) return { ok: false, code: 'NOT_ADJACENT', events: [] };
+    return {
+      ok: true,
+      progress: { ...progress, presence: doc.camp },
+      doc: { ...doc, suspended: true },
+      events: [
+        {
+          type: 'QUEST_PAUSED',
+          payload: { heroId: progress.knowledge.heroId, questId: doc.run.offerId },
         },
       ],
     };

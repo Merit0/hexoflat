@@ -22,7 +22,12 @@ const SQUAD_SPRITES = {
 } as const;
 
 const SQUAD_ACTIONS = {
-  [EHexActionType.ATTACK]: { label: 'squad.attack', durationMs: 0, willCost: 2 },
+  [EHexActionType.ATTACK]: {
+    label: 'squad.attack',
+    durationMs: 0,
+    willCost: 2,
+    destination: { type: 'BATTLE' as const },
+  },
   [EHexActionType.SCOUT]: { label: 'squad.scout', durationMs: 0, willCost: 1 },
 };
 

@@ -7,7 +7,6 @@ import {
   fieldHexagon,
   previousHex,
   questHandAction,
-  questToolHexAt,
   resolveFieldClick,
 } from './quest-field-model';
 import { questHoverObject } from './quest-hover-object';
@@ -109,13 +108,6 @@ describe('quest field model', () => {
     expect(questHandAction(collecting, START)).toBeNull();
     expect(resolveFieldClick(collecting, b)).toBeNull();
     expect(questHandAction({ ...collecting, phase: 'lost' }, b)).toBeNull();
-  });
-
-  it('the tool hex snaps to the hero neighbour nearest to the pointer', () => {
-    const [a] = getHexNeighbors(START);
-    expect(questToolHexAt(projection(), a)).toEqual(a);
-    expect(questToolHexAt(projection(), null)).toEqual(getHexNeighbors(START)[0]);
-    expect(questToolHexAt(projection({ phase: 'lost' }), a)).toBeNull();
   });
 
   it('offers no steps while a chest stands on the field', () => {

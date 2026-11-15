@@ -16,6 +16,31 @@ async function reachTheOpenedChest() {
 }
 
 test.describe('Treasure Seeker chest loot', { tag: ['@hero'] }, () => {
+  test('Verify three consecutive complete runs on the same hero', async () => {
+    test.setTimeout(120_000);
+    await new OpenCampingMapFeature().open();
+    const quest = new QuestRunFeature();
+    await quest.openBoard();
+
+    for (let run = 1; run <= 3; run += 1) {
+      await test.step(`Complete run ${run} of 3`, async () => {
+        // Refill only Will; keep the hero, inventory and completed quests.
+        await quest.setWill(50);
+        await quest.startFirstTrail();
+        await quest.walkOnTrail(STEPS);
+        await quest.openChest();
+        await quest.verifyHeroOnTheEmptiedChest();
+        await quest.takeEveryStack();
+        await quest.returnToCamp();
+        await quest.dismissResult();
+        await quest.verifyFieldGone();
+        await quest.board.verifyDoneCount('seeker-1', run);
+        await quest.board.verifyWill(20);
+        await quest.verifyNextCardOpen('seeker-2');
+      });
+    }
+  });
+
   test('Verify a clean run: open the chest, take all, return, loot in the bag and the next card open', async () => {
     const quest = await reachTheOpenedChest();
 

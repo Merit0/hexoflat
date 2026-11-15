@@ -1,3 +1,4 @@
+import { arriveAtQuestEntrance } from '../test-support/quest-entrance';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
@@ -50,6 +51,7 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     const inventory = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
     const accept = envelope(heroId, 'QUEST_ACCEPT', { questId: 'seeker-1' }, inventory.revision);
     expect((await kit.service.execute(userId, accept)).result).toBe('applied');
+    await arriveAtQuestEntrance(kit, world, userId, heroId, at === NEAR);
     return { userId, heroId };
   }
 
@@ -177,7 +179,7 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     delete (move.command.payload as { revision?: number }).revision;
     await kit.service.execute(userId, move);
     const refused = await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
-    expect(refused).toMatchObject({ result: 'rejected', code: 'NOT_AT_BOARD' });
+    expect(refused).toMatchObject({ result: 'rejected', code: 'NOT_AT_QUEST_ENTRANCE' });
   });
 
   const bagOf = async (userId: string, heroId: string) =>
@@ -352,5 +354,29 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     expect((await stateOf(userId, heroId)).knowledge.current).toBe(willBefore);
     expect((await stateOf(userId, heroId)).quests.done['seeker-1']).toBe(1);
     expect((await bagOf(userId, heroId)).some((cell) => cell?.key === item.itemKey)).toBe(true);
+  });
+  it('pauses through the camping portal and discards an abandoned suspended run', async () => {
+    const { userId, heroId } = await heroAt(NEAR);
+    expect((await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' })).result).toBe(
+      'applied',
+    );
+    const paused = await send(userId, heroId, 'QUEST_PAUSE');
+    expect(paused.result).toBe('applied');
+    expect(paused.quest).toBeNull();
+    expect((await stateOf(userId, heroId)).presence?.locationKey).toBe('camping');
+    expect((await quests.snapshot(userId, heroId)).quest).toBeNull();
+    const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+    const stored = parseQuestRunDoc((await readServerDocument(kit.db, expeditionId, 'srv-quest'))!);
+    expect(stored.suspended).toBe(true);
+    const inventory = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
+    expect(
+      (
+        await kit.service.execute(
+          userId,
+          envelope(heroId, 'QUEST_ABANDON', { questId: 'seeker-1' }, inventory.revision),
+        )
+      ).result,
+    ).toBe('applied');
+    expect(await readServerDocument(kit.db, expeditionId, 'srv-quest')).toBeNull();
   });
 });

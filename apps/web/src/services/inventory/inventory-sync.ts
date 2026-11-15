@@ -355,14 +355,17 @@ export function sendProgress(
 export function sendQuestCommand(
   type: string,
   payload: Record<string, unknown>,
+  isCurrent: () => boolean = () => true,
 ): Promise<QuestRunAnswer> {
   if (inventorySession.status !== 'live') {
     return Promise.resolve({ ok: false, code: 'OFFLINE', events: [] });
   }
+  const sentEpoch = epoch;
   return enqueue(() =>
     runQuestCommand(
       {
         socket,
+        isCurrent: () => epoch === sentEpoch && isCurrent(),
         heroId: inventorySession.heroId,
         progressRevision: inventorySession.progressRevision,
         applyProgress,

@@ -242,3 +242,11 @@ Health is in `progress.health` (`{ current, bonus, debt }`, base `HERO_BASE_HEAL
 - Web reads `packages/engine/dist`: rebuild with `pnpm build` after flipping a flag or editing the engine, or web tests still see the old rules.
 
 - **One open event (CH-P5, 2026-11-15).** `CHEST_OPENED` (world, quest) and `GRAVE_LOOTED` are gone; `openInSpace` itself emits `CONTAINER_OPENED { actorId, containerId, kind, hex, from, placed[{ hex, itemKey, amount }], toBag, nothing }`, all axial (`containers/container-opened.ts`). A `ContainerSpace.apply` now returns `SpaceApplied { opened: { from, placed, toBag } | null, events }` (extras such as the lure's `AMBUSH_SPRUNG`; `opened: null` = no open event) and writes the space's own state; the world and quest adapters convert axial to offset when they store tiles/`collect.ground`. `questId` and `creatureId` were dropped (no consumer; `actorId` replaces `heroId`/`creatureId`). Old names in any text below mean this event.
+
+## Treasure Seeker world entry (2026-11-15)
+
+`QUEST_ACCEPT` only accepts/pays; `quests/world-entrances.ts` installs one quest-linked `TREASURE_MAP` on reachable empty Silesia ground and preserves fog. `questId` is serialized with that object. `canEnterQuestWorld` requires a revealed marker and an adjacent hero in Silesia. `QUEST_ENTER` is validated by the server world, not the board. `QUEST_PAUSE` requires adjacency to `questExitHex(start)`, restores camp presence and keeps the run document with `suspended: true`; a valid re-entry resumes that same run. Suspended runs cannot step, open or loot. The portal is outside the number field, so it does not change the generated trail. See `docs/quest-board/world-entry-plan.md`.
+
+## Map placement and action destinations (2026-11-15)
+
+Use `map/object-placement.ts` for eligible empty placement or explicit expected-key replacement; inject seeded RNG and actor occupancy. Preserve fog/reservations. Quest target maps belong to `QuestDefinition.mapObjectPlacement`, not portal key branches. `map/object-transition.ts` resolves `actions[action].destination` with legacy `enter` compatibility and validates voluntary entry. Destination handlers retain separate persistence/rules; watcher ambushes do not pass through voluntary-action validation. World gates permit distance <= 1 for compatibility; quest/squad require exactly 1.

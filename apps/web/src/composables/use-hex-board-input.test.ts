@@ -8,10 +8,24 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useTraderStore } from '@/stores/trader-store';
-import { HAND_SCROLL_COOLDOWN_MS, useHexBoardInput } from './use-hex-board-input';
+import {
+  HAND_SCROLL_COOLDOWN_MS,
+  useHexBoardInput,
+  type UseHexBoardInputDeps,
+} from './use-hex-board-input';
 
 let app: App;
 let host: HTMLElement;
+const position = ref({ columnIndex: 12, rowIndex: 12 });
+const enabled = ref(true);
+const blocked = ref(false);
+let inputDeps: UseHexBoardInputDeps;
+const InputHarness = defineComponent({
+  setup() {
+    useHexBoardInput(inputDeps);
+    return () => h('div');
+  },
+});
 
 function scroll() {
   window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, cancelable: true }));
@@ -19,6 +33,8 @@ function scroll() {
 
 describe('the mouse wheel takes the hand only when no hand action is running', () => {
   beforeEach(() => {
+    enabled.value = true;
+    blocked.value = false;
     const pinia = createPinia();
     setActivePinia(pinia);
     localStorage.clear();
@@ -27,19 +43,32 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     const tool = useHeroToolStore();
     tool.stopTool();
     host = document.createElement('div');
-    app = createApp(
-      defineComponent({
-        setup() {
-          useHexBoardInput({ hoveredTileCoord: ref(null) });
-          return () => h('div');
-        },
-      }),
-    ).use(pinia);
+    inputDeps = { hoveredTileCoord: ref(null) };
+    app = createApp(InputHarness).use(pinia);
     app.mount(host);
   });
   afterEach(() => {
     knowledgePanelMode.value = null;
     app.unmount();
+  });
+
+  it('uses the quest hero position and bypasses the reading-panel block only for the quest input', () => {
+    app.unmount();
+    knowledgePanelMode.value = 'quests';
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    useHeroInventoryStore().hydrate();
+    inputDeps = { hoveredTileCoord: ref(null), heroCoordinates: position, enabled, blocked };
+    app = createApp(InputHarness).use(pinia);
+    app.mount(host);
+    scroll();
+    const tool = useHeroToolStore();
+    expect(tool.isDragging).toBe(true);
+    expect(tool.origin).toEqual(position.value);
+    tool.stopTool();
+    enabled.value = false;
+    scroll();
+    expect(tool.isDragging).toBe(false);
   });
 
   it('arms the hand when the hero is idle', () => {

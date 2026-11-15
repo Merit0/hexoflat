@@ -2,10 +2,8 @@ import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { QuestBoardFeature } from '@features/world/quest-board.feature';
-import { ReloadCampingMapFeature } from '@features/world/reload-camping-map.feature';
+import { QuestWorldEntryFeature } from './quest-world-entry.feature';
 import type { QuestFieldHex, QuestFieldSnapshot } from '@components/quest-field.component';
-
-const FIRST_TRAIL = 'seeker-1';
 
 export class QuestRunFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
@@ -25,7 +23,9 @@ export class QuestRunFeature extends BaseFeature {
 
   async startFirstTrail(): Promise<void> {
     await this.step('Start the First Trail', async () => {
-      await this.panel.start(FIRST_TRAIL);
+      const entrance = new QuestWorldEntryFeature();
+      await entrance.accept();
+      await entrance.enterFromSilesia(true);
       await this.field.waitForReady();
       await this.panel.verifyRunCard();
     });
@@ -234,7 +234,7 @@ export class QuestRunFeature extends BaseFeature {
   async reloadAndVerifyLootKept(): Promise<void> {
     await this.step('Reload and see the same loot, hexes and quantities', async () => {
       const before = await this.field.read();
-      await new ReloadCampingMapFeature().reload();
+      await this.reloadQuestField();
       await this.field.waitForReady();
       const after = await this.field.read();
       expect(after.phase).toBe(before.phase);
@@ -336,6 +336,7 @@ export class QuestRunFeature extends BaseFeature {
     await this.step('Dismiss the result card', async () => {
       await this.panel.dismissResult();
       await this.field.verifyIsClosed();
+      await this.board.open();
     });
   }
 
@@ -360,10 +361,16 @@ export class QuestRunFeature extends BaseFeature {
     });
   }
 
+  private async reloadQuestField(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
+    await this.page.reload();
+    await this.field.waitForReady();
+  }
+
   async reloadMidRun(): Promise<QuestFieldSnapshot> {
     return this.step('Reload the page in the middle of the run', async () => {
       const before = await this.field.read();
-      await new ReloadCampingMapFeature().reload();
+      await this.reloadQuestField();
       await this.field.waitForReady();
       const after = await this.field.read();
       expect(after.phase).toBe(before.phase);

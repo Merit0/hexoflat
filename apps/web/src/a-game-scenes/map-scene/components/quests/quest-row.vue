@@ -104,15 +104,7 @@
         >
           {{ t('quest.claim') }}
         </quest-action-button>
-        <quest-action-button
-          v-else-if="row.taken && row.seeker"
-          compact
-          :testid="`quest-start-${row.quest.id}`"
-          :disabled="busy"
-          @click="actions.enter(row)"
-        >
-          {{ t('quest.enter') }}
-        </quest-action-button>
+        <span v-else-if="row.taken && row.seeker" class="meta">{{ t('quest.findInSilesia') }}</span>
         <quest-action-button
           v-else-if="row.taken"
           compact

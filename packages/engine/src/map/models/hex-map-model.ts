@@ -10,6 +10,7 @@ import type { RouteName } from '../route-name';
 import type { IHexResourceSpawner } from '../../abstraction/hex-resource-spawner';
 import type { IPendingTileAction } from '../../abstraction/hex-tile-abstraction';
 import { EHexActionType } from '../../enums/hex-action-type';
+import { objectDestinationAction } from '../object-transition';
 import { DEFAULT_TERRAIN, type TerrainId } from '../../boards/terrain';
 import type { ExitSide } from '../../boards/exits';
 import {
@@ -62,6 +63,11 @@ function savedLock(
   saved: { isLocked?: boolean },
 ): boolean | undefined {
   return built.chestType ? (saved.isLocked ?? built.isLocked) : built.isLocked;
+}
+
+function restoreQuestMarker(saved: THexobject, built: THexobject) {
+  if (objectDestinationAction(built, 'QUEST') && typeof saved.questId === 'string')
+    built.questId = saved.questId;
 }
 
 export default class HexMapModel implements IWorldMap {
@@ -291,6 +297,7 @@ export default class HexMapModel implements IWorldMap {
     }
 
     const built = HexObjectFactory.create(saved.hexobjectKey, coord, overrides);
+    restoreQuestMarker(saved, built);
 
     switch (saved.groupType) {
       case EHexobjectGroup.CREATURE: {

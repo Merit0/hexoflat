@@ -57,7 +57,7 @@
 
         <board-overlay-layer data-testid="hex-map-inner" :camera="camera" :frame-rect="frameRect">
           <tool-hex-tile
-            v-if="heroToolStore.isDragging && activeTool"
+            v-if="!questStore.inRun && heroToolStore.isDragging && activeTool"
             :tile-width="screenTileSize.w"
             :tile-height="screenTileSize.h"
             :tool="activeTool"
@@ -130,9 +130,10 @@ import { useUserStore } from '@/stores/user-store';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
 import { createTestApi } from '@/e2e/create-test-api';
+import { useQuestMapRoute } from '@/composables/use-quest-map-route';
 
 const props = defineProps<{
-  locationKey: LocationKey;
+  locationKey?: LocationKey;
 }>();
 
 const { handleTileClick } = useTileClick();
@@ -140,6 +141,7 @@ const { t } = useI18n();
 const worldStore = useWorldMapStore();
 const battleStore = useBattleStore();
 const questStore = useQuestStore();
+useQuestMapRoute(() => worldStore.currentLocationKey);
 useSquadFlow();
 const squadViews = useSquadViews();
 const heroToolStore = useHeroToolStore();
@@ -187,7 +189,7 @@ const devPanelOptions = SHOW_DEV_TOOLS
 watch(
   () => props.locationKey,
   (locationKey) => {
-    worldStore.goToLocation(locationKey);
+    if (locationKey) worldStore.goToLocation(locationKey);
   },
   { immediate: true },
 );
@@ -327,7 +329,7 @@ function onHide() {
 
 function onKeyDown(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
-  if (knowledgePanelMode.value) {
+  if (knowledgePanelMode.value && !questStore.inRun) {
     event.preventDefault();
     void closeKnowledgePanel(false);
     return;
@@ -338,7 +340,7 @@ function onKeyDown(event: KeyboardEvent) {
   onHide();
 }
 
-useHexBoardInput({ hoveredTileCoord });
+useHexBoardInput({ hoveredTileCoord, enabled: computed(() => !questStore.inRun) });
 useStopToolWhenUnequipped(onHide);
 
 onMounted(() => {

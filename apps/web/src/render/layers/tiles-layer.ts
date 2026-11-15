@@ -2,7 +2,8 @@ import { Container, Graphics, Sprite, Text, Texture, type FederatedPointerEvent 
 import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { getMeta } from '@hexoflat/engine';
+import { objectActionDestination } from '@hexoflat/engine/map/object-transition';
+import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { applyCoverFit, createHexHitArea, createHexMask, drawHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
@@ -81,7 +82,7 @@ function constructionLockLabel(
   if (!tile.isRevealed || !hexobject) return null;
   if (hexobject.groupType !== EHexobjectGroup.CONSTRUCTION) return null;
 
-  const enterCfg = getMeta(hexobject.hexobjectKey)?.enter;
+  const enterCfg = objectActionDestination(hexobject, EHexActionType.ENTER);
   if (enterCfg?.type === 'WORLD') {
     const remainingMs = worldStore.getLocationRespawnRemainingMs(enterCfg.locationKey);
     if (remainingMs > 0) {

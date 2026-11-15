@@ -23,7 +23,7 @@
       <stash-board v-if="stashStore.isOpen" />
       <shop-board v-else-if="traderStore.isOpen" />
       <knowledge-board v-else-if="knowledgePanelMode === 'hall'" />
-      <quest-board v-else-if="knowledgePanelMode === 'quests' || questStore.inRun" />
+      <quest-board v-else-if="knowledgePanelMode === 'quests' && !questStore.inRun" />
       <div v-else class="hero-board-body">
         <header class="board-top">
           <div class="tabs" :style="{ '--tab-count': tabs.length }">
@@ -48,6 +48,7 @@
         <hero-details-board v-else-if="activeTab === 'hero'" />
 
         <hero-path-board v-else-if="activeTab === 'path'" />
+        <quest-run-panel v-else-if="activeTab === 'quest'" class="tab-panel" />
 
         <section v-else-if="activeTab === 'inventory'" class="tab-panel board-body">
           <div ref="boardFitWrapperRef" class="board-body-frame">
@@ -102,6 +103,8 @@ import { useI18n } from 'vue-i18n';
 import KnowledgeBoard from './knowledge-board.vue';
 import StashBoard from './stash/stash-board.vue';
 import ShopBoard from './shop/shop-board.vue';
+import { questResult } from '@/services/quests/quest-result';
+import QuestRunPanel from './quests/quest-run-panel.vue';
 import QuestBoard from './quests/quest-board.vue';
 import { useQuestStore } from '@/stores/quest-store';
 import { useStashSession } from '@/composables/use-stash-session';
@@ -128,7 +131,7 @@ import BattleTab from '@/a-game-scenes/map-scene/components/battle/battle-tab.vu
 import { useBattleStore } from '@/stores/battle-store';
 import { useBattleEnemyDriver } from '@/services/battle/use-battle-enemy-driver';
 
-type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events' | 'battle';
+type HeroBoardTab = 'hero' | 'inventory' | 'path' | 'events' | 'battle' | 'quest';
 
 const TABS: Array<{ id: HeroBoardTab; label: string; disabled?: boolean }> = [
   { id: 'hero', label: 'Hero' },
@@ -144,8 +147,22 @@ const questStore = useQuestStore();
 const traderStore = useTraderStore();
 useStashSession();
 useShopSession();
-const tabs = computed(() =>
-  battleStore.isOpen ? [...TABS, { id: 'battle' as const, label: 'Battle' }] : TABS,
+const tabs = computed(() => {
+  const base =
+    questStore.inRun || questResult.value
+      ? TABS.map((tab) =>
+          tab.id === 'path' ? { id: 'quest' as const, label: t('quest.tab') } : tab,
+        )
+      : TABS;
+  return battleStore.isOpen ? [...base, { id: 'battle' as const, label: 'Battle' }] : base;
+});
+watch(
+  () => questStore.inRun || !!questResult.value,
+  (open) => {
+    if (open) activeTab.value = 'quest';
+    else if (activeTab.value === 'quest') activeTab.value = 'hero';
+  },
+  { immediate: true },
 );
 
 watch(
@@ -181,7 +198,7 @@ onMounted(() => {
 useEscapeClearsItemSelection();
 useEquipmentHealthSync();
 useOpenInventoryOnPickup(() => {
-  if (!battleStore.isOpen) activeTab.value = 'inventory';
+  if (!battleStore.isOpen && !questStore.inRun) activeTab.value = 'inventory';
 });
 watch(
   () => heroStore.knowledgeError,

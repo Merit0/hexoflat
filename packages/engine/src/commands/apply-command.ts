@@ -33,7 +33,8 @@ import {
 } from './hex-engine-commands';
 import { applyEnterPortal, applyOpenPortal, closePortalIfOpen } from '../portal/apply-portal';
 import type { PortalLocation } from '../portal/portal-rules';
-import { getMeta } from '../content/content-accessors';
+import { objectActionDestination } from '../map/object-transition';
+import { transitionRejection } from './validate-object-transition';
 import type { ApplyCommandResult, DomainEvent } from './types';
 import type { BattleState } from '../battle/battle-state';
 import { applyBattleCommand } from '../battle/apply-battle';
@@ -217,8 +218,7 @@ function applyBattleState(state: HexEngineState, command: BattleCommand): Domain
 }
 
 function isWorldGate(tile: HexTileModel, actionType: EHexActionType): boolean {
-  const key = tile.hexobject?.hexobjectKey;
-  return actionType === EHexActionType.ENTER && !!key && getMeta(key).enter?.type === 'WORLD';
+  return objectActionDestination(tile.hexobject, actionType)?.type === 'WORLD';
 }
 
 function applyStartHexAction(
@@ -237,6 +237,9 @@ function applyStartHexAction(
     });
     return out;
   }
+
+  const blocked = transitionRejection(state, tile, parsed.payload);
+  if (blocked) return blocked;
 
   const cost = actionCharge(state, tile, actionType);
   const price = willPriceOf(state, parsed.payload, cost);

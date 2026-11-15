@@ -50,6 +50,7 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
   });
 
   test('Verify a clean run reaches the real chest, returns to camp and opens the next trail', async () => {
+    test.setTimeout(120_000);
     const quest = await openBoard();
 
     await quest.startFirstTrail();

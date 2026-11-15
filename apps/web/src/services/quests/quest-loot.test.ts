@@ -8,7 +8,6 @@ import {
   offsetToAxial,
 } from '@hexoflat/engine/utils/hex-utils';
 import en from '@/locales/en/ui.json';
-import uk from '@/locales/uk/ui.json';
 import { getByPath } from '@/i18n/locale-keys';
 import { questRefusalText } from '@/composables/quest-messages';
 import { i18n } from '@/i18n';
@@ -159,6 +158,7 @@ describe('quest transport and loot flights', () => {
 
   beforeEach(() => {
     get.mockReset();
+    applyInventory.mockClear();
     questRun.value = null;
     finishLootFlights();
   });
@@ -174,6 +174,50 @@ describe('quest transport and loot flights', () => {
     expect(lootFlightRequest.value?.flights).toHaveLength(2);
     expect(lootFlightRequest.value?.flights[0]).toMatchObject({ itemKey: 'coins', to: stackHex });
     expect(get).not.toHaveBeenCalled();
+  });
+
+  it('does not apply a delayed response after its map or session becomes stale', async () => {
+    let resolve!: (value: unknown) => void;
+    const pending = new Promise((done) => {
+      resolve = done;
+    });
+    const base = transport();
+    const applyProgress = vi.fn();
+    base.applyProgress = applyProgress;
+    base.socket = { sendQuest: () => pending } as unknown as QuestTransport['socket'];
+    let current = true;
+    base.isCurrent = () => current;
+    const answer = runQuestCommand(base, 'QUEST_ENTER', { questId: 'seeker-1' });
+    current = false;
+    resolve({
+      result: 'applied',
+      quest: collecting(),
+      events: [OPENED],
+      aggregates: { inventory: {} },
+    });
+    expect(await answer).toEqual({ ok: false, code: 'STALE_CONTEXT', events: [] });
+    expect(applyProgress).not.toHaveBeenCalled();
+    expect(applyInventory).not.toHaveBeenCalled();
+    expect(questRun.value).toBeNull();
+    expect(lootFlightRequest.value).toBeNull();
+  });
+
+  it('does not mark a newer session offline when an old request rejects', async () => {
+    let reject!: (error: Error) => void;
+    const pending = new Promise((_, fail) => {
+      reject = fail;
+    });
+    const base = transport();
+    const lost = vi.fn();
+    base.lost = lost;
+    base.socket = { sendQuest: () => pending } as unknown as QuestTransport['socket'];
+    let current = true;
+    base.isCurrent = () => current;
+    const answer = runQuestCommand(base, 'QUEST_ENTER', { questId: 'seeker-1' });
+    current = false;
+    reject(new Error('old socket closed'));
+    expect(await answer).toEqual({ ok: false, code: 'STALE_CONTEXT', events: [] });
+    expect(lost).not.toHaveBeenCalled();
   });
 
   it('a replayed answer that still carries a removed event name does not throw and plays no flight', async () => {

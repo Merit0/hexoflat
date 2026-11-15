@@ -7,6 +7,8 @@ import type { QuestFieldModel } from './quest-field-model';
 
 export function questHoverObject(model: QuestFieldModel, hex: IHexCoordinates): THexobject | null {
   const key = coordinateKey(hex);
+  if (model.exit && coordinateKey(model.exit) === key)
+    return HexObjectFactory.create(HEXOBJECT_KEYS.CAMPING_ENTRANCE, hex);
   if (model.chest && coordinateKey(model.chest) === key) {
     return HexObjectFactory.create(
       model.chestEmpty ? HEXOBJECT_KEYS.CHEST_OPEN : HEXOBJECT_KEYS.CHEST,

@@ -50,6 +50,7 @@ export const questTestApi = {
     if (!run) return null;
     const model = buildQuestField(run);
     return {
+      exit: model.exit,
       phase: run.phase,
       outcome: run.outcome,
       position: run.position,

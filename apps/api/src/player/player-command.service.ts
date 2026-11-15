@@ -42,9 +42,11 @@ import {
 } from './aggregate-store';
 import {
   clearExpeditionBlobs,
+  lockExpedition,
   ensureExpedition,
   readServerDocument,
 } from '../expedition/expedition-store';
+import { reconcileQuestWorld } from '../quests/reconcile-quest-world';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { ledgerEntriesFor } from './item-ledger';
 import {
@@ -348,6 +350,10 @@ export class PlayerCommandService {
 
   private async runLocked(tx: Tx, input: LockedRun): Promise<PlayerCommandResponse> {
     const { userId, heroId, commandId, kinds } = input;
+    const questExpedition = input.commandType.startsWith('QUEST_')
+      ? await ensureExpedition(tx, userId, heroId)
+      : null;
+    if (questExpedition) await lockExpedition(tx, questExpedition);
     await createInitialAggregates(tx, heroId);
     const loaded = await loadAggregatesForUpdate(tx, heroId, kinds);
 
@@ -456,6 +462,8 @@ export class PlayerCommandService {
     }
 
     const primaryAfter = aggregates[input.aggregateKind];
+    if (questExpedition && outcome.changed.progress)
+      await reconcileQuestWorld(tx, questExpedition, heroId, outcome.changed.progress);
     await journal('applied', outcome.events, null, primaryAfter?.revision ?? primary.revision);
     return { commandId, result: 'applied', events: outcome.events, aggregates };
   }

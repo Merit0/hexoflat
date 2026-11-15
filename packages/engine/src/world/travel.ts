@@ -1,17 +1,16 @@
 import type { ExitSide } from '../boards/exits';
 import { planBoardCrossing } from '../hero-movement/board-crossing';
-import { getMeta } from '../content';
+import { objectActionDestination, objectTransitionRefusal } from '../map/object-transition';
 import { EHexActionType } from '../enums/hex-action-type';
-import type { StartHexActionCommand } from '../commands/hex-engine-commands';
 import type { DomainEvent } from '../commands/types';
 import type { InventoryState } from '../inventory/inventory-state';
 import type { ProgressState } from '../aggregates/progress-state';
 import { revealAroundHero, revealEntryTile } from '../map/fog-service';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
-import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
 import { deriveStream } from '../utils/random-seeded';
-import { coordinateKey, hexDistance } from '../utils/hex-utils';
+import { coordinateKey } from '../utils/hex-utils';
 import { findArrivalHex } from './hero-placement';
 import type { ServerWorld } from './server-world';
 import type { WorldEffect } from './server-ports';
@@ -75,10 +74,18 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
     const tile = world.map.tiles.find(
       (candidate) => coordinateKey(candidate.coordinates) === coordinateKey(via.coordinates),
     );
-    const key = tile?.hexobject?.hexobjectKey;
-    const enter = key ? getMeta(key)?.enter : undefined;
+    const enter = objectActionDestination(tile?.hexobject, EHexActionType.ENTER);
     if (!tile || enter?.type !== 'WORLD') return refuse('NOT_A_GATE');
-    if (hexDistance(position, via.coordinates) > 1) return refuse('TOO_FAR');
+    // World gates historically permit standing on the target; keep that policy.
+    const blocked = objectTransitionRefusal(
+      tile,
+      position,
+      !!world.engagement,
+      EHexActionType.ENTER,
+      HEXOBJECT_KEYS.HAND,
+      true,
+    );
+    if (blocked) return refuse(blocked);
     to = enter.locationKey;
     if (isSealed(progress, to, now)) return refuse('SEALED');
     const charge = actWorld(

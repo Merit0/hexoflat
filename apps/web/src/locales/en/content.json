@@ -134,6 +134,11 @@
     "bone-court": {
       "title": "Bone Court",
       "tableRule": "The skeleton king with two warriors. The king strikes hard."
+    },
+    "treasureMap": {
+      "title": "Treasure Map",
+      "subtitle": "Treasure Seeker",
+      "description": "Open with the hand to enter your expedition."
     }
   }
 }

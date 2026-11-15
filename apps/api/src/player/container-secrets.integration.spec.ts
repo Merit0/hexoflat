@@ -1,3 +1,4 @@
+import { arriveAtQuestEntrance } from '../test-support/quest-entrance';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
@@ -304,6 +305,7 @@ describe.skipIf(!dbAvailable)(
       const inventory = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
       const accept = envelope(heroId, 'QUEST_ACCEPT', { questId: 'seeker-1' }, inventory.revision);
       expect((await kit.service.execute(userId, accept)).result).toBe('applied');
+      await arriveAtQuestEntrance(kit, world, userId, heroId);
       return { userId, heroId };
     }
 

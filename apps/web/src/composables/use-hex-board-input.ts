@@ -15,6 +15,9 @@ export const HAND_SCROLL_COOLDOWN_MS = 180;
 
 export interface UseHexBoardInputDeps {
   hoveredTileCoord: Ref<IHexCoordinates | null>;
+  heroCoordinates?: Ref<IHexCoordinates | null>;
+  enabled?: Ref<boolean>;
+  blocked?: Ref<boolean>;
 }
 
 /**
@@ -30,9 +33,10 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
 
   const stashStore = useHeroStashStore();
   const traderStore = useTraderStore();
-  const toolIsWorking = computed(
-    () => !!knowledgePanelMode.value || stashStore.isOpen || traderStore.isOpen,
-  );
+  const heroCoordinates = deps.heroCoordinates ?? computed(() => heroStore.heroCoordinates);
+  const toolIsWorking =
+    deps.blocked ??
+    computed(() => !!knowledgePanelMode.value || stashStore.isOpen || traderStore.isOpen);
 
   const activeHandSlot = ref<TEquipSlot>('weapon');
   const lastHandScrollAt = ref(0);
@@ -43,9 +47,9 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
 
   function resolvePreferredToolHover(): IHexCoordinates | null {
     const hoveredTileCoord = deps.hoveredTileCoord.value;
-    if (!heroStore.heroCoordinates || !hoveredTileCoord) return null;
+    if (!heroCoordinates.value || !hoveredTileCoord) return null;
 
-    const neighbors = getHexNeighbors(heroStore.heroCoordinates);
+    const neighbors = getHexNeighbors(heroCoordinates.value);
     const target = hoveredTileCoord;
 
     const directNeighbor = neighbors.find(
@@ -68,16 +72,17 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
   }
 
   function equipToolFromHand(slot: TEquipSlot) {
-    if (!heroStore.heroCoordinates) return;
+    if (!heroCoordinates.value) return;
 
     const toolKey = resolveEquippedToolKey(slot);
     if (!toolKey) return;
 
     activeHandSlot.value = slot;
-    heroToolStore.useTool(toolKey, heroStore.heroCoordinates, resolvePreferredToolHover());
+    heroToolStore.useTool(toolKey, heroCoordinates.value, resolvePreferredToolHover());
   }
 
   function onWheel(event: WheelEvent) {
+    if (deps.enabled && !deps.enabled.value) return;
     const target = event.target as HTMLElement | null;
     if (
       target &&
@@ -86,7 +91,7 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
       return;
     }
 
-    if (heroToolStore.isBusy || toolIsWorking.value || !heroStore.heroCoordinates) return;
+    if (heroToolStore.isBusy || toolIsWorking.value || !heroCoordinates.value) return;
     if (event.deltaY === 0) return;
 
     event.preventDefault();

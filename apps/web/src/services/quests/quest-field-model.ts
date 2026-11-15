@@ -1,12 +1,7 @@
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { QuestProjection } from '@hexoflat/engine/quests/projection';
-import { FIELD_CENTER, FIELD_RADIUS } from '@hexoflat/engine/quests/treasure-field';
-import {
-  axialToOffset,
-  coordinateKey,
-  getHexNeighbors,
-  hexDistance,
-} from '@hexoflat/engine/utils/hex-utils';
+import { FIELD_CENTER, FIELD_RADIUS, questExitHex } from '@hexoflat/engine/quests/treasure-field';
+import { axialToOffset, coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 
 export interface QuestFieldHex {
   hex: IHexCoordinates;
@@ -21,6 +16,7 @@ export interface QuestFieldModel {
   hexes: QuestFieldHex[];
   position: IHexCoordinates;
   chest: IHexCoordinates | null;
+  exit?: IHexCoordinates;
   chestEmpty: boolean;
   ground: QuestFieldStack[];
   walking: boolean;
@@ -62,6 +58,8 @@ export function previousHex(run: QuestProjection): IHexCoordinates | null {
 }
 
 export function buildQuestField(run: QuestProjection): QuestFieldModel {
+  const exit = questExitHex(run.start);
+  const exitKey = coordinateKey(exit);
   const walking = run.phase === 'walking';
   const collecting = run.phase === 'collect';
   const ground = run.collect?.ground ?? [];
@@ -76,6 +74,7 @@ export function buildQuestField(run: QuestProjection): QuestFieldModel {
   const hexes: QuestFieldHex[] = [];
   const add = (hex: IHexCoordinates, number: number | null, footprint: boolean) => {
     const key = coordinateKey(hex);
+    if (key === exitKey) return;
     if (seen.has(key)) return;
     seen.add(key);
     const isBack = key === backKey;
@@ -102,6 +101,7 @@ export function buildQuestField(run: QuestProjection): QuestFieldModel {
   for (const stack of ground) add(stack.hex, null, false);
   return {
     fog: fieldHexagon().filter((hex) => !seen.has(coordinateKey(hex))),
+    exit,
     hexes,
     position: run.position,
     chest: run.chest ? run.chest.hex : null,
@@ -114,37 +114,18 @@ export function buildQuestField(run: QuestProjection): QuestFieldModel {
 
 export type FieldClick = { kind: 'step'; hex: IHexCoordinates } | { kind: 'back' } | null;
 
-export type QuestHandAction = 'eye' | 'take';
+export type QuestHandAction = 'eye' | 'take' | 'exit';
 
 export function questHandAction(run: QuestProjection, at: IHexCoordinates): QuestHandAction | null {
   const key = coordinateKey(at);
   const near = new Set(getHexNeighbors(run.position).map(coordinateKey));
   if (!near.has(key)) return null;
+  if (coordinateKey(questExitHex(run.start)) === key) return 'exit';
   if (run.phase === 'walking' && run.chest && coordinateKey(run.chest.hex) === key) return 'eye';
   if (run.phase !== 'collect') return null;
   return (run.collect?.ground ?? []).some((stack) => coordinateKey(stack.hex) === key)
     ? 'take'
     : null;
-}
-
-export function questToolHexAt(
-  run: QuestProjection,
-  pointer: IHexCoordinates | null,
-): IHexCoordinates | null {
-  if (run.phase !== 'walking' && run.phase !== 'collect') return null;
-  const neighbours = getHexNeighbors(run.position);
-  if (!neighbours.length) return null;
-  if (!pointer) return neighbours[0];
-  let best = neighbours[0];
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const neighbour of neighbours) {
-    const distance = hexDistance(neighbour, pointer);
-    if (distance < bestDistance) {
-      best = neighbour;
-      bestDistance = distance;
-    }
-  }
-  return best;
 }
 
 export function resolveFieldClick(run: QuestProjection, hex: IHexCoordinates): FieldClick {

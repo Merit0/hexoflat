@@ -62,7 +62,7 @@ function enter(seed = 's1') {
       progress,
       doc: null,
       command: { type: 'QUEST_ENTER', payload: { heroId: HERO, questId: 'seeker-1' } },
-      atBoard: true,
+      atEntrance: true,
       newSeed: () => seed,
     }),
   );
@@ -79,7 +79,7 @@ describe('the seeker run commands', () => {
         progress: entered.progress,
         doc: entered.doc,
         command: { type: 'QUEST_GIVE_UP', payload: { heroId: HERO } },
-        atBoard: false,
+        atEntrance: false,
         newSeed: () => 'x',
       }),
     );
@@ -100,7 +100,7 @@ describe('the seeker run commands', () => {
             type: 'QUEST_STEP',
             payload: { heroId: HERO, hex: restored.run.trail[0] },
           },
-          atBoard: false,
+          atEntrance: false,
           newSeed: () => 'x',
         }),
       );
@@ -115,7 +115,7 @@ describe('the seeker run commands', () => {
           progress,
           doc,
           command,
-          atBoard: false,
+          atEntrance: false,
           inventory: inventoryWith({}),
           newSeed: () => 'x',
         }),
@@ -141,7 +141,7 @@ describe('the seeker run commands', () => {
       progress: entered.progress,
       doc: null,
       command: { type: 'QUEST_STEP_BACK', payload: { heroId: HERO } },
-      atBoard: false,
+      atEntrance: false,
       newSeed: () => 'x',
     });
     expect(noRun).toMatchObject({ ok: false, code: 'NO_RUN' });
@@ -149,7 +149,7 @@ describe('the seeker run commands', () => {
       progress: { ...entered.progress, presence: camp },
       doc: entered.doc,
       command: { type: 'QUEST_ENTER', payload: { heroId: HERO, questId: 'seeker-1' } },
-      atBoard: true,
+      atEntrance: true,
       newSeed: () => 'y',
     });
     expect(twice).toMatchObject({ ok: false, code: 'QUEST_IN_PROGRESS' });

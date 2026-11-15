@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import {
   giveUpQuest,
+  pauseQuest,
   openQuestChest,
   pickUpQuestLoot,
   returnFromQuest,
@@ -8,10 +9,14 @@ import {
   stepQuest,
   stepQuestBack,
 } from '@/services/quests/quest-run-commands';
-import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
+import { closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import type { QuestOutcome } from '@/services/quests/quest-commands';
 import { questRefusalText } from '@/composables/quest-messages';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
+import { questRun } from '@/services/quests/quest-run-projection';
+import { routeToLocation } from '@/services/world/location-navigator';
+import { refetchServedWorld } from '@/services/world/served-world';
+import { useWorldMapStore } from '@/stores/world-map-store';
 import type { FieldClick } from '@/services/quests/quest-field-model';
 
 const message = ref<string | null>(null);
@@ -22,8 +27,15 @@ async function run(action: () => Promise<QuestOutcome>): Promise<boolean> {
   busy.value = true;
   message.value = null;
   try {
+    const wasInQuest = questRun.value !== null;
     const outcome = await action();
     if (!outcome.ok) message.value = questRefusalText(outcome.reason);
+    if (outcome.ok && wasInQuest && !questRun.value) {
+      await closeKnowledgePanel(false);
+      await refetchServedWorld('camping');
+      useWorldMapStore().goToLocation('camping');
+      await routeToLocation('camping');
+    }
     return outcome.ok;
   } finally {
     busy.value = false;
@@ -36,11 +48,12 @@ export function useQuestRunActions() {
     busy,
     start: async (questId: string) => {
       const started = await run(() => startSeekerQuest(questId));
-      if (started) openKnowledgePanel('quests');
+      if (started) await closeKnowledgePanel(false);
       return started;
     },
     giveUp: () => run(giveUpQuest),
     returnToCamp: () => run(returnFromQuest),
+    pause: () => run(pauseQuest),
     openChest: () => run(openQuestChest),
     pickUp: (hex: IHexCoordinates) => run(() => pickUpQuestLoot(hex)),
     click: (action: FieldClick) => {

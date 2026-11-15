@@ -1,7 +1,7 @@
 import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { BATTLEFIELD_BIOMES } from '@hexoflat/engine/battle/battlefield';
-import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
+import { calcHexPixelPosition, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
 import {
   HEX_WORLD_HEIGHT,
@@ -46,7 +46,8 @@ export function fieldWorldRect(): WorldRect {
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (const coordinates of fieldHexagon()) {
+  const field = fieldHexagon();
+  for (const coordinates of [...field, ...field.flatMap(getHexNeighbors)]) {
     const { x, y } = calcHexPixelPosition({ coordinates }, HEX_WORLD_WIDTH, HEX_WORLD_HEIGHT);
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);

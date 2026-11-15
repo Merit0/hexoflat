@@ -64,6 +64,7 @@ export interface TestQuests {
 }
 
 export interface TestQuestField {
+  exit?: TestHexCoordinates;
   phase: string;
   outcome: string | null;
   position: TestHexCoordinates;

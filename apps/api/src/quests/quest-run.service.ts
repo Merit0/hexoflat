@@ -3,11 +3,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import {
   QUEST_RUN_COMMAND_SCHEMAS,
+  canEnterQuestWorld,
+  deserializeWorld,
   executeQuestRunCommand,
   isQuestRunCommandType,
   parseQuestRunDoc,
   projectQuestForClient,
-  serverQuestContext,
   type DomainEvent,
   type QuestProjection,
   type QuestRunDoc,
@@ -77,7 +78,7 @@ export class QuestRunService {
     if (!hero) throw new PlayerCommandError('FORBIDDEN');
     const expeditionId = await ensureExpedition(this.db, userId, heroId);
     const doc = await readDoc(this.db, expeditionId);
-    return { quest: doc ? projectQuestForClient(doc.run) : null };
+    return { quest: doc && !doc.suspended ? projectQuestForClient(doc.run) : null };
   }
 
   async execute(userId: string, raw: unknown): Promise<QuestRunResponse> {
@@ -124,7 +125,7 @@ export class QuestRunService {
         result,
         ...(code ? { code } : {}),
         events,
-        quest: quest ? projectQuestForClient(quest.run) : null,
+        quest: quest && !quest.suspended ? projectQuestForClient(quest.run) : null,
         aggregates: { progress: projectAggregate(state), inventory: projectAggregate(bag) },
         ...extra,
       });
@@ -176,12 +177,26 @@ export class QuestRunService {
         return respond('rejected', [], 'BATTLE_OPEN', doc);
       }
 
+      let atEntrance = false;
+      if (command.type === 'QUEST_ENTER' && progress.state.presence) {
+        const rawWorld = await readServerDocument(
+          tx,
+          expeditionId,
+          `srv-world:${progress.state.presence.mapId}`,
+        );
+        atEntrance =
+          !!rawWorld &&
+          canEnterQuestWorld(
+            deserializeWorld(JSON.parse(rawWorld), Date.now()),
+            command.payload.questId,
+          );
+      }
       const seed = await expeditionSeed(tx, expeditionId);
       const outcome = executeQuestRunCommand({
         progress: progress.state,
         doc,
         command,
-        atBoard: serverQuestContext(progress.state.presence).atBoard,
+        atEntrance,
         inventory: inventory.state,
         newSeed: () => `${seed}:quest:${randomUUID()}`,
       });
@@ -212,6 +227,24 @@ export class QuestRunService {
           await tx
             .insert(itemLedger)
             .values(entries.map((entry) => ({ heroId, commandId, ...entry })));
+        }
+      }
+      if (command.type === 'QUEST_ENTER' && outcome.doc && !doc) {
+        const rawIndex = await readServerDocument(tx, expeditionId, 'srv-index');
+        const campId = rawIndex
+          ? (JSON.parse(rawIndex) as { camping?: string }).camping
+          : undefined;
+        const rawCamp = campId
+          ? await readServerDocument(tx, expeditionId, `srv-world:${campId}`)
+          : null;
+        if (rawCamp && campId) {
+          const campWorld = deserializeWorld(JSON.parse(rawCamp), Date.now());
+          if (campWorld.heroCoordinates)
+            outcome.doc.camp = {
+              locationKey: 'camping',
+              mapId: campId,
+              coordinates: campWorld.heroCoordinates,
+            };
         }
       }
       if (outcome.doc) {

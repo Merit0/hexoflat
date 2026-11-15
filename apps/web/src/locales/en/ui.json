@@ -895,7 +895,9 @@
       "NO_RUN": "No trail is open.",
       "HEX_BLOCKED": "You cannot step there.",
       "NO_LOOT_THERE": "Nothing lies there.",
-      "OFFLINE": "No connection to the server."
+      "OFFLINE": "No connection to the server.",
+      "NOT_AT_QUEST_ENTRANCE": "Open your treasure map from an adjacent hex in Silesia.",
+      "QUEST_SUSPENDED": "Re-enter through your treasure map in Silesia."
     },
     "woodcutter": {
       "name": "Woodcutter",
@@ -933,7 +935,6 @@
       "steps": "steps"
     },
     "start": "Start",
-    "enter": "Enter",
     "chip": {
       "stepPrice": "Step {n}",
       "backPrice": "Step back {n}"
@@ -966,21 +967,21 @@
       "name": "First Trail",
       "desc": "Follow the numbers through the fog to the chest.",
       "table": "Find the chest at the end of the trail.",
-      "how": "Press Enter on the card.\nStep to the hex whose number continues the pattern.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
+      "how": "Accept this quest at the board, then find its treasure map in Silesia and OPEN it with the hand.\nStep to the hex whose number continues the pattern.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
       "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Only the real chest ends the quest."
     },
     "seeker-2": {
       "name": "Leaping Trail",
       "desc": "The numbers jump. Find the pattern.",
       "table": "Find the chest at the end of the trail.",
-      "how": "Press Enter on the card.\nThe numbers jump: find the rule before you step.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
+      "how": "Accept this quest at the board, then find its treasure map in Silesia and OPEN it with the hand.\nThe numbers jump: find the rule before you step.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
       "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. The First Trail must be finished first."
     },
     "seeker-3": {
       "name": "Cunning Trail",
       "desc": "Every step costs more. Choose carefully.",
       "table": "Find the chest at the end of the trail.",
-      "how": "Press Enter on the card.\nEvery step costs more, so plan the path.\nA wrong hex can be left with a step back.\nOpen the chest at the end and take the loot, then return to camp.",
+      "how": "Accept this quest at the board, then find its treasure map in Silesia and OPEN it with the hand.\nEvery step costs more, so plan the path.\nA wrong hex can be left with a step back.\nOpen the chest at the end and take the loot, then return to camp.",
       "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. The Leaping Trail must be finished first."
     },
     "board": {
@@ -993,7 +994,6 @@
       "return": "Return",
       "returnLabel": "Return {name} to the board",
       "claimReward": "Claim reward",
-      "enterTrail": "Enter the trail",
       "filter": {
         "gather": "Gathering",
         "combat": "Combat",
@@ -1001,7 +1001,7 @@
         "exp": "Expedition"
       },
       "group": {
-        "active": "My quests",
+        "active": "My Quests",
         "available": "On the board",
         "of": "{used} of {max}",
         "count": "{n, plural, one {# quest} other {# quests}}"
@@ -1019,7 +1019,7 @@
         "goal": "Goal: {n} {unit}",
         "progress": "{done} / {n} {unit}",
         "ready": "Goal reached — claim it",
-        "onTrail": "On the trail — enter it",
+        "onTrail": "Find the map in Silesia",
         "countCost": "Goal: Count steps cost"
       },
       "reason": {
@@ -1045,6 +1045,11 @@
       },
       "more": "+{n} more",
       "doneTimes": "Done {n}×"
+    },
+    "findInSilesia": "Find in Silesia",
+    "tab": "Quest",
+    "portal": {
+      "enter": "Enter camp"
     }
   }
 }

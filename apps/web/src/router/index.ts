@@ -11,6 +11,7 @@ export const ROUTES = {
   LOGIN: 'login',
   REGISTER: 'register',
   WORLD: 'world',
+  QUEST_MAP: 'quest-map',
   BATTLE: 'battle',
   DEV_BATTLEFIELD: 'dev-battlefield',
 } as const;
@@ -43,6 +44,12 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.REGISTER,
     redirect: { name: ROUTES.LOGIN, query: { mode: 'new' } },
     meta: { requiresAuth: false },
+  },
+  {
+    path: '/world/treasure-seeker-map',
+    name: ROUTES.QUEST_MAP,
+    component: HexWorldMap,
+    meta: { requiresAuth: true },
   },
   {
     path: '/world/:locationKey?',

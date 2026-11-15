@@ -8,6 +8,7 @@ import type { IActionContext } from '../abstraction/abstract-action';
 import { TToolKeys } from '../content/tools.content';
 import { HEXOBJECT_KEYS } from './hexobjects-registry';
 import { THeroToolKey } from '../content/equipment.content';
+import { objectActionDestination } from '../map/object-transition';
 
 export type StartResult = { ok: true; endsAt: number } | { ok: false; message: string };
 
@@ -307,7 +308,8 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
       return { ok: false, message: `Need a tool: ${requiredToolKey}` };
     }
 
-    if (!meta?.enter) return { ok: false, message: 'No training today!' };
+    const target = objectActionDestination(tile.hexobject, EHexActionType.ENTER);
+    if (!target) return { ok: false, message: 'No training today!' };
 
     heroToolStore.clearResolvedActions();
     heroToolStore.stopTool();
@@ -318,19 +320,19 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     const heroName = heroStore.hero?.name ?? 'Hero';
     const destination = meta?.subtitle ?? key;
 
-    if (meta?.enter?.type === 'WORLD') {
-      if (worldStore.isLocationRespawning(meta.enter.locationKey)) {
+    if (target.type === 'WORLD') {
+      if (worldStore.isLocationRespawning(target.locationKey)) {
         const remainingSeconds = Math.ceil(
-          worldStore.getLocationRespawnRemainingMs(meta.enter.locationKey) / 1000,
+          worldStore.getLocationRespawnRemainingMs(target.locationKey) / 1000,
         );
         return { ok: false, message: `Opens in ${remainingSeconds}s` };
       }
 
       gameEventsStore.push(heroName, `navigated to ${destination}!`, 'NAVIGATION');
 
-      worldStore.goToLocation(meta.enter.locationKey);
+      worldStore.goToLocation(target.locationKey);
 
-      ctx.navigate?.(meta.enter.locationKey);
+      ctx.navigate?.(target.locationKey);
     }
 
     return { ok: true, endsAt: now + 100 };

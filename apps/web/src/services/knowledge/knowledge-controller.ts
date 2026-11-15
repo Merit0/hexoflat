@@ -1,6 +1,5 @@
-import type { HexEngineActionContext, HexEngineState } from '@hexoflat/engine';
+import type { HexEngineActionContext } from '@hexoflat/engine';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
-import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { SacrificeOptionId } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillId } from '@hexoflat/engine/skills/skill-content';
@@ -12,14 +11,19 @@ import type { HeroState } from '@hexoflat/engine/hero-movement/hero-state';
 import type { PortalLocation } from '@hexoflat/engine/portal/portal-rules';
 import type { BattleState } from '@hexoflat/engine/battle/battle-state';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
-import { ensurePresence, sendProgress } from '@/services/inventory/inventory-sync';
+import {
+  ensurePresence,
+  sendProgress,
+  sendQuestCommand,
+} from '@/services/inventory/inventory-sync';
 import {
   actOnServerWorld,
   installTravelledWorlds,
   travelOnServer,
 } from '@/services/world/served-world';
-import { getMeta } from '@hexoflat/engine';
-import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
+import { objectActionDestination } from '@hexoflat/engine/map/object-transition';
+import { runObjectTransition, enterQuestDestination } from './object-transition-controller';
+import { questRefusalText } from '@/composables/quest-messages';
 import type { WorldClientHint } from '@hexoflat/engine/world/server-ports';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import { inventorySession } from '@/services/inventory/inventory-session';
@@ -82,50 +86,13 @@ export interface SquadHostState {
   engagement?: Engagement;
 }
 
-function blockedGate(
-  host: Omit<KnowledgeHost, 'state'>,
-  command: StartHexActionCommand,
-): DomainEvent | null {
-  const { coordinates, actionType } = command.payload;
-  if (actionType !== EHexActionType.ENTER) return null;
-  const key = host.map.tiles.find(
-    (tile) =>
-      tile.coordinates.columnIndex === coordinates.columnIndex &&
-      tile.coordinates.rowIndex === coordinates.rowIndex,
-  )?.hexobject?.hexobjectKey;
-  const enter = key ? getMeta(key)?.enter : undefined;
-  if (enter?.type !== 'WORLD') return null;
-  const world = host.engineContext.worldMap;
-  const rejected = (message: string): DomainEvent => ({
-    type: 'HEX_ACTION_START_REJECTED',
-    payload: { coordinates, actionType, message },
-  });
-  if (world.combatActive) return rejected('Cannot leave the map during combat!');
-  if (!world.isLocationRespawning(enter.locationKey)) return null;
-  const seconds = Math.ceil(world.getLocationRespawnRemainingMs(enter.locationKey) / 1000);
-  return rejected(`Opens in ${seconds}s`);
-}
-
-function enteredGate(host: Omit<KnowledgeHost, 'state'>, command: StartHexActionCommand) {
-  const { coordinates } = command.payload;
-  const key = host.map.tiles.find(
-    (tile) =>
-      tile.coordinates.columnIndex === coordinates.columnIndex &&
-      tile.coordinates.rowIndex === coordinates.rowIndex,
-  )?.hexobject?.hexobjectKey;
-  const enter = key ? getMeta(key)?.enter : undefined;
-  return enter?.type === 'WORLD' ? enter.locationKey : null;
-}
-
-export async function dispatchHexAction(
+async function executeHexAction(
   host: Omit<KnowledgeHost, 'state'>,
   command: StartHexActionCommand,
   held: SquadHostState = {},
 ) {
   const known = inventorySession.knowledge;
   if (!known || !host.isCurrent()) return { state: known, events: [], hero: host.hero, held };
-  const blocked = blockedGate(host, command);
-  if (blocked) return { state: known, events: [blocked], hero: host.hero, held };
 
   const { coordinates, actionType, toolKey } = command.payload;
   const from = host.context.coordinates ?? host.hero.coordinates;
@@ -134,16 +101,39 @@ export async function dispatchHexAction(
     mapId: host.context.mapId,
     from,
   };
-  const gate = actionType === EHexActionType.ENTER ? enteredGate(host, command) : null;
+  const tile = host.map.tiles.find(
+    (candidate) =>
+      candidate.coordinates.columnIndex === coordinates.columnIndex &&
+      candidate.coordinates.rowIndex === coordinates.rowIndex,
+  );
+  const destination = objectActionDestination(tile?.hexobject, actionType);
+  if (destination?.type === 'QUEST') {
+    const events = await enterQuestDestination(
+      {
+        isCurrent: () => host.isCurrent(),
+        ensurePresence: () => ensurePresence(at),
+        send: () =>
+          sendQuestCommand('QUEST_ENTER', { questId: tile?.hexobject?.questId ?? '' }, () =>
+            host.isCurrent(),
+          ),
+        refusalText: questRefusalText,
+      },
+      coordinates,
+      actionType,
+    );
+    return { state: inventorySession.knowledge, events, hero: host.hero, held };
+  }
+  const gate = destination?.type === 'WORLD' ? destination.locationKey : null;
   const result = gate
     ? await travelOnServer(at, { kind: 'gate', coordinates })
     : await actOnServerWorld(at, { coordinates, actionType, toolKey }, host.clientHint());
   const stale = !host.isCurrent();
-  if (!stale) host.applyWorldResult(result);
+  if (stale) return { state: inventorySession.knowledge, events: [], hero: host.hero, held };
+  host.applyWorldResult(result);
 
   const events = [...result.events];
   const started = events.some((event) => event.type === 'HEX_ACTION_STARTED');
-  if (started && gate && !stale) {
+  if (started && gate) {
     installTravelledWorlds(result);
     host.travelTo(gate);
     host.engineContext.navigate?.(gate);
@@ -153,4 +143,16 @@ export async function dispatchHexAction(
     ? { battle: held.battle, engagement: result.engagement ?? undefined }
     : held;
   return { state: inventorySession.knowledge, events, hero: host.hero, held: after };
+}
+
+export function dispatchHexAction(
+  host: Omit<KnowledgeHost, 'state'>,
+  command: StartHexActionCommand,
+  held: SquadHostState = {},
+) {
+  return runObjectTransition(
+    `${host.heroId}:${host.context.mapId}`,
+    () => executeHexAction(host, command, held),
+    () => ({ state: inventorySession.knowledge, events: [], hero: host.hero, held }),
+  );
 }

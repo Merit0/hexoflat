@@ -5,6 +5,7 @@ import {
   AGGREGATE_KINDS,
   WORLD_COMMAND_SCHEMAS,
   actWorld,
+  installQuestEntrances,
   battleWorld,
   createServerWorld,
   deserializeWorld,
@@ -249,7 +250,8 @@ export class WorldService {
 
     let world: ServerWorld | null;
     const progressState = structuredClone(progress.state);
-    if (await readServerDocument(tx, expeditionId, 'srv-quest')) {
+    const heldQuest = await readServerDocument(tx, expeditionId, 'srv-quest');
+    if (heldQuest && !(JSON.parse(heldQuest) as { suspended?: boolean }).suspended) {
       await journal('rejected', [], 'QUEST_OPEN', null);
       return respond('rejected', 'QUEST_OPEN', [], [], null);
     }
@@ -272,6 +274,7 @@ export class WorldService {
         mapId: world.mapId,
         coordinates: { ...(world.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }) },
       };
+      installQuestEntrances(world, progressState);
       await saveWorld(tx, expeditionId, world);
       await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
       const saved = await saveAggregate(tx, heroId, 'progress', progress.revision, progressState);
@@ -339,6 +342,7 @@ export class WorldService {
         return respond('rejected', travelled.code, travelled.events, [], world, travelled.effects);
       }
       const { origin, destination, replaced, touched } = travelled;
+      installQuestEntrances(destination, travelled.progress);
       for (const other of touched) await saveWorld(tx, expeditionId, other);
       if (replaced) {
         await deleteServerDocument(tx, expeditionId, worldKey(origin.mapId));
@@ -607,7 +611,13 @@ export class WorldService {
       const index = await readIndex(tx, expeditionId);
       const known = index[locationKey];
       const existing = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
-      if (existing) return clientWorld(existing);
+      await createInitialAggregates(tx, heroId);
+      const aggregates = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      if (existing) {
+        installQuestEntrances(existing, aggregates.progress!.state);
+        await saveWorld(tx, expeditionId, existing);
+        return clientWorld(existing);
+      }
       const mapId = randomUUID();
       const created = createServerWorld(
         locationKey,
@@ -615,6 +625,7 @@ export class WorldService {
         await expeditionSeed(tx, expeditionId),
         heroId,
       );
+      installQuestEntrances(created, aggregates.progress!.state);
       await saveWorld(tx, expeditionId, created);
       index[locationKey] = mapId;
       await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));

@@ -51,6 +51,7 @@ export interface IBaseHexobject {
   tileBackground?: string;
   quantity?: number;
   container?: ContainerState;
+  questId?: string;
 }
 
 export interface IResource extends ITraitable<IResourceTraits> {

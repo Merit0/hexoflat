@@ -122,3 +122,11 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 ## Loot on the quest field (QC2, 2026-11-14)
 
 `use-quest-board.ts` owns a `loot-flight-layer` (above the quest layer) and plays `lootFlightRequest`; `quest-numbers-layer.ts` takes `isHidden(key)` (`isLootFlightPending`) so landing stacks stay hidden until the flight lands, then `resync()`. Empty chest = `EMPTY_CHEST_ALPHA` (0.45), hero token is added after the chest so it stands above it. The canvas `data-ready` is ANDed with `!lootFlying`.
+
+## Quest tool overlay (2026-11-15)
+
+The quest field uses the same `board-overlay-layer.vue` and `tool-hex-anchor.vue` as the world for camera translation, screen hex sizing, left/right flip and the 120 ms position transition. `quest-tool-hex.vue` only supplies its icon/action/working state. Do not restore quest-specific `worldToScreen` positioning or nearest-pointer orbit logic.
+
+- Treasure Seeker world entry (2026-11-15): the field draws a camping-door object at `questExitHex(start)`. Camera bounds include one neighbouring ring outside the radius-6 field so that door remains visible. It is not part of the generated number trail. The field model's `exit` supplies hover/tool geometry; click still only walks, the hand enters the portal.
+
+- Gate lock labels resolve the shared object action destination (legacy `enter` remains supported), so action-defined WORLD destinations use the same sealing countdown.

@@ -34,7 +34,13 @@ const HINT_GREEN = 0x6fdc8c;
 export const EMPTY_CHEST_ALPHA = 0.45;
 
 export function questLayerAssetPaths(floorSprite: string): string[] {
-  return [floorSprite, QUEST_CHEST_SPRITE, CREATURE_SPRITES.hero, hiddenTileLook('mist').url];
+  return [
+    floorSprite,
+    '/hex-assets/hex-constructs/camping-door-hex.png',
+    QUEST_CHEST_SPRITE,
+    CREATURE_SPRITES.hero,
+    hiddenTileLook('mist').url,
+  ];
 }
 
 export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer {
@@ -163,6 +169,10 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
       const tile = tileAt(cell.hex, content, cell.step !== null);
       tiles.addChild(tile);
     }
+    if (model.exit)
+      marks.addChild(
+        tileAt(model.exit, [textured('/hex-assets/hex-constructs/camping-door-hex.png')], true),
+      );
     if (model.chest) {
       const chest = textured(QUEST_CHEST_SPRITE, EHexobjectGroup.LOOT);
       if (model.chestEmpty) chest.alpha = EMPTY_CHEST_ALPHA;

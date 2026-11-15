@@ -1,6 +1,6 @@
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { deriveStream } from '../utils/random-seeded';
-import { axialToOffset, coordinateKey, hexDistance } from '../utils/hex-utils';
+import { axialToOffset, coordinateKey, hexDistance, getHexNeighbors } from '../utils/hex-utils';
 import type { SeekerBoard } from './quest-state';
 
 export const FIELD_RADIUS = 6;
@@ -30,4 +30,13 @@ export function createTreasureField(seed: string): TreasureField {
     .sort((a, b) => coordinateKey(a).localeCompare(coordinateKey(b)));
   const start = edge[Math.floor(random() * edge.length)];
   return { floor, start };
+}
+
+export function questExitHex(start: IHexCoordinates): IHexCoordinates {
+  const center = axialToOffset(FIELD_CENTER);
+  const neighbours = getHexNeighbors(start);
+  return (
+    neighbours.find((hex) => hexDistance(center, hex) > FIELD_RADIUS) ??
+    neighbours[neighbours.length - 1]
+  );
 }

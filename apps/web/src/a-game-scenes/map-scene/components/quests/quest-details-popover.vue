@@ -83,15 +83,7 @@
         >
           {{ t('quest.board.claimReward') }}
         </quest-action-button>
-        <quest-action-button
-          v-else-if="row.taken && row.seeker"
-          variant="main"
-          :testid="`quest-details-${row.quest.id}-enter`"
-          :disabled="busy"
-          @click="actions.enter(row)"
-        >
-          {{ t('quest.board.enterTrail') }}
-        </quest-action-button>
+        <p v-else-if="row.taken && row.seeker">{{ t('quest.findInSilesia') }}</p>
         <quest-action-button
           v-else-if="row.state === 'open'"
           variant="main"

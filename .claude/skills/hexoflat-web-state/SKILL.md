@@ -229,10 +229,24 @@ Health comes from the server: `bindHealthListener` restores `hero` from every `p
 ## Seeker chest loot on the client (QC2, 2026-11-14)
 
 - `runQuestCommand` (`services/quests/quest-run-transport.ts`) applies the progress AND inventory aggregates of every quest answer (the bag changes on `QUEST_PICKUP` and on a chest that sends drops to the bag), starts the shared loot flight on `CHEST_OPENED` (`quest-loot.ts` `questChestOpenedOf`; offset hexes, no conversion) BEFORE `applyQuestRun`, and on a `replayed` answer refetches `GET /player/quest` once and plays nothing.
-- `quest-field-model.ts` in the collect phase: seen hexes, free steps (cost 0), `ground` stacks, `chestEmpty`; `resolveFieldClick` gives `chest | pickup | step`. The field has no tool ring (hand): chest = click, stack = click. Refusals go through `questRefusalText` (`loot.reject.*` for the loot reasons not already known to `quest.refusal.*`).
+- `quest-field-model.ts` in the collect phase: seen hexes, free steps (cost 0), `ground` stacks, `chestEmpty`; `resolveFieldClick` gives walking/back actions only; objects are used through the hand tool hex. Refusals go through `questRefusalText` (`loot.reject.*` for the loot reasons not already known to `quest.refusal.*`).
 
 ## Messages about events (Oleh, 2026-11-14)
 
 Only the general warning system shows messages about any event or refusal: `heroToolStore.setActionMessage(text, icon?, cost?, tone?)` -> `action-alert-banner`. Do not add a local message line to a board or panel (the old `quest-message` is legacy). E2E asserts on the banner.
 
 - **One parser (CH-P5, 2026-11-15).** `services/loot/loot-flight.ts` `containerOpenedOf(events, toBoard)` is the only reader of `CONTAINER_OPENED` (world and quest pass `axialToOffset`, the battle passes `deps.offsetOf`); `chestOpenedOf`, `gravePlayedOf` and `questChestOpenedOf` are deleted, and `battle-animation-plan.ts` reads `actorId`. A replayed answer still refetches before any parsing; an old event name in a journal is simply not found (tests in `loot-flight.test.ts`, `quest-loot.test.ts`, `server-world-actions.loot.test.ts`).
+
+## Shared world / quest tool input (2026-11-15)
+
+- `useHexBoardInput` is shared by the world and the quest field. Optional `heroCoordinates`, `enabled`, and `blocked` refs let a board supply its own origin and input guards without duplicating slot cycling, nearest-neighbour initialization or the 180 ms cooldown. The world disables its handler during `questStore.inRun`; the quest supplies its projected hero position and blocks during loot flights. Global `heroTool.isBusy` still guards both.
+- Quest pointer hover uses `heroTool.updateHover`, so only the six adjacent hexes move the tool, exactly like the world; distant hover keeps its last position. Refresh the tool origin/allowed neighbours when the quest hero moves (including opening the chest). Freeze hover during the hand action.
+- Escape during a run hides the tool through the world scene handler instead of closing the quest panel. Quest hand waits cancel on unmount or projection replacement and check the captured projection before sending a command.
+
+## Treasure Seeker access (2026-11-15)
+
+Board cards accept expeditions into My Quests; there is no remote Enter button. `open-quest-object.ts` dispatches the Silesia map object's hand OPEN to the quest controller. During an active run, the normal hero panel exposes Hero / Inventory / Quest / Events, replacing Path, and loot pickup keeps the Quest tab selected. The shared world tool overlay is hidden. The camping-door action sends `QUEST_PAUSE`, restores the camp world and routes to camp; the server retains the suspended run. Re-enter via the Silesia marker, never by accepting/paying again.
+
+## Destination dispatch (2026-11-15)
+
+Map action destinations flow through `knowledge-controller.ts`; do not add Treasure Map key checks. `object-transition-controller.ts` guards pending interactions per hero/map and adapts quest outcomes to normal hex-action results. `sendQuestCommand` captures session epoch and accepts a current-context predicate; guard before transport and before projection/loot application. `useQuestMapRoute` synchronizes active runs to `/world/treasure-seeker-map` without treating it as a registered ServerWorld location.

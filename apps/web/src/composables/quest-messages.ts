@@ -19,6 +19,8 @@ export function questRefusalText(reason: string): string {
     NO_INVENTORY: () => t('quest.refusal.NO_INVENTORY'),
   };
   const seeker: Record<string, () => string> = {
+    NOT_AT_QUEST_ENTRANCE: () => t('quest.refusal.NOT_AT_QUEST_ENTRANCE'),
+    QUEST_SUSPENDED: () => t('quest.refusal.QUEST_SUSPENDED'),
     QUEST_IN_PROGRESS: () => t('quest.refusal.QUEST_IN_PROGRESS'),
     NOT_ADJACENT: () => t('quest.refusal.NOT_ADJACENT'),
     HEX_NOT_REVEALED: () => t('quest.refusal.HEX_NOT_REVEALED'),
