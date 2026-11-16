@@ -36,8 +36,9 @@ import {
   stopExpeditionSync,
 } from '@/services/player/expedition-sync';
 import { observeServerClock } from '@/services/battle/battle-clock';
-import { reportHeroElsewhere } from '@/services/world/presence-location';
+import { reportHeroElsewhere, reportMapMismatch } from '@/services/world/presence-location';
 import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
+import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
 import { bindInventoryMirror } from './inventory-mirror';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
@@ -472,6 +473,7 @@ export function sendWorldCommand(
     applyProgress(response.aggregates.progress);
     const inventory = response.aggregates.inventory;
     if (inventory && inventory.revision !== inventorySession.revision) applyInventory(inventory);
+    if (response.code === MAP_MISMATCH) reportMapMismatch();
     if (response.result === 'conflict') warn(i18n.global.t('player.sync.restored'));
     const common = {
       tileDiffs: response.tileDiffs as TileDiff[],

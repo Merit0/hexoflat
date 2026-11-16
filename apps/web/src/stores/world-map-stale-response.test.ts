@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { createApp, defineComponent } from 'vue';
 import { createServerWorld } from '@hexoflat/engine';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -10,10 +11,13 @@ import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { PlayerSocket } from '@/services/player/player-socket';
 import type { PlayerEnvelope } from '@/services/player/player-socket';
 import { inventorySession } from '@/services/inventory/inventory-session';
+import { onMapMismatch } from '@/services/world/presence-location';
+import { usePresenceRoute } from '@/composables/use-presence-route';
 import { readCachedWorld } from '@/services/world/served-world';
 import {
   fakePresence,
   fakeProgressRow,
+  fakeStoreWorld,
   fakeStoredWorld,
   sentCommands,
 } from '@/test-support/fake-player-server';
@@ -29,6 +33,7 @@ vi.mock('@/services/world/location-navigator', () => ({
   navigateToLocation: vi.fn(),
   isViewingOtherWorldLocation: vi.fn(() => false),
   routeToLocation: vi.fn(async () => {}),
+  replaceLocationRoute: vi.fn(async () => {}),
 }));
 
 const HERO = 'hero-1';
@@ -62,6 +67,19 @@ function inSilesia() {
   return { hero, world, map: world.map as HexMapModel };
 }
 
+function showRouteOf(locationKey: 'silesia') {
+  const app = createApp(
+    defineComponent({
+      setup() {
+        usePresenceRoute(() => locationKey);
+        return () => null;
+      },
+    }),
+  );
+  app.mount(document.createElement('div'));
+  return app;
+}
+
 function moveServerPresence(mapId: string) {
   fakeProgressRow().state.presence = { ...fakePresence()!, mapId };
 }
@@ -79,7 +97,11 @@ function answerAfterMapChange(type: string, change: () => void) {
 }
 
 describe('an answer for a map the client no longer shows (MAPFIX-2)', () => {
+  const mismatches = vi.fn();
+
   beforeEach(() => {
+    mismatches.mockReset();
+    onMapMismatch(mismatches);
     vi.restoreAllMocks();
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
   });
@@ -109,6 +131,7 @@ describe('an answer for a map the client no longer shows (MAPFIX-2)', () => {
     expect(hero.heroCoordinates).toEqual(camp.heroCoordinates);
     expect(hero.hero.heroSteps).toBe(0);
     expect(useHeroToolStore().actionMessage).toBeNull();
+    expect(mismatches).not.toHaveBeenCalled();
   });
 
   it('REQ-4: drops an action answer that names another map than the one shown', () => {
@@ -145,6 +168,7 @@ describe('an answer for a map the client no longer shows (MAPFIX-2)', () => {
     expect(moved).toBe(false);
     expect(sentCommands.map((sent) => sent.command.type)).toEqual(['WORLD_STEP']);
     expect(inventorySession.presence?.mapId).toBe('moved-on-server');
+    expect(mismatches).toHaveBeenCalledTimes(1);
     expect(hero.hero.heroSteps).toBe(0);
     expect(useHeroToolStore().actionMessage).toBeNull();
   });
@@ -170,5 +194,30 @@ describe('an answer for a map the client no longer shows (MAPFIX-2)', () => {
     expect(sentCommands.map((sent) => sent.command.type)).toEqual(['WORLD_TICK']);
     expect(sentCommands[0].command.payload).toMatchObject({ expectedMapId: 'silesia-map' });
     expect(tile.pendingAction).not.toBeNull();
+  });
+
+  it('reloads the map the server holds after a MAP_MISMATCH refusal, and the next step walks on it', async () => {
+    const { hero, world, map } = inSilesia();
+    const view = showRouteOf('silesia');
+    const target = walkableNeighbour(map, hero.heroCoordinates!);
+    const remade = createServerWorld('silesia', 'silesia-remade', 'another-seed', HERO);
+    fakeStoreWorld(remade);
+    fakeStandIn('silesia');
+    expect(inventorySession.presence?.mapId).toBe('silesia-remade');
+    expect(world.currentMapId).toBe('silesia-map');
+    sentCommands.length = 0;
+
+    expect(await hero.moveHeroTo(target)).toBe(false);
+    await vi.waitFor(() => expect(world.currentMapId).toBe('silesia-remade'));
+    expect(hero.heroCoordinates).toEqual(remade.heroCoordinates);
+
+    const next = walkableNeighbour(world.map as HexMapModel, hero.heroCoordinates!);
+    expect(await hero.moveHeroTo(next)).toBe(true);
+    expect(
+      sentCommands
+        .filter((sent) => sent.command.type === 'WORLD_STEP')
+        .map((sent) => (sent.command.payload as { expectedMapId: string }).expectedMapId),
+    ).toEqual(['silesia-map', 'silesia-remade']);
+    view.unmount();
   });
 });

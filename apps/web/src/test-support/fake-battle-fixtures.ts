@@ -1,6 +1,8 @@
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
+import { projectWorldForClient } from '@hexoflat/engine/world/client-projection';
+import { serializeWorld } from '@hexoflat/engine/world/server-world';
 import { fakeCurrentWorld, fakeHeroId } from './fake-player-server';
 
 export function fakeEngageSquad(at: { columnIndex: number; rowIndex: number }) {
@@ -28,8 +30,10 @@ export function fakeEndBattle(outcome: 'victory' | 'defeat') {
 }
 
 export function fakeWorldSnapshot() {
-  const held = fakeCurrentWorld()?.battle ?? null;
+  const current = fakeCurrentWorld();
+  const held = current?.battle ?? null;
   return {
+    ...(current ? projectWorldForClient(serializeWorld(current)) : {}),
     battleView: held ? projectBattleForViewer(held, 'heroes') : null,
     serverNowMs: Date.now(),
   };

@@ -5,6 +5,7 @@ import { inventorySession } from '@/services/inventory/inventory-session';
 export type HeroElsewhereListener = (held: LocationKey) => void;
 
 let listener: HeroElsewhereListener | null = null;
+let mapListener: (() => void) | null = null;
 
 export function heldLocationKey(): LocationKey | null {
   const key = inventorySession.presence?.locationKey ?? '';
@@ -17,4 +18,12 @@ export function onHeroElsewhere(next: HeroElsewhereListener | null): void {
 
 export function reportHeroElsewhere(): void {
   listener?.(heldLocationKey() ?? HOME_LOCATION);
+}
+
+export function onMapMismatch(next: (() => void) | null): void {
+  mapListener = next;
+}
+
+export function reportMapMismatch(): void {
+  mapListener?.();
 }
