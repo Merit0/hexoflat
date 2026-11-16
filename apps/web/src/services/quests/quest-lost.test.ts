@@ -43,12 +43,17 @@ describe('lost treasure on the quest field', () => {
         payload: {
           questId: 'seeker-1',
           reason: 'TREASURE_LOST',
-          recap: { numbers: [1], firstDeviation: { number: 4, expected: 3 } },
+          recap: {
+            numbers: [1],
+            answerReview: [false],
+            firstDeviation: { number: 4, expected: 3 },
+          },
         },
       },
       { type: 'QUEST_SUMMARY', payload: { outcome: 'lost' } },
     ]);
     expect(result?.outcome).toBe('lost');
+    expect(result?.answerReview).toEqual([false]);
   });
 
   it('has the lost texts in both languages', () => {

@@ -18,6 +18,7 @@ import { ShopBoardComponent } from '@components/shop-board.component';
 import { QuestBoardComponent } from '@components/quest-board.component';
 import { QuestFieldComponent } from '@components/quest-field.component';
 import { LootBoardComponent } from '@components/loot-board.component';
+import { ActiveBoardComponent } from '@components/active-board.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
@@ -39,6 +40,7 @@ export class CampingMapPage extends BasePage {
   readonly questField = new QuestFieldComponent();
   readonly lootBoard = new LootBoardComponent();
   readonly pageErrors = new PageErrorsComponent();
+  readonly activeBoard = new ActiveBoardComponent();
 
   async goto(): Promise<void> {
     await this.page.goto('/world/camping');
@@ -50,7 +52,7 @@ export class CampingMapPage extends BasePage {
 
   async waitUntilReady(): Promise<void> {
     await this.verifyUrlIsCamping();
-    await this.hexBoard.waitForReady();
+    await this.activeBoard.waitForReady();
   }
 
   async verifyUrlMatches(pattern: RegExp): Promise<void> {

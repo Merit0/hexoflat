@@ -61,7 +61,9 @@ export class QuestRunFeature extends BaseFeature {
     await this.step('Step to a hex that breaks the numbers', async () => {
       const before = await this.field.read();
       const expected = before.path.length + 1;
-      const target = this.forward(before).find((cell) => cell.number !== expected);
+      const target = await this.roomiest(
+        this.forward(before).filter((cell) => cell.number !== expected),
+      );
       if (!target) throw new Error('No wrong hex to step on');
       await this.field.clickHex(target.hex);
       await this.field.verifyPathLength(before.path.length + 1);
@@ -72,13 +74,22 @@ export class QuestRunFeature extends BaseFeature {
     await this.step('Step to any hex not walked before', async () => {
       const before = await this.field.read();
       const walked = new Set(before.pathHexes.map((hex) => `${hex.columnIndex}:${hex.rowIndex}`));
-      const target = this.forward(before).find(
-        (cell) => !cell.footprint && !walked.has(`${cell.hex.columnIndex}:${cell.hex.rowIndex}`),
+      const target = await this.roomiest(
+        this.forward(before).filter(
+          (cell) => !cell.footprint && !walked.has(`${cell.hex.columnIndex}:${cell.hex.rowIndex}`),
+        ),
       );
       if (!target) throw new Error('Nothing to step on');
       await this.field.clickHex(target.hex);
       await this.field.verifyPathLength(before.path.length + 1);
     });
+  }
+
+  private async roomiest(cells: QuestFieldHex[]): Promise<QuestFieldHex | undefined> {
+    const room = await this.field.fogAround(cells.map((cell) => cell.hex));
+    return cells
+      .map((cell, index) => ({ cell, room: room[index] }))
+      .sort((a, b) => b.room - a.room)[0]?.cell;
   }
 
   async stepOnAnyFreshHexUntilTheChestAppears(): Promise<void> {
@@ -106,6 +117,16 @@ export class QuestRunFeature extends BaseFeature {
       await this.field.verifyPhase('lost');
       await this.panel.verifyLostCard();
       await this.field.verifyNothingDrawnOrOffered();
+      await this.verifyQuestResolved('lost');
+    });
+  }
+
+  async verifyQuestResolved(outcome: 'treasure' | 'lost'): Promise<void> {
+    await this.step('Verify the last step resolves the quest before leaving its map', async () => {
+      const log = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getQuests());
+      expect(log.active.some((entry) => entry.questId === 'seeker-1')).toBe(false);
+      expect(log.done['seeker-1'] ?? 0).toBe(outcome === 'treasure' ? 1 : 0);
+      await this.field.waitForReady();
     });
   }
 
@@ -161,6 +182,7 @@ export class QuestRunFeature extends BaseFeature {
         await this.field.verifyBoardSettled();
         await this.field.verifyPhase('collect');
         await this.field.verifyChestEmpty(true);
+        await this.field.verifyToolHexShown(true);
         const field = await this.field.read();
         expect(field.position).toEqual(field.chest);
         expect(field.ground.length + (await this.countBag())).toBeGreaterThan(0);
@@ -181,6 +203,7 @@ export class QuestRunFeature extends BaseFeature {
         await this.field.aimHandAt(ground[taken].hex);
         await this.field.pressToolHex();
         await this.field.verifyGroundCount(ground.length - taken - 1);
+        await this.field.verifyToolHexShown(true);
       }
       await this.field.verifyGroundCount(0);
       await this.field.verifyBagTotals(expected);
@@ -202,6 +225,27 @@ export class QuestRunFeature extends BaseFeature {
         [first.itemKey]: (before[first.itemKey] ?? 0) + first.quantity,
       });
     });
+  }
+
+  async verifyOverweightSwordPickupWarning(): Promise<void> {
+    await this.step(
+      'Refuse an overweight sword with a visible warning and keep the hand active',
+      async () => {
+        await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.grantInventoryItem('sword', 5));
+        await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
+        const before = await this.field.readBagTotals();
+        const { ground } = await this.field.read();
+        const sword = ground.find((stack) => stack.itemKey === 'sword');
+        if (!sword) throw new Error('No sword dropped from the quest chest');
+        await this.field.armHand();
+        await this.field.aimHandAt(sword.hex);
+        await this.field.pressToolHex();
+        await this.board.verifyWarning(/carry more|нести більше/i);
+        await this.field.verifyGroundCount(ground.length);
+        await this.field.verifyBagTotals(before);
+        await this.field.verifyToolHexShown(true);
+      },
+    );
   }
 
   async stepOffTheChest(): Promise<void> {
@@ -228,7 +272,7 @@ export class QuestRunFeature extends BaseFeature {
   }
 
   async verifyRefusal(pattern: RegExp): Promise<void> {
-    await this.step(`Verify the refusal reads ${pattern}`, () => this.board.verifyRefusal(pattern));
+    await this.step(`Verify the refusal reads ${pattern}`, () => this.board.verifyWarning(pattern));
   }
 
   async reloadAndVerifyLootKept(): Promise<void> {
@@ -344,6 +388,14 @@ export class QuestRunFeature extends BaseFeature {
     await this.step(`Set the hero's Will to ${will}`, async () => {
       await this.page.evaluate((value) => window.__HEXOFLAT_TEST__!.setWill(value), will);
       await this.board.verifyWill(will);
+    });
+  }
+
+  async emptyTheBag(): Promise<void> {
+    await this.step('Empty the bag, as a player stores the loot between runs', async () => {
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.setBag([]));
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
+      await this.field.verifyBagTotals({});
     });
   }
 

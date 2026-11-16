@@ -3,15 +3,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import {
   QUEST_RUN_COMMAND_SCHEMAS,
-  canEnterQuestWorld,
   deserializeWorld,
+  questEntranceFor,
   executeQuestRunCommand,
   isQuestRunCommandType,
   parseQuestRunDoc,
   projectQuestForClient,
   type DomainEvent,
+  type Presence,
   type QuestProjection,
   type QuestRunDoc,
+  type SeekerEntrance,
 } from '@hexoflat/engine';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
@@ -64,6 +66,30 @@ async function battleOpen(
   if (!mapId) return false;
   const raw = await readServerDocument(tx, expeditionId, `srv-world:${mapId}`);
   return !!raw && !!(JSON.parse(raw) as { battle?: unknown }).battle;
+}
+
+async function loadWorldDoc(tx: Tx, expeditionId: string, mapId: string) {
+  const raw = await readServerDocument(tx, expeditionId, `srv-world:${mapId}`);
+  return raw ? deserializeWorld(JSON.parse(raw), Date.now()) : null;
+}
+
+async function entranceOf(
+  tx: Tx,
+  expeditionId: string,
+  presence: Presence | null,
+  questId: string,
+): Promise<SeekerEntrance | null> {
+  const world = presence ? await loadWorldDoc(tx, expeditionId, presence.mapId) : null;
+  return world ? questEntranceFor(world, questId) : null;
+}
+
+async function campPlace(tx: Tx, expeditionId: string): Promise<Presence | null> {
+  const rawIndex = await readServerDocument(tx, expeditionId, 'srv-index');
+  const campId = rawIndex ? (JSON.parse(rawIndex) as Record<string, string>).camping : undefined;
+  const camp = campId ? await loadWorldDoc(tx, expeditionId, campId) : null;
+  return camp?.heroCoordinates
+    ? { locationKey: 'camping', mapId: camp.mapId, coordinates: { ...camp.heroCoordinates } }
+    : null;
 }
 
 @Injectable()
@@ -177,26 +203,17 @@ export class QuestRunService {
         return respond('rejected', [], 'BATTLE_OPEN', doc);
       }
 
-      let atEntrance = false;
-      if (command.type === 'QUEST_ENTER' && progress.state.presence) {
-        const rawWorld = await readServerDocument(
-          tx,
-          expeditionId,
-          `srv-world:${progress.state.presence.mapId}`,
-        );
-        atEntrance =
-          !!rawWorld &&
-          canEnterQuestWorld(
-            deserializeWorld(JSON.parse(rawWorld), Date.now()),
-            command.payload.questId,
-          );
-      }
+      const entering = command.type === 'QUEST_ENTER';
+      const entrance = entering
+        ? await entranceOf(tx, expeditionId, progress.state.presence, command.payload.questId)
+        : null;
       const seed = await expeditionSeed(tx, expeditionId);
       const outcome = executeQuestRunCommand({
         progress: progress.state,
         doc,
         command,
-        atEntrance,
+        entrance,
+        camp: entering ? await campPlace(tx, expeditionId) : null,
         inventory: inventory.state,
         newSeed: () => `${seed}:quest:${randomUUID()}`,
       });
@@ -227,24 +244,6 @@ export class QuestRunService {
           await tx
             .insert(itemLedger)
             .values(entries.map((entry) => ({ heroId, commandId, ...entry })));
-        }
-      }
-      if (command.type === 'QUEST_ENTER' && outcome.doc && !doc) {
-        const rawIndex = await readServerDocument(tx, expeditionId, 'srv-index');
-        const campId = rawIndex
-          ? (JSON.parse(rawIndex) as { camping?: string }).camping
-          : undefined;
-        const rawCamp = campId
-          ? await readServerDocument(tx, expeditionId, `srv-world:${campId}`)
-          : null;
-        if (rawCamp && campId) {
-          const campWorld = deserializeWorld(JSON.parse(rawCamp), Date.now());
-          if (campWorld.heroCoordinates)
-            outcome.doc.camp = {
-              locationKey: 'camping',
-              mapId: campId,
-              coordinates: campWorld.heroCoordinates,
-            };
         }
       }
       if (outcome.doc) {

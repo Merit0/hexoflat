@@ -21,6 +21,7 @@ export function applyQuestFixture(
   return {
     ...progress,
     quests: {
+      ...progress.quests,
       active: fixture.active ?? progress.quests.active,
       done: fixture.done ?? progress.quests.done,
     },

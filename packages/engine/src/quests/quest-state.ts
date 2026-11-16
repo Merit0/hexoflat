@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
+import { TERRAIN_IDS } from '../boards/terrain';
+import { LOCATION_KEYS } from '../registry/location-key';
 import type { SequenceRule } from './sequences/rules';
 
 export const hexSchema = z
@@ -37,6 +39,20 @@ export const collectSchema = z
   })
   .strict();
 export type QuestCollect = z.infer<typeof collectSchema>;
+
+const fieldTileSchema = z
+  .object({ hex: hexSchema, terrain: z.enum(TERRAIN_IDS).optional() })
+  .strict();
+
+export const seekerFieldSchema = z
+  .object({
+    origin: z.enum(LOCATION_KEYS),
+    background: z.string().min(1),
+    exit: hexSchema,
+    tiles: z.array(fieldTileSchema).min(1),
+  })
+  .strict();
+export type SeekerField = z.infer<typeof seekerFieldSchema>;
 
 export const SEEKER_OUTCOMES = [
   'treasure',
@@ -92,6 +108,8 @@ export const QuestRunSchema = z
     collect: collectSchema.nullable().default(null),
     phase: z.enum(['walking', 'collect', 'ambush', 'lost', 'ended']),
     outcome: z.enum(SEEKER_OUTCOMES).nullable(),
+    resolution: z.enum(['treasure', 'lost']).optional(),
+    field: seekerFieldSchema.optional(),
   })
   .strict();
 

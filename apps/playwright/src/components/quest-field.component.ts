@@ -50,6 +50,20 @@ export class QuestFieldComponent extends BaseComponent {
     return snapshot;
   }
 
+  async fogAround(hexes: QuestHex[]): Promise<number[]> {
+    return this.page.evaluate((targets) => {
+      const api = window.__HEXOFLAT_TEST__!;
+      const fog = new Set(
+        (api.getQuestField()?.fog ?? []).map((hex) => `${hex.columnIndex},${hex.rowIndex}`),
+      );
+      return targets.map(
+        (target) =>
+          api.getNeighbors(target).filter((hex) => fog.has(`${hex.columnIndex},${hex.rowIndex}`))
+            .length,
+      );
+    }, hexes);
+  }
+
   async verifyPathLength(length: number): Promise<void> {
     await expect.poll(async () => (await this.read()).path.length, POLL).toBe(length);
   }

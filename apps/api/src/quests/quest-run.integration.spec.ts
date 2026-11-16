@@ -1,7 +1,7 @@
 import { arriveAtQuestEntrance } from '../test-support/quest-entrance';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
+import { deserializeWorld, parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -378,5 +378,34 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
       ).result,
     ).toBe('applied');
     expect(await readServerDocument(kit.db, expeditionId, 'srv-quest')).toBeNull();
+  });
+
+  it('clones the origin map: hero where he stood, camping door on the marker hex, return to camp', async () => {
+    const { userId, heroId } = await heroAt(NEAR);
+    const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+    const presence = (await stateOf(userId, heroId)).presence!;
+    const origin = JSON.parse(
+      (await readServerDocument(kit.db, expeditionId, `srv-world:${presence.mapId}`))!,
+    ) as { questEntrances: Record<string, string>; map: { tiles: unknown[] } };
+    const silesia = await world.ensure(userId, heroId, 'silesia');
+    const held = deserializeWorld(silesia, Date.now());
+    const marker = held.map.tiles.find(
+      (tile) => tile.hexobject?.id === origin.questEntrances['seeker-1'],
+    )!;
+
+    const entered = await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
+    expect(entered.result).toBe('applied');
+    expect(entered.quest?.position).toEqual(presence.coordinates);
+    expect(entered.quest?.board?.exit).toEqual(marker.coordinates);
+    expect(entered.quest?.board?.border).toEqual([
+      { hex: marker.coordinates, objectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE },
+    ]);
+    expect(entered.quest?.chest).toBeNull();
+    const stored = parseQuestRunDoc((await readServerDocument(kit.db, expeditionId, 'srv-quest'))!);
+    expect(stored.run.start).toEqual(presence.coordinates);
+    expect(stored.run.field?.origin).toBe('silesia');
+    expect(stored.run.field?.tiles).toHaveLength(held.map.tiles.length);
+    expect(stored.camp?.locationKey).toBe('camping');
+    expect(JSON.stringify(entered)).not.toContain('"tiles"');
   });
 });

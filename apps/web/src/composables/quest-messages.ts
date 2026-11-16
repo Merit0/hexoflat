@@ -21,6 +21,8 @@ export function questRefusalText(reason: string): string {
   const seeker: Record<string, () => string> = {
     NOT_AT_QUEST_ENTRANCE: () => t('quest.refusal.NOT_AT_QUEST_ENTRANCE'),
     QUEST_SUSPENDED: () => t('quest.refusal.QUEST_SUSPENDED'),
+    OTHER_QUEST_SUSPENDED: () => t('quest.refusal.OTHER_QUEST_SUSPENDED'),
+    NO_ROOM_FOR_TRAIL: () => t('quest.refusal.NO_ROOM_FOR_TRAIL'),
     QUEST_IN_PROGRESS: () => t('quest.refusal.QUEST_IN_PROGRESS'),
     NOT_ADJACENT: () => t('quest.refusal.NOT_ADJACENT'),
     HEX_NOT_REVEALED: () => t('quest.refusal.HEX_NOT_REVEALED'),

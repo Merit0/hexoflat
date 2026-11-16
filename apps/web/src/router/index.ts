@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { TREASURE_SEEKER_MAP_KEY } from '@hexoflat/engine/registry/quest-map-key';
 import { useUserStore } from '@/stores/user-store';
 
 const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-view.vue');
@@ -46,7 +47,7 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false },
   },
   {
-    path: '/world/treasure-seeker-map',
+    path: `/world/${TREASURE_SEEKER_MAP_KEY}`,
     name: ROUTES.QUEST_MAP,
     component: HexWorldMap,
     meta: { requiresAuth: true },

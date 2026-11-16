@@ -51,6 +51,9 @@ export const questTestApi = {
     const model = buildQuestField(run);
     return {
       exit: model.exit,
+      border: model.border,
+      terrain: model.terrain.map(({ hex, terrain }) => ({ hex, terrain })),
+      fog: model.fog.map((hex) => ({ columnIndex: hex.columnIndex, rowIndex: hex.rowIndex })),
       phase: run.phase,
       outcome: run.outcome,
       position: run.position,

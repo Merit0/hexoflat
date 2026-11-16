@@ -8,7 +8,6 @@ import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import type { HexTileModel } from './models/hex-tile-model';
 import { hexDistance } from '../utils/hex-utils';
 
-/** Object categories do not determine navigation: their action capabilities do. */
 export function objectActionDestination(
   object: THexobject | null | undefined,
   action: EHexActionType,
@@ -16,7 +15,6 @@ export function objectActionDestination(
   if (!object) return null;
   const meta = getMeta(object.hexobjectKey);
   const destination = meta.actions?.[action]?.destination;
-  // Existing saved/content world and return-portal descriptors stay compatible.
   return destination ?? (action === EHexActionType.ENTER ? (meta.enter ?? null) : null);
 }
 
@@ -34,7 +32,14 @@ export function objectDestinationAction(
 export type TransitionRefusal =
   'NO_POSITION' | 'BATTLE_OPEN' | 'HIDDEN' | 'TOO_FAR' | 'INVALID_ACTION';
 
-/** Shared voluntary-entry checks. Ambushes intentionally use their own rules. */
+export const TRANSITION_REFUSAL_MESSAGES: Record<TransitionRefusal, string> = {
+  NO_POSITION: 'No hero here.',
+  BATTLE_OPEN: 'Cannot leave the map during combat!',
+  HIDDEN: 'You cannot see it yet.',
+  TOO_FAR: 'Stand next to it first.',
+  INVALID_ACTION: 'This cannot be done here.',
+};
+
 export function objectTransitionRefusal(
   tile: HexTileModel,
   hero: IHexCoordinates | null,

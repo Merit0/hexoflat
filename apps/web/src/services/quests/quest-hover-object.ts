@@ -9,6 +9,12 @@ export function questHoverObject(model: QuestFieldModel, hex: IHexCoordinates): 
   const key = coordinateKey(hex);
   if (model.exit && coordinateKey(model.exit) === key)
     return HexObjectFactory.create(HEXOBJECT_KEYS.CAMPING_ENTRANCE, hex);
+  const border = model.border.find((entry) => coordinateKey(entry.hex) === key);
+  if (border) {
+    const object = HexObjectFactory.create(border.objectKey, hex);
+    object.isInteractable = false;
+    return object;
+  }
   if (model.chest && coordinateKey(model.chest) === key) {
     return HexObjectFactory.create(
       model.chestEmpty ? HEXOBJECT_KEYS.CHEST_OPEN : HEXOBJECT_KEYS.CHEST,

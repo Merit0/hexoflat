@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TRANSITION_REFUSAL_MESSAGES } from '../map/object-transition';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { getMeta } from '../content/content-accessors';
@@ -58,7 +59,7 @@ describe('squads as creature tokens', () => {
       hexAction(hidden, ATTACK, SQUAD_AT).find(
         (event) => event.type === 'HEX_ACTION_START_REJECTED',
       )?.payload,
-    ).toMatchObject({ message: 'HIDDEN' });
+    ).toMatchObject({ message: TRANSITION_REFUSAL_MESSAGES.HIDDEN });
     expect(hidden.engagement).toBeUndefined();
   });
   it('REQ-ENC-001: visible only from a revealed hex; count, leader, threat and watcher always; members after SCOUT', () => {

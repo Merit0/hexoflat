@@ -6,7 +6,11 @@
         v-for="(n, i) in numbers"
         :key="i"
         class="step"
-        :class="{ last: i === numbers.length - 1 }"
+        :class="{
+          last: i === numbers.length - 1,
+          'is-correct': answerReview?.[i] === true,
+          'is-wrong': answerReview?.[i] === false,
+        }"
         data-testid="quest-trail-chip"
       >
         {{ n }}
@@ -19,7 +23,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 
-defineProps<{ numbers: readonly number[]; testid?: string }>();
+defineProps<{ numbers: readonly number[]; answerReview?: readonly boolean[]; testid?: string }>();
 const { t } = useI18n();
 </script>
 
@@ -71,5 +75,13 @@ const { t } = useI18n();
 }
 .empty {
   color: #8a7a55;
+}
+.step.is-correct {
+  color: #8fcb9a;
+  border-color: #8fcb9a;
+}
+.step.is-wrong {
+  color: #ff9d8a;
+  border-color: #ff9d8a;
 }
 </style>

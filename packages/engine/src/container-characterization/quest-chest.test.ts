@@ -203,7 +203,9 @@ describe('CH-P0 quest chest: pickup order differs from the grave', () => {
     expect(seekerPickup(result.progress, result.run, empty, inventoryWith({}))).toMatchObject({
       reason: 'NO_LOOT_THERE',
     });
-    expect(seekerPickup(result.progress, result.run, near, fullBag())).toMatchObject({
+    expect(
+      seekerPickup(result.progress, result.run, near, { ...fullBag(), capacityKg: 1000 }),
+    ).toMatchObject({
       reason: 'BAG_FULL',
     });
   });

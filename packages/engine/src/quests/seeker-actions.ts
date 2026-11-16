@@ -1,4 +1,6 @@
 import type { ProgressState } from '../aggregates/progress-state';
+import { questAnswerReview } from './quest-answer-review';
+import { resolveSeekerPath } from './resolve-seeker-path';
 import type { DomainEvent } from '../commands/types';
 import { createContainer } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
@@ -13,6 +15,7 @@ import {
   positionOf,
   type QuestRun,
   type SeekerBoard,
+  type SeekerField,
   type SeekerOutcome,
 } from './quest-state';
 import { generateSequence } from './sequences/generate';
@@ -52,6 +55,7 @@ export function enterQuest(
     seed: string;
     board: SeekerBoard;
     start: IHexCoordinates;
+    field?: SeekerField;
     atBoard: boolean;
     hasRun: boolean;
   },
@@ -85,7 +89,7 @@ export function enterQuest(
     params.steps,
     deriveStream(input.seed, `quest:${input.questId}:trail`),
   );
-  if (!trail) throw new Error('TRAIL_GENERATION_FAILED');
+  if (!trail) return reject(progress, input.questId, 'NO_ROOM_FOR_TRAIL');
 
   const run: QuestRun = {
     offerId: input.questId,
@@ -113,6 +117,7 @@ export function enterQuest(
     collect: null,
     phase: 'walking',
     outcome: null,
+    ...(input.field ? { field: input.field } : {}),
   };
   const ring = revealRing(run, input.board, registry).hexes;
   mergeRevealed(run, ring);
@@ -136,15 +141,21 @@ function finish(
 ): { progress: ProgressState; events: DomainEvent[] } {
   const next = structuredClone(progress);
   next.quests.active = next.quests.active.filter((entry) => entry.questId !== run.offerId);
-  if (outcome === 'treasure') {
+  if (run.resolution) {
+    outcome = run.resolution;
+    reason = outcome === 'treasure' ? null : 'TREASURE_LOST';
+  }
+  if (outcome === 'treasure' && !run.resolution) {
     next.quests.done[run.offerId] = (next.quests.done[run.offerId] ?? 0) + 1;
   }
+  const answerReview = questAnswerReview(run);
   run.phase = 'ended';
   run.outcome = outcome;
   const heroId = next.knowledge.heroId;
   const recap = {
     numbers: run.path.map((step) => step.number),
     firstDeviation: run.firstDeviation,
+    ...(answerReview ? { answerReview } : {}),
   };
   const closing: DomainEvent =
     reason === null
@@ -286,6 +297,7 @@ export function seekerStep(
   const falseDeadEnd = run.lines.length > 0 && position < run.terms.length && !ring.continuation;
   if (falseDeadEnd || position >= run.terms.length)
     showChest(run, board, events, heroId, options.ambushEnabled ?? SEEKER_RULES.ambushEnabled);
+  events.push(...resolveSeekerPath(next, run));
   const stranded = strandedCheck(next, run);
   if (stranded)
     return { ok: true, progress: stranded.progress, run, events: [...events, ...stranded.events] };
@@ -300,7 +312,8 @@ export function seekerStepBack(
 ): SeekerResult {
   void options;
   void board;
-  if (source.phase !== 'walking') return reject(progress, source, 'WRONG_PHASE');
+  if (source.phase !== 'walking' || source.resolution)
+    return reject(progress, source, 'WRONG_PHASE');
   if (source.path.length === 0) return reject(progress, source, 'NOTHING_TO_STEP_BACK');
   const cost = source.stepCost * source.backMultiplier;
   const have = progress.knowledge.current;

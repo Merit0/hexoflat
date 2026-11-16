@@ -19,8 +19,10 @@ export const SEEKER_REFUSALS = [
   'CONTAINER_EMPTY',
   'NO_ROOM_FOR_LOOT',
   'BAG_FULL',
+  'OVERWEIGHT',
   'NO_LOOT_THERE',
   'NO_INVENTORY',
+  'NO_ROOM_FOR_TRAIL',
 ] as const;
 export type SeekerRefusal = (typeof SEEKER_REFUSALS)[number];
 

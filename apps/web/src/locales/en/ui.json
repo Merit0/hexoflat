@@ -487,6 +487,7 @@
       }
     },
     "reject": {
+      "OVERWEIGHT": "Can't carry more. Free up inventory!",
       "NO_BATTLE": "There is no battle.",
       "BATTLE_ENDED": "The battle is over.",
       "NOT_YOUR_TURN": "It is not your turn.",
@@ -851,6 +852,7 @@
   "loot": {
     "reject": {
       "NO_ROOM_FOR_LOOT": "There is no room around for the loot.",
+      "OVERWEIGHT": "Can't carry more. Free up inventory!",
       "BAG_FULL": "Your bag is full. Free some space.",
       "STANDING_ON_TARGET": "Step off this spot first.",
       "CHEST_EMPTY": "The chest is empty.",
@@ -897,7 +899,9 @@
       "NO_LOOT_THERE": "Nothing lies there.",
       "OFFLINE": "No connection to the server.",
       "NOT_AT_QUEST_ENTRANCE": "Open your treasure map from an adjacent hex in Silesia.",
-      "QUEST_SUSPENDED": "Re-enter through your treasure map in Silesia."
+      "QUEST_SUSPENDED": "Re-enter through your treasure map in Silesia.",
+      "OTHER_QUEST_SUSPENDED": "Another treasure map is still open. Finish it first.",
+      "NO_ROOM_FOR_TRAIL": "No room for a trail here. Stand on the other side of the map."
     },
     "woodcutter": {
       "name": "Woodcutter",
@@ -940,6 +944,10 @@
       "backPrice": "Step back {n}"
     },
     "run": {
+      "statusLabel": "Status",
+      "statusInProgress": "In Progress",
+      "statusFinished": "Finished",
+      "statusWasted": "Wasted",
       "step": "Step {n} / {total}",
       "trail": "Your trail",
       "collect": "The chest is open. Take what you can.",
@@ -1047,9 +1055,6 @@
       "doneTimes": "Done {n}×"
     },
     "findInSilesia": "Find in Silesia",
-    "tab": "Quest",
-    "portal": {
-      "enter": "Enter camp"
-    }
+    "tab": "Quest"
   }
 }

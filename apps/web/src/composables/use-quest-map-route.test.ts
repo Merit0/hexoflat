@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick } from 'vue';
 import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import router, { ROUTES } from '@/router';
-import { questRun } from '@/services/quests/quest-run-projection';
+import { applyQuestRun, questRun, resetQuestRun } from '@/services/quests/quest-run-projection';
 import { closeKnowledgePanel } from './use-knowledge-panel';
 import { useQuestMapRoute } from './use-quest-map-route';
 
@@ -25,7 +25,7 @@ describe('quest map route synchronization', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    questRun.value = null;
+    resetQuestRun();
     router.currentRoute.value = { name: ROUTES.WORLD } as typeof router.currentRoute.value;
     scope = effectScope();
   });
@@ -52,8 +52,18 @@ describe('quest map route synchronization', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it('waits on the quest URL until the server has said whether a run exists', async () => {
+    router.currentRoute.value = { name: ROUTES.QUEST_MAP } as typeof router.currentRoute.value;
+    start();
+    expect(replace).not.toHaveBeenCalled();
+    applyQuestRun({ phase: 'walking' } as QuestProjection);
+    await nextTick();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it('falls back to the origin map when a quest URL has no active run', () => {
     router.currentRoute.value = { name: ROUTES.QUEST_MAP } as typeof router.currentRoute.value;
+    applyQuestRun(null);
     start();
     expect(replace).toHaveBeenCalledExactlyOnceWith({
       name: ROUTES.WORLD,
@@ -63,9 +73,9 @@ describe('quest map route synchronization', () => {
 
   it('leaves the quest URL when the run is suspended or ended', async () => {
     router.currentRoute.value = { name: ROUTES.QUEST_MAP } as typeof router.currentRoute.value;
-    questRun.value = { phase: 'walking' } as QuestProjection;
+    applyQuestRun({ phase: 'walking' } as QuestProjection);
     start();
-    questRun.value = null;
+    applyQuestRun(null);
     await nextTick();
     expect(replace).toHaveBeenCalledWith({
       name: ROUTES.WORLD,

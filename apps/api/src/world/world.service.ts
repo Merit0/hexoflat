@@ -6,6 +6,7 @@ import {
   WORLD_COMMAND_SCHEMAS,
   actWorld,
   installQuestEntrances,
+  parseQuestRunDoc,
   battleWorld,
   createServerWorld,
   deserializeWorld,
@@ -53,6 +54,7 @@ import {
 import { HeroesService } from '../heroes/heroes.service';
 import {
   createInitialAggregates,
+  loadAggregates,
   loadAggregatesForUpdate,
   projectAggregate,
   type LoadedAggregate,
@@ -251,7 +253,7 @@ export class WorldService {
     let world: ServerWorld | null;
     const progressState = structuredClone(progress.state);
     const heldQuest = await readServerDocument(tx, expeditionId, 'srv-quest');
-    if (heldQuest && !(JSON.parse(heldQuest) as { suspended?: boolean }).suspended) {
+    if (heldQuest && !parseQuestRunDoc(heldQuest).suspended) {
       await journal('rejected', [], 'QUEST_OPEN', null);
       return respond('rejected', 'QUEST_OPEN', [], [], null);
     }
@@ -612,10 +614,10 @@ export class WorldService {
       const known = index[locationKey];
       const existing = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
       await createInitialAggregates(tx, heroId);
-      const aggregates = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      const aggregates = await loadAggregates(tx, heroId, ['progress']);
       if (existing) {
-        installQuestEntrances(existing, aggregates.progress!.state);
-        await saveWorld(tx, expeditionId, existing);
+        if (installQuestEntrances(existing, aggregates.progress!.state))
+          await saveWorld(tx, expeditionId, existing);
         return clientWorld(existing);
       }
       const mapId = randomUUID();

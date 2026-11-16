@@ -119,13 +119,14 @@ export interface FitAtReferenceZoomInput {
   frameRect: WorldRect;
   referenceRect: WorldRect | null;
   pane: PaneSize;
+  focus?: WorldPoint | null;
 }
 
 export function fitAtReferenceZoom(input: FitAtReferenceZoomInput): BoardCamera {
   const { frameRect, referenceRect, pane } = input;
-  if (!referenceRect) return fitBoardCamera({ frameRect, pane });
+  if (!referenceRect) return fitBoardCamera({ frameRect, pane, focus: input.focus });
   const { zoom } = fitBoardCamera({ frameRect: referenceRect, pane });
-  return fitBoardCamera({ frameRect, pane, minZoom: zoom, maxZoom: zoom });
+  return fitBoardCamera({ frameRect, pane, focus: input.focus, minZoom: zoom, maxZoom: zoom });
 }
 
 export function snapCameraToPixels(camera: BoardCamera, pixelRatio: number): BoardCamera {

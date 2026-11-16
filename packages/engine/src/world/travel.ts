@@ -11,7 +11,7 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
 import { deriveStream } from '../utils/random-seeded';
 import { coordinateKey } from '../utils/hex-utils';
-import { findArrivalHex } from './hero-placement';
+import { findArrivalHex, findEntryHex } from './hero-placement';
 import type { ServerWorld } from './server-world';
 import type { WorldEffect } from './server-ports';
 import { closePortalIfOpen } from '../portal/apply-portal';
@@ -76,7 +76,6 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
     );
     const enter = objectActionDestination(tile?.hexobject, EHexActionType.ENTER);
     if (!tile || enter?.type !== 'WORLD') return refuse('NOT_A_GATE');
-    // World gates historically permit standing on the target; keep that policy.
     const blocked = objectTransitionRefusal(
       tile,
       position,
@@ -137,7 +136,11 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
           arrivalSide,
           deriveStream(destination.worldSeed, `arrive:${progress.steps}`),
         ) ?? destination.heroCoordinates)
-      : destination.heroCoordinates;
+      : (findEntryHex(
+          destination.map,
+          to,
+          deriveStream(destination.worldSeed, `arrive:${progress.steps}`),
+        ) ?? destination.heroCoordinates);
   destination.heroCoordinates = arrival ? { ...arrival } : { columnIndex: 0, rowIndex: 0 };
   revealAroundHero(destination.map, destination.heroCoordinates);
   revealEntryTile(destination.map);

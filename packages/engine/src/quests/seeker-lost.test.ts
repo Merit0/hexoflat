@@ -86,6 +86,10 @@ describe('REQ-QST-036 a false trail ends in a lost treasure when the ambush is o
     for (const { length, end } of falseTrails(OFF)) {
       covered.add(length);
       expect(end.run.phase).toBe('lost');
+      expect(end.run.resolution).toBe('lost');
+      expect(end.progress.quests.active).toEqual([]);
+      expect(end.progress.quests.done['seeker-1']).toBeUndefined();
+      expect(end.events.filter((event) => event.type === 'QUEST_RESOLVED')).toHaveLength(1);
       expect(end.run.chest).toBeNull();
       expect(end.events.filter((event) => event.type === 'CHEST_APPEARED')).toEqual([]);
       const lost = end.events.filter((event) => event.type === 'QUEST_LOST');

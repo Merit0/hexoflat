@@ -1,8 +1,7 @@
 import { grantToDraft, type IInventoryDraft } from '../inventory/apply-stock';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
-import { bagTakesAll } from './plan-spread';
 
-export type StackPickupRefusal = 'NO_LOOT_THERE' | 'NOT_ADJACENT' | 'BAG_FULL';
+export type StackPickupRefusal = 'NO_LOOT_THERE' | 'NOT_ADJACENT' | 'BAG_FULL' | 'OVERWEIGHT';
 
 export interface StackPickupInput<S extends { itemKey: string; amount: number }> {
   stacks: readonly S[];
@@ -20,8 +19,13 @@ export function pickupStack<S extends { itemKey: string; amount: number }>(
   const stack = input.stacks.find(input.isTarget);
   if (!stack) return { ok: false, reason: 'NO_LOOT_THERE' };
   if (!input.adjacent) return { ok: false, reason: 'NOT_ADJACENT' };
-  const drop = { itemKey: stack.itemKey as THexobjectKey, amount: stack.amount, guaranteed: false };
-  if (!bagTakesAll(input.bag, [drop])) return { ok: false, reason: 'BAG_FULL' };
-  grantToDraft(input.bag, drop.itemKey, drop.amount, 'pickup');
+  const trial: IInventoryDraft = { current: input.bag.current, events: [] };
+  if (!grantToDraft(trial, stack.itemKey as THexobjectKey, stack.amount, 'pickup')) {
+    const refused = trial.events.find((event) => event.type === 'ITEM_GRANT_REJECTED');
+    const reason = (refused?.payload as { reason?: string } | undefined)?.reason;
+    return { ok: false, reason: reason === 'TOO_HEAVY' ? 'OVERWEIGHT' : 'BAG_FULL' };
+  }
+  input.bag.current = trial.current;
+  input.bag.events.push(...trial.events);
   return { ok: true, stack, remaining: input.stacks.filter((s) => !input.isTarget(s)) };
 }

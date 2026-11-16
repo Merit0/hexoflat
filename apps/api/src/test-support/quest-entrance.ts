@@ -1,5 +1,6 @@
 import { deserializeWorld, serializeWorld } from '@hexoflat/engine';
 import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { isTerrainPassable } from '@hexoflat/engine/boards/terrain';
 import { ensureExpedition, writeServerDocument } from '../expedition/expedition-store';
 import { envelope, type TestKit } from '../player/player-test-kit';
 import type { WorldService } from '../world/world.service';
@@ -13,10 +14,15 @@ export async function arriveAtQuestEntrance(
 ) {
   await world.ensure(userId, heroId, 'camping');
   const held = deserializeWorld(await world.ensure(userId, heroId, 'silesia'), Date.now());
-  const marker = held.map.tiles.find((tile) => tile.hexobject?.questId === 'seeker-1')!;
+  const marker = held.map.tiles.find(
+    (tile) => tile.hexobject?.id === held.questEntrances?.['seeker-1'],
+  )!;
   const stand = getHexNeighbors(marker.coordinates).find((hex) =>
     held.map.tiles.some(
-      (tile) => coordinateKey(tile.coordinates) === coordinateKey(hex) && !tile.hexobject,
+      (tile) =>
+        coordinateKey(tile.coordinates) === coordinateKey(hex) &&
+        !tile.hexobject &&
+        isTerrainPassable(tile.terrain),
     ),
   );
   held.heroCoordinates = adjacent ? stand! : marker.coordinates;

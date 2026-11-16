@@ -463,7 +463,7 @@ export class PlayerCommandService {
 
     const primaryAfter = aggregates[input.aggregateKind];
     if (questExpedition && outcome.changed.progress)
-      await reconcileQuestWorld(tx, questExpedition, heroId, outcome.changed.progress);
+      await reconcileQuestWorld(tx, questExpedition, outcome.changed.progress);
     await journal('applied', outcome.events, null, primaryAfter?.revision ?? primary.revision);
     return { commandId, result: 'applied', events: outcome.events, aggregates };
   }

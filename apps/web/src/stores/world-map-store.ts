@@ -273,7 +273,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       this.installServedWorld(cached);
       this.markAllTilesDirty();
 
-      this.startWorldLoop();
       useHeroStore().setLocation(locationKey, cached.mapId);
     },
 

@@ -10,6 +10,8 @@ import type { ServerWorld } from '../world/server-world';
 import { ALL_QUESTS } from './all-quests';
 import type { QuestCatalogue } from './quest-definition';
 import type { LocationKey } from '../registry/location-key';
+import type { HexTileModel } from '../map/models/hex-tile-model';
+import { cloneOriginField, type SeekerEntrance } from './origin-field';
 
 export const questEntranceId = (questId: string) => `quest-entrance:${questId}`;
 
@@ -34,7 +36,6 @@ function reachableHexes(world: ServerWorld): Set<string> {
   return visited;
 }
 
-/** Reconcile accepted expeditions without altering fog or existing map objects. */
 export function questPlacementMaps(
   progress: ProgressState,
   catalogue: QuestCatalogue = ALL_QUESTS,
@@ -53,63 +54,86 @@ export function installQuestEntrances(
   world: ServerWorld,
   progress: ProgressState,
   catalogue: QuestCatalogue = ALL_QUESTS,
-): void {
+): boolean {
   const quests = progress.quests.active.filter(
     ({ questId }) => catalogue[questId]?.mapObjectPlacement?.targetMap === world.locationKey,
   );
-  const wanted = new Set(quests.map(({ questId }) => questEntranceId(questId)));
-  for (const tile of world.map.tiles) {
-    if (tile.hexobject?.questId && !wanted.has(questEntranceId(tile.hexobject.questId ?? '')))
-      tile.hexobject = null;
+  const bindings = (world.questEntrances ??= {});
+  const wanted = new Set(quests.map(({ questId }) => questId));
+  let changed = false;
+  for (const [questId, objectId] of Object.entries(bindings)) {
+    if (wanted.has(questId)) continue;
+    const tile = world.map.tiles.find((entry) => entry.hexobject?.id === objectId);
+    if (tile) tile.hexobject = null;
+    delete bindings[questId];
+    changed = true;
   }
-  for (const { questId } of quests) {
-    const reachable = reachableHexes(world);
+  const missing = quests.filter(({ questId }) => {
+    const objectKey = catalogue[questId].mapObjectPlacement!.objectKey;
+    return !world.map.tiles.some(
+      (tile) =>
+        tile.hexobject?.hexobjectKey === objectKey && tile.hexobject.id === bindings[questId],
+    );
+  });
+  if (!missing.length) return changed;
+  const reachable = reachableHexes(world);
+  for (const { questId } of missing) {
     const id = questEntranceId(questId);
+    const activation = progress.quests.placementActivations?.[questId];
     const placement = catalogue[questId].mapObjectPlacement!;
-    if (
-      world.map.tiles.some(
-        (tile) =>
-          tile.hexobject?.hexobjectKey === placement.objectKey &&
-          tile.hexobject.questId === questId,
-      )
-    )
-      continue;
     const result = placeMapObject(
       world.map,
       placement.objectKey,
       {
         strategy: placement.strategy,
-        random: deriveStream(world.worldSeed, id),
+        random: deriveStream(world.worldSeed, activation ? `${id}:${activation}` : id),
       },
       {
         occupied: world.heroCoordinates ? [world.heroCoordinates] : [],
         eligible: (tile) => reachable.has(coordinateKey(tile.coordinates)),
       },
     );
-    if (result.ok) result.object.questId = questId;
+    if (!result.ok) continue;
+    bindings[questId] = result.object.id;
+    changed = true;
   }
+  return changed;
 }
 
-export function canEnterQuestWorld(
+function entranceTile(
+  world: ServerWorld,
+  questId: string,
+  catalogue: QuestCatalogue,
+): HexTileModel | null {
+  const placement = catalogue[questId]?.mapObjectPlacement;
+  if (world.locationKey !== placement?.targetMap) return null;
+  const tile = world.map.tiles.find(
+    (entry) =>
+      entry.hexobject?.hexobjectKey === placement.objectKey &&
+      entry.hexobject.id === world.questEntrances?.[questId],
+  );
+  if (!tile?.hexobject) return null;
+  const action = objectDestinationAction(tile.hexobject, 'QUEST');
+  if (action === null) return null;
+  const refusal = objectTransitionRefusal(
+    tile,
+    world.heroCoordinates,
+    !!(world.battle || world.engagement),
+    action,
+    HEXOBJECT_KEYS.HAND,
+  );
+  return refusal === null ? tile : null;
+}
+
+export function questEntranceFor(
   world: ServerWorld,
   questId: string,
   catalogue: QuestCatalogue = ALL_QUESTS,
-): boolean {
-  const placement = catalogue[questId]?.mapObjectPlacement;
-  if (world.locationKey !== placement?.targetMap) return false;
-  return world.map.tiles.some((tile) => {
-    if (tile.hexobject?.hexobjectKey !== placement.objectKey || tile.hexobject.questId !== questId)
-      return false;
-    const action = objectDestinationAction(tile.hexobject, 'QUEST');
-    return (
-      action !== null &&
-      objectTransitionRefusal(
-        tile,
-        world.heroCoordinates,
-        !!(world.battle || world.engagement),
-        action,
-        HEXOBJECT_KEYS.HAND,
-      ) === null
-    );
-  });
+): SeekerEntrance | null {
+  const tile = entranceTile(world, questId, catalogue);
+  if (!tile || !world.heroCoordinates) return null;
+  return {
+    field: cloneOriginField(world, tile.coordinates),
+    start: { ...world.heroCoordinates },
+  };
 }

@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref, type ComputedRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import {
   fitBoardCamera,
@@ -15,9 +15,10 @@ const PANE_POLL_INTERVAL_MS = 100;
 export function useBoardCamera(
   frame: ComputedRef<BoardFrame | null>,
   focus: ComputedRef<IHexCoordinates | null>,
+  stageElement?: Ref<HTMLElement | null>,
 ) {
   const containerRef = ref<HTMLElement | null>(null);
-  const stageRef = ref<HTMLElement | null>(null);
+  const stageRef = stageElement ?? ref<HTMLElement | null>(null);
   const paneWidth = ref(0);
   const paneHeight = ref(0);
   const stageWidth = ref(0);
@@ -61,6 +62,11 @@ export function useBoardCamera(
 
   let sizeObserver: ResizeObserver | null = null;
   let sizePollTimer: number | null = null;
+  watch(stageRef, (element, before) => {
+    if (before) sizeObserver?.unobserve(before);
+    if (element) sizeObserver?.observe(element);
+    readSizes();
+  });
 
   function stopPolling() {
     if (sizePollTimer) window.clearInterval(sizePollTimer);

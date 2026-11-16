@@ -63,7 +63,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { activateBattleHand } from '@/composables/use-battle-view';
-import { useHeroStore } from '@/stores/hero-store';
+import { useActiveMapContext } from '@/composables/use-active-map-context';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
 import { inventoryDragState, useInventoryDragHandle } from '@/composables/use-inventory-drag';
@@ -77,7 +77,7 @@ onBeforeUnmount(hideItemTooltip);
 
 const inventoryStore = useHeroInventoryStore();
 const heroToolStore = useHeroToolStore();
-const heroStore = useHeroStore();
+const activeMap = useActiveMapContext();
 const overlayStore = useOverlayStore();
 const battleStore = useBattleStore();
 const { t } = useI18n();
@@ -142,10 +142,9 @@ function useToolToken() {
   const toolType = resolveToolType();
   if (!toolType) return;
 
-  const heroCoords = heroStore.heroCoordinates;
+  const heroCoords = activeMap.value.heroPosition;
   if (!heroCoords) return;
 
-  heroToolStore.activeTool = toolType;
   heroToolStore.useTool(toolType, heroCoords);
   overlayStore.closeOverlay();
 }

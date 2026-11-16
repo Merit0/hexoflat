@@ -3,6 +3,7 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { TContentDefinition } from './content-schema';
 import { CAVE_CHEST_TABLE_ID } from './loot-tables.content';
+import { TREASURE_SEEKER_MAP_KEY } from '../registry/quest-map-key';
 
 export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.KNOWLEDGE_BOOK
@@ -41,7 +42,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
         label: 'Open',
         requiredTool: HEXOBJECT_KEYS.HAND,
         willCost: 0,
-        destination: { type: 'QUEST', mapKey: 'treasure-seeker-map' },
+        destination: { type: 'QUEST', mapKey: TREASURE_SEEKER_MAP_KEY },
       },
     },
   },

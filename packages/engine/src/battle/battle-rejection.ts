@@ -32,6 +32,7 @@ export const BATTLE_REJECTION_CODES = [
 export type BattleRejectionCode = (typeof BATTLE_REJECTION_CODES)[number];
 
 export const COLLECT_REJECTION_CODES = [
+  'OVERWEIGHT',
   'STANDING_ON_TARGET',
   'CONTAINER_EMPTY',
   'NO_LOOT_THERE',

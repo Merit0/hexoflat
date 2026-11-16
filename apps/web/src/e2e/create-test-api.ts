@@ -36,6 +36,7 @@ import type {
   TestGridSize,
   TestHeroHealth,
   TestHexCoordinates,
+  TestTerrainHex,
   TestPortalPreview,
   TestTileFraction,
 } from '@/e2e/test-api.types';
@@ -206,6 +207,15 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return exit
         ? { columnIndex: exit.coordinates.columnIndex, rowIndex: exit.coordinates.rowIndex }
         : null;
+    },
+
+    getImpassableTerrain(): TestTerrainHex[] {
+      return (worldStore.map?.tiles ?? [])
+        .filter((tile) => !isTerrainPassable(tile.terrain))
+        .map((tile) => ({
+          hex: { columnIndex: tile.coordinates.columnIndex, rowIndex: tile.coordinates.rowIndex },
+          terrain: tile.terrain,
+        }));
     },
 
     isTileImpassableTerrain(coordinates: TestHexCoordinates): boolean {

@@ -27,3 +27,13 @@ const TERRAIN_LOOKS: Partial<Record<TerrainId, TerrainLook>> = {
 export function terrainLook(terrain: TerrainId | undefined): TerrainLook | null {
   return TERRAIN_LOOKS[terrain ?? 'ground'] ?? null;
 }
+
+export function terrainLookPaths(): string[] {
+  return [
+    ...new Set(
+      Object.values(TERRAIN_LOOKS).flatMap((look) =>
+        look ? [look.background, ...(look.sprite ? [look.sprite] : [])] : [],
+      ),
+    ),
+  ];
+}

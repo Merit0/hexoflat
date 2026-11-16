@@ -33,7 +33,6 @@ function available(tile: HexTileModel, restrictions: PlacementRestrictions): boo
   );
 }
 
-/** Pure selection: fog and tile order never influence eligibility or seeded choice. */
 export function planObjectPlacement(
   map: HexMapModel,
   placement: ObjectPlacement,
@@ -52,14 +51,17 @@ export function planObjectPlacement(
   }
   const candidates = map.tiles
     .filter((tile) => !tile.hexobject && available(tile, restrictions))
-    .sort((a, b) => coordinateKey(a.coordinates).localeCompare(coordinateKey(b.coordinates)));
+    .sort(
+      (a, b) =>
+        a.coordinates.rowIndex - b.coordinates.rowIndex ||
+        a.coordinates.columnIndex - b.coordinates.columnIndex,
+    );
   const chosen = pickRandom(candidates, placement.random);
   return chosen
     ? { ok: true, coordinates: { ...chosen.coordinates } }
     : { ok: false, reason: 'NO_ELIGIBLE_HEX' };
 }
 
-/** Apply a validated placement inside a command/reconciliation transaction. */
 export function placeMapObject(
   map: HexMapModel,
   objectKey: THexobjectKey,

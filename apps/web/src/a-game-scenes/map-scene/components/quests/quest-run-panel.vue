@@ -1,7 +1,27 @@
 <template>
   <div class="run" data-testid="quest-run-panel">
+    <div v-if="run || result" class="will">
+      <h3>{{ t(run?.nameKey ?? result?.nameKey ?? '') }}</h3>
+      <span class="separator" aria-hidden="true"></span>
+      <span class="will-counter" :aria-label="t('quest.board.will')">
+        <img :src="WILL_ICON_URL" alt="" aria-hidden="true" />
+        <span>
+          <WillNumber :current="hero.knowledge?.current ?? 0" /> /
+          {{ hero.knowledge?.capacity ?? 0 }}
+        </span>
+      </span>
+    </div>
     <article v-if="run" class="card" data-testid="quest-run-card" :data-phase="run.phase">
-      <h3>{{ t(run.nameKey) }}</h3>
+      <p class="status" data-testid="quest-run-status">
+        {{ t('quest.run.statusLabel') }}:
+        <span v-if="run.lost || run.phase === 'ambush'" class="is-wasted">{{
+          t('quest.run.statusWasted')
+        }}</span>
+        <span v-else-if="run.projection.chest || run.phase === 'collect'" class="is-finished">{{
+          t('quest.run.statusFinished')
+        }}</span>
+        <span v-else>{{ t('quest.run.statusInProgress') }}</span>
+      </p>
       <p class="step" data-testid="quest-run-step">
         {{ t('quest.run.step', { n: run.step, total: run.steps }) }}
       </p>
@@ -9,7 +29,11 @@
         <span>{{ t('quest.chip.stepPrice', { n: run.stepCost }) }}</span>
         <span>{{ t('quest.chip.backPrice', { n: run.backCost }) }}</span>
       </p>
-      <QuestTrail :numbers="run.trail" testid="quest-trail-row" />
+      <QuestTrail
+        :numbers="run.trail"
+        :answer-review="run.projection.answerReview"
+        testid="quest-trail-row"
+      />
       <p v-if="run.descKey" class="desc">{{ t(run.descKey) }}</p>
       <dl class="info" data-testid="quest-run-details">
         <template v-if="run.goalKey">
@@ -87,9 +111,12 @@
       data-testid="quest-result"
       :data-outcome="result.outcome"
     >
-      <h3>{{ t(result.nameKey) }}</h3>
       <p class="outcome">{{ t(`quest.result.${result.outcome}`) }}</p>
-      <QuestTrail :numbers="result.numbers" testid="quest-result-trail" />
+      <QuestTrail
+        :numbers="result.numbers"
+        :answer-review="result.answerReview"
+        testid="quest-result-trail"
+      />
       <p v-if="result.firstDeviation" class="note" data-testid="quest-result-review">
         {{
           t('quest.result.review', {
@@ -120,8 +147,12 @@ import { useQuestRunActions } from '@/composables/use-quest-run-actions';
 import QuestActionButton from './quest-action-button.vue';
 import QuestTrail from './quest-trail.vue';
 import { dismissQuestResult } from '@/services/quests/quest-result';
+import { useHeroStore } from '@/stores/hero-store';
+import { WILL_ICON_URL } from '@/composables/use-hero-details';
+import WillNumber from '@/components/gui/will-number.vue';
 
 const { t } = useI18n();
+const hero = useHeroStore();
 const { run, result } = useQuestRunView();
 const { message, busy, giveUp, returnToCamp } = useQuestRunActions();
 const confirming = ref(false);
@@ -155,6 +186,40 @@ async function giveReturn() {
   border: 1px solid #3a4a58;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.25);
+}
+.will {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid #3a4a58;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.will h3 {
+  font-size: 1.3rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.separator {
+  align-self: stretch;
+  margin: 4px 0;
+  background: #3a4a58;
+}
+.will-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.will img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 h3,
 p {
@@ -206,6 +271,17 @@ h3 {
 }
 .goal {
   color: #8fcb9a;
+}
+.status span {
+  font-weight: 700;
+}
+.is-finished {
+  color: #8fcb9a;
+}
+.is-wasted,
+.card[data-phase='lost'] .step,
+.card[data-phase='lost'] .goal {
+  color: #ff9d8a;
 }
 .how {
   display: grid;

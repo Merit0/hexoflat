@@ -17,6 +17,8 @@ async function reachTheLostTreasure() {
 }
 
 test.describe('Treasure Seeker lost treasure', { tag: ['@hero'] }, () => {
+  test.describe.configure({ timeout: 120_000 });
+
   test('Verify one wrong turn ends in a lost treasure, leaving gives no loot and no refund', async () => {
     const quest = await reachTheLostTreasure();
     const bag = await quest.readBag();

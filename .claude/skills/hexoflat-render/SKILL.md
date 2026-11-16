@@ -55,7 +55,7 @@ Every creature (hero on the map, squads on the dungeon map, heroes and enemies o
 
 ## The quest field (Q4)
 
-`render/quest/use-quest-board.ts` is a third seam (like the battle board): it fits a fixed radius-6 hexagon (`fieldWorldRect`) and syncs one layer, `layers/quest-numbers-layer.ts` (fog, floor, numbers, gold hint, footprints, blue step frames with a hover price, path line, chest, hero token). It redraws everything from the pure `QuestFieldModel`; never read stores in the layer. Add new always-needed sprites to `questLayerAssetPaths`.
+`render/quest/use-quest-board.ts` is a third seam (like the battle board): it fits the field (`fieldWorldRect`: fog, open hexes, border and terrain) and syncs one layer, `layers/quest-numbers-layer.ts` (fog, origin terrain from `model.terrain` drawn with `terrainLook` and never fogged, floor, numbers, gold hint, footprints, chest, door, ground stacks; hero token in its own layer). The field of a new run is a clone of the origin map (~400 tiles on Silesia), so the layer keeps every tile in a map keyed by category + hex with a content signature and rebuilds only the tiles whose signature changed (a full rebuild per projection was slow and could destroy the tile between pointerdown and pointerup). Build it from the pure `QuestFieldModel`; never read stores in the layer. Add new always-needed sprites to `questLayerAssetPaths`.
 
 ## The contract
 
@@ -130,3 +130,15 @@ The quest field uses the same `board-overlay-layer.vue` and `tool-hex-anchor.vue
 - Treasure Seeker world entry (2026-11-15): the field draws a camping-door object at `questExitHex(start)`. Camera bounds include one neighbouring ring outside the radius-6 field so that door remains visible. It is not part of the generated number trail. The field model's `exit` supplies hover/tool geometry; click still only walks, the hand enters the portal.
 
 - Gate lock labels resolve the shared object action destination (legacy `enter` remains supported), so action-defined WORLD destinations use the same sealing countdown.
+
+- Quest borders (2026-11-15): `QuestFieldModel.border` is a radius-7 ring outside the radius-6 numbered field, using existing tree/rock sprites with one camping-door replacement. Preload border assets. All quest tiles report pointer hover; only walkable cells report taps. Border blockers are informational and do not dispatch resource actions.
+
+## One active gameplay renderer (2026-11-15)
+
+`hex-world-map.vue` is the persistent shell. `gameplay-board-host.vue` uses exclusive `v-if` branches for world (`world-map-board.vue`), quest and battle. Never keep a hidden world canvas mounted beneath another board. Each renderer disposes its Pixi app, listeners and effects on unmount. The world camera takes the persistent stage element to preserve pane sizing. Test hooks obtain world camera/readiness through the host. `ActiveBoardComponent` asserts one canvas in browser transitions.
+
+Seeker floor, border, exit and background come from `QuestProjection.board`, produced by the registered engine recipe `treasure-seeker-map`. `quest-field-model.ts` adapts this public projection; do not regenerate geometry in the frontend. World and quest use the single shared hex-info tooltip with active-map object lookup; battle retains its specialized tooltip.
+
+Map answer colors (2026-11-15): `buildQuestField` maps the server's final `answerReview` mask to path hex coordinates as `answerCorrect`; `quest-numbers-layer` renders those numbers green/red with a dark outline, overriding hint styling. Unchosen hexes and paths without a review retain their normal number style.
+
+Quest camera scale (2026-11-16): the board host supplies the saved world frame to `quest-field-area.vue`; `useQuestBoard` reuses `fitAtReferenceZoom`, as battles do, instead of fitting a separate quest zoom. The shared helper accepts optional hero focus for clamped following on larger fields. Quest offsets use the same pixel snapping as the world, and reference/viewport changes re-fit without mounting a background canvas. Browser entry checks compare actual screen spacing between adjacent world and quest hexes.

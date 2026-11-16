@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { createServerWorld } from '@hexoflat/engine';
+import { createServerWorld, serializeWorld } from '@hexoflat/engine';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -16,6 +16,8 @@ import { fakePresence, fakeStoredWorld, sentCommands } from '@/test-support/fake
 import { holdServedWorld, seedFakeSession } from '@/test-support/fake-session';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from './world-map-store';
+import { readCachedWorld, serverWorldJson } from '@/services/world/served-world';
+import { cacheServerWorld } from '@/services/player/world-sync';
 
 vi.mock('@/services/player/player-socket', async () =>
   (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
@@ -52,6 +54,26 @@ describe('a world the server holds', () => {
     expect(world.map?.tiles.map((t) => t.hexobject?.hexobjectKey ?? null)).toEqual(
       served.map.tiles.map((t) => t.hexobject?.hexobjectKey ?? null),
     );
+  });
+
+  it('leaves simulation startup to the active board when a world is loaded', () => {
+    const { world } = setup();
+    const start = vi.spyOn(world, 'startWorldLoop');
+    world.goToLocation('silesia');
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it('keeps quest bindings through cache rewrites only for the same map instance', () => {
+    const { world } = setup();
+    world.goToLocation('silesia');
+    const cached = readCachedWorld('silesia')!;
+    cached.questEntrances = { seeker: 'entrance-object' };
+    const view = { ...cached, questEntrances: undefined };
+    cacheServerWorld('silesia', JSON.stringify(serializeWorld(cached)));
+    cacheServerWorld('silesia', serverWorldJson(view));
+    expect(readCachedWorld('silesia')?.questEntrances).toEqual({ seeker: 'entrance-object' });
+    cacheServerWorld('silesia', serverWorldJson({ ...view, mapId: 'replacement-map' }));
+    expect(readCachedWorld('silesia')?.questEntrances).toEqual({});
   });
 
   it('walks one hex through WORLD_STEP and takes the fog from the server, without ARRIVE', async () => {

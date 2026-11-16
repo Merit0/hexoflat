@@ -17,9 +17,26 @@ import { questRun } from '@/services/quests/quest-run-projection';
 import { routeToLocation } from '@/services/world/location-navigator';
 import { refetchServedWorld } from '@/services/world/served-world';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type { FieldClick } from '@/services/quests/quest-field-model';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import { LOCATION_KEYS, type LocationKey } from '@hexoflat/engine/registry/location-key';
 
 const message = ref<string | null>(null);
+
+function returnPlace(): LocationKey | null {
+  const key = inventorySession.presence?.locationKey;
+  return (LOCATION_KEYS as readonly string[]).includes(key ?? '') ? (key as LocationKey) : null;
+}
+
+async function leaveQuestField() {
+  await closeKnowledgePanel(false);
+  const place = returnPlace();
+  if (!place) return;
+  await refetchServedWorld(place);
+  useWorldMapStore().goToLocation(place);
+  await routeToLocation(place);
+}
 const busy = ref(false);
 
 async function run(action: () => Promise<QuestOutcome>): Promise<boolean> {
@@ -29,13 +46,8 @@ async function run(action: () => Promise<QuestOutcome>): Promise<boolean> {
   try {
     const wasInQuest = questRun.value !== null;
     const outcome = await action();
-    if (!outcome.ok) message.value = questRefusalText(outcome.reason);
-    if (outcome.ok && wasInQuest && !questRun.value) {
-      await closeKnowledgePanel(false);
-      await refetchServedWorld('camping');
-      useWorldMapStore().goToLocation('camping');
-      await routeToLocation('camping');
-    }
+    if (!outcome.ok) useHeroToolStore().setActionMessage(questRefusalText(outcome.reason));
+    if (outcome.ok && wasInQuest && !questRun.value) await leaveQuestField();
     return outcome.ok;
   } finally {
     busy.value = false;

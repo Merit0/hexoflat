@@ -63,7 +63,15 @@ export interface TestQuests {
   done: Record<string, number>;
 }
 
+export interface TestTerrainHex {
+  hex: TestHexCoordinates;
+  terrain: string;
+}
+
 export interface TestQuestField {
+  border: { hex: { columnIndex: number; rowIndex: number }; objectKey: string }[];
+  terrain: TestTerrainHex[];
+  fog: TestHexCoordinates[];
   exit?: TestHexCoordinates;
   phase: string;
   outcome: string | null;
@@ -126,6 +134,7 @@ export interface HexoflatTestApi {
 
   getExitTile(side: 'N' | 'S' | 'W' | 'E'): TestHexCoordinates | null;
 
+  getImpassableTerrain(): TestTerrainHex[];
   isTileImpassableTerrain(coordinates: TestHexCoordinates): boolean;
 
   getHeroHealth(): TestHeroHealth;

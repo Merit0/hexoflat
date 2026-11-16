@@ -167,7 +167,7 @@ describe('REQ-LOOT-085 picking loot up in a battle', () => {
   });
 
   it('leaves the stack on the ground when the bag is full', () => {
-    expectRefused(scene(), pickAt({ q: 0, r: 1 }), 'BAG_FULL', fullBag());
+    expectRefused(scene(), pickAt({ q: 0, r: 1 }), 'BAG_FULL', { ...fullBag(), capacityKg: 1000 });
   });
 
   it('refuses a stack that is not adjacent and a hex without loot', () => {

@@ -16,16 +16,22 @@ async function reachTheOpenedChest() {
 }
 
 test.describe('Treasure Seeker chest loot', { tag: ['@hero'] }, () => {
+  test.describe.configure({ timeout: 120_000 });
+
+  test('Verify an overweight sword pickup warns and keeps the loot and hand', async () => {
+    const quest = await reachTheOpenedChest();
+    await quest.verifyOverweightSwordPickupWarning();
+  });
   test('Verify three consecutive complete runs on the same hero', async () => {
-    test.setTimeout(120_000);
+    test.setTimeout(300_000);
     await new OpenCampingMapFeature().open();
     const quest = new QuestRunFeature();
     await quest.openBoard();
 
     for (let run = 1; run <= 3; run += 1) {
       await test.step(`Complete run ${run} of 3`, async () => {
-        // Refill only Will; keep the hero, inventory and completed quests.
         await quest.setWill(50);
+        await quest.emptyTheBag();
         await quest.startFirstTrail();
         await quest.walkOnTrail(STEPS);
         await quest.openChest();

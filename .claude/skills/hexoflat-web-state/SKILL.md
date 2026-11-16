@@ -250,3 +250,34 @@ Board cards accept expeditions into My Quests; there is no remote Enter button. 
 ## Destination dispatch (2026-11-15)
 
 Map action destinations flow through `knowledge-controller.ts`; do not add Treasure Map key checks. `object-transition-controller.ts` guards pending interactions per hero/map and adapts quest outcomes to normal hex-action results. `sendQuestCommand` captures session epoch and accepts a current-context predicate; guard before transport and before projection/loot application. `useQuestMapRoute` synchronizes active runs to `/world/treasure-seeker-map` without treating it as a registered ServerWorld location.
+
+- Quest hover isolation (2026-11-15): hide and clear the underlying world hex tooltip during a quest, and disable its resolved-action lookup. Quest hover reads only its field objects (border, portal, chest, and ground loot); empty/fog cells return no object.
+
+- Quest run state (2026-11-16): `questRunKnown` (`services/quests/quest-run-projection.ts`) is true once the server answered whether a run exists; `use-quest-map-route.ts` redirects away from `/world/treasure-seeker-map` (`TREASURE_SEEKER_MAP_KEY`) only after that, so a reload on the quest URL is not bounced before the restore. Leaving the quest field goes to the location of `inventorySession.presence` (the server's camp place), never a hard-coded `camping`. `dispatchHexAction` (`knowledge-controller.ts`) wraps only actions with a destination in `runObjectTransition`; ordinary actions run while a gate ENTER is pending.
+- Inventory tool activation (2026-11-15): `equip-token.vue` anchors equipped tools at `questRun.position` while a quest is active, otherwise at `heroStore.heroCoordinates`; battle activation keeps its dedicated hand handler. Both token clicks and USE share this path. Never use the background world position for a quest tool.
+
+## Active-map ownership (2026-11-15)
+
+`useActiveMapContext` is a read adapter over battle, quest and world projections (in that priority). Inventory tool activation and shared board input read its hero position; world/quest hover reads its `objectAt`. Battle positions must use `battleHexToOffset`, matching the renderer. Keep game rules in the engine.
+
+`gameplay-board-host.vue` owns world-loop startup/stop and clears tool/hover state on context changes. `loadLocationMap` must not start background simulation. The shell stops the loop on disposal. Quest entrance associations live in the served world's `questEntrances` namespace, not base hexobjects or a new Pinia field. `serverWorldJson` preserves cached bindings only for the same map ID.
+
+This supersedes earlier guidance about disabling hidden world handlers during quests: the world renderer is now unmounted. The generic tooltip replaces the removed quest-local tooltip.
+
+Quest failure feedback (2026-11-15): `quest-run-panel.vue` uses the server-projected `lost` phase to color both the step counter and goal red after a false trail ends; no client-side correctness checks or early mistake hints.
+
+Quest run status (2026-11-15): the panel displays localized Status: In Progress while walking, Finished in green when the chest appears or collection begins, and Wasted in red for lost/ambush phases. Derive this from the public projection; never inspect the hidden trail to reveal mistakes early.
+
+Final answer review (2026-11-15): `questAnswerReview` exposes per-answer correctness only when the path has ended (full path, lost, collect or ambush). `QuestProjection.answerReview` and closing-event recap carry the boolean mask; no correct values or future answers are exposed. `quest-trail.vue` colors reviewed numbers green/red in both the active run and result card, overriding the last-chip highlight. Walking paths stay neutral.
+
+Map answer colors (2026-11-15): `buildQuestField` maps the server's final `answerReview` mask to path hex coordinates as `answerCorrect`; `quest-numbers-layer` renders those numbers green/red with a dark outline, overriding hint styling. Unchosen hexes and paths without a review retain their normal number style.
+
+Quest run Will display (2026-11-15): `quest-run-panel.vue` groups the quest title, a vertical separator and the current/capacity counter with the shared Will icon in one header during the run and result view, reading reactive hero knowledge and reusing `WillNumber` for spend feedback. The quest catalogue already has its own resource banner.
+
+Quest door action label (2026-11-15): the camping door in `quest-tool-hex.vue` uses the shared `tool.open` label (OPEN), without a destination suffix; removed the quest-specific portal label.
+
+Quest resolution timing (2026-11-15, corrected by Oleh): the final numbered step resolves the quest immediately through `resolveSeekerPath`, removes it from the active log and records success once (failed paths earn no completion). The saved run keeps an optional `resolution` and emits `QUEST_RESOLVED`; chest/loot/map lifecycle can continue independently. Leaving cannot count success again or overturn the resolved result. No further numbered step-back is allowed after resolution. The door retains its original adjacency-checked `QUEST_PAUSE` behavior. Reconciliation discards suspended resolved runs before a new acceptance, so an old completed map cannot resume as a new quest.
+
+Persistent quest hand (2026-11-16): `gameplay-board-host.vue` watches map identity through separate Vue watch sources, not a freshly allocated tuple from each active-context projection. Quest movement/chest/pickup snapshots must not reset the tool; actual board transitions still do. Shared wheel input selects an equipped hand first when the tool is inactive, whichever slot holds it, then keeps normal slot cycling. Browser loot coverage checks the hand remains visible after opening the chest and every pickup.
+
+Quest pickup refusal feedback (2026-11-16): `useQuestRunActions` sends every refusal through the shared action banner, never only a panel-local message hidden behind Inventory. Shared `pickupStack` performs one inventory grant in a trial draft, preserves inventory/events/ground on refusal, and reports `OVERWEIGHT` separately from `BAG_FULL`. Quest and battle collection share this behavior and localized carrying-limit text. Duplicate swords remain allowed when weight and slots permit.

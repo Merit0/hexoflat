@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
-import { QuestEntranceComponent } from '@components/quest-entrance.component';
+import { QuestEntranceComponent, type QuestOrigin } from '@components/quest-entrance.component';
 import { QuestBoardFeature } from './quest-board.feature';
 import type { QuestFieldSnapshot, QuestHex } from '@components/quest-field.component';
 
@@ -10,6 +10,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
   private readonly entrance = new QuestEntranceComponent();
   private readonly board = new QuestBoardFeature();
   private marker: QuestHex | null = null;
+  private origin: QuestOrigin | null = null;
 
   async accept() {
     await this.step(
@@ -25,6 +26,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
         if (!active) await this.map.questBoard.start('seeker-1');
         await this.map.questBoard.verifyCardState('seeker-1', 'taken');
         await this.entrance.verifyFieldClosed();
+        await this.map.activeBoard.verifyOnly('world');
         await this.map.questBoard.close();
       },
     );
@@ -39,6 +41,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
         await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
         await this.page.goto('/world/silesia');
         await this.map.hexBoard.waitForReady();
+        await this.map.activeBoard.verifyOnly('world');
         const { marker, route } = await this.entrance.approachRoute();
         if (this.marker) expect(marker).toEqual(this.marker);
         this.marker = marker;
@@ -50,13 +53,21 @@ export class QuestWorldEntryFeature extends BaseFeature {
           await this.page.evaluate((will) => window.__HEXOFLAT_TEST__!.setWill(will), questWill);
           await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
         }
+        const origin = await this.entrance.readOrigin(marker);
         await this.map.hexBoard.armHandTool();
         await this.map.hexBoard.hoverTile(marker);
         await this.map.toolActionOverlay.verifyOfferedAction(/Open|Відкрити/i);
+        const worldHexSpacing = await this.entrance.readWorldHexSpacing();
         await this.map.toolActionOverlay.triggerAction();
         await this.map.questField.waitForReady();
+        await this.map.activeBoard.verifyOnly('quest');
+        await this.entrance.verifyQuestHexSpacing(worldHexSpacing);
         await this.entrance.verifyQuestUrl();
         await this.entrance.verifyQuestTabs();
+        if (!this.origin) {
+          this.origin = origin;
+          await this.entrance.verifyClonedField(origin);
+        }
       },
     );
   }
@@ -79,6 +90,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
         await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
         await this.page.reload();
         await field.waitForReady();
+        await this.map.activeBoard.verifyOnly('quest');
         await this.entrance.verifyQuestUrl();
         await this.verifySameRun(advanced);
         await this.entrance.verifyQuestTabs();
@@ -91,11 +103,52 @@ export class QuestWorldEntryFeature extends BaseFeature {
     );
   }
 
+  async verifyOnlyDoorAndHero() {
+    await this.step(
+      'Verify only the camping door and the hero stand on the cloned field',
+      async () => {
+        const field = await this.map.questField.read();
+        const door = await this.entrance.exitPoint();
+        const free = await this.entrance.freeNeighbour();
+        await this.map.questField.putTheHandDown();
+        await this.map.questField.hoverHex(field.position);
+        await this.entrance.verifyNoObjectTooltip();
+        await this.map.questField.hoverHex(free);
+        await this.entrance.verifyNoObjectTooltip();
+        await this.map.questField.hoverHex(door);
+        await this.entrance.verifyDoorTooltip();
+        await this.map.questField.armHand();
+        await this.map.questField.aimHandAt(free);
+        await this.entrance.verifyNoActionOffered();
+        await this.map.questField.putTheHandDown();
+      },
+    );
+  }
+
+  async verifyInventoryHandUsesQuestPosition() {
+    await this.step(
+      'Activate Hand from its Inventory cell and USE button beside the quest hero',
+      async () => {
+        await this.map.heroBoardPanel.clickTab('inventory');
+        const hand = await this.map.inventory.getItemIdByKey('hand');
+        await this.map.inventory.clickEquippedItem(hand);
+        await this.entrance.verifyToolBesideQuestHero();
+        await this.map.questField.putTheHandDown();
+        await this.map.inventory.useEquippedItem(hand);
+        await this.entrance.verifyToolBesideQuestHero();
+        await this.map.questField.aimHandAt(await this.entrance.freeNeighbour());
+        await this.map.questField.putTheHandDown();
+        await this.map.heroBoardPanel.clickTab('quest');
+      },
+    );
+  }
+
   async reloadAtCamp() {
     await this.step('Reload at camp while the Treasure Seeker run is suspended', async () => {
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
       await this.page.reload();
       await this.map.hexBoard.waitForReady();
+      await this.map.activeBoard.verifyOnly('world');
       await this.entrance.verifyFieldClosed();
       await this.map.hexBoard.verifyLocation('camping');
     });
@@ -112,6 +165,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
         await this.map.questField.pressToolHex();
         await this.entrance.verifyFieldClosed();
         await this.map.hexBoard.verifyLocation('camping');
+        await this.map.activeBoard.verifyOnly('world');
         const active = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getQuests());
         expect(active.active.some((entry) => entry.questId === 'seeker-1')).toBe(true);
         return before;

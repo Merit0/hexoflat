@@ -4,7 +4,11 @@ import { HEXOBJECT_KEYS as K } from '../registry/hexobjects-registry';
 import { EHexActionType as A } from '../enums/hex-action-type';
 import { createServerWorld } from '../world/server-world';
 import { getHexNeighbors } from '../utils/hex-utils';
-import { objectActionDestination, objectTransitionRefusal } from './object-transition';
+import {
+  TRANSITION_REFUSAL_MESSAGES,
+  objectActionDestination,
+  objectTransitionRefusal,
+} from './object-transition';
 
 describe('object action destinations', () => {
   it.each([
@@ -35,5 +39,12 @@ describe('object action destinations', () => {
     tile.isRevealed = false;
     expect(check()).toBe('HIDDEN');
     expect(tile.hexobject.hexobjectKey).toBe(K.TREASURE_MAP);
+  });
+
+  it('words every refusal for the player instead of showing its code', () => {
+    for (const [code, message] of Object.entries(TRANSITION_REFUSAL_MESSAGES)) {
+      expect(message).not.toBe(code);
+      expect(message).toMatch(/^[A-Z][a-z].*[.!]$/);
+    }
   });
 });

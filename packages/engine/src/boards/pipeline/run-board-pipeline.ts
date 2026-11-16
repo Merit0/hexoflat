@@ -52,6 +52,7 @@ function runStage(
   recipe: BoardRecipe,
   draft: BoardDraft,
   attemptSeedValue: string,
+  sourceSeed: string,
   params: Record<string, unknown>,
 ): CheckResult {
   const seenKinds = new Map<string, number>();
@@ -64,7 +65,13 @@ function runStage(
       attemptSeedValue,
       pieceStreamLabel(stage, pieceParams.kind, occurrence),
     );
-    const result = piece.run(draft, parsed, { recipe, seed: attemptSeedValue, params, rng });
+    const result = piece.run(draft, parsed, {
+      recipe,
+      seed: attemptSeedValue,
+      sourceSeed,
+      params,
+      rng,
+    });
     if (stage === 'checks' && !(result as CheckResult).ok) return result as CheckResult;
   }
   return { ok: true };
@@ -73,6 +80,7 @@ function runStage(
 function runAttempt(
   recipe: BoardRecipe,
   attemptSeedValue: string,
+  sourceSeed: string,
   params: Record<string, unknown>,
 ): AttemptResult {
   const draft: BoardDraft = {
@@ -86,7 +94,7 @@ function runAttempt(
   };
 
   for (const stage of STAGE_NAMES) {
-    const result = runStage(stage, recipe, draft, attemptSeedValue, params);
+    const result = runStage(stage, recipe, draft, attemptSeedValue, sourceSeed, params);
     if (!result.ok) return result;
   }
   return { ok: true, draft };
@@ -144,13 +152,13 @@ export function runBoardPipeline(
   let lastReason = '';
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const result = runAttempt(recipe, attemptSeed(input.seed, attempt), params);
+    const result = runAttempt(recipe, attemptSeed(input.seed, attempt), input.seed, params);
     if (result.ok) return finalize(recipe, result.draft, input.seed, attempt, params);
     lastReason = result.reason;
   }
 
   if (recipe.fallbackSeed !== undefined) {
-    const result = runAttempt(recipe, recipe.fallbackSeed, params);
+    const result = runAttempt(recipe, recipe.fallbackSeed, input.seed, params);
     if (result.ok) return finalize(recipe, result.draft, input.seed, attempts, params);
     lastReason = result.reason;
   }

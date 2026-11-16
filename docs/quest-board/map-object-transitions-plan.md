@@ -112,3 +112,37 @@ delayed-rejection regression test.
 Quest association hydration now discovers the quest destination action instead of
 assuming OPEN. Numbered-trail gameplay and the construction/creature categories
 remain unchanged.
+
+## Quest hover and border follow-up [DONE — 2026-11-15]
+
+Fixed the underlying world tooltip remaining active during a quest. The world
+hover target is cleared on quest transitions, its tooltip is unmounted, and its
+tool-object lookup is disabled. The quest tooltip reads only defined quest
+objects; empty or fogged cells do not inherit Silesia resources.
+
+The field now renders a 42-cell tree/rock ring outside the numbered field. The
+camping door replaces exactly one border object next to the starting position.
+Other border objects show their own information but offer no resource actions or
+movement commands. Number generation, costs, fog, and pause/resume are unchanged.
+
+Verified 29 targeted web tests, workspace typecheck, hooks-enabled build, and
+changed-file lint (one existing world-scene cycle warning). Chromium checked no
+tooltip on an empty quest cell, a single correct border tooltip, no action on a
+border blocker, and three camping-door exit/re-entry cycles with reloads:
+`sh scripts/pre-push-e2e.sh e2e/hero/quest-world-entry.spec.ts --project=chromium
+--workers=1 --retries=0` — passed without retry.
+
+## Inventory Hand origin follow-up [DONE — 2026-11-15]
+
+Inventory token clicks and USE previously initialized the tool with the
+background world's hero coordinates while the quest rendered another position.
+Both now resolve the active quest position first, keeping the existing world
+fallback and battle-specific hand handler. Removed the redundant direct
+`activeTool` assignment; the tool store owns activation and its adjacent orbit.
+
+Before the fix, the new mounted-component tests reproduced both broken quest
+activation paths while the normal-world case passed. After the fix, all 13
+targeted inventory/lifecycle tests and 21 related input/quest tests passed.
+The UI regression exercises cell click, USE, an adjacent orbit move, and the
+existing three portal/re-entry cycles. Workspace typecheck, build, and changed
+code lint also pass.

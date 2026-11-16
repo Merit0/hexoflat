@@ -1,7 +1,7 @@
 import { CREATURE_SPRITES } from '@/render/creature-sprites';
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { getPrototype } from '@hexoflat/engine';
-import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
@@ -11,6 +11,7 @@ import { createHexHitArea, createHexMask } from '@/render/hex-geometry';
 import { applyObjectFit } from '@/render/object-fit';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { hiddenTileLook } from '@/render/fog-look';
+import { terrainLook, terrainLookPaths } from '@/render/terrain-look';
 
 export const QUEST_CHEST_SPRITE = '/hex-assets/hex-loot/chest-token.png';
 
@@ -30,6 +31,12 @@ export interface QuestNumbersLayer {
   destroy(): void;
 }
 
+interface TileEntry {
+  tile: Container;
+  signature: string;
+  release: Array<() => void>;
+}
+
 const HINT_GREEN = 0x6fdc8c;
 export const EMPTY_CHEST_ALPHA = 0.45;
 
@@ -40,6 +47,11 @@ export function questLayerAssetPaths(floorSprite: string): string[] {
     QUEST_CHEST_SPRITE,
     CREATURE_SPRITES.hero,
     hiddenTileLook('mist').url,
+    ...terrainLookPaths(),
+    ...[HEXOBJECT_KEYS.TREE, HEXOBJECT_KEYS.ROCK].flatMap((key) => {
+      const sprite = getPrototype(key).spritePath;
+      return sprite ? [sprite] : [];
+    }),
   ];
 }
 
@@ -50,12 +62,13 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
   const tiles = new Container();
   const marks = new Container();
   root.addChild(tiles, marks);
-  let unsubscribers: Array<() => void> = [];
+  let pending: Array<() => void> = [];
+  let entries = new Map<string, TileEntry>();
 
   function textured(url: string, group = EHexobjectGroup.CONSTRUCTION): Sprite {
     const sprite = new Sprite(getTexture(url));
     applyObjectFit(sprite, w, h, group);
-    unsubscribers.push(
+    pending.push(
       onTextureReady(url, () => {
         sprite.texture = getTexture(url);
         applyObjectFit(sprite, w, h, group);
@@ -72,42 +85,47 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     return { centerX: top.x + dx, top: top.y + dy, bottom: bottom.y + dy } satisfies TileAnchor;
   }
 
-  function tileAt(hex: IHexCoordinates, content: Container[], interactive: boolean): Container {
+  function tileAt(hex: IHexCoordinates, content: Container[], clickable: boolean): Container {
     const tile = new Container();
     const mask = createHexMask(w, h);
     tile.addChild(mask, ...content);
     tile.mask = mask;
     const { x, y } = deps.positionOf(hex);
     tile.position.set(x, y);
-    if (interactive) {
-      tile.eventMode = 'static';
-      tile.hitArea = createHexHitArea(w, h);
-      tile.on('pointertap', () => deps.onHexTap?.(hex));
-      const report = (event: {
-        clientX: number;
-        clientY: number;
-        global: { x: number; y: number };
-      }) =>
-        deps.onHexPointer?.(
-          hex,
-          anchorOf(tile, event.clientX, event.clientY, event.global.x, event.global.y),
-        );
-      tile.on('pointerover', report);
-      tile.on('pointermove', report);
-      tile.on('pointerout', () => deps.onHexPointer?.(null, null));
-    }
+    tile.eventMode = 'static';
+    tile.hitArea = createHexHitArea(w, h);
+    if (clickable) tile.on('pointertap', () => deps.onHexTap?.(hex));
+    const report = (event: {
+      clientX: number;
+      clientY: number;
+      global: { x: number; y: number };
+    }) =>
+      deps.onHexPointer?.(
+        hex,
+        anchorOf(tile, event.clientX, event.clientY, event.global.x, event.global.y),
+      );
+    tile.on('pointerover', report);
+    tile.on('pointermove', report);
+    tile.on('pointerout', () => deps.onHexPointer?.(null, null));
     return tile;
   }
 
-  function numberText(value: number, hint: boolean): Text {
+  function numberText(value: number, hint: boolean, answerCorrect?: boolean): Text {
     const text = new Text({
       text: String(value),
       style: {
         fontFamily: 'Cinzel, serif',
         fontSize: Math.round(h * 0.34),
         fontWeight: '800',
-        fill: hint ? 0x06260f : 0xf5fcff,
-        stroke: { color: hint ? HINT_GREEN : 0x0b0d11, width: 5 },
+        fill:
+          answerCorrect === true
+            ? 0x8fcb9a
+            : answerCorrect === false
+              ? 0xff9d8a
+              : hint
+                ? 0x06260f
+                : 0xf5fcff,
+        stroke: { color: answerCorrect === undefined && hint ? HINT_GREEN : 0x0b0d11, width: 5 },
       },
     });
     text.anchor.set(0.5);
@@ -144,44 +162,90 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     return parts;
   }
 
+  function release(entry: TileEntry) {
+    for (const unsubscribe of entry.release) unsubscribe();
+    entry.tile.destroy({ children: true });
+  }
+
   function clear() {
-    for (const unsubscribe of unsubscribers) unsubscribe();
-    unsubscribers = [];
-    tiles.removeChildren().forEach((child) => child.destroy({ children: true }));
-    marks.removeChildren().forEach((child) => child.destroy({ children: true }));
+    tiles.removeChildren();
+    marks.removeChildren();
+    for (const entry of entries.values()) release(entry);
+    entries = new Map();
   }
 
   let last: QuestFieldModel | null = null;
 
   function sync(model: QuestFieldModel) {
     last = model;
-    clear();
-    const mist = hiddenTileLook('mist').url;
-    for (const hex of model.fog) tiles.addChild(tileAt(hex, [textured(mist)], false));
-    for (const cell of model.hexes) {
-      const content: Container[] = [textured(deps.floorSprite)];
-      if (cell.footprint) content.push(footprints());
-      if (cell.number !== null && cell.step === null)
-        content.push(numberText(cell.number, cell.hint));
-      if (cell.step) {
-        if (cell.number !== null) content.push(numberText(cell.number, cell.hint));
+    tiles.removeChildren();
+    marks.removeChildren();
+    const next = new Map<string, TileEntry>();
+    const place = (target: Container, key: string, signature: string, build: () => Container) => {
+      const old = entries.get(key);
+      if (old && old.signature === signature) {
+        entries.delete(key);
+        next.set(key, old);
+        target.addChild(old.tile);
+        return;
       }
-      const tile = tileAt(cell.hex, content, cell.step !== null);
-      tiles.addChild(tile);
-    }
-    if (model.exit)
-      marks.addChild(
-        tileAt(model.exit, [textured('/hex-assets/hex-constructs/camping-door-hex.png')], true),
+      pending = [];
+      const tile = build();
+      next.set(key, { tile, signature, release: pending });
+      pending = [];
+      target.addChild(tile);
+    };
+    const mist = hiddenTileLook('mist').url;
+    for (const hex of model.fog)
+      place(tiles, `f:${coordinateKey(hex)}`, 'fog', () => tileAt(hex, [textured(mist)], false));
+    for (const cell of model.terrain)
+      place(tiles, `f:${coordinateKey(cell.hex)}`, `t|${cell.terrain}`, () => {
+        const look = terrainLook(cell.terrain);
+        const content = [textured(look?.background ?? deps.floorSprite)];
+        if (look?.sprite) content.push(textured(look.sprite));
+        return tileAt(cell.hex, content, false);
+      });
+    for (const cell of model.hexes)
+      place(
+        tiles,
+        `f:${coordinateKey(cell.hex)}`,
+        `h|${cell.footprint}|${cell.number}|${cell.hint}|${cell.answerCorrect}|${cell.step !== null}`,
+        () => {
+          const content: Container[] = [textured(deps.floorSprite)];
+          if (cell.footprint) content.push(footprints());
+          if (cell.number !== null)
+            content.push(numberText(cell.number, cell.hint, cell.answerCorrect));
+          return tileAt(cell.hex, content, cell.step !== null);
+        },
       );
-    if (model.chest) {
-      const chest = textured(QUEST_CHEST_SPRITE, EHexobjectGroup.LOOT);
-      if (model.chestEmpty) chest.alpha = EMPTY_CHEST_ALPHA;
-      marks.addChild(tileAt(model.chest, [chest], model.walking || model.collect));
+    for (const border of model.border)
+      place(marks, `b:${coordinateKey(border.hex)}`, border.objectKey, () =>
+        tileAt(
+          border.hex,
+          [textured(deps.floorSprite), ...stackSprite(border.objectKey, 1)],
+          false,
+        ),
+      );
+    const chestAt = model.chest;
+    if (chestAt) {
+      const clickable = model.walking || model.collect;
+      place(marks, `c:${coordinateKey(chestAt)}`, `${model.chestEmpty}|${clickable}`, () => {
+        const chest = textured(QUEST_CHEST_SPRITE, EHexobjectGroup.LOOT);
+        if (model.chestEmpty) chest.alpha = EMPTY_CHEST_ALPHA;
+        return tileAt(chestAt, [chest], clickable);
+      });
     }
     for (const stack of model.ground) {
       if (deps.isHidden?.(coordinateKey(stack.hex))) continue;
-      marks.addChild(tileAt(stack.hex, stackSprite(stack.itemKey, stack.amount), model.collect));
+      place(
+        marks,
+        `g:${coordinateKey(stack.hex)}`,
+        `${stack.itemKey}|${stack.amount}|${model.collect}`,
+        () => tileAt(stack.hex, stackSprite(stack.itemKey, stack.amount), model.collect),
+      );
     }
+    for (const entry of entries.values()) release(entry);
+    entries = next;
   }
 
   return {

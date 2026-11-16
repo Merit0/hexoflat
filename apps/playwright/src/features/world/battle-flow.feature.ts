@@ -61,6 +61,7 @@ export class BattleFlowFeature extends BaseFeature {
       await squad.attack();
       await squad.startBattle();
       await this.campingMap.battleTab.waitForBoardStill();
+      await this.campingMap.activeBoard.verifyOnly('battle');
     });
   }
 
@@ -664,6 +665,7 @@ export class BattleFlowFeature extends BaseFeature {
   async verifyTheDefeatSentTheHeroHome(): Promise<void> {
     await this.step('The battle is closed and the hero is back alive at the camp', async () => {
       await this.campingMap.battleTab.verifyBoardClosed();
+      await this.campingMap.activeBoard.verifyOnly('world');
       await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(false);
       const health = await this.campingMap.heroBoardPanel.getHeroHealth();
       expect(health.current).toBeGreaterThan(0);

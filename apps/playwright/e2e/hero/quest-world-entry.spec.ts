@@ -3,7 +3,7 @@ import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature'
 import { QuestWorldEntryFeature } from '@features/world/quest-world-entry.feature';
 
 test(
-  'Treasure Seeker preserves its field through three camping portal and re-entry cycles with reloads',
+  'Treasure Seeker clones the origin map with only the door and the hero, and preserves its field through three camping portal and re-entry cycles with reloads',
   { tag: ['@hero'] },
   async () => {
     test.setTimeout(240_000);
@@ -11,6 +11,8 @@ test(
     const quest = new QuestWorldEntryFeature();
     await quest.accept();
     await quest.enterFromSilesia();
+    await quest.verifyOnlyDoorAndHero();
+    await quest.verifyInventoryHandUsesQuestPosition();
     for (let cycle = 0; cycle < 3; cycle += 1) {
       await quest.walkTrailAndReloadBeforeReturningToPortal();
       const before = await quest.pauseThroughPortal();

@@ -230,13 +230,15 @@ describe('REQ-QST-013 stepping back', () => {
     });
   });
 
-  it('makes the chest vanish when its hex is left', () => {
+  it('keeps the final result fixed instead of allowing another numbered attempt', () => {
     const state = startQuest('seeker-1', 'seed-g');
     const end = followTruth(state, 10);
     expect(end.run.chest).not.toBeNull();
-    const back = must(seekerStepBack(end.progress, end.run, state.board));
-    expect(back.run.chest).toBeNull();
-    expect(back.events.map((event) => event.type)).toContain('CHEST_VANISHED');
+    expect(end.progress.quests.done['seeker-1']).toBe(1);
+    expect(seekerStepBack(end.progress, end.run, state.board)).toMatchObject({
+      ok: false,
+      reason: 'WRONG_PHASE',
+    });
   });
 });
 

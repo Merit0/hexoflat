@@ -23,7 +23,6 @@
         @hide="heroTool.stopTool()"
       />
     </board-overlay-layer>
-    <quest-hex-info-tooltip v-if="!tool" :model="model" :hover="hover" />
   </div>
 </template>
 
@@ -38,17 +37,17 @@ import {
   resolveFieldClick,
 } from '@/services/quests/quest-field-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import type { TileAnchor } from '@/render/layers/tiles-layer';
 import { lootFlying } from '@/services/loot/loot-flight-state';
 import { questHandDurationMs } from '@/services/quests/quest-hand-duration';
-import QuestHexInfoTooltip from './quest-hex-info-tooltip.vue';
+import { useHexHoverInfo } from '@/composables/use-hex-hover-info';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import QuestToolHex from './quest-tool-hex.vue';
-import { tileScreenSize, type BoardCamera } from '@/render/board-camera';
+import { tileScreenSize, type BoardCamera, type BoardFrame } from '@/render/board-camera';
 import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import { useHexBoardInput } from '@/composables/use-hex-board-input';
 
+const props = defineProps<{ referenceFrame?: BoardFrame | null }>();
 const pane = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const ready = ref(false);
@@ -67,7 +66,7 @@ useHexBoardInput({
   enabled: acceptsTools,
   blocked: computed(() => lootFlying.value),
 });
-const hover = ref<{ hex: IHexCoordinates; anchor: TileAnchor } | null>(null);
+const hexHoverInfo = useHexHoverInfo();
 const heroTool = useHeroToolStore();
 watch(heroCoordinates, (at, before) => {
   if (!at || !before || (at.columnIndex === before.columnIndex && at.rowIndex === before.rowIndex))
@@ -106,8 +105,6 @@ function pause(ms: number): Promise<boolean> {
   });
 }
 
-// Projections have no run ID. Invalidate the action on any replacement,
-// including restarting the same quest or receiving a newer server snapshot.
 watch(
   () => run.value?.projection,
   () => cancelWait?.(),
@@ -120,6 +117,7 @@ watch(
   },
 );
 onBeforeUnmount(() => {
+  hexHoverInfo.hide();
   disposed = true;
   cancelWait?.();
   heroTool.stopTool();
@@ -151,6 +149,7 @@ useQuestBoard({
   pane,
   canvas,
   model,
+  referenceFrame: computed(() => props.referenceFrame ?? null),
   onCamera: (value) => {
     camera.value = value;
   },
@@ -163,7 +162,8 @@ useQuestBoard({
     if (projection) void click(resolveFieldClick(projection, hex));
   },
   onHexPointer: (hex, anchor) => {
-    hover.value = hex && anchor ? { hex, anchor } : null;
+    if (hex && anchor) hexHoverInfo.show(hex, anchor);
+    else hexHoverInfo.hide();
     hoveredTileCoord.value = hex;
     if (hex && !handWorking.value) heroTool.updateHover(hex);
   },

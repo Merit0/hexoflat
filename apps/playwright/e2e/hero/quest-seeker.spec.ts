@@ -21,6 +21,8 @@ async function walkToTheChest(quest: QuestRunFeature) {
 }
 
 test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
+  test.describe.configure({ timeout: 120_000 });
+
   test('Verify the First Trail rule states its four prices and no total', async () => {
     const quest = await openBoard();
 
@@ -50,7 +52,6 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
   });
 
   test('Verify a clean run reaches the real chest, returns to camp and opens the next trail', async () => {
-    test.setTimeout(120_000);
     const quest = await openBoard();
 
     await quest.startFirstTrail();
@@ -61,6 +62,7 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
     await walkToTheChest(quest);
     await quest.verifyStepCounter(STEPS, STEPS);
     await quest.verifyTrailRow();
+    await quest.verifyQuestResolved('treasure');
     await quest.openChest();
     await quest.verifyPhase('collect');
     await quest.returnToCamp();

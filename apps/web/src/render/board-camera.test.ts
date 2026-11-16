@@ -110,6 +110,27 @@ describe('fitAtReferenceZoom', () => {
   const map = frameWorldRect({ width: 18, height: 17 });
   const battle = frameWorldRect({ width: 11, height: 9 });
 
+  it.each([
+    { width: 1200, height: 900 },
+    { width: 450, height: 700 },
+  ])('keeps quest hex sizes equal to world hex sizes at %j', (viewport) => {
+    const quest = { x: 800, y: 400, width: 1800, height: 1500 };
+    const focus = { x: 1800, y: 1300 };
+    const world = fitBoardCamera({ frameRect: map, pane: viewport });
+    const camera = fitAtReferenceZoom({
+      frameRect: quest,
+      referenceRect: map,
+      pane: viewport,
+      focus,
+    });
+    expect(tileScreenSize(camera)).toEqual(tileScreenSize(world));
+    const onScreen = worldToScreen(camera, focus);
+    expect(onScreen.x).toBeGreaterThanOrEqual(0);
+    expect(onScreen.x).toBeLessThanOrEqual(viewport.width);
+    expect(onScreen.y).toBeGreaterThanOrEqual(0);
+    expect(onScreen.y).toBeLessThanOrEqual(viewport.height);
+  });
+
   it('draws the battle board at the zoom of the map it came from', () => {
     const mapZoom = fitBoardCamera({ frameRect: map, pane }).zoom;
     const camera = fitAtReferenceZoom({ frameRect: battle, referenceRect: map, pane });

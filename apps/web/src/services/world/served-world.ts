@@ -53,6 +53,7 @@ export interface ServedWorldView {
 }
 
 export function serverWorldJson(view: ServedWorldView): string {
+  const cached = readCachedWorld(view.locationKey);
   return JSON.stringify({
     contentVersion: CONTENT_VERSION,
     locationKey: view.locationKey,
@@ -62,6 +63,7 @@ export function serverWorldJson(view: ServedWorldView): string {
     heroCoordinates: view.heroCoordinates,
     worldSeed: view.worldSeed ?? 'local',
     engagement: view.engagement,
+    questEntrances: cached?.mapId === view.mapId ? cached.questEntrances : undefined,
   });
 }
 

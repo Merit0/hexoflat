@@ -131,7 +131,7 @@ describe('CH-P0 payload snapshots: grave', () => {
       LOOT_PICKED: play(state, pickAt(stack.hex)).events,
       NO_LOOT_THERE: play(state, pickAt({ q: -3, r: 0 })).events,
       NOT_ADJACENT: play(away, pickAt(away.collect!.items.find((i) => i.hex.q === 2)!.hex)).events,
-      BAG_FULL: play(state, pickAt(stack.hex), fullBag()).events,
+      BAG_FULL: play(state, pickAt(stack.hex), { ...fullBag(), capacityKg: 1000 }).events,
     }).toMatchSnapshot();
   });
 });
@@ -205,7 +205,10 @@ describe('CH-P0 payload snapshots: quest chest', () => {
         state.run.start,
         inventoryWith({}),
       ).events,
-      BAG_FULL: seekerPickup(opened.progress, opened.run, ground[0].hex, fullBag()).events,
+      BAG_FULL: seekerPickup(opened.progress, opened.run, ground[0].hex, {
+        ...fullBag(),
+        capacityKg: 1000,
+      }).events,
     }).toMatchSnapshot();
   });
 });

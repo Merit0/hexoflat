@@ -9,6 +9,8 @@ import { createServerWorld, type ServerWorld } from './server-world';
 import { travelWorld, type TravelRun, type TravelVia } from './travel';
 import * as contentAccessors from '../content/content-accessors';
 import { EHexActionType } from '../enums/hex-action-type';
+import { MapRegistry } from '../registry/world-map-registry';
+import { installQuestEntrances } from '../quests/world-entrances';
 
 const HERO = 'hero-1';
 const SEED = 'seed';
@@ -97,6 +99,46 @@ describe('a crossing of the board edge on the server', () => {
     if (!outcome.ok) throw new Error(outcome.code);
     expect(outcome.destination.mapId).not.toBe('old-map');
     expect(outcome.progress.sealedUntil[neighbour]).toBeUndefined();
+  });
+});
+
+describe('gate arrival with an active quest', () => {
+  it('arrives beside the Silesia camping door instead of the saved treasure-map position', () => {
+    const origin = createServerWorld('camping', 'camp', SEED, HERO);
+    const gate = placeBeside(origin, HEXOBJECT_KEYS.HOMELAND_GATE);
+    const stored = createServerWorld('silesia', 'silesia-saved', SEED, HERO);
+    const run = runOf(origin, { silesia: stored });
+    run.progress.quests.active.push({ questId: 'seeker-1', progress: 0, state: 'active' });
+    installQuestEntrances(stored, run.progress);
+    const marker = stored.map.tiles.find(
+      (tile) => tile.hexobject?.id === stored.questEntrances?.['seeker-1'],
+    )!;
+    const door = stored.map.tiles.find(
+      (tile) => tile.hexobject?.hexobjectKey === MapRegistry.get('silesia').entryHexobjectKey,
+    )!;
+    const nearDoor = getHexNeighbors(door.coordinates);
+    const saved = getHexNeighbors(marker.coordinates).find(
+      (hex) =>
+        !nearDoor.some(
+          (entry) => entry.columnIndex === hex.columnIndex && entry.rowIndex === hex.rowIndex,
+        ) &&
+        stored.map.tiles.some(
+          (tile) =>
+            tile.coordinates.columnIndex === hex.columnIndex &&
+            tile.coordinates.rowIndex === hex.rowIndex &&
+            !tile.hexobject,
+        ),
+    )!;
+    expect(saved).toBeDefined();
+    stored.heroCoordinates = saved;
+    const markerId = marker.hexobject!.id;
+    const outcome = travelWorld(run, { kind: 'gate', coordinates: gate });
+    if (!outcome.ok) throw new Error(outcome.code);
+    expect(nearDoor).toContainEqual(outcome.destination.heroCoordinates);
+    expect(outcome.progress.presence?.coordinates).toEqual(outcome.destination.heroCoordinates);
+    expect(outcome.destination.mapId).toBe('silesia-saved');
+    expect(outcome.destination.questEntrances?.['seeker-1']).toBe(markerId);
+    expect(marker.hexobject?.id).toBe(markerId);
   });
 });
 

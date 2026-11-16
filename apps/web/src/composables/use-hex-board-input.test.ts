@@ -8,6 +8,8 @@ import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useTraderStore } from '@/stores/trader-store';
+import { questRun } from '@/services/quests/quest-run-projection';
+import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import {
   HAND_SCROLL_COOLDOWN_MS,
   useHexBoardInput,
@@ -34,6 +36,7 @@ function scroll() {
 describe('the mouse wheel takes the hand only when no hand action is running', () => {
   beforeEach(() => {
     enabled.value = true;
+    questRun.value = null;
     blocked.value = false;
     const pinia = createPinia();
     setActivePinia(pinia);
@@ -49,6 +52,7 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
   });
   afterEach(() => {
     knowledgePanelMode.value = null;
+    questRun.value = null;
     app.unmount();
   });
 
@@ -75,6 +79,35 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     scroll();
     expect(useHeroToolStore().isDragging).toBe(true);
     expect(HAND_SCROLL_COOLDOWN_MS).toBeGreaterThan(0);
+  });
+
+  it.each(['weapon', 'shield'] as const)(
+    'prioritizes the hand equipped in %s on the first scroll',
+    (slot) => {
+      const inventory = useHeroInventoryStore();
+      for (const item of inventory.items) {
+        if (item.slotKey === 'eq:weapon' || item.slotKey === 'eq:shield')
+          item.key = item.slotKey === `eq:${slot}` ? K.HAND : K.AXE;
+      }
+      scroll();
+      expect(useHeroToolStore().activeTool).toBe(K.HAND);
+    },
+  );
+
+  it('cycles from the actual tool when it was activated outside the wheel', () => {
+    const inventory = useHeroInventoryStore();
+    const shield = inventory.items.find((item) => item.slotKey === 'eq:shield')!;
+    shield.key = K.AXE;
+    const tool = useHeroToolStore();
+    tool.useTool(K.AXE, { columnIndex: 2, rowIndex: 2 });
+    scroll();
+    expect(tool.activeTool).toBe(K.HAND);
+  });
+
+  it('uses the active quest position by default without a board-specific origin override', () => {
+    questRun.value = { position: position.value } as QuestProjection;
+    scroll();
+    expect(useHeroToolStore().origin).toEqual(position.value);
   });
 
   it('does nothing while a world action locks the tool', () => {

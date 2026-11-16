@@ -1,8 +1,24 @@
+import { seekerBoardOf } from './origin-field';
+import type { TerrainId } from '../boards/terrain';
+import type { TreasureSeekerMapKey } from '../registry/quest-map-key';
+import { TREASURE_SEEKER_MAP_KEY } from '../registry/quest-map-key';
+import { questAnswerReview } from './quest-answer-review';
+import type { THexobjectKey } from '../registry/hexobjects-registry';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
 import { positionOf, type QuestRun, type SeekerOutcome } from './quest-state';
 
+export interface QuestBoardProjection {
+  mapId: TreasureSeekerMapKey;
+  background?: string;
+  floor: IHexCoordinates[];
+  border: { hex: IHexCoordinates; objectKey: THexobjectKey }[];
+  terrain?: { hex: IHexCoordinates; terrain: TerrainId }[];
+  exit: IHexCoordinates;
+}
+
 export interface QuestProjection {
+  board?: QuestBoardProjection;
   offerId: string;
   phase: QuestRun['phase'];
   outcome: SeekerOutcome | null;
@@ -18,6 +34,7 @@ export interface QuestProjection {
   } | null;
   stepCost: number;
   backCost: number;
+  answerReview?: boolean[];
 }
 
 function parseKey(key: string): IHexCoordinates {
@@ -30,7 +47,19 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
   const hintActive = !run.everDeviated && !run.steppedBack && run.path.length < run.hintSteps;
   const hint = hintActive ? (run.trail[run.path.length] ?? null) : null;
   const hintVisible = hint !== null && coordinateKey(hint) in run.revealed;
+  const field = seekerBoardOf(run);
+  const answerReview = questAnswerReview(run);
   return {
+    board: {
+      mapId: TREASURE_SEEKER_MAP_KEY,
+      background: field.background,
+      floor: [...field.floor],
+      border: field.border.map(({ hex, objectKey }) => ({ hex: { ...hex }, objectKey })),
+      ...(field.blocked.length
+        ? { terrain: field.blocked.map(({ hex, terrain }) => ({ hex: { ...hex }, terrain })) }
+        : {}),
+      exit: field.exit,
+    },
     offerId: run.offerId,
     phase: run.phase,
     outcome: run.outcome,
@@ -54,5 +83,6 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
       : null,
     stepCost: run.stepCost,
     backCost: run.stepCost * run.backMultiplier,
+    ...(answerReview ? { answerReview } : {}),
   };
 }

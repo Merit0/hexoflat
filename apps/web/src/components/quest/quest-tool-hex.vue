@@ -46,7 +46,7 @@ const { t } = useI18n();
 
 const iconPath = computed(() => getPrototype(props.toolKey).spritePath ?? '');
 const label = computed(() => {
-  if (props.action === 'exit') return t('quest.portal.enter');
+  if (props.action === 'exit') return t('tool.open');
   if (props.action === 'eye') return t('tool.read');
   return props.action === 'take' ? t('battle.tool.take') : null;
 });

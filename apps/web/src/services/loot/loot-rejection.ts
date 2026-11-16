@@ -1,6 +1,7 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 
 export const LOOT_REJECT_REASONS = [
+  'OVERWEIGHT',
   'NO_ROOM_FOR_LOOT',
   'BAG_FULL',
   'STANDING_ON_TARGET',

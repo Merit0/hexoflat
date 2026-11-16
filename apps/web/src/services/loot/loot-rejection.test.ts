@@ -10,6 +10,7 @@ import {
 } from './loot-rejection';
 
 const UK_TEXT = {
+  OVERWEIGHT: 'Не можеш нести більше. Розвантаж сумку!',
   NO_ROOM_FOR_LOOT: 'Навколо немає місця для здобичі.',
   BAG_FULL: 'Сумка повна. Звільни місце.',
   STANDING_ON_TARGET: 'Спершу зійди з цього місця.',

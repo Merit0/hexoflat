@@ -5,7 +5,6 @@ import type { QuestRunAnswer } from '@/services/quests/quest-run-transport';
 
 const pending = new Set<string>();
 
-/** Hold the guard across presence synchronization and destination entry. */
 export async function runObjectTransition<T>(
   key: string,
   execute: () => Promise<T>,

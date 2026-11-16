@@ -13,6 +13,7 @@ import { HERO_SHIELD_SLOTS } from '../combat/shield-slots';
 import { MAX_EQUIPMENT_HEARTS } from '../combat/heart-slots';
 import type { LocationKey } from '../registry/location-key';
 import { LOCATION_KEYS } from '../registry/location-key';
+import { TREASURE_SEEKER_MAP_KEY } from '../registry/quest-map-key';
 import type { TToolKeys } from './tools.content';
 
 const hexobjectKeys = Object.values(HEXOBJECT_KEYS) as [THexobjectKey, ...THexobjectKey[]];
@@ -21,15 +22,11 @@ export const hexobjectKeySchema = z.enum(hexobjectKeys);
 export const actionDestinationSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('WORLD'), locationKey: z.enum(LOCATION_KEYS) }),
   z.object({ type: z.literal('PORTAL') }),
-  z.object({ type: z.literal('QUEST'), mapKey: z.literal('treasure-seeker-map') }),
+  z.object({ type: z.literal('QUEST'), mapKey: z.literal(TREASURE_SEEKER_MAP_KEY) }),
   z.object({ type: z.literal('BATTLE') }),
 ]);
 
-export type ActionDestination =
-  | { type: 'WORLD'; locationKey: LocationKey }
-  | { type: 'PORTAL' }
-  | { type: 'QUEST'; mapKey: 'treasure-seeker-map' }
-  | { type: 'BATTLE' };
+export type ActionDestination = z.infer<typeof actionDestinationSchema>;
 
 const actionConfigSchema = z.object({
   label: z.string(),

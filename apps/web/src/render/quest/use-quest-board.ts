@@ -1,12 +1,14 @@
 import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { BATTLEFIELD_BIOMES } from '@hexoflat/engine/battle/battlefield';
-import { calcHexPixelPosition, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
 import {
   HEX_WORLD_HEIGHT,
   HEX_WORLD_WIDTH,
-  fitBoardCamera,
+  fitAtReferenceZoom,
+  frameWorldRect,
+  snapCameraToPixels,
+  type BoardFrame,
   type BoardCamera,
   type WorldRect,
 } from '@/render/board-camera';
@@ -27,27 +29,35 @@ import {
 } from '@/services/loot/loot-flight-state';
 import { registerQuestHexProbe } from '@/e2e/quest-hooks';
 import { tileWorldCenter, worldToScreen } from '@/render/board-camera';
-import { fieldHexagon, type QuestFieldModel } from '@/services/quests/quest-field-model';
+import { type QuestFieldModel } from '@/services/quests/quest-field-model';
 
 export interface UseQuestBoardOptions {
   pane: Ref<HTMLElement | null>;
   canvas: Ref<HTMLCanvasElement | null>;
   model: ComputedRef<QuestFieldModel>;
+  referenceFrame?: ComputedRef<BoardFrame | null>;
   onReady?: () => void;
   onHexTap?: (hex: IHexCoordinates) => void;
   onHexPointer?: (hex: IHexCoordinates | null, anchor: TileAnchor | null) => void;
   onCamera?: (camera: BoardCamera) => void;
 }
 
-const FLOOR = BATTLEFIELD_BIOMES.crypt.background;
+const LEGACY_FLOOR = '/hex-assets/board-hexes/stone-hex.png';
 
-export function fieldWorldRect(): WorldRect {
+export function fieldWorldRect(model: QuestFieldModel): WorldRect {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  const field = fieldHexagon();
-  for (const coordinates of [...field, ...field.flatMap(getHexNeighbors)]) {
+  const coordinatesOf = [
+    ...model.fog,
+    ...model.hexes.map(({ hex }) => hex),
+    ...model.border.map(({ hex }) => hex),
+    ...model.terrain.map(({ hex }) => hex),
+  ];
+  if (!coordinatesOf.length)
+    return { x: 0, y: 0, width: HEX_WORLD_WIDTH, height: HEX_WORLD_HEIGHT };
+  for (const coordinates of coordinatesOf) {
     const { x, y } = calcHexPixelPosition({ coordinates }, HEX_WORLD_WIDTH, HEX_WORLD_HEIGHT);
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);
@@ -65,12 +75,23 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
   let observer: ResizeObserver | null = null;
   let destroyed = false;
   let currentCamera: BoardCamera | null = null;
-  const frameRect = fieldWorldRect();
+  let paneSize = { width: 0, height: 0 };
+  const frameRect = () => fieldWorldRect(options.model.value);
 
   function fit(width: number, height: number) {
-    if (!pixi) return;
-    pixi.resize(width, height);
-    const camera = fitBoardCamera({ frameRect, pane: { width, height } });
+    if (!pixi || width <= 0 || height <= 0) return;
+    if (paneSize.width !== width || paneSize.height !== height) pixi.resize(width, height);
+    paneSize = { width, height };
+    const reference = options.referenceFrame?.value;
+    const camera = snapCameraToPixels(
+      fitAtReferenceZoom({
+        frameRect: frameRect(),
+        referenceRect: reference ? frameWorldRect(reference) : null,
+        pane: paneSize,
+        focus: tileWorldCenter(options.model.value.position),
+      }),
+      window.devicePixelRatio || 1,
+    );
     pixi.setCamera(camera);
     currentCamera = camera;
     options.onCamera?.(camera);
@@ -91,7 +112,8 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
       app.destroy();
       return;
     }
-    await preloadTextures(questLayerAssetPaths(FLOOR));
+    const floor = options.model.value.background ?? LEGACY_FLOOR;
+    await preloadTextures(questLayerAssetPaths(floor));
     if (destroyed) {
       app.destroy();
       return;
@@ -102,7 +124,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
       tileSize: { w: HEX_WORLD_WIDTH, h: HEX_WORLD_HEIGHT },
       positionOf: (coordinates) =>
         calcHexPixelPosition({ coordinates }, HEX_WORLD_WIDTH, HEX_WORLD_HEIGHT),
-      floorSprite: FLOOR,
+      floorSprite: floor,
       isHidden: isLootFlightPending,
       onHexTap: options.onHexTap,
       onHexPointer: options.onHexPointer,
@@ -150,6 +172,12 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
   }
 
   watch(options.model, sync);
+  watch(
+    () => options.model.value.position,
+    () => fit(paneSize.width, paneSize.height),
+  );
+  if (options.referenceFrame)
+    watch(options.referenceFrame, () => fit(paneSize.width, paneSize.height));
   watch(lootFlightRequest, playPending);
 
   onBeforeUnmount(() => {

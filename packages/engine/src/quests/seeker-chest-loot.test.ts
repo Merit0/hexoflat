@@ -255,7 +255,9 @@ describe('REQ-QST-029 picking loot up', () => {
     expect(held).toBeGreaterThanOrEqual(item.amount);
     expect(taken.events.map((event) => event.type)).toContain('QUEST_LOOT_TAKEN');
 
-    const blocked = seekerPickup(opened.progress, opened.run, item.hex, fullBag());
+    const full = fullBag();
+    full.capacityKg = 1000;
+    const blocked = seekerPickup(opened.progress, opened.run, item.hex, full);
     expect(blocked).toMatchObject({ ok: false, reason: 'BAG_FULL' });
     expect(opened.run.collect!.ground.map(keyOf)).toContain(keyOf(item));
 

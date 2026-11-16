@@ -17,3 +17,10 @@ Requested behavior (2026-11-15): accepting an expedition at the camp board place
 - Browser: six Chromium scenarios passed without retries across the final runs: world entry / pause / re-entry; full loot collection / return / next card; reload persistence; hand-only object use; clean quest completion; Will exhaustion / return to camp.
 - Typecheck passed across all packages; engine/frontend build passed through the E2E runner. Lint passed for changed TypeScript/Vue files with the existing reviewed cycle warning on `hex-world-map.vue`; `git diff --check` passed.
 - No commit or push performed.
+
+## Cloned origin field (2026-11-16)
+
+- `QUEST_ENTER` clones the terrain of the map holding the marker (`questEntranceFor`, `quests/origin-field.ts`, `QuestRun.field`), with no hexobjects.
+- The camping door stands on the marker hex. The hero starts on the hex he stood on, and the trail starts beside him. At the start the field holds only the door and the hero.
+- Runs saved before keep the generated radius-6 ring with the tree/rock border (`seekerBoardOf`).
+- New refusals: `OTHER_QUEST_SUSPENDED` and `NO_ROOM_FOR_TRAIL`.

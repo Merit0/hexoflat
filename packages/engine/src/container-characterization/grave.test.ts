@@ -193,6 +193,9 @@ describe('CH-P0 grave: pickup', () => {
 
   it('a full bag refuses with BAG_FULL and leaves the stack', () => {
     const state = withStacks();
-    expectRefused(state, pickAt(state.collect!.items[0].hex), 'BAG_FULL', fullBag());
+    expectRefused(state, pickAt(state.collect!.items[0].hex), 'BAG_FULL', {
+      ...fullBag(),
+      capacityKg: 1000,
+    });
   });
 });

@@ -20,6 +20,7 @@ import {
   actOnServerWorld,
   installTravelledWorlds,
   travelOnServer,
+  readCachedWorld,
 } from '@/services/world/served-world';
 import { objectActionDestination } from '@hexoflat/engine/map/object-transition';
 import { runObjectTransition, enterQuestDestination } from './object-transition-controller';
@@ -86,6 +87,15 @@ export interface SquadHostState {
   engagement?: Engagement;
 }
 
+function targetTile(host: Omit<KnowledgeHost, 'state'>, command: StartHexActionCommand) {
+  const { coordinates } = command.payload;
+  return host.map.tiles.find(
+    (candidate) =>
+      candidate.coordinates.columnIndex === coordinates.columnIndex &&
+      candidate.coordinates.rowIndex === coordinates.rowIndex,
+  );
+}
+
 async function executeHexAction(
   host: Omit<KnowledgeHost, 'state'>,
   command: StartHexActionCommand,
@@ -101,21 +111,24 @@ async function executeHexAction(
     mapId: host.context.mapId,
     from,
   };
-  const tile = host.map.tiles.find(
-    (candidate) =>
-      candidate.coordinates.columnIndex === coordinates.columnIndex &&
-      candidate.coordinates.rowIndex === coordinates.rowIndex,
-  );
+  const tile = targetTile(host, command);
   const destination = objectActionDestination(tile?.hexobject, actionType);
   if (destination?.type === 'QUEST') {
+    const stored = readCachedWorld(at.locationKey);
+    const questId =
+      stored?.mapId === at.mapId
+        ? Object.entries(stored.questEntrances ?? {}).find(
+            ([, objectId]) => objectId === tile?.hexobject?.id,
+          )?.[0]
+        : undefined;
     const events = await enterQuestDestination(
       {
         isCurrent: () => host.isCurrent(),
         ensurePresence: () => ensurePresence(at),
         send: () =>
-          sendQuestCommand('QUEST_ENTER', { questId: tile?.hexobject?.questId ?? '' }, () =>
-            host.isCurrent(),
-          ),
+          questId
+            ? sendQuestCommand('QUEST_ENTER', { questId }, () => host.isCurrent())
+            : Promise.resolve({ ok: false as const, code: 'NOT_AT_QUEST_ENTRANCE', events: [] }),
         refusalText: questRefusalText,
       },
       coordinates,
@@ -150,6 +163,9 @@ export function dispatchHexAction(
   command: StartHexActionCommand,
   held: SquadHostState = {},
 ) {
+  const tile = targetTile(host, command);
+  if (!objectActionDestination(tile?.hexobject, command.payload.actionType))
+    return executeHexAction(host, command, held);
   return runObjectTransition(
     `${host.heroId}:${host.context.mapId}`,
     () => executeHexAction(host, command, held),

@@ -85,7 +85,6 @@ describe('map object placement', () => {
     const map = mapOf();
     const tile = map.tiles[0];
     tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CAVE_ENTRANCE, tile.coordinates);
-    // The planner only inspects reservation presence; production schemas own its payload.
     tile.pendingAction = {} as NonNullable<typeof tile.pendingAction>;
     expect(
       placeMapObject(map, HEXOBJECT_KEYS.TREASURE_MAP, {

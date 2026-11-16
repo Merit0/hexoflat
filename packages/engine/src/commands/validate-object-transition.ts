@@ -1,4 +1,8 @@
-import { objectActionDestination, objectTransitionRefusal } from '../map/object-transition';
+import {
+  TRANSITION_REFUSAL_MESSAGES,
+  objectActionDestination,
+  objectTransitionRefusal,
+} from '../map/object-transition';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { THeroToolKey } from '../content/equipment.content';
 import type { HexTileModel } from '../map/models/hex-tile-model';
@@ -35,7 +39,7 @@ export function transitionRejection(
   return [
     {
       type: 'HEX_ACTION_START_REJECTED',
-      payload: { coordinates, actionType, message: blocked },
+      payload: { coordinates, actionType, message: TRANSITION_REFUSAL_MESSAGES[blocked] },
     },
   ];
 }

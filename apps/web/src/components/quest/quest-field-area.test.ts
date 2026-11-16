@@ -25,7 +25,6 @@ vi.mock('@/render/quest/use-quest-board', () => ({
   useQuestBoard: (options: { onCamera: (camera: object) => void }) => options.onCamera({ zoom: 1 }),
 }));
 vi.mock('@/services/quests/quest-hand-duration', () => ({ questHandDurationMs: () => 400 }));
-vi.mock('./quest-hex-info-tooltip.vue', () => ({ default: defineComponent(() => () => null) }));
 vi.mock('./quest-tool-hex.vue', () => ({
   default: defineComponent({
     emits: ['act', 'hide'],
