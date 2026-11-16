@@ -209,15 +209,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const locationKey = heldLocationKey() ?? heroStore.nav.locationKey;
 
       this.goToLocation(locationKey);
-
-      if (this.currentMapId) {
-        const remembered = heroStore.nav.positionByMapId[this.currentMapId];
-        if (remembered) {
-          heroStore.heroCoordinates = { ...remembered };
-          this.revealAroundHero();
-          this.cacheServedWorld();
-        }
-      }
     },
 
     goToLocation(locationKey: LocationKey) {
@@ -242,7 +233,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     leaveCurrentLocation() {
-      leaveCurrentLocationAction(this, useHeroStore());
+      leaveCurrentLocationAction(this);
     },
 
     placeHeroOnArrival(locationKey: LocationKey) {

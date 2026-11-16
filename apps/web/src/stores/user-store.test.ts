@@ -79,7 +79,7 @@ describe('useUserStore restoreSession', () => {
   // reset the hero back to the map entry point, defeating the point of the
   // httpOnly-cookie session-restore fix.
   it('does not clear localStorage["hero"] — a refresh must not lose world-map-store state', async () => {
-    localStorage.setItem('hero', JSON.stringify({ nav: { positionByMapId: { m1: { x: 4 } } } }));
+    localStorage.setItem('hero', JSON.stringify({ nav: { locationKey: 'cave' } }));
     fetchSessionMock.mockResolvedValue({
       user: { id: 'user-1', username: 'merito', name: 'Merito' },
       accessToken: 'fresh-token',
@@ -93,7 +93,7 @@ describe('useUserStore restoreSession', () => {
   });
 
   it('login still clears any previous session leftovers in localStorage["hero"]', async () => {
-    localStorage.setItem('hero', JSON.stringify({ nav: { positionByMapId: { m1: { x: 4 } } } }));
+    localStorage.setItem('hero', JSON.stringify({ nav: { locationKey: 'cave' } }));
     loginMock.mockResolvedValue({
       user: { id: 'user-1', username: 'merito', name: 'Merito' },
       accessToken: 'fresh-token',

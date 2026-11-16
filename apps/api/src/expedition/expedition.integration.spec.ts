@@ -21,8 +21,7 @@ import {
 } from './expedition-store';
 
 const dbAvailable = inject('dbAvailable');
-const MAP_A = `map:${randomUUID()}`;
-const STATE_A = `state:${randomUUID()}`;
+const RETIRED_KEYS = [`map:${randomUUID()}`, `state:${randomUUID()}`, 'index', 'respawn'];
 
 describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
   let kit: TestKit;
@@ -75,10 +74,23 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
   it('stores, replaces and removes documents and counts the revision', async () => {
     const { userId, heroId } = await kit.newPlayer();
     const id = await ensureExpedition(kit.db, userId, heroId);
-    expect(await patchBlobs(kit.db, id, { [MAP_A]: '{"a":1}', nav: '{"k":1}' }, [])).toBe(1);
-    expect(await patchBlobs(kit.db, id, { [MAP_A]: '{"a":2}' }, ['nav'])).toBe(2);
-    expect(await loadBlobs(kit.db, id)).toEqual({ [MAP_A]: '{"a":2}' });
+    expect(await patchBlobs(kit.db, id, { progress: '{"a":1}', nav: '{"k":1}' }, [])).toBe(1);
+    expect(await patchBlobs(kit.db, id, { progress: '{"a":2}' }, ['nav'])).toBe(2);
+    expect(await loadBlobs(kit.db, id)).toEqual({ progress: '{"a":2}' });
   });
+
+  it.each(RETIRED_KEYS)(
+    'REQ-4: refuses to write or remove the retired document %s and writes nothing',
+    async (key) => {
+      const { userId, heroId } = await kit.newPlayer();
+      const id = await ensureExpedition(kit.db, userId, heroId);
+      await expect(patchBlobs(kit.db, id, { [key]: '{}', nav: '{}' }, [])).rejects.toMatchObject({
+        code: 'BAD_KEY',
+      });
+      await expect(patchBlobs(kit.db, id, {}, [key])).rejects.toMatchObject({ code: 'BAD_KEY' });
+      expect(await loadBlobs(kit.db, id)).toEqual({});
+    },
+  );
 
   it.each([
     ['a key that is not part of the world', { 'evil/../key': '{}' }, 'BAD_KEY'],
@@ -138,13 +150,16 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
       const { userId, heroId } = await kit.newPlayer();
       const token = (sessions.claim(heroId, 'socket-1'), sessions.tokenOf(heroId)!);
       const saved = await call(userId, 'PATCH', token, {
-        put: { [MAP_A]: '{"tiles":[]}', [STATE_A]: '{"contentVersion":1}' },
+        put: { nav: '{"locationKey":"camping"}', 'hero-store': '{"extraShields":0}' },
       });
       expect(saved.status).toBe(200);
       const loaded = (await (await call(userId, 'GET', null)).json()) as {
         blobs: Record<string, string>;
       };
-      expect(loaded.blobs).toEqual({ [MAP_A]: '{"tiles":[]}', [STATE_A]: '{"contentVersion":1}' });
+      expect(loaded.blobs).toEqual({
+        nav: '{"locationKey":"camping"}',
+        'hero-store': '{"extraShields":0}',
+      });
     });
 
     it('refuses a save without the session secret, and from a tab that was taken over', async () => {

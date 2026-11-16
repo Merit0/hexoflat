@@ -4,8 +4,7 @@ import type { Db } from '../db/db.module';
 import { expeditionBlobs, expeditionMembers, expeditions } from '../db/schema';
 import type { Executor, Tx } from '../player/aggregate-store';
 
-export const BLOB_KEY_PATTERN =
-  /^(?:(?:map|state):[0-9a-f-]{36}|index|respawn|nav|progress|hero-store)$/;
+export const BLOB_KEY_PATTERN = /^(?:nav|progress|hero-store)$/;
 export const MAX_BLOB_BYTES = 3 * 1024 * 1024;
 export const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 export const MAX_BLOB_KEYS = 64;

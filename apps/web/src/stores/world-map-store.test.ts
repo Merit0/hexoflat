@@ -22,7 +22,7 @@ describe('useWorldMapStore: leaveCurrentLocation', () => {
     seedFakeSession('hero-wm');
   });
 
-  it('remembers where the hero stood and stops the world loop', () => {
+  it('stops the world loop and keeps no position of its own', () => {
     const worldStore = useWorldMapStore();
     const hero = useHeroStore();
     worldStore.map = buildRevealedMap();
@@ -33,7 +33,11 @@ describe('useWorldMapStore: leaveCurrentLocation', () => {
 
     worldStore.leaveCurrentLocation();
 
-    expect(hero.nav.positionByMapId['cave-map-id']).toEqual({ columnIndex: 1, rowIndex: 1 });
+    expect(hero.nav).toEqual({
+      locationKey: 'camping',
+      locationMapId: null,
+      returnStack: [],
+    });
     expect(stopSpy).toHaveBeenCalled();
   });
 

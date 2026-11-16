@@ -34,7 +34,7 @@ import { portalLocation } from '@/services/world/portal-service';
 import { portalFxBusy } from '@/render/portal-fx';
 import { executeMovementRoute } from '@/services/hero-movement/movement-executor';
 import { readBlob, writeBlob } from '@/services/persistence/world-blob-store';
-import { HERO_STORE_BLOB } from '@/stores/hero-store-blob';
+import { HERO_STORE_BLOB, restorableHeroState } from '@/stores/hero-store-blob';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
 import { closeBoardsForWalk } from '@/services/hero-movement/close-boards-for-walk';
@@ -59,7 +59,6 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 type HeroNavState = {
   locationKey: LocationKey;
   locationMapId: string | null;
-  positionByMapId: Record<string, IHexCoordinates>;
   returnStack: Array<{ locationKey: string; mapId: string }>;
 };
 
@@ -75,7 +74,6 @@ function defaultNav(): HeroNavState {
   return {
     locationKey: 'camping',
     locationMapId: null,
-    positionByMapId: {},
     returnStack: [],
   };
 }
@@ -135,8 +133,8 @@ export const useHeroStore = defineStore('hero', {
       const raw = readBlob(HERO_STORE_BLOB);
       if (!raw) return;
       try {
-        const saved = JSON.parse(raw) as Record<string, unknown>;
-        if (saved && typeof saved === 'object') this.$patch(saved as never);
+        const saved = restorableHeroState(JSON.parse(raw));
+        if (saved) this.$patch(saved as never);
       } catch (error) {
         console.warn('Could not restore the hero from the saved expedition', error);
       }
@@ -313,11 +311,6 @@ export const useHeroStore = defineStore('hero', {
     setPendingLocation(locationKey: LocationKey) {
       this.nav.locationKey = locationKey;
       this.nav.locationMapId = null;
-      this.saveNavToStorage();
-    },
-
-    rememberPosition(mapId: string, pos: IHexCoordinates) {
-      this.nav.positionByMapId[mapId] = { ...pos };
       this.saveNavToStorage();
     },
 
@@ -498,10 +491,6 @@ export const useHeroStore = defineStore('hero', {
           const engagement = stepped.ambush ?? plan.ambush;
           if (spotted && engagement) this.engageAmbush(engagement);
           worldStore.cacheServedWorld();
-
-          if (worldStore.currentMapId && this.heroCoordinates) {
-            this.rememberPosition(worldStore.currentMapId, this.heroCoordinates);
-          }
 
           if (spotted) return false;
         });
