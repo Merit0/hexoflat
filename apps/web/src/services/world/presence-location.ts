@@ -6,6 +6,7 @@ export type HeroElsewhereListener = (held: LocationKey) => void;
 
 let listener: HeroElsewhereListener | null = null;
 let mapListener: (() => void) | null = null;
+let acceptListener: (() => void) | null = null;
 
 export function heldLocationKey(): LocationKey | null {
   const key = inventorySession.presence?.locationKey ?? '';
@@ -26,4 +27,12 @@ export function onMapMismatch(next: (() => void) | null): void {
 
 export function reportMapMismatch(): void {
   mapListener?.();
+}
+
+export function onMapAccepted(next: (() => void) | null): void {
+  acceptListener = next;
+}
+
+export function reportMapAccepted(): void {
+  acceptListener?.();
 }

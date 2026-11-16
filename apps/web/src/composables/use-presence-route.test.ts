@@ -2,28 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, defineComponent, nextTick, ref, type Ref } from 'vue';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { inventorySession, resetInventorySession } from '@/services/inventory/inventory-session';
-import { reportHeroElsewhere, reportMapMismatch } from '@/services/world/presence-location';
+import {
+  reportHeroElsewhere,
+  reportMapAccepted,
+  reportMapMismatch,
+} from '@/services/world/presence-location';
 import { replaceLocationRoute } from '@/services/world/location-navigator';
-import { refetchServedWorld } from '@/services/world/served-world';
 import { usePresenceRoute } from './use-presence-route';
 
 const goToLocation = vi.fn();
+const retryWorldLoad = vi.fn<(locationKey: LocationKey) => Promise<void>>(async () => {});
+const failWorldLoad = vi.fn();
 
 vi.mock('@/stores/world-map-store', () => ({
-  useWorldMapStore: () => ({ goToLocation, isShowing: () => false }),
+  useWorldMapStore: () => ({ goToLocation, retryWorldLoad, failWorldLoad, isShowing: () => false }),
 }));
 vi.mock('@/services/world/location-navigator', () => ({
   replaceLocationRoute: vi.fn(async () => {}),
 }));
-vi.mock('@/services/world/served-world', () => ({
-  refetchServedWorld: vi.fn(),
-}));
-
-function serverHolds(mapId: string | null) {
-  vi.mocked(refetchServedWorld).mockResolvedValue(
-    mapId ? ({ mapId } as Awaited<ReturnType<typeof refetchServedWorld>>) : null,
-  );
-}
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -53,7 +49,8 @@ describe('the world route follows the place the server holds', () => {
     resetInventorySession();
     goToLocation.mockReset();
     vi.mocked(replaceLocationRoute).mockClear();
-    vi.mocked(refetchServedWorld).mockReset();
+    retryWorldLoad.mockClear();
+    failWorldLoad.mockClear();
   });
 
   it('silently replaces a link to another location with the location the hero stands in', () => {
@@ -107,60 +104,64 @@ describe('the world route follows the place the server holds', () => {
   });
 
   describe('a command refused because the hero stands on another map (MAPFIX-2)', () => {
-    it('reloads the held map of the same location and shows it', async () => {
+    it('reloads the world once through the retry path for the held location', async () => {
       standIn('silesia');
       showRoute(ref<LocationKey | undefined>('silesia'));
-      goToLocation.mockClear();
-      serverHolds('silesia-map');
       reportMapMismatch();
       await settle();
-      expect(refetchServedWorld).toHaveBeenCalledWith('silesia');
-      expect(goToLocation).toHaveBeenCalledTimes(1);
-      expect(goToLocation).toHaveBeenCalledWith('silesia');
+      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
+      expect(retryWorldLoad).toHaveBeenCalledWith('silesia');
       expect(replaceLocationRoute).not.toHaveBeenCalled();
+      expect(failWorldLoad).not.toHaveBeenCalled();
     });
 
-    it('reloads the held map of another location and moves the route there', async () => {
+    it('moves the route to the held location after the reload', async () => {
       standIn('silesia');
       showRoute(ref<LocationKey | undefined>('silesia'));
-      goToLocation.mockClear();
       standIn('camping');
-      serverHolds('camping-map');
       reportMapMismatch();
       await settle();
-      expect(refetchServedWorld).toHaveBeenCalledWith('camping');
+      expect(retryWorldLoad).toHaveBeenCalledWith('camping');
       expect(replaceLocationRoute).toHaveBeenCalledWith('camping');
-      expect(goToLocation).not.toHaveBeenCalled();
     });
 
-    it('shows nothing new when the reload fails or brings another map than the held one', async () => {
+    it('REQ-7: a refusal after the reload shows the load error and reloads no more', async () => {
       standIn('silesia');
       showRoute(ref<LocationKey | undefined>('silesia'));
-      goToLocation.mockClear();
-      serverHolds(null);
+      reportMapMismatch();
       reportMapMismatch();
       await settle();
-      serverHolds('older-map');
+      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
+      reportMapMismatch();
       reportMapMismatch();
       await settle();
-      expect(refetchServedWorld).toHaveBeenCalledTimes(2);
-      expect(goToLocation).not.toHaveBeenCalled();
+      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
+      expect(failWorldLoad).toHaveBeenCalledTimes(2);
+    });
+
+    it('a failed reload still counts as the one reload and raises nothing', async () => {
+      standIn('silesia');
+      showRoute(ref<LocationKey | undefined>('silesia'));
+      retryWorldLoad.mockRejectedValueOnce(new Error('offline'));
+      reportMapMismatch();
+      await settle();
+      reportMapMismatch();
+      await settle();
+      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
+      expect(failWorldLoad).toHaveBeenCalledTimes(1);
       expect(replaceLocationRoute).not.toHaveBeenCalled();
     });
 
-    it('reloads once for refusals that arrive while a reload runs, and again after it', async () => {
+    it('an accepted command on the shown map allows one reload again', async () => {
       standIn('silesia');
       showRoute(ref<LocationKey | undefined>('silesia'));
-      goToLocation.mockClear();
-      serverHolds('silesia-map');
-      reportMapMismatch();
-      reportMapMismatch();
       reportMapMismatch();
       await settle();
-      expect(refetchServedWorld).toHaveBeenCalledTimes(1);
+      reportMapAccepted();
       reportMapMismatch();
       await settle();
-      expect(refetchServedWorld).toHaveBeenCalledTimes(2);
+      expect(retryWorldLoad).toHaveBeenCalledTimes(2);
+      expect(failWorldLoad).not.toHaveBeenCalled();
     });
 
     it('does not reload without a held place or after unmount', async () => {
@@ -170,7 +171,8 @@ describe('the world route follows the place the server holds', () => {
       view.unmount();
       reportMapMismatch();
       await settle();
-      expect(refetchServedWorld).not.toHaveBeenCalled();
+      expect(retryWorldLoad).not.toHaveBeenCalled();
+      expect(failWorldLoad).not.toHaveBeenCalled();
     });
   });
 });

@@ -36,7 +36,11 @@ import {
   stopExpeditionSync,
 } from '@/services/player/expedition-sync';
 import { observeServerClock } from '@/services/battle/battle-clock';
-import { reportHeroElsewhere, reportMapMismatch } from '@/services/world/presence-location';
+import {
+  reportHeroElsewhere,
+  reportMapAccepted,
+  reportMapMismatch,
+} from '@/services/world/presence-location';
 import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
 import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
 import { bindInventoryMirror } from './inventory-mirror';
@@ -395,19 +399,18 @@ export async function ensurePresence(
   if (result.code === HERO_ELSEWHERE) reportHeroElsewhere();
 }
 
-async function loadWorldCache(): Promise<void> {
+async function ensureWorldDocument(locationKey: string): Promise<void> {
   const headers = { 'X-Player-Session': inventorySession.sessionToken ?? '' };
-  for (const locationKey of LOCATION_KEYS) {
-    const world = await apiClient.post<unknown>(
-      '/player/world/ensure',
-      { locationKey },
-      { headers },
-    );
-    cacheServerWorld(locationKey, JSON.stringify(world));
-  }
+  const world = await apiClient.post<unknown>('/player/world/ensure', { locationKey }, { headers });
+  cacheServerWorld(locationKey, JSON.stringify(world));
+}
+
+async function loadWorldCache(): Promise<void> {
+  for (const locationKey of LOCATION_KEYS) await ensureWorldDocument(locationKey);
 }
 
 export const reloadWorldCache = loadWorldCache;
+export const reloadWorldDocument = ensureWorldDocument;
 
 export interface WorldCommandResult {
   ok: boolean;
@@ -474,6 +477,7 @@ export function sendWorldCommand(
     const inventory = response.aggregates.inventory;
     if (inventory && inventory.revision !== inventorySession.revision) applyInventory(inventory);
     if (response.code === MAP_MISMATCH) reportMapMismatch();
+    else if (response.result === 'applied' && mapId.mapId) reportMapAccepted();
     if (response.result === 'conflict') warn(i18n.global.t('player.sync.restored'));
     const common = {
       tileDiffs: response.tileDiffs as TileDiff[],

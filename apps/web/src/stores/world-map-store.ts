@@ -1,6 +1,10 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
-import { forgetAllServerWorlds, cacheServerWorld } from '@/services/player/world-sync';
-import { reloadWorldCache, type WorldCommandResult } from '@/services/inventory/inventory-sync';
+import { forgetAllServerWorlds, cacheServerWorld, wasEvicted } from '@/services/player/world-sync';
+import {
+  reloadWorldCache,
+  reloadWorldDocument,
+  type WorldCommandResult,
+} from '@/services/inventory/inventory-sync';
 import { installTravelledWorlds, readCachedWorld } from '@/services/world/served-world';
 import { takeServerBattleView } from '@/services/battle/battle-server';
 import type { Engagement } from '@hexoflat/engine/squads/engagement';
@@ -60,6 +64,11 @@ import {
 } from '@/stores/server-world-actions';
 import { claimMapSwap, swapActiveMap, type MapSwap } from '@/stores/active-map-swap';
 import { respawnHeroAtCampingAction } from '@/stores/camp-respawn-action';
+
+function cachedSwapOf(locationKey: LocationKey): MapSwap {
+  const served = readCachedWorld(locationKey);
+  return served ? { kind: 'served', locationKey, served } : { kind: 'missing', locationKey };
+}
 
 export const useWorldMapStore = defineStore('world-map-store', {
   state: () => ({
@@ -231,10 +240,21 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     loadLocationMap(locationKey: LocationKey) {
-      const served = readCachedWorld(locationKey);
-      this.swapMap(
-        served ? { kind: 'served', locationKey, served } : { kind: 'missing', locationKey },
-      );
+      if (!readCachedWorld(locationKey) && wasEvicted(locationKey)) {
+        void this.loadEvictedMap(locationKey);
+        return;
+      }
+      this.swapMap(cachedSwapOf(locationKey));
+    },
+
+    async loadEvictedMap(locationKey: LocationKey) {
+      const latest = claimMapSwap();
+      await reloadWorldDocument(locationKey).catch(() => undefined);
+      if (latest()) this.swapMap(cachedSwapOf(locationKey));
+    },
+
+    failWorldLoad() {
+      this.swapMap({ kind: 'missing', locationKey: this.currentLocationKey });
     },
 
     swapMap(swap: MapSwap) {
@@ -248,10 +268,11 @@ export const useWorldMapStore = defineStore('world-map-store', {
       });
     },
 
-    async retryWorldLoad() {
+    async retryWorldLoad(locationKey?: LocationKey) {
+      const target = locationKey ?? this.currentLocationKey;
       const latest = claimMapSwap();
       await reloadWorldCache();
-      if (latest()) this.goToLocation(this.currentLocationKey);
+      if (latest()) this.goToLocation(target);
     },
 
     serverWorldJson(engagement?: Engagement | null): string | null {

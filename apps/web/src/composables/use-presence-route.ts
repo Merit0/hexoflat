@@ -4,11 +4,10 @@ import { useWorldMapStore } from '@/stores/world-map-store';
 import {
   heldLocationKey,
   onHeroElsewhere,
+  onMapAccepted,
   onMapMismatch,
 } from '@/services/world/presence-location';
 import { replaceLocationRoute } from '@/services/world/location-navigator';
-import { refetchServedWorld } from '@/services/world/served-world';
-import { inventorySession } from '@/services/inventory/inventory-session';
 
 export function usePresenceRoute(routeKey: () => LocationKey | undefined): void {
   const worldStore = useWorldMapStore();
@@ -29,22 +28,32 @@ export function usePresenceRoute(routeKey: () => LocationKey | undefined): void 
     if (held !== routeKey()) void replaceLocationRoute(held);
   });
   let reloading = false;
+  let reloaded = false;
   onMapMismatch(() => {
     const held = heldLocationKey();
     if (!held || reloading) return;
+    if (reloaded) {
+      worldStore.failWorldLoad();
+      return;
+    }
     reloading = true;
-    void refetchServedWorld(held)
-      .then(async (served) => {
-        if (!served || served.mapId !== inventorySession.presence?.mapId) return;
+    reloaded = true;
+    void worldStore
+      .retryWorldLoad(held)
+      .then(async () => {
         if (held !== routeKey()) await replaceLocationRoute(held);
-        else worldStore.goToLocation(held);
       })
+      .catch(() => undefined)
       .finally(() => {
         reloading = false;
       });
   });
+  onMapAccepted(() => {
+    if (!reloading) reloaded = false;
+  });
   onBeforeUnmount(() => {
     onHeroElsewhere(null);
     onMapMismatch(null);
+    onMapAccepted(null);
   });
 }

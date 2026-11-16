@@ -14,6 +14,9 @@ import { inventorySession } from '@/services/inventory/inventory-session';
 import { onMapMismatch } from '@/services/world/presence-location';
 import { usePresenceRoute } from '@/composables/use-presence-route';
 import { readCachedWorld } from '@/services/world/served-world';
+import { cachedWorldJson } from '@/services/player/world-sync';
+import { apiClient } from '@/api/client';
+import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
 import {
   fakePresence,
   fakeProgressRow,
@@ -95,6 +98,28 @@ function answerAfterMapChange(type: string, change: () => void) {
     return answer;
   });
 }
+
+function ensureRequests(): string[] {
+  return vi
+    .mocked(apiClient.post)
+    .mock.calls.filter(([path]) => path === '/player/world/ensure')
+    .map(([, body]) => (body as { locationKey: string }).locationKey);
+}
+
+function stepsSent(): string[] {
+  return sentCommands
+    .filter((sent) => sent.command.type === 'WORLD_STEP')
+    .map((sent) => (sent.command.payload as { expectedMapId: string }).expectedMapId);
+}
+
+function remakeServerSilesia(mapId: string) {
+  const remade = createServerWorld('silesia', mapId, `${mapId}-seed`, HERO);
+  fakeStoreWorld(remade);
+  fakeStandIn('silesia');
+  return remade;
+}
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 describe('an answer for a map the client no longer shows (MAPFIX-2)', () => {
   const mismatches = vi.fn();
@@ -219,5 +244,83 @@ describe('an answer for a map the client no longer shows (MAPFIX-2)', () => {
         .map((sent) => (sent.command.payload as { expectedMapId: string }).expectedMapId),
     ).toEqual(['silesia-map', 'silesia-remade']);
     view.unmount();
+  });
+
+  it('REQ-6: a MAP_MISMATCH refusal reloads the world exactly once and the refused step is not sent again', async () => {
+    const { hero, world, map } = inSilesia();
+    const view = showRouteOf('silesia');
+    const target = walkableNeighbour(map, hero.heroCoordinates!);
+    remakeServerSilesia('silesia-remade');
+    sentCommands.length = 0;
+    vi.mocked(apiClient.post).mockClear();
+
+    expect(await hero.moveHeroTo(target)).toBe(false);
+    await vi.waitFor(() => expect(world.currentMapId).toBe('silesia-remade'));
+    await settle();
+
+    expect(ensureRequests()).toEqual([...LOCATION_KEYS]);
+    expect(stepsSent()).toEqual(['silesia-map']);
+    expect(world.worldLoadFailed).toBe(false);
+    view.unmount();
+  });
+
+  it('REQ-7: a second MAP_MISMATCH after the reload shows the world load error and reloads no more', async () => {
+    const { hero, world, map } = inSilesia();
+    const view = showRouteOf('silesia');
+    remakeServerSilesia('silesia-remade');
+    expect(await hero.moveHeroTo(walkableNeighbour(map, hero.heroCoordinates!))).toBe(false);
+    await vi.waitFor(() => expect(world.currentMapId).toBe('silesia-remade'));
+    remakeServerSilesia('silesia-third');
+    sentCommands.length = 0;
+    vi.mocked(apiClient.post).mockClear();
+
+    const next = walkableNeighbour(world.map as HexMapModel, hero.heroCoordinates!);
+    expect(await hero.moveHeroTo(next)).toBe(false);
+    await vi.waitFor(() => expect(world.worldLoadFailed).toBe(true));
+    await settle();
+
+    expect(world.map).toBeNull();
+    expect(world.currentLocationKey).toBe('silesia');
+    expect(ensureRequests()).toEqual([]);
+    expect(stepsSent()).toEqual(['silesia-remade']);
+    view.unmount();
+  });
+
+  it('REQ-8: a dropped stale step evicts the cached document of its location, and the next entry there asks the server', async () => {
+    const { hero, world, map } = inSilesia();
+    const target = walkableNeighbour(map, hero.heroCoordinates!);
+    answerAfterMapChange('WORLD_STEP', () => world.goToLocation('camping'));
+
+    expect(await hero.moveHeroTo(target)).toBe(false);
+    expect(cachedWorldJson('silesia')).toBeNull();
+    expect(cachedWorldJson('camping')).not.toBeNull();
+    vi.mocked(apiClient.post).mockClear();
+
+    world.goToLocation('silesia');
+    await vi.waitFor(() => expect(world.currentLocationKey).toBe('silesia'));
+
+    expect(ensureRequests()).toEqual(['silesia']);
+    expect(world.worldLoadFailed).toBe(false);
+    expect(world.currentMapId).toBe('silesia-map');
+    expect(hero.heroCoordinates).toEqual(target);
+  });
+
+  it('REQ-8: keeps the cached document when its location already shows a newer map', async () => {
+    const { hero, world, map } = inSilesia();
+    const target = walkableNeighbour(map, hero.heroCoordinates!);
+    const remade = createServerWorld('silesia', 'silesia-remade', 'another-seed', HERO);
+    answerAfterMapChange('WORLD_STEP', () => {
+      holdServedWorld(remade);
+      world.swapMap({
+        kind: 'served',
+        locationKey: 'silesia',
+        served: readCachedWorld('silesia')!,
+      });
+    });
+
+    expect(await hero.moveHeroTo(target)).toBe(false);
+
+    expect(world.currentMapId).toBe('silesia-remade');
+    expect(readCachedWorld('silesia')?.mapId).toBe('silesia-remade');
   });
 });
