@@ -194,6 +194,8 @@ Health is in `progress.health` (`{ current, bonus, debt }`, base `HERO_BASE_HEAL
 
 **Commands name their map (MAPFIX-2, 2026-11-16).** Every world command in `MAP_BOUND_WORLD_COMMANDS` (step, action, tick, travel, portal open/enter/close) has a required `expectedMapId`; `mapRefusal(presence, command)` (`world/map-guard.ts`) answers `MAP_MISMATCH` when it differs from `presence.mapId` (a `null` presence is left to `NO_WORLD`). A new world command that runs on the presence map gets `onMap` in its schema and joins that list; `WORLD_ENTER` (sets presence) and `WORLD_BATTLE` stay without it.
 
+**Board kinds are exhaustive (MAPFIX-5, 2026-11-16).** `BoardKind` lives only in `registry/board-kind.ts`. Never branch with `boardKind === 'DUNGEON'`: write a small `switch` with `assertNever` (`utils/assert-never.ts`), like `freshAfterLeave`, `freshAfterDeath`, `countsAsTrip`, `campHexFor` (web: `regeneratesInDevPanel`, `fogLookForBoardKind`), so a new kind fails typecheck at every decision. Branches on the `'camping'` key stay plain checks.
+
 ## Quest sequences (`src/quests/`, Q1 of `docs/quest-board/`, 2026-11-12)
 
 - `sequences/rules.ts`: Zod `SequenceRuleSchema` (arith, geom, alternating, growingStep) and the registry `RULES` (`params`, `build`, `first`, `advance(rule, index, value)`, `slips`). A new kind is one `RULES` entry; every function takes an optional `registry` argument so tests extend it without touching quest code. `termsOf`, `continueFrom(rule, step, wrongValue, count)` (values of steps step+1..count, same recurrence from the wrong value), `termsFitLimits(terms, maxDigits)`.

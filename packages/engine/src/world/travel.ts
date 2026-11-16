@@ -8,7 +8,9 @@ import type { ProgressState } from '../aggregates/progress-state';
 import { revealAroundHero, revealEntryTile } from '../map/fog-service';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import type { BoardKind } from '../registry/board-kind';
 import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
+import { assertNever } from '../utils/assert-never';
 import { deriveStream } from '../utils/random-seeded';
 import { coordinateKey } from '../utils/hex-utils';
 import { findArrivalHex, findEntryHex } from './hero-placement';
@@ -145,7 +147,7 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
   revealAroundHero(destination.map, destination.heroCoordinates);
   revealEntryTile(destination.map);
 
-  if (MapRegistry.get(to).boardKind === 'DUNGEON') progress.trips += 1;
+  if (countsAsTrip(MapRegistry.get(to).boardKind)) progress.trips += 1;
   progress.presence = {
     locationKey: to,
     mapId: destination.mapId,
@@ -156,4 +158,15 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
     payload: { heroId: run.heroId, from: origin.locationKey, to, via: via.kind },
   });
   return { ok: true, origin, destination, replaced, touched, progress, inventory, events, effects };
+}
+
+function countsAsTrip(kind: BoardKind): boolean {
+  switch (kind) {
+    case 'DUNGEON':
+      return true;
+    case 'STATIC':
+      return false;
+    default:
+      return assertNever(kind);
+  }
 }

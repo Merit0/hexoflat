@@ -1,6 +1,8 @@
 import { revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { closePortalIfOpen } from '../portal/apply-portal';
+import type { BoardKind } from '../registry/board-kind';
 import { MapRegistry } from '../registry/world-map-registry';
+import { assertNever } from '../utils/assert-never';
 import type { ServerWorld } from './server-world';
 import { removeClosedPortals } from './world-leave';
 import { heroOf } from './world-commands';
@@ -26,7 +28,7 @@ export function respawnWorld(run: TravelRun): TravelOutcome {
 
   const inCamp = origin.locationKey === RESPAWN_LOCATION;
   const replaced =
-    !inCamp && MapRegistry.get(origin.locationKey).boardKind === 'DUNGEON'
+    !inCamp && freshAfterDeath(MapRegistry.get(origin.locationKey).boardKind)
       ? run.create(origin.locationKey)
       : null;
   const destination: ServerWorld = inCamp
@@ -62,4 +64,15 @@ export function respawnWorld(run: TravelRun): TravelOutcome {
     events,
     effects: [],
   };
+}
+
+function freshAfterDeath(kind: BoardKind): boolean {
+  switch (kind) {
+    case 'DUNGEON':
+      return true;
+    case 'STATIC':
+      return false;
+    default:
+      return assertNever(kind);
+  }
 }

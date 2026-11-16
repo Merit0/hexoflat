@@ -3,7 +3,9 @@ import type { ProgressState } from '../aggregates/progress-state';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { removeReturnPortal } from '../portal/portal-placement';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import type { BoardKind } from '../registry/board-kind';
 import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
+import { assertNever } from '../utils/assert-never';
 import type { ServerWorld } from './server-world';
 
 export interface WorldFinders {
@@ -55,5 +57,16 @@ export function leaveOrigin(
   ) {
     progress.sealedUntil[origin.locationKey] = now + definition.respawnAfterClearedMs;
   }
-  return definition.boardKind === 'DUNGEON' ? finders.create(origin.locationKey) : null;
+  return freshAfterLeave(definition.boardKind) ? finders.create(origin.locationKey) : null;
+}
+
+function freshAfterLeave(kind: BoardKind): boolean {
+  switch (kind) {
+    case 'DUNGEON':
+      return true;
+    case 'STATIC':
+      return false;
+    default:
+      return assertNever(kind);
+  }
 }

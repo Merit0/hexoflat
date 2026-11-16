@@ -1,6 +1,8 @@
 import { reseedWorld } from '@/services/rng/world-rng';
 import { MapRegistry, type LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
+import type { BoardKind } from '@hexoflat/engine/registry/board-kind';
+import { assertNever } from '@hexoflat/engine/utils/assert-never';
 import type { BoardRecipeInput } from '@hexoflat/engine/content/boards/recipe-schema';
 import { runBoardPipeline } from '@hexoflat/engine/boards/pipeline/run-board-pipeline';
 import { requireWorldSeed } from '@/stores/world-map-store-helpers';
@@ -9,6 +11,17 @@ import type { MapSwap } from '@/stores/active-map-swap';
 let nextSeedCounter = 0;
 
 export type DevRecipeParams = Record<string, unknown>;
+
+function regeneratesInDevPanel(kind: BoardKind): boolean {
+  switch (kind) {
+    case 'DUNGEON':
+      return true;
+    case 'STATIC':
+      return false;
+    default:
+      return assertNever(kind);
+  }
+}
 
 export interface DevBoardPanelHost {
   currentLocationKey: LocationKey;
@@ -21,7 +34,7 @@ export interface DevBoardPanelHost {
 export function devRegenerateDungeon(host: DevBoardPanelHost, params: DevRecipeParams): void {
   const locationKey = host.currentLocationKey;
   const def = MapRegistry.get(locationKey);
-  if (def.boardKind !== 'DUNGEON' || !host.currentMapId) return;
+  if (!regeneratesInDevPanel(def.boardKind) || !host.currentMapId) return;
 
   reseedWorld(crypto.randomUUID());
   host.swapMap({
@@ -34,7 +47,7 @@ export function devRegenerateDungeon(host: DevBoardPanelHost, params: DevRecipeP
 export function devNextSeed(host: DevBoardPanelHost, params: DevRecipeParams): void {
   const locationKey = host.currentLocationKey;
   const def = MapRegistry.get(locationKey);
-  if (def.boardKind !== 'DUNGEON' || !host.currentMapId) return;
+  if (!regeneratesInDevPanel(def.boardKind) || !host.currentMapId) return;
 
   nextSeedCounter += 1;
   const seed = `${requireWorldSeed()}:panel:next:${nextSeedCounter}`;

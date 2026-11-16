@@ -8,8 +8,10 @@ import type { LocationKey } from '../registry/location-key';
 import { getPortalAbility, type SkillRanks } from '../skills/skill-rules';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { heroPortal, type PortalCloseReason, type PortalLink } from './portal-state';
+import type { BoardKind } from '../registry/board-kind';
+import { assertNever } from '../utils/assert-never';
 
-export type BoardKind = 'STATIC' | 'DUNGEON';
+export type { BoardKind };
 
 export interface PortalLocation {
   locationKey: LocationKey;
@@ -79,9 +81,20 @@ export function planPortalOpening(
       originLocationKey: location.locationKey,
       originMapId: location.mapId,
       originHex: { ...target },
-      campHex: location.boardKind === 'DUNGEON' ? null : { ...CAMP_PORTAL_SPOT },
+      campHex: campHexFor(location.boardKind),
     },
   };
+}
+
+function campHexFor(kind: BoardKind): IHexCoordinates | null {
+  switch (kind) {
+    case 'DUNGEON':
+      return null;
+    case 'STATIC':
+      return { ...CAMP_PORTAL_SPOT };
+    default:
+      return assertNever(kind);
+  }
 }
 
 export interface PortalDestination {

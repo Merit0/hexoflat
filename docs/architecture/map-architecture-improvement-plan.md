@@ -56,6 +56,12 @@ Source: read-only audit of the map architecture (2026-11-16, branch `codex/map-o
 - **Tests.** `stores/world-map-swap-paths.test.ts` (REQ-1, inline snapshots taken before the refactor: bootstrap, retry, board crossing, portal, quest exit, camp respawn, refetched map, dev board, logout; `crypto.randomUUID` is made deterministic because the fake server's map ids decide the entry hex), `stores/world-map-swap-order.test.ts` (REQ-2 retry overtaken by a travel, two overlapping refetches; REQ-3 one map swap on open for a matching and a replaced deep link; all red before). E2E `world-deep-link`, `board-exit`, `return-portal`, `dungeon-fog`, `quest-world-entry` 11/11.
 - **Left (M5).** A quest exit still loads the camp twice: the route watch loads the cached camp as soon as the quest route is replaced, then `leaveQuestField` loads the refetched one.
 
+### MAPFIX-5. Compile-time guard for board kinds (AUDIT-MAP-1 MAP-08) [DONE — 2026-11-16]
+
+- **Trigger.** Branches on `boardKind` were `=== 'DUNGEON'` / `!== 'DUNGEON'` checks, and the kind union was written out in three places, so a new kind would silently fall into the STATIC side.
+- **Result.** One union `BoardKind` in `packages/engine/src/registry/board-kind.ts` (`MapDefinition.boardKind` uses it, `portal-rules.ts` re-exports it). Every branch on the kind is a `switch` with `assertNever`: `portal-rules.ts` `campHexFor`, `world-leave.ts` `freshAfterLeave`, `respawn-world.ts` `freshAfterDeath`, `travel.ts` `countsAsTrip`, web `dev-board-panel-actions.ts` `regeneratesInDevPanel`, `render/fog-look.ts` `fogLookForBoardKind`. Behaviour unchanged, no test edited. Adding a kind to the union gave one typecheck error in each of the six (checked, reverted).
+- **Left as is.** Branches on the `'camping'` location key (portal rules, `IN_CAMPING`, camp facilities/Book install, respawn place, home location, portal return) are about one location, not a kind, and cannot be exhaustive. `descriptor.kind` checks in `dev-board-panel.vue` and `dev-board-panel-actions.ts` narrow the `BoardDescriptor` union (`STATIC | DUNGEON | RECIPE`), a different union.
+
 ### M4. One failing animation cannot stop `Ticker.shared` (robustness) [PARTLY DONE in MAPFIX-3]
 
 - `runTween` and `hero-layer.tweenTo` run `onFrame` in `try`; on an error they remove their handler, resolve `done` and report the error, so a broken frame never blocks other listeners. **Done in MAPFIX-3** (`tweenTo` uses `runTween`).
