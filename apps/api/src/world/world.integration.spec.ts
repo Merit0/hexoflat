@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import {
   EHexActionTypeForTests,
   deserializeWorld,
+  onHeldMap,
   placeHeroIn,
   serializeWorld,
 } from './world-test-support';
@@ -46,12 +47,13 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     payload: Record<string, unknown>,
     options: { revision?: number; commandId?: string } = {},
   ): Promise<WorldResponse> {
+    const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
     return world.execute(userId, {
       commandId: options.commandId ?? randomUUID(),
       heroId,
       aggregate: 'progress',
-      expectedRevision: options.revision ?? (await progressRevision(userId, heroId)),
-      command: { type, payload: { heroId, ...payload } },
+      expectedRevision: options.revision ?? progress.revision,
+      command: { type, payload: { heroId, ...onHeldMap(type, payload, progress.state) } },
     });
   }
 
@@ -210,6 +212,156 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       ),
     );
     expect(racing.filter((r) => r.result === 'applied')).toHaveLength(1);
+  });
+
+  describe('a command for a map the hero has left (MAPFIX-2)', () => {
+    async function heldState(userId: string, heroId: string) {
+      const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+      const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
+      const { mapId } = (progress.state as { presence: { mapId: string } }).presence;
+      const blobs = await kit.db
+        .select()
+        .from(expeditionBlobs)
+        .where(eq(expeditionBlobs.expeditionId, expeditionId));
+      const ledger = await kit.db.select().from(itemLedger).where(eq(itemLedger.heroId, heroId));
+      return {
+        mapId,
+        revision: progress.revision,
+        documents: Object.fromEntries(blobs.map((row) => [row.key, row.data])),
+        ledger: ledger.length,
+      };
+    }
+
+    async function leftCamp() {
+      const { userId, heroId } = await kit.newPlayer();
+      await arrive(userId, heroId, 'camping');
+      const target = await firstStepTarget(userId, heroId);
+      const camp = (await heldState(userId, heroId)).mapId;
+      await arrive(userId, heroId, 'silesia');
+      return { userId, heroId, target, camp };
+    }
+
+    const MAP_BOUND_SAMPLES: [string, Record<string, unknown>][] = [
+      ['WORLD_STEP', { target: { columnIndex: 1, rowIndex: 1 } }],
+      [
+        'WORLD_ACTION',
+        {
+          coordinates: { columnIndex: 1, rowIndex: 1 },
+          actionType: EHexActionTypeForTests.TAKE,
+          toolKey: HEXOBJECT_KEYS.HAND,
+        },
+      ],
+      ['WORLD_TICK', {}],
+      ['WORLD_TRAVEL', { via: { kind: 'exit' } }],
+      ['WORLD_PORTAL_OPEN', { target: { columnIndex: 1, rowIndex: 1 } }],
+      ['WORLD_PORTAL_ENTER', {}],
+      ['WORLD_PORTAL_CLOSE', {}],
+    ];
+
+    it('REQ-2: refuses every map-bound command naming the left map, and stores nothing', async () => {
+      const { userId, heroId, target, camp } = await leftCamp();
+      const before = await heldState(userId, heroId);
+      expect(before.mapId).not.toBe(camp);
+      const samples = MAP_BOUND_SAMPLES.map(
+        ([type, payload]) => [type, type === 'WORLD_STEP' ? { target } : payload] as const,
+      );
+      for (const [type, payload] of samples) {
+        const refused = await send(userId, heroId, type, { ...payload, expectedMapId: camp });
+        expect(refused, type).toMatchObject({
+          result: 'rejected',
+          code: 'MAP_MISMATCH',
+          events: [],
+          tileDiffs: [],
+          effects: [],
+          hero: null,
+        });
+      }
+      expect(await heldState(userId, heroId)).toEqual(before);
+      const journal = await kit.db
+        .select()
+        .from(commandJournal)
+        .where(and(eq(commandJournal.heroId, heroId), eq(commandJournal.reason, 'MAP_MISMATCH')));
+      expect(journal.map((row) => row.commandType).sort()).toEqual(
+        samples.map(([type]) => type).sort(),
+      );
+      expect(journal.every((row) => row.result === 'rejected' && row.newRevision === null)).toBe(
+        true,
+      );
+      expect(journal.flatMap((row) => row.events as unknown[])).toEqual([]);
+    });
+
+    it('REQ-2: still runs a command that names the map the hero stands on', async () => {
+      const { userId, heroId } = await leftCamp();
+      const target = await firstStepTarget(userId, heroId);
+      const { mapId } = await heldState(userId, heroId);
+      const stepped = await send(userId, heroId, 'WORLD_STEP', { target, expectedMapId: mapId });
+      expect(stepped.result).toBe('applied');
+      expect(stepped.hero).toMatchObject({ mapId, coordinates: target });
+    });
+
+    it('REQ-2: a schema without expectedMapId is refused before anything is read', async () => {
+      const { userId, heroId } = await kit.newPlayer();
+      await arrive(userId, heroId, 'camping');
+      const revision = await progressRevision(userId, heroId);
+      await expect(
+        world.execute(userId, {
+          commandId: randomUUID(),
+          heroId,
+          aggregate: 'progress',
+          expectedRevision: revision,
+          command: { type: 'WORLD_TICK', payload: { heroId } },
+        }),
+      ).rejects.toMatchObject({ code: 'INVALID_COMMAND' });
+    });
+
+    it('REQ-3: a repeated commandId returns the original result, without a map change in between', async () => {
+      const { userId, heroId } = await kit.newPlayer();
+      await arrive(userId, heroId, 'camping');
+      const target = await firstStepTarget(userId, heroId);
+      const { mapId, revision } = await heldState(userId, heroId);
+      const commandId = randomUUID();
+      const step = { target, expectedMapId: mapId };
+      const first = await send(userId, heroId, 'WORLD_STEP', step, { revision, commandId });
+      const again = await send(userId, heroId, 'WORLD_STEP', step, { revision, commandId });
+      expect(first.result).toBe('applied');
+      expect(again).toMatchObject({ result: 'applied', replayed: true, events: first.events });
+      expect(again.code).toBeUndefined();
+    });
+
+    it('REQ-3: a repeated commandId returns the original result after the hero changed map', async () => {
+      const { userId, heroId } = await kit.newPlayer();
+      await arrive(userId, heroId, 'camping');
+      const target = await firstStepTarget(userId, heroId);
+      const { mapId, revision } = await heldState(userId, heroId);
+      const commandId = randomUUID();
+      const step = { target, expectedMapId: mapId };
+      const first = await send(userId, heroId, 'WORLD_STEP', step, { revision, commandId });
+      expect(first.result).toBe('applied');
+      await arrive(userId, heroId, 'silesia');
+      const moved = await heldState(userId, heroId);
+      expect(moved.mapId).not.toBe(mapId);
+      const again = await send(userId, heroId, 'WORLD_STEP', step, { revision, commandId });
+      expect(again).toMatchObject({ result: 'applied', replayed: true, events: first.events });
+      expect(again.code).toBeUndefined();
+      expect(await heldState(userId, heroId)).toEqual(moved);
+    });
+
+    it('REQ-3: a repeated refused commandId stays refused with MAP_MISMATCH, also back on that map', async () => {
+      const { userId, heroId, target, camp } = await leftCamp();
+      const revision = await progressRevision(userId, heroId);
+      const commandId = randomUUID();
+      const step = { target, expectedMapId: camp };
+      const first = await send(userId, heroId, 'WORLD_STEP', step, { revision, commandId });
+      expect(first).toMatchObject({ result: 'rejected', code: 'MAP_MISMATCH' });
+      const again = await send(userId, heroId, 'WORLD_STEP', step, { revision, commandId });
+      expect(again).toMatchObject({ result: 'rejected', code: 'MAP_MISMATCH', replayed: true });
+      await arrive(userId, heroId, 'camping');
+      const back = await heldState(userId, heroId);
+      expect(back.mapId).toBe(camp);
+      const later = await send(userId, heroId, 'WORLD_STEP', step, { revision, commandId });
+      expect(later).toMatchObject({ result: 'rejected', code: 'MAP_MISMATCH', replayed: true });
+      expect(await heldState(userId, heroId)).toEqual(back);
+    });
   });
 
   it('gives the loot of a finished action to the inventory, by the server clock, once', async () => {

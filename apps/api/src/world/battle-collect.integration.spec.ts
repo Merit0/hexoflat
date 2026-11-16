@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import {
   EHexActionTypeForTests,
   deserializeWorld,
+  onHeldMap,
   placeHeroIn,
   serializeWorld,
 } from './world-test-support';
@@ -47,13 +48,13 @@ describe.skipIf(!dbAvailable)('battle close and restore as they are (real Postgr
     type: string,
     payload: Record<string, unknown>,
   ): Promise<WorldResponse> {
-    const revision = (await kit.service.snapshot(userId, heroId)).aggregates.progress!.revision;
+    const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
     return world.execute(userId, {
       commandId: randomUUID(),
       heroId,
       aggregate: 'progress',
-      expectedRevision: revision,
-      command: { type, payload: { heroId, ...payload } },
+      expectedRevision: progress.revision,
+      command: { type, payload: { heroId, ...onHeldMap(type, payload, progress.state) } },
     });
   }
 

@@ -420,9 +420,8 @@ export interface WorldCommandResult {
   steps: NonNullable<WorldCommandResponse['steps']>;
   serverNowMs: number | null;
   replayed?: boolean;
+  mapId?: string;
 }
-
-export type WorldStepResult = WorldCommandResult;
 
 export function sendWorldCommand(
   type:
@@ -437,6 +436,7 @@ export function sendWorldCommand(
     | 'WORLD_BATTLE',
   payload: Record<string, unknown>,
 ): Promise<WorldCommandResult> {
+  const mapId = typeof payload.expectedMapId === 'string' ? { mapId: payload.expectedMapId } : {};
   const failed = (code: string): WorldCommandResult => ({
     ok: false,
     code,
@@ -446,6 +446,7 @@ export function sendWorldCommand(
     engagement: null,
     steps: [],
     serverNowMs: null,
+    ...mapId,
   });
   if (inventorySession.status !== 'live') return Promise.resolve(failed('OFFLINE'));
   return enqueue(async (): Promise<WorldCommandResult> => {
@@ -482,19 +483,13 @@ export function sendWorldCommand(
       steps: response.steps ?? [],
       serverNowMs: response.serverNowMs ?? null,
       ...(response.replayed ? { replayed: true } : {}),
+      ...mapId,
     };
     if (response.result !== 'applied') {
       return { ...common, ok: false, code: response.code ?? response.result };
     }
     return { ...common, ok: true, ...(response.code ? { code: response.code } : {}) };
   });
-}
-
-export function sendWorldStep(target: {
-  columnIndex: number;
-  rowIndex: number;
-}): Promise<WorldCommandResult> {
-  return sendWorldCommand('WORLD_STEP', { target });
 }
 
 export function pushHealthFixture(current: number): Promise<ProgressResult> {

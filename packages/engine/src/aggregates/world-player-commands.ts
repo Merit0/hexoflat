@@ -28,6 +28,7 @@ const clientHint = z
   })
   .strict();
 const base = { heroId: z.string().min(1) };
+const onMap = { ...base, expectedMapId: z.string().min(1).max(128) };
 
 export const WORLD_COMMAND_SCHEMAS = {
   WORLD_ENTER: z
@@ -39,7 +40,7 @@ export const WORLD_COMMAND_SCHEMAS = {
   WORLD_STEP: z
     .object({
       type: z.literal('WORLD_STEP'),
-      payload: z.object({ ...base, target: coordinates.strict() }).strict(),
+      payload: z.object({ ...onMap, target: coordinates.strict() }).strict(),
     })
     .strict(),
   WORLD_ACTION: z
@@ -47,7 +48,7 @@ export const WORLD_COMMAND_SCHEMAS = {
       type: z.literal('WORLD_ACTION'),
       payload: z
         .object({
-          ...base,
+          ...onMap,
           coordinates: coordinates.strict(),
           actionType: z.enum(EHexActionType),
           toolKey: z.string().refine((key) => KNOWN_KEYS.has(key), 'unknown tool'),
@@ -61,7 +62,7 @@ export const WORLD_COMMAND_SCHEMAS = {
       type: z.literal('WORLD_TRAVEL'),
       payload: z
         .object({
-          ...base,
+          ...onMap,
           via: z.discriminatedUnion('kind', [
             z.object({ kind: z.literal('exit') }).strict(),
             z.object({ kind: z.literal('gate'), coordinates: coordinates.strict() }).strict(),
@@ -73,14 +74,14 @@ export const WORLD_COMMAND_SCHEMAS = {
   WORLD_PORTAL_OPEN: z
     .object({
       type: z.literal('WORLD_PORTAL_OPEN'),
-      payload: z.object({ ...base, target: coordinates.strict() }).strict(),
+      payload: z.object({ ...onMap, target: coordinates.strict() }).strict(),
     })
     .strict(),
   WORLD_PORTAL_ENTER: z
-    .object({ type: z.literal('WORLD_PORTAL_ENTER'), payload: z.object(base).strict() })
+    .object({ type: z.literal('WORLD_PORTAL_ENTER'), payload: z.object(onMap).strict() })
     .strict(),
   WORLD_PORTAL_CLOSE: z
-    .object({ type: z.literal('WORLD_PORTAL_CLOSE'), payload: z.object(base).strict() })
+    .object({ type: z.literal('WORLD_PORTAL_CLOSE'), payload: z.object(onMap).strict() })
     .strict(),
   WORLD_BATTLE: z
     .object({
@@ -97,13 +98,23 @@ export const WORLD_COMMAND_SCHEMAS = {
   WORLD_TICK: z
     .object({
       type: z.literal('WORLD_TICK'),
-      payload: z.object({ ...base, client: clientHint.optional() }).strict(),
+      payload: z.object({ ...onMap, client: clientHint.optional() }).strict(),
     })
     .strict(),
 } as const;
 
 export type TWorldCommandType = keyof typeof WORLD_COMMAND_SCHEMAS;
 export type WorldPlayerCommand = z.infer<(typeof WORLD_COMMAND_SCHEMAS)[TWorldCommandType]>;
+
+export const MAP_BOUND_WORLD_COMMANDS = [
+  'WORLD_STEP',
+  'WORLD_ACTION',
+  'WORLD_TICK',
+  'WORLD_TRAVEL',
+  'WORLD_PORTAL_OPEN',
+  'WORLD_PORTAL_ENTER',
+  'WORLD_PORTAL_CLOSE',
+] as const satisfies readonly TWorldCommandType[];
 
 export function isWorldCommandType(type: string): type is TWorldCommandType {
   return Object.hasOwn(WORLD_COMMAND_SCHEMAS, type);

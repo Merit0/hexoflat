@@ -3,6 +3,7 @@ import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { BoardCrossing } from '@hexoflat/engine/hero-movement/board-crossing';
 import { portalLocation } from '@/services/world/portal-service';
 import { installTravelledWorlds, travelOnServer } from '@/services/world/served-world';
+import { holdsMap } from '@/services/world/held-map';
 import { routeToLocation } from '@/services/world/location-navigator';
 import { useHeroStore } from '@/stores/hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -36,7 +37,7 @@ export async function crossExitIfStanding(): Promise<boolean> {
     },
     { kind: 'exit' },
   );
-  if (!result.ok) return false;
+  if (!result.ok || !holdsMap(worldStore, result.mapId)) return false;
   installTravelledWorlds(result);
   heroStore.heroCoordinates = { ...hero.coordinates };
   worldStore.goToLocation(crossing.to);

@@ -19,6 +19,7 @@ import { QuestRunService } from '../quests/quest-run.service';
 import {
   EHexActionTypeForTests,
   deserializeWorld,
+  onHeldMap,
   serializeWorld,
   placeHeroIn,
 } from '../world/world-test-support';
@@ -90,12 +91,13 @@ describe.skipIf(!dbAvailable)(
       type: string,
       payload: Record<string, unknown>,
     ): Promise<WorldResponse> {
+      const progress = await progressOf(userId, heroId);
       return world.execute(userId, {
         commandId: randomUUID(),
         heroId,
         aggregate: 'progress',
-        expectedRevision: (await progressOf(userId, heroId)).revision,
-        command: { type, payload: { heroId, ...payload } },
+        expectedRevision: progress.revision,
+        command: { type, payload: { heroId, ...onHeldMap(type, payload, progress.state) } },
       });
     }
 

@@ -52,6 +52,7 @@ import { inventorySession } from '@/services/inventory/inventory-session';
 import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
 import { buildClientHint } from '@/services/world/served-world';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -465,6 +466,7 @@ export const useHeroStore = defineStore('hero', {
       try {
         await executeMovementRoute(route, async (coord) => {
           const stepped = await worldStore.stepOnServer(coord);
+          if (stepped.code === MAP_MISMATCH) return false;
           if (!stepped.ok) {
             const blocked = ['BLOCKED', 'INVALID_STEP', 'UNREACHABLE', 'NO_WORLD'];
             heroToolStore.setActionMessage(

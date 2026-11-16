@@ -26,6 +26,7 @@ import {
 } from '@hexoflat/engine';
 import { projectWorldForClient } from '@hexoflat/engine/world/client-projection';
 import { enterRefusal } from '@hexoflat/engine/world/enter-rule';
+import { mapRefusal } from '@hexoflat/engine/world/map-guard';
 import type {
   HeroSnapshot,
   PlayerCommandResponse,
@@ -265,11 +266,13 @@ function handleWorld(envelope: PlayerEnvelope) {
   sentCommands.push(envelope);
   const s = store!;
   const base = { commandId: envelope.commandId, tileDiffs: [], effects: [], events: [] };
-  if (s.progress.revision !== envelope.expectedRevision || !world) {
+  const conflict = s.progress.revision !== envelope.expectedRevision && 'REVISION_CONFLICT';
+  const refused = world && (conflict || mapRefusal(s.progress.state.presence, envelope.command));
+  if (refused || !world) {
     return {
       ...base,
-      result: world ? ('conflict' as const) : ('rejected' as const),
-      code: world ? 'REVISION_CONFLICT' : 'NO_WORLD',
+      result: refused === 'REVISION_CONFLICT' ? ('conflict' as const) : ('rejected' as const),
+      code: refused || 'NO_WORLD',
       hero: null,
       aggregates: snapshot().aggregates,
     };

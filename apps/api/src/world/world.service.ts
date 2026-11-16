@@ -42,6 +42,7 @@ import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { BATTLE_RULES, type BattleRules } from '@hexoflat/engine/battle/battle-content';
 import { applyBattleFixture, battleFixtureSchema } from '@hexoflat/engine/battle/battle-fixtures';
 import { applyWorldFixture, worldFixtureSchema } from '@hexoflat/engine/world/world-fixtures';
+import { mapRefusal } from '@hexoflat/engine/world/map-guard';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
@@ -317,6 +318,11 @@ export class WorldService {
     }
 
     const presence = progressState.presence;
+    const mismatch = mapRefusal(presence, command);
+    if (mismatch) {
+      await journal('rejected', [], mismatch, null);
+      return respond('rejected', mismatch, [], [], null);
+    }
     world = presence ? await loadWorld(tx, expeditionId, presence.mapId, now) : null;
     if (!world || !presence) {
       await journal('rejected', [], 'NO_WORLD', null);
