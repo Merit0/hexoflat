@@ -13,6 +13,7 @@ import {
   battleFloorSprite,
   battleObjectSprite,
 } from '@/render/battle/battle-look';
+import { subscribeTicker } from '@/render/ticker-subscription';
 
 export interface BattleLayerDeps {
   worldContainer: Container;
@@ -44,6 +45,7 @@ export function createBattleBoardLayer(deps: BattleLayerDeps): BattleBoardLayer 
   deps.worldContainer.addChild(container);
   let blades: Sprite[] = [];
   let unsubscribers: Array<() => void> = [];
+  let unsubscribeSpin: (() => void) | null = null;
 
   const coverTile: Fit = (sprite) => applyObjectFit(sprite, w, h, EHexobjectGroup.CONSTRUCTION);
   const spinningTile: Fit = (sprite) => {
@@ -72,8 +74,14 @@ export function createBattleBoardLayer(deps: BattleLayerDeps): BattleBoardLayer 
   };
 
   function setSpinning(on: boolean) {
-    deps.ticker.remove(spin);
-    if (on && blades.length) deps.ticker.add(spin);
+    unsubscribeSpin?.();
+    unsubscribeSpin = null;
+    if (on && blades.length) {
+      unsubscribeSpin = subscribeTicker(deps.ticker, spin, {
+        source: 'battle-board-layer saw spin',
+        onFailure: () => (unsubscribeSpin = null),
+      });
+    }
   }
 
   function anchorOf(tile: Container, event: FederatedPointerEvent): TileAnchor {
@@ -144,7 +152,7 @@ export function createBattleBoardLayer(deps: BattleLayerDeps): BattleBoardLayer 
       setSpinning(visible);
     },
     destroy() {
-      deps.ticker.remove(spin);
+      setSpinning(false);
       clear();
       container.destroy({ children: true });
     },

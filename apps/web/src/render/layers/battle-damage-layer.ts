@@ -2,6 +2,7 @@ import { Container, Sprite, Text, type Ticker } from 'pixi.js';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { BATTLE_MOTION, BATTLE_TIMING } from '@/render/battle/battle-timing';
 import type { DamageNumber } from '@/render/battle/battle-animation-sample';
+import { subscribeTicker } from '@/render/ticker-subscription';
 import type { BattleLayerDeps } from './battle-board-layer';
 
 export interface BattleDamageLayer {
@@ -27,7 +28,7 @@ export function createBattleDamageLayer(deps: BattleLayerDeps): BattleDamageLaye
   container.eventMode = 'none';
   deps.worldContainer.addChild(container);
   let popups: Popup[] = [];
-  let running = false;
+  let unsubscribeTick: (() => void) | null = null;
 
   function draw(popup: Popup) {
     const t = Math.min(1, popup.ageMs / BATTLE_TIMING.damageNumberMs);
@@ -53,9 +54,8 @@ export function createBattleDamageLayer(deps: BattleLayerDeps): BattleDamageLaye
   };
 
   function stop() {
-    if (!running) return;
-    running = false;
-    deps.ticker.remove(onTick);
+    unsubscribeTick?.();
+    unsubscribeTick = null;
   }
 
   function halfHeart(): Sprite {
@@ -101,9 +101,11 @@ export function createBattleDamageLayer(deps: BattleLayerDeps): BattleDamageLaye
       draw(popup);
       popups.push(popup);
     }
-    if (!running && popups.length) {
-      running = true;
-      deps.ticker.add(onTick);
+    if (!unsubscribeTick && popups.length) {
+      unsubscribeTick = subscribeTicker(deps.ticker, onTick, {
+        source: 'battle-damage-layer',
+        onFailure: () => (unsubscribeTick = null),
+      });
     }
   }
 

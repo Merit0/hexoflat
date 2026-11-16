@@ -5,6 +5,7 @@ import { createHexMask } from '@/render/hex-geometry';
 import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { easeOutCubic } from '@/render/tween';
 import { holdPortalFxFor } from '@/render/portal-fx';
+import { subscribeTicker } from '@/render/ticker-subscription';
 import { PORTAL_FRAME_URL, PORTAL_FX, PORTAL_VORTEX_URL } from '@/render/portal-fx-config';
 
 export interface PortalLayerDeps {
@@ -55,7 +56,7 @@ export function createPortalLayer(deps: PortalLayerDeps): PortalLayer {
   const nodes = new Map<string, PortalNode>();
   const unsubscribes: Array<() => void> = [];
   let boardKey: string | null | undefined;
-  let tickerHandler: (() => void) | null = null;
+  let unsubscribeTick: (() => void) | null = null;
 
   function tick() {
     const now = performance.now();
@@ -84,12 +85,14 @@ export function createPortalLayer(deps: PortalLayerDeps): PortalLayer {
   }
 
   function updateTicker() {
-    if (nodes.size > 0 && !tickerHandler) {
-      tickerHandler = tick;
-      Ticker.shared.add(tickerHandler);
-    } else if (nodes.size === 0 && tickerHandler) {
-      Ticker.shared.remove(tickerHandler);
-      tickerHandler = null;
+    if (nodes.size > 0 && !unsubscribeTick) {
+      unsubscribeTick = subscribeTicker(Ticker.shared, tick, {
+        source: 'portal-layer',
+        onFailure: () => (unsubscribeTick = null),
+      });
+    } else if (nodes.size === 0 && unsubscribeTick) {
+      unsubscribeTick();
+      unsubscribeTick = null;
     }
   }
 
@@ -159,8 +162,8 @@ export function createPortalLayer(deps: PortalLayerDeps): PortalLayer {
     isAnimating: () =>
       [...nodes.values()].some((node) => node.phase === 'opening' || node.phase === 'closing'),
     destroy() {
-      if (tickerHandler) Ticker.shared.remove(tickerHandler);
-      tickerHandler = null;
+      unsubscribeTick?.();
+      unsubscribeTick = null;
       for (const unsubscribe of unsubscribes) unsubscribe();
       clearAll();
       container.destroy({ children: true });
