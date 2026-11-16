@@ -1,16 +1,15 @@
 import { randomBytes } from 'node:crypto';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/db.module';
 import { expeditionBlobs, expeditionMembers, expeditions } from '../db/schema';
 import type { Executor, Tx } from '../player/aggregate-store';
 
-export const BLOB_KEY_PATTERN = /^(?:nav|progress|hero-store)$/;
+export const CLIENT_BLOB_KEYS = ['nav', 'progress', 'hero-store'] as const;
+export const BLOB_KEY_PATTERN = new RegExp(`^(?:${CLIENT_BLOB_KEYS.join('|')})$`);
 export const MAX_BLOB_BYTES = 3 * 1024 * 1024;
 export const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
-export const MAX_BLOB_KEYS = 64;
 
-export type ExpeditionRefusal =
-  'BAD_KEY' | 'BAD_JSON' | 'BLOB_TOO_LARGE' | 'EXPEDITION_TOO_LARGE' | 'TOO_MANY_KEYS';
+export type ExpeditionRefusal = 'BAD_KEY' | 'BAD_JSON' | 'BLOB_TOO_LARGE' | 'EXPEDITION_TOO_LARGE';
 
 export class ExpeditionError extends Error {
   constructor(readonly code: ExpeditionRefusal) {
@@ -62,7 +61,7 @@ export async function loadBlobs(
     .from(expeditionBlobs)
     .where(eq(expeditionBlobs.expeditionId, expeditionId));
   return Object.fromEntries(
-    rows.filter((row) => !row.key.startsWith('srv-')).map((row) => [row.key, row.data]),
+    rows.filter((row) => BLOB_KEY_PATTERN.test(row.key)).map((row) => [row.key, row.data]),
   );
 }
 
@@ -165,19 +164,17 @@ export async function patchBlobs(
           set: { data, updatedAt: new Date().toISOString() },
         });
     }
-    const [{ keys, bytes }] = await tx
+    const [{ bytes }] = await tx
       .select({
-        keys: sql<number>`count(*)::int`,
         bytes: sql<number>`coalesce(sum(octet_length(${expeditionBlobs.data})), 0)::int`,
       })
       .from(expeditionBlobs)
       .where(
         and(
           eq(expeditionBlobs.expeditionId, expeditionId),
-          sql`${expeditionBlobs.key} not like 'srv-%'`,
+          inArray(expeditionBlobs.key, [...CLIENT_BLOB_KEYS]),
         ),
       );
-    if (keys > MAX_BLOB_KEYS) throw new ExpeditionError('TOO_MANY_KEYS');
     if (bytes > MAX_TOTAL_BYTES) throw new ExpeditionError('EXPEDITION_TOO_LARGE');
     const revision = locked.revision + 1;
     await tx.update(expeditions).set({ revision }).where(eq(expeditions.id, expeditionId));

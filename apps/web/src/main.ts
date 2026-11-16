@@ -9,7 +9,7 @@ import { queryClient } from './api/query-client';
 import { useUserStore } from './stores/user-store';
 import { i18n } from './i18n';
 import { writeBlob } from './services/persistence/world-blob-store';
-import { HERO_STORE_BLOB } from './stores/hero-store-blob';
+import { HERO_STORE_BLOB, savableHeroState } from './stores/hero-store-blob';
 
 if (import.meta.env.DEV) {
   validateContent();
@@ -18,7 +18,7 @@ if (import.meta.env.DEV) {
 const pinia = createPinia();
 
 /**
- * The `hero` store (where the hero stands, his health, the portal link) belongs to his expedition,
+ * The `hero` store (his health, the portal link) belongs to his expedition,
  * so it is kept with the server's copy of the world (`world-blob-store`, key `hero-store`) and
  * restored by `hero-store.getHero()` once the expedition is loaded. Never persist the `user`
  * store: it carries the JWT accessToken, which only ever lives in memory (api/auth-token.ts); a
@@ -29,14 +29,7 @@ pinia.use((context) => {
 
   context.store.$subscribe((_, state) => {
     try {
-      writeBlob(
-        HERO_STORE_BLOB,
-        JSON.stringify(
-          Object.fromEntries(
-            Object.entries(state).filter(([key]) => !['knowledge', 'knowledgeError'].includes(key)),
-          ),
-        ),
-      );
+      writeBlob(HERO_STORE_BLOB, JSON.stringify(savableHeroState(state)));
     } catch (e) {
       console.warn('[pinia-persist] failed to persist "hero"', e);
     }

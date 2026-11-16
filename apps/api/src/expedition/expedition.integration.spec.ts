@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { readFileSync } from 'node:fs';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Global, Module } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -12,16 +13,14 @@ import { expeditionBlobs, expeditionMembers, expeditions } from '../db/schema';
 import { HERO_SESSIONS, type HeroSessions } from '../player/hero-sessions';
 import { PlayerModule } from '../player/player.module';
 import { createTestKit, type TestKit } from '../player/player-test-kit';
-import {
-  ExpeditionError,
-  MAX_BLOB_BYTES,
-  ensureExpedition,
-  loadBlobs,
-  patchBlobs,
-} from './expedition-store';
+import { MAX_BLOB_BYTES, ensureExpedition, loadBlobs, patchBlobs } from './expedition-store';
 
 const dbAvailable = inject('dbAvailable');
 const RETIRED_KEYS = [`map:${randomUUID()}`, `state:${randomUUID()}`, 'index', 'respawn'];
+const RETIRE_MIGRATION = new URL(
+  '../../drizzle/0007_retire_client_world_blobs.sql',
+  import.meta.url,
+);
 
 describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
   let kit: TestKit;
@@ -104,12 +103,39 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
     expect(await loadBlobs(kit.db, id)).toEqual({});
   });
 
-  it('refuses too many documents in one expedition', async () => {
+  async function expeditionWithRetiredRows() {
     const { userId, heroId } = await kit.newPlayer();
     const id = await ensureExpedition(kit.db, userId, heroId);
-    const put = Object.fromEntries(Array.from({ length: 65 }, () => [`map:${randomUUID()}`, '{}']));
-    await expect(patchBlobs(kit.db, id, put, [])).rejects.toBeInstanceOf(ExpeditionError);
-    expect(await loadBlobs(kit.db, id)).toEqual({});
+    await patchBlobs(kit.db, id, { nav: '{"k":1}' }, []);
+    await kit.db
+      .insert(expeditionBlobs)
+      .values([
+        ...RETIRED_KEYS.map((key) => ({ expeditionId: id, key, data: '{"old":true}' })),
+        { expeditionId: id, key: 'srv-index', data: '{}' },
+      ]);
+    return id;
+  }
+
+  async function keysOf(id: string) {
+    const rows = await kit.db
+      .select({ key: expeditionBlobs.key })
+      .from(expeditionBlobs)
+      .where(eq(expeditionBlobs.expeditionId, id));
+    return rows.map((row) => row.key).sort();
+  }
+
+  it('the migration deletes the retired documents and keeps the hero documents and the server maps', async () => {
+    const id = await expeditionWithRetiredRows();
+
+    await kit.db.execute(sql.raw(readFileSync(RETIRE_MIGRATION, 'utf8')));
+
+    expect(await keysOf(id)).toEqual(['nav', 'srv-index']);
+  });
+
+  it('never gives the browser a retired document still left in the database', async () => {
+    const id = await expeditionWithRetiredRows();
+
+    expect(await loadBlobs(kit.db, id)).toEqual({ nav: '{"k":1}' });
   });
 
   describe('over HTTP', () => {

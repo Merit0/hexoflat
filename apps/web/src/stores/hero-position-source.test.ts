@@ -11,7 +11,7 @@ import { usePortal } from '@/composables/use-portal';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroInventoryStore } from './hero-inventory-store';
-import { HERO_STORE_BLOB } from './hero-store-blob';
+import { HERO_STORE_BLOB, savableHeroState } from './hero-store-blob';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from './world-map-store';
 
@@ -71,6 +71,7 @@ describe('where the hero stands after a map load', () => {
     storeLegacyHeroBlob('cave', { [mapId]: remembered });
     const hero = useHeroStore();
     hero.restoreFromExpedition();
+    expect(hero.heroCoordinates).toBeNull();
 
     useWorldMapStore().bootstrapWorld();
 
@@ -163,5 +164,15 @@ describe('a stored hero blob from before the server held the position', () => {
 
     expect(readBlob('nav')).not.toContain(LEGACY_FIELD);
     expect(JSON.stringify(hero.$state)).not.toContain(LEGACY_FIELD);
+  });
+
+  it('the saved hero blob never holds where the hero stands', () => {
+    const hero = useHeroStore();
+    hero.heroCoordinates = { columnIndex: 3, rowIndex: 7 };
+
+    const saved = savableHeroState(hero.$state);
+
+    expect(saved).not.toHaveProperty('heroCoordinates');
+    expect(saved).toHaveProperty('nav');
   });
 });
