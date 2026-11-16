@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
+import type { TestRenderStats } from '@framework/test-api';
 
 type BoardKind = 'world' | 'quest' | 'battle';
 
@@ -16,6 +17,27 @@ export class ActiveBoardComponent extends BaseComponent {
         ? world
         : this.page.getByTestId(kind === 'quest' ? 'quest-field' : 'battle-board');
     await expect(ready).toHaveAttribute('data-ready', kind === 'world' ? '1' : 'true');
+    await expect.poll(async () => (await this.readRenderStats()).liveApps).toBe(1);
+  }
+
+  async readRenderStats(): Promise<TestRenderStats> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getRenderStats());
+  }
+
+  async verifySharedTickerBackTo(baseline: number): Promise<void> {
+    await expect
+      .poll(async () => (await this.readRenderStats()).sharedTickerListeners, {
+        message: 'animations left on the shared ticker after the board changed',
+      })
+      .toBeLessThanOrEqual(baseline);
+  }
+
+  async verifyHeroTokenSettled(): Promise<void> {
+    await expect
+      .poll(async () => (await this.readRenderStats()).heroTokenSettled, {
+        message: 'the hero token reached the hex the hero stands on',
+      })
+      .toBe(true);
   }
 
   async waitForReady(): Promise<void> {

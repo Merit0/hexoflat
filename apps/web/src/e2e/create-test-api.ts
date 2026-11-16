@@ -32,6 +32,7 @@ import { questTestApi } from './quest-hooks';
 import { lootTestApi } from './loot-hooks';
 import { inventoryTestApi } from './inventory-hooks';
 import { findTilesWithKeyIn, relocateHero } from './relocate-hooks';
+import { renderStats } from '@/render/render-stats';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -267,6 +268,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     findTilesWithKeyIn,
+    getRenderStats: renderStats,
 
     getInventoryItemAmount(key: string): number {
       return heroInventoryStore.countItem(key as THexobjectKey);

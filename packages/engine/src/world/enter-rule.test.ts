@@ -8,9 +8,14 @@ const at = (locationKey: string) => ({
 });
 
 describe('entering a location', () => {
-  it('lets a hero with no place yet enter any location', () => {
-    expect(enterRefusal(null, 'cave')).toBeNull();
+  it('lets a hero with no place yet enter only the camp', () => {
+    expect(enterRefusal(null, 'camping')).toBeNull();
     expect(enterRefusal(undefined, 'camping')).toBeNull();
+  });
+
+  it('refuses a hero with no place yet any location but the camp', () => {
+    expect(enterRefusal(null, 'cave')).toBe(HERO_ELSEWHERE);
+    expect(enterRefusal(undefined, 'silesia')).toBe(HERO_ELSEWHERE);
   });
 
   it('lets a hero announce the location he already stands in', () => {

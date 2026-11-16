@@ -99,6 +99,8 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 
 "Vue mounted" is a much weaker signal than "the board is interactive" — Pixi init and the pane measurement both resolve asynchronously afterwards. `onBoardReady` fires once the renderer has presented its first frame with every layer synced, and drives the `data-ready` attribute the e2e suite waits on. Anything that needs a usable board must wait for this, not for `onMounted`.
 
+**Render stats for e2e (M3, 2026-11-16):** `render/render-stats.ts` counts live board apps (`createHexBoardApp` calls `trackBoardApp`, its `destroy` releases once), reads `Ticker.shared.count`, and asks the world `hero-layer` whether its token reached its hex (`registerHeroToken`, the newest board wins, a late unregister of the old one is ignored). The hook `getRenderStats()` exposes it. A new board factory must go through `createHexBoardApp`, and a layer with a long-lived shared-ticker listener raises the idle baseline the e2e guard compares with, so remove listeners when idle.
+
 ## Checklist before finishing
 
 - [ ] New visual = new layer file + `UseHexBoardOptions` entry + lifecycle wiring

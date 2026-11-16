@@ -1,6 +1,7 @@
 import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
 import { QuestRunFeature } from '@features/world/quest-run.feature';
+import { RenderHealthFeature } from '@features/world/render-health.feature';
 
 const STEPS = 10;
 
@@ -73,5 +74,19 @@ test.describe('Treasure Seeker chest loot', { tag: ['@hero'] }, () => {
 
     await quest.clickTheChestWithTheMouse();
     await quest.takeOneStack();
+  });
+
+  test('Verify returning to camp while the chest loot still flies leaves a clean world board', async () => {
+    await new OpenCampingMapFeature().open();
+    const render = new RenderHealthFeature();
+    await render.recordTheIdleWorldBoard();
+    const quest = new QuestRunFeature();
+    await quest.openBoard();
+    await quest.startFirstTrail();
+    await quest.walkOnTrail(STEPS);
+    await quest.openTheChestAndReturnWhileTheLootFlies();
+    await quest.dismissResult();
+    await quest.verifyFieldGone();
+    await render.verifyTheWorldBoardIsClean();
   });
 });

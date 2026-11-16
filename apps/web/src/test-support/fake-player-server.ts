@@ -24,7 +24,6 @@ import {
   type ServerWorld,
   type WorldClientHint,
 } from '@hexoflat/engine';
-import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { projectWorldForClient } from '@hexoflat/engine/world/client-projection';
 import { enterRefusal } from '@hexoflat/engine/world/enter-rule';
 import type {
@@ -191,6 +190,18 @@ export function fakeStoreWorld(held: ServerWorld): void {
     if (stored.locationKey === held.locationKey) storedWorlds.delete(mapId);
   }
   storedWorlds.set(held.mapId, held);
+}
+
+export function fakeRelocate(locationKey: string): void {
+  const held = fakeStoredWorldOf(locationKey)!;
+  const row = store!.progress;
+  row.state.presence = {
+    locationKey: held.locationKey,
+    mapId: held.mapId,
+    coordinates: { ...(held.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }) },
+  };
+  row.revision += 1;
+  world = held;
 }
 
 export function fakeEnsureWorld(locationKey: string) {
@@ -463,14 +474,6 @@ function battleFake(
     result: 'applied' as const,
     hero: null,
     aggregates: snapshot().aggregates,
-  };
-}
-
-export function fakeWorldSnapshot() {
-  const held = world?.battle ?? null;
-  return {
-    battleView: held ? projectBattleForViewer(held, 'heroes') : null,
-    serverNowMs: Date.now(),
   };
 }
 

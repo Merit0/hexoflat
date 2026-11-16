@@ -153,6 +153,7 @@ export interface HexoflatTestApi {
 
   findTilesWithKey(key: string): TestHexCoordinates[];
   findTilesWithKeyIn(locationKey: string, key: string): TestHexCoordinates[];
+  getRenderStats(): TestRenderStats;
 
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;
@@ -235,4 +236,10 @@ export interface HexoflatTestApi {
   setQuests(fixture: TestQuestFixture): Promise<void>;
   getQuestField(): TestQuestField | null;
   getQuestHexPoint(columnIndex: number, rowIndex: number): { x: number; y: number } | null;
+}
+
+export interface TestRenderStats {
+  liveApps: number;
+  sharedTickerListeners: number;
+  heroTokenSettled: boolean | null;
 }

@@ -5,6 +5,7 @@ import { CREATURE_SPRITES } from '@/render/creature-sprites';
 import { createHexToken } from '@/render/hex-token';
 import { easeOutCubic, runTween, type Tween } from '@/render/tween';
 import { PORTAL_FX } from '@/render/portal-fx-config';
+import { registerHeroToken } from '@/render/render-stats';
 
 const HERO_SPRITE_URL = CREATURE_SPRITES.hero;
 
@@ -34,6 +35,9 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
   let portalTween: Tween | null = null;
   let heldByPortal = false;
   let tickerHandler: (() => void) | null = null;
+  const unregister = registerHeroToken(
+    () => !tickerHandler && Math.hypot(root.x - heroTarget.x, root.y - heroTarget.y) < 0.5,
+  );
 
   function stopTween() {
     if (tickerHandler) {
@@ -150,6 +154,7 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
     destroy() {
       portalTween?.cancel();
       stopTween();
+      unregister();
       token.destroy();
     },
   };

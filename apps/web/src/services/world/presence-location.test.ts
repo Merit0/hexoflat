@@ -51,6 +51,15 @@ describe('the place the server holds for the hero', () => {
     expect(heldLocationKey()).toBe('camping');
   });
 
+  it('sends a new hero refused at the cave back to the camp', async () => {
+    seedFakeSession('hero-1');
+    const seen = vi.fn();
+    onHeroElsewhere(seen);
+    await ensurePresence({ locationKey: 'cave', mapId: fakeStoredWorldOf('cave')!.mapId });
+    expect(seen).toHaveBeenCalledWith('camping');
+    expect(heldLocationKey()).toBeNull();
+  });
+
   it('opens the world where the server holds the hero, not where the last local note says', () => {
     seedStandingIn('cave');
     const hero = useHeroStore();

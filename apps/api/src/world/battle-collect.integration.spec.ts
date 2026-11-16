@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { EHexActionTypeForTests, deserializeWorld, serializeWorld } from './world-test-support';
+import {
+  EHexActionTypeForTests,
+  deserializeWorld,
+  placeHeroIn,
+  serializeWorld,
+} from './world-test-support';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
@@ -55,6 +60,7 @@ describe.skipIf(!dbAvailable)('battle close and restore as they are (real Postgr
   async function openBattle() {
     const { userId, heroId } = await kit.newPlayer();
     await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
+    await placeHeroIn(world, userId, heroId, 'cave');
     await send(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);
     const presence = (

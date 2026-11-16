@@ -20,6 +20,7 @@ import {
   EHexActionTypeForTests,
   deserializeWorld,
   serializeWorld,
+  placeHeroIn,
 } from '../world/world-test-support';
 import { WorldService, type WorldResponse } from '../world/world.service';
 import { createTestKit, envelope, type TestKit } from './player-test-kit';
@@ -121,6 +122,7 @@ describe.skipIf(!dbAvailable)(
 
     it('world chest: the OPEN answer, a later tick, the world snapshot and the hero snapshot carry no seed, table or drop', async () => {
       const { userId, heroId } = await kit.newPlayer();
+      await placeHeroIn(world, userId, heroId, 'cave');
       await sendWorld(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
       const { expeditionId, docKey, loaded } = await heldWorld(userId, heroId);
       const spot = getHexNeighbors(loaded.heroCoordinates!).find((hex) => {
@@ -161,6 +163,7 @@ describe.skipIf(!dbAvailable)(
 
     it('CH-P6 world: a cave chest holds its contents in the server document only; the snapshot before and after OPEN shows none', async () => {
       const { userId, heroId } = await kit.newPlayer();
+      await placeHeroIn(world, userId, heroId, 'cave');
       await sendWorld(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
       const { expeditionId, docKey, loaded } = await heldWorld(userId, heroId);
       const stored = loaded.map.tiles.find(
@@ -213,6 +216,7 @@ describe.skipIf(!dbAvailable)(
 
     it('F-S1 fixed: a world snapshot no longer names the table id of a full chest', async () => {
       const { userId, heroId } = await kit.newPlayer();
+      await placeHeroIn(world, userId, heroId, 'cave');
       await sendWorld(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
       const text = JSON.stringify(await world.snapshot(userId, heroId));
       expect(text).not.toContain('lootTableId');
@@ -224,6 +228,7 @@ describe.skipIf(!dbAvailable)(
       process.env.HEXOFLAT_E2E_FIXTURES = '1';
       const { userId, heroId } = await kit.newPlayer();
       await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
+      await placeHeroIn(world, userId, heroId, 'cave');
       await sendWorld(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
       const { expeditionId, docKey, loaded } = await heldWorld(userId, heroId);
       const spot = getHexNeighbors(loaded.heroCoordinates!).find((hex) => {

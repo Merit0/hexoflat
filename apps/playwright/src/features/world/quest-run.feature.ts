@@ -356,6 +356,15 @@ export class QuestRunFeature extends BaseFeature {
     });
   }
 
+  async openTheChestAndReturnWhileTheLootFlies(): Promise<void> {
+    await this.step('Open the chest and return to camp while the loot still flies', async () => {
+      await this.openChest();
+      await this.campingMap.lootBoard.verifyLootFlying();
+      await this.panel.returnToCamp();
+      await this.panel.verifyResult('treasure');
+    });
+  }
+
   async returnToCamp(): Promise<void> {
     await this.step('Return to camp', async () => {
       await this.panel.returnToCamp();

@@ -1,4 +1,5 @@
 import { LOCATION_KEYS, type LocationKey } from '@hexoflat/engine/registry/location-key';
+import { HOME_LOCATION } from '@hexoflat/engine/world/enter-rule';
 import { inventorySession } from '@/services/inventory/inventory-session';
 
 export type HeroElsewhereListener = (held: LocationKey) => void;
@@ -15,6 +16,5 @@ export function onHeroElsewhere(next: HeroElsewhereListener | null): void {
 }
 
 export function reportHeroElsewhere(): void {
-  const held = heldLocationKey();
-  if (held) listener?.(held);
+  listener?.(heldLocationKey() ?? HOME_LOCATION);
 }

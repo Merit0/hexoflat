@@ -4,6 +4,8 @@ import { CampingMapPage } from '@pages/camping-map.page';
 import { BattleFlowFeature } from '@features/world/battle-flow.feature';
 import type { CollectGrave, CollectItem } from '@components/battle-collect.component';
 
+const GRAVE_FLIGHT_START_MS = 2_000;
+
 /**
  * What the player does after a won battle: walk to a grave, look through it with the hand (the eye),
  * pick up what lies around it and leave. The win itself is granted by the fixture hook.
@@ -14,9 +16,9 @@ export class BattleCollectFeature extends BaseFeature {
   private expected: Record<string, number> = {};
   private looted: CollectItem[] = [];
 
-  async winTheBattle(): Promise<void> {
+  async winTheBattle(squad?: string): Promise<void> {
     await this.step('Start a battle against a squad and win it', async () => {
-      await new BattleFlowFeature().startBattleNextToTheSquad();
+      await new BattleFlowFeature().startBattleNextToTheSquad({ squad });
       await this.campingMap.hexBoard.finishBattle('victory');
       await this.collect.waitForCollecting();
       await this.collect.waitForBoardStill();
@@ -37,6 +39,31 @@ export class BattleCollectFeature extends BaseFeature {
       const graves = (await this.collect.read()).graves;
       for (const grave of graves) await this.lookThrough(grave);
     });
+  }
+
+  async lookThroughGravesAndLeaveWhileTheLootFlies(): Promise<void> {
+    await this.step(
+      'Look through graves and leave the battle while a grave loot flies',
+      async () => {
+        for (const grave of (await this.collect.read()).graves) {
+          const stand = await this.collect.clickFirstUncoveredHex(grave.standHexes);
+          await this.collect.verifyHeroStandsAt(stand);
+          await this.collect.waitForBoardStill();
+          await this.collect.openTheHandTool();
+          await this.collect.hoverHex(grave);
+          await this.collect.pressToolAction();
+          if (await this.campingMap.lootBoard.lootStartsFlying(GRAVE_FLIGHT_START_MS)) {
+            await this.collect.pressLeave();
+            await this.collect.confirmLeave();
+            await this.verifyTheBoardIsBack();
+            return;
+          }
+          await this.collect.verifyExamined(grave, true);
+          await this.collect.waitForBoardStill();
+        }
+        throw new Error('No grave gave any loot to fly');
+      },
+    );
   }
 
   private async lookThrough(grave: CollectGrave): Promise<void> {

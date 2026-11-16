@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { EHexActionTypeForTests, deserializeWorld, serializeWorld } from './world-test-support';
+import {
+  EHexActionTypeForTests,
+  deserializeWorld,
+  placeHeroIn,
+  serializeWorld,
+} from './world-test-support';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
@@ -53,6 +58,11 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
   const enter = (userId: string, heroId: string, locationKey: string) =>
     send(userId, heroId, 'WORLD_ENTER', { locationKey });
 
+  async function arrive(userId: string, heroId: string, locationKey: string) {
+    await placeHeroIn(world, userId, heroId, locationKey);
+    return enter(userId, heroId, locationKey);
+  }
+
   async function placeBesideHero(userId: string, heroId: string, key: string) {
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);
     const presence = (
@@ -88,11 +98,11 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('builds the map itself on the first entry, puts the hero at the entry, and gives the same map next time', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    const first = await enter(userId, heroId, 'silesia');
+    const first = await arrive(userId, heroId, 'silesia');
     expect(first.result).toBe('applied');
     expect(first.hero).toMatchObject({ locationKey: 'silesia' });
     expect(first.hero!.coordinates).not.toBeNull();
-    const again = await enter(userId, heroId, 'silesia');
+    const again = await arrive(userId, heroId, 'silesia');
     expect(again.hero!.mapId).toBe(first.hero!.mapId);
     const other = (await world.ensure(userId, heroId, 'camping')) as { mapId: string };
     expect(other.mapId).not.toBe(first.hero!.mapId);
@@ -101,7 +111,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('keeps the server maps away from the browser: it can neither read nor write them', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'silesia');
+    await arrive(userId, heroId, 'silesia');
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);
     expect(Object.keys(await loadBlobs(kit.db, expeditionId))).toEqual([]);
     const rows = await kit.db
@@ -151,7 +161,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('walks one hex on the server map: Will, steps, fog and place change together, and survive a reload', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'silesia');
+    await arrive(userId, heroId, 'silesia');
     const target = await firstStepTarget(userId, heroId);
     const stepped = await send(userId, heroId, 'WORLD_STEP', { target });
     expect(stepped.result).toBe('applied');
@@ -172,7 +182,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('refuses a hex that is not next to the hero, one the map blocks, and changes nothing', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'silesia');
+    await arrive(userId, heroId, 'silesia');
     const before = await progressRevision(userId, heroId);
     const far = await send(userId, heroId, 'WORLD_STEP', {
       target: { columnIndex: 200, rowIndex: 200 },
@@ -183,7 +193,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('applies a repeated commandId once and lets only one of ten parallel steps through', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'silesia');
+    await arrive(userId, heroId, 'silesia');
     const target = await firstStepTarget(userId, heroId);
     const revision = await progressRevision(userId, heroId);
     const commandId = randomUUID();
@@ -412,7 +422,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('walks through a gate on the server: the Will is charged, the presence moves and the map comes back', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'silesia');
+    await arrive(userId, heroId, 'silesia');
     const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CAVE_ENTRANCE);
     const travelled = await send(userId, heroId, 'WORLD_TRAVEL', {
       via: { kind: 'gate', coordinates: spot },
@@ -431,7 +441,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       await send(lost.userId, lost.heroId, 'WORLD_TRAVEL', { via: { kind: 'exit' } }),
     ).toMatchObject({ result: 'rejected', code: 'NO_WORLD' });
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'silesia');
+    await arrive(userId, heroId, 'silesia');
     expect(
       await send(userId, heroId, 'WORLD_TRAVEL', {
         via: { kind: 'gate', coordinates: { columnIndex: 0, rowIndex: 0 } },
@@ -442,7 +452,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('leaves a dungeon through its gate: a fresh dungeon waits on the server and a cleared one is sealed', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    const first = await enter(userId, heroId, 'cave');
+    const first = await arrive(userId, heroId, 'cave');
     const oldMapId = first.hero!.mapId;
     const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CAMPING_ENTRANCE);
     await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.GRAVE);
@@ -501,7 +511,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
   it('opens a portal, walks it to the camp and back, and keeps both ends on the server', async () => {
     const { userId, heroId } = await kit.newPlayer();
     await world.ensure(userId, heroId, 'camping');
-    await enter(userId, heroId, 'silesia');
+    await arrive(userId, heroId, 'silesia');
     await equipForPortal(userId, heroId);
     const origin = (await presenceOf(userId, heroId)).presence;
     const held = deserializeWorld(await world.snapshot(userId, heroId), 0);
@@ -628,6 +638,15 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect((await enter(userId, heroId, 'camping')).result).toBe('applied');
   });
 
+  it('lets a new hero with no place yet enter only the camp', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const jumped = await enter(userId, heroId, 'cave');
+    expect(jumped).toMatchObject({ result: 'rejected', code: 'HERO_ELSEWHERE' });
+    expect((await presenceOf(userId, heroId)).presence).toBeNull();
+    expect((await enter(userId, heroId, 'camping')).result).toBe('applied');
+    expect((await presenceOf(userId, heroId)).presence).toMatchObject({ locationKey: 'camping' });
+  });
+
   it('moves the hero to another location with the relocate fixture only when the e2e flag is on', async () => {
     const { userId, heroId } = await kit.newPlayer();
     await enter(userId, heroId, 'camping');
@@ -656,7 +675,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
   async function openBattle() {
     const { userId, heroId } = await kit.newPlayer();
     await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
-    await enter(userId, heroId, 'cave');
+    await arrive(userId, heroId, 'cave');
     const { spot, expeditionId, mapId } = await placeBesideHero(
       userId,
       heroId,
@@ -924,7 +943,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('hides the members and the loot of an unscouted squad in every map the client gets', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'cave');
+    await arrive(userId, heroId, 'cave');
     await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.SKELETON_PACK);
     const ensured = JSON.stringify(await world.ensure(userId, heroId, 'cave'));
     expect(ensured).not.toContain('"loot":"sword"');
@@ -957,7 +976,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
     async function scene() {
       const { userId, heroId } = await kit.newPlayer();
-      await enter(userId, heroId, 'cave');
+      await arrive(userId, heroId, 'cave');
       const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CHEST);
       return { userId, heroId, spot };
     }

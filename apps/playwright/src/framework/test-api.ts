@@ -20,6 +20,7 @@ export type {
   TestHeroHealth,
   TestHexCoordinates,
   TestPortalPreview,
+  TestRenderStats,
   TestTileFraction,
 } from '@web-test-api';
 

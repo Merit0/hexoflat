@@ -1,5 +1,6 @@
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
+import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { fakeCurrentWorld, fakeHeroId } from './fake-player-server';
 
 export function fakeEngageSquad(at: { columnIndex: number; rowIndex: number }) {
@@ -24,4 +25,12 @@ export function fakeEndBattle(outcome: 'victory' | 'defeat') {
   for (const creature of battle.creatures) if (creature.side === loser) creature.hp = 0;
   battle.outcome = outcome;
   battle.phase = 'ended';
+}
+
+export function fakeWorldSnapshot() {
+  const held = fakeCurrentWorld()?.battle ?? null;
+  return {
+    battleView: held ? projectBattleForViewer(held, 'heroes') : null,
+    serverNowMs: Date.now(),
+  };
 }

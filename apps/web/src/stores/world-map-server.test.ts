@@ -13,7 +13,7 @@ import { useHeroInventoryStore } from './hero-inventory-store';
 import { useHeroToolStore } from './hero-tool-store';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { fakePresence, fakeStoredWorld, sentCommands } from '@/test-support/fake-player-server';
-import { holdServedWorld, seedFakeSession } from '@/test-support/fake-session';
+import { holdServedWorld, fakeStandIn, seedFakeSession } from '@/test-support/fake-session';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from './world-map-store';
 import { readCachedWorld, serverWorldJson } from '@/services/world/served-world';
@@ -39,6 +39,7 @@ function setup() {
   hero.loadKnowledge();
   const served = createServerWorld('silesia', 'served-map', 'expedition-seed', HERO);
   holdServedWorld(served);
+  fakeStandIn('silesia');
   return { hero, world: useWorldMapStore(), served };
 }
 
@@ -250,6 +251,7 @@ describe('travel through the server', () => {
     gate.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CAVE_ENTRANCE, spot);
     gate.isRevealed = true;
     holdServedWorld(silesia);
+    fakeStandIn('silesia');
     const world = useWorldMapStore();
     world.goToLocation('silesia');
     const tile = world.getTileAt(spot)!;
