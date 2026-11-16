@@ -24,6 +24,7 @@ import { lootRefusalText } from '@/services/loot/loot-rejection';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { inventorySession } from '@/services/inventory/inventory-session';
 
 const SERVER_TICK_BACKOFF_MS = 2000;
 let serverTicking = false;
@@ -79,10 +80,17 @@ export async function refetchWorldAction(host: ServerWorldHost, hero: ServerWorl
   host.markTilesDirty(served.map.tiles.map((tile) => tile.coordinates));
 }
 
+function heldElsewhere(host: ServerWorldHost): boolean {
+  const presence = inventorySession.presence;
+  if (!presence) return false;
+  return presence.locationKey !== host.currentLocationKey || presence.mapId !== host.currentMapId;
+}
+
 export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldHero) {
   const from = hero.heroCoordinates;
   const now = Date.now();
   if (!host.map || !host.currentMapId || !from || now < serverTickPausedUntil) return;
+  if (heldElsewhere(host)) return;
   if (serverTicking || !hasDueWork(host.map as HexMapModel, now)) return;
   serverTicking = true;
   const mapId = host.currentMapId;

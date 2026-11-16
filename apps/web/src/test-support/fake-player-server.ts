@@ -24,10 +24,9 @@ import {
   type ServerWorld,
   type WorldClientHint,
 } from '@hexoflat/engine';
-import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { projectWorldForClient } from '@hexoflat/engine/world/client-projection';
+import { enterRefusal } from '@hexoflat/engine/world/enter-rule';
 import type {
   HeroSnapshot,
   PlayerCommandResponse,
@@ -218,6 +217,16 @@ function enterFake(envelope: PlayerEnvelope) {
       ...base,
       result: 'conflict' as const,
       code: 'REVISION_CONFLICT',
+      hero: null,
+      aggregates: snapshot().aggregates,
+    };
+  }
+  const refused = enterRefusal(s.progress.state.presence, locationKey);
+  if (refused) {
+    return {
+      ...base,
+      result: 'rejected' as const,
+      code: refused,
       hero: null,
       aggregates: snapshot().aggregates,
     };
@@ -465,26 +474,10 @@ export function fakeWorldSnapshot() {
   };
 }
 
-export function fakeEngageSquad(at: { columnIndex: number; rowIndex: number }) {
-  const held = world!;
-  const tile = held.map.tiles.find(
-    (t) => t.coordinates.columnIndex === at.columnIndex && t.coordinates.rowIndex === at.rowIndex,
-  )!;
-  tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETON_PACK, tile.coordinates);
-  held.engagement = {
-    squadId: `${at.columnIndex}:${at.rowIndex}:skeleton-pack`,
-    ambush: false,
-    heroAt: { ...held.heroCoordinates! },
-    heroIds: [store!.heroId],
-    startItems: {},
-  };
-  return held.engagement;
+export function fakeCurrentWorld(): ServerWorld | null {
+  return world;
 }
 
-export function fakeEndBattle(outcome: 'victory' | 'defeat') {
-  const battle = world!.battle!;
-  const loser = outcome === 'victory' ? 'enemies' : 'heroes';
-  for (const creature of battle.creatures) if (creature.side === loser) creature.hp = 0;
-  battle.outcome = outcome;
-  battle.phase = 'ended';
+export function fakeHeroId(): string {
+  return store!.heroId;
 }

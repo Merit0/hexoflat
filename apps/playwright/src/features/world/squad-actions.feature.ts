@@ -65,7 +65,7 @@ export class SquadActionsFeature extends BaseFeature {
     await this.step('Open the generated cave with enough Will to enter', async () => {
       await new OpenCampingMapFeature().open();
       this.campingMap.pageErrors.watch();
-      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(40));
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(40, 'cave'));
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
       await this.page.goto('/world/cave');
       await this.campingMap.hexBoard.waitForReady();

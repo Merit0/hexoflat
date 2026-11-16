@@ -18,6 +18,7 @@ import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from './world-map-store';
 import { readCachedWorld, serverWorldJson } from '@/services/world/served-world';
 import { cacheServerWorld } from '@/services/player/world-sync';
+import { inventorySession } from '@/services/inventory/inventory-session';
 
 vi.mock('@/services/player/player-socket', async () =>
   (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
@@ -166,6 +167,30 @@ describe('actions and ticks through the server', () => {
     expect(tile.hexobject).toBeNull();
     const bag = useHeroInventoryStore();
     expect(bag.items.some((item) => item.key === HEXOBJECT_KEYS.HEALTH_BOTTLE)).toBe(true);
+  });
+
+  it('keeps a background tick quiet while the server holds the hero in another place', async () => {
+    const { world, tile } = withBottle();
+    await world.executeHexAction(tile, EHexActionType.TAKE, HEXOBJECT_KEYS.HAND);
+    inventorySession.presence = {
+      locationKey: 'silesia',
+      mapId: 'silesia-map',
+      coordinates: { columnIndex: 3, rowIndex: 3 },
+    };
+    sentCommands.length = 0;
+    tile.pendingAction!.endsAt = Date.now() - 1;
+    await world.serverTick();
+    expect(sentCommands.map((c) => c.command.type)).toEqual([]);
+    expect(inventorySession.presence.locationKey).toBe('silesia');
+  });
+
+  it('ticks again once the shown world is the place the server holds', async () => {
+    const { world, tile } = withBottle();
+    await world.executeHexAction(tile, EHexActionType.TAKE, HEXOBJECT_KEYS.HAND);
+    sentCommands.length = 0;
+    tile.pendingAction!.endsAt = Date.now() - 1;
+    await world.serverTick();
+    expect(sentCommands.map((c) => c.command.type)).toEqual(['WORLD_TICK']);
   });
 
   it('shows the server refusal and leaves the tool free', async () => {

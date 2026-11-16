@@ -31,6 +31,7 @@ import { shopTestApi } from './shop-hooks';
 import { questTestApi } from './quest-hooks';
 import { lootTestApi } from './loot-hooks';
 import { inventoryTestApi } from './inventory-hooks';
+import { findTilesWithKeyIn, relocateHero } from './relocate-hooks';
 import type {
   HexoflatTestApi,
   TestGridSize,
@@ -111,7 +112,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
         lastAward: session?.lastAward ?? 0,
       };
     },
-    prepareKnowledgeWorld(current: number) {
+    async prepareKnowledgeWorld(current: number, locationKey = 'silesia') {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
       if (
         !heroStore.knowledge ||
@@ -123,7 +124,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       const state = { ...heroStore.knowledge, current, session: null };
       pushKnowledgeFixture(state);
       heroStore.loadKnowledge();
-      worldStore.goToLocation('silesia');
+      await relocateHero(locationKey);
     },
     setWill(current: number) {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
@@ -264,6 +265,8 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
           rowIndex: tile.coordinates.rowIndex,
         }));
     },
+
+    findTilesWithKeyIn,
 
     getInventoryItemAmount(key: string): number {
       return heroInventoryStore.countItem(key as THexobjectKey);

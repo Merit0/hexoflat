@@ -19,19 +19,13 @@ import { refetchServedWorld } from '@/services/world/served-world';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type { FieldClick } from '@/services/quests/quest-field-model';
-import { inventorySession } from '@/services/inventory/inventory-session';
-import { LOCATION_KEYS, type LocationKey } from '@hexoflat/engine/registry/location-key';
+import { heldLocationKey } from '@/services/world/presence-location';
 
 const message = ref<string | null>(null);
 
-function returnPlace(): LocationKey | null {
-  const key = inventorySession.presence?.locationKey;
-  return (LOCATION_KEYS as readonly string[]).includes(key ?? '') ? (key as LocationKey) : null;
-}
-
 async function leaveQuestField() {
   await closeKnowledgePanel(false);
-  const place = returnPlace();
+  const place = heldLocationKey();
   if (!place) return;
   await refetchServedWorld(place);
   useWorldMapStore().goToLocation(place);

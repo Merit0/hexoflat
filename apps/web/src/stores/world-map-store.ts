@@ -33,6 +33,7 @@ import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
 import { getStream, reseedWorld } from '@/services/rng/world-rng';
 import { worldLoop } from '@/services/world/world-loop';
+import { heldLocationKey } from '@/services/world/presence-location';
 
 import {
   initFog as initMapFog,
@@ -205,7 +206,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     bootstrapWorld() {
       const heroStore = useHeroStore();
 
-      const locationKey = heroStore.nav.locationKey;
+      const locationKey = heldLocationKey() ?? heroStore.nav.locationKey;
 
       this.goToLocation(locationKey);
 

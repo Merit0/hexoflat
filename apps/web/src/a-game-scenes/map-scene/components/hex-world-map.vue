@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 import { devBoardPanelEnabled } from '@/composables/dev-board-panel-flag';
 import { closeKnowledgePanel, knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
@@ -54,6 +54,7 @@ import { useOverlayStore } from '@/stores/overlay-store';
 import { useSquadFlow } from '@/services/squads/squad-flow';
 import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
 import { createTestApi } from '@/e2e/create-test-api';
+import { usePresenceRoute } from '@/composables/use-presence-route';
 import { IDENTITY_CAMERA } from '@/render/board-camera';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import GameplayBoardHost from './gameplay-board-host.vue';
@@ -78,13 +79,7 @@ const { sceneLayoutStyle } = useGameLayout();
 useQuestMapRoute(() => worldStore.currentLocationKey);
 useSquadFlow();
 useKnowledgeChallenge();
-watch(
-  () => props.locationKey,
-  (key) => {
-    if (key) worldStore.goToLocation(key);
-  },
-  { immediate: true },
-);
+usePresenceRoute(() => props.locationKey);
 onMounted(() => {
   worldStore.bootstrapWorld();
   boardHost.value?.syncSimulation();

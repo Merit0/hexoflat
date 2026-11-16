@@ -124,9 +124,9 @@ export class VerifyReturnPortalFeature extends BaseFeature {
 
         await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
 
-        await this.page.goto('/world/camping');
+        await this.map.reload();
         await this.map.hexBoard.waitForReady();
-        await this.map.hexBoard.verifyTileCountWithKey(HexobjectKeys.returnPortal, 0);
+        await this.map.hexBoard.verifyTileCountWithKeyIn('camping', HexobjectKeys.returnPortal, 0);
       },
     );
   }
@@ -146,9 +146,9 @@ export class VerifyReturnPortalFeature extends BaseFeature {
 
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
 
-      await this.page.goto('/world/camping');
+      await this.map.reload();
       await this.map.hexBoard.waitForReady();
-      await this.map.hexBoard.verifyTileCountWithKey(HexobjectKeys.returnPortal, 0);
+      await this.map.hexBoard.verifyTileCountWithKeyIn('camping', HexobjectKeys.returnPortal, 0);
     });
   }
 

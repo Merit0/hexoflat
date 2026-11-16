@@ -11,20 +11,22 @@ Source: read-only audit of the map architecture (2026-11-16, branch `codex/map-o
 
 ## Next phases (one chat each, in this order)
 
-### M1. A background world tick never announces presence (correctness, small)
+### M1. A background world tick never announces presence (correctness, small) [DONE — 2026-11-16]
 
 - **Trigger.** Every quest exit (PAUSE, RETURN, GIVE_UP) sets server presence to `camping` (`quest-run.service.ts` `campPlace`), but `world-map-store` still holds the Silesia map. The host mounts the world board and starts the loop at once; `leaveQuestField` waits for `GET /player/world`. A tick 250 ms later with `hasDueWork` (likely: respawns piled up while the loop was stopped) calls `ensurePresence(Silesia)` → `WORLD_ENTER silesia`.
 - **Consequence.** On slow networks the server hero goes back to Silesia, and `refetchServedWorld('camping')` can cache the Silesia document under the `camping` key.
 - **Fix.** `serverTickAction` skips the tick when `inventorySession.presence` is set and differs from `{currentLocationKey, currentMapId}`; ticks never call `ensurePresence` for a place the hero has not chosen.
 - **Tests.** Unit test in `stores/world-map-server.test.ts` with the fake player server: presence = camp, store on Silesia, due spawner → no `WORLD_ENTER` is sent.
+- **Result (2026-11-16, branch `map-architecture-improvements`).** `serverTickAction` (`stores/server-world-actions.ts`) returns before `ensurePresence` while `inventorySession.presence` names another location or map; with no presence (fresh session) or the same place it ticks as before. Hex actions, steps and travel still announce presence themselves, so a started action always ticks. Tests: `world-map-server.test.ts` "keeps a background tick quiet …" (red before the fix: `['WORLD_ENTER', 'WORLD_TICK']`) and "ticks again once the shown world …". Web 3365/3365, typecheck, lint; e2e `gather-resource`, `return-portal`, `quest-world-entry` 7/7 without retries.
 
-### M2. `WORLD_ENTER` is validated by the server; the client starts from server presence (authority)
+### M2. `WORLD_ENTER` is validated by the server; the client starts from server presence (authority) [DONE — 2026-11-16]
 
 - **Trigger.** `world.service.ts` moves presence to any `locationKey` without a sealing check, entry price or trip count. The client picks the location from the URL prop and its own `nav` blob (`hex-world-map.vue` watch, `bootstrapWorld`, `heroStore.setLocation`). Opening `/world/cave` loads the cave from the cache and the first action enters it.
 - **Consequence.** `WORLD_TRAVEL` rules (2 Will, `trips` that reset the trader refresh price, `sealedUntil`) can be skipped.
 - **Fix.** Server: `WORLD_ENTER` is allowed only while presence is `null` or names the same location; otherwise `rejected` with a new code. Client: `bootstrapWorld` and the route prop use `inventorySession.presence.locationKey`; a URL for another location is replaced by the presence route.
 - **Cost.** API tests that use `WORLD_ENTER` as a fixture (`world.integration.spec.ts`, `battle-collect.integration.spec.ts`, `quest-run.integration.spec.ts`) move to `WORLD_TRAVEL` or a dev fixture. Check every flow that leaves presence `null` (new hero, quest ENTER) before closing it.
 - **Tests.** API: entering another location while present elsewhere is refused and nothing is charged. E2E: a deep link to another location shows the presence location.
+- **Result (2026-11-16, Oleh: silent redirect + server refusal).** Engine `world/enter-rule.ts` (`enterRefusal`, `HERO_ELSEWHERE`): `WORLD_ENTER` is refused while presence names another location, nothing is charged; `WorldService` places the hero through `placeHeroIn`. Dev fixture `POST /player/dev/relocate-fixture` (`relocateFixtureSchema`, fixtures flag only) moves the hero for e2e; the hook `prepareKnowledgeWorld(current, locationKey = 'silesia')` is now async and uses it. Web: `services/world/presence-location.ts` (`heldLocationKey`, `onHeroElsewhere`, `reportHeroElsewhere`), `composables/use-presence-route.ts` replaces the `hex-world-map.vue` route watch (a URL for another location is `router.replace`d to the held one, `replaceLocationRoute`), `bootstrapWorld` starts from presence, `ensurePresence` reports a `HERO_ELSEWHERE` refusal so the route returns to the held place. The fake player server mirrors the rule (battle fixtures moved to `test-support/fake-battle-fixtures.ts` for the line limit). Return-portal e2e checks the camp through the cached world (`findTilesWithKeyIn` / `verifyTileCountWithKeyIn`) because `goto('/world/camping')` now redirects. New e2e `e2e/board/world-deep-link.spec.ts`. **Gap left on purpose:** a hero with `presence: null` (brand-new hero before the first action) may still enter any location once; closing it means 25 API test call sites move to travel/fixtures — ask Oleh.
 
 ### M3. E2E guards for renderer leaks and mid-animation exits (verification)
 
@@ -67,7 +69,8 @@ Source: read-only audit of the map architecture (2026-11-16, branch `codex/map-o
 ## Open questions for Oleh
 
 1. The hand-cycling wheel listener is on `window` (`use-hex-board-input.ts`), so the wheel over the right panel also cycles the hand and calls `preventDefault`. Is that intended, or should it be limited to the map pane?
-2. M2 changes how deep links behave: should `/world/<other location>` redirect silently to the hero's real place?
+2. ~~M2 deep links~~ answered 2026-11-16: redirect silently to the hero's real place.
+3. A brand-new hero (`presence: null`) may still `WORLD_ENTER` any location once. Should `null` allow only `camping`?
 
 ## Out of scope
 

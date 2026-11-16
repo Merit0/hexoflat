@@ -94,8 +94,9 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     expect(first.hero!.coordinates).not.toBeNull();
     const again = await enter(userId, heroId, 'silesia');
     expect(again.hero!.mapId).toBe(first.hero!.mapId);
-    const other = await enter(userId, heroId, 'camping');
-    expect(other.hero!.mapId).not.toBe(first.hero!.mapId);
+    const other = (await world.ensure(userId, heroId, 'camping')) as { mapId: string };
+    expect(other.mapId).not.toBe(first.hero!.mapId);
+    expect((await enter(userId, heroId, 'camping')).code).toBe('HERO_ELSEWHERE');
   });
 
   it('keeps the server maps away from the browser: it can neither read nor write them', async () => {
@@ -405,6 +406,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       presence: { locationKey: string; mapId: string };
       sealedUntil: Record<string, number>;
       knowledge: { current: number };
+      trips: number;
     };
   }
 
@@ -498,7 +500,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
   it('opens a portal, walks it to the camp and back, and keeps both ends on the server', async () => {
     const { userId, heroId } = await kit.newPlayer();
-    await enter(userId, heroId, 'camping');
+    await world.ensure(userId, heroId, 'camping');
     await enter(userId, heroId, 'silesia');
     await equipForPortal(userId, heroId);
     const origin = (await presenceOf(userId, heroId)).presence;
@@ -608,6 +610,47 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     await expect(
       send(mine.userId, mine.heroId, 'WORLD_ENTER', { locationKey: 'mars' }),
     ).rejects.toMatchObject({ code: 'INVALID_COMMAND' });
+  });
+
+  it('refuses to enter another location while the hero stands somewhere, and charges nothing', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    const before = await presenceOf(userId, heroId);
+
+    const jumped = await enter(userId, heroId, 'cave');
+
+    expect(jumped.result).toBe('rejected');
+    expect(jumped.code).toBe('HERO_ELSEWHERE');
+    const after = await presenceOf(userId, heroId);
+    expect(after.presence).toEqual(before.presence);
+    expect(after.knowledge.current).toBe(before.knowledge.current);
+    expect(after.trips).toBe(before.trips);
+    expect((await enter(userId, heroId, 'camping')).result).toBe('applied');
+  });
+
+  it('moves the hero to another location with the relocate fixture only when the e2e flag is on', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    await enter(userId, heroId, 'camping');
+    delete process.env.HEXOFLAT_E2E_FIXTURES;
+    await expect(
+      world.relocateFixture(userId, heroId, { locationKey: 'cave' }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    process.env.HEXOFLAT_E2E_FIXTURES = '1';
+    try {
+      await expect(
+        world.relocateFixture(userId, heroId, { locationKey: 'mars' }),
+      ).rejects.toMatchObject({ code: 'INVALID_COMMAND' });
+      const moved = (await world.relocateFixture(userId, heroId, { locationKey: 'cave' })) as {
+        hero: { locationKey: string; mapId: string };
+      };
+      expect(moved.hero.locationKey).toBe('cave');
+      const after = await presenceOf(userId, heroId);
+      expect(after.presence).toMatchObject({ locationKey: 'cave', mapId: moved.hero.mapId });
+      expect((await enter(userId, heroId, 'cave')).result).toBe('applied');
+    } finally {
+      delete process.env.HEXOFLAT_E2E_FIXTURES;
+    }
   });
 
   async function openBattle() {

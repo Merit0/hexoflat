@@ -113,7 +113,7 @@ export interface HexoflatTestApi {
     answer: number | null;
     lastAward: number;
   } | null;
-  prepareKnowledgeWorld(current: number): void;
+  prepareKnowledgeWorld(current: number, locationKey?: string): Promise<void>;
   setWill(current: number): void;
   setSkillRank(skillId: string, rank: number): void;
   getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null;
@@ -152,6 +152,7 @@ export interface HexoflatTestApi {
   getCurrentLocationKey(): string;
 
   findTilesWithKey(key: string): TestHexCoordinates[];
+  findTilesWithKeyIn(locationKey: string, key: string): TestHexCoordinates[];
 
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;

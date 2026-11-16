@@ -36,6 +36,8 @@ import {
   stopExpeditionSync,
 } from '@/services/player/expedition-sync';
 import { observeServerClock } from '@/services/battle/battle-clock';
+import { reportHeroElsewhere } from '@/services/world/presence-location';
+import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
 import { bindInventoryMirror } from './inventory-mirror';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
@@ -388,7 +390,8 @@ export async function ensurePresence(
   if (!now) return;
   const known = inventorySession.presence;
   if (known && known.locationKey === now.locationKey && known.mapId === now.mapId) return;
-  await sendWorldCommand('WORLD_ENTER', { locationKey: now.locationKey });
+  const result = await sendWorldCommand('WORLD_ENTER', { locationKey: now.locationKey });
+  if (result.code === HERO_ELSEWHERE) reportHeroElsewhere();
 }
 
 async function loadWorldCache(): Promise<void> {

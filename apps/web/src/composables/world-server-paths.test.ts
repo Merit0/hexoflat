@@ -12,11 +12,10 @@ import {
   fakePresence,
   sentCommands,
   fakeStoredWorldOf,
-  fakeEngageSquad,
-  fakeEndBattle,
   fakeWorldSnapshot,
 } from '@/test-support/fake-player-server';
 import { seedFakeSession } from '@/test-support/fake-session';
+import { fakeEngageSquad, fakeEndBattle } from '@/test-support/fake-battle-fixtures';
 import { ensurePresence, settleInventorySync } from '@/services/inventory/inventory-sync';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
