@@ -10,7 +10,7 @@ import { usePresenceRoute } from './use-presence-route';
 const goToLocation = vi.fn();
 
 vi.mock('@/stores/world-map-store', () => ({
-  useWorldMapStore: () => ({ goToLocation }),
+  useWorldMapStore: () => ({ goToLocation, isShowing: () => false }),
 }));
 vi.mock('@/services/world/location-navigator', () => ({
   replaceLocationRoute: vi.fn(async () => {}),

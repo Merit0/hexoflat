@@ -16,7 +16,7 @@ function buildRevealedMap(width = 3, height = 3) {
   return map;
 }
 
-describe('useWorldMapStore: leaveCurrentLocation', () => {
+describe('useWorldMapStore: leaving a location', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     seedFakeSession('hero-wm');
@@ -29,15 +29,17 @@ describe('useWorldMapStore: leaveCurrentLocation', () => {
     worldStore.currentLocationKey = 'cave';
     worldStore.currentMapId = 'cave-map-id';
     hero.heroCoordinates = { columnIndex: 1, rowIndex: 1 };
+    forgetServerWorld('silesia');
     const stopSpy = vi.spyOn(worldStore, 'stopWorldLoop');
 
-    worldStore.leaveCurrentLocation();
+    worldStore.goToLocation('silesia');
 
     expect(hero.nav).toEqual({
       locationKey: 'camping',
       locationMapId: null,
       returnStack: [],
     });
+    expect(hero.heroCoordinates).toEqual({ columnIndex: 1, rowIndex: 1 });
     expect(stopSpy).toHaveBeenCalled();
   });
 

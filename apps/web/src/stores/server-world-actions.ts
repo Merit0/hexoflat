@@ -26,6 +26,7 @@ import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { holdsMap, holdsPlace } from '@/services/world/held-map';
+import { claimMapSwap, type MapSwap } from '@/stores/active-map-swap';
 
 const SERVER_TICK_BACKOFF_MS = 2000;
 let serverTicking = false;
@@ -70,15 +71,13 @@ export function applyWorldResultAction(
   host.markTilesDirty(applyWorldResult(host.map as HexMapModel, result, deps));
 }
 
-export async function refetchWorldAction(host: ServerWorldHost, hero: ServerWorldHero) {
+export async function refetchWorldAction(host: ServerWorldHost & { swapMap(swap: MapSwap): void }) {
   const mapId = host.currentMapId;
   if (!mapId) return;
+  const latest = claimMapSwap();
   const served = await refetchServedWorld(host.currentLocationKey);
-  if (!served || served.mapId !== mapId || host.currentMapId !== mapId) return;
-  host.map = served.map;
-  hero.heroCoordinates = served.heroCoordinates;
-  host.cacheServedWorld();
-  host.markTilesDirty(served.map.tiles.map((tile) => tile.coordinates));
+  if (!latest() || !served || served.mapId !== mapId || host.currentMapId !== mapId) return;
+  host.swapMap({ kind: 'refetched', served });
 }
 
 function heldElsewhere(host: ServerWorldHost): boolean {

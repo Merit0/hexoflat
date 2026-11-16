@@ -21,7 +21,7 @@ export function usePresenceRoute(routeKey: () => LocationKey | undefined): void 
         void replaceLocationRoute(held);
         return;
       }
-      worldStore.goToLocation(key);
+      if (!worldStore.isShowing(key)) worldStore.goToLocation(key);
     },
     { immediate: true },
   );

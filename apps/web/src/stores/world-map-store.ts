@@ -1,6 +1,5 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { forgetAllServerWorlds, cacheServerWorld } from '@/services/player/world-sync';
-import type { ServerWorld } from '@hexoflat/engine/world/server-world';
 import { reloadWorldCache, type WorldCommandResult } from '@/services/inventory/inventory-sync';
 import { installTravelledWorlds, readCachedWorld } from '@/services/world/served-world';
 import { takeServerBattleView } from '@/services/battle/battle-server';
@@ -14,11 +13,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroStore } from '@/stores/hero-store';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useGatheringStore } from '@/stores/gathering-store';
-import {
-  LocationKey,
-  MapRegistry,
-  type CreatedBoard,
-} from '@hexoflat/engine/registry/world-map-registry';
+import { LocationKey, MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import type { BoardDescriptor } from '@hexoflat/engine/boards/board-descriptors';
 import type { BoardRecipeInput } from '@hexoflat/engine/content/boards/recipe-schema';
 import {
@@ -31,7 +26,7 @@ import type { HexEngineActionContext } from '@hexoflat/engine';
 import type { IWorldMapPort } from '@hexoflat/engine/abstraction/abstract-action';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { tileDirtyTracker } from '@/render/tile-dirty-tracker';
-import { getStream, reseedWorld } from '@/services/rng/world-rng';
+import { getStream } from '@/services/rng/world-rng';
 import { worldLoop } from '@/services/world/world-loop';
 import { heldLocationKey } from '@/services/world/presence-location';
 
@@ -63,8 +58,7 @@ import {
   serverWorldJsonOfHost,
   stepOnServerAction,
 } from '@/stores/server-world-actions';
-import { leaveCurrentLocationAction } from '@/stores/leave-location-action';
-import { placeHeroOnArrivalAction } from '@/stores/arrival-action';
+import { claimMapSwap, swapActiveMap, type MapSwap } from '@/stores/active-map-swap';
 import { respawnHeroAtCampingAction } from '@/stores/camp-respawn-action';
 
 export const useWorldMapStore = defineStore('world-map-store', {
@@ -207,8 +201,13 @@ export const useWorldMapStore = defineStore('world-map-store', {
       const heroStore = useHeroStore();
 
       const locationKey = heldLocationKey() ?? heroStore.nav.locationKey;
+      if (this.isShowing(locationKey)) return;
 
       this.goToLocation(locationKey);
+    },
+
+    isShowing(locationKey: LocationKey): boolean {
+      return this.currentMapId !== null && this.currentLocationKey === locationKey;
     },
 
     goToLocation(locationKey: LocationKey) {
@@ -221,23 +220,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
         return;
       }
 
-      this.leaveCurrentLocation();
       this.loadLocationMap(locationKey);
-
-      if (!this.currentMapId) return;
-
-      this.placeHeroOnArrival(locationKey);
-      this.revealAroundHero();
-      this.revealEntryTile();
-      this.cacheServedWorld();
-    },
-
-    leaveCurrentLocation() {
-      leaveCurrentLocationAction(this);
-    },
-
-    placeHeroOnArrival(locationKey: LocationKey) {
-      placeHeroOnArrivalAction(this, useHeroStore(), locationKey);
     },
 
     revealEntryTile() {
@@ -248,29 +231,27 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     loadLocationMap(locationKey: LocationKey) {
-      const cached = readCachedWorld(locationKey);
-      this.currentLocationKey = locationKey;
+      const served = readCachedWorld(locationKey);
+      this.swapMap(
+        served ? { kind: 'served', locationKey, served } : { kind: 'missing', locationKey },
+      );
+    },
 
-      if (!cached) {
-        this.stopWorldLoop();
-        this.map = null;
-        this.descriptor = null;
-        this.currentMapId = null;
-        this.worldLoadFailed = true;
-        return;
-      }
-
-      this.worldLoadFailed = false;
-      this.currentMapId = cached.mapId;
-      this.installServedWorld(cached);
-      this.markAllTilesDirty();
-
-      useHeroStore().setLocation(locationKey, cached.mapId);
+    swapMap(swap: MapSwap) {
+      swapActiveMap(this, swap, {
+        hero: useHeroStore(),
+        restoreBattle: (engagement) =>
+          useBattleStore().restore(
+            servedEngagement(engagement, this.map as HexMapModel | null),
+            takeServerBattleView(),
+          ),
+      });
     },
 
     async retryWorldLoad() {
+      const latest = claimMapSwap();
       await reloadWorldCache();
-      this.goToLocation(this.currentLocationKey);
+      if (latest()) this.goToLocation(this.currentLocationKey);
     },
 
     serverWorldJson(engagement?: Engagement | null): string | null {
@@ -280,17 +261,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     stepOnServer(coordinates: IHexCoordinates) {
       return stepOnServerAction(this, useHeroStore(), coordinates);
-    },
-
-    applyFreshBoard(created: CreatedBoard) {
-      this.map = created.map;
-      this.descriptor = created.descriptor;
-      this.initFog();
-      this.hydrateResourcesFromConfig();
-    },
-
-    setHeroLocation(locationKey: LocationKey, mapId: string) {
-      useHeroStore().setLocation(locationKey, mapId);
     },
 
     devRegenerateDungeon(params: DevRecipeParams = {}) {
@@ -305,22 +275,6 @@ export const useWorldMapStore = defineStore('world-map-store', {
       devRebuildFromRecipeAction(this, recipe, params);
     },
 
-    installServedWorld(served: ServerWorld) {
-      const heroStore = useHeroStore();
-
-      this.descriptor = served.descriptor;
-      this.map = served.map;
-      heroStore.heroCoordinates = served.heroCoordinates;
-      this.cacheServedWorld(served.engagement);
-      this.hydrateResourcesFromConfig();
-      reseedWorld(served.worldSeed ?? crypto.randomUUID());
-      useBattleStore().restore(
-        servedEngagement(served.engagement, this.map as HexMapModel | null),
-        takeServerBattleView(),
-      );
-      if (!heroStore.heroCoordinates) this.placeHeroAtEntry(this.currentLocationKey);
-    },
-
     cacheServedWorld(engagement?: Engagement | null) {
       if (!this.currentMapId) return;
       const json = this.serverWorldJson(engagement);
@@ -328,7 +282,7 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     refetchWorld() {
-      return refetchWorldAction(this, useHeroStore());
+      return refetchWorldAction(this);
     },
 
     applyWorldResult(result: WorldCommandResult) {
@@ -396,16 +350,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
     },
 
     clearAllWorlds() {
-      this.stopWorldLoop();
-
       forgetAllServerWorlds();
-
-      this.map = null;
-      this.descriptor = null;
-      useHeroStore().heroCoordinates = null;
-      this.currentMapId = null;
-      this.worldLoadFailed = false;
-      this.currentLocationKey = 'camping';
+      this.swapMap({ kind: 'cleared' });
       useBattleStore().close();
     },
   },
