@@ -121,8 +121,8 @@ export class BattleCollectFeature extends BaseFeature {
     await this.step('Reload the page and verify the collection phase resumes', async () => {
       const before = await this.collect.read();
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
-      await this.page.reload();
-      await this.campingMap.hexBoard.waitForReady();
+      await this.campingMap.reload();
+      await this.campingMap.activeBoard.waitForReady();
       await this.collect.waitForCollecting();
       const after = await this.collect.read();
       expect(after.graves.map((g) => [g.q, g.r, g.examined])).toEqual(

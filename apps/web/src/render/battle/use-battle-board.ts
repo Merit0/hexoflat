@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
+import { watch, type ComputedRef, type Ref } from 'vue';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type {
   BattleCreature,
@@ -12,7 +12,8 @@ import {
   type BattlefieldBiome,
 } from '@hexoflat/engine/battle/battlefield';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
-import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
+import type { HexBoardApp } from '@/render/pixi-app';
+import { useObservedBoardApp } from '@/render/use-observed-board-app';
 import {
   HEX_WORLD_HEIGHT,
   HEX_WORLD_WIDTH,
@@ -21,6 +22,7 @@ import {
   worldToScreen,
   type BoardCamera,
   type BoardFrame,
+  type PaneSize,
 } from '@/render/board-camera';
 import { preloadTextures } from '@/render/texture-cache';
 import { preloadBloodSplash } from '@/render/blood-splash';
@@ -90,8 +92,6 @@ interface Layers {
 export function useBattleBoard(options: UseBattleBoardOptions): void {
   let pixi: HexBoardApp | null = null;
   let layers: Layers | null = null;
-  let observer: ResizeObserver | null = null;
-  let destroyed = false;
 
   const positionOf = (hex: BattleHex) =>
     calcHexPixelPosition(
@@ -211,22 +211,14 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     return { board, overlay, preview, tokens, loot, flight, fx, damage, animator };
   }
 
-  async function start(width: number, height: number) {
-    const canvas = options.canvas.value;
-    if (!canvas || pixi) return;
-    const app = await createHexBoardApp(canvas, width, height);
-    if (destroyed) {
-      app.destroy();
-      return;
-    }
-    await Promise.all([
+  function prepare() {
+    return Promise.all([
       preloadTextures(battleAssetPaths(options.scene.value.biome)),
       preloadBloodSplash(),
     ]);
-    if (destroyed) {
-      app.destroy();
-      return;
-    }
+  }
+
+  function start(app: HexBoardApp, { width, height }: PaneSize) {
     pixi = app;
     options.takeEvents?.();
     layers = createLayers(app);
@@ -245,16 +237,28 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     app.onFirstFramePresented(() => options.onReady?.());
   }
 
-  onMounted(() => {
-    const pane = options.pane.value;
-    if (!pane) return;
-    observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      if (width <= 0 || height <= 0) return;
-      if (pixi) fit(width, height);
-      else void start(width, height);
-    });
-    observer.observe(pane);
+  function dispose() {
+    if (import.meta.env.VITE_E2E_HOOKS === 'true') registerBattleHexProbe(null);
+    layers?.animator.destroy();
+    layers?.fx.destroy();
+    layers?.damage.destroy();
+    layers?.preview.destroy();
+    layers?.board.destroy();
+    layers?.overlay.destroy();
+    layers?.tokens.destroy();
+    layers?.loot.destroy();
+    layers?.flight.destroy();
+    pixi = null;
+    layers = null;
+  }
+
+  useObservedBoardApp({
+    pane: options.pane,
+    canvas: options.canvas,
+    prepare,
+    onStart: start,
+    onResize: ({ width, height }) => fit(width, height),
+    onDispose: dispose,
   });
 
   watch([options.scene, options.overlay], () => {
@@ -269,23 +273,5 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
   watch(options.preview, () => {
     syncPreview();
     pixi?.renderNow();
-  });
-
-  onBeforeUnmount(() => {
-    destroyed = true;
-    if (import.meta.env.VITE_E2E_HOOKS === 'true') registerBattleHexProbe(null);
-    observer?.disconnect();
-    layers?.animator.destroy();
-    layers?.fx.destroy();
-    layers?.damage.destroy();
-    layers?.preview.destroy();
-    layers?.board.destroy();
-    layers?.overlay.destroy();
-    layers?.tokens.destroy();
-    layers?.loot.destroy();
-    layers?.flight.destroy();
-    pixi?.destroy();
-    pixi = null;
-    layers = null;
   });
 }

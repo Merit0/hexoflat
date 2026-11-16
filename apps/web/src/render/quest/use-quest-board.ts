@@ -1,7 +1,8 @@
-import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue';
+import { watch, type ComputedRef, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
-import { createHexBoardApp, type HexBoardApp } from '@/render/pixi-app';
+import type { HexBoardApp } from '@/render/pixi-app';
+import { useObservedBoardApp } from '@/render/use-observed-board-app';
 import {
   HEX_WORLD_HEIGHT,
   HEX_WORLD_WIDTH,
@@ -10,6 +11,7 @@ import {
   snapCameraToPixels,
   type BoardFrame,
   type BoardCamera,
+  type PaneSize,
   type WorldRect,
 } from '@/render/board-camera';
 import { preloadTextures } from '@/render/texture-cache';
@@ -72,8 +74,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
   let layer: QuestNumbersLayer | null = null;
   let flightLayer: LootFlightLayer | null = null;
   let heroLayer: HeroLayer | null = null;
-  let observer: ResizeObserver | null = null;
-  let destroyed = false;
+  let floor = LEGACY_FLOOR;
   let currentCamera: BoardCamera | null = null;
   let paneSize = { width: 0, height: 0 };
   const frameRect = () => fieldWorldRect(options.model.value);
@@ -104,20 +105,12 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
     pixi?.renderNow();
   }
 
-  async function start(width: number, height: number) {
-    const canvas = options.canvas.value;
-    if (!canvas || pixi) return;
-    const app = await createHexBoardApp(canvas, width, height);
-    if (destroyed) {
-      app.destroy();
-      return;
-    }
-    const floor = options.model.value.background ?? LEGACY_FLOOR;
-    await preloadTextures(questLayerAssetPaths(floor));
-    if (destroyed) {
-      app.destroy();
-      return;
-    }
+  function prepare() {
+    floor = options.model.value.background ?? LEGACY_FLOOR;
+    return preloadTextures(questLayerAssetPaths(floor));
+  }
+
+  function start(app: HexBoardApp, { width, height }: PaneSize) {
     pixi = app;
     layer = createQuestNumbersLayer({
       worldContainer: app.worldContainer,
@@ -154,16 +147,24 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
     app.onFirstFramePresented(() => options.onReady?.());
   }
 
-  onMounted(() => {
-    const pane = options.pane.value;
-    if (!pane) return;
-    observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      if (width <= 0 || height <= 0) return;
-      if (pixi) fit(width, height);
-      else void start(width, height);
-    });
-    observer.observe(pane);
+  function dispose() {
+    if (import.meta.env.VITE_E2E_HOOKS === 'true') registerQuestHexProbe(null);
+    flightLayer?.destroy();
+    heroLayer?.destroy();
+    layer?.destroy();
+    pixi = null;
+    layer = null;
+    flightLayer = null;
+    heroLayer = null;
+  }
+
+  useObservedBoardApp({
+    pane: options.pane,
+    canvas: options.canvas,
+    prepare,
+    onStart: start,
+    onResize: ({ width, height }) => fit(width, height),
+    onDispose: dispose,
   });
 
   function playPending(request: typeof lootFlightRequest.value) {
@@ -179,18 +180,4 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
   if (options.referenceFrame)
     watch(options.referenceFrame, () => fit(paneSize.width, paneSize.height));
   watch(lootFlightRequest, playPending);
-
-  onBeforeUnmount(() => {
-    destroyed = true;
-    if (import.meta.env.VITE_E2E_HOOKS === 'true') registerQuestHexProbe(null);
-    observer?.disconnect();
-    flightLayer?.destroy();
-    heroLayer?.destroy();
-    layer?.destroy();
-    pixi?.destroy();
-    pixi = null;
-    layer = null;
-    flightLayer = null;
-    heroLayer = null;
-  });
 }

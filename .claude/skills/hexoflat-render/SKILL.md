@@ -11,7 +11,8 @@ PixiJS renders the board. Vue owns the surrounding DOM and feeds the renderer re
 
 ```
 pixi-app.ts          bootstrap of the Pixi Application
-use-hex-board.ts     the Vue<->Pixi seam; owns all layer lifecycles
+use-hex-board.ts     the Vue<->Pixi seam of the world board; owns all layer lifecycles
+use-observed-board-app.ts  shared Pixi lifecycle of the quest and battle boards (ResizeObserver start, one app, dispose)
 board-camera.ts      world hex size, fit/follow camera, world->screen mapping
 hex-geometry.ts      hex pixel math
 texture-cache.ts     texture reuse; preloadTextures(paths) awaits loads
@@ -142,3 +143,8 @@ Seeker floor, border, exit and background come from `QuestProjection.board`, pro
 Map answer colors (2026-11-15): `buildQuestField` maps the server's final `answerReview` mask to path hex coordinates as `answerCorrect`; `quest-numbers-layer` renders those numbers green/red with a dark outline, overriding hint styling. Unchosen hexes and paths without a review retain their normal number style.
 
 Quest camera scale (2026-11-16): the board host supplies the saved world frame to `quest-field-area.vue`; `useQuestBoard` reuses `fitAtReferenceZoom`, as battles do, instead of fitting a separate quest zoom. The shared helper accepts optional hero focus for clamped following on larger fields. Quest offsets use the same pixel snapping as the world, and reference/viewport changes re-fit without mounting a background canvas. Browser entry checks compare actual screen spacing between adjacent world and quest hexes.
+
+## Board app lifecycle and shared-ticker animations (2026-11-16)
+
+- **Quest and battle boards start Pixi only through `useObservedBoardApp`** (`render/use-observed-board-app.ts`): a `starting` guard so a `ResizeObserver` callback during `app.init` or texture preload never creates a second `Application` on the same canvas, the latest pane size goes to `onStart`, an app that finishes after unmount is destroyed, and `onDispose` (layers, e2e probe) runs before `app.destroy()`. Pass preloads as `prepare`. Never add another `if (pixi) fit() else start()` copy. The world board keeps its own `onMounted` start (pane polling in `useBoardCamera`). Tests: `use-observed-board-app.test.ts`.
+- **A layer that runs a tween on `Ticker.shared` must cancel it in `destroy()` and before replacing it.** A destroyed Pixi `Container` has `position === null`; a frame that still touches it throws, the handler never removes itself, and every later `Ticker.shared` listener (hero walk tween, portal tweens, loot flights) stops running, which also leaves `portalFxBusy` stuck and blocks walking. `loot-flight-layer.ts` keeps its `Tween`, cancels it in `clear()`/`destroy()`, and lands nothing once destroyed (`loot-flight-layer.test.ts`). Follow-ups (try/catch in `runTween`, render-leak e2e hook) are in `docs/architecture/map-architecture-improvement-plan.md`.
