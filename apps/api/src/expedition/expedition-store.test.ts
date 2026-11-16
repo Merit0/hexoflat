@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { BLOB_KEY_PATTERN, CLIENT_BLOB_KEYS } from './expedition-store';
 
 describe('client blob keys', () => {
-  it('allowed blob keys are fixed - reintroduce key-count limit if keys become dynamic', () => {
+  it('allowed blob keys are fixed - reintroduce key-count and total-size limits if keys become dynamic', () => {
     expect([...CLIENT_BLOB_KEYS]).toEqual(['nav', 'progress', 'hero-store']);
     for (const key of CLIENT_BLOB_KEYS) expect(BLOB_KEY_PATTERN.test(key)).toBe(true);
     for (const key of [

@@ -96,6 +96,11 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
     ['a map key that is not a map id', { 'map:123': '{}' }, 'BAD_KEY'],
     ['a document that is not JSON', { nav: 'not json' }, 'BAD_JSON'],
     ['a document that is too large', { nav: `"${'x'.repeat(MAX_BLOB_BYTES)}"` }, 'BLOB_TOO_LARGE'],
+    [
+      'a document over the size limit beside a valid one',
+      { nav: '{"k":1}', progress: `"${'x'.repeat(MAX_BLOB_BYTES)}"` },
+      'BLOB_TOO_LARGE',
+    ],
   ])('refuses %s and writes nothing', async (_name, put, code) => {
     const { userId, heroId } = await kit.newPlayer();
     const id = await ensureExpedition(kit.db, userId, heroId);
@@ -215,6 +220,55 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
       const bad = await call(userId, 'PATCH', token, { put: { nope: '{}' } });
       expect(bad.status).toBe(400);
       expect(((await bad.json()) as { code: string }).code).toBe('BAD_KEY');
+    });
+
+    describe('removing documents', () => {
+      async function savedPlayer() {
+        const { userId, heroId } = await kit.newPlayer();
+        sessions.claim(heroId, 'tab');
+        const token = sessions.tokenOf(heroId)!;
+        await call(userId, 'PATCH', token, { put: { nav: '{"k":1}', progress: '{"p":1}' } });
+        return { userId, token };
+      }
+
+      async function blobsOf(userId: string) {
+        return (
+          (await (await call(userId, 'GET', null)).json()) as {
+            blobs: Record<string, string>;
+          }
+        ).blobs;
+      }
+
+      it('REQ-3: refuses to remove an unknown key with BAD_KEY and removes nothing', async () => {
+        const { userId, token } = await savedPlayer();
+
+        const refused = await call(userId, 'PATCH', token, { remove: ['nav', 'index'] });
+
+        expect(refused.status).toBe(400);
+        expect(((await refused.json()) as { code: string }).code).toBe('BAD_KEY');
+        expect(await blobsOf(userId)).toEqual({ nav: '{"k":1}', progress: '{"p":1}' });
+      });
+
+      it('refuses a remove list longer than the allowed keys and removes nothing', async () => {
+        const { userId, token } = await savedPlayer();
+
+        const refused = await call(userId, 'PATCH', token, {
+          remove: ['nav', 'progress', 'hero-store', 'nav'],
+        });
+
+        expect(refused.status).toBe(400);
+        expect(((await refused.json()) as { code: string }).code).toBe('INVALID_COMMAND');
+        expect(await blobsOf(userId)).toEqual({ nav: '{"k":1}', progress: '{"p":1}' });
+      });
+
+      it('removes an allowed document and keeps the others', async () => {
+        const { userId, token } = await savedPlayer();
+
+        const removed = await call(userId, 'PATCH', token, { remove: ['nav'] });
+
+        expect(removed.status).toBe(200);
+        expect(await blobsOf(userId)).toEqual({ progress: '{"p":1}' });
+      });
     });
 
     it('never shows another account the expedition of this one', async () => {

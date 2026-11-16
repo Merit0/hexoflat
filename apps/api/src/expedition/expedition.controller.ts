@@ -15,12 +15,18 @@ import { JwtAuthGuard, type AuthenticatedRequest } from '../auth/jwt-auth.guard'
 import { DB, type Db } from '../db/db.module';
 import { HeroesService } from '../heroes/heroes.service';
 import { HERO_SESSIONS, type HeroSessions } from '../player/hero-sessions';
-import { ExpeditionError, ensureExpedition, loadBlobs, patchBlobs } from './expedition-store';
+import {
+  CLIENT_BLOB_KEYS,
+  ExpeditionError,
+  ensureExpedition,
+  loadBlobs,
+  patchBlobs,
+} from './expedition-store';
 
 const PatchSchema = z
   .object({
     put: z.record(z.string().max(80), z.string()).default({}),
-    remove: z.array(z.string().max(80)).max(64).default([]),
+    remove: z.array(z.enum(CLIENT_BLOB_KEYS)).max(CLIENT_BLOB_KEYS.length).default([]),
   })
   .strict();
 
@@ -51,7 +57,12 @@ export class ExpeditionController {
       throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
     }
     const parsed = PatchSchema.safeParse(body ?? {});
-    if (!parsed.success) throw new BadRequestException({ code: 'INVALID_COMMAND' });
+    if (!parsed.success) {
+      const badKey = parsed.error.issues.some(
+        (issue) => issue.path[0] === 'remove' && issue.code === 'invalid_value',
+      );
+      throw new BadRequestException({ code: badKey ? 'BAD_KEY' : 'INVALID_COMMAND' });
+    }
     const expeditionId = await ensureExpedition(this.db, request.user.sub, hero.id);
     try {
       const revision = await patchBlobs(this.db, expeditionId, parsed.data.put, parsed.data.remove);

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/db.module';
 import { expeditionBlobs, expeditionMembers, expeditions } from '../db/schema';
 import type { Executor, Tx } from '../player/aggregate-store';
@@ -7,9 +7,8 @@ import type { Executor, Tx } from '../player/aggregate-store';
 export const CLIENT_BLOB_KEYS = ['nav', 'progress', 'hero-store'] as const;
 export const BLOB_KEY_PATTERN = new RegExp(`^(?:${CLIENT_BLOB_KEYS.join('|')})$`);
 export const MAX_BLOB_BYTES = 3 * 1024 * 1024;
-export const MAX_TOTAL_BYTES = 24 * 1024 * 1024;
 
-export type ExpeditionRefusal = 'BAD_KEY' | 'BAD_JSON' | 'BLOB_TOO_LARGE' | 'EXPEDITION_TOO_LARGE';
+export type ExpeditionRefusal = 'BAD_KEY' | 'BAD_JSON' | 'BLOB_TOO_LARGE';
 
 export class ExpeditionError extends Error {
   constructor(readonly code: ExpeditionRefusal) {
@@ -164,18 +163,6 @@ export async function patchBlobs(
           set: { data, updatedAt: new Date().toISOString() },
         });
     }
-    const [{ bytes }] = await tx
-      .select({
-        bytes: sql<number>`coalesce(sum(octet_length(${expeditionBlobs.data})), 0)::int`,
-      })
-      .from(expeditionBlobs)
-      .where(
-        and(
-          eq(expeditionBlobs.expeditionId, expeditionId),
-          inArray(expeditionBlobs.key, [...CLIENT_BLOB_KEYS]),
-        ),
-      );
-    if (bytes > MAX_TOTAL_BYTES) throw new ExpeditionError('EXPEDITION_TOO_LARGE');
     const revision = locked.revision + 1;
     await tx.update(expeditions).set({ revision }).where(eq(expeditions.id, expeditionId));
     return revision;
