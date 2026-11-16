@@ -79,7 +79,7 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
   });
 
   it.each(RETIRED_KEYS)(
-    'REQ-4: refuses to write or remove the retired document %s and writes nothing',
+    'REQ-3: refuses to write or remove the retired document %s and writes nothing',
     async (key) => {
       const { userId, heroId } = await kit.newPlayer();
       const id = await ensureExpedition(kit.db, userId, heroId);
@@ -116,23 +116,26 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
     return id;
   }
 
-  async function keysOf(id: string) {
+  async function rowsOf(id: string) {
     const rows = await kit.db
-      .select({ key: expeditionBlobs.key })
+      .select({ key: expeditionBlobs.key, data: expeditionBlobs.data })
       .from(expeditionBlobs)
       .where(eq(expeditionBlobs.expeditionId, id));
-    return rows.map((row) => row.key).sort();
+    return rows.sort((a, b) => a.key.localeCompare(b.key));
   }
 
-  it('the migration deletes the retired documents and keeps the hero documents and the server maps', async () => {
+  it('REQ-2: the migration deletes the retired documents and leaves the hero documents and the server maps untouched', async () => {
     const id = await expeditionWithRetiredRows();
 
     await kit.db.execute(sql.raw(readFileSync(RETIRE_MIGRATION, 'utf8')));
 
-    expect(await keysOf(id)).toEqual(['nav', 'srv-index']);
+    expect(await rowsOf(id)).toEqual([
+      { key: 'nav', data: '{"k":1}' },
+      { key: 'srv-index', data: '{}' },
+    ]);
   });
 
-  it('never gives the browser a retired document still left in the database', async () => {
+  it('REQ-1: never gives the browser a retired document still left in the database', async () => {
     const id = await expeditionWithRetiredRows();
 
     expect(await loadBlobs(kit.db, id)).toEqual({ nav: '{"k":1}' });

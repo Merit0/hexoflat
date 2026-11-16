@@ -8,8 +8,7 @@ import { validateContent } from '@hexoflat/engine/content/validate-content';
 import { queryClient } from './api/query-client';
 import { useUserStore } from './stores/user-store';
 import { i18n } from './i18n';
-import { writeBlob } from './services/persistence/world-blob-store';
-import { HERO_STORE_BLOB, savableHeroState } from './stores/hero-store-blob';
+import { persistHeroStore } from './stores/hero-store-blob';
 
 if (import.meta.env.DEV) {
   validateContent();
@@ -24,17 +23,7 @@ const pinia = createPinia();
  * store: it carries the JWT accessToken, which only ever lives in memory (api/auth-token.ts); a
  * page refresh survives via a silent `GET /auth/session` call against an httpOnly cookie.
  */
-pinia.use((context) => {
-  if (context.store.$id !== 'hero') return;
-
-  context.store.$subscribe((_, state) => {
-    try {
-      writeBlob(HERO_STORE_BLOB, JSON.stringify(savableHeroState(state)));
-    } catch (e) {
-      console.warn('[pinia-persist] failed to persist "hero"', e);
-    }
-  });
-});
+pinia.use(persistHeroStore);
 
 const app = createApp(App);
 

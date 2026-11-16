@@ -1,3 +1,6 @@
+import type { PiniaPluginContext } from 'pinia';
+import { writeBlob } from '@/services/persistence/world-blob-store';
+
 export const HERO_STORE_BLOB = 'hero-store';
 
 const NAV_FIELDS = ['locationKey', 'locationMapId', 'returnStack'] as const;
@@ -24,4 +27,16 @@ export function restorableHeroState(saved: unknown): Record<string, unknown> | n
     NAV_FIELDS.filter((key) => key in source).map((key) => [key, source[key]]),
   );
   return { ...restorable, nav };
+}
+
+export function persistHeroStore(context: PiniaPluginContext): void {
+  if (context.store.$id !== 'hero') return;
+
+  context.store.$subscribe((_, state) => {
+    try {
+      writeBlob(HERO_STORE_BLOB, JSON.stringify(savableHeroState(state)));
+    } catch (e) {
+      console.warn('[pinia-persist] failed to persist "hero"', e);
+    }
+  });
 }

@@ -1,23 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createApp, nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
+import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { apiClient } from '@/api/client';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { readBlob, writeBlob } from '@/services/persistence/world-blob-store';
 import { ensurePresence } from '@/services/inventory/inventory-sync';
 import { fakePlaceHero, fakePresence, fakeStoredWorldOf } from '@/test-support/fake-player-server';
+import { fakeWorldSnapshot } from '@/test-support/fake-battle-fixtures';
 import { fakeStandIn, seedFakeSession } from '@/test-support/fake-session';
 import { crossExitIfStanding } from '@/composables/use-board-crossing';
 import { usePortal } from '@/composables/use-portal';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { useHeroInventoryStore } from './hero-inventory-store';
-import { HERO_STORE_BLOB, savableHeroState } from './hero-store-blob';
+import { HERO_STORE_BLOB, persistHeroStore } from './hero-store-blob';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from './world-map-store';
 
 vi.mock('@/services/player/player-socket', async () =>
   (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
 );
+const { fetchHeroMock } = vi.hoisted(() => ({ fetchHeroMock: vi.fn() }));
+
+vi.mock('@/api/Requests', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/Requests')>()),
+  fetchHero: fetchHeroMock,
+}));
 vi.mock('@/services/world/location-navigator', () => ({
   navigateToLocation: vi.fn(),
   isViewingOtherWorldLocation: vi.fn(() => false),
@@ -44,20 +54,21 @@ function otherGround(locationKey: string, not: IHexCoordinates): IHexCoordinates
   return { ...tile.coordinates };
 }
 
-function storeLegacyHeroBlob(locationKey: string, positions: Record<string, IHexCoordinates>) {
+function legacyHeroBlob(locationKey: string, positions: Record<string, IHexCoordinates>): string {
   const [first] = Object.values(positions);
-  writeBlob(
-    HERO_STORE_BLOB,
-    JSON.stringify({
-      heroCoordinates: first,
-      nav: {
-        locationKey,
-        locationMapId: null,
-        [LEGACY_FIELD]: positions,
-        returnStack: [],
-      },
-    }),
-  );
+  return JSON.stringify({
+    heroCoordinates: first,
+    nav: {
+      locationKey,
+      locationMapId: null,
+      [LEGACY_FIELD]: positions,
+      returnStack: [],
+    },
+  });
+}
+
+function storeLegacyHeroBlob(locationKey: string, positions: Record<string, IHexCoordinates>) {
+  writeBlob(HERO_STORE_BLOB, legacyHeroBlob(locationKey, positions));
 }
 
 describe('where the hero stands after a map load', () => {
@@ -65,7 +76,7 @@ describe('where the hero stands after a map load', () => {
     setActivePinia(createPinia());
   });
 
-  it('REQ-1: equals the server projection even when the stored blob remembers another hex', () => {
+  it('MAPFIX-1 REQ-1: equals the server projection even when the stored blob remembers another hex', () => {
     const { mapId, projected } = seedStandingIn('cave');
     const remembered = otherGround('cave', projected);
     storeLegacyHeroBlob('cave', { [mapId]: remembered });
@@ -88,7 +99,7 @@ describe('where the hero stands after an arrival', () => {
     useWorldMapStore().loadLocationMap('silesia');
   });
 
-  it('REQ-2: equals the server projection after crossing a board edge, whatever the blob remembers', async () => {
+  it('MAPFIX-1 REQ-2: equals the server projection after crossing a board edge, whatever the blob remembers', async () => {
     const world = useWorldMapStore();
     const hero = useHeroStore();
     const north = fakeStoredWorldOf('silesia-north')!;
@@ -111,7 +122,7 @@ describe('where the hero stands after an arrival', () => {
     expect(hero.heroCoordinates).not.toEqual(remembered);
   });
 
-  it('REQ-2: equals the server projection after stepping through a portal, whatever the blob remembers', async () => {
+  it('MAPFIX-1 REQ-2: equals the server projection after stepping through a portal, whatever the blob remembers', async () => {
     vi.stubGlobal('navigator', { locks: { request: (_key: string, run: () => unknown) => run() } });
     seedFakeSession('hero-pos', { will: 20, skills: { a_crest: 1, a_teleport: 6 } });
     const hero = useHeroStore();
@@ -148,31 +159,83 @@ describe('where the hero stands after an arrival', () => {
 
 describe('a stored hero blob from before the server held the position', () => {
   beforeEach(() => {
-    setActivePinia(createPinia());
+    const pinia = createPinia();
+    pinia.use(persistHeroStore);
+    createApp({}).use(pinia);
+    setActivePinia(pinia);
     seedFakeSession('hero-pos');
   });
 
-  it('REQ-3: loads without error, and the old per-map positions are not saved again', () => {
+  it('REQ-4: loads a blob with heroCoordinates, and the next save holds neither it nor the per-map positions', async () => {
     storeLegacyHeroBlob('silesia', { 'old-map': { columnIndex: 4, rowIndex: 2 } });
     const hero = useHeroStore();
 
     expect(() => hero.restoreFromExpedition()).not.toThrow();
     expect(hero.nav.locationKey).toBe('silesia');
+    expect(hero.heroCoordinates).toBeNull();
     expect(LEGACY_FIELD in hero.nav).toBe(false);
+    await nextTick();
 
+    hero.heroCoordinates = { columnIndex: 3, rowIndex: 7 };
     hero.setLocation('silesia', 'map-1');
+    await nextTick();
 
+    const saved = JSON.parse(readBlob(HERO_STORE_BLOB)!) as Record<string, unknown>;
+    expect(saved).not.toHaveProperty('heroCoordinates');
+    expect(saved.nav).toMatchObject({ locationKey: 'silesia', locationMapId: 'map-1' });
+    expect(readBlob(HERO_STORE_BLOB)).not.toContain(LEGACY_FIELD);
     expect(readBlob('nav')).not.toContain(LEGACY_FIELD);
-    expect(JSON.stringify(hero.$state)).not.toContain(LEGACY_FIELD);
+  });
+});
+
+const FAKE_HERO: IHero = {
+  id: 'hero-pos',
+  name: 'Hero',
+  currentHealth: 3,
+  maxHealth: 3,
+  attack: 1,
+  defense: 1,
+  kills: 0,
+  currentEnergy: 0,
+  maxEnergy: 0,
+  imgPath: '',
+  heroLocation: { columnIndex: 0, rowIndex: 0 },
+  heroSteps: 0,
+};
+
+describe('where the hero stands right after login', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    fetchHeroMock.mockReset();
   });
 
-  it('the saved hero blob never holds where the hero stands', () => {
+  it('REQ-5: has no board position between getHero and the world projection, then stands where the server says', async () => {
+    const { mapId, projected } = seedStandingIn('cave');
+    const remembered = otherGround('cave', projected);
+    const blobs = { [HERO_STORE_BLOB]: legacyHeroBlob('cave', { [mapId]: remembered }) };
+    vi.spyOn(apiClient, 'get').mockImplementation((path: string) =>
+      Promise.resolve(
+        (path === '/expeditions/current'
+          ? { expeditionId: 'exp-pos', blobs }
+          : path === '/player/quest'
+            ? { quest: null }
+            : fakeWorldSnapshot()) as never,
+      ),
+    );
+    fetchHeroMock.mockResolvedValue(FAKE_HERO);
     const hero = useHeroStore();
-    hero.heroCoordinates = { columnIndex: 3, rowIndex: 7 };
+    const world = useWorldMapStore();
 
-    const saved = savableHeroState(hero.$state);
+    expect(await hero.getHero()).toBe(true);
 
-    expect(saved).not.toHaveProperty('heroCoordinates');
-    expect(saved).toHaveProperty('nav');
+    expect(hero.nav.locationKey).toBe('cave');
+    expect(world.currentMapId).toBeNull();
+    expect(hero.heroCoordinates).toBeNull();
+
+    world.bootstrapWorld();
+
+    expect(world.currentMapId).toBe(mapId);
+    expect(hero.heroCoordinates).toEqual(projected);
+    expect(hero.heroCoordinates).not.toEqual(remembered);
   });
 });
