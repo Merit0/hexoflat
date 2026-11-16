@@ -1,4 +1,4 @@
-import { Container, Ticker } from 'pixi.js';
+import type { Container } from 'pixi.js';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { calcHexPixelPosition, coordinateKey } from '@hexoflat/engine/utils/hex-utils';
 import { CREATURE_SPRITES } from '@/render/creature-sprites';
@@ -34,31 +34,29 @@ export function createHeroLayer(deps: HeroLayerDeps): HeroLayer {
   let heroTarget = { x: 0, y: 0 };
   let portalTween: Tween | null = null;
   let heldByPortal = false;
-  let tickerHandler: (() => void) | null = null;
+  let moveTween: Tween | null = null;
   const unregister = registerHeroToken(
-    () => !tickerHandler && Math.hypot(root.x - heroTarget.x, root.y - heroTarget.y) < 0.5,
+    () => !moveTween && Math.hypot(root.x - heroTarget.x, root.y - heroTarget.y) < 0.5,
   );
 
   function stopTween() {
-    if (tickerHandler) {
-      Ticker.shared.remove(tickerHandler);
-      tickerHandler = null;
-    }
+    const running = moveTween;
+    moveTween = null;
+    running?.cancel();
   }
 
   function tweenTo(targetX: number, targetY: number) {
     stopTween();
     const fromX = root.x;
     const fromY = root.y;
-    const start = performance.now();
-
-    tickerHandler = () => {
-      const t = Math.min(1, (performance.now() - start) / MOVE_DURATION_MS);
+    const running = runTween(MOVE_DURATION_MS, (t) => {
       const eased = easeOutCubic(t);
       root.position.set(fromX + (targetX - fromX) * eased, fromY + (targetY - fromY) * eased);
-      if (t >= 1) stopTween();
-    };
-    Ticker.shared.add(tickerHandler);
+    });
+    moveTween = running;
+    void running.done.then(() => {
+      if (moveTween === running) moveTween = null;
+    });
   }
 
   function syncHero(coord: IHexCoordinates | null) {

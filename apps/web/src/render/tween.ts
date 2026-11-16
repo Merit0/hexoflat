@@ -16,21 +16,23 @@ export function runTween(durationMs: number, onFrame: (progress: number) => void
     finish = resolve;
   });
 
+  const stop = () => {
+    Ticker.shared.remove(handler);
+    finish();
+  };
+
   const handler = () => {
     const progress = Math.min(1, (performance.now() - start) / durationMs);
-    onFrame(progress);
-    if (progress >= 1) {
-      Ticker.shared.remove(handler);
-      finish();
+    try {
+      onFrame(progress);
+    } catch (error) {
+      stop();
+      console.error('[tween] an animation frame failed and was stopped', error);
+      return;
     }
+    if (progress >= 1) stop();
   };
   Ticker.shared.add(handler);
 
-  return {
-    done,
-    cancel() {
-      Ticker.shared.remove(handler);
-      finish();
-    },
-  };
+  return { done, cancel: stop };
 }

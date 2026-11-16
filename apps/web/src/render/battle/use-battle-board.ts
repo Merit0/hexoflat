@@ -248,6 +248,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
     layers?.tokens.destroy();
     layers?.loot.destroy();
     layers?.flight.destroy();
+    graveFlights.cancel();
     pixi = null;
     layers = null;
   }

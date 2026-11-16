@@ -19,8 +19,10 @@ export interface GraveFlightsDeps {
 export function createGraveFlights(deps: GraveFlightsDeps) {
   let flightBusy = false;
   let animatorBusy = false;
+  let cancelled = false;
 
   function report() {
+    if (cancelled) return;
     deps.onBusy(flightBusy || animatorBusy);
   }
 
@@ -43,6 +45,11 @@ export function createGraveFlights(deps: GraveFlightsDeps) {
         flightBusy = false;
         report();
       });
+    },
+    cancel() {
+      cancelled = true;
+      flightBusy = false;
+      finishLootFlights();
     },
   };
 }

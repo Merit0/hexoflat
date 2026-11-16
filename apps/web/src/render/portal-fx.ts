@@ -10,27 +10,45 @@ export interface PortalFxHooks {
 export const portalFxBusy = ref(false);
 
 let hooks: PortalFxHooks | null = null;
-let holds = 0;
+const holds = new Set<symbol>();
+const timers = new Set<ReturnType<typeof setTimeout>>();
+
+function refreshBusy(): void {
+  portalFxBusy.value = holds.size > 0;
+}
+
+function resetPortalFx(): void {
+  for (const timer of timers) clearTimeout(timer);
+  timers.clear();
+  holds.clear();
+  refreshBusy();
+}
 
 export function registerPortalFx(next: PortalFxHooks): () => void {
   hooks = next;
   return () => {
-    if (hooks === next) hooks = null;
+    if (hooks !== next) return;
+    hooks = null;
+    resetPortalFx();
   };
 }
 
 function hold(): () => void {
-  holds += 1;
-  portalFxBusy.value = true;
+  const token = Symbol('portal-fx-hold');
+  holds.add(token);
+  refreshBusy();
   return () => {
-    holds = Math.max(0, holds - 1);
-    portalFxBusy.value = holds > 0;
+    if (holds.delete(token)) refreshBusy();
   };
 }
 
 export function holdPortalFxFor(durationMs: number): void {
   const release = hold();
-  setTimeout(release, durationMs);
+  const timer = setTimeout(() => {
+    timers.delete(timer);
+    release();
+  }, durationMs);
+  timers.add(timer);
 }
 
 async function playHeld(play: (() => Promise<void>) | undefined): Promise<void> {

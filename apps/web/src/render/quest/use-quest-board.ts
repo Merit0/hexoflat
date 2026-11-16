@@ -149,6 +149,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
 
   function dispose() {
     if (import.meta.env.VITE_E2E_HOOKS === 'true') registerQuestHexProbe(null);
+    finishLootFlights();
     flightLayer?.destroy();
     heroLayer?.destroy();
     layer?.destroy();
