@@ -162,6 +162,7 @@ export function useQuestBoard(options: UseQuestBoardOptions): void {
   useObservedBoardApp({
     pane: options.pane,
     canvas: options.canvas,
+    source: 'quest-board',
     prepare,
     onStart: start,
     onResize: ({ width, height }) => fit(width, height),

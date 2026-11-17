@@ -17,7 +17,7 @@ describe('destination interaction lifetime', () => {
     const events = await enterQuestDestination(
       {
         isCurrent: () => true,
-        ensurePresence: () => Promise.resolve(),
+        ensurePresence: () => Promise.resolve(true),
         send: () => Promise.resolve({ ok: true, events: [{ type: 'QUEST_RESUMED', payload: {} }] }),
         refusalText: (reason) => reason,
       },
@@ -69,7 +69,7 @@ describe('destination interaction lifetime', () => {
   });
 
   it('does not send quest entry when the map changes during presence synchronization', async () => {
-    const presence = deferred<void>();
+    const presence = deferred<boolean>();
     let current = true;
     const send = vi.fn(() => Promise.resolve({ ok: true as const, events: [] }));
     const result = enterQuestDestination(
@@ -83,7 +83,7 @@ describe('destination interaction lifetime', () => {
       EHexActionType.OPEN,
     );
     current = false;
-    presence.resolve();
+    presence.resolve(true);
     expect(await result).toEqual([]);
     expect(send).not.toHaveBeenCalled();
   });
@@ -92,7 +92,7 @@ describe('destination interaction lifetime', () => {
     const events = await enterQuestDestination(
       {
         isCurrent: () => true,
-        ensurePresence: () => Promise.resolve(),
+        ensurePresence: () => Promise.resolve(true),
         send: () => Promise.resolve({ ok: false, code: 'NOT_ACTIVE', events: [] }),
         refusalText: (reason) => `translated:${reason}`,
       },
@@ -114,7 +114,7 @@ describe('destination interaction lifetime', () => {
     const result = enterQuestDestination(
       {
         isCurrent: () => current,
-        ensurePresence: () => Promise.resolve(),
+        ensurePresence: () => Promise.resolve(true),
         send,
         refusalText: (reason) => reason,
       },

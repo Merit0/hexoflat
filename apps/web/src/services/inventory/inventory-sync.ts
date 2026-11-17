@@ -29,6 +29,7 @@ import {
   type WorldCommandResponse,
 } from '@/services/player/player-socket';
 import { cacheServerWorld, resetWorldSync } from '@/services/player/world-sync';
+import { refusedWorldCommand, type WorldCommandResult } from './world-command-result';
 import {
   flushExpedition,
   onExpeditionTakenOver,
@@ -391,12 +392,14 @@ export function sendQuestCommand(
 
 export async function ensurePresence(
   now: { locationKey: string; mapId: string } | null,
-): Promise<void> {
-  if (!now) return;
+): Promise<boolean> {
+  if (!now) return true;
   const known = inventorySession.presence;
-  if (known && known.locationKey === now.locationKey && known.mapId === now.mapId) return;
+  if (known && known.locationKey === now.locationKey && known.mapId === now.mapId) return true;
   const result = await sendWorldCommand('WORLD_ENTER', { locationKey: now.locationKey });
-  if (result.code === HERO_ELSEWHERE) reportHeroElsewhere();
+  if (result.code !== HERO_ELSEWHERE) return true;
+  reportHeroElsewhere();
+  return false;
 }
 
 async function ensureWorldDocument(locationKey: string): Promise<void> {
@@ -412,20 +415,7 @@ async function loadWorldCache(): Promise<void> {
 export const reloadWorldCache = loadWorldCache;
 export const reloadWorldDocument = ensureWorldDocument;
 
-export interface WorldCommandResult {
-  ok: boolean;
-  code?: string;
-  tileDiffs: TileDiff[];
-  events: DomainEvent[];
-  effects: WorldEffect[];
-  engagement: Engagement | null;
-  travel?: WorldCommandResponse['travel'];
-  touched?: WorldCommandResponse['touched'];
-  steps: NonNullable<WorldCommandResponse['steps']>;
-  serverNowMs: number | null;
-  replayed?: boolean;
-  mapId?: string;
-}
+export { refusedWorldCommand, type WorldCommandResult };
 
 export function sendWorldCommand(
   type:
@@ -441,17 +431,7 @@ export function sendWorldCommand(
   payload: Record<string, unknown>,
 ): Promise<WorldCommandResult> {
   const mapId = typeof payload.expectedMapId === 'string' ? { mapId: payload.expectedMapId } : {};
-  const failed = (code: string): WorldCommandResult => ({
-    ok: false,
-    code,
-    tileDiffs: [],
-    events: [],
-    effects: [],
-    engagement: null,
-    steps: [],
-    serverNowMs: null,
-    ...mapId,
-  });
+  const failed = (code: string) => refusedWorldCommand(code, mapId.mapId);
   if (inventorySession.status !== 'live') return Promise.resolve(failed('OFFLINE'));
   return enqueue(async (): Promise<WorldCommandResult> => {
     const env: PlayerEnvelope = {

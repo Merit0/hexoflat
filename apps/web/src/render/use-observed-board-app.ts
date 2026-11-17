@@ -5,36 +5,45 @@ import type { PaneSize } from '@/render/board-camera';
 export interface ObservedBoardAppOptions {
   pane: Ref<HTMLElement | null>;
   canvas: Ref<HTMLCanvasElement | null>;
+  source: string;
   prepare?: () => Promise<unknown>;
   onStart: (app: HexBoardApp, size: PaneSize) => void;
   onResize: (size: PaneSize) => void;
   onDispose: () => void;
+  onError?: (error: unknown) => void;
 }
 
 export function useObservedBoardApp(options: ObservedBoardAppOptions): void {
   let app: HexBoardApp | null = null;
   let starting = false;
+  let failed = false;
   let disposed = false;
   let observer: ResizeObserver | null = null;
   let latest: PaneSize | null = null;
 
+  function fail(error: unknown) {
+    failed = true;
+    console.error(`[board] ${options.source} failed to start`, error);
+    options.onError?.(error);
+  }
+
   async function start() {
     const canvas = options.canvas.value;
-    if (!canvas || !latest || app || starting) return;
+    if (!canvas || !latest || app || starting || failed) return;
     starting = true;
+    let created: HexBoardApp | null = null;
     try {
-      const created = await createHexBoardApp(canvas, latest.width, latest.height);
-      if (disposed) {
-        created.destroy();
-        return;
-      }
-      await options.prepare?.();
+      created = await createHexBoardApp(canvas, latest.width, latest.height);
+      if (!disposed) await options.prepare?.();
       if (disposed) {
         created.destroy();
         return;
       }
       app = created;
       options.onStart(created, latest);
+    } catch (error) {
+      if (created && app !== created) created.destroy();
+      if (!disposed) fail(error);
     } finally {
       starting = false;
     }

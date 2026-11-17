@@ -21,7 +21,7 @@ export async function runObjectTransition<T>(
 
 interface QuestDestinationHost {
   isCurrent(): boolean;
-  ensurePresence(): Promise<unknown>;
+  ensurePresence(): Promise<boolean>;
   send(): Promise<QuestRunAnswer>;
   refusalText(reason: string): string;
 }
@@ -32,8 +32,7 @@ export async function enterQuestDestination(
   actionType: EHexActionType,
 ): Promise<DomainEvent[]> {
   if (!host.isCurrent()) return [];
-  await host.ensurePresence();
-  if (!host.isCurrent()) return [];
+  if (!(await host.ensurePresence()) || !host.isCurrent()) return [];
   const answer = await host.send();
   if (!host.isCurrent()) return [];
   if (answer.ok)

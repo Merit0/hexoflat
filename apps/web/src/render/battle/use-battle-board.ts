@@ -256,6 +256,7 @@ export function useBattleBoard(options: UseBattleBoardOptions): void {
   useObservedBoardApp({
     pane: options.pane,
     canvas: options.canvas,
+    source: 'battle-board',
     prepare,
     onStart: start,
     onResize: ({ width, height }) => fit(width, height),

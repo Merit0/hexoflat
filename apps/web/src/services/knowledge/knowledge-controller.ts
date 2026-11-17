@@ -52,7 +52,9 @@ async function viaServer(
 ) {
   if (!host.isCurrent()) return { state: inventorySession.knowledge, accepted: false };
   const { coordinates, locationKey, mapId } = host.context;
-  if (coordinates) await ensurePresence({ locationKey, mapId });
+  if (coordinates && !(await ensurePresence({ locationKey, mapId }))) {
+    return { state: inventorySession.knowledge, accepted: false };
+  }
   const result = await sendProgress(type, payload);
   return { state: result.knowledge, accepted: result.ok && host.isCurrent() };
 }

@@ -65,7 +65,7 @@ import {
 import { claimMapSwap, swapActiveMap, type MapSwap } from '@/stores/active-map-swap';
 import { respawnHeroAtCampingAction } from '@/stores/camp-respawn-action';
 
-const evictedLoads = new Map<LocationKey, Promise<void>>();
+const locationReloads = new Map<LocationKey, Promise<void>>();
 
 function cachedSwapOf(locationKey: LocationKey): MapSwap {
   const served = readCachedWorld(locationKey);
@@ -243,14 +243,14 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     loadLocationMap(locationKey: LocationKey) {
       if (!readCachedWorld(locationKey) && wasEvicted(locationKey)) {
-        void this.loadEvictedMap(locationKey);
+        void this.reloadLocationMap(locationKey);
         return;
       }
       this.swapMap(cachedSwapOf(locationKey));
     },
 
-    loadEvictedMap(locationKey: LocationKey): Promise<void> {
-      const running = evictedLoads.get(locationKey);
+    reloadLocationMap(locationKey: LocationKey): Promise<void> {
+      const running = locationReloads.get(locationKey);
       if (running) return running;
       const latest = claimMapSwap();
       const load = reloadWorldDocument(locationKey)
@@ -258,8 +258,8 @@ export const useWorldMapStore = defineStore('world-map-store', {
         .then(() => {
           if (latest()) this.swapMap(cachedSwapOf(locationKey));
         })
-        .finally(() => evictedLoads.delete(locationKey));
-      evictedLoads.set(locationKey, load);
+        .finally(() => locationReloads.delete(locationKey));
+      locationReloads.set(locationKey, load);
       return load;
     },
 

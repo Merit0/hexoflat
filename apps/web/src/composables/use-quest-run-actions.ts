@@ -27,7 +27,7 @@ async function leaveQuestField() {
   await closeKnowledgePanel(false);
   const place = heldLocationKey();
   if (!place) return;
-  await refetchServedWorld(place);
+  await refetchServedWorld();
   useWorldMapStore().goToLocation(place);
   if (!isViewingWorldLocation(place)) await routeToLocation(place);
 }

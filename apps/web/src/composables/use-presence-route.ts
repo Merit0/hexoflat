@@ -25,32 +25,32 @@ export function usePresenceRoute(routeKey: () => LocationKey | undefined): void 
     },
     { immediate: true },
   );
-  onHeroElsewhere((held) => {
-    if (held !== routeKey()) void replaceLocationRoute(held);
-  });
-  let reloading = false;
-  let reloaded = false;
-  onMapMismatch(() => {
-    const held = heldLocationKey();
-    if (!held || reloading) return;
-    if (reloaded) {
-      worldStore.failWorldLoad();
-      return;
-    }
-    reloading = true;
-    reloaded = true;
-    void worldStore
-      .retryWorldLoad(held)
+  let recovery: Promise<void> | null = null;
+  function recover(held: LocationKey): void {
+    recovery ??= worldStore
+      .reloadLocationMap(held)
       .then(async () => {
         if (held !== routeKey()) await replaceLocationRoute(held);
       })
       .catch(() => undefined)
       .finally(() => {
-        reloading = false;
+        recovery = null;
       });
+  }
+  onHeroElsewhere(recover);
+  let reloaded = false;
+  onMapMismatch(() => {
+    const held = heldLocationKey();
+    if (!held || recovery) return;
+    if (reloaded) {
+      worldStore.failWorldLoad();
+      return;
+    }
+    reloaded = true;
+    recover(held);
   });
   onMapAccepted(() => {
-    if (!reloading) reloaded = false;
+    if (!recovery) reloaded = false;
   });
   onBeforeUnmount(() => {
     onHeroElsewhere(null);

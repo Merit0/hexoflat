@@ -16,7 +16,6 @@ import { usePresenceRoute } from '@/composables/use-presence-route';
 import { readCachedWorld } from '@/services/world/served-world';
 import { cachedWorldJson } from '@/services/player/world-sync';
 import { apiClient } from '@/api/client';
-import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
 import {
   fakePresence,
   fakeProgressRow,
@@ -258,7 +257,7 @@ describe('an answer for a map the client no longer shows (MAPFIX-2)', () => {
     await vi.waitFor(() => expect(world.currentMapId).toBe('silesia-remade'));
     await settle();
 
-    expect(ensureRequests()).toEqual([...LOCATION_KEYS]);
+    expect(ensureRequests()).toEqual(['silesia']);
     expect(stepsSent()).toEqual(['silesia-map']);
     expect(world.worldLoadFailed).toBe(false);
     view.unmount();

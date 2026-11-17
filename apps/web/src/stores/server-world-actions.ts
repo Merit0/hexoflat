@@ -72,24 +72,27 @@ export function applyWorldResultAction(
 }
 
 export async function refetchWorldAction(host: ServerWorldHost & { swapMap(swap: MapSwap): void }) {
-  const mapId = host.currentMapId;
-  if (!mapId) return;
+  if (!host.currentMapId) return;
   const latest = claimMapSwap();
-  const served = await refetchServedWorld(host.currentLocationKey);
-  if (!latest() || !served || served.mapId !== mapId || host.currentMapId !== mapId) return;
-  host.swapMap({ kind: 'refetched', served });
+  const served = await refetchServedWorld();
+  if (!latest() || !served) return;
+  host.swapMap(
+    holdsPlace(host, served)
+      ? { kind: 'refetched', served }
+      : { kind: 'served', locationKey: served.locationKey, served },
+  );
 }
 
-function heldElsewhere(host: ServerWorldHost): boolean {
+function tickPlaceHeld(host: ServerWorldHost): boolean {
   const presence = inventorySession.presence;
-  return !!presence && !holdsPlace(host, presence);
+  return !!presence && holdsPlace(host, presence);
 }
 
 export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldHero) {
   const from = hero.heroCoordinates;
   const now = Date.now();
   if (!host.map || !host.currentMapId || !from || now < serverTickPausedUntil) return;
-  if (heldElsewhere(host)) return;
+  if (!tickPlaceHeld(host)) return;
   if (serverTicking || !hasDueWork(host.map as HexMapModel, now)) return;
   serverTicking = true;
   const mapId = host.currentMapId;

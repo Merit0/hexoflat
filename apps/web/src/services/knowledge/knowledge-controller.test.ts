@@ -10,7 +10,7 @@ import { inventorySession } from '@/services/inventory/inventory-session';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
 
 vi.mock('@/services/inventory/inventory-sync', () => ({
-  ensurePresence: vi.fn(() => Promise.resolve()),
+  ensurePresence: vi.fn(() => Promise.resolve(true)),
   sendProgress: vi.fn(),
   sendQuestCommand: vi.fn(),
 }));

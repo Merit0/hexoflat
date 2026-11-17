@@ -9,8 +9,7 @@ import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { portalLocation } from '@/services/world/portal-service';
 import { installTravelledWorlds, portalCommandOnServer } from '@/services/world/served-world';
-import { holdsMap } from '@/services/world/held-map';
-import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
+import { holdsMap, isRecoveredRefusal } from '@/services/world/held-map';
 import { playPortalEnter, playPortalExit, portalFxBusy, releasePortalFx } from '@/render/portal-fx';
 import { routeToLocation } from '@/services/world/location-navigator';
 import { inventorySession } from '@/services/inventory/inventory-session';
@@ -93,7 +92,8 @@ export function usePortal() {
     const at = currentPlace();
     if (!at || heroStore.knowledgeError) return { ok: false, reason: 'NO_LOCATION' };
     const result = await portalCommandOnServer(at, 'WORLD_PORTAL_OPEN', { target });
-    if (result.code === MAP_MISMATCH || !holdsMap(worldStore, result.mapId)) return { ok: false };
+    if (isRecoveredRefusal(result.code) || !holdsMap(worldStore, result.mapId))
+      return { ok: false };
     if (!result.ok) return { ok: false, reason: result.code ?? 'NO_LOCATION' };
     worldStore.applyWorldResult(result);
     heroStore.knowledge = inventorySession.knowledge;
@@ -127,7 +127,8 @@ export function usePortal() {
     try {
       await playPortalEnter(portalHex);
       const result = await portalCommandOnServer(at, 'WORLD_PORTAL_ENTER');
-      if (result.code === MAP_MISMATCH || !holdsMap(worldStore, result.mapId)) return { ok: false };
+      if (isRecoveredRefusal(result.code) || !holdsMap(worldStore, result.mapId))
+        return { ok: false };
       if (!result.ok) return { ok: false, reason: result.code ?? 'NO_PORTAL' };
       installTravelledWorlds(result);
       worldStore.goToLocation(destination.to);
