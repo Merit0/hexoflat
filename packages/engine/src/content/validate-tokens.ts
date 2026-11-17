@@ -48,6 +48,7 @@ function fixedAttributeFailure(
   if (definition.allowedTypes?.length && !definition.allowedTypes.includes(unique.type)) {
     return `${where} is not allowed on type ${unique.type}`;
   }
+  if (!definition.implemented) return `${where} is not implemented`;
   const values = Object.values(definition.valueByTier);
   const [min, max] = [Math.min(...values), Math.max(...values)];
   if (attribute.value < min || attribute.value > max) {

@@ -62,6 +62,7 @@ const ROLLING: UniqueTokenDefinition = {
 };
 const richFactory = createTokenFactory(RICH_CONTENT, SPRITE_MANIFEST, [...TOKEN_UNIQUES, ROLLING]);
 const { attributes: richAttributes } = createTokenRegistries(RICH_CONTENT);
+const { attributes: defaultAttributes } = createTokenRegistries();
 
 describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
   'TG-11: createUnique(%s) over seeds 1-500',
@@ -95,11 +96,14 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
       }
     });
 
-    it('rolls only the rolled part, by TG-2, never repeating a fixed key', () => {
+    it('rolls exactly the rolled count, fewer only from an empty pool, never a fixed key', () => {
       const fixedKeys = unique.attributes.map((attribute) => attribute.key);
       for (const token of tokens) {
         const rolled = token.attributes.slice(unique.attributes.length);
-        expect(rolled.length).toBeLessThanOrEqual(unique.rolled?.attributes ?? 0);
+        const pool = defaultAttributes
+          .generatableFor(unique.type)
+          .filter((rule) => !fixedKeys.includes(rule.key));
+        expect(rolled.length).toBe(Math.min(unique.rolled?.attributes ?? 0, pool.length));
         expect(new Set(rolled.map((attribute) => attribute.key)).size).toBe(rolled.length);
         for (const attribute of rolled) {
           expect(fixedKeys).not.toContain(attribute.key);
@@ -121,7 +125,7 @@ describe('TG-11: createUnique with a rolled part', () => {
     valueOf(richFactory.createUnique('rolling-test', uniqueContext(seed))),
   );
 
-  it('adds 0-2 implemented attributes at the tier value, never the fixed heart', () => {
+  it('adds exactly 2 implemented attributes at the tier value, never the fixed heart', () => {
     const counts = new Set<number>();
     for (const token of tokens) {
       expect(itemTokenSchema.safeParse(token).success).toBe(true);
@@ -136,7 +140,7 @@ describe('TG-11: createUnique with a rolled part', () => {
         expect(attribute.value).toBe(rule.valueByTier[token.mapTier]);
       }
     }
-    expect(counts).toEqual(new Set([0, 1, 2]));
+    expect(counts).toEqual(new Set([2]));
   });
 
   it('gives a deeply equal token for the same seed and context', () => {

@@ -86,6 +86,11 @@ describe('unique token content', () => {
       { attributes: [{ key: 'shield', value: 1 }] },
       /not allowed on type sword/,
     ],
+    [
+      'an attribute that is not implemented',
+      { attributes: [{ key: 'force', value: 1 }] },
+      /force is not implemented/,
+    ],
     ['a broken schema', { price: 0 }, /price/],
   ])('reports %s', (_label, changes, message) => {
     expect(uniqueContentFailures(withUnique(changes)).join('\n')).toMatch(message);

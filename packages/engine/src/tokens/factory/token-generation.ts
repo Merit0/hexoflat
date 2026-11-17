@@ -71,7 +71,7 @@ export interface TokenSheet {
 }
 
 export interface AttributeRollOptions {
-  maxCount?: number;
+  count?: number;
   exclude?: readonly AttributeKey[];
 }
 

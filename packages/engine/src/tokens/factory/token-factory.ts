@@ -138,7 +138,7 @@ export class TokenFactory {
           ctx.mapTier,
           deriveStream(ctx.seed, tokenStreamLabel(id, 'attributes')),
           {
-            maxCount: definition.rolled.attributes,
+            count: definition.rolled.attributes,
             exclude: definition.attributes.map((attribute) => attribute.key),
           },
         )

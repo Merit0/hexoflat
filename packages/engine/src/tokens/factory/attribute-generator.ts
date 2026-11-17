@@ -20,9 +20,8 @@ export class WeightedAttributeGenerator implements IAttributeGenerator {
     rng: RandomNumberGenerator,
     options: AttributeRollOptions = {},
   ): TokenAttribute[] {
-    const maxCount = options.maxCount ?? this.maxCount;
     const excluded = new Set(options.exclude ?? []);
-    const wanted = Math.floor(rng() * (maxCount + 1));
+    const wanted = options.count ?? Math.floor(rng() * (this.maxCount + 1));
     const pool = this.attributes
       .generatableFor(type.key)
       .filter((definition) => !excluded.has(definition.key));
