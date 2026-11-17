@@ -19,6 +19,7 @@ import {
 import {
   actOnServerWorld,
   installTravelledWorlds,
+  keepStaleAnswer,
   travelOnServer,
   readCachedWorld,
 } from '@/services/world/served-world';
@@ -142,8 +143,10 @@ async function executeHexAction(
   const result = gate
     ? await travelOnServer(at, { kind: 'gate', coordinates })
     : await actOnServerWorld(at, { coordinates, actionType, toolKey }, host.clientHint());
-  const stale = !host.isCurrent();
-  if (stale) return { state: inventorySession.knowledge, events: [], hero: host.hero, held };
+  if (!host.isCurrent()) {
+    keepStaleAnswer(result);
+    return { state: inventorySession.knowledge, events: [], hero: host.hero, held };
+  }
   host.applyWorldResult(result);
 
   const events = [...result.events];

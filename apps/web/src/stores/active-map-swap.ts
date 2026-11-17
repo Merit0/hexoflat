@@ -42,11 +42,28 @@ export interface MapSwapDeps {
 }
 
 let generation = 0;
+let awaited = 0;
 
-export function claimMapSwap(): () => boolean {
+export interface MapSwapTicket {
+  latest(): boolean;
+  settle(): void;
+}
+
+export function claimMapSwap(): MapSwapTicket {
   generation += 1;
   const mine = generation;
-  return () => mine === generation;
+  awaited = mine;
+  return {
+    latest: () => mine === generation,
+    settle: () => {
+      if (awaited === mine) awaited = 0;
+    },
+  };
+}
+
+export function observeMapSwaps(): () => boolean {
+  const seen = generation;
+  return () => seen === generation && awaited === 0;
 }
 
 const CLEARED: ActiveMapFields = {
@@ -129,7 +146,8 @@ const SWAP_STAGES: readonly SwapStage[] = [
 ];
 
 export function swapActiveMap(host: MapSwapHost, swap: MapSwap, deps: MapSwapDeps): void {
-  claimMapSwap();
+  generation += 1;
+  awaited = 0;
   for (const step of SWAP_STAGES) {
     if (step.kinds.includes(swap.kind)) step.run(host, swap, deps);
   }

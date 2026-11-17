@@ -11,7 +11,9 @@ import { replaceLocationRoute } from '@/services/world/location-navigator';
 import { usePresenceRoute } from './use-presence-route';
 
 const goToLocation = vi.fn();
-const reloadLocationMap = vi.fn<(locationKey: LocationKey) => Promise<void>>(async () => {});
+const reloadLocationMap = vi.fn<(locationKey: LocationKey) => Promise<boolean>>(() =>
+  Promise.resolve(true),
+);
 const failWorldLoad = vi.fn();
 
 vi.mock('@/stores/world-map-store', () => ({

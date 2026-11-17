@@ -26,11 +26,12 @@ import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { holdsMap, holdsPlace } from '@/services/world/held-map';
-import { claimMapSwap, type MapSwap } from '@/stores/active-map-swap';
+import { observeMapSwaps, type MapSwap } from '@/stores/active-map-swap';
 
 const SERVER_TICK_BACKOFF_MS = 2000;
 let serverTicking = false;
 let serverTickPausedUntil = 0;
+let refetches = 0;
 
 export type ServerWorldHero = ReplayDeps['hero'] & {
   heroCoordinates: IHexCoordinates | null;
@@ -73,9 +74,11 @@ export function applyWorldResultAction(
 
 export async function refetchWorldAction(host: ServerWorldHost & { swapMap(swap: MapSwap): void }) {
   if (!host.currentMapId) return;
-  const latest = claimMapSwap();
+  refetches += 1;
+  const mine = refetches;
+  const unchanged = observeMapSwaps();
   const served = await refetchServedWorld();
-  if (!latest() || !served) return;
+  if (mine !== refetches || !unchanged() || !served) return;
   host.swapMap(
     holdsPlace(host, served)
       ? { kind: 'refetched', served }

@@ -19,6 +19,7 @@ import {
 import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
 import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
 import { apiClient } from '@/api/client';
+import { reportStaleAnswer } from '@/services/world/presence-location';
 import {
   cachedWorldJson,
   evictStaleServerWorld,
@@ -93,6 +94,7 @@ export async function stepOnServerWorld(
   if (!result.ok) return { ok: false, code: result.code, ambush: null, changed: [] };
   if (!at.holds()) {
     evictStaleServerWorld(at.locationKey, at.mapId);
+    keepStaleAnswer(result);
     return { ok: false, code: MAP_MISMATCH, ambush: null, changed: [] };
   }
   const changed = applyTileDiffs(at.map, result.tileDiffs, Date.now());
@@ -250,6 +252,12 @@ export function installTravelledWorlds(result: WorldCommandResult): LocationKey 
     cacheServerWorld(entry.locationKey, JSON.stringify(entry.world));
   }
   return travel ? (travel.locationKey as LocationKey) : null;
+}
+
+export function keepStaleAnswer(result: WorldCommandResult): void {
+  if (!result.ok) return;
+  installTravelledWorlds(result);
+  reportStaleAnswer(result.mapId);
 }
 
 type PortalAt = { locationKey: LocationKey; mapId: string; from: IHexCoordinates };

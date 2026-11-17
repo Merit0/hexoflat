@@ -1,12 +1,15 @@
 import { onBeforeUnmount, watch } from 'vue';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
+import { HOME_LOCATION } from '@hexoflat/engine/world/enter-rule';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
 import {
   arrivalTarget,
   heldLocationKey,
   onHeroElsewhere,
   onMapAccepted,
   onMapMismatch,
+  onStaleAnswer,
 } from '@/services/world/presence-location';
 import { replaceLocationRoute } from '@/services/world/location-navigator';
 
@@ -29,8 +32,8 @@ export function usePresenceRoute(routeKey: () => LocationKey | undefined): void 
   function recover(held: LocationKey): void {
     recovery ??= worldStore
       .reloadLocationMap(held)
-      .then(async () => {
-        if (held !== routeKey()) await replaceLocationRoute(held);
+      .then(async (applied) => {
+        if (applied && held !== routeKey()) await replaceLocationRoute(held);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -52,7 +55,13 @@ export function usePresenceRoute(routeKey: () => LocationKey | undefined): void 
   onMapAccepted(() => {
     if (!recovery) reloaded = false;
   });
+  onStaleAnswer((mapId) => {
+    if (mapId && mapId === worldStore.currentMapId) return;
+    useHeroToolStore().stopTool();
+    recover(heldLocationKey() ?? HOME_LOCATION);
+  });
   onBeforeUnmount(() => {
+    onStaleAnswer(null);
     onHeroElsewhere(null);
     onMapMismatch(null);
     onMapAccepted(null);
