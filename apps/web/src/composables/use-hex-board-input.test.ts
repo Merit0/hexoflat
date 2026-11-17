@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, defineComponent, h, ref, type App } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -21,20 +21,34 @@ let host: HTMLElement;
 const position = ref({ columnIndex: 12, rowIndex: 12 });
 const enabled = ref(true);
 const blocked = ref(false);
-let inputDeps: UseHexBoardInputDeps;
+let inputDeps: Omit<UseHexBoardInputDeps, 'surface'>;
+let givenSurface: HTMLElement | null = null;
 const InputHarness = defineComponent({
   setup() {
-    useHexBoardInput(inputDeps);
-    return () => h('div');
+    const surface = ref<HTMLElement | null>(givenSurface);
+    useHexBoardInput({ ...inputDeps, surface });
+    const boardRef = givenSurface ? undefined : surface;
+    return () =>
+      h('div', [
+        h('div', { ref: boardRef, 'data-role': 'board' }, [h('span', { 'data-role': 'tile' })]),
+        h('aside', { 'data-role': 'panel' }, [h('p', { 'data-role': 'panel-text' })]),
+      ]);
   },
 });
 
+function wheelOn(role: string): WheelEvent {
+  const event = new WheelEvent('wheel', { deltaY: 100, cancelable: true, bubbles: true });
+  host.querySelector(`[data-role="${role}"]`)!.dispatchEvent(event);
+  return event;
+}
+
 function scroll() {
-  window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, cancelable: true }));
+  wheelOn('tile');
 }
 
 describe('the mouse wheel takes the hand only when no hand action is running', () => {
   beforeEach(() => {
+    givenSurface = null;
     enabled.value = true;
     questRun.value = null;
     blocked.value = false;
@@ -46,6 +60,7 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     const tool = useHeroToolStore();
     tool.stopTool();
     host = document.createElement('div');
+    document.body.appendChild(host);
     inputDeps = { hoveredTileCoord: ref(null) };
     app = createApp(InputHarness).use(pinia);
     app.mount(host);
@@ -54,6 +69,7 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     knowledgePanelMode.value = null;
     questRun.value = null;
     app.unmount();
+    host.remove();
   });
 
   it('uses the quest hero position and bypasses the reading-panel block only for the quest input', () => {
@@ -135,5 +151,66 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     scroll();
     expect(useHeroToolStore().isDragging).toBe(false);
     expect(useHeroToolStore().activeTool).not.toBe(K.PICKAXE);
+  });
+
+  it('REQ-1: the wheel over the board opens the ring and the next turn rotates it', () => {
+    const inventory = useHeroInventoryStore();
+    const shield = inventory.items.find((item) => item.slotKey === 'eq:shield')!;
+    shield.key = K.AXE;
+    const now = vi.spyOn(Date, 'now').mockReturnValue(10_000);
+    const tool = useHeroToolStore();
+
+    const opening = wheelOn('tile');
+    expect(opening.defaultPrevented).toBe(true);
+    expect(tool.isDragging).toBe(true);
+    expect(tool.activeTool).toBe(K.HAND);
+
+    now.mockReturnValue(10_000 + HAND_SCROLL_COOLDOWN_MS);
+    const turning = wheelOn('board');
+    expect(turning.defaultPrevented).toBe(true);
+    expect(tool.activeTool).toBe(K.AXE);
+    now.mockRestore();
+  });
+
+  it('REQ-2: the wheel over a side panel leaves the ring alone and scrolls natively', () => {
+    const tool = useHeroToolStore();
+    const closed = wheelOn('panel-text');
+    expect(closed.defaultPrevented).toBe(false);
+    expect(tool.isDragging).toBe(false);
+
+    scroll();
+    const openTool = tool.activeTool;
+    const overPanel = wheelOn('panel');
+    expect(overPanel.defaultPrevented).toBe(false);
+    expect(tool.isDragging).toBe(true);
+    expect(tool.activeTool).toBe(openTool);
+  });
+
+  it('REQ-3: after the board unmounts no wheel listener is left on the window or the board', () => {
+    const board = document.createElement('div');
+    const boardAdd = vi.spyOn(board, 'addEventListener');
+    const boardRemove = vi.spyOn(board, 'removeEventListener');
+    const windowAdd = vi.spyOn(window, 'addEventListener');
+    const windowRemove = vi.spyOn(window, 'removeEventListener');
+    givenSurface = board;
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    useHeroInventoryStore().hydrate();
+    const boardApp = createApp(InputHarness).use(pinia);
+    boardApp.mount(document.createElement('div'));
+    boardApp.unmount();
+    givenSurface = null;
+    const wheelOnly = (calls: unknown[][]) => calls.filter(([type]) => type === 'wheel');
+    const added = wheelOnly(boardAdd.mock.calls);
+    const removed = wheelOnly(boardRemove.mock.calls);
+    const onWindow = wheelOnly([...windowAdd.mock.calls, ...windowRemove.mock.calls]);
+    vi.restoreAllMocks();
+
+    expect(onWindow).toEqual([]);
+    expect(added).toHaveLength(1);
+    expect(removed).toHaveLength(1);
+    expect(removed[0][1]).toBe(added[0][1]);
+    board.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, cancelable: true }));
+    expect(useHeroToolStore().isDragging).toBe(false);
   });
 });

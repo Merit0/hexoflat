@@ -186,7 +186,7 @@ function onHide() {
   if (heroToolStore.isLocked) heroToolStore.cancelLockedAction('HIDE');
   heroToolStore.stopTool();
 }
-useHexBoardInput({ hoveredTileCoord });
+useHexBoardInput({ surface: containerRef, hoveredTileCoord });
 onMounted(() => {
   healTickerTimer = window.setInterval(() => {
     healTickerNow.value = Date.now();

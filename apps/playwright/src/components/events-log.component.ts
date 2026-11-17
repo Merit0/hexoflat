@@ -11,6 +11,10 @@ export class EventsLogComponent extends BaseComponent {
     return this.page.getByTestId('events-logger-clear-button');
   }
 
+  private get scrollBox(): Locator {
+    return this.page.getByTestId('events-tab-content');
+  }
+
   private get rows(): Locator {
     return this.page.getByTestId(/^events-logger-row-/);
   }
@@ -33,5 +37,23 @@ export class EventsLogComponent extends BaseComponent {
 
   async verifyRowCount(count: number): Promise<void> {
     await expect(this.rows).toHaveCount(count);
+  }
+
+  async fillWithTestEvents(count: number): Promise<void> {
+    await this.page.evaluate((n) => window.__HEXOFLAT_TEST__!.logTestEvents(n), count);
+    await expect(this.rows).toHaveCount(count);
+  }
+
+  async scrollWithTheWheel(): Promise<void> {
+    await this.scrollBox.hover();
+    await this.page.mouse.wheel(0, 300);
+  }
+
+  async verifyScrolledToTop(): Promise<void> {
+    await expect.poll(() => this.scrollBox.evaluate((box) => box.scrollTop)).toBe(0);
+  }
+
+  async verifyScrolledDown(): Promise<void> {
+    await expect.poll(() => this.scrollBox.evaluate((box) => box.scrollTop)).toBeGreaterThan(0);
   }
 }

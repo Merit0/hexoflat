@@ -21,4 +21,16 @@ export class VerifyEventsLogFeature extends BaseFeature {
       this.campingMap.eventsLog.verifyRowCount(count),
     );
   }
+
+  async verifyScrolledToTop(): Promise<void> {
+    await this.step('Verify the events log is scrolled to the top', () =>
+      this.campingMap.eventsLog.verifyScrolledToTop(),
+    );
+  }
+
+  async verifyScrolledDown(): Promise<void> {
+    await this.step('Verify the events log has scrolled down', () =>
+      this.campingMap.eventsLog.verifyScrolledDown(),
+    );
+  }
 }

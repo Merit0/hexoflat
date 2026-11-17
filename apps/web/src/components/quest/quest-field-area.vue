@@ -1,5 +1,5 @@
 <template>
-  <div class="quest-area" data-testid="quest-field-area">
+  <div ref="area" class="quest-area" data-testid="quest-field-area">
     <div
       ref="pane"
       class="quest-board"
@@ -48,6 +48,7 @@ import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
 import { useHexBoardInput } from '@/composables/use-hex-board-input';
 
 const props = defineProps<{ referenceFrame?: BoardFrame | null }>();
+const area = ref<HTMLElement | null>(null);
 const pane = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const ready = ref(false);
@@ -61,6 +62,7 @@ const acceptsTools = computed(() => {
   return phase === 'walking' || phase === 'collect';
 });
 useHexBoardInput({
+  surface: area,
   hoveredTileCoord,
   heroCoordinates,
   enabled: acceptsTools,

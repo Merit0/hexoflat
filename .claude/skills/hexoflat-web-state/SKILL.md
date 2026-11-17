@@ -253,6 +253,7 @@ Only the general warning system shows messages about any event or refusal: `hero
 
 - `useHexBoardInput` is shared by the world and the quest field. Optional `heroCoordinates`, `enabled`, and `blocked` refs let a board supply its own origin and input guards without duplicating slot cycling, nearest-neighbour initialization or the 180 ms cooldown. The world disables its handler during `questStore.inRun`; the quest supplies its projected hero position and blocks during loot flights. Global `heroTool.isBusy` still guards both.
 - Quest pointer hover uses `heroTool.updateHover`, so only the six adjacent hexes move the tool, exactly like the world; distant hover keeps its last position. Refresh the tool origin/allowed neighbours when the quest hero moves (including opening the chest). Freeze hover during the hand action.
+- **The wheel listens on the board only (WHEEL-1, 2026-11-17).** `useHexBoardInput` requires `surface: Ref<HTMLElement | null>` (the board element that also holds its DOM overlays); the listener is added there on mount and removed on unmount, never on `window`, so the wheel over the right panel scrolls it and never cycles the hand. A new board passes its root.
 - Escape during a run hides the tool through the world scene handler instead of closing the quest panel. Quest hand waits cancel on unmount or projection replacement and check the captured projection before sending a command.
 
 ## Treasure Seeker access (2026-11-15)

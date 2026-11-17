@@ -219,6 +219,10 @@ export class HexBoardComponent extends BaseComponent {
       .toBe(true);
   }
 
+  async verifyHandToolIdle(): Promise<void> {
+    expect(await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.isToolUsed())).toBe(false);
+  }
+
   private async waitForHeroCoordinates(
     matches: (coordinates: TestHexCoordinates) => boolean,
   ): Promise<TestHexCoordinates> {

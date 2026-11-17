@@ -118,7 +118,7 @@ Source: read-only audit of the map architecture (2026-11-16, branch `codex/map-o
 
 ## Open questions for Oleh
 
-1. The hand-cycling wheel listener is on `window` (`use-hex-board-input.ts`), so the wheel over the right panel also cycles the hand and calls `preventDefault`. Is that intended, or should it be limited to the map pane?
+1. ~~The hand-cycling wheel listener is on `window`~~ answered and done 2026-11-17 (WHEEL-1): the wheel works only over the board. `useHexBoardInput` takes a required `surface` (world: `.hex-map` `containerRef`; quest: the `.quest-area` root, which also holds the tool overlay), adds the listener on mount and removes it on unmount; over the panels nothing is prevented, so they scroll natively. The battle board already listened on its own element (`battle-board-area.vue` `@wheel.prevent`) and is unchanged. Tests: `use-hex-board-input.test.ts` REQ-1…3 (REQ-2/3 red on the old code), e2e `hero-board-panel.spec.ts` «the mouse wheel scrolls the right panel…» (hook `logTestEvents`).
 2. ~~M2 deep links~~ answered 2026-11-16: redirect silently to the hero's real place.
 3. ~~New hero without presence~~ answered 2026-11-16: only the camp.
 

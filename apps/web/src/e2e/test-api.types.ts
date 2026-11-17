@@ -147,6 +147,8 @@ export interface HexoflatTestApi {
 
   isToolUsed(): boolean;
 
+  logTestEvents(count: number): void;
+
   getToolHoverCoordinates(): TestHexCoordinates | null;
 
   getCurrentLocationKey(): string;
