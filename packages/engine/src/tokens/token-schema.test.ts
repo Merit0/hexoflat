@@ -92,6 +92,18 @@ describe.each(CASES)('$name schema', ({ schema, valid, invalid }) => {
   });
 });
 
+describe('tool names', () => {
+  it('accepts a tool token named only by its type', () => {
+    const axe = sampleToken({ type: 'axe', name: { kind: 'noun', noun: 'axe' } });
+    expect(itemTokenSchema.safeParse(axe).success).toBe(true);
+  });
+
+  it('rejects a noun name of another type', () => {
+    const axe = sampleToken({ type: 'axe', name: { kind: 'noun', noun: 'pickaxe' } });
+    expect(itemTokenSchema.safeParse(axe).success).toBe(false);
+  });
+});
+
 describe('ItemTokenEntry stack branch', () => {
   it('keeps the current stack shape', () => {
     expect(itemTokenEntrySchema.parse({ kind: 'stack', itemKey: 'coins', amount: 30 })).toEqual({

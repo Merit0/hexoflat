@@ -33,6 +33,10 @@ export const tokenNameSchema = z.discriminatedUnion('kind', [
     suffix: wordKeySchemaFor('suffix'),
   }),
   z.strictObject({
+    kind: z.literal('noun'),
+    noun: itemTypeKeySchema,
+  }),
+  z.strictObject({
     kind: z.literal('authored'),
     nameKey: i18nKeySchema,
   }),
@@ -88,7 +92,7 @@ export const itemTokenSchema = z
         message: 'god-executor tokens are unique only',
       });
     }
-    if (token.name.kind === 'generated' && token.name.noun !== token.type) {
+    if (token.name.kind !== 'authored' && token.name.noun !== token.type) {
       ctx.addIssue({
         code: 'custom',
         path: ['name', 'noun'],

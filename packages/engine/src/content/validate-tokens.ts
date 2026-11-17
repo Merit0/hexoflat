@@ -1,5 +1,5 @@
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
-import { tokenPriceRangesSchema } from '../tokens/token-content-schema';
+import { hasGeneratedName, tokenPriceRangesSchema } from '../tokens/token-content-schema';
 import { coinPriceOf } from './content-accessors';
 import {
   createTokenRegistries,
@@ -43,7 +43,7 @@ export function tokenContentFailures(content: TokenContent = TOKEN_CONTENT): str
     }
   }
 
-  for (const type of types.all()) {
+  for (const type of types.all().filter(hasGeneratedName)) {
     for (const realm of type.realms) {
       const count = words.combinations(realm);
       if (count < TOKEN_NAME_MIN_COMBINATIONS) {

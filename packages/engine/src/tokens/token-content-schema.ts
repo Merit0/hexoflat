@@ -26,6 +26,10 @@ export const itemTypeDefinitionSchema = z.strictObject({
 });
 export type ItemTypeDefinition = z.infer<typeof itemTypeDefinitionSchema>;
 
+export function hasGeneratedName(type: ItemTypeDefinition): boolean {
+  return type.tool === null;
+}
+
 const tierValueSchema = z.number().int().positive();
 
 export const attributeDefinitionSchema = z.strictObject({

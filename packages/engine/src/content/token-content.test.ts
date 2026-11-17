@@ -11,6 +11,7 @@ import { ITEM_TYPES } from './item-types.content';
 import { TOKEN_ATTRIBUTES } from './token-attributes.content';
 import { createTokenRegistries, TOKEN_CONTENT, tokenLocaleKeys } from './token-content';
 import { TOKEN_PRICE_RANGES } from './token-prices.content';
+import { hasGeneratedName } from '../tokens/token-content-schema';
 import { TOKEN_NAME_MIN_COMBINATIONS, tokenContentFailures } from './validate-tokens';
 
 const LOCALES_DIR = path.resolve(
@@ -39,8 +40,8 @@ describe('item token content', () => {
     expect(tokenContentFailures()).toEqual([]);
   });
 
-  it('TG-8: gives at least 1000 prefix x suffix names for every realm and type', () => {
-    for (const type of types.all()) {
+  it('TG-8: gives at least 1000 prefix x suffix names for every realm and named type', () => {
+    for (const type of types.all().filter(hasGeneratedName)) {
       for (const realm of type.realms) {
         expect(words.combinations(realm), `${realm}+${type.key}`).toBeGreaterThanOrEqual(
           TOKEN_NAME_MIN_COMBINATIONS,
@@ -58,6 +59,24 @@ describe('item token content', () => {
       },
     };
     expect(tokenContentFailures(small).join('\n')).toMatch(/name combinations/);
+  });
+
+  it('names tools only by their type and generates names for the rest', () => {
+    const generated = types
+      .all()
+      .filter(hasGeneratedName)
+      .map((type) => type.key);
+    expect(generated).toEqual(['sword', 'shield']);
+  });
+
+  it('needs no word pool for tool types', () => {
+    const toolsOnly = {
+      ...TOKEN_CONTENT,
+      types: TOKEN_CONTENT.types.filter((type) => type.tool !== null),
+      attributes: TOKEN_CONTENT.attributes.filter((attribute) => !attribute.allowedTypes),
+      words: { prefixes: [], suffixes: [] },
+    };
+    expect(tokenContentFailures(toolsOnly)).toEqual([]);
   });
 
   it('has at least 32 prefixes and 32 suffixes in every realm', () => {
