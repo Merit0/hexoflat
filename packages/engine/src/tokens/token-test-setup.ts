@@ -1,0 +1,26 @@
+import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import type { ItemToken } from './token-schema';
+
+export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
+  return {
+    id: 'cave-chest-4-7:0',
+    origin: 'base',
+    type: 'sword',
+    rarity: ERarityKind.IDOL,
+    name: {
+      kind: 'generated',
+      prefix: 'content.tokens.prefix.ash',
+      noun: 'sword',
+      suffix: 'content.tokens.suffix.warden',
+    },
+    description: [{ key: 'content.tokens.noun.sword', params: { strike: 2 } }],
+    attributes: [{ key: 'heart', value: 1 }],
+    skills: [],
+    price: 500,
+    sprite: 'idol-sword-01.png',
+    mapTier: 1,
+    generatorVersion: 1,
+    ext: { aspects: [], heroGrade: null },
+    ...overrides,
+  };
+}

@@ -7,6 +7,7 @@ import { TRADERS } from './traders.content';
 import { ALL_QUESTS } from '../quests/all-quests';
 import { questContentFailures } from '../quests/quests.content';
 import { seekerCardFailures } from '../quests/seeker-content';
+import { tokenContentFailures } from './validate-tokens';
 
 export function validateContent(): void {
   const keys = Object.values(HEXOBJECT_KEYS) as THexobjectKey[];
@@ -29,6 +30,7 @@ export function validateContent(): void {
   failures.push(...lootContentFailures());
   failures.push(...questContentFailures(Object.values(ALL_QUESTS)));
   failures.push(...seekerCardFailures());
+  failures.push(...tokenContentFailures().map((failure) => `[tokens] ${failure}`));
 
   if (failures.length > 0) {
     throw new Error(`Hexobject content validation failed:\n${failures.join('\n')}`);
