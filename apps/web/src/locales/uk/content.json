@@ -227,6 +227,29 @@
         "painted-mask": "Розписаної Маски",
         "high-wind": "Високого Вітру",
         "morning-star": "Ранкової Зорі"
+      },
+      "line": {
+        "kind": "{type} · {realm}",
+        "strike": "Удар {strike}",
+        "tier": "Рівень {tier}"
+      },
+      "realm": {
+        "gloom": "Морок",
+        "idol": "Кумир",
+        "spark": "Іскра"
+      },
+      "attr": {
+        "heart": "Серця +{value}",
+        "shield": "Щит +{value}",
+        "force": "Сила +{value}",
+        "mass": "Маса +{value}",
+        "will": "Воля +{value}",
+        "fog": "Туман +{value}",
+        "bag": "Сумка +{value}"
+      },
+      "tool": {
+        "cut": "Рубка",
+        "mine": "Видобуток"
       }
     }
   }

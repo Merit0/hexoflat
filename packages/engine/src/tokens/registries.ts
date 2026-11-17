@@ -1,6 +1,7 @@
 import type { ERarityKind } from '../abstraction/hexobject-abstraction';
 import {
   attributeDefinitionSchema,
+  sharesTheme,
   itemTypeDefinitionSchema,
   wordPoolDataSchema,
   type AttributeDefinition,
@@ -105,8 +106,15 @@ export class WordPool {
     return this.data.suffixes.filter((word) => inRealm(word, realm));
   }
 
+  suffixesAfter(realm: ERarityKind, prefix: TokenWord): readonly TokenWord[] {
+    return this.suffixes(realm).filter((suffix) => !sharesTheme(prefix, suffix));
+  }
+
   combinations(realm: ERarityKind): number {
-    return this.prefixes(realm).length * this.suffixes(realm).length;
+    return this.prefixes(realm).reduce(
+      (total, prefix) => total + this.suffixesAfter(realm, prefix).length,
+      0,
+    );
   }
 
   keys(): readonly string[] {

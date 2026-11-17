@@ -32,6 +32,9 @@ export function hasGeneratedName(type: ItemTypeDefinition): boolean {
 
 const tierValueSchema = z.number().int().positive();
 
+export const ATTRIBUTE_UNITS = ['half-heart', 'point'] as const;
+export type TAttributeUnit = (typeof ATTRIBUTE_UNITS)[number];
+
 export const attributeDefinitionSchema = z.strictObject({
   key: attributeKeySchema,
   valueByTier: z.strictObject({
@@ -43,6 +46,7 @@ export const attributeDefinitionSchema = z.strictObject({
   weight: z.number().int().positive(),
   allowedTypes: z.array(itemTypeKeySchema).refine(distinct, 'a type is listed twice').optional(),
   implemented: z.boolean(),
+  unit: z.enum(ATTRIBUTE_UNITS).optional(),
 });
 export type AttributeDefinition = z.infer<typeof attributeDefinitionSchema>;
 
@@ -58,14 +62,22 @@ export const tokenPriceRangesSchema = z.strictObject({
 });
 export type TokenPriceRanges = z.infer<typeof tokenPriceRangesSchema>;
 
+const wordThemeSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
 export const prefixWordSchema = z.strictObject({
   key: wordKeySchemaFor('prefix'),
   realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice').optional(),
+  theme: wordThemeSchema.optional(),
 });
 export const suffixWordSchema = z.strictObject({
   key: wordKeySchemaFor('suffix'),
   realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice').optional(),
+  theme: wordThemeSchema.optional(),
 });
+
+export function sharesTheme(first: TokenWord, second: TokenWord): boolean {
+  return first.theme !== undefined && first.theme === second.theme;
+}
 export type TokenWord = z.infer<typeof prefixWordSchema>;
 
 export const wordPoolDataSchema = z.strictObject({

@@ -9,8 +9,28 @@ export const attributeKeySchema = z.string().regex(SLUG);
 export const aspectKeySchema = z.string().regex(SLUG);
 export const uniqueKeySchema = z.string().regex(SLUG);
 export const i18nKeySchema = z.string().regex(/^content(?:\.[A-Za-z0-9_-]+)+$/);
-export const spriteKeySchema = z.string().regex(/^_?[a-z0-9]+(?:-[a-z0-9]+)*\.png$/);
-export const itemTokenIdSchema = z.string().regex(/^\S+:(?:0|[1-9]\d*)$/);
+export const spriteKeySchema = z.string().regex(/^_?[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
+export const TOKEN_SOURCE_KINDS = [
+  'chest',
+  'grave',
+  'quest',
+  'shop',
+  'upcast',
+  'dev',
+  'test',
+] as const;
+export type TTokenSourceKind = (typeof TOKEN_SOURCE_KINDS)[number];
+
+const SOURCE_ID_PART = `(?:${TOKEN_SOURCE_KINDS.join('|')}):[a-z0-9._-]+`;
+export const tokenSourceIdSchema = z.string().regex(new RegExp(`^${SOURCE_ID_PART}$`));
+export const itemTokenIdSchema = z
+  .string()
+  .regex(new RegExp(`^${SOURCE_ID_PART}:(?:0|[1-9]\\d*)$`));
+
+export function itemTokenIdOf(sourceId: string, n: number): string {
+  return `${sourceId}:${n}`;
+}
 
 export type ItemTypeKey = z.infer<typeof itemTypeKeySchema>;
 export type AttributeKey = z.infer<typeof attributeKeySchema>;
@@ -19,6 +39,7 @@ export type UniqueKey = z.infer<typeof uniqueKeySchema>;
 export type I18nKey = z.infer<typeof i18nKeySchema>;
 export type SpriteKey = z.infer<typeof spriteKeySchema>;
 export type ItemTokenId = z.infer<typeof itemTokenIdSchema>;
+export type TokenSourceId = z.infer<typeof tokenSourceIdSchema>;
 
 export const WORD_SLOTS = ['prefix', 'suffix', 'noun'] as const;
 export type TWordSlot = (typeof WORD_SLOTS)[number];

@@ -1,4 +1,5 @@
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { descriptionLocaleKeys } from '../tokens/factory/description-builder';
 import { AttributeRegistry, TypeRegistry, WordPool } from '../tokens/registries';
 import type {
   AttributeDefinition,
@@ -41,5 +42,6 @@ export function tokenLocaleKeys(content: TokenContent = TOKEN_CONTENT): string[]
     ...content.types.map((type) => type.nounKey),
     ...content.words.prefixes.map((word) => word.key),
     ...content.words.suffixes.map((word) => word.key),
+    ...descriptionLocaleKeys(content.attributes.map((attribute) => attribute.key)),
   ];
 }

@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "size-limit": "size-limit",
-    "tokens:manifest": "tsx scripts/build-sprite-manifest.ts"
+    "tokens:manifest": "tsx scripts/build-sprite-manifest.ts",
+    "tokens:sample": "tsx scripts/print-token-sample.ts"
   },
   "size-limit": [
     {
@@ -58,6 +59,7 @@
     "@vue/tsconfig": "^0.8.1",
     "happy-dom": "^20.11.1",
     "size-limit": "^13.0.1",
+    "tsx": "^4.23.1",
     "typescript": "~5.9.3",
     "vite": "^7.2.2",
     "vitest": "^4.1.10",

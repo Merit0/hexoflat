@@ -1,5 +1,6 @@
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { hasGeneratedName, tokenPriceRangesSchema } from '../tokens/token-content-schema';
+import { wordKeyOf } from '../tokens/token-keys';
 import { coinPriceOf } from './content-accessors';
 import {
   createTokenRegistries,
@@ -40,6 +41,14 @@ export function tokenContentFailures(content: TokenContent = TOKEN_CONTENT): str
   for (const attribute of attributes.all()) {
     for (const type of attribute.allowedTypes ?? []) {
       if (!types.has(type)) failures.push(`attribute ${attribute.key} names unknown type ${type}`);
+    }
+  }
+
+  for (const type of types.all()) {
+    if (type.nounKey !== wordKeyOf('noun', type.key)) {
+      failures.push(
+        `type ${type.key} has noun key ${type.nounKey}, expected ${wordKeyOf('noun', type.key)}`,
+      );
     }
   }
 

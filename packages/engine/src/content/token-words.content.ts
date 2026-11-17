@@ -84,15 +84,46 @@ const REALM_SUFFIXES: Record<TBaseRealm, string[]> = {
   [ERarityKind.SPARK]: ['high-wind', 'morning-star'],
 };
 
+const WORD_THEMES: Record<string, string> = {
+  star: 'star',
+  'morning-star': 'star',
+  deep: 'deep',
+  'deep-root': 'deep',
+  clay: 'clay',
+  'clay-idol': 'clay',
+  salt: 'salt',
+  'salt-road': 'salt',
+  wind: 'wind',
+  'high-wind': 'wind',
+  dusk: 'night',
+  'long-night': 'night',
+  lightless: 'light',
+  lantern: 'light',
+  'last-light': 'light',
+  frost: 'snow',
+  'first-snow': 'snow',
+  river: 'river',
+  'quiet-ford': 'river',
+};
+
+function word(slot: 'prefix' | 'suffix', id: string, realms?: TBaseRealm[]): TokenWord {
+  const theme = WORD_THEMES[id];
+  return {
+    key: wordKeyOf(slot, id),
+    ...(realms ? { realms } : {}),
+    ...(theme ? { theme } : {}),
+  };
+}
+
 function words(
   slot: 'prefix' | 'suffix',
   shared: readonly string[],
   byRealm: Record<TBaseRealm, string[]>,
 ): TokenWord[] {
   const tagged = (Object.entries(byRealm) as [TBaseRealm, string[]][]).flatMap(([realm, ids]) =>
-    ids.map((id) => ({ key: wordKeyOf(slot, id), realms: [realm] })),
+    ids.map((id) => word(slot, id, [realm])),
   );
-  return [...shared.map((id) => ({ key: wordKeyOf(slot, id) })), ...tagged];
+  return [...shared.map((id) => word(slot, id)), ...tagged];
 }
 
 export const TOKEN_WORDS: WordPoolData = {

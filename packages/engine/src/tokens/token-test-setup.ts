@@ -3,7 +3,7 @@ import type { ItemToken } from './token-schema';
 
 export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
   return {
-    id: 'cave-chest-4-7:0',
+    id: 'chest:cave.4-7:0',
     origin: 'base',
     type: 'sword',
     rarity: ERarityKind.IDOL,
@@ -17,7 +17,7 @@ export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
     attributes: [{ key: 'heart', value: 1 }],
     skills: [],
     price: 500,
-    sprite: 'idol-sword-01.png',
+    sprite: 'idol-sword-01',
     mapTier: 1,
     generatorVersion: 1,
     ext: { aspects: [], heroGrade: null },

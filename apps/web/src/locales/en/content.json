@@ -227,6 +227,29 @@
         "painted-mask": "of the Painted Mask",
         "high-wind": "of the High Wind",
         "morning-star": "of the Morning Star"
+      },
+      "line": {
+        "kind": "{type} · {realm}",
+        "strike": "Strike {strike}",
+        "tier": "Tier {tier}"
+      },
+      "realm": {
+        "gloom": "Gloom",
+        "idol": "Idol",
+        "spark": "Spark"
+      },
+      "attr": {
+        "heart": "Hearts +{value}",
+        "shield": "Shield +{value}",
+        "force": "Force +{value}",
+        "mass": "Mass +{value}",
+        "will": "Will +{value}",
+        "fog": "Fog +{value}",
+        "bag": "Bag +{value}"
+      },
+      "tool": {
+        "cut": "Chopping",
+        "mine": "Mining"
       }
     }
   }
