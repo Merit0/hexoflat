@@ -15,3 +15,6 @@ export {
   type TokenContent,
 } from '../content/token-content';
 export { tokenContentFailures, TOKEN_NAME_MIN_COMBINATIONS } from '../content/validate-tokens';
+export * from './sprite-files';
+export { ManifestSpriteRegistry, type SpriteRef } from './sprite-registry';
+export { SPRITE_MANIFEST } from './sprite-manifest';

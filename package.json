@@ -13,6 +13,7 @@
     "test": "turbo run test",
     "test:e2e:push": "sh scripts/pre-push-e2e.sh",
     "e2e:map:check": "pnpm --silent --filter @hexoflat/playwright e2e:map:check",
+    "tokens:manifest": "pnpm --silent --filter @hexoflat/web tokens:manifest",
     "test:coverage": "turbo run test:coverage",
     "size-limit": "turbo run size-limit",
     "format": "prettier --write .",

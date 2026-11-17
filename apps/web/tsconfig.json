@@ -26,6 +26,7 @@
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx",
+    "scripts/**/*.ts",
     "vite.config.ts"
   ],
   "exclude": ["node_modules", "dist", "back-up"]
