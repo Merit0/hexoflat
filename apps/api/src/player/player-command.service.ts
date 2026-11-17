@@ -47,6 +47,7 @@ import {
   readServerDocument,
 } from '../expedition/expedition-store';
 import { reconcileQuestWorld } from '../quests/reconcile-quest-world';
+import { isStaleWorldDocument, worldDocumentKey } from '../world/world-documents';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { ledgerEntriesFor } from './item-ledger';
 import {
@@ -74,8 +75,8 @@ interface LockedRun {
 async function battleOpen(tx: Tx, expeditionId: string, loaded: LoadedAggregates) {
   const mapId = loaded.progress?.state.presence?.mapId;
   if (!mapId) return null;
-  const raw = await readServerDocument(tx, expeditionId, `srv-world:${mapId}`);
-  const held = raw ? (JSON.parse(raw) as { battle?: unknown }) : null;
+  const raw = await readServerDocument(tx, expeditionId, worldDocumentKey(mapId));
+  const held = raw && !isStaleWorldDocument(raw) ? (JSON.parse(raw) as { battle?: unknown }) : null;
   return held?.battle ? 'BATTLE_OPEN' : null;
 }
 

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import type { ItemToken } from '../tokens/token-schema';
 
 const itemKeys = Object.values(HEXOBJECT_KEYS) as [THexobjectKey, ...THexobjectKey[]];
 
@@ -39,4 +40,5 @@ export interface LootDrop {
   itemKey: THexobjectKey;
   amount: number;
   guaranteed: boolean;
+  token?: ItemToken;
 }

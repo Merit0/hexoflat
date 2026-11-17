@@ -9,6 +9,7 @@ function padded<T>(entries: T[], slots: number): (T | null)[] {
 }
 
 function canJoin(entry: BuybackEntry, sold: BuybackEntry): boolean {
+  if (entry.token || sold.token) return false;
   if (entry.key !== sold.key || entry.unitPrice !== sold.unitPrice) return false;
   const traits = getMeta(sold.key)?.traits;
   if (!traits?.stackable) return false;

@@ -9,7 +9,6 @@ import {
   parseQuestRunDoc,
   battleWorld,
   createServerWorld,
-  deserializeWorld,
   isWorldCommandType,
   projectDiffsForClient,
   projectWorldForClient,
@@ -55,6 +54,7 @@ import {
   writeServerDocument,
 } from '../expedition/expedition-store';
 import { HeroesService } from '../heroes/heroes.service';
+import { loadWorldDocument } from './world-documents';
 import {
   createInitialAggregates,
   loadAggregates,
@@ -112,9 +112,8 @@ async function readIndex(tx: Tx, expeditionId: string): Promise<Index> {
   return raw ? (JSON.parse(raw) as Index) : {};
 }
 
-async function loadWorld(tx: Tx, expeditionId: string, mapId: string, now: number) {
-  const raw = await readServerDocument(tx, expeditionId, worldKey(mapId));
-  return raw ? deserializeWorld(JSON.parse(raw), now) : null;
+async function loadWorld(tx: Tx, expeditionId: string, mapId: string, now: number, heroId: string) {
+  return loadWorldDocument(tx, { expeditionId, heroId, mapId, now });
 }
 
 async function saveWorld(tx: Tx, expeditionId: string, world: ServerWorld): Promise<void> {
@@ -138,7 +137,7 @@ async function placeHeroIn(
 ): Promise<ServerWorld> {
   const { expeditionId, heroId, index, locationKey, progress } = input;
   const known = index[locationKey];
-  let world = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
+  let world = known ? await loadWorld(tx, expeditionId, known, Date.now(), heroId) : null;
   if (!world) {
     const mapId = randomUUID();
     world = createServerWorld(locationKey, mapId, await expeditionSeed(tx, expeditionId), heroId);
@@ -323,7 +322,7 @@ export class WorldService {
       await journal('rejected', [], mismatch, null);
       return respond('rejected', mismatch, [], [], null);
     }
-    world = presence ? await loadWorld(tx, expeditionId, presence.mapId, now) : null;
+    world = presence ? await loadWorld(tx, expeditionId, presence.mapId, now, heroId) : null;
     if (!world || !presence) {
       await journal('rejected', [], 'NO_WORLD', null);
       return respond('rejected', 'NO_WORLD', [], [], null);
@@ -349,7 +348,8 @@ export class WorldService {
     const byMap = new Map<string, ServerWorld>();
     if (needsFinders) {
       for (const [key, mapId] of Object.entries(index) as [LocationKey, string][]) {
-        const held = mapId === world.mapId ? null : await loadWorld(tx, expeditionId, mapId, now);
+        const held =
+          mapId === world.mapId ? null : await loadWorld(tx, expeditionId, mapId, now, heroId);
         if (held) {
           stored[key] = held;
           byMap.set(mapId, held);
@@ -641,7 +641,7 @@ export class WorldService {
       await lockExpedition(tx, expeditionId);
       const index = await readIndex(tx, expeditionId);
       const known = index[locationKey];
-      const existing = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
+      const existing = known ? await loadWorld(tx, expeditionId, known, Date.now(), heroId) : null;
       await createInitialAggregates(tx, heroId);
       const aggregates = await loadAggregates(tx, heroId, ['progress']);
       if (existing) {
@@ -675,14 +675,14 @@ export class WorldService {
       const mapId = progress?.state.presence?.mapId;
       if (!progress || !inventory || !mapId) return;
       const now = Date.now();
-      const world = await loadWorld(tx, expeditionId, mapId, now);
+      const world = await loadWorld(tx, expeditionId, mapId, now, heroId);
       if (world?.battle?.phase !== 'ended' || world.battle.outcome !== 'defeat') return;
       const index = await readIndex(tx, expeditionId);
       const stored: Partial<Record<LocationKey, ServerWorld>> = {};
       const byMap = new Map<string, ServerWorld>();
       for (const [key, otherId] of Object.entries(index) as [LocationKey, string][]) {
         const held =
-          otherId === world.mapId ? null : await loadWorld(tx, expeditionId, otherId, now);
+          otherId === world.mapId ? null : await loadWorld(tx, expeditionId, otherId, now, heroId);
         if (held) {
           stored[key] = held;
           byMap.set(otherId, held);
@@ -728,7 +728,7 @@ export class WorldService {
       const mapId = progress?.state.presence?.mapId;
       if (!progress || !inventory || !mapId) return null;
       const now = Date.now();
-      let world = await loadWorld(tx, expeditionId, mapId, now);
+      let world = await loadWorld(tx, expeditionId, mapId, now, heroId);
       if (!world) return null;
       if (world.battle) {
         const settled = battleWorld(
@@ -780,7 +780,7 @@ export class WorldService {
       const { progress } = await loadAggregatesForUpdate(tx, heroId, ['progress']);
       const mapId = progress?.state.presence?.mapId;
       const now = Date.now();
-      const world = mapId ? await loadWorld(tx, expeditionId, mapId, now) : null;
+      const world = mapId ? await loadWorld(tx, expeditionId, mapId, now, heroId) : null;
       if (!world?.battle) throw new PlayerCommandError('INVALID_COMMAND');
       world.battle = applyBattleFixture(world.battle, fixture.data);
       world.battle.turnClockMs = now;
@@ -800,7 +800,7 @@ export class WorldService {
       await lockExpedition(tx, expeditionId);
       const { progress } = await loadAggregatesForUpdate(tx, heroId, ['progress']);
       const mapId = progress?.state.presence?.mapId;
-      const world = mapId ? await loadWorld(tx, expeditionId, mapId, Date.now()) : null;
+      const world = mapId ? await loadWorld(tx, expeditionId, mapId, Date.now(), heroId) : null;
       if (!world || world.battle) throw new PlayerCommandError('INVALID_COMMAND');
       const placed = applyWorldFixture(world, fixture.data);
       if (!placed) throw new PlayerCommandError('INVALID_COMMAND');

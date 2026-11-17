@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import type { LootDrop } from '../loot';
+import { tokenEntryIssue } from '../tokens/token-entry';
+import { itemTokenSchema } from '../tokens/token-schema';
 import type { Axial } from '../utils/hex-utils';
 
 export type LootLists = LootDrop[][];
@@ -23,6 +25,13 @@ export type AccessRefusal = Extract<
   'STANDING_ON_TARGET' | 'CONTAINER_EMPTY' | 'NOT_ADJACENT'
 >;
 
+function tokenFits(drop: LootDrop): boolean {
+  if (drop.token === undefined) return true;
+  return (
+    itemTokenSchema.safeParse(drop.token).success && tokenEntryIssue(drop, drop.itemKey) === null
+  );
+}
+
 const lootDropSchema = z.custom<LootDrop>(
   (value) =>
     typeof value === 'object' &&
@@ -31,7 +40,8 @@ const lootDropSchema = z.custom<LootDrop>(
     (value as LootDrop).itemKey.length > 0 &&
     Number.isInteger((value as LootDrop).amount) &&
     (value as LootDrop).amount >= 1 &&
-    typeof (value as LootDrop).guaranteed === 'boolean',
+    typeof (value as LootDrop).guaranteed === 'boolean' &&
+    tokenFits(value as LootDrop),
 );
 
 export const containerStateSchema = z.object({

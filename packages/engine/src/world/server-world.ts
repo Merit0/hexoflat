@@ -66,7 +66,36 @@ export function serializeWorld(world: ServerWorld): SerializedWorld {
   };
 }
 
+export class StaleWorldError extends Error {
+  constructor(
+    readonly found: unknown,
+    readonly locationKey: LocationKey,
+    readonly mapId: string,
+  ) {
+    super(`World ${mapId} has content version ${String(found)}, expected ${CONTENT_VERSION}`);
+    this.name = 'StaleWorldError';
+  }
+}
+
+const staleWorldHeaderSchema = z.object({
+  contentVersion: z.unknown(),
+  locationKey: z.enum(LOCATION_KEYS),
+  mapId: z.string().min(1),
+});
+
+export function staleWorldOf(raw: unknown): StaleWorldError | null {
+  const header = staleWorldHeaderSchema.safeParse(raw);
+  if (!header.success || header.data.contentVersion === CONTENT_VERSION) return null;
+  return new StaleWorldError(
+    header.data.contentVersion,
+    header.data.locationKey,
+    header.data.mapId,
+  );
+}
+
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
+  const stale = staleWorldOf(raw);
+  if (stale) throw stale;
   const parsed = serializedWorldSchema.parse(raw);
   const map = HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true });
   if (parsed.locationKey === 'camping') installCampFacilities(map, parsed.heroCoordinates);

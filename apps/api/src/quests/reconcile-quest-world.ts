@@ -1,5 +1,4 @@
 import {
-  deserializeWorld,
   installQuestEntrances,
   isStaleSuspendedRun,
   parseQuestRunDoc,
@@ -13,6 +12,7 @@ import {
   writeServerDocument,
 } from '../expedition/expedition-store';
 import type { Tx } from '../player/aggregate-store';
+import { loadWorldDocument, worldDocumentKey } from '../world/world-documents';
 
 export async function reconcileQuestWorld(
   tx: Tx,
@@ -26,14 +26,20 @@ export async function reconcileQuestWorld(
   const index = rawIndex ? (JSON.parse(rawIndex) as Record<string, string>) : {};
   for (const key of LOCATION_KEYS) {
     const mapId = index[key];
-    const raw = mapId ? await readServerDocument(tx, expeditionId, `srv-world:${mapId}`) : null;
-    if (!raw) continue;
-    const world = deserializeWorld(JSON.parse(raw), Date.now());
+    const world = mapId
+      ? await loadWorldDocument(tx, {
+          expeditionId,
+          heroId: progress.knowledge.heroId,
+          mapId,
+          now: Date.now(),
+        })
+      : null;
+    if (!world) continue;
     if (!installQuestEntrances(world, progress)) continue;
     await writeServerDocument(
       tx,
       expeditionId,
-      `srv-world:${world.mapId}`,
+      worldDocumentKey(world.mapId),
       JSON.stringify(serializeWorld(world)),
     );
   }

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
 import { TRADER_KEYS } from '../content/traders.content';
+import { refineTokenEntry } from '../tokens/token-entry';
+import { itemTokenSchema } from '../tokens/token-schema';
 
 export const traderGoodSchema = z
   .object({
@@ -9,8 +11,10 @@ export const traderGoodSchema = z
     sold: z.literal(true).optional(),
     discountPercent: z.number().int().min(1).max(99).optional(),
     wasted: z.literal(true).optional(),
+    token: itemTokenSchema.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine(refineTokenEntry((good) => good.key));
 export type TraderGood = z.infer<typeof traderGoodSchema>;
 
 export const buybackEntrySchema = z
@@ -18,8 +22,10 @@ export const buybackEntrySchema = z
     key: hexobjectKeySchema,
     amount: z.number().int().positive(),
     unitPrice: z.number().int().positive(),
+    token: itemTokenSchema.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine(refineTokenEntry((entry) => entry.key));
 export type BuybackEntry = z.infer<typeof buybackEntrySchema>;
 
 export const traderStateSchema = z

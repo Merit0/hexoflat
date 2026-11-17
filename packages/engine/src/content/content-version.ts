@@ -4,4 +4,4 @@
  * written under an older CONTENT_VERSION are discarded on load rather than
  * risking a mismatch with the current content catalog.
  */
-export const CONTENT_VERSION = 1;
+export const CONTENT_VERSION = 2;

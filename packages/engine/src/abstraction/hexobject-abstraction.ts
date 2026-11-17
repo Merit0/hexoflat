@@ -1,4 +1,5 @@
 import type { ContainerState } from '../containers/container';
+import type { ItemToken } from '../tokens/token-schema';
 import { THexobjectKey } from '../registry/hexobjects-registry';
 
 export type THexobjectGroup = EHexobjectGroup;
@@ -51,6 +52,7 @@ export interface IBaseHexobject {
   tileBackground?: string;
   quantity?: number;
   container?: ContainerState;
+  token?: ItemToken;
 }
 
 export interface IResource extends ITraitable<IResourceTraits> {

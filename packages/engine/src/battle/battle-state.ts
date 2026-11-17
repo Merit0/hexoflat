@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
+import { refineTokenEntry } from '../tokens/token-entry';
+import { itemTokenSchema } from '../tokens/token-schema';
 
 export const axialSchema = z.object({ q: z.number().int(), r: z.number().int() });
 export type BattleHex = z.infer<typeof axialSchema>;
@@ -116,11 +118,14 @@ export const graveSchema = z.object({
 });
 export type Grave = z.infer<typeof graveSchema>;
 
-export const groundItemSchema = z.object({
-  hex: axialSchema,
-  itemKey: z.string().min(1),
-  amount: z.number().int().min(1),
-});
+export const groundItemSchema = z
+  .object({
+    hex: axialSchema,
+    itemKey: z.string().min(1),
+    amount: z.number().int().min(1),
+    token: itemTokenSchema.optional(),
+  })
+  .superRefine(refineTokenEntry((item) => item.itemKey));
 export type GroundItem = z.infer<typeof groundItemSchema>;
 
 export const collectSchema = z.object({

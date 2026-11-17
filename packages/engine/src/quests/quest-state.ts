@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
+import { refineTokenEntry } from '../tokens/token-entry';
+import { itemTokenSchema } from '../tokens/token-schema';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
 import { TERRAIN_IDS } from '../boards/terrain';
@@ -16,8 +18,14 @@ export const hexSchema = z
 const stepSchema = z.object({ hex: hexSchema, number: z.number().int() }).strict();
 
 const groundItemSchema = z
-  .object({ hex: hexSchema, itemKey: z.string().min(1), amount: z.number().int().min(1) })
-  .strict();
+  .object({
+    hex: hexSchema,
+    itemKey: z.string().min(1),
+    amount: z.number().int().min(1),
+    token: itemTokenSchema.optional(),
+  })
+  .strict()
+  .superRefine(refineTokenEntry((item) => item.itemKey));
 
 export const chestDropSchema = z
   .array(

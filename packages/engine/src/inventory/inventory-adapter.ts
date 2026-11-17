@@ -10,8 +10,8 @@ function widen(item: InventoryStateItem | null): InventoryItem | null {
 
 function slim(item: InventoryItem | null): InventoryStateItem | null {
   if (!item) return null;
-  const { id, key, type, stackKey, amount } = item;
-  return { id, key, type, ...(stackKey ? { stackKey } : {}), amount };
+  const { id, key, type, stackKey, amount, token } = item;
+  return { id, key, type, ...(stackKey ? { stackKey } : {}), amount, ...(token ? { token } : {}) };
 }
 
 export function toAggregate(state: InventoryState): IInventoryAggregate {

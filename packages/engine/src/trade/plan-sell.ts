@@ -4,6 +4,7 @@ import type { InventoryState } from '../inventory/inventory-state';
 import { exceedsCapacity } from '../inventory/item-queries';
 import { canSplit, halfOf, placeInto } from '../inventory/placement';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { withToken } from '../tokens/token-entry';
 import { freshPiece, sequenceOf } from './coin-purse';
 import { addToBuyback } from './trade-lists';
 import type { ITradeOptions, ITraderRef, TTradeError, TTradeResult } from './trade-types';
@@ -44,7 +45,7 @@ export function planSell(
   if (exceedsCapacity(agg, next, inventory.capacityKg)) return refuse('OVERWEIGHT', price);
 
   const idSeq = paidOut.some((cell) => cell?.id === coins.id) ? seq.idSeq : inventory.idSeq;
-  const sold = { key: item.key, amount, unitPrice: unit };
+  const sold = withToken({ key: item.key, amount, unitPrice: unit }, item.token);
   return {
     ok: true,
     inventory: { ...applyAggregate(inventory, next), idSeq },

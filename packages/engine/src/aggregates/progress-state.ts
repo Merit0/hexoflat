@@ -6,6 +6,7 @@ import { emptyQuestLog, questLogSchema } from '../quests/quest-log-state';
 import { portalLinkSchema } from '../portal/portal-state';
 import { emptyListings, listingsSchema } from '../trade/listing-state';
 import { tradersStateSchema } from '../trade/trade-state';
+import { uniqueKeySchema } from '../tokens/token-keys';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
 
@@ -44,6 +45,7 @@ export const progressStateSchema = z
     listings: listingsSchema,
     quests: questLogSchema,
     graveExitWarningAcknowledged: z.boolean(),
+    ownedUniques: z.array(uniqueKeySchema).max(1000).default([]),
   })
   .strict();
 export type ProgressState = z.infer<typeof progressStateSchema>;
@@ -63,5 +65,6 @@ export function emptyProgressState(heroId: string): ProgressState {
     listings: emptyListings(),
     quests: emptyQuestLog(),
     graveExitWarningAcknowledged: false,
+    ownedUniques: [],
   };
 }
