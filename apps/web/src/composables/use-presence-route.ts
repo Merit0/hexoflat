@@ -2,6 +2,7 @@ import { onBeforeUnmount, watch } from 'vue';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import {
+  arrivalTarget,
   heldLocationKey,
   onHeroElsewhere,
   onMapAccepted,
@@ -14,7 +15,7 @@ export function usePresenceRoute(routeKey: () => LocationKey | undefined): void 
   watch(
     routeKey,
     (key) => {
-      if (!key) return;
+      if (!key || key === arrivalTarget()) return;
       const held = heldLocationKey();
       if (held && held !== key) {
         void replaceLocationRoute(held);

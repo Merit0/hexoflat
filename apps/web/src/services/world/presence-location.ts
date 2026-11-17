@@ -36,3 +36,19 @@ export function onMapAccepted(next: (() => void) | null): void {
 export function reportMapAccepted(): void {
   acceptListener?.();
 }
+
+let arrivals = 0;
+
+export function expectArrival(): () => void {
+  arrivals += 1;
+  let ended = false;
+  return () => {
+    if (ended) return;
+    ended = true;
+    arrivals -= 1;
+  };
+}
+
+export function arrivalTarget(): LocationKey | null {
+  return arrivals > 0 ? heldLocationKey() : null;
+}

@@ -36,3 +36,8 @@ export async function replaceLocationRoute(locationKey: LocationKey): Promise<vo
     .replace({ name: ROUTES.WORLD, params: { locationKey } })
     .catch((e: unknown) => console.error('Router replace failed:', e));
 }
+
+export function isViewingWorldLocation(locationKey: LocationKey): boolean {
+  const current = router.currentRoute.value;
+  return current.name === ROUTES.WORLD && current.params.locationKey === locationKey;
+}

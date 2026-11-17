@@ -32,6 +32,7 @@ vi.mock('@/services/player/player-socket', async () =>
 vi.mock('@/services/world/location-navigator', () => ({
   navigateToLocation: vi.fn(),
   isViewingOtherWorldLocation: vi.fn(() => false),
+  isViewingWorldLocation: vi.fn(() => false),
   routeToLocation: vi.fn(async () => {}),
   replaceLocationRoute: vi.fn(async () => {}),
 }));

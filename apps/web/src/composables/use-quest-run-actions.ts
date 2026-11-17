@@ -14,12 +14,12 @@ import type { QuestOutcome } from '@/services/quests/quest-commands';
 import { questRefusalText } from '@/composables/quest-messages';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { questRun } from '@/services/quests/quest-run-projection';
-import { routeToLocation } from '@/services/world/location-navigator';
+import { isViewingWorldLocation, routeToLocation } from '@/services/world/location-navigator';
 import { refetchServedWorld } from '@/services/world/served-world';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import type { FieldClick } from '@/services/quests/quest-field-model';
-import { heldLocationKey } from '@/services/world/presence-location';
+import { expectArrival, heldLocationKey } from '@/services/world/presence-location';
 
 const message = ref<string | null>(null);
 
@@ -29,11 +29,14 @@ async function leaveQuestField() {
   if (!place) return;
   await refetchServedWorld(place);
   useWorldMapStore().goToLocation(place);
-  await routeToLocation(place);
+  if (!isViewingWorldLocation(place)) await routeToLocation(place);
 }
 const busy = ref(false);
 
-async function run(action: () => Promise<QuestOutcome>): Promise<boolean> {
+async function run(
+  action: () => Promise<QuestOutcome>,
+  endExit: () => void = () => undefined,
+): Promise<boolean> {
   if (busy.value) return false;
   busy.value = true;
   message.value = null;
@@ -44,8 +47,14 @@ async function run(action: () => Promise<QuestOutcome>): Promise<boolean> {
     if (outcome.ok && wasInQuest && !questRun.value) await leaveQuestField();
     return outcome.ok;
   } finally {
+    endExit();
     busy.value = false;
   }
+}
+
+function leave(action: () => Promise<QuestOutcome>): Promise<boolean> {
+  if (busy.value) return Promise.resolve(false);
+  return run(action, expectArrival());
 }
 
 export function useQuestRunActions() {
@@ -57,9 +66,9 @@ export function useQuestRunActions() {
       if (started) await closeKnowledgePanel(false);
       return started;
     },
-    giveUp: () => run(giveUpQuest),
-    returnToCamp: () => run(returnFromQuest),
-    pause: () => run(pauseQuest),
+    giveUp: () => leave(giveUpQuest),
+    returnToCamp: () => leave(returnFromQuest),
+    pause: () => leave(pauseQuest),
     openChest: () => run(openQuestChest),
     pickUp: (hex: IHexCoordinates) => run(() => pickUpQuestLoot(hex)),
     click: (action: FieldClick) => {

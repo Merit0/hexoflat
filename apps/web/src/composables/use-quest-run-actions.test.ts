@@ -23,7 +23,10 @@ vi.mock('@/services/quests/quest-run-commands', () => ({
 }));
 
 vi.mock('@/services/world/served-world', () => ({ refetchServedWorld: vi.fn() }));
-vi.mock('@/services/world/location-navigator', () => ({ routeToLocation: vi.fn() }));
+vi.mock('@/services/world/location-navigator', () => ({
+  routeToLocation: vi.fn(),
+  isViewingWorldLocation: vi.fn(() => false),
+}));
 
 describe('quest pickup warnings', () => {
   beforeEach(() => setActivePinia(createPinia()));
