@@ -331,8 +331,8 @@ describe('REQ-8: an evicted map is asked for once', () => {
     const before = mapRequests();
     const swaps = recordSwaps(world);
 
-    const first = world.loadEvictedMap('silesia').then(() => world.map);
-    const second = world.loadEvictedMap('silesia').then(() => world.map);
+    const first = world.reloadLocationMap('silesia').then(() => world.map);
+    const second = world.reloadLocationMap('silesia').then(() => world.map);
     const [firstMap, secondMap] = await Promise.all([first, second]);
 
     expect(mapRequests() - before).toBe(1);

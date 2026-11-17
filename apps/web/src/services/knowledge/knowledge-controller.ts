@@ -19,6 +19,7 @@ import {
 import {
   actOnServerWorld,
   installTravelledWorlds,
+  keepStaleAnswer,
   travelOnServer,
   readCachedWorld,
 } from '@/services/world/served-world';
@@ -52,7 +53,9 @@ async function viaServer(
 ) {
   if (!host.isCurrent()) return { state: inventorySession.knowledge, accepted: false };
   const { coordinates, locationKey, mapId } = host.context;
-  if (coordinates) await ensurePresence({ locationKey, mapId });
+  if (coordinates && !(await ensurePresence({ locationKey, mapId }))) {
+    return { state: inventorySession.knowledge, accepted: false };
+  }
   const result = await sendProgress(type, payload);
   return { state: result.knowledge, accepted: result.ok && host.isCurrent() };
 }
@@ -140,8 +143,10 @@ async function executeHexAction(
   const result = gate
     ? await travelOnServer(at, { kind: 'gate', coordinates })
     : await actOnServerWorld(at, { coordinates, actionType, toolKey }, host.clientHint());
-  const stale = !host.isCurrent();
-  if (stale) return { state: inventorySession.knowledge, events: [], hero: host.hero, held };
+  if (!host.isCurrent()) {
+    keepStaleAnswer(result);
+    return { state: inventorySession.knowledge, events: [], hero: host.hero, held };
+  }
   host.applyWorldResult(result);
 
   const events = [...result.events];

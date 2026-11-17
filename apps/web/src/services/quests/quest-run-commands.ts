@@ -1,5 +1,6 @@
 import { ensurePresence, sendQuestCommand } from '@/services/inventory/inventory-sync';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { type QuestOutcome } from './quest-commands';
 import type { QuestRunAnswer } from './quest-run-transport';
@@ -15,10 +16,10 @@ function outcomeOf(answer: QuestRunAnswer): QuestOutcome {
   return { ok: false, reason: payload?.reason ?? answer.code };
 }
 
-async function announcePlace(): Promise<void> {
+function announcePlace(): Promise<boolean> {
   const world = useWorldMapStore();
-  if (!world.currentLocationKey || !world.currentMapId) return;
-  await ensurePresence({ locationKey: world.currentLocationKey, mapId: world.currentMapId });
+  if (!world.currentLocationKey || !world.currentMapId) return Promise.resolve(true);
+  return ensurePresence({ locationKey: world.currentLocationKey, mapId: world.currentMapId });
 }
 
 async function send(type: string, payload: Record<string, unknown> = {}): Promise<QuestOutcome> {
@@ -26,7 +27,7 @@ async function send(type: string, payload: Record<string, unknown> = {}): Promis
 }
 
 export async function startSeekerQuest(questId: string): Promise<QuestOutcome> {
-  await announcePlace();
+  if (!(await announcePlace())) return { ok: false, reason: HERO_ELSEWHERE };
   return send('QUEST_ENTER', { questId });
 }
 

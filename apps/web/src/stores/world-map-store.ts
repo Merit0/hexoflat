@@ -65,7 +65,7 @@ import {
 import { claimMapSwap, swapActiveMap, type MapSwap } from '@/stores/active-map-swap';
 import { respawnHeroAtCampingAction } from '@/stores/camp-respawn-action';
 
-const evictedLoads = new Map<LocationKey, Promise<void>>();
+const locationReloads = new Map<LocationKey, Promise<unknown>>();
 
 function cachedSwapOf(locationKey: LocationKey): MapSwap {
   const served = readCachedWorld(locationKey);
@@ -243,24 +243,27 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     loadLocationMap(locationKey: LocationKey) {
       if (!readCachedWorld(locationKey) && wasEvicted(locationKey)) {
-        void this.loadEvictedMap(locationKey);
+        void this.reloadLocationMap(locationKey);
         return;
       }
       this.swapMap(cachedSwapOf(locationKey));
     },
 
-    loadEvictedMap(locationKey: LocationKey): Promise<void> {
-      const running = evictedLoads.get(locationKey);
-      if (running) return running;
-      const latest = claimMapSwap();
-      const load = reloadWorldDocument(locationKey)
-        .catch(() => undefined)
-        .then(() => {
-          if (latest()) this.swapMap(cachedSwapOf(locationKey));
-        })
-        .finally(() => evictedLoads.delete(locationKey));
-      evictedLoads.set(locationKey, load);
-      return load;
+    reloadLocationMap(locationKey: LocationKey): Promise<boolean> {
+      const ticket = claimMapSwap();
+      let request = locationReloads.get(locationKey);
+      if (!request) {
+        request = reloadWorldDocument(locationKey)
+          .catch(() => undefined)
+          .finally(() => locationReloads.delete(locationKey));
+        locationReloads.set(locationKey, request);
+      }
+      return request.then(() => {
+        const applied = ticket.latest();
+        if (applied) this.swapMap(cachedSwapOf(locationKey));
+        ticket.settle();
+        return applied;
+      });
     },
 
     failWorldLoad() {
@@ -280,9 +283,13 @@ export const useWorldMapStore = defineStore('world-map-store', {
 
     async retryWorldLoad(locationKey?: LocationKey) {
       const target = locationKey ?? this.currentLocationKey;
-      const latest = claimMapSwap();
-      await reloadWorldCache();
-      if (latest()) this.goToLocation(target);
+      const ticket = claimMapSwap();
+      try {
+        await reloadWorldCache();
+        if (ticket.latest()) this.goToLocation(target);
+      } finally {
+        ticket.settle();
+      }
     },
 
     serverWorldJson(engagement?: Engagement | null): string | null {

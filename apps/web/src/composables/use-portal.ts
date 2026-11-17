@@ -8,9 +8,13 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
 import { portalLocation } from '@/services/world/portal-service';
-import { installTravelledWorlds, portalCommandOnServer } from '@/services/world/served-world';
-import { holdsMap } from '@/services/world/held-map';
-import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
+import type { WorldCommandResult } from '@/services/inventory/inventory-sync';
+import {
+  installTravelledWorlds,
+  keepStaleAnswer,
+  portalCommandOnServer,
+} from '@/services/world/served-world';
+import { holdsMap, isRecoveredRefusal } from '@/services/world/held-map';
 import { playPortalEnter, playPortalExit, portalFxBusy, releasePortalFx } from '@/render/portal-fx';
 import { routeToLocation } from '@/services/world/location-navigator';
 import { inventorySession } from '@/services/inventory/inventory-session';
@@ -78,6 +82,13 @@ export function usePortal() {
     return { ok: true, oneWay: plan.link.campHex === null, cost };
   }
 
+  function droppedPortalAnswer(result: WorldCommandResult): boolean {
+    if (isRecoveredRefusal(result.code)) return true;
+    if (holdsMap(worldStore, result.mapId)) return false;
+    keepStaleAnswer(result);
+    return true;
+  }
+
   function currentPlace() {
     const from = heroStore.heroCoordinates;
     if (!worldStore.map || !worldStore.currentMapId || !from) return null;
@@ -93,7 +104,7 @@ export function usePortal() {
     const at = currentPlace();
     if (!at || heroStore.knowledgeError) return { ok: false, reason: 'NO_LOCATION' };
     const result = await portalCommandOnServer(at, 'WORLD_PORTAL_OPEN', { target });
-    if (result.code === MAP_MISMATCH || !holdsMap(worldStore, result.mapId)) return { ok: false };
+    if (droppedPortalAnswer(result)) return { ok: false };
     if (!result.ok) return { ok: false, reason: result.code ?? 'NO_LOCATION' };
     worldStore.applyWorldResult(result);
     heroStore.knowledge = inventorySession.knowledge;
@@ -127,7 +138,7 @@ export function usePortal() {
     try {
       await playPortalEnter(portalHex);
       const result = await portalCommandOnServer(at, 'WORLD_PORTAL_ENTER');
-      if (result.code === MAP_MISMATCH || !holdsMap(worldStore, result.mapId)) return { ok: false };
+      if (droppedPortalAnswer(result)) return { ok: false };
       if (!result.ok) return { ok: false, reason: result.code ?? 'NO_PORTAL' };
       installTravelledWorlds(result);
       worldStore.goToLocation(destination.to);

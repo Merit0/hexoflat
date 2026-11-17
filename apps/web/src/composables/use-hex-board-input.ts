@@ -15,6 +15,7 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 export const HAND_SCROLL_COOLDOWN_MS = 180;
 
 export interface UseHexBoardInputDeps {
+  surface: Ref<HTMLElement | null>;
   hoveredTileCoord: Ref<IHexCoordinates | null>;
   heroCoordinates?: Ref<IHexCoordinates | null>;
   enabled?: Ref<boolean>;
@@ -120,8 +121,15 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
     equipToolFromHand(nextSlot);
   }
 
-  onMounted(() => window.addEventListener('wheel', onWheel, { passive: false }));
-  onBeforeUnmount(() => window.removeEventListener('wheel', onWheel));
+  let listeningOn: HTMLElement | null = null;
+  onMounted(() => {
+    listeningOn = deps.surface.value;
+    listeningOn?.addEventListener('wheel', onWheel, { passive: false });
+  });
+  onBeforeUnmount(() => {
+    listeningOn?.removeEventListener('wheel', onWheel);
+    listeningOn = null;
+  });
 
   return { activeHandSlot };
 }

@@ -67,7 +67,7 @@ describe('leaving the quest field', () => {
     });
     const go = vi.spyOn(useWorldMapStore(), 'goToLocation').mockImplementation(() => undefined);
     expect(await useQuestRunActions().returnToCamp()).toBe(true);
-    expect(refetchServedWorld).toHaveBeenCalledWith('silesia');
+    expect(refetchServedWorld).toHaveBeenCalledTimes(1);
     expect(go).toHaveBeenCalledWith('silesia');
     expect(routeToLocation).toHaveBeenCalledWith('silesia');
   });

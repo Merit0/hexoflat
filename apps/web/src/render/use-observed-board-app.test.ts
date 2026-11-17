@@ -9,16 +9,23 @@ interface Pending {
   app: HexBoardApp;
   destroy: Mock<() => void>;
   resolve(): void;
+  reject(error: Error): void;
 }
 
 const created = vi.hoisted(() => ({ pending: [] as Pending[] }));
 
 vi.mock('@/render/pixi-app', () => ({
   createHexBoardApp: (_canvas: HTMLCanvasElement, width: number, height: number) =>
-    new Promise<HexBoardApp>((resolve) => {
+    new Promise<HexBoardApp>((resolve, reject) => {
       const destroy = vi.fn<() => void>();
       const app = { destroy } as unknown as HexBoardApp;
-      created.pending.push({ size: { width, height }, app, destroy, resolve: () => resolve(app) });
+      created.pending.push({
+        size: { width, height },
+        app,
+        destroy,
+        resolve: () => resolve(app),
+        reject,
+      });
     }),
 }));
 
@@ -41,6 +48,7 @@ class FakeResizeObserver {
 
 type Hooks = Pick<ObservedBoardAppOptions, 'onStart' | 'onResize' | 'onDispose'> & {
   prepare?: ObservedBoardAppOptions['prepare'];
+  onError?: ObservedBoardAppOptions['onError'];
 };
 
 let app: App | null = null;
@@ -52,7 +60,7 @@ function mount(hooks: Hooks): void {
       setup() {
         const pane = ref<HTMLElement | null>(null);
         const canvas = ref<HTMLCanvasElement | null>(null);
-        useObservedBoardApp({ pane, canvas, ...hooks });
+        useObservedBoardApp({ pane, canvas, source: 'test-board', ...hooks });
         return () => h('div', { ref: pane }, [h('canvas', { ref: canvas })]);
       },
     }),
@@ -70,7 +78,12 @@ function hooks() {
     onStart: vi.fn(),
     onResize: vi.fn(),
     onDispose: vi.fn(),
+    onError: vi.fn(),
   };
+}
+
+function liveApps(): number {
+  return created.pending.filter((one) => one.destroy.mock.calls.length === 0).length;
 }
 
 beforeEach(() => {
@@ -167,5 +180,69 @@ describe('observed board app', () => {
     app = null;
 
     expect(order).toEqual(['layers', 'app']);
+  });
+
+  describe('a start that fails (MAPFIX-6 REQ-5)', () => {
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
+
+    it('destroys the created app when the textures fail to load, and surfaces the error', async () => {
+      const failure = new Error('preload failed');
+      const spy = { ...hooks(), prepare: vi.fn(() => Promise.reject(failure)) };
+      mount(spy);
+      observe!(800, 600);
+      created.pending[0].resolve();
+      await settle();
+
+      expect(liveApps()).toBe(0);
+      expect(spy.onStart).not.toHaveBeenCalled();
+      expect(spy.onError).toHaveBeenCalledWith(failure);
+      expect(console.error).toHaveBeenCalledWith('[board] test-board failed to start', failure);
+
+      observe!(900, 700);
+      await settle();
+      expect(created.pending).toHaveLength(1);
+      expect(liveApps()).toBe(0);
+      expect(spy.onResize).not.toHaveBeenCalled();
+    });
+
+    it('surfaces a failed Pixi init and never starts a second app on a later resize', async () => {
+      const failure = new Error('webgl lost');
+      const spy = hooks();
+      mount(spy);
+      observe!(800, 600);
+      created.pending[0].reject(failure);
+      await settle();
+      observe!(820, 640);
+      await settle();
+
+      expect(created.pending).toHaveLength(1);
+      expect(spy.onError).toHaveBeenCalledWith(failure);
+      expect(spy.onStart).not.toHaveBeenCalled();
+    });
+
+    it('keeps at most one live app when the pane resizes while the failing start is still loading', async () => {
+      let fail: (error: Error) => void = () => {};
+      const spy = {
+        ...hooks(),
+        prepare: vi.fn(() => new Promise<void>((_resolve, reject) => (fail = reject))),
+      };
+      mount(spy);
+      observe!(800, 600);
+      created.pending[0].resolve();
+      await settle();
+      observe!(820, 600);
+      expect(liveApps()).toBeLessThanOrEqual(1);
+
+      fail(new Error('preload failed'));
+      await settle();
+      observe!(840, 600);
+      await settle();
+
+      expect(created.pending).toHaveLength(1);
+      expect(liveApps()).toBe(0);
+      expect(spy.onError).toHaveBeenCalledTimes(1);
+    });
   });
 });

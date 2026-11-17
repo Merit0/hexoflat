@@ -12,11 +12,14 @@ import type { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
 import type { WorldClientHint } from '@hexoflat/engine/world/server-ports';
 import {
   ensurePresence,
+  refusedWorldCommand,
   sendWorldCommand,
   type WorldCommandResult,
 } from '@/services/inventory/inventory-sync';
 import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
+import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
 import { apiClient } from '@/api/client';
+import { reportStaleAnswer } from '@/services/world/presence-location';
 import {
   cachedWorldJson,
   evictStaleServerWorld,
@@ -35,13 +38,14 @@ export function readCachedWorld(locationKey: LocationKey): ServerWorld | null {
   }
 }
 
-export async function refetchServedWorld(locationKey: LocationKey): Promise<ServerWorld | null> {
+export async function refetchServedWorld(): Promise<ServerWorld | null> {
   try {
     const body = await apiClient.get<Record<string, unknown> | null>('/player/world');
     if (!body) return null;
     const { battleView: _battleView, serverNowMs: _serverNowMs, ...world } = body;
-    cacheServerWorld(locationKey, JSON.stringify(world));
-    return readCachedWorld(locationKey);
+    const served = deserializeWorld(world, Date.now());
+    cacheServerWorld(served.locationKey, JSON.stringify(world));
+    return served;
   } catch {
     return null;
   }
@@ -83,11 +87,14 @@ export async function stepOnServerWorld(
   at: { locationKey: LocationKey; mapId: string; map: HexMapModel; holds: () => boolean },
   target: IHexCoordinates,
 ): Promise<ServerStepOutcome> {
-  await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
+  if (!(await ensurePresence(at))) {
+    return { ok: false, code: HERO_ELSEWHERE, ambush: null, changed: [] };
+  }
   const result = await sendWorldCommand('WORLD_STEP', { expectedMapId: at.mapId, target });
   if (!result.ok) return { ok: false, code: result.code, ambush: null, changed: [] };
   if (!at.holds()) {
     evictStaleServerWorld(at.locationKey, at.mapId);
+    keepStaleAnswer(result);
     return { ok: false, code: MAP_MISMATCH, ambush: null, changed: [] };
   }
   const changed = applyTileDiffs(at.map, result.tileDiffs, Date.now());
@@ -193,11 +200,10 @@ export function hasDueWork(map: HexMapModel, now: number): boolean {
   );
 }
 
-export async function tickServerWorld(
+export function tickServerWorld(
   at: { locationKey: LocationKey; mapId: string; from: IHexCoordinates },
   client: WorldClientHint,
 ): Promise<WorldCommandResult> {
-  await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
   return sendWorldCommand('WORLD_TICK', { expectedMapId: at.mapId, client });
 }
 
@@ -206,7 +212,7 @@ export async function actOnServerWorld(
   action: { coordinates: IHexCoordinates; actionType: string; toolKey: string },
   client: WorldClientHint,
 ): Promise<WorldCommandResult> {
-  await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
+  if (!(await ensurePresence(at))) return refusedWorldCommand(HERO_ELSEWHERE, at.mapId);
   return sendWorldCommand('WORLD_ACTION', {
     expectedMapId: at.mapId,
     coordinates: {
@@ -223,7 +229,7 @@ export async function travelOnServer(
   at: { locationKey: LocationKey; mapId: string; from: IHexCoordinates },
   via: { kind: 'exit' } | { kind: 'gate'; coordinates: IHexCoordinates },
 ): Promise<WorldCommandResult> {
-  await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
+  if (!(await ensurePresence(at))) return refusedWorldCommand(HERO_ELSEWHERE, at.mapId);
   const body =
     via.kind === 'exit'
       ? via
@@ -248,6 +254,12 @@ export function installTravelledWorlds(result: WorldCommandResult): LocationKey 
   return travel ? (travel.locationKey as LocationKey) : null;
 }
 
+export function keepStaleAnswer(result: WorldCommandResult): void {
+  if (!result.ok) return;
+  installTravelledWorlds(result);
+  reportStaleAnswer(result.mapId);
+}
+
 type PortalAt = { locationKey: LocationKey; mapId: string; from: IHexCoordinates };
 
 export async function portalCommandOnServer(
@@ -255,6 +267,6 @@ export async function portalCommandOnServer(
   type: 'WORLD_PORTAL_OPEN' | 'WORLD_PORTAL_ENTER' | 'WORLD_PORTAL_CLOSE',
   payload: Record<string, unknown> = {},
 ): Promise<WorldCommandResult> {
-  await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
+  if (!(await ensurePresence(at))) return refusedWorldCommand(HERO_ELSEWHERE, at.mapId);
   return sendWorldCommand(type, { expectedMapId: at.mapId, ...payload });
 }

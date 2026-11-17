@@ -31,6 +31,7 @@ import { shopTestApi } from './shop-hooks';
 import { questTestApi } from './quest-hooks';
 import { lootTestApi } from './loot-hooks';
 import { inventoryTestApi } from './inventory-hooks';
+import { eventsTestApi } from './events-hooks';
 import { findTilesWithKeyIn, relocateHero } from './relocate-hooks';
 import { renderStats } from '@/render/render-stats';
 import type {
@@ -275,6 +276,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     ...inventoryTestApi,
+    ...eventsTestApi,
     ...stashTestApi,
     ...shopTestApi,
     ...lootTestApi,

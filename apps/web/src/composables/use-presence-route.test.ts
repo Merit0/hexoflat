@@ -11,11 +11,18 @@ import { replaceLocationRoute } from '@/services/world/location-navigator';
 import { usePresenceRoute } from './use-presence-route';
 
 const goToLocation = vi.fn();
-const retryWorldLoad = vi.fn<(locationKey: LocationKey) => Promise<void>>(async () => {});
+const reloadLocationMap = vi.fn<(locationKey: LocationKey) => Promise<boolean>>(() =>
+  Promise.resolve(true),
+);
 const failWorldLoad = vi.fn();
 
 vi.mock('@/stores/world-map-store', () => ({
-  useWorldMapStore: () => ({ goToLocation, retryWorldLoad, failWorldLoad, isShowing: () => false }),
+  useWorldMapStore: () => ({
+    goToLocation,
+    reloadLocationMap,
+    failWorldLoad,
+    isShowing: () => false,
+  }),
 }));
 vi.mock('@/services/world/location-navigator', () => ({
   replaceLocationRoute: vi.fn(async () => {}),
@@ -49,7 +56,7 @@ describe('the world route follows the place the server holds', () => {
     resetInventorySession();
     goToLocation.mockReset();
     vi.mocked(replaceLocationRoute).mockClear();
-    retryWorldLoad.mockClear();
+    reloadLocationMap.mockClear();
     failWorldLoad.mockClear();
   });
 
@@ -84,33 +91,52 @@ describe('the world route follows the place the server holds', () => {
     expect(replaceLocationRoute).not.toHaveBeenCalled();
   });
 
-  it('returns to the held location when the server refuses an entry elsewhere, and stops after unmount', () => {
+  it('reloads the held location and returns to it when the server refuses an entry elsewhere, and stops after unmount', async () => {
     standIn('silesia');
     const view = showRoute(ref<LocationKey | undefined>('silesia'));
     standIn('cave');
     reportHeroElsewhere();
+    await settle();
+    expect(reloadLocationMap).toHaveBeenCalledWith('cave');
     expect(replaceLocationRoute).toHaveBeenCalledWith('cave');
     view.unmount();
     vi.mocked(replaceLocationRoute).mockClear();
+    reloadLocationMap.mockClear();
     reportHeroElsewhere();
+    await settle();
+    expect(reloadLocationMap).not.toHaveBeenCalled();
     expect(replaceLocationRoute).not.toHaveBeenCalled();
   });
 
-  it('leaves the route alone when the refusal names the location already shown', () => {
+  it('leaves the route alone when the refusal names the location already shown', async () => {
     standIn('silesia');
     showRoute(ref<LocationKey | undefined>('silesia'));
     reportHeroElsewhere();
+    await settle();
     expect(replaceLocationRoute).not.toHaveBeenCalled();
   });
 
+  it('joins a HERO_ELSEWHERE and a MAP_MISMATCH that arrive while one recovery runs (MAPFIX-6)', async () => {
+    standIn('silesia');
+    showRoute(ref<LocationKey | undefined>('silesia'));
+    standIn('cave');
+    reportHeroElsewhere();
+    reportMapMismatch();
+    reportHeroElsewhere();
+    await settle();
+    expect(reloadLocationMap).toHaveBeenCalledTimes(1);
+    expect(reloadLocationMap).toHaveBeenCalledWith('cave');
+    expect(failWorldLoad).not.toHaveBeenCalled();
+  });
+
   describe('a command refused because the hero stands on another map (MAPFIX-2)', () => {
-    it('reloads the world once through the retry path for the held location', async () => {
+    it('reloads only the held location once', async () => {
       standIn('silesia');
       showRoute(ref<LocationKey | undefined>('silesia'));
       reportMapMismatch();
       await settle();
-      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
-      expect(retryWorldLoad).toHaveBeenCalledWith('silesia');
+      expect(reloadLocationMap).toHaveBeenCalledTimes(1);
+      expect(reloadLocationMap).toHaveBeenCalledWith('silesia');
       expect(replaceLocationRoute).not.toHaveBeenCalled();
       expect(failWorldLoad).not.toHaveBeenCalled();
     });
@@ -121,7 +147,7 @@ describe('the world route follows the place the server holds', () => {
       standIn('camping');
       reportMapMismatch();
       await settle();
-      expect(retryWorldLoad).toHaveBeenCalledWith('camping');
+      expect(reloadLocationMap).toHaveBeenCalledWith('camping');
       expect(replaceLocationRoute).toHaveBeenCalledWith('camping');
     });
 
@@ -131,23 +157,23 @@ describe('the world route follows the place the server holds', () => {
       reportMapMismatch();
       reportMapMismatch();
       await settle();
-      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
+      expect(reloadLocationMap).toHaveBeenCalledTimes(1);
       reportMapMismatch();
       reportMapMismatch();
       await settle();
-      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
+      expect(reloadLocationMap).toHaveBeenCalledTimes(1);
       expect(failWorldLoad).toHaveBeenCalledTimes(2);
     });
 
     it('a failed reload still counts as the one reload and raises nothing', async () => {
       standIn('silesia');
       showRoute(ref<LocationKey | undefined>('silesia'));
-      retryWorldLoad.mockRejectedValueOnce(new Error('offline'));
+      reloadLocationMap.mockRejectedValueOnce(new Error('offline'));
       reportMapMismatch();
       await settle();
       reportMapMismatch();
       await settle();
-      expect(retryWorldLoad).toHaveBeenCalledTimes(1);
+      expect(reloadLocationMap).toHaveBeenCalledTimes(1);
       expect(failWorldLoad).toHaveBeenCalledTimes(1);
       expect(replaceLocationRoute).not.toHaveBeenCalled();
     });
@@ -160,7 +186,7 @@ describe('the world route follows the place the server holds', () => {
       reportMapAccepted();
       reportMapMismatch();
       await settle();
-      expect(retryWorldLoad).toHaveBeenCalledTimes(2);
+      expect(reloadLocationMap).toHaveBeenCalledTimes(2);
       expect(failWorldLoad).not.toHaveBeenCalled();
     });
 
@@ -171,7 +197,7 @@ describe('the world route follows the place the server holds', () => {
       view.unmount();
       reportMapMismatch();
       await settle();
-      expect(retryWorldLoad).not.toHaveBeenCalled();
+      expect(reloadLocationMap).not.toHaveBeenCalled();
       expect(failWorldLoad).not.toHaveBeenCalled();
     });
   });

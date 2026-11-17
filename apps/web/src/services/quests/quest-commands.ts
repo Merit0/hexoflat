@@ -1,16 +1,17 @@
 import { ensurePresence, sendInventoryCommand } from '@/services/inventory/inventory-sync';
 import { useWorldMapStore } from '@/stores/world-map-store';
+import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
 
 export type QuestOutcome = { ok: true } | { ok: false; reason: string };
 
-async function announcePlace(): Promise<void> {
+function announcePlace(): Promise<boolean> {
   const world = useWorldMapStore();
-  if (!world.currentLocationKey || !world.currentMapId) return;
-  await ensurePresence({ locationKey: world.currentLocationKey, mapId: world.currentMapId });
+  if (!world.currentLocationKey || !world.currentMapId) return Promise.resolve(true);
+  return ensurePresence({ locationKey: world.currentLocationKey, mapId: world.currentMapId });
 }
 
 async function send(type: string, questId: string): Promise<QuestOutcome> {
-  await announcePlace();
+  if (!(await announcePlace())) return { ok: false, reason: HERO_ELSEWHERE };
   const answer = await sendInventoryCommand(type, { questId });
   if (answer.ok) return { ok: true };
   const rejected = answer.events.find((event) => event.type === 'QUEST_REJECTED');

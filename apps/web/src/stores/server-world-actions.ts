@@ -26,11 +26,12 @@ import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { holdsMap, holdsPlace } from '@/services/world/held-map';
-import { claimMapSwap, type MapSwap } from '@/stores/active-map-swap';
+import { observeMapSwaps, type MapSwap } from '@/stores/active-map-swap';
 
 const SERVER_TICK_BACKOFF_MS = 2000;
 let serverTicking = false;
 let serverTickPausedUntil = 0;
+let refetches = 0;
 
 export type ServerWorldHero = ReplayDeps['hero'] & {
   heroCoordinates: IHexCoordinates | null;
@@ -72,24 +73,29 @@ export function applyWorldResultAction(
 }
 
 export async function refetchWorldAction(host: ServerWorldHost & { swapMap(swap: MapSwap): void }) {
-  const mapId = host.currentMapId;
-  if (!mapId) return;
-  const latest = claimMapSwap();
-  const served = await refetchServedWorld(host.currentLocationKey);
-  if (!latest() || !served || served.mapId !== mapId || host.currentMapId !== mapId) return;
-  host.swapMap({ kind: 'refetched', served });
+  if (!host.currentMapId) return;
+  refetches += 1;
+  const mine = refetches;
+  const unchanged = observeMapSwaps();
+  const served = await refetchServedWorld();
+  if (mine !== refetches || !unchanged() || !served) return;
+  host.swapMap(
+    holdsPlace(host, served)
+      ? { kind: 'refetched', served }
+      : { kind: 'served', locationKey: served.locationKey, served },
+  );
 }
 
-function heldElsewhere(host: ServerWorldHost): boolean {
+function tickPlaceHeld(host: ServerWorldHost): boolean {
   const presence = inventorySession.presence;
-  return !!presence && !holdsPlace(host, presence);
+  return !!presence && holdsPlace(host, presence);
 }
 
 export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldHero) {
   const from = hero.heroCoordinates;
   const now = Date.now();
   if (!host.map || !host.currentMapId || !from || now < serverTickPausedUntil) return;
-  if (heldElsewhere(host)) return;
+  if (!tickPlaceHeld(host)) return;
   if (serverTicking || !hasDueWork(host.map as HexMapModel, now)) return;
   serverTicking = true;
   const mapId = host.currentMapId;

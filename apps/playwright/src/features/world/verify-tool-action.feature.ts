@@ -21,4 +21,11 @@ export class VerifyToolActionFeature extends BaseFeature {
       this.campingMap.toolActionOverlay.verifyActionIsNoLongerOffered(),
     );
   }
+
+  async verifyHandIsIdle(): Promise<void> {
+    await this.step('Verify the hand tool is not armed', async () => {
+      await this.campingMap.hexBoard.verifyHandToolIdle();
+      await this.campingMap.toolActionOverlay.verifyToolHexHidden();
+    });
+  }
 }

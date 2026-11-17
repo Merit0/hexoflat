@@ -9,6 +9,10 @@ import { TakePlacedItemFeature } from '@features/world/take-placed-item.feature'
 import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.feature';
 import { HexobjectKeys } from '@config/test-data';
 import { EquipSlot } from '@config/equip-slot';
+import { FillEventsLogFeature } from '@features/world/fill-events-log.feature';
+import { ScrollWithWheelFeature } from '@features/world/scroll-with-wheel.feature';
+import { VerifyEventsLogFeature } from '@features/world/verify-events-log.feature';
+import { VerifyToolActionFeature } from '@features/world/verify-tool-action.feature';
 
 test.describe('hero board panel', { tag: ['@hero'] }, () => {
   test('Verify the hero board panel opens on the Hero tab by default', async () => {
@@ -238,5 +242,23 @@ test.describe('hero board panel', { tag: ['@hero'] }, () => {
     await switchTab.switchTo('inventory');
     await new VerifyInventoryFeature().givenItem(HexobjectKeys.returnScroll, 5);
     await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.returnScroll);
+  });
+
+  test('Verify the mouse wheel scrolls the right panel there and opens the hand only over the board', async () => {
+    await new OpenCampingMapFeature().open();
+    await new SwitchHeroBoardTabFeature().switchTo('events');
+    await new FillEventsLogFeature().fill(50);
+
+    const wheel = new ScrollWithWheelFeature();
+    const verifyLog = new VerifyEventsLogFeature();
+    const verifyTool = new VerifyToolActionFeature();
+    await verifyLog.verifyScrolledToTop();
+
+    await wheel.overTheEventsLog();
+    await verifyLog.verifyScrolledDown();
+    await verifyTool.verifyHandIsIdle();
+
+    await wheel.overTheBoard();
+    await verifyTool.verifyToolHexVisible();
   });
 });
