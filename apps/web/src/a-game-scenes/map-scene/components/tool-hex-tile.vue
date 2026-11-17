@@ -32,6 +32,7 @@
 import { useI18n } from 'vue-i18n';
 import ToolHexFace from '@/components/gui/tool-hex/tool-hex-face.vue';
 import ToolHexAnchor from '@/components/gui/tool-hex/tool-hex-anchor.vue';
+import { openQuestObject } from '@/composables/open-quest-object';
 import { openKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { openStashBoard } from '@/composables/use-stash-board';
 import { unlockNextChest } from '@/services/inventory/stash-transfer';
@@ -65,6 +66,7 @@ import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import { applySquadEvents } from '@/services/squads/squad-flow';
 import { lootRefusalText } from '@/services/loot/loot-rejection';
 import { asSquad } from '@hexoflat/engine/squads/squad-state';
+import { objectActionDestination } from '@hexoflat/engine/map/object-transition';
 
 defineProps<{
   tileWidth: number;
@@ -141,7 +143,7 @@ function actionsForTool(tool: THeroToolKey, tile: HexTileModel | null): Resolved
   if (!tile?.hexobject) return [];
 
   if (tile.hexobject.groupType === EHexobjectGroup.CONSTRUCTION) {
-    const enterCfg = getMeta(tile.hexobject.hexobjectKey)?.enter;
+    const enterCfg = objectActionDestination(tile.hexobject, EHexActionType.ENTER);
     if (
       !tile.hexobject.isInteractable ||
       (enterCfg?.type === 'WORLD' && worldMapStore.isLocationRespawning(enterCfg.locationKey))
@@ -167,10 +169,19 @@ function topPriority(tool: THeroToolKey, tile: HexTileModel | null): number {
 }
 
 watch(
-  () => [hoveredTile.value, handTools.value, heroToolStore.isDragging] as const,
+  () =>
+    [
+      hoveredTile.value,
+      handTools.value,
+      heroToolStore.isDragging,
+      isReading.value,
+      isOpeningStash.value,
+      isOpeningShop.value,
+    ] as const,
   ([tile, tools, dragging]) => {
     const current = activeToolKey.value;
     if (!dragging || !tile || !current || battleStore.inBattle || heroToolStore.isLocked) return;
+    if (isReading.value || isOpeningStash.value || isOpeningShop.value) return;
 
     let best = current;
     let bestPriority = topPriority(current, tile);
@@ -371,7 +382,7 @@ async function executeAction() {
   const actionType = ACTION_TYPE_MAP[best.actioType];
   if (!actionType) return;
 
-  if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.RETURN_PORTAL) {
+  if (objectActionDestination(tile.hexobject, actionType)?.type === 'PORTAL') {
     const entered = await portal.enterPortal();
     if (!entered.ok && entered.reason) {
       flashDenied();
@@ -390,10 +401,7 @@ async function executeAction() {
     return;
   }
 
-  if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.QUEST_BOARD) {
-    openKnowledgePanel('quests');
-    return;
-  }
+  if (openQuestObject(tile.hexobject)) return;
 
   if (tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.STASH_CHEST) {
     await openStashBoard();

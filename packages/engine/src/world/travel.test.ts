@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { emptyInventoryState } from '../inventory/inventory-state';
@@ -7,6 +7,10 @@ import type { LocationKey } from '../registry/location-key';
 import { getHexNeighbors } from '../utils/hex-utils';
 import { createServerWorld, type ServerWorld } from './server-world';
 import { travelWorld, type TravelRun, type TravelVia } from './travel';
+import * as contentAccessors from '../content/content-accessors';
+import { EHexActionType } from '../enums/hex-action-type';
+import { MapRegistry } from '../registry/world-map-registry';
+import { installQuestEntrances } from '../quests/world-entrances';
 
 const HERO = 'hero-1';
 const SEED = 'seed';
@@ -98,7 +102,93 @@ describe('a crossing of the board edge on the server', () => {
   });
 });
 
+describe('gate arrival with an active quest', () => {
+  it('arrives beside the Silesia camping door instead of the saved treasure-map position', () => {
+    const origin = createServerWorld('camping', 'camp', SEED, HERO);
+    const gate = placeBeside(origin, HEXOBJECT_KEYS.HOMELAND_GATE);
+    const stored = createServerWorld('silesia', 'silesia-saved', SEED, HERO);
+    const run = runOf(origin, { silesia: stored });
+    run.progress.quests.active.push({ questId: 'seeker-1', progress: 0, state: 'active' });
+    installQuestEntrances(stored, run.progress);
+    const marker = stored.map.tiles.find(
+      (tile) => tile.hexobject?.id === stored.questEntrances?.['seeker-1'],
+    )!;
+    const door = stored.map.tiles.find(
+      (tile) => tile.hexobject?.hexobjectKey === MapRegistry.get('silesia').entryHexobjectKey,
+    )!;
+    const nearDoor = getHexNeighbors(door.coordinates);
+    const saved = getHexNeighbors(marker.coordinates).find(
+      (hex) =>
+        !nearDoor.some(
+          (entry) => entry.columnIndex === hex.columnIndex && entry.rowIndex === hex.rowIndex,
+        ) &&
+        stored.map.tiles.some(
+          (tile) =>
+            tile.coordinates.columnIndex === hex.columnIndex &&
+            tile.coordinates.rowIndex === hex.rowIndex &&
+            !tile.hexobject,
+        ),
+    )!;
+    expect(saved).toBeDefined();
+    stored.heroCoordinates = saved;
+    const markerId = marker.hexobject!.id;
+    const outcome = travelWorld(run, { kind: 'gate', coordinates: gate });
+    if (!outcome.ok) throw new Error(outcome.code);
+    expect(nearDoor).toContainEqual(outcome.destination.heroCoordinates);
+    expect(outcome.progress.presence?.coordinates).toEqual(outcome.destination.heroCoordinates);
+    expect(outcome.destination.mapId).toBe('silesia-saved');
+    expect(outcome.destination.questEntrances?.['seeker-1']).toBe(markerId);
+    expect(marker.hexobject?.id).toBe(markerId);
+  });
+});
+
 describe('a gate on the server', () => {
+  it('enters a world configured entirely through its action destination', () => {
+    const getMeta = contentAccessors.getMeta;
+    const spy = vi.spyOn(contentAccessors, 'getMeta').mockImplementation((key) => {
+      const meta = getMeta(key);
+      if (key !== HEXOBJECT_KEYS.CAVE_ENTRANCE) return meta;
+      return {
+        ...meta,
+        enter: undefined,
+        actions: {
+          ...meta.actions,
+          [EHexActionType.ENTER]: {
+            ...meta.actions![EHexActionType.ENTER]!,
+            destination: { type: 'WORLD', locationKey: 'cave' },
+          },
+        },
+      };
+    });
+    try {
+      const world = createServerWorld('silesia', 'map', SEED, HERO);
+      const coordinates = placeBeside(world, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+      const outcome = travelWorld(runOf(world), { kind: 'gate', coordinates });
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) throw new Error(outcome.code);
+      expect(outcome.destination.locationKey).toBe('cave');
+      expect(outcome.progress.knowledge.current).toBe(48);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+  it('refuses a hidden gate without spending Will or changing presence', () => {
+    const world = createServerWorld('silesia', 'map', SEED, HERO);
+    const spot = placeBeside(world, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    world.map.tiles.find(
+      (tile) =>
+        tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAVE_ENTRANCE &&
+        tile.coordinates.columnIndex === spot.columnIndex &&
+        tile.coordinates.rowIndex === spot.rowIndex,
+    )!.isRevealed = false;
+    const run = runOf(world);
+    const before = structuredClone(run.progress);
+    expect(travelWorld(run, { kind: 'gate', coordinates: spot })).toMatchObject({
+      ok: false,
+      code: 'HIDDEN',
+    });
+    expect(run.progress).toEqual(before);
+  });
   it('charges the Will printed on the gate, takes the stored map and leaves a static board as it is', () => {
     const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
     const spot = placeBeside(origin, HEXOBJECT_KEYS.CAVE_ENTRANCE);

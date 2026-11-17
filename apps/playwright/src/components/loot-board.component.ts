@@ -27,6 +27,29 @@ export class LootBoardComponent extends BaseComponent {
     return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getChests());
   }
 
+  async verifyLootFlying(): Promise<void> {
+    await expect
+      .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.isLootFlying()), {
+        intervals: POLL_INTERVALS_MS,
+        timeout: SETTLE_TIMEOUT_MS,
+      })
+      .toBe(true);
+  }
+
+  async lootStartsFlying(withinMs: number): Promise<boolean> {
+    try {
+      await expect
+        .poll(() => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.isLootFlying()), {
+          intervals: POLL_INTERVALS_MS,
+          timeout: withinMs,
+        })
+        .toBe(true);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async waitUntilLootHasLanded(): Promise<void> {
     await expect(this.canvas).toHaveAttribute('data-ready', '1', { timeout: SETTLE_TIMEOUT_MS });
     await expect

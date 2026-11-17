@@ -271,6 +271,7 @@ export function useHexBoard(opts: UseHexBoardOptions) {
     for (const stop of stopWatchers) stop();
     stopWatchers = [];
     unregisterPortalFx?.();
+    finishLootFlights();
     tilesLayer?.destroy();
     portalLayer?.destroy();
     heroLayer?.destroy();

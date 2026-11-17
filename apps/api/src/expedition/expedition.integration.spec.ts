@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { readFileSync } from 'node:fs';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { Global, Module } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -12,17 +13,14 @@ import { expeditionBlobs, expeditionMembers, expeditions } from '../db/schema';
 import { HERO_SESSIONS, type HeroSessions } from '../player/hero-sessions';
 import { PlayerModule } from '../player/player.module';
 import { createTestKit, type TestKit } from '../player/player-test-kit';
-import {
-  ExpeditionError,
-  MAX_BLOB_BYTES,
-  ensureExpedition,
-  loadBlobs,
-  patchBlobs,
-} from './expedition-store';
+import { MAX_BLOB_BYTES, ensureExpedition, loadBlobs, patchBlobs } from './expedition-store';
 
 const dbAvailable = inject('dbAvailable');
-const MAP_A = `map:${randomUUID()}`;
-const STATE_A = `state:${randomUUID()}`;
+const RETIRED_KEYS = [`map:${randomUUID()}`, `state:${randomUUID()}`, 'index', 'respawn'];
+const RETIRE_MIGRATION = new URL(
+  '../../drizzle/0007_retire_client_world_blobs.sql',
+  import.meta.url,
+);
 
 describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
   let kit: TestKit;
@@ -75,16 +73,34 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
   it('stores, replaces and removes documents and counts the revision', async () => {
     const { userId, heroId } = await kit.newPlayer();
     const id = await ensureExpedition(kit.db, userId, heroId);
-    expect(await patchBlobs(kit.db, id, { [MAP_A]: '{"a":1}', nav: '{"k":1}' }, [])).toBe(1);
-    expect(await patchBlobs(kit.db, id, { [MAP_A]: '{"a":2}' }, ['nav'])).toBe(2);
-    expect(await loadBlobs(kit.db, id)).toEqual({ [MAP_A]: '{"a":2}' });
+    expect(await patchBlobs(kit.db, id, { progress: '{"a":1}', nav: '{"k":1}' }, [])).toBe(1);
+    expect(await patchBlobs(kit.db, id, { progress: '{"a":2}' }, ['nav'])).toBe(2);
+    expect(await loadBlobs(kit.db, id)).toEqual({ progress: '{"a":2}' });
   });
+
+  it.each(RETIRED_KEYS)(
+    'REQ-3: refuses to write or remove the retired document %s and writes nothing',
+    async (key) => {
+      const { userId, heroId } = await kit.newPlayer();
+      const id = await ensureExpedition(kit.db, userId, heroId);
+      await expect(patchBlobs(kit.db, id, { [key]: '{}', nav: '{}' }, [])).rejects.toMatchObject({
+        code: 'BAD_KEY',
+      });
+      await expect(patchBlobs(kit.db, id, {}, [key])).rejects.toMatchObject({ code: 'BAD_KEY' });
+      expect(await loadBlobs(kit.db, id)).toEqual({});
+    },
+  );
 
   it.each([
     ['a key that is not part of the world', { 'evil/../key': '{}' }, 'BAD_KEY'],
     ['a map key that is not a map id', { 'map:123': '{}' }, 'BAD_KEY'],
     ['a document that is not JSON', { nav: 'not json' }, 'BAD_JSON'],
     ['a document that is too large', { nav: `"${'x'.repeat(MAX_BLOB_BYTES)}"` }, 'BLOB_TOO_LARGE'],
+    [
+      'a document over the size limit beside a valid one',
+      { nav: '{"k":1}', progress: `"${'x'.repeat(MAX_BLOB_BYTES)}"` },
+      'BLOB_TOO_LARGE',
+    ],
   ])('refuses %s and writes nothing', async (_name, put, code) => {
     const { userId, heroId } = await kit.newPlayer();
     const id = await ensureExpedition(kit.db, userId, heroId);
@@ -92,12 +108,42 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
     expect(await loadBlobs(kit.db, id)).toEqual({});
   });
 
-  it('refuses too many documents in one expedition', async () => {
+  async function expeditionWithRetiredRows() {
     const { userId, heroId } = await kit.newPlayer();
     const id = await ensureExpedition(kit.db, userId, heroId);
-    const put = Object.fromEntries(Array.from({ length: 65 }, () => [`map:${randomUUID()}`, '{}']));
-    await expect(patchBlobs(kit.db, id, put, [])).rejects.toBeInstanceOf(ExpeditionError);
-    expect(await loadBlobs(kit.db, id)).toEqual({});
+    await patchBlobs(kit.db, id, { nav: '{"k":1}' }, []);
+    await kit.db
+      .insert(expeditionBlobs)
+      .values([
+        ...RETIRED_KEYS.map((key) => ({ expeditionId: id, key, data: '{"old":true}' })),
+        { expeditionId: id, key: 'srv-index', data: '{}' },
+      ]);
+    return id;
+  }
+
+  async function rowsOf(id: string) {
+    const rows = await kit.db
+      .select({ key: expeditionBlobs.key, data: expeditionBlobs.data })
+      .from(expeditionBlobs)
+      .where(eq(expeditionBlobs.expeditionId, id));
+    return rows.sort((a, b) => a.key.localeCompare(b.key));
+  }
+
+  it('REQ-2: the migration deletes the retired documents and leaves the hero documents and the server maps untouched', async () => {
+    const id = await expeditionWithRetiredRows();
+
+    await kit.db.execute(sql.raw(readFileSync(RETIRE_MIGRATION, 'utf8')));
+
+    expect(await rowsOf(id)).toEqual([
+      { key: 'nav', data: '{"k":1}' },
+      { key: 'srv-index', data: '{}' },
+    ]);
+  });
+
+  it('REQ-1: never gives the browser a retired document still left in the database', async () => {
+    const id = await expeditionWithRetiredRows();
+
+    expect(await loadBlobs(kit.db, id)).toEqual({ nav: '{"k":1}' });
   });
 
   describe('over HTTP', () => {
@@ -138,13 +184,16 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
       const { userId, heroId } = await kit.newPlayer();
       const token = (sessions.claim(heroId, 'socket-1'), sessions.tokenOf(heroId)!);
       const saved = await call(userId, 'PATCH', token, {
-        put: { [MAP_A]: '{"tiles":[]}', [STATE_A]: '{"contentVersion":1}' },
+        put: { nav: '{"locationKey":"camping"}', 'hero-store': '{"extraShields":0}' },
       });
       expect(saved.status).toBe(200);
       const loaded = (await (await call(userId, 'GET', null)).json()) as {
         blobs: Record<string, string>;
       };
-      expect(loaded.blobs).toEqual({ [MAP_A]: '{"tiles":[]}', [STATE_A]: '{"contentVersion":1}' });
+      expect(loaded.blobs).toEqual({
+        nav: '{"locationKey":"camping"}',
+        'hero-store': '{"extraShields":0}',
+      });
     });
 
     it('refuses a save without the session secret, and from a tab that was taken over', async () => {
@@ -171,6 +220,55 @@ describe.skipIf(!dbAvailable)('expedition storage (real Postgres)', () => {
       const bad = await call(userId, 'PATCH', token, { put: { nope: '{}' } });
       expect(bad.status).toBe(400);
       expect(((await bad.json()) as { code: string }).code).toBe('BAD_KEY');
+    });
+
+    describe('removing documents', () => {
+      async function savedPlayer() {
+        const { userId, heroId } = await kit.newPlayer();
+        sessions.claim(heroId, 'tab');
+        const token = sessions.tokenOf(heroId)!;
+        await call(userId, 'PATCH', token, { put: { nav: '{"k":1}', progress: '{"p":1}' } });
+        return { userId, token };
+      }
+
+      async function blobsOf(userId: string) {
+        return (
+          (await (await call(userId, 'GET', null)).json()) as {
+            blobs: Record<string, string>;
+          }
+        ).blobs;
+      }
+
+      it('REQ-3: refuses to remove an unknown key with BAD_KEY and removes nothing', async () => {
+        const { userId, token } = await savedPlayer();
+
+        const refused = await call(userId, 'PATCH', token, { remove: ['nav', 'index'] });
+
+        expect(refused.status).toBe(400);
+        expect(((await refused.json()) as { code: string }).code).toBe('BAD_KEY');
+        expect(await blobsOf(userId)).toEqual({ nav: '{"k":1}', progress: '{"p":1}' });
+      });
+
+      it('refuses a remove list longer than the allowed keys and removes nothing', async () => {
+        const { userId, token } = await savedPlayer();
+
+        const refused = await call(userId, 'PATCH', token, {
+          remove: ['nav', 'progress', 'hero-store', 'nav'],
+        });
+
+        expect(refused.status).toBe(400);
+        expect(((await refused.json()) as { code: string }).code).toBe('INVALID_COMMAND');
+        expect(await blobsOf(userId)).toEqual({ nav: '{"k":1}', progress: '{"p":1}' });
+      });
+
+      it('removes an allowed document and keeps the others', async () => {
+        const { userId, token } = await savedPlayer();
+
+        const removed = await call(userId, 'PATCH', token, { remove: ['nav'] });
+
+        expect(removed.status).toBe(200);
+        expect(await blobsOf(userId)).toEqual({ progress: '{"p":1}' });
+      });
     });
 
     it('never shows another account the expedition of this one', async () => {

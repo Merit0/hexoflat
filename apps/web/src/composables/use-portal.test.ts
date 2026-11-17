@@ -6,7 +6,7 @@ import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { coordinateKey, getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { fakePlaceHero, fakeStoredWorldOf } from '@/test-support/fake-player-server';
-import { seedFakeSession } from '@/test-support/fake-session';
+import { fakeStandIn, seedFakeSession } from '@/test-support/fake-session';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useWorldMapStore } from '@/stores/world-map-store';
@@ -56,6 +56,7 @@ describe('usePortal', () => {
     inventory.hydrate();
     if (scrolls) inventory.putToInventory(SCROLL, scrolls);
 
+    fakeStandIn('silesia');
     world.goToLocation('silesia');
     const map = world.map as HexMapModel;
     const target = getHexNeighbors(hero.heroCoordinates!).find((c) => {
@@ -218,6 +219,7 @@ describe('usePortal', () => {
     inventory.hydrate();
     inventory.putToInventory(SCROLL, 1);
     expect(MapRegistry.get('cave').boardKind).toBe('DUNGEON');
+    fakeStandIn('cave');
     world.goToLocation('cave');
     const map = world.map as HexMapModel;
     const target = getHexNeighbors(hero.heroCoordinates!).find((c) => {

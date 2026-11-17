@@ -487,6 +487,7 @@
       }
     },
     "reject": {
+      "OVERWEIGHT": "Can't carry more. Free up inventory!",
       "NO_BATTLE": "There is no battle.",
       "BATTLE_ENDED": "The battle is over.",
       "NOT_YOUR_TURN": "It is not your turn.",
@@ -514,12 +515,8 @@
       "NOT_AN_OPTION": "You cannot strike from that hex.",
       "AIM_PENDING": "Choose the hex of the strike first.",
       "WINDOW_CLOSED": "The time is up — the window is closed.",
-      "STANDING_ON_TARGET": "Step off this spot first.",
-      "NO_GRAVE": "There is no grave there.",
-      "GRAVE_EMPTY": "Nothing found!",
+      "CONTAINER_EMPTY": "Nothing found!",
       "NO_LOOT_THERE": "There is nothing to pick up here.",
-      "NO_ROOM_FOR_LOOT": "There is no room around for the loot.",
-      "BAG_FULL": "Your bag is full. Free some space.",
       "FIGHT_NOT_OVER": "Win the fight first."
     },
     "actionName": {
@@ -855,19 +852,23 @@
   "loot": {
     "reject": {
       "NO_ROOM_FOR_LOOT": "There is no room around for the loot.",
+      "OVERWEIGHT": "Can't carry more. Free up inventory!",
       "BAG_FULL": "Your bag is full. Free some space.",
       "STANDING_ON_TARGET": "Step off this spot first.",
       "CHEST_EMPTY": "The chest is empty.",
+      "CONTAINER_EMPTY": "The chest is empty.",
       "NOT_ADJACENT": "Come closer."
     }
   },
   "quest": {
     "boardTitle": "Quests",
+    "tracker": {
+      "open": "Active quests",
+      "empty": "No active quests",
+      "ready": "Ready to claim"
+    },
     "close": "Close the quest board",
     "claim": "Claim",
-    "price": {
-      "will": "{n} Will"
-    },
     "reward": {
       "will": "{n} Will"
     },
@@ -894,57 +895,71 @@
       "WRONG_PHASE": "Not now.",
       "BATTLE_OPEN": "Finish the battle first.",
       "NO_RUN": "No trail is open.",
-      "OFFLINE": "No connection to the server."
+      "HEX_BLOCKED": "You cannot step there.",
+      "NO_LOOT_THERE": "Nothing lies there.",
+      "OFFLINE": "No connection to the server.",
+      "NOT_AT_QUEST_ENTRANCE": "Open your treasure map from an adjacent hex in Silesia.",
+      "QUEST_SUSPENDED": "Re-enter through your treasure map in Silesia.",
+      "OTHER_QUEST_SUSPENDED": "Another treasure map is still open. Finish it first.",
+      "NO_ROOM_FOR_TRAIL": "No room for a trail here. Stand on the other side of the map."
     },
     "woodcutter": {
       "name": "Woodcutter",
       "desc": "The camp needs timber. Cut trees in the wild.",
-      "table": "Cut 10 trees, get 5 axes."
+      "table": "Cut 10 trees, get 5 axes.",
+      "how": "Put an axe in your hand.\nUse it on trees in the wild to cut them.\nCut 10 trees.\nWalk back to the quest board and press Claim.",
+      "rule": "Free to take. Needs an axe in your hand. Every cut costs {will} Will and wears the axe. Only trees you cut count."
     },
     "stonebreaker": {
       "name": "Stonebreaker",
       "desc": "Break stone for the camp walls.",
-      "table": "Mine 8 stones, get 30 coins."
+      "table": "Mine 8 stones, get 30 coins.",
+      "how": "Put a pickaxe in your hand.\nUse it on rocks to mine them.\nMine 8 stones.\nWalk back to the quest board and press Claim.",
+      "rule": "Free to take. Needs a pickaxe in your hand. Every mining costs {will} Will and wears the pickaxe. Only stones you mine count."
     },
     "scholar": {
       "name": "Scholar",
       "desc": "Sharpen your mind in the Book of Will.",
-      "table": "Answer 15 questions correctly, get 20 coins."
+      "table": "Answer 15 questions correctly, get 20 coins.",
+      "how": "Open the Book of Will in the camp.\nAnswer the questions.\nGive 15 correct answers.\nWalk to the quest board and press Claim.",
+      "rule": "Free to take. Only correct answers in the Book of Will count; a wrong answer adds nothing. Each correct answer also gives you Will."
     },
     "bone-hunter": {
       "name": "Bone Hunter",
       "desc": "The crypt is full of walking bones. Thin them out.",
-      "table": "Defeat 3 skeletons in battles, get a wooden shield."
+      "table": "Defeat 3 skeletons in battles, get a wooden shield.",
+      "how": "Take a sword in your hand.\nAttack skeleton squads in the crypt.\nWin battles until 3 skeletons fall.\nWalk back to the quest board and press Claim.",
+      "rule": "Costs {entry} Will to take. Only skeletons you defeat in a battle you win count; a lost battle adds nothing."
     },
     "unit": {
       "trees": "trees",
       "stones": "stones",
       "answers": "correct answers",
-      "skeletons": "skeletons"
+      "skeletons": "skeletons",
+      "steps": "steps"
     },
     "start": "Start",
-    "enter": "Enter",
     "chip": {
-      "entry": "Entry {n}",
-      "steps": "{n} steps",
       "stepPrice": "Step {n}",
       "backPrice": "Step back {n}"
     },
     "run": {
+      "statusLabel": "Status",
+      "statusInProgress": "In Progress",
+      "statusFinished": "Finished",
+      "statusWasted": "Wasted",
       "step": "Step {n} / {total}",
       "trail": "Your trail",
       "collect": "The chest is open. Take what you can.",
       "ambush": "Something is wrong with this chest.",
       "chestSeen": "A chest stands nearby. Open it.",
+      "lost": "The treasure is lost.",
+      "lostHint": "The trail led nowhere. Leave the map.",
+      "leaveMap": "Leave the map",
       "return": "Return to camp",
       "giveUp": "Give up",
       "giveUpConfirm": "Yes, give up",
       "giveUpCancel": "Stay"
-    },
-    "tip": {
-      "chest": "A chest. Open it with your hand.",
-      "step": "Step: {n} Will",
-      "back": "Step back: {n} Will"
     },
     "result": {
       "treasure": "You found the treasure.",
@@ -952,23 +967,30 @@
       "defeat": "The ambush defeated you.",
       "stranded": "Your Will ran out. You are stranded.",
       "left": "You left the trail.",
+      "lost": "The treasure is lost.",
       "review": "First wrong turn: you chose {took}, the rule gave {rule}.",
       "dismiss": "Back to the board"
     },
     "seeker-1": {
-      "name": "I · First Trail",
+      "name": "First Trail",
       "desc": "Follow the numbers through the fog to the chest.",
-      "table": "Find the chest at the end of the trail."
+      "table": "Find the chest at the end of the trail.",
+      "how": "Accept this quest at the board, then find its treasure map in Silesia and OPEN it with the hand.\nStep to the hex whose number continues the pattern.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. Only the real chest ends the quest."
     },
     "seeker-2": {
-      "name": "II · Leaping Trail",
+      "name": "Leaping Trail",
       "desc": "The numbers jump. Find the pattern.",
-      "table": "Find the chest at the end of the trail."
+      "table": "Find the chest at the end of the trail.",
+      "how": "Accept this quest at the board, then find its treasure map in Silesia and OPEN it with the hand.\nThe numbers jump: find the rule before you step.\nKeep every step paid with Will.\nOpen the chest at the end and take the loot, then return to camp.",
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. The First Trail must be finished first."
     },
     "seeker-3": {
-      "name": "III · Cunning Trail",
+      "name": "Cunning Trail",
       "desc": "Every step costs more. Choose carefully.",
-      "table": "Find the chest at the end of the trail."
+      "table": "Find the chest at the end of the trail.",
+      "how": "Accept this quest at the board, then find its treasure map in Silesia and OPEN it with the hand.\nEvery step costs more, so plan the path.\nA wrong hex can be left with a step back.\nOpen the chest at the end and take the loot, then return to camp.",
+      "rule": "Entry costs {entry} Will. Every step costs {step} Will, a step back costs {back}. The trail is {steps} steps long. The Leaping Trail must be finished first."
     },
     "board": {
       "will": "Will",
@@ -977,53 +999,41 @@
       "rowLabel": "{name}, {meta}. Show details.",
       "takeFor": "Take {name} for {n} Will",
       "detailsLabel": "{name} details",
-      "detailsClose": "Close details",
-      "abandon": "Abandon",
+      "return": "Return",
+      "returnLabel": "Return {name} to the board",
       "claimReward": "Claim reward",
-      "enterTrail": "Enter the trail",
-      "expeditionNote": "Count the Will for the whole trail before you enter.",
-      "takenNote": "In your quests. Abandoning gives no Will back.",
       "filter": {
-        "label": "Filter quests",
-        "all": "All",
         "gather": "Gathering",
         "combat": "Combat",
         "learn": "Learning",
         "exp": "Expedition"
       },
       "group": {
-        "active": "My quests",
+        "active": "My Quests",
         "available": "On the board",
         "of": "{used} of {max}",
         "count": "{n, plural, one {# quest} other {# quests}}"
       },
       "empty": {
-        "active": "No quest taken yet. Take one below — it moves up here with its counter.",
-        "available": "Nothing new for this filter."
+        "available": "Nothing new on the board."
       },
       "label": {
         "goal": "Goal",
         "reward": "Reward",
-        "toTake": "To take",
-        "taken": "Taken"
+        "how": "How to finish",
+        "rule": "Rule"
       },
       "meta": {
         "goal": "Goal: {n} {unit}",
         "progress": "{done} / {n} {unit}",
         "ready": "Goal reached — claim it",
-        "onTrail": "On the trail — enter it",
+        "onTrail": "Find the map in Silesia",
         "countCost": "Goal: Count steps cost"
       },
       "reason": {
         "will": "Not enough Will",
         "slots": "All quest slots are in use",
-        "slotsFull": "All {max} quest slots are in use. Finish or abandon a quest first.",
         "willNeed": "Not enough Will: you need {need}, you have {have}."
-      },
-      "cost": {
-        "free": "Free",
-        "entry": "Entry {n}",
-        "slot": "Quest slot {slot} +{n}"
       },
       "status": {
         "taken": "Taken: {name} · −{n} Will",
@@ -1039,11 +1049,12 @@
         "taken": "Quests taken"
       },
       "tag": {
-        "once": "One-time",
         "repeatable": "Repeatable"
       },
       "more": "+{n} more",
       "doneTimes": "Done {n}×"
-    }
+    },
+    "findInSilesia": "Find in Silesia",
+    "tab": "Quest"
   }
 }

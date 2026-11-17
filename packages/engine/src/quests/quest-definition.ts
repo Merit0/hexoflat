@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
 import { TreasureSeekerParamsSchema } from './seeker-content';
+import { LOCATION_KEYS } from '../registry/location-key';
 
 export const CostSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('free') }).strict(),
@@ -91,6 +92,14 @@ export type QuestSlots = z.infer<typeof QuestSlotsSchema>;
 
 export const QUEST_SLOTS: QuestSlots = { base: 1, max: 3, extraCost: [5, 10] };
 
+export const QuestMapObjectPlacementSchema = z
+  .object({
+    targetMap: z.enum(LOCATION_KEYS),
+    objectKey: hexobjectKeySchema,
+    strategy: z.literal('random-empty'),
+  })
+  .strict();
+
 export const QuestDefinitionSchema = z
   .object({
     id: z.string().min(1),
@@ -100,6 +109,7 @@ export const QuestDefinitionSchema = z
     requires: z.array(RequirementSchema),
     accept: CostSchema,
     objective: ObjectiveSchema,
+    mapObjectPlacement: QuestMapObjectPlacementSchema.optional(),
     rewards: z.array(RewardSchema),
     turnIn: z.enum(['board', 'auto']),
     maxSellValue: z.number().int().min(0).optional(),

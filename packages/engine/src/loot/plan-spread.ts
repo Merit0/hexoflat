@@ -35,21 +35,12 @@ export function planLootSpread(input: LootSpreadInput): LootSpreadResult {
     drops: input.lists,
   });
   if (result.kind === 'refused') return { ok: false, reason: result.refusal.reason };
-  if (result.kind === 'to-bag') {
-    if (!bagTakesAll(input.bag, result.drops)) return { ok: false, reason: 'BAG_FULL' };
-    return {
-      ok: true,
-      plan: {
-        placements: [],
-        toBag: result.drops.map(({ itemKey, amount }) => ({ itemKey, amount })),
-      },
-    };
-  }
+  if (!bagTakesAll(input.bag, result.toBag)) return { ok: false, reason: 'BAG_FULL' };
   return {
     ok: true,
     plan: {
       placements: result.placements.map(({ hex, itemKey, amount }) => ({ hex, itemKey, amount })),
-      toBag: [],
+      toBag: result.toBag.map(({ itemKey, amount }) => ({ itemKey, amount })),
     },
   };
 }

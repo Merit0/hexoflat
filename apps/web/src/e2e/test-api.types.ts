@@ -63,7 +63,16 @@ export interface TestQuests {
   done: Record<string, number>;
 }
 
+export interface TestTerrainHex {
+  hex: TestHexCoordinates;
+  terrain: string;
+}
+
 export interface TestQuestField {
+  border: { hex: { columnIndex: number; rowIndex: number }; objectKey: string }[];
+  terrain: TestTerrainHex[];
+  fog: TestHexCoordinates[];
+  exit?: TestHexCoordinates;
   phase: string;
   outcome: string | null;
   position: TestHexCoordinates;
@@ -71,6 +80,8 @@ export interface TestQuestField {
   pathHexes: TestHexCoordinates[];
   hintHex: TestHexCoordinates | null;
   chest: TestHexCoordinates | null;
+  chestEmpty: boolean;
+  ground: { hex: TestHexCoordinates; itemKey: string; quantity: number }[];
   stepCost: number;
   backCost: number;
   hexes: {
@@ -102,7 +113,7 @@ export interface HexoflatTestApi {
     answer: number | null;
     lastAward: number;
   } | null;
-  prepareKnowledgeWorld(current: number): void;
+  prepareKnowledgeWorld(current: number, locationKey?: string): Promise<void>;
   setWill(current: number): void;
   setSkillRank(skillId: string, rank: number): void;
   getWalkRoute(to: TestHexCoordinates): TestHexCoordinates[] | null;
@@ -123,6 +134,7 @@ export interface HexoflatTestApi {
 
   getExitTile(side: 'N' | 'S' | 'W' | 'E'): TestHexCoordinates | null;
 
+  getImpassableTerrain(): TestTerrainHex[];
   isTileImpassableTerrain(coordinates: TestHexCoordinates): boolean;
 
   getHeroHealth(): TestHeroHealth;
@@ -140,6 +152,8 @@ export interface HexoflatTestApi {
   getCurrentLocationKey(): string;
 
   findTilesWithKey(key: string): TestHexCoordinates[];
+  findTilesWithKeyIn(locationKey: string, key: string): TestHexCoordinates[];
+  getRenderStats(): TestRenderStats;
 
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;
@@ -222,4 +236,10 @@ export interface HexoflatTestApi {
   setQuests(fixture: TestQuestFixture): Promise<void>;
   getQuestField(): TestQuestField | null;
   getQuestHexPoint(columnIndex: number, rowIndex: number): { x: number; y: number } | null;
+}
+
+export interface TestRenderStats {
+  liveApps: number;
+  sharedTickerListeners: number;
+  heroTokenSettled: boolean | null;
 }

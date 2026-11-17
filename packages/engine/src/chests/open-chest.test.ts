@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { chestRefusal } from './open-chest';
 import { ACTION_STARTERS } from '../registry/action-starters-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import { findShortestPath } from '../hero-movement/pathfinding-service';
 import { getReachableTileDistances } from '../hero-movement/reachable-range-service';
 import { isEnterableTile } from '../hero-movement/move-planner';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, offsetToAxial } from '../utils/hex-utils';
 import {
   actWorld,
   applyTileDiffs,
@@ -20,6 +19,7 @@ import {
   chestScene,
   freeNeighbour,
   openAction,
+  openRefusal,
   putObject,
   runOf,
   snapshotOf,
@@ -64,12 +64,13 @@ describe('opening a chest', () => {
     expect(outcome.progress.knowledge.current).toBe(48);
     expect(outcome.world.heroCoordinates).toEqual(chest);
     expect(tileOf(outcome.world, chest).hexobject?.hexobjectKey).toBe(HEXOBJECT_KEYS.CHEST_OPEN);
-    const openings = outcome.events.filter((event) => event.type === 'CHEST_OPENED');
+    const openings = outcome.events.filter((event) => event.type === 'CONTAINER_OPENED');
     expect(openings).toHaveLength(1);
     expect(openings[0].payload).toMatchObject({
-      heroId: 'hero-1',
-      coordinates: chest,
-      from: entry,
+      actorId: 'hero-1',
+      kind: 'chest',
+      hex: offsetToAxial(chest),
+      from: offsetToAxial(entry),
       toBag: [],
     });
     expect((openings[0].payload as { placed: unknown[] }).placed.length).toBeGreaterThan(0);
@@ -143,7 +144,7 @@ describe('opening a chest', () => {
       portal: null,
     };
     expect(
-      chestRefusal({ map: world.map, heroes: { 'hero-1': hero } }, tileOf(world, chest), 'hero-1'),
+      openRefusal({ map: world.map, heroes: { 'hero-1': hero } }, tileOf(world, chest), 'hero-1'),
     ).toBe('NOT_ADJACENT');
     world.heroCoordinates = faraway;
     const before = snapshotOf(world);
@@ -160,7 +161,7 @@ describe('opening a chest', () => {
     const off = applied(stepWorld(afterOutcome(outcome), entry));
     const beside = actWorld(afterOutcome(off), openAction(chest));
     expect(beside).toMatchObject({ ok: false });
-    expect(JSON.stringify(beside.ok ? [] : beside.events)).toContain('CHEST_EMPTY');
+    expect(JSON.stringify(beside.ok ? [] : beside.events)).toContain('CONTAINER_EMPTY');
     expect(off.progress.knowledge.current).toBe(47);
   });
 

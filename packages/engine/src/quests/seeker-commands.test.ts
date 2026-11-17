@@ -14,6 +14,7 @@ import {
 import { questBoardState } from './quest-log';
 import { ALL_QUESTS } from './all-quests';
 import { HERO, inventoryWith } from './quest-test-setup';
+import { generatedEntrance } from './seeker-entrance-setup';
 
 describe('REQ-QST-006 the trail on the real field', () => {
   for (const card of SEEKER_CARDS) {
@@ -62,7 +63,7 @@ function enter(seed = 's1') {
       progress,
       doc: null,
       command: { type: 'QUEST_ENTER', payload: { heroId: HERO, questId: 'seeker-1' } },
-      atBoard: true,
+      entrance: generatedEntrance(seed),
       newSeed: () => seed,
     }),
   );
@@ -79,7 +80,7 @@ describe('the seeker run commands', () => {
         progress: entered.progress,
         doc: entered.doc,
         command: { type: 'QUEST_GIVE_UP', payload: { heroId: HERO } },
-        atBoard: false,
+        entrance: null,
         newSeed: () => 'x',
       }),
     );
@@ -100,40 +101,53 @@ describe('the seeker run commands', () => {
             type: 'QUEST_STEP',
             payload: { heroId: HERO, hex: restored.run.trail[0] },
           },
-          atBoard: false,
+          entrance: null,
           newSeed: () => 'x',
         }),
       );
     expect(JSON.stringify(step(restored))).toBe(JSON.stringify(step(entered.doc)));
   });
 
-  it('play a whole true run to the chest, open it, return and open the next card', () => {
-    let { progress, doc } = enter('s3');
-    const send = (command: Parameters<typeof executeQuestRunCommand>[0]['command']) => {
-      const out = must(
-        executeQuestRunCommand({
-          progress,
-          doc,
-          command,
-          atBoard: false,
-          inventory: inventoryWith({}),
-          newSeed: () => 'x',
-        }),
-      );
-      progress = out.progress;
-      doc = out.doc;
-    };
-    const trail = doc!.run.trail;
-    for (const hex of trail) send({ type: 'QUEST_STEP', payload: { heroId: HERO, hex } });
-    send({ type: 'QUEST_OPEN_CHEST', payload: { heroId: HERO } });
-    expect(doc!.run.phase).toBe('collect');
-    send({ type: 'QUEST_RETURN', payload: { heroId: HERO } });
-    expect(doc).toBeNull();
-    expect(progress.quests.done['seeker-1']).toBe(1);
-    expect(progress.presence).toEqual(camp);
-    expect(questBoardState(progress.quests, ALL_QUESTS['seeker-2'])).toBe('open');
-    expect(questBoardState(progress.quests, ALL_QUESTS['seeker-3'])).toBe('locked');
-  });
+  it.each(['QUEST_RETURN', 'QUEST_PAUSE'] as const)(
+    'finishes a true run through %s and opens the next card',
+    (type) => {
+      let { progress, doc } = enter('s3');
+      const send = (command: Parameters<typeof executeQuestRunCommand>[0]['command']) => {
+        const out = must(
+          executeQuestRunCommand({
+            progress,
+            doc,
+            command,
+            entrance: null,
+            inventory: inventoryWith({}),
+            newSeed: () => 'x',
+          }),
+        );
+        progress = out.progress;
+        doc = out.doc;
+      };
+      const trail = doc!.run.trail;
+      for (const hex of trail.slice(0, -1))
+        send({ type: 'QUEST_STEP', payload: { heroId: HERO, hex } });
+      expect(progress.quests.active).toHaveLength(1);
+      expect(progress.quests.done['seeker-1']).toBeUndefined();
+      send({ type: 'QUEST_STEP', payload: { heroId: HERO, hex: trail.at(-1)! } });
+      expect(progress.quests.active).toEqual([]);
+      expect(progress.quests.done['seeker-1']).toBe(1);
+      expect(doc!.run.resolution).toBe('treasure');
+      send({ type: 'QUEST_OPEN_CHEST', payload: { heroId: HERO } });
+      expect(doc!.run.phase).toBe('collect');
+      if (type === 'QUEST_PAUSE') doc!.run.collect!.hero = doc!.run.start;
+      send({ type, payload: { heroId: HERO } });
+      if (type === 'QUEST_PAUSE') expect(doc?.suspended).toBe(true);
+      else expect(doc).toBeNull();
+      expect(progress.quests.done['seeker-1']).toBe(1);
+      expect(progress.quests.active).toEqual([]);
+      expect(progress.presence).toEqual(camp);
+      expect(questBoardState(progress.quests, ALL_QUESTS['seeker-2'])).toBe('open');
+      expect(questBoardState(progress.quests, ALL_QUESTS['seeker-3'])).toBe('locked');
+    },
+  );
 
   it('refuse a step without a run and a second ENTER while one is open', () => {
     const entered = enter();
@@ -141,7 +155,7 @@ describe('the seeker run commands', () => {
       progress: entered.progress,
       doc: null,
       command: { type: 'QUEST_STEP_BACK', payload: { heroId: HERO } },
-      atBoard: false,
+      entrance: null,
       newSeed: () => 'x',
     });
     expect(noRun).toMatchObject({ ok: false, code: 'NO_RUN' });
@@ -149,7 +163,7 @@ describe('the seeker run commands', () => {
       progress: { ...entered.progress, presence: camp },
       doc: entered.doc,
       command: { type: 'QUEST_ENTER', payload: { heroId: HERO, questId: 'seeker-1' } },
-      atBoard: true,
+      entrance: generatedEntrance('y'),
       newSeed: () => 'y',
     });
     expect(twice).toMatchObject({ ok: false, code: 'QUEST_IN_PROGRESS' });
@@ -161,5 +175,28 @@ describe('the seeker run commands', () => {
       payload: { heroId: HERO, hex: { columnIndex: 1, rowIndex: 1 }, cost: 0 },
     });
     expect(bad.success).toBe(false);
+  });
+});
+
+describe('leaving a resolved run through the door', () => {
+  it('preserves normal pause behavior without changing the quest result', () => {
+    const entered = enter();
+    entered.doc!.run.phase = 'lost';
+    entered.doc!.run.resolution = 'lost';
+    entered.progress.quests.active = [];
+    const send = (type: 'QUEST_PAUSE' | 'QUEST_GIVE_UP') =>
+      executeQuestRunCommand({
+        progress: entered.progress,
+        doc: structuredClone(entered.doc),
+        command: { type, payload: { heroId: HERO } },
+        entrance: null,
+        newSeed: () => 'unused',
+      });
+    const door = must(send('QUEST_PAUSE'));
+    expect(door.doc?.suspended).toBe(true);
+    expect(door.progress.presence).toEqual(camp);
+    expect(door.progress.quests.active).toEqual([]);
+    expect(door.progress.quests.done['seeker-1']).toBeUndefined();
+    expect(door.events.map((event) => event.type)).toEqual(['QUEST_PAUSED']);
   });
 });

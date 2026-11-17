@@ -3,6 +3,7 @@ import { HexObjectFactory } from '../factory/hex-object-factory';
 import { isEnterableTile } from '../hero-movement/move-planner';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { LOCATION_KEYS } from '../registry/location-key';
 import { getHexNeighbors } from '../utils/hex-utils';
 import type { ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
@@ -19,6 +20,10 @@ export const worldFixtureSchema = z.discriminatedUnion('kind', [
 ]);
 
 export type WorldFixture = z.infer<typeof worldFixtureSchema>;
+
+export const relocateFixtureSchema = z.object({ locationKey: z.enum(LOCATION_KEYS) }).strict();
+
+export type RelocateFixture = z.infer<typeof relocateFixtureSchema>;
 
 export interface WorldFixtureResult {
   coordinates: { columnIndex: number; rowIndex: number };

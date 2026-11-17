@@ -56,9 +56,23 @@ function actionState(key: THexobjectKey, will: number, context: KnowledgeContext
   const map = new HexMapBuilder().name('will').width(1).height(1).build();
   const tile = map.tiles[0];
   tile.hexobject = HexObjectFactory.create(key, tile.coordinates);
+  tile.isRevealed = true;
   const knowledge = createKnowledgeState('hero');
   knowledge.current = will;
-  const state: HexEngineState = { map, heroes: {}, knowledge, knowledgeContext: context };
+  const state: HexEngineState = {
+    map,
+    heroes: {
+      hero: {
+        id: 'hero',
+        controlledBy: null,
+        coordinates: { ...tile.coordinates },
+        heroSteps: 0,
+        portal: null,
+      },
+    },
+    knowledge,
+    knowledgeContext: context,
+  };
   const start = (actionType: EHexActionType) =>
     applyCommand(
       state,

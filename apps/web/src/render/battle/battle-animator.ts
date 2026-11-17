@@ -7,6 +7,7 @@ import type { BattleTokenLayer } from '@/render/layers/battle-token-layer';
 import { planBattleAnimation, type AnimatedCreature } from './battle-animation-plan';
 import { BattleAnimationQueue } from './battle-animation-queue';
 import type { AnimationGeometry } from './battle-animation-sample';
+import { subscribeTicker } from '@/render/ticker-subscription';
 
 export interface BattleAnimatorDeps {
   ticker: Ticker;
@@ -26,6 +27,7 @@ export interface BattleAnimator {
 export function createBattleAnimator(deps: BattleAnimatorDeps): BattleAnimator {
   const queue = new BattleAnimationQueue(deps.geometry);
   let running = false;
+  let unsubscribeTick: (() => void) | null = null;
 
   function render(deltaMs: number) {
     const frame = queue.advance(deltaMs);
@@ -42,8 +44,19 @@ export function createBattleAnimator(deps: BattleAnimatorDeps): BattleAnimator {
   function setRunning(next: boolean) {
     if (running === next) return;
     running = next;
-    if (next) deps.ticker.add(onTick);
-    else deps.ticker.remove(onTick);
+    if (next) {
+      unsubscribeTick = subscribeTicker(deps.ticker, onTick, {
+        source: 'battle-animator',
+        onFailure: () => {
+          unsubscribeTick = null;
+          queue.clear();
+          setRunning(false);
+        },
+      });
+    } else {
+      unsubscribeTick?.();
+      unsubscribeTick = null;
+    }
     deps.onBusyChange(next);
   }
 

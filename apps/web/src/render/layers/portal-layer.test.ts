@@ -137,4 +137,39 @@ describe('portal layer', () => {
     expect(Ticker.shared.count).toBe(before);
     layer.destroy();
   });
+  it('REQ-1: a throwing portal tick is removed, logs once and later listeners still run', () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { world, layer } = setup();
+    const before = Ticker.shared.count;
+    layer.sync([], 'silesia:m1');
+    layer.sync([A], 'silesia:m1');
+    let laterFrames = 0;
+    const later = () => laterFrames++;
+    Ticker.shared.add(later);
+    world.children[0].children[0].destroy({ children: true });
+
+    expect(() => advance(16)).not.toThrow();
+    expect(laterFrames).toBe(1);
+    expect(Ticker.shared.count).toBe(before + 1);
+    advance(16);
+
+    expect(laterFrames).toBe(2);
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(String(log.mock.calls[0][0])).toContain('portal-layer');
+    Ticker.shared.remove(later);
+    layer.destroy();
+    expect(Ticker.shared.count).toBe(before);
+  });
+
+  it('REQ-2: destroying after the tick was removed leaves the listener count unchanged', () => {
+    const { layer } = setup();
+    const before = Ticker.shared.count;
+    layer.sync([A], 'silesia:m1');
+    layer.destroy();
+    expect(Ticker.shared.count).toBe(before);
+
+    layer.destroy();
+
+    expect(Ticker.shared.count).toBe(before);
+  });
 });

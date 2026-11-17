@@ -21,17 +21,19 @@ describe('quest hex sprites', () => {
 });
 
 describe('board quest cap', () => {
-  it('keeps taken quests first and shows at most five in total', () => {
+  it('keeps taken quests first and shows at most seven in total', () => {
     const rows = [
       { id: 'a', taken: false },
       { id: 'b', taken: false },
       { id: 'c', taken: false },
       { id: 'd', taken: false },
       { id: 'e', taken: false },
-      { id: 'f', taken: true },
+      { id: 'f', taken: false },
+      { id: 'g', taken: false },
+      { id: 'h', taken: true },
     ];
     const capped = capQuests(rows);
-    expect(capped).toHaveLength(5);
-    expect(capped[0].id).toBe('f');
+    expect(capped).toHaveLength(7);
+    expect(capped[0].id).toBe('h');
   });
 });

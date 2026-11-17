@@ -5,6 +5,7 @@ export interface QuestResult {
   questId: string;
   outcome: string;
   numbers: number[];
+  answerReview?: boolean[];
   firstDeviation: { number: number; expected: number } | null;
 }
 
@@ -22,13 +23,18 @@ export function resultFromEvents(events: readonly DomainEvent[]): QuestResult | 
   if (!closing || !summary) return null;
   const payload = closing.payload as {
     questId: string;
-    recap: { numbers: number[]; firstDeviation: QuestResult['firstDeviation'] };
+    recap: {
+      numbers: number[];
+      answerReview?: boolean[];
+      firstDeviation: QuestResult['firstDeviation'];
+    };
   };
   const { outcome } = summary.payload as { outcome: string };
   return {
     questId: payload.questId,
     outcome,
     numbers: payload.recap.numbers,
+    ...(payload.recap.answerReview ? { answerReview: payload.recap.answerReview } : {}),
     firstDeviation: payload.recap.firstDeviation,
   };
 }

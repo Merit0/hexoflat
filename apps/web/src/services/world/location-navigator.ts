@@ -30,3 +30,14 @@ export function isViewingOtherWorldLocation(locationKey: LocationKey): boolean {
 export async function routeToLocation(locationKey: LocationKey): Promise<void> {
   await router.push({ name: ROUTES.WORLD, params: { locationKey } });
 }
+
+export async function replaceLocationRoute(locationKey: LocationKey): Promise<void> {
+  await router
+    .replace({ name: ROUTES.WORLD, params: { locationKey } })
+    .catch((e: unknown) => console.error('Router replace failed:', e));
+}
+
+export function isViewingWorldLocation(locationKey: LocationKey): boolean {
+  const current = router.currentRoute.value;
+  return current.name === ROUTES.WORLD && current.params.locationKey === locationKey;
+}

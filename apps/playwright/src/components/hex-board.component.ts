@@ -453,6 +453,23 @@ export class HexBoardComponent extends BaseComponent {
     return (await this.getTilesWithKey(hexobjectKey))[0];
   }
 
+  async verifyTileCountWithKeyIn(
+    locationKey: string,
+    hexobjectKey: string,
+    count: number,
+  ): Promise<void> {
+    await expect
+      .poll(
+        () =>
+          this.page.evaluate(
+            ([location, key]) => window.__HEXOFLAT_TEST__!.findTilesWithKeyIn(location, key).length,
+            [locationKey, hexobjectKey] as const,
+          ),
+        { timeout: 5_000, intervals: POLL_INTERVALS_MS },
+      )
+      .toBe(count);
+  }
+
   async verifyTileCountWithKey(hexobjectKey: string, count: number): Promise<void> {
     await expect
       .poll(async () => (await this.getTilesWithKey(hexobjectKey)).length, {

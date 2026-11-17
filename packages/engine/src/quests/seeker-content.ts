@@ -13,6 +13,10 @@ import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-regis
 import { sellUnitPrice } from '../trade/trader-view';
 import { RulePoolEntrySchema } from './sequences/rules';
 
+export const SEEKER_RULES = { ambushEnabled: false };
+
+export const MAX_GUARANTEED_CHEST_ENTRIES = 5;
+
 export const TreasureSeekerParamsSchema = z
   .object({
     steps: z.number().int().min(4),
@@ -52,7 +56,7 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
     tableRule: 'quest.seeker-1.table',
     entryWill: ENTRY_WILL,
     requiresCleanOf: null,
-    maxSellValue: 30,
+    maxSellValue: 232,
     params: {
       chestLootTableId: SEEKER_1_CHEST_TABLE_ID,
       steps: 10,
@@ -70,7 +74,7 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
     tableRule: 'quest.seeker-2.table',
     entryWill: ENTRY_WILL,
     requiresCleanOf: 'seeker-1',
-    maxSellValue: 60,
+    maxSellValue: 232,
     params: {
       chestLootTableId: SEEKER_2_CHEST_TABLE_ID,
       steps: 10,
@@ -99,7 +103,7 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
     tableRule: 'quest.seeker-3.table',
     entryWill: ENTRY_WILL,
     requiresCleanOf: 'seeker-2',
-    maxSellValue: 130,
+    maxSellValue: 232,
     params: {
       chestLootTableId: SEEKER_3_CHEST_TABLE_ID,
       steps: 8,
@@ -178,6 +182,14 @@ export function seekerCardFailures(
       ),
     );
     const table = LOOT_TABLES[card.params.chestLootTableId];
+    if (table && (table.guaranteed ?? []).length > MAX_GUARANTEED_CHEST_ENTRIES) {
+      failures.push(
+        `${card.id}: chest table has more than ${MAX_GUARANTEED_CHEST_ENTRIES} guaranteed entries`,
+      );
+    }
+    if (table && table.rolls[0] < 1 && (table.guaranteed ?? []).length === 0) {
+      failures.push(`${card.id}: chest table can yield nothing`);
+    }
     if (table && lootTableMaxSellValue(table) > card.maxSellValue) {
       failures.push(
         `${card.id}: chest can sell for ${lootTableMaxSellValue(table)} over ${card.maxSellValue}`,

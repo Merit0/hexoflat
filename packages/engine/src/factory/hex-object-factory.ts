@@ -5,6 +5,7 @@ import {
   type THexobject,
   type THexobjectPrototype,
 } from '../abstraction/hexobject-abstraction';
+import { containerStateSchema } from '../containers/container';
 import { getPrototype } from '../content';
 import { THexobjectKey } from '../registry/hexobjects-registry';
 
@@ -32,6 +33,8 @@ export class HexObjectFactory {
 
   private static applyOverrides(obj: THexobject, overrides: Record<string, unknown>) {
     if (isPieceCount(overrides.quantity)) obj.quantity = overrides.quantity;
+    const container = containerStateSchema.safeParse(overrides.container);
+    if (container.success) obj.container = container.data;
 
     if (obj.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof overrides.regrowMs === 'number') obj.resource.regrowMs = overrides.regrowMs;

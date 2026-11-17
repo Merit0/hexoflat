@@ -13,6 +13,7 @@ export const questLogSchema = z
   .object({
     active: z.array(activeQuestSchema).max(16),
     done: z.record(z.string(), z.number().int().positive()),
+    placementActivations: z.record(z.string(), z.number().int().positive()).optional(),
   })
   .strict();
 export type QuestLog = z.infer<typeof questLogSchema>;

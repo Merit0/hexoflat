@@ -54,7 +54,7 @@ describe('REQ-LOOT-083 a boss grave with no free place', () => {
       30,
     );
     expect(looted.events.map((event) => event.type)).toContain('ITEM_GRANTED');
-    const payload = looted.events.find((event) => event.type === 'GRAVE_LOOTED')!.payload as {
+    const payload = looted.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
       toBag: { itemKey: string }[];
     };
     expect(payload.toBag.map((drop) => drop.itemKey)).toEqual([
@@ -72,7 +72,7 @@ describe('REQ-LOOT-083 a boss grave with no free place', () => {
     const lists = [retry, again].map(
       (played) =>
         (
-          played.events.find((event) => event.type === 'GRAVE_LOOTED')!.payload as {
+          played.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
             toBag: unknown;
           }
         ).toBag,
@@ -167,7 +167,7 @@ describe('REQ-LOOT-085 picking loot up in a battle', () => {
   });
 
   it('leaves the stack on the ground when the bag is full', () => {
-    expectRefused(scene(), pickAt({ q: 0, r: 1 }), 'BAG_FULL', fullBag());
+    expectRefused(scene(), pickAt({ q: 0, r: 1 }), 'BAG_FULL', { ...fullBag(), capacityKg: 1000 });
   });
 
   it('refuses a stack that is not adjacent and a hex without loot', () => {

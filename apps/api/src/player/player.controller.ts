@@ -79,6 +79,24 @@ export class PlayerController {
     }
   }
 
+  @Post('dev/relocate-fixture')
+  async relocateFixture(
+    @Req() request: AuthenticatedRequest,
+    @Headers('x-player-session') sessionToken: string | undefined,
+    @Body() body: unknown,
+  ) {
+    const hero = await this.heroes.findOrCreateByUserId(request.user.sub);
+    if (!this.sessions.isValidToken(hero.id, sessionToken)) {
+      throw new ConflictException({ code: 'SESSION_TAKEN_OVER' });
+    }
+    try {
+      return await this.world.relocateFixture(request.user.sub, hero.id, body);
+    } catch (error) {
+      if (error instanceof PlayerCommandError) throw new ForbiddenException({ code: error.code });
+      throw error;
+    }
+  }
+
   @Post('dev/trader-fixture')
   async traderFixture(
     @Req() request: AuthenticatedRequest,

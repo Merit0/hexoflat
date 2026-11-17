@@ -1,5 +1,8 @@
+import { openInSpace } from '../containers';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
+import { worldChestSpace } from './world-container-space';
+import type { ChestWorld } from './open-chest';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { emptyInventoryState, type InventoryState } from '../inventory/inventory-state';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
@@ -135,4 +138,15 @@ export function itemsAround(world: ServerWorld, chest: IHexCoordinates) {
       ? [{ coordinates: coord, key: object.hexobjectKey, quantity: object.quantity ?? 1 }]
       : [];
   });
+}
+
+export function openRefusal(world: ChestWorld, tile: HexTileModel, heroId: string): string | null {
+  const opened = openInSpace(
+    worldChestSpace(EHexActionType.OPEN),
+    world,
+    heroId,
+    tile.coordinates,
+    { current: emptyInventoryState(heroId), events: [] },
+  );
+  return opened.ok ? null : opened.reason;
 }

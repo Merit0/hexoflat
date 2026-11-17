@@ -90,7 +90,7 @@ describe('REQ-QST-023 the real chest spreads loot by the shared rule', () => {
       expect(grounds).not.toContain(coordinateKey(chest));
       expect(grounds).not.toContain(coordinateKey(entry));
       expect(opened.run.collect!.hero).toEqual(chest);
-      expect(opened.events[0].type).toBe('CHEST_OPENED');
+      expect(opened.events[0].type).toBe('CONTAINER_OPENED');
       expect(opened.progress).toEqual(end.progress);
     }
   });
@@ -132,7 +132,7 @@ describe('REQ-QST-026 every refusal leaves the state as it was', () => {
     const noChest = structuredClone(end.run);
     noChest.chest = null;
     cases.push([
-      'NO_CHEST',
+      'CONTAINER_EMPTY',
       openChestOf(state, { progress: end.progress, run: noChest }, inventory),
     ]);
     const far = structuredClone(end.run);
@@ -171,7 +171,7 @@ describe('REQ-QST-026 every refusal leaves the state as it was', () => {
     expect(openChestOf(state, { progress: away.progress, run: away.run }, inventory)).toMatchObject(
       {
         ok: false,
-        reason: 'CHEST_EMPTY',
+        reason: 'CONTAINER_EMPTY',
       },
     );
   });
@@ -210,11 +210,15 @@ describe('REQ-QST-028 a chest with no free place', () => {
     const c = crowded('seeker-3-chest-loot');
     const result = must(open(c));
     expect(result.run.collect!.ground).toEqual([]);
-    const coins = result.inventory!.bag.reduce(
-      (sum, item) => (item?.key === HEXOBJECT_KEYS.COINS ? sum + item.amount : sum),
-      0,
+    const kept = result.inventory!.bag.flatMap((item) => (item ? [item.key] : [])).sort();
+    expect(kept).toEqual(
+      [
+        HEXOBJECT_KEYS.SWORD,
+        HEXOBJECT_KEYS.SHIELD,
+        HEXOBJECT_KEYS.HEALTH_BOTTLE,
+        HEXOBJECT_KEYS.MANA_BOTTLE,
+      ].sort(),
     );
-    expect(coins).toBeGreaterThanOrEqual(15);
     expect(result.events.some((event) => event.type === 'ITEM_GRANTED')).toBe(true);
   });
 
@@ -226,8 +230,10 @@ describe('REQ-QST-028 a chest with no free place', () => {
     expect(first.events[0]).toEqual(second.events[0]);
   });
 
-  it('answers NO_ROOM_FOR_LOOT when nothing is guaranteed', () => {
-    expect(open(crowded('seeker-1-chest-loot'))).toMatchObject({
+  it('answers NO_ROOM_FOR_LOOT when nothing is guaranteed (a chest from before the stored drop)', () => {
+    const c = crowded('cave-chest-loot');
+    c.run = { ...c.run, chest: { ...c.run.chest!, drop: undefined, container: undefined } };
+    expect(open(c)).toMatchObject({
       ok: false,
       reason: 'NO_ROOM_FOR_LOOT',
     });
@@ -249,7 +255,9 @@ describe('REQ-QST-029 picking loot up', () => {
     expect(held).toBeGreaterThanOrEqual(item.amount);
     expect(taken.events.map((event) => event.type)).toContain('QUEST_LOOT_TAKEN');
 
-    const blocked = seekerPickup(opened.progress, opened.run, item.hex, fullBag());
+    const full = fullBag();
+    full.capacityKg = 1000;
+    const blocked = seekerPickup(opened.progress, opened.run, item.hex, full);
     expect(blocked).toMatchObject({ ok: false, reason: 'BAG_FULL' });
     expect(opened.run.collect!.ground.map(keyOf)).toContain(keyOf(item));
 

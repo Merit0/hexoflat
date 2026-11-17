@@ -36,6 +36,13 @@ import {
   stopExpeditionSync,
 } from '@/services/player/expedition-sync';
 import { observeServerClock } from '@/services/battle/battle-clock';
+import {
+  reportHeroElsewhere,
+  reportMapAccepted,
+  reportMapMismatch,
+} from '@/services/world/presence-location';
+import { HERO_ELSEWHERE } from '@hexoflat/engine/world/enter-rule';
+import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
 import { bindInventoryMirror } from './inventory-mirror';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
@@ -355,17 +362,25 @@ export function sendProgress(
 export function sendQuestCommand(
   type: string,
   payload: Record<string, unknown>,
+  isCurrent: () => boolean = () => true,
 ): Promise<QuestRunAnswer> {
   if (inventorySession.status !== 'live') {
     return Promise.resolve({ ok: false, code: 'OFFLINE', events: [] });
   }
+  const sentEpoch = epoch;
   return enqueue(() =>
     runQuestCommand(
       {
         socket,
+        isCurrent: () => epoch === sentEpoch && isCurrent(),
         heroId: inventorySession.heroId,
         progressRevision: inventorySession.progressRevision,
         applyProgress,
+        applyInventory: (projection) => {
+          if (projection && projection.revision !== inventorySession.revision) {
+            applyInventory(projection);
+          }
+        },
         lost,
       },
       type,
@@ -380,22 +395,22 @@ export async function ensurePresence(
   if (!now) return;
   const known = inventorySession.presence;
   if (known && known.locationKey === now.locationKey && known.mapId === now.mapId) return;
-  await sendWorldCommand('WORLD_ENTER', { locationKey: now.locationKey });
+  const result = await sendWorldCommand('WORLD_ENTER', { locationKey: now.locationKey });
+  if (result.code === HERO_ELSEWHERE) reportHeroElsewhere();
+}
+
+async function ensureWorldDocument(locationKey: string): Promise<void> {
+  const headers = { 'X-Player-Session': inventorySession.sessionToken ?? '' };
+  const world = await apiClient.post<unknown>('/player/world/ensure', { locationKey }, { headers });
+  cacheServerWorld(locationKey, JSON.stringify(world));
 }
 
 async function loadWorldCache(): Promise<void> {
-  const headers = { 'X-Player-Session': inventorySession.sessionToken ?? '' };
-  for (const locationKey of LOCATION_KEYS) {
-    const world = await apiClient.post<unknown>(
-      '/player/world/ensure',
-      { locationKey },
-      { headers },
-    );
-    cacheServerWorld(locationKey, JSON.stringify(world));
-  }
+  for (const locationKey of LOCATION_KEYS) await ensureWorldDocument(locationKey);
 }
 
 export const reloadWorldCache = loadWorldCache;
+export const reloadWorldDocument = ensureWorldDocument;
 
 export interface WorldCommandResult {
   ok: boolean;
@@ -409,9 +424,8 @@ export interface WorldCommandResult {
   steps: NonNullable<WorldCommandResponse['steps']>;
   serverNowMs: number | null;
   replayed?: boolean;
+  mapId?: string;
 }
-
-export type WorldStepResult = WorldCommandResult;
 
 export function sendWorldCommand(
   type:
@@ -426,6 +440,7 @@ export function sendWorldCommand(
     | 'WORLD_BATTLE',
   payload: Record<string, unknown>,
 ): Promise<WorldCommandResult> {
+  const mapId = typeof payload.expectedMapId === 'string' ? { mapId: payload.expectedMapId } : {};
   const failed = (code: string): WorldCommandResult => ({
     ok: false,
     code,
@@ -435,6 +450,7 @@ export function sendWorldCommand(
     engagement: null,
     steps: [],
     serverNowMs: null,
+    ...mapId,
   });
   if (inventorySession.status !== 'live') return Promise.resolve(failed('OFFLINE'));
   return enqueue(async (): Promise<WorldCommandResult> => {
@@ -460,6 +476,8 @@ export function sendWorldCommand(
     applyProgress(response.aggregates.progress);
     const inventory = response.aggregates.inventory;
     if (inventory && inventory.revision !== inventorySession.revision) applyInventory(inventory);
+    if (response.code === MAP_MISMATCH) reportMapMismatch();
+    else if (response.result === 'applied' && mapId.mapId) reportMapAccepted();
     if (response.result === 'conflict') warn(i18n.global.t('player.sync.restored'));
     const common = {
       tileDiffs: response.tileDiffs as TileDiff[],
@@ -471,19 +489,13 @@ export function sendWorldCommand(
       steps: response.steps ?? [],
       serverNowMs: response.serverNowMs ?? null,
       ...(response.replayed ? { replayed: true } : {}),
+      ...mapId,
     };
     if (response.result !== 'applied') {
       return { ...common, ok: false, code: response.code ?? response.result };
     }
     return { ...common, ok: true, ...(response.code ? { code: response.code } : {}) };
   });
-}
-
-export function sendWorldStep(target: {
-  columnIndex: number;
-  rowIndex: number;
-}): Promise<WorldCommandResult> {
-  return sendWorldCommand('WORLD_STEP', { target });
 }
 
 export function pushHealthFixture(current: number): Promise<ProgressResult> {

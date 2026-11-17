@@ -5,7 +5,13 @@ import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { emptyInventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { emptyProgressState } from '@hexoflat/engine/aggregates/progress-state';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import {
+  axialToOffset,
+  coordinateKey,
+  getHexNeighbors,
+  offsetToAxial,
+  type Axial,
+} from '@hexoflat/engine/utils/hex-utils';
 import { actWorld, type WorldRun } from '@hexoflat/engine/world/world-commands';
 import {
   createServerWorld,
@@ -130,8 +136,10 @@ describe('a chest answer reaches the client state', () => {
   it('moves the hero to the chest hex and shows the placed items with their quantities', () => {
     const { server, client, entry, chest } = chestScene();
     const result = resultOf(actWorld(runOn(server), action(chest, EHexActionType.OPEN)));
-    const opened = result.events.find((event) => event.type === 'CHEST_OPENED')!;
-    const placed = (opened.payload as { placed: { coordinates: IHexCoordinates }[] }).placed;
+    const opened = result.events.find((event) => event.type === 'CONTAINER_OPENED')!;
+    const placed = (opened.payload as { placed: { hex: Axial }[] }).placed.map((item) => ({
+      coordinates: axialToOffset(item.hex),
+    }));
     expect(placed.length).toBeGreaterThan(0);
     const hero = heroAt(entry);
 
@@ -160,11 +168,14 @@ describe('a chest answer reaches the client state', () => {
     const hero = heroAt(entry);
     const result = bareResult([
       {
-        type: 'CHEST_OPENED',
+        type: 'CONTAINER_OPENED',
         payload: {
-          heroId: HERO_ID,
-          coordinates: chest,
-          from: entry,
+          actorId: HERO_ID,
+          containerId: 'chest',
+          kind: 'chest',
+          hex: offsetToAxial(chest),
+          from: offsetToAxial(entry),
+          nothing: false,
           placed: [],
           toBag: [{ itemKey: 'coins', amount: 3 }],
         },
@@ -175,6 +186,34 @@ describe('a chest answer reaches the client state', () => {
 
     expect(hero.heroCoordinates).toEqual(chest);
     expect(lootFlightRequest.value!.flights.every((flight) => flight.to === null)).toBe(true);
+  });
+
+  it('REQ-LOOT-114 an answer with both placed and toBag updates the map and flies the rest to the bag', () => {
+    const { server, client, entry, chest } = chestScene();
+    const result = resultOf(actWorld(runOn(server), action(chest, EHexActionType.OPEN)));
+    const opened = result.events.find((event) => event.type === 'CONTAINER_OPENED')!;
+    const raw = opened.payload as {
+      placed: { hex: Axial; itemKey: string }[];
+      toBag: { itemKey: string; amount: number }[];
+    };
+    raw.toBag = [{ itemKey: 'crown-shard', amount: 1 }];
+    const payload = {
+      placed: raw.placed.map((item) => ({
+        coordinates: axialToOffset(item.hex),
+        itemKey: item.itemKey,
+      })),
+    };
+    const hero = heroAt(entry);
+
+    applyWorldResultAction(hostOf(client.map).host, hero, result);
+
+    expect(hero.heroCoordinates).toEqual(chest);
+    for (const item of payload.placed) {
+      expect(tileAt(client, item.coordinates).hexobject?.hexobjectKey).toBe(item.itemKey);
+    }
+    const flights = lootFlightRequest.value!.flights;
+    expect(flights.filter((flight) => flight.to !== null)).toHaveLength(payload.placed.length);
+    expect(flights.filter((flight) => flight.to === null)).toHaveLength(1);
   });
 
   it('a replayed answer refetches the world exactly once and applies nothing else', () => {

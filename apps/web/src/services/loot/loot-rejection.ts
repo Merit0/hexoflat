@@ -1,16 +1,28 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 
 export const LOOT_REJECT_REASONS = [
+  'OVERWEIGHT',
   'NO_ROOM_FOR_LOOT',
   'BAG_FULL',
   'STANDING_ON_TARGET',
   'CHEST_EMPTY',
+  'CONTAINER_EMPTY',
   'NOT_ADJACENT',
 ] as const;
 
 export type LootRejectReason = (typeof LOOT_REJECT_REASONS)[number];
 
-export function lootRejectKey(reason: LootRejectReason): string {
+export const SHARED_CONTAINER_REFUSALS: readonly LootRejectReason[] = [
+  'STANDING_ON_TARGET',
+  'NO_ROOM_FOR_LOOT',
+  'BAG_FULL',
+];
+
+export function isSharedContainerRefusal(code: string): code is LootRejectReason {
+  return (SHARED_CONTAINER_REFUSALS as readonly string[]).includes(code);
+}
+
+export function lootRejectKey(reason: string): string {
   return `loot.reject.${reason}`;
 }
 

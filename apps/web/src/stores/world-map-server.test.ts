@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { createServerWorld } from '@hexoflat/engine';
+import { createServerWorld, serializeWorld } from '@hexoflat/engine';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -13,9 +13,12 @@ import { useHeroInventoryStore } from './hero-inventory-store';
 import { useHeroToolStore } from './hero-tool-store';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { fakePresence, fakeStoredWorld, sentCommands } from '@/test-support/fake-player-server';
-import { holdServedWorld, seedFakeSession } from '@/test-support/fake-session';
+import { holdServedWorld, fakeStandIn, seedFakeSession } from '@/test-support/fake-session';
 import { useHeroStore } from './hero-store';
 import { useWorldMapStore } from './world-map-store';
+import { readCachedWorld, serverWorldJson } from '@/services/world/served-world';
+import { cacheServerWorld } from '@/services/player/world-sync';
+import { inventorySession } from '@/services/inventory/inventory-session';
 
 vi.mock('@/services/player/player-socket', async () =>
   (await import('@/test-support/fake-player-server')).fakePlayerSocketModule(),
@@ -36,6 +39,7 @@ function setup() {
   hero.loadKnowledge();
   const served = createServerWorld('silesia', 'served-map', 'expedition-seed', HERO);
   holdServedWorld(served);
+  fakeStandIn('silesia');
   return { hero, world: useWorldMapStore(), served };
 }
 
@@ -52,6 +56,26 @@ describe('a world the server holds', () => {
     expect(world.map?.tiles.map((t) => t.hexobject?.hexobjectKey ?? null)).toEqual(
       served.map.tiles.map((t) => t.hexobject?.hexobjectKey ?? null),
     );
+  });
+
+  it('leaves simulation startup to the active board when a world is loaded', () => {
+    const { world } = setup();
+    const start = vi.spyOn(world, 'startWorldLoop');
+    world.goToLocation('silesia');
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it('keeps quest bindings through cache rewrites only for the same map instance', () => {
+    const { world } = setup();
+    world.goToLocation('silesia');
+    const cached = readCachedWorld('silesia')!;
+    cached.questEntrances = { seeker: 'entrance-object' };
+    const view = { ...cached, questEntrances: undefined };
+    cacheServerWorld('silesia', JSON.stringify(serializeWorld(cached)));
+    cacheServerWorld('silesia', serverWorldJson(view));
+    expect(readCachedWorld('silesia')?.questEntrances).toEqual({ seeker: 'entrance-object' });
+    cacheServerWorld('silesia', serverWorldJson({ ...view, mapId: 'replacement-map' }));
+    expect(readCachedWorld('silesia')?.questEntrances).toEqual({});
   });
 
   it('walks one hex through WORLD_STEP and takes the fog from the server, without ARRIVE', async () => {
@@ -146,6 +170,30 @@ describe('actions and ticks through the server', () => {
     expect(bag.items.some((item) => item.key === HEXOBJECT_KEYS.HEALTH_BOTTLE)).toBe(true);
   });
 
+  it('keeps a background tick quiet while the server holds the hero in another place', async () => {
+    const { world, tile } = withBottle();
+    await world.executeHexAction(tile, EHexActionType.TAKE, HEXOBJECT_KEYS.HAND);
+    inventorySession.presence = {
+      locationKey: 'silesia',
+      mapId: 'silesia-map',
+      coordinates: { columnIndex: 3, rowIndex: 3 },
+    };
+    sentCommands.length = 0;
+    tile.pendingAction!.endsAt = Date.now() - 1;
+    await world.serverTick();
+    expect(sentCommands.map((c) => c.command.type)).toEqual([]);
+    expect(inventorySession.presence.locationKey).toBe('silesia');
+  });
+
+  it('ticks again once the shown world is the place the server holds', async () => {
+    const { world, tile } = withBottle();
+    await world.executeHexAction(tile, EHexActionType.TAKE, HEXOBJECT_KEYS.HAND);
+    sentCommands.length = 0;
+    tile.pendingAction!.endsAt = Date.now() - 1;
+    await world.serverTick();
+    expect(sentCommands.map((c) => c.command.type)).toEqual(['WORLD_TICK']);
+  });
+
   it('shows the server refusal and leaves the tool free', async () => {
     const { world, tile } = withBottle();
     const tool = useHeroToolStore();
@@ -203,6 +251,7 @@ describe('travel through the server', () => {
     gate.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.CAVE_ENTRANCE, spot);
     gate.isRevealed = true;
     holdServedWorld(silesia);
+    fakeStandIn('silesia');
     const world = useWorldMapStore();
     world.goToLocation('silesia');
     const tile = world.getTileAt(spot)!;

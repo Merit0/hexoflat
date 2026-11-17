@@ -11,12 +11,13 @@ import { LOCATION_KEYS } from '@hexoflat/engine/registry/location-key';
 import { cacheServerWorld, resetWorldSync } from '@/services/player/world-sync';
 import {
   fakeEnsureWorld,
+  fakeRelocate,
   fakeStoreWorld,
-  fakeWorldSnapshot,
   resetFakePlayerServer,
   snapshot,
 } from './fake-player-server';
 import { fakeTraderFixture } from './fake-trader-fixture';
+import { fakeWorldSnapshot } from './fake-battle-fixtures';
 
 export function seedFakeSession(
   heroId: string,
@@ -74,4 +75,9 @@ export function holdLocalWorld(held: {
     engagement: null,
     battle: null,
   });
+}
+
+export function fakeStandIn(locationKey: string): void {
+  fakeRelocate(locationKey);
+  applyProgress(snapshot().aggregates.progress);
 }

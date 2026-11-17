@@ -106,6 +106,10 @@ export function planAccept(
     next.knowledge.revision++;
   }
   next.quests.active.push({ questId, progress: 0, state: 'active' });
+  if (quest.mapObjectPlacement) {
+    const activations = (next.quests.placementActivations ??= {});
+    activations[questId] = (activations[questId] ?? 0) + 1;
+  }
   events.push({
     type: 'QUEST_ACCEPTED',
     payload: {

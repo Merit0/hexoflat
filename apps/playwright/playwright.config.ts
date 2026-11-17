@@ -19,7 +19,7 @@ export default defineConfig({
   failOnFlakyTests: !process.env.CI,
   // Each worker renders a Pixi board. CPU-based defaults
   // oversubscribe local machines and can consume the entire test timeout.
-  workers: process.env.CI ? 1 : 2,
+  workers: process.env.CI ? 1 : 4,
   maxFailures: process.env.CI ? 10 : undefined,
 
   // allure-playwright only writes raw result JSON (allure-results/) — the

@@ -5,7 +5,7 @@ import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-c
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 import { applyObjectFit } from '@/render/object-fit';
 import { LOOT_TIMING } from '@/render/loot-timing';
-import { easeOutCubic, runTween } from '@/render/tween';
+import { easeOutCubic, runTween, type Tween } from '@/render/tween';
 
 function easeOutBack(t: number): number {
   const c = 1.4;
@@ -44,6 +44,8 @@ export function createLootFlightLayer(deps: LootFlightLayerDeps): LootFlightLaye
   container.eventMode = 'none';
   deps.worldContainer.addChild(container);
   let runners: Runner[] = [];
+  let tween: Tween | null = null;
+  let destroyed = false;
 
   function build(flight: LootFlight): Runner {
     const { w, h } = deps.getTileSize();
@@ -101,6 +103,8 @@ export function createLootFlightLayer(deps: LootFlightLayerDeps): LootFlightLaye
   }
 
   function clear() {
+    tween?.cancel();
+    tween = null;
     for (const runner of runners) {
       runner.unsubscribe();
       runner.node.destroy({ children: true });
@@ -111,12 +115,17 @@ export function createLootFlightLayer(deps: LootFlightLayerDeps): LootFlightLaye
   return {
     async play(request) {
       clear();
+      if (destroyed) return;
       runners = request.flights.map(build);
       const active = runners;
-      await runTween(request.totalMs, (progress) => {
+      const running = runTween(request.totalMs, (progress) => {
         const elapsed = progress * request.totalMs;
         for (const runner of active) frame(runner, elapsed, request);
-      }).done;
+      });
+      tween = running;
+      await running.done;
+      if (tween === running) tween = null;
+      if (destroyed) return;
       for (const runner of active) {
         if (!runner.landed) {
           runner.landed = true;
@@ -126,6 +135,7 @@ export function createLootFlightLayer(deps: LootFlightLayerDeps): LootFlightLaye
       if (runners === active) clear();
     },
     destroy() {
+      destroyed = true;
       clear();
       container.destroy({ children: true });
     },

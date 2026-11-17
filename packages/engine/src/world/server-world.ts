@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { restoreQuestEntrances, type QuestEntranceAssociations } from '../quests/quest-map-state';
 import { CONTENT_VERSION } from '../content/content-version';
 import { initFog, revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { installCampBook } from '../knowledge/camp-book';
+import { createChestContainers } from '../chests/create-chest-containers';
 import { installCampFacilities } from './camp-facilities';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
@@ -25,6 +27,7 @@ export interface ServerWorld {
   worldSeed: string;
   engagement: Engagement | null;
   battle: BattleState | null;
+  questEntrances?: QuestEntranceAssociations;
 }
 
 const MAP_ORIGIN: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
@@ -42,6 +45,7 @@ export const serializedWorldSchema = z.object({
   engagement: engagementSchema.nullable().default(null),
   battle: battleStateSchema.nullable().default(null),
   current: z.boolean().optional(),
+  questEntrances: z.record(z.string(), z.string().min(1)).optional(),
 });
 export type SerializedWorld = z.infer<typeof serializedWorldSchema>;
 
@@ -56,6 +60,9 @@ export function serializeWorld(world: ServerWorld): SerializedWorld {
     worldSeed: world.worldSeed,
     engagement: world.engagement,
     battle: world.battle,
+    ...(world.questEntrances && Object.keys(world.questEntrances).length
+      ? { questEntrances: world.questEntrances }
+      : {}),
   };
 }
 
@@ -72,6 +79,7 @@ export function deserializeWorld(raw: unknown, now: number): ServerWorld {
     worldSeed: parsed.worldSeed,
     engagement: parsed.engagement,
     battle: parsed.battle,
+    questEntrances: restoreQuestEntrances(parsed.map, map, parsed.questEntrances),
   };
 }
 
@@ -98,6 +106,7 @@ export function createServerWorld(
     );
   }
   if (locationKey === 'camping') installCampBook(map, null);
+  createChestContainers(map, { seed: worldSeed, sourceId: mapId });
 
   const entry = findEntryHex(map, locationKey, deriveStream(worldSeed, 'world')) ?? {
     ...MAP_ORIGIN,

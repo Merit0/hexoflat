@@ -6,7 +6,6 @@ import { applyQuestProjection, resetQuestProjection } from '@/services/quests/qu
 import { acceptQuest, claimQuest } from '@/services/quests/quest-commands';
 import { useQuestActions } from '@/composables/use-quest-actions';
 import { useQuestDetails } from '@/composables/use-quest-details';
-import { useQuestBoardView } from '@/composables/use-quest-board-view';
 import QuestBoard from './quest-board.vue';
 
 vi.mock('@/services/quests/quest-commands', () => ({
@@ -36,7 +35,6 @@ describe('quest board panel', () => {
   });
   afterEach(() => {
     useQuestDetails().close();
-    useQuestBoardView().filter.value = 'all';
     app?.unmount();
     host.remove();
     app = null;
@@ -57,11 +55,25 @@ describe('quest board panel', () => {
     });
     mount();
     expect(byId('quest-progress-woodcutter')!.textContent?.trim()).toBe('3 / 10');
-    byId('quest-row-woodcutter')!.click();
+    byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseenter'));
     await nextTick();
     expect(document.querySelector('[data-testid="quest-abandon-woodcutter"]')).not.toBeNull();
     expect(byId('quest-claim-woodcutter')).toBeNull();
     expect(byId('quest-accept-woodcutter')).toBeNull();
+  });
+
+  it('swaps the progress counter for Return on hover and back on leave', async () => {
+    applyQuestProjection({
+      quests: { active: [{ questId: 'woodcutter', progress: 3, state: 'active' }], done: {} },
+    });
+    mount();
+    const counter = () => byId('quest-progress-woodcutter')!;
+    counter().dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    expect(counter().textContent?.trim()).toBe('Return');
+    counter().dispatchEvent(new MouseEvent('mouseleave'));
+    await nextTick();
+    expect(counter().textContent?.trim()).toBe('3 / 10');
   });
 
   it('marks a finished quest and explains a refused claim', async () => {
@@ -93,7 +105,6 @@ describe('quest board layout and details', () => {
   });
   afterEach(() => {
     useQuestDetails().close();
-    useQuestBoardView().filter.value = 'all';
     app?.unmount();
     host.remove();
     app = null;
@@ -114,20 +125,6 @@ describe('quest board layout and details', () => {
     expect(byId('quest-slots')!.textContent).toContain('1 / 3');
   });
 
-  it('shows the empty hint when nothing is taken', () => {
-    mount();
-    expect(byId('quest-tracker-empty')).not.toBeNull();
-  });
-
-  it('filters every group by category and counts the chips', async () => {
-    mount();
-    expect(byId('quest-filter-all')!.textContent).toContain('5');
-    byId('quest-filter-combat')!.click();
-    await nextTick();
-    expect(byId('quest-card-bone-hunter')).not.toBeNull();
-    expect(byId('quest-card-woodcutter')).toBeNull();
-  });
-
   it('puts only the price on the take button, never the word Take', () => {
     mount();
     const button = byId('quest-accept-bone-hunter')!;
@@ -135,20 +132,25 @@ describe('quest board layout and details', () => {
     expect(button.getAttribute('aria-label')).toContain('5');
   });
 
-  it('opens the details on hover, pins them on click and closes on Escape', async () => {
+  it('paints the price red while the hero has too little Will', () => {
     mount();
+    expect(byId('quest-price-bone-hunter')!.classList.contains('is-short')).toBe(true);
+  });
+
+  it('opens the details on hover only and closes them after the pointer leaves', async () => {
+    vi.useFakeTimers();
+    mount();
+    byId('quest-row-woodcutter')!.click();
+    await nextTick();
+    expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).toBeNull();
     byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseenter'));
     await nextTick();
     expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).not.toBeNull();
-    byId('quest-row-woodcutter')!.click();
-    await nextTick();
     byId('quest-row-woodcutter')!.dispatchEvent(new MouseEvent('mouseleave'));
-    expect(document.querySelector('[data-testid="quest-details-woodcutter-close"]')).not.toBeNull();
-    byId('quest-board')!.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    );
+    vi.advanceTimersByTime(200);
     await nextTick();
     expect(document.querySelector('[data-testid="quest-details-woodcutter"]')).toBeNull();
+    vi.useRealTimers();
   });
 
   it('never prints a raw translation key', () => {

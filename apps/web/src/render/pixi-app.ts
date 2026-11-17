@@ -1,5 +1,7 @@
 import { Application, Container, UPDATE_PRIORITY } from 'pixi.js';
 import type { BoardCamera } from '@/render/board-camera';
+import { trackBoardApp } from '@/render/render-stats';
+import { subscribeTicker } from '@/render/ticker-subscription';
 
 export interface HexBoardApp {
   app: Application;
@@ -45,6 +47,7 @@ export async function createHexBoardApp(
 
   const worldContainer = new Container();
   app.stage.addChild(worldContainer);
+  const release = trackBoardApp();
 
   return {
     app,
@@ -62,9 +65,14 @@ export async function createHexBoardApp(
       app.render();
     },
     onFirstFramePresented(callback: () => void) {
-      app.ticker.addOnce(callback, undefined, UPDATE_PRIORITY.UTILITY);
+      subscribeTicker(app.ticker, callback, {
+        source: 'board first frame',
+        priority: UPDATE_PRIORITY.UTILITY,
+        once: true,
+      });
     },
     destroy() {
+      release();
       app.destroy({ removeView: true }, { children: true, texture: false });
     },
   };

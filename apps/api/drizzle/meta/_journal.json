@@ -50,6 +50,13 @@
       "when": 1794251675244,
       "tag": "0006_expeditions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794866574117,
+      "tag": "0007_retire_client_world_blobs",
+      "breakpoints": true
     }
   ]
 }

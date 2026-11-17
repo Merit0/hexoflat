@@ -4,7 +4,7 @@ import { coordinateKey, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroStore } from '@/stores/hero-store';
 import { useBattleStore } from '@/stores/battle-store';
-import { seedFakeSession } from '@/test-support/fake-session';
+import { fakeStandIn, seedFakeSession } from '@/test-support/fake-session';
 import { fakePlaceHero } from '@/test-support/fake-player-server';
 import { ensurePresence } from '@/services/inventory/inventory-sync';
 import { crossExitIfStanding } from './use-board-crossing';
@@ -40,6 +40,7 @@ describe('crossExitIfStanding', () => {
     routeToLocationMock.mockReset();
     setActivePinia(createPinia());
     seedFakeSession('hero-cross');
+    fakeStandIn('silesia');
     useWorldMapStore().loadLocationMap('silesia');
   });
 

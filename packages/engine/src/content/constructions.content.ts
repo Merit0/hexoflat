@@ -3,6 +3,7 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { TContentDefinition } from './content-schema';
 import { CAVE_CHEST_TABLE_ID } from './loot-tables.content';
+import { TREASURE_SEEKER_MAP_KEY } from '../registry/quest-map-key';
 
 export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.KNOWLEDGE_BOOK
@@ -19,11 +20,32 @@ export type TConstructionKeys =
   | typeof HEXOBJECT_KEYS.STASH_CHEST
   | typeof HEXOBJECT_KEYS.TRADER_STALL
   | typeof HEXOBJECT_KEYS.TRAINING_GROUNDS
+  | typeof HEXOBJECT_KEYS.TREASURE_MAP
   | typeof HEXOBJECT_KEYS.QUEST_BOARD
   | typeof HEXOBJECT_KEYS.STONE_WALL
   | typeof HEXOBJECT_KEYS.RETURN_PORTAL;
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
+  [HEXOBJECT_KEYS.TREASURE_MAP]: {
+    hexobjectKey: HEXOBJECT_KEYS.TREASURE_MAP,
+    tags: ['portal'],
+    groupType: EHexobjectGroup.CONSTRUCTION,
+    isInteractable: true,
+    title: 'content.treasureMap.title',
+    subtitle: 'content.treasureMap.subtitle',
+    description: 'content.treasureMap.description',
+    collision: EHexCollision.SOLID,
+    spritePath: '/hex-assets/hex-constructs/quests/treasure-map-hex.png',
+    construction: { integrity: 1000, isLocked: false },
+    actions: {
+      [EHexActionType.OPEN]: {
+        label: 'Open',
+        requiredTool: HEXOBJECT_KEYS.HAND,
+        willCost: 0,
+        destination: { type: 'QUEST', mapKey: TREASURE_SEEKER_MAP_KEY },
+      },
+    },
+  },
   [HEXOBJECT_KEYS.KNOWLEDGE_BOOK]: {
     hexobjectKey: HEXOBJECT_KEYS.KNOWLEDGE_BOOK,
     tags: ['challenge'],

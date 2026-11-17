@@ -24,10 +24,9 @@ import {
   type ServerWorld,
   type WorldClientHint,
 } from '@hexoflat/engine';
-import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
-import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { projectWorldForClient } from '@hexoflat/engine/world/client-projection';
+import { enterRefusal } from '@hexoflat/engine/world/enter-rule';
+import { mapRefusal } from '@hexoflat/engine/world/map-guard';
 import type {
   HeroSnapshot,
   PlayerCommandResponse,
@@ -194,6 +193,18 @@ export function fakeStoreWorld(held: ServerWorld): void {
   storedWorlds.set(held.mapId, held);
 }
 
+export function fakeRelocate(locationKey: string): void {
+  const held = fakeStoredWorldOf(locationKey)!;
+  const row = store!.progress;
+  row.state.presence = {
+    locationKey: held.locationKey,
+    mapId: held.mapId,
+    coordinates: { ...(held.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }) },
+  };
+  row.revision += 1;
+  world = held;
+}
+
 export function fakeEnsureWorld(locationKey: string) {
   const known = [...storedWorlds.values()].find((stored) => stored.locationKey === locationKey);
   const held =
@@ -222,6 +233,16 @@ function enterFake(envelope: PlayerEnvelope) {
       aggregates: snapshot().aggregates,
     };
   }
+  const refused = enterRefusal(s.progress.state.presence, locationKey);
+  if (refused) {
+    return {
+      ...base,
+      result: 'rejected' as const,
+      code: refused,
+      hero: null,
+      aggregates: snapshot().aggregates,
+    };
+  }
   fakeEnsureWorld(locationKey);
   const entered = [...storedWorlds.values()].find((stored) => stored.locationKey === locationKey)!;
   world = entered;
@@ -245,11 +266,13 @@ function handleWorld(envelope: PlayerEnvelope) {
   sentCommands.push(envelope);
   const s = store!;
   const base = { commandId: envelope.commandId, tileDiffs: [], effects: [], events: [] };
-  if (s.progress.revision !== envelope.expectedRevision || !world) {
+  const conflict = s.progress.revision !== envelope.expectedRevision && 'REVISION_CONFLICT';
+  const refused = world && (conflict || mapRefusal(s.progress.state.presence, envelope.command));
+  if (refused || !world) {
     return {
       ...base,
-      result: world ? ('conflict' as const) : ('rejected' as const),
-      code: world ? 'REVISION_CONFLICT' : 'NO_WORLD',
+      result: refused === 'REVISION_CONFLICT' ? ('conflict' as const) : ('rejected' as const),
+      code: refused || 'NO_WORLD',
       hero: null,
       aggregates: snapshot().aggregates,
     };
@@ -457,34 +480,10 @@ function battleFake(
   };
 }
 
-export function fakeWorldSnapshot() {
-  const held = world?.battle ?? null;
-  return {
-    battleView: held ? projectBattleForViewer(held, 'heroes') : null,
-    serverNowMs: Date.now(),
-  };
+export function fakeCurrentWorld(): ServerWorld | null {
+  return world;
 }
 
-export function fakeEngageSquad(at: { columnIndex: number; rowIndex: number }) {
-  const held = world!;
-  const tile = held.map.tiles.find(
-    (t) => t.coordinates.columnIndex === at.columnIndex && t.coordinates.rowIndex === at.rowIndex,
-  )!;
-  tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETON_PACK, tile.coordinates);
-  held.engagement = {
-    squadId: `${at.columnIndex}:${at.rowIndex}:skeleton-pack`,
-    ambush: false,
-    heroAt: { ...held.heroCoordinates! },
-    heroIds: [store!.heroId],
-    startItems: {},
-  };
-  return held.engagement;
-}
-
-export function fakeEndBattle(outcome: 'victory' | 'defeat') {
-  const battle = world!.battle!;
-  const loser = outcome === 'victory' ? 'enemies' : 'heroes';
-  for (const creature of battle.creatures) if (creature.side === loser) creature.hp = 0;
-  battle.outcome = outcome;
-  battle.phase = 'ended';
+export function fakeHeroId(): string {
+  return store!.heroId;
 }

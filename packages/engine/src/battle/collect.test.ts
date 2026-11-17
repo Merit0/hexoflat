@@ -162,7 +162,7 @@ describe('REQ-LOOT-080 every refusal changes nothing', () => {
   const lone = () => won([warrior('s1', TARGET)]);
 
   it('refuses a hex without a grave', () => {
-    expectRefused(lone(), lootAt({ q: 0, r: 1 }), 'NO_GRAVE');
+    expectRefused(lone(), lootAt({ q: 0, r: 1 }), 'CONTAINER_EMPTY');
   });
 
   it('refuses a grave that is not adjacent', () => {
@@ -173,7 +173,7 @@ describe('REQ-LOOT-080 every refusal changes nothing', () => {
   it('refuses a grave that was already examined', () => {
     const looted = play(lone(), lootAt(TARGET));
     const away = play(looted.battle, stepTo(ORIGIN));
-    expectRefused(away.battle, lootAt(TARGET), 'GRAVE_EMPTY');
+    expectRefused(away.battle, lootAt(TARGET), 'CONTAINER_EMPTY');
   });
 
   it('refuses with NO_ROOM_FOR_LOOT when nothing is guaranteed and no place is free', () => {
@@ -244,7 +244,7 @@ describe('REQ-LOOT-081 a successful LOOT_GRAVE', () => {
     expect(looted.battle.collect!.items.some((item) => item.hex.q === 0 && item.hex.r === 0)).toBe(
       false,
     );
-    expect(looted.events.map((event) => event.type)).toEqual(['GRAVE_LOOTED']);
+    expect(looted.events.map((event) => event.type)).toEqual(['CONTAINER_OPENED']);
     expect(looted.inventory!.revision).toBe(0);
   });
 

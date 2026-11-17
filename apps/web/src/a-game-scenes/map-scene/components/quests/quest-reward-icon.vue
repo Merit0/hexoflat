@@ -7,16 +7,46 @@
     aria-hidden="true"
     :style="{ width: `${size}px`, height: `${size}px` }"
   />
-  <span v-else class="item-icon" :style="style" aria-hidden="true"></span>
+  <span
+    v-else
+    class="item-icon"
+    :style="style"
+    aria-hidden="true"
+    @mouseenter="showTip"
+    @mouseleave="hideItemTooltip()"
+  ></span>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount } from 'vue';
 import type { Reward } from '@hexoflat/engine/quests/quest-definition';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
+import { hideItemTooltip, showItemTooltip } from '@/composables/use-item-tooltip';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 
-const props = withDefaults(defineProps<{ reward: Reward; size?: number }>(), { size: 18 });
+const props = withDefaults(defineProps<{ reward: Reward; size?: number; tooltip?: boolean }>(), {
+  size: 18,
+  tooltip: false,
+});
+
+function showTip(event: MouseEvent) {
+  const reward = props.reward;
+  if (!props.tooltip || reward.kind !== 'item') return;
+  const view = resolveInventoryView(reward.itemKey);
+  const id = `quest-reward-${reward.itemKey}`;
+  showItemTooltip(id, event.currentTarget as HTMLElement, {
+    item: {
+      id,
+      key: reward.itemKey,
+      type: view.group,
+      amount: reward.amount,
+      slotKey: id,
+      isNew: false,
+    },
+  });
+}
+
+onBeforeUnmount(hideItemTooltip);
 
 const style = computed(() => {
   const path =

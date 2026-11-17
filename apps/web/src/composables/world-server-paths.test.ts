@@ -8,15 +8,13 @@ import { useSquadFlow } from '@/services/squads/squad-flow';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import { coordinateKey, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { fakePresence, sentCommands, fakeStoredWorldOf } from '@/test-support/fake-player-server';
+import { fakeStandIn, seedFakeSession } from '@/test-support/fake-session';
 import {
-  fakePresence,
-  sentCommands,
-  fakeStoredWorldOf,
   fakeEngageSquad,
   fakeEndBattle,
   fakeWorldSnapshot,
-} from '@/test-support/fake-player-server';
-import { seedFakeSession } from '@/test-support/fake-session';
+} from '@/test-support/fake-battle-fixtures';
 import { ensurePresence, settleInventorySync } from '@/services/inventory/inventory-sync';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useHeroStore } from '@/stores/hero-store';
@@ -49,6 +47,7 @@ function start(location: 'silesia' | 'cave') {
   hero.loadKnowledge();
   inventory.hydrate();
   inventory.putToInventory(HEXOBJECT_KEYS.RETURN_SCROLL, 2);
+  fakeStandIn(location);
   world.goToLocation(location);
   const map = world.map as HexMapModel;
   const target = getHexNeighbors(hero.heroCoordinates!).find((c) => {

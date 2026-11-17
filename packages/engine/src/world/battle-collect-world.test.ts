@@ -126,7 +126,7 @@ describe('REQ-LOOT-088 a victory the server holds with grave loot on', () => {
     ).toBe(true);
     expect(view.collect!.items.length).toBeGreaterThan(0);
     expect(before.collect!.items).toEqual([]);
-    expect(looted.events.map((e) => e.type)).toContain('GRAVE_LOOTED');
+    expect(looted.events.map((e) => e.type)).toContain('CONTAINER_OPENED');
     expect(JSON.stringify(looted.steps)).not.toContain(run.world.battle!.seed);
     expect(JSON.stringify(looted.steps)).not.toContain('-loot');
   });
@@ -135,7 +135,7 @@ describe('REQ-LOOT-088 a victory the server holds with grave loot on', () => {
     const { run } = standBeside(wonRun());
     const out = send(run, heroAction({ kind: 'loot-grave', hex: { q: 99, r: 99 } }));
     expect(out.ok).toBe(false);
-    if (!out.ok) expect(out.code).toBe('NO_GRAVE');
+    if (!out.ok) expect(out.code).toBe('CONTAINER_EMPTY');
   });
 
   it('picks a stack up into the bag through the same grant path as the map', () => {

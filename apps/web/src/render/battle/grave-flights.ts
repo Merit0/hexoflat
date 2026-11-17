@@ -2,7 +2,7 @@ import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { LootFlightLayer } from '@/render/layers/loot-flight-layer';
-import { gravePlayedOf, graveWalkLeadMs, planLootFlights } from '@/services/loot/loot-flight';
+import { containerOpenedOf, graveWalkLeadMs, planLootFlights } from '@/services/loot/loot-flight';
 import { BATTLE_TIMING } from './battle-timing';
 import {
   finishLootFlights,
@@ -19,8 +19,10 @@ export interface GraveFlightsDeps {
 export function createGraveFlights(deps: GraveFlightsDeps) {
   let flightBusy = false;
   let animatorBusy = false;
+  let cancelled = false;
 
   function report() {
+    if (cancelled) return;
     deps.onBusy(flightBusy || animatorBusy);
   }
 
@@ -30,7 +32,7 @@ export function createGraveFlights(deps: GraveFlightsDeps) {
       report();
     },
     start(events: DomainEvent[]) {
-      const played = gravePlayedOf(events, deps.offsetOf);
+      const played = containerOpenedOf(events, deps.offsetOf);
       if (!played) return;
       startLootFlights(planLootFlights(played, graveWalkLeadMs(events, BATTLE_TIMING.stepMs)));
       const request = lootFlightRequest.value;
@@ -43,6 +45,11 @@ export function createGraveFlights(deps: GraveFlightsDeps) {
         flightBusy = false;
         report();
       });
+    },
+    cancel() {
+      cancelled = true;
+      flightBusy = false;
+      finishLootFlights();
     },
   };
 }

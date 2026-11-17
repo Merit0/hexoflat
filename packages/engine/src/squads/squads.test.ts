@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TRANSITION_REFUSAL_MESSAGES } from '../map/object-transition';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { getMeta } from '../content/content-accessors';
@@ -44,6 +45,23 @@ function actionsOf(state: HexEngineState, tool: 'hand' | 'sword') {
 }
 
 describe('squads as creature tokens', () => {
+  it('refuses a forged attack using a non-attacking tool or an unrevealed squad without charging', () => {
+    const state = packWorld();
+    const before = state.knowledge!.current;
+    const wrongTool = hexAction(state, ATTACK, SQUAD_AT, 1000, HEXOBJECT_KEYS.RETURN_SCROLL);
+    expect(wrongTool).toContainEqual(
+      expect.objectContaining({ type: 'HEX_ACTION_START_REJECTED' }),
+    );
+    expect(state.engagement).toBeUndefined();
+    expect(state.knowledge!.current).toBe(before);
+    const hidden = packWorld({ hidden: [SQUAD_AT] });
+    expect(
+      hexAction(hidden, ATTACK, SQUAD_AT).find(
+        (event) => event.type === 'HEX_ACTION_START_REJECTED',
+      )?.payload,
+    ).toMatchObject({ message: TRANSITION_REFUSAL_MESSAGES.HIDDEN });
+    expect(hidden.engagement).toBeUndefined();
+  });
   it('REQ-ENC-001: visible only from a revealed hex; count, leader, threat and watcher always; members after SCOUT', () => {
     expect(projectSquads(packWorld({ hidden: [SQUAD_AT] }).map, STRONG)).toEqual([]);
 

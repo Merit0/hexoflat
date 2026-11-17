@@ -13,11 +13,16 @@ import type { WorldClientHint } from '@hexoflat/engine/world/server-ports';
 import {
   ensurePresence,
   sendWorldCommand,
-  sendWorldStep,
   type WorldCommandResult,
 } from '@/services/inventory/inventory-sync';
+import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
 import { apiClient } from '@/api/client';
-import { cachedWorldJson, forgetServerWorld, cacheServerWorld } from '@/services/player/world-sync';
+import {
+  cachedWorldJson,
+  evictStaleServerWorld,
+  forgetServerWorld,
+  cacheServerWorld,
+} from '@/services/player/world-sync';
 
 export function readCachedWorld(locationKey: LocationKey): ServerWorld | null {
   const json = cachedWorldJson(locationKey);
@@ -53,6 +58,7 @@ export interface ServedWorldView {
 }
 
 export function serverWorldJson(view: ServedWorldView): string {
+  const cached = readCachedWorld(view.locationKey);
   return JSON.stringify({
     contentVersion: CONTENT_VERSION,
     locationKey: view.locationKey,
@@ -62,6 +68,7 @@ export function serverWorldJson(view: ServedWorldView): string {
     heroCoordinates: view.heroCoordinates,
     worldSeed: view.worldSeed ?? 'local',
     engagement: view.engagement,
+    questEntrances: cached?.mapId === view.mapId ? cached.questEntrances : undefined,
   });
 }
 
@@ -73,12 +80,16 @@ export interface ServerStepOutcome {
 }
 
 export async function stepOnServerWorld(
-  at: { locationKey: LocationKey; mapId: string; from: IHexCoordinates; map: HexMapModel },
+  at: { locationKey: LocationKey; mapId: string; map: HexMapModel; holds: () => boolean },
   target: IHexCoordinates,
 ): Promise<ServerStepOutcome> {
   await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
-  const result = await sendWorldStep(target);
+  const result = await sendWorldCommand('WORLD_STEP', { expectedMapId: at.mapId, target });
   if (!result.ok) return { ok: false, code: result.code, ambush: null, changed: [] };
+  if (!at.holds()) {
+    evictStaleServerWorld(at.locationKey, at.mapId);
+    return { ok: false, code: MAP_MISMATCH, ambush: null, changed: [] };
+  }
   const changed = applyTileDiffs(at.map, result.tileDiffs, Date.now());
   const ambushed = result.events.some((event) => event.type === 'AMBUSH');
   return { ok: true, ambush: ambushed ? result.engagement : null, changed };
@@ -187,7 +198,7 @@ export async function tickServerWorld(
   client: WorldClientHint,
 ): Promise<WorldCommandResult> {
   await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
-  return sendWorldCommand('WORLD_TICK', { client });
+  return sendWorldCommand('WORLD_TICK', { expectedMapId: at.mapId, client });
 }
 
 export async function actOnServerWorld(
@@ -197,6 +208,7 @@ export async function actOnServerWorld(
 ): Promise<WorldCommandResult> {
   await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
   return sendWorldCommand('WORLD_ACTION', {
+    expectedMapId: at.mapId,
     coordinates: {
       columnIndex: action.coordinates.columnIndex,
       rowIndex: action.coordinates.rowIndex,
@@ -222,7 +234,7 @@ export async function travelOnServer(
             rowIndex: via.coordinates.rowIndex,
           },
         };
-  return sendWorldCommand('WORLD_TRAVEL', { via: body });
+  return sendWorldCommand('WORLD_TRAVEL', { expectedMapId: at.mapId, via: body });
 }
 
 export function installTravelledWorlds(result: WorldCommandResult): LocationKey | null {
@@ -244,5 +256,5 @@ export async function portalCommandOnServer(
   payload: Record<string, unknown> = {},
 ): Promise<WorldCommandResult> {
   await ensurePresence({ locationKey: at.locationKey, mapId: at.mapId });
-  return sendWorldCommand(type, payload);
+  return sendWorldCommand(type, { expectedMapId: at.mapId, ...payload });
 }

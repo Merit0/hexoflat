@@ -12,6 +12,7 @@ interface ImportMetaEnv {
   readonly VITE_AUTH_PASSKEY?: string;
   readonly VITE_SHOP_TRADE_TAB?: string;
   readonly VITE_SEEKER_QUESTS?: string;
+  readonly VITE_DEV_BOARD_PANEL?: string;
   readonly VITE_AUTH_GUARDIAN_SIGNUP?: string;
   readonly VITE_AUTH_PLACEHOLDER_LINKS?: string;
 }

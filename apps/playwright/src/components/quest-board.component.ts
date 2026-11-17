@@ -44,7 +44,7 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async abandon(questId: string): Promise<void> {
-    await this.page.getByTestId(`quest-row-${questId}`).click();
+    await this.page.getByTestId(`quest-row-${questId}`).hover();
     await this.page.getByTestId(`quest-abandon-${questId}`).click();
   }
 
@@ -154,10 +154,10 @@ export class QuestBoardComponent extends BaseComponent {
     await expect(this.card(questId)).not.toContainText(pattern);
   }
 
-  async verifyChips(questId: string, chips: string[]): Promise<void> {
+  async verifyRule(questId: string, phrases: string[]): Promise<void> {
     await this.page.getByTestId(`quest-row-${questId}`).hover();
-    const row = this.page.getByTestId(`quest-chips-${questId}`);
-    for (const chip of chips) await expect(row).toContainText(chip);
+    const rule = this.page.getByTestId(`quest-details-${questId}-rule`);
+    for (const phrase of phrases) await expect(rule).toContainText(phrase);
   }
 
   async verifyRunCard(): Promise<void> {
@@ -169,8 +169,12 @@ export class QuestBoardComponent extends BaseComponent {
   }
 
   async verifyTrail(numbers: number[]): Promise<void> {
-    const expected = numbers.length ? numbers.join(' · ') : '—';
-    await expect(this.page.getByTestId('quest-trail-row')).toContainText(expected);
+    const row = this.page.getByTestId('quest-trail-row');
+    if (!numbers.length) {
+      await expect(row.getByTestId('quest-trail-empty')).toBeVisible();
+      return;
+    }
+    await expect(row.getByTestId('quest-trail-chip')).toHaveText(numbers.map(String));
   }
 
   async verifyRunPhase(phase: string): Promise<void> {
@@ -184,6 +188,23 @@ export class QuestBoardComponent extends BaseComponent {
   async giveUp(): Promise<void> {
     await this.page.getByTestId('quest-give-up').click();
     await this.page.getByTestId('quest-give-up-confirm').click();
+  }
+
+  async verifyLostCard(): Promise<void> {
+    await expect(this.page.getByTestId('quest-run-lost')).toBeVisible();
+    await expect(this.page.getByTestId('quest-run-lost-hint')).toBeVisible();
+    await expect(this.page.getByTestId('quest-leave-map')).toBeVisible();
+    await expect(this.page.getByTestId('quest-return-to-camp')).toHaveCount(0);
+  }
+
+  async leaveMap(): Promise<void> {
+    await this.page.getByTestId('quest-leave-map').click();
+  }
+
+  async readWill(): Promise<number> {
+    const will = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge()?.current);
+    if (will === undefined) throw new Error('No Will to read');
+    return will;
   }
 
   async verifyResult(outcome: string): Promise<void> {

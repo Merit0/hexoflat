@@ -25,6 +25,7 @@ interface HeroToolState {
   isLocked: boolean;
   lockedTile: HexTileModel | null;
   lockedUntil: number | null;
+  holds: number;
 
   treesCut: number;
   stoneCollected: number;
@@ -46,6 +47,7 @@ export const useHeroToolStore = defineStore('heroTool', {
     isLocked: false,
     lockedUntil: null,
     lockedTile: null,
+    holds: 0,
 
     durability: 100,
     durabilityMax: 100,
@@ -56,6 +58,7 @@ export const useHeroToolStore = defineStore('heroTool', {
 
   getters: {
     allowedKeySet: (s) => new Set(s.allowedKeys),
+    isBusy: (s) => s.isLocked || s.holds > 0,
     isActive: (s) => (tool: THeroToolKey) => s.activeTool === tool && s.isDragging,
   },
 
@@ -96,6 +99,14 @@ export const useHeroToolStore = defineStore('heroTool', {
       this.isLocked = true;
       this.lockedUntil = untilMs;
       this.lockedTile = tile;
+    },
+
+    holdTool() {
+      this.holds += 1;
+    },
+
+    releaseTool() {
+      this.holds = Math.max(0, this.holds - 1);
     },
 
     unlockTool() {

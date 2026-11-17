@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { offsetToAxial } from '../utils/hex-utils';
 import { ALL_QUESTS } from './all-quests';
 import { questBoardState } from './quest-log';
 import { projectQuestForClient } from './projection';
@@ -17,14 +18,19 @@ describe('QC1 characterization: what the quest chest kept and what the loot adap
     expect(opened.run.phase).toBe('collect');
     expect(opened.progress).toEqual(end.progress);
     expect(opened.events[0]).toMatchObject({
-      type: 'CHEST_OPENED',
+      type: 'CONTAINER_OPENED',
       payload: {
-        heroId: end.progress.knowledge.heroId,
-        questId: 'seeker-1',
-        hex: end.run.chest!.hex,
+        actorId: end.progress.knowledge.heroId,
+        kind: 'quest-chest',
+        hex: offsetToAxial(end.run.chest!.hex),
       },
     });
-    expect({ ...opened.run, phase: 'walking', collect: null }).toEqual(end.run);
+    expect({
+      ...opened.run,
+      phase: 'walking',
+      collect: null,
+      chest: end.run.chest,
+    }).toEqual(end.run);
   });
 
   it('the collect phase still refuses a step back and giving up; OPEN again is refused on the empty chest', () => {

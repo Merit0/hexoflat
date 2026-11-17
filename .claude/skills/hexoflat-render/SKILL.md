@@ -11,7 +11,8 @@ PixiJS renders the board. Vue owns the surrounding DOM and feeds the renderer re
 
 ```
 pixi-app.ts          bootstrap of the Pixi Application
-use-hex-board.ts     the Vue<->Pixi seam; owns all layer lifecycles
+use-hex-board.ts     the Vue<->Pixi seam of the world board; owns all layer lifecycles
+use-observed-board-app.ts  shared Pixi lifecycle of the quest and battle boards (ResizeObserver start, one app, dispose)
 board-camera.ts      world hex size, fit/follow camera, world->screen mapping
 hex-geometry.ts      hex pixel math
 texture-cache.ts     texture reuse; preloadTextures(paths) awaits loads
@@ -55,7 +56,7 @@ Every creature (hero on the map, squads on the dungeon map, heroes and enemies o
 
 ## The quest field (Q4)
 
-`render/quest/use-quest-board.ts` is a third seam (like the battle board): it fits a fixed radius-6 hexagon (`fieldWorldRect`) and syncs one layer, `layers/quest-numbers-layer.ts` (fog, floor, numbers, gold hint, footprints, blue step frames with a hover price, path line, chest, hero token). It redraws everything from the pure `QuestFieldModel`; never read stores in the layer. Add new always-needed sprites to `questLayerAssetPaths`.
+`render/quest/use-quest-board.ts` is a third seam (like the battle board): it fits the field (`fieldWorldRect`: fog, open hexes, border and terrain) and syncs one layer, `layers/quest-numbers-layer.ts` (fog, origin terrain from `model.terrain` drawn with `terrainLook` and never fogged, floor, numbers, gold hint, footprints, chest, door, ground stacks; hero token in its own layer). The field of a new run is a clone of the origin map (~400 tiles on Silesia), so the layer keeps every tile in a map keyed by category + hex with a content signature and rebuilds only the tiles whose signature changed (a full rebuild per projection was slow and could destroy the tile between pointerdown and pointerup). Build it from the pure `QuestFieldModel`; never read stores in the layer. Add new always-needed sprites to `questLayerAssetPaths`.
 
 ## The contract
 
@@ -98,6 +99,8 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 
 "Vue mounted" is a much weaker signal than "the board is interactive" — Pixi init and the pane measurement both resolve asynchronously afterwards. `onBoardReady` fires once the renderer has presented its first frame with every layer synced, and drives the `data-ready` attribute the e2e suite waits on. Anything that needs a usable board must wait for this, not for `onMounted`.
 
+**Render stats for e2e (M3, 2026-11-16):** `render/render-stats.ts` counts live board apps (`createHexBoardApp` calls `trackBoardApp`, its `destroy` releases once), reads `Ticker.shared.count`, and asks the world `hero-layer` whether its token reached its hex (`registerHeroToken`, the newest board wins, a late unregister of the old one is ignored). The hook `getRenderStats()` exposes it. A new board factory must go through `createHexBoardApp`, and a layer with a long-lived shared-ticker listener raises the idle baseline the e2e guard compares with, so remove listeners when idle.
+
 ## Checklist before finishing
 
 - [ ] New visual = new layer file + `UseHexBoardOptions` entry + lifecycle wiring
@@ -117,4 +120,35 @@ Pane measurement has the same race the old tile probe had: a single read can lan
 
 ## Walk onto a grave before the loot flies (L5, 2026-11-14)
 
-`GRAVE_LOOTED` becomes a `walk` step in `battle-animation-plan.ts` (from the entry hex to the grave, `BATTLE_TIMING.stepMs`; none when `nothing: true`, `rewind` puts the hero back on `from`). The flight is shifted by `graveWalkLeadMs` through `lootSchedule(count, leadMs)` / `planLootFlights(played, leadMs)`, so walk plus flight stay inside `LOOT_TIMING.maxTotalMs` (800); items stay hidden from the first frame (`pending`).
+`CONTAINER_OPENED` (kind grave, `actorId`) becomes a `walk` step in `battle-animation-plan.ts` (from the entry hex to the grave, `BATTLE_TIMING.stepMs`; none when `nothing: true`, `rewind` puts the hero back on `from`). The flight is shifted by `graveWalkLeadMs` through `lootSchedule(count, leadMs)` / `planLootFlights(played, leadMs)`, so walk plus flight stay inside `LOOT_TIMING.maxTotalMs` (800); items stay hidden from the first frame (`pending`).
+
+## Loot on the quest field (QC2, 2026-11-14)
+
+`use-quest-board.ts` owns a `loot-flight-layer` (above the quest layer) and plays `lootFlightRequest`; `quest-numbers-layer.ts` takes `isHidden(key)` (`isLootFlightPending`) so landing stacks stay hidden until the flight lands, then `resync()`. Empty chest = `EMPTY_CHEST_ALPHA` (0.45), hero token is added after the chest so it stands above it. The canvas `data-ready` is ANDed with `!lootFlying`.
+
+## Quest tool overlay (2026-11-15)
+
+The quest field uses the same `board-overlay-layer.vue` and `tool-hex-anchor.vue` as the world for camera translation, screen hex sizing, left/right flip and the 120 ms position transition. `quest-tool-hex.vue` only supplies its icon/action/working state. Do not restore quest-specific `worldToScreen` positioning or nearest-pointer orbit logic.
+
+- Treasure Seeker world entry (2026-11-15): the field draws a camping-door object at `questExitHex(start)`. Camera bounds include one neighbouring ring outside the radius-6 field so that door remains visible. It is not part of the generated number trail. The field model's `exit` supplies hover/tool geometry; click still only walks, the hand enters the portal.
+
+- Gate lock labels resolve the shared object action destination (legacy `enter` remains supported), so action-defined WORLD destinations use the same sealing countdown.
+
+- Quest borders (2026-11-15): `QuestFieldModel.border` is a radius-7 ring outside the radius-6 numbered field, using existing tree/rock sprites with one camping-door replacement. Preload border assets. All quest tiles report pointer hover; only walkable cells report taps. Border blockers are informational and do not dispatch resource actions.
+
+## One active gameplay renderer (2026-11-15)
+
+`hex-world-map.vue` is the persistent shell. `gameplay-board-host.vue` uses exclusive `v-if` branches for world (`world-map-board.vue`), quest and battle. Never keep a hidden world canvas mounted beneath another board. Each renderer disposes its Pixi app, listeners and effects on unmount. The world camera takes the persistent stage element to preserve pane sizing. Test hooks obtain world camera/readiness through the host. `ActiveBoardComponent` asserts one canvas in browser transitions.
+
+Seeker floor, border, exit and background come from `QuestProjection.board`, produced by the registered engine recipe `treasure-seeker-map`. `quest-field-model.ts` adapts this public projection; do not regenerate geometry in the frontend. World and quest use the single shared hex-info tooltip with active-map object lookup; battle retains its specialized tooltip.
+
+Map answer colors (2026-11-15): `buildQuestField` maps the server's final `answerReview` mask to path hex coordinates as `answerCorrect`; `quest-numbers-layer` renders those numbers green/red with a dark outline, overriding hint styling. Unchosen hexes and paths without a review retain their normal number style.
+
+Quest camera scale (2026-11-16): the board host supplies the saved world frame to `quest-field-area.vue`; `useQuestBoard` reuses `fitAtReferenceZoom`, as battles do, instead of fitting a separate quest zoom. The shared helper accepts optional hero focus for clamped following on larger fields. Quest offsets use the same pixel snapping as the world, and reference/viewport changes re-fit without mounting a background canvas. Browser entry checks compare actual screen spacing between adjacent world and quest hexes.
+
+## Board app lifecycle and shared-ticker animations (2026-11-16)
+
+- **Quest and battle boards start Pixi only through `useObservedBoardApp`** (`render/use-observed-board-app.ts`): a `starting` guard so a `ResizeObserver` callback during `app.init` or texture preload never creates a second `Application` on the same canvas, the latest pane size goes to `onStart`, an app that finishes after unmount is destroyed, and `onDispose` (layers, e2e probe) runs before `app.destroy()`. Pass preloads as `prepare`. Never add another `if (pixi) fit() else start()` copy. The world board keeps its own `onMounted` start (pane polling in `useBoardCamera`). Tests: `use-observed-board-app.test.ts`.
+- **A layer that runs a tween on `Ticker.shared` must cancel it in `destroy()` and before replacing it.** A destroyed Pixi `Container` has `position === null`; a frame that still touches it throws, the handler never removes itself, and every later `Ticker.shared` listener (hero walk tween, portal tweens, loot flights) stops running, which also leaves `portalFxBusy` stuck and blocks walking. `loot-flight-layer.ts` keeps its `Tween`, cancels it in `clear()`/`destroy()`, and lands nothing once destroyed (`loot-flight-layer.test.ts`). Follow-ups are in `docs/architecture/map-architecture-improvement-plan.md`.
+- **Nothing from a board survives its unmount (MAPFIX-3, 2026-11-16).** `runTween` catches a throwing frame (removes its handler, settles `done`, logs once); every shared-ticker tween should go through it (`hero-layer.tweenTo` does). Portal holds are tokens with tracked timers, cleared by the board's `registerPortalFx` unregister. Every board dispose calls `finishLootFlights()` (battle: `graveFlights.cancel()`). A new module-level timer or busy flag driven by a board must be reset by that board's dispose; guard with a mount/unmount test like `use-hex-board.lifecycle.test.ts` (warm Vue up with `createApp(Board)` in `beforeAll`, or its devtools-hook timer counts as pending).
+- **Ticker subscriptions go through one helper (MAPFIX-3b, 2026-11-17).** Never call `ticker.add`/`addOnce` (shared or app ticker) in `render/`; use `subscribeTicker(ticker, callback, { source, priority?, once?, onFailure? })` from `render/ticker-subscription.ts`, keep the returned unsubscribe as the owner's handle and null it in `onFailure`. A throwing callback is removed and logged once (`[ticker] <source> …`); every other listener keeps running. `render/ticker-guard.test.ts` enforces this (test files may still add raw listeners).

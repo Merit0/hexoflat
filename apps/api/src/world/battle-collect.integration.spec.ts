@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { EHexActionTypeForTests, deserializeWorld, serializeWorld } from './world-test-support';
+import {
+  EHexActionTypeForTests,
+  deserializeWorld,
+  onHeldMap,
+  placeHeroIn,
+  serializeWorld,
+} from './world-test-support';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
@@ -11,6 +17,11 @@ import {
 } from '../expedition/expedition-store';
 import { createTestKit, envelope, type TestKit } from '../player/player-test-kit';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
+import {
+  LOOT_TABLES,
+  SKELETON_WARRIOR_TABLE_ID,
+} from '@hexoflat/engine/content/loot-tables.content';
+import { lootTableSchema } from '@hexoflat/engine/loot/loot-table';
 import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
 import { itemLedger } from '../db/schema';
@@ -37,19 +48,20 @@ describe.skipIf(!dbAvailable)('battle close and restore as they are (real Postgr
     type: string,
     payload: Record<string, unknown>,
   ): Promise<WorldResponse> {
-    const revision = (await kit.service.snapshot(userId, heroId)).aggregates.progress!.revision;
+    const progress = (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
     return world.execute(userId, {
       commandId: randomUUID(),
       heroId,
       aggregate: 'progress',
-      expectedRevision: revision,
-      command: { type, payload: { heroId, ...payload } },
+      expectedRevision: progress.revision,
+      command: { type, payload: { heroId, ...onHeldMap(type, payload, progress.state) } },
     });
   }
 
   async function openBattle() {
     const { userId, heroId } = await kit.newPlayer();
     await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
+    await placeHeroIn(world, userId, heroId, 'cave');
     await send(userId, heroId, 'WORLD_ENTER', { locationKey: 'cave' });
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);
     const presence = (
@@ -120,12 +132,21 @@ describe.skipIf(!dbAvailable)('battle close and restore as they are (real Postgr
 
   describe('with grave loot on', () => {
     const originalRules = BATTLE_RULES;
+    const tables = LOOT_TABLES as Record<string, unknown>;
+    const realWarriorTable = tables[SKELETON_WARRIOR_TABLE_ID];
 
     beforeAll(() => {
       world.battleRules = { ...originalRules, graveLootEnabled: true };
+      tables[SKELETON_WARRIOR_TABLE_ID] = lootTableSchema.parse({
+        id: SKELETON_WARRIOR_TABLE_ID,
+        rolls: [1, 1],
+        guaranteed: [{ itemKey: HEXOBJECT_KEYS.COINS, amount: [5, 5] }],
+        entries: [{ itemKey: HEXOBJECT_KEYS.COINS, weight: 1, amount: [1, 1] }],
+      });
     });
     afterAll(() => {
       world.battleRules = originalRules;
+      tables[SKELETON_WARRIOR_TABLE_ID] = realWarriorTable;
     });
 
     interface Collected {

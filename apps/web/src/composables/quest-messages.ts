@@ -1,4 +1,5 @@
 import { i18n } from '@/i18n';
+import { questLootRefusalKey } from '@/services/quests/quest-loot';
 import type { QuestRefusal } from '@hexoflat/engine/quests/quest-definition';
 
 export function questRefusalText(reason: string): string {
@@ -18,6 +19,10 @@ export function questRefusalText(reason: string): string {
     NO_INVENTORY: () => t('quest.refusal.NO_INVENTORY'),
   };
   const seeker: Record<string, () => string> = {
+    NOT_AT_QUEST_ENTRANCE: () => t('quest.refusal.NOT_AT_QUEST_ENTRANCE'),
+    QUEST_SUSPENDED: () => t('quest.refusal.QUEST_SUSPENDED'),
+    OTHER_QUEST_SUSPENDED: () => t('quest.refusal.OTHER_QUEST_SUSPENDED'),
+    NO_ROOM_FOR_TRAIL: () => t('quest.refusal.NO_ROOM_FOR_TRAIL'),
     QUEST_IN_PROGRESS: () => t('quest.refusal.QUEST_IN_PROGRESS'),
     NOT_ADJACENT: () => t('quest.refusal.NOT_ADJACENT'),
     HEX_NOT_REVEALED: () => t('quest.refusal.HEX_NOT_REVEALED'),
@@ -27,11 +32,15 @@ export function questRefusalText(reason: string): string {
     WRONG_PHASE: () => t('quest.refusal.WRONG_PHASE'),
     BATTLE_OPEN: () => t('quest.refusal.BATTLE_OPEN'),
     NO_RUN: () => t('quest.refusal.NO_RUN'),
+    HEX_BLOCKED: () => t('quest.refusal.HEX_BLOCKED'),
+    NO_LOOT_THERE: () => t('quest.refusal.NO_LOOT_THERE'),
     OFFLINE: () => t('quest.refusal.OFFLINE'),
   };
+  const lootKey = questLootRefusalKey(reason);
   return (
     seeker[reason]?.() ??
     (known as Record<string, (() => string) | undefined>)[reason]?.() ??
+    (lootKey ? t(lootKey) : undefined) ??
     t('quest.refusal.OTHER')
   );
 }

@@ -1,3 +1,4 @@
+import { formSeekerField, boundsSeekerBorder, gatesSeekerCamp } from './pieces/seeker-field';
 import type { ZodType } from 'zod';
 import type { StageName } from '../../content/boards/recipe-schema';
 import {
@@ -24,7 +25,12 @@ import type { CheckResult, Piece } from './types';
 
 export type PieceRegistry<TResult = void> = Record<string, Piece<unknown, TResult>>;
 
-export const FORM: PieceRegistry = { drawing: formDrawing, blobs: formBlobs, hexagon: formHexagon };
+export const FORM: PieceRegistry = {
+  drawing: formDrawing,
+  blobs: formBlobs,
+  hexagon: formHexagon,
+  'seeker-field': formSeekerField,
+};
 export const RELIEF: PieceRegistry = {
   drawing: reliefDrawing,
   lake: reliefLake,
@@ -32,8 +38,17 @@ export const RELIEF: PieceRegistry = {
   sea: reliefSea,
   'battle-features': reliefBattleFeatures,
 };
-export const BOUNDS: PieceRegistry = { void: boundsVoid, wall: boundsWall };
-export const GATES: PieceRegistry = { drawing: gatesDrawing, entry: gatesEntry, exits: gatesExits };
+export const BOUNDS: PieceRegistry = {
+  void: boundsVoid,
+  wall: boundsWall,
+  'seeker-border': boundsSeekerBorder,
+};
+export const GATES: PieceRegistry = {
+  drawing: gatesDrawing,
+  entry: gatesEntry,
+  exits: gatesExits,
+  'seeker-camp': gatesSeekerCamp,
+};
 export const OBJECTS: PieceRegistry = {
   drawing: objectsDrawing,
   rules: objectsRules,

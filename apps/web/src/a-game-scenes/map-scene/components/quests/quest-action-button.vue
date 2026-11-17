@@ -1,7 +1,7 @@
 <template>
   <span class="shape" :class="[`v-${variant}`, { 'is-disabled': disabled, 'is-compact': compact }]">
     <button
-      v-if="variant !== 'counter'"
+      v-if="variant !== 'counter' || interactive"
       type="button"
       class="face"
       :disabled="disabled"
@@ -22,8 +22,9 @@ withDefaults(
     variant?: 'steel' | 'claim' | 'counter' | 'main';
     disabled?: boolean;
     compact?: boolean;
+    interactive?: boolean;
   }>(),
-  { variant: 'steel', disabled: false, compact: false },
+  { variant: 'steel', disabled: false, compact: false, interactive: false },
 );
 </script>
 

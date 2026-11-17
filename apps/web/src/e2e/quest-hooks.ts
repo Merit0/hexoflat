@@ -50,6 +50,10 @@ export const questTestApi = {
     if (!run) return null;
     const model = buildQuestField(run);
     return {
+      exit: model.exit,
+      border: model.border,
+      terrain: model.terrain.map(({ hex, terrain }) => ({ hex, terrain })),
+      fog: model.fog.map((hex) => ({ columnIndex: hex.columnIndex, rowIndex: hex.rowIndex })),
       phase: run.phase,
       outcome: run.outcome,
       position: run.position,
@@ -57,6 +61,12 @@ export const questTestApi = {
       pathHexes: run.path.map((step) => step.hex),
       hintHex: run.hintHex,
       chest: run.chest ? run.chest.hex : null,
+      chestEmpty: model.chestEmpty,
+      ground: model.ground.map((stack) => ({
+        hex: stack.hex,
+        itemKey: stack.itemKey,
+        quantity: stack.amount,
+      })),
       stepCost: run.stepCost,
       backCost: run.backCost,
       hexes: model.hexes.map((cell) => ({

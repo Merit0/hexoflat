@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { TREASURE_SEEKER_MAP_KEY } from '@hexoflat/engine/registry/quest-map-key';
 import { useUserStore } from '@/stores/user-store';
 
 const LoginPage = () => import('@/a-game-scenes/login-scene/components/login-view.vue');
@@ -11,6 +12,7 @@ export const ROUTES = {
   LOGIN: 'login',
   REGISTER: 'register',
   WORLD: 'world',
+  QUEST_MAP: 'quest-map',
   BATTLE: 'battle',
   DEV_BATTLEFIELD: 'dev-battlefield',
 } as const;
@@ -43,6 +45,12 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.REGISTER,
     redirect: { name: ROUTES.LOGIN, query: { mode: 'new' } },
     meta: { requiresAuth: false },
+  },
+  {
+    path: `/world/${TREASURE_SEEKER_MAP_KEY}`,
+    name: ROUTES.QUEST_MAP,
+    component: HexWorldMap,
+    meta: { requiresAuth: true },
   },
   {
     path: '/world/:locationKey?',

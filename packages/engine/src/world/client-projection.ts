@@ -14,10 +14,30 @@ function squadOf(tile: object): { creature: Record<string, unknown>; squad: Squa
   return creature && squad && Array.isArray(squad.members) ? { creature, squad } : null;
 }
 
-export function projectTileForClient<T extends object>(tile: T): T {
-  const found = squadOf(tile);
-  if (!found || found.creature.scouted === true || found.squad.members.length <= 1) return tile;
+function withoutLootTable<T extends object>(tile: T): T {
+  const construction = (
+    (tile as { hexobject?: unknown }).hexobject as { construction?: Record<string, unknown> } | null
+  )?.construction;
+  if (!construction || !('lootTableId' in construction)) return tile;
   const copy = structuredClone(tile);
+  const hidden = (copy as { hexobject: { construction: Record<string, unknown> } }).hexobject;
+  delete hidden.construction.lootTableId;
+  return copy;
+}
+
+function withoutContainer<T extends object>(tile: T): T {
+  const object = (tile as { hexobject?: unknown }).hexobject as Record<string, unknown> | null;
+  if (!object || !('container' in object)) return tile;
+  const copy = structuredClone(tile);
+  delete (copy as { hexobject: Record<string, unknown> }).hexobject.container;
+  return copy;
+}
+
+export function projectTileForClient<T extends object>(tile: T): T {
+  const clean = withoutContainer(withoutLootTable(tile));
+  const found = squadOf(clean);
+  if (!found || found.creature.scouted === true || found.squad.members.length <= 1) return clean;
+  const copy = structuredClone(clean);
   const hidden = squadOf(copy)!.squad;
   const leader = hidden.members[0];
   hidden.members = hidden.members.map(() => leader);

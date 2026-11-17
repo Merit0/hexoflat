@@ -40,10 +40,8 @@ describe('REQ-QST-006 the trail on a board', () => {
             .map(coordinateKey)
             .filter((key) => keys.includes(key)),
         ).toEqual([coordinateKey(last)]);
-        const freeAroundChest = getHexNeighbors(chestHex).filter(
-          (hex) => floor.has(coordinateKey(hex)) && coordinateKey(hex) !== coordinateKey(last),
-        );
-        expect(freeAroundChest.length).toBeGreaterThanOrEqual(3);
+        const aroundChest = getHexNeighbors(chestHex);
+        expect(aroundChest.every((hex) => floor.has(coordinateKey(hex)))).toBe(true);
         for (const hex of trail) {
           const free = getHexNeighbors(hex).filter((n) => {
             const key = coordinateKey(n);

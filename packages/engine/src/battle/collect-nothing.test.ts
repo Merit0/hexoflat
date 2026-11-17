@@ -12,11 +12,12 @@ import {
   stepTo,
   warrior,
   won,
+  setGraveTables,
 } from './collect-test-setup';
 
 function emptyGrave(board = hexagonBoard()) {
   const state = won([warrior('s1', TARGET)], { board });
-  state.collect!.graves[0].tables = [NOTHING_FIXTURE_TABLE_ID];
+  setGraveTables(state, 0, [NOTHING_FIXTURE_TABLE_ID]);
   return state;
 }
 
@@ -27,7 +28,7 @@ describe('REQ-LOOT-100 a grave with an empty loot list', () => {
     expect(creatureById(looted.battle, 'hero')!.pos).toEqual(ORIGIN);
     expect(looted.battle.collect!.graves[0].examined).toBe(true);
     expect(looted.battle.collect!.items).toEqual([]);
-    expect(looted.events.map((event) => event.type)).toEqual(['GRAVE_LOOTED']);
+    expect(looted.events.map((event) => event.type)).toEqual(['CONTAINER_OPENED']);
     expect(looted.events[0].payload).toMatchObject({ placed: [], toBag: [], nothing: true });
     expect(looted.inventory!.revision).toBe(0);
   });
@@ -41,7 +42,7 @@ describe('REQ-LOOT-100 a grave with an empty loot list', () => {
 
   it('keeps an examined grave non-enterable and refuses a second eye without a change', () => {
     const looted = play(emptyGrave(), lootAt(TARGET));
-    expectRefused(looted.battle, lootAt(TARGET), 'GRAVE_EMPTY');
+    expectRefused(looted.battle, lootAt(TARGET), 'CONTAINER_EMPTY');
     expectRefused(looted.battle, stepTo(TARGET), 'HEX_BLOCKED');
   });
 
@@ -52,7 +53,7 @@ describe('REQ-LOOT-100 a grave with an empty loot list', () => {
 
   it('a grave with no table at all gives the same answer', () => {
     const state = emptyGrave();
-    state.collect!.graves[0].tables = [];
+    setGraveTables(state, 0, []);
     const looted = play(state, lootAt(TARGET));
     expect(looted.events[0].payload).toMatchObject({ nothing: true });
   });

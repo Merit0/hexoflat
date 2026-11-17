@@ -1,9 +1,13 @@
 import type { ProgressState } from '../aggregates/progress-state';
+import { questAnswerReview } from './quest-answer-review';
+import { resolveSeekerPath } from './resolve-seeker-path';
 import type { DomainEvent } from '../commands/types';
+import { createContainer } from '../containers';
+import { lootTableOf } from '../content/loot-tables.content';
 import { spendWill } from '../knowledge/will';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { deriveStream } from '../utils/random-seeded';
-import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, offsetToAxial } from '../utils/hex-utils';
 import { expectedNumber, revealRing, type RevealedHex } from './numbers';
 import type { QuestCatalogue } from './quest-definition';
 import {
@@ -11,12 +15,14 @@ import {
   positionOf,
   type QuestRun,
   type SeekerBoard,
+  type SeekerField,
   type SeekerOutcome,
 } from './quest-state';
 import { generateSequence } from './sequences/generate';
 import { RULES, continueFrom, type RuleRegistry } from './sequences/rules';
 import { generateTrail } from './trail';
 import { seekerCollectStep } from './seeker-chest';
+import { SEEKER_RULES } from './seeker-content';
 import { reject, type SeekerResult } from './seeker-result';
 
 export { seekerOpenChest, seekerPickup } from './seeker-chest';
@@ -24,6 +30,7 @@ export { SEEKER_REFUSALS, type SeekerRefusal, type SeekerResult } from './seeker
 
 export interface SeekerOptions {
   registry?: RuleRegistry;
+  ambushEnabled?: boolean;
 }
 
 function revealedEvent(heroId: string, offerId: string, hexes: RevealedHex[]): DomainEvent {
@@ -48,6 +55,7 @@ export function enterQuest(
     seed: string;
     board: SeekerBoard;
     start: IHexCoordinates;
+    field?: SeekerField;
     atBoard: boolean;
     hasRun: boolean;
   },
@@ -81,7 +89,7 @@ export function enterQuest(
     params.steps,
     deriveStream(input.seed, `quest:${input.questId}:trail`),
   );
-  if (!trail) throw new Error('TRAIL_GENERATION_FAILED');
+  if (!trail) return reject(progress, input.questId, 'NO_ROOM_FOR_TRAIL');
 
   const run: QuestRun = {
     offerId: input.questId,
@@ -90,6 +98,7 @@ export function enterQuest(
     terms: sequence.terms,
     trail: trail.trail,
     chestHex: trail.chestHex,
+    chestLootTableId: params.chestLootTableId,
     start: input.start,
     stepCost: params.stepCost,
     backMultiplier: params.backMultiplier,
@@ -108,6 +117,7 @@ export function enterQuest(
     collect: null,
     phase: 'walking',
     outcome: null,
+    ...(input.field ? { field: input.field } : {}),
   };
   const ring = revealRing(run, input.board, registry).hexes;
   mergeRevealed(run, ring);
@@ -131,15 +141,21 @@ function finish(
 ): { progress: ProgressState; events: DomainEvent[] } {
   const next = structuredClone(progress);
   next.quests.active = next.quests.active.filter((entry) => entry.questId !== run.offerId);
-  if (outcome === 'treasure') {
+  if (run.resolution) {
+    outcome = run.resolution;
+    reason = outcome === 'treasure' ? null : 'TREASURE_LOST';
+  }
+  if (outcome === 'treasure' && !run.resolution) {
     next.quests.done[run.offerId] = (next.quests.done[run.offerId] ?? 0) + 1;
   }
+  const answerReview = questAnswerReview(run);
   run.phase = 'ended';
   run.outcome = outcome;
   const heroId = next.knowledge.heroId;
   const recap = {
     numbers: run.path.map((step) => step.number),
     firstDeviation: run.firstDeviation,
+    ...(answerReview ? { answerReview } : {}),
   };
   const closing: DomainEvent =
     reason === null
@@ -161,7 +177,7 @@ function strandedCheck(
   progress: ProgressState,
   run: QuestRun,
 ): { progress: ProgressState; events: DomainEvent[] } | null {
-  if (run.chest || progress.knowledge.current >= run.stepCost) return null;
+  if (run.chest || run.phase === 'lost' || progress.knowledge.current >= run.stepCost) return null;
   return finish(progress, run, 'stranded', 'STRANDED');
 }
 
@@ -182,12 +198,40 @@ function placeLure(run: QuestRun, board: SeekerBoard): IHexCoordinates | null {
   return options[Math.floor(random() * options.length)];
 }
 
-function showChest(run: QuestRun, board: SeekerBoard, events: DomainEvent[], heroId: string): void {
+function showChest(
+  run: QuestRun,
+  board: SeekerBoard,
+  events: DomainEvent[],
+  heroId: string,
+  ambushEnabled: boolean,
+): void {
   if (run.path.length < run.terms.length && run.lines.length === 0) return;
   const real = run.lines.length === 0;
+  if (!real && !ambushEnabled) {
+    run.phase = 'lost';
+    events.push({
+      type: 'QUEST_LOST',
+      payload: { heroId, questId: run.offerId, reason: 'TREASURE_LOST' },
+    });
+    return;
+  }
   const hex = real ? run.chestHex : placeLure(run, board);
   if (!hex) return;
   run.chest = { hex, kind: real ? 'real' : 'lure', appearedAtStep: run.path.length };
+  if (real && run.chestLootTableId) {
+    const container = createContainer({
+      id: coordinateKey(hex),
+      kind: 'quest-chest',
+      at: offsetToAxial(hex),
+      tables: [lootTableOf(run.chestLootTableId)],
+      seed: run.seed,
+      sourceId: run.seed,
+      targetKey: coordinateKey(hex),
+    });
+    const drop = container.contents?.[0] ?? [];
+    if (drop.length === 0) throw new Error(`CHEST_DROP_EMPTY:${run.chestLootTableId}`);
+    run.chest.container = container;
+  }
   events.push({ type: 'CHEST_APPEARED', payload: { heroId, questId: run.offerId, hex } });
 }
 
@@ -251,7 +295,9 @@ export function seekerStep(
   mergeRevealed(run, ring.hexes);
   events.push(revealedEvent(heroId, run.offerId, ring.hexes));
   const falseDeadEnd = run.lines.length > 0 && position < run.terms.length && !ring.continuation;
-  if (falseDeadEnd || position >= run.terms.length) showChest(run, board, events, heroId);
+  if (falseDeadEnd || position >= run.terms.length)
+    showChest(run, board, events, heroId, options.ambushEnabled ?? SEEKER_RULES.ambushEnabled);
+  events.push(...resolveSeekerPath(next, run));
   const stranded = strandedCheck(next, run);
   if (stranded)
     return { ok: true, progress: stranded.progress, run, events: [...events, ...stranded.events] };
@@ -266,7 +312,8 @@ export function seekerStepBack(
 ): SeekerResult {
   void options;
   void board;
-  if (source.phase !== 'walking') return reject(progress, source, 'WRONG_PHASE');
+  if (source.phase !== 'walking' || source.resolution)
+    return reject(progress, source, 'WRONG_PHASE');
   if (source.path.length === 0) return reject(progress, source, 'NOTHING_TO_STEP_BACK');
   const cost = source.stepCost * source.backMultiplier;
   const have = progress.knowledge.current;
@@ -323,10 +370,14 @@ export function seekerStepBack(
 }
 
 export function seekerGiveUp(progress: ProgressState, source: QuestRun): SeekerResult {
-  if (source.phase !== 'walking' && source.phase !== 'ambush') {
+  if (source.phase !== 'walking' && source.phase !== 'ambush' && source.phase !== 'lost') {
     return reject(progress, source, 'WRONG_PHASE');
   }
   const run = structuredClone(source);
+  if (run.phase === 'lost') {
+    const lost = finish(progress, run, 'lost', 'TREASURE_LOST');
+    return { ok: true, progress: lost.progress, run, events: lost.events };
+  }
   const closing = finish(progress, run, 'left', 'LEFT');
   return { ok: true, progress: closing.progress, run, events: closing.events };
 }

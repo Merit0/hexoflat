@@ -32,6 +32,7 @@ export interface BoardDraft {
 export interface PieceContext {
   recipe: BoardRecipe;
   seed: string;
+  sourceSeed?: string;
   params: Record<string, unknown>;
   rng: SeededRandom;
 }

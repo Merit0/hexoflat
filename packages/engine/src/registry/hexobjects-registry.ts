@@ -33,6 +33,7 @@ export const HEXOBJECT_KEYS = {
   TRADER_STALL: 'trader-stall',
   TRAINING_GROUNDS: 'training-grounds',
   QUEST_BOARD: 'quest-board',
+  TREASURE_MAP: 'treasure-map',
   STONE_WALL: 'stone-wall',
   RETURN_SCROLL: 'return-scroll',
   RETURN_PORTAL: 'return-portal',

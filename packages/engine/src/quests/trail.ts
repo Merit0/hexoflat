@@ -9,7 +9,6 @@ export interface Trail {
 }
 
 const MIN_FREE_AROUND_TRAIL = 2;
-const MIN_FREE_AROUND_CHEST = 3;
 const MAX_ATTEMPTS = 400;
 
 function shuffled<T>(items: readonly T[], random: RandomNumberGenerator): T[] {
@@ -82,10 +81,7 @@ function pickChestHex(
     const neighbors = getHexNeighbors(hex);
     const touchesTrail = neighbors.filter((n) => trailKeys.has(coordinateKey(n)));
     if (touchesTrail.length !== 1) return false;
-    const free = neighbors.filter(
-      (n) => board.has(coordinateKey(n)) && coordinateKey(n) !== coordinateKey(last),
-    );
-    return free.length >= MIN_FREE_AROUND_CHEST;
+    return neighbors.every((n) => board.has(coordinateKey(n)));
   });
   return candidates.length === 0 ? null : shuffled(candidates, random)[0];
 }
@@ -114,9 +110,11 @@ export function generateTrail(
   start: IHexCoordinates,
   length: number,
   random: RandomNumberGenerator,
+  stats?: { attempts: number },
 ): Trail | null {
   const floor = floorKeys(board);
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    if (stats) stats.attempts = attempt + 1;
     const trail = walk(floor, start, length, random);
     if (!trail) continue;
     const chestHex = pickChestHex(floor, trail, start, random);

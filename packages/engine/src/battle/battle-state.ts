@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { containerStateSchema } from '../containers/container';
 
 export const axialSchema = z.object({ q: z.number().int(), r: z.number().int() });
 export type BattleHex = z.infer<typeof axialSchema>;
@@ -111,6 +112,7 @@ export const graveSchema = z.object({
   hex: axialSchema,
   tables: z.array(z.string().min(1)),
   examined: z.boolean(),
+  container: containerStateSchema.optional(),
 });
 export type Grave = z.infer<typeof graveSchema>;
 

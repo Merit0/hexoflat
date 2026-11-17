@@ -5,6 +5,8 @@ import {
   AGGREGATE_KINDS,
   WORLD_COMMAND_SCHEMAS,
   actWorld,
+  installQuestEntrances,
+  parseQuestRunDoc,
   battleWorld,
   createServerWorld,
   deserializeWorld,
@@ -30,6 +32,8 @@ import {
   type WorldRun,
   closePortalWorld,
   enterPortalWorld,
+  enterRefusal,
+  relocateFixtureSchema,
   openPortalWorld,
   travelWorld,
 } from '@hexoflat/engine';
@@ -38,6 +42,7 @@ import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { BATTLE_RULES, type BattleRules } from '@hexoflat/engine/battle/battle-content';
 import { applyBattleFixture, battleFixtureSchema } from '@hexoflat/engine/battle/battle-fixtures';
 import { applyWorldFixture, worldFixtureSchema } from '@hexoflat/engine/world/world-fixtures';
+import { mapRefusal } from '@hexoflat/engine/world/map-guard';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
@@ -52,6 +57,7 @@ import {
 import { HeroesService } from '../heroes/heroes.service';
 import {
   createInitialAggregates,
+  loadAggregates,
   loadAggregatesForUpdate,
   projectAggregate,
   type LoadedAggregate,
@@ -118,6 +124,35 @@ async function saveWorld(tx: Tx, expeditionId: string, world: ServerWorld): Prom
     worldKey(world.mapId),
     JSON.stringify(serializeWorld(world)),
   );
+}
+
+async function placeHeroIn(
+  tx: Tx,
+  input: {
+    expeditionId: string;
+    heroId: string;
+    index: Index;
+    locationKey: LocationKey;
+    progress: ProgressState;
+  },
+): Promise<ServerWorld> {
+  const { expeditionId, heroId, index, locationKey, progress } = input;
+  const known = index[locationKey];
+  let world = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
+  if (!world) {
+    const mapId = randomUUID();
+    world = createServerWorld(locationKey, mapId, await expeditionSeed(tx, expeditionId), heroId);
+    index[locationKey] = mapId;
+  }
+  progress.presence = {
+    locationKey,
+    mapId: world.mapId,
+    coordinates: { ...(world.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }) },
+  };
+  installQuestEntrances(world, progress);
+  await saveWorld(tx, expeditionId, world);
+  await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
+  return world;
 }
 
 function clientWorld(world: ServerWorld) {
@@ -249,31 +284,25 @@ export class WorldService {
 
     let world: ServerWorld | null;
     const progressState = structuredClone(progress.state);
-    if (await readServerDocument(tx, expeditionId, 'srv-quest')) {
+    const heldQuest = await readServerDocument(tx, expeditionId, 'srv-quest');
+    if (heldQuest && !parseQuestRunDoc(heldQuest).suspended) {
       await journal('rejected', [], 'QUEST_OPEN', null);
       return respond('rejected', 'QUEST_OPEN', [], [], null);
     }
     if (command.type === 'WORLD_ENTER') {
       const { locationKey } = command.payload;
-      const known = index[locationKey];
-      world = known ? await loadWorld(tx, expeditionId, known, now) : null;
-      if (!world) {
-        const mapId = randomUUID();
-        world = createServerWorld(
-          locationKey,
-          mapId,
-          await expeditionSeed(tx, expeditionId),
-          heroId,
-        );
-        index[locationKey] = mapId;
+      const refused = enterRefusal(progressState.presence, locationKey);
+      if (refused) {
+        await journal('rejected', [], refused, null);
+        return respond('rejected', refused, [], [], null);
       }
-      progressState.presence = {
+      world = await placeHeroIn(tx, {
+        expeditionId,
+        heroId,
+        index,
         locationKey,
-        mapId: world.mapId,
-        coordinates: { ...(world.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 }) },
-      };
-      await saveWorld(tx, expeditionId, world);
-      await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
+        progress: progressState,
+      });
       const saved = await saveAggregate(tx, heroId, 'progress', progress.revision, progressState);
       const events: DomainEvent[] = [
         { type: 'WORLD_ENTERED', payload: { heroId, locationKey, mapId: world.mapId } },
@@ -289,6 +318,11 @@ export class WorldService {
     }
 
     const presence = progressState.presence;
+    const mismatch = mapRefusal(presence, command);
+    if (mismatch) {
+      await journal('rejected', [], mismatch, null);
+      return respond('rejected', mismatch, [], [], null);
+    }
     world = presence ? await loadWorld(tx, expeditionId, presence.mapId, now) : null;
     if (!world || !presence) {
       await journal('rejected', [], 'NO_WORLD', null);
@@ -339,6 +373,7 @@ export class WorldService {
         return respond('rejected', travelled.code, travelled.events, [], world, travelled.effects);
       }
       const { origin, destination, replaced, touched } = travelled;
+      installQuestEntrances(destination, travelled.progress);
       for (const other of touched) await saveWorld(tx, expeditionId, other);
       if (replaced) {
         await deleteServerDocument(tx, expeditionId, worldKey(origin.mapId));
@@ -607,7 +642,13 @@ export class WorldService {
       const index = await readIndex(tx, expeditionId);
       const known = index[locationKey];
       const existing = known ? await loadWorld(tx, expeditionId, known, Date.now()) : null;
-      if (existing) return clientWorld(existing);
+      await createInitialAggregates(tx, heroId);
+      const aggregates = await loadAggregates(tx, heroId, ['progress']);
+      if (existing) {
+        if (installQuestEntrances(existing, aggregates.progress!.state))
+          await saveWorld(tx, expeditionId, existing);
+        return clientWorld(existing);
+      }
       const mapId = randomUUID();
       const created = createServerWorld(
         locationKey,
@@ -615,6 +656,7 @@ export class WorldService {
         await expeditionSeed(tx, expeditionId),
         heroId,
       );
+      installQuestEntrances(created, aggregates.progress!.state);
       await saveWorld(tx, expeditionId, created);
       index[locationKey] = mapId;
       await writeServerDocument(tx, expeditionId, INDEX_KEY, JSON.stringify(index));
@@ -764,6 +806,38 @@ export class WorldService {
       if (!placed) throw new PlayerCommandError('INVALID_COMMAND');
       await saveWorld(tx, expeditionId, world);
       return placed;
+    });
+  }
+
+  async relocateFixture(userId: string, heroId: string, raw: unknown): Promise<unknown> {
+    if (!e2eFixturesEnabled()) throw new PlayerCommandError('FORBIDDEN');
+    const fixture = relocateFixtureSchema.safeParse(raw);
+    if (!fixture.success) throw new PlayerCommandError('INVALID_COMMAND');
+    const hero = await this.heroes.findOwned(heroId, userId);
+    if (!hero) throw new PlayerCommandError('FORBIDDEN');
+    const expeditionId = await ensureExpedition(this.db, userId, heroId);
+    return this.db.transaction(async (tx) => {
+      await lockExpedition(tx, expeditionId);
+      await createInitialAggregates(tx, heroId);
+      const { progress } = await loadAggregatesForUpdate(tx, heroId, ['progress']);
+      if (!progress) throw new Error(`Hero ${heroId} has no progress aggregate`);
+      const state = structuredClone(progress.state);
+      const world = await placeHeroIn(tx, {
+        expeditionId,
+        heroId,
+        index: await readIndex(tx, expeditionId),
+        locationKey: fixture.data.locationKey,
+        progress: state,
+      });
+      const revision = await saveAggregate(tx, heroId, 'progress', progress.revision, state);
+      return {
+        hero: {
+          locationKey: world.locationKey,
+          mapId: world.mapId,
+          coordinates: world.heroCoordinates,
+        },
+        aggregates: { progress: projectAggregate({ ...progress, revision, state }) },
+      };
     });
   }
 }

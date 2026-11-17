@@ -5,8 +5,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useWorldMapStore } from '@/stores/world-map-store';
-import { useBattleStore } from '@/stores/battle-store';
+import { useActiveMapContext } from '@/composables/use-active-map-context';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { useHexHoverInfo } from '@/composables/use-hex-hover-info';
@@ -16,8 +15,7 @@ import HexInfoPopover from './hex-info-popover.vue';
 const i18n = useI18n();
 const t = (key: string, params?: Record<string, unknown>) => i18n.t(key, params ?? {});
 const te = (key: string) => i18n.te(key);
-const worldStore = useWorldMapStore();
-const battleStore = useBattleStore();
+const activeMap = useActiveMapContext();
 const heroToolStore = useHeroToolStore();
 const { target } = useHexHoverInfo();
 
@@ -28,16 +26,17 @@ const hoveredKey = computed(() => {
 
 const view = computed(() => {
   const key = hoveredKey.value;
-  if (!key || battleStore.isOpen || heroToolStore.isDragging || knowledgePanelMode.value) {
+  if (
+    !key ||
+    activeMap.value.kind === 'battle' ||
+    heroToolStore.isDragging ||
+    knowledgePanelMode.value
+  ) {
     return null;
   }
   const [columnIndex, rowIndex] = key.split(':').map(Number);
-  const tile = worldStore.map?.tiles.find(
-    (candidate) =>
-      candidate.coordinates.columnIndex === columnIndex &&
-      candidate.coordinates.rowIndex === rowIndex,
-  );
-  if (!tile?.isRevealed || !tile.hexobject) return null;
-  return buildHexInfo(tile.hexobject, t(`itemTooltip.group.${tile.hexobject.groupType}`), t, te);
+  const object = activeMap.value.objectAt({ columnIndex, rowIndex });
+  if (!object) return null;
+  return buildHexInfo(object, t(`itemTooltip.group.${object.groupType}`), t, te);
 });
 </script>

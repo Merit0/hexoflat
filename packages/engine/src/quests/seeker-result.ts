@@ -14,14 +14,15 @@ export const SEEKER_REFUSALS = [
   'HEX_BLOCKED',
   'USE_STEP_BACK',
   'NOTHING_TO_STEP_BACK',
-  'NO_CHEST',
   'WRONG_PHASE',
   'STANDING_ON_TARGET',
-  'CHEST_EMPTY',
+  'CONTAINER_EMPTY',
   'NO_ROOM_FOR_LOOT',
   'BAG_FULL',
+  'OVERWEIGHT',
   'NO_LOOT_THERE',
   'NO_INVENTORY',
+  'NO_ROOM_FOR_TRAIL',
 ] as const;
 export type SeekerRefusal = (typeof SEEKER_REFUSALS)[number];
 

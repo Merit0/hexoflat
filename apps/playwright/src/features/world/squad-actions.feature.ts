@@ -55,6 +55,7 @@ export class SquadActionsFeature extends BaseFeature {
       'The battle opens at once, with no deploy card, for the engaged squad',
       async () => {
         await this.campingMap.battleTab.verifyBoardOpen();
+        await this.campingMap.activeBoard.verifyOnly('battle');
         await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(true);
       },
     );
@@ -64,16 +65,18 @@ export class SquadActionsFeature extends BaseFeature {
     await this.step('Open the generated cave with enough Will to enter', async () => {
       await new OpenCampingMapFeature().open();
       this.campingMap.pageErrors.watch();
-      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(40));
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.prepareKnowledgeWorld(40, 'cave'));
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
       await this.page.goto('/world/cave');
       await this.campingMap.hexBoard.waitForReady();
+      await this.campingMap.activeBoard.verifyOnly('world');
     });
   }
 
   async startBattle(): Promise<void> {
     await this.step('The battle starts straight from the attack', async () => {
       await this.campingMap.battleTab.verifyBoardOpen();
+      await this.campingMap.activeBoard.verifyOnly('battle');
     });
   }
 
@@ -87,6 +90,7 @@ export class SquadActionsFeature extends BaseFeature {
   async verifyBoardIsBackWithoutErrors(): Promise<void> {
     await this.step('The map is back, the battle is closed and nothing threw', async () => {
       await this.campingMap.battleTab.verifyBoardClosed();
+      await this.campingMap.activeBoard.verifyOnly('world');
       await expect.poll(() => this.campingMap.hexBoard.isBattleEngaged()).toBe(false);
       await this.campingMap.pageErrors.verifyNone();
     });

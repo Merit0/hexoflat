@@ -23,8 +23,7 @@ export interface LootPlacement {
 }
 
 export type PlaceLootResult =
-  | { kind: 'placed'; placements: LootPlacement[] }
-  | { kind: 'to-bag'; drops: LootDrop[] }
+  | { kind: 'placed'; placements: LootPlacement[]; toBag: LootDrop[] }
   | { kind: 'refused'; refusal: LootRefusal };
 
 const DIRECTION_COUNT = AXIAL_DIRS.length;
@@ -78,37 +77,41 @@ function mergeCoins(drops: readonly LootDrop[]): LootDrop[] {
   return merged;
 }
 
-function truncated(drops: readonly LootDrop[], places: number): LootDrop[] {
-  if (drops.length <= places) return [...drops];
+function split(
+  drops: readonly LootDrop[],
+  places: number,
+): { placed: LootDrop[]; toBag: LootDrop[] } {
   let guaranteedLeft = Math.min(places, drops.filter((drop) => drop.guaranteed).length);
   let rolledLeft = places - guaranteedLeft;
-  return drops.filter((drop) => {
+  const placed: LootDrop[] = [];
+  const toBag: LootDrop[] = [];
+  for (const drop of drops) {
     if (drop.guaranteed) {
-      if (guaranteedLeft === 0) return false;
-      guaranteedLeft -= 1;
-      return true;
+      if (guaranteedLeft > 0) {
+        guaranteedLeft -= 1;
+        placed.push(drop);
+      } else {
+        toBag.push(drop);
+      }
+    } else if (rolledLeft > 0) {
+      rolledLeft -= 1;
+      placed.push(drop);
     }
-    if (rolledLeft === 0) return false;
-    rolledLeft -= 1;
-    return true;
-  });
+  }
+  return { placed, toBag };
 }
 
 export function placeLoot(input: PlaceLootInput): PlaceLootResult {
   const places = freePlaces(input);
-  const drops = mergeCoins(input.drops.flat());
-  if (places.length === 0) {
-    const guaranteed = drops.filter((drop) => drop.guaranteed);
-    if (guaranteed.length === 0) {
-      return { kind: 'refused', refusal: lootRefusal('NO_ROOM_FOR_LOOT') };
-    }
-    return { kind: 'to-bag', drops: guaranteed };
+  const { placed, toBag } = split(mergeCoins(input.drops.flat()), places.length);
+  if (places.length === 0 && toBag.length === 0) {
+    return { kind: 'refused', refusal: lootRefusal('NO_ROOM_FOR_LOOT') };
   }
-  const placements = truncated(drops, places.length).map((drop, index) => ({
+  const placements = placed.map((drop, index) => ({
     hex: { ...places[index] },
     itemKey: drop.itemKey,
     amount: drop.amount,
     guaranteed: drop.guaranteed,
   }));
-  return { kind: 'placed', placements };
+  return { kind: 'placed', placements, toBag };
 }

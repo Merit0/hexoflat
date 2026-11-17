@@ -103,6 +103,8 @@ describe('R4: other transitions close the pair', () => {
     const gate = s.state.map.tiles.find(
       (t) => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.HOMELAND_GATE,
     )!;
+    gate.isRevealed = true;
+    s.hero.coordinates = getHexNeighbors(gate.coordinates)[0];
 
     const { events } = applyCommand(
       s.state,

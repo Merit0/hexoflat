@@ -1,6 +1,9 @@
 import { z } from 'zod';
+import { containerStateSchema } from '../containers/container';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
+import { TERRAIN_IDS } from '../boards/terrain';
+import { LOCATION_KEYS } from '../registry/location-key';
 import type { SequenceRule } from './sequences/rules';
 
 export const hexSchema = z
@@ -16,6 +19,18 @@ const groundItemSchema = z
   .object({ hex: hexSchema, itemKey: z.string().min(1), amount: z.number().int().min(1) })
   .strict();
 
+export const chestDropSchema = z
+  .array(
+    z
+      .object({
+        itemKey: z.string().min(1),
+        amount: z.number().int().min(1),
+        guaranteed: z.boolean(),
+      })
+      .strict(),
+  )
+  .min(1);
+
 export const collectSchema = z
   .object({
     hero: hexSchema,
@@ -25,7 +40,28 @@ export const collectSchema = z
   .strict();
 export type QuestCollect = z.infer<typeof collectSchema>;
 
-export const SEEKER_OUTCOMES = ['treasure', 'ambushWon', 'defeat', 'stranded', 'left'] as const;
+const fieldTileSchema = z
+  .object({ hex: hexSchema, terrain: z.enum(TERRAIN_IDS).optional() })
+  .strict();
+
+export const seekerFieldSchema = z
+  .object({
+    origin: z.enum(LOCATION_KEYS),
+    background: z.string().min(1),
+    exit: hexSchema,
+    tiles: z.array(fieldTileSchema).min(1),
+  })
+  .strict();
+export type SeekerField = z.infer<typeof seekerFieldSchema>;
+
+export const SEEKER_OUTCOMES = [
+  'treasure',
+  'ambushWon',
+  'defeat',
+  'stranded',
+  'left',
+  'lost',
+] as const;
 export type SeekerOutcome = (typeof SEEKER_OUTCOMES)[number];
 
 export const QuestRunSchema = z
@@ -36,6 +72,7 @@ export const QuestRunSchema = z
     terms: z.array(z.number().int()).min(1),
     trail: z.array(hexSchema).min(1),
     chestHex: hexSchema,
+    chestLootTableId: z.string().min(1).optional(),
     start: hexSchema,
     stepCost: z.number().int().min(1),
     backMultiplier: z.number().int().min(1),
@@ -63,12 +100,16 @@ export const QuestRunSchema = z
         hex: hexSchema,
         kind: z.enum(['real', 'lure']),
         appearedAtStep: z.number().int().nonnegative(),
+        drop: chestDropSchema.optional(),
+        container: containerStateSchema.optional(),
       })
       .strict()
       .nullable(),
     collect: collectSchema.nullable().default(null),
-    phase: z.enum(['walking', 'collect', 'ambush', 'ended']),
+    phase: z.enum(['walking', 'collect', 'ambush', 'lost', 'ended']),
     outcome: z.enum(SEEKER_OUTCOMES).nullable(),
+    resolution: z.enum(['treasure', 'lost']).optional(),
+    field: seekerFieldSchema.optional(),
   })
   .strict();
 

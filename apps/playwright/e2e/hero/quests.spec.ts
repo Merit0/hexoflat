@@ -49,7 +49,7 @@ test.describe('quest board', { tag: ['@hero'] }, () => {
 
     await quests.accept('bone-hunter');
 
-    await quests.verifyRefusal(NO_FREE_SLOTS);
+    await quests.verifyWarning(NO_FREE_SLOTS);
     await quests.verifyWill(START_WILL - SECOND_SLOT - THIRD_SLOT);
     await quests.verifyNotTracked('bone-hunter');
   });

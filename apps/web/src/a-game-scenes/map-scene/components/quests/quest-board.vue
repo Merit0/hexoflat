@@ -4,7 +4,6 @@
     tabindex="-1"
     data-testid="quest-board"
     :aria-label="t('quest.boardTitle')"
-    @keydown.esc="onEscape"
   >
     <board-header
       class="header"
@@ -19,28 +18,6 @@
     <quest-run-panel v-if="run || result" />
     <template v-else>
       <div class="banner" data-testid="quest-board-resources">
-        <span class="cell" data-testid="quest-slots">
-          <svg
-            class="icon"
-            viewBox="0 0 24 24"
-            width="34"
-            height="34"
-            fill="none"
-            stroke="#f5c26b"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="5" y="4" width="14" height="17" rx="2" />
-            <path d="M9 4V3h6v1M9 13l2 2 4-4" />
-          </svg>
-          <span class="figures">
-            <span class="label">{{ t('quest.board.pill.taken') }}</span>
-            <span class="value">{{ slots.used }} / {{ slots.max }}</span>
-          </span>
-        </span>
-        <i class="divider" aria-hidden="true"></i>
         <quest-tip :text="t('quest.board.coins')">
           <span class="cell" data-testid="quest-board-coins">
             <img class="icon" :src="COIN_SRC" alt="" aria-hidden="true" />
@@ -62,10 +39,14 @@
         </quest-tip>
       </div>
       <board-ornament />
-      <quest-filter-chips />
-      <board-ornament />
+      <quest-taken-bar />
       <div class="groups" @scroll.passive="details.close()">
-        <section class="group" data-testid="quest-group-active">
+        <section
+          class="group"
+          :class="dropClass('active')"
+          data-quest-group="active"
+          data-testid="quest-group-active"
+        >
           <h3>
             <span>{{ t('quest.board.group.active') }}</span>
             <i class="rule" aria-hidden="true"></i>
@@ -76,11 +57,13 @@
           <ul v-if="active.length > 0">
             <quest-row v-for="row in active" :key="row.quest.id" :row="row" />
           </ul>
-          <p v-else class="empty dashed" data-testid="quest-tracker-empty">
-            {{ t('quest.board.empty.active') }}
-          </p>
         </section>
-        <section class="group" data-testid="quest-group-available">
+        <section
+          class="group"
+          :class="dropClass('available')"
+          data-quest-group="available"
+          data-testid="quest-group-available"
+        >
           <h3>
             <span>{{ t('quest.board.group.available') }}</span>
             <i class="rule" aria-hidden="true"></i>
@@ -100,12 +83,12 @@
         {{ status ?? t('quest.board.hint') }}
       </p>
     </template>
+    <quest-drag-ghost />
     <quest-details-popover
       v-if="openRow && anchor && !run && !result"
       :key="openRow.quest.id"
       :row="openRow"
       :anchor="anchor"
-      :pinned="details.pinned.value"
     />
   </section>
 </template>
@@ -122,6 +105,7 @@ import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useQuestBoardView } from '@/composables/use-quest-board-view';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
+import { questDrag, targetOf } from '@/composables/use-quest-drag';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestActions } from '@/composables/use-quest-actions';
 import { useQuestRunView } from '@/composables/use-quest-run-view';
@@ -131,8 +115,9 @@ import QuestRow from './quest-row.vue';
 import QuestRunPanel from './quest-run-panel.vue';
 import BoardHeader from '../board-header.vue';
 import BoardOrnament from '../board-ornament.vue';
-import QuestFilterChips from './quest-filter-chips.vue';
+import QuestTakenBar from './quest-taken-bar.vue';
 import QuestTip from './quest-tip.vue';
+import QuestDragGhost from './quest-drag-ghost.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
 
 const { t } = useI18n();
@@ -144,12 +129,14 @@ const { run, result } = useQuestRunView();
 const { message: startMessage } = useQuestRunActions();
 const { message, status } = useQuestActions();
 
+function dropClass(group: 'active' | 'available') {
+  if (!questDrag.active || !questDrag.from) return {};
+  const valid = targetOf(questDrag.from) === group;
+  return { 'is-drop-target': valid, 'is-drop-over': valid && questDrag.over === group };
+}
+
 const openRow = computed(() => (details.openId.value ? rowById(details.openId.value) : null));
 const anchor = details.anchor;
-
-function onEscape() {
-  if (details.pinned.value) details.closeAndFocusRow();
-}
 
 onBeforeUnmount(() => {
   details.close();
@@ -189,7 +176,7 @@ onBeforeUnmount(() => {
   isolation: isolate;
   flex: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr) 11px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 11px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   box-sizing: border-box;
@@ -224,6 +211,12 @@ onBeforeUnmount(() => {
     0 calc(100% - 10px),
     0 10px
   );
+}
+.banner :deep(.tip-host) {
+  display: flex;
+  align-self: stretch;
+  justify-content: center;
+  min-width: 0;
 }
 .cell {
   display: flex;
@@ -272,6 +265,21 @@ onBeforeUnmount(() => {
   min-height: 0;
   padding: 2px;
   overflow: hidden;
+}
+.group {
+  border-radius: 10px;
+  transition:
+    outline-color 0.15s,
+    background 0.15s;
+  outline: 2px dashed transparent;
+  outline-offset: 2px;
+}
+.group.is-drop-target {
+  outline-color: rgba(217, 168, 78, 0.55);
+}
+.group.is-drop-over {
+  background: rgba(217, 168, 78, 0.1);
+  outline-color: #ffe98a;
 }
 .group h3 {
   display: flex;

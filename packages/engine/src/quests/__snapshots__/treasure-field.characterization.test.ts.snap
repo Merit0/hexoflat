@@ -1,0 +1,7 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`saved Treasure Seeker geometry > preserves legacy floor and start for quest-seed 1`] = `"2cddac3f6748b688c3e7ba908c6fb9a0da28d39f765b9d58246b0ce4b57f4e02"`;
+
+exports[`saved Treasure Seeker geometry > preserves legacy floor and start for same 1`] = `"25bc46aedfcd198babb1192a479b81e247a73c44e1c74ec68c15553b3427bec2"`;
+
+exports[`saved Treasure Seeker geometry > preserves legacy floor and start for seed-secret 1`] = `"1460ded6f96452ce00755a0f6222658b5affec0ccb4180abde096eb68d8afb08"`;

@@ -60,4 +60,66 @@ describe('portal-fx', () => {
     unregister();
     vi.useRealTimers();
   });
+
+  it('REQ-1: unregistering the board drops its hold timers and frees the lock', () => {
+    vi.useFakeTimers();
+    const unregister = registerPortalFx({
+      enter: async () => {},
+      exit: async () => {},
+      release() {},
+    });
+    holdPortalFxFor(300);
+
+    unregister();
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(portalFxBusy.value).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('REQ-1: an animation of the old board finishing late never frees the new board', async () => {
+    vi.useFakeTimers();
+    let finishOld: () => void = () => {};
+    const unregisterOld = registerPortalFx({
+      enter: () => new Promise<void>((resolve) => (finishOld = resolve)),
+      exit: async () => {},
+      release() {},
+    });
+    const oldPlay = playPortalEnter(HEX);
+    unregisterOld();
+    const unregisterNew = registerPortalFx({
+      enter: async () => {},
+      exit: async () => {},
+      release() {},
+    });
+    holdPortalFxFor(300);
+
+    finishOld();
+    await oldPlay;
+
+    expect(portalFxBusy.value).toBe(true);
+    vi.advanceTimersByTime(300);
+    expect(portalFxBusy.value).toBe(false);
+    unregisterNew();
+    vi.useRealTimers();
+  });
+
+  it('stays busy until the longest of overlapping holds ends', () => {
+    vi.useFakeTimers();
+    const unregister = registerPortalFx({
+      enter: async () => {},
+      exit: async () => {},
+      release() {},
+    });
+
+    holdPortalFxFor(300);
+    holdPortalFxFor(500);
+    vi.advanceTimersByTime(300);
+    expect(portalFxBusy.value).toBe(true);
+    vi.advanceTimersByTime(200);
+    expect(portalFxBusy.value).toBe(false);
+
+    unregister();
+    vi.useRealTimers();
+  });
 });

@@ -77,6 +77,12 @@ export class QuestBoardFeature extends BaseFeature {
     );
   }
 
+  async verifyWarning(pattern: RegExp): Promise<void> {
+    await this.step('Verify the general warning banner explains the refusal', () =>
+      this.campingMap.actionAlertBanner.verifyIsVisibleMatching(pattern),
+    );
+  }
+
   async verifyRefusal(pattern: RegExp): Promise<void> {
     await this.step('Verify the board explains the refusal', () =>
       this.board.verifyMessage(pattern),
@@ -109,9 +115,9 @@ export class QuestBoardFeature extends BaseFeature {
     await this.step('Verify the quest board is closed', () => this.board.verifyIsClosed());
   }
 
-  async verifyChips(questId: string, chips: string[]): Promise<void> {
-    await this.step(`Verify "${questId}" shows the chips ${chips.join(', ')}`, () =>
-      this.board.verifyChips(questId, chips),
+  async verifyRule(questId: string, phrases: string[]): Promise<void> {
+    await this.step(`Verify the rule of "${questId}" says ${phrases.join(', ')}`, () =>
+      this.board.verifyRule(questId, phrases),
     );
   }
 

@@ -1,4 +1,5 @@
 import { Ticker } from 'pixi.js';
+import { subscribeTicker } from '@/render/ticker-subscription';
 
 export function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
@@ -19,18 +20,17 @@ export function runTween(durationMs: number, onFrame: (progress: number) => void
   const handler = () => {
     const progress = Math.min(1, (performance.now() - start) / durationMs);
     onFrame(progress);
-    if (progress >= 1) {
-      Ticker.shared.remove(handler);
-      finish();
-    }
+    if (progress >= 1) stop();
   };
-  Ticker.shared.add(handler);
+  const unsubscribe = subscribeTicker(Ticker.shared, handler, {
+    source: 'tween',
+    onFailure: () => finish(),
+  });
 
-  return {
-    done,
-    cancel() {
-      Ticker.shared.remove(handler);
-      finish();
-    },
-  };
+  function stop() {
+    unsubscribe();
+    finish();
+  }
+
+  return { done, cancel: stop };
 }

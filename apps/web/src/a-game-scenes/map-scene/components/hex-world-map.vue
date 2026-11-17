@@ -8,6 +8,7 @@
   >
     <div class="map-pane">
       <component :is="DevBoardPanel" v-if="DevBoardPanel" />
+      <quest-tracker-button v-else />
       <action-alert-banner />
       <div class="map-session-controls">
         <button
@@ -29,53 +30,7 @@
           ⏻
         </button>
       </div>
-      <battle-board-area
-        v-if="battleStore.isOpen"
-        class="battle-pane"
-        :reference-frame="boardFrame"
-      />
-      <quest-field-area v-if="questStore.inRun" class="battle-pane" />
-      <div
-        v-if="worldStore.worldLoadFailed"
-        class="world-load-error"
-        role="alert"
-        data-testid="world-load-error"
-      >
-        <p>{{ t('world.loadError') }}</p>
-        <button type="button" data-testid="world-load-retry" @click="worldStore.retryWorldLoad()">
-          {{ t('world.retry') }}
-        </button>
-      </div>
-      <div ref="containerRef" class="hex-map" data-testid="hex-map">
-        <canvas
-          ref="boardCanvasRef"
-          class="hex-board-canvas"
-          data-testid="hex-board-canvas"
-          :data-ready="isBoardReady && !lootFlying ? '1' : undefined"
-        />
-
-        <board-overlay-layer data-testid="hex-map-inner" :camera="camera" :frame-rect="frameRect">
-          <tool-hex-tile
-            v-if="heroToolStore.isDragging && activeTool"
-            :tile-width="screenTileSize.w"
-            :tile-height="screenTileSize.h"
-            :tool="activeTool"
-            @hide="onHide"
-          />
-
-          <component
-            :is="StaticBoardCoordinatesOverlay"
-            v-if="StaticBoardCoordinatesOverlay && staticBoardEditorStore?.isEditing"
-            :tiles="tiles"
-            :tile-width="screenTileSize.w"
-            :tile-height="screenTileSize.h"
-          />
-        </board-overlay-layer>
-      </div>
-      <component
-        :is="StaticBoardEditorPanel"
-        v-if="StaticBoardEditorPanel && staticBoardEditorStore?.isEditing"
-      />
+      <gameplay-board-host ref="boardHost" :stage-element="stageRef" />
     </div>
     <hero-board-panel />
     <hex-info-tooltip />
@@ -83,244 +38,71 @@
 </template>
 
 <script setup lang="ts">
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
+import { devBoardPanelEnabled } from '@/composables/dev-board-panel-flag';
 import { closeKnowledgePanel, knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { useKnowledgeChallenge } from '@/composables/use-knowledge-challenge';
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useWorldMapStore } from '@/stores/world-map-store';
-import { useBattleStore } from '@/stores/battle-store';
-import { useSquadFlow } from '@/services/squads/squad-flow';
-import { useSquadViews } from '@/services/squads/squad-views';
-import { lootFlightRequest, lootFlying } from '@/services/loot/loot-flight-state';
-import { useHexBoard } from '@/render/use-hex-board';
-import { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
-import { useTileClick } from '@/composables/use-tile-click';
-import { useMovePreview } from '@/composables/use-move-preview';
-import { useBoardCamera } from '@/composables/use-board-camera';
-import { useStopToolWhenUnequipped } from '@/composables/use-stop-tool-when-unequipped';
-import { useHexBoardInput } from '@/composables/use-hex-board-input';
 import { useGameLayout } from '@/composables/use-game-layout';
+import { useQuestMapRoute } from '@/composables/use-quest-map-route';
+import { useStopToolWhenUnequipped } from '@/composables/use-stop-tool-when-unequipped';
+import { useWorldMapStore } from '@/stores/world-map-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
-import {
-  resolveActions,
-  ResolvedAction,
-} from '@hexoflat/engine/game-resolvers/interactions-resolver';
-import HeroBoardPanel from '@/a-game-scenes/map-scene/components/hero-board-panel.vue';
-import { useDevBoardPanelStore } from '@/stores/dev-board-panel-store';
-import { useStaticBoardEditorStore } from '@/stores/static-board-editor-store';
-import BoardOverlayLayer from '@/components/gui/board/board-overlay-layer.vue';
-import ToolHexTile from '@/a-game-scenes/map-scene/components/tool-hex-tile.vue';
-import QuestFieldArea from '@/components/quest/quest-field-area.vue';
-import { useQuestStore } from '@/stores/quest-store';
-import BattleBoardArea from '@/a-game-scenes/map-scene/components/battle/battle-board-area.vue';
-import HexInfoTooltip from '@/components/gui/hex-info/hex-info-tooltip.vue';
-import { useHexHoverInfo } from '@/composables/use-hex-hover-info';
-import type { TilePointer } from '@/render/layers/tiles-layer';
-import ActionAlertBanner from '@/a-game-scenes/map-scene/components/action-alert-banner.vue';
-import { LocationKey } from '@hexoflat/engine/registry/world-map-registry';
-import type { IHexTile } from '@hexoflat/engine/map/models/hex-tile-model';
-import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
-import { useHeroStore } from '@/stores/hero-store';
-import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useUiSettingsStore } from '@/stores/ui-settings-store';
 import { useUserStore } from '@/stores/user-store';
 import { useOverlayStore } from '@/stores/overlay-store';
+import { useSquadFlow } from '@/services/squads/squad-flow';
 import { installTestHooks, uninstallTestHooks } from '@/e2e/test-hooks';
 import { createTestApi } from '@/e2e/create-test-api';
+import { usePresenceRoute } from '@/composables/use-presence-route';
+import { IDENTITY_CAMERA } from '@/render/board-camera';
+import type { LocationKey } from '@hexoflat/engine/registry/location-key';
+import GameplayBoardHost from './gameplay-board-host.vue';
+import HeroBoardPanel from './hero-board-panel.vue';
+import QuestTrackerButton from './quests/quest-tracker-button.vue';
+import ActionAlertBanner from './action-alert-banner.vue';
+import HexInfoTooltip from '@/components/gui/hex-info/hex-info-tooltip.vue';
 
-const props = defineProps<{
-  locationKey: LocationKey;
-}>();
-
-const { handleTileClick } = useTileClick();
-const { t } = useI18n();
+const props = defineProps<{ locationKey?: LocationKey }>();
+const stageRef = ref<HTMLElement | null>(null);
+const boardHost = ref<InstanceType<typeof GameplayBoardHost> | null>(null);
 const worldStore = useWorldMapStore();
-const battleStore = useBattleStore();
-const questStore = useQuestStore();
-useSquadFlow();
-const squadViews = useSquadViews();
 const heroToolStore = useHeroToolStore();
-const worldMapStore = useWorldMapStore();
-const heroStore = useHeroStore();
-const uiSettingsStore = useUiSettingsStore();
-const heroInventoryStore = useHeroInventoryStore();
 const userStore = useUserStore();
 const overlayStore = useOverlayStore();
-const hoveredTileCoord = ref<IHexCoordinates | null>(null);
-const healTickerNow = ref(Date.now());
-let healTickerTimer: number | null = null;
-
-const RULE_HIGHLIGHT_TINT = 0xffe66d;
 const SHOW_DEV_TOOLS = import.meta.env.DEV && import.meta.env.VITE_E2E_HOOKS !== 'true';
-const DevBoardPanel = SHOW_DEV_TOOLS
-  ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
-  : null;
-const StaticBoardEditorPanel = SHOW_DEV_TOOLS
-  ? defineAsyncComponent(() => import('./static-board-editor-panel.vue'))
-  : null;
-const StaticBoardCoordinatesOverlay = SHOW_DEV_TOOLS
-  ? defineAsyncComponent(() => import('./static-board-coordinates-overlay.vue'))
-  : null;
-const devBoardPanelStore = SHOW_DEV_TOOLS ? useDevBoardPanelStore() : null;
-const staticBoardEditorStore = SHOW_DEV_TOOLS ? useStaticBoardEditorStore() : null;
-const devPanelOptions = SHOW_DEV_TOOLS
-  ? {
-      showWholeBoard: computed(
-        () => staticBoardEditorStore?.isEditing || (devBoardPanelStore?.showWholeBoard ?? false),
-      ),
-      zoneTintByCoordinateKey: computed(
-        () =>
-          new Map<string, number>(
-            (devBoardPanelStore?.highlightedCellKeys ?? []).map((key) => [
-              key,
-              RULE_HIGHLIGHT_TINT,
-            ]),
-          ),
-      ),
-    }
-  : undefined;
-
-watch(
-  () => props.locationKey,
-  (locationKey) => {
-    worldStore.goToLocation(locationKey);
-  },
-  { immediate: true },
-);
-
-useKnowledgeChallenge();
-onMounted(() => worldStore.bootstrapWorld());
-// The condition is inlined (rather than read from a helper) so Vite can
-// statically fold it away: in any build without VITE_E2E_HOOKS=true this
-// whole branch is dead code, both imports go unused, and the e2e hook
-// modules never make it into the bundle at all.
-onMounted(() => {
-  if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-  installTestHooks(
-    createTestApi({
-      getCamera: () => camera.value,
-      getCanvasSize: () => canvasSize.value,
-      isBoardReady: () => isBoardReady.value && !lootFlying.value,
-    }),
-  );
-});
-onBeforeUnmount(() => {
-  if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
-  uninstallTestHooks();
-});
-onMounted(() => uiSettingsStore.hydrateFromStorage());
-onMounted(() => heroInventoryStore.hydrate());
-onBeforeUnmount(() => worldStore.stopWorldLoop());
-
-const tiles = computed(() => {
-  if (staticBoardEditorStore?.isEditing && staticBoardEditorStore.draftMap) {
-    return staticBoardEditorStore.draftMap.tiles;
-  }
-  return worldStore.map?.tiles ?? [];
-});
-const boardFrame = computed(() =>
-  worldStore.map ? { width: worldStore.map.width, height: worldStore.map.height } : null,
-);
-const tilesDirtyTick = computed(() => worldStore.dirtyTick);
-const boardKey = computed(() =>
-  worldStore.currentMapId ? `${worldStore.currentLocationKey}:${worldStore.currentMapId}` : null,
-);
-const activeTool = computed(() => heroToolStore.activeTool);
-
-const hexHoverInfo = useHexHoverInfo();
-
-function handleTileHover(tile: IHexTile, point: TilePointer) {
-  hoveredTileCoord.value = tile.coordinates;
-  hexHoverInfo.show(tile.coordinates, point.anchor);
-  if (heroToolStore.isDragging) {
-    heroToolStore.updateHover(tile.coordinates);
-  }
-}
-
-const boardCanvasRef = ref<HTMLCanvasElement | null>(null);
-const isBoardReady = ref(false);
-
-const heroCoordinatesComputed = computed(() => heroStore.heroCoordinates);
-const { containerRef, stageRef, canvasSize, frameRect, camera, screenTileSize } = useBoardCamera(
-  boardFrame,
-  heroCoordinatesComputed,
-);
+const DevBoardPanel =
+  SHOW_DEV_TOOLS && devBoardPanelEnabled()
+    ? defineAsyncComponent(() => import('./dev-board-panel.vue'))
+    : null;
 const { sceneLayoutStyle } = useGameLayout();
-
-function getTileByCoord(coord: IHexCoordinates) {
-  const tiles = worldMapStore.map?.tiles as HexTileModel[] | undefined;
-  return tiles?.find(
-    (t: HexTileModel) =>
-      t.coordinates.rowIndex === coord.rowIndex && t.coordinates.columnIndex === coord.columnIndex,
-  );
-}
-
-watch(
-  () => [heroToolStore.isDragging, heroToolStore.activeTool, heroToolStore.hover] as const,
-  ([isDragging, tool, hover]) => {
-    if (!isDragging || !tool || !hover) {
-      heroToolStore.clearResolvedActions();
-      return;
-    }
-
-    const tile = getTileByCoord(hover);
-    if (!tile?.hexobject || !tile.hexobject.isInteractable) {
-      heroToolStore.clearResolvedActions();
-      return;
-    }
-
-    const actions: ResolvedAction[] = resolveActions(tool, tile.hexobject);
-    heroToolStore.setResolvedActions(actions);
-  },
-  { immediate: true },
-);
-
-const movePreview = useMovePreview({ hoveredTileCoord, getTileByCoord });
-
-useHexBoard({
-  canvasRef: boardCanvasRef,
-  canvasSize,
-  camera,
-  tiles,
-  tilesDirtyTick,
-  boardKey,
-  heroCoordinates: heroCoordinatesComputed,
-  healTickerNow,
-  movePreview,
-  squadWatched: squadViews.watched,
-  lootFlight: lootFlightRequest,
-  onTileHover: handleTileHover,
-  onTileMove: (_tile, point) => hexHoverInfo.move(point.anchor),
-  onTileLeave: () => hexHoverInfo.hide(),
-  onTileClick: (tile) => {
-    hexHoverInfo.hide();
-    if (devBoardPanelStore?.inspectMode) {
-      devBoardPanelStore.inspect(tile.coordinates);
-      return;
-    }
-    if (staticBoardEditorStore?.isEditing) {
-      staticBoardEditorStore.selectHex(tile.coordinates);
-      return;
-    }
-    void handleTileClick(tile);
-  },
-  onBoardReady: () => {
-    isBoardReady.value = true;
-  },
-  devPanel: devPanelOptions,
+useQuestMapRoute(() => worldStore.currentLocationKey);
+useSquadFlow();
+useKnowledgeChallenge();
+usePresenceRoute(() => props.locationKey);
+onMounted(() => {
+  worldStore.bootstrapWorld();
+  boardHost.value?.syncSimulation();
+  useUiSettingsStore().hydrateFromStorage();
+  useHeroInventoryStore().hydrate();
+  window.addEventListener('keydown', onKeyDown);
+  if (import.meta.env.VITE_E2E_HOOKS === 'true') {
+    installTestHooks(
+      createTestApi({
+        getCamera: () => boardHost.value?.worldCamera ?? IDENTITY_CAMERA,
+        getCanvasSize: () => boardHost.value?.worldCanvasSize ?? { width: 0, height: 0 },
+        isBoardReady: () => boardHost.value?.worldReady ?? false,
+      }),
+    );
+  }
 });
-
 function openSettings() {
   overlayStore.openOverlay('settings');
 }
-
 function onHide() {
-  if (heroToolStore.isLocked) {
-    heroToolStore.cancelLockedAction('HIDE');
-  }
+  if (heroToolStore.isLocked) heroToolStore.cancelLockedAction('HIDE');
   heroToolStore.stopTool();
 }
-
 function onKeyDown(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
   if (knowledgePanelMode.value) {
@@ -328,32 +110,18 @@ function onKeyDown(event: KeyboardEvent) {
     void closeKnowledgePanel(false);
     return;
   }
-  if (!heroToolStore.isDragging && !heroToolStore.activeTool) return;
-
-  event.preventDefault();
-  onHide();
-}
-
-useHexBoardInput({ hoveredTileCoord });
-useStopToolWhenUnequipped(onHide);
-
-onMounted(() => {
-  window.addEventListener('keydown', onKeyDown);
-  healTickerTimer = window.setInterval(() => {
-    healTickerNow.value = Date.now();
-  }, 250);
-});
-
-onBeforeUnmount(() => {
-  hexHoverInfo.hide();
-  window.removeEventListener('keydown', onKeyDown);
-  if (healTickerTimer) {
-    window.clearInterval(healTickerTimer);
-    healTickerTimer = null;
+  if (heroToolStore.isDragging || heroToolStore.activeTool) {
+    event.preventDefault();
+    onHide();
   }
+}
+useStopToolWhenUnequipped(onHide);
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeyDown);
+  worldStore.stopWorldLoop();
+  if (import.meta.env.VITE_E2E_HOOKS === 'true') uninstallTestHooks();
 });
 </script>
-
 <style scoped>
 @media (max-width: 760px) {
   .scene-root.is-knowledge .map-pane {
@@ -418,48 +186,5 @@ onBeforeUnmount(() => {
 .icon-btn--logout:hover {
   border-color: rgba(255, 197, 197, 0.6);
   background: rgba(255, 197, 197, 0.1);
-}
-
-.world-load-error {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 16px;
-  text-align: center;
-  background: rgba(10, 8, 6, 0.85);
-  color: #f2e6cf;
-}
-
-.hex-map {
-  position: relative;
-  width: 100%;
-  height: 100%;
-
-  background-image: url('/board-assets/dark-board-stones.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-
-  overflow: hidden;
-}
-
-.hex-board-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: block;
-}
-
-.battle-pane {
-  position: absolute;
-  inset: 0;
-  z-index: 140;
-  background: #0b0d11;
 }
 </style>

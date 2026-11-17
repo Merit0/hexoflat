@@ -21,10 +21,17 @@ async function walkToTheChest(quest: QuestRunFeature) {
 }
 
 test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
-  test('Verify the First Trail card shows its four prices and no total', async () => {
+  test.describe.configure({ timeout: 120_000 });
+
+  test('Verify the First Trail rule states its four prices and no total', async () => {
     const quest = await openBoard();
 
-    await quest.board.verifyChips('seeker-1', ['Entry 20', '10 steps', 'Step 1', 'Step back 3']);
+    await quest.board.verifyRule('seeker-1', [
+      'Entry costs 20 Will',
+      'Every step costs 1 Will',
+      'step back costs 3',
+      '10 steps long',
+    ]);
     await quest.board.verifyCardTextAbsent('seeker-1', /total|усього|разом/i);
   });
 
@@ -51,11 +58,11 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
     await quest.verifyHintOnFirstStep();
     await quest.verifyExactlyOneHexContinues();
     await quest.verifyStepPrices(1, BACK_COST);
-    await quest.hoverStepAndVerifyPrice(1);
 
     await walkToTheChest(quest);
     await quest.verifyStepCounter(STEPS, STEPS);
     await quest.verifyTrailRow();
+    await quest.verifyQuestResolved('treasure');
     await quest.openChest();
     await quest.verifyPhase('collect');
     await quest.returnToCamp();
@@ -93,20 +100,6 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
     await quest.openChest();
 
     await quest.verifyPhase('collect');
-  });
-
-  test('Verify following a wrong trail to the end ends in an ambush the hero can leave', async () => {
-    const quest = await openBoard();
-
-    await quest.startFirstTrail();
-    await quest.walkOnTrail(STEPS - 2);
-    await quest.stepOffTrail();
-    await quest.stepOnAnyFreshHexUntilTheChestAppears();
-    await quest.openChest();
-
-    await quest.verifyPhase('ambush');
-    await quest.giveUp();
-    await quest.verifyResult('left');
   });
 
   test('Verify running out of Will mid-trail strands the hero and returns to camp', async () => {

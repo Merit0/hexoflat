@@ -1,10 +1,14 @@
-import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { getHexNeighbors, hexDistance } from '@hexoflat/engine/utils/hex-utils';
 import type { TEquipSlot } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { toolKeyOfItem } from '@/composables/hand-tools';
-import { useHeroStore } from '@/stores/hero-store';
+import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
+import { useHeroStashStore } from '@/stores/hero-stash-store';
+import { useTraderStore } from '@/stores/trader-store';
+import { useActiveMapContext } from '@/composables/use-active-map-context';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 
@@ -12,6 +16,9 @@ export const HAND_SCROLL_COOLDOWN_MS = 180;
 
 export interface UseHexBoardInputDeps {
   hoveredTileCoord: Ref<IHexCoordinates | null>;
+  heroCoordinates?: Ref<IHexCoordinates | null>;
+  enabled?: Ref<boolean>;
+  blocked?: Ref<boolean>;
 }
 
 /**
@@ -21,9 +28,16 @@ export interface UseHexBoardInputDeps {
  * unreachable hex.
  */
 export function useHexBoardInput(deps: UseHexBoardInputDeps) {
-  const heroStore = useHeroStore();
+  const activeMap = useActiveMapContext();
   const heroToolStore = useHeroToolStore();
   const heroInventoryStore = useHeroInventoryStore();
+
+  const stashStore = useHeroStashStore();
+  const traderStore = useTraderStore();
+  const heroCoordinates = deps.heroCoordinates ?? computed(() => activeMap.value.heroPosition);
+  const toolIsWorking =
+    deps.blocked ??
+    computed(() => !!knowledgePanelMode.value || stashStore.isOpen || traderStore.isOpen);
 
   const activeHandSlot = ref<TEquipSlot>('weapon');
   const lastHandScrollAt = ref(0);
@@ -34,9 +48,9 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
 
   function resolvePreferredToolHover(): IHexCoordinates | null {
     const hoveredTileCoord = deps.hoveredTileCoord.value;
-    if (!heroStore.heroCoordinates || !hoveredTileCoord) return null;
+    if (!heroCoordinates.value || !hoveredTileCoord) return null;
 
-    const neighbors = getHexNeighbors(heroStore.heroCoordinates);
+    const neighbors = getHexNeighbors(heroCoordinates.value);
     const target = hoveredTileCoord;
 
     const directNeighbor = neighbors.find(
@@ -59,16 +73,17 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
   }
 
   function equipToolFromHand(slot: TEquipSlot) {
-    if (!heroStore.heroCoordinates) return;
+    if (!heroCoordinates.value) return;
 
     const toolKey = resolveEquippedToolKey(slot);
     if (!toolKey) return;
 
     activeHandSlot.value = slot;
-    heroToolStore.useTool(toolKey, heroStore.heroCoordinates, resolvePreferredToolHover());
+    heroToolStore.useTool(toolKey, heroCoordinates.value, resolvePreferredToolHover());
   }
 
   function onWheel(event: WheelEvent) {
+    if (deps.enabled && !deps.enabled.value) return;
     const target = event.target as HTMLElement | null;
     if (
       target &&
@@ -77,7 +92,7 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
       return;
     }
 
-    if (heroToolStore.isLocked || !heroStore.heroCoordinates) return;
+    if (heroToolStore.isBusy || toolIsWorking.value || !heroCoordinates.value) return;
     if (event.deltaY === 0) return;
 
     event.preventDefault();
@@ -87,7 +102,17 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
     lastHandScrollAt.value = now;
 
     const handSlots: TEquipSlot[] = ['weapon', 'shield'];
-    const currentIndex = handSlots.indexOf(activeHandSlot.value);
+    if (!heroToolStore.isDragging) {
+      const hand = handSlots.find((slot) => resolveEquippedToolKey(slot) === HEXOBJECT_KEYS.HAND);
+      if (hand) {
+        equipToolFromHand(hand);
+        return;
+      }
+    }
+    const currentSlot =
+      handSlots.find((slot) => resolveEquippedToolKey(slot) === heroToolStore.activeTool) ??
+      activeHandSlot.value;
+    const currentIndex = handSlots.indexOf(currentSlot);
     const direction = event.deltaY > 0 ? 1 : -1;
     const nextIndex = (currentIndex + direction + handSlots.length) % handSlots.length;
     const nextSlot = handSlots[nextIndex];

@@ -2,6 +2,7 @@ import type HexMapModel from '../map/models/hex-map-model';
 import type { TFogPolicy } from '../map/models/hex-map-model';
 import type { THexobjectKey } from './hexobjects-registry';
 import type { LocationKey } from './location-key';
+import type { BoardKind } from './board-kind';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { runBoardPipeline } from '../boards/pipeline/run-board-pipeline';
 import { CAMPING_BOARD } from '../content/boards/static/camping';
@@ -28,7 +29,7 @@ export interface CreatedBoard {
 export type MapDefinition = {
   key: LocationKey;
   title: string;
-  boardKind: 'STATIC' | 'DUNGEON';
+  boardKind: BoardKind;
   create: (ctx: CreateBoardContext) => CreatedBoard;
   staticDrawing?: StaticBoardDrawing;
   entryHexobjectKey?: THexobjectKey;

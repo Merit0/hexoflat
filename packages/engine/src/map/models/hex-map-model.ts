@@ -57,6 +57,10 @@ export interface ISerializedHexMap {
   fogPolicy?: TFogPolicy;
 }
 
+function restoreObjectIdentity(saved: THexobject, built: THexobject): void {
+  if (typeof saved.id === 'string' && saved.id.length > 0) built.id = saved.id;
+}
+
 function savedLock(
   built: { chestType?: unknown; isLocked?: boolean },
   saved: { isLocked?: boolean },
@@ -271,6 +275,7 @@ export default class HexMapModel implements IWorldMap {
     const overrides: Record<string, any> = {};
 
     if (typeof saved.quantity === 'number') overrides.quantity = saved.quantity;
+    overrides.container = saved.container;
 
     if (saved.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof saved.resource?.regrowMs === 'number')
@@ -290,6 +295,7 @@ export default class HexMapModel implements IWorldMap {
     }
 
     const built = HexObjectFactory.create(saved.hexobjectKey, coord, overrides);
+    restoreObjectIdentity(saved, built);
 
     switch (saved.groupType) {
       case EHexobjectGroup.CREATURE: {

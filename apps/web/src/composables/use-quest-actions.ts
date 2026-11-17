@@ -6,6 +6,7 @@ import {
   type QuestOutcome,
 } from '@/services/quests/quest-commands';
 import { questRefusalText } from '@/composables/quest-messages';
+import { useHeroToolStore } from '@/stores/hero-tool-store';
 
 const message = ref<string | null>(null);
 const status = ref<string | null>(null);
@@ -17,8 +18,15 @@ async function run(action: () => Promise<QuestOutcome>, done?: () => string): Pr
   message.value = null;
   try {
     const outcome = await action();
-    if (!outcome.ok) message.value = questRefusalText(outcome.reason);
-    else if (done) status.value = done();
+    if (!outcome.ok) {
+      if (outcome.reason === 'QUEST_SLOTS_FULL') {
+        useHeroToolStore().setActionMessage(questRefusalText(outcome.reason));
+      } else {
+        message.value = questRefusalText(outcome.reason);
+      }
+    } else if (done) {
+      status.value = done();
+    }
     return outcome.ok;
   } finally {
     busy.value = false;

@@ -2,6 +2,7 @@ import { computed } from 'vue';
 import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
 import { useQuestStore } from '@/stores/quest-store';
 import { questResult } from '@/services/quests/quest-result';
+import { questRuleParams } from '@/services/quests/quest-rule-params';
 import { buildQuestField } from '@/services/quests/quest-field-model';
 
 export function useQuestRunView() {
@@ -15,6 +16,10 @@ export function useQuestRunView() {
     return {
       projection,
       nameKey: quest?.nameKey ?? projection.offerId,
+      descKey: quest?.descKey ?? null,
+      goalKey: quest?.tableRule ?? null,
+      ruleParams: quest ? { ...questRuleParams(quest) } : {},
+      questId: projection.offerId,
       step: projection.path.length,
       steps: objective?.params.steps ?? projection.path.length,
       stepCost: projection.stepCost,
@@ -22,6 +27,7 @@ export function useQuestRunView() {
       trail: projection.path.map((entry) => entry.number),
       phase: projection.phase,
       canGiveUp: projection.phase === 'walking' || projection.phase === 'ambush',
+      lost: projection.phase === 'lost',
     };
   });
 

@@ -1,3 +1,4 @@
+import { axialToOffset } from '@hexoflat/engine/utils/hex-utils';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { HexTileModel } from '@hexoflat/engine/map/models/hex-tile-model';
@@ -17,12 +18,15 @@ import {
   type ReplayDeps,
 } from '@/services/world/served-world';
 import { i18n } from '@/i18n';
-import { chestOpenedOf, planLootFlights } from '@/services/loot/loot-flight';
+import { containerOpenedOf, planLootFlights } from '@/services/loot/loot-flight';
 import { startLootFlights } from '@/services/loot/loot-flight-state';
 import { lootRefusalText } from '@/services/loot/loot-rejection';
 import { useGameEventsStore } from '@/stores/game-events-store';
 import { useGatheringStore } from '@/stores/gathering-store';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
+import { inventorySession } from '@/services/inventory/inventory-session';
+import { holdsMap, holdsPlace } from '@/services/world/held-map';
+import { claimMapSwap, type MapSwap } from '@/stores/active-map-swap';
 
 const SERVER_TICK_BACKOFF_MS = 2000;
 let serverTicking = false;
@@ -47,12 +51,12 @@ export function applyWorldResultAction(
   hero: ServerWorldHero,
   result: WorldCommandResult,
 ): void {
-  if (!host.map) return;
+  if (!host.map || !holdsMap(host, result.mapId)) return;
   if (result.replayed) {
     void host.refetchWorld();
     return;
   }
-  const opened = chestOpenedOf(result.events);
+  const opened = containerOpenedOf(result.events, axialToOffset);
   if (opened) {
     startLootFlights(planLootFlights(opened));
     hero.heroCoordinates = { ...opened.coordinates };
@@ -67,21 +71,25 @@ export function applyWorldResultAction(
   host.markTilesDirty(applyWorldResult(host.map as HexMapModel, result, deps));
 }
 
-export async function refetchWorldAction(host: ServerWorldHost, hero: ServerWorldHero) {
+export async function refetchWorldAction(host: ServerWorldHost & { swapMap(swap: MapSwap): void }) {
   const mapId = host.currentMapId;
   if (!mapId) return;
+  const latest = claimMapSwap();
   const served = await refetchServedWorld(host.currentLocationKey);
-  if (!served || served.mapId !== mapId || host.currentMapId !== mapId) return;
-  host.map = served.map;
-  hero.heroCoordinates = served.heroCoordinates;
-  host.cacheServedWorld();
-  host.markTilesDirty(served.map.tiles.map((tile) => tile.coordinates));
+  if (!latest() || !served || served.mapId !== mapId || host.currentMapId !== mapId) return;
+  host.swapMap({ kind: 'refetched', served });
+}
+
+function heldElsewhere(host: ServerWorldHost): boolean {
+  const presence = inventorySession.presence;
+  return !!presence && !holdsPlace(host, presence);
 }
 
 export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldHero) {
   const from = hero.heroCoordinates;
   const now = Date.now();
   if (!host.map || !host.currentMapId || !from || now < serverTickPausedUntil) return;
+  if (heldElsewhere(host)) return;
   if (serverTicking || !hasDueWork(host.map as HexMapModel, now)) return;
   serverTicking = true;
   const mapId = host.currentMapId;
@@ -89,7 +97,7 @@ export async function serverTickAction(host: ServerWorldHost, hero: ServerWorldH
     const at = { locationKey: host.currentLocationKey, mapId, from };
     const result = await tickServerWorld(at, buildClientHint(useHeroToolStore()));
     if (!result.ok) serverTickPausedUntil = Date.now() + SERVER_TICK_BACKOFF_MS;
-    else if (host.currentMapId === mapId) {
+    else if (holdsMap(host, mapId)) {
       applyWorldResultAction(host, hero, result);
       host.cacheServedWorld();
       const refused = lootRefusalText(result.events, (key) => i18n.global.t(key));
@@ -109,8 +117,12 @@ export async function stepOnServerAction(
   if (!host.map || !host.currentMapId || !from) {
     return { ok: false, code: 'NO_WORLD', ambush: null, changed: [] };
   }
-  const at = { locationKey: host.currentLocationKey, mapId: host.currentMapId, from };
-  const outcome = await stepOnServerWorld({ ...at, map: host.map as HexMapModel }, coordinates);
+  const mapId = host.currentMapId;
+  const at = { locationKey: host.currentLocationKey, mapId, map: host.map as HexMapModel };
+  const outcome = await stepOnServerWorld(
+    { ...at, holds: () => holdsMap(host, mapId) },
+    coordinates,
+  );
   host.markTilesDirty(outcome.changed);
   return outcome;
 }
