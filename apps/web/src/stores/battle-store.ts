@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef, type Ref } from 'vue';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleAction } from '@hexoflat/engine/battle/battle-commands';
 import type { BattleHex, BattleSetupInput } from '@hexoflat/engine/battle/battle-state';
@@ -77,9 +77,52 @@ function noBridgeReply(): BattleReply {
   return { ok: false, code: 'NO_BATTLE', steps: [], events: [], closed: false, result: null };
 }
 
+const STALE_REPLY = 'STALE_REPLY';
+
+function staleReply(): BattleReply {
+  return { ...noBridgeReply(), code: STALE_REPLY };
+}
+
+function isStale(reply: BattleReply): boolean {
+  return reply.code === STALE_REPLY;
+}
+
+function createShieldReveal(revealed: Ref<BattleHex[]>) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  function clear() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    revealed.value = [];
+  }
+  return {
+    clear,
+    show(events: DomainEvent[]) {
+      const burned = burnedShieldsOf(events);
+      if (!burned) return;
+      clear();
+      revealed.value = burned;
+      timer = setTimeout(clear, REVEAL_MS);
+    },
+  };
+}
+
+function createReplySession() {
+  let token = 0;
+  return {
+    renew() {
+      token += 1;
+    },
+    capture(): () => boolean {
+      const captured = token;
+      return () => captured === token;
+    },
+  };
+}
+
 export function createBattleStore(id: string) {
   return defineStore(id, () => {
     let bridge: BattleServerBridge | null = null;
+    const session = createReplySession();
     const deploy = shallowRef<BattleDeploy | null>(null);
     const engagement = shallowRef<Engagement | null>(null);
     const projection = shallowRef<BattleProjection | null>(null);
@@ -93,7 +136,7 @@ export function createBattleStore(id: string) {
     const connectionLost = ref(false);
     const refusedEnemyTurn = shallowRef<BattleProjection | null>(null);
     const revealedShields = shallowRef<BattleHex[]>([]);
-    let revealTimer: ReturnType<typeof setTimeout> | null = null;
+    const shieldReveal = createShieldReveal(revealedShields);
 
     const inputLocked = computed(() => animating.value && enemyTurnPlaying.value);
     const isOpen = computed(() => deploy.value !== null);
@@ -103,20 +146,9 @@ export function createBattleStore(id: string) {
       return !!id && localHeroIds.value.includes(id);
     }
 
-    function revealShields(events: DomainEvent[]) {
-      const burned = burnedShieldsOf(events);
-      if (!burned) return;
-      if (revealTimer) clearTimeout(revealTimer);
-      revealedShields.value = burned;
-      revealTimer = setTimeout(() => {
-        revealedShields.value = [];
-        revealTimer = null;
-      }, REVEAL_MS);
-    }
-
     function absorb(next: BattleProjection | null, events: DomainEvent[]) {
       projection.value = next;
-      revealShields(events);
+      shieldReveal.show(events);
       if (animatesForeignCreature(events, isLocalHero)) enemyTurnPlaying.value = true;
       for (const event of events) {
         if (event.type === 'TURN_STARTED')
@@ -128,13 +160,15 @@ export function createBattleStore(id: string) {
     async function run(request: BattleRequest): Promise<BattleReply> {
       const current = bridge;
       if (!current) return noBridgeReply();
+      const live = session.capture();
       waiting.value = true;
       let reply: BattleReply;
       try {
         reply = await current.request(request);
       } finally {
-        waiting.value = false;
+        if (live()) waiting.value = false;
       }
+      if (!live()) return staleReply();
       connectionLost.value = reply.code === 'CONNECTION_LOST';
       for (const step of reply.steps) {
         absorb(step.battle, step.events);
@@ -149,6 +183,7 @@ export function createBattleStore(id: string) {
       heroes: string[],
       resumed: BattleProjection | null = null,
     ) {
+      session.renew();
       deploy.value = next;
       localHeroIds.value = [...heroes];
       projection.value = resumed;
@@ -159,11 +194,12 @@ export function createBattleStore(id: string) {
 
     async function start(): Promise<boolean> {
       if (!deploy.value || projection.value || waiting.value) return false;
+      const live = session.capture();
       const reply = await run({ kind: 'start' });
       if (reply.ok) return true;
       if (reply.code !== 'BATTLE_OPEN' || !bridge) return false;
       const view = await bridge.restore();
-      if (!view) return false;
+      if (!view || !live()) return false;
       projection.value = view;
       turnStartWill.value = view.turnWill;
       return true;
@@ -195,15 +231,18 @@ export function createBattleStore(id: string) {
       if (!animating.value) enemyTurnPlaying.value = false;
       if (!actorFor(projection.value, action, isLocalHero)) return false;
       const reply = await run({ kind: 'hero', action });
+      if (isStale(reply)) return false;
       lastHeroEvents.value = reply.events;
       return reply.ok && !reply.events.some((e) => e.type === 'BATTLE_REJECTED');
     }
 
     async function actAll(actions: BattleAction[]): Promise<boolean> {
       const collected: DomainEvent[] = [];
+      const live = session.capture();
       let accepted = actions.length > 0;
       for (const action of actions) {
         accepted = await act(action);
+        if (!live()) return false;
         collected.push(...lastHeroEvents.value);
         if (!accepted || projection.value?.task) break;
       }
@@ -225,7 +264,7 @@ export function createBattleStore(id: string) {
       lastHeroEvents.value = [];
       enemyTurnPlaying.value = true;
       const reply = await run({ kind: 'run-enemy-turn' });
-      if (reply.ok || projection.value !== before) return;
+      if (isStale(reply) || reply.ok || projection.value !== before) return;
       refusedEnemyTurn.value = before;
       if (!animating.value) enemyTurnPlaying.value = false;
     }
@@ -242,9 +281,8 @@ export function createBattleStore(id: string) {
     }
 
     function close() {
-      if (revealTimer) clearTimeout(revealTimer);
-      revealTimer = null;
-      revealedShields.value = [];
+      session.renew();
+      shieldReveal.clear();
       animating.value = false;
       enemyTurnPlaying.value = false;
       waiting.value = false;
