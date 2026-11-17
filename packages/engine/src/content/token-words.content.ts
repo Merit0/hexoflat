@@ -35,6 +35,22 @@ const SHARED_PREFIXES = [
   'hearth',
   'tide',
   'vow',
+  'thistle',
+  'pine',
+  'flint',
+  'willow',
+  'birch',
+  'heather',
+  'tar',
+  'owl',
+  'hawk',
+  'boar',
+  'lichen',
+  'slate',
+  'ochre',
+  'linen',
+  'rain',
+  'hail',
 ];
 
 const SHARED_SUFFIXES = [
@@ -70,6 +86,22 @@ const SHARED_SUFFIXES = [
   'seventh-gate',
   'lost-herd',
   'red-hill',
+  'cooper',
+  'weaver',
+  'tanner',
+  'potter',
+  'lamplighter',
+  'bellringer',
+  'stranger',
+  'gravedigger',
+  'falconer',
+  'ninth-winter',
+  'dry-spring',
+  'stone-bridge',
+  'burnt-mill',
+  'thin-ice',
+  'still-water',
+  'long-rain',
 ];
 
 const REALM_PREFIXES: Record<TBaseRealm, string[]> = {
@@ -104,6 +136,17 @@ const WORD_THEMES: Record<string, string> = {
   'first-snow': 'snow',
   river: 'river',
   'quiet-ford': 'river',
+  'still-water': 'river',
+  lamplighter: 'light',
+  'ninth-winter': 'snow',
+  'thin-ice': 'snow',
+  hail: 'snow',
+  stone: 'stone',
+  'stone-bridge': 'stone',
+  rain: 'rain',
+  'long-rain': 'rain',
+  hawk: 'hawk',
+  falconer: 'hawk',
 };
 
 function word(slot: 'prefix' | 'suffix', id: string, realms?: TBaseRealm[]): TokenWord {

@@ -1,8 +1,18 @@
 export * from './token-keys';
 export * from './token-schema';
 export * from './token-content-schema';
-export { lightTone, LIGHT_TONES, type TLightTone } from './light-tone';
-export { TypeRegistry, AttributeRegistry, WordPool } from './registries';
+export {
+  lightTone,
+  lightFrameFile,
+  LIGHT_TONES,
+  LIGHT_COLOR_BY_TONE,
+  type TLightTone,
+  type TLightColor,
+} from './light-tone';
+export { TypeRegistry, AttributeRegistry, WordPool, UniqueRegistry } from './registries';
+export * from './unique-schema';
+export * from './unique-drop';
+export { TOKEN_UNIQUES } from '../content/token-uniques.content';
 export { ITEM_TYPES } from '../content/item-types.content';
 export { TOKEN_ATTRIBUTES } from '../content/token-attributes.content';
 export { TOKEN_PRICE_RANGES } from '../content/token-prices.content';
@@ -14,7 +24,11 @@ export {
   tokenLocaleKeys,
   type TokenContent,
 } from '../content/token-content';
-export { tokenContentFailures, TOKEN_NAME_MIN_COMBINATIONS } from '../content/validate-tokens';
+export {
+  tokenContentFailures,
+  uniqueContentFailures,
+  TOKEN_NAME_MIN_COMBINATIONS,
+} from '../content/validate-tokens';
 export * from './sprite-files';
 export { ManifestSpriteRegistry, type SpriteRef } from './sprite-registry';
 export { SPRITE_MANIFEST } from './sprite-manifest';

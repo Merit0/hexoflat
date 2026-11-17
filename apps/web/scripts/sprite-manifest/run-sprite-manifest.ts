@@ -4,9 +4,12 @@ import { fileURLToPath } from 'node:url';
 import {
   buildSpriteManifest,
   createTokenRegistries,
+  ManifestSpriteRegistry,
+  uniqueSpriteKey,
   spriteManifestSource,
   type SpriteFailure,
   type SpriteTypeLookup,
+  type UniqueKey,
 } from '@hexoflat/engine';
 import { collectSpriteFiles } from './collect-sprite-files';
 
@@ -35,4 +38,24 @@ export function runSpriteManifest(run: SpriteManifestRun): SpriteManifestRunResu
   const changed = !existsSync(run.outFile) || readFileSync(run.outFile, 'utf-8') !== source;
   if (changed) writeFileSync(run.outFile, source);
   return { ok: true, count: result.manifest.entries.length, changed };
+}
+
+export interface UniqueSpriteCheck {
+  itemsDir: string;
+  uniqueKeys?: readonly UniqueKey[];
+  types?: SpriteTypeLookup;
+}
+
+export function uniqueSpriteWarnings(check: UniqueSpriteCheck): string[] {
+  const registries = createTokenRegistries();
+  const types = check.types ?? registries.types;
+  const uniqueKeys = check.uniqueKeys ?? registries.uniques.all().map((unique) => unique.key);
+  const result = buildSpriteManifest(collectSpriteFiles(check.itemsDir), types);
+  if (!result.ok) return [];
+  return new ManifestSpriteRegistry(result.manifest)
+    .missingUniqueSprites(uniqueKeys)
+    .map(
+      (key) =>
+        `unique "${key}" has no sprite unique/${uniqueSpriteKey(key)}.png, the placeholder is used`,
+    );
 }

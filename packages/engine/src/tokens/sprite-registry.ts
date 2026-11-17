@@ -5,7 +5,8 @@ import {
   type SpriteManifest,
   type SpriteManifestEntry,
 } from './sprite-files';
-import type { ItemTypeKey, TTokenOrigin } from './token-keys';
+import type { ItemTypeKey, TTokenOrigin, UniqueKey } from './token-keys';
+import { uniqueSpriteKey } from './unique-schema';
 
 export interface SpriteRef {
   key: string;
@@ -36,5 +37,17 @@ export class ManifestSpriteRegistry {
     if (exact.length > 0) return exact;
     if (ofType.length > 0) return ofType;
     return [this.placeholderRef];
+  }
+
+  uniqueSprite(uniqueKey: UniqueKey): SpriteRef {
+    const key = uniqueSpriteKey(uniqueKey);
+    const entry = this.entries.find(
+      (candidate) => candidate.origin === 'unique' && candidate.key === key,
+    );
+    return entry ?? this.placeholderRef;
+  }
+
+  missingUniqueSprites(uniqueKeys: readonly UniqueKey[]): UniqueKey[] {
+    return uniqueKeys.filter((key) => this.uniqueSprite(key) === this.placeholderRef);
   }
 }

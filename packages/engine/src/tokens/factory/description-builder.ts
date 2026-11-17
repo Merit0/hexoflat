@@ -1,9 +1,9 @@
 import type { AttributeRegistry } from '../registries';
 import { TOOL_ACTIONS } from '../token-content-schema';
-import type { AttributeKey, TBaseRealm } from '../token-keys';
-import { BASE_REALMS } from '../token-keys';
+import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import type { AttributeKey } from '../token-keys';
 import type { DescriptionLine, TokenAttribute } from '../token-schema';
-import type { BaseTokenSheet, IDescriptionBuilder } from './token-generation';
+import type { IDescriptionBuilder, TokenSheet } from './token-generation';
 
 export const TOKEN_LINE_KEYS = {
   kind: 'content.tokens.line.kind',
@@ -11,7 +11,7 @@ export const TOKEN_LINE_KEYS = {
   tier: 'content.tokens.line.tier',
 } as const;
 
-export function realmTextKey(realm: TBaseRealm): string {
+export function realmTextKey(realm: ERarityKind): string {
   return `content.tokens.realm.${realm}`;
 }
 
@@ -26,7 +26,7 @@ export function toolTextKey(action: (typeof TOOL_ACTIONS)[number]): string {
 export function descriptionLocaleKeys(attributeKeys: readonly AttributeKey[]): string[] {
   return [
     ...Object.values(TOKEN_LINE_KEYS),
-    ...BASE_REALMS.map(realmTextKey),
+    ...Object.values(ERarityKind).map(realmTextKey),
     ...attributeKeys.map(attributeTextKey),
     ...TOOL_ACTIONS.map(toolTextKey),
   ];
@@ -39,9 +39,10 @@ function halfHeartsToHearts(halfHearts: number): number {
 export class SpecSheetDescriptionBuilder implements IDescriptionBuilder {
   constructor(private readonly attributes: AttributeRegistry) {}
 
-  build(sheet: BaseTokenSheet): DescriptionLine[] {
+  build(sheet: TokenSheet): DescriptionLine[] {
     const { type, realm, mapTier } = sheet;
     const lines: DescriptionLine[] = [
+      ...(sheet.descriptionKey ? [{ key: sheet.descriptionKey, params: {} }] : []),
       { key: TOKEN_LINE_KEYS.kind, params: { type: type.nounKey, realm: realmTextKey(realm) } },
       { key: TOKEN_LINE_KEYS.strike, params: { strike: halfHeartsToHearts(type.strike) } },
       ...sheet.attributes.map((attribute) => this.attributeLine(attribute)),

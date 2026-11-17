@@ -14,7 +14,12 @@ export {
   descriptionLocaleKeys,
 } from './description-builder';
 export { ZodTokenValidator } from './token-validator';
-export { TokenFactory, tokenStreamLabel, type TokenFactoryParts } from './token-factory';
+export {
+  TokenFactory,
+  tokenStreamLabel,
+  type TokenFactoryParts,
+  type UniqueTokenParts,
+} from './token-factory';
 export { createTokenFactory } from './create-token-factory';
 export {
   formatTokenName,

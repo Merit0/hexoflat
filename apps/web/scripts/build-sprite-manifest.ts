@@ -1,4 +1,9 @@
-import { ITEMS_DIR, MANIFEST_FILE, runSpriteManifest } from './sprite-manifest/run-sprite-manifest';
+import {
+  ITEMS_DIR,
+  MANIFEST_FILE,
+  runSpriteManifest,
+  uniqueSpriteWarnings,
+} from './sprite-manifest/run-sprite-manifest';
 
 const result = runSpriteManifest({ itemsDir: ITEMS_DIR, outFile: MANIFEST_FILE });
 
@@ -11,4 +16,7 @@ if (!result.ok) {
   const state = result.changed ? 'written' : 'unchanged';
   console.log(`tokens:manifest: ${result.count} sprite(s), ${MANIFEST_FILE} ${state}.`);
   if (result.changed) console.log('Rebuild the engine: pnpm --filter @hexoflat/engine build');
+  for (const warning of uniqueSpriteWarnings({ itemsDir: ITEMS_DIR })) {
+    console.warn(`tokens:manifest: warning: ${warning}`);
+  }
 }

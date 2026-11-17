@@ -9,7 +9,8 @@ import {
   type TokenWord,
   type WordPoolData,
 } from './token-content-schema';
-import type { AttributeKey, ItemTypeKey } from './token-keys';
+import type { AttributeKey, ItemTypeKey, UniqueKey } from './token-keys';
+import { uniqueTokenDefinitionSchema, type UniqueTokenDefinition } from './unique-schema';
 
 function indexByKey<T extends { key: string }>(
   kind: string,
@@ -82,6 +83,31 @@ export class AttributeRegistry {
         definition.implemented &&
         (!definition.allowedTypes?.length || definition.allowedTypes.includes(type)),
     );
+  }
+}
+
+export class UniqueRegistry {
+  private readonly byKey: ReadonlyMap<string, UniqueTokenDefinition>;
+
+  constructor(definitions: readonly UniqueTokenDefinition[]) {
+    this.byKey = indexByKey(
+      'Unique',
+      definitions.map((definition) => uniqueTokenDefinitionSchema.parse(definition)),
+    );
+  }
+
+  has(key: UniqueKey): boolean {
+    return this.byKey.has(key);
+  }
+
+  get(key: UniqueKey): UniqueTokenDefinition {
+    const definition = this.byKey.get(key);
+    if (!definition) throw new Error(`Unknown unique "${key}"`);
+    return definition;
+  }
+
+  all(): readonly UniqueTokenDefinition[] {
+    return [...this.byKey.values()];
   }
 }
 

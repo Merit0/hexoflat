@@ -32,7 +32,7 @@ export function hasGeneratedName(type: ItemTypeDefinition): boolean {
 
 const tierValueSchema = z.number().int().positive();
 
-export const ATTRIBUTE_UNITS = ['half-heart', 'point'] as const;
+export const ATTRIBUTE_UNITS = ['half-heart', 'side', 'point', 'hex', 'kg'] as const;
 export type TAttributeUnit = (typeof ATTRIBUTE_UNITS)[number];
 
 export const attributeDefinitionSchema = z.strictObject({
