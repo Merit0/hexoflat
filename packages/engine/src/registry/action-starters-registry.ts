@@ -9,6 +9,7 @@ import { TToolKeys } from '../content/tools.content';
 import { HEXOBJECT_KEYS } from './hexobjects-registry';
 import { THeroToolKey } from '../content/equipment.content';
 import { objectActionDestination } from '../map/object-transition';
+import { toolActionOf } from '../tokens/tool-action';
 
 export type StartResult = { ok: true; endsAt: number } | { ok: false; message: string };
 
@@ -76,12 +77,14 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     const durationMs: number = cutCfg?.durationMs ?? 5000;
     const costPct: number = cutCfg?.durabilityCostPct ?? 0.1;
 
-    if (requiredTool && tool !== requiredTool) {
+    const typed = toolActionOf(tool) === EHexActionType.CUT;
+    if (!typed && tool !== requiredTool) {
       return { ok: false, message: `Need a tool: ${requiredTool}` };
     }
 
-    const cap = getToolCapabilities(tool);
-    if (!cap.canCut) return { ok: false, message: 'Need something to cut with!' };
+    if (!typed && !getToolCapabilities(tool).canCut) {
+      return { ok: false, message: 'Need something to cut with!' };
+    }
 
     const heroToolStore = ctx.heroToolStore;
     const okDur = heroToolStore.consumeDurability(costPct);
@@ -130,12 +133,14 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
     const durationMs: number = mineCfg?.durationMs ?? 10000;
     const costPct: number = mineCfg?.durabilityCostPct ?? 0.1;
 
-    if (requiredTool && tool !== requiredTool) {
+    const typed = toolActionOf(tool) === EHexActionType.MINE;
+    if (!typed && tool !== requiredTool) {
       return { ok: false, message: `Need a tool: ${requiredTool}` };
     }
 
-    const cap = getToolCapabilities(tool);
-    if (!cap.canMine) return { ok: false, message: 'Need something to mine with!' };
+    if (!typed && !getToolCapabilities(tool).canMine) {
+      return { ok: false, message: 'Need something to mine with!' };
+    }
 
     const heroToolStore = ctx.heroToolStore;
     const okDur = heroToolStore.consumeDurability(costPct);

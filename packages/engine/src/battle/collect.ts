@@ -3,6 +3,7 @@ import type { IInventoryDraft } from '../inventory/apply-stock';
 import { pickupStack } from '../loot';
 import { createContainer, openInSpace } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
+import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { lootTableIdOfKind } from './battle-catalogue';
 import { collectActorRefusal, graveAt, graveSpace } from './grave-container-space';
 import { isAlive, isFreeHex } from './battle-board';
@@ -56,6 +57,7 @@ export function enterCollectPhase(state: BattleState): DomainEvent[] {
       seed: state.seed,
       sourceId: state.id,
       targetKey: hexKey(grave.hex),
+      origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
     });
   }
   state.collect = { graves, items: [] };

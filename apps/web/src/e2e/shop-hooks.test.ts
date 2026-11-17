@@ -45,9 +45,14 @@ describe('shop test hooks', () => {
     );
     const trader = shopTestApi.getTrader()!;
     expect(trader.trips).toBe(2);
-    expect(trader.goods[0]).toEqual({ key: K.SWORD, amount: 1 });
+    expect(trader.goods[0]).toMatchObject({ key: K.SWORD, amount: 1, token: { type: K.SWORD } });
     expect(trader.goods.slice(1).every((cell) => cell === null)).toBe(true);
-    expect(trader.buyback[0]).toEqual({ key: K.AXE, amount: 1, unitPrice: 19 });
+    expect(trader.buyback[0]).toMatchObject({
+      key: K.AXE,
+      amount: 1,
+      unitPrice: 19,
+      token: { type: K.AXE },
+    });
   });
 
   it('counts the coins in the bag and the hands', async () => {

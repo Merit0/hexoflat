@@ -1,6 +1,6 @@
-import { coinPriceOf } from '../content/content-accessors';
+import { priceOf } from './price-of';
 import type { InventoryState } from '../inventory/inventory-state';
-import { discountedUnit } from './discount-math';
+import { discountedPrice } from './discount-math';
 import { planBuy } from './plan-buy';
 import { readSource } from './trade-lists';
 import type { TraderGood, TraderState } from './trade-state';
@@ -26,7 +26,7 @@ export function planDeal(
   if (!good || !('discountPercent' in good) || !good.discountPercent) {
     return refused(good ? 'NOT_DISCOUNTED' : 'EMPTY_SOURCE');
   }
-  const exact = discountedUnit(good.key, good.discountPercent);
+  const exact = discountedPrice(priceOf(good), good.discountPercent);
   if (exact === null) return refused('NOT_DISCOUNTED');
   if (guess !== exact) {
     const goods = trader.state.goods.slice();
@@ -40,5 +40,5 @@ export function planDeal(
     unitOverride: exact,
   });
   if (!result.ok) return { kind: 'refused', result };
-  return { kind: 'bought', result, saved: (coinPriceOf(good.key) ?? exact) - exact };
+  return { kind: 'bought', result, saved: (priceOf(good) ?? exact) - exact };
 }

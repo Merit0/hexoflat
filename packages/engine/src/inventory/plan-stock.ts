@@ -6,6 +6,7 @@ import { EQUIP_SLOTS } from '../abstraction/hexobject-abstraction';
 import type { TItemLocation } from './item-location';
 import { carriedWeightKg } from './item-queries';
 import type { IInventoryAggregate } from './transfer-types';
+import type { ItemToken } from '../tokens/token-schema';
 
 export type TGrantError = 'UNKNOWN_ITEM' | 'NOT_STORABLE' | 'TOO_HEAVY' | 'BAG_FULL';
 export type TConsumeError = 'UNKNOWN_ITEM' | 'NOT_ENOUGH';
@@ -34,6 +35,7 @@ function newItem(
   stackKey: string | undefined,
   amount: number,
   id: string,
+  token: ItemToken | undefined,
 ): InventoryItem {
   return {
     id,
@@ -43,6 +45,7 @@ function newItem(
     amount,
     slotKey: '',
     isNew: true,
+    ...(token ? { token } : {}),
   };
 }
 
@@ -52,6 +55,7 @@ export function planGrant(
   amount: number,
   capacityKg: number,
   newId: () => string,
+  tokenAt?: (piece: number) => ItemToken | undefined,
 ): TGrantResult {
   if (!KNOWN_KEYS.has(key)) return { ok: false, reason: 'UNKNOWN_ITEM' };
   if (key === HEXOBJECT_KEYS.HAND) return { ok: false, reason: 'NOT_STORABLE' };
@@ -65,6 +69,7 @@ export function planGrant(
   const equip = { ...agg.equip };
   const placedAt: TItemLocation[] = [];
   let left = amount;
+  let piece = 0;
 
   const topUp = (item: InventoryItem): InventoryItem => {
     const room = maxStack === null ? left : Math.max(0, maxStack - item.amount);
@@ -97,7 +102,9 @@ export function planGrant(
     const index = bag.findIndex((cell) => cell === null);
     if (index === -1) return { ok: false, reason: 'BAG_FULL' };
     const chunk = stackable ? (maxStack === null ? left : Math.min(left, maxStack)) : 1;
-    bag[index] = newItem(key, stackKey, chunk, newId());
+    const token = stackable ? undefined : tokenAt?.(piece);
+    piece += 1;
+    bag[index] = newItem(key, stackKey, chunk, newId(), token);
     placedAt.push({ container: 'bag', index });
     left -= chunk;
   }

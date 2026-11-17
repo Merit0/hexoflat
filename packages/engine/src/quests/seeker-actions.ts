@@ -3,6 +3,7 @@ import { questAnswerReview } from './quest-answer-review';
 import { resolveSeekerPath } from './resolve-seeker-path';
 import type { DomainEvent } from '../commands/types';
 import { createContainer } from '../containers';
+import { questTokenOrigin } from './quest-token-origin';
 import { lootTableOf } from '../content/loot-tables.content';
 import { spendWill } from '../knowledge/will';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
@@ -227,6 +228,7 @@ function showChest(
       seed: run.seed,
       sourceId: run.seed,
       targetKey: coordinateKey(hex),
+      origin: questTokenOrigin(run),
     });
     const drop = container.contents?.[0] ?? [];
     if (drop.length === 0) throw new Error(`CHEST_DROP_EMPTY:${run.chestLootTableId}`);

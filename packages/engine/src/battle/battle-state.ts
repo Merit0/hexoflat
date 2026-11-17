@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
 import { itemTokenSchema } from '../tokens/token-schema';
+import { tokenOriginSchema } from '../tokens/token-origin';
 
 export const axialSchema = z.object({ q: z.number().int(), r: z.number().int() });
 export type BattleHex = z.infer<typeof axialSchema>;
@@ -164,6 +165,7 @@ export const battleStateSchema = z.object({
   lootEnabled: z.boolean().optional(),
   fallen: z.array(z.string()).optional(),
   collect: collectSchema.optional(),
+  tokenOrigin: tokenOriginSchema.optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
 

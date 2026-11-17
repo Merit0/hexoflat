@@ -15,5 +15,6 @@ export { planList, planUnlist, planReprice } from './plan-listing';
 export type { TListingResult } from './plan-listing';
 export { planDeal } from './plan-deal';
 export type { TDealResult } from './plan-deal';
-export { discountedUnit, applyDiscounts } from './discount-math';
+export { discountedUnit, discountedPrice, applyDiscounts } from './discount-math';
+export { priceOf, sellPriceOf, sellPriceFrom, type PricedEntry } from './price-of';
 export { rollTraderGoods } from './trader-view';

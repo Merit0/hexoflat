@@ -4,11 +4,12 @@ import { getPrototype } from '../content/content-accessors';
 import { lootTableOf } from '../content/loot-tables.content';
 import type HexMapModel from '../map/models/hex-map-model';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import type { TokenOrigin } from '../tokens/token-origin';
 import { coordinateKey, offsetToAxial } from '../utils/hex-utils';
 
 export function createChestContainers(
   map: HexMapModel,
-  source: { seed: string; sourceId: string },
+  source: { seed: string; sourceId: string; origin: TokenOrigin },
 ): void {
   for (const tile of map.tiles) {
     const object = tile.hexobject;
@@ -25,6 +26,7 @@ export function createChestContainers(
       seed: source.seed,
       sourceId: source.sourceId,
       targetKey: key,
+      origin: source.origin,
     });
   }
 }

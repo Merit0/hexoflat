@@ -100,7 +100,7 @@ export class TokenFactory {
       }),
       attributes,
       skills: this.parts.skillGenerator.generate(type, stream('skills')),
-      price: this.parts.priceGenerator.generate(realm, stream('price')),
+      price: this.parts.priceGenerator.generate(type, realm, stream('price')),
       sprite: this.parts.spriteResolver.resolve(type, realm, stream('sprite')),
       mapTier: ctx.mapTier,
       generatorVersion: TOKEN_GENERATOR_VERSION,

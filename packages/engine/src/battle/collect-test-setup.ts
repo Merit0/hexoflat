@@ -1,3 +1,4 @@
+import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { expect } from 'vitest';
 import { createContainer } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
@@ -129,5 +130,6 @@ export function setGraveTables(state: BattleState, index: number, tables: string
     seed: state.seed,
     sourceId: state.id,
     targetKey: `${grave.hex.q},${grave.hex.r}`,
+    origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
   });
 }

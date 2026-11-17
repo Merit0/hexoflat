@@ -104,6 +104,7 @@ export function applyCommand(
     inventory: draft,
     emit: (event) => emitted.push(event),
     heroId: soleHeroId(state),
+    loot: state.loot,
   };
 
   switch (parsed.type) {

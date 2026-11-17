@@ -1,3 +1,5 @@
+import { locationTokenOrigin } from '../registry/location-token-origin';
+import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { applyBattleCommand } from '../battle/apply-battle';
 import { isFreeHex } from '../battle/battle-board';
@@ -131,7 +133,11 @@ function take(
 }
 
 function lootChest(pool: CavePool, runSeed: string, result: RunResult): void {
-  const context = { seed: runSeed, sourceId: `cave-${runSeed}` };
+  const context = {
+    seed: runSeed,
+    sourceId: `cave-${runSeed}`,
+    origin: locationTokenOrigin('cave'),
+  };
   const rolled = mergedCount([rollChestLoot(pool.chest, context)]);
   const original = pool.chest.hexobject!;
   const ring = getHexNeighbors(pool.chest.coordinates).map((coords) => tileAt(pool.map, coords));
@@ -147,6 +153,7 @@ function lootChest(pool: CavePool, runSeed: string, result: RunResult): void {
       seed: context.seed,
       sourceId: context.sourceId,
       targetKey: key,
+      origin: context.origin,
     }),
   };
   const hero = 'economy-hero';
@@ -198,6 +205,7 @@ function lootGraves(source: BattleState, runSeed: string, label: string, result:
       seed: battle.seed,
       sourceId: battle.id,
       targetKey: hexKey(grave.hex),
+      origin: battle.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
     });
   }
   for (const { hex, tables } of structuredClone(battle.collect!.graves)) {

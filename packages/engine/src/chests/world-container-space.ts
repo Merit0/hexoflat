@@ -8,6 +8,7 @@ import {
 import { EHexActionType } from '../enums/hex-action-type';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { applySpreadPlan } from '../loot';
+import { withToken } from '../tokens/token-entry';
 import { revealAroundHero } from '../map/fog-service';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
@@ -76,7 +77,7 @@ export function worldChestSpace(
           target.hexobject = HexObjectFactory.create(
             placement.itemKey,
             axialToOffset(placement.hex),
-            { quantity: placement.amount },
+            withToken({ quantity: placement.amount }, placement.token),
           );
         }
         return { hex: placement.hex, itemKey: placement.itemKey, amount: placement.amount };

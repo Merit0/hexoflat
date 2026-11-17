@@ -2,7 +2,10 @@ import { healthCapOf } from '../utils/combat/health-format';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import type { IPendingTileAction } from '../abstraction/hex-tile-abstraction';
-import { grantToDraft } from '../inventory/apply-stock';
+import { grantToDraft, type TokenSupply } from '../inventory/apply-stock';
+import { tokenSourceIdOf } from '../tokens/game-tokens';
+import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { coordinateKey } from '../utils/hex-utils';
 import { IActionContext } from '../abstraction/abstract-action';
 import { getMeta } from '../content';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
@@ -46,6 +49,18 @@ const FINISH_UNLOCK_ONLY: ActionFinisher = (_tile, _action, ctx) => {
   ensureUnlocked(ctx);
   return true;
 };
+
+function takeSupply(tile: HexTileModel, ctx: IActionContext): TokenSupply {
+  const token = tile.hexobject?.token;
+  if (token || !ctx.loot) return { tokens: [token] };
+  return {
+    mint: {
+      seed: ctx.loot.seed,
+      sourceId: tokenSourceIdOf('dev', ctx.loot.sourceId, coordinateKey(tile.coordinates)),
+      origin: ctx.loot.origin ?? DEFAULT_TOKEN_ORIGIN,
+    },
+  };
+}
 
 export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
   [EHexActionType.CUT]: (tile, action, ctx) => {
@@ -105,7 +120,9 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
       hexobject.quantity ??
       (hexobject.groupType === EHexobjectGroup.RESOURCE ? (hexobject.resource?.amount ?? 1) : 1);
 
-    if (!grantToDraft(ctx.inventory, hexobject.hexobjectKey, amount, 'pickup')) {
+    if (
+      !grantToDraft(ctx.inventory, hexobject.hexobjectKey, amount, 'pickup', takeSupply(tile, ctx))
+    ) {
       if (ctx.heroId) {
         ctx.emit?.({ type: 'LOOT_REJECTED', payload: { heroId: ctx.heroId, reason: 'BAG_FULL' } });
       }

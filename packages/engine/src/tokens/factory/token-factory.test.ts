@@ -6,6 +6,10 @@ import { ManifestSpriteRegistry } from '../sprite-registry';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
 import { itemTokenSchema, emptyTokenExtensions, type ItemToken } from '../token-schema';
 import { createTokenFactory } from './create-token-factory';
+import { RangePriceGenerator, TypePriceGenerator } from './price-generator';
+import { coinPriceOf } from '../../content/content-accessors';
+import type { THexobjectKey } from '../../registry/hexobjects-registry';
+import { deriveStream } from '../../utils/random-seeded';
 import { contextFor, defaultFactory, mixedContexts } from './factory-test-setup';
 import { TOKEN_GENERATOR_VERSION, type GenerationContext } from './token-generation';
 
@@ -76,12 +80,26 @@ describe('TokenFactory.createBase', () => {
 });
 
 describe('TokenFactory.createBase prices, determinism and text', () => {
-  it('TG-5: prices inside the realm range, no skills, default extensions', () => {
+  it('D21: a type without a coin price falls back to the realm range', () => {
+    const ranged = new TypePriceGenerator(
+      () => null,
+      new RangePriceGenerator(TOKEN_CONTENT.priceRanges),
+    );
+    const [min, max] = TOKEN_CONTENT.priceRanges[ERarityKind.IDOL];
+    for (let index = 0; index < 50; index += 1) {
+      const price = ranged.generate(
+        types.get('sword'),
+        ERarityKind.IDOL,
+        deriveStream('p', `${index}`),
+      );
+      expect(price).toBeGreaterThanOrEqual(min);
+      expect(price).toBeLessThanOrEqual(max);
+    }
+  });
+
+  it('TG-5 (D21): the price is the coin price of the type, no skills, default extensions', () => {
     for (const { token } of TOKENS) {
-      const [min, max] = TOKEN_CONTENT.priceRanges[token.rarity as ERarityKind.IDOL];
-      expect(Number.isInteger(token.price)).toBe(true);
-      expect(token.price).toBeGreaterThanOrEqual(min);
-      expect(token.price).toBeLessThanOrEqual(max);
+      expect(token.price).toBe(coinPriceOf(token.type as THexobjectKey));
       expect(token.skills).toEqual([]);
       expect(token.ext).toEqual(emptyTokenExtensions());
       expect(token.origin).toBe('base');

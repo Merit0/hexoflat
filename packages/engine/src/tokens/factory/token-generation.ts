@@ -109,7 +109,7 @@ export interface ISkillGenerator {
 }
 
 export interface IPriceGenerator {
-  generate(realm: TBaseRealm, rng: RandomNumberGenerator): number;
+  generate(type: ItemTypeDefinition, realm: TBaseRealm, rng: RandomNumberGenerator): number;
 }
 
 export interface IDescriptionBuilder {

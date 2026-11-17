@@ -1,3 +1,4 @@
+import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { describe, expect, it } from 'vitest';
 import { SEEKER_CHEST_TABLE_IDS, lootTableOf } from '../content/loot-tables.content';
 import { rollLootLists } from '../loot';
@@ -16,6 +17,7 @@ describe('CH-P6 createContainer', () => {
       seed: 's',
       sourceId: 'b1',
       targetKey: '2,-1',
+      origin: DEFAULT_TOKEN_ORIGIN,
     });
     expect(made.status).toBe('full');
     expect(made.at).toEqual(AT);
@@ -33,6 +35,7 @@ describe('CH-P6 createContainer', () => {
       seed: 's',
       sourceId: 'm',
       targetKey: 'x',
+      origin: DEFAULT_TOKEN_ORIGIN,
     });
     expect(made.contents).toEqual([]);
   });
@@ -47,6 +50,7 @@ describe('CH-P6 createContainer', () => {
         seed: `seed-${index}`,
         sourceId: `seed-${index}`,
         targetKey: `${index},0`,
+        origin: DEFAULT_TOKEN_ORIGIN,
       });
       expect(made.contents![0].length).toBeGreaterThan(0);
     }

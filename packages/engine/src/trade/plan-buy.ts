@@ -1,5 +1,5 @@
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
-import { coinPriceOf } from '../content/content-accessors';
+import { priceOf } from './price-of';
 import { TRADERS } from '../content/traders.content';
 import { applyAggregate, toAggregate } from '../inventory/inventory-adapter';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -74,8 +74,7 @@ export function planBuy(
   if ('discountPercent' in entry && entry.discountPercent && opts.unitOverride === undefined) {
     return refuse('NEEDS_DEAL');
   }
-  const unit =
-    opts.unitOverride ?? ('unitPrice' in entry ? entry.unitPrice : coinPriceOf(entry.key));
+  const unit = opts.unitOverride ?? ('unitPrice' in entry ? entry.unitPrice : priceOf(entry));
   if (unit === null) return refuse('NOT_TRADEABLE');
 
   const seq = sequenceOf(inventory);

@@ -1,7 +1,5 @@
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
-import { ITEM_TYPES } from '../content/item-types.content';
-import { createTokenFactory } from '../tokens/factory/create-token-factory';
-import type { TokenFactory } from '../tokens/factory/token-factory';
+import { gameTokenFactory, isTokenType, tokenSourceIdOf } from '../tokens/game-tokens';
 import type { ItemToken } from '../tokens/token-schema';
 
 export const UPCAST_MAP_TIER = 1;
@@ -19,21 +17,8 @@ interface StoredInventory {
   stash?: { cells?: unknown };
 }
 
-const TOKEN_TYPES: ReadonlySet<string> = new Set(ITEM_TYPES.map((type) => type.key));
-
-let factory: TokenFactory | null = null;
-
-function tokenFactory(): TokenFactory {
-  factory ??= createTokenFactory();
-  return factory;
-}
-
-function sourcePart(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
-}
-
 export function upcastSourceId(heroId: string, slot: string): string {
-  return `upcast:${sourcePart(heroId)}.${sourcePart(slot)}`;
+  return tokenSourceIdOf('upcast', heroId, slot);
 }
 
 export function upcastSeed(heroId: string): string {
@@ -43,7 +28,7 @@ export function upcastSeed(heroId: string): string {
 function isTokenizable(cell: StoredCell): cell is StoredCell & { key: string } {
   return (
     typeof cell.key === 'string' &&
-    TOKEN_TYPES.has(cell.key) &&
+    isTokenType(cell.key) &&
     cell.amount === 1 &&
     cell.stackKey === undefined &&
     cell.token === undefined
@@ -51,7 +36,7 @@ function isTokenizable(cell: StoredCell): cell is StoredCell & { key: string } {
 }
 
 export function upcastToken(heroId: string, slot: string, type: string): ItemToken | null {
-  const result = tokenFactory().createBase({
+  const result = gameTokenFactory().createBase({
     seed: upcastSeed(heroId),
     sourceId: upcastSourceId(heroId, slot),
     n: 0,

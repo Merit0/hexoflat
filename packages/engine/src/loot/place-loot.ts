@@ -2,6 +2,7 @@ import { AXIAL_DIRS, type Axial } from '../utils/hex-utils';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { lootRefusal, type LootRefusal } from './loot-refusal';
 import type { LootDrop } from './loot-table';
+import { withToken } from '../tokens/token-entry';
 
 export interface LootNeighbour {
   hex: Axial;
@@ -20,6 +21,7 @@ export interface LootPlacement {
   itemKey: LootDrop['itemKey'];
   amount: number;
   guaranteed: boolean;
+  token?: LootDrop['token'];
 }
 
 export type PlaceLootResult =
@@ -107,11 +109,16 @@ export function placeLoot(input: PlaceLootInput): PlaceLootResult {
   if (places.length === 0 && toBag.length === 0) {
     return { kind: 'refused', refusal: lootRefusal('NO_ROOM_FOR_LOOT') };
   }
-  const placements = placed.map((drop, index) => ({
-    hex: { ...places[index] },
-    itemKey: drop.itemKey,
-    amount: drop.amount,
-    guaranteed: drop.guaranteed,
-  }));
+  const placements = placed.map((drop, index) =>
+    withToken(
+      {
+        hex: { ...places[index] },
+        itemKey: drop.itemKey,
+        amount: drop.amount,
+        guaranteed: drop.guaranteed,
+      },
+      drop.token,
+    ),
+  );
   return { kind: 'placed', placements, toBag };
 }

@@ -183,7 +183,12 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
     expect(bagAmount(after, COINS)).toBe(START_COINS - SWORD_PRICE + SWORD_SELL);
     expect(
       ((await progressOf(userId, heroId)).state as ProgressState).traders.ilva!.buyback[0],
-    ).toEqual({ key: SWORD, amount: 1, unitPrice: SWORD_SELL });
+    ).toMatchObject({
+      key: SWORD,
+      amount: 1,
+      unitPrice: SWORD_SELL,
+      token: { type: SWORD, price: SWORD_PRICE },
+    });
     const ledger = await ledgerRows(command.commandId);
     expect(ledger).toHaveLength(2);
     expect(ledger.find((row) => row.itemKey === COINS)).toMatchObject({
@@ -388,7 +393,13 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
       });
       expect(bagAmount(await inventoryOf(userId, heroId), SWORD)).toBe(0);
       const listings = ((await progressOf(userId, heroId)).state as ProgressState).listings;
-      expect(listings[0]).toEqual({ key: SWORD, amount: 1, unitPrice: 300 });
+      expect(listings[0]).toMatchObject({
+        key: SWORD,
+        amount: 1,
+        unitPrice: 300,
+        token: { type: SWORD },
+      });
+      expect(Object.keys(listings[0]!).sort()).toEqual(['amount', 'key', 'token', 'unitPrice']);
       const ledger = await ledgerRows(command.commandId);
       expect(ledger).toHaveLength(1);
       expect(ledger[0]).toMatchObject({ itemKey: SWORD, delta: -1, reason: 'listing' });

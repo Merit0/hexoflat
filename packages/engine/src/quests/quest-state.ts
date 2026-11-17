@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
 import { itemTokenSchema } from '../tokens/token-schema';
+import { mapTierSchema } from '../tokens/token-keys';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
 import { TERRAIN_IDS } from '../boards/terrain';
@@ -58,6 +59,7 @@ export const seekerFieldSchema = z
     background: z.string().min(1),
     exit: hexSchema,
     tiles: z.array(fieldTileSchema).min(1),
+    mapTier: mapTierSchema.optional(),
   })
   .strict();
 export type SeekerField = z.infer<typeof seekerFieldSchema>;

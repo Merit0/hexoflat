@@ -113,7 +113,7 @@ describe('a refused deal changes nothing and says why', () => {
     await drop();
     expect(shopCommands()).toEqual([]);
     expect(coins()).toBe(100);
-    expect(ilva().goods[1]).toEqual({ key: K.SWORD, amount: 1 });
+    expect(ilva().goods[1]).toMatchObject({ key: K.SWORD, amount: 1, token: { type: K.SWORD } });
     expect(message()).toBe('Not enough coins.');
     expect(useHeroToolStore().actionMessageIcon).toBe('coins');
     expect(useHeroToolStore().actionMessageWillCost).toBe(SWORD_PRICE);

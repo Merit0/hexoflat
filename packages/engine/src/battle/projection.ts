@@ -54,6 +54,7 @@ function publicPart(state: BattleState, viewer: BattleSide): Omit<BattleState, H
   delete copy.taskHistory;
   delete copy.wounds;
   delete copy.turnClockMs;
+  delete copy.tokenOrigin;
   delete copy.lootEnabled;
   delete copy.fallen;
   delete copy.collect;

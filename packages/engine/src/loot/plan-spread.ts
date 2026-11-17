@@ -2,6 +2,7 @@ import type { LootDrop } from './loot-table';
 import { placeLoot, type LootNeighbour } from './place-loot';
 import type { Axial } from '../utils/hex-utils';
 import { grantToDraft, type IInventoryDraft } from '../inventory/apply-stock';
+import { withToken } from '../tokens/token-entry';
 
 export interface LootSpreadInput {
   target: Axial;
@@ -11,9 +12,15 @@ export interface LootSpreadInput {
   bag: IInventoryDraft;
 }
 
+export interface SpreadDrop {
+  itemKey: LootDrop['itemKey'];
+  amount: number;
+  token?: LootDrop['token'];
+}
+
 export interface LootSpreadPlan {
-  placements: { hex: Axial; itemKey: LootDrop['itemKey']; amount: number }[];
-  toBag: { itemKey: LootDrop['itemKey']; amount: number }[];
+  placements: (SpreadDrop & { hex: Axial })[];
+  toBag: SpreadDrop[];
 }
 
 export type LootSpreadResult =
@@ -21,9 +28,13 @@ export type LootSpreadResult =
 
 export const EMPTY_LOOT_SPREAD: LootSpreadPlan = { placements: [], toBag: [] };
 
-export function bagTakesAll(draft: IInventoryDraft, drops: readonly LootDrop[]): boolean {
+export function grantDrop(draft: IInventoryDraft, drop: SpreadDrop): boolean {
+  return grantToDraft(draft, drop.itemKey, drop.amount, 'loot', { tokens: [drop.token] });
+}
+
+export function bagTakesAll(draft: IInventoryDraft, drops: readonly SpreadDrop[]): boolean {
   const trial: IInventoryDraft = { current: draft.current, events: [] };
-  return drops.every((drop) => grantToDraft(trial, drop.itemKey, drop.amount, 'loot'));
+  return drops.every((drop) => grantDrop(trial, drop));
 }
 
 export function planLootSpread(input: LootSpreadInput): LootSpreadResult {
@@ -39,8 +50,12 @@ export function planLootSpread(input: LootSpreadInput): LootSpreadResult {
   return {
     ok: true,
     plan: {
-      placements: result.placements.map(({ hex, itemKey, amount }) => ({ hex, itemKey, amount })),
-      toBag: result.toBag.map(({ itemKey, amount }) => ({ itemKey, amount })),
+      placements: result.placements.map(({ hex, itemKey, amount, token }) =>
+        withToken({ hex, itemKey, amount }, token),
+      ),
+      toBag: result.toBag.map(({ itemKey, amount, token }) =>
+        withToken({ itemKey, amount }, token),
+      ),
     },
   };
 }

@@ -10,6 +10,8 @@ import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model
 import { findTilesMissingSpawners } from '../map/resource-hydration';
 import { LOCATION_KEYS, type LocationKey } from '../registry/location-key';
 import { MapRegistry } from '../registry/world-map-registry';
+import { locationTokenOrigin } from '../registry/location-token-origin';
+import type { TokenOrigin } from '../tokens/token-origin';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { deriveStream } from '../utils/random-seeded';
 import { applyCommand } from '../commands/apply-command';
@@ -93,6 +95,12 @@ export function staleWorldOf(raw: unknown): StaleWorldError | null {
   );
 }
 
+export function worldTokenOrigin(
+  world: Pick<ServerWorld, 'locationKey' | 'descriptor'>,
+): TokenOrigin {
+  return locationTokenOrigin(world.locationKey, world.descriptor);
+}
+
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   const stale = staleWorldOf(raw);
   if (stale) throw stale;
@@ -135,7 +143,11 @@ export function createServerWorld(
     );
   }
   if (locationKey === 'camping') installCampBook(map, null);
-  createChestContainers(map, { seed: worldSeed, sourceId: mapId });
+  createChestContainers(map, {
+    seed: worldSeed,
+    sourceId: mapId,
+    origin: locationTokenOrigin(locationKey, created.descriptor),
+  });
 
   const entry = findEntryHex(map, locationKey, deriveStream(worldSeed, 'world')) ?? {
     ...MAP_ORIGIN,

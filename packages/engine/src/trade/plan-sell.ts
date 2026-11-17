@@ -8,7 +8,7 @@ import { withToken } from '../tokens/token-entry';
 import { freshPiece, sequenceOf } from './coin-purse';
 import { addToBuyback } from './trade-lists';
 import type { ITradeOptions, ITraderRef, TTradeError, TTradeResult } from './trade-types';
-import { sellUnitPrice } from './trader-view';
+import { sellPriceOf } from './price-of';
 
 function refuse(reason: TTradeError, price: number | null = null): TTradeResult {
   return { ok: false, reason, price };
@@ -24,7 +24,7 @@ export function planSell(
   const item = agg.bag[fromBagIndex];
   if (!item) return refuse('EMPTY_SOURCE');
   const def = TRADERS[trader.key];
-  const unit = sellUnitPrice(def, item.key);
+  const unit = sellPriceOf(def, item);
   if (unit === null) return refuse('NOT_TRADEABLE');
   const amount =
     opts.amount !== undefined

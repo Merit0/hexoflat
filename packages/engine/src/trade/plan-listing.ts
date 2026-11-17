@@ -1,4 +1,4 @@
-import { coinPriceOf } from '../content/content-accessors';
+import { priceOf } from './price-of';
 import { applyAggregate, toAggregate } from '../inventory/inventory-adapter';
 import type { InventoryState } from '../inventory/inventory-state';
 import { exceedsCapacity } from '../inventory/item-queries';
@@ -40,7 +40,7 @@ export function planList(
   const agg = toAggregate(inventory);
   const item = agg.bag[fromBagIndex];
   if (!item) return refuse('EMPTY_SOURCE');
-  if (coinPriceOf(item.key) === null) return refuse('NOT_TRADEABLE');
+  if (priceOf(item) === null) return refuse('NOT_TRADEABLE');
   const slot = listings.findIndex((cell) => cell === null);
   if (slot === -1) return refuse('TRADE_SLOTS_FULL');
 

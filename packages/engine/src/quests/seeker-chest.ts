@@ -1,16 +1,12 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
-import { openInSpace } from '../containers';
+import { openInSpace, rollContainerContents } from '../containers';
+import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
+import { questTokenOrigin } from './quest-token-origin';
 import { lootTableOf } from '../content/loot-tables.content';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
-import {
-  lootNeighbours,
-  pickupStack,
-  rollLootList,
-  type LootDrop,
-  type LootNeighbour,
-} from '../loot';
+import { lootNeighbours, pickupStack, type LootDrop, type LootNeighbour } from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import {
   axialToOffset,
@@ -32,12 +28,17 @@ export function generateChestDrop(input: {
   seed: string;
   chestHex: IHexCoordinates;
   tableId: string | undefined;
+  origin?: TokenOrigin;
 }): LootDrop[] {
-  return rollLootList(lootTableOf(input.tableId), {
+  const [drops] = rollContainerContents({
+    kind: 'quest-chest',
+    tables: [lootTableOf(input.tableId)],
     seed: input.seed,
     sourceId: input.seed,
     targetKey: coordinateKey(input.chestHex),
+    origin: input.origin ?? DEFAULT_TOKEN_ORIGIN,
   });
+  return drops ?? [];
 }
 
 function sameHex(a: IHexCoordinates, b: IHexCoordinates): boolean {
@@ -67,7 +68,12 @@ function seenAround(board: SeekerBoard, at: IHexCoordinates): string[] {
 const CHEST_SPACE = questChestSpace({
   neighbours: questLootNeighbours,
   generate: ({ source, tableId }) =>
-    generateChestDrop({ seed: source.seed, chestHex: source.chest!.hex, tableId }),
+    generateChestDrop({
+      seed: source.seed,
+      chestHex: source.chest!.hex,
+      tableId,
+      origin: questTokenOrigin(source),
+    }),
   seen: seenAround,
 });
 

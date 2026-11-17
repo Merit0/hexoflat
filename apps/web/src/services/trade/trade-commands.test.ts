@@ -151,7 +151,12 @@ describe('trade commands go to the server and wait for its answer', () => {
     });
     expect(coins()).toBe(payout);
     expect(useHeroInventoryStore().countItem(K.SWORD)).toBe(0);
-    expect(trader.view?.buyback[0]).toEqual({ key: K.SWORD, amount: 1, unitPrice: payout });
+    expect(trader.view?.buyback[0]).toMatchObject({
+      key: K.SWORD,
+      amount: 1,
+      unitPrice: payout,
+      token: { type: K.SWORD },
+    });
   });
 
   it('refreshes for 20 Will, rolls a new serial and asks 40 next time', async () => {
