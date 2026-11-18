@@ -21,7 +21,7 @@ import { heroModelOf, heroOf } from './world-commands';
 import { respawnWorld } from './respawn-world';
 import type { TravelOutcome, TravelRun } from './travel';
 import { syncHandsToInventory } from './battle-hands-sync';
-import { worldTokenOrigin, type ServerWorld } from './server-world';
+import { worldTokenOrigin, worldTokenSecret, type ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
 
 type BattlePayload = Extract<WorldPlayerCommand, { type: 'WORLD_BATTLE' }>['payload'];
@@ -186,6 +186,7 @@ function startBattleWorld(session: Session): BattleWorldOutcome {
   if (!outcome.ok) return fail(session, outcome.reason);
   const battle = squadWorld.battle!;
   battle.tokenOrigin = worldTokenOrigin(session.world);
+  battle.tokenSecret = worldTokenSecret(session.world);
   session.world.engagement = squadWorld.engagement ?? null;
   record(session, null, battle, outcome.events);
   return finish(session, null, null);
@@ -269,6 +270,7 @@ export function battleWorld(
     engagement: run.world.engagement ? structuredClone(run.world.engagement) : null,
   };
   if (world.battle && !world.battle.tokenOrigin) world.battle.tokenOrigin = worldTokenOrigin(world);
+  if (world.battle && !world.battle.tokenSecret) world.battle.tokenSecret = worldTokenSecret(world);
   const session: Session = {
     run,
     world,

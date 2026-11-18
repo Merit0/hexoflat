@@ -29,6 +29,12 @@ export interface PlayerCommandContext {
   inventory: InventoryContext;
   trade?: TradeContext;
   quest?: QuestApplyContext;
+  rngSeed?: string;
+}
+
+export function serverSecretOf(ctx: { rngSeed?: string }): string {
+  if (!ctx.rngSeed) throw new Error('NO_SERVER_SECRET');
+  return ctx.rngSeed;
 }
 
 export type PlayerCommandOutcome =
@@ -103,7 +109,12 @@ function executeCore(
   const { inventory, progress } = aggregates;
   switch (command.type) {
     case 'CLAIM_CAMP_CHEST': {
-      const result = claimCampChest(inventory, progress, command.payload.revision);
+      const result = claimCampChest(
+        inventory,
+        progress,
+        command.payload.revision,
+        serverSecretOf(ctx),
+      );
       if (!result.ok) return rejectionOf(result.events) as PlayerCommandOutcome;
       return {
         ok: true,
@@ -181,7 +192,10 @@ function executeCore(
     case 'QUEST_ACCEPT':
     case 'QUEST_ABANDON':
     case 'QUEST_CLAIM': {
-      const result = applyQuestCommand(aggregates, command, ctx.quest ?? { atBoard: false });
+      const result = applyQuestCommand(aggregates, command, {
+        atBoard: ctx.quest?.atBoard ?? false,
+        rngSeed: ctx.rngSeed,
+      });
       return (
         rejectionOf(result.events) ?? { ok: true, changed: result.changed, events: result.events }
       );

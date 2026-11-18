@@ -7,7 +7,11 @@ import type { QuestCatalogue, QuestContext, QuestDefinition } from './index';
 
 export { HERO, inventoryWith };
 
-export const AT_BOARD: QuestContext = { catalogue: QUESTS, atBoard: true };
+export const AT_BOARD: QuestContext = {
+  catalogue: QUESTS,
+  atBoard: true,
+  rngSeed: 'server-secret',
+};
 
 export function progressWith(will: number, patch: Partial<ProgressState> = {}): ProgressState {
   const progress = emptyProgressState(HERO);

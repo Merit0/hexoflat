@@ -22,9 +22,9 @@ function refused(heroId: string, reason: ClaimRejectReason): ClaimCampChestResul
   };
 }
 
-function campChestMint(heroId: string): TokenMint {
+function campChestMint(heroId: string, rngSeed: string): TokenMint {
   return {
-    seed: `camp-chest:${heroId}`,
+    seed: rngSeed,
     sourceId: tokenSourceIdOf('chest', 'camp-first', heroId),
     origin: campTokenOrigin(),
   };
@@ -34,6 +34,7 @@ export function claimCampChest(
   inventory: InventoryState,
   progress: ProgressState,
   revision: number,
+  rngSeed: string,
 ): ClaimCampChestResult {
   const heroId = inventory.heroId;
   if (inventory.revision !== revision) return refused(heroId, 'INVENTORY_STALE');
@@ -48,7 +49,7 @@ export function claimCampChest(
     if (index >= STASH_CHEST_CELLS) return;
     cells[index] = withToken(
       mintItem(seq, key, 1),
-      isTokenType(key) ? mintBaseToken(campChestMint(heroId), key, index) : undefined,
+      isTokenType(key) ? mintBaseToken(campChestMint(heroId, rngSeed), key, index) : undefined,
     );
     granted.push({
       type: 'ITEM_GRANTED',

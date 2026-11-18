@@ -13,6 +13,7 @@ import { creatureById } from './battle-board';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleHex, BattleState, BattleTerrain } from './battle-state';
 import { hexagonBoard, hero } from './battle-test-setup';
+import { graveTokenSource } from './grave-token-source';
 import { startBattle } from './start-battle';
 
 export const ON = { ...BATTLE_RULES, graveLootEnabled: true };
@@ -131,5 +132,6 @@ export function setGraveTables(state: BattleState, index: number, tables: string
     sourceId: state.id,
     targetKey: `${grave.hex.q},${grave.hex.r}`,
     origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+    tokenSource: graveTokenSource(state),
   });
 }

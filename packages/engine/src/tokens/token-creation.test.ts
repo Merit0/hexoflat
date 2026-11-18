@@ -10,13 +10,17 @@ import { emptyInventoryState, type InventoryStateItem } from '../inventory/inven
 import { planClaim } from '../quests/quest-log';
 import { QUESTS } from '../quests/quests.content';
 import { questTokenOrigin } from '../quests/quest-token-origin';
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import {
+  locationTokenOrigin,
+  realmOfBoard,
+  tierOfBoard,
+  tokenOriginOfBoard,
+} from '../registry/location-token-origin';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { rollTraderGoods, traderView } from '../trade/trader-view';
 import { TRADERS } from '../content/traders.content';
 import { createServerWorld } from '../world';
 import { isTokenType } from './game-tokens';
-import { realmOfBoard, tierOfBoard, tokenOriginOfBoard } from './token-origin';
 
 const HERO = 'hero-1';
 
@@ -38,7 +42,7 @@ describe('LG5b step 3: realmOfBoard', () => {
       kind: 'RECIPE' as const,
       recipeId: 'cave',
       version: 1,
-      seed: 's',
+      seed: 'unit-seed',
       params,
       attempt: 0,
     });
@@ -112,7 +116,12 @@ describe('LG5b step 4: every creation point gives tokens', () => {
   });
 
   it('the first camp chest gives idol tokens for the four tools and weapons', () => {
-    const result = claimCampChest(emptyInventoryState(HERO), emptyProgressState(HERO), 0);
+    const result = claimCampChest(
+      emptyInventoryState(HERO),
+      emptyProgressState(HERO),
+      0,
+      'server-secret',
+    );
     if (!result.ok) throw new Error(result.reason);
     const tokens = heldTokens(result.inventory.stash.cells);
     expect(tokens).toHaveLength(4);
@@ -127,6 +136,7 @@ describe('LG5b step 4: every creation point gives tokens', () => {
     const plan = planClaim(progress, emptyInventoryState(HERO), 'woodcutter', {
       catalogue: QUESTS,
       atBoard: true,
+      rngSeed: 'server-secret',
     });
     if (!plan.ok) throw new Error('claim refused');
     const axes = heldTokens(plan.inventory!.bag);

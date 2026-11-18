@@ -48,12 +48,27 @@ function baseRealmOf(realm: ERarityKind): TBaseRealm | null {
   return (BASE_REALMS as readonly ERarityKind[]).includes(realm) ? (realm as TBaseRealm) : null;
 }
 
-function sourceRefusal(ctx: { sourceId: string; n: number }): TokenResult<never> | null {
+function plainText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
+export function sourceIdContainsSeed(sourceId: string, seed: string): boolean {
+  return sourceId.includes(seed) || plainText(sourceId).includes(plainText(seed));
+}
+
+function sourceRefusal(ctx: {
+  seed: string;
+  sourceId: string;
+  n: number;
+}): TokenResult<never> | null {
   if (!tokenSourceIdSchema.safeParse(ctx.sourceId).success) {
     return refuseToken('BAD_SOURCE_ID', `source id "${ctx.sourceId}" is not <kind>:<key>`);
   }
   if (!Number.isSafeInteger(ctx.n) || ctx.n < 0) {
     return refuseToken('BAD_ITEM_INDEX', `item index ${ctx.n} is not a whole number from 0`);
+  }
+  if (sourceIdContainsSeed(ctx.sourceId, ctx.seed)) {
+    return refuseToken('SOURCE_ID_CONTAINS_SEED', 'the source id must not contain the seed');
   }
   return null;
 }

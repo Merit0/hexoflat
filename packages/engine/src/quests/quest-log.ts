@@ -2,7 +2,7 @@ import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { consumeFromDraft, countInDraft, grantToDraft } from '../inventory/apply-stock';
 import { campTokenOrigin } from '../registry/location-token-origin';
-import { tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
+import { isTokenType, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
 import { grantWill, spendWill } from '../knowledge/will';
@@ -21,6 +21,7 @@ export interface QuestContext {
   atBoard: boolean;
   slots?: QuestSlots;
   freeSlots?: number;
+  rngSeed?: string;
 }
 
 export type QuestPlan =
@@ -142,11 +143,16 @@ export function planAbandon(
   };
 }
 
-function rewardMint(progress: ProgressState, questId: string): TokenMint {
+function rewardMint(
+  progress: ProgressState,
+  questId: string,
+  rngSeed: string | undefined,
+): TokenMint {
+  if (!rngSeed) throw new Error('NO_SERVER_SECRET');
   const heroId = progress.knowledge.heroId;
   const times = progress.quests.done[questId] ?? 0;
   return {
-    seed: `quest-reward:${heroId}`,
+    seed: rngSeed,
     sourceId: tokenSourceIdOf('quest', questId, heroId, String(times)),
     origin: campTokenOrigin(),
   };
@@ -172,7 +178,9 @@ export function planClaim(
   for (const reward of quest.rewards) {
     if (reward.kind === 'item') {
       if (!inventory) return reject(progress, questId, 'NO_INVENTORY');
-      const supply = { mint: rewardMint(progress, questId) };
+      const supply = isTokenType(reward.itemKey)
+        ? { mint: rewardMint(progress, questId, ctx.rngSeed) }
+        : undefined;
       if (!grantToDraft(draft, reward.itemKey, reward.amount, 'reward', supply)) {
         return reject(progress, questId, 'BAG_FULL');
       }

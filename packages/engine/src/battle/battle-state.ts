@@ -166,6 +166,7 @@ export const battleStateSchema = z.object({
   fallen: z.array(z.string()).optional(),
   collect: collectSchema.optional(),
   tokenOrigin: tokenOriginSchema.optional(),
+  tokenSecret: z.strictObject({ seed: z.string().min(1), mapId: z.string().min(1) }).optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
 

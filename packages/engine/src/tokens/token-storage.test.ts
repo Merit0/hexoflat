@@ -168,7 +168,7 @@ describe('token entry schemas (LG0 B, K)', () => {
     const factory = createTokenFactory();
     for (const type of ['sword', 'shield', 'axe', 'pickaxe']) {
       const made = factory.createBase({
-        seed: 's',
+        seed: 'unit-seed',
         sourceId: 'test:entry',
         n: 0,
         realm: token.rarity,

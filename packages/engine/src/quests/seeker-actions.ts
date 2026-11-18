@@ -2,13 +2,10 @@ import type { ProgressState } from '../aggregates/progress-state';
 import { questAnswerReview } from './quest-answer-review';
 import { resolveSeekerPath } from './resolve-seeker-path';
 import type { DomainEvent } from '../commands/types';
-import { createContainer } from '../containers';
-import { questTokenOrigin } from './quest-token-origin';
-import { lootTableOf } from '../content/loot-tables.content';
 import { spendWill } from '../knowledge/will';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { deriveStream } from '../utils/random-seeded';
-import { coordinateKey, getHexNeighbors, offsetToAxial } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { expectedNumber, revealRing, type RevealedHex } from './numbers';
 import type { QuestCatalogue } from './quest-definition';
 import {
@@ -22,7 +19,7 @@ import {
 import { generateSequence } from './sequences/generate';
 import { RULES, continueFrom, type RuleRegistry } from './sequences/rules';
 import { generateTrail } from './trail';
-import { seekerCollectStep } from './seeker-chest';
+import { createSeekerChestContainer, seekerCollectStep } from './seeker-chest';
 import { SEEKER_RULES } from './seeker-content';
 import { reject, type SeekerResult } from './seeker-result';
 
@@ -220,16 +217,7 @@ function showChest(
   if (!hex) return;
   run.chest = { hex, kind: real ? 'real' : 'lure', appearedAtStep: run.path.length };
   if (real && run.chestLootTableId) {
-    const container = createContainer({
-      id: coordinateKey(hex),
-      kind: 'quest-chest',
-      at: offsetToAxial(hex),
-      tables: [lootTableOf(run.chestLootTableId)],
-      seed: run.seed,
-      sourceId: run.seed,
-      targetKey: coordinateKey(hex),
-      origin: questTokenOrigin(run),
-    });
+    const container = createSeekerChestContainer(run, hex, run.chestLootTableId);
     const drop = container.contents?.[0] ?? [];
     if (drop.length === 0) throw new Error(`CHEST_DROP_EMPTY:${run.chestLootTableId}`);
     run.chest.container = container;

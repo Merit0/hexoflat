@@ -245,7 +245,7 @@ describe('LG5b step 8: priceOf reads the token price (D4)', () => {
 describe('LG5b step 9: item skills are not wired', () => {
   it('equipping a token with skills changes no hero skill', () => {
     const made = gameTokenFactory().createUnique('last-verdict', {
-      seed: 's',
+      seed: 'unit-seed',
       sourceId: 'test:unique',
       n: 0,
       mapTier: 1,

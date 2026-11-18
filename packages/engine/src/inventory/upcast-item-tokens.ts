@@ -22,7 +22,7 @@ export function upcastSourceId(heroId: string, slot: string): string {
 }
 
 export function upcastSeed(heroId: string): string {
-  return `upcast:${heroId}`;
+  return `upcast-seed/${heroId}`;
 }
 
 function isTokenizable(cell: StoredCell): cell is StoredCell & { key: string } {

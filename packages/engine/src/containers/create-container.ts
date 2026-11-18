@@ -5,6 +5,11 @@ import type { TokenOrigin } from '../tokens/token-origin';
 import type { Axial } from '../utils/hex-utils';
 import type { ContainerKind, ContainerState, LootLists } from './container';
 
+export interface ContainerTokenSource {
+  seed: string;
+  scope: readonly string[];
+}
+
 export interface ContainerRollInput {
   kind: ContainerKind;
   tables: readonly (LootTable | null | undefined)[];
@@ -12,6 +17,7 @@ export interface ContainerRollInput {
   sourceId: string;
   targetKey: string;
   origin: TokenOrigin;
+  tokenSource?: ContainerTokenSource;
 }
 
 export interface CreateContainerInput extends ContainerRollInput {
@@ -31,9 +37,10 @@ export function rollContainerContents(input: ContainerRollInput): LootLists {
     sourceId: input.sourceId,
     targetKey: input.targetKey,
   });
+  const tokens = input.tokenSource ?? { seed: input.seed, scope: [input.sourceId] };
   return tokenizeLootLists(lists, {
-    seed: input.seed,
-    sourceId: tokenSourceIdOf(TOKEN_SOURCE_OF[input.kind], input.sourceId, input.targetKey),
+    seed: tokens.seed,
+    sourceId: tokenSourceIdOf(TOKEN_SOURCE_OF[input.kind], ...tokens.scope, input.targetKey),
     origin: input.origin,
   });
 }

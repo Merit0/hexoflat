@@ -134,7 +134,7 @@ function take(
 
 function lootChest(pool: CavePool, runSeed: string, result: RunResult): void {
   const context = {
-    seed: runSeed,
+    seed: `${runSeed}:world`,
     sourceId: `cave-${runSeed}`,
     origin: locationTokenOrigin('cave'),
   };

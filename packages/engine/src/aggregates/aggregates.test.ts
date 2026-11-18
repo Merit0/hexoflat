@@ -23,6 +23,7 @@ const HERO = 'hero-1';
 const CTX: PlayerCommandContext = {
   devGrantAllowed: false,
   inventory: { stashOpen: true, battleOpen: false },
+  rngSeed: 'server-secret',
 };
 
 function fresh(): PlayerAggregates {

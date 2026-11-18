@@ -1,8 +1,13 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
-import { openInSpace, rollContainerContents } from '../containers';
+import {
+  createContainer,
+  openInSpace,
+  rollContainerContents,
+  type ContainerState,
+} from '../containers';
 import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
-import { questTokenOrigin } from './quest-token-origin';
+import { questTokenOrigin, questTokenSource } from './quest-token-origin';
 import { lootTableOf } from '../content/loot-tables.content';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -13,6 +18,7 @@ import {
   coordinateKey,
   getHexNeighbors,
   hexDistance,
+  offsetToAxial,
   type Axial,
 } from '../utils/hex-utils';
 import { floorKeys, positionOf, type QuestRun, type SeekerBoard } from './quest-state';
@@ -37,8 +43,27 @@ export function generateChestDrop(input: {
     sourceId: input.seed,
     targetKey: coordinateKey(input.chestHex),
     origin: input.origin ?? DEFAULT_TOKEN_ORIGIN,
+    tokenSource: questTokenSource({ seed: input.seed }),
   });
   return drops ?? [];
+}
+
+export function createSeekerChestContainer(
+  run: QuestRun,
+  hex: IHexCoordinates,
+  tableId: string,
+): ContainerState {
+  return createContainer({
+    id: coordinateKey(hex),
+    kind: 'quest-chest',
+    at: offsetToAxial(hex),
+    tables: [lootTableOf(tableId)],
+    seed: run.seed,
+    sourceId: run.seed,
+    targetKey: coordinateKey(hex),
+    origin: questTokenOrigin(run),
+    tokenSource: questTokenSource(run),
+  });
 }
 
 function sameHex(a: IHexCoordinates, b: IHexCoordinates): boolean {

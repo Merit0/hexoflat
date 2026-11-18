@@ -72,6 +72,33 @@ describe('TokenFactory.createBase refusals', () => {
     expect(refusalOf(contextFor(3), factory)).toBe('INVALID_TOKEN');
   });
 
+  it('LG5f: createBase and createUnique refuse a source id that contains the seed, raw or with other separators', () => {
+    const cases: [string, string][] = [
+      [
+        '0f1e2d3c4b5a69788796a5b4c3d2e1f0.run-7',
+        'quest:0f1e2d3c4b5a69788796a5b4c3d2e1f0.run-7.3-4',
+      ],
+      [
+        '0f1e2d3c4b5a69788796a5b4c3d2e1f0:Run:7',
+        'quest:0f1e2d3c4b5a69788796a5b4c3d2e1f0-run-7.3-4',
+      ],
+    ];
+    for (const [seed, sourceId] of cases) {
+      expect(refusalOf(contextFor(3, { seed, sourceId }))).toBe('SOURCE_ID_CONTAINS_SEED');
+      const unique = defaultFactory.createUnique('last-verdict', {
+        seed,
+        sourceId,
+        n: 0,
+        mapTier: 1,
+        ownedUniques: [],
+      });
+      expect(unique.ok ? null : unique.refusal.code).toBe('SOURCE_ID_CONTAINS_SEED');
+    }
+    expect(
+      refusalOf(contextFor(3, { seed: cases[1][0], sourceId: 'quest:4be1c2d3a4f5.3-4' })),
+    ).toBeNull();
+  });
+
   it('accepts every source kind', () => {
     for (const kind of ['chest', 'grave', 'quest', 'shop', 'upcast', 'dev', 'test']) {
       expect(refusalOf(contextFor(3, { sourceId: `${kind}:map-1.4_7` }))).toBeNull();

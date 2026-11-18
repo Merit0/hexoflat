@@ -13,6 +13,7 @@ const ctx = (atBoard: boolean) => ({
   devGrantAllowed: false,
   inventory: { stashOpen: false, battleOpen: false },
   quest: { atBoard },
+  rngSeed: 'server-secret',
 });
 
 function command(type: 'QUEST_ACCEPT' | 'QUEST_CLAIM' | 'QUEST_ABANDON', revision: number) {

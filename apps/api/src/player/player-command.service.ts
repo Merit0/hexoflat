@@ -165,6 +165,7 @@ export class PlayerCommandService {
           executePlayerCommand(aggregates, command, {
             devGrantAllowed,
             inventory: serverInventoryContext(aggregates.progress.presence),
+            rngSeed: loaded.progress?.serverState.rngSeed,
             ...(command.type.startsWith('SHOP_')
               ? { trade: serverTradeContext(aggregates.progress.presence, rngSeedOf(loaded)) }
               : {}),

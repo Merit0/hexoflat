@@ -21,6 +21,7 @@ export type TTokenStep = (typeof TOKEN_STEPS)[number];
 export const TOKEN_REFUSALS = [
   'BAD_SOURCE_ID',
   'BAD_ITEM_INDEX',
+  'SOURCE_ID_CONTAINS_SEED',
   'GOD_EXECUTOR_NOT_BASE',
   'UNKNOWN_TYPE',
   'TYPE_NOT_IN_REALM',

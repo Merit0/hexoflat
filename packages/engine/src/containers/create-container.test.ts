@@ -48,7 +48,7 @@ describe('CH-P6 createContainer', () => {
         at: AT,
         tables: [lootTableOf(tableId)],
         seed: `seed-${index}`,
-        sourceId: `seed-${index}`,
+        sourceId: `run-${index}`,
         targetKey: `${index},0`,
         origin: DEFAULT_TOKEN_ORIGIN,
       });

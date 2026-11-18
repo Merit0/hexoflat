@@ -101,6 +101,10 @@ export function worldTokenOrigin(
   return locationTokenOrigin(world.locationKey, world.descriptor);
 }
 
+export function worldTokenSecret(world: Pick<ServerWorld, 'worldSeed' | 'mapId'>) {
+  return { seed: world.worldSeed, mapId: world.mapId };
+}
+
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   const stale = staleWorldOf(raw);
   if (stale) throw stale;
