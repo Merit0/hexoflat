@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { giveTurn, hero, skeleton, hexagonBoard } from './battle-test-setup';
+import { giveTurn, hero, skeleton, hexagonBoard, TEST_TOKEN_SECRET } from './battle-test-setup';
 import { startBattle } from './start-battle';
 import { applyBattleFixture, battleFixtureSchema } from './battle-fixtures';
 
@@ -8,6 +8,7 @@ function fresh() {
     id: 'b',
     seed: 's',
     board: hexagonBoard(3),
+    tokenSecret: TEST_TOKEN_SECRET,
     creatures: [
       hero({ q: 0, r: 0 }),
       skeleton('s1', { q: 3, r: 0 }),

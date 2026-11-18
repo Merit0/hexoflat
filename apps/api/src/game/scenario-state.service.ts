@@ -3,6 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import {
   deserializeState,
   serializeState,
+  StaleSnapshotError,
   type ApplyCommandResult,
   type HexEngineActionContext,
   type HexEngineCommand,
@@ -22,6 +23,14 @@ export class ScenarioStateService {
   private readonly logger = new Logger(ScenarioStateService.name);
   private readonly rooms = new Map<string, HexEngineState>();
   private readonly autosaveTimers = new Map<string, NodeJS.Timeout>();
+
+  private static freshState(): HexEngineState {
+    return {
+      map: HexMapProvider.getHomeLand(),
+      heroes: {},
+      rngState: { seed: crypto.randomUUID(), counter: 0 },
+    };
+  }
 
   constructor(
     @Inject(DB) private readonly db: Db,
@@ -80,17 +89,17 @@ export class ScenarioStateService {
       try {
         state = deserializeState(payload, Date.now());
       } catch (error) {
-        this.logger.error(
-          `Failed to deserialize snapshot for scenario ${scenarioId}: ${(error as Error).message}`,
-        );
-        throw error;
+        if (!(error instanceof StaleSnapshotError)) {
+          this.logger.error(
+            `Failed to deserialize snapshot for scenario ${scenarioId}: ${(error as Error).message}`,
+          );
+          throw error;
+        }
+        this.logger.warn(`Stale snapshot for scenario ${scenarioId}: ${error.message}`);
+        state = ScenarioStateService.freshState();
       }
     } else {
-      state = {
-        map: HexMapProvider.getHomeLand(),
-        heroes: {},
-        rngState: { seed: crypto.randomUUID(), counter: 0 },
-      };
+      state = ScenarioStateService.freshState();
     }
 
     this.rooms.set(scenarioId, state);

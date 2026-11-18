@@ -1,4 +1,4 @@
-import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
+import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
 
@@ -27,17 +27,13 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
     equipment: {
       durability: 100,
       durabilityMax: 100,
-      rarity: { kind: ERarityKind.IDOL, boss: false },
       capabilities: { canAttack: true },
       traits: { weightKG: 1.8 },
     },
     weapon: {
-      damageMin: 1,
-      damageMax: 1,
       attackMultiplier: 1.2,
       radius: 1,
     },
-    equip: { slot: 'weapon' },
   },
 
   [HEXOBJECT_KEYS.SHIELD]: {
@@ -54,12 +50,9 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
       durability: 120,
       durabilityMax: 120,
       defense: 2.4,
-      shields: 1,
       hearts: 1,
-      rarity: { kind: ERarityKind.IDOL, boss: false },
       capabilities: { canBlock: true },
       traits: { weightKG: 2.6 },
     },
-    equip: { slot: 'shield' },
   },
 };

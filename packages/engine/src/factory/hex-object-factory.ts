@@ -7,6 +7,7 @@ import {
 } from '../abstraction/hexobject-abstraction';
 import { containerStateSchema } from '../containers/container';
 import { getPrototype } from '../content';
+import { itemTokenSchema } from '../tokens/token-schema';
 import { THexobjectKey } from '../registry/hexobjects-registry';
 
 function isPieceCount(value: unknown): value is number {
@@ -35,6 +36,8 @@ export class HexObjectFactory {
     if (isPieceCount(overrides.quantity)) obj.quantity = overrides.quantity;
     const container = containerStateSchema.safeParse(overrides.container);
     if (container.success) obj.container = container.data;
+    const token = itemTokenSchema.safeParse(overrides.token);
+    if (token.success && token.data.type === obj.hexobjectKey) obj.token = token.data;
 
     if (obj.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof overrides.regrowMs === 'number') obj.resource.regrowMs = overrides.regrowMs;

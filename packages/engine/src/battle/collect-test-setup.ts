@@ -1,3 +1,4 @@
+import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { expect } from 'vitest';
 import { createContainer } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
@@ -10,8 +11,15 @@ import { applyDamage } from './battle-end';
 import { BATTLE_RULES } from './battle-content';
 import { creatureById } from './battle-board';
 import type { BattleAction } from './battle-commands';
-import type { BattleCreature, BattleHex, BattleState, BattleTerrain } from './battle-state';
-import { hexagonBoard, hero } from './battle-test-setup';
+import type {
+  BattleCreature,
+  BattleHex,
+  BattleState,
+  BattleTerrain,
+  BattleTokenSecret,
+} from './battle-state';
+import { hexagonBoard, hero, TEST_TOKEN_SECRET } from './battle-test-setup';
+import { graveLootSource, graveTokenSource } from './grave-token-source';
 import { startBattle } from './start-battle';
 
 export const ON = { ...BATTLE_RULES, graveLootEnabled: true };
@@ -41,6 +49,7 @@ export function fight(
     id?: string;
     board?: Record<string, BattleTerrain>;
     heroAt?: BattleHex;
+    tokenSecret?: BattleTokenSecret;
   } = {},
 ): BattleState {
   return startBattle(
@@ -49,6 +58,7 @@ export function fight(
       seed: options.seed ?? 'loot-seed',
       board: options.board ?? hexagonBoard(),
       creatures: [hero(options.heroAt ?? ORIGIN), ...enemies],
+      tokenSecret: options.tokenSecret ?? TEST_TOKEN_SECRET,
     },
     ON,
   ).battle;
@@ -126,8 +136,8 @@ export function setGraveTables(state: BattleState, index: number, tables: string
     kind: 'grave',
     at: grave.hex,
     tables: tables.map((id) => lootTableOf(id)),
-    seed: state.seed,
-    sourceId: state.id,
-    targetKey: `${grave.hex.q},${grave.hex.r}`,
+    ...graveLootSource(state, `${grave.hex.q},${grave.hex.r}`),
+    origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+    tokenSource: graveTokenSource(state),
   });
 }

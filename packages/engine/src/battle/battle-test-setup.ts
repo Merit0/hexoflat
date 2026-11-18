@@ -18,6 +18,8 @@ import { startBattle } from './start-battle';
 import { battleDistance, hexKey } from './hex-battle-geom';
 import { beginTurn } from './turn';
 
+export const TEST_TOKEN_SECRET = { seed: 'test-token-secret', mapId: 'test-map' };
+
 export function hexagonBoard(
   radius = 3,
   overrides: Record<string, BattleTerrain> = {},
@@ -76,7 +78,8 @@ export function battleWith(
   seed = 'test-seed',
   boulders: Boulder[] = [],
 ): BattleState {
-  return startBattle({ id: 'b1', seed, board, creatures, boulders }).battle;
+  return startBattle({ id: 'b1', seed, board, creatures, boulders, tokenSecret: TEST_TOKEN_SECRET })
+    .battle;
 }
 
 export function rightAnswer(battle: BattleState): number {

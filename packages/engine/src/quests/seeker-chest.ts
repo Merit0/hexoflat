@@ -1,22 +1,24 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
-import { openInSpace } from '../containers';
+import {
+  createContainer,
+  openInSpace,
+  rollContainerContents,
+  type ContainerState,
+} from '../containers';
+import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
+import { questTokenOrigin, questTokenSource } from './quest-token-origin';
 import { lootTableOf } from '../content/loot-tables.content';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
-import {
-  lootNeighbours,
-  pickupStack,
-  rollLootList,
-  type LootDrop,
-  type LootNeighbour,
-} from '../loot';
+import { lootNeighbours, pickupStack, type LootDrop, type LootNeighbour } from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import {
   axialToOffset,
   coordinateKey,
   getHexNeighbors,
   hexDistance,
+  offsetToAxial,
   type Axial,
 } from '../utils/hex-utils';
 import { floorKeys, positionOf, type QuestRun, type SeekerBoard } from './quest-state';
@@ -32,11 +34,35 @@ export function generateChestDrop(input: {
   seed: string;
   chestHex: IHexCoordinates;
   tableId: string | undefined;
+  origin?: TokenOrigin;
 }): LootDrop[] {
-  return rollLootList(lootTableOf(input.tableId), {
+  const [drops] = rollContainerContents({
+    kind: 'quest-chest',
+    tables: [lootTableOf(input.tableId)],
     seed: input.seed,
     sourceId: input.seed,
     targetKey: coordinateKey(input.chestHex),
+    origin: input.origin ?? DEFAULT_TOKEN_ORIGIN,
+    tokenSource: questTokenSource({ seed: input.seed }),
+  });
+  return drops ?? [];
+}
+
+export function createSeekerChestContainer(
+  run: QuestRun,
+  hex: IHexCoordinates,
+  tableId: string,
+): ContainerState {
+  return createContainer({
+    id: coordinateKey(hex),
+    kind: 'quest-chest',
+    at: offsetToAxial(hex),
+    tables: [lootTableOf(tableId)],
+    seed: run.seed,
+    sourceId: run.seed,
+    targetKey: coordinateKey(hex),
+    origin: questTokenOrigin(run),
+    tokenSource: questTokenSource(run),
   });
 }
 
@@ -67,7 +93,12 @@ function seenAround(board: SeekerBoard, at: IHexCoordinates): string[] {
 const CHEST_SPACE = questChestSpace({
   neighbours: questLootNeighbours,
   generate: ({ source, tableId }) =>
-    generateChestDrop({ seed: source.seed, chestHex: source.chest!.hex, tableId }),
+    generateChestDrop({
+      seed: source.seed,
+      chestHex: source.chest!.hex,
+      tableId,
+      origin: questTokenOrigin(source),
+    }),
   seen: seenAround,
 });
 

@@ -187,10 +187,10 @@ test.describe('battle flow', { tag: ['@combat'] }, () => {
     await battle.giveEnemyTheTurn();
     await battle.waitForTheBlockWindow();
     await battle.holdTheWindowOpen();
-    await battle.tapShieldHexes(3);
-    await battle.verifyShieldsRaised(2, 2);
-    await battle.tapTheFirstShieldAgain();
-    await battle.verifyShieldsRaised(1, 2);
+    await battle.tapShieldHexes(2);
+    await battle.verifyShieldsRaised(1, 1);
+    await battle.tapTheRaisedShieldAgain();
+    await battle.verifyShieldsRaised(0, 1);
   });
 
   test('Verify the tool hex lifts the shield it just raised', async () => {
@@ -201,7 +201,7 @@ test.describe('battle flow', { tag: ['@combat'] }, () => {
     await battle.waitForTheBlockWindow();
     await battle.putAShieldThroughTheToolHex();
     await battle.liftTheShieldWithTheToolHex();
-    await battle.verifyShieldsRaised(0, 2);
+    await battle.verifyShieldsRaised(0, 1);
   });
 
   test('Verify an aim that is not chosen runs out and the hero strikes from where he stands', async () => {

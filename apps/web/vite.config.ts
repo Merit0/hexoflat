@@ -122,7 +122,7 @@ export default defineConfig({
     // localStorage directly, not through an injectable port yet).
     environment: 'happy-dom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.{test,spec}.ts'],
+    include: ['src/**/*.{test,spec}.ts', 'scripts/**/*.test.ts'],
     // Content tests moved to packages/engine (Phase 3); apps/web is only
     // gaining unit tests now, so allow an empty run instead of failing CI
     // for any package/dir that still has none.

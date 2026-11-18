@@ -3,7 +3,7 @@ import { applyBattleCommand } from './apply-battle';
 import { BATTLE_RULES } from './battle-content';
 import { battlefieldSeed, generateBattlefield } from './battlefield';
 import { deployBattle } from './battlefield-setup';
-import { hero } from './battle-test-setup';
+import { hero, TEST_TOKEN_SECRET } from './battle-test-setup';
 import { startBattle } from './start-battle';
 import type { BattleState } from './battle-state';
 
@@ -22,7 +22,10 @@ function passiveFight(n: number): { outcome: string; commands: number } {
     direction: { x: -1, y: 0 },
     ambush: false,
   });
-  let battle: BattleState = startBattle(setup, BATTLE_RULES).battle;
+  let battle: BattleState = startBattle(
+    { ...setup, tokenSecret: TEST_TOKEN_SECRET },
+    BATTLE_RULES,
+  ).battle;
   for (let i = 0, atMs = 0; i < 500 && battle.phase !== 'ended'; i++, atMs += 300) {
     const active = battle.creatures.find((c) => c.id === battle.activeId)!;
     const payload =

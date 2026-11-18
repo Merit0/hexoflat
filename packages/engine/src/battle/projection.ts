@@ -13,7 +13,8 @@ type HiddenFields =
   | 'turnClockMs'
   | 'lootEnabled'
   | 'fallen'
-  | 'collect';
+  | 'collect'
+  | 'tokenSecret';
 export interface ProjectedCollect {
   graves: { hex: BattleHex; examined: boolean }[];
   items: GroundItem[];
@@ -54,6 +55,8 @@ function publicPart(state: BattleState, viewer: BattleSide): Omit<BattleState, H
   delete copy.taskHistory;
   delete copy.wounds;
   delete copy.turnClockMs;
+  delete copy.tokenOrigin;
+  delete copy.tokenSecret;
   delete copy.lootEnabled;
   delete copy.fallen;
   delete copy.collect;

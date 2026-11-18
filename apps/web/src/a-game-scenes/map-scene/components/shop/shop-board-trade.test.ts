@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import { TRADERS } from '@hexoflat/engine/content/traders.content';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
-import { sellUnitPrice } from '@hexoflat/engine/trade/trader-view';
 import { shopDrag } from '@/composables/shop-drag-state';
 import { settleShopDeal } from '@/composables/use-shop-drag';
 import { settleInventorySync } from '@/services/inventory/inventory-sync';
@@ -27,7 +25,8 @@ import {
   drop,
   registerShopCleanup,
   POTION_PRICE,
-  SWORD_PRICE,
+  goodPrice,
+  bagSwordSale,
 } from './shop-board-trade-kit';
 
 vi.mock('@/services/player/player-socket', async () =>
@@ -66,11 +65,12 @@ describe('buying with the pointer', () => {
 
     expect(bagCell(landing).classList.contains('is-next')).toBe(true);
     expect(byId('stash-bag-pane').classList.contains('zone-ok')).toBe(true);
-    expect(ghostBadge()?.textContent).toBe(`Buy · ${SWORD_PRICE}`);
+    const price = goodPrice(1);
+    expect(ghostBadge()?.textContent).toBe(`Buy · ${price}`);
 
     await drop();
     expect(bagKeys()[landing]).toBe(`${K.SWORD}x1`);
-    expect(coins()).toBe(1000 - SWORD_PRICE);
+    expect(coins()).toBe(1000 - price);
   });
 
   it('takes half of the stack when Shift is held at the press', async () => {
@@ -104,7 +104,9 @@ describe('buying with the pointer', () => {
 
 describe('a refused deal changes nothing and says why', () => {
   it('cannot afford: red ghost, red cell, coins warning with the price, no command', async () => {
-    await mountShop({ coins: 100 });
+    await mountShop({ coins: 30 });
+    const price = goodPrice(1);
+    expect(price).toBeGreaterThan(30);
     await drag(byId('shop-goods-cell-1'), [bagCell(5)]);
 
     expect(ghostBadge()?.textContent).toBe("Can't afford");
@@ -112,11 +114,11 @@ describe('a refused deal changes nothing and says why', () => {
 
     await drop();
     expect(shopCommands()).toEqual([]);
-    expect(coins()).toBe(100);
-    expect(ilva().goods[1]).toEqual({ key: K.SWORD, amount: 1 });
+    expect(coins()).toBe(30);
+    expect(ilva().goods[1]).toMatchObject({ key: K.SWORD, amount: 1, token: { type: K.SWORD } });
     expect(message()).toBe('Not enough coins.');
     expect(useHeroToolStore().actionMessageIcon).toBe('coins');
-    expect(useHeroToolStore().actionMessageWillCost).toBe(SWORD_PRICE);
+    expect(useHeroToolStore().actionMessageWillCost).toBe(price);
     expect(bagCell(5).classList.contains('is-shake')).toBe(true);
   });
 
@@ -145,7 +147,7 @@ describe('selling and buying back', () => {
 
   it('sells a bag item dropped on the trader and lists it in BUYBACK at the sale price', async () => {
     await giveSword();
-    const sale = sellUnitPrice(TRADERS.ilva, K.SWORD)!;
+    const sale = bagSwordSale();
     await drag(bagCellWith(K.SWORD), [byId('shop-trader-banner')]);
 
     expect(ghostBadge()?.textContent).toBe(`Sell +${sale}`);
@@ -170,10 +172,11 @@ describe('selling and buying back', () => {
 
   it('a double click sells, a double click on BUYBACK buys it back for the same coins', async () => {
     await giveSword();
+    const sale = bagSwordSale();
     bagCellWith(K.SWORD).dispatchEvent(pointer('dblclick', {}));
     await settleShopDeal();
     await nextTick();
-    expect(coins()).toBe(10 + sellUnitPrice(TRADERS.ilva, K.SWORD)!);
+    expect(coins()).toBe(10 + sale);
 
     await openBuybackTab();
     byId('shop-buyback-cell-0').dispatchEvent(pointer('dblclick', {}));
@@ -187,10 +190,10 @@ describe('selling and buying back', () => {
 
   it('drags a BUYBACK item back into the bag with its own label', async () => {
     await giveSword();
+    const sale = bagSwordSale();
     bagCellWith(K.SWORD).dispatchEvent(pointer('contextmenu', {}));
     await settleShopDeal();
     await nextTick();
-    const sale = sellUnitPrice(TRADERS.ilva, K.SWORD)!;
 
     await openBuybackTab();
     await drag(byId('shop-buyback-cell-0'), [byId('stash-bag-pane')]);

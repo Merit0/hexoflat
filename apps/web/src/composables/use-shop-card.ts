@@ -1,8 +1,8 @@
 import { computed } from 'vue';
-import { getMeta } from '@hexoflat/engine';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getItemUnitWeightKg } from '@hexoflat/engine/utils/inventory/traits-resolver';
-import { i18n } from '@/i18n';
+import { itemTitle } from '@/services/tokens/token-text';
+import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { currentInventory, traderRef } from '@/services/trade/trade-commands';
 import { planList, planUnlist } from '@hexoflat/engine/trade/plan-listing';
 import { previewBuy, previewSell, type TradePreview } from '@/services/trade/trade-preview';
@@ -18,6 +18,7 @@ export type ShopBlock = 'OVERWEIGHT' | 'BAG_FULL' | 'NOT_SELLABLE' | 'SLOTS_FULL
 export interface ShopCardView {
   mode: ShopCardMode;
   key: THexobjectKey;
+  token?: ItemToken;
   name: string;
   available: number;
   unitWeightKg: number;
@@ -47,11 +48,6 @@ function blockOf(preview: TradePreview): ShopBlock {
   return null;
 }
 
-function nameOf(key: THexobjectKey): string {
-  const title = getMeta(key).title;
-  return i18n.global.te(title) ? i18n.global.t(title) : title;
-}
-
 function targetOf(
   source: ShopDragSource,
   available: number,
@@ -67,6 +63,7 @@ interface Located {
   ownSlot: number | null;
   source: ShopDragSource;
   key: THexobjectKey;
+  token?: ItemToken;
   available: number;
   discountPercent: number | null;
 }
@@ -82,6 +79,7 @@ function locate(): Located | null {
       ownSlot: shopSelection.index,
       source: { kind: 'trade', list: 'goods', index: shopSelection.index },
       key: listing.key,
+      token: listing.token,
       available: listing.amount,
       discountPercent: null,
     };
@@ -93,6 +91,7 @@ function locate(): Located | null {
       ownSlot: null,
       source: { kind: 'bag', index: shopSelection.index },
       key: item.key,
+      token: item.token,
       available: item.amount,
       discountPercent: null,
     };
@@ -106,6 +105,7 @@ function locate(): Located | null {
     ownSlot: null,
     source: { kind: 'trade', list, index: shopSelection.index },
     key: entry.key,
+    token: entry.token,
     available: entry.amount,
     discountPercent: 'discountPercent' in entry ? (entry.discountPercent ?? null) : null,
   };
@@ -172,7 +172,8 @@ export function useShopCard() {
     return {
       mode: listed ? listed.mode : defaultMode,
       key: found.key,
-      name: nameOf(found.key),
+      ...(found.token ? { token: found.token } : {}),
+      name: itemTitle(found),
       available,
       unitWeightKg: getItemUnitWeightKg(found.key),
       inBag: inventory.bag.reduce(

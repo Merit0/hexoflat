@@ -1,9 +1,10 @@
-import { coinPriceOf } from '../content/content-accessors';
+import { priceOf } from './price-of';
 import { applyAggregate, toAggregate } from '../inventory/inventory-adapter';
 import type { InventoryState } from '../inventory/inventory-state';
 import { exceedsCapacity } from '../inventory/item-queries';
 import { placeInto } from '../inventory/placement';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
+import { withToken } from '../tokens/token-entry';
 import { freshPiece, sequenceOf } from './coin-purse';
 import { LISTING_MAX_PRICE, type Listings } from './listing-state';
 import type { TTradeError } from './trade-types';
@@ -39,7 +40,7 @@ export function planList(
   const agg = toAggregate(inventory);
   const item = agg.bag[fromBagIndex];
   if (!item) return refuse('EMPTY_SOURCE');
-  if (coinPriceOf(item.key) === null) return refuse('NOT_TRADEABLE');
+  if (priceOf(item) === null) return refuse('NOT_TRADEABLE');
   const slot = listings.findIndex((cell) => cell === null);
   if (slot === -1) return refuse('TRADE_SLOTS_FULL');
 
@@ -47,7 +48,7 @@ export function planList(
   const bag = agg.bag.slice();
   bag[fromBagIndex] = item.amount > amount ? { ...item, amount: item.amount - amount } : null;
   const next = listings.slice();
-  next[slot] = { key: item.key, amount, unitPrice };
+  next[slot] = withToken({ key: item.key, amount, unitPrice }, item.token);
   return {
     ok: true,
     inventory: applyAggregate(inventory, { ...agg, bag }),
@@ -68,7 +69,7 @@ export function planUnlist(
   if (!listing) return refuse('EMPTY_SOURCE');
   const agg = toAggregate(inventory);
   const seq = sequenceOf(inventory);
-  const piece = freshPiece(seq, listing.key, listing.amount);
+  const piece = withToken(freshPiece(seq, listing.key, listing.amount), listing.token);
   const cells = placeInto(agg.bag, piece);
   if (!cells) return refuse('CONTAINER_FULL');
   const next = { ...agg, bag: cells };

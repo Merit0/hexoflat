@@ -10,6 +10,7 @@ import { applyCommand } from '../commands/apply-command';
 import { createContext } from '../commands/command-test-context';
 import type { DomainEvent } from '../commands/types';
 import type { SquadLifecyclePayload } from '../battle/battle-commands';
+import { TEST_TOKEN_SECRET } from '../battle/battle-test-setup';
 
 export const HERO = 'hero-1';
 
@@ -60,6 +61,7 @@ export function squadWorld(options: FixtureOptions): HexEngineState {
       moving: false,
       atBook: false,
     },
+    loot: { seed: TEST_TOKEN_SECRET.seed, sourceId: TEST_TOKEN_SECRET.mapId },
   };
 }
 

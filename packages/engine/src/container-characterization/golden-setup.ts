@@ -42,9 +42,14 @@ export function worldChestGolden(seed: string): string {
   );
 }
 
+export const GOLDEN_GRAVE_MAP = 'golden-map';
+
 export function graveGolden(seed: string, kind: 'warrior' | 'king'): string {
   const enemy = kind === 'king' ? king('e1', TARGET) : warrior('e1', TARGET);
-  const played = play(won([enemy], { seed }), lootAt(TARGET));
+  const played = play(
+    won([enemy], { tokenSecret: { seed, mapId: GOLDEN_GRAVE_MAP } }),
+    lootAt(TARGET),
+  );
   const payload = played.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
     placed: { hex: { q: number; r: number }; itemKey: string; amount: number }[];
     toBag: Stack[];

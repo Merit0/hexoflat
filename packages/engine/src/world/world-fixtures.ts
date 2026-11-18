@@ -4,8 +4,9 @@ import { isEnterableTile } from '../hero-movement/move-planner';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { LOCATION_KEYS } from '../registry/location-key';
-import { getHexNeighbors } from '../utils/hex-utils';
-import type { ServerWorld } from './server-world';
+import { isTokenType, mintBaseToken, tokenSourceIdOf } from '../tokens/game-tokens';
+import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { worldTokenOrigin, type ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
 
 const KNOWN_KEYS = new Set<string>(Object.values(HEXOBJECT_KEYS));
@@ -46,7 +47,19 @@ export function applyWorldFixture(
     : undefined;
   if (!spot || !tile) return null;
   const before = snapshotTiles(world.map);
-  tile.hexobject = HexObjectFactory.create(fixture.key as THexobjectKey, spot);
+  const key = fixture.key as THexobjectKey;
+  const token = isTokenType(key)
+    ? mintBaseToken(
+        {
+          seed: world.worldSeed,
+          sourceId: tokenSourceIdOf('dev', world.mapId, coordinateKey(spot)),
+          origin: worldTokenOrigin(world),
+        },
+        key,
+        0,
+      )
+    : undefined;
+  tile.hexobject = HexObjectFactory.create(key, spot, token ? { token } : undefined);
   return {
     coordinates: { columnIndex: spot.columnIndex, rowIndex: spot.rowIndex },
     tileDiffs: diffTiles(before, world.map),

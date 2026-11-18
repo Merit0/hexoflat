@@ -77,7 +77,6 @@ export function getMeta(key: THexobjectKey): IHexobjectMeta {
     subtitle: content.subtitle,
     actions: content.actions,
     traits: deriveMetaTraits(content),
-    equip: content.equip,
     yields: content.yields,
     enter: content.enter as IHexobjectMeta['enter'],
     heal: content.heal,

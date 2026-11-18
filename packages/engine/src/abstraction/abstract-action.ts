@@ -1,3 +1,4 @@
+import type { TokenOrigin } from '../tokens/token-origin';
 import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type HexMapModel from '../map/models/hex-map-model';
@@ -65,6 +66,7 @@ export interface IActionContext {
   inventory: IInventoryDraft;
   emit?: (event: DomainEvent) => void;
   heroId?: string;
+  loot?: { seed: string; sourceId: string; origin?: TokenOrigin };
   events: IEventsPort;
   worldMap: IWorldMapPort;
   navigate?: (locationKey: LocationKey) => void;

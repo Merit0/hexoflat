@@ -20,3 +20,12 @@ export function rarityTone(rarity: IItemRarity): TRarityTone {
 
   return rarity.boss ? `${rarity.kind}-boss` : rarity.kind;
 }
+
+export interface RarityCarrier {
+  rarity: ERarityKind;
+  origin: 'base' | 'unique';
+}
+
+export function tokenRarity(token: RarityCarrier): IItemRarity {
+  return { kind: token.rarity, boss: token.origin === 'unique' };
+}

@@ -1,6 +1,9 @@
 import type { DomainEvent } from '../commands/types';
 import { CAMP_CHEST_ITEMS, STASH_CHEST_CELLS } from '../inventory/stash-constants';
 import { mintItem, type InventoryState } from '../inventory/inventory-state';
+import { campTokenOrigin } from '../registry/location-token-origin';
+import { isTokenType, mintBaseToken, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
+import { withToken } from '../tokens/token-entry';
 import { CAMP_FIRST_CHEST_REWARD, type ProgressState } from './progress-state';
 
 export type ClaimRejectReason = 'INVENTORY_STALE' | 'ALREADY_CLAIMED';
@@ -19,10 +22,19 @@ function refused(heroId: string, reason: ClaimRejectReason): ClaimCampChestResul
   };
 }
 
+function campChestMint(heroId: string, rngSeed: string): TokenMint {
+  return {
+    seed: rngSeed,
+    sourceId: tokenSourceIdOf('chest', 'camp-first', heroId),
+    origin: campTokenOrigin(),
+  };
+}
+
 export function claimCampChest(
   inventory: InventoryState,
   progress: ProgressState,
   revision: number,
+  rngSeed: string,
 ): ClaimCampChestResult {
   const heroId = inventory.heroId;
   if (inventory.revision !== revision) return refused(heroId, 'INVENTORY_STALE');
@@ -35,7 +47,10 @@ export function claimCampChest(
   const granted: DomainEvent[] = [];
   CAMP_CHEST_ITEMS.forEach((key, index) => {
     if (index >= STASH_CHEST_CELLS) return;
-    cells[index] = mintItem(seq, key, 1);
+    cells[index] = withToken(
+      mintItem(seq, key, 1),
+      isTokenType(key) ? mintBaseToken(campChestMint(heroId, rngSeed), key, index) : undefined,
+    );
     granted.push({
       type: 'ITEM_GRANTED',
       payload: {

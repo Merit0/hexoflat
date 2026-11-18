@@ -135,7 +135,7 @@ import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getPrototype } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
-import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
+import { itemLook } from '@/render/token-look';
 import {
   clearShopSelection,
   shopGuess,
@@ -164,7 +164,7 @@ const qty = computed(() =>
   view.value ? Math.min(Math.max(shopQty.value, 1), view.value.maxQty) : 1,
 );
 const iconStyle = computed(() => {
-  const path = view.value ? resolveInventoryView(view.value.key).iconPath : '';
+  const path = view.value ? itemLook(view.value).sprite : '';
   return { backgroundImage: path ? `url("${path}")` : 'none' };
 });
 

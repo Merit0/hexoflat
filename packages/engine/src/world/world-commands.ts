@@ -15,7 +15,7 @@ import { revealAroundHero } from '../map/fog-service';
 import { MapRegistry } from '../registry/world-map-registry';
 import { hexDistance } from '../utils/hex-utils';
 import { createRecordingPorts, type WorldClientHint, type WorldEffect } from './server-ports';
-import type { ServerWorld } from './server-world';
+import { worldTokenOrigin, type ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
 
 export interface WorldRun {
@@ -87,7 +87,11 @@ export function stateOf(run: WorldRun, hero: HeroState): HexEngineState {
     inventory: run.inventory,
     inventoryContext: { stashOpen: false, battleOpen: false },
     engagement: run.world.engagement ?? undefined,
-    loot: { seed: run.world.worldSeed, sourceId: run.world.mapId },
+    loot: {
+      seed: run.world.worldSeed,
+      sourceId: run.world.mapId,
+      origin: worldTokenOrigin(run.world),
+    },
   };
 }
 

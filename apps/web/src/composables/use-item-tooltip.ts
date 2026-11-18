@@ -5,6 +5,10 @@ import {
   type ItemTooltipView,
 } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
+import { tokenHeartPoints } from '@hexoflat/engine/combat/heart-points';
+import { tokenRarity } from '@hexoflat/engine/content/rarity-rules';
+import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
+import { tokenRarityTone } from '@/render/token-look';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
@@ -24,6 +28,22 @@ export interface TooltipPrice {
 export interface TooltipExtra {
   item?: InventoryItem;
   price?: TooltipPrice | null;
+}
+
+export type InventoryTooltipView = ItemTooltipView & { token?: ItemToken };
+
+export function withToken(
+  view: ItemTooltipView,
+  token: ItemToken | undefined,
+): InventoryTooltipView {
+  if (!token) return view;
+  return {
+    ...view,
+    token,
+    rarity: tokenRarity(token),
+    rarityTone: tokenRarityTone(token),
+    hearts: tokenHeartPoints(token),
+  };
 }
 
 export interface TooltipTarget extends TooltipExtra {
@@ -91,12 +111,13 @@ export function resolveInventoryItemTooltip(
   inventory: ReturnType<typeof useHeroInventoryStore>,
   item: InventoryItem,
   skills?: SkillRanks,
-): ItemTooltipView {
+): InventoryTooltipView {
   const equippedItems = inventory.equippedItems;
   const equipSlot = resolveInventoryView(item.key).equipSlot;
   const equipped = Object.values(equippedItems).some((entry) => entry?.id === item.id);
   const compareWith = !equipped && equipSlot ? equippedItems[equipSlot]?.key : undefined;
-  return resolveItemTooltip(item.key, { equipped, compareWith, amount: item.amount, skills });
+  const view = resolveItemTooltip(item.key, { equipped, compareWith, amount: item.amount, skills });
+  return withToken(view, item.token);
 }
 
 export function useItemTooltip() {
@@ -104,7 +125,7 @@ export function useItemTooltip() {
   const heroStore = useHeroStore();
   const stash = useHeroStashStore();
 
-  const view = computed<ItemTooltipView | null>(() => {
+  const view = computed<InventoryTooltipView | null>(() => {
     if (!target.value) return null;
     const id = target.value.itemId;
     const item =

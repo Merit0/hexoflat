@@ -67,7 +67,7 @@ function byId<T extends { id: string }>(schema: z.ZodType<T>, defs: T[]): Record
 export const BATTLE_ITEMS: Record<string, BattleItemDef> = byId(battleItemDefSchema, [
   { id: 'sword', power: 2, ...texts('sword') },
   { id: 'dagger', power: 1, ...texts('dagger') },
-  { id: 'wooden-shield', shieldCapacity: 2, ...texts('wooden-shield') },
+  { id: 'wooden-shield', shieldCapacity: 1, ...texts('wooden-shield') },
   {
     id: 'health-potion',
     heal: 2,

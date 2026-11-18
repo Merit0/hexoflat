@@ -14,7 +14,7 @@
               t('itemTooltip.equipped')
             }}</span>
           </div>
-          <h4 class="tip__title" data-testid="item-tooltip-title">{{ t(view.title) }}</h4>
+          <h4 class="tip__title" data-testid="item-tooltip-title">{{ title }}</h4>
           <p class="tip__type">{{ typeLabel }}</p>
         </header>
 
@@ -57,7 +57,17 @@
           </li>
         </ul>
 
-        <p v-if="view.description" class="tip__flavor">{{ t(view.description) }}</p>
+        <div v-if="view.token" class="tip__lines" data-testid="item-tooltip-description">
+          <p
+            v-for="(line, index) in tokenLines"
+            :key="index"
+            class="tip__line"
+            data-testid="item-tooltip-line"
+          >
+            {{ line }}
+          </p>
+        </div>
+        <p v-else-if="view.description" class="tip__flavor">{{ t(view.description) }}</p>
 
         <footer class="tip__foot">
           <span class="tip__stat" :title="t('itemTooltip.footer.weight')">
@@ -99,7 +109,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { ItemTooltipView } from '@hexoflat/engine/utils/inventory/item-tooltip';
+import type { InventoryTooltipView } from '@/composables/use-item-tooltip';
+import { tokenDescription, tokenName } from '@/services/tokens/token-text';
 import {
   EQUIP_SLOT_ICON,
   ICON_PATHS,
@@ -113,8 +124,15 @@ import { useItemTooltipLabels } from './use-item-tooltip-labels';
 const SHIELD_ICON_URL = '/board-assets/hero-board/shield-icon.png';
 const HEART_ICON_URL = '/board-assets/hero-board/heart-icon.png';
 
-const props = defineProps<{ view: ItemTooltipView; square?: boolean }>();
-const { t } = useI18n();
+const props = defineProps<{ view: InventoryTooltipView; square?: boolean }>();
+const { t, locale } = useI18n();
+
+const title = computed(() =>
+  props.view.token ? tokenName(props.view.token, locale.value) : t(props.view.title),
+);
+const tokenLines = computed(() =>
+  props.view.token ? tokenDescription(props.view.token, locale.value) : [],
+);
 const labels = useItemTooltipLabels();
 
 const rarityColor = computed(() => RARITY_COLOR[props.view.rarityTone]);
@@ -242,6 +260,18 @@ const stackText = computed(() => {
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.tip__lines {
+  margin: 10px 0 0;
+}
+
+.tip__line {
+  margin: 0;
+  color: var(--flavor);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .tip__title {
   margin: 0;
   color: var(--rarity);

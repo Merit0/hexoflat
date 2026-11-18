@@ -3,7 +3,11 @@ import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstr
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { HEX_ENGINE_COMMAND_SCHEMAS } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
-import { applyConsumeItem, applyGrantItem } from '@hexoflat/engine/inventory/apply-stock';
+import {
+  applyConsumeItem,
+  applyGrantItem,
+  devTokenMint,
+} from '@hexoflat/engine/inventory/apply-stock';
 import { applyInventoryCommand } from '@hexoflat/engine/inventory/apply-inventory';
 import { BAG_SLOT_KEYS, bagIndexOfSlotKey } from '@hexoflat/engine/inventory/bag-layout';
 import type { InventoryContext } from '@hexoflat/engine/inventory/inventory-commands';
@@ -15,6 +19,7 @@ import {
 } from '@hexoflat/engine/inventory/inventory-state';
 import { STASH_CAPACITY } from '@hexoflat/engine/inventory/stash-constants';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { i18n } from '@/i18n';
 import { inventorySession, LOCAL_HERO_ID } from './inventory-session';
 import { mirrorLocalCommand } from './inventory-mirror';
 import type { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -40,13 +45,10 @@ function nextIdSeq(heroId: string, items: readonly (InventoryItem | null)[]): nu
 const EQUIP_PREFIX = 'eq:';
 
 function slim(item: InventoryItem): InventoryStateItem | null {
-  const parsed = inventoryItemSchema.safeParse({
-    id: item.id,
-    key: item.key,
-    type: item.type,
-    stackKey: item.stackKey,
-    amount: item.amount,
-  });
+  const cell = { id: item.id, key: item.key, type: item.type, amount: item.amount };
+  const parsed = inventoryItemSchema.safeParse(
+    item.token ? { ...cell, token: item.token } : { ...cell, stackKey: item.stackKey },
+  );
   return parsed.success ? (parsed.data as InventoryStateItem) : null;
 }
 
@@ -172,7 +174,13 @@ export interface DispatchResult {
 function run(state: InventoryState, command: HexEngineCommand, context: InventoryContext) {
   switch (command.type) {
     case 'GRANT_ITEM':
-      return applyGrantItem(state, command);
+      return applyGrantItem(
+        state,
+        command,
+        import.meta.env.DEV || import.meta.env.VITE_E2E_HOOKS === 'true'
+          ? { mint: devTokenMint(state) }
+          : undefined,
+      );
     case 'CONSUME_ITEM':
       return applyConsumeItem(state, command);
     case 'MOVE_ITEM':
@@ -229,7 +237,7 @@ export interface StockOutcome {
 
 const NO_CONTEXT: InventoryContext = { stashOpen: false, battleOpen: false };
 
-function grantMessage(reason: string | undefined, key: string, capacityKg: number): string {
+export function grantMessage(reason: string | undefined, key: string, capacityKg: number): string {
   switch (reason) {
     case 'TOO_HEAVY':
       return `Too heavy! Carry limit: ${capacityKg} kg`;
@@ -237,6 +245,12 @@ function grantMessage(reason: string | undefined, key: string, capacityKg: numbe
       return 'Inventory is full!';
     case 'NOT_STORABLE':
       return 'Hand cannot be added to inventory.';
+    case 'TOKEN_SOURCE_REQUIRED':
+      return i18n.global.t('inventory.grantReject.TOKEN_SOURCE_REQUIRED');
+    case 'DUPLICATE_TOKEN':
+      return i18n.global.t('inventory.grantReject.DUPLICATE_TOKEN');
+    case 'INVALID_AMOUNT':
+      return i18n.global.t('inventory.grantReject.INVALID_AMOUNT');
     default:
       return `Unknown hexobject prototype: ${key}`;
   }
@@ -255,6 +269,7 @@ export function grantItem(
       payload: { heroId, revision, key, amount, source },
     }),
     NO_CONTEXT,
+    { heroId: inventorySession.heroId },
   );
   if (result.ok) return { ok: true };
   const reason = key === 'hand' ? 'NOT_STORABLE' : result.reason;

@@ -9,7 +9,7 @@ import { battleStateSchema, type BattleHex, type BattleState } from './battle-st
 import { battlefieldSeed, generateBattlefield } from './battlefield';
 import { deployBattle } from './battlefield-setup';
 import { hexKey, hexNeighbours, sameHex } from './hex-battle-geom';
-import { hero } from './battle-test-setup';
+import { hero, TEST_TOKEN_SECRET } from './battle-test-setup';
 import { projectBattleForViewer } from './projection';
 import { shieldCapacity } from './defend';
 import { startBattle } from './start-battle';
@@ -154,7 +154,7 @@ function playBattle(n: number): { bad: string[]; outcome: string; log: string[] 
     direction: { x: -1, y: 0 },
     ambush: n % 4 === 0,
   });
-  let battle = startBattle(setup, BATTLE_RULES).battle;
+  let battle = startBattle({ ...setup, tokenSecret: TEST_TOKEN_SECRET }, BATTLE_RULES).battle;
   const log: string[] = [];
   const bad: string[] = [];
   for (let i = 0, atMs = 0; i < MAX_COMMANDS && battle.phase !== 'ended'; i++, atMs += 400) {

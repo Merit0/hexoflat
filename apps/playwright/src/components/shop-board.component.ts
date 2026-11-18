@@ -1,6 +1,7 @@
 import { expect, type Locator } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 import { pointerDrag } from '@components/pointer-drag';
+import type { TestItemToken } from '@framework/test-api';
 
 const POLL = { timeout: 5_000, intervals: [100] };
 
@@ -10,6 +11,7 @@ export type ShopCellContent = {
   sold?: boolean;
   discountPercent?: number;
   wasted?: boolean;
+  token?: TestItemToken;
 } | null;
 export type ShopBuybackContent = { key: string; amount: number; unitPrice: number } | null;
 export type ShopListingContent = { key: string; amount: number; unitPrice: number } | null;
@@ -21,6 +23,13 @@ export type ShopTraderFixture = {
 };
 export type ShopCellShows = { key: string; amount: number; price: number };
 export type SellTarget = 'trader' | 'goods' | 'buyback';
+
+function withoutToken<T extends { token?: unknown }>(cell: T | null): T | null {
+  if (!cell) return null;
+  const rest = { ...cell };
+  delete rest.token;
+  return rest;
+}
 
 /**
  * The camp trader's board that replaces the hero panel after OPEN on the stall (apps/web's
@@ -496,10 +505,14 @@ export class ShopBoardComponent extends BaseComponent {
       .toBe(coins);
   }
 
+  private readTrader() {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getTrader());
+  }
+
   async verifyTraderGoods(goods: ShopCellContent[]): Promise<void> {
     await expect
       .poll(
-        () => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getTrader()?.goods.slice(0, 8)),
+        async () => (await this.readTrader())?.goods.slice(0, 8).map((cell) => withoutToken(cell)),
         POLL,
       )
       .toEqual(goods);
@@ -508,10 +521,45 @@ export class ShopBoardComponent extends BaseComponent {
   async verifyTraderBuyback(buyback: ShopBuybackContent[]): Promise<void> {
     await expect
       .poll(
-        () => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getTrader()?.buyback.slice(0, 7)),
+        async () =>
+          (await this.readTrader())?.buyback.slice(0, 7).map((cell) => withoutToken(cell)),
         POLL,
       )
       .toEqual(buyback);
+  }
+
+  async readGoodsToken(index: number): Promise<TestItemToken> {
+    let token: TestItemToken | undefined;
+    await expect
+      .poll(async () => {
+        token = (await this.readTrader())?.goods[index]?.token;
+        return token !== undefined;
+      }, POLL)
+      .toBe(true);
+    return token!;
+  }
+
+  async readBuybackUnitPrice(index: number): Promise<number> {
+    let price: number | undefined;
+    await expect
+      .poll(async () => {
+        price = (await this.readTrader())?.buyback[index]?.unitPrice;
+        return price !== undefined;
+      }, POLL)
+      .toBe(true);
+    return price!;
+  }
+
+  async verifyBuybackHoldsToken(index: number, tokenId: string): Promise<void> {
+    await expect
+      .poll(async () => (await this.readTrader())?.buyback[index]?.token?.id, POLL)
+      .toBe(tokenId);
+  }
+
+  async readTradingCardPrice(): Promise<number> {
+    const price = this.page.getByTestId('shop-card-trade-price').locator('b');
+    await expect(price).toHaveAttribute('data-price', /^\d+$/);
+    return Number(await price.getAttribute('data-price'));
   }
 
   async verifyTraderSerial(serial: number): Promise<void> {

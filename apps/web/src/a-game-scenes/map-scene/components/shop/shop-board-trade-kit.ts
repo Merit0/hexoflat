@@ -5,6 +5,8 @@ import type { Presence } from '@hexoflat/engine';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { coinPriceOf } from '@hexoflat/engine/content/content-accessors';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
+import { TRADERS } from '@hexoflat/engine/content/traders.content';
+import { priceOf, sellPriceOf } from '@hexoflat/engine/trade/price-of';
 import type { BuybackEntry, TraderGood } from '@hexoflat/engine/trade/trade-state';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { i18n } from '@/i18n';
@@ -39,7 +41,6 @@ export const AT_STALL: Presence = {
   coordinates: getHexNeighbors(STALL)[0],
 };
 export const POTION_PRICE = coinPriceOf(K.HEALTH_BOTTLE)!;
-export const SWORD_PRICE = coinPriceOf(K.SWORD)!;
 
 export const view = {
   app: null as App | null,
@@ -52,6 +53,12 @@ export const ghostBadge = () =>
   document.querySelector<HTMLElement>('[data-testid="shop-drag-badge"]');
 export const coins = () => useHeroInventoryStore().countItem(K.COINS);
 export const ilva = () => traderProjection.value.traders.ilva!;
+export const goodPrice = (index: number) => priceOf(ilva().goods[index]!)!;
+export const bagSwordSale = () =>
+  sellPriceOf(
+    TRADERS.ilva,
+    currentInventory().bag.find((cell) => cell?.key === K.SWORD)!,
+  )!;
 export const bagKeys = () =>
   currentInventory().bag.map((cell) => cell && `${cell.key}x${cell.amount}`);
 export const message = () => useHeroToolStore().actionMessage;

@@ -11,6 +11,7 @@ import { applySpreadPlan, type LootDrop, type LootNeighbour } from '../loot';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { axialToOffset, coordinateKey, offsetToAxial, type Axial } from '../utils/hex-utils';
+import { withToken } from '../tokens/token-entry';
 import { positionOf, type QuestRun, type SeekerBoard } from './quest-state';
 
 export type QuestChestPrecondition = 'WRONG_PHASE' | 'NO_INVENTORY';
@@ -79,20 +80,25 @@ export function questChestSpace(
           ],
         };
       }
-      const { placed, toBag } = applySpreadPlan(outcome.plan, bag, (placement) => ({
-        hex: placement.hex,
-        itemKey: placement.itemKey,
-        amount: placement.amount,
-      }));
+      const ground: NonNullable<QuestRun['collect']>['ground'] = [];
+      const { placed, toBag } = applySpreadPlan(outcome.plan, bag, (placement) => {
+        ground.push(
+          withToken(
+            {
+              hex: axialToOffset(placement.hex),
+              itemKey: placement.itemKey,
+              amount: placement.amount,
+            },
+            placement.token,
+          ),
+        );
+        return { hex: placement.hex, itemKey: placement.itemKey, amount: placement.amount };
+      });
       run.phase = 'collect';
       chest.container = emptiedContainer(outcome.container);
       run.collect = {
         hero: { ...chest.hex },
-        ground: placed.map((item) => ({
-          hex: axialToOffset(item.hex),
-          itemKey: item.itemKey,
-          amount: item.amount,
-        })),
+        ground,
         seen: helpers.seen(state.board, chest.hex),
       };
       return { opened: { from, placed, toBag }, events: [] };

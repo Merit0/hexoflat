@@ -31,6 +31,7 @@ import {
   QuestClaimCommandSchema,
 } from '../quests/quest-commands';
 import type { TAggregateKind } from './aggregate-kinds';
+import { tokenSpecSchema } from '../tokens/token-spec';
 
 const base = { heroId: z.string().min(1), revision: z.number().int().nonnegative() };
 
@@ -41,20 +42,27 @@ export const ClaimCampChestCommandSchema = z.object({
 
 const KNOWN_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));
 
+const devItemPayload = z.object({
+  ...base,
+  key: z
+    .string()
+    .refine((key) => key !== 'hand' && KNOWN_KEYS.has(key), 'unknown or unstorable key'),
+  amount: z.number().int().min(1).max(9999),
+});
+
 export const DevGrantItemCommandSchema = z.object({
   type: z.literal('DEV_GRANT_ITEM'),
-  payload: z.object({
-    ...base,
-    key: z
-      .string()
-      .refine((key) => key !== 'hand' && KNOWN_KEYS.has(key), 'unknown or unstorable key'),
-    amount: z.number().int().min(1).max(9999),
-  }),
+  payload: devItemPayload
+    .extend({ token: tokenSpecSchema.optional() })
+    .refine((payload) => !payload.token || payload.token.type === payload.key, {
+      message: 'token type differs from the key',
+      path: ['token', 'type'],
+    }),
 });
 
 export const DevConsumeItemCommandSchema = z.object({
   type: z.literal('DEV_CONSUME_ITEM'),
-  payload: DevGrantItemCommandSchema.shape.payload,
+  payload: devItemPayload,
 });
 
 export const DevSetInventoryCommandSchema = z.object({

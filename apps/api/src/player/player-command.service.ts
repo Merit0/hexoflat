@@ -1,3 +1,4 @@
+import { devTokenMint } from '@hexoflat/engine/inventory/apply-stock';
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
@@ -47,6 +48,7 @@ import {
   readServerDocument,
 } from '../expedition/expedition-store';
 import { reconcileQuestWorld } from '../quests/reconcile-quest-world';
+import { isStaleWorldDocument, worldDocumentKey } from '../world/world-documents';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { ledgerEntriesFor } from './item-ledger';
 import {
@@ -74,8 +76,8 @@ interface LockedRun {
 async function battleOpen(tx: Tx, expeditionId: string, loaded: LoadedAggregates) {
   const mapId = loaded.progress?.state.presence?.mapId;
   if (!mapId) return null;
-  const raw = await readServerDocument(tx, expeditionId, `srv-world:${mapId}`);
-  const held = raw ? (JSON.parse(raw) as { battle?: unknown }) : null;
+  const raw = await readServerDocument(tx, expeditionId, worldDocumentKey(mapId));
+  const held = raw && !isStaleWorldDocument(raw) ? (JSON.parse(raw) as { battle?: unknown }) : null;
   return held?.battle ? 'BATTLE_OPEN' : null;
 }
 
@@ -164,6 +166,7 @@ export class PlayerCommandService {
           executePlayerCommand(aggregates, command, {
             devGrantAllowed,
             inventory: serverInventoryContext(aggregates.progress.presence),
+            rngSeed: loaded.progress?.serverState.rngSeed,
             ...(command.type.startsWith('SHOP_')
               ? { trade: serverTradeContext(aggregates.progress.presence, rngSeedOf(loaded)) }
               : {}),
@@ -321,7 +324,13 @@ export class PlayerCommandService {
     commandId: string = randomUUID(),
   ): Promise<PlayerCommandResponse> {
     return this.serverStock(userId, heroId, commandId, 'GRANT_ITEM', { key, amount, source }, (a) =>
-      grantItemServerSide(a.inventory, key, amount, source),
+      grantItemServerSide(
+        a.inventory,
+        key,
+        amount,
+        source,
+        source === 'dev' ? { mint: devTokenMint(a.inventory) } : undefined,
+      ),
     );
   }
 

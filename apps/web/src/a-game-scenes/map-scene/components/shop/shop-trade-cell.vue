@@ -65,9 +65,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { getMeta, getPrototype } from '@hexoflat/engine';
 import type { TTradeList } from '@hexoflat/engine/trade/trade-types';
-import { getObjectRarityTone } from '@/render/rarity';
+import { itemRarityTone } from '@/render/token-look';
+import { itemTitle } from '@/services/tokens/token-text';
 import { showsCounter } from '@/composables/item-counter';
 import type { TooltipPrice } from '@/composables/use-item-tooltip';
 import { stashFx } from '@/composables/stash-drag-state';
@@ -117,16 +117,12 @@ const classes = computed(() => ({
 }));
 
 const rarity = computed(() =>
-  props.cell.item
-    ? (getObjectRarityTone(getPrototype(props.cell.item.key)) ?? undefined)
-    : undefined,
+  props.cell.item ? (itemRarityTone(props.cell.item) ?? undefined) : undefined,
 );
 
-const label = computed(() => {
-  if (!props.cell.item) return undefined;
-  const title = getMeta(props.cell.item.key).title;
-  return i18n.te(title) ? i18n.t(title) : title;
-});
+const label = computed(() =>
+  props.cell.item ? itemTitle(props.cell.item, i18n.locale.value) : undefined,
+);
 
 function onPointerDown(event: PointerEvent) {
   if (own.value) return;

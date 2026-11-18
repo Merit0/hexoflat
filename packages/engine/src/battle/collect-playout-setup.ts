@@ -5,7 +5,7 @@ import { battlefieldSeed, generateBattlefield } from './battlefield';
 import { deployBattle } from './battlefield-setup';
 import { heroBotAction } from './battle-sim';
 import type { BattleState } from './battle-state';
-import { hero } from './battle-test-setup';
+import { hero, TEST_TOKEN_SECRET } from './battle-test-setup';
 import { projectBattleForViewer } from './projection';
 import { startBattle } from './start-battle';
 
@@ -23,7 +23,7 @@ export function playOutSquad(members: string[], battleId: string, fieldLabel: st
     ambush: false,
   });
   const rng = deriveStream(setup.seed, 'sim:answers');
-  let battle = startBattle(setup, ON).battle;
+  let battle = startBattle({ ...setup, tokenSecret: TEST_TOKEN_SECRET }, ON).battle;
   for (let i = 0, atMs = 0; i < MAX_COMMANDS && !battle.outcome; i++, atMs += 1_000) {
     if (battle.round > MAX_ROUNDS) break;
     const task = battle.task;

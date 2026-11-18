@@ -15,11 +15,6 @@ const WINDOW_RESOLVES_MS = 20_000;
 
 type Snapshot = NonNullable<Awaited<ReturnType<CampingMapPage['hexBoard']['readBattleSnapshot']>>>;
 
-/**
- * Battle scenarios that go through the real command pipeline: the block window,
- * the aim stage, the order of initiative. State the game reaches only by luck
- * (who moves first, where the enemy stands) is granted by test hooks.
- */
 export class BattleFlowFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
   private before: Snapshot | null = null;
@@ -210,7 +205,7 @@ export class BattleFlowFeature extends BaseFeature {
     await this.step('Raise a shield through the auto-selected tool hex', async () => {
       await this.campingMap.battleTab.verifyToolHexOffers(/Блок|Block/);
       await this.campingMap.battleTab.pressToolHexAction();
-      await this.campingMap.battleTab.verifyShieldCount(1, 2);
+      await this.campingMap.battleTab.verifyShieldCount(1, 1);
       expect((await this.snapshot()).placedShields).toBe(1);
     });
   }
@@ -582,10 +577,14 @@ export class BattleFlowFeature extends BaseFeature {
     });
   }
 
-  async tapTheFirstShieldAgain(): Promise<void> {
-    await this.step('Tap a raised shield again to take it down', async () => {
-      await this.campingMap.battleTab.clickBoardPoint(await this.pointOf(this.tappedShields[0]));
-    });
+  async tapTheRaisedShieldAgain(): Promise<void> {
+    await this.step(
+      'Tap the first hex, which holds the only raised shield, to take it down',
+      async () => {
+        expect((await this.snapshot()).placedShields).toBe(1);
+        await this.campingMap.battleTab.clickBoardPoint(await this.pointOf(this.tappedShields[0]));
+      },
+    );
   }
 
   async verifyShieldsRaised(placed: number, capacity: number): Promise<void> {

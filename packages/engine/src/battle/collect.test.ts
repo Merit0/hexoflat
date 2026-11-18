@@ -9,7 +9,8 @@ import { applyBattleCommand } from './apply-battle';
 import { applyDamage } from './battle-end';
 import { BATTLE_RULES } from './battle-content';
 import { creatureById } from './battle-board';
-import { hexagonBoard, hero } from './battle-test-setup';
+import { hexagonBoard, hero, TEST_TOKEN_SECRET } from './battle-test-setup';
+import { graveLootSource } from './grave-token-source';
 import type { BattleState } from './battle-state';
 import { startBattle } from './start-battle';
 import { hexKey } from './hex-battle-geom';
@@ -74,6 +75,7 @@ describe('REQ-LOOT-077 graves appear at the moment of victory', () => {
         seed: 'loot-seed',
         board: hexagonBoard(),
         creatures: [hero(ORIGIN), warrior('s1', { q: 1, r: 0 })],
+        tokenSecret: TEST_TOKEN_SECRET,
       },
       { ...BATTLE_RULES, graveLootEnabled: false },
     ).battle;
@@ -212,8 +214,11 @@ describe('REQ-LOOT-080 every refusal changes nothing', () => {
 describe('REQ-LOOT-081 a successful LOOT_GRAVE', () => {
   const seedOf = (n: number) => `seed-${n}`;
 
+  const secretOf = (seed: string) => ({ seed, mapId: TEST_TOKEN_SECRET.mapId });
+
   function expected(seed: string, id = 'b1') {
-    const rng = deriveStream(seed, lootStreamLabel(id, hexKey(TARGET)));
+    const source = graveLootSource({ id, tokenSecret: secretOf(seed) }, hexKey(TARGET));
+    const rng = deriveStream(source.seed, lootStreamLabel(source.sourceId, source.targetKey));
     const drops = rollLoot(LOOT_TABLES['skeleton-warrior-loot'], rng);
     return placeLoot({
       target: TARGET,
@@ -226,9 +231,12 @@ describe('REQ-LOOT-081 a successful LOOT_GRAVE', () => {
     });
   }
 
-  it('places exactly what placeLoot gives for the same battle seed', () => {
+  it('places exactly what placeLoot gives for the same token secret', () => {
     for (let n = 0; n < 20; n++) {
-      const looted = play(won([warrior('s1', TARGET)], { seed: seedOf(n) }), lootAt(TARGET));
+      const looted = play(
+        won([warrior('s1', TARGET)], { tokenSecret: secretOf(seedOf(n)) }),
+        lootAt(TARGET),
+      );
       const plan = expected(seedOf(n));
       if (plan.kind !== 'placed') throw new Error('expected a placement');
       expect(looted.battle.collect!.items).toEqual(
@@ -255,12 +263,13 @@ describe('REQ-LOOT-081 a successful LOOT_GRAVE', () => {
     expectRefused(off.battle, stepTo(TARGET), 'HEX_BLOCKED');
   });
 
-  it('gives the same loot for the same seed and grave, a different stream for another battle', () => {
+  it('gives the same loot for the same secret and grave, a different stream for another battle', () => {
     const seeds = Array.from({ length: 12 }, (_, n) => seedOf(n));
     const list = (id: string) =>
       seeds.map(
         (seed) =>
-          play(won([king('k1', TARGET)], { seed, id }), lootAt(TARGET)).battle.collect!.items,
+          play(won([king('k1', TARGET)], { tokenSecret: secretOf(seed), id }), lootAt(TARGET))
+            .battle.collect!.items,
       );
     expect(list('b1')).toEqual(list('b1'));
     expect(list('b1')).not.toEqual(list('b2'));

@@ -1,4 +1,5 @@
 import type { ContainerState } from '../containers/container';
+import type { ItemToken } from '../tokens/token-schema';
 import { THexobjectKey } from '../registry/hexobjects-registry';
 
 export type THexobjectGroup = EHexobjectGroup;
@@ -51,6 +52,7 @@ export interface IBaseHexobject {
   tileBackground?: string;
   quantity?: number;
   container?: ContainerState;
+  token?: ItemToken;
 }
 
 export interface IResource extends ITraitable<IResourceTraits> {
@@ -95,8 +97,6 @@ export interface ITool extends IDurable {
   defense?: number;
   rarity?: IItemRarity;
   capabilities: {
-    canCut?: boolean;
-    canMine?: boolean;
     canPickup?: boolean;
     canEnter?: boolean;
     canUse?: boolean;
@@ -119,8 +119,6 @@ export interface IConstruction {
 }
 
 export interface IWeapon {
-  damageMin: number;
-  damageMax: number;
   attackMultiplier?: number;
   radius?: number;
 }

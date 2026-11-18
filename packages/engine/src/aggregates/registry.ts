@@ -1,6 +1,8 @@
+import { upcastTokenIdentities } from '../inventory/upcast-token-identities';
 import type { z } from 'zod';
 import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventory-state';
 import type { InventoryState } from '../inventory/inventory-state';
+import { upcastInventoryTokens } from '../inventory/upcast-item-tokens';
 import type { TAggregateKind } from './aggregate-kinds';
 import { createKnowledgeState } from '../knowledge/state';
 import { emptyQuestLog } from '../quests/quest-log-state';
@@ -28,9 +30,12 @@ export interface IAggregateDefinition<TState> {
 
 const inventoryDefinition: IAggregateDefinition<InventoryState> = {
   kind: 'inventory',
-  schemaVersion: 1,
+  schemaVersion: 3,
   schema: inventoryStateSchema as unknown as z.ZodType<InventoryState>,
-  upcasters: {},
+  upcasters: {
+    1: upcastInventoryTokens,
+    2: upcastTokenIdentities,
+  },
   createInitial: ({ heroId }) => emptyInventoryState(heroId),
   project: (state) => state,
 };
@@ -39,7 +44,7 @@ const LEGACY_GRAVE_EXIT_REWARD = 'grave-exit-warning-acknowledged';
 
 const progressDefinition: IAggregateDefinition<ProgressState> = {
   kind: 'progress',
-  schemaVersion: 9,
+  schemaVersion: 10,
   schema: progressStateSchema,
   upcasters: {
     1: (old, { heroId }) => ({
@@ -62,6 +67,7 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
         graveExitWarningAcknowledged: rewards.includes(LEGACY_GRAVE_EXIT_REWARD),
       };
     },
+    9: (old) => ({ ...(old as object), ownedUniques: [] }),
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
   project: projectProgress,

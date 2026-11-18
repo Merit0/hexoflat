@@ -1,3 +1,4 @@
+import { isTokenType } from '../tokens/game-tokens';
 import { describe, expect, it } from 'vitest';
 import { LOOT_TABLES } from '../content/loot-tables.content';
 import { emptyInventoryState } from '../inventory/inventory-state';
@@ -79,13 +80,18 @@ describe('REQ-QST-023 the real chest spreads loot by the shared rule', () => {
       });
       expect(expected.ok).toBe(true);
       if (!expected.ok) continue;
-      expect(opened.run.collect!.ground).toEqual(
+      expect(
+        opened.run.collect!.ground.map(({ hex, itemKey, amount }) => ({ hex, itemKey, amount })),
+      ).toEqual(
         expected.plan.placements.map(({ hex, itemKey, amount }) => ({
           hex: axialToOffset(hex),
           itemKey,
           amount,
         })),
       );
+      for (const item of opened.run.collect!.ground) {
+        expect(!!item.token).toBe(isTokenType(item.itemKey));
+      }
       const grounds = opened.run.collect!.ground.map(keyOf);
       expect(grounds).not.toContain(coordinateKey(chest));
       expect(grounds).not.toContain(coordinateKey(entry));

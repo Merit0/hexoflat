@@ -6,21 +6,46 @@ import {
 } from '../abstraction/hexobject-abstraction';
 import { getMeta, getPrototype } from '../content/content-accessors';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import { itemTokenSchema, type ItemToken } from '../tokens/token-schema';
 import { BAG_CAPACITY, DEFAULT_CARRY_CAPACITY_KG } from './bag-layout';
 import { STASH_CAPACITY, STASH_MAX_CHESTS } from './stash-constants';
 
 const KNOWN_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));
 
-export const inventoryItemSchema = z.object({
+const itemKeySchema = z.string().refine((key) => KNOWN_KEYS.has(key), 'unknown hexobject key');
+
+const stackCellSchema = z.object({
   id: z.string().min(1),
-  key: z.string().refine((key) => KNOWN_KEYS.has(key), 'unknown hexobject key'),
+  key: itemKeySchema,
   type: z.nativeEnum(EHexobjectGroup),
   stackKey: z.string().optional(),
   amount: z.number().int().positive(),
+  token: z.undefined().optional(),
 });
-export type InventoryStateItem = Omit<z.infer<typeof inventoryItemSchema>, 'key'> & {
+
+const tokenCellSchema = z
+  .strictObject({
+    id: z.string().min(1),
+    key: itemKeySchema,
+    type: z.nativeEnum(EHexobjectGroup),
+    amount: z.literal(1),
+    token: itemTokenSchema,
+  })
+  .refine((cell) => cell.key === cell.token.type, {
+    path: ['token'],
+    message: 'token type differs from the cell key',
+  });
+
+export const inventoryItemSchema = z.union([tokenCellSchema, stackCellSchema]);
+
+export interface InventoryStateItem {
+  id: string;
   key: THexobjectKey;
-};
+  type: EHexobjectGroup;
+  stackKey?: string;
+  amount: number;
+  token?: ItemToken;
+}
 
 const cellSchema = inventoryItemSchema.nullable();
 
@@ -32,7 +57,10 @@ function everyIdIsUnique(state: {
   const ids = [...state.bag, ...Object.values(state.equip), ...state.stash.cells]
     .filter((item) => item !== null)
     .map((item) => item.id);
-  return new Set(ids).size === ids.length;
+  const tokens = [...state.bag, ...Object.values(state.equip), ...state.stash.cells].flatMap(
+    (item) => (item?.token ? [item.token.id] : []),
+  );
+  return new Set(ids).size === ids.length && new Set(tokens).size === tokens.length;
 }
 
 export const inventoryStateSchema = z

@@ -3,11 +3,10 @@ import { EHexActionType } from '../enums/hex-action-type';
 import { getPrototype, getMeta, type IHexobjectMeta } from '../content';
 import { THeroToolKey } from '../content/equipment.content';
 import { assertNever } from '../utils/assert-never';
+import { toolActionOf } from '../tokens/tool-action';
 
 export interface ToolCapabilities {
-  canCut?: boolean;
   canPickup?: boolean;
-  canMine?: boolean;
   canEnter?: boolean;
   canUse?: boolean;
   canOpen?: boolean;
@@ -19,7 +18,6 @@ export interface ToolCapabilities {
 export type ResolvedActionType =
   'CUT' | 'TAKE' | 'MINE' | 'USE' | 'OPEN' | 'ENTER' | 'ATTACK' | 'SCOUT';
 
-/** Minimal navigation descriptor — engine stays framework-agnostic, apps/web maps this to a real route. */
 export interface EngineRouteDescriptor {
   name: string;
   params?: Record<string, string>;
@@ -86,6 +84,7 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
   if (!obj.isInteractable) return [];
 
   const cap = getToolCapabilities(toolKey);
+  const toolAction = toolActionOf(toolKey);
   const resolvedActions: ResolvedAction[] = [];
 
   switch (obj.groupType) {
@@ -94,7 +93,7 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
 
       const traits: IResourceTraits = obj.resource.traits ?? {};
 
-      if (cap.canCut && traits.cuttable) {
+      if (toolAction === EHexActionType.CUT && traits.cuttable) {
         resolvedActions.push({
           actioType: 'CUT',
           label: labelFromMeta(obj, EHexActionType.CUT, 'Chop'),
@@ -110,7 +109,7 @@ export function resolveActions(toolKey: THeroToolKey, obj: THexobject): Resolved
         });
       }
 
-      if (cap.canMine && traits.mineable) {
+      if (toolAction === EHexActionType.MINE && traits.mineable) {
         resolvedActions.push({
           actioType: 'MINE',
           label: labelFromMeta(obj, EHexActionType.MINE, 'Mine'),

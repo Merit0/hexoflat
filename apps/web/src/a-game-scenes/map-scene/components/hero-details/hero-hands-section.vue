@@ -49,7 +49,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { HeroDetailsView } from '@/composables/use-hero-details';
+import type { HandItem, HeroDetailsView } from '@/composables/use-hero-details';
+import { tokenName } from '@/services/tokens/token-text';
 import { ICON_PATHS } from '@/components/gui/icons/item-icons';
 import { RARITY_COLOR } from '@/render/rarity';
 import HeroDetailsCard from './hero-details-card.vue';
@@ -57,10 +58,14 @@ import { useHeroDetailsLabels } from './use-hero-details-labels';
 
 const props = defineProps<{ view: HeroDetailsView }>();
 const emit = defineEmits<{ unequip: ['right' | 'left'] }>();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const labels = useHeroDetailsLabels();
 
 const EMPTY_COLOR = '#3a474e';
+
+function handTitle(item: HandItem): string {
+  return item.token ? tokenName(item.token, locale.value) : t(item.titleKey);
+}
 
 const hands = computed(() =>
   (['right', 'left'] as const).map((id) => {
@@ -68,7 +73,7 @@ const hands = computed(() =>
     return {
       id,
       label: labels.value.hands[id],
-      title: item ? t(item.titleKey) : null,
+      title: item ? handTitle(item) : null,
       willCost: item?.willCost ?? null,
       color: item?.rarity ? RARITY_COLOR[item.rarity] : EMPTY_COLOR,
     };

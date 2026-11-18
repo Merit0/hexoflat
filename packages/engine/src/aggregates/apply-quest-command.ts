@@ -7,6 +7,7 @@ import type { ProgressState } from './progress-state';
 
 export interface QuestApplyContext {
   atBoard: boolean;
+  rngSeed?: string;
 }
 
 export interface QuestApplyResult {
@@ -29,7 +30,7 @@ function plan(
 ): QuestPlan {
   const { progress, inventory } = aggregates;
   const questId = command.payload.questId;
-  const context = { catalogue: ALL_QUESTS, atBoard: ctx.atBoard };
+  const context = { catalogue: ALL_QUESTS, atBoard: ctx.atBoard, rngSeed: ctx.rngSeed };
   if (command.type === 'QUEST_ACCEPT') return planAccept(progress, inventory, questId, context);
   if (command.type === 'QUEST_CLAIM') return planClaim(progress, inventory, questId, context);
   return planAbandon(progress, inventory, questId);

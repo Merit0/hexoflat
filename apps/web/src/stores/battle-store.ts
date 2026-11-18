@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref, shallowRef, type Ref } from 'vue';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import type { BattleAction } from '@hexoflat/engine/battle/battle-commands';
-import type { BattleHex, BattleSetupInput } from '@hexoflat/engine/battle/battle-state';
+import type { BattleHex, BattleLayoutInput } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import type { BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
 import type { DeploymentZones } from '@hexoflat/engine/battle/battlefield-setup';
@@ -11,7 +11,7 @@ import type { BattleReply, BattleRequest } from '@/services/battle/battle-reply'
 import { inCollect } from '@/composables/battle-collect';
 
 export interface BattleDeploy {
-  setup: BattleSetupInput;
+  setup: BattleLayoutInput;
   zones: DeploymentZones;
   biome: BattlefieldBiome;
   place: string;

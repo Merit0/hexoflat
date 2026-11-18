@@ -7,6 +7,7 @@ import { applyDamage } from '@hexoflat/engine/battle/battle-end';
 import type { BattleCreature, BattleState } from '@hexoflat/engine/battle/battle-state';
 import { projectBattleForViewer, type BattleProjection } from '@hexoflat/engine/battle/projection';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
+import { TEST_TOKEN_SECRET } from '@hexoflat/engine/battle/battle-test-setup';
 import { devBattleHero } from '@/a-game-scenes/battle-scene/dev-battlefield';
 import enUi from '@/locales/en/ui.json';
 import ukUi from '@/locales/uk/ui.json';
@@ -32,7 +33,10 @@ function fight(): BattleState {
     { ...devBattleHero('h'), pos: { q: 0, r: 0 } },
     enemyCreature('skeleton-warrior', 'w', { q: 1, r: 0 }),
   ];
-  return startBattle({ id: 'b', seed: 's', board: floor(), creatures }, BATTLE_RULES).battle;
+  return startBattle(
+    { id: 'b', seed: 's', board: floor(), creatures, tokenSecret: TEST_TOKEN_SECRET },
+    BATTLE_RULES,
+  ).battle;
 }
 
 function victory(): BattleState {

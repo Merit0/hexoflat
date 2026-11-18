@@ -4,6 +4,7 @@ export * from './roll-loot';
 export * from './place-loot';
 export * from './plan-spread';
 export * from './roll-for';
+export * from './tokenize-drops';
 export * from './apply-spread';
 export * from './neighbours';
 export * from './offset-placement';

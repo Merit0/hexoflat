@@ -1,7 +1,7 @@
-import { coinPriceOf } from '@hexoflat/engine/content/content-accessors';
 import { TRADERS, type TTraderKey } from '@hexoflat/engine/content/traders.content';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { planBuy } from '@hexoflat/engine/trade/plan-buy';
+import { priceOf } from '@hexoflat/engine/trade/price-of';
 import { planSell } from '@hexoflat/engine/trade/plan-sell';
 import { refreshPrice } from '@hexoflat/engine/trade/trader-view';
 import type { TraderState } from '@hexoflat/engine/trade/trade-state';
@@ -42,7 +42,7 @@ export function previewBuy(
   amount?: number,
 ): TradePreview {
   const entry = from.list === 'goods' ? trader.state.goods[from.index] : null;
-  const unitOverride = entry?.discountPercent ? (coinPriceOf(entry.key) ?? undefined) : undefined;
+  const unitOverride = entry?.discountPercent ? (priceOf(entry) ?? undefined) : undefined;
   return settle((expectedPrice) =>
     planBuy(inventory, trader, from, to, { split, amount, expectedPrice, unitOverride }),
   );

@@ -82,8 +82,10 @@ describe('CH-P0 payload snapshots: the whole open event and every refusal event,
   });
 });
 
+const GRAVE_SECRET = { seed: SEED, mapId: 'test-map-8' };
+
 describe('CH-P0 payload snapshots: grave', () => {
-  const lone = () => won([warrior('e1', TARGET)], { seed: SEED });
+  const lone = () => won([warrior('e1', TARGET)], { tokenSecret: GRAVE_SECRET });
 
   it('the full loot: CONTAINER_OPENED', () => {
     expect(play(lone(), lootAt(TARGET)).events).toMatchSnapshot();
@@ -91,7 +93,7 @@ describe('CH-P0 payload snapshots: grave', () => {
 
   it('the full loot of a boss grave with no room: CONTAINER_OPENED and ITEM_GRANTED', () => {
     const state = won([king('k1', TARGET)], {
-      seed: SEED,
+      tokenSecret: GRAVE_SECRET,
       board: hexagonBoard(3, RING_OF_TARGET),
     });
     expect(play(state, lootAt(TARGET)).events).toMatchSnapshot();
@@ -102,7 +104,7 @@ describe('CH-P0 payload snapshots: grave', () => {
     const away = play(looted, stepTo(ORIGIN)).battle;
     const crowded = (enemy: ReturnType<typeof warrior>, bag?: ReturnType<typeof fullBag>) =>
       play(
-        won([enemy], { seed: SEED, board: hexagonBoard(3, RING_OF_TARGET) }),
+        won([enemy], { tokenSecret: GRAVE_SECRET, board: hexagonBoard(3, RING_OF_TARGET) }),
         lootAt(TARGET),
         bag,
       ).events;
@@ -111,7 +113,7 @@ describe('CH-P0 payload snapshots: grave', () => {
       CONTAINER_EMPTY_NO_GRAVE: play(lone(), lootAt({ q: 0, r: 1 })).events,
       CONTAINER_EMPTY_EXAMINED: play(away, lootAt(TARGET)).events,
       NOT_ADJACENT: play(
-        won([warrior('e1', { q: 2, r: 0 })], { seed: SEED }),
+        won([warrior('e1', { q: 2, r: 0 })], { tokenSecret: GRAVE_SECRET }),
         lootAt({ q: 2, r: 0 }),
       ).events,
       NO_ROOM_FOR_LOOT: crowded(warrior('e1', TARGET)),

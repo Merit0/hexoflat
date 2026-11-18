@@ -1,11 +1,12 @@
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
-import { coinPriceOf } from '../content/content-accessors';
+import { priceOf } from './price-of';
 import { TRADERS } from '../content/traders.content';
 import { applyAggregate, toAggregate } from '../inventory/inventory-adapter';
 import type { InventoryState } from '../inventory/inventory-state';
 import { canStackTogether, exceedsCapacity, stackLimit } from '../inventory/item-queries';
 import { halfOf, placeInto } from '../inventory/placement';
 import type { IInventoryAggregate, TItemCells } from '../inventory/transfer-types';
+import { withToken } from '../tokens/token-entry';
 import { freshPiece, payCoins, sequenceOf } from './coin-purse';
 import { readSource, takeFromSource } from './trade-lists';
 import type {
@@ -73,8 +74,7 @@ export function planBuy(
   if ('discountPercent' in entry && entry.discountPercent && opts.unitOverride === undefined) {
     return refuse('NEEDS_DEAL');
   }
-  const unit =
-    opts.unitOverride ?? ('unitPrice' in entry ? entry.unitPrice : coinPriceOf(entry.key));
+  const unit = opts.unitOverride ?? ('unitPrice' in entry ? entry.unitPrice : priceOf(entry));
   if (unit === null) return refuse('NOT_TRADEABLE');
 
   const seq = sequenceOf(inventory);
@@ -89,7 +89,7 @@ export function planBuy(
 
   const paid = payCoins(agg, price);
   if (!paid) return refuse('NOT_ENOUGH_COINS', price);
-  const piece = freshPiece(seq, entry.key, amount);
+  const piece = withToken(freshPiece(seq, entry.key, amount), entry.token);
   const placed = placeBought(paid.bag, to, piece);
   if ('error' in placed) return refuse(placed.error, price);
   const next = { ...paid, bag: placed.cells };

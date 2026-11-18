@@ -4,6 +4,9 @@ import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 import { TRADERS, traderView, type ProgressState } from '@hexoflat/engine';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { coinPriceOf } from '@hexoflat/engine/content/content-accessors';
+import { mintBaseToken } from '@hexoflat/engine/tokens/game-tokens';
+import { DEFAULT_TOKEN_ORIGIN } from '@hexoflat/engine/tokens/token-origin';
+import { priceOf, sellPriceFrom } from '@hexoflat/engine/trade/price-of';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
@@ -16,11 +19,8 @@ const { COINS, SWORD, HEALTH_BOTTLE } = HEXOBJECT_KEYS;
 const [STALL] = campObjectSpots(HEXOBJECT_KEYS.TRADER_STALL);
 const NEAR = getHexNeighbors(STALL)[0];
 const FAR = { columnIndex: STALL.columnIndex + 2, rowIndex: STALL.rowIndex };
-const SWORD_PRICE = coinPriceOf(SWORD)!;
 const BOTTLE_PRICE = coinPriceOf(HEALTH_BOTTLE)!;
-const SWORD_SELL = Math.floor(
-  (SWORD_PRICE * TRADERS.ilva.sellRate.num) / TRADERS.ilva.sellRate.den,
-);
+const DISCOUNT_SWORD_PRICE = 200;
 const START_COINS = 1000;
 
 describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', () => {
@@ -81,7 +81,10 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
         { key: HEALTH_BOTTLE, amount: 5 },
       ],
     });
-    return { userId, heroId, mapId };
+    const goods = ((await progressOf(userId, heroId)).state as ProgressState).traders.ilva!.goods;
+    const swordPrice = priceOf(goods[0]!)!;
+    const swordSell = sellPriceFrom(TRADERS.ilva, swordPrice)!;
+    return { userId, heroId, mapId, swordPrice, swordSell };
   }
 
   const buy = (
@@ -114,16 +117,16 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
   };
 
   it('buys next to the stall: coins paid, item in the bag, one journal row and a shop ledger row per key', async () => {
-    const { userId, heroId } = await heroInCamp(NEAR);
+    const { userId, heroId, swordPrice } = await heroInCamp(NEAR);
     const before = await inventoryOf(userId, heroId);
-    const command = buy(heroId, before.revision, 0, SWORD_PRICE);
+    const command = buy(heroId, before.revision, 0, swordPrice);
 
     const answer = await kit.service.execute(userId, command);
 
     expect(answer.result).toBe('applied');
     expect(answer.events.map((event) => event.type)).toEqual(['ITEM_BOUGHT', 'INVENTORY_CHANGED']);
     const after = await inventoryOf(userId, heroId);
-    expect(bagAmount(after, COINS)).toBe(START_COINS - SWORD_PRICE);
+    expect(bagAmount(after, COINS)).toBe(START_COINS - swordPrice);
     expect(bagAmount(after, SWORD)).toBe(1);
     const goods = ((await progressOf(userId, heroId)).state as ProgressState).traders.ilva!.goods;
     expect(goods[0]).toMatchObject({ key: SWORD, amount: 1, sold: true });
@@ -145,8 +148,8 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
       expect.arrayContaining([
         {
           itemKey: COINS,
-          delta: -SWORD_PRICE,
-          balanceAfter: START_COINS - SWORD_PRICE,
+          delta: -swordPrice,
+          balanceAfter: START_COINS - swordPrice,
           reason: 'shop',
         },
         { itemKey: SWORD, delta: 1, balanceAfter: 1, reason: 'shop' },
@@ -156,10 +159,10 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
   });
 
   it('sells from the bag into the buyback row and writes the coins and the item to the ledger', async () => {
-    const { userId, heroId } = await heroInCamp(NEAR);
+    const { userId, heroId, swordPrice, swordSell } = await heroInCamp(NEAR);
     const bought = await kit.service.execute(
       userId,
-      buy(heroId, (await inventoryOf(userId, heroId)).revision, 0, SWORD_PRICE),
+      buy(heroId, (await inventoryOf(userId, heroId)).revision, 0, swordPrice),
     );
     const inventory = bought.aggregates.inventory!;
     const swordIndex = (inventory.state as InventoryState).bag.findIndex((c) => c?.key === SWORD);
@@ -170,7 +173,7 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
         trader: 'ilva',
         from: { container: 'bag', index: swordIndex },
         split: false,
-        expectedPrice: SWORD_SELL,
+        expectedPrice: swordSell,
       },
       inventory.revision,
     );
@@ -180,15 +183,20 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
     expect(answer.result).toBe('applied');
     const after = await inventoryOf(userId, heroId);
     expect(bagAmount(after, SWORD)).toBe(0);
-    expect(bagAmount(after, COINS)).toBe(START_COINS - SWORD_PRICE + SWORD_SELL);
+    expect(bagAmount(after, COINS)).toBe(START_COINS - swordPrice + swordSell);
     expect(
       ((await progressOf(userId, heroId)).state as ProgressState).traders.ilva!.buyback[0],
-    ).toEqual({ key: SWORD, amount: 1, unitPrice: SWORD_SELL });
+    ).toMatchObject({
+      key: SWORD,
+      amount: 1,
+      unitPrice: swordSell,
+      token: { type: SWORD, price: swordPrice },
+    });
     const ledger = await ledgerRows(command.commandId);
     expect(ledger).toHaveLength(2);
     expect(ledger.find((row) => row.itemKey === COINS)).toMatchObject({
-      delta: SWORD_SELL,
-      balanceAfter: START_COINS - SWORD_PRICE + SWORD_SELL,
+      delta: swordSell,
+      balanceAfter: START_COINS - swordPrice + swordSell,
       reason: 'shop',
     });
     expect(ledger.find((row) => row.itemKey === SWORD)).toMatchObject({
@@ -221,9 +229,9 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
   });
 
   it('answers a stale revision with REVISION_CONFLICT and a wrong Will revision with STALE_REVISION', async () => {
-    const { userId, heroId } = await heroInCamp(NEAR);
+    const { userId, heroId, swordPrice } = await heroInCamp(NEAR);
     const { revision } = await inventoryOf(userId, heroId);
-    const stale = await kit.service.execute(userId, buy(heroId, revision - 1, 0, SWORD_PRICE));
+    const stale = await kit.service.execute(userId, buy(heroId, revision - 1, 0, swordPrice));
     expect(stale).toMatchObject({ result: 'conflict', code: 'REVISION_CONFLICT' });
     expect(bagAmount(await inventoryOf(userId, heroId), SWORD)).toBe(0);
 
@@ -236,9 +244,9 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
   });
 
   it('refuses every deal far from the stall with NOT_AT_TRADER and changes nothing', async () => {
-    const { userId, heroId } = await heroInCamp(FAR);
+    const { userId, heroId, swordPrice } = await heroInCamp(FAR);
     const before = await snapshotOf(userId, heroId);
-    const command = buy(heroId, before.aggregates.inventory!.revision, 0, SWORD_PRICE);
+    const command = buy(heroId, before.aggregates.inventory!.revision, 0, swordPrice);
 
     expect(await kit.service.execute(userId, command)).toMatchObject({
       result: 'rejected',
@@ -257,7 +265,7 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
   });
 
   it('refuses buying and refreshing with BATTLE_OPEN while a battle is open on the map', async () => {
-    const { userId, heroId, mapId } = await heroInCamp(NEAR);
+    const { userId, heroId, mapId, swordPrice } = await heroInCamp(NEAR);
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);
     await kit.db.transaction((tx) =>
       writeServerDocument(tx, expeditionId, `srv-world:${mapId}`, JSON.stringify({ battle: {} })),
@@ -266,7 +274,7 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
 
     const bought = await kit.service.execute(
       userId,
-      buy(heroId, before.aggregates.inventory!.revision, 0, SWORD_PRICE),
+      buy(heroId, before.aggregates.inventory!.revision, 0, swordPrice),
     );
     const refreshed = await kit.service.execute(userId, await refresh(userId, heroId, 20));
 
@@ -276,16 +284,16 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
   });
 
   it('refuses a deal at an old price with PRICE_CHANGED and keeps the coins', async () => {
-    const { userId, heroId } = await heroInCamp(NEAR);
+    const { userId, heroId, swordPrice } = await heroInCamp(NEAR);
     const { revision } = await inventoryOf(userId, heroId);
-    const command = buy(heroId, revision, 0, SWORD_PRICE - 4);
+    const command = buy(heroId, revision, 0, swordPrice - 4);
 
     const answer = await kit.service.execute(userId, command);
 
     expect(answer).toMatchObject({ result: 'rejected', code: 'PRICE_CHANGED' });
     expect(answer.events[0]).toMatchObject({
       type: 'TRADE_REJECTED',
-      payload: { reason: 'PRICE_CHANGED', price: SWORD_PRICE },
+      payload: { reason: 'PRICE_CHANGED', price: swordPrice },
     });
     expect(bagAmount(await inventoryOf(userId, heroId), COINS)).toBe(START_COINS);
     expect(await journalRow(command.commandId)).toMatchObject({
@@ -295,7 +303,15 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
   });
 
   describe('discounted goods', () => {
-    const HALF = SWORD_PRICE / 2;
+    const HALF = DISCOUNT_SWORD_PRICE / 2;
+    const swordToken = () => ({
+      ...mintBaseToken(
+        { seed: 'shop-spec', sourceId: 'test:shop.discount', origin: DEFAULT_TOKEN_ORIGIN },
+        SWORD,
+        0,
+      ),
+      price: DISCOUNT_SWORD_PRICE,
+    });
     const deal = (heroId: string, revision: number, guess: number) =>
       envelope(heroId, 'SHOP_DEAL', { trader: 'ilva', index: 0, guess, to: 'auto' }, revision);
 
@@ -303,7 +319,7 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
       const hero = await heroInCamp(NEAR);
       await kit.service.traderFixture(hero.userId, hero.heroId, {
         trader: 'ilva',
-        goods: [{ key: SWORD, amount: 1, discountPercent: 50 }],
+        goods: [{ key: SWORD, amount: 1, discountPercent: 50, token: swordToken() }],
       });
       return hero;
     }
@@ -342,7 +358,10 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
       const { userId, heroId } = await heroWithDiscount();
       const { revision } = await inventoryOf(userId, heroId);
 
-      const answer = await kit.service.execute(userId, buy(heroId, revision, 0, SWORD_PRICE));
+      const answer = await kit.service.execute(
+        userId,
+        buy(heroId, revision, 0, DISCOUNT_SWORD_PRICE),
+      );
 
       expect(answer).toMatchObject({ result: 'rejected', code: 'NEEDS_DEAL' });
     });
@@ -388,7 +407,13 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
       });
       expect(bagAmount(await inventoryOf(userId, heroId), SWORD)).toBe(0);
       const listings = ((await progressOf(userId, heroId)).state as ProgressState).listings;
-      expect(listings[0]).toEqual({ key: SWORD, amount: 1, unitPrice: 300 });
+      expect(listings[0]).toMatchObject({
+        key: SWORD,
+        amount: 1,
+        unitPrice: 300,
+        token: { type: SWORD },
+      });
+      expect(Object.keys(listings[0]!).sort()).toEqual(['amount', 'key', 'token', 'unitPrice']);
       const ledger = await ledgerRows(command.commandId);
       expect(ledger).toHaveLength(1);
       expect(ledger[0]).toMatchObject({ itemKey: SWORD, delta: -1, reason: 'listing' });
@@ -460,7 +485,7 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
           from: { list: 'goods', index: first },
           to: 'auto',
           split: false,
-          expectedPrice: coinPriceOf(good.key)! * good.amount,
+          expectedPrice: priceOf(good)! * good.amount,
         },
         snapshot.aggregates.inventory!.revision,
       ),

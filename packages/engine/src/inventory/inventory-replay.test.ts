@@ -15,7 +15,13 @@ function start(): HexEngineState {
   const inventory = emptyInventoryState(HERO);
   inventory.capacityKg = 1000;
   inventory.stash.chests = 1;
-  return { map, heroes: {}, inventory, inventoryContext: { stashOpen: true, battleOpen: false } };
+  return {
+    map,
+    heroes: {},
+    loot: { seed: 'server-stock-secret', sourceId: 'stock-test' },
+    inventory,
+    inventoryContext: { stashOpen: true, battleOpen: false },
+  };
 }
 
 function script(): HexEngineCommand[] {

@@ -2,6 +2,8 @@ import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { GUARANTEED_GOOD, TRADER_GOODS_SLOTS } from '@config/test-data';
+import type { TestItemToken } from '@framework/test-api';
+import { VerifyInventoryFeature } from './verify-inventory.feature';
 import type {
   SellTarget,
   ShopBuybackContent,
@@ -38,6 +40,60 @@ export class ShopBoardFeature extends BaseFeature {
 
   async givenBag(cells: ShopCellContent[]): Promise<void> {
     await this.step('Arrange the bag', () => this.board.givenBag(cells));
+  }
+
+  async givenTokenInBag(type: string, price?: number): Promise<TestItemToken> {
+    return this.step(`Put a "${type}" token in the bag through the dev grant`, () =>
+      new VerifyInventoryFeature().givenTokenItem({
+        type,
+        realm: 'idol',
+        mapTier: 1,
+        ...(price === undefined ? {} : { price }),
+      }),
+    );
+  }
+
+  async givenDiscountedToken(type: string, price: number, discountPercent: number): Promise<void> {
+    await this.step(
+      `Put a "${type}" token priced ${price} on the shelf at -${discountPercent}%`,
+      async () => {
+        const token = await this.givenTokenInBag(type, price);
+        await this.board.givenTrader({
+          goods: [{ key: type, amount: 1, discountPercent, token }],
+        });
+      },
+    );
+  }
+
+  async goodsTokenPrice(index: number): Promise<number> {
+    return this.step(`Read the token price of goods cell ${index}`, async () => {
+      const token = await this.board.readGoodsToken(index);
+      return token.price;
+    });
+  }
+
+  async soldFor(buybackIndex: number): Promise<number> {
+    return this.step(`Read what buyback cell ${buybackIndex} was sold for`, () =>
+      this.board.readBuybackUnitPrice(buybackIndex),
+    );
+  }
+
+  async verifySoldBelowTheTokenPrice(buybackIndex: number, token: TestItemToken): Promise<void> {
+    await this.step(
+      `Verify the sale kept token ${token.id} and paid less than its price ${token.price}`,
+      async () => {
+        await this.board.verifyBuybackHoldsToken(buybackIndex, token.id);
+        const paid = await this.board.readBuybackUnitPrice(buybackIndex);
+        expect(paid).toBeGreaterThanOrEqual(1);
+        expect(paid).toBeLessThan(token.price);
+      },
+    );
+  }
+
+  async readTradingCardPrice(): Promise<number> {
+    return this.step('Read the sale price on the trading card', () =>
+      this.board.readTradingCardPrice(),
+    );
   }
 
   async givenWill(will: number): Promise<void> {

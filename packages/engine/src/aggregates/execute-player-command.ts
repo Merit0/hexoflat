@@ -1,13 +1,19 @@
-import { sumHeartPoints } from '../combat/heart-points';
+import { sumEquippedHeartPoints } from '../combat/heart-points';
 import { HERO_BASE_HEALTH, HeroModel } from '../models/hero-model';
 import type { DomainEvent } from '../commands/types';
-import { applyConsumeItem, applyGrantItem } from '../inventory/apply-stock';
+import {
+  applyConsumeItem,
+  applyGrantItem,
+  devTokenMint,
+  type TokenSupply,
+} from '../inventory/apply-stock';
 import { applyInventoryCommand } from '../inventory/apply-inventory';
 import type { InventoryContext } from '../inventory/inventory-commands';
 import type { InventoryState } from '../inventory/inventory-state';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { toAggregate } from '../inventory/inventory-adapter';
 import { countItem } from '../inventory/plan-stock';
+import { mintSpecTokens } from '../tokens/token-spec';
 import { replaceInventory } from './replace-inventory';
 import { executeProgressCommand } from './execute-progress-command';
 import { claimCampChest } from './claim-camp-chest';
@@ -28,6 +34,12 @@ export interface PlayerCommandContext {
   inventory: InventoryContext;
   trade?: TradeContext;
   quest?: QuestApplyContext;
+  rngSeed?: string;
+}
+
+export function serverSecretOf(ctx: { rngSeed?: string }): string {
+  if (!ctx.rngSeed) throw new Error('NO_SERVER_SECRET');
+  return ctx.rngSeed;
 }
 
 export type PlayerCommandOutcome =
@@ -69,9 +81,7 @@ export function executePlayerCommand(
   const outcome = foldQuest(aggregates, executeCore(aggregates, command, ctx));
   if (!outcome.ok || !outcome.changed.inventory) return outcome;
   const progress = outcome.changed.progress ?? aggregates.progress;
-  const bonus = sumHeartPoints(
-    Object.values(outcome.changed.inventory.equip).map((cell) => cell?.key as THexobjectKey),
-  );
+  const bonus = sumEquippedHeartPoints(Object.values(outcome.changed.inventory.equip));
   if (bonus === progress.health.bonus) return outcome;
   const model = new HeroModel().setMaxHealth(HERO_BASE_HEALTH).restoreHealth(progress.health);
   model.setMaxHealthBonus(bonus);
@@ -104,7 +114,12 @@ function executeCore(
   const { inventory, progress } = aggregates;
   switch (command.type) {
     case 'CLAIM_CAMP_CHEST': {
-      const result = claimCampChest(inventory, progress, command.payload.revision);
+      const result = claimCampChest(
+        inventory,
+        progress,
+        command.payload.revision,
+        serverSecretOf(ctx),
+      );
       if (!result.ok) return rejectionOf(result.events) as PlayerCommandOutcome;
       return {
         ok: true,
@@ -116,11 +131,16 @@ function executeCore(
       if (!ctx.devGrantAllowed) {
         return { ok: false, code: 'FORBIDDEN', events: [] };
       }
-      const { heroId, revision, key, amount } = command.payload;
-      const result = applyGrantItem(inventory, {
-        type: 'GRANT_ITEM',
-        payload: { heroId, revision, key: key, amount, source: 'dev' },
-      });
+      const { heroId, revision, key, amount, token } = command.payload;
+      const minted = token
+        ? mintSpecTokens(token, { heroId, idSeq: inventory.idSeq, amount })
+        : null;
+      if (minted && !minted.ok) return { ok: false, code: minted.refusal.code, events: [] };
+      const result = applyGrantItem(
+        inventory,
+        { type: 'GRANT_ITEM', payload: { heroId, revision, key: key, amount, source: 'dev' } },
+        minted ? { tokens: minted.value } : { mint: devTokenMint(inventory) },
+      );
       return inventoryOutcome(inventory, result.inventory, result.events);
     }
     case 'DEV_CONSUME_ITEM': {
@@ -177,7 +197,10 @@ function executeCore(
     case 'QUEST_ACCEPT':
     case 'QUEST_ABANDON':
     case 'QUEST_CLAIM': {
-      const result = applyQuestCommand(aggregates, command, ctx.quest ?? { atBoard: false });
+      const result = applyQuestCommand(aggregates, command, {
+        atBoard: ctx.quest?.atBoard ?? false,
+        rngSeed: ctx.rngSeed,
+      });
       return (
         rejectionOf(result.events) ?? { ok: true, changed: result.changed, events: result.events }
       );
@@ -194,11 +217,16 @@ export function grantItemServerSide(
   key: THexobjectKey,
   amount: number,
   source: 'pickup' | 'loot' | 'reward' | 'dev',
+  supply?: TokenSupply,
 ): PlayerCommandOutcome {
-  const result = applyGrantItem(inventory, {
-    type: 'GRANT_ITEM',
-    payload: { heroId: inventory.heroId, revision: inventory.revision, key, amount, source },
-  });
+  const result = applyGrantItem(
+    inventory,
+    {
+      type: 'GRANT_ITEM',
+      payload: { heroId: inventory.heroId, revision: inventory.revision, key, amount, source },
+    },
+    supply,
+  );
   return inventoryOutcome(inventory, result.inventory, result.events);
 }
 

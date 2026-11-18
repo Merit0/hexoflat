@@ -34,9 +34,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, type CSSProperties } from 'vue';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
-import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { inventoryDragState, useInventoryDragHandle } from '@/composables/use-inventory-drag';
-import { rarityFrameUrlForKey } from '@/render/rarity';
+import { itemLook } from '@/render/token-look';
 import { hideItemTooltip, showItemTooltip } from '@/composables/use-item-tooltip';
 
 const props = defineProps<{ item: InventoryItem }>();
@@ -54,7 +53,7 @@ function onTokenPointerDown(e: PointerEvent) {
 const isDragging = computed(() => inventoryDragState.draggingId === props.item.id);
 const isSelected = computed(() => inventoryStore.selectedItemId === props.item.id);
 const rotation = computed(() => inventoryStore.ensureRotation(props.item.id));
-const meta = computed(() => resolveInventoryView(props.item.key));
+const look = computed(() => itemLook(props.item));
 
 const tokenStyle = computed(() => ({
   '--rot': `${rotation.value}deg`,
@@ -76,11 +75,11 @@ const dragGhostStyle = computed<CSSProperties>(() => {
 });
 
 const iconStyle = computed(() => ({
-  backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : 'none',
+  backgroundImage: look.value.sprite ? `url("${look.value.sprite}")` : 'none',
 }));
 
 const frameStyle = computed(() => {
-  const url = rarityFrameUrlForKey(props.item.key);
+  const url = look.value.light;
   return url ? { backgroundImage: `url("${url}")` } : null;
 });
 

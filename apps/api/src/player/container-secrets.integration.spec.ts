@@ -1,17 +1,27 @@
 import { arriveAtQuestEntrance } from '../test-support/quest-entrance';
 import { randomUUID } from 'node:crypto';
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
-import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
-import { hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
+import { isAlive, isFreeHex } from '@hexoflat/engine/battle/battle-board';
+import { lootTableIdOfKind } from '@hexoflat/engine/battle/battle-catalogue';
+import { battlefieldSeed } from '@hexoflat/engine/battle/battlefield';
+import type { BattleProjection } from '@hexoflat/engine/battle/projection';
+import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
+import { rollContainerContents } from '@hexoflat/engine/containers/create-container';
+import type { LootLists } from '@hexoflat/engine/containers/container';
+import { lootTableOf } from '@hexoflat/engine/content/loot-tables.content';
+import { DEFAULT_TOKEN_ORIGIN } from '@hexoflat/engine/tokens/token-origin';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { LOOT_TABLES } from '@hexoflat/engine/content/loot-tables.content';
 import { lootStreamLabel } from '@hexoflat/engine/loot/roll-loot';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
+import { heroAggregates } from '../db/schema';
 import {
   ensureExpedition,
+  expeditionSeed,
   readServerDocument,
   writeServerDocument,
 } from '../expedition/expedition-store';
@@ -56,8 +66,39 @@ function secretKeysIn(value: unknown, found = new Set<string>()): Set<string> {
   return found;
 }
 
-function expectNoSecrets(label: string, payload: unknown, secrets: string[]) {
+const HEX_WINDOW = 16;
+
+function hexWindows(seed: string): string[] {
+  const runs = seed.toLowerCase().match(/[0-9a-f]{16,}/g) ?? [];
+  return runs.flatMap((run) =>
+    Array.from({ length: run.length - HEX_WINDOW + 1 }, (_, i) => run.slice(i, i + HEX_WINDOW)),
+  );
+}
+
+function separatorPattern(seed: string): RegExp | null {
+  const parts = seed.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  if (parts.join('').length < 8) return null;
+  return new RegExp(parts.join('[^a-zA-Z0-9]{0,3}'), 'i');
+}
+
+function seedLeak(text: string, seed: string): string | null {
+  if (text.includes(seed)) return 'raw';
+  if (separatorPattern(seed)?.test(text)) return 'with separators';
+  const lower = text.toLowerCase();
+  const window = hexWindows(seed).find((part) => lower.includes(part));
+  return window ? `as hex ${window}` : null;
+}
+
+function expectNoSeeds(label: string, payload: unknown, seeds: string[]) {
   const text = JSON.stringify(payload);
+  seeds.forEach((seed, index) =>
+    expect(seedLeak(text, seed), `${label} leaks seed #${index}`).toBeNull(),
+  );
+}
+
+function expectNoSecrets(label: string, payload: unknown, secrets: string[], seeds: string[] = []) {
+  const text = JSON.stringify(payload);
+  expectNoSeeds(label, payload, seeds);
   expect([...secretKeysIn(payload)], `${label} has a secret key`).toEqual([]);
   for (const marker of SECRET_TEXTS) expect(text, `${label} has ${marker}`).not.toContain(marker);
   for (const id of Object.keys(LOOT_TABLES))
@@ -84,6 +125,17 @@ describe.skipIf(!dbAvailable)(
 
     const progressOf = async (userId: string, heroId: string) =>
       (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
+
+    async function serverSeeds(userId: string, heroId: string): Promise<string[]> {
+      const expeditionId = await ensureExpedition(kit.db, userId, heroId);
+      const [row] = await kit.db
+        .select()
+        .from(heroAggregates)
+        .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+      const rngSeed = (row.serverState as { rngSeed?: string }).rngSeed;
+      expect(rngSeed).toBeTruthy();
+      return [await expeditionSeed(kit.db, expeditionId), rngSeed!];
+    }
 
     async function sendWorld(
       userId: string,
@@ -144,6 +196,7 @@ describe.skipIf(!dbAvailable)(
       tile.isRevealed = true;
       await saveWorld(expeditionId, docKey, loaded);
       const secrets = [loaded.worldSeed, loaded.mapId].filter((value) => value.length > 6);
+      const seeds = [loaded.worldSeed, ...(await serverSeeds(userId, heroId))];
 
       const opened = await sendWorld(userId, heroId, 'WORLD_ACTION', {
         coordinates: spot,
@@ -152,14 +205,20 @@ describe.skipIf(!dbAvailable)(
       });
       expect(opened.result).toBe('applied');
       expect(opened.events.some((event) => event.type === 'CONTAINER_OPENED')).toBe(true);
-      expectNoSecrets('OPEN answer', opened, [loaded.worldSeed]);
+      expectNoSecrets('OPEN answer', opened, [loaded.worldSeed], seeds);
       const ticked = await sendWorld(userId, heroId, 'WORLD_TICK', {});
-      expectNoSecrets('tick answer', ticked, [loaded.worldSeed]);
-      expectNoSecrets('world snapshot', await world.snapshot(userId, heroId), [loaded.worldSeed]);
+      expectNoSecrets('tick answer', ticked, [loaded.worldSeed], seeds);
+      expectNoSecrets(
+        'world snapshot',
+        await world.snapshot(userId, heroId),
+        [loaded.worldSeed],
+        seeds,
+      );
       expectNoSecrets(
         'hero snapshot',
         await kit.service.snapshot(userId, heroId),
         secrets.slice(0, 1),
+        seeds,
       );
     });
 
@@ -226,7 +285,7 @@ describe.skipIf(!dbAvailable)(
       expect(text).toContain('"chest"');
     });
 
-    async function wonGrave() {
+    async function wonGrave(squadKey: string = HEXOBJECT_KEYS.SKELETON_PACK) {
       process.env.HEXOFLAT_E2E_FIXTURES = '1';
       const { userId, heroId } = await kit.newPlayer();
       await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
@@ -246,7 +305,7 @@ describe.skipIf(!dbAvailable)(
           t.coordinates.columnIndex === spot.columnIndex &&
           t.coordinates.rowIndex === spot.rowIndex,
       )!;
-      tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETON_PACK, spot);
+      tile.hexobject = HexObjectFactory.create(squadKey as never, spot);
       tile.isRevealed = true;
       await saveWorld(expeditionId, docKey, loaded);
       await sendWorld(userId, heroId, 'WORLD_ACTION', {
@@ -258,46 +317,105 @@ describe.skipIf(!dbAvailable)(
       await world.battleFixture(userId, heroId, { kind: 'finish', outcome: 'victory' });
       const held = await heldWorld(userId, heroId);
       const battle = held.loaded.battle!;
+      expect(battle.tokenSecret).toEqual({
+        seed: held.loaded.worldSeed,
+        mapId: held.loaded.mapId,
+      });
       const roomy = (hex: { q: number; r: number }) =>
         hexNeighbours(hex).filter((n) => isFreeHex(battle, n)).length;
       const grave = [...battle.collect!.graves].sort((a, b) => roomy(b.hex) - roomy(a.hex))[0].hex;
       const hero = battle.creatures.find((c) => c.side === 'heroes')!;
       hero.pos = hexNeighbours(grave).find((hex) => isFreeHex(battle, hex, hero.id))!;
       await saveWorld(held.expeditionId, held.docKey, held.loaded);
-      return { userId, heroId, grave, seed: battle.seed, id: battle.id };
+      return {
+        userId,
+        heroId,
+        grave,
+        seed: battle.seed,
+        id: battle.id,
+        seeds: [battle.seed, held.loaded.worldSeed, ...(await serverSeeds(userId, heroId))],
+      };
     }
 
     it('grave: the loot answer, the pickup answer, the battle view and the hero snapshot carry no seed, table or drop', async () => {
       const c = await wonGrave();
       const secrets = [c.seed];
-      expectNoSecrets('battle view before loot', await world.snapshot(c.userId, c.heroId), secrets);
+      expectNoSecrets(
+        'battle view before loot',
+        await world.snapshot(c.userId, c.heroId),
+        secrets,
+        c.seeds,
+      );
       expectNoSecrets(
         'hero snapshot before loot',
         await kit.service.snapshot(c.userId, c.heroId),
         secrets,
+        c.seeds,
       );
       const looted = await sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', {
         kind: 'hero',
         action: { kind: 'loot-grave', hex: c.grave },
       });
       expect(looted.result).toBe('applied');
-      expectNoSecrets('loot answer', looted, secrets);
+      expectNoSecrets('loot answer', looted, secrets, c.seeds);
       const view = (await world.snapshot(c.userId, c.heroId)) as {
         battleView: { collect: { items: { hex: { q: number; r: number } }[] } };
       };
-      expectNoSecrets('battle view', view, secrets);
+      expectNoSecrets('battle view', view, secrets, c.seeds);
       const item = view.battleView.collect.items[0];
       if (item) {
         const picked = await sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', {
           kind: 'hero',
           action: { kind: 'pickup-loot', hex: item.hex },
         });
-        expectNoSecrets('pickup answer', picked, secrets);
+        expectNoSecrets('pickup answer', picked, secrets, c.seeds);
       }
-      expectNoSecrets('hero snapshot', await kit.service.snapshot(c.userId, c.heroId), secrets);
+      expectNoSecrets(
+        'hero snapshot',
+        await kit.service.snapshot(c.userId, c.heroId),
+        secrets,
+        c.seeds,
+      );
     });
 
-    async function questHero() {
+    const itemsOf = (lists: LootLists) =>
+      lists.map((list) => list.map(({ itemKey, amount }) => ({ itemKey, amount })));
+
+    function predictFromPublicData(view: BattleProjection) {
+      const [squadId, attempt] = view.id.split('#');
+      const seed = battlefieldSeed(squadId, Number(attempt));
+      return view.collect!.graves.map(({ hex }) => {
+        const tables = view.creatures
+          .filter((c) => c.side === 'enemies' && !isAlive(c) && sameHex(c.pos, hex))
+          .flatMap((c) => lootTableIdOfKind(c.kind) ?? [])
+          .map((id) => lootTableOf(id));
+        return itemsOf(
+          rollContainerContents({
+            kind: 'grave',
+            tables,
+            seed,
+            sourceId: view.id,
+            targetKey: hexKey(hex),
+            origin: DEFAULT_TOKEN_ORIGIN,
+          }),
+        );
+      });
+    }
+
+    it('LG5g-1 the client cannot reproduce the grave contents from client-visible battle data', async () => {
+      const c = await wonGrave(HEXOBJECT_KEYS.BONE_COURT);
+      const { battleView } = (await world.snapshot(c.userId, c.heroId)) as {
+        battleView: BattleProjection;
+      };
+      const stored = (await heldWorld(c.userId, c.heroId)).loaded.battle!.collect!.graves;
+      const actual = battleView.collect!.graves.map(({ hex }) =>
+        itemsOf(stored.find((grave) => sameHex(grave.hex, hex))!.container!.contents!),
+      );
+      expect(actual.flat(2).length).toBeGreaterThan(0);
+      expect(predictFromPublicData(battleView)).not.toEqual(actual);
+    });
+
+    async function boardHero() {
       const { userId, heroId } = await kit.newPlayer();
       const { revision } = await progressOf(userId, heroId);
       const arrive = envelope(
@@ -309,6 +427,11 @@ describe.skipIf(!dbAvailable)(
       );
       delete (arrive.command.payload as { revision?: number }).revision;
       expect((await kit.service.execute(userId, arrive)).result).toBe('applied');
+      return { userId, heroId };
+    }
+
+    async function questHero() {
+      const { userId, heroId } = await boardHero();
       const inventory = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
       const accept = envelope(heroId, 'QUEST_ACCEPT', { questId: 'seeker-1' }, inventory.revision);
       expect((await kit.service.execute(userId, accept)).result).toBe('applied');
@@ -338,6 +461,7 @@ describe.skipIf(!dbAvailable)(
         parseQuestRunDoc((await readServerDocument(kit.db, expeditionId, 'srv-quest'))!);
       const { run } = await docOf();
       const secrets = [run.seed];
+      const seeds = [run.seed, ...(await serverSeeds(userId, heroId))];
       for (const hex of run.trail)
         answers.push(await sendQuest(userId, heroId, 'QUEST_STEP', { hex }));
       const stored = (await docOf()).run.chest!.container!.contents![0];
@@ -355,12 +479,52 @@ describe.skipIf(!dbAvailable)(
       answers.push(await quests.snapshot(userId, heroId));
       answers.push(await kit.service.snapshot(userId, heroId));
       answers.forEach((answer, index) =>
-        expectNoSecrets(`quest answer #${index}`, answer, secrets),
+        expectNoSecrets(`quest answer #${index}`, answer, secrets, seeds),
       );
       expect(((await progressOf(userId, heroId)).state as ProgressState).presence).toBeNull();
     });
+
+    it('LG5f camp chest and quest reward: the claim answers and the hero snapshot carry no server seed', async () => {
+      process.env.HEXOFLAT_E2E_FIXTURES = '1';
+      const { userId, heroId } = await boardHero();
+      const seeds = await serverSeeds(userId, heroId);
+      const inventory = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
+      const chest = await kit.service.execute(
+        userId,
+        envelope(heroId, 'CLAIM_CAMP_CHEST', {}, inventory.revision),
+      );
+      expect(chest.result).toBe('applied');
+      await kit.service.questFixture(userId, heroId, {
+        active: [{ questId: 'woodcutter', progress: 10, state: 'ready' }],
+      });
+      const { revision } = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
+      const claimed = await kit.service.execute(
+        userId,
+        envelope(heroId, 'QUEST_CLAIM', { questId: 'woodcutter' }, revision),
+      );
+      expect(claimed.result).toBe('applied');
+      expectNoSeeds('camp chest answer', chest, seeds);
+      expectNoSeeds('quest claim answer', claimed, seeds);
+      expectNoSeeds('hero snapshot', await kit.service.snapshot(userId, heroId), seeds);
+    });
   },
 );
+
+describe('LG5f the seed detector', () => {
+  const seed = '0123456789abcdef0123456789abcdef:quest:5f0e';
+
+  it('finds a seed raw, with other separators and as a 16-hex substring', () => {
+    expect(seedLeak(`x${seed}x`, seed)).toBe('raw');
+    expect(seedLeak('quest:0123456789abcdef0123456789abcdef-quest-5f0e.3-4:0', seed)).toBe(
+      'with separators',
+    );
+    expect(seedLeak('id 89abcdef01234567 end', seed)).toBe('as hex 89abcdef01234567');
+  });
+
+  it('passes text without the seed', () => {
+    expect(seedLeak('quest:4be1c2d3a4f5.3-4:0', seed)).toBeNull();
+  });
+});
 
 describe('CH-P7 the secrets guard fails when a stored container reaches a response', () => {
   const stored = {

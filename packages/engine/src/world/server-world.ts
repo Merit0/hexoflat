@@ -10,11 +10,17 @@ import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model
 import { findTilesMissingSpawners } from '../map/resource-hydration';
 import { LOCATION_KEYS, type LocationKey } from '../registry/location-key';
 import { MapRegistry } from '../registry/world-map-registry';
+import { locationTokenOrigin } from '../registry/location-token-origin';
+import type { TokenOrigin } from '../tokens/token-origin';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { deriveStream } from '../utils/random-seeded';
 import { applyCommand } from '../commands/apply-command';
 import { engagementSchema, type Engagement } from '../squads/engagement';
-import { battleStateSchema, type BattleState } from '../battle/battle-state';
+import {
+  battleStateSchema,
+  type BattleState,
+  type BattleTokenSecret,
+} from '../battle/battle-state';
 import { createRecordingPorts } from './server-ports';
 import { findEntryHex } from './hero-placement';
 
@@ -66,8 +72,59 @@ export function serializeWorld(world: ServerWorld): SerializedWorld {
   };
 }
 
+export class StaleWorldError extends Error {
+  constructor(
+    readonly found: unknown,
+    readonly locationKey: LocationKey,
+    readonly mapId: string,
+  ) {
+    super(`World ${mapId} has content version ${String(found)}, expected ${CONTENT_VERSION}`);
+    this.name = 'StaleWorldError';
+  }
+}
+
+const staleWorldHeaderSchema = z.object({
+  contentVersion: z.unknown(),
+  locationKey: z.enum(LOCATION_KEYS),
+  mapId: z.string().min(1),
+});
+
+export function staleWorldOf(raw: unknown): StaleWorldError | null {
+  const header = staleWorldHeaderSchema.safeParse(raw);
+  if (!header.success || header.data.contentVersion === CONTENT_VERSION) return null;
+  return new StaleWorldError(
+    header.data.contentVersion,
+    header.data.locationKey,
+    header.data.mapId,
+  );
+}
+
+export function worldTokenOrigin(
+  world: Pick<ServerWorld, 'locationKey' | 'descriptor'>,
+): TokenOrigin {
+  return locationTokenOrigin(world.locationKey, world.descriptor);
+}
+
+export function worldTokenSecret(
+  world: Pick<ServerWorld, 'worldSeed' | 'mapId'>,
+): BattleTokenSecret {
+  return { seed: world.worldSeed, mapId: world.mapId };
+}
+
+function withBattleSecret(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const world = raw as { worldSeed?: unknown; mapId?: unknown; battle?: unknown };
+  const battle = world.battle as { tokenSecret?: unknown } | null | undefined;
+  if (!battle || typeof battle !== 'object' || battle.tokenSecret) return raw;
+  if (typeof world.worldSeed !== 'string' || typeof world.mapId !== 'string') return raw;
+  const tokenSecret = worldTokenSecret({ worldSeed: world.worldSeed, mapId: world.mapId });
+  return { ...world, battle: { ...battle, tokenSecret } };
+}
+
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
-  const parsed = serializedWorldSchema.parse(raw);
+  const stale = staleWorldOf(raw);
+  if (stale) throw stale;
+  const parsed = serializedWorldSchema.parse(withBattleSecret(raw));
   const map = HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true });
   if (parsed.locationKey === 'camping') installCampFacilities(map, parsed.heroCoordinates);
   return {
@@ -106,7 +163,11 @@ export function createServerWorld(
     );
   }
   if (locationKey === 'camping') installCampBook(map, null);
-  createChestContainers(map, { seed: worldSeed, sourceId: mapId });
+  createChestContainers(map, {
+    seed: worldSeed,
+    sourceId: mapId,
+    origin: locationTokenOrigin(locationKey, created.descriptor),
+  });
 
   const entry = findEntryHex(map, locationKey, deriveStream(worldSeed, 'world')) ?? {
     ...MAP_ORIGIN,

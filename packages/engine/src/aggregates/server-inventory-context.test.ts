@@ -36,7 +36,7 @@ function heroWithOpenChest(presence: Presence | null): PlayerAggregates {
   const claimed = executePlayerCommand(
     start,
     parse({ type: 'CLAIM_CAMP_CHEST', payload: { heroId: HERO, revision: 0 } }),
-    { devGrantAllowed: false, inventory: serverInventoryContext(null) },
+    { devGrantAllowed: false, inventory: serverInventoryContext(null), rngSeed: 'server-secret' },
   );
   if (!claimed.ok) throw new Error(claimed.code);
   const coins = grantItemServerSide(claimed.changed.inventory!, HEXOBJECT_KEYS.COINS, 150, 'dev');

@@ -11,6 +11,7 @@ import { applyObjectFit } from '@/render/object-fit';
 import { terrainLook } from '@/render/terrain-look';
 import { hiddenTileLook, type FogLook } from '@/render/fog-look';
 import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
+import { tokenLightUrl, tokenSpriteUrl } from '@/render/token-look';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 
 const DEFAULT_BG_URL = '/hex-assets/placement-hex.png';
@@ -100,8 +101,18 @@ function constructionLockLabel(
   return null;
 }
 
-function getGearRarity(tile: IHexTile) {
-  return tile.hexobject ? getObjectRarityTone(tile.hexobject) : null;
+function gearLightUrl(tile: IHexTile): string | null {
+  const hexobject = tile.hexobject;
+  if (!hexobject) return null;
+  if (hexobject.token) return tokenLightUrl(hexobject.token);
+  const tone = getObjectRarityTone(hexobject);
+  return tone ? RARITY_FRAME_URLS[tone] : null;
+}
+
+function objectSpritePath(tile: IHexTile): string | undefined {
+  const hexobject = tile.hexobject;
+  if (!hexobject) return undefined;
+  return hexobject.token ? tokenSpriteUrl(hexobject.token) : hexobject.spritePath;
 }
 
 function applyTexture(sprite: Sprite, path: string, node: TileNode, fit: () => void) {
@@ -147,20 +158,20 @@ function syncTileVisual(node: TileNode, tile: IHexTile, deps: TilesLayerDeps) {
   }
   node.bg.tint = deps.getZoneTint?.(tile) ?? 0xffffff;
 
-  const gearRarity = displayRevealed ? getGearRarity(tile) : null;
-  if (gearRarity) {
+  const gearLight = displayRevealed ? gearLightUrl(tile) : null;
+  if (gearLight) {
     const frameFit = () => {
       const { w, h } = deps.getTileSize();
       applyCoverFit(node.frame, w, h);
     };
-    applyTexture(node.frame, RARITY_FRAME_URLS[gearRarity], node, frameFit);
+    applyTexture(node.frame, gearLight, node, frameFit);
   } else {
     node.frame.texture = Texture.EMPTY;
   }
 
   const drawnByPortalLayer = tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.RETURN_PORTAL;
   const spritePath =
-    displayRevealed && !drawnByPortalLayer ? (tile.hexobject?.spritePath ?? look?.sprite) : null;
+    displayRevealed && !drawnByPortalLayer ? (objectSpritePath(tile) ?? look?.sprite) : null;
   if (spritePath) {
     const spriteFit = () => {
       const { w, h } = deps.getTileSize();

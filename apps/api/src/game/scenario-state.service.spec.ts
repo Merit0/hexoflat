@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
 import { serializeState, type HexEngineState } from '@hexoflat/engine';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
@@ -180,6 +181,46 @@ describe('ScenarioStateService', () => {
         coordinates: HERO.heroLocation,
         heroSteps: HERO.heroSteps,
       });
+    });
+
+    it('replaces a stale snapshot with a fresh scenario and one warning', async () => {
+      const seedMap = new HexMapModel();
+      seedMap.name = 'old-map';
+      const fresh = serializeState({ map: seedMap, heroes: {} });
+      const stale = { ...fresh, version: 1 };
+      const { db } = createFakeDb({
+        seedRows: [{ state: stale, checksum: stale.checksum, createdAt: new Date().toISOString() }],
+      });
+      const service = new ScenarioStateService(
+        db,
+        createFakeHeroesService(null),
+        new GameEngineService(),
+      );
+      const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+
+      const state = await service.getOrCreate(randomUUID());
+
+      expect(state.map.name).toBe('Silesia');
+      expect(state.heroes).toEqual({});
+      expect(warn).toHaveBeenCalledTimes(1);
+      warn.mockRestore();
+    });
+
+    it('still refuses a snapshot whose checksum does not match', async () => {
+      const seedMap = new HexMapModel();
+      const payload = { ...serializeState({ map: seedMap, heroes: {} }), checksum: 'bad' };
+      const { db } = createFakeDb({
+        seedRows: [{ state: payload, checksum: 'bad', createdAt: new Date().toISOString() }],
+      });
+      const service = new ScenarioStateService(
+        db,
+        createFakeHeroesService(null),
+        new GameEngineService(),
+      );
+      const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
+      await expect(service.getOrCreate(randomUUID())).rejects.toThrow();
+      error.mockRestore();
     });
 
     it('caches the room in memory across calls', async () => {
