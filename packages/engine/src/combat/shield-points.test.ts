@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { getShieldPoints, HERO_SHIELD_SLOTS, sumShieldPoints } from './shield-points';
+import { BATTLE_ITEMS } from '../battle/battle-catalogue';
+import { ITEM_TYPES } from '../content/item-types.content';
 
 describe('shield points', () => {
+  it('D16: battle and displayed base shield use one block side', () => {
+    const sides = ITEM_TYPES.find((type) => type.key === 'shield')!.block!.sides;
+    expect(sides).toBe(1);
+    expect(BATTLE_ITEMS['wooden-shield'].shieldCapacity).toBe(sides);
+    expect(getShieldPoints(HEXOBJECT_KEYS.SHIELD)).toBe(sides);
+  });
   it('gives the base shield one shield', () => {
     expect(getShieldPoints(HEXOBJECT_KEYS.SHIELD)).toBe(1);
   });

@@ -1,3 +1,4 @@
+import { stockTokenSupply } from '../inventory/stock-token-supply';
 import { isEnterableTile } from '../hero-movement/move-planner';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
 import { applyKnowledgeCommand } from '../knowledge/reducer';
@@ -193,7 +194,7 @@ export function applyCommand(
     case 'CONSUME_ITEM': {
       const result =
         parsed.type === 'GRANT_ITEM'
-          ? applyGrantItem(state.inventory, parsed)
+          ? applyGrantItem(state.inventory, parsed, stockTokenSupply(state.inventory, state.loot))
           : applyConsumeItem(state.inventory, parsed);
       draft.current = result.inventory;
       events.push(...result.events);

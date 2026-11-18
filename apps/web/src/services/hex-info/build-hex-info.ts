@@ -1,3 +1,4 @@
+import { getShieldPoints } from '@hexoflat/engine/combat/shield-points';
 import { getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
@@ -296,8 +297,9 @@ function gearInfo(
     stats.push(stat('radius', ctx.t('hexInfo.stats.radius'), obj.weapon.radius));
   }
   if (body.defense) stats.push(stat('defense', ctx.t('hexInfo.stats.defense'), body.defense));
-  if (equipment?.shields) {
-    stats.push(stat('shields', ctx.t('hexInfo.stats.shields'), `+${equipment.shields}`));
+  const shields = getShieldPoints(obj.hexobjectKey);
+  if (shields) {
+    stats.push(stat('shields', ctx.t('hexInfo.stats.shields'), `+${shields}`));
   }
   const hearts = obj.token ? tokenHeartPoints(obj.token) : (equipment?.hearts ?? 0);
   if (hearts) stats.push(stat('hearts', ctx.t('hexInfo.stats.hearts'), `+${hearts}`));

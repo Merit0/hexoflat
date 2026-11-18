@@ -39,7 +39,7 @@ describe('TokenFactory.createBase refusals', () => {
     ],
     ['the god-executor realm', { realm: ERarityKind.GOD_EXECUTOR }, 'GOD_EXECUTOR_NOT_BASE'],
     ['a source id without a kind', { sourceId: 'cave-chest-4-7' }, 'BAD_SOURCE_ID'],
-    ['a source id of an unknown kind', { sourceId: 'boss:king' }, 'BAD_SOURCE_ID'],
+    ['an invalid source kind', { sourceId: 'Boss:king' }, 'BAD_SOURCE_ID'],
     ['a source key with capitals', { sourceId: 'chest:Cave' }, 'BAD_SOURCE_ID'],
     ['a negative item index', { n: -1 }, 'BAD_ITEM_INDEX'],
   ])('refuses %s', (_label, overrides, code, factory) => {
@@ -48,8 +48,13 @@ describe('TokenFactory.createBase refusals', () => {
 
   it('refuses a realm that allows no type', () => {
     const noIdol = createTokenFactory(
-      { ...TOKEN_CONTENT, types: extendedContent().types.filter((type) => type.key === 'hammer') },
+      {
+        ...TOKEN_CONTENT,
+        types: extendedContent().types.filter((type) => type.key === 'hammer'),
+        attributes: [],
+      },
       extendedManifest(),
+      [],
     );
     expect(refusalOf(contextFor(3, { realm: ERarityKind.IDOL }), noIdol)).toBe('NO_TYPE_IN_REALM');
   });
@@ -57,6 +62,7 @@ describe('TokenFactory.createBase refusals', () => {
   it('returns the validator refusal for a token that fails the schema', () => {
     const { types, attributes, words } = createTokenRegistries();
     const failing: ITokenValidator = {
+      validateAttributes: () => ({ ok: true, value: true }),
       validate: () => ({ ok: false, refusal: { code: 'INVALID_TOKEN', message: 'test' } }),
     };
     const factory = new TokenFactory({

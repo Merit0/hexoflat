@@ -1,5 +1,4 @@
-import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
-import { getPrototype } from '../content/content-accessors';
+import { ITEM_TYPES } from '../content/item-types.content';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { HERO_SHIELD_SLOTS } from './shield-slots';
 
@@ -9,10 +8,10 @@ export { HERO_SHIELD_SLOTS };
 export function getShieldPoints(key?: THexobjectKey | null): number {
   if (!key) return 0;
 
-  const proto = getPrototype(key);
-  if (proto?.groupType !== EHexobjectGroup.EQUIPMENT) return 0;
-
-  return Math.min(HERO_SHIELD_SLOTS, Math.max(0, Math.floor(proto.equipment.shields ?? 0)));
+  return Math.min(
+    HERO_SHIELD_SLOTS,
+    ITEM_TYPES.find((type) => type.key === key)?.block?.sides ?? 0,
+  );
 }
 
 /** Total shields from everything the hero wears, capped at the slot count. */

@@ -9,7 +9,7 @@ describe('TypeRegistry', () => {
   const registry = new TypeRegistry(ITEM_TYPES);
 
   it('reads a type by key', () => {
-    expect(registry.get('shield').block).toEqual({ sides: 2 });
+    expect(registry.get('shield').block).toEqual({ sides: 1 });
   });
 
   it('refuses an unknown type', () => {

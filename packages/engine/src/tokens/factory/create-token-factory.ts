@@ -14,16 +14,19 @@ import { WordPoolNameGenerator } from './name-generator';
 import { RangePriceGenerator } from './price-generator';
 import { EmptySkillGenerator } from './skill-generator';
 import { ManifestSpriteResolver } from './sprite-resolver';
-import { TokenFactory } from './token-factory';
+import { TokenFactory, type TokenFactoryParts } from './token-factory';
 import { ZodTokenValidator } from './token-validator';
 import { RealmTypePicker } from './type-picker';
+import { validateFactoryContent } from './validate-factory-content';
 
 export function createTokenFactory(
   content: TokenContent = TOKEN_CONTENT,
   manifest: SpriteManifest = SPRITE_MANIFEST,
   uniqueDefinitions: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
+  steps: Partial<Omit<TokenFactoryParts, 'validator'>> = {},
 ): TokenFactory {
   const { types, attributes, words, uniques } = createTokenRegistries(content, uniqueDefinitions);
+  validateFactoryContent({ types, attributes, words, uniques });
   const spriteResolver = new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest));
   return new TokenFactory(
     {
@@ -34,7 +37,8 @@ export function createTokenFactory(
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(content.priceRanges),
       descriptionBuilder: new SpecSheetDescriptionBuilder(attributes),
-      validator: new ZodTokenValidator(),
+      ...steps,
+      validator: new ZodTokenValidator(types, attributes),
     },
     { types, uniques, spriteResolver },
   );

@@ -20,7 +20,7 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { rollTraderGoods, traderView } from '../trade/trader-view';
 import { TRADERS } from '../content/traders.content';
 import { createServerWorld } from '../world';
-import { isTokenType } from './game-tokens';
+import { isTokenType, tokenSourceIdOf } from './game-tokens';
 
 const HERO = 'hero-1';
 
@@ -95,7 +95,9 @@ describe('LG5b step 4: every creation point gives tokens', () => {
         mapTier: 2,
         type: drop.itemKey,
       });
-      expect(drop.token!.id.startsWith('grave:battle-1.0-0:')).toBe(true);
+      expect(drop.token!.id.startsWith(`${tokenSourceIdOf('grave', 'battle-1', '0,0')}:`)).toBe(
+        true,
+      );
     }
     expect(new Set(gear.map((drop) => drop.token!.id)).size).toBe(gear.length);
   });
@@ -149,7 +151,7 @@ describe('LG5b step 4: every creation point gives tokens', () => {
     const goods = rollTraderGoods(TRADERS.ilva, 'rng', 'ilva', 3);
     for (const good of goods) {
       if (good && isTokenType(good.key))
-        expect(good.token?.id.startsWith('shop:ilva.3.g')).toBe(true);
+        expect(good.token?.id).toMatch(/^shop:[a-f0-9]{32}\.ilva\.3\.g\d+:0$/);
     }
     const plain = goods.map((good) => (good ? { key: good.key, amount: good.amount } : null));
     const progress = emptyProgressState(HERO);

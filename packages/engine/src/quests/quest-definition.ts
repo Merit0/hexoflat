@@ -1,3 +1,4 @@
+import { tokenOriginSchema } from '../tokens/token-origin';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
 import { TreasureSeekerParamsSchema } from './seeker-content';
@@ -111,6 +112,7 @@ export const QuestDefinitionSchema = z
     objective: ObjectiveSchema,
     mapObjectPlacement: QuestMapObjectPlacementSchema.optional(),
     rewards: z.array(RewardSchema),
+    rewardOrigin: tokenOriginSchema.optional(),
     turnIn: z.enum(['board', 'auto']),
     maxSellValue: z.number().int().min(0).optional(),
     tableRule: z.string().min(1),

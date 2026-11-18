@@ -14,18 +14,7 @@ export function parseChance(chance: string): Fraction | null {
   if (!match) return null;
   const num = Number(match[1]);
   const den = Number(match[2]);
-  return num <= den ? { num, den } : null;
-}
-
-function greatestDivisor(a: number, b: number): number {
-  return b === 0 ? a : greatestDivisor(b, a % b);
-}
-
-function addFractions(first: Fraction, second: Fraction): Fraction {
-  const num = first.num * second.den + second.num * first.den;
-  const den = first.den * second.den;
-  const divisor = greatestDivisor(num, den);
-  return { num: num / divisor, den: den / divisor };
+  return Number.isSafeInteger(num) && Number.isSafeInteger(den) && num <= den ? { num, den } : null;
 }
 
 export const uniqueChanceSchema = z
@@ -42,22 +31,28 @@ function fractionOf(rule: UniqueDropRule): Fraction {
   return parseChance(rule.chance) as Fraction;
 }
 
-function totalChance(rules: readonly UniqueDropRule[]): Fraction {
-  return rules.map(fractionOf).reduce(addFractions, { num: 0, den: 1 });
+function validTotal(rules: readonly UniqueDropRule[]): boolean {
+  let num = 0n;
+  let den = 1n;
+  for (const rule of rules) {
+    const fraction = parseChance(rule.chance);
+    if (!fraction) return false;
+    num = num * BigInt(fraction.den) + BigInt(fraction.num) * den;
+    den *= BigInt(fraction.den);
+    if (num > den) return false;
+  }
+  return true;
 }
 
 export const uniqueDropRulesSchema = z
   .array(uniqueDropRuleSchema)
+  .max(1000)
   .refine((rules) => new Set(rules.map((rule) => rule.uniqueKey)).size === rules.length, {
     message: 'a unique is listed twice',
   })
-  .refine(
-    (rules) => {
-      const total = totalChance(rules);
-      return total.num <= total.den;
-    },
-    { message: 'the chances add up to more than 1' },
-  );
+  .refine((rules) => rules.length <= 1000 && validTotal(rules), {
+    message: 'the chances add up to more than 1',
+  });
 
 export function resolveUniqueDrop(
   rules: readonly UniqueDropRule[],

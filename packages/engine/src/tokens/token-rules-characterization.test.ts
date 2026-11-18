@@ -1,3 +1,5 @@
+import { sampleToken } from './token-test-setup';
+import { devTokenMint } from '../inventory/apply-stock';
 import { describe, expect, it } from 'vitest';
 import { executePlayerCommand, type PlayerAggregates } from '../aggregates/execute-player-command';
 import { PLAYER_COMMAND_SCHEMAS } from '../aggregates/player-commands';
@@ -48,7 +50,9 @@ function creatureWith(right: string | null): BattleCreature {
 describe('LG5b characterization: items enter the bag', () => {
   it('grantToDraft puts one sword per bag cell', () => {
     const draft = draftOf();
-    expect(grantToDraft(draft, SWORD, 2, 'pickup')).toBe(true);
+    expect(grantToDraft(draft, SWORD, 2, 'pickup', { mint: devTokenMint(draft.current!) })).toBe(
+      true,
+    );
     const swords = draft.current!.bag.filter((cell) => cell?.key === SWORD);
     expect(swords.map((cell) => cell!.amount)).toEqual([1, 1]);
   });
@@ -56,7 +60,12 @@ describe('LG5b characterization: items enter the bag', () => {
   it('pickupStack takes the whole stack into the bag and leaves the rest on the ground', () => {
     const bag = draftOf();
     const stacks = [
-      { itemKey: SHIELD, amount: 1, id: 'a' },
+      {
+        itemKey: SHIELD,
+        amount: 1,
+        id: 'a',
+        token: sampleToken({ type: SHIELD, name: { kind: 'noun', noun: SHIELD } }),
+      },
       { itemKey: COINS, amount: 4, id: 'b' },
     ];
     const result = pickupStack({ stacks, isTarget: (s) => s.id === 'a', adjacent: true, bag });

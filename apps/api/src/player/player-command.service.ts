@@ -1,3 +1,4 @@
+import { devTokenMint } from '@hexoflat/engine/inventory/apply-stock';
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
@@ -323,7 +324,13 @@ export class PlayerCommandService {
     commandId: string = randomUUID(),
   ): Promise<PlayerCommandResponse> {
     return this.serverStock(userId, heroId, commandId, 'GRANT_ITEM', { key, amount, source }, (a) =>
-      grantItemServerSide(a.inventory, key, amount, source),
+      grantItemServerSide(
+        a.inventory,
+        key,
+        amount,
+        source,
+        source === 'dev' ? { mint: devTokenMint(a.inventory) } : undefined,
+      ),
     );
   }
 

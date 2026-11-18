@@ -3,13 +3,14 @@ import type { TTraderDefinition } from '../content/content-schema';
 import { TRADERS, TRADER_KEYS, type TTraderKey } from '../content/traders.content';
 import type { InventoryState } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import { sha256Hex } from '../utils/hash/sha256';
 import { deriveStream } from '../utils/random-seeded';
 import type { ProgressState } from '../aggregates/progress-state';
 import { applyDiscounts } from './discount-math';
 import { sellPriceOf } from './price-of';
 import { emptyBuyback, rollGoods } from './roll-goods';
 import type { TraderGood, TraderState } from './trade-state';
-import { campTokenOrigin } from '../registry/location-token-origin';
+import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
 import { isTokenType, mintBaseToken, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { ItemToken } from '../tokens/token-schema';
 
@@ -25,20 +26,50 @@ function withSlotToken<E extends { key: string; amount: number; token?: ItemToke
   return { ...entry, token: mintBaseToken(mint, entry.key, 0) };
 }
 
-function slotMint(rngSeed: string, key: TTraderKey, serial: number, slot: string): TokenMint {
+function slotMint(
+  rngSeed: string,
+  key: TTraderKey,
+  serial: number,
+  slot: string,
+  origin: TokenOrigin,
+): TokenMint {
   return {
     seed: rngSeed,
-    sourceId: tokenSourceIdOf('shop', key, String(serial), slot),
-    origin: campTokenOrigin(),
+    sourceId: tokenSourceIdOf(
+      'shop',
+      sha256Hex(`shop-namespace:${rngSeed}`).slice(0, 32),
+      key,
+      String(serial),
+      slot,
+    ),
+    origin,
   };
 }
 
 function withTraderTokens(state: TraderState, rngSeed: string, key: TTraderKey): TraderState {
   const goods = state.goods.map((good, index) =>
-    withSlotToken(good, slotMint(rngSeed, key, state.serial, `g${index}`)),
+    withSlotToken(
+      good,
+      slotMint(
+        rngSeed,
+        key,
+        state.serial,
+        `g${index}`,
+        (TRADERS[key] as TTraderDefinition).tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+      ),
+    ),
   );
   const buyback = state.buyback.map((entry, index) =>
-    withSlotToken(entry, slotMint(rngSeed, key, state.serial, `b${index}`)),
+    withSlotToken(
+      entry,
+      slotMint(
+        rngSeed,
+        key,
+        state.serial,
+        `b${index}`,
+        (TRADERS[key] as TTraderDefinition).tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+      ),
+    ),
   );
   const same =
     goods.every((good, i) => good === state.goods[i]) &&
@@ -54,7 +85,10 @@ export function rollTraderGoods(
 ): (TraderGood | null)[] {
   const label = goodsStreamLabel(key, serial);
   const goods = rollGoods(def, deriveStream(rngSeed, label)).map((good, index) =>
-    withSlotToken(good, slotMint(rngSeed, key, serial, `g${index}`)),
+    withSlotToken(
+      good,
+      slotMint(rngSeed, key, serial, `g${index}`, def.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN),
+    ),
   );
   return applyDiscounts(def, goods, deriveStream(rngSeed, `${label}:deals`));
 }

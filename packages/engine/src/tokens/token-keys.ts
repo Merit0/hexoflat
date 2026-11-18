@@ -20,10 +20,13 @@ export const TOKEN_SOURCE_KINDS = [
   'dev',
   'test',
 ] as const;
-export type TTokenSourceKind = (typeof TOKEN_SOURCE_KINDS)[number];
+export type TTokenSourceKind = string;
 
-const SOURCE_ID_PART = `(?:${TOKEN_SOURCE_KINDS.join('|')}):[a-z0-9._-]+`;
-export const tokenSourceIdSchema = z.string().regex(new RegExp(`^${SOURCE_ID_PART}$`));
+const SOURCE_ID_PART = `${SLUG_PART}:[a-z0-9._-]+`;
+export const tokenSourceIdSchema = z
+  .string()
+  .max(4096)
+  .regex(new RegExp(`^${SOURCE_ID_PART}$`));
 export const itemTokenIdSchema = z
   .string()
   .regex(new RegExp(`^${SOURCE_ID_PART}:(?:0|[1-9]\\d*)$`));

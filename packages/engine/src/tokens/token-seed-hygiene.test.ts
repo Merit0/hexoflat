@@ -100,7 +100,7 @@ describe('LG5f a token id never carries a seed', () => {
       .flat()
       .flatMap((drop) => (drop.token ? [drop.token] : []));
     for (const token of tokens) expect(token.id.startsWith(`quest:${questRunId(run)}.`)).toBe(true);
-    expect(questRunId(run)).toMatch(/^[0-9a-f]{12}$/);
+    expect(questRunId(run)).toMatch(/^[0-9a-f]{32}$/);
     expectNoSeedIn(tokens, [run.seed, EXPEDITION_SEED]);
   });
 

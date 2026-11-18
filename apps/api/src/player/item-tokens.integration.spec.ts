@@ -100,7 +100,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
         .select()
         .from(heroAggregates)
         .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
-      expect(row.schemaVersion).toBe(2);
+      expect(row.schemaVersion).toBe(3);
       expect((row.state as InventoryState).bag[10]!.token).toEqual(loaded.equip.weapon!.token);
 
       const reloaded = await inventoryOf(userId, heroId);

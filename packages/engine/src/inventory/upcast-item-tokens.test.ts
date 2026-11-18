@@ -21,8 +21,8 @@ function stored(): unknown {
 const upcast = () => upcastAggregate('inventory', 1, stored(), { heroId: V1_HERO });
 
 describe('inventory upcast v1 -> v2 (LG5a, D2, D5)', () => {
-  it('declares inventory schema version 2', () => {
-    expect(AGGREGATES.inventory.schemaVersion).toBe(2);
+  it('declares inventory schema version 3', () => {
+    expect(AGGREGATES.inventory.schemaVersion).toBe(3);
   });
 
   it('gives a valid v2 document with the same item count', () => {
@@ -47,8 +47,8 @@ describe('inventory upcast v1 -> v2 (LG5a, D2, D5)', () => {
   it('names the source after the hero and the slot', () => {
     const v2 = upcast();
     expect(v2.equip.weapon!.token!.id).toBe(`${upcastSourceId(V1_HERO, 'equip.weapon')}:0`);
-    expect(v2.bag[0]!.token!.id).toBe('upcast:hero-v1.bag.0:0');
-    expect(v2.stash.cells[0]!.token!.id).toBe('upcast:hero-v1.stash.0:0');
+    expect(v2.bag[0]!.token!.id).toBe(`${upcastSourceId(V1_HERO, 'bag.0')}:0`);
+    expect(v2.stash.cells[0]!.token!.id).toBe(`${upcastSourceId(V1_HERO, 'stash.0')}:0`);
   });
 
   it('keeps the stacks, ids, revision and id sequence unchanged', () => {

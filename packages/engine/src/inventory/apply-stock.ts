@@ -1,3 +1,4 @@
+import { tokenSupplyFailure } from './token-supply-rules';
 import type { DomainEvent } from '../commands/types';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { isTokenType, mintBaseToken, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
@@ -26,7 +27,7 @@ export interface StockResult {
   ok: boolean;
 }
 
-function fallbackMint(state: InventoryState): TokenMint {
+export function devTokenMint(state: InventoryState): TokenMint {
   return {
     seed: `grant:${state.heroId}`,
     sourceId: tokenSourceIdOf('dev', state.heroId, String(state.idSeq)),
@@ -35,13 +36,11 @@ function fallbackMint(state: InventoryState): TokenMint {
 }
 
 function tokenSource(
-  state: InventoryState,
   key: THexobjectKey,
   supply: TokenSupply | undefined,
 ): ((piece: number) => ItemToken) | undefined {
   if (!isTokenType(key)) return undefined;
-  const mint = supply?.mint ?? fallbackMint(state);
-  return (piece) => supply?.tokens?.[piece] ?? mintBaseToken(mint, key, piece);
+  return (piece) => supply?.tokens?.[piece] ?? mintBaseToken(supply!.mint!, key, piece);
 }
 
 function grant(
@@ -58,6 +57,8 @@ function grant(
     events: [{ type: 'ITEM_GRANT_REJECTED', payload: { heroId, key, reason } }],
   });
   if (!state) return refuse('NO_INVENTORY');
+  const supplyFailure = tokenSupplyFailure(state, key, amount, supply);
+  if (supplyFailure) return refuse(supplyFailure);
   const seq = { next: state.idSeq };
   const plan = planGrant(
     toAggregate(state),
@@ -65,7 +66,7 @@ function grant(
     amount,
     state.capacityKg,
     () => `${state.heroId}:${seq.next++}`,
-    tokenSource(state, key, supply),
+    tokenSource(key, supply),
   );
   if (!plan.ok) return refuse(plan.reason);
   const revision = state.revision + 1;

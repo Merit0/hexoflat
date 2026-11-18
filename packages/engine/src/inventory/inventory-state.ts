@@ -57,7 +57,10 @@ function everyIdIsUnique(state: {
   const ids = [...state.bag, ...Object.values(state.equip), ...state.stash.cells]
     .filter((item) => item !== null)
     .map((item) => item.id);
-  return new Set(ids).size === ids.length;
+  const tokens = [...state.bag, ...Object.values(state.equip), ...state.stash.cells].flatMap(
+    (item) => (item?.token ? [item.token.id] : []),
+  );
+  return new Set(ids).size === ids.length && new Set(tokens).size === tokens.length;
 }
 
 export const inventoryStateSchema = z

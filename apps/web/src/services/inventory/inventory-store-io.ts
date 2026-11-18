@@ -3,7 +3,11 @@ import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstr
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { HEX_ENGINE_COMMAND_SCHEMAS } from '@hexoflat/engine/commands/hex-engine-commands';
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
-import { applyConsumeItem, applyGrantItem } from '@hexoflat/engine/inventory/apply-stock';
+import {
+  applyConsumeItem,
+  applyGrantItem,
+  devTokenMint,
+} from '@hexoflat/engine/inventory/apply-stock';
 import { applyInventoryCommand } from '@hexoflat/engine/inventory/apply-inventory';
 import { BAG_SLOT_KEYS, bagIndexOfSlotKey } from '@hexoflat/engine/inventory/bag-layout';
 import type { InventoryContext } from '@hexoflat/engine/inventory/inventory-commands';
@@ -169,7 +173,13 @@ export interface DispatchResult {
 function run(state: InventoryState, command: HexEngineCommand, context: InventoryContext) {
   switch (command.type) {
     case 'GRANT_ITEM':
-      return applyGrantItem(state, command);
+      return applyGrantItem(
+        state,
+        command,
+        import.meta.env.DEV || import.meta.env.VITE_E2E_HOOKS === 'true'
+          ? { mint: devTokenMint(state) }
+          : undefined,
+      );
     case 'CONSUME_ITEM':
       return applyConsumeItem(state, command);
     case 'MOVE_ITEM':

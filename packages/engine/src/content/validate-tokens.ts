@@ -1,7 +1,7 @@
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { hasGeneratedName, tokenPriceRangesSchema } from '../tokens/token-content-schema';
 import { wordKeyOf } from '../tokens/token-keys';
-import type { TokenAttribute } from '../tokens/token-schema';
+import { attributeFailure } from '../tokens/attribute-rules';
 import type { UniqueTokenDefinition } from '../tokens/unique-schema';
 import { coinPriceOf } from './content-accessors';
 import { TOKEN_UNIQUES } from './token-uniques.content';
@@ -37,26 +37,6 @@ function priceFailures(content: TokenContent): string[] {
 
 type TokenRegistries = ReturnType<typeof createTokenRegistries>;
 
-function fixedAttributeFailure(
-  unique: UniqueTokenDefinition,
-  attribute: TokenAttribute,
-  registries: TokenRegistries,
-): string | null {
-  const where = `unique ${unique.key}: attribute ${attribute.key}`;
-  if (!registries.attributes.has(attribute.key)) return `${where} is unknown`;
-  const definition = registries.attributes.get(attribute.key);
-  if (definition.allowedTypes?.length && !definition.allowedTypes.includes(unique.type)) {
-    return `${where} is not allowed on type ${unique.type}`;
-  }
-  if (!definition.implemented) return `${where} is not implemented`;
-  const values = Object.values(definition.valueByTier);
-  const [min, max] = [Math.min(...values), Math.max(...values)];
-  if (attribute.value < min || attribute.value > max) {
-    return `${where} value ${attribute.value} is outside [${min}, ${max}]`;
-  }
-  return null;
-}
-
 export function uniqueContentFailures(
   uniques: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
   content: TokenContent = TOKEN_CONTENT,
@@ -74,8 +54,8 @@ export function uniqueContentFailures(
       continue;
     }
     for (const attribute of unique.attributes) {
-      const failure = fixedAttributeFailure(unique, attribute, registries);
-      if (failure) failures.push(failure);
+      const failure = attributeFailure(registries.attributes, unique.type, attribute);
+      if (failure) failures.push(`unique ${unique.key}: ${failure}`);
     }
   }
   return failures;

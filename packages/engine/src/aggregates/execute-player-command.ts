@@ -1,7 +1,12 @@
 import { sumEquippedHeartPoints } from '../combat/heart-points';
 import { HERO_BASE_HEALTH, HeroModel } from '../models/hero-model';
 import type { DomainEvent } from '../commands/types';
-import { applyConsumeItem, applyGrantItem } from '../inventory/apply-stock';
+import {
+  applyConsumeItem,
+  applyGrantItem,
+  devTokenMint,
+  type TokenSupply,
+} from '../inventory/apply-stock';
 import { applyInventoryCommand } from '../inventory/apply-inventory';
 import type { InventoryContext } from '../inventory/inventory-commands';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -134,7 +139,7 @@ function executeCore(
       const result = applyGrantItem(
         inventory,
         { type: 'GRANT_ITEM', payload: { heroId, revision, key: key, amount, source: 'dev' } },
-        minted ? { tokens: minted.value } : undefined,
+        minted ? { tokens: minted.value } : { mint: devTokenMint(inventory) },
       );
       return inventoryOutcome(inventory, result.inventory, result.events);
     }
@@ -212,11 +217,16 @@ export function grantItemServerSide(
   key: THexobjectKey,
   amount: number,
   source: 'pickup' | 'loot' | 'reward' | 'dev',
+  supply?: TokenSupply,
 ): PlayerCommandOutcome {
-  const result = applyGrantItem(inventory, {
-    type: 'GRANT_ITEM',
-    payload: { heroId: inventory.heroId, revision: inventory.revision, key, amount, source },
-  });
+  const result = applyGrantItem(
+    inventory,
+    {
+      type: 'GRANT_ITEM',
+      payload: { heroId: inventory.heroId, revision: inventory.revision, key, amount, source },
+    },
+    supply,
+  );
   return inventoryOutcome(inventory, result.inventory, result.events);
 }
 

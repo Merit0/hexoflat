@@ -18,7 +18,7 @@ export const ITEM_TYPES: readonly ItemTypeDefinition[] = [
     key: 'shield',
     slot: 'shield',
     strike: 1,
-    block: { sides: 2 },
+    block: { sides: 1 },
     tool: null,
     nounKey: wordKeyOf('noun', 'shield'),
     realms: [...ALL_REALMS],

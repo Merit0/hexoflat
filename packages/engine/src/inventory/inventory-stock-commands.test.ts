@@ -15,7 +15,12 @@ const POTION = HEXOBJECT_KEYS.HEALTH_BOTTLE;
 
 function world(inventory?: InventoryState): HexEngineState {
   const map = new HexMapBuilder().name('stock').width(2).height(2).build();
-  return { map, heroes: {}, inventory };
+  return {
+    map,
+    heroes: {},
+    loot: { seed: 'server-stock-secret', sourceId: 'stock-test' },
+    inventory,
+  };
 }
 
 function run(state: HexEngineState, command: HexEngineCommand) {

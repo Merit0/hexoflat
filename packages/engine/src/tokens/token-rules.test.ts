@@ -248,7 +248,7 @@ describe('LG5b step 9: item skills are not wired', () => {
       seed: 'unit-seed',
       sourceId: 'test:unique',
       n: 0,
-      mapTier: 1,
+      mapTier: 3,
       ownedUniques: [],
     });
     if (!made.ok) throw new Error(made.refusal.code);

@@ -1,3 +1,4 @@
+import { tokenOriginSchema } from '../tokens/token-origin';
 import { z } from 'zod';
 import {
   EChestType,
@@ -259,6 +260,7 @@ export const traderDefinitionSchema = z
     sellRate: z
       .object({ num: z.number().int().positive(), den: z.number().int().positive() })
       .strict(),
+    tokenOrigin: tokenOriginSchema.optional(),
     goodsSlots: z.number().int().positive(),
     buybackSlots: z.number().int().positive(),
     refresh: z

@@ -1,6 +1,13 @@
+import { decodedSourceId } from '../source-id';
 import { ERarityKind } from '../../abstraction/hexobject-abstraction';
 import { deriveStream } from '../../utils/random-seeded';
-import { BASE_REALMS, itemTokenIdOf, tokenSourceIdSchema, type TBaseRealm } from '../token-keys';
+import {
+  BASE_REALMS,
+  itemTokenIdOf,
+  tokenSourceIdSchema,
+  mapTierSchema,
+  type TBaseRealm,
+} from '../token-keys';
 import type { TypeRegistry, UniqueRegistry } from '../registries';
 import { emptyTokenExtensions, type ItemToken } from '../token-schema';
 import type { UniqueTokenDefinition } from '../unique-schema';
@@ -53,20 +60,30 @@ function plainText(value: string): string {
 }
 
 export function sourceIdContainsSeed(sourceId: string, seed: string): boolean {
-  return sourceId.includes(seed) || plainText(sourceId).includes(plainText(seed));
+  if (seed.length < 16) return false;
+  const normalized = plainText(seed);
+  const decoded = decodedSourceId(sourceId);
+  return (
+    decoded.includes(seed) || (normalized.length >= 16 && plainText(decoded).includes(normalized))
+  );
 }
 
 function sourceRefusal(ctx: {
   seed: string;
   sourceId: string;
   n: number;
+  mapTier: number;
 }): TokenResult<never> | null {
+  if (typeof ctx.seed !== 'string' || !ctx.seed.trim() || ctx.seed.length > 4096)
+    return refuseToken('BAD_SEED', 'A bounded nonempty seed is required');
   if (!tokenSourceIdSchema.safeParse(ctx.sourceId).success) {
-    return refuseToken('BAD_SOURCE_ID', `source id "${ctx.sourceId}" is not <kind>:<key>`);
+    return refuseToken('BAD_SOURCE_ID', 'source id must be <kind>:<key>');
   }
   if (!Number.isSafeInteger(ctx.n) || ctx.n < 0) {
     return refuseToken('BAD_ITEM_INDEX', `item index ${ctx.n} is not a whole number from 0`);
   }
+  if (!mapTierSchema.safeParse(ctx.mapTier).success)
+    return refuseToken('INVALID_TOKEN', 'Invalid source tier');
   if (sourceIdContainsSeed(ctx.sourceId, ctx.seed)) {
     return refuseToken('SOURCE_ID_CONTAINS_SEED', 'the source id must not contain the seed');
   }
@@ -100,6 +117,12 @@ export class TokenFactory {
     const attributes = overrides.attributes
       ? overrides.attributes.map((attribute) => ({ ...attribute }))
       : this.parts.attributeGenerator.generate(type, ctx.mapTier, stream('attributes'));
+    const checked = this.parts.validator.validateAttributes({
+      type,
+      mapTier: ctx.mapTier,
+      attributes,
+    });
+    if (!checked.ok) return checked;
     return this.parts.validator.validate({
       id,
       origin: 'base',
@@ -158,6 +181,12 @@ export class TokenFactory {
         )
       : [];
     const attributes = [...definition.attributes.map((attribute) => ({ ...attribute })), ...rolled];
+    const checked = this.parts.validator.validateAttributes({
+      type,
+      mapTier: ctx.mapTier,
+      attributes,
+    });
+    if (!checked.ok) return checked;
     return this.parts.validator.validate({
       id,
       origin: 'unique',

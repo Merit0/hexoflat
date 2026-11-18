@@ -19,6 +19,7 @@ export const TOKEN_STEPS = ['type', 'name', 'sprite', 'attributes', 'skills', 'p
 export type TTokenStep = (typeof TOKEN_STEPS)[number];
 
 export const TOKEN_REFUSALS = [
+  'BAD_SEED',
   'BAD_SOURCE_ID',
   'BAD_ITEM_INDEX',
   'SOURCE_ID_CONTAINS_SEED',
@@ -123,5 +124,6 @@ export interface IDescriptionBuilder {
 }
 
 export interface ITokenValidator {
+  validateAttributes(sheet: Pick<TokenSheet, 'type' | 'mapTier' | 'attributes'>): TokenResult<true>;
   validate(candidate: unknown): TokenResult<ItemToken>;
 }

@@ -4,7 +4,7 @@ import type { ContainerTokenSource } from '../containers/create-container';
 import { sha256Hex } from '../utils/hash/sha256';
 import type { QuestRun } from './quest-state';
 
-const QUEST_RUN_ID_LENGTH = 12;
+const QUEST_RUN_ID_LENGTH = 32;
 
 export function questTokenOrigin(run: Pick<QuestRun, 'field'>): TokenOrigin {
   if (!run.field) return DEFAULT_TOKEN_ORIGIN;

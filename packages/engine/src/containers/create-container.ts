@@ -2,6 +2,7 @@ import { rollLootLists, tokenizeLootLists, type LootTable } from '../loot';
 import { tokenSourceIdOf } from '../tokens/game-tokens';
 import type { TTokenSourceKind } from '../tokens/token-keys';
 import type { TokenOrigin } from '../tokens/token-origin';
+import type { TokenFactory } from '../tokens/factory/token-factory';
 import type { Axial } from '../utils/hex-utils';
 import type { ContainerKind, ContainerState, LootLists } from './container';
 
@@ -18,6 +19,7 @@ export interface ContainerRollInput {
   targetKey: string;
   origin: TokenOrigin;
   tokenSource?: ContainerTokenSource;
+  tokenFactory?: TokenFactory;
 }
 
 export interface CreateContainerInput extends ContainerRollInput {
@@ -42,6 +44,7 @@ export function rollContainerContents(input: ContainerRollInput): LootLists {
     seed: tokens.seed,
     sourceId: tokenSourceIdOf(TOKEN_SOURCE_OF[input.kind], ...tokens.scope, input.targetKey),
     origin: input.origin,
+    factory: input.tokenFactory,
   });
 }
 

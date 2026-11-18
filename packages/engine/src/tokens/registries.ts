@@ -12,6 +12,14 @@ import {
 import type { AttributeKey, ItemTypeKey, UniqueKey } from './token-keys';
 import { uniqueTokenDefinitionSchema, type UniqueTokenDefinition } from './unique-schema';
 
+function freezeContent<T>(value: T): T {
+  if (value && typeof value === 'object') {
+    for (const child of Object.values(value)) freezeContent(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
 function indexByKey<T extends { key: string }>(
   kind: string,
   entries: readonly T[],
@@ -19,7 +27,7 @@ function indexByKey<T extends { key: string }>(
   const byKey = new Map<string, T>();
   for (const entry of entries) {
     if (byKey.has(entry.key)) throw new Error(`${kind} "${entry.key}" is listed twice`);
-    byKey.set(entry.key, entry);
+    byKey.set(entry.key, freezeContent(entry));
   }
   return byKey;
 }
@@ -121,7 +129,7 @@ export class WordPool {
   constructor(data: WordPoolData) {
     const parsed = wordPoolDataSchema.parse(data);
     indexByKey('Word', [...parsed.prefixes, ...parsed.suffixes]);
-    this.data = parsed;
+    this.data = freezeContent(parsed);
   }
 
   prefixes(realm: ERarityKind): readonly TokenWord[] {

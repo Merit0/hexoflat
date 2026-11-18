@@ -4,7 +4,6 @@ import { createTokenRegistries, TOKEN_CONTENT } from '../../content/token-conten
 import { TOKEN_UNIQUES } from '../../content/token-uniques.content';
 import { lightTone } from '../light-tone';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
-import { MAP_TIERS } from '../token-keys';
 import { emptyTokenExtensions, itemTokenSchema, type ItemToken } from '../token-schema';
 import type { UniqueTokenDefinition } from '../unique-schema';
 import { createTokenFactory } from './create-token-factory';
@@ -25,7 +24,7 @@ function uniqueContext(
     seed: String(seed),
     sourceId: 'test:unique',
     n: seed,
-    mapTier: MAP_TIERS[seed % MAP_TIERS.length],
+    mapTier: seed % 2 === 0 ? 3 : 4,
     ownedUniques: [],
     ...overrides,
   };

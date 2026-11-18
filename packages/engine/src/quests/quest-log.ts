@@ -1,7 +1,7 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { consumeFromDraft, countInDraft, grantToDraft } from '../inventory/apply-stock';
-import { campTokenOrigin } from '../registry/location-token-origin';
+import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
 import { isTokenType, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -147,14 +147,16 @@ function rewardMint(
   progress: ProgressState,
   questId: string,
   rngSeed: string | undefined,
+  rewardIndex: number,
+  origin: TokenOrigin,
 ): TokenMint {
   if (!rngSeed) throw new Error('NO_SERVER_SECRET');
   const heroId = progress.knowledge.heroId;
   const times = progress.quests.done[questId] ?? 0;
   return {
     seed: rngSeed,
-    sourceId: tokenSourceIdOf('quest', questId, heroId, String(times)),
-    origin: campTokenOrigin(),
+    sourceId: tokenSourceIdOf('quest', questId, heroId, String(times), String(rewardIndex)),
+    origin,
   };
 }
 
@@ -175,11 +177,19 @@ export function planClaim(
   const next = structuredClone(progress);
   const draft: IInventoryDraft = { current: inventory, events: [] };
   const events: DomainEvent[] = [];
-  for (const reward of quest.rewards) {
+  for (const [rewardIndex, reward] of quest.rewards.entries()) {
     if (reward.kind === 'item') {
       if (!inventory) return reject(progress, questId, 'NO_INVENTORY');
       const supply = isTokenType(reward.itemKey)
-        ? { mint: rewardMint(progress, questId, ctx.rngSeed) }
+        ? {
+            mint: rewardMint(
+              progress,
+              questId,
+              ctx.rngSeed,
+              rewardIndex,
+              quest.rewardOrigin ?? DEFAULT_TOKEN_ORIGIN,
+            ),
+          }
         : undefined;
       if (!grantToDraft(draft, reward.itemKey, reward.amount, 'reward', supply)) {
         return reject(progress, questId, 'BAG_FULL');
