@@ -6,6 +6,7 @@ import { isFreeHex } from '../battle/battle-board';
 import { BATTLE_RULES } from '../battle/battle-content';
 import type { BattleState } from '../battle/battle-state';
 import { playOutSquad } from '../battle/collect-playout-setup';
+import { graveLootSource, graveTokenSource } from '../battle/grave-token-source';
 import { hexKey, hexNeighbours } from '../battle/hex-battle-geom';
 import { isTerrainPassable } from '../boards/terrain';
 import type { ChestWorld } from '../chests/open-chest';
@@ -189,28 +190,33 @@ function chestTableId(hexobjectKey: string): string | undefined {
     : undefined;
 }
 
+const ECONOMY_MAP_ID = 'economy-sim';
+
 interface GravePayload {
   placed: { itemKey: string; amount: number }[];
   toBag: { itemKey: string; amount: number }[];
 }
 
 function lootGraves(source: BattleState, runSeed: string, label: string, result: RunResult): void {
-  let battle: BattleState = { ...structuredClone(source), seed: `${runSeed}:${label}` };
+  let battle: BattleState = {
+    ...structuredClone(source),
+    tokenSecret: { seed: `${runSeed}:${label}`, mapId: ECONOMY_MAP_ID },
+  };
   for (const grave of battle.collect!.graves) {
     grave.container = createContainer({
       id: hexKey(grave.hex),
       kind: 'grave',
       at: grave.hex,
       tables: grave.tables.map((id) => lootTableOf(id)),
-      seed: battle.seed,
-      sourceId: battle.id,
-      targetKey: hexKey(grave.hex),
+      ...graveLootSource(battle, hexKey(grave.hex)),
       origin: battle.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+      tokenSource: graveTokenSource(battle),
     });
   }
   for (const { hex, tables } of structuredClone(battle.collect!.graves)) {
     const grave = { hex, tables };
-    const rng = deriveStream(battle.seed, lootStreamLabel(battle.id, hexKey(grave.hex)));
+    const stream = graveLootSource(battle, hexKey(grave.hex));
+    const rng = deriveStream(stream.seed, lootStreamLabel(stream.sourceId, stream.targetKey));
     const lists = grave.tables.map((id) => rollLoot(lootTableOf(id)!, rng));
     const rolled = mergedCount(lists);
     const ordinary = !grave.tables.includes(SKELETON_KING_TABLE_ID);

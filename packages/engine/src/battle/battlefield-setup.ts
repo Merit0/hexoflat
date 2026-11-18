@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { axialToPixelPointy, offsetToAxial } from '../utils/hex-utils';
 import { enemyCreature } from './battle-catalogue';
-import type { BattleCreature, BattleHex, BattleSetupInput, BattleSide } from './battle-state';
+import type { BattleCreature, BattleHex, BattleLayoutInput, BattleSide } from './battle-state';
 import type { Battlefield } from './battlefield';
 import { battleDistance, hexKey, parseHexKey } from './hex-battle-geom';
 
@@ -112,7 +112,7 @@ export interface DeploymentInput {
 }
 
 export interface Deployment {
-  setup: BattleSetupInput;
+  setup: BattleLayoutInput;
   zones: DeploymentZones;
 }
 

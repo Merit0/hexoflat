@@ -5,6 +5,7 @@ import type { HeroState } from '../hero-movement/hero-state';
 import type { KnowledgeState } from '../knowledge/state';
 import type { InventoryState } from '../inventory/inventory-state';
 import type { BattleState } from '../battle/battle-state';
+import type { ChestLootContext } from '../chests/plan-chest-loot';
 import { approachDirection } from '../battle/battlefield-setup';
 import type { Engagement, SquadRejection } from './engagement';
 import { compositionKnown, findSquad, isAdjacent, type PlacedSquad } from './squad-state';
@@ -16,6 +17,7 @@ export interface SquadWorld {
   battle?: BattleState;
   engagement?: Engagement;
   inventory?: InventoryState;
+  loot?: ChestLootContext;
 }
 
 export interface SquadInput {

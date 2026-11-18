@@ -11,7 +11,7 @@ import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { withToken } from '../tokens/token-entry';
 import { isAlive, isFreeHex } from './battle-board';
 import type { BattleCreature, BattleHex, BattleState, CollectState, Grave } from './battle-state';
-import { graveTokenSource } from './grave-token-source';
+import { graveLootSource, graveTokenSource } from './grave-token-source';
 import { hexKey, sameHex } from './hex-battle-geom';
 
 export type GraveCommandRefusal = 'BATTLE_ENDED' | 'NOT_YOUR_TURN';
@@ -58,9 +58,7 @@ export function graveSpace(): ContainerSpace<BattleState, BattleHex, GraveComman
       rollContainerContents({
         kind: 'grave',
         tables: graveOf(state, container.at)!.tables.map((id) => lootTableOf(id)),
-        seed: state.seed,
-        sourceId: state.id,
-        targetKey: hexKey(container.at),
+        ...graveLootSource(state, hexKey(container.at)),
         origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
         tokenSource: graveTokenSource(state),
       }),

@@ -12,6 +12,8 @@ import { HERO, hexAction, idAt, squadWorld } from '../squads/squad-test-setup';
 import {
   battleWorld,
   createServerWorld,
+  deserializeWorld,
+  worldTokenSecret,
   diffTiles,
   projectDiffsForClient,
   projectTileForClient,
@@ -368,5 +370,18 @@ describe('REQ-SRV-BTL-005 the map the client gets hides an unscouted squad', () 
     const world = projectWorldForClient(serializeWorld(hidden.world));
     expect(JSON.stringify(world.map.tiles)).not.toContain('"scouted":true');
     expect(world.battle).toBeNull();
+  });
+});
+
+describe('LG5g a battle saved before LG5f without a token secret', () => {
+  it('gets the secret from worldSeed and mapId on load, the same rule as a new battle', () => {
+    const table = started('seed-old');
+    const raw = serializeWorld(table.run.world);
+    const fresh = raw.battle!.tokenSecret;
+    delete (raw.battle as Partial<BattleState>).tokenSecret;
+    const loaded = deserializeWorld(JSON.parse(JSON.stringify(raw)), 0);
+    expect(loaded.battle!.tokenSecret).toEqual(worldTokenSecret(table.run.world));
+    expect(loaded.battle!.tokenSecret).toEqual(fresh);
+    expect(fresh).toEqual({ seed: 'seed-old', mapId: 'map-1' });
   });
 });

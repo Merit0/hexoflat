@@ -3,7 +3,13 @@ import type { RandomNumberGenerator } from '../utils/random';
 import { deriveStream } from '../utils/random-seeded';
 import { BATTLE_RULES, type BattleRules } from './battle-content';
 import type { BattleAction } from './battle-commands';
-import type { BattleHand, BattleOutcome, BattleSetupInput, BattleState } from './battle-state';
+import type {
+  BattleHand,
+  BattleLayoutInput,
+  BattleOutcome,
+  BattleState,
+  BattleTokenSecret,
+} from './battle-state';
 import { applyBattleCommand } from './apply-battle';
 import { startBattle } from './start-battle';
 import { projectBattleForViewer, type BattleProjection } from './projection';
@@ -14,10 +20,18 @@ export interface SimOptions {
   accuracy: number;
   maxRounds: number;
   rules: BattleRules;
+  tokenSecret: BattleTokenSecret;
   onEvents?: (events: DomainEvent[]) => void;
 }
 
-const DEFAULT_SIM: SimOptions = { accuracy: 0.8, maxRounds: 30, rules: BATTLE_RULES };
+export const SIM_TOKEN_SECRET: BattleTokenSecret = { seed: 'sim-token-secret', mapId: 'sim-map' };
+
+const DEFAULT_SIM: SimOptions = {
+  accuracy: 0.8,
+  maxRounds: 30,
+  rules: BATTLE_RULES,
+  tokenSecret: SIM_TOKEN_SECRET,
+};
 const ANSWER_DELAY_MS = 2_000;
 const MAX_COMMANDS = 5_000;
 
@@ -59,12 +73,12 @@ function nextPayload(
 }
 
 export function simulateBattle(
-  setup: BattleSetupInput,
+  setup: BattleLayoutInput,
   overrides: Partial<SimOptions> = {},
 ): BattleOutcome | 'stalemate' {
   const options = { ...DEFAULT_SIM, ...overrides };
   const rng = deriveStream(setup.seed, 'sim:answers');
-  let battle = startBattle(setup, options.rules).battle;
+  let battle = startBattle({ ...setup, tokenSecret: options.tokenSecret }, options.rules).battle;
   for (let i = 0, atMs = 0; i < MAX_COMMANDS; i++, atMs += 1_000) {
     if (battle.outcome) return battle.outcome;
     if (battle.round > options.maxRounds) return 'stalemate';

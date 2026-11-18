@@ -7,7 +7,9 @@ import { generateChestDrop } from '../quests/seeker-chest';
 import { deriveStream } from '../utils/random-seeded';
 import { hexKey } from '../battle/hex-battle-geom';
 import { TARGET } from '../battle/collect-test-setup';
+import { graveLootSource } from '../battle/grave-token-source';
 import {
+  GOLDEN_GRAVE_MAP,
   GOLDEN_SEEDS,
   listOf,
   graveGolden,
@@ -39,49 +41,49 @@ const WORLD: string[] = [
 ];
 
 const WARRIOR_GRAVE: string[] = [
+  '1,-1=coinsx14;2,-1=health-bottlex1 | bag -',
+  'nothing - | bag -',
+  '1,-1=coinsx5;2,-1=bone-charmx1 | bag -',
+  'nothing - | bag -',
+  '1,-1=coinsx12 | bag -',
+  'nothing - | bag -',
+  '1,-1=coinsx10;2,-1=bone-charmx1 | bag -',
+  'nothing - | bag -',
+  '1,-1=coinsx4;2,-1=bone-charmx1;2,0=health-bottlex1 | bag -',
+  '1,-1=health-bottlex1 | bag -',
+  '1,-1=bone-charmx1 | bag -',
+  '1,-1=coinsx8;2,-1=health-bottlex1;2,0=bone-charmx1 | bag -',
+  '1,-1=coinsx18 | bag -',
+  '1,-1=coinsx12;2,-1=bone-charmx1 | bag -',
+  '1,-1=bone-charmx1 | bag -',
+  '1,-1=coinsx11 | bag -',
+  'nothing - | bag -',
   '1,-1=coinsx7 | bag -',
   'nothing - | bag -',
-  '1,-1=coinsx14;2,-1=health-bottlex1 | bag -',
-  '1,-1=coinsx10;2,-1=bone-charmx1 | bag -',
-  '1,-1=bone-charmx1;2,-1=coinsx9 | bag -',
   'nothing - | bag -',
-  '1,-1=coinsx13 | bag -',
-  'nothing - | bag -',
-  'nothing - | bag -',
-  '1,-1=coinsx9 | bag -',
-  '1,-1=coinsx14 | bag -',
-  '1,-1=coinsx5 | bag -',
-  '1,-1=coinsx5;2,-1=health-bottlex1 | bag -',
-  '1,-1=coinsx13 | bag -',
-  '1,-1=coinsx8;2,-1=health-bottlex1 | bag -',
-  '1,-1=health-bottlex1;2,-1=coinsx8 | bag -',
-  '1,-1=coinsx6;2,-1=bone-charmx1 | bag -',
-  '1,-1=health-bottlex1;2,-1=health-bottlex1;2,0=coinsx7 | bag -',
-  '1,-1=bone-charmx1;2,-1=coinsx15 | bag -',
-  '1,-1=health-bottlex1;2,-1=coinsx3;2,0=bone-charmx1 | bag -',
 ];
 
 const KING_GRAVE: string[] = [
-  '1,-1=coinsx40;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=shieldx1 | bag -',
-  '1,-1=coinsx40;2,-1=crown-shardx1;2,0=shieldx1;1,1=return-scrollx1 | bag -',
-  '1,-1=coinsx33;2,-1=crown-shardx1;2,0=health-bottlex2;1,1=shieldx1;0,1=health-bottlex1 | bag -',
-  '1,-1=coinsx38;2,-1=crown-shardx1;2,0=health-bottlex2;1,1=shieldx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx48;2,-1=crown-shardx1;2,0=shieldx1;1,1=health-bottlex1;0,1=return-scrollx1 | bag -',
-  '1,-1=coinsx44;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=health-bottlex2 | bag -',
-  '1,-1=coinsx31;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex2;0,1=shieldx1 | bag -',
-  '1,-1=coinsx50;2,-1=crown-shardx1;2,0=shieldx1;1,1=return-scrollx1 | bag -',
-  '1,-1=coinsx40;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=shieldx1 | bag -',
-  '1,-1=coinsx31;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=shieldx1 | bag -',
-  '1,-1=coinsx33;2,-1=crown-shardx1;2,0=shieldx1;1,1=shieldx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx33;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=shieldx1 | bag -',
-  '1,-1=coinsx35;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=return-scrollx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx34;2,-1=crown-shardx1;2,0=shieldx1;1,1=return-scrollx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx42;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=shieldx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx43;2,-1=crown-shardx1;2,0=swordx1;1,1=return-scrollx1;0,1=swordx1 | bag -',
-  '1,-1=coinsx30;2,-1=crown-shardx1;2,0=health-bottlex2;1,1=shieldx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx44;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=swordx1;0,1=return-scrollx1 | bag -',
-  '1,-1=coinsx48;2,-1=crown-shardx1;2,0=swordx1;1,1=return-scrollx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx44;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex1;0,1=return-scrollx1 | bag -',
+  '1,-1=coinsx37;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=health-bottlex2;0,1=swordx1 | bag -',
+  '1,-1=coinsx45;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=return-scrollx1 | bag -',
+  '1,-1=coinsx41;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=health-bottlex2;0,1=return-scrollx1 | bag -',
+  '1,-1=coinsx34;2,-1=crown-shardx1;2,0=shieldx1;1,1=swordx1 | bag -',
+  '1,-1=coinsx32;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=shieldx1;0,1=shieldx1 | bag -',
+  '1,-1=coinsx48;2,-1=crown-shardx1;2,0=shieldx1;1,1=return-scrollx1 | bag -',
+  '1,-1=coinsx37;2,-1=crown-shardx1;2,0=shieldx1;1,1=health-bottlex2;0,1=return-scrollx1 | bag -',
+  '1,-1=coinsx31;2,-1=crown-shardx1;2,0=health-bottlex2;1,1=return-scrollx1 | bag -',
+  '1,-1=coinsx41;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=return-scrollx1;0,1=shieldx1 | bag -',
+  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=health-bottlex2 | bag -',
+  '1,-1=coinsx50;2,-1=crown-shardx1;2,0=shieldx1;1,1=shieldx1 | bag -',
+  '1,-1=coinsx30;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=health-bottlex2;0,1=shieldx1 | bag -',
+  '1,-1=coinsx39;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex1;0,1=shieldx1 | bag -',
+  '1,-1=coinsx32;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex1;0,1=return-scrollx1 | bag -',
+  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=shieldx1;1,1=shieldx1 | bag -',
+  '1,-1=coinsx42;2,-1=crown-shardx1;2,0=shieldx1;1,1=shieldx1;0,1=return-scrollx1 | bag -',
+  '1,-1=coinsx38;2,-1=crown-shardx1;2,0=shieldx1;1,1=health-bottlex1 | bag -',
+  '1,-1=coinsx40;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex1 | bag -',
+  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=shieldx1;1,1=return-scrollx1 | bag -',
+  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=health-bottlex2;1,1=health-bottlex2 | bag -',
 ];
 
 const QUEST_STORED: string[] = [
@@ -148,14 +150,19 @@ describe('CH-P0 golden loot: the exact drop of 20 fixed seeds per space (guards 
     expect(listOf(byLabel)).toBe('coinsx11,health-bottlex2,coinsx29,health-bottlex1');
   });
 
-  it('warrior grave: placements, bag and the empty answer for 20 seeds, and the exact label loot:<battleId>:<q,r>', () => {
+  it('warrior grave: placements, bag and the empty answer for 20 seeds, and the exact label loot:grave:<mapId>.<battleId>:<q,r> over the token secret', () => {
     expect(GOLDEN_SEEDS.map((seed) => graveGolden(seed, 'warrior'))).toEqual(WARRIOR_GRAVE);
-    expect(lootStreamLabel('b1', hexKey(TARGET))).toBe('loot:b1:1,0');
+    const source = graveLootSource(
+      { id: 'b1', tokenSecret: { seed: 'golden-3', mapId: GOLDEN_GRAVE_MAP } },
+      hexKey(TARGET),
+    );
+    expect(source.seed).toBe('golden-3');
+    expect(lootStreamLabel(source.sourceId, source.targetKey)).toBe('loot:grave:golden-map.b1:1,0');
     const byLabel = rollLoot(
       lootTableOf('skeleton-warrior-loot')!,
-      deriveStream('golden-3', 'loot:b1:1,0'),
+      deriveStream('golden-3', 'loot:grave:golden-map.b1:1,0'),
     );
-    expect(listOf(byLabel)).toBe('coinsx5,health-bottlex1,coinsx9');
+    expect(listOf(byLabel)).toBe('coinsx5,bone-charmx1');
   });
 
   it('king grave: placements and bag for 20 seeds', () => {

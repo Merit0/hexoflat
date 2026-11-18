@@ -135,6 +135,12 @@ export const collectSchema = z.object({
 });
 export type CollectState = z.infer<typeof collectSchema>;
 
+export const battleTokenSecretSchema = z.strictObject({
+  seed: z.string().min(1),
+  mapId: z.string().min(1),
+});
+export type BattleTokenSecret = z.infer<typeof battleTokenSecretSchema>;
+
 export const battleStateSchema = z.object({
   id: z.string().min(1),
   seed: z.string().min(1),
@@ -166,7 +172,7 @@ export const battleStateSchema = z.object({
   fallen: z.array(z.string()).optional(),
   collect: collectSchema.optional(),
   tokenOrigin: tokenOriginSchema.optional(),
-  tokenSecret: z.strictObject({ seed: z.string().min(1), mapId: z.string().min(1) }).optional(),
+  tokenSecret: battleTokenSecretSchema,
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
 
@@ -178,6 +184,8 @@ export const battleSetupSchema = z.object({
   boulders: z.array(boulderSchema).default([]),
   advantage: battleSideSchema.optional(),
   taskHistory: z.record(z.string(), z.array(z.boolean())).optional(),
+  tokenSecret: battleTokenSecretSchema,
 });
 export type BattleSetup = z.infer<typeof battleSetupSchema>;
 export type BattleSetupInput = z.input<typeof battleSetupSchema>;
+export type BattleLayoutInput = Omit<BattleSetupInput, 'tokenSecret'>;

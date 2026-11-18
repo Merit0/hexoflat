@@ -9,6 +9,7 @@ import type {
 } from '@hexoflat/engine/battle/battle-state';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
+import { TEST_TOKEN_SECRET } from '@hexoflat/engine/battle/battle-test-setup';
 import { beginTurn } from '@hexoflat/engine/battle/turn';
 import { devBattleHero } from '@/a-game-scenes/battle-scene/dev-battlefield';
 import { battleMovePreview, type BattleUiMode } from './battle-board-tap';
@@ -26,7 +27,13 @@ function heroTurn(terrain: Record<string, BattleTerrain> = {}, will?: number): B
     { ...devBattleHero('h'), pos: { q: 0, r: 0 } },
     enemyCreature('skeleton-warrior', 'w', { q: 3, r: -3 }),
   ];
-  const battle = startBattle({ id: 'b', seed: 's', board: board(terrain), creatures }).battle;
+  const battle = startBattle({
+    id: 'b',
+    seed: 's',
+    board: board(terrain),
+    creatures,
+    tokenSecret: TEST_TOKEN_SECRET,
+  }).battle;
   battle.order = creatures.map((c) => c.id);
   battle.turnIndex = 0;
   beginTurn(battle, 'h', BATTLE_RULES);

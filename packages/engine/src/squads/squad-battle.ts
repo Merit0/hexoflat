@@ -149,9 +149,14 @@ export function beginBattle(
   if (!engagement) return refuse('NO_ENGAGEMENT');
   if (world.battle) return refuse('BATTLE_OPEN');
   if (!findSquad(world.map, engagement.squadId)) return refuse('UNKNOWN_SQUAD');
+  if (!world.loot) throw new Error('NO_SERVER_SECRET');
   const fighters = heroes.map((hero) => withInventoryLoadout(hero, world.inventory));
   const plan = planSquadBattle(world.map, engagement, fighters);
-  const setup = { ...plan.deployment.setup, taskHistory: world.knowledge?.history ?? {} };
+  const setup = {
+    ...plan.deployment.setup,
+    taskHistory: world.knowledge?.history ?? {},
+    tokenSecret: { seed: world.loot.seed, mapId: world.loot.sourceId },
+  };
   const result = startBattle(setup, rules);
   world.battle = result.battle;
   engagement.startItems = startItemsOf(fighters);

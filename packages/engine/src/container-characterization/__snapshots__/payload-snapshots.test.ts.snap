@@ -87,7 +87,7 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
       "placed": [],
       "toBag": [
         {
-          "amount": 33,
+          "amount": 41,
           "itemKey": "coins",
         },
         {
@@ -100,7 +100,7 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
   },
   {
     "payload": {
-      "amount": 33,
+      "amount": 41,
       "heroId": "hero",
       "key": "coins",
       "placedAt": [
@@ -163,7 +163,7 @@ exports[`CH-P0 payload snapshots: grave > the full loot: CONTAINER_OPENED 1`] = 
       "nothing": false,
       "placed": [
         {
-          "amount": 14,
+          "amount": 10,
           "hex": {
             "q": 1,
             "r": -1,
@@ -200,7 +200,7 @@ exports[`CH-P0 payload snapshots: grave > the pickup event and its refusals 1`] 
   "LOOT_PICKED": [
     {
       "payload": {
-        "amount": 14,
+        "amount": 10,
         "creatureId": "hero",
         "hex": {
           "q": 1,
@@ -212,7 +212,7 @@ exports[`CH-P0 payload snapshots: grave > the pickup event and its refusals 1`] 
     },
     {
       "payload": {
-        "amount": 14,
+        "amount": 10,
         "heroId": "hero",
         "key": "coins",
         "placedAt": [

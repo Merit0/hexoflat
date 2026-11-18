@@ -8,6 +8,7 @@ import type {
 } from '@hexoflat/engine/battle/battle-state';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
+import { TEST_TOKEN_SECRET } from '@hexoflat/engine/battle/battle-test-setup';
 import { beginTurn } from '@hexoflat/engine/battle/turn';
 import { devBattleHero } from '@/a-game-scenes/battle-scene/dev-battlefield';
 import { battleOverlayModel, type BattleOverlayInput } from './battle-overlay-model';
@@ -24,7 +25,13 @@ function heroTurn(
   creatures: BattleCreature[],
   terrain: Record<string, BattleTerrain> = {},
 ): BattleState {
-  const battle = startBattle({ id: 'b', seed: 's', board: board(terrain), creatures }).battle;
+  const battle = startBattle({
+    id: 'b',
+    seed: 's',
+    board: board(terrain),
+    creatures,
+    tokenSecret: TEST_TOKEN_SECRET,
+  }).battle;
   battle.order = creatures.map((c) => c.id);
   battle.turnIndex = 0;
   beginTurn(battle, creatures[0].id, BATTLE_RULES);

@@ -16,7 +16,11 @@ import type { BoardDescriptor } from '../boards/board-descriptors';
 import { deriveStream } from '../utils/random-seeded';
 import { applyCommand } from '../commands/apply-command';
 import { engagementSchema, type Engagement } from '../squads/engagement';
-import { battleStateSchema, type BattleState } from '../battle/battle-state';
+import {
+  battleStateSchema,
+  type BattleState,
+  type BattleTokenSecret,
+} from '../battle/battle-state';
 import { createRecordingPorts } from './server-ports';
 import { findEntryHex } from './hero-placement';
 
@@ -101,14 +105,26 @@ export function worldTokenOrigin(
   return locationTokenOrigin(world.locationKey, world.descriptor);
 }
 
-export function worldTokenSecret(world: Pick<ServerWorld, 'worldSeed' | 'mapId'>) {
+export function worldTokenSecret(
+  world: Pick<ServerWorld, 'worldSeed' | 'mapId'>,
+): BattleTokenSecret {
   return { seed: world.worldSeed, mapId: world.mapId };
+}
+
+function withBattleSecret(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const world = raw as { worldSeed?: unknown; mapId?: unknown; battle?: unknown };
+  const battle = world.battle as { tokenSecret?: unknown } | null | undefined;
+  if (!battle || typeof battle !== 'object' || battle.tokenSecret) return raw;
+  if (typeof world.worldSeed !== 'string' || typeof world.mapId !== 'string') return raw;
+  const tokenSecret = worldTokenSecret({ worldSeed: world.worldSeed, mapId: world.mapId });
+  return { ...world, battle: { ...battle, tokenSecret } };
 }
 
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   const stale = staleWorldOf(raw);
   if (stale) throw stale;
-  const parsed = serializedWorldSchema.parse(raw);
+  const parsed = serializedWorldSchema.parse(withBattleSecret(raw));
   const map = HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true });
   if (parsed.locationKey === 'camping') installCampFacilities(map, parsed.heroCoordinates);
   return {

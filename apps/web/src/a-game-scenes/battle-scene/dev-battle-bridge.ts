@@ -1,7 +1,7 @@
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
 import { applyBattleCommand } from '@hexoflat/engine/battle/apply-battle';
 import { isFightCommand, type BattleCommand } from '@hexoflat/engine/battle/battle-commands';
-import type { BattleSetupInput, BattleState } from '@hexoflat/engine/battle/battle-state';
+import type { BattleLayoutInput, BattleState } from '@hexoflat/engine/battle/battle-state';
 import { projectBattleEvent, projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
 import type { BattleReply, BattleRequest } from '@/services/battle/battle-reply';
@@ -28,7 +28,7 @@ function replyOf(state: BattleState | undefined, raw: DomainEvent[]): BattleRepl
 }
 
 export function createDevBattleBridge(
-  setup: () => BattleSetupInput | null,
+  setup: () => BattleLayoutInput | null,
   onClose: () => void,
   clock: () => number = Date.now,
 ): DevBattleBridge {
@@ -63,7 +63,10 @@ export function createDevBattleBridge(
         const input = setup();
         if (!input)
           return Promise.resolve({ ...replyOf(undefined, []), ok: false, code: 'NO_ENGAGEMENT' });
-        const started = startBattle(input);
+        const started = startBattle({
+          ...input,
+          tokenSecret: { seed: crypto.randomUUID(), mapId: 'dev-battlefield' },
+        });
         state = started.battle;
         return Promise.resolve(replyOf(state, started.events));
       }

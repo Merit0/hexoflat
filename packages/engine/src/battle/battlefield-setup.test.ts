@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { generateBattlefield, battlefieldSeed } from './battlefield';
 import { drawWithAdvantage } from './initiative';
 import { startBattle } from './start-battle';
-import { hero } from './battle-test-setup';
+import { hero, TEST_TOKEN_SECRET } from './battle-test-setup';
 import { battleDistance, hexKey } from './hex-battle-geom';
 import { createSeededRandom } from '../utils/random-seeded';
 import {
@@ -134,7 +134,10 @@ describe('REQ-ENC-005 deployment', () => {
   });
 
   it('starts a deployed battle with the advantage only in round 1', () => {
-    const { battle } = startBattle(deploy('enc-start', false).setup);
+    const { battle } = startBattle({
+      ...deploy('enc-start', false).setup,
+      tokenSecret: TEST_TOKEN_SECRET,
+    });
     expect(battle.round).toBe(1);
     expect(battle.advantage).toBe('heroes');
     expect(Object.values(battle.draws).sort()).toEqual([1, 2, 3, 4, 5, 6]);

@@ -4,7 +4,8 @@ import { emptyProgressState } from '../aggregates/progress-state';
 import { SKELETON_KING_TABLE_ID } from '../content/loot-tables.content';
 import { emptyInventoryState } from '../inventory/inventory-state';
 import { projectBattleForViewer } from '../battle/projection';
-import type { BattleState } from '../battle/battle-state';
+import type { BattleState, BattleTokenSecret } from '../battle/battle-state';
+import type { LootLists } from '../containers/container';
 import { fight, setGraveTables, slay, warrior } from '../battle/collect-test-setup';
 import { planClaim } from '../quests/quest-log';
 import { AT_BOARD } from '../quests/quest-test-setup';
@@ -36,19 +37,28 @@ function campChestTokens(rngSeed: string): ItemToken[] {
   return result.inventory.stash.cells.flatMap((cell) => (cell?.token ? [cell.token] : []));
 }
 
-function graveTokens(secret: { seed: string; mapId: string }): ItemToken[] {
-  const state: BattleState = fight([warrior('w1', { q: 2, r: 0 })], { seed: BATTLE_SEED });
-  state.tokenSecret = secret;
+function graveContents(secret: BattleTokenSecret, battleSeed = BATTLE_SEED): LootLists[] {
+  const state: BattleState = fight([warrior('w1', { q: 2, r: 0 })], {
+    seed: battleSeed,
+    tokenSecret: secret,
+  });
   slay(state, 'w1');
   setGraveTables(
     state,
     0,
     Array.from({ length: 20 }, () => SKELETON_KING_TABLE_ID),
   );
-  return state.collect!.graves.flatMap((grave) =>
-    (grave.container?.contents ?? []).flat().flatMap((drop) => (drop.token ? [drop.token] : [])),
+  return state.collect!.graves.map((grave) => grave.container?.contents ?? []);
+}
+
+function graveTokens(secret: BattleTokenSecret): ItemToken[] {
+  return graveContents(secret).flatMap((lists) =>
+    lists.flat().flatMap((drop) => (drop.token ? [drop.token] : [])),
   );
 }
+
+const itemsOf = (graves: LootLists[]) =>
+  graves.map((lists) => lists.map((list) => list.map(({ itemKey, amount }) => [itemKey, amount])));
 
 function worldOf(mapId: string) {
   return createServerWorld('cave', mapId, EXPEDITION_SEED, HERO);
@@ -112,8 +122,10 @@ describe('LG5f a token id never carries a seed', () => {
   });
 
   it('the battle projection hides the token secret', () => {
-    const state = fight([warrior('w1', { q: 2, r: 0 })], { seed: BATTLE_SEED });
-    state.tokenSecret = worldTokenSecret(worldOf(MAP_A));
+    const state = fight([warrior('w1', { q: 2, r: 0 })], {
+      seed: BATTLE_SEED,
+      tokenSecret: worldTokenSecret(worldOf(MAP_A)),
+    });
     expect(projectBattleForViewer(state, 'heroes')).not.toHaveProperty('tokenSecret');
   });
 });
@@ -137,12 +149,29 @@ describe('LG5f token values follow the server secret', () => {
     expect(other).not.toEqual(first);
   });
 
-  it('grave: the same secret gives the same tokens, another secret other tokens', () => {
+  it('LG5g grave: the same secret gives the same contents and tokens, another secret other contents', () => {
     const secret = { seed: `${EXPEDITION_SEED}:${MAP_A}`, mapId: MAP_A };
-    const first = graveTokens(secret);
-    expect(graveTokens(secret)).toEqual(first);
-    const other = graveTokens({ ...secret, seed: `${OTHER_RNG_SEED}:${MAP_A}` });
-    expect(other.map((token) => token.id)).toEqual(first.map((token) => token.id));
-    expect(other).not.toEqual(first);
+    const first = graveContents(secret);
+    expect(first.flat(2).length).toBeGreaterThan(0);
+    expect(graveContents(secret)).toEqual(first);
+    const other = graveContents({ ...secret, seed: `${OTHER_RNG_SEED}:${MAP_A}` });
+    expect(itemsOf(other)).not.toEqual(itemsOf(first));
+  });
+
+  it('LG5g grave: the public battle seed does not change the contents or the tokens', () => {
+    const secret = { seed: `${EXPEDITION_SEED}:${MAP_A}`, mapId: MAP_A };
+    expect(graveContents(secret, '9:9:bone-court:battlefield:3')).toEqual(graveContents(secret));
+  });
+
+  it('LG5g the battle projection and its JSON never carry the token secret', () => {
+    const secret = worldTokenSecret(worldOf(MAP_A));
+    const state = fight([warrior('w1', { q: 2, r: 0 })], {
+      seed: BATTLE_SEED,
+      tokenSecret: secret,
+    });
+    slay(state, 'w1');
+    const text = JSON.stringify(projectBattleForViewer(state, 'heroes'));
+    expect(text).not.toContain('tokenSecret');
+    expect(text).not.toContain(secret.seed);
   });
 });

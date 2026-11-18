@@ -3,8 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
-import { isFreeHex } from '@hexoflat/engine/battle/battle-board';
-import { hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
+import { isAlive, isFreeHex } from '@hexoflat/engine/battle/battle-board';
+import { lootTableIdOfKind } from '@hexoflat/engine/battle/battle-catalogue';
+import { battlefieldSeed } from '@hexoflat/engine/battle/battlefield';
+import type { BattleProjection } from '@hexoflat/engine/battle/projection';
+import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-battle-geom';
+import { rollContainerContents } from '@hexoflat/engine/containers/create-container';
+import type { LootLists } from '@hexoflat/engine/containers/container';
+import { lootTableOf } from '@hexoflat/engine/content/loot-tables.content';
+import { DEFAULT_TOKEN_ORIGIN } from '@hexoflat/engine/tokens/token-origin';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { LOOT_TABLES } from '@hexoflat/engine/content/loot-tables.content';
 import { lootStreamLabel } from '@hexoflat/engine/loot/roll-loot';
@@ -278,7 +285,7 @@ describe.skipIf(!dbAvailable)(
       expect(text).toContain('"chest"');
     });
 
-    async function wonGrave() {
+    async function wonGrave(squadKey: string = HEXOBJECT_KEYS.SKELETON_PACK) {
       process.env.HEXOFLAT_E2E_FIXTURES = '1';
       const { userId, heroId } = await kit.newPlayer();
       await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
@@ -298,7 +305,7 @@ describe.skipIf(!dbAvailable)(
           t.coordinates.columnIndex === spot.columnIndex &&
           t.coordinates.rowIndex === spot.rowIndex,
       )!;
-      tile.hexobject = HexObjectFactory.create(HEXOBJECT_KEYS.SKELETON_PACK, spot);
+      tile.hexobject = HexObjectFactory.create(squadKey as never, spot);
       tile.isRevealed = true;
       await saveWorld(expeditionId, docKey, loaded);
       await sendWorld(userId, heroId, 'WORLD_ACTION', {
@@ -369,6 +376,43 @@ describe.skipIf(!dbAvailable)(
         secrets,
         c.seeds,
       );
+    });
+
+    const itemsOf = (lists: LootLists) =>
+      lists.map((list) => list.map(({ itemKey, amount }) => ({ itemKey, amount })));
+
+    function predictFromPublicData(view: BattleProjection) {
+      const [squadId, attempt] = view.id.split('#');
+      const seed = battlefieldSeed(squadId, Number(attempt));
+      return view.collect!.graves.map(({ hex }) => {
+        const tables = view.creatures
+          .filter((c) => c.side === 'enemies' && !isAlive(c) && sameHex(c.pos, hex))
+          .flatMap((c) => lootTableIdOfKind(c.kind) ?? [])
+          .map((id) => lootTableOf(id));
+        return itemsOf(
+          rollContainerContents({
+            kind: 'grave',
+            tables,
+            seed,
+            sourceId: view.id,
+            targetKey: hexKey(hex),
+            origin: DEFAULT_TOKEN_ORIGIN,
+          }),
+        );
+      });
+    }
+
+    it('LG5g-1 the client cannot reproduce the grave contents from client-visible battle data', async () => {
+      const c = await wonGrave(HEXOBJECT_KEYS.BONE_COURT);
+      const { battleView } = (await world.snapshot(c.userId, c.heroId)) as {
+        battleView: BattleProjection;
+      };
+      const stored = (await heldWorld(c.userId, c.heroId)).loaded.battle!.collect!.graves;
+      const actual = battleView.collect!.graves.map(({ hex }) =>
+        itemsOf(stored.find((grave) => sameHex(grave.hex, hex))!.container!.contents!),
+      );
+      expect(actual.flat(2).length).toBeGreaterThan(0);
+      expect(predictFromPublicData(battleView)).not.toEqual(actual);
     });
 
     async function boardHero() {

@@ -5,7 +5,7 @@ import { createContainer, openInSpace } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
 import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { lootTableIdOfKind } from './battle-catalogue';
-import { graveTokenSource } from './grave-token-source';
+import { graveLootSource, graveTokenSource } from './grave-token-source';
 import { collectActorRefusal, graveAt, graveSpace } from './grave-container-space';
 import { isAlive, isFreeHex } from './battle-board';
 import type { BattleAction } from './battle-commands';
@@ -55,9 +55,7 @@ export function enterCollectPhase(state: BattleState): DomainEvent[] {
       kind: 'grave',
       at: grave.hex,
       tables: grave.tables.map((id) => lootTableOf(id)),
-      seed: state.seed,
-      sourceId: state.id,
-      targetKey: hexKey(grave.hex),
+      ...graveLootSource(state, hexKey(grave.hex)),
       origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
       tokenSource: graveTokenSource(state),
     });

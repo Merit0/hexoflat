@@ -1,16 +1,22 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
-import { giveTurn, hero, skeleton } from '@hexoflat/engine/battle/battle-test-setup';
+import {
+  giveTurn,
+  hero,
+  skeleton,
+  TEST_TOKEN_SECRET,
+} from '@hexoflat/engine/battle/battle-test-setup';
 import { startBattle } from '@hexoflat/engine/battle/start-battle';
 import type { BattleReply, BattleRequest } from '@/services/battle/battle-server';
 import { useBattleStore } from './battle-store';
 import { testDeploy } from './battle-store.fixture';
 
 function enemyTurnProjection() {
-  const started = startBattle(
-    testDeploy([hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]).setup,
-  );
+  const started = startBattle({
+    ...testDeploy([hero({ q: 0, r: 0 }), skeleton('s1', { q: 3, r: 0 })]).setup,
+    tokenSecret: TEST_TOKEN_SECRET,
+  });
   return projectBattleForViewer(giveTurn(started.battle, ['s1', 'hero']), 'heroes');
 }
 
