@@ -122,10 +122,12 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
         continue;
       }
       if (token.name.kind !== 'generated') throw new Error('expected a generated name');
-      const prefixTheme = themeOf.get(token.name.prefix);
-      if (prefixTheme) expect(themeOf.get(token.name.suffix)).not.toBe(prefixTheme);
-      expect(words.prefixes(token.rarity).map((word) => word.key)).toContain(token.name.prefix);
-      expect(words.suffixes(token.rarity).map((word) => word.key)).toContain(token.name.suffix);
+      const { prefix, suffix } = token.name;
+      expect(prefix ?? suffix).toBeDefined();
+      if (prefix && suffix && themeOf.get(prefix))
+        expect(themeOf.get(suffix)).not.toBe(themeOf.get(prefix));
+      if (prefix) expect(words.prefixes(token.rarity).map((word) => word.key)).toContain(prefix);
+      if (suffix) expect(words.suffixes(token.rarity).map((word) => word.key)).toContain(suffix);
     }
   });
 

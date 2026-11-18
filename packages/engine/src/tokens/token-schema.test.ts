@@ -27,6 +27,10 @@ const CASES: SchemaCase[] = [
       ['an unknown field', { ...sampleToken(), durability: 30 }],
       ['a base god-executor token', sampleToken({ rarity: ERarityKind.GOD_EXECUTOR })],
       ['a unique token without uniqueKey', sampleToken({ origin: 'unique' })],
+      [
+        'a generated name with neither prefix nor suffix',
+        sampleToken({ name: { kind: 'generated', noun: 'sword' } }),
+      ],
     ],
   },
   {

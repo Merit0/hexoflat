@@ -27,3 +27,4 @@ export {
   flattenTextTree,
   type TokenDictionary,
 } from './format-token';
+export { tokenNameRuleFailures, letterCount, type TokenNameRules } from './name-rules';

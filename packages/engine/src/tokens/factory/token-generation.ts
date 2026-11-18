@@ -13,7 +13,7 @@ import type {
 } from '../token-keys';
 import type { DescriptionLine, ItemToken, TokenAttribute, TokenName } from '../token-schema';
 
-export const TOKEN_GENERATOR_VERSION = 2;
+export const TOKEN_GENERATOR_VERSION = 3;
 
 export const TOKEN_STEPS = ['type', 'name', 'sprite', 'attributes', 'skills', 'price'] as const;
 export type TTokenStep = (typeof TOKEN_STEPS)[number];

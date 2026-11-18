@@ -28,9 +28,9 @@ export function emptyTokenExtensions(): TokenExtensions {
 export const tokenNameSchema = z.discriminatedUnion('kind', [
   z.strictObject({
     kind: z.literal('generated'),
-    prefix: wordKeySchemaFor('prefix'),
+    prefix: wordKeySchemaFor('prefix').optional(),
     noun: itemTypeKeySchema,
-    suffix: wordKeySchemaFor('suffix'),
+    suffix: wordKeySchemaFor('suffix').optional(),
   }),
   z.strictObject({
     kind: z.literal('noun'),
@@ -90,6 +90,13 @@ export const itemTokenSchema = z
         code: 'custom',
         path: ['rarity'],
         message: 'god-executor tokens are unique only',
+      });
+    }
+    if (token.name.kind === 'generated' && !token.name.prefix && !token.name.suffix) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['name'],
+        message: 'a generated name needs a prefix or a suffix',
       });
     }
     if (token.name.kind !== 'authored' && token.name.noun !== token.type) {

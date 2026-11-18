@@ -12,7 +12,7 @@ import { ITEM_TYPES } from './item-types.content';
 import { TOKEN_ATTRIBUTES } from './token-attributes.content';
 import { TOKEN_PRICE_RANGES } from './token-prices.content';
 import { TOKEN_UNIQUES } from './token-uniques.content';
-import { TOKEN_NAME_TEMPLATE_KEY, TOKEN_WORDS } from './token-words.content';
+import { TOKEN_NAME_TEMPLATE_KEYS, TOKEN_WORDS } from './token-words.content';
 
 export interface TokenContent {
   types: readonly ItemTypeDefinition[];
@@ -47,7 +47,7 @@ export function tokenLocaleKeys(
   uniques: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
 ): string[] {
   return [
-    TOKEN_NAME_TEMPLATE_KEY,
+    ...Object.values(TOKEN_NAME_TEMPLATE_KEYS),
     ...content.types.map((type) => type.nounKey),
     ...content.words.prefixes.map((word) => word.key),
     ...content.words.suffixes.map((word) => word.key),

@@ -16,7 +16,14 @@ export { TOKEN_UNIQUES } from '../content/token-uniques.content';
 export { ITEM_TYPES } from '../content/item-types.content';
 export { TOKEN_ATTRIBUTES } from '../content/token-attributes.content';
 export { TOKEN_PRICE_RANGES } from '../content/token-prices.content';
-export { TOKEN_WORDS, TOKEN_NAME_TEMPLATE_KEY } from '../content/token-words.content';
+export {
+  TOKEN_WORDS,
+  TOKEN_NAME_TEMPLATE_KEY,
+  TOKEN_NAME_TEMPLATE_KEYS,
+  TOKEN_NAME_RULES,
+  TOKEN_NAME_SHAPE_WEIGHTS,
+  type TokenNameShape,
+} from '../content/token-words.content';
 export {
   TOKEN_CONTENT,
   TOKEN_PRICE_ANCHOR_KEY,

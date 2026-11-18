@@ -1,4 +1,4 @@
-import { TOKEN_NAME_TEMPLATE_KEY } from '../../content/token-words.content';
+import { TOKEN_NAME_TEMPLATE_KEYS } from '../../content/token-words.content';
 import { i18nKeySchema, wordKeyOf } from '../token-keys';
 import type { DescriptionLine, TokenName } from '../token-schema';
 
@@ -31,10 +31,11 @@ export function formatTokenName(name: TokenName, dictionary: TokenDictionary): s
   if (name.kind === 'authored') return textOf(name.nameKey, dictionary);
   const noun = textOf(wordKeyOf('noun', name.noun), dictionary);
   if (name.kind === 'noun') return noun;
-  return fill(textOf(TOKEN_NAME_TEMPLATE_KEY, dictionary), {
-    prefix: textOf(name.prefix, dictionary),
+  const shape = name.prefix && name.suffix ? 'full' : name.prefix ? 'prefix' : 'suffix';
+  return fill(textOf(TOKEN_NAME_TEMPLATE_KEYS[shape], dictionary), {
     noun,
-    suffix: textOf(name.suffix, dictionary),
+    ...(name.prefix ? { prefix: textOf(name.prefix, dictionary) } : {}),
+    ...(name.suffix ? { suffix: textOf(name.suffix, dictionary) } : {}),
   });
 }
 
