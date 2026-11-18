@@ -1,6 +1,5 @@
 import { tokenSourceIdOf } from '../tokens/game-tokens';
 
-/** Repair only duplicate identities from older multi-row quest rewards; never reroll stats. */
 export function upcastTokenIdentities(old: unknown, ctx: { heroId: string }): unknown {
   if (!old || typeof old !== 'object') return old;
   const state = structuredClone(old) as {

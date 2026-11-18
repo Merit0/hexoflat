@@ -17,7 +17,6 @@ export function tokenSupplyFailure(
       cell?.token ? [cell.token.id] : [],
     ),
   );
-  // Gear occupies one bag cell per token. The placement planner rejects larger batches.
   for (let index = 0; index < Math.min(amount, state.bag.length); index++) {
     const token = supply?.tokens?.[index];
     if (!token) {

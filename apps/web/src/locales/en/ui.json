@@ -1056,5 +1056,12 @@
     },
     "findInSilesia": "Find in Silesia",
     "tab": "Quest"
+  },
+  "inventory": {
+    "grantReject": {
+      "TOKEN_SOURCE_REQUIRED": "This gear cannot be made here: it has no source.",
+      "DUPLICATE_TOKEN": "You already have this exact item.",
+      "INVALID_AMOUNT": "The amount must be a whole number above zero."
+    }
   }
 }

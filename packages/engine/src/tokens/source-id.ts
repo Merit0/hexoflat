@@ -5,7 +5,6 @@ function sourcePart(value: string): string {
   return `_u${Array.from(value, (char) => char.codePointAt(0)!.toString(16)).join('-')}`;
 }
 
-/** Segments are encoded independently; neither separators nor case can alias another source. */
 export function tokenSourceIdOf(kind: TTokenSourceKind, ...parts: string[]): string {
   return `${kind}:${parts.map(sourcePart).join('.')}`;
 }

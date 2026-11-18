@@ -2,7 +2,6 @@ import type { AttributeRegistry } from './registries';
 import type { TMapTier } from './token-keys';
 import type { TokenAttribute } from './token-schema';
 
-/** The tier value is both the normal roll and the ceiling for authored bonuses. */
 export function attributeFailure(
   registry: AttributeRegistry,
   type: string,

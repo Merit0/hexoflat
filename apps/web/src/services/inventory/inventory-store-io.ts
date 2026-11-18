@@ -19,6 +19,7 @@ import {
 } from '@hexoflat/engine/inventory/inventory-state';
 import { STASH_CAPACITY } from '@hexoflat/engine/inventory/stash-constants';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
+import { i18n } from '@/i18n';
 import { inventorySession, LOCAL_HERO_ID } from './inventory-session';
 import { mirrorLocalCommand } from './inventory-mirror';
 import type { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -236,7 +237,7 @@ export interface StockOutcome {
 
 const NO_CONTEXT: InventoryContext = { stashOpen: false, battleOpen: false };
 
-function grantMessage(reason: string | undefined, key: string, capacityKg: number): string {
+export function grantMessage(reason: string | undefined, key: string, capacityKg: number): string {
   switch (reason) {
     case 'TOO_HEAVY':
       return `Too heavy! Carry limit: ${capacityKg} kg`;
@@ -244,6 +245,12 @@ function grantMessage(reason: string | undefined, key: string, capacityKg: numbe
       return 'Inventory is full!';
     case 'NOT_STORABLE':
       return 'Hand cannot be added to inventory.';
+    case 'TOKEN_SOURCE_REQUIRED':
+      return i18n.global.t('inventory.grantReject.TOKEN_SOURCE_REQUIRED');
+    case 'DUPLICATE_TOKEN':
+      return i18n.global.t('inventory.grantReject.DUPLICATE_TOKEN');
+    case 'INVALID_AMOUNT':
+      return i18n.global.t('inventory.grantReject.INVALID_AMOUNT');
     default:
       return `Unknown hexobject prototype: ${key}`;
   }

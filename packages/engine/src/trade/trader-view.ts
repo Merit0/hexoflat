@@ -26,50 +26,47 @@ function withSlotToken<E extends { key: string; amount: number; token?: ItemToke
   return { ...entry, token: mintBaseToken(mint, entry.key, 0) };
 }
 
-function slotMint(
+function shopNamespace(rngSeed: string): string {
+  return sha256Hex(`shop-namespace:${rngSeed}`).slice(0, 32);
+}
+
+interface SlotMintBase {
+  rngSeed: string;
+  namespace: string;
+  key: TTraderKey;
+  serial: number;
+  origin: TokenOrigin;
+}
+
+function slotMint(base: SlotMintBase, slot: string): TokenMint {
+  return {
+    seed: base.rngSeed,
+    sourceId: tokenSourceIdOf('shop', base.namespace, base.key, String(base.serial), slot),
+    origin: base.origin,
+  };
+}
+
+function slotMintBase(
+  def: TTraderDefinition,
   rngSeed: string,
   key: TTraderKey,
   serial: number,
-  slot: string,
-  origin: TokenOrigin,
-): TokenMint {
+): SlotMintBase {
   return {
-    seed: rngSeed,
-    sourceId: tokenSourceIdOf(
-      'shop',
-      sha256Hex(`shop-namespace:${rngSeed}`).slice(0, 32),
-      key,
-      String(serial),
-      slot,
-    ),
-    origin,
+    rngSeed,
+    namespace: shopNamespace(rngSeed),
+    key,
+    serial,
+    origin: def.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
   };
 }
 
 function withTraderTokens(state: TraderState, rngSeed: string, key: TTraderKey): TraderState {
-  const goods = state.goods.map((good, index) =>
-    withSlotToken(
-      good,
-      slotMint(
-        rngSeed,
-        key,
-        state.serial,
-        `g${index}`,
-        (TRADERS[key] as TTraderDefinition).tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
-      ),
-    ),
-  );
+  const def: TTraderDefinition = TRADERS[key];
+  const base = slotMintBase(def, rngSeed, key, state.serial);
+  const goods = state.goods.map((good, index) => withSlotToken(good, slotMint(base, `g${index}`)));
   const buyback = state.buyback.map((entry, index) =>
-    withSlotToken(
-      entry,
-      slotMint(
-        rngSeed,
-        key,
-        state.serial,
-        `b${index}`,
-        (TRADERS[key] as TTraderDefinition).tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
-      ),
-    ),
+    withSlotToken(entry, slotMint(base, `b${index}`)),
   );
   const same =
     goods.every((good, i) => good === state.goods[i]) &&
@@ -84,11 +81,9 @@ export function rollTraderGoods(
   serial: number,
 ): (TraderGood | null)[] {
   const label = goodsStreamLabel(key, serial);
+  const base = slotMintBase(def, rngSeed, key, serial);
   const goods = rollGoods(def, deriveStream(rngSeed, label)).map((good, index) =>
-    withSlotToken(
-      good,
-      slotMint(rngSeed, key, serial, `g${index}`, def.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN),
-    ),
+    withSlotToken(good, slotMint(base, `g${index}`)),
   );
   return applyDiscounts(def, goods, deriveStream(rngSeed, `${label}:deals`));
 }

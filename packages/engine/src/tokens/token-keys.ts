@@ -17,10 +17,12 @@ export const TOKEN_SOURCE_KINDS = [
   'quest',
   'shop',
   'upcast',
+  'grant',
+  'repair',
   'dev',
   'test',
 ] as const;
-export type TTokenSourceKind = string;
+export type TTokenSourceKind = (typeof TOKEN_SOURCE_KINDS)[number];
 
 const SOURCE_ID_PART = `${SLUG_PART}:[a-z0-9._-]+`;
 export const tokenSourceIdSchema = z

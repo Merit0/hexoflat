@@ -94,6 +94,7 @@ Content (heroes, cards, enemies, items, statuses, maps, scenarios) is data, vali
 
 - Schemas: `content-schema.ts`. Content files: `*.content.ts`. Registration: `content-map.ts`, `index.ts`.
 - Display strings are **i18n keys**, never literal text — the engine is language-neutral and `apps/web` resolves them through vue-i18n against `src/locales/{uk,en}/content.json`.
+- `enter.locationKey` in `content-schema.ts` is a plain `z.string()` on purpose: `LocationKey` lives in `world-map-registry.ts`, which pulls in rendering code, and content must stay framework-agnostic.
 - Prefer capability fields over key checks. Example already in the codebase: any object carrying a `heal` field is a valid `USE` target, so adding a new healing object needs no `hexobjectKey` branch anywhere.
 - Write a schema only when a near-term consumer exists. A schema nobody reads is an unverified guess frozen into code.
 

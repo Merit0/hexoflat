@@ -10,7 +10,6 @@ import {
 } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
-import { HERO_SHIELD_SLOTS } from '../combat/shield-slots';
 import { MAX_EQUIPMENT_HEARTS } from '../combat/heart-slots';
 import type { LocationKey } from '../registry/location-key';
 import { LOCATION_KEYS } from '../registry/location-key';
@@ -41,8 +40,6 @@ const actionConfigSchema = z.object({
 const enterSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('WORLD'),
-    // Loose on purpose: LocationKey lives in world-map-registry.ts, which pulls in
-    // rendering code, and content must stay framework-agnostic.
     locationKey: z.string(),
   }),
   z.object({ type: z.literal('PORTAL') }),
@@ -75,10 +72,6 @@ const baseContentFields = {
   spritePath: z.string().optional(),
   alwaysVisible: z.boolean().optional(),
   tileBackground: z.string().optional(),
-  // title/subtitle/description (and creature.name/action labels below) are
-  // i18n keys (e.g. 'content.skeletor.title'), not literal display text —
-  // packages/engine stays language-neutral, apps/web resolves them via
-  // vue-i18n against src/locales/{uk,en}/content.json.
   description: z.string().optional(),
 
   title: z.string(),
@@ -87,9 +80,6 @@ const baseContentFields = {
   yields: z.record(z.string(), z.number()).optional(),
   equip: z.object({ slot: z.enum(EQUIP_SLOTS) }).optional(),
   enter: enterSchema.optional(),
-  // Any object with this field is a valid USE target for the generic
-  // rest-and-heal flow — see action-starters/finishers-registry.ts's USE
-  // handlers. No hexobjectKey check needed to add a new one.
   heal: healSchema.optional(),
   coinPrice: z.number().int().positive().optional(),
 };
@@ -135,7 +125,7 @@ export const squadSchema = z.object({
 });
 
 const creatureSchema = z.object({
-  name: z.string(), // i18n key, same convention as baseContentFields.title above
+  name: z.string(),
   hp: z.number(),
   hpMax: z.number(),
   attack: z.number(),
@@ -182,7 +172,6 @@ const equipmentSchema = z.object({
   durability: z.number(),
   durabilityMax: z.number(),
   defense: z.number().optional(),
-  shields: z.number().int().min(0).max(HERO_SHIELD_SLOTS).optional(),
   hearts: z.number().int().min(0).max(MAX_EQUIPMENT_HEARTS).optional(),
   rarity: raritySchema.optional(),
   capabilities: z
