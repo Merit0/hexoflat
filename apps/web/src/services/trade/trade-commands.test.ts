@@ -2,9 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import type { Presence } from '@hexoflat/engine';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
-import { coinPriceOf } from '@hexoflat/engine/content/content-accessors';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
-import { sellUnitPrice } from '@hexoflat/engine/trade/trader-view';
+import { priceOf, sellPriceOf } from '@hexoflat/engine/trade/price-of';
 import { TRADERS } from '@hexoflat/engine/content/traders.content';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { inventorySession } from '@/services/inventory/inventory-session';
@@ -69,7 +68,7 @@ describe('trade commands go to the server and wait for its answer', () => {
   it('buys at the engine price and changes nothing before the answer', async () => {
     const trader = await heroWithCoins(2000);
     const { index, good } = firstGood();
-    const price = coinPriceOf(good.key)! * good.amount;
+    const price = priceOf(good)! * good.amount;
 
     const pending = buyFromTrader('ilva', { list: 'goods', index }, 'auto');
     expect(coins()).toBe(2000);
@@ -93,7 +92,7 @@ describe('trade commands go to the server and wait for its answer', () => {
     expect(await buyFromTrader('ilva', { list: 'goods', index }, 'auto')).toEqual({
       ok: false,
       reason: 'NOT_ENOUGH_COINS',
-      price: coinPriceOf(good.key)! * good.amount,
+      price: priceOf(good)! * good.amount,
     });
     expect(lastSent().command.type).toBe('SHOP_BUY');
     expect(bagContents()).toEqual(before);
@@ -142,7 +141,7 @@ describe('trade commands go to the server and wait for its answer', () => {
     useHeroInventoryStore().putToInventory(K.SWORD, 1);
     await settleInventorySync();
     const index = currentInventory().bag.findIndex((cell) => cell?.key === K.SWORD);
-    const payout = sellUnitPrice(TRADERS.ilva, K.SWORD)!;
+    const payout = sellPriceOf(TRADERS.ilva, currentInventory().bag[index]!)!;
 
     expect(await sellToTrader('ilva', index)).toEqual({ ok: true });
     expect(lastSent().command).toMatchObject({

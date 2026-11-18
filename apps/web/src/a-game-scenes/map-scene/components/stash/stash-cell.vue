@@ -29,10 +29,10 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { getMeta, getPrototype } from '@hexoflat/engine';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 import type { TItemLocation } from '@hexoflat/engine/inventory/item-location';
-import { getObjectRarityTone } from '@/render/rarity';
+import { itemRarityTone } from '@/render/token-look';
+import { itemTitle } from '@/services/tokens/token-text';
 import { showsCounter } from '@/composables/item-counter';
 import { locationKey, stashFx } from '@/composables/stash-drag-state';
 import { moveGridFocus } from '@/composables/stash-grid-nav';
@@ -54,15 +54,9 @@ const tooltipPrice = computed(() => {
   return priceOf ? () => priceOf(props.location) : undefined;
 });
 
-const rarity = computed(() =>
-  props.item ? (getObjectRarityTone(getPrototype(props.item.key)) ?? undefined) : undefined,
-);
+const rarity = computed(() => (props.item ? (itemRarityTone(props.item) ?? undefined) : undefined));
 
-const label = computed(() => {
-  if (!props.item) return undefined;
-  const title = getMeta(props.item.key).title;
-  return i18n.te(title) ? i18n.t(title) : title;
-});
+const label = computed(() => (props.item ? itemTitle(props.item, i18n.locale.value) : undefined));
 
 const selected = computed(() =>
   props.item ? (context.isSelected?.(props.location, props.item) ?? false) : false,

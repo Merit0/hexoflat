@@ -6,6 +6,12 @@ const INVENTORY_POLL_TIMEOUT_MS = 5_000;
 const POLL_INTERVALS_MS = [100];
 const DRAG_MOVE_STEPS = 8;
 
+export interface BagItemLook {
+  title: string;
+  lines: string[];
+  sprite: string;
+}
+
 /** The always-mounted hero board panel (apps/web's hero-board-panel.vue). */
 export class HeroInventoryComponent extends BaseComponent {
   private get panel(): Locator {
@@ -199,6 +205,21 @@ export class HeroInventoryComponent extends BaseComponent {
   async verifyTooltipTitle(title: RegExp): Promise<void> {
     await expect(this.tooltip).toBeVisible();
     await expect(this.page.getByTestId('item-tooltip-title')).toHaveText(title);
+  }
+
+  async readGridItemLook(itemId: string): Promise<BagItemLook> {
+    await this.hoverGridItem(itemId);
+    await expect(this.tooltip).toBeVisible();
+    const title = (await this.page.getByTestId('item-tooltip-title').textContent())?.trim() ?? '';
+    const lines = (await this.page.getByTestId('item-tooltip-line').allTextContents()).map((line) =>
+      line.trim(),
+    );
+    const sprite = await this.gridToken(itemId)
+      .locator('.icon')
+      .evaluate((icon) => (icon as HTMLElement).style.backgroundImage);
+    await this.moveMouseAway();
+    await expect(this.tooltip).toBeHidden();
+    return { title, lines, sprite };
   }
 
   async verifyTooltipWillCost(will: number, locked: boolean): Promise<void> {

@@ -44,12 +44,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
-import { getPrototype } from '@hexoflat/engine';
 import { useHeroInventoryStore, type TEquipSlot } from '@/stores/hero-inventory-store';
 import { inventoryDragState } from '@/composables/use-inventory-drag';
 import EquipToken from '@/a-game-scenes/inventory-scene/components/equip-token.vue';
 import { resolveEquipCompatibility } from '@hexoflat/engine/utils/inventory/equip-compatibility';
-import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
+import { itemLook } from '@/render/token-look';
 
 const EQUIP_SLOTS: TEquipSlot[] = ['weapon', 'shield', 'armor', 'gloves', 'helm', 'boots'];
 
@@ -138,11 +137,11 @@ function slotRarityStyle(t: PseudoTile): Record<string, string> {
   const item = getEquippedItem(t.id);
   if (!item || inventoryDragState.draggingId === item.id) return {};
 
-  const tone = getObjectRarityTone(getPrototype(item.key));
-  if (!tone) return {};
+  const light = itemLook(item).light;
+  if (!light) return {};
 
   return {
-    backgroundImage: `url('${RARITY_FRAME_URLS[tone]}')`,
+    backgroundImage: `url('${light}')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',

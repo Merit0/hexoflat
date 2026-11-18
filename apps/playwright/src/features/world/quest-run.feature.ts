@@ -227,6 +227,23 @@ export class QuestRunFeature extends BaseFeature {
     });
   }
 
+  async takeStackOf(itemKey: string): Promise<void> {
+    await this.step(`Take the "${itemKey}" lying on the field`, async () => {
+      const before = await this.field.readBagTotals();
+      const { ground } = await this.field.read();
+      const stack = ground.find((candidate) => candidate.itemKey === itemKey);
+      if (!stack) throw new Error(`No "${itemKey}" dropped from the quest chest`);
+      await this.field.armHand();
+      await this.field.aimHandAt(stack.hex);
+      await this.field.pressToolHex();
+      await this.field.verifyGroundCount(ground.length - 1);
+      await this.field.verifyBagTotals({
+        ...before,
+        [itemKey]: (before[itemKey] ?? 0) + stack.quantity,
+      });
+    });
+  }
+
   async verifyOverweightSwordPickupWarning(): Promise<void> {
     await this.step(
       'Refuse an overweight sword with a visible warning and keep the hand active',

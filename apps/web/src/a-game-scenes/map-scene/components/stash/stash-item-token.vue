@@ -14,8 +14,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount } from 'vue';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
-import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
-import { rarityFrameUrlForKey } from '@/render/rarity';
+import { itemLook } from '@/render/token-look';
 import {
   hideItemTooltip,
   showItemTooltip,
@@ -33,12 +32,13 @@ const props = defineProps<{
 
 const inventory = useHeroInventoryStore();
 const rotation = computed(() => props.rotationDeg ?? inventory.ensureRotation(props.item.id));
+const look = computed(() => itemLook(props.item));
 const iconStyle = computed(() => {
-  const path = resolveInventoryView(props.item.key).iconPath;
+  const path = look.value.sprite;
   return { backgroundImage: path ? `url("${path}")` : 'none' };
 });
 const glowStyle = computed(() => {
-  const url = rarityFrameUrlForKey(props.item.key);
+  const url = look.value.light;
   return url ? { backgroundImage: `url("${url}")` } : null;
 });
 

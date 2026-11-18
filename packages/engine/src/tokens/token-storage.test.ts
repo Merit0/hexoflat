@@ -10,7 +10,7 @@ import { planList, planUnlist } from '../trade/plan-listing';
 import { planSell } from '../trade/plan-sell';
 import { buybackEntrySchema, traderGoodSchema } from '../trade/trade-state';
 import { listingSchema, emptyListings } from '../trade/listing-state';
-import { sellUnitPrice } from '../trade/trader-view';
+import { sellPriceOf } from '../trade/price-of';
 import { HERO, ILVA, SWORD, inventoryWith, traderWith } from '../trade/trade-test-setup';
 import { upcastToken } from '../inventory/upcast-item-tokens';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -50,7 +50,7 @@ describe('a token keeps its data wherever the item goes (LG5a, D1)', () => {
   });
 
   it('is sold into BUYBACK with its token and bought back as the same token', () => {
-    const unit = sellUnitPrice(ILVA, SWORD)!;
+    const unit = sellPriceOf(ILVA, { key: SWORD, token: swordToken() })!;
     const sold = planSell(heroWithTokenSword(), traderWith([]), 0, {
       split: false,
       expectedPrice: unit,
@@ -76,12 +76,14 @@ describe('a token keeps its data wherever the item goes (LG5a, D1)', () => {
     const inventory = inventoryWith({ 0: [SWORD, 1], 1: [SWORD, 1] });
     inventory.bag[0] = { ...inventory.bag[0]!, token: swordToken() };
     inventory.bag[1] = { ...inventory.bag[1]!, token: upcastToken(HERO, 'bag.1', 'sword')! };
-    const unit = sellUnitPrice(ILVA, SWORD)!;
-    const first = planSell(inventory, traderWith([]), 0, { split: false, expectedPrice: unit });
+    const first = planSell(inventory, traderWith([]), 0, {
+      split: false,
+      expectedPrice: sellPriceOf(ILVA, inventory.bag[0])!,
+    });
     if (!first.ok) throw new Error(first.reason);
     const second = planSell(first.inventory, { key: 'ilva', state: first.trader }, 1, {
       split: false,
-      expectedPrice: unit,
+      expectedPrice: sellPriceOf(ILVA, inventory.bag[1])!,
     });
     if (!second.ok) throw new Error(second.reason);
     expect(second.trader.buyback.filter(Boolean)).toHaveLength(2);

@@ -6,15 +6,15 @@ import { sumShieldPoints } from '@hexoflat/engine/combat/shield-points';
 import type { SkillProgress } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
-import { getPrototype } from '@hexoflat/engine';
 import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
+import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useBattleStore } from '@/stores/battle-store';
-import { getObjectRarityTone } from '@/render/rarity';
+import { itemRarityTone } from '@/render/token-look';
 import { SHIELD_SLOTS } from '@/constants/shield-slots';
 import { buildSkillTreeView, type SkillTreeView } from './skill-tree-view';
 
@@ -27,6 +27,7 @@ export type HeroStatId = 'attack' | 'defense' | 'load' | 'victories';
 
 export interface HandItem {
   titleKey: string;
+  token?: ItemToken;
   rarity: TRarityTone | null;
   willCost: number | null;
 }
@@ -136,12 +137,13 @@ function battleStat(key: THexobjectKey, stat: 'power' | 'shieldCapacity'): numbe
   return item ? (BATTLE_ITEMS[item]?.[stat] ?? 0) : 0;
 }
 
-function toHandItem(key: THexobjectKey, skills: SkillRanks): HandItem {
-  const view = resolveInventoryView(key);
+function toHandItem(item: { key: THexobjectKey; token?: ItemToken }, skills: SkillRanks): HandItem {
+  const view = resolveInventoryView(item.key);
   return {
     titleKey: view.title,
-    rarity: getObjectRarityTone(getPrototype(key)),
-    willCost: resolveItemTooltip(key, { skills }).use?.will ?? null,
+    ...(item.token ? { token: item.token } : {}),
+    rarity: itemRarityTone(item),
+    willCost: resolveItemTooltip(item.key, { skills }).use?.will ?? null,
   };
 }
 
@@ -161,14 +163,14 @@ export function useHeroDetails() {
     const weapon =
       weaponItem && weaponItem.key !== HEXOBJECT_KEYS.HAND
         ? {
-            item: toHandItem(weaponItem.key, skills),
+            item: toHandItem(weaponItem, skills),
             power: battleStat(weaponItem.key, 'power') || THREAT_RULES.unarmedPower,
           }
         : null;
     const shield =
       shieldItem && shieldItem.key !== HEXOBJECT_KEYS.HAND
         ? {
-            item: toHandItem(shieldItem.key, skills),
+            item: toHandItem(shieldItem, skills),
             sides: battleStat(shieldItem.key, 'shieldCapacity'),
           }
         : null;

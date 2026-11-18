@@ -4,7 +4,7 @@ export { WordPoolNameGenerator } from './name-generator';
 export { ManifestSpriteResolver } from './sprite-resolver';
 export { WeightedAttributeGenerator, MAX_BASE_TOKEN_ATTRIBUTES } from './attribute-generator';
 export { EmptySkillGenerator } from './skill-generator';
-export { RangePriceGenerator, TypePriceGenerator } from './price-generator';
+export { RangePriceGenerator } from './price-generator';
 export {
   SpecSheetDescriptionBuilder,
   TOKEN_LINE_KEYS,

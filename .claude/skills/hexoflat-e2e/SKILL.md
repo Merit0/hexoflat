@@ -179,3 +179,8 @@ Persistent quest hand (2026-11-16): `gameplay-board-host.vue` watches map identi
 Quest camera scale (2026-11-16): the board host supplies the saved world frame to `quest-field-area.vue`; `useQuestBoard` reuses `fitAtReferenceZoom`, as battles do, instead of fitting a separate quest zoom. The shared helper accepts optional hero focus for clamped following on larger fields. Quest offsets use the same pixel snapping as the world, and reference/viewport changes re-fit without mounting a background canvas. Browser entry checks compare actual screen spacing between adjacent world and quest hexes.
 
 Quest pickup refusal feedback (2026-11-16): `useQuestRunActions` sends every refusal through the shared action banner, never only a panel-local message hidden behind Inventory. Shared `pickupStack` performs one inventory grant in a trial draft, preserves inventory/events/ground on refusal, and reports `OVERWEIGHT` separately from `BAG_FULL`. Quest and battle collection share this behavior and localized carrying-limit text. Duplicate swords remain allowed when weight and slots permit.
+
+## Item tokens (LG5c, 2026-11-18)
+
+- Gear names are generated (`Reedwoven Sword of the Herald`), but they always hold the type word, so `/Axe/i`-style title checks still work; never assert an old hand-written title or a fixed gear price.
+- `e2e/hero/token-look.spec.ts` (LG-13) through `TokenLookFeature` (`rememberBagItem`, `verifyLookComesFromTheToken`, `verifyBagItemLooksTheSame`) and `HeroInventoryComponent.readGridItemLook(itemId)` (`{ title, lines, sprite }` from the tooltip and the token icon). It uses the Seeker chest (`QuestRunFeature.takeStackOf`), because the camp chest may roll no gear.

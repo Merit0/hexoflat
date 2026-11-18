@@ -9,6 +9,9 @@ import {
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
 import { RARITY_COLOR, getObjectRarity, getObjectRarityTone } from '@/render/rarity';
+import { tokenRarityTone } from '@/render/token-look';
+import { tokenDescription, tokenName } from '@/services/tokens/token-text';
+import { tokenHeartPoints } from '@hexoflat/engine/combat/heart-points';
 import { ITEM_ICON_BY_KEY, type TIconName } from '@/components/gui/icons/item-icons';
 
 export type HexInfoTranslate = (key: string, params?: Record<string, unknown>) => string;
@@ -296,9 +299,8 @@ function gearInfo(
   if (equipment?.shields) {
     stats.push(stat('shields', ctx.t('hexInfo.stats.shields'), `+${equipment.shields}`));
   }
-  if (equipment?.hearts) {
-    stats.push(stat('hearts', ctx.t('hexInfo.stats.hearts'), `+${equipment.hearts}`));
-  }
+  const hearts = obj.token ? tokenHeartPoints(obj.token) : (equipment?.hearts ?? 0);
+  if (hearts) stats.push(stat('hearts', ctx.t('hexInfo.stats.hearts'), `+${hearts}`));
   if (body.durabilityMax) {
     stats.push(stat('durability', ctx.t('hexInfo.stats.durability'), body.durabilityMax));
   }
@@ -313,7 +315,8 @@ export function buildHexInfo(
 ): HexInfoView {
   const ctx: Ctx = { t, te };
   const meta = getMeta(obj.hexobjectKey);
-  const tone = getObjectRarityTone(obj);
+  const token = obj.token;
+  const tone = token ? tokenRarityTone(token) : getObjectRarityTone(obj);
   let part: Part;
 
   switch (obj.groupType) {
@@ -332,15 +335,16 @@ export function buildHexInfo(
     default:
       part = gearInfo(ctx, obj);
   }
-  const rarity = getObjectRarity(obj);
+  const rarity = token ? { kind: token.rarity } : getObjectRarity(obj);
   const icon =
     ITEM_ICON_BY_KEY[obj.hexobjectKey] ??
     RESOURCE_ICON_BY_KEY[obj.hexobjectKey] ??
     (part.headline ? 'sword' : (GROUP_ICON[obj.groupType] ?? null));
   const accent = tone ? RARITY_COLOR[tone] : (part.accent ?? GROUP_ACCENT[obj.groupType]);
 
-  const title =
-    obj.groupType === EHexobjectGroup.CREATURE
+  const title = token
+    ? tokenName(token)
+    : obj.groupType === EHexobjectGroup.CREATURE
       ? localize(ctx, obj.creature.name)
       : localize(ctx, meta.title);
 
@@ -358,7 +362,11 @@ export function buildHexInfo(
     title,
     kind: groupLabel,
     subtitle: meta.subtitle ? localize(ctx, meta.subtitle) : null,
-    description: obj.description ? localize(ctx, obj.description) : null,
+    description: token
+      ? tokenDescription(token).join(' · ')
+      : obj.description
+        ? localize(ctx, obj.description)
+        : null,
     accent,
     icon,
     rarity:

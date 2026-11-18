@@ -40,13 +40,10 @@ function nextIdSeq(heroId: string, items: readonly (InventoryItem | null)[]): nu
 const EQUIP_PREFIX = 'eq:';
 
 function slim(item: InventoryItem): InventoryStateItem | null {
-  const parsed = inventoryItemSchema.safeParse({
-    id: item.id,
-    key: item.key,
-    type: item.type,
-    stackKey: item.stackKey,
-    amount: item.amount,
-  });
+  const cell = { id: item.id, key: item.key, type: item.type, amount: item.amount };
+  const parsed = inventoryItemSchema.safeParse(
+    item.token ? { ...cell, token: item.token } : { ...cell, stackKey: item.stackKey },
+  );
   return parsed.success ? (parsed.data as InventoryStateItem) : null;
 }
 
@@ -255,6 +252,7 @@ export function grantItem(
       payload: { heroId, revision, key, amount, source },
     }),
     NO_CONTEXT,
+    { heroId: inventorySession.heroId },
   );
   if (result.ok) return { ok: true };
   const reason = key === 'hand' ? 'NOT_STORABLE' : result.reason;

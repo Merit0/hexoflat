@@ -57,7 +57,7 @@ import { battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue'
 import { toolKeyOfItem } from '@/composables/hand-tools';
 import { showsCounter } from '@/composables/item-counter';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
-import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
+import { itemLook } from '@/render/token-look';
 import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
@@ -101,10 +101,10 @@ const tokenStyle = computed(() => ({
 
 const isDefaultHandToken = computed(() => props.item.key === HEXOBJECT_KEYS.HAND);
 
-const meta = computed(() => resolveInventoryView(props.item.key));
+const look = computed(() => itemLook(props.item));
 
 const iconStyle = computed(() => ({
-  backgroundImage: meta.value.iconPath ? `url("${meta.value.iconPath}")` : 'none',
+  backgroundImage: look.value.sprite ? `url("${look.value.sprite}")` : 'none',
 }));
 
 const dragGhostStyle = computed<CSSProperties>(() => ({

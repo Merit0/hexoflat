@@ -39,6 +39,7 @@ export function tradeItemOf(
     key: entry.key,
     type: getPrototype(entry.key).groupType,
     amount: entry.amount,
+    ...(entry.token ? { token: entry.token } : {}),
     slotKey: '',
     isNew: false,
   };
@@ -92,6 +93,7 @@ export function useShopBoardData() {
             key: listing.key,
             type: getPrototype(listing.key).groupType,
             amount: listing.amount,
+            ...(listing.token ? { token: listing.token } : {}),
             slotKey: '',
             isNew: false,
           }
