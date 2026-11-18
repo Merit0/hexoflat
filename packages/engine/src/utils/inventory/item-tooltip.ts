@@ -23,6 +23,8 @@ import {
   type SkillRanks,
 } from '../../skills/skill-rules';
 import { resolveInventoryView } from './traits-resolver';
+import { EHexActionType } from '../../enums/hex-action-type';
+import { strikeHeartsOf, toolActionOf } from '../../tokens/tool-action';
 
 export type TooltipCapability =
   'cut' | 'mine' | 'pickup' | 'enter' | 'use' | 'open' | 'attack' | 'block';
@@ -74,9 +76,12 @@ export interface ItemTooltipOptions {
   skills?: SkillRanks;
 }
 
+const CAPABILITY_BY_TOOL_ACTION: Partial<Record<EHexActionType, TooltipCapability>> = {
+  [EHexActionType.CUT]: 'cut',
+  [EHexActionType.MINE]: 'mine',
+};
+
 const CAPABILITY_BY_FLAG: Array<[keyof ToolCapabilities, TooltipCapability]> = [
-  ['canCut', 'cut'],
-  ['canMine', 'mine'],
   ['canPickup', 'pickup'],
   ['canEnter', 'enter'],
   ['canUse', 'use'],
@@ -99,8 +104,9 @@ function rarityOf(proto: THexobjectPrototype): IItemRarity {
 }
 
 function headlineOf(proto: THexobjectPrototype): TooltipHeadline | undefined {
-  if (proto.groupType === EHexobjectGroup.EQUIPMENT && proto.weapon) {
-    return { kind: 'damage', min: proto.weapon.damageMin, max: proto.weapon.damageMax };
+  const strike = strikeHeartsOf(proto.hexobjectKey);
+  if (proto.groupType === EHexobjectGroup.EQUIPMENT && proto.weapon && strike !== null) {
+    return { kind: 'damage', min: strike, max: strike };
   }
   const defense =
     proto.groupType === EHexobjectGroup.EQUIPMENT
@@ -138,7 +144,12 @@ function durabilityMaxOf(proto: THexobjectPrototype): number | undefined {
 function capabilitiesOf(key: THexobjectKey, group: EHexobjectGroup): TooltipCapability[] {
   if (group !== EHexobjectGroup.TOOL && group !== EHexobjectGroup.EQUIPMENT) return [];
   const flags = getToolCapabilities(key as THeroToolKey);
-  return CAPABILITY_BY_FLAG.filter(([flag]) => flags[flag]).map(([, name]) => name);
+  const action = toolActionOf(key);
+  const fromType = action ? [CAPABILITY_BY_TOOL_ACTION[action]] : [];
+  return [
+    ...fromType.filter((name): name is TooltipCapability => name !== undefined),
+    ...CAPABILITY_BY_FLAG.filter(([flag]) => flags[flag]).map(([, name]) => name),
+  ];
 }
 
 function useWillOf(key: THexobjectKey, skills: SkillRanks = {}): TooltipWillUse | undefined {

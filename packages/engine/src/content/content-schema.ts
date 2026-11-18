@@ -5,8 +5,6 @@ import {
   ERarityKind,
   EHexCollision,
   EHexobjectGroup,
-  EQUIP_SLOTS,
-  type TEquipSlot,
 } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
@@ -78,7 +76,6 @@ const baseContentFields = {
   subtitle: z.string().optional(),
   actions: z.record(z.string(), actionConfigSchema).optional(),
   yields: z.record(z.string(), z.number()).optional(),
-  equip: z.object({ slot: z.enum(EQUIP_SLOTS) }).optional(),
   enter: enterSchema.optional(),
   heal: healSchema.optional(),
   coinPrice: z.number().int().positive().optional(),
@@ -141,8 +138,6 @@ const toolSchema = z.object({
   defense: z.number().optional(),
   rarity: raritySchema.optional(),
   capabilities: z.object({
-    canCut: z.boolean().optional(),
-    canMine: z.boolean().optional(),
     canPickup: z.boolean().optional(),
     canEnter: z.boolean().optional(),
     canUse: z.boolean().optional(),
@@ -162,8 +157,6 @@ const constructionSchema = z.object({
 });
 
 const weaponSchema = z.object({
-  damageMin: z.number(),
-  damageMax: z.number(),
   attackMultiplier: z.number().optional(),
   radius: z.number().int().min(1).optional(),
 });
@@ -299,7 +292,6 @@ export interface IHexobjectMeta {
     maxStack?: number;
     weightKG?: number;
   };
-  equip?: { slot: TEquipSlot };
   yields?: THexYields;
   enter?: { type: 'WORLD'; locationKey: LocationKey } | { type: 'PORTAL' };
   heal?: { amountPerTick: number; radius?: number };

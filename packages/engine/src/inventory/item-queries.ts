@@ -1,5 +1,5 @@
 import { getMeta, getPrototype, usePriceOf } from '../content';
-import { DEFAULT_RARITY, rarityTone, type TRarityTone } from '../content/rarity-rules';
+import { DEFAULT_RARITY, rarityTone, tokenRarity, type TRarityTone } from '../content/rarity-rules';
 import { EHexobjectGroup, type TEquipSlot } from '../abstraction/hexobject-abstraction';
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
 import { calculateCarriedWeightKg } from '../utils/inventory/traits-resolver';
@@ -17,7 +17,6 @@ export const CATEGORY_ORDER: readonly TItemCategory[] = [
   'quest',
 ];
 
-/** Rarest first. Items without a rarity (coins, resources) come last. */
 export const TONE_SORT_ORDER: readonly TRarityTone[] = [
   'god-executor',
   'spark-boss',
@@ -53,6 +52,7 @@ export function categoryOf(item: InventoryItem): TItemCategory {
 }
 
 export function rarityToneOf(item: InventoryItem): TRarityTone | null {
+  if (item.token) return rarityTone(tokenRarity(item.token));
   const proto = getPrototype(item.key);
   if (proto.groupType === EHexobjectGroup.TOOL) {
     return rarityTone(proto.tool.rarity ?? DEFAULT_RARITY);
@@ -93,7 +93,6 @@ function cellsOf(agg: IInventoryAggregate, container: 'bag' | 'stash'): TItemCel
   return container === 'bag' ? agg.bag : agg.stash;
 }
 
-/** `undefined` means the address does not exist; `null` means an empty cell. */
 export function readAt(
   agg: IInventoryAggregate,
   at: TItemLocation,
@@ -127,7 +126,6 @@ export function touchesStash(...places: TItemLocation[]): boolean {
 
 const WEIGHT_EPSILON = 1e-9;
 
-/** Weight may drop at any time; it may only grow while it stays within the capacity. */
 export function exceedsCapacity(
   before: IInventoryAggregate,
   after: IInventoryAggregate,

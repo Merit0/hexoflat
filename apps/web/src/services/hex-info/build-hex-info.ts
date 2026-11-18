@@ -13,6 +13,7 @@ import { RARITY_COLOR, getObjectRarity, getObjectRarityTone } from '@/render/rar
 import { tokenRarityTone } from '@/render/token-look';
 import { tokenDescription, tokenName } from '@/services/tokens/token-text';
 import { tokenHeartPoints } from '@hexoflat/engine/combat/heart-points';
+import { strikeHeartsOf } from '@hexoflat/engine/tokens/tool-action';
 import { ITEM_ICON_BY_KEY, type TIconName } from '@/components/gui/icons/item-icons';
 
 export type HexInfoTranslate = (key: string, params?: Record<string, unknown>) => string;
@@ -272,12 +273,9 @@ function weaponHeadline(
   ctx: Ctx,
   obj: Extract<THexobject, { groupType: EHexobjectGroup.TOOL | EHexobjectGroup.EQUIPMENT }>,
 ): HexInfoHeadline | undefined {
-  if (obj.groupType === EHexobjectGroup.EQUIPMENT && obj.weapon) {
-    const { damageMin, damageMax } = obj.weapon;
-    return {
-      value: damageMin === damageMax ? `${damageMax}` : `${damageMin}–${damageMax}`,
-      label: ctx.t('hexInfo.stats.damage'),
-    };
+  const strike = strikeHeartsOf(obj.hexobjectKey);
+  if (obj.groupType === EHexobjectGroup.EQUIPMENT && obj.weapon && strike !== null) {
+    return { value: `${strike}`, label: ctx.t('hexInfo.stats.damage') };
   }
   if (obj.groupType === EHexobjectGroup.TOOL && obj.tool.attackMultiplier) {
     return { value: `×${obj.tool.attackMultiplier}`, label: ctx.t('hexInfo.stats.damage') };

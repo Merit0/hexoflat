@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { coinPriceOf } from '../content/content-accessors';
 import { TRADERS, TRADER_KEYS } from '../content/traders.content';
 import type { ProgressState } from '../aggregates/progress-state';
 import { listingsSchema } from './listing-state';
 import { buybackEntrySchema, traderGoodSchema } from './trade-state';
 import { traderView } from './trader-view';
+import { priceOf } from './price-of';
 
 export const traderFixtureSchema = z
   .object({
@@ -31,7 +31,7 @@ export function applyTraderFixture(
   if (goods && goods.length > def.goodsSlots) return null;
   if (buyback && buyback.length > def.buybackSlots) return null;
   const listed = [...(goods ?? []), ...(buyback ?? [])];
-  if (listed.some((cell) => cell !== null && coinPriceOf(cell.key) === null)) return null;
+  if (listed.some((cell) => cell !== null && priceOf(cell) === null)) return null;
 
   const trips = fixture.trips ?? progress.trips;
   const current = traderView({ ...progress, trips }, fixture.trader, rngSeed);

@@ -18,9 +18,9 @@ interface SchemaCase {
 
 const AXE = {
   key: 'axe',
-  slot: 'weapon',
+  slot: 'any',
   strike: 1,
-  tool: { action: EHexActionType.CUT },
+  tool: { action: EHexActionType.CUT, durabilityCostPct: 0.1 },
   nounKey: 'content.tokens.noun.axe',
   realms: [ERarityKind.IDOL],
 };
@@ -44,7 +44,12 @@ const CASES: SchemaCase[] = [
     invalid: [
       ['a hand slot', { ...AXE, slot: 'hand' }],
       ['a fractional strike', { ...AXE, strike: 0.5 }],
-      ['a tool action that is not CUT or MINE', { ...AXE, tool: { action: EHexActionType.USE } }],
+      [
+        'a tool action that is not CUT or MINE',
+        { ...AXE, tool: { action: EHexActionType.USE, durabilityCostPct: 0.1 } },
+      ],
+      ['a tool without wear', { ...AXE, tool: { action: EHexActionType.CUT } }],
+      ['a wear above 1', { ...AXE, tool: { action: EHexActionType.CUT, durabilityCostPct: 2 } }],
     ],
   },
   {

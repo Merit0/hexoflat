@@ -9,7 +9,7 @@ import { TToolKeys } from '../content/tools.content';
 import { HEXOBJECT_KEYS } from './hexobjects-registry';
 import { THeroToolKey } from '../content/equipment.content';
 import { objectActionDestination } from '../map/object-transition';
-import { toolActionOf } from '../tokens/tool-action';
+import { toolActionOf, toolWearOf } from '../tokens/tool-action';
 
 export type StartResult = { ok: true; endsAt: number } | { ok: false; message: string };
 
@@ -75,16 +75,13 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     const requiredTool: TToolKeys = cutCfg?.requiredTool ?? HEXOBJECT_KEYS.AXE;
     const durationMs: number = cutCfg?.durationMs ?? 5000;
-    const costPct: number = cutCfg?.durabilityCostPct ?? 0.1;
 
-    const typed = toolActionOf(tool) === EHexActionType.CUT;
-    if (!typed && tool !== requiredTool) {
-      return { ok: false, message: `Need a tool: ${requiredTool}` };
+    if (toolActionOf(tool) !== EHexActionType.CUT) {
+      return tool !== requiredTool
+        ? { ok: false, message: `Need a tool: ${requiredTool}` }
+        : { ok: false, message: 'Need something to cut with!' };
     }
-
-    if (!typed && !getToolCapabilities(tool).canCut) {
-      return { ok: false, message: 'Need something to cut with!' };
-    }
+    const costPct = toolWearOf(tool) ?? 0;
 
     const heroToolStore = ctx.heroToolStore;
     const okDur = heroToolStore.consumeDurability(costPct);
@@ -131,16 +128,13 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     const requiredTool: TToolKeys = mineCfg?.requiredTool ?? HEXOBJECT_KEYS.PICKAXE;
     const durationMs: number = mineCfg?.durationMs ?? 10000;
-    const costPct: number = mineCfg?.durabilityCostPct ?? 0.1;
 
-    const typed = toolActionOf(tool) === EHexActionType.MINE;
-    if (!typed && tool !== requiredTool) {
-      return { ok: false, message: `Need a tool: ${requiredTool}` };
+    if (toolActionOf(tool) !== EHexActionType.MINE) {
+      return tool !== requiredTool
+        ? { ok: false, message: `Need a tool: ${requiredTool}` }
+        : { ok: false, message: 'Need something to mine with!' };
     }
-
-    if (!typed && !getToolCapabilities(tool).canMine) {
-      return { ok: false, message: 'Need something to mine with!' };
-    }
+    const costPct = toolWearOf(tool) ?? 0;
 
     const heroToolStore = ctx.heroToolStore;
     const okDur = heroToolStore.consumeDurability(costPct);

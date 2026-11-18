@@ -6,6 +6,7 @@ import {
 } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { tokenHeartPoints } from '@hexoflat/engine/combat/heart-points';
+import { tokenRarity } from '@hexoflat/engine/content/rarity-rules';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { tokenRarityTone } from '@/render/token-look';
 import { useHeroStore } from '@/stores/hero-store';
@@ -39,7 +40,7 @@ export function withToken(
   return {
     ...view,
     token,
-    rarity: { kind: token.rarity, boss: token.origin === 'unique' },
+    rarity: tokenRarity(token),
     rarityTone: tokenRarityTone(token),
     hearts: tokenHeartPoints(token),
   };

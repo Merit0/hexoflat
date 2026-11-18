@@ -10,6 +10,7 @@ import {
   inventoryWith,
   traderWith,
 } from '@hexoflat/engine/trade/trade-test-setup';
+import { sampleToken } from '@hexoflat/engine/tokens/token-test-setup';
 import { previewBuy, previewRefresh, previewSell } from './trade-preview';
 
 const SWORD_PRICE = coinPriceOf(SWORD)!;
@@ -65,6 +66,21 @@ describe('previewBuy asks the engine for the price instead of computing it', () 
       ok: false,
       reason: 'SPLIT_TARGET_TAKEN',
       price: SWORD_PRICE,
+    });
+  });
+});
+
+describe('previewBuy of a discounted token good', () => {
+  it('shows the full price of the token, not a price of its type', () => {
+    const trader = traderWith([[SWORD, 1]]);
+    const good = trader.state.goods[0]!;
+    trader.state.goods[0] = { ...good, token: sampleToken({ price: 120 }), discountPercent: 50 };
+    const rich = inventoryWith({ 0: [COINS, 5000] });
+
+    expect(previewBuy(rich, trader, GOODS_FROM(0), 'auto', false)).toEqual({
+      ok: true,
+      price: 120,
+      amount: 1,
     });
   });
 });

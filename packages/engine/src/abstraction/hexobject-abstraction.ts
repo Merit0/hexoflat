@@ -97,8 +97,6 @@ export interface ITool extends IDurable {
   defense?: number;
   rarity?: IItemRarity;
   capabilities: {
-    canCut?: boolean;
-    canMine?: boolean;
     canPickup?: boolean;
     canEnter?: boolean;
     canUse?: boolean;
@@ -121,8 +119,6 @@ export interface IConstruction {
 }
 
 export interface IWeapon {
-  damageMin: number;
-  damageMax: number;
   attackMultiplier?: number;
   radius?: number;
 }

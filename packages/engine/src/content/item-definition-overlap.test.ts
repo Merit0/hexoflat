@@ -10,13 +10,7 @@ const ITEM_TYPE_FIELDS_IN_DEFINITIONS: Record<string, readonly string[]> = {
   'tool.action': ['tool.capabilities.canCut', 'tool.capabilities.canMine'],
 };
 
-const STILL_READ_UNTIL_LG5D = [
-  'equip.slot',
-  'weapon.damageMin',
-  'weapon.damageMax',
-  'tool.capabilities.canCut',
-  'tool.capabilities.canMine',
-];
+const ALLOWED_OVERLAPS: string[] = [];
 
 function valueAt(source: unknown, path: string): unknown {
   return path
@@ -43,8 +37,8 @@ describe('LG5d: a definition holds no field that item-types also holds', () => {
     }
   });
 
-  it('only the fields still read by the old rules remain in a definition', () => {
+  it('no definition repeats a slot, a strike or a tool action of item-types', () => {
     const remaining = new Set(ITEM_TYPES.flatMap((type) => overlappingPaths(type.key)));
-    expect([...remaining].sort()).toEqual([...STILL_READ_UNTIL_LG5D].sort());
+    expect([...remaining].sort()).toEqual(ALLOWED_OVERLAPS);
   });
 });

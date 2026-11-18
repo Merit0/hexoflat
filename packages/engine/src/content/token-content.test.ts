@@ -124,10 +124,20 @@ describe('item token content', () => {
     );
   });
 
-  it('binds the gathering tools to CUT and MINE', () => {
-    expect(types.get('axe').tool).toEqual({ action: EHexActionType.CUT });
-    expect(types.get('pickaxe').tool).toEqual({ action: EHexActionType.MINE });
+  it('binds the gathering tools to CUT and MINE with a wear of 0.1 per use', () => {
+    expect(types.get('axe').tool).toEqual({ action: EHexActionType.CUT, durabilityCostPct: 0.1 });
+    expect(types.get('pickaxe').tool).toEqual({
+      action: EHexActionType.MINE,
+      durabilityCostPct: 0.1,
+    });
     expect(types.get('sword').tool).toBeNull();
+  });
+
+  it('lets the axe and the pickaxe into any hand, the sword and the shield into their own', () => {
+    expect(types.get('axe').slot).toBe('any');
+    expect(types.get('pickaxe').slot).toBe('any');
+    expect(types.get('sword').slot).toBe('weapon');
+    expect(types.get('shield').slot).toBe('shield');
   });
 
   it('keeps the current sword price inside the idol range', () => {

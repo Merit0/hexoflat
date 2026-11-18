@@ -7,6 +7,7 @@ import {
 } from '../../abstraction/hexobject-abstraction';
 import type { InventoryItem } from '../../abstraction/inventory-abstraction';
 import { assertNever } from '../assert-never';
+import { fixedHandSlotOf } from '../../tokens/tool-action';
 
 export type ResolvedInventoryView = {
   group: EHexobjectGroup;
@@ -31,7 +32,6 @@ function resolveProtoFields(proto: THexobjectPrototype) {
   let stackable = false;
   let defaultAmount = 1;
   let weightKg = 0;
-  let equipSlot: TEquipSlot | undefined = undefined;
   const stackKey: string | undefined = undefined;
 
   switch (proto.groupType) {
@@ -55,7 +55,6 @@ function resolveProtoFields(proto: THexobjectPrototype) {
 
     case EHexobjectGroup.EQUIPMENT: {
       defaultAmount = 1;
-      equipSlot = getMeta(proto.hexobjectKey)?.equip?.slot;
       weightKg = proto.equipment.traits?.weightKG ?? 0;
       break;
     }
@@ -81,7 +80,6 @@ function resolveProtoFields(proto: THexobjectPrototype) {
     stackable,
     stackKey,
     defaultAmount,
-    equipSlot,
     weightKg,
   };
 }
@@ -131,8 +129,6 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
   const proto = getPrototype(key);
   const meta = getMeta(key);
 
-  // proto is required by satisfies Record<THexobjectKey,...>
-  // але якщо колись буде partial — зробимо страховку:
   if (!proto) {
     return {
       group: EHexobjectGroup.LOOT,
@@ -155,7 +151,7 @@ export function resolveInventoryView(key: THexobjectKey): ResolvedInventoryView 
   const metaStackable = !!meta?.traits?.stackable;
   const stackable = meta?.traits ? metaStackable : p.stackable;
   const stackKey = meta?.traits?.stackKey ?? (stackable ? key : undefined);
-  const equipSlot = meta?.equip?.slot ?? p.equipSlot;
+  const equipSlot = fixedHandSlotOf(key);
 
   return {
     group: p.group,

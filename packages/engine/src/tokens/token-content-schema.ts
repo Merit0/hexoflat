@@ -12,7 +12,8 @@ function distinct<T>(values: readonly T[]): boolean {
   return new Set(values).size === values.length;
 }
 
-export const ITEM_SLOTS = ['weapon', 'shield'] as const;
+export const ITEM_SLOTS = ['weapon', 'shield', 'any'] as const;
+export type TItemSlot = (typeof ITEM_SLOTS)[number];
 export const TOOL_ACTIONS = [EHexActionType.CUT, EHexActionType.MINE] as const;
 
 export const itemTypeDefinitionSchema = z.strictObject({
@@ -20,7 +21,12 @@ export const itemTypeDefinitionSchema = z.strictObject({
   slot: z.enum(ITEM_SLOTS),
   strike: z.number().int().positive(),
   block: z.strictObject({ sides: z.number().int().positive() }).optional(),
-  tool: z.strictObject({ action: z.enum(TOOL_ACTIONS) }).nullable(),
+  tool: z
+    .strictObject({
+      action: z.enum(TOOL_ACTIONS),
+      durabilityCostPct: z.number().positive().max(1),
+    })
+    .nullable(),
   nounKey: wordKeySchemaFor('noun'),
   realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice'),
 });

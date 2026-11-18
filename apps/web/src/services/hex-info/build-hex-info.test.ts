@@ -56,6 +56,27 @@ describe('buildHexInfo icon', () => {
   });
 });
 
+describe('LG5d characterization: gear headline and rarity without a token', () => {
+  it('shows the sword damage as one heart', () => {
+    expect(buildHexInfo(placed('sword'), 'Equipment', t, te).headline).toEqual({
+      value: '1',
+      label: 'hexInfo.stats.damage',
+    });
+  });
+
+  it('shows the tool multiplier for the axe and the pickaxe, nothing for the shield', () => {
+    expect(buildHexInfo(placed('axe'), 'Tool', t, te).headline?.value).toBe('×1');
+    expect(buildHexInfo(placed('pickaxe'), 'Tool', t, te).headline?.value).toBe('×1');
+    expect(buildHexInfo(placed('shield'), 'Equipment', t, te).headline).toBeNull();
+  });
+
+  it.each(['sword', 'shield', 'axe', 'pickaxe'] as const)('%s reads as an idol item', (key) => {
+    const view = buildHexInfo(placed(key), 'Gear', t, te);
+    expect(view.rarity?.tone).toBe('idol');
+    expect(view.rarity?.label).toBe('itemTooltip.rarity.idol');
+  });
+});
+
 describe('buildHexInfo broken seal', () => {
   it('never marks the stash chest as broken, even in a save that kept integrity 0', () => {
     const chest = placed('stash-chest');

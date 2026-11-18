@@ -34,7 +34,6 @@ export interface ISerializedHexTile {
   imagePath?: string;
   tileKey?: RouteName | null;
   coordinates?: IHexCoordinates;
-  // Legacy save format used flat row/column fields instead of `coordinates`.
   r?: number;
   q?: number;
   isRevealed?: boolean;
@@ -232,8 +231,6 @@ export default class HexMapModel implements IWorldMap {
       return tile;
     });
 
-    // Reconcile after hydration: drop stale in-progress actions and spawn
-    // resources whose respawn timer already elapsed while the map was unloaded.
     for (const tile of map.tiles) {
       const action = tile.pendingAction;
       if (action?.type === EHexActionType.USE && !options.keepUseActions) {
@@ -324,10 +321,6 @@ export default class HexMapModel implements IWorldMap {
       }
 
       case EHexobjectGroup.EQUIPMENT: {
-        if ('weapon' in built && 'weapon' in saved && built.weapon && saved.weapon) {
-          built.weapon.damageMin = saved.weapon.damageMin ?? built.weapon.damageMin;
-          built.weapon.damageMax = saved.weapon.damageMax ?? built.weapon.damageMax;
-        }
         if ('equipment' in built && 'equipment' in saved) {
           built.equipment.durability = saved.equipment.durability ?? built.equipment.durability;
           built.equipment.durabilityMax =
