@@ -3,6 +3,13 @@ import type { BoardCamera } from '@/render/board-camera';
 import { trackBoardApp } from '@/render/render-stats';
 import { subscribeTicker } from '@/render/ticker-subscription';
 
+export const MIN_BOARD_RESOLUTION = 2;
+
+export function boardResolution(devicePixelRatio: number): number {
+  const screen = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0 ? devicePixelRatio : 1;
+  return Math.max(MIN_BOARD_RESOLUTION, screen);
+}
+
 export interface HexBoardApp {
   app: Application;
   worldContainer: Container;
@@ -39,7 +46,7 @@ export async function createHexBoardApp(
     width,
     height,
     backgroundAlpha: 0,
-    resolution: window.devicePixelRatio || 1,
+    resolution: boardResolution(window.devicePixelRatio),
     autoDensity: true,
     antialias: true,
     preference: 'webgl',

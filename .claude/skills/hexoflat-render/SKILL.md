@@ -10,7 +10,7 @@ PixiJS renders the board. Vue owns the surrounding DOM and feeds the renderer re
 ## Layout of `apps/web/src/render/`
 
 ```
-pixi-app.ts          bootstrap of the Pixi Application
+pixi-app.ts          bootstrap of the Pixi Application; renderer resolution is boardResolution(dpr) = max(2, dpr): a 1x screen gets a 2x buffer that the browser shrinks (supersampling, smooth token outlines). Mipmaps and a canvas-resampled texture copy were tried for 1x grain and did not help (2026-11-18); do not go back to resolution = dpr
 use-hex-board.ts     the Vue<->Pixi seam of the world board; owns all layer lifecycles
 use-observed-board-app.ts  shared Pixi lifecycle of the quest and battle boards (ResizeObserver start, one app, dispose)
 board-camera.ts      world hex size, fit/follow camera, world->screen mapping
