@@ -1,4 +1,6 @@
+import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
+import type { TestTokenAttribute } from '@framework/test-api';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { OpenCampingMapFeature } from './open-camping-map.feature';
 import { DragInventoryItemFeature } from './drag-inventory-item.feature';
@@ -13,24 +15,34 @@ import '@framework/test-api';
 
 const FIREPLACE_TICK_TIMEOUT_MS = 30_000;
 
+export const NO_ATTRIBUTES: TestTokenAttribute[] = [];
+export const ONE_HALF_HEART: TestTokenAttribute[] = [{ key: 'heart', value: 1 }];
+
 /**
- * The +1 heart shield and the maximum-health rule: a full hero stays full when the maximum grows,
- * a hurt hero keeps his health, removing the shield clamps health, and healing respects the raised
- * maximum. Health is read from the app through `getHeroHealth`, never recomputed here.
+ * The shield token and the maximum-health rule: hearts come only from the token's `heart`
+ * attribute (in half-hearts), a full hero stays full when the maximum grows, a hurt hero keeps
+ * his health, removing the shield clamps health, and healing respects the raised maximum.
+ * The shield is minted by the dev grant with fixed attributes; health is read from the app
+ * through `getHeroHealth`, never recomputed here.
  */
 export class ShieldMaxHealthFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
   private readonly board = new VerifyHeroBoardFeature();
   private readonly tabs = new SwitchHeroBoardTabFeature();
 
-  async startWithShieldInBag(health?: number): Promise<void> {
-    await this.step('Start in camp with a shield in the bag', async () => {
+  async startWithShieldInBag(attributes: TestTokenAttribute[], health?: number): Promise<void> {
+    await this.step(`Start in camp with a shield of ${JSON.stringify(attributes)}`, async () => {
       await new OpenCampingMapFeature().open();
-      await this.page.evaluate(async (current) => {
-        window.__HEXOFLAT_TEST__!.grantInventoryItem('shield', 1);
-        if (current !== undefined) await window.__HEXOFLAT_TEST__!.setHeroHealth(current);
-      }, health);
-      await new VerifyInventoryFeature().verifyContainsItem(HexobjectKeys.shield);
+      const inventory = new VerifyInventoryFeature();
+      const shield = await inventory.givenTokenItem({
+        type: HexobjectKeys.shield,
+        realm: 'idol',
+        mapTier: 1,
+        attributes,
+      });
+      expect(shield.attributes).toEqual(attributes);
+      if (health !== undefined) await this.setHealth(health);
+      await inventory.verifyContainsItem(HexobjectKeys.shield);
     });
   }
 
@@ -44,6 +56,8 @@ export class ShieldMaxHealthFeature extends BaseFeature {
     await this.step('Equip the shield', async () => {
       await this.tabs.switchTo('inventory');
       await new DragInventoryItemFeature().dragToEquipSlot(HexobjectKeys.shield, EquipSlot.SHIELD);
+      await this.tabs.switchTo('hero');
+      await this.board.verifyHandHolds('left', /shield|щит/i);
     });
   }
 

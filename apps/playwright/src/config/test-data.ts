@@ -76,23 +76,16 @@ export const NEW_HERO_PASSWORD = 'Strong-pass-1';
 export const GUARDIAN_EMAIL = 'grown-up@example.com';
 
 /**
- * Coin prices approved in docs/shop/SHOP-PLAN.md (D19/D24), kept here as the independent oracle for
- * the trader specs instead of being read back from the game. Sale value is floor(price * 2 / 5).
+ * Coin prices of stacks approved in docs/shop/SHOP-PLAN.md (content `coinPrice`), kept here as the
+ * independent oracle for the trader specs. Gear is a token: its price is read from the token in the
+ * projection (loot-generator-plan D4), never from a constant.
  */
-export const CoinPrices = {
+export const StackCoinPrices = {
   healthBottle: 20,
-  shield: 40,
-  axe: 60,
-  pickaxe: 60,
-  returnScroll: 60,
-  sword: 500,
 } as const;
 
-export const SellValues = {
+export const StackSellValues = {
   healthBottle: 8,
-  shield: 16,
-  axe: 24,
-  sword: 200,
 } as const;
 
 export const TRADER_GOODS_SLOTS = 8;

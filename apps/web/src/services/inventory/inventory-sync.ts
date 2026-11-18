@@ -301,6 +301,10 @@ export function sendInventoryCommand(
   });
 }
 
+export function grantTokenFixture(spec: { type: string }): Promise<InventoryCommandResult> {
+  return sendInventoryCommand('DEV_GRANT_ITEM', { key: spec.type, amount: 1, token: spec });
+}
+
 export async function claimCampChest(): Promise<ClaimOutcome> {
   if (inventorySession.claimedRewards.includes(CAMP_FIRST_CHEST_REWARD)) return { ok: true };
   const answer = await sendInventoryCommand('CLAIM_CAMP_CHEST', {});

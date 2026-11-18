@@ -17,6 +17,7 @@ import {
   type ITokenValidator,
   type ITypePicker,
   type IUniqueSpriteResolver,
+  type TokenOverrides,
   type TokenResult,
   type TTokenStep,
   type UniqueGenerationContext,
@@ -72,7 +73,7 @@ export class TokenFactory {
     private readonly uniqueParts: UniqueTokenParts | null = null,
   ) {}
 
-  createBase(ctx: GenerationContext): TokenResult<ItemToken> {
+  createBase(ctx: GenerationContext, overrides: TokenOverrides = {}): TokenResult<ItemToken> {
     const refusal = contextRefusal(ctx);
     if (refusal) return refusal;
     const realm = baseRealmOf(ctx.realm) as TBaseRealm;
@@ -81,11 +82,9 @@ export class TokenFactory {
     const picked = this.parts.typePicker.pick(realm, ctx.type, stream('type'));
     if (!picked.ok) return picked;
     const type = picked.value;
-    const attributes = this.parts.attributeGenerator.generate(
-      type,
-      ctx.mapTier,
-      stream('attributes'),
-    );
+    const attributes = overrides.attributes
+      ? overrides.attributes.map((attribute) => ({ ...attribute }))
+      : this.parts.attributeGenerator.generate(type, ctx.mapTier, stream('attributes'));
     return this.parts.validator.validate({
       id,
       origin: 'base',
@@ -100,7 +99,7 @@ export class TokenFactory {
       }),
       attributes,
       skills: this.parts.skillGenerator.generate(type, stream('skills')),
-      price: this.parts.priceGenerator.generate(realm, stream('price')),
+      price: overrides.price ?? this.parts.priceGenerator.generate(realm, stream('price')),
       sprite: this.parts.spriteResolver.resolve(type, realm, stream('sprite')),
       mapTier: ctx.mapTier,
       generatorVersion: TOKEN_GENERATOR_VERSION,

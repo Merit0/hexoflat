@@ -383,6 +383,61 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     }
   });
 
+  const tokenGrant = (heroId: string) =>
+    envelope(
+      heroId,
+      'DEV_GRANT_ITEM',
+      {
+        key: HEXOBJECT_KEYS.SHIELD,
+        amount: 1,
+        token: {
+          type: HEXOBJECT_KEYS.SHIELD,
+          realm: 'idol',
+          mapTier: 1,
+          attributes: [{ key: 'heart', value: 1 }],
+          price: 77,
+        },
+      },
+      0,
+    );
+  const shieldsHeld = (inventory: { state: unknown }) =>
+    (inventory.state as InventoryState).bag.filter((cell) => cell?.key === HEXOBJECT_KEYS.SHIELD);
+
+  it.each([
+    [
+      'production, even with the fixtures flag',
+      { NODE_ENV: 'production', HEXOFLAT_E2E_FIXTURES: '1' },
+    ],
+    [
+      'a non-production build without the fixtures flag',
+      { NODE_ENV: 'development', HEXOFLAT_E2E_FIXTURES: '' },
+    ],
+  ])('refuses DEV_GRANT_ITEM with a token spec in %s', async (_name, env) => {
+    const { userId, heroId } = await kit.newPlayer();
+    for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+    try {
+      expect(await kit.service.execute(userId, tokenGrant(heroId))).toMatchObject({
+        result: 'rejected',
+        code: 'FORBIDDEN',
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    expect(shieldsHeld(await inventoryOf(heroId))).toHaveLength(0);
+  });
+
+  it('grants a token with the given attributes and price in a dev build', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    expect((await kit.service.execute(userId, tokenGrant(heroId))).result).toBe('applied');
+    const [shield] = shieldsHeld(await inventoryOf(heroId));
+    expect(shield?.token).toMatchObject({
+      type: HEXOBJECT_KEYS.SHIELD,
+      rarity: 'idol',
+      attributes: [{ key: 'heart', value: 1 }],
+      price: 77,
+    });
+  });
+
   it('accepts a DEV_* command when the fixtures flag is on and the build is not production', async () => {
     const { userId, heroId } = await kit.newPlayer();
     expect((await kit.service.execute(userId, devGrant(heroId, 0, 5))).result).toBe('applied');

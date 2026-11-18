@@ -8,6 +8,7 @@ import type { InventoryState } from '../inventory/inventory-state';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { toAggregate } from '../inventory/inventory-adapter';
 import { countItem } from '../inventory/plan-stock';
+import { mintSpecTokens } from '../tokens/token-spec';
 import { replaceInventory } from './replace-inventory';
 import { executeProgressCommand } from './execute-progress-command';
 import { claimCampChest } from './claim-camp-chest';
@@ -114,11 +115,16 @@ function executeCore(
       if (!ctx.devGrantAllowed) {
         return { ok: false, code: 'FORBIDDEN', events: [] };
       }
-      const { heroId, revision, key, amount } = command.payload;
-      const result = applyGrantItem(inventory, {
-        type: 'GRANT_ITEM',
-        payload: { heroId, revision, key: key, amount, source: 'dev' },
-      });
+      const { heroId, revision, key, amount, token } = command.payload;
+      const minted = token
+        ? mintSpecTokens(token, { heroId, idSeq: inventory.idSeq, amount })
+        : null;
+      if (minted && !minted.ok) return { ok: false, code: minted.refusal.code, events: [] };
+      const result = applyGrantItem(
+        inventory,
+        { type: 'GRANT_ITEM', payload: { heroId, revision, key: key, amount, source: 'dev' } },
+        minted ? { tokens: minted.value } : undefined,
+      );
       return inventoryOutcome(inventory, result.inventory, result.events);
     }
     case 'DEV_CONSUME_ITEM': {

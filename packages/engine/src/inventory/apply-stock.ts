@@ -150,10 +150,14 @@ function checked(
   };
 }
 
-export function applyGrantItem(state: InventoryState | undefined, command: GrantItemCommand) {
+export function applyGrantItem(
+  state: InventoryState | undefined,
+  command: GrantItemCommand,
+  supply?: TokenSupply,
+) {
   const { key, amount, source } = command.payload;
   const early = checked(state, command.payload, 'ITEM_GRANT_REJECTED', key);
-  return early ?? grant(state, key as THexobjectKey, amount, source);
+  return early ?? grant(state, key as THexobjectKey, amount, source, supply);
 }
 
 export function applyConsumeItem(state: InventoryState | undefined, command: ConsumeItemCommand) {

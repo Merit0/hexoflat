@@ -54,6 +54,11 @@ export interface GenerationContext {
   type?: ItemTypeKey;
 }
 
+export interface TokenOverrides {
+  attributes?: readonly TokenAttribute[];
+  price?: number;
+}
+
 export interface UniqueGenerationContext {
   seed: string;
   sourceId: string;

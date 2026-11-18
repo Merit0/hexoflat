@@ -1,6 +1,8 @@
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import type { EquipSlot } from '@config/equip-slot';
+import type { TestItemToken, TestTokenSpec } from '@framework/test-api';
+import '@framework/test-api';
 
 export class VerifyInventoryFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
@@ -20,6 +22,12 @@ export class VerifyInventoryFeature extends BaseFeature {
         },
         [itemKey, amount] as const,
       ),
+    );
+  }
+
+  async givenTokenItem(spec: TestTokenSpec): Promise<TestItemToken> {
+    return this.step(`Give the hero a "${spec.type}" token through the dev grant`, () =>
+      this.page.evaluate((s) => window.__HEXOFLAT_TEST__!.grantTokenItem(s), spec),
     );
   }
 

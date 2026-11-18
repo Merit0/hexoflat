@@ -24,6 +24,28 @@ export interface TestPortalPreview {
   reason: string | null;
 }
 
+export interface TestTokenAttribute {
+  key: string;
+  value: number;
+}
+
+export interface TestTokenSpec {
+  type: string;
+  realm: 'gloom' | 'idol' | 'spark';
+  mapTier: 1 | 2 | 3 | 4;
+  attributes?: TestTokenAttribute[];
+  price?: number;
+}
+
+export interface TestItemToken {
+  id: string;
+  type: string;
+  rarity: string;
+  price: number;
+  attributes: TestTokenAttribute[];
+  [field: string]: unknown;
+}
+
 export interface TestTrader {
   key: string;
   serial: number;
@@ -34,8 +56,9 @@ export interface TestTrader {
     sold?: boolean;
     discountPercent?: number;
     wasted?: boolean;
+    token?: TestItemToken;
   } | null)[];
-  buyback: ({ key: string; amount: number; unitPrice: number } | null)[];
+  buyback: ({ key: string; amount: number; unitPrice: number; token?: TestItemToken } | null)[];
   refreshPrice: number;
 }
 
@@ -47,6 +70,7 @@ export interface TestTraderFixture {
     sold?: boolean;
     discountPercent?: number;
     wasted?: boolean;
+    token?: TestItemToken;
   } | null)[];
   buyback?: ({ key: string; amount: number; unitPrice: number } | null)[];
   trips?: number;
@@ -159,6 +183,7 @@ export interface HexoflatTestApi {
 
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;
+  grantTokenItem(spec: TestTokenSpec): Promise<TestItemToken>;
   getStash(): ({ key: string; amount: number; id: string } | null)[];
   getBag(): ({ key: string; amount: number; id: string } | null)[];
   getStashChests(): number;

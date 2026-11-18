@@ -19,9 +19,12 @@ export type {
   TestGroundItem,
   TestHeroHealth,
   TestHexCoordinates,
+  TestItemToken,
+  TestTokenAttribute,
   TestPortalPreview,
   TestRenderStats,
   TestTileFraction,
+  TestTokenSpec,
 } from '@web-test-api';
 
 export const MISSING_TEST_HOOKS_MESSAGE =
