@@ -8,6 +8,7 @@ import { ALL_QUESTS } from '../quests/all-quests';
 import { questContentFailures } from '../quests/quests.content';
 import { seekerCardFailures } from '../quests/seeker-content';
 import { tokenContentFailures, uniqueContentFailures } from './validate-tokens';
+import { equipmentContentFailures } from './validate-equipment';
 
 export function validateContent(): void {
   const keys = Object.values(HEXOBJECT_KEYS) as THexobjectKey[];
@@ -32,6 +33,7 @@ export function validateContent(): void {
   failures.push(...seekerCardFailures());
   failures.push(...tokenContentFailures().map((failure) => `[tokens] ${failure}`));
   failures.push(...uniqueContentFailures().map((failure) => `[uniques] ${failure}`));
+  failures.push(...equipmentContentFailures().map((failure) => `[equipment] ${failure}`));
 
   if (failures.length > 0) {
     throw new Error(`Hexobject content validation failed:\n${failures.join('\n')}`);

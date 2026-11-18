@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { CONTENT, TRADERS, tokenLocaleKeys } from '@hexoflat/engine';
+import { CONTENT, TRADERS, equipmentLocaleKeys, tokenLocaleKeys } from '@hexoflat/engine';
 import { SKILL_BRANCHES, SKILL_IDS } from '@hexoflat/engine/skills/skill-content';
 import {
   BATTLE_CREATURES,
@@ -71,6 +71,7 @@ export function collectContentLocaleKeys(): string[] {
   }
 
   for (const key of tokenLocaleKeys()) keys.add(key);
+  for (const key of equipmentLocaleKeys()) keys.add(key);
 
   return [...keys].sort();
 }

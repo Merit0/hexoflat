@@ -13,7 +13,19 @@ export { TypeRegistry, AttributeRegistry, WordPool, UniqueRegistry } from './reg
 export * from './unique-schema';
 export * from './unique-drop';
 export { TOKEN_UNIQUES } from '../content/token-uniques.content';
-export { ITEM_TYPES } from '../content/item-types.content';
+export * from './equipment';
+export { ITEM_TYPES, PLANNED_ITEM_TYPES, EQUIPMENT_TYPES } from '../content/item-types.content';
+export { EQUIPMENT_ATTRIBUTES } from '../content/equipment-attributes.content';
+export { ATTRIBUTE_PROFILES, ATTRIBUTE_MAX_COUNT } from '../content/attribute-profiles.content';
+export { TOKEN_ADJECTIVES } from '../content/token-adjectives.content';
+export {
+  EQUIPMENT_CONTENT,
+  MIN_ADJECTIVES_PER_BAND,
+  adjectivesFor,
+  equipmentContentFailures,
+  equipmentLocaleKeys,
+  type EquipmentContent,
+} from '../content/validate-equipment';
 export { TOKEN_ATTRIBUTES } from '../content/token-attributes.content';
 export { TOKEN_PRICE_RANGES } from '../content/token-prices.content';
 export {

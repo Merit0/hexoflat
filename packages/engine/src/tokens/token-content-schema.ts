@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
+import { equipmentTypeFieldShape } from './equipment/equipment-keys';
 import {
   attributeKeySchema,
   baseRealmSchema,
@@ -29,6 +30,11 @@ export const itemTypeDefinitionSchema = z.strictObject({
     .nullable(),
   nounKey: wordKeySchemaFor('noun'),
   realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice'),
+  group: equipmentTypeFieldShape.group.optional(),
+  gender: equipmentTypeFieldShape.gender.optional(),
+  materials: equipmentTypeFieldShape.materials.optional(),
+  enabled: equipmentTypeFieldShape.enabled.optional(),
+  base: equipmentTypeFieldShape.base.optional(),
 });
 export type ItemTypeDefinition = z.infer<typeof itemTypeDefinitionSchema>;
 

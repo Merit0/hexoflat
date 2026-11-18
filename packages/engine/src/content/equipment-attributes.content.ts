@@ -1,0 +1,214 @@
+import {
+  attributeHintKey,
+  attributeLabelKey,
+  type EquipmentAttributeDefinition,
+} from '../tokens/equipment/equipment-attribute-schema';
+import type { TAttributeFormat } from '../tokens/equipment/equipment-keys';
+
+type AttributeFields = Omit<EquipmentAttributeDefinition, 'key' | 'display' | 'implemented'> & {
+  icon: string;
+  format: TAttributeFormat;
+  implemented?: boolean;
+};
+
+function attribute(key: string, fields: AttributeFields): EquipmentAttributeDefinition {
+  const { icon, format, implemented = false, ...rest } = fields;
+  return {
+    key,
+    ...rest,
+    implemented,
+    display: { labelKey: attributeLabelKey(key), hintKey: attributeHintKey(key), icon, format },
+  };
+}
+
+function blocked(
+  key: string,
+  groups: EquipmentAttributeDefinition['groups'],
+  icon: string,
+): EquipmentAttributeDefinition {
+  return attribute(key, {
+    groups,
+    stat: null,
+    aggregate: 'sum',
+    scope: 'hero',
+    icon,
+    format: 'plain',
+  });
+}
+
+const HERO_SUM = { aggregate: 'sum', scope: 'hero' } as const;
+const ITEM_SUM = { aggregate: 'sum', scope: 'item' } as const;
+
+export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
+  attribute('heart', {
+    groups: ['defense', 'clothing'],
+    stat: 'maxHearts',
+    ...HERO_SUM,
+    cap: 10,
+    icon: 'heart',
+    format: 'hearts',
+    implemented: true,
+  }),
+  attribute('shield', {
+    groups: ['defense'],
+    stat: 'blockSides',
+    ...HERO_SUM,
+    cap: 6,
+    icon: 'shield',
+    format: 'plus',
+  }),
+  attribute('will', {
+    groups: ['jewelry'],
+    stat: 'maxWill',
+    ...HERO_SUM,
+    cap: 10,
+    icon: 'flame',
+    format: 'plus',
+  }),
+  attribute('fog', {
+    groups: ['clothing'],
+    onlyTypes: ['helm'],
+    stat: 'fogRadius',
+    ...HERO_SUM,
+    cap: 2,
+    icon: 'sun',
+    format: 'plus',
+  }),
+  attribute('force', {
+    groups: ['weapon'],
+    stat: 'strikeForce',
+    ...HERO_SUM,
+    icon: 'anvil',
+    format: 'plus',
+  }),
+  attribute('mass', {
+    groups: ['clothing'],
+    stat: 'pushMass',
+    ...HERO_SUM,
+    icon: 'rock',
+    format: 'plus',
+  }),
+  attribute('bag', {
+    groups: ['burden'],
+    stat: 'carryKg',
+    ...HERO_SUM,
+    icon: 'weight',
+    format: 'plus',
+  }),
+  attribute('crit', {
+    groups: ['weapon'],
+    stat: 'critPoints',
+    ...ITEM_SUM,
+    cap: 25,
+    icon: 'bolt',
+    format: 'pct',
+  }),
+  attribute('crit-dmg', {
+    groups: ['weapon'],
+    stat: 'critDamage',
+    ...ITEM_SUM,
+    cap: 2,
+    icon: 'drop',
+    format: 'hearts',
+  }),
+  attribute('trophy', {
+    groups: ['weapon'],
+    stat: 'graveLootBonus',
+    ...ITEM_SUM,
+    cap: 2,
+    icon: 'skull',
+    format: 'plus',
+  }),
+  attribute('yield', {
+    groups: ['weapon'],
+    requires: { tool: true },
+    stat: 'harvestBonus',
+    ...ITEM_SUM,
+    cap: 2,
+    icon: 'stack',
+    format: 'plus',
+  }),
+  attribute('thorns', {
+    groups: ['defense'],
+    stat: 'thorns',
+    ...HERO_SUM,
+    cap: 2,
+    icon: 'star',
+    format: 'hearts',
+  }),
+  attribute('absorb', {
+    groups: ['clothing'],
+    onlyTypes: ['armor', 'helm'],
+    stat: 'absorb',
+    aggregate: 'max',
+    scope: 'hero',
+    cap: 1,
+    icon: 'ward',
+    format: 'hearts',
+  }),
+  attribute('hero-crit', {
+    groups: ['clothing'],
+    onlyTypes: ['gloves'],
+    stat: 'critPoints',
+    ...HERO_SUM,
+    cap: 25,
+    icon: 'target',
+    format: 'pct',
+  }),
+  attribute('smart-step', {
+    groups: ['clothing'],
+    onlyTypes: ['boots'],
+    stat: 'stepFreeEvery',
+    aggregate: 'min',
+    scope: 'hero',
+    icon: 'boots',
+    format: 'plain',
+  }),
+  attribute('deft-hands', {
+    groups: ['clothing'],
+    onlyTypes: ['gloves'],
+    stat: 'useWillDiscount',
+    ...HERO_SUM,
+    cap: 2,
+    icon: 'gloves',
+    format: 'minus',
+  }),
+  attribute('trade', {
+    groups: ['jewelry'],
+    onlyTypes: ['ring'],
+    stat: 'shopBuyDiscountPct',
+    ...HERO_SUM,
+    cap: 10,
+    icon: 'coins',
+    format: 'pct',
+  }),
+  attribute('focus', {
+    groups: ['jewelry'],
+    onlyTypes: ['amulet'],
+    stat: 'mathTimerSec',
+    ...HERO_SUM,
+    cap: 3,
+    icon: 'eye',
+    format: 'sec',
+  }),
+  attribute('wisdom', {
+    groups: ['jewelry'],
+    onlyTypes: ['amulet'],
+    stat: 'hallWillReward',
+    ...HERO_SUM,
+    cap: 2,
+    icon: 'book',
+    format: 'plus',
+  }),
+  blocked('initiative', ['weapon', 'jewelry'], 'feather'),
+  blocked('sweep', ['weapon'], 'spiral'),
+  blocked('feint', ['weapon'], 'wings'),
+  blocked('knockback', ['weapon'], 'horns'),
+  blocked('crit-power', ['weapon'], 'bolt'),
+  blocked('damage-plus', ['weapon'], 'sword'),
+  blocked('damage-mul', ['weapon'], 'sword'),
+  blocked('defense-plus', ['defense'], 'shield'),
+  blocked('counter', ['defense'], 'cross'),
+  blocked('steadfast', ['defense'], 'tower'),
+  blocked('rest', ['clothing'], 'moon'),
+];
