@@ -20,7 +20,7 @@ import { beginBattle, closeBattle, heroBattleCreature } from '../squads/squad-ba
 import { heroModelOf, heroOf } from './world-commands';
 import { respawnWorld } from './respawn-world';
 import type { TravelOutcome, TravelRun } from './travel';
-import { syncHandsToInventory } from './battle-hands-sync';
+import { restoreHandTokens, syncHandsToInventory } from './battle-hands-sync';
 import { worldTokenOrigin, type ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
 
@@ -254,6 +254,7 @@ function fightBattleWorld(session: Session, payload: BattlePayload): BattleWorld
     const synced = before && after ? syncHandsToInventory(session.inventory, before, after) : null;
     if (!synced) return fail(session, 'HANDS_MISMATCH');
     session.inventory = synced;
+    if (after) restoreHandTokens(after, synced);
   }
   record(session, battle, result.battle, result.events);
   return finish(session, null, null);

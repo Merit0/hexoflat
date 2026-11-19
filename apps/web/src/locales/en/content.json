@@ -42,6 +42,9 @@
       }
     },
     "battle": {
+      "crit": {
+        "chance": "Critical chance: {chance}%"
+      },
       "hero": {
         "title": "Hero",
         "tableRule": "Three heart tokens. Holds one item in each hand. On your turn take 20 Will on the counter; spend it on steps, strikes, shields and items."

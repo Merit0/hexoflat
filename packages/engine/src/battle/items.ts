@@ -85,13 +85,16 @@ export function setHands(
 
   for (const hand of changed) {
     const outgoing = actor.hands[hand];
-    const incoming = wanted[hand];
     if (outgoing) actor.bag.push(outgoing);
+  }
+  for (const hand of changed) {
+    const incoming = wanted[hand];
+    let item = incoming ? battleItem(incoming) : null;
     if (incoming) {
       const inBag = actor.bag.findIndex((item) => item.key === incoming);
-      if (inBag >= 0) actor.bag.splice(inBag, 1);
+      if (inBag >= 0) [item] = actor.bag.splice(inBag, 1);
     }
-    actor.hands[hand] = incoming ? battleItem(incoming) : null;
+    actor.hands[hand] = item;
   }
   state.undo = [];
   return [

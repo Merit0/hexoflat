@@ -9,6 +9,8 @@ import type {
 } from './battle-state';
 import { creatureById, isAlive } from './battle-board';
 import { applyDamage } from './battle-end';
+import { resolveStrike } from './strike-pipeline';
+import { battleHeroStats } from './hero-stats';
 import { isAdjacentHex, sameHex } from './hex-battle-geom';
 import { cheapestPaths, moveCreature, pathTo } from './movement';
 import { reject, type BattleRejection } from './battle-rejection';
@@ -87,6 +89,7 @@ function sweepAround(
   attacker: BattleCreature,
   target: BattleCreature,
   hand: BattleHand,
+  strike: PendingStrike,
   rules: BattleRules,
 ): DomainEvent[] {
   const weapon = strikingItem(attacker, hand, rules);
@@ -101,20 +104,28 @@ function sweepAround(
   );
   for (const victim of victims) {
     if (state.phase === 'ended') break;
-    const damage = strikePower(state, attacker, victim, hand, rules);
-    events.push({
-      type: 'STRIKE_SWEPT',
-      payload: {
-        attackerId: attacker.id,
-        victimId: victim.id,
+    const resolved = resolveStrike(
+      {
+        state,
+        strike,
+        attacker,
+        target: victim,
+        weapon,
+        attackerStats: battleHeroStats(attacker),
+        targetStats: battleHeroStats(victim),
         fromHex: { ...attacker.pos },
-        damage,
+        power: strikePower(state, attacker, victim, hand, rules),
+        blocked: false,
+        shields: [],
+        sweep: true,
       },
-    });
+      rules,
+    );
+    events.push(...resolved.events);
     if (attacker.side === 'enemies') {
       state.wounds[victim.id] = [...(state.wounds[victim.id] ?? []), { ...attacker.pos }];
     }
-    events.push(...applyDamage(state, victim, damage));
+    events.push(...applyDamage(state, victim, resolved.result.damageDealt));
   }
   return events;
 }
@@ -140,8 +151,23 @@ function resolveAt(
   const shields = reaction.shields;
   const blocked = shields.some((h) => sameHex(h, fromHex));
   const power = strikePower(state, attacker, defender, reaction.hand, rules);
-  const damage = blocked ? 0 : power;
   const weapon = strikingItem(attacker, reaction.hand, rules);
+  const resolved = resolveStrike(
+    {
+      state,
+      strike,
+      attacker,
+      target: defender,
+      weapon,
+      attackerStats: battleHeroStats(attacker),
+      targetStats: battleHeroStats(defender),
+      fromHex,
+      power,
+      blocked,
+      shields,
+    },
+    rules,
+  );
   state.pending = state.pending.filter((s) => s.id !== strike.id);
   state.reaction = undefined;
   if (!blocked && attacker.side === 'enemies') {
@@ -149,34 +175,11 @@ function resolveAt(
   }
   return [
     ...events,
-    {
-      type: 'STRIKE_LANDED',
-      payload: {
-        attackerId: attacker.id,
-        targetId: defender.id,
-        fromHex,
-        itemKey: weapon?.key ?? 'unarmed',
-        ring: strike.ring,
-      },
-    },
-    {
-      type: 'STRIKES_RESOLVED',
-      payload: {
-        creatureId: defender.id,
-        results: [
-          {
-            strikeId: strike.id,
-            attackerId: attacker.id,
-            fromHex,
-            outcome: blocked ? 'blocked' : 'hit',
-            damage,
-          },
-        ],
-        burnedShields: shields,
-      },
-    },
-    ...applyDamage(state, defender, damage),
-    ...(reaction.ranged ? [] : sweepAround(state, attacker, defender, reaction.hand, rules)),
+    ...resolved.events,
+    ...applyDamage(state, defender, resolved.result.damageDealt),
+    ...(reaction.ranged
+      ? []
+      : sweepAround(state, attacker, defender, reaction.hand, strike, rules)),
   ];
 }
 

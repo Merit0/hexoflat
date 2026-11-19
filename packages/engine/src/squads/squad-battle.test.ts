@@ -55,9 +55,9 @@ describe('squad battles, loot, threat and saves', () => {
     const hero = heroBattleCreature({
       id: HERO,
       hearts: 3,
-      weapon: 'sword',
-      shield: 'shield',
-      bag: ['health-bottle'],
+      weapon: { key: 'sword' },
+      shield: { key: 'shield' },
+      bag: [{ key: 'health-bottle' }],
     });
     expect(eventTypes(lifecycle(state, { kind: 'start', heroes: [hero] }))).toContain(
       'BATTLE_STARTED',
@@ -93,7 +93,7 @@ describe('squad battles, loot, threat and saves', () => {
     const hero = heroBattleCreature({
       id: HERO,
       hearts: 3,
-      weapon: 'sword',
+      weapon: { key: 'sword' },
       shield: null,
       bag: [],
     });

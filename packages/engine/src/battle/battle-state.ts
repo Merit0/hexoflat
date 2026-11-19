@@ -21,6 +21,7 @@ export type BattleHand = z.infer<typeof battleHandSchema>;
 
 export const battleItemSchema = z.object({
   key: z.string().min(1),
+  token: itemTokenSchema.optional(),
   power: z.number().int().min(0).optional(),
   shieldCapacity: z.number().int().min(0).optional(),
   heal: z.number().int().positive().optional(),
@@ -28,6 +29,12 @@ export const battleItemSchema = z.object({
   range: z.object({ min: z.number().int().min(1), max: z.number().int().min(1) }).optional(),
 });
 export type BattleItem = z.infer<typeof battleItemSchema>;
+
+export const battleEquipmentSchema = z.object({
+  key: z.string().min(1),
+  token: itemTokenSchema.optional(),
+});
+export type BattleEquipment = z.infer<typeof battleEquipmentSchema>;
 
 export const battleCreatureSchema = z.object({
   id: z.string().min(1),
@@ -40,6 +47,7 @@ export const battleCreatureSchema = z.object({
   force: z.number().int().min(0),
   hands: z.object({ right: battleItemSchema.nullable(), left: battleItemSchema.nullable() }),
   bag: z.array(battleItemSchema).default([]),
+  equipment: z.array(battleEquipmentSchema).optional(),
 });
 export type BattleCreature = z.infer<typeof battleCreatureSchema>;
 
