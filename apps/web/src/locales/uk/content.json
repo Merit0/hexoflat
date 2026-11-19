@@ -359,6 +359,15 @@
         "counter": "Ще недоступно.",
         "steadfast": "Ще недоступно.",
         "rest": "Ще недоступно."
+      },
+      "nameTemplateAdjective": "{adjective} {noun}",
+      "attrFormat": {
+        "plus": "+{value}",
+        "minus": "−{value}",
+        "pct": "+{value}%",
+        "sec": "+{value} с",
+        "hearts": "+{value}",
+        "plain": "{value}"
       }
     }
   }

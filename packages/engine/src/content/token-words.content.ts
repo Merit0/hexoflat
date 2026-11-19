@@ -184,11 +184,7 @@ export const TOKEN_NAME_TEMPLATE_KEYS = {
 
 export type TokenNameShape = keyof typeof TOKEN_NAME_TEMPLATE_KEYS;
 
-export const TOKEN_NAME_SHAPE_WEIGHTS: Readonly<Record<TokenNameShape, number>> = {
-  full: 10,
-  prefix: 45,
-  suffix: 45,
-};
+export const TOKEN_ADJECTIVE_NAME_TEMPLATE_KEY = 'content.tokens.nameTemplateAdjective';
 
 export const TOKEN_NAME_RULES = {
   maxWords: 3,

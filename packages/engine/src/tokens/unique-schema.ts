@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { skillIdSchema } from '../skills/skill-content';
-import { MAX_BASE_TOKEN_ATTRIBUTES } from './factory/attribute-generator';
 import {
   i18nKeySchema,
   itemTypeKeySchema,
@@ -40,11 +39,6 @@ export const uniqueTokenDefinitionSchema = z.strictObject({
     }),
   skills: z.array(skillIdSchema).refine(distinct, 'a skill is listed twice'),
   price: z.number().int().positive(),
-  rolled: z
-    .strictObject({
-      attributes: z.number().int().min(1).max(MAX_BASE_TOKEN_ATTRIBUTES).optional(),
-    })
-    .optional(),
   revision: z.number().int().positive(),
 });
 export type UniqueTokenDefinition = z.infer<typeof uniqueTokenDefinitionSchema>;

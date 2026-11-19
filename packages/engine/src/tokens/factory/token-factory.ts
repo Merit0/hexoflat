@@ -11,11 +11,13 @@ import {
 import type { TypeRegistry, UniqueRegistry } from '../registries';
 import { emptyTokenExtensions, type ItemToken } from '../token-schema';
 import type { UniqueTokenDefinition } from '../unique-schema';
+import type { IAttributeGenerator as IEquipmentAttributeGenerator } from '../equipment/generator/generator-contracts';
+import { seededRandomStreams } from '../equipment/generator/attribute-streams';
+import { resolveGenerationLevel } from '../equipment/generator/generation-level';
 import {
   refuseToken,
   TOKEN_GENERATOR_VERSION,
   type GenerationContext,
-  type IAttributeGenerator,
   type IDescriptionBuilder,
   type INameGenerator,
   type IPriceGenerator,
@@ -34,7 +36,7 @@ export interface TokenFactoryParts {
   typePicker: ITypePicker;
   nameGenerator: INameGenerator;
   spriteResolver: ISpriteResolver;
-  attributeGenerator: IAttributeGenerator;
+  attributeGenerator: IEquipmentAttributeGenerator;
   skillGenerator: ISkillGenerator;
   priceGenerator: IPriceGenerator;
   descriptionBuilder: IDescriptionBuilder;
@@ -114,30 +116,36 @@ export class TokenFactory {
     const picked = this.parts.typePicker.pick(realm, ctx.type, stream('type'));
     if (!picked.ok) return picked;
     const type = picked.value;
+    if (!type.group) return refuseToken('INVALID_TOKEN', `item type "${type.key}" has no group`);
     const attributes = overrides.attributes
       ? overrides.attributes.map((attribute) => ({ ...attribute }))
-      : this.parts.attributeGenerator.generate(type, ctx.mapTier, stream('attributes'));
+      : this.parts.attributeGenerator.generate({
+          level: resolveGenerationLevel(null, ctx.mapTier),
+          group: type.group,
+          type,
+          tokenId: id,
+          rng: seededRandomStreams(ctx.seed),
+        });
     const checked = this.parts.validator.validateAttributes({
       type,
+      origin: 'base',
       mapTier: ctx.mapTier,
       attributes,
     });
     if (!checked.ok) return checked;
+    const attributeCount = attributes.length;
     return this.parts.validator.validate({
       id,
       origin: 'base',
       type: type.key,
       rarity: realm,
-      name: this.parts.nameGenerator.generate(type, realm, stream('name')),
-      description: this.parts.descriptionBuilder.build({
-        type,
-        realm,
-        mapTier: ctx.mapTier,
-        attributes,
-      }),
+      name: this.parts.nameGenerator.generate({ type, attributeCount }, stream('name')),
+      description: this.parts.descriptionBuilder.build({ type, realm, mapTier: ctx.mapTier }),
       attributes,
       skills: this.parts.skillGenerator.generate(type, stream('skills')),
-      price: overrides.price ?? this.parts.priceGenerator.generate(realm, stream('price')),
+      price:
+        overrides.price ??
+        this.parts.priceGenerator.generate(realm, attributeCount, stream('price')),
       sprite: this.parts.spriteResolver.resolve(type, realm, stream('sprite')),
       mapTier: ctx.mapTier,
       generatorVersion: TOKEN_GENERATOR_VERSION,
@@ -169,20 +177,10 @@ export class TokenFactory {
   ): TokenResult<ItemToken> {
     const id = itemTokenIdOf(ctx.sourceId, ctx.n);
     const type = unique.types.get(definition.type);
-    const rolled = definition.rolled?.attributes
-      ? this.parts.attributeGenerator.generate(
-          type,
-          ctx.mapTier,
-          deriveStream(ctx.seed, tokenStreamLabel(id, 'attributes')),
-          {
-            count: definition.rolled.attributes,
-            exclude: definition.attributes.map((attribute) => attribute.key),
-          },
-        )
-      : [];
-    const attributes = [...definition.attributes.map((attribute) => ({ ...attribute })), ...rolled];
+    const attributes = definition.attributes.map((attribute) => ({ ...attribute }));
     const checked = this.parts.validator.validateAttributes({
       type,
+      origin: 'unique',
       mapTier: ctx.mapTier,
       attributes,
     });
@@ -198,7 +196,6 @@ export class TokenFactory {
         type,
         realm: definition.rarity,
         mapTier: ctx.mapTier,
-        attributes,
         descriptionKey: definition.descriptionKey,
       }),
       attributes,

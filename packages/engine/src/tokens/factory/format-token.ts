@@ -1,8 +1,27 @@
-import { TOKEN_NAME_TEMPLATE_KEYS } from '../../content/token-words.content';
-import { i18nKeySchema, wordKeyOf } from '../token-keys';
-import type { DescriptionLine, TokenName } from '../token-schema';
+import { EQUIPMENT_TYPES } from '../../content/item-types.content';
+import { TOKEN_ADJECTIVES } from '../../content/token-adjectives.content';
+import {
+  TOKEN_ADJECTIVE_NAME_TEMPLATE_KEY,
+  TOKEN_NAME_TEMPLATE_KEYS,
+} from '../../content/token-words.content';
+import { attributeRowsOf } from '../attribute-display';
+import type { Adjective } from '../equipment/adjective-schema';
+import type { EquipmentAttributeDefinition } from '../equipment/equipment-attribute-schema';
+import { NOUN_GENDERS, type TNounGender } from '../equipment/equipment-keys';
+import { i18nKeySchema, WORD_KEY_ROOT, wordKeyOf } from '../token-keys';
+import type { DescriptionLine, ItemToken, TokenName } from '../token-schema';
 
 export type TokenDictionary = Readonly<Record<string, string>>;
+
+export interface TokenAttributeRow {
+  key: string;
+  label: string;
+  icon: string;
+  value: string;
+}
+
+const DEFAULT_GENDER: TNounGender = 'm';
+const UK_LOCALE = 'uk';
 
 export function flattenTextTree(tree: unknown, prefix = ''): Record<string, string> {
   if (typeof tree === 'string') return prefix ? { [prefix]: tree } : {};
@@ -14,6 +33,32 @@ export function flattenTextTree(tree: unknown, prefix = ''): Record<string, stri
     }),
     {},
   );
+}
+
+export function adjectiveTextKey(adjective: string, gender: TNounGender): string {
+  return `${WORD_KEY_ROOT}.adjective.${adjective}.${gender}`;
+}
+
+export function adjectiveTexts(
+  locale: string,
+  adjectives: readonly Adjective[] = TOKEN_ADJECTIVES,
+): Record<string, string> {
+  return Object.fromEntries(
+    adjectives.flatMap((adjective) =>
+      NOUN_GENDERS.map((gender) => [
+        adjectiveTextKey(adjective.key, gender),
+        locale === UK_LOCALE ? adjective.uk[gender] : adjective.en,
+      ]),
+    ),
+  );
+}
+
+export function withAdjectiveTexts(dictionary: TokenDictionary, locale: string): TokenDictionary {
+  return { ...dictionary, ...adjectiveTexts(locale) };
+}
+
+function genderOf(noun: string): TNounGender {
+  return EQUIPMENT_TYPES.find((type) => type.key === noun)?.gender ?? DEFAULT_GENDER;
 }
 
 function textOf(key: string, dictionary: TokenDictionary): string {
@@ -31,6 +76,12 @@ export function formatTokenName(name: TokenName, dictionary: TokenDictionary): s
   if (name.kind === 'authored') return textOf(name.nameKey, dictionary);
   const noun = textOf(wordKeyOf('noun', name.noun), dictionary);
   if (name.kind === 'noun') return noun;
+  if (name.kind === 'adjective') {
+    return fill(textOf(TOKEN_ADJECTIVE_NAME_TEMPLATE_KEY, dictionary), {
+      adjective: textOf(adjectiveTextKey(name.adjective, genderOf(name.noun)), dictionary),
+      noun,
+    });
+  }
   const shape = name.prefix && name.suffix ? 'full' : name.prefix ? 'prefix' : 'suffix';
   return fill(textOf(TOKEN_NAME_TEMPLATE_KEYS[shape], dictionary), {
     noun,
@@ -54,4 +105,17 @@ export function formatTokenDescription(
     );
     return fill(textOf(line.key, dictionary), params);
   });
+}
+
+export function formatTokenAttributes(
+  token: Pick<ItemToken, 'attributes' | 'description'>,
+  dictionary: TokenDictionary,
+  attributes?: readonly EquipmentAttributeDefinition[],
+): TokenAttributeRow[] {
+  return attributeRowsOf(token, attributes).map((row) => ({
+    key: row.key,
+    label: textOf(row.labelKey, dictionary),
+    icon: row.icon,
+    value: fill(textOf(row.formatKey, dictionary), { value: String(row.value) }),
+  }));
 }

@@ -1,36 +1,53 @@
 import { itemTokenSchema, type ItemToken } from '../token-schema';
 import {
   refuseToken,
+  type AttributeSheet,
   type ITokenValidator,
   type TokenResult,
-  type TokenSheet,
 } from './token-generation';
 import { attributeFailure } from '../attribute-rules';
+import type { AttributeProfiles } from '../equipment/attribute-profile-schema';
 import type { AttributeRegistry, TypeRegistry } from '../registries';
 import { mapTierSchema } from '../token-keys';
-import { MAX_BASE_TOKEN_ATTRIBUTES } from './attribute-generator';
+
+const MAX_BLOCK_SIDES = 6;
+const BLOCK_ATTRIBUTE_KEY = 'shield';
 
 export class ZodTokenValidator implements ITokenValidator {
   constructor(
     private readonly types: TypeRegistry,
     private readonly attributes: AttributeRegistry,
+    private readonly profiles: AttributeProfiles,
   ) {}
 
-  validateAttributes(
-    sheet: Pick<TokenSheet, 'type' | 'mapTier' | 'attributes'>,
-  ): TokenResult<true> {
+  validateAttributes(sheet: AttributeSheet): TokenResult<true> {
     if (!mapTierSchema.safeParse(sheet.mapTier).success)
       return refuseToken('INVALID_TOKEN', 'Invalid source tier');
+    const check =
+      sheet.origin === 'base'
+        ? { origin: 'base' as const, profiles: this.profiles }
+        : { origin: 'unique' as const };
+    const maxCount = this.profiles[`tier-${sheet.mapTier}`].maxCount;
+    if (sheet.origin === 'base' && sheet.attributes.length > maxCount) {
+      return refuseToken('INVALID_TOKEN', 'Too many base token attributes');
+    }
     for (const attribute of sheet.attributes) {
-      const failure = attributeFailure(this.attributes, sheet.type.key, attribute, sheet.mapTier);
+      const failure = attributeFailure(
+        this.attributes,
+        sheet.type,
+        attribute,
+        check,
+        sheet.mapTier,
+      );
       if (failure) return refuseToken('INVALID_TOKEN', failure);
     }
     const sides =
       (sheet.type.block?.sides ?? 0) +
       sheet.attributes
-        .filter((attribute) => attribute.key === 'shield')
+        .filter((attribute) => attribute.key === BLOCK_ATTRIBUTE_KEY)
         .reduce((sum, attribute) => sum + attribute.value, 0);
-    if (sides > 6) return refuseToken('INVALID_TOKEN', 'A shield cannot exceed six block sides');
+    if (sides > MAX_BLOCK_SIDES)
+      return refuseToken('INVALID_TOKEN', 'A shield cannot exceed six block sides');
     return { ok: true, value: true };
   }
 
@@ -38,12 +55,10 @@ export class ZodTokenValidator implements ITokenValidator {
     const parsed = itemTokenSchema.safeParse(candidate);
     if (parsed.success) {
       const token = parsed.data;
-      if (token.origin === 'base' && token.attributes.length > MAX_BASE_TOKEN_ATTRIBUTES) {
-        return refuseToken('INVALID_TOKEN', 'Too many base token attributes');
-      }
       if (!this.types.has(token.type)) return refuseToken('INVALID_TOKEN', 'Unknown token type');
       const checked = this.validateAttributes({
         type: this.types.get(token.type),
+        origin: token.origin,
         mapTier: token.mapTier,
         attributes: token.attributes,
       });

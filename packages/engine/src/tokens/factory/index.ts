@@ -1,15 +1,13 @@
 export * from './token-generation';
 export { RealmTypePicker } from './type-picker';
-export { WordPoolNameGenerator } from './name-generator';
+export { AdjectiveNameGenerator, adjectiveBandFor, adjectivesForType } from './name-generator';
 export { ManifestSpriteResolver } from './sprite-resolver';
-export { WeightedAttributeGenerator, MAX_BASE_TOKEN_ATTRIBUTES } from './attribute-generator';
 export { EmptySkillGenerator } from './skill-generator';
-export { RangePriceGenerator } from './price-generator';
+export { RangePriceGenerator, priceBandOf, PRICE_BANDS } from './price-generator';
 export {
   SpecSheetDescriptionBuilder,
   TOKEN_LINE_KEYS,
   realmTextKey,
-  attributeTextKey,
   toolTextKey,
   descriptionLocaleKeys,
 } from './description-builder';
@@ -24,7 +22,12 @@ export { createTokenFactory } from './create-token-factory';
 export {
   formatTokenName,
   formatTokenDescription,
+  formatTokenAttributes,
   flattenTextTree,
+  adjectiveTextKey,
+  adjectiveTexts,
+  withAdjectiveTexts,
   type TokenDictionary,
+  type TokenAttributeRow,
 } from './format-token';
 export { tokenNameRuleFailures, letterCount, type TokenNameRules } from './name-rules';

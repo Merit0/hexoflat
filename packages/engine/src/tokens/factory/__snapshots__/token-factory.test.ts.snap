@@ -33,7 +33,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:0",
     "mapTier": 2,
     "name": {
@@ -41,19 +41,14 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "pickaxe",
     },
     "origin": "base",
-    "price": 464,
+    "price": 181,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
     "type": "pickaxe",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 1,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -69,12 +64,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
       {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 0.5,
-        },
-      },
-      {
         "key": "content.tokens.line.tier",
         "params": {
           "tier": 2,
@@ -85,29 +74,23 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:1",
     "mapTier": 2,
     "name": {
-      "kind": "generated",
+      "adjective": "poor",
+      "kind": "adjective",
       "noun": "sword",
-      "prefix": "content.tokens.prefix.ember",
-      "suffix": "content.tokens.suffix.last-light",
     },
     "origin": "base",
-    "price": 848,
+    "price": 349,
     "rarity": "spark",
     "skills": [],
     "sprite": "idol-sword-01",
     "type": "sword",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 2,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -120,12 +103,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "content.tokens.line.strike",
         "params": {
           "strike": 0.5,
-        },
-      },
-      {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
         },
       },
       {
@@ -143,7 +120,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:2",
     "mapTier": 3,
     "name": {
@@ -151,19 +128,14 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "pickaxe",
     },
     "origin": "base",
-    "price": 331,
+    "price": 150,
     "rarity": "gloom",
     "skills": [],
     "sprite": "idol-pickaxe-01",
     "type": "pickaxe",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 2,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -176,12 +148,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "content.tokens.line.strike",
         "params": {
           "strike": 0.5,
-        },
-      },
-      {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
         },
       },
       {
@@ -199,7 +165,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:3",
     "mapTier": 3,
     "name": {
@@ -207,14 +173,19 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "axe",
     },
     "origin": "base",
-    "price": 281,
+    "price": 120,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-axe-01",
     "type": "axe",
   },
   {
-    "attributes": [],
+    "attributes": [
+      {
+        "key": "heart",
+        "value": 1,
+      },
+    ],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -240,28 +211,23 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:4",
     "mapTier": 3,
     "name": {
-      "kind": "generated",
+      "adjective": "bone",
+      "kind": "adjective",
       "noun": "shield",
-      "suffix": "content.tokens.suffix.broken-bell",
     },
     "origin": "base",
-    "price": 892,
+    "price": 731,
     "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
     "type": "shield",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 2,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -277,12 +243,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
       {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
-        },
-      },
-      {
         "key": "content.tokens.line.tier",
         "params": {
           "tier": 4,
@@ -293,29 +253,23 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:5",
     "mapTier": 4,
     "name": {
-      "kind": "generated",
+      "adjective": "poor",
+      "kind": "adjective",
       "noun": "shield",
-      "prefix": "content.tokens.prefix.wind",
-      "suffix": "content.tokens.suffix.lamplighter",
     },
     "origin": "base",
-    "price": 471,
+    "price": 197,
     "rarity": "gloom",
     "skills": [],
     "sprite": "idol-shield-01",
     "type": "shield",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 2,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -328,12 +282,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "content.tokens.line.strike",
         "params": {
           "strike": 0.5,
-        },
-      },
-      {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
         },
       },
       {
@@ -351,7 +299,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:6",
     "mapTier": 4,
     "name": {
@@ -359,7 +307,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "pickaxe",
     },
     "origin": "base",
-    "price": 482,
+    "price": 187,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
@@ -369,7 +317,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
     "attributes": [
       {
         "key": "heart",
-        "value": 2,
+        "value": 1,
       },
     ],
     "description": [
@@ -387,12 +335,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
       {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
-        },
-      },
-      {
         "key": "content.tokens.line.tier",
         "params": {
           "tier": 4,
@@ -403,28 +345,23 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:7",
     "mapTier": 4,
     "name": {
-      "kind": "generated",
+      "adjective": "bronze",
+      "kind": "adjective",
       "noun": "shield",
-      "prefix": "content.tokens.prefix.frost",
     },
     "origin": "base",
-    "price": 687,
+    "price": 662,
     "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
     "type": "shield",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 1,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -437,12 +374,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "content.tokens.line.strike",
         "params": {
           "strike": 0.5,
-        },
-      },
-      {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 0.5,
         },
       },
       {
@@ -460,7 +391,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:8",
     "mapTier": 1,
     "name": {
@@ -468,7 +399,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "axe",
     },
     "origin": "base",
-    "price": 234,
+    "price": 118,
     "rarity": "gloom",
     "skills": [],
     "sprite": "idol-axe-01",
@@ -505,7 +436,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:9",
     "mapTier": 1,
     "name": {
@@ -513,7 +444,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "pickaxe",
     },
     "origin": "base",
-    "price": 96,
+    "price": 58,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
@@ -546,16 +477,16 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:10",
     "mapTier": 1,
     "name": {
-      "kind": "generated",
+      "adjective": "rusty",
+      "kind": "adjective",
       "noun": "shield",
-      "suffix": "content.tokens.suffix.pilgrim",
     },
     "origin": "base",
-    "price": 207,
+    "price": 135,
     "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
@@ -588,28 +519,23 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:11",
     "mapTier": 2,
     "name": {
-      "kind": "generated",
+      "adjective": "broken",
+      "kind": "adjective",
       "noun": "sword",
-      "prefix": "content.tokens.prefix.heather",
     },
     "origin": "base",
-    "price": 294,
+    "price": 138,
     "rarity": "gloom",
     "skills": [],
     "sprite": "idol-sword-01",
     "type": "sword",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 1,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -622,12 +548,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "content.tokens.line.strike",
         "params": {
           "strike": 0.5,
-        },
-      },
-      {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 0.5,
         },
       },
       {
@@ -645,7 +565,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:12",
     "mapTier": 2,
     "name": {
@@ -653,7 +573,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "pickaxe",
     },
     "origin": "base",
-    "price": 536,
+    "price": 205,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
@@ -681,12 +601,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
       {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 0.5,
-        },
-      },
-      {
         "key": "content.tokens.line.tier",
         "params": {
           "tier": 2,
@@ -697,23 +611,28 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:13",
     "mapTier": 2,
     "name": {
-      "kind": "generated",
+      "adjective": "iron",
+      "kind": "adjective",
       "noun": "shield",
-      "prefix": "content.tokens.prefix.marsh",
     },
     "origin": "base",
-    "price": 715,
+    "price": 672,
     "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
     "type": "shield",
   },
   {
-    "attributes": [],
+    "attributes": [
+      {
+        "key": "heart",
+        "value": 2,
+      },
+    ],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -739,16 +658,16 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:14",
     "mapTier": 3,
     "name": {
-      "kind": "generated",
+      "adjective": "leather",
+      "kind": "adjective",
       "noun": "shield",
-      "suffix": "content.tokens.suffix.red-hill",
     },
     "origin": "base",
-    "price": 71,
+    "price": 310,
     "rarity": "gloom",
     "skills": [],
     "sprite": "idol-shield-01",
@@ -758,7 +677,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
     "attributes": [
       {
         "key": "heart",
-        "value": 2,
+        "value": 1,
       },
     ],
     "description": [
@@ -776,12 +695,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
       {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
-        },
-      },
-      {
         "key": "content.tokens.line.tier",
         "params": {
           "tier": 3,
@@ -792,28 +705,23 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:15",
     "mapTier": 3,
     "name": {
-      "kind": "generated",
+      "adjective": "iron",
+      "kind": "adjective",
       "noun": "shield",
-      "prefix": "content.tokens.prefix.copper",
     },
     "origin": "base",
-    "price": 318,
+    "price": 319,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-shield-01",
     "type": "shield",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 2,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -826,12 +734,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "content.tokens.line.strike",
         "params": {
           "strike": 0.5,
-        },
-      },
-      {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
         },
       },
       {
@@ -849,7 +751,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:16",
     "mapTier": 3,
     "name": {
@@ -857,7 +759,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "axe",
     },
     "origin": "base",
-    "price": 787,
+    "price": 329,
     "rarity": "spark",
     "skills": [],
     "sprite": "idol-axe-01",
@@ -890,23 +792,28 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:17",
     "mapTier": 4,
     "name": {
-      "kind": "generated",
+      "adjective": "cracked",
+      "kind": "adjective",
       "noun": "sword",
-      "suffix": "content.tokens.suffix.wanderer",
     },
     "origin": "base",
-    "price": 135,
+    "price": 85,
     "rarity": "gloom",
     "skills": [],
     "sprite": "idol-sword-01",
     "type": "sword",
   },
   {
-    "attributes": [],
+    "attributes": [
+      {
+        "key": "heart",
+        "value": 1,
+      },
+    ],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -932,28 +839,23 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:18",
     "mapTier": 4,
     "name": {
-      "kind": "generated",
+      "adjective": "bone",
+      "kind": "adjective",
       "noun": "shield",
-      "suffix": "content.tokens.suffix.bellringer",
     },
     "origin": "base",
-    "price": 260,
+    "price": 300,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-shield-01",
     "type": "shield",
   },
   {
-    "attributes": [
-      {
-        "key": "heart",
-        "value": 2,
-      },
-    ],
+    "attributes": [],
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -966,12 +868,6 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "content.tokens.line.strike",
         "params": {
           "strike": 0.5,
-        },
-      },
-      {
-        "key": "content.tokens.attr.heart",
-        "params": {
-          "value": 1,
         },
       },
       {
@@ -989,7 +885,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 3,
+    "generatorVersion": 4,
     "id": "test:golden:19",
     "mapTier": 4,
     "name": {
@@ -997,7 +893,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "axe",
     },
     "origin": "base",
-    "price": 917,
+    "price": 372,
     "rarity": "spark",
     "skills": [],
     "sprite": "idol-axe-01",

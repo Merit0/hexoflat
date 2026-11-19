@@ -12,11 +12,11 @@ import type { GenerationContext, ITokenValidator } from './token-generation';
 import { TOKEN_CONTENT } from '../../content/token-content';
 import { createTokenRegistries } from '../../content/token-content';
 import { RealmTypePicker } from './type-picker';
-import { WordPoolNameGenerator } from './name-generator';
+import { AdjectiveNameGenerator } from './name-generator';
 import { ManifestSpriteResolver } from './sprite-resolver';
 import { ManifestSpriteRegistry } from '../sprite-registry';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
-import { WeightedAttributeGenerator } from './attribute-generator';
+import { createEquipmentAttributeGenerator } from '../equipment/generator/create-equipment-attribute-generator';
 import { EmptySkillGenerator } from './skill-generator';
 import { RangePriceGenerator } from './price-generator';
 import { SpecSheetDescriptionBuilder } from './description-builder';
@@ -51,7 +51,6 @@ describe('TokenFactory.createBase refusals', () => {
       {
         ...TOKEN_CONTENT,
         types: extendedContent().types.filter((type) => type.key === 'hammer'),
-        attributes: [],
       },
       extendedManifest(),
       [],
@@ -60,19 +59,22 @@ describe('TokenFactory.createBase refusals', () => {
   });
 
   it('returns the validator refusal for a token that fails the schema', () => {
-    const { types, attributes, words } = createTokenRegistries();
+    const { types } = createTokenRegistries();
     const failing: ITokenValidator = {
       validateAttributes: () => ({ ok: true, value: true }),
       validate: () => ({ ok: false, refusal: { code: 'INVALID_TOKEN', message: 'test' } }),
     };
     const factory = new TokenFactory({
       typePicker: new RealmTypePicker(types),
-      nameGenerator: new WordPoolNameGenerator(words),
+      nameGenerator: new AdjectiveNameGenerator(TOKEN_CONTENT.adjectives),
       spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(SPRITE_MANIFEST)),
-      attributeGenerator: new WeightedAttributeGenerator(attributes),
+      attributeGenerator: createEquipmentAttributeGenerator(
+        TOKEN_CONTENT.attributes,
+        TOKEN_CONTENT.profiles,
+      ),
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(TOKEN_CONTENT.priceRanges),
-      descriptionBuilder: new SpecSheetDescriptionBuilder(attributes),
+      descriptionBuilder: new SpecSheetDescriptionBuilder(),
       validator: failing,
     });
     expect(refusalOf(contextFor(3), factory)).toBe('INVALID_TOKEN');

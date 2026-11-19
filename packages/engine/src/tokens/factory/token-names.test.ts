@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { ERarityKind } from '../../abstraction/hexobject-abstraction';
 import { createTokenRegistries, TOKEN_CONTENT, tokenLocaleKeys } from '../../content/token-content';
-import { TOKEN_NAME_RULES, TOKEN_NAME_SHAPE_WEIGHTS } from '../../content/token-words.content';
+import { TOKEN_NAME_RULES } from '../../content/token-words.content';
 import type { DescriptionLine, ItemToken, TokenName } from '../token-schema';
 import { wordKeyOf } from '../token-keys';
 import { createTokenFactory } from './create-token-factory';
@@ -18,8 +18,10 @@ import {
 } from './factory-test-setup';
 import {
   flattenTextTree,
+  formatTokenAttributes,
   formatTokenDescription,
   formatTokenName,
+  withAdjectiveTexts,
   type TokenDictionary,
 } from './format-token';
 import { letterCount, tokenNameRuleFailures } from './name-rules';
@@ -31,8 +33,11 @@ const LOCALES_DIR = path.resolve(
 );
 
 function dictionaryOf(lang: string): TokenDictionary {
-  return flattenTextTree(
-    JSON.parse(readFileSync(path.join(LOCALES_DIR, lang, 'content.json'), 'utf-8')),
+  return withAdjectiveTexts(
+    flattenTextTree(
+      JSON.parse(readFileSync(path.join(LOCALES_DIR, lang, 'content.json'), 'utf-8')),
+    ),
+    lang,
   );
 }
 
@@ -46,28 +51,7 @@ function tokensOf(contexts: GenerationContext[], factory = defaultFactory): Item
   });
 }
 
-function nameId(name: TokenName): string {
-  return JSON.stringify(name);
-}
-
-function shapeOf(name: TokenName): string {
-  if (name.kind !== 'generated') return name.kind;
-  if (name.prefix && name.suffix) return 'full';
-  return name.prefix ? 'prefix' : 'suffix';
-}
-
-function diversity(tokens: ItemToken[]) {
-  const counts = new Map<string, number>();
-  for (const token of tokens)
-    counts.set(nameId(token.name), (counts.get(nameId(token.name)) ?? 0) + 1);
-  return { distinct: counts.size / tokens.length, most: Math.max(...counts.values()) };
-}
-
 const { types } = createTokenRegistries();
-const NAMED_TYPES = types
-  .all()
-  .filter((type) => type.tool === null)
-  .map((type) => type.key);
 
 describe('token names and descriptions', () => {
   const tokens = tokensOf(mixedContexts(500, [undefined, ...types.all().map((type) => type.key)]));
@@ -155,31 +139,13 @@ describe('token names and descriptions', () => {
       /content\.tokens\.noun\.hammer/,
     );
   });
-
-  it('TG-7: gives at least 40% distinct names in 500 mixed tokens, none more than 12 times', () => {
-    const named = tokensOf(mixedContexts(500, NAMED_TYPES));
-    const { distinct, most } = diversity(named);
-    expect(distinct).toBeGreaterThanOrEqual(0.4);
-    expect(most).toBeLessThanOrEqual(12);
-  });
-
-  it.each(
-    [ERarityKind.GLOOM, ERarityKind.IDOL, ERarityKind.SPARK].flatMap((realm) =>
-      NAMED_TYPES.map((type) => [realm, type] as const),
-    ),
-  )('TG-7: gives at least 25%% distinct names in 500 %s %s tokens', (realm, type) => {
-    const tokens = tokensOf(
-      Array.from({ length: 500 }, (_, index) => contextFor(index + 1, { realm, type })),
-    );
-    expect(diversity(tokens).distinct).toBeGreaterThanOrEqual(0.25);
-  });
 });
 
-describe('generated name limits and shapes', () => {
+describe('name limits', () => {
   const named = tokensOf(mixedContexts(500, [undefined, ...types.all().map((type) => type.key)]));
 
   it.each(['en', 'uk'] as const)(
-    'TG-4b: keeps every %s generated name within the word and letter limits',
+    'TG-4b: keeps every %s token name and old word within the word and letter limits',
     (lang) => {
       expect(tokenNameRuleFailures(TOKEN_CONTENT, DICTIONARIES[lang])).toEqual([]);
       for (const token of named.filter((token) => token.name.kind !== 'authored')) {
@@ -209,23 +175,13 @@ describe('generated name limits and shapes', () => {
     expect(letterCount("Smith's")).toBe(6);
     expect(letterCount("Кожум'яки")).toBe(8);
   });
-
-  it('TG-7: gives a three-word name to about 10% of 5000 named tokens, two words to the rest', () => {
-    const named = tokensOf(mixedContexts(5000, NAMED_TYPES));
-    const total = Object.values(TOKEN_NAME_SHAPE_WEIGHTS).reduce((sum, weight) => sum + weight, 0);
-    for (const [shape, weight] of Object.entries(TOKEN_NAME_SHAPE_WEIGHTS)) {
-      const share = named.filter((token) => shapeOf(token.name) === shape).length / named.length;
-      expect(share, shape).toBeGreaterThan(weight / total - 0.03);
-      expect(share, shape).toBeLessThan(weight / total + 0.03);
-    }
-  });
 });
 
 describe('TG-9: extension by data only', () => {
   const factory = createTokenFactory(extendedContent(), extendedManifest());
   const tokens = tokensOf(
     Array.from({ length: 300 }, (_, index) =>
-      contextFor(index + 1, { realm: ERarityKind.SPARK, type: 'hammer' }),
+      contextFor(index + 1, { realm: ERarityKind.SPARK, type: 'hammer', mapTier: 4 }),
     ),
     factory,
   );
@@ -233,30 +189,32 @@ describe('TG-9: extension by data only', () => {
     ...Object.fromEntries(
       Object.keys(DICTIONARIES.en).map((key) => [key, `~${DICTIONARIES.en[key]}`]),
     ),
-    'content.tokens.nameTemplate': '{suffix} / {noun} / {prefix}',
-    'content.tokens.nameTemplatePrefix': '{noun} / {prefix}',
-    'content.tokens.nameTemplateSuffix': '{suffix} / {noun}',
+    'content.tokens.nameTemplateAdjective': '{noun} / {adjective}',
+    'content.tokens.attrFormat.plus': '+{value}',
     ...EXTENSION_TEXTS,
   };
 
-  it('makes tokens of the new type with its sprite, attribute and words', () => {
+  it('makes tokens of the new type with its sprite, attribute and adjectives', () => {
     expect(tokens.every((token) => token.type === 'hammer')).toBe(true);
     expect(tokens.every((token) => token.sprite === 'spark-hammer-01')).toBe(true);
     expect(tokens.some((token) => token.attributes.some((a) => a.key === 'ward'))).toBe(true);
-    const names = tokens.map((token) => token.name);
-    expect(names.some((name) => name.kind === 'generated' && name.prefix?.endsWith('.glass'))).toBe(
-      true,
-    );
-    expect(
-      names.some((name) => name.kind === 'generated' && name.suffix?.endsWith('.lighthouse')),
-    ).toBe(true);
+    for (const token of tokens) {
+      for (const attribute of token.attributes) {
+        expect(attribute.value).toBeGreaterThanOrEqual(3);
+        expect(attribute.value).toBeLessThanOrEqual(6);
+      }
+    }
+    expect(tokens.every((token) => token.name.kind === 'adjective')).toBe(true);
   });
 
-  it('formats the new type in a new language', () => {
+  it('formats the new type and its attribute in a new language', () => {
     for (const token of tokens) {
-      expect(formatTokenName(token.name, extraLanguage)).toMatch(/^(.+ \/ )?Hammer( \/ .+)?$/);
-      expect(formatTokenName(token.name, extraLanguage)).not.toBe('Hammer');
+      expect(formatTokenName(token.name, extraLanguage)).toMatch(/^Hammer \/ ~.+$/);
       expect(formatTokenDescription(token.description, extraLanguage)[0]).toBe('~Hammer · ~Spark');
+      for (const row of formatTokenAttributes(token, extraLanguage, extendedContent().attributes)) {
+        expect(row).toMatchObject({ key: 'ward', label: 'Ward', icon: 'anvil' });
+        expect(row.value).toMatch(/^\+[3-6]$/);
+      }
     }
   });
 

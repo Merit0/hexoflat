@@ -359,6 +359,15 @@
         "counter": "Not available yet.",
         "steadfast": "Not available yet.",
         "rest": "Not available yet."
+      },
+      "nameTemplateAdjective": "{adjective} {noun}",
+      "attrFormat": {
+        "plus": "+{value}",
+        "minus": "−{value}",
+        "pct": "+{value}%",
+        "sec": "+{value} s",
+        "hearts": "+{value}",
+        "plain": "{value}"
       }
     }
   }

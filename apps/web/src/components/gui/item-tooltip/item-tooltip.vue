@@ -66,6 +66,19 @@
           >
             {{ line }}
           </p>
+          <p
+            v-for="row in attributeRows"
+            :key="row.key"
+            class="tip__line"
+            data-testid="item-tooltip-attribute"
+          >
+            <span class="tip__stat">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path :d="ICON_PATHS[row.icon as TIconName]" />
+              </svg>
+              {{ row.label }} {{ row.value }}
+            </span>
+          </p>
         </div>
         <p v-else-if="view.description" class="tip__flavor">{{ t(view.description) }}</p>
 
@@ -110,7 +123,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { InventoryTooltipView } from '@/composables/use-item-tooltip';
-import { tokenDescription, tokenName } from '@/services/tokens/token-text';
+import { tokenAttributeRows, tokenDescription, tokenName } from '@/services/tokens/token-text';
 import {
   EQUIP_SLOT_ICON,
   ICON_PATHS,
@@ -132,6 +145,9 @@ const title = computed(() =>
 );
 const tokenLines = computed(() =>
   props.view.token ? tokenDescription(props.view.token, locale.value) : [],
+);
+const attributeRows = computed(() =>
+  props.view.token ? tokenAttributeRows(props.view.token, locale.value) : [],
 );
 const labels = useItemTooltipLabels();
 

@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { ITEM_TYPES } from '../content/item-types.content';
-import { TOKEN_ATTRIBUTES } from '../content/token-attributes.content';
-import { TOKEN_WORDS } from '../content/token-words.content';
-import { AttributeRegistry, TypeRegistry, WordPool } from './registries';
+import { EQUIPMENT_ATTRIBUTES } from '../content/equipment-attributes.content';
+import { AttributeRegistry, TypeRegistry } from './registries';
 
 describe('TypeRegistry', () => {
   const registry = new TypeRegistry(ITEM_TYPES);
@@ -32,28 +31,27 @@ describe('TypeRegistry', () => {
 });
 
 describe('AttributeRegistry', () => {
-  const registry = new AttributeRegistry(TOKEN_ATTRIBUTES);
+  const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
 
-  it('offers only implemented attributes for generation', () => {
-    expect(registry.generatableFor('shield').map((attribute) => attribute.key)).toEqual(['heart']);
+  it('holds the equipment attributes with heart as the only implemented one', () => {
+    expect(registry.all()).toHaveLength(EQUIPMENT_ATTRIBUTES.length);
+    expect(
+      registry
+        .all()
+        .filter((attribute) => attribute.implemented)
+        .map((attribute) => attribute.key),
+    ).toEqual(['heart']);
   });
 
   it('keeps the stub attributes readable', () => {
     expect(registry.get('fog').implemented).toBe(false);
-  });
-});
-
-describe('WordPool', () => {
-  const pool = new WordPool(TOKEN_WORDS);
-
-  it('keeps realm-tagged words in their realm', () => {
-    const gloom = pool.prefixes(ERarityKind.GLOOM).map((word) => word.key);
-    expect(gloom).toContain('content.tokens.prefix.deep');
-    expect(gloom).not.toContain('content.tokens.prefix.clay');
+    expect(registry.get('smart-step').display.icon).toBe('boots');
   });
 
-  it('refuses a word listed twice', () => {
-    const word = { key: 'content.tokens.prefix.ash' };
-    expect(() => new WordPool({ prefixes: [word, word], suffixes: [] })).toThrow(/listed twice/);
+  it('refuses an unknown key and a key listed twice', () => {
+    expect(() => registry.get('luck')).toThrow(/Unknown attribute/);
+    expect(() => new AttributeRegistry([EQUIPMENT_ATTRIBUTES[0], EQUIPMENT_ATTRIBUTES[0]])).toThrow(
+      /listed twice/,
+    );
   });
 });

@@ -9,6 +9,7 @@ import { emptyProgressState } from '../aggregates/progress-state';
 import { sumEquippedHeartPoints } from '../combat/heart-points';
 import { emptyInventoryState } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { attributeRowsOf } from './attribute-display';
 import { isTokenType } from './game-tokens';
 import type { ItemToken } from './token-schema';
 
@@ -70,10 +71,17 @@ describe('LG5e: DEV_GRANT_ITEM with a token spec', () => {
     });
 
     expect(token.attributes).toEqual([{ key: 'heart', value: 1 }]);
-    expect(token.description).toContainEqual({
-      key: 'content.tokens.attr.heart',
-      params: { value: 0.5 },
-    });
+    expect(token.description.some((line) => line.key.startsWith('content.tokens.attr.'))).toBe(
+      false,
+    );
+    expect(attributeRowsOf(token)).toMatchObject([
+      {
+        key: 'heart',
+        labelKey: 'content.tokens.attrLabel.heart',
+        formatKey: 'content.tokens.attrFormat.hearts',
+        value: 0.5,
+      },
+    ]);
     expect(sumEquippedHeartPoints([{ key: token.type, token }])).toBe(0.5);
   });
 

@@ -129,11 +129,8 @@ describe('EA1 EA-16a: attribute registry', () => {
     expect(equipmentLocaleKeys()).toHaveLength(EQUIPMENT_ATTRIBUTES.length * 2);
   });
 
-  it('keeps the LG3 attributes and their implemented flag in step', () => {
-    for (const legacy of TOKEN_CONTENT.attributes) {
-      const attribute = EQUIPMENT_ATTRIBUTES.find((candidate) => candidate.key === legacy.key);
-      expect(attribute?.implemented, legacy.key).toBe(legacy.implemented);
-    }
+  it('is the only attribute registry of the token content (D-EA21)', () => {
+    expect(TOKEN_CONTENT.attributes).toBe(EQUIPMENT_ATTRIBUTES);
   });
 });
 
@@ -242,11 +239,11 @@ describe('EA1 attribute profiles', () => {
       /crit has a weight for group jewelry/,
     ],
     [
-      'a heart max above its token ceiling',
+      'an absorb max above its cap',
       (profiles) => {
-        profiles['tier-1'].attributes.heart.max = 2;
+        profiles['tier-1'].attributes.absorb.max = 2;
       },
-      /heart max 2 is above its token ceiling/,
+      /absorb max 2 is above its cap 1/,
     ],
   ])('refuses %s', (_name, change, message) => {
     expect(withProfiles(change).join('\n')).toMatch(message);

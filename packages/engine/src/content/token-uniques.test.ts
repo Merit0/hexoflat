@@ -3,8 +3,7 @@ import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { BASE_REALMS } from '../tokens/token-keys';
 import { uniqueTokenDefinitionSchema, type UniqueTokenDefinition } from '../tokens/unique-schema';
 import { UniqueRegistry } from '../tokens/registries';
-import { TOKEN_ATTRIBUTES } from './token-attributes.content';
-import { createTokenRegistries, tokenLocaleKeys } from './token-content';
+import { tokenLocaleKeys } from './token-content';
 import { TOKEN_UNIQUES } from './token-uniques.content';
 import { TOKEN_WORDS } from './token-words.content';
 import { uniqueContentFailures } from './validate-tokens';
@@ -26,25 +25,6 @@ describe('word pools (D17)', () => {
       expect(TOKEN_WORDS.suffixes.filter((word) => word.realms?.includes(realm))).toHaveLength(2);
     }
   });
-
-  it('gives at least 2 304 names per realm', () => {
-    const { words } = createTokenRegistries();
-    for (const realm of BASE_REALMS) expect(words.combinations(realm)).toBeGreaterThanOrEqual(2304);
-  });
-});
-
-describe('attribute units (D18)', () => {
-  it('gives every attribute its unit', () => {
-    expect(Object.fromEntries(TOKEN_ATTRIBUTES.map((a) => [a.key, a.unit]))).toEqual({
-      heart: 'half-heart',
-      shield: 'side',
-      force: 'point',
-      mass: 'point',
-      will: 'point',
-      fog: 'hex',
-      bag: 'kg',
-    });
-  });
 });
 
 describe('unique token content', () => {
@@ -52,20 +32,20 @@ describe('unique token content', () => {
     expect(uniqueContentFailures()).toEqual([]);
   });
 
-  it('has a gloom sword with one fixed heart and one rolled attribute', () => {
+  it('has a gloom sword with one fixed heart', () => {
     expect(GLOOM_SWORD).toMatchObject({
       type: 'sword',
       rarity: ERarityKind.GLOOM,
       attributes: [{ key: 'heart', value: 1 }],
-      rolled: { attributes: 1 },
     });
+    expect('rolled' in GLOOM_SWORD).toBe(false);
   });
 
-  it('has a god-executor sword with fixed attributes and no rolled part', () => {
+  it('has a god-executor sword with fixed attributes', () => {
     expect(EXECUTOR_SWORD.type).toBe('sword');
     expect(EXECUTOR_SWORD.rarity).toBe(ERarityKind.GOD_EXECUTOR);
     expect(EXECUTOR_SWORD.attributes.length).toBeGreaterThan(0);
-    expect(EXECUTOR_SWORD.rolled).toBeUndefined();
+    expect('rolled' in EXECUTOR_SWORD).toBe(false);
   });
 
   it('lists the name and description keys of every unique among the locale keys', () => {
@@ -80,12 +60,7 @@ describe('unique token content', () => {
   it.each<[string, Partial<UniqueTokenDefinition>, RegExp]>([
     ['an unknown type', { type: 'dragon-lance' }, /unknown type/],
     ['an unknown attribute', { attributes: [{ key: 'luck', value: 1 }] }, /luck is unknown/],
-    ['a value above the tiers', { attributes: [{ key: 'heart', value: 3 }] }, /outside \[1, 2\]/],
-    [
-      'an attribute not allowed on the type',
-      { attributes: [{ key: 'shield', value: 1 }] },
-      /not allowed on type sword/,
-    ],
+    ['a value above the cap', { attributes: [{ key: 'heart', value: 11 }] }, /above the cap 10/],
     [
       'an attribute that is not implemented',
       { attributes: [{ key: 'force', value: 1 }] },
@@ -102,7 +77,7 @@ describe('unique token content', () => {
     expect(bad({ name: { kind: 'generated', nameKey: GLOOM_SWORD.name.nameKey } })).toBe(false);
     expect(bad({ skills: ['not-a-skill'] })).toBe(false);
     expect(bad({ skills: ['b_strike', 'b_strike'] })).toBe(false);
-    expect(bad({ rolled: { attributes: 3 } })).toBe(false);
+    expect(bad({ rolled: { attributes: 1 } })).toBe(false);
     expect(bad({ price: 1.5 })).toBe(false);
     expect(bad({ attributes: [GLOOM_SWORD.attributes[0], GLOOM_SWORD.attributes[0]] })).toBe(false);
     expect(bad({ rarity: ERarityKind.GOD_EXECUTOR })).toBe(true);

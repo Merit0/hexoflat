@@ -3,7 +3,12 @@ import { Logger } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 import { CONTENT_VERSION } from '@hexoflat/engine';
+import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { inventoryV1Fixture } from '@hexoflat/engine/inventory/inventory-v1-fixture';
+import { mintItem } from '@hexoflat/engine/inventory/inventory-state';
+import { createTokenFactory } from '@hexoflat/engine/tokens/factory/create-token-factory';
+import { LEGACY_SHIELD, LEGACY_SWORD } from '@hexoflat/engine/tokens/legacy-token-fixtures';
+import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import type {
   InventoryState,
   InventoryStateItem,
@@ -107,6 +112,79 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       expect(reloaded.equip.weapon).toBeNull();
       expect(tokenFields(reloaded.bag[10])).toEqual(before);
       expect(reloaded.bag[10]!.token).toEqual(loaded.equip.weapon!.token);
+    });
+  });
+
+  describe('TG-12 (EA3): new and old tokens survive a save and a reload', () => {
+    function newShield(): ItemToken {
+      const result = createTokenFactory().createBase(
+        {
+          seed: 'tg-12-ea3',
+          sourceId: 'test:tg12',
+          n: 0,
+          realm: ERarityKind.GLOOM,
+          mapTier: 4,
+          type: 'shield',
+        },
+        { attributes: [{ key: 'heart', value: 2 }] },
+      );
+      if (!result.ok) throw new Error(JSON.stringify(result.refusal));
+      return result.value;
+    }
+
+    async function storeTokens(userId: string, heroId: string, tokens: ItemToken[]) {
+      const state = structuredClone(await inventoryOf(userId, heroId));
+      tokens.forEach((token, index) => {
+        const item = mintItem(state, token.type as 'shield', 1);
+        state.idSeq += 1;
+        state.bag[index] = { ...item, token };
+      });
+      await kit.db
+        .update(heroAggregates)
+        .set({ state })
+        .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+      return state;
+    }
+
+    const saved = (token: ItemToken) => ({
+      name: token.name,
+      price: token.price,
+      attributes: token.attributes,
+      description: token.description,
+      generatorVersion: token.generatorVersion,
+    });
+
+    it('reloads a new token with the same name, price and attributes after a save', async () => {
+      const { userId, heroId } = await kit.newPlayer();
+      const token = newShield();
+      expect(token.name.kind).toBe('adjective');
+      const stored = await storeTokens(userId, heroId, [token]);
+
+      const moved = await kit.service.execute(
+        userId,
+        envelope(
+          heroId,
+          'MOVE_ITEM',
+          { from: { container: 'bag', index: 0 }, to: { container: 'bag', index: 7 } },
+          stored.revision,
+        ),
+      );
+      expect(moved.result).toBe('applied');
+
+      const reloaded = await inventoryOf(userId, heroId);
+      expect(reloaded.bag[0]).toBeNull();
+      expect(reloaded.bag[7]!.token).toEqual(token);
+      expect(saved(reloaded.bag[7]!.token!)).toEqual(saved(token));
+    });
+
+    it('reloads old generator tokens unchanged, baked lines and all', async () => {
+      const { userId, heroId } = await kit.newPlayer();
+      await storeTokens(userId, heroId, [LEGACY_SWORD, LEGACY_SHIELD]);
+
+      const reloaded = await inventoryOf(userId, heroId);
+      expect(reloaded.bag[0]!.token).toEqual(LEGACY_SWORD);
+      expect(reloaded.bag[1]!.token).toEqual(LEGACY_SHIELD);
+      expect(reloaded.bag[0]!.token!.name.kind).toBe('generated');
     });
   });
 

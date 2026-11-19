@@ -3,7 +3,6 @@ import type { SkillId } from '../../skills/skill-content';
 import type { RandomNumberGenerator } from '../../utils/random';
 import type { ItemTypeDefinition } from '../token-content-schema';
 import type {
-  AttributeKey,
   I18nKey,
   ItemTypeKey,
   SpriteKey,
@@ -13,9 +12,9 @@ import type {
 } from '../token-keys';
 import type { DescriptionLine, ItemToken, TokenAttribute, TokenName } from '../token-schema';
 
-export const TOKEN_GENERATOR_VERSION = 3;
+export const TOKEN_GENERATOR_VERSION = 4;
 
-export const TOKEN_STEPS = ['type', 'name', 'sprite', 'attributes', 'skills', 'price'] as const;
+export const TOKEN_STEPS = ['type', 'name', 'sprite', 'skills', 'price'] as const;
 export type TTokenStep = (typeof TOKEN_STEPS)[number];
 
 export const TOKEN_REFUSALS = [
@@ -73,13 +72,19 @@ export interface TokenSheet {
   type: ItemTypeDefinition;
   realm: ERarityKind;
   mapTier: TMapTier;
-  attributes: readonly TokenAttribute[];
   descriptionKey?: I18nKey;
 }
 
-export interface AttributeRollOptions {
-  count?: number;
-  exclude?: readonly AttributeKey[];
+export interface AttributeSheet {
+  type: ItemTypeDefinition;
+  origin: 'base' | 'unique';
+  mapTier: TMapTier;
+  attributes: readonly TokenAttribute[];
+}
+
+export interface NameRequest {
+  type: ItemTypeDefinition;
+  attributeCount: number;
 }
 
 export interface ITypePicker {
@@ -91,20 +96,11 @@ export interface ITypePicker {
 }
 
 export interface INameGenerator {
-  generate(type: ItemTypeDefinition, realm: TBaseRealm, rng: RandomNumberGenerator): TokenName;
+  generate(request: NameRequest, rng: RandomNumberGenerator): TokenName;
 }
 
 export interface ISpriteResolver {
   resolve(type: ItemTypeDefinition, realm: TBaseRealm, rng: RandomNumberGenerator): SpriteKey;
-}
-
-export interface IAttributeGenerator {
-  generate(
-    type: ItemTypeDefinition,
-    mapTier: TMapTier,
-    rng: RandomNumberGenerator,
-    options?: AttributeRollOptions,
-  ): TokenAttribute[];
 }
 
 export interface IUniqueSpriteResolver {
@@ -116,7 +112,7 @@ export interface ISkillGenerator {
 }
 
 export interface IPriceGenerator {
-  generate(realm: TBaseRealm, rng: RandomNumberGenerator): number;
+  generate(realm: TBaseRealm, attributeCount: number, rng: RandomNumberGenerator): number;
 }
 
 export interface IDescriptionBuilder {
@@ -124,6 +120,6 @@ export interface IDescriptionBuilder {
 }
 
 export interface ITokenValidator {
-  validateAttributes(sheet: Pick<TokenSheet, 'type' | 'mapTier' | 'attributes'>): TokenResult<true>;
+  validateAttributes(sheet: AttributeSheet): TokenResult<true>;
   validate(candidate: unknown): TokenResult<ItemToken>;
 }

@@ -22,8 +22,6 @@ import {
   equipmentTypeDefinitionSchema,
   type EquipmentTypeDefinition,
 } from '../tokens/equipment/equipment-type-schema';
-import type { AttributeDefinition } from '../tokens/token-content-schema';
-import type { TMapTier } from '../tokens/token-keys';
 import { ATTRIBUTE_PROFILES } from './attribute-profiles.content';
 import { EQUIPMENT_ATTRIBUTES } from './equipment-attributes.content';
 import { EQUIPMENT_TYPES } from './item-types.content';
@@ -37,7 +35,6 @@ export interface EquipmentContent {
   attributes: readonly EquipmentAttributeDefinition[];
   profiles: AttributeProfiles;
   adjectives: readonly Adjective[];
-  tokenAttributes: readonly AttributeDefinition[];
   tokenTypeKeys: readonly string[];
 }
 
@@ -46,7 +43,6 @@ export const EQUIPMENT_CONTENT: EquipmentContent = {
   attributes: EQUIPMENT_ATTRIBUTES,
   profiles: ATTRIBUTE_PROFILES,
   adjectives: TOKEN_ADJECTIVES,
-  tokenAttributes: TOKEN_CONTENT.attributes,
   tokenTypeKeys: TOKEN_CONTENT.types.map((type) => type.key),
 };
 
@@ -115,14 +111,6 @@ function attributeFailures(content: EquipmentContent): string[] {
   for (const attribute of content.attributes) {
     failures.push(...attributeTypeFailures(attribute, types));
   }
-  const byKey = new Map(content.attributes.map((attribute) => [attribute.key, attribute] as const));
-  for (const legacy of content.tokenAttributes) {
-    const attribute = byKey.get(legacy.key);
-    if (!attribute) failures.push(`token attribute ${legacy.key} is not an equipment attribute`);
-    else if (attribute.implemented !== legacy.implemented) {
-      failures.push(`attribute ${legacy.key} is implemented in one registry only`);
-    }
-  }
   return failures;
 }
 
@@ -141,10 +129,8 @@ function profileEntryFailures(
       failures.push(`${tier}: attribute ${key} has a weight for group ${group}`);
     }
   }
-  const legacy = content.tokenAttributes.find((candidate) => candidate.key === key);
-  const mapTier = (ATTRIBUTE_PROFILE_TIERS.indexOf(tier) + 1) as TMapTier;
-  if (legacy && entry.max > legacy.valueByTier[mapTier]) {
-    failures.push(`${tier}: attribute ${key} max ${entry.max} is above its token ceiling`);
+  if (attribute.cap !== undefined && entry.max > attribute.cap) {
+    failures.push(`${tier}: attribute ${key} max ${entry.max} is above its cap ${attribute.cap}`);
   }
   return failures;
 }

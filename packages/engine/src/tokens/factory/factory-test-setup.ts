@@ -3,6 +3,12 @@ import { TOKEN_CONTENT, type TokenContent } from '../../content/token-content';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
 import type { SpriteManifest } from '../sprite-files';
 import { BASE_REALMS, MAP_TIERS, wordKeyOf } from '../token-keys';
+import {
+  attributeHintKey,
+  attributeLabelKey,
+  type EquipmentAttributeDefinition,
+} from '../equipment/equipment-attribute-schema';
+import { FIXTURE_ATTRIBUTES, withProfileRow } from '../equipment/generator/generator-test-setup';
 import { createTokenFactory } from './create-token-factory';
 import type { GenerationContext } from './token-generation';
 
@@ -33,13 +39,29 @@ export function mixedContexts(
 
 export const EXTENSION_TEXTS: Readonly<Record<string, string>> = {
   'content.tokens.noun.hammer': 'Hammer',
-  'content.tokens.prefix.glass': 'Glassy',
-  'content.tokens.suffix.lighthouse': 'of the Lighthouse',
-  'content.tokens.attr.ward': 'Ward +{value}',
+  'content.tokens.attrLabel.ward': 'Ward',
+  'content.tokens.attrHint.ward': 'Wards off a blow.',
+};
+
+export const WARD_ATTRIBUTE: EquipmentAttributeDefinition = {
+  key: 'ward',
+  groups: ['weapon'],
+  onlyTypes: ['hammer'],
+  stat: 'strikeForce',
+  aggregate: 'sum',
+  scope: 'item',
+  display: {
+    labelKey: attributeLabelKey('ward'),
+    hintKey: attributeHintKey('ward'),
+    icon: 'anvil',
+    format: 'plus',
+  },
+  implemented: true,
 };
 
 export function extendedContent(): TokenContent {
   return {
+    ...TOKEN_CONTENT,
     types: [
       ...TOKEN_CONTENT.types,
       {
@@ -49,30 +71,25 @@ export function extendedContent(): TokenContent {
         tool: null,
         nounKey: wordKeyOf('noun', 'hammer'),
         realms: [ERarityKind.SPARK],
+        group: 'weapon',
+        gender: 'm',
+        materials: ['iron'],
+        enabled: true,
+        base: { damage: 3 },
       },
     ],
-    attributes: [
-      ...TOKEN_CONTENT.attributes,
-      {
-        key: 'ward',
-        valueByTier: { 1: 3, 2: 4, 3: 5, 4: 6 },
-        weight: 50,
-        allowedTypes: ['hammer'],
-        implemented: true,
-      },
-    ],
-    words: {
-      prefixes: [
-        ...TOKEN_CONTENT.words.prefixes,
-        { key: wordKeyOf('prefix', 'glass'), realms: [ERarityKind.SPARK] },
-      ],
-      suffixes: [
-        ...TOKEN_CONTENT.words.suffixes,
-        { key: wordKeyOf('suffix', 'lighthouse'), realms: [ERarityKind.SPARK] },
-      ],
-    },
-    priceRanges: TOKEN_CONTENT.priceRanges,
+    attributes: [...TOKEN_CONTENT.attributes, WARD_ATTRIBUTE],
+    profiles: withProfileRow(TOKEN_CONTENT.profiles, 'ward', {
+      weight: { weapon: 50 },
+      min: 3,
+      max: 6,
+      step: 1,
+    }),
   };
+}
+
+export function implementedContent(): TokenContent {
+  return { ...TOKEN_CONTENT, attributes: FIXTURE_ATTRIBUTES };
 }
 
 export function extendedManifest(): SpriteManifest {

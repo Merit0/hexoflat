@@ -3,6 +3,7 @@ import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { skillIdSchema } from '../skills/skill-content';
 import {
+  adjectiveKeySchema,
   aspectKeySchema,
   attributeKeySchema,
   i18nKeySchema,
@@ -31,6 +32,11 @@ export const tokenNameSchema = z.discriminatedUnion('kind', [
     prefix: wordKeySchemaFor('prefix').optional(),
     noun: itemTypeKeySchema,
     suffix: wordKeySchemaFor('suffix').optional(),
+  }),
+  z.strictObject({
+    kind: z.literal('adjective'),
+    adjective: adjectiveKeySchema,
+    noun: itemTypeKeySchema,
   }),
   z.strictObject({
     kind: z.literal('noun'),
