@@ -68,7 +68,9 @@ describe('A01 hero sight', () => {
     for (let seed = 0; seed < 100; seed++) {
       const attributes = rollFor(generator, typeOf('helm'), 4, seed);
       found ||= attributes.some((attribute) => attribute.key === 'fog');
-      expect(attributes.every((attribute) => ['heart', 'fog'].includes(attribute.key))).toBe(true);
+      expect(
+        attributes.every((attribute) => ['heart', 'will', 'fog'].includes(attribute.key)),
+      ).toBe(true);
     }
     expect(found).toBe(true);
     const attributes = EQUIPMENT_ATTRIBUTES.map((attribute) =>

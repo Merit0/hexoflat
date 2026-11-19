@@ -152,7 +152,7 @@ describe('name limits', () => {
         const words = formatTokenName(token.name, DICTIONARIES[lang]).split(' ');
         expect(words.length).toBeLessThanOrEqual(TOKEN_NAME_RULES.maxWords);
         for (const word of words)
-          expect(letterCount(word)).toBeLessThanOrEqual(TOKEN_NAME_RULES.maxWordLetters);
+          expect(letterCount(word), word).toBeLessThanOrEqual(TOKEN_NAME_RULES.maxWordLetters);
       }
     },
   );
@@ -199,7 +199,7 @@ describe('TG-9: extension by data only', () => {
     expect(tokens.every((token) => token.sprite === 'spark-hammer-01')).toBe(true);
     expect(tokens.some((token) => token.attributes.some((a) => a.key === 'ward'))).toBe(true);
     for (const token of tokens) {
-      for (const attribute of token.attributes) {
+      for (const attribute of token.attributes.filter((entry) => entry.key === 'ward')) {
         expect(attribute.value).toBeGreaterThanOrEqual(3);
         expect(attribute.value).toBeLessThanOrEqual(6);
       }
@@ -211,7 +211,11 @@ describe('TG-9: extension by data only', () => {
     for (const token of tokens) {
       expect(formatTokenName(token.name, extraLanguage)).toMatch(/^Hammer \/ ~.+$/);
       expect(formatTokenDescription(token.description, extraLanguage)[0]).toBe('~Hammer · ~Spark');
-      for (const row of formatTokenAttributes(token, extraLanguage, extendedContent().attributes)) {
+      for (const row of formatTokenAttributes(
+        token,
+        extraLanguage,
+        extendedContent().attributes,
+      ).filter((entry) => entry.key === 'ward')) {
         expect(row).toMatchObject({ key: 'ward', label: 'Ward', icon: 'anvil' });
         expect(row.value).toMatch(/^\+[3-6]$/);
       }

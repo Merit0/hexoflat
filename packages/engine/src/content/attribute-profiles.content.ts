@@ -122,12 +122,12 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
     ],
   },
   will: {
-    weight: { jewelry: 35 },
+    weight: { weapon: 35, defense: 35, clothing: 35, jewelry: 35, burden: 35, charm: 35 },
     tiers: [
-      [1, 2],
-      [1, 3],
-      [2, 4],
-      [3, 5],
+      [1, 10],
+      [1, 20],
+      [1, 30],
+      [1, 40],
     ],
   },
   trade: {

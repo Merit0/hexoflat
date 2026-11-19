@@ -9,14 +9,14 @@ export class EquipmentWillFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
   private readonly shield = new ShieldMaxHealthFeature();
 
-  async startWithWillBonus(bonus: number, current = 50): Promise<void> {
+  async startWithWillBonus(bonus: number, current = 50, mapTier: 1 | 2 | 3 | 4 = 1): Promise<void> {
     await this.step(
       `Start with an owned Will +${bonus} token in the bag and ${current} Will`,
       async () => {
         await new OpenCampingMapFeature().open();
         await this.page.evaluate(
-          (value) => window.__HEXOFLAT_TEST__!.grantLegacyWillToken(value),
-          bonus,
+          ({ bonus, mapTier }) => window.__HEXOFLAT_TEST__!.grantWillToken(bonus, mapTier),
+          { bonus, mapTier },
         );
         await this.setWill(current);
       },

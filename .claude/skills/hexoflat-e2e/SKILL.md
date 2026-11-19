@@ -202,6 +202,8 @@ Quest pickup refusal feedback (2026-11-16): `useQuestRunActions` sends every ref
 ## Equipment Will (A02, 2026-11-19)
 
 - `e2e/hero/equipment-will.spec.ts` uses `EquipmentWillFeature`/`EquipmentWillComponent`: bag has no effect; real shield-slot drag raises 50→55 with no refill; a filled bonus is clamped back to 50 by the hand-icon unequip; reload/re-equip retain the correct values. A +10 token verifies a low balance stays unchanged with capacity 60 and after removal.
-- Jewelry is disabled. `grantLegacyWillToken(bonus)` uses the same owned-token fixture as sight: a normal minted shield receives stored `will` through the dev-only inventory replacement. Both public fixture hooks keep inline E2E guards and validate their bonus ranges. Generator restrictions remain intact.
+- `grantWillToken(bonus, mapTier = 1)` mints a shield at the source tier with `will` through the standard dev token grant and factory validation. Will is available to every equipment group with a +1…(10 × source tier) range, without a total equipment cap (Oleh correction after A02). The sight fixture remains legacy-only because fog is restricted to helmets. Both hooks keep inline E2E guards and validate bonuses.
 - `getKnowledge` now exposes actual `capacity`; `getKnowledgeRules().capacity` is still the base constant. The component checks both server knowledge projection and visible `hero-will-value`. `setWill(55)` is valid only after equipping capacity 55; settle before reload.
 - Run `sh scripts/pre-push-e2e.sh e2e/hero/equipment-will.spec.ts e2e/board/dungeon-fog.spec.ts` to cover Will plus the shared sight fixture.
+
+- Will scaling correction: a third scenario grants a tier-4 +40 shield through the normal factory, verifies 50/90 without refill, fills/reloads at 90/90 and unequips back to 50/50.

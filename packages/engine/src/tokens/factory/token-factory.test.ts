@@ -61,13 +61,14 @@ describe('TokenFactory.createBase', () => {
         expect(attribute.value).toBeLessThanOrEqual(range.max);
       }
     }
-    expect(counts).toEqual(new Set([0, 1]));
+    expect(counts).toEqual(new Set([0, 1, 2]));
   });
 
   it('TG-2: gives the sword no heart, because heart is not a weapon attribute', () => {
     const swords = TOKENS.filter(({ token }) => token.type === 'sword');
     expect(swords.length).toBeGreaterThan(0);
-    for (const { token } of swords) expect(token.attributes).toEqual([]);
+    for (const { token } of swords)
+      expect(token.attributes.some((attribute) => attribute.key === 'heart')).toBe(false);
   });
 
   it('TG-3: takes the sprite from the manifest of its type or the placeholder', () => {

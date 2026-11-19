@@ -29,4 +29,16 @@ test.describe('equipment Will capacity', { tag: ['@hero'] }, () => {
     await will.unequip();
     await will.verifyWill(25, 50);
   });
+
+  test('tier-4 Will +40 raises capacity beyond the former cap and clamps on removal', async () => {
+    const will = new EquipmentWillFeature();
+    await will.startWithWillBonus(40, 50, 4);
+    await will.equip();
+    await will.verifyWill(50, 90);
+    await will.setWill(90);
+    await will.reload();
+    await will.verifyWill(90, 90);
+    await will.unequip();
+    await will.verifyWill(50, 50);
+  });
 });

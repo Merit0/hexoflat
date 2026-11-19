@@ -19,12 +19,39 @@ function jewel(type: string, value: number) {
 }
 
 describe('A02 equipment Will stats', () => {
-  it('EA-15: includes ring/amulet bases and caps all equipment at +10', () => {
+  it('raises the Will roll ceiling by 10 per source tier on every equipment type', () => {
+    const generator = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
+    for (const type of EQUIPMENT_TYPES) {
+      for (const level of [1, 2, 3, 4] as const) {
+        const values = new Set<number>();
+        let withoutWill = false;
+        for (let seed = 0; seed < 1000; seed++) {
+          const attributes = generator.generate({
+            level,
+            group: type.group,
+            type,
+            tokenId: `${type.key}:${seed}`,
+            rng: seededRandomStreams(`seed:${seed}`),
+          });
+          const will = attributes.find((attribute) => attribute.key === 'will');
+          if (will) values.add(will.value);
+          else withoutWill = true;
+        }
+        expect(
+          [...values].sort((a, b) => a - b),
+          `${type.key} tier ${level}`,
+        ).toEqual(Array.from({ length: level * 10 }, (_, index) => index + 1));
+        expect(withoutWill).toBe(true);
+      }
+    }
+  });
+
+  it('EA-15: sums ring/amulet bases and attributes without a total cap', () => {
     expect(resolveHeroStats([jewel('ring', 2), jewel('amulet', 3)]).maxWill).toBe(8);
-    const stats = resolveHeroStats([jewel('ring', 8), jewel('amulet', 8)]);
-    expect(stats.maxWill).toBe(10);
+    const stats = resolveHeroStats([jewel('ring', 40), jewel('amulet', 40)]);
+    expect(stats.maxWill).toBe(83);
     expect(syncEquipmentWill(createKnowledgeState('hero'), stats).knowledge).toMatchObject({
-      capacity: 60,
+      capacity: 133,
       current: 50,
     });
   });

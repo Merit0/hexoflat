@@ -3,7 +3,7 @@ import {
   attributeLabelKey,
   type EquipmentAttributeDefinition,
 } from '../tokens/equipment/equipment-attribute-schema';
-import type { TAttributeFormat } from '../tokens/equipment/equipment-keys';
+import { ITEM_GROUPS, type TAttributeFormat } from '../tokens/equipment/equipment-keys';
 
 type AttributeFields = Omit<EquipmentAttributeDefinition, 'key' | 'display' | 'implemented'> & {
   icon: string;
@@ -58,10 +58,9 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     format: 'plus',
   }),
   attribute('will', {
-    groups: ['jewelry'],
+    groups: [...ITEM_GROUPS],
     stat: 'maxWill',
     ...HERO_SUM,
-    cap: 10,
     icon: 'flame',
     format: 'plus',
     implemented: true,

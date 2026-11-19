@@ -105,7 +105,7 @@ export const TOKEN_ADJECTIVES: readonly Adjective[] = [
     key: 'polished',
     band: 'fine',
     en: 'Polished',
-    uk: { m: 'Полірований', f: 'Полірована', n: 'Поліроване', pl: 'Поліровані' },
+    uk: { m: 'Шліфований', f: 'Шліфована', n: 'Шліфоване', pl: 'Шліфовані' },
   },
   {
     key: 'masterful',

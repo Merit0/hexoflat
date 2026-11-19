@@ -120,7 +120,9 @@ describe('EA-16 hero stat registry contract', () => {
       ).toBe(
         Math.min(
           10,
-          rolled.reduce((sum, attribute) => sum + attribute.value, 0),
+          rolled
+            .filter((attribute) => attribute.key !== 'will')
+            .reduce((sum, attribute) => sum + attribute.value, 0),
         ),
       );
     }

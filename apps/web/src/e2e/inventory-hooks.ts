@@ -47,10 +47,16 @@ export const inventoryTestApi = {
     if (!result.ok) throw new Error(`Cannot grant ${amount} x ${key}`);
   },
   grantTokenItem,
-  async grantLegacyWillToken(bonus: number): Promise<ItemToken> {
+  async grantWillToken(bonus: number, mapTier: TestTokenSpec['mapTier'] = 1): Promise<ItemToken> {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
-    if (!Number.isInteger(bonus) || bonus < 1 || bonus > 10) throw new Error('Invalid Will bonus');
-    return grantLegacyAttribute('will', bonus);
+    if (!Number.isInteger(bonus) || bonus < 1 || bonus > mapTier * 10)
+      throw new Error('Invalid Will bonus');
+    return grantTokenItem({
+      type: 'shield',
+      realm: 'idol',
+      mapTier,
+      attributes: [{ key: 'will', value: bonus }],
+    });
   },
   async grantLegacySightToken(bonus: number): Promise<ItemToken> {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
