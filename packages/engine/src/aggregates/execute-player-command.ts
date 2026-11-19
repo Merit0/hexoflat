@@ -1,4 +1,5 @@
 import { resolveHeroStats } from '../tokens/equipment/hero-stats';
+import { syncEquipmentWill } from '../knowledge/equipment-will';
 import { HERO_BASE_HEALTH, HeroModel } from '../models/hero-model';
 import type { DomainEvent } from '../commands/types';
 import {
@@ -83,12 +84,17 @@ export function executePlayerCommand(
   const progress = outcome.changed.progress ?? aggregates.progress;
   const stats = resolveHeroStats(Object.values(outcome.changed.inventory.equip));
   const bonus = stats.maxHearts / 2;
-  if (bonus === progress.health.bonus) return outcome;
+  const will = syncEquipmentWill(progress.knowledge, stats);
+  if (bonus === progress.health.bonus && will.knowledge === progress.knowledge) return outcome;
   const model = new HeroModel().setMaxHealth(HERO_BASE_HEALTH).restoreHealth(progress.health);
   model.setMaxHealthBonus(bonus);
   return {
     ...outcome,
-    changed: { ...outcome.changed, progress: { ...progress, health: model.healthState() } },
+    changed: {
+      ...outcome.changed,
+      progress: { ...progress, health: model.healthState(), knowledge: will.knowledge },
+    },
+    events: [...outcome.events, ...will.events],
   };
 }
 

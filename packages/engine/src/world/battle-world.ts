@@ -21,6 +21,8 @@ import { heroModelOf, heroOf } from './world-commands';
 import { respawnWorld } from './respawn-world';
 import type { TravelOutcome, TravelRun } from './travel';
 import { restoreHandTokens, syncHandsToInventory } from './battle-hands-sync';
+import { syncEquipmentWill } from '../knowledge/equipment-will';
+import { resolveHeroStats } from '../tokens/equipment/hero-stats';
 import { worldTokenOrigin, type ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
 
@@ -141,12 +143,17 @@ function finish(
   extra: DomainEvent[] = [],
 ): BattleWorldOutcome {
   const { world } = session;
+  const will = syncEquipmentWill(
+    session.progress.knowledge,
+    resolveHeroStats(Object.values(session.inventory.equip)),
+  );
+  session.progress.knowledge = will.knowledge;
   return {
     ok: true,
     world,
     progress: session.progress,
     inventory: session.inventory,
-    events: [...session.events, ...extra],
+    events: [...session.events, ...extra, ...will.events],
     steps: session.steps,
     tileDiffs: before ? diffTiles(before, world.map) : [],
     serverNowMs: session.run.now,

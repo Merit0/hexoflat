@@ -10,7 +10,7 @@ export type WillSource =
   | { kind: 'quest'; ref: string }
   | { kind: 'dev'; ref: string };
 export type WillSpendReason =
-  'step' | 'action' | 'entry' | 'combat-boost' | 'skill' | 'trader-refresh' | 'quest';
+  'step' | 'action' | 'entry' | 'combat-boost' | 'skill' | 'trader-refresh' | 'quest' | 'equipment';
 export type WillRejectReason = 'INSUFFICIENT_WILL' | 'NO_WILL_STATE';
 
 export function grantWill(

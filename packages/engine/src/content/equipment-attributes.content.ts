@@ -64,6 +64,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     cap: 10,
     icon: 'flame',
     format: 'plus',
+    implemented: true,
   }),
   attribute('fog', {
     groups: ['clothing'],

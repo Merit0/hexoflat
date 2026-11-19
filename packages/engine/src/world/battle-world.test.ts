@@ -6,6 +6,7 @@ import { creatureById } from '../battle/battle-board';
 import type { BattleState } from '../battle/battle-state';
 import { EHexActionType } from '../enums/hex-action-type';
 import { emptyInventoryState, mintItem, type InventoryState } from '../inventory/inventory-state';
+import { upcastToken } from '../inventory/upcast-item-tokens';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { findSquad } from '../squads/squad-state';
 import { HERO, hexAction, idAt, squadWorld } from '../squads/squad-test-setup';
@@ -266,9 +267,16 @@ describe('REQ-SRV-BTL-003 hands are the inventory', () => {
   it('moves the item between the hand and the bag in the same step', () => {
     const table = started();
     table.playUntil('heroes');
+    table.run.inventory.equip.weapon!.token = {
+      ...upcastToken(HERO, 'equip.weapon', 'sword')!,
+      attributes: [{ key: 'will', value: 5 }],
+    };
+    table.run.progress.knowledge.capacity = 55;
+    table.run.progress.knowledge.current = 55;
     const out = table.hero({ kind: 'set-hands', right: 'health-potion', left: 'wooden-shield' });
     expect(out.ok ? 'ok' : out.code).toBe('ok');
     const { equip, bag } = table.run.inventory;
+    expect(out).toMatchObject({ ok: true, progress: { knowledge: { capacity: 50, current: 50 } } });
     expect(equip.weapon?.key).toBe(HEXOBJECT_KEYS.HEALTH_BOTTLE);
     expect(bag.some((cell) => cell?.key === HEXOBJECT_KEYS.SWORD)).toBe(true);
     expect(table.run.inventory.revision).toBeGreaterThan(0);

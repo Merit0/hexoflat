@@ -23,6 +23,23 @@ async function grantTokenItem(spec: TestTokenSpec): Promise<ItemToken> {
   return granted;
 }
 
+async function grantLegacyAttribute(key: 'fog' | 'will', bonus: number): Promise<ItemToken> {
+  const token = await grantTokenItem({
+    type: 'shield',
+    realm: 'idol',
+    mapTier: 1,
+    attributes: [],
+  });
+  const item = useHeroInventoryStore().items.find((entry) => entry.token?.id === token.id);
+  if (!item?.token) throw new Error('No granted token');
+  // Owned tokens retain attributes their type can no longer roll. Planned jewelry/clothing generation stays disabled.
+  item.token = { ...item.token, attributes: [{ key, value: bonus }] };
+  const owned = item.token;
+  pushInventoryFixture();
+  await settleInventorySync();
+  return owned;
+}
+
 export const inventoryTestApi = {
   grantInventoryItem(key: string, amount: number) {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
@@ -30,22 +47,14 @@ export const inventoryTestApi = {
     if (!result.ok) throw new Error(`Cannot grant ${amount} x ${key}`);
   },
   grantTokenItem,
+  async grantLegacyWillToken(bonus: number): Promise<ItemToken> {
+    if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+    if (!Number.isInteger(bonus) || bonus < 1 || bonus > 10) throw new Error('Invalid Will bonus');
+    return grantLegacyAttribute('will', bonus);
+  },
   async grantLegacySightToken(bonus: number): Promise<ItemToken> {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
     if (bonus !== 1 && bonus !== 2) throw new Error('Invalid sight bonus');
-    const token = await grantTokenItem({
-      type: 'shield',
-      realm: 'idol',
-      mapTier: 1,
-      attributes: [],
-    });
-    const item = useHeroInventoryStore().items.find((entry) => entry.token?.id === token.id);
-    if (!item?.token) throw new Error('No granted token');
-    // Owned tokens retain attributes their type can no longer roll. Helm generation stays disabled.
-    item.token = { ...item.token, attributes: [{ key: 'fog', value: bonus }] };
-    const owned = item.token;
-    pushInventoryFixture();
-    await settleInventorySync();
-    return owned;
+    return grantLegacyAttribute('fog', bonus);
   },
 };

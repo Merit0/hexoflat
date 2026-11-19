@@ -108,6 +108,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       const question = session?.question;
       return {
         current: state.current,
+        capacity: state.capacity,
         status: session?.status ?? null,
         index: session?.index ?? 0,
         options: question?.options ?? [],

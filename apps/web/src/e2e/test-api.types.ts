@@ -135,11 +135,13 @@ export interface TestFogTile {
 }
 
 export interface HexoflatTestApi {
+  grantLegacyWillToken(bonus: number): Promise<TestItemToken>;
   grantLegacySightToken(bonus: number): Promise<TestItemToken>;
   getFogTiles(center: TestHexCoordinates): TestFogTile[];
   findFogStep(): TestHexCoordinates | null;
   getKnowledge(): {
     current: number;
+    capacity: number;
     status: string | null;
     index: number;
     options: number[];

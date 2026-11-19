@@ -198,3 +198,10 @@ Quest pickup refusal feedback (2026-11-16): `useQuestRunActions` sends every ref
 - `fog-hooks.ts` answers `findFogStep` and `getFogTiles(center)` using engine enterability/hex-distance functions. A candidate must have still-hidden tiles at distances 2 and 3, preventing assertions from passing on explored fog. Geometry stays inside the app.
 - `EquipmentFogComponent` checks every tile against its pre-step state: only the requested radius becomes newly revealed; explored tiles remain visible. It waits for actual hero coordinates/fog, settles inventory before reload, and compares the saved snapshot afterward.
 - Run `sh scripts/pre-push-e2e.sh e2e/board/dungeon-fog.spec.ts` (4 tests: 2 attribute scenarios + 2 existing dungeon checks).
+
+## Equipment Will (A02, 2026-11-19)
+
+- `e2e/hero/equipment-will.spec.ts` uses `EquipmentWillFeature`/`EquipmentWillComponent`: bag has no effect; real shield-slot drag raises 50→55 with no refill; a filled bonus is clamped back to 50 by the hand-icon unequip; reload/re-equip retain the correct values. A +10 token verifies a low balance stays unchanged with capacity 60 and after removal.
+- Jewelry is disabled. `grantLegacyWillToken(bonus)` uses the same owned-token fixture as sight: a normal minted shield receives stored `will` through the dev-only inventory replacement. Both public fixture hooks keep inline E2E guards and validate their bonus ranges. Generator restrictions remain intact.
+- `getKnowledge` now exposes actual `capacity`; `getKnowledgeRules().capacity` is still the base constant. The component checks both server knowledge projection and visible `hero-will-value`. `setWill(55)` is valid only after equipping capacity 55; settle before reload.
+- Run `sh scripts/pre-push-e2e.sh e2e/hero/equipment-will.spec.ts e2e/board/dungeon-fog.spec.ts` to cover Will plus the shared sight fixture.
