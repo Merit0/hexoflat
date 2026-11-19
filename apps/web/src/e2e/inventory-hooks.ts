@@ -23,7 +23,10 @@ async function grantTokenItem(spec: TestTokenSpec): Promise<ItemToken> {
   return granted;
 }
 
-async function grantLegacyAttribute(key: 'fog' | 'will', bonus: number): Promise<ItemToken> {
+async function grantLegacyAttribute(
+  key: 'fog' | 'will' | 'deft-hands',
+  bonus: number,
+): Promise<ItemToken> {
   const token = await grantTokenItem({
     type: 'shield',
     realm: 'idol',
@@ -57,6 +60,11 @@ export const inventoryTestApi = {
       mapTier,
       attributes: [{ key: 'will', value: bonus }],
     });
+  },
+  async grantLegacyDeftHandsToken(bonus: number): Promise<ItemToken> {
+    if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+    if (bonus !== 1 && bonus !== 2) throw new Error('Invalid Deft Hands bonus');
+    return grantLegacyAttribute('deft-hands', bonus);
   },
   async grantLegacySightToken(bonus: number): Promise<ItemToken> {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');

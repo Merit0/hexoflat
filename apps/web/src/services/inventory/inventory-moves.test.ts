@@ -38,8 +38,28 @@ describe('hands while a battle is open', () => {
 
     inventory.moveItemToSlot(sword.id, 'eq:weapon');
 
-    expect(approve).toHaveBeenCalledWith({ weapon: HEXOBJECT_KEYS.SWORD, shield: null });
+    expect(approve).toHaveBeenCalledWith(
+      expect.objectContaining({ weapon: HEXOBJECT_KEYS.SWORD, shield: null }),
+    );
     expect(inventory.equippedItems.weapon?.key).toBe(HEXOBJECT_KEYS.SWORD);
+  });
+
+  it('asks the battle before replacing gear of the same type, including the chosen token identity', () => {
+    const { inventory } = armed();
+    inventory.putToInventory(HEXOBJECT_KEYS.SHIELD, 2);
+    const shields = inventory.items.filter((item) => item.key === HEXOBJECT_KEYS.SHIELD);
+    inventory.moveItemToSlot(shields[0].id, 'eq:shield');
+    const approve = vi.fn(() => false);
+    bindInventoryHandsGate(approve, () => true);
+    const before = JSON.stringify(inventory.items);
+    inventory.moveItemToSlot(shields[1].id, 'eq:shield');
+    expect(approve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        shield: HEXOBJECT_KEYS.SHIELD,
+        tokenIds: { weapon: null, shield: shields[1].token!.id },
+      }),
+    );
+    expect(JSON.stringify(inventory.items)).toBe(before);
   });
 
   it('leaves the inventory untouched when the battle refuses the new hands', () => {

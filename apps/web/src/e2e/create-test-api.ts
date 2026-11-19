@@ -243,6 +243,10 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return heroInventoryStore.items.find((item) => item.key === key)?.id ?? null;
     },
 
+    getInventoryItemIdByTokenId(tokenId: string): string | null {
+      return heroInventoryStore.items.find((item) => item.token?.id === tokenId)?.id ?? null;
+    },
+
     getGridSize(): TestGridSize {
       const map = worldStore.map;
       return { width: map?.width ?? 0, height: map?.height ?? 0 };

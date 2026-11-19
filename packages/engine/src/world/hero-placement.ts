@@ -4,14 +4,25 @@ import type { ExitSide } from '../boards/exits';
 import { findFreeHexNearExit, findFreeHexNearObject } from '../map/free-hex-finder';
 import { MapRegistry, type LocationKey } from '../registry/world-map-registry';
 import type { RandomNumberGenerator } from '../utils/random';
+import { objectActionDestination } from '../map/object-transition';
+import { EHexActionType } from '../enums/hex-action-type';
 
 export function findEntryHex(
   map: HexMapModel | null,
   locationKey: LocationKey,
   random: RandomNumberGenerator,
+  fromLocation?: LocationKey,
 ): IHexCoordinates | null {
   if (!map) return null;
 
+  const returnGate = fromLocation
+    ? map.tiles.find((tile) => {
+        const destination = objectActionDestination(tile.hexobject, EHexActionType.ENTER);
+        return destination?.type === 'WORLD' && destination.locationKey === fromLocation;
+      })?.hexobject?.hexobjectKey
+    : undefined;
+  const byReturn = returnGate ? findFreeHexNearObject(map, returnGate, random) : null;
+  if (byReturn) return byReturn;
   const entryKey = MapRegistry.get(locationKey).entryHexobjectKey;
   const byEntry = entryKey ? findFreeHexNearObject(map, entryKey, random) : null;
   return byEntry ?? findFreeHexNearExit(map, undefined, random);

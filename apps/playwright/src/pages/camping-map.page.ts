@@ -1,3 +1,4 @@
+import { EquipmentUseComponent } from '@components/equipment-use.component';
 import { KnowledgeBoardComponent } from '@components/knowledge-board.component';
 import { expect } from '@playwright/test';
 import { BasePage } from '@framework/base-page';
@@ -44,6 +45,7 @@ export class CampingMapPage extends BasePage {
   readonly pageErrors = new PageErrorsComponent();
   readonly activeBoard = new ActiveBoardComponent();
   readonly equipmentFog = new EquipmentFogComponent();
+  readonly equipmentUse = new EquipmentUseComponent();
   readonly equipmentWill = new EquipmentWillComponent();
 
   async goto(): Promise<void> {

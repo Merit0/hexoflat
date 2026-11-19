@@ -23,7 +23,12 @@ export function bindBattleHandsGate({ send, lockedWarning }: HandsGateDeps): voi
     if (lockedWarning()) return false;
     const right = battleKey(hands.weapon);
     const left = battleKey(hands.shield);
-    void send(() => battle.act({ kind: 'set-hands', right, left }));
+    const tokenIds = hands.tokenIds
+      ? { right: hands.tokenIds.weapon, left: hands.tokenIds.shield }
+      : undefined;
+    void send(() =>
+      battle.act({ kind: 'set-hands', right, left, ...(tokenIds ? { tokenIds } : {}) }),
+    );
     return false;
   }, isOpen);
 }

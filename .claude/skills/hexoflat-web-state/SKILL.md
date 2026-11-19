@@ -308,3 +308,13 @@ Quest pickup refusal feedback (2026-11-16): `useQuestRunActions` sends every ref
 ## Equipment health projection (EA4, 2026-11-19)
 
 Equipment hearts are calculated by engine `resolveHeroStats` inside the server command pipeline. Web consumes `progress.health` (`current`, `bonus`, `debt`) through `applyProgress` and `heroStore.loadKnowledge`/`bindHealthListener`, including the initial cached session value. Do not derive hero health from optimistic equipment changes. `useEquipmentHealthSync` and `heroStore.setMaxHealthBonus` were removed. Item-tooltip heart helpers remain display-only. Coverage: `services/inventory/health-projection.test.ts` and `composables/use-hero-details-hearts.test.ts`; browser regression: `shield-max-health.spec.ts`.
+
+A03 (2026-11-19): battle-hero-card and battle-tool-hex derive consumable prices from engine `usePriceFor(item, battleHeroStats(self))`, including disabled/insufficient-Will checks. Do not subtract equipment discounts in client state.
+
+### A03 E2E extension and token replacement (2026-11-19)
+
+`equipment-use.spec.ts` now covers insufficient Will (disabled USE, unchanged health/balance/potion after reload), removing discount gear (price returns to 3), and replacing a −1 token with −2 of the same type (price 2→1, then reload/use). `getInventoryItemIdByTokenId` is a read-only E2E hook to select the exact spare item, never an arbitrary same-type token.
+
+The replacement scenario exposed a real defect: inventory/battle hand comparison used keys alone. `HandKeys.tokenIds?` carries the prospective weapon/shield token identities; `set-hands.tokenIds?` carries right/left ids to the engine, which validates ownership/key and distinct ids before spending swap Will. Same-type token changes now count as hand changes, select the exact bag item and synchronize authoritative inventory by token id. `HANDS_SET` records requested ids when supplied. Legacy key-only commands remain valid; no snapshot/version migration. Regression tests: `equipment-tokens.test.ts` (same-type replacement + unowned token refusal), `inventory-moves.test.ts` (same-type replacement reaches the gate before mutation).
+
+Victory tool activation (2026-11-19): Inventory default-hand USE is allowed when `collectHero` reports an owned collecting hero, routed to `activateBattleHand`. Unsupported non-hand battle tools and hand USE during a live fight remain blocked. Regression lives in `equip-token-position.test.ts`; do not activate the background world tool on the battle field.

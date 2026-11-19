@@ -60,6 +60,48 @@ describe('EA5 tokens in battle equipment', () => {
     expect(synced.revision).toBe(inventory.revision + 1);
   });
 
+  it('replaces a held token with another of the same type and synchronizes inventory', () => {
+    const inventory = equipped();
+    const incoming = {
+      ...mintItem(inventory, 'shield', 1),
+      token: {
+        ...upcastToken('hero', 'bag.0', 'shield')!,
+        attributes: [{ key: 'deft-hands', value: 2 }],
+      },
+    };
+    inventory.bag[0] = incoming;
+    const creature = heroBattleCreature(loadoutFromInventory(inventory, 3));
+    const state = giveTurn(battleWith([creature, skeleton('s1', { q: 3, r: 0 })]), ['hero', 's1']);
+    const action = {
+      kind: 'set-hands' as const,
+      right: 'sword',
+      left: 'wooden-shield',
+      tokenIds: { right: creature.hands.right!.token!.id, left: incoming.token.id },
+    };
+    const { battle } = heroDoes(state, action);
+    expect(battle.creatures[0].hands.left?.token?.id).toBe(incoming.token.id);
+    expect(battle.turnWill).toBe(state.turnWill - 4);
+    const synced = syncHandsToInventory(inventory, creature, battle.creatures[0])!;
+    expect(synced.equip.shield?.token?.id).toBe(incoming.token.id);
+    expect(synced.bag.some((item) => item?.token?.id === inventory.equip.shield?.token?.id)).toBe(
+      true,
+    );
+  });
+
+  it('rejects an unowned requested token without spending Will or replacing equipment', () => {
+    const creature = heroBattleCreature(loadoutFromInventory(equipped(), 3));
+    const state = giveTurn(battleWith([creature, skeleton('s1', { q: 3, r: 0 })]), ['hero', 's1']);
+    const { battle, events } = heroDoes(state, {
+      kind: 'set-hands',
+      right: 'sword',
+      left: 'wooden-shield',
+      tokenIds: { right: creature.hands.right!.token!.id, left: 'not-owned' },
+    });
+    expect(events[0].type).toBe('BATTLE_REJECTED');
+    expect(battle.turnWill).toBe(state.turnWill);
+    expect(battle.creatures[0].hands).toEqual(creature.hands);
+  });
+
   it('selects the same token in inventory even when two swords have the same battle key', () => {
     const inventory = equipped();
     inventory.equip.weapon = null;

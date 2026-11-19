@@ -1,3 +1,5 @@
+import { usePriceFor } from '../inventory/use-price';
+import { battleHeroStats } from './hero-stats';
 import type { DomainEvent } from '../commands/types';
 import type { BattleRules } from './battle-content';
 import type { BattleCreature, BattleHand, BattleState } from './battle-state';
@@ -44,7 +46,8 @@ export function useItem(
   const item = actor.hands[hand];
   if (!item) return reject('NO_SUCH_ITEM');
   if (!item.heal || !item.usePrice) return reject('NOT_USABLE');
-  const refused = spendTurnWill(state, item.usePrice);
+  const cost = usePriceFor(item, battleHeroStats(actor));
+  const refused = spendTurnWill(state, cost);
   if (refused) return refused;
 
   const before = actor.hp;
@@ -60,7 +63,7 @@ export function useItem(
         itemKey: item.key,
         healed: actor.hp - before,
         hp: actor.hp,
-        cost: item.usePrice,
+        cost,
         willLeft: state.turnWill,
       },
     },
@@ -72,12 +75,32 @@ export function setHands(
   actor: BattleCreature,
   wanted: Record<BattleHand, string | null>,
   rules: BattleRules,
+  tokenIds?: Record<BattleHand, string | null>,
 ): DomainEvent[] | BattleRejection {
   const hands = Object.keys(wanted) as BattleHand[];
   if (hands.some((hand) => wanted[hand] !== null && !BATTLE_ITEMS[wanted[hand]])) {
     return reject('NO_SUCH_ITEM');
   }
-  const changed = hands.filter((hand) => (actor.hands[hand]?.key ?? null) !== wanted[hand]);
+  if (tokenIds) {
+    const ids = hands.flatMap((hand) => (tokenIds[hand] ? [tokenIds[hand]] : []));
+    const available = [...Object.values(actor.hands), ...actor.bag];
+    if (
+      new Set(ids).size !== ids.length ||
+      hands.some(
+        (hand) =>
+          tokenIds[hand] &&
+          !available.some(
+            (item) => item?.key === wanted[hand] && item.token?.id === tokenIds[hand],
+          ),
+      )
+    )
+      return reject('NO_SUCH_ITEM');
+  }
+  const changed = hands.filter(
+    (hand) =>
+      (actor.hands[hand]?.key ?? null) !== wanted[hand] ||
+      (tokenIds && (actor.hands[hand]?.token?.id ?? null) !== tokenIds[hand]),
+  );
   if (changed.length === 0) return [];
   const cost = rules.swap * changed.length;
   const refused = spendTurnWill(state, cost);
@@ -91,7 +114,9 @@ export function setHands(
     const incoming = wanted[hand];
     let item = incoming ? battleItem(incoming) : null;
     if (incoming) {
-      const inBag = actor.bag.findIndex((item) => item.key === incoming);
+      const inBag = actor.bag.findIndex(
+        (item) => item.key === incoming && (!tokenIds?.[hand] || item.token?.id === tokenIds[hand]),
+      );
       if (inBag >= 0) [item] = actor.bag.splice(inBag, 1);
     }
     actor.hands[hand] = item;
@@ -104,6 +129,7 @@ export function setHands(
         creatureId: actor.id,
         right: actor.hands.right?.key ?? null,
         left: actor.hands.left?.key ?? null,
+        ...(tokenIds ? { tokenIds } : {}),
         cost,
         willLeft: state.turnWill,
       },

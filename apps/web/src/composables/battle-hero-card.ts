@@ -1,3 +1,5 @@
+import { usePriceFor } from '@hexoflat/engine/inventory/use-price';
+import { battleHeroStats } from '@hexoflat/engine/battle/hero-stats';
 import type { BattleCreature, BattleHand, BattleItem } from '@hexoflat/engine/battle/battle-state';
 import { BATTLE_HANDS } from '@hexoflat/engine/battle/battle-state';
 import { creatureById, isAlive } from '@hexoflat/engine/battle/battle-board';
@@ -75,6 +77,7 @@ function handKind(item: BattleItem | null): BattleHandKind {
 }
 
 function handMeta(
+  cost: number,
   item: BattleItem | null,
   struck: boolean,
   input: BattleViewInput,
@@ -89,21 +92,21 @@ function handMeta(
   if (kind === 'consumable')
     return {
       key: 'battle.hand.consumable',
-      params: { hearts: item!.heal! / 2, cost: item!.usePrice! },
+      params: { hearts: item!.heal! / 2, cost },
     };
   return { key: 'battle.hand.shield', params: { sides: item!.shieldCapacity ?? 0 } };
 }
 
 function handDisabled(
+  cost: number,
   kind: BattleHandKind,
-  item: BattleItem | null,
   struck: boolean,
   view: BattleProjection,
   input: BattleViewInput,
 ) {
   if (input.ui.mode === 'swap') return false;
   if (kind === 'weapon' || kind === 'empty') return struck || view.turnWill < input.rules.strike;
-  if (kind === 'consumable') return view.turnWill < (item?.usePrice ?? 0);
+  if (kind === 'consumable') return view.turnWill < cost;
   return true;
 }
 
@@ -115,6 +118,7 @@ function hands(
   return BATTLE_HANDS.map((hand) => {
     const item = self.hands[hand];
     const kind = handKind(item);
+    const cost = item ? usePriceFor(item, battleHeroStats(self)) : 0;
     const struck = view.struckHands.includes(hand);
     const selected =
       input.ui.mode === 'swap'
@@ -124,9 +128,9 @@ function hands(
       hand,
       kind,
       itemKey: item?.key ?? null,
-      meta: handMeta(item, struck, input),
+      meta: handMeta(cost, item, struck, input),
       selected,
-      disabled: handDisabled(kind, item, struck, view, input),
+      disabled: handDisabled(cost, kind, struck, view, input),
     };
   });
 }

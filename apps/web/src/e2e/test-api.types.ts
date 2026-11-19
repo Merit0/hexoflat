@@ -136,6 +136,7 @@ export interface TestFogTile {
 
 export interface HexoflatTestApi {
   grantWillToken(bonus: number, mapTier?: TestTokenSpec['mapTier']): Promise<TestItemToken>;
+  grantLegacyDeftHandsToken(bonus: number): Promise<TestItemToken>;
   grantLegacySightToken(bonus: number): Promise<TestItemToken>;
   getFogTiles(center: TestHexCoordinates): TestFogTile[];
   findFogStep(): TestHexCoordinates | null;
@@ -177,6 +178,7 @@ export interface HexoflatTestApi {
   getInventoryItemKeys(): string[];
 
   getInventoryItemIdByKey(key: string): string | null;
+  getInventoryItemIdByTokenId(tokenId: string): string | null;
 
   getGridSize(): TestGridSize;
 

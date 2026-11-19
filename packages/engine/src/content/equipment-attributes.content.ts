@@ -173,6 +173,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     cap: 2,
     icon: 'gloves',
     format: 'minus',
+    implemented: true,
   }),
   attribute('trade', {
     groups: ['jewelry'],

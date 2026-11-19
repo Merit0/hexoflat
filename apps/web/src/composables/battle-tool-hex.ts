@@ -1,3 +1,5 @@
+import { usePriceFor } from '@hexoflat/engine/inventory/use-price';
+import { battleHeroStats } from '@hexoflat/engine/battle/hero-stats';
 import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
 import {
   type BattleCreature,
@@ -141,8 +143,10 @@ function blockDecision(
 
 const NO_ACTION: Decision = { action: null, targetId: null, price: 0 };
 
-function useDecision(item: BattleItem): Decision {
-  return item.usePrice ? { action: 'use', targetId: null, price: item.usePrice } : NO_ACTION;
+function useDecision(item: BattleItem, self: BattleCreature): Decision {
+  return item.usePrice
+    ? { action: 'use', targetId: null, price: usePriceFor(item, battleHeroStats(self)) }
+    : NO_ACTION;
 }
 
 function decide(
@@ -156,7 +160,7 @@ function decide(
   const item = self.hands[hand];
   if (!item || item.power) return attackDecision(view, self, hand, at, rules, chosenId);
   if (item.shieldCapacity) return blockDecision(view, self, at, rules);
-  return useDecision(item);
+  return useDecision(item, self);
 }
 
 function defaultAnchor(

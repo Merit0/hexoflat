@@ -33,14 +33,14 @@ describe('TypeRegistry', () => {
 describe('AttributeRegistry', () => {
   const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
 
-  it('holds the equipment attributes with heart, will and fog implemented', () => {
+  it('holds the equipment attributes with heart, will, fog and deft-hands implemented', () => {
     expect(registry.all()).toHaveLength(EQUIPMENT_ATTRIBUTES.length);
     expect(
       registry
         .all()
         .filter((attribute) => attribute.implemented)
         .map((attribute) => attribute.key),
-    ).toEqual(['heart', 'will', 'fog']);
+    ).toEqual(['heart', 'will', 'fog', 'deft-hands']);
   });
 
   it('keeps the stub attributes readable', () => {

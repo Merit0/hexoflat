@@ -44,7 +44,9 @@ export function syncHandsToInventory(
 ): InventoryState | null {
   const next = structuredClone(inventory);
   const changed = (Object.keys(SLOT_OF_HAND) as BattleHand[]).filter(
-    (hand) => (before.hands[hand]?.key ?? null) !== (after.hands[hand]?.key ?? null),
+    (hand) =>
+      (before.hands[hand]?.key ?? null) !== (after.hands[hand]?.key ?? null) ||
+      before.hands[hand]?.token?.id !== after.hands[hand]?.token?.id,
   );
   const stowed: InventoryStateItem[] = [];
   for (const hand of changed) {

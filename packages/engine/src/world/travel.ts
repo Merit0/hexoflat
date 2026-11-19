@@ -143,6 +143,7 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
           destination.map,
           to,
           deriveStream(destination.worldSeed, `arrive:${progress.steps}`),
+          origin.locationKey,
         ) ?? destination.heroCoordinates);
   destination.heroCoordinates = arrival ? { ...arrival } : { columnIndex: 0, rowIndex: 0 };
   revealAroundHero(destination.map, destination.heroCoordinates, heroFogRadius(inventory));

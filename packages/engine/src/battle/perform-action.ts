@@ -120,7 +120,13 @@ export function performAction(
     case 'use-item':
       return useItem(state, actor, action.hand);
     case 'set-hands':
-      return setHands(state, actor, { right: action.right, left: action.left }, rules);
+      return setHands(
+        state,
+        actor,
+        { right: action.right, left: action.left },
+        rules,
+        action.tokenIds,
+      );
     case 'end-turn':
       return endTurn(state, rules);
     case 'loot-grave':

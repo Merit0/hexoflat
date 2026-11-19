@@ -1,3 +1,4 @@
+import { upcastToken } from '@hexoflat/engine/inventory/upcast-item-tokens';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
@@ -154,6 +155,39 @@ describe('battle tool hex and statuses', () => {
     expect(viewOf({ ...ACTION, hand: 'left' }).board?.tool).toMatchObject({
       action: 'use',
       price: battleItem('health-potion').usePrice,
+    });
+  });
+
+  it.each([
+    [1, 2],
+    [2, 1],
+  ])('previews Deft Hands %s as USE cost %s in the tool and hand card', async (discount, cost) => {
+    await startedOn(
+      ['hero', 's1'],
+      [
+        hero(
+          { q: 0, r: 0 },
+          {
+            hands: { right: battleItem('sword'), left: battleItem('health-potion') },
+            equipment: [
+              {
+                key: 'shield',
+                token: {
+                  ...upcastToken('hero', 'equip.shield', 'shield')!,
+                  attributes: [{ key: 'deft-hands', value: discount }],
+                },
+              },
+            ],
+          },
+        ),
+        skeleton('s1', { q: 3, r: 0 }),
+      ],
+    );
+    const view = viewOf({ ...ACTION, hand: 'left' });
+    expect(view.board?.tool).toMatchObject({ action: 'use', price: cost });
+    expect(view.hero?.hands.find((hand) => hand.hand === 'left')).toMatchObject({
+      disabled: false,
+      meta: { params: { cost } },
     });
   });
 
