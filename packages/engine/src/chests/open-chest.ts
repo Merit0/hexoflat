@@ -6,6 +6,7 @@ import type HexMapModel from '../map/models/hex-map-model';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { ChestLootContext } from './plan-chest-loot';
+import type { InventoryState } from '../inventory/inventory-state';
 
 export type ChestRefusal = 'NO_HERO' | ContainerRefusal;
 
@@ -22,6 +23,7 @@ export interface ChestWorld {
   map: HexMapModel;
   heroes: Record<string, HeroState>;
   loot?: ChestLootContext;
+  inventory?: InventoryState;
 }
 
 export function isChestOpening(tile: HexTileModel, actionType: EHexActionType): boolean {

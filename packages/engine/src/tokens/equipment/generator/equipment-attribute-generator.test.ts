@@ -197,11 +197,12 @@ describe('closed attributes are never generated', () => {
 describe('real content', () => {
   const real = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
 
-  it('gives only heart or nothing for every group and tier', () => {
+  it('gives only implemented attributes for every group and tier', () => {
     for (const type of EQUIPMENT_TYPES) {
       for (const tier of TIERS) {
         for (const seed of seeds(100)) {
-          for (const { key } of rollFor(real, type, tier, seed)) expect(key).toBe('heart');
+          for (const { key } of rollFor(real, type, tier, seed))
+            expect(['heart', 'fog']).toContain(key);
         }
       }
     }

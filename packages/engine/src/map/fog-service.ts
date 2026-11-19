@@ -2,8 +2,10 @@ import type HexMapModel from './models/hex-map-model';
 import type { HexTileModel } from './models/hex-tile-model';
 import type { IHexCoordinates } from './interfaces/hex-tile-config-interface';
 import type { IHexMapPlacement } from '../abstraction/hex-map-placement';
-import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
+import { coordinateKey, getHexNeighbors, hexDistance } from '../utils/hex-utils';
 import { isTerrainAlwaysVisible } from '../boards/terrain';
+
+export const BASE_FOG_RADIUS = 1;
 
 /**
  * Fog of war: which tiles the hero can see.
@@ -39,19 +41,18 @@ export function initFog(map: HexMapModel): IHexCoordinates[] {
 }
 
 /**
- * Reveals the hero's own tile plus its six neighbours. One rule for every map in
+ * Reveals tiles within the hero's sight radius. One rule for every map in
  * the game: Silesia, the camp, the generated cave and dungeon boards alike.
  */
 export function revealAroundHero(
   map: HexMapModel,
   heroCoordinates: IHexCoordinates,
+  radius = BASE_FOG_RADIUS,
 ): IHexCoordinates[] {
-  const byKey = indexByCoordinate(map);
   const revealedCoords: IHexCoordinates[] = [];
 
-  for (const coord of [heroCoordinates, ...getHexNeighbors(heroCoordinates)]) {
-    const tile = byKey.get(coordinateKey(coord));
-    if (!tile) continue;
+  for (const tile of map.tiles) {
+    if (hexDistance(heroCoordinates, tile.coordinates) > radius) continue;
     tile.isRevealed = true;
     revealedCoords.push(tile.coordinates);
   }

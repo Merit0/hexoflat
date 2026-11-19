@@ -1,3 +1,4 @@
+import { heroFogRadius } from '../map/hero-fog';
 import type { ExitSide } from '../boards/exits';
 import { planBoardCrossing } from '../hero-movement/board-crossing';
 import { objectActionDestination, objectTransitionRefusal } from '../map/object-transition';
@@ -144,7 +145,7 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
           deriveStream(destination.worldSeed, `arrive:${progress.steps}`),
         ) ?? destination.heroCoordinates);
   destination.heroCoordinates = arrival ? { ...arrival } : { columnIndex: 0, rowIndex: 0 };
-  revealAroundHero(destination.map, destination.heroCoordinates);
+  revealAroundHero(destination.map, destination.heroCoordinates, heroFogRadius(inventory));
   revealEntryTile(destination.map);
 
   if (countsAsTrip(MapRegistry.get(to).boardKind)) progress.trips += 1;

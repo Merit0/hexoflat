@@ -65,7 +65,11 @@ describe('EA-13: attribute rows of a new token', () => {
       'shows %s as a label, an icon and a value',
       async (_key, attribute) => {
         i18n.global.locale.value = locale;
-        const token = shieldWith([{ key: attribute.key, value: 1 }]);
+        // Rendering also supports owned attributes that this type cannot roll now.
+        const token = {
+          ...shieldWith([]),
+          attributes: [{ key: attribute.key, value: 1 }],
+        };
         const [row] = tokenAttributeRows(token, locale);
 
         expect(row.label).toBe(localeText(locale, attribute.display.labelKey));

@@ -1,3 +1,4 @@
+import { heroFogRadius } from '../map/hero-fog';
 import { applyCommand, type HexEngineState } from '../commands/apply-command';
 import type { DomainEvent } from '../commands/types';
 import { closePortalIfOpen } from '../portal/apply-portal';
@@ -104,7 +105,7 @@ export function enterPortalWorld(run: PortalRun): TravelOutcome {
   const stand = anchor ? findFreeHexNear(destination.map, anchor) : null;
   destination.heroCoordinates = stand ??
     destination.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 };
-  revealAroundHero(destination.map, destination.heroCoordinates);
+  revealAroundHero(destination.map, destination.heroCoordinates, heroFogRadius(run.inventory));
   revealEntryTile(destination.map);
   const touched = removeClosedPortals(events, [world, destination], run);
   progress.portal = hero.portal ?? null;

@@ -73,6 +73,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     cap: 2,
     icon: 'sun',
     format: 'plus',
+    implemented: true,
   }),
   attribute('force', {
     groups: ['weapon'],

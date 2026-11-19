@@ -33,18 +33,18 @@ describe('TypeRegistry', () => {
 describe('AttributeRegistry', () => {
   const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
 
-  it('holds the equipment attributes with heart as the only implemented one', () => {
+  it('holds the equipment attributes with heart and fog implemented', () => {
     expect(registry.all()).toHaveLength(EQUIPMENT_ATTRIBUTES.length);
     expect(
       registry
         .all()
         .filter((attribute) => attribute.implemented)
         .map((attribute) => attribute.key),
-    ).toEqual(['heart']);
+    ).toEqual(['heart', 'fog']);
   });
 
   it('keeps the stub attributes readable', () => {
-    expect(registry.get('fog').implemented).toBe(false);
+    expect(registry.get('smart-step').implemented).toBe(false);
     expect(registry.get('smart-step').display.icon).toBe('boots');
   });
 

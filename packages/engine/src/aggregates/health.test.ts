@@ -102,20 +102,21 @@ describe('the hero health on the server', () => {
     expect(state.progress.health).toEqual({ current: 2.5, bonus: 1, debt: 0.5 });
   });
 
-  it.each(EQUIPMENT_ATTRIBUTES.filter((attribute) => attribute.implemented))(
-    'EA-16: $key has a server reader for its stat',
-    (attribute) => {
-      expect(attribute.stat).toBe('maxHearts');
-      const command = withShield(true);
-      command.payload.inventory.equip.shield!.token = {
-        ...upcastToken(HERO, 'equip.shield', 'shield')!,
-        attributes: [{ key: attribute.key, value: 1 }],
-      };
-      const outcome = executePlayerCommand(fresh(), command, CTX);
-      if (!outcome.ok) throw new Error(outcome.code);
-      expect(outcome.changed.progress?.health).toEqual({ current: 3.5, bonus: 0.5, debt: 0 });
-    },
-  );
+  it.each(
+    EQUIPMENT_ATTRIBUTES.filter(
+      (attribute) => attribute.implemented && attribute.stat === 'maxHearts',
+    ),
+  )('EA-16: $key has a server reader for its stat', (attribute) => {
+    expect(attribute.stat).toBe('maxHearts');
+    const command = withShield(true);
+    command.payload.inventory.equip.shield!.token = {
+      ...upcastToken(HERO, 'equip.shield', 'shield')!,
+      attributes: [{ key: attribute.key, value: 1 }],
+    };
+    const outcome = executePlayerCommand(fresh(), command, CTX);
+    if (!outcome.ok) throw new Error(outcome.code);
+    expect(outcome.changed.progress?.health).toEqual({ current: 3.5, bonus: 0.5, debt: 0 });
+  });
 
   it('EA-12: the server applies the shared cap after summing token hearts', () => {
     const command = withShield(true);

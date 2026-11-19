@@ -1,3 +1,4 @@
+import { heroFogRadius } from '../map/hero-fog';
 import {
   emptiedContainer,
   type ContainerRefusal,
@@ -68,7 +69,7 @@ export function worldChestSpace(
       });
       if (!outcome.nothing) {
         hero.coordinates = { ...chest };
-        revealAroundHero(world.map, chest);
+        revealAroundHero(world.map, chest, heroFogRadius(world.inventory));
       }
       const byKey = new Map(world.map.tiles.map((t) => [coordinateKey(t.coordinates), t]));
       const applied = applySpreadPlan(outcome.plan, bag, (placement) => {
