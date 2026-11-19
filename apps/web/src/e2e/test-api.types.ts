@@ -128,7 +128,16 @@ export interface TestChest {
   state: 'full' | 'empty';
 }
 
+export interface TestFogTile {
+  coordinates: TestHexCoordinates;
+  distance: number;
+  revealed: boolean;
+}
+
 export interface HexoflatTestApi {
+  grantLegacySightToken(bonus: number): Promise<TestItemToken>;
+  getFogTiles(center: TestHexCoordinates): TestFogTile[];
+  findFogStep(): TestHexCoordinates | null;
   getKnowledge(): {
     current: number;
     status: string | null;

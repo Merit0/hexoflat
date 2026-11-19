@@ -1,7 +1,11 @@
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
-import { grantTokenFixture, settleInventorySync } from '@/services/inventory/inventory-sync';
+import {
+  grantTokenFixture,
+  pushInventoryFixture,
+  settleInventorySync,
+} from '@/services/inventory/inventory-sync';
 import type { TestTokenSpec } from './test-api.types';
 
 function heldTokens(): ItemToken[] {
@@ -26,4 +30,22 @@ export const inventoryTestApi = {
     if (!result.ok) throw new Error(`Cannot grant ${amount} x ${key}`);
   },
   grantTokenItem,
+  async grantLegacySightToken(bonus: number): Promise<ItemToken> {
+    if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+    if (bonus !== 1 && bonus !== 2) throw new Error('Invalid sight bonus');
+    const token = await grantTokenItem({
+      type: 'shield',
+      realm: 'idol',
+      mapTier: 1,
+      attributes: [],
+    });
+    const item = useHeroInventoryStore().items.find((entry) => entry.token?.id === token.id);
+    if (!item?.token) throw new Error('No granted token');
+    // Owned tokens retain attributes their type can no longer roll. Helm generation stays disabled.
+    item.token = { ...item.token, attributes: [{ key: 'fog', value: bonus }] };
+    const owned = item.token;
+    pushInventoryFixture();
+    await settleInventorySync();
+    return owned;
+  },
 };

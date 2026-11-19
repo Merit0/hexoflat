@@ -19,6 +19,7 @@ import { QuestBoardComponent } from '@components/quest-board.component';
 import { QuestFieldComponent } from '@components/quest-field.component';
 import { LootBoardComponent } from '@components/loot-board.component';
 import { ActiveBoardComponent } from '@components/active-board.component';
+import { EquipmentFogComponent } from '@components/equipment-fog.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
@@ -41,6 +42,7 @@ export class CampingMapPage extends BasePage {
   readonly lootBoard = new LootBoardComponent();
   readonly pageErrors = new PageErrorsComponent();
   readonly activeBoard = new ActiveBoardComponent();
+  readonly equipmentFog = new EquipmentFogComponent();
 
   async goto(): Promise<void> {
     await this.page.goto('/world/camping');
