@@ -188,11 +188,6 @@ export const useHeroStore = defineStore('hero', {
       }
     },
 
-    setMaxHealthBonus(bonus: number): void {
-      this.hero.setMaxHealthBonus(bonus);
-      this.saveProgressToStorage();
-    },
-
     devAddShield(): void {
       if (!import.meta.env.DEV) return;
       this.extraShields = Math.min(SHIELD_SLOTS, this.extraShields + 1);

@@ -1,4 +1,4 @@
-import { sumEquippedHeartPoints } from '../combat/heart-points';
+import { resolveHeroStats } from '../tokens/equipment/hero-stats';
 import { HERO_BASE_HEALTH, HeroModel } from '../models/hero-model';
 import type { DomainEvent } from '../commands/types';
 import {
@@ -81,7 +81,8 @@ export function executePlayerCommand(
   const outcome = foldQuest(aggregates, executeCore(aggregates, command, ctx));
   if (!outcome.ok || !outcome.changed.inventory) return outcome;
   const progress = outcome.changed.progress ?? aggregates.progress;
-  const bonus = sumEquippedHeartPoints(Object.values(outcome.changed.inventory.equip));
+  const stats = resolveHeroStats(Object.values(outcome.changed.inventory.equip));
+  const bonus = stats.maxHearts / 2;
   if (bonus === progress.health.bonus) return outcome;
   const model = new HeroModel().setMaxHealth(HERO_BASE_HEALTH).restoreHealth(progress.health);
   model.setMaxHealthBonus(bonus);

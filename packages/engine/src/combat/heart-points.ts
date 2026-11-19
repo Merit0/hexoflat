@@ -41,7 +41,3 @@ export function cellHeartPoints(cell: HeartCell | null | undefined): number {
 export function sumHeartPoints(keys: ReadonlyArray<THexobjectKey | null | undefined>): number {
   return keys.reduce((sum, key) => sum + getHeartPoints(key), 0);
 }
-
-export function sumEquippedHeartPoints(cells: ReadonlyArray<HeartCell | null | undefined>): number {
-  return cells.reduce((sum, cell) => sum + cellHeartPoints(cell), 0);
-}
