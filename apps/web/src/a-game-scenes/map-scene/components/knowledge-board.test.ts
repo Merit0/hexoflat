@@ -8,21 +8,21 @@ import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { i18n } from '@/i18n';
 import KnowledgeBoard from './knowledge-board.vue';
 
-describe('Hall reward feedback with Focus', () => {
+describe('Hall reward feedback with Wisdom', () => {
   let app: App;
   let host: HTMLElement;
   beforeEach(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const hero = useHeroStore();
-    const question = generateHallQuestion('focus', 0, {}, []);
+    const question = generateHallQuestion('wisdom', 0, {}, []);
     hero.knowledge = {
       ...createKnowledgeState(hero.hero.id),
       current: 15,
       session: {
         id: 'hall',
         mode: 'hall',
-        seed: 'focus',
+        seed: 'wisdom',
         originMapId: 'camp',
         status: 'feedback',
         index: 0,

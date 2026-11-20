@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 import '@framework/test-api';
 
-export class EquipmentFocusComponent extends BaseComponent {
+export class EquipmentWisdomComponent extends BaseComponent {
   async answerHallAndVerify(min: number, max = min): Promise<void> {
     const before = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getKnowledge());
     if (!before) throw new Error('No Hall question');

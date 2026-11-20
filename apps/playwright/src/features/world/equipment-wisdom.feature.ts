@@ -8,20 +8,37 @@ import { SwitchHeroBoardTabFeature } from './switch-hero-board-tab.feature';
 import { HexobjectKeys } from '@config/test-data';
 import '@framework/test-api';
 
-export class EquipmentFocusFeature extends BaseFeature {
+export class EquipmentWisdomFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
   private readonly shield = new ShieldMaxHealthFeature();
 
-  async start(bonus: number, equipped: boolean): Promise<void> {
-    await this.step(`Start with Focus +${bonus}, equipped: ${equipped}`, async () => {
+  async start(bonus: number, equipped: boolean, legacyKey = false): Promise<void> {
+    await this.step(`Start with Wisdom +${bonus}, equipped: ${equipped}`, async () => {
       await new OpenCampingMapFeature().open();
-      await this.page.evaluate(async (value) => {
-        await window.__HEXOFLAT_TEST__!.grantLegacyFocusToken(value);
-        window.__HEXOFLAT_TEST__!.setWill(10);
-        await window.__HEXOFLAT_TEST__!.settleInventorySync();
-      }, bonus);
+      await this.page.evaluate(
+        async ({ bonus, legacyKey }) => {
+          await window.__HEXOFLAT_TEST__!.grantLegacyWisdomToken(bonus, legacyKey);
+          window.__HEXOFLAT_TEST__!.setWill(10);
+          await window.__HEXOFLAT_TEST__!.settleInventorySync();
+        },
+        { bonus, legacyKey },
+      );
       if (equipped) await this.shield.equipShield();
     });
+  }
+
+  async verifyWisdomName(): Promise<void> {
+    await this.step(
+      'The item tooltip calls the attribute Wisdom, including old focus tokens',
+      async () => {
+        await new SwitchHeroBoardTabFeature().switchTo('inventory');
+        const id = await this.map.inventory.getItemIdByKey(HexobjectKeys.shield);
+        await this.map.inventory.hoverGridItem(id);
+        await this.map.inventory.verifyTooltipAttributeLabel(/Wisdom|Мудрість/);
+        await this.map.inventory.moveMouseAway();
+        await new SwitchHeroBoardTabFeature().switchTo('hero');
+      },
+    );
   }
 
   async openHall(): Promise<void> {
@@ -33,7 +50,7 @@ export class EquipmentFocusFeature extends BaseFeature {
 
   async answerHall(min: number, max = min): Promise<void> {
     await this.step(`Answer correctly and receive ${min}…${max} Will`, () =>
-      this.map.equipmentFocus.answerHallAndVerify(min, max),
+      this.map.equipmentWisdom.answerHallAndVerify(min, max),
     );
   }
 
@@ -44,10 +61,13 @@ export class EquipmentFocusFeature extends BaseFeature {
   }
 
   async equipFromHall(): Promise<void> {
-    await this.step('Close the Hall and equip the owned Focus item through Inventory', async () => {
-      await this.map.knowledge.close();
-      await this.shield.equipShield();
-    });
+    await this.step(
+      'Close the Hall and equip the owned Wisdom item through Inventory',
+      async () => {
+        await this.map.knowledge.close();
+        await this.shield.equipShield();
+      },
+    );
   }
 
   async setWill(current: number): Promise<void> {
@@ -74,12 +94,12 @@ export class EquipmentFocusFeature extends BaseFeature {
     await this.step(`Answer a real timed battle task, correct: ${correct}`, async () => {
       await new SwitchHeroBoardTabFeature().switchTo('battle');
       const right = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.openBattleTask());
-      await this.map.equipmentFocus.answerBattle(correct ? right : (right + 1) % 4);
+      await this.map.equipmentWisdom.answerBattle(correct ? right : (right + 1) % 4);
     });
   }
 
   async remove(): Promise<void> {
-    await this.step('Remove Focus through the hand icon', () =>
+    await this.step('Remove Wisdom through the hand icon', () =>
       this.shield.takeShieldOffWithTheHandIcon(),
     );
   }
@@ -94,7 +114,7 @@ export class EquipmentFocusFeature extends BaseFeature {
 
   async verifyWill(current: number): Promise<void> {
     await this.step(`Verify the hero has ${current} persistent Will`, () =>
-      this.map.equipmentFocus.verifyWill(current),
+      this.map.equipmentWisdom.verifyWill(current),
     );
   }
 }

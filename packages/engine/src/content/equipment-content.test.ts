@@ -53,7 +53,7 @@ const STAT_BY_KEY = {
   'deft-hands': 'useWillDiscount',
   trade: 'shopBuyDiscountPct',
   focus: 'answerWillReward',
-  wisdom: 'hallWillReward',
+  wisdom: 'answerWillReward',
   force: 'strikeForce',
   mass: 'pushMass',
   bag: 'carryKg',
@@ -92,12 +92,12 @@ describe('EA1 EA-16a: attribute registry', () => {
     expect([...keys].sort()).toEqual([...Object.keys(STAT_BY_KEY), ...BLOCKED_KEYS].sort());
   });
 
-  it('implements heart, will, fog, smart-step, deft-hands and focus', () => {
+  it('implements heart, will, fog, smart-step, deft-hands and wisdom (with legacy focus)', () => {
     expect(
       EQUIPMENT_ATTRIBUTES.filter((attribute) => attribute.implemented).map(
         (attribute) => attribute.key,
       ),
-    ).toEqual(['heart', 'will', 'fog', 'smart-step', 'deft-hands', 'focus']);
+    ).toEqual(['heart', 'will', 'fog', 'smart-step', 'deft-hands', 'focus', 'wisdom']);
   });
 
   it('maps every open attribute to its hero stat and leaves blocked ones without a stat', () => {
@@ -349,9 +349,18 @@ describe('EA1 EA-6a: adjectives', () => {
   });
 });
 
-describe('Focus definition', () => {
-  it('defines Focus as a Will reward capped at five, with its reader enabled', () => {
-    expect(EQUIPMENT_ATTRIBUTES.find((attribute) => attribute.key === 'focus')).toMatchObject({
+describe('Wisdom definition', () => {
+  it.each(['en', 'uk'])('shows the Wisdom name and hint for both keys in %s', (lang) => {
+    const root = 'content.tokens';
+    expect(localeText(lang, `${root}.attrLabel.focus`)).toBe(
+      localeText(lang, `${root}.attrLabel.wisdom`),
+    );
+    expect(localeText(lang, `${root}.attrHint.focus`)).toBe(
+      localeText(lang, `${root}.attrHint.wisdom`),
+    );
+  });
+  it('defines Wisdom as a Will reward capped at five, with its reader enabled', () => {
+    expect(EQUIPMENT_ATTRIBUTES.find((attribute) => attribute.key === 'wisdom')).toMatchObject({
       stat: 'answerWillReward',
       aggregate: 'sum',
       cap: 5,

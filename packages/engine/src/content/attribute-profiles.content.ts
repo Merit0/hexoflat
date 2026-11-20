@@ -139,22 +139,13 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
       [4, 6],
     ],
   },
-  focus: {
+  wisdom: {
     weight: { jewelry: 30 },
     tiers: [
       [1, 1],
       [1, 2],
       [1, 3],
       [1, 4],
-    ],
-  },
-  wisdom: {
-    weight: { jewelry: 25 },
-    tiers: [
-      [1, 1],
-      [1, 1],
-      [1, 1],
-      [1, 2],
     ],
   },
 };

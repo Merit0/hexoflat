@@ -16,7 +16,7 @@ import {
 import { deserializeWorld, onHeldMap, placeHeroIn, serializeWorld } from './world-test-support';
 import { WorldService } from './world.service';
 
-describe.skipIf(!inject('dbAvailable'))('A05 Focus persistence (real Postgres)', () => {
+describe.skipIf(!inject('dbAvailable'))('A05 Wisdom persistence (real Postgres)', () => {
   let kit: TestKit;
   let world: WorldService;
   beforeAll(() => {
@@ -53,13 +53,13 @@ describe.skipIf(!inject('dbAvailable'))('A05 Focus persistence (real Postgres)',
     const current = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
     const inventory = structuredClone(current.state) as InventoryState;
     inventory.equip.shield = {
-      id: `${heroId}:focus`,
+      id: `${heroId}:wisdom`,
       key: 'shield',
       type: EHexobjectGroup.EQUIPMENT,
       amount: 1,
       token: {
-        ...upcastToken(heroId, 'focus', 'shield')!,
-        attributes: [{ key: 'focus', value: 4 }],
+        ...upcastToken(heroId, 'wisdom', 'shield')!,
+        attributes: [{ key: 'wisdom', value: 4 }],
       },
     };
     expect(
@@ -81,7 +81,7 @@ describe.skipIf(!inject('dbAvailable'))('A05 Focus persistence (real Postgres)',
     return { userId, heroId };
   }
 
-  it('adds Focus to a correct Hall answer and saves the total across snapshots', async () => {
+  it('adds Wisdom to a correct Hall answer and saves the total across snapshots', async () => {
     const { userId, heroId } = await player();
     expect(
       (
@@ -95,7 +95,7 @@ describe.skipIf(!inject('dbAvailable'))('A05 Focus persistence (real Postgres)',
     expect(
       (
         await command(userId, heroId, 'KNOWLEDGE', {
-          action: { kind: 'start', mode: 'hall', seed: 'focus' },
+          action: { kind: 'start', mode: 'hall', seed: 'wisdom' },
         })
       ).result,
     ).toBe('applied');

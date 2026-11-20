@@ -52,7 +52,6 @@ export const HERO_STATS = [
   'useWillDiscount',
   'shopBuyDiscountPct',
   'answerWillReward',
-  'hallWillReward',
   'fogRadius',
   'graveLootBonus',
   'harvestBonus',

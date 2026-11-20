@@ -36,7 +36,7 @@ function hall() {
     coordinates: getHexNeighbors(CAMP_BOOK_HEX)[0],
   };
   state.progress.knowledge.current = 10;
-  return run(state, { kind: 'start', mode: 'hall', seed: 'focus' }).state;
+  return run(state, { kind: 'start', mode: 'hall', seed: 'wisdom' }).state;
 }
 
 function answer(state: PlayerAggregates, correct = true, elapsedMs = 500) {
@@ -52,13 +52,13 @@ function answer(state: PlayerAggregates, correct = true, elapsedMs = 500) {
   });
 }
 
-function focus(state: PlayerAggregates, value: number, equipped = true) {
+function wisdom(state: PlayerAggregates, value: number, equipped = true) {
   const item = {
-    id: 'hero:focus',
+    id: 'hero:wisdom',
     key: 'shield' as const,
     type: EHexobjectGroup.EQUIPMENT,
     amount: 1,
-    token: { ...upcastToken('hero', 'focus', 'shield')!, attributes: [{ key: 'focus', value }] },
+    token: { ...upcastToken('hero', 'wisdom', 'shield')!, attributes: [{ key: 'wisdom', value }] },
   };
   if (equipped) state.inventory.equip.shield = item;
   else state.inventory.bag[0] = item;
@@ -80,20 +80,20 @@ describe('Hall rewards before equipment bonuses', () => {
   });
 });
 
-describe('A05 Focus Hall rewards', () => {
+describe('A05 Wisdom Hall rewards', () => {
   it('marks quick answers by elapsed time rather than the equipment reward amount', () => {
-    expect(answer(focus(hall(), 4), true, 5000).state.progress.knowledge.session).toMatchObject({
+    expect(answer(wisdom(hall(), 4), true, 5000).state.progress.knowledge.session).toMatchObject({
       lastAward: 5,
       lastFast: false,
     });
-    expect(answer(focus(hall(), 4)).state.progress.knowledge.session).toMatchObject({
+    expect(answer(wisdom(hall(), 4)).state.progress.knowledge.session).toMatchObject({
       lastAward: 6,
       lastFast: true,
     });
   });
 
   it('does not grant the hero Will for somebody else’s correct task answer', () => {
-    const state = focus(hall(), 4);
+    const state = wisdom(hall(), 4);
     expect(
       grantEquipmentTaskWill(state.progress.knowledge, state.inventory, [
         {
@@ -105,22 +105,22 @@ describe('A05 Focus Hall rewards', () => {
     expect(state.progress.knowledge.current).toBe(10);
   });
   it.each([1, 2, 3, 4, 5])('adds +%s to both fast and slow correct answers', (bonus) => {
-    expect(answer(focus(hall(), bonus)).state.progress.knowledge.current).toBe(12 + bonus);
-    expect(answer(focus(hall(), bonus), true, 5000).state.progress.knowledge.current).toBe(
+    expect(answer(wisdom(hall(), bonus)).state.progress.knowledge.current).toBe(12 + bonus);
+    expect(answer(wisdom(hall(), bonus), true, 5000).state.progress.knowledge.current).toBe(
       11 + bonus,
     );
   });
 
   it('ignores bag items and wrong answers; removing equipment restores the base reward', () => {
-    expect(answer(focus(hall(), 4, false)).state.progress.knowledge.current).toBe(12);
-    expect(answer(focus(hall(), 4), false).state.progress.knowledge.current).toBe(10);
-    const state = focus(hall(), 4);
+    expect(answer(wisdom(hall(), 4, false)).state.progress.knowledge.current).toBe(12);
+    expect(answer(wisdom(hall(), 4), false).state.progress.knowledge.current).toBe(10);
+    const state = wisdom(hall(), 4);
     state.inventory.equip.shield = null;
     expect(answer(state).state.progress.knowledge.current).toBe(12);
   });
 
   it('caps the sum at five and clamps the actual grant to Will capacity', () => {
-    const state = focus(hall(), 4);
+    const state = wisdom(hall(), 4);
     state.inventory.equip.weapon = { ...state.inventory.equip.shield!, id: 'hero:other' };
     expect(answer(state).state.progress.knowledge.current).toBe(17);
     state.progress.knowledge.current = 49;
@@ -131,16 +131,16 @@ describe('A05 Focus Hall rewards', () => {
   });
 
   it('never grants twice for the same correct answer', () => {
-    const first = answer(focus(hall(), 5)).state;
+    const first = answer(wisdom(hall(), 5)).state;
     const again = answer(first);
     expect(again.result.ok).toBe(false);
     expect(again.state.progress.knowledge.current).toBe(17);
   });
 
-  it('continues to resolve deprecated owned Focus attributes', () => {
-    const state = focus(hall(), 4);
+  it('continues to resolve deprecated owned Wisdom attributes', () => {
+    const state = wisdom(hall(), 4);
     const attributes = EQUIPMENT_ATTRIBUTES.map((entry) =>
-      entry.key === 'focus' ? { ...entry, deprecated: true } : entry,
+      entry.key === 'wisdom' ? { ...entry, deprecated: true } : entry,
     );
     expect(
       resolveHeroStats(Object.values(state.inventory.equip), { attributes, types: EQUIPMENT_TYPES })

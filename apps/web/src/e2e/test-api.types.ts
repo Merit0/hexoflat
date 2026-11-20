@@ -139,7 +139,7 @@ export interface HexoflatTestApi {
   grantLegacyDeftHandsToken(bonus: number): Promise<TestItemToken>;
   grantLegacySightToken(bonus: number): Promise<TestItemToken>;
   grantLegacySmartStepToken(every: number): Promise<TestItemToken>;
-  grantLegacyFocusToken(bonus: number): Promise<TestItemToken>;
+  grantLegacyWisdomToken(bonus: number, legacyKey?: boolean): Promise<TestItemToken>;
   getPaidSteps(): number;
   findWorldStep(): TestHexCoordinates | null;
   getFogTiles(center: TestHexCoordinates): TestFogTile[];

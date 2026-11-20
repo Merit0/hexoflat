@@ -22,18 +22,18 @@ import {
 } from './index';
 
 function scene(value: number, equipped = true): TravelRun {
-  const world = createServerWorld('cave', 'focus', 'seed', 'hero');
+  const world = createServerWorld('cave', 'wisdom', 'seed', 'hero');
   world.battle = giveTurn(battleWith([hero({ q: 0, r: 0 }), skeleton('s1', { q: 1, r: 0 })]), [
     'hero',
     's1',
   ]);
   const inventory = emptyInventoryState('hero');
   const item = {
-    id: 'hero:focus',
+    id: 'hero:wisdom',
     key: 'shield' as const,
     type: EHexobjectGroup.EQUIPMENT,
     amount: 1,
-    token: { ...upcastToken('hero', 'focus', 'shield')!, attributes: [{ key: 'focus', value }] },
+    token: { ...upcastToken('hero', 'wisdom', 'shield')!, attributes: [{ key: 'wisdom', value }] },
   };
   if (equipped) inventory.equip.shield = item;
   else inventory.bag[0] = item;
@@ -71,7 +71,7 @@ function answer(run: TravelRun, correct = true, now = run.now + 100) {
   );
 }
 
-describe('A05 battle Focus restores the hero Will reserve', () => {
+describe('A05 battle Wisdom restores the hero Will reserve', () => {
   it.each([1, 4, 5])('grants +%s once and preserves the reward after a reload', (value) => {
     const run = pushing(scene(value));
     const turnWill = run.world.battle!.turnWill;

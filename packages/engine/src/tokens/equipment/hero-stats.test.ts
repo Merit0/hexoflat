@@ -58,14 +58,14 @@ describe('EA4 hero stats', () => {
       [
         cell('sword', [
           { key: 'unknown', value: 100 },
-          { key: 'wisdom', value: 2 },
+          { key: 'trade', value: 2 },
           { key: 'item-heart', value: 4 },
         ]),
       ],
       { attributes, types: EQUIPMENT_TYPES },
     );
     expect(stats.maxHearts).toBe(0);
-    expect(stats.hallWillReward).toBe(0);
+    expect(stats.shopBuyDiscountPct).toBe(0);
   });
 
   it('aggregates min and max without treating an absent contribution as zero', () => {
