@@ -92,12 +92,12 @@ describe('EA1 EA-16a: attribute registry', () => {
     expect([...keys].sort()).toEqual([...Object.keys(STAT_BY_KEY), ...BLOCKED_KEYS].sort());
   });
 
-  it('implements heart, will, fog and deft-hands', () => {
+  it('implements heart, will, fog, smart-step and deft-hands', () => {
     expect(
       EQUIPMENT_ATTRIBUTES.filter((attribute) => attribute.implemented).map(
         (attribute) => attribute.key,
       ),
-    ).toEqual(['heart', 'will', 'fog', 'deft-hands']);
+    ).toEqual(['heart', 'will', 'fog', 'smart-step', 'deft-hands']);
   });
 
   it('maps every open attribute to its hero stat and leaves blocked ones without a stat', () => {

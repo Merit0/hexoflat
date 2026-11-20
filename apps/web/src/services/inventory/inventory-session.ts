@@ -15,6 +15,7 @@ export const inventorySession = {
   knowledge: null as KnowledgeState | null,
   presence: null as ServerPresence | null,
   steps: 0,
+  paidSteps: 0,
   kills: 0,
   graveExitWarningAcknowledged: false,
   sealedUntil: {} as Record<string, number>,
@@ -39,6 +40,7 @@ export function resetInventorySession(): void {
   inventorySession.knowledge = null;
   inventorySession.presence = null;
   inventorySession.steps = 0;
+  inventorySession.paidSteps = 0;
   inventorySession.kills = 0;
   inventorySession.graveExitWarningAcknowledged = false;
   inventorySession.sealedUntil = {};

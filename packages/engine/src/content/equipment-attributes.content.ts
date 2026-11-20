@@ -164,6 +164,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     scope: 'hero',
     icon: 'boots',
     format: 'plain',
+    implemented: true,
   }),
   attribute('deft-hands', {
     groups: ['clothing'],

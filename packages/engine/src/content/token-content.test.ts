@@ -133,12 +133,12 @@ describe('item token content', () => {
     expect(ERarityKind.GOD_EXECUTOR in TOKEN_PRICE_RANGES).toBe(false);
   });
 
-  it('implements heart, will, fog and deft-hands, with heart values in whole half-hearts', () => {
+  it('implements heart, will, fog, smart-step and deft-hands, with heart values in whole half-hearts', () => {
     expect(
       EQUIPMENT_ATTRIBUTES.filter((attribute) => attribute.implemented).map(
         (attribute) => attribute.key,
       ),
-    ).toEqual(['heart', 'will', 'fog', 'deft-hands']);
+    ).toEqual(['heart', 'will', 'fog', 'smart-step', 'deft-hands']);
     expect(
       [1, 2, 3, 4].map((tier) => {
         const { min, max } = ATTRIBUTE_PROFILES[`tier-${tier as 1 | 2 | 3 | 4}`].attributes.heart;

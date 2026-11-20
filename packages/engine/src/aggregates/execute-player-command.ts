@@ -179,7 +179,7 @@ function executeCore(
     case 'SPEND_WILL':
     case 'DEV_GRANT_WILL':
     case 'DEV_SET_KNOWLEDGE': {
-      const outcome = executeProgressCommand(progress, command, ctx.devGrantAllowed);
+      const outcome = executeProgressCommand(progress, command, ctx.devGrantAllowed, inventory);
       if (!outcome) return { ok: false, code: 'UNKNOWN_COMMAND', events: [] };
       return outcome.ok
         ? { ok: true, changed: { progress: outcome.progress }, events: outcome.events }

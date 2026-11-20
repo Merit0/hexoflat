@@ -14,6 +14,6 @@ Initial browser run found two defects: cave exit returned distance 3 from its en
 
 - Targeted engine/component regressions passed before the full run after the fixes.
 - Full unit suite: engine 2199 passed / 2 skipped, web 4184, API 272, Playwright helpers 37.
-- Typecheck passed for all packages.
+- Typecheck and lint passed for all packages (existing warnings only); Prettier and `git diff HEAD --check` passed.
 - `sh scripts/pre-push-e2e.sh e2e/board/dungeon-exit.spec.ts e2e/combat/battle-collect.spec.ts --retries=0`: 7/7 passed, including all three new scenarios and the existing collection regressions. Dungeon entry/exit and reload checked three consecutive times.
 - No commits created; previous staged and unstaged work preserved.

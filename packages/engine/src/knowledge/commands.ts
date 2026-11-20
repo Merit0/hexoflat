@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { WillZone } from './will-zone';
+import type { StepWillContext } from './math';
 
 export const KnowledgeCommandSchema = z.object({
   type: z.literal('KNOWLEDGE'),
@@ -40,4 +41,5 @@ export interface KnowledgeContext {
   moving: boolean;
   atBook: boolean;
   coordinates?: { columnIndex: number; rowIndex: number };
+  step?: StepWillContext;
 }

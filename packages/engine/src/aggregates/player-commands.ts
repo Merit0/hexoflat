@@ -177,7 +177,7 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   DEV_GRANT_ITEM: ['inventory', 'progress'],
   DEV_CONSUME_ITEM: ['inventory', 'progress'],
   DEV_SET_INVENTORY: ['inventory', 'progress'],
-  KNOWLEDGE: ['progress'],
+  KNOWLEDGE: ['inventory', 'progress'],
   SACRIFICE_TO_SKILL: ['progress'],
   RESET_SKILLS: ['progress'],
   ARRIVE: ['progress'],
@@ -197,6 +197,11 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   QUEST_CLAIM: ['inventory', 'progress'],
   ACK_GRAVE_EXIT_WARNING: ['progress'],
 };
+
+/** Read dependencies stay in lock order; KNOWLEDGE still targets the progress revision. */
+export function playerCommandAggregate(type: TPlayerCommandType): TAggregateKind {
+  return type === 'KNOWLEDGE' ? 'progress' : PLAYER_COMMAND_AGGREGATES[type][0];
+}
 
 export const PLAYER_COMMAND_REVISION: Record<
   TPlayerCommandType,

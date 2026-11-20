@@ -115,7 +115,7 @@ function transition(
     const ref = action.target
       ? `${action.target.columnIndex}:${action.target.rowIndex}`
       : ctx.mapId;
-    const spent = spendWill(state, stepCost(ctx), 'step', ref);
+    const spent = spendWill(state, stepCost(ctx, ctx.step), 'step', ref);
     willEvents.push(...spent.events);
     if (!spent.ok) return false;
     if (action.target)

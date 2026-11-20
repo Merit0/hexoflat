@@ -109,10 +109,29 @@ export function willCapacityOf(modifiers: readonly WillCapacityModifier[] = []):
   return effectiveWillCapacity(KNOWLEDGE_RULES.capacity, modifiers);
 }
 
-export function stepCost(ctx: WillZoneContext): number {
-  return willZoneCharges(ctx) ? KNOWLEDGE_RULES.worldStepCost : 0;
+export interface StepWillContext {
+  paidSteps: number;
+  stepFreeEvery: number;
 }
 
-export function travelStepBudget(steps: number, currentWill: number, ctx: WillZoneContext): number {
-  return willZoneCharges(ctx) ? Math.min(steps, Math.floor(currentWill / stepCost(ctx))) : steps;
+export function stepCost(ctx: WillZoneContext, step?: StepWillContext): number {
+  if (!willZoneCharges(ctx)) return 0;
+  if (step && step.stepFreeEvery > 0 && (step.paidSteps + 1) % step.stepFreeEvery === 0) return 0;
+  return KNOWLEDGE_RULES.worldStepCost;
+}
+
+export function travelStepBudget(
+  steps: number,
+  currentWill: number,
+  ctx: WillZoneContext,
+  step?: StepWillContext,
+): number {
+  if (!willZoneCharges(ctx)) return steps;
+  let remaining = currentWill;
+  for (let index = 0; index < steps; index += 1) {
+    const cost = stepCost(ctx, step && { ...step, paidSteps: step.paidSteps + index });
+    if (cost > remaining) return index;
+    remaining -= cost;
+  }
+  return steps;
 }

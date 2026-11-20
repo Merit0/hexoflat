@@ -24,7 +24,7 @@ async function grantTokenItem(spec: TestTokenSpec): Promise<ItemToken> {
 }
 
 async function grantLegacyAttribute(
-  key: 'fog' | 'will' | 'deft-hands',
+  key: 'fog' | 'will' | 'deft-hands' | 'smart-step',
   bonus: number,
 ): Promise<ItemToken> {
   const token = await grantTokenItem({
@@ -70,5 +70,11 @@ export const inventoryTestApi = {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
     if (bonus !== 1 && bonus !== 2) throw new Error('Invalid sight bonus');
     return grantLegacyAttribute('fog', bonus);
+  },
+  async grantLegacySmartStepToken(every: number): Promise<ItemToken> {
+    if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+    if (!Number.isInteger(every) || every < 1 || every > 5)
+      throw new Error('Invalid Smart Step interval');
+    return grantLegacyAttribute('smart-step', every);
   },
 };

@@ -155,7 +155,7 @@ export function stepWorld(
       action: { kind: 'step', target },
     },
   } as PlayerCommand;
-  const paid = executeProgressCommand(progress, stepCommand);
+  const paid = executeProgressCommand(progress, stepCommand, false, run.inventory);
   if (!paid || !paid.ok)
     return refuse(paid && !paid.ok ? paid.code : 'REJECTED', paid?.events ?? []);
 

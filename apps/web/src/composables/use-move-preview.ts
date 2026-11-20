@@ -40,6 +40,7 @@ export function useMovePreview(deps: UseMovePreviewDeps) {
       getScoutMoveStepsForSteps(heroStore.hero?.heroSteps ?? 0),
       heroStore.knowledge?.current ?? 0,
       heroStore.willZoneContext,
+      heroStore.worldStepContext,
     ),
   );
 
