@@ -143,9 +143,9 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
     weight: { jewelry: 30 },
     tiers: [
       [1, 1],
-      [1, 1],
-      [1, 1],
       [1, 2],
+      [1, 3],
+      [1, 4],
     ],
   },
   wisdom: {

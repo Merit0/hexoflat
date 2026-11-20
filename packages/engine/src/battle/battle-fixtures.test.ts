@@ -19,6 +19,18 @@ function fresh() {
 }
 
 describe('battle fixtures (e2e only)', () => {
+  it('opens a real timed saw task from the supplied server clock without changing the source', () => {
+    const source = fresh();
+    const result = applyBattleFixture(source, { kind: 'saw-task' }, 10_000);
+    expect(result.task).toMatchObject({
+      kind: 'saw',
+      creatureId: 'hero',
+      issuedAtMs: 10_000,
+      deadlineMs: 15_000,
+    });
+    expect(result.task!.options).toContain(result.task!.answer);
+    expect(source.task).toBeUndefined();
+  });
   it('rejects unknown fields and out-of-range values (REQ-FIX-001)', () => {
     expect(battleFixtureSchema.safeParse({ kind: 'hero-turn', will: 99 }).success).toBe(false);
     expect(battleFixtureSchema.safeParse({ kind: 'hero-turn', will: 5, extra: 1 }).success).toBe(

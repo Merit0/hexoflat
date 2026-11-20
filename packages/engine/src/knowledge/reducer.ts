@@ -43,6 +43,7 @@ function answerHall(
   session: HallSession,
   action: Extract<KnowledgeAction, { kind: 'answer' }>,
   willEvents: DomainEvent[],
+  bonus: number,
 ): boolean {
   const { question } = session;
   if (
@@ -54,7 +55,7 @@ function answerHall(
   const correct = action.answer === question.answer;
   willEvents.push({ type: 'HALL_ANSWERED', payload: { heroId: state.heroId, correct } });
   const granted = correct
-    ? grantWill(state, hallAward(action.elapsedMs), {
+    ? grantWill(state, hallAward(action.elapsedMs) + bonus, {
         kind: 'hall',
         ref: `${session.id}:${session.index}`,
       })
@@ -68,6 +69,7 @@ function answerHall(
   session.answer = action.answer;
   session.correct += correct ? 1 : 0;
   session.lastAward = awarded;
+  session.lastFast = correct && hallAward(action.elapsedMs) === KNOWLEDGE_RULES.hallFastReward;
   session.earned += awarded;
   session.status = 'feedback';
   return true;
@@ -126,7 +128,8 @@ function transition(
   const session = state.session;
   if (!session || session.id !== action.sessionId) return false;
   if (!available(ctx) || ctx.mapId !== session.originMapId) return false;
-  if (action.kind === 'answer') return answerHall(state, session, action, willEvents);
+  if (action.kind === 'answer')
+    return answerHall(state, session, action, willEvents, ctx.answerWillReward ?? 0);
   return action.kind === 'next' ? nextHall(state, session, action) : false;
 }
 

@@ -13,7 +13,10 @@ import { useBattleStore } from '@/stores/battle-store';
 interface FixtureAnswer {
   battleView: BattleProjection | null;
   serverNowMs: number;
+  taskCorrectOption: number | null;
 }
+
+let taskCorrectOption: number | null = null;
 
 async function serverFixture(body: Record<string, unknown>): Promise<void> {
   const sentAt = Date.now();
@@ -29,6 +32,7 @@ async function serverFixture(body: Record<string, unknown>): Promise<void> {
   }
   observeServerClock(answer.serverNowMs, sentAt, Date.now());
   useBattleStore().projection = answer.battleView;
+  taskCorrectOption = answer.taskCorrectOption;
 }
 
 export function finishOpenBattle(outcome: 'victory' | 'defeat'): Promise<void> {
@@ -229,6 +233,12 @@ export function readBattleCollect(): BattleCollectSnapshot | null {
 
 export function battleTestHooks() {
   return {
+    async openBattleTask(): Promise<number> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'saw-task' });
+      if (taskCorrectOption === null || taskCorrectOption < 0) throw new Error('No task answer');
+      return taskCorrectOption;
+    },
     getBattleHands(): BattleHandsSnapshot | null {
       return readBattleHands();
     },

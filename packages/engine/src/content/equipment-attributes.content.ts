@@ -188,11 +188,12 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   attribute('focus', {
     groups: ['jewelry'],
     onlyTypes: ['amulet'],
-    stat: 'mathTimerSec',
+    stat: 'answerWillReward',
     ...HERO_SUM,
-    cap: 3,
+    cap: 5,
     icon: 'eye',
-    format: 'sec',
+    format: 'plus',
+    implemented: true,
   }),
   attribute('wisdom', {
     groups: ['jewelry'],

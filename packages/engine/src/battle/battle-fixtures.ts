@@ -3,8 +3,11 @@ import type { BattleState } from './battle-state';
 import { isFreeHex } from './battle-board';
 import { battleDistance, hexKey } from './hex-battle-geom';
 import { enterCollectPhase } from './collect';
+import { issueTask } from './timed-task';
+import { BATTLE_RULES } from './battle-content';
 
 export const battleFixtureSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('saw-task') }).strict(),
   z.object({ kind: z.literal('hero-turn'), will: z.number().int().min(0).max(50) }).strict(),
   z.object({ kind: z.literal('enemy-turn'), will: z.number().int().min(0).max(50) }).strict(),
   z
@@ -87,9 +90,19 @@ function finish(battle: BattleState, outcome: 'victory' | 'defeat'): void {
   if (outcome === 'victory' && battle.lootEnabled && !battle.collect) enterCollectPhase(battle);
 }
 
-export function applyBattleFixture(source: BattleState, fixture: BattleFixture): BattleState {
+export function applyBattleFixture(
+  source: BattleState,
+  fixture: BattleFixture,
+  now = 0,
+): BattleState {
   const battle = structuredClone(source);
   switch (fixture.kind) {
+    case 'saw-task': {
+      giveHeroTurn(battle, BATTLE_RULES.willPerTurn);
+      const hero = battle.creatures.find((creature) => creature.side === 'heroes')!;
+      issueTask(battle, 'saw', hero.id, now, BATTLE_RULES, { backHex: hero.pos });
+      break;
+    }
     case 'hero-turn':
       giveHeroTurn(battle, fixture.will);
       break;

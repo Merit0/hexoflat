@@ -22,6 +22,7 @@ import { respawnWorld } from './respawn-world';
 import type { TravelOutcome, TravelRun } from './travel';
 import { restoreHandTokens, syncHandsToInventory } from './battle-hands-sync';
 import { syncEquipmentWill } from '../knowledge/equipment-will';
+import { grantEquipmentTaskWill } from '../knowledge/equipment-task-will';
 import { resolveHeroStats } from '../tokens/equipment/hero-stats';
 import { worldTokenOrigin, type ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
@@ -76,7 +77,8 @@ function record(
   if (!before || turnKey(before) !== turnKey(next)) next.turnClockMs = session.run.now;
   session.world.battle = next;
   writeHealth(session, next);
-  const visible = raw.map((event) => projectBattleEvent(next, event, 'heroes'));
+  const rewarded = grantEquipmentTaskWill(session.progress.knowledge, session.inventory, raw);
+  const visible = [...raw, ...rewarded].map((event) => projectBattleEvent(next, event, 'heroes'));
   session.events.push(...visible);
   session.steps.push({ events: visible, battle: projectBattleForViewer(next, 'heroes') });
 }

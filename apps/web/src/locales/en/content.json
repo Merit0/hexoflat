@@ -349,7 +349,7 @@
         "smart-step": "Every N-th paid step on the world map costs no Will.",
         "deft-hands": "Using an item costs less Will, at least 1.",
         "trade": "Buying from a trader costs fewer coins.",
-        "focus": "Adds seconds to timed battle tasks.",
+        "focus": "Restores additional Will for a correct answer.",
         "wisdom": "A correct answer in the Book of Will gives more Will.",
         "initiative": "Not available yet.",
         "sweep": "Not available yet.",

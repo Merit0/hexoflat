@@ -42,4 +42,5 @@ export interface KnowledgeContext {
   atBook: boolean;
   coordinates?: { columnIndex: number; rowIndex: number };
   step?: StepWillContext;
+  answerWillReward?: number;
 }

@@ -52,7 +52,7 @@ const STAT_BY_KEY = {
   'smart-step': 'stepFreeEvery',
   'deft-hands': 'useWillDiscount',
   trade: 'shopBuyDiscountPct',
-  focus: 'mathTimerSec',
+  focus: 'answerWillReward',
   wisdom: 'hallWillReward',
   force: 'strikeForce',
   mass: 'pushMass',
@@ -92,12 +92,12 @@ describe('EA1 EA-16a: attribute registry', () => {
     expect([...keys].sort()).toEqual([...Object.keys(STAT_BY_KEY), ...BLOCKED_KEYS].sort());
   });
 
-  it('implements heart, will, fog, smart-step and deft-hands', () => {
+  it('implements heart, will, fog, smart-step, deft-hands and focus', () => {
     expect(
       EQUIPMENT_ATTRIBUTES.filter((attribute) => attribute.implemented).map(
         (attribute) => attribute.key,
       ),
-    ).toEqual(['heart', 'will', 'fog', 'smart-step', 'deft-hands']);
+    ).toEqual(['heart', 'will', 'fog', 'smart-step', 'deft-hands', 'focus']);
   });
 
   it('maps every open attribute to its hero stat and leaves blocked ones without a stat', () => {
@@ -346,5 +346,17 @@ describe('EA1 EA-6a: adjectives', () => {
     expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, adjectives })).toContain(
       'sword has 0 fine adjectives, needs 3',
     );
+  });
+});
+
+describe('Focus definition', () => {
+  it('defines Focus as a Will reward capped at five, with its reader enabled', () => {
+    expect(EQUIPMENT_ATTRIBUTES.find((attribute) => attribute.key === 'focus')).toMatchObject({
+      stat: 'answerWillReward',
+      aggregate: 'sum',
+      cap: 5,
+      display: { format: 'plus' },
+      implemented: true,
+    });
   });
 });

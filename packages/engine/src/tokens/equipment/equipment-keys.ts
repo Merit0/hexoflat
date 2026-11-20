@@ -51,7 +51,7 @@ export const HERO_STATS = [
   'stepFreeEvery',
   'useWillDiscount',
   'shopBuyDiscountPct',
-  'mathTimerSec',
+  'answerWillReward',
   'hallWillReward',
   'fogRadius',
   'graveLootBonus',

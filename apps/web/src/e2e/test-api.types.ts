@@ -139,6 +139,7 @@ export interface HexoflatTestApi {
   grantLegacyDeftHandsToken(bonus: number): Promise<TestItemToken>;
   grantLegacySightToken(bonus: number): Promise<TestItemToken>;
   grantLegacySmartStepToken(every: number): Promise<TestItemToken>;
+  grantLegacyFocusToken(bonus: number): Promise<TestItemToken>;
   getPaidSteps(): number;
   findWorldStep(): TestHexCoordinates | null;
   getFogTiles(center: TestHexCoordinates): TestFogTile[];
@@ -213,6 +214,7 @@ export interface HexoflatTestApi {
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): Promise<void>;
   giveHeroTheTurn(will?: number): Promise<void>;
+  openBattleTask(): Promise<number>;
   getBattleHands(): {
     right: string | null;
     left: string | null;

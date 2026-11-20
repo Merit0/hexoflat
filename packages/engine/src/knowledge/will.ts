@@ -6,6 +6,7 @@ import type { KnowledgeState } from './state';
 
 export type WillSource =
   | { kind: 'hall'; ref: string }
+  | { kind: 'task'; ref: string }
   | { kind: 'item'; ref: string }
   | { kind: 'quest'; ref: string }
   | { kind: 'dev'; ref: string };

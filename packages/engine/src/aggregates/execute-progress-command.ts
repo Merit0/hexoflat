@@ -96,9 +96,11 @@ export function executeProgressCommand(
 ): ProgressOutcome | null {
   const next: ProgressState = structuredClone(progress);
   const ctx = serverKnowledgeContext(next.presence);
+  const stats = resolveHeroStats(Object.values(inventory?.equip ?? {}));
+  ctx.answerWillReward = stats.answerWillReward;
   ctx.step = {
     paidSteps: next.paidSteps,
-    stepFreeEvery: resolveHeroStats(Object.values(inventory?.equip ?? {})).stepFreeEvery,
+    stepFreeEvery: stats.stepFreeEvery,
   };
   let events: DomainEvent[];
   switch (command.type) {
