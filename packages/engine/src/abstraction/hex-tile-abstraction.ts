@@ -8,6 +8,7 @@ export interface IPendingTileAction {
   hexobjectKey: THexobjectKey;
 
   cancelled?: boolean;
+  harvestBonus?: number;
   cancelReason?: 'ESC' | 'HIDE' | 'MOVE';
 
   meta?: Record<string, any>;

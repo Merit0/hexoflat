@@ -4,7 +4,8 @@ import { EQUIPMENT_TYPES } from '../../content/item-types.content';
 import type { THexobjectKey } from '../../registry/hexobjects-registry';
 import type { EquipmentAttributeDefinition } from './equipment-attribute-schema';
 import type { EquipmentTypeDefinition } from './equipment-type-schema';
-import { HERO_STATS, type THeroStat, type TStatAggregate } from './equipment-keys';
+import { HERO_STATS, type THeroStat } from './equipment-keys';
+import { resolveStat } from './stat-values';
 
 /** Equipment bonuses, in content units (maxHearts is measured in half-hearts). */
 export type HeroStats = Record<THeroStat, number>;
@@ -18,25 +19,6 @@ const DEFAULT_REGISTRY: HeroStatRegistry = {
   attributes: EQUIPMENT_ATTRIBUTES,
   types: EQUIPMENT_TYPES,
 };
-
-function aggregate(values: readonly number[], rule: TStatAggregate): number {
-  if (values.length === 0) return 0;
-  if (rule === 'min') return Math.min(...values);
-  if (rule === 'max') return Math.max(...values);
-  return values.reduce((sum, value) => sum + value, 0);
-}
-
-function resolveStat(
-  values: readonly number[],
-  definitions: readonly EquipmentAttributeDefinition[],
-): number {
-  const rule = definitions[0]?.aggregate ?? 'sum';
-  if (definitions.some((definition) => definition.aggregate !== rule)) {
-    throw new Error('Attributes of one hero stat must use the same aggregate');
-  }
-  const cap = Math.min(...definitions.map((definition) => definition.cap ?? Infinity));
-  return Math.min(cap, aggregate(values, rule));
-}
 
 function baseValues(cell: HeartCell, registry: HeroStatRegistry): Partial<HeroStats> {
   if (!cell.token) return { maxHearts: getHeartPoints(cell.key as THexobjectKey) * 2 };

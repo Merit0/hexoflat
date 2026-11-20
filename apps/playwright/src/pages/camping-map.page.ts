@@ -24,6 +24,7 @@ import { EquipmentFogComponent } from '@components/equipment-fog.component';
 import { EquipmentWillComponent } from '@components/equipment-will.component';
 import { EquipmentSmartStepComponent } from '@components/equipment-smart-step.component';
 import { EquipmentWisdomComponent } from '@components/equipment-wisdom.component';
+import { EquipmentYieldComponent } from '@components/equipment-yield.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
@@ -51,6 +52,7 @@ export class CampingMapPage extends BasePage {
   readonly equipmentWill = new EquipmentWillComponent();
   readonly equipmentSmartStep = new EquipmentSmartStepComponent();
   readonly equipmentWisdom = new EquipmentWisdomComponent();
+  readonly equipmentYield = new EquipmentYieldComponent();
 
   async goto(): Promise<void> {
     await this.page.goto('/world/camping');

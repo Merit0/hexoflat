@@ -5,8 +5,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 16,
+        "key": "yield",
+        "value": 1,
       },
     ],
     "description": [
@@ -294,6 +294,10 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "key": "will",
         "value": 20,
       },
+      {
+        "key": "yield",
+        "value": 2,
+      },
     ],
     "description": [
       {
@@ -332,7 +336,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "noun": "pickaxe",
     },
     "origin": "base",
-    "price": 374,
+    "price": 561,
     "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
@@ -388,8 +392,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 6,
+        "key": "yield",
+        "value": 1,
       },
     ],
     "description": [

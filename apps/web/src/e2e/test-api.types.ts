@@ -135,6 +135,12 @@ export interface TestFogTile {
 }
 
 export interface HexoflatTestApi {
+  getHarvest(): {
+    wood: number;
+    stone: number;
+    counts: Partial<Record<string, number>>;
+    pending: (TestHexCoordinates & { type: string; bonus: number })[];
+  };
   grantWillToken(bonus: number, mapTier?: TestTokenSpec['mapTier']): Promise<TestItemToken>;
   grantLegacyDeftHandsToken(bonus: number): Promise<TestItemToken>;
   grantLegacySightToken(bonus: number): Promise<TestItemToken>;

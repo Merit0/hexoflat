@@ -152,7 +152,7 @@ function useToolToken() {
   const heroCoords = activeMap.value.heroPosition;
   if (!heroCoords) return;
 
-  heroToolStore.useTool(toolType, heroCoords);
+  heroToolStore.useTool(toolType, heroCoords, null, props.item.id);
   overlayStore.closeOverlay();
 }
 

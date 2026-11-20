@@ -66,7 +66,8 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
   [EHexActionType.CUT]: (tile, action, ctx) => {
     if (handleCancelled(action, ctx)) return true;
 
-    ctx.gathering.add(action.hexobjectKey, 1);
+    const bonus = action.harvestBonus ?? 0;
+    ctx.gathering.add(action.hexobjectKey, 1 + bonus);
     logAction(ctx, 'Cut the Tree');
     ctx.emit?.({
       type: 'RESOURCE_GATHERED',
@@ -78,7 +79,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     const meta = getMeta(action.hexobjectKey);
     const wood = meta?.yields?.wood ?? 0;
     if (wood > 0 && ctx.heroToolStore.addTreeCut) {
-      ctx.heroToolStore.addTreeCut(wood);
+      ctx.heroToolStore.addTreeCut(wood + bonus);
     }
 
     scheduleRespawn(tile, ctx.now);
@@ -91,15 +92,16 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
 
     const meta = getMeta(action.hexobjectKey);
     const stone = meta?.yields?.stone ?? 0;
-    logAction(ctx, `Mine the ${stone} ${tile.hexobject?.hexobjectKey ?? action.hexobjectKey}`);
-    ctx.gathering.add(action.hexobjectKey, stone);
+    const amount = stone > 0 ? stone + (action.harvestBonus ?? 0) : 0;
+    logAction(ctx, `Mine the ${amount} ${tile.hexobject?.hexobjectKey ?? action.hexobjectKey}`);
+    ctx.gathering.add(action.hexobjectKey, amount);
     ctx.emit?.({
       type: 'RESOURCE_GATHERED',
       payload: { action: 'MINE', hexobjectKey: action.hexobjectKey, amount: stone },
     });
 
     if (stone > 0 && ctx.heroToolStore.stoneCollected) {
-      ctx.heroToolStore.collectStones?.(stone);
+      ctx.heroToolStore.collectStones?.(amount);
     }
 
     scheduleRespawn(tile, ctx.now);

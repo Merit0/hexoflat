@@ -24,6 +24,7 @@ export interface WorldClientHint {
     dragging: boolean;
     hover: IHexCoordinates | null;
     active: THeroToolKey | null;
+    itemId?: string;
     durability?: { current: number; max: number };
   };
 }
@@ -46,6 +47,7 @@ export function createRecordingPorts(
     heroToolStore: {
       isLocked: true,
       isDragging: hint.tool.dragging,
+      activeItemId: hint.tool.itemId,
       hover: hint.tool.hover ? { ...hint.tool.hover } : null,
       stoneCollected: 1,
       get activeTool() {

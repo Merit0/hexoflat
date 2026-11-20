@@ -21,6 +21,7 @@ export interface IHeroToolPort {
   isLocked: boolean;
   isDragging: boolean;
   activeTool: THeroToolKey | null;
+  activeItemId?: string | null;
   hover: IHexCoordinates | null;
   stoneCollected?: number;
   consumeDurability: (costPct: number) => boolean;

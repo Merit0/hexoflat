@@ -39,7 +39,13 @@ function tileWith(objectKey: THexobjectKey) {
 
 function start(action: EHexActionType, objectKey: THexobjectKey, tool: THeroToolKey) {
   const ctx = createContext();
-  const result = ACTION_STARTERS[action](tileWith(objectKey), tool, 0, ctx as never);
+  const tile = tileWith(objectKey);
+  const result = ACTION_STARTERS[action](tile, tool, 0, {
+    ...ctx,
+    map: new HexMapBuilder().name('context').width(1).height(1).build(),
+    now: 0,
+    inventory: { current: undefined, events: [] },
+  });
   return { result, ctx };
 }
 

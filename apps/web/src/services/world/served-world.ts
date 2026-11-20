@@ -174,6 +174,7 @@ export function buildClientHint(tool: {
   isDragging: boolean;
   hover: IHexCoordinates | null;
   activeTool: THeroToolKey | null;
+  activeItemId?: string | null;
   durability: number;
   durabilityMax: number;
 }): WorldClientHint {
@@ -184,6 +185,7 @@ export function buildClientHint(tool: {
         ? { columnIndex: tool.hover.columnIndex, rowIndex: tool.hover.rowIndex }
         : null,
       active: tool.activeTool,
+      ...(tool.activeItemId ? { itemId: tool.activeItemId } : {}),
       durability: { current: tool.durability, max: tool.durabilityMax },
     },
   };

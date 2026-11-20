@@ -5,3 +5,4 @@ export * from './attribute-profile-schema';
 export * from './adjective-schema';
 export * from './generator';
 export * from './hero-stats';
+export * from './item-stats';

@@ -80,7 +80,12 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
     if (!toolKey) return;
 
     activeHandSlot.value = slot;
-    heroToolStore.useTool(toolKey, heroCoordinates.value, resolvePreferredToolHover());
+    heroToolStore.useTool(
+      toolKey,
+      heroCoordinates.value,
+      resolvePreferredToolHover(),
+      heroInventoryStore.equippedItems[slot]?.id ?? null,
+    );
   }
 
   function onWheel(event: WheelEvent) {
@@ -111,6 +116,9 @@ export function useHexBoardInput(deps: UseHexBoardInputDeps) {
       }
     }
     const currentSlot =
+      handSlots.find(
+        (slot) => heroInventoryStore.equippedItems[slot]?.id === heroToolStore.activeItemId,
+      ) ??
       handSlots.find((slot) => resolveEquippedToolKey(slot) === heroToolStore.activeTool) ??
       activeHandSlot.value;
     const currentIndex = handSlots.indexOf(currentSlot);

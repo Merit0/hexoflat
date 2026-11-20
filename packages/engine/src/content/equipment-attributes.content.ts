@@ -128,6 +128,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     cap: 2,
     icon: 'stack',
     format: 'plus',
+    implemented: true,
   }),
   attribute('thorns', {
     groups: ['defense'],

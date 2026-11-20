@@ -202,7 +202,15 @@ describe('real content', () => {
       for (const tier of TIERS) {
         for (const seed of seeds(100)) {
           for (const { key } of rollFor(real, type, tier, seed))
-            expect(['heart', 'will', 'fog', 'smart-step', 'deft-hands', 'wisdom']).toContain(key);
+            expect([
+              'heart',
+              'will',
+              'fog',
+              'yield',
+              'smart-step',
+              'deft-hands',
+              'wisdom',
+            ]).toContain(key);
         }
       }
     }

@@ -97,6 +97,19 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     expect(HAND_SCROLL_COOLDOWN_MS).toBeGreaterThan(0);
   });
 
+  it('carries the equipped item identity into the server hint and clears it when stopped', () => {
+    const inventory = useHeroInventoryStore();
+    const left = inventory.items.find((item) => item.slotKey === 'eq:shield')!;
+    left.key = K.AXE;
+    const tool = useHeroToolStore();
+    tool.useTool(K.HAND, { columnIndex: 2, rowIndex: 2 });
+    scroll();
+    expect(tool.activeTool).toBe(K.AXE);
+    expect(tool.activeItemId).toBe(left.id);
+    tool.stopTool();
+    expect(tool.activeItemId).toBeNull();
+  });
+
   it.each(['weapon', 'shield'] as const)(
     'prioritizes the hand equipped in %s on the first scroll',
     (slot) => {
@@ -118,6 +131,18 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     tool.useTool(K.AXE, { columnIndex: 2, rowIndex: 2 });
     scroll();
     expect(tool.activeTool).toBe(K.HAND);
+  });
+
+  it('cycles from the exact item when both hands hold axes with different attributes', () => {
+    const inventory = useHeroInventoryStore();
+    const right = inventory.items.find((item) => item.slotKey === 'eq:weapon')!;
+    const left = inventory.items.find((item) => item.slotKey === 'eq:shield')!;
+    right.key = K.AXE;
+    left.key = K.AXE;
+    const tool = useHeroToolStore();
+    tool.useTool(K.AXE, { columnIndex: 2, rowIndex: 2 }, null, left.id);
+    scroll();
+    expect(tool.activeItemId).toBe(right.id);
   });
 
   it('uses the active quest position by default without a board-specific origin override', () => {

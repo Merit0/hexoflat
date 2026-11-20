@@ -365,3 +365,11 @@ Gate return placement (2026-11-19): `findEntryHex` accepts optional `fromLocatio
 Wisdom rename: canonical wisdom, legacy focus deprecated but still implemented for owned tokens, same reward stat/cap 5 and localized name. No focus generation profile. The obsolete Hall-only wisdom effect and hallWillReward reserve are removed. A06 is merged into A05, not another attribute to implement.
 
 Focus is deferred to A16, the last attribute after A07–A15, before the final generator audit (user decision, 2026-11-20). Its future mechanic and key are undecided; legacy focus must retain Wisdom compatibility. Next remains A07 Trade.
+
+Current attribute scope (user correction, 2026-11-20): weapons, shields, armor, boots, gloves and helmets only. Defer attributes exclusive to other types until their items are added to the game. A07 Trade waits for rings; its uncommitted work was removed. Keep completed Wisdom and owned-token compatibility. This overrides “next A07” and does not enable disabled types.
+
+## Yield (A08, 2026-11-20)
+
+User includes axe/pickaxe in scope. Yield requires TOOL capability; plain swords/shields never roll it, and factory overrides must obey the same gate. `yield` → item-scoped harvestBonus, sum/cap 2, profiles +1 / +1 / +1…2 / +1…2. `resolveItemStats` resolves only the acting item's implemented item attributes (deprecated owned tokens retained); `stat-values.ts` shares aggregation/caps with the hero resolver. Do not sum other equipped tools or bag items.
+
+Starters capture harvestBonus in pendingAction from ctx.inventory.current and the matching equipped tool; optional client.tool.itemId selects an exact owned item, never a bonus. Old no-id clients retain key-based selection; wrong/unowned ids give no bonus. CUT/MINE completion adds the captured bonus to resource effects, keeps RESOURCE_GATHERED.amount at base for quests, and does not recalculate on swaps/reload. Old pending actions without the field default to 0. Cancellation and repeat ticks give no reward. Existing resource counters' persistence is unchanged. No CONTENT_VERSION/generatorVersion bump or rerolls. Next A09 Trophy; A07 waits for rings. Tests: commands/equipment-yield, item-stats, yield-generation, API equipment-yield.integration; E2E equipment-yield.
