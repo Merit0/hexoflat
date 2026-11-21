@@ -203,6 +203,8 @@ describe('real content', () => {
         for (const seed of seeds(100)) {
           for (const { key } of rollFor(real, type, tier, seed))
             expect([
+              'crit',
+              'crit-dmg',
               'heart',
               'shield',
               'will',

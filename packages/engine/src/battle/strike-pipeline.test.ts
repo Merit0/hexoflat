@@ -53,9 +53,9 @@ describe('EA5 strike pipeline', () => {
       const outcome = resolveStrike(context(blocked), BATTLE_RULES, {
         crit: { id: crit.id, describe: (rating) => crit.describe(rating), resolve },
         damage: {
-          resolve: (ctx) => {
+          resolve: (ctx, critical) => {
             order.push('damage');
-            return damage.resolve(ctx);
+            return damage.resolve(ctx, critical);
           },
         },
         block: {

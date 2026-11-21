@@ -103,6 +103,8 @@ describe('EA1 EA-16a: attribute registry', () => {
       'shield',
       'will',
       'fog',
+      'crit',
+      'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',
@@ -179,10 +181,10 @@ describe('EA1 attribute profiles', () => {
         return [entry.min, entry.max];
       });
     expect(ranges('crit')).toEqual([
-      [4, 6],
-      [5, 8],
-      [7, 10],
-      [9, 12],
+      [2, 2],
+      [2, 4],
+      [2, 6],
+      [2, 10],
     ]);
     expect(ranges('heart')).toEqual([
       [1, 1],

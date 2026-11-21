@@ -5,8 +5,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "yield",
-        "value": 1,
+        "key": "will",
+        "value": 16,
       },
     ],
     "description": [
@@ -55,8 +55,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 5,
+        "key": "crit-dmg",
+        "value": 3,
       },
     ],
     "description": [
@@ -102,8 +102,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 6,
+        "key": "trophy",
+        "value": 1,
       },
     ],
     "description": [
@@ -152,8 +152,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 19,
+        "key": "trophy",
+        "value": 1,
       },
     ],
     "description": [
@@ -291,12 +291,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "trophy",
-        "value": 1,
+        "key": "crit",
+        "value": 5,
       },
       {
-        "key": "yield",
-        "value": 2,
+        "key": "will",
+        "value": 20,
       },
     ],
     "description": [
@@ -392,8 +392,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "yield",
-        "value": 1,
+        "key": "will",
+        "value": 6,
       },
     ],
     "description": [
@@ -529,8 +529,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "trophy",
-        "value": 1,
+        "key": "crit",
+        "value": 3,
       },
     ],
     "description": [
@@ -766,8 +766,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "trophy",
-        "value": 1,
+        "key": "crit",
+        "value": 5,
       },
     ],
     "description": [
@@ -910,8 +910,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "trophy",
-        "value": 2,
+        "key": "crit",
+        "value": 9,
       },
     ],
     "description": [

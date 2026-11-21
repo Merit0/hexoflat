@@ -1,3 +1,4 @@
+import type { StrikeResolution } from '@hexoflat/engine/battle/strike-pipeline';
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleDistance, hexKey, hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
@@ -239,6 +240,14 @@ export function battleTestHooks() {
     async prepareShieldStrike(openDirections?: boolean): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
       await serverFixture({ kind: 'shield-strike', ...(openDirections ? { openDirections } : {}) });
+    },
+    async prepareCritTarget(): Promise<void> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'crit-target' });
+    },
+    getLastBattleStrike() {
+      const event = useBattleStore().lastHeroEvents.find((entry) => entry.type === 'STRIKE_LANDED');
+      return event?.type === 'STRIKE_LANDED' ? (event.payload as StrikeResolution) : null;
     },
     async prepareTrophyTarget(): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');

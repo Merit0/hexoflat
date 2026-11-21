@@ -4,6 +4,7 @@ import {
   type TokenContent,
 } from '../../content/token-content';
 import { TOKEN_UNIQUES } from '../../content/token-uniques.content';
+import { attributeProfilesSchema } from '../equipment/attribute-profile-schema';
 import { createEquipmentAttributeGenerator } from '../equipment/generator/create-equipment-attribute-generator';
 import type { SpriteManifest } from '../sprite-files';
 import type { UniqueTokenDefinition } from '../unique-schema';
@@ -25,6 +26,7 @@ export function createTokenFactory(
   uniqueDefinitions: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
   steps: Partial<Omit<TokenFactoryParts, 'validator'>> = {},
 ): TokenFactory {
+  const profiles = attributeProfilesSchema.parse(content.profiles);
   const { types, attributes, uniques } = createTokenRegistries(content, uniqueDefinitions);
   validateFactoryContent({ types, attributes, uniques, content });
   const spriteResolver = new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest));
@@ -33,12 +35,12 @@ export function createTokenFactory(
       typePicker: new RealmTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(content.adjectives),
       spriteResolver,
-      attributeGenerator: createEquipmentAttributeGenerator(content.attributes, content.profiles),
+      attributeGenerator: createEquipmentAttributeGenerator(content.attributes, profiles),
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(content.priceRanges),
       descriptionBuilder: new SpecSheetDescriptionBuilder(),
       ...steps,
-      validator: new ZodTokenValidator(types, attributes, content.profiles),
+      validator: new ZodTokenValidator(types, attributes, profiles),
     },
     { types, uniques, spriteResolver },
   );

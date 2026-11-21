@@ -146,6 +146,8 @@ describe('implemented token attributes', () => {
       'shield',
       'will',
       'fog',
+      'crit',
+      'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',

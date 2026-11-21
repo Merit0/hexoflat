@@ -1,3 +1,4 @@
+import { prepareCritTarget } from './crit-fixture';
 import { z } from 'zod';
 import type { BattleState } from './battle-state';
 import { isFreeHex } from './battle-board';
@@ -9,6 +10,7 @@ import { BATTLE_RULES } from './battle-content';
 
 export const battleFixtureSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('trophy-target') }).strict(),
+  z.object({ kind: z.literal('crit-target') }).strict(),
   z.object({ kind: z.literal('shield-strike'), openDirections: z.boolean().optional() }).strict(),
   z.object({ kind: z.literal('saw-task') }).strict(),
   z.object({ kind: z.literal('hero-turn'), will: z.number().int().min(0).max(50) }).strict(),
@@ -100,6 +102,9 @@ export function applyBattleFixture(
 ): BattleState {
   const battle = structuredClone(source);
   switch (fixture.kind) {
+    case 'crit-target':
+      prepareCritTarget(battle);
+      break;
     case 'shield-strike': {
       if (fixture.openDirections) {
         const hero = battle.creatures.find((creature) => creature.side === 'heroes')!;

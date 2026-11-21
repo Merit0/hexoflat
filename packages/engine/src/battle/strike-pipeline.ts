@@ -1,3 +1,4 @@
+import { resolveItemStats } from '../tokens/equipment/item-stats';
 import type { DomainEvent } from '../commands/types';
 import type { HeroStats } from '../tokens/equipment/hero-stats';
 import { deriveStream } from '../utils/random-seeded';
@@ -52,8 +53,9 @@ export interface IStrikeEffects {
 }
 
 export class BaseStrikeDamage implements IStrikeDamage {
-  resolve(ctx: StrikeContext): number {
-    return ctx.power;
+  resolve(ctx: StrikeContext, crit: CritOutcome): number {
+    const multiplier = Math.max(2, resolveItemStats(ctx.weapon).critDamage);
+    return ctx.power * (crit.critical ? multiplier : 1);
   }
 }
 
@@ -131,8 +133,8 @@ export function resolveStrike(
 ): { result: StrikeResolution; events: DomainEvent[] } {
   const suffix = ctx.sweep ? `:sweep:${ctx.target.id}` : '';
   const rng = deriveStream(ctx.state.seed, `combat:${ctx.strike.id}${suffix}:crit`);
-  // EA5 installs the pipeline; A13/A14 connect weapon and hero crit ratings.
-  const crit = parts.crit.resolve({ rating: 0, rng });
+  const rating = ctx.attacker.side === 'heroes' ? resolveItemStats(ctx.weapon).critPoints : 0;
+  const crit = parts.crit.resolve({ rating, rng });
   const damageBeforeBlock = parts.damage.resolve(ctx, crit);
   const result: StrikeResolution = {
     critical: crit.critical,

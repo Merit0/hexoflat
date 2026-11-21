@@ -9,6 +9,7 @@ type Range = readonly [min: number, max: number];
 
 interface ProfileRow {
   weight: GroupWeights;
+  minTier?: number;
   tiers: readonly [Range, Range, Range, Range];
 }
 
@@ -16,19 +17,20 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
   crit: {
     weight: { weapon: 45 },
     tiers: [
-      [4, 6],
-      [5, 8],
-      [7, 10],
-      [9, 12],
+      [2, 2],
+      [2, 4],
+      [2, 6],
+      [2, 10],
     ],
   },
   'crit-dmg': {
     weight: { weapon: 20 },
+    minTier: 2,
     tiers: [
-      [1, 1],
-      [1, 1],
-      [1, 1],
-      [1, 2],
+      [3, 3],
+      [3, 3],
+      [3, 4],
+      [3, 5],
     ],
   },
   trophy: {
@@ -173,10 +175,12 @@ function profileFor(tier: TAttributeProfileTier, index: number): AttributeProfil
     maxCount: ATTRIBUTE_MAX_COUNT,
     countWeights: [...COUNT_WEIGHTS[tier]],
     attributes: Object.fromEntries(
-      Object.entries(ROWS).map(([key, row]) => {
-        const [min, max] = row.tiers[index];
-        return [key, { weight: { ...row.weight }, min, max, step: 1 }];
-      }),
+      Object.entries(ROWS)
+        .filter(([, row]) => index + 1 >= (row.minTier ?? 1))
+        .map(([key, row]) => {
+          const [min, max] = row.tiers[index];
+          return [key, { weight: { ...row.weight }, min, max, step: 1 }];
+        }),
     ),
   };
 }

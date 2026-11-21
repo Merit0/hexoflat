@@ -137,6 +137,12 @@ export interface TestFogTile {
 export interface HexoflatTestApi {
   prepareShieldStrike(openDirections?: boolean): Promise<void>;
   prepareTrophyTarget(): Promise<void>;
+  prepareCritTarget(): Promise<void>;
+  getLastBattleStrike(): {
+    critical: boolean;
+    damageBeforeBlock: number;
+    damageDealt: number;
+  } | null;
   getBattleTrophy(): {
     corpses: { id: string; bonus: number }[];
     items: {

@@ -341,7 +341,7 @@
         "mass": "Reserved: waits for the push rule.",
         "bag": "Reserved: more carrying weight.",
         "crit": "Each point adds 1% crit chance to strikes with this weapon.",
-        "crit-dmg": "A crit with this weapon deals double damage plus this bonus.",
+        "crit-dmg": "Critical damage multiplier for this weapon. A crit without this attribute deals double damage.",
         "trophy": "An enemy killed by this weapon leaves more loot in its grave.",
         "yield": "Cutting or mining with this tool gives more resources.",
         "heal-on-block": "A successful shield block restores hearts, up to the hero’s maximum.",
@@ -370,6 +370,7 @@
         "plus": "+{value}",
         "minus": "−{value}",
         "pct": "+{value}%",
+        "multiplier": "×{value}",
         "sec": "+{value} s",
         "hearts": "+{value}",
         "plain": "{value}"

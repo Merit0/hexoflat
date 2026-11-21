@@ -69,7 +69,15 @@ export type TStatAggregate = (typeof STAT_AGGREGATES)[number];
 export const ATTRIBUTE_SCOPES = ['hero', 'item'] as const;
 export type TAttributeScope = (typeof ATTRIBUTE_SCOPES)[number];
 
-export const ATTRIBUTE_FORMATS = ['plus', 'minus', 'pct', 'sec', 'hearts', 'plain'] as const;
+export const ATTRIBUTE_FORMATS = [
+  'plus',
+  'minus',
+  'pct',
+  'sec',
+  'hearts',
+  'plain',
+  'multiplier',
+] as const;
 export type TAttributeFormat = (typeof ATTRIBUTE_FORMATS)[number];
 
 export const ADJECTIVE_BANDS = ['poor', 'plain', 'fine'] as const;

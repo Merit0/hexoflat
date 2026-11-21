@@ -45,6 +45,8 @@ describe('AttributeRegistry', () => {
       'shield',
       'will',
       'fog',
+      'crit',
+      'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',

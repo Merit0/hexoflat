@@ -10,7 +10,17 @@ export class ContentAttributeProfileProvider implements IAttributeProfileProvide
   private readonly profiles: Readonly<AttributeProfiles>;
 
   constructor(profiles: AttributeProfiles) {
-    this.profiles = Object.freeze(attributeProfilesSchema.parse(profiles));
+    const snapshot = attributeProfilesSchema.parse(profiles);
+    for (const profile of Object.values(snapshot)) {
+      for (const entry of Object.values(profile.attributes)) {
+        Object.freeze(entry.weight);
+        Object.freeze(entry);
+      }
+      Object.freeze(profile.attributes);
+      Object.freeze(profile.countWeights);
+      Object.freeze(profile);
+    }
+    this.profiles = Object.freeze(snapshot);
   }
 
   profileFor(level: TMapTier): AttributeProfile {
