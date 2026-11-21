@@ -4,10 +4,12 @@ import { isFreeHex } from './battle-board';
 import { battleDistance, hexKey } from './hex-battle-geom';
 import { enterCollectPhase } from './collect';
 import { issueTask } from './timed-task';
+import { performAction } from './perform-action';
 import { BATTLE_RULES } from './battle-content';
 
 export const battleFixtureSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('trophy-target') }).strict(),
+  z.object({ kind: z.literal('shield-strike') }).strict(),
   z.object({ kind: z.literal('saw-task') }).strict(),
   z.object({ kind: z.literal('hero-turn'), will: z.number().int().min(0).max(50) }).strict(),
   z.object({ kind: z.literal('enemy-turn'), will: z.number().int().min(0).max(50) }).strict(),
@@ -98,6 +100,26 @@ export function applyBattleFixture(
 ): BattleState {
   const battle = structuredClone(source);
   switch (fixture.kind) {
+    case 'shield-strike': {
+      giveEnemyTurn(battle, BATTLE_RULES.strike);
+      const enemy = battle.creatures.find((creature) => creature.id === battle.activeId)!;
+      const hero = battle.creatures.find((creature) => creature.side === 'heroes')!;
+      const spot = floorHexes(battle).find(
+        (hex) => battleDistance(hex, hero.pos) === 1 && isFreeHex(battle, hex, enemy.id),
+      );
+      if (!spot) throw new Error('No adjacent shield attacker hex');
+      enemy.pos = spot;
+      enemy.hands = { right: { key: 'bone-blade', power: 2 }, left: null };
+      const result = performAction(
+        battle,
+        enemy,
+        { kind: 'strike', targetId: hero.id, hand: 'right' },
+        now,
+        BATTLE_RULES,
+      );
+      if (!Array.isArray(result) || !battle.reaction) throw new Error('No shield reaction');
+      break;
+    }
     case 'trophy-target': {
       const hero = battle.creatures.find((creature) => creature.side === 'heroes');
       const target = battle.creatures.find(

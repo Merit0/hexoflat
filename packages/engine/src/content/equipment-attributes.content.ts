@@ -131,6 +131,16 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     format: 'plus',
     implemented: true,
   }),
+  attribute('heal-on-block', {
+    groups: ['defense'],
+    onlyTypes: ['shield'],
+    stat: 'healOnBlock',
+    ...ITEM_SUM,
+    cap: 4,
+    icon: 'heart',
+    format: 'hearts',
+    implemented: true,
+  }),
   attribute('thorns', {
     groups: ['defense'],
     stat: 'thorns',

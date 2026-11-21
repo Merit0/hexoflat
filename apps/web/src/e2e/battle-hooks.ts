@@ -236,6 +236,10 @@ export function battleTestHooks() {
     isBattleEngaged(): boolean {
       return useBattleStore().engagement !== null;
     },
+    async prepareShieldStrike(): Promise<void> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'shield-strike' });
+    },
     async prepareTrophyTarget(): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
       await serverFixture({ kind: 'trophy-target' });

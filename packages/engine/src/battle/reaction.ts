@@ -12,6 +12,7 @@ import { applyDamage } from './battle-end';
 import { resolveStrike } from './strike-pipeline';
 import { battleHeroStats } from './hero-stats';
 import { trophyBonusFor } from './trophy-bonus';
+import { healBlockedStrike } from './heal-on-block';
 import { isAdjacentHex, sameHex } from './hex-battle-geom';
 import { cheapestPaths, moveCreature, pathTo } from './movement';
 import { reject, type BattleRejection } from './battle-rejection';
@@ -180,6 +181,7 @@ function resolveAt(
     ...events,
     ...resolved.events,
     ...applyDamage(state, defender, resolved.result.damageDealt, trophyBonusFor(attacker, weapon)),
+    ...healBlockedStrike(defender, resolved.result),
     ...(reaction.ranged
       ? []
       : sweepAround(state, attacker, defender, reaction.hand, strike, rules)),

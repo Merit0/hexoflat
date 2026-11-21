@@ -233,3 +233,7 @@ Wisdom rename: canonical wisdom, legacy focus deprecated but still implemented f
 ## Equipment Trophy (A09, 2026-11-20)
 
 `combat/equipment-trophy.spec.ts` uses EquipmentTrophyFeature / EquipmentTrophyComponent: normal factory +1 tier 1 / +2 tier 4 swords, exact-token equip, real Inventory USE + ATTACK, real grave READ and reload. Bag exclusion has a plain lethal sword. Start a lone-skeleton battle and wait for the board to settle before the guarded trophy-target fixture; it only positions a live enemy with 1 HP and gives the hero a turn, never kills or awards loot. getBattleTrophy exposes captured corpse bonuses and already-public collect items, never unopened containers or secret seeds. Run via scripts/pre-push-e2e.sh.
+
+## Shield Heal on Block (2026-11-21)
+
+`combat/heal-on-block.spec.ts` uses HealOnBlockFeature with normal factory shield tokens and real equip, a board tap to block the visible attacker or TAKE HIT, and reload. `prepareShieldStrike` invokes guarded shield-strike fixture: a living adjacent enemy spends its last strike Will through performAction, opening a real timed block window with one reachable attack side. The fixture never places shields or heals. Assertions use public battle HP; PostgreSQL integration verifies progress health and replay. Run with scripts/pre-push-e2e.sh and one worker to avoid overloading the user's Mac.

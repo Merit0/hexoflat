@@ -60,12 +60,14 @@ describe('EA4 hero stats', () => {
           { key: 'unknown', value: 100 },
           { key: 'trade', value: 2 },
           { key: 'item-heart', value: 4 },
+          { key: 'heal-on-block', value: 4 },
         ]),
       ],
       { attributes, types: EQUIPMENT_TYPES },
     );
     expect(stats.maxHearts).toBe(0);
     expect(stats.shopBuyDiscountPct).toBe(0);
+    expect(stats.healOnBlock).toBe(0);
   });
 
   it('aggregates min and max without treating an absent contribution as zero', () => {
@@ -121,7 +123,7 @@ describe('EA-16 hero stat registry contract', () => {
         Math.min(
           10,
           rolled
-            .filter((attribute) => attribute.key !== 'will')
+            .filter((attribute) => attribute.key === 'heart' || attribute.key === extra.key)
             .reduce((sum, attribute) => sum + attribute.value, 0),
         ),
       );

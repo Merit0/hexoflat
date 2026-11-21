@@ -208,6 +208,7 @@ describe('real content', () => {
               'fog',
               'trophy',
               'yield',
+              'heal-on-block',
               'smart-step',
               'deft-hands',
               'wisdom',

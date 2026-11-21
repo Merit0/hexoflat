@@ -46,6 +46,7 @@ describe('AttributeRegistry', () => {
       'fog',
       'trophy',
       'yield',
+      'heal-on-block',
       'smart-step',
       'deft-hands',
       'focus',

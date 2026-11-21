@@ -47,6 +47,7 @@ export const HERO_STATS = [
   'critDamage',
   'blockSides',
   'thorns',
+  'healOnBlock',
   'absorb',
   'stepFreeEvery',
   'useWillDiscount',

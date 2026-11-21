@@ -132,8 +132,10 @@ describe('item token content', () => {
     expect(coinPriceOf('sword')).toBeLessThanOrEqual(max);
     expect(ERarityKind.GOD_EXECUTOR in TOKEN_PRICE_RANGES).toBe(false);
   });
+});
 
-  it('implements heart, will, fog, trophy, yield, smart-step, deft-hands and wisdom (with legacy focus), with heart values in whole half-hearts', () => {
+describe('implemented token attributes', () => {
+  it('keeps the released pool and heart ranges in whole half-hearts', () => {
     expect(
       EQUIPMENT_ATTRIBUTES.filter((attribute) => attribute.implemented).map(
         (attribute) => attribute.key,
@@ -144,6 +146,7 @@ describe('item token content', () => {
       'fog',
       'trophy',
       'yield',
+      'heal-on-block',
       'smart-step',
       'deft-hands',
       'focus',

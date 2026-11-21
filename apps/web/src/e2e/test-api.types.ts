@@ -135,6 +135,7 @@ export interface TestFogTile {
 }
 
 export interface HexoflatTestApi {
+  prepareShieldStrike(): Promise<void>;
   prepareTrophyTarget(): Promise<void>;
   getBattleTrophy(): {
     corpses: { id: string; bonus: number }[];

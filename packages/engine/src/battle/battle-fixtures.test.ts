@@ -19,6 +19,22 @@ function fresh() {
 }
 
 describe('battle fixtures (e2e only)', () => {
+  it('opens a real incoming strike without blocking or awarding healing', () => {
+    const source = fresh();
+    source.creatures[0].hp = 2;
+    const result = applyBattleFixture(source, { kind: 'shield-strike' }, 10_000);
+    expect(result.reaction).toMatchObject({
+      stage: 'block',
+      defenderId: 'hero',
+      deadlineMs: 15_000,
+    });
+    expect(result.pending).toHaveLength(1);
+    expect(result.reaction!.resume.turnWill).toBe(0);
+    expect(result.placedShields).toEqual([]);
+    expect(result.creatures[0].hp).toBe(2);
+    expect(source.pending).toEqual([]);
+  });
+
   it('opens a real timed saw task from the supplied server clock without changing the source', () => {
     const source = fresh();
     const result = applyBattleFixture(source, { kind: 'saw-task' }, 10_000);
