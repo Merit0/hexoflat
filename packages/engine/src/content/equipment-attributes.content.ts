@@ -51,6 +51,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   }),
   attribute('shield', {
     groups: ['defense'],
+    onlyTypes: ['shield'],
+    implemented: true,
     stat: 'blockSides',
     ...HERO_SUM,
     cap: 6,

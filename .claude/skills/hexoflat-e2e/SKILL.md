@@ -237,3 +237,7 @@ Wisdom rename: canonical wisdom, legacy focus deprecated but still implemented f
 ## Shield Heal on Block (2026-11-21)
 
 `combat/heal-on-block.spec.ts` uses HealOnBlockFeature with normal factory shield tokens and real equip, a board tap to block the visible attacker or TAKE HIT, and reload. `prepareShieldStrike` invokes guarded shield-strike fixture: a living adjacent enemy spends its last strike Will through performAction, opening a real timed block window with one reachable attack side. The fixture never places shields or heals. Assertions use public battle HP; PostgreSQL integration verifies progress health and replay. Run with scripts/pre-push-e2e.sh and one worker to avoid overloading the user's Mac.
+
+## Equipment Block sides (2026-11-21)
+
+combat/equipment-block.spec.ts uses EquipmentBlockFeature: normal shield tokens, real equip and board taps, visible shield counter, over-cap attempt, pending-window reload, and same-type replacement. prepareShieldStrike(true) asks the dev-only fixture for six clear directions before the real incoming strike, then holdTheWindowOpen keeps the window available for UI assertions. This arranges terrain only; tests still place shields through actual clicks. Existing heal-on-block tests call the same hook without the optional flag. Run via pre-push script, one worker.

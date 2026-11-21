@@ -1,3 +1,4 @@
+import { upcastToken } from '../inventory/upcast-item-tokens';
 import { deriveStream } from '../utils/random-seeded';
 import { applyBattleCommand } from './apply-battle';
 import { BATTLE_RULES } from './battle-content';
@@ -14,10 +15,16 @@ const MAX_COMMANDS = 2_000;
 const MAX_ROUNDS = 30;
 
 export function playOutSquad(members: string[], battleId: string, fieldLabel: string): BattleState {
+  // Keep the benchmark's historical two-side loadout through real equipment stats.
+  const player = hero({ q: 0, r: 0 });
+  player.hands.left!.token = {
+    ...upcastToken('hero', 'benchmark-shield', 'shield')!,
+    attributes: [{ key: 'shield', value: 1 }],
+  };
   const { setup } = deployBattle({
     battleId,
     field: generateBattlefield('crypt', battlefieldSeed(fieldLabel, 0)),
-    heroes: [hero({ q: 0, r: 0 })],
+    heroes: [player],
     members,
     direction: { x: -1, y: 0 },
     ambush: false,

@@ -42,6 +42,7 @@ describe('AttributeRegistry', () => {
         .map((attribute) => attribute.key),
     ).toEqual([
       'heart',
+      'shield',
       'will',
       'fog',
       'trophy',

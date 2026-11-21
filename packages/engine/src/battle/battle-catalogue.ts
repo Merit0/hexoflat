@@ -15,7 +15,7 @@ export const battleItemDefSchema = z
     id: z.string().min(1),
     power: z.number().int().positive().optional(),
     range: z.object({ min: z.number().int().min(2), max: z.number().int().min(2) }).optional(),
-    shieldCapacity: z.number().int().positive().optional(),
+    block: z.object({ sides: z.number().int().positive() }).optional(),
     heal: z.number().int().positive().optional(),
     usePrice: z.number().int().positive().optional(),
     title: i18nKey,
@@ -67,7 +67,7 @@ function byId<T extends { id: string }>(schema: z.ZodType<T>, defs: T[]): Record
 export const BATTLE_ITEMS: Record<string, BattleItemDef> = byId(battleItemDefSchema, [
   { id: 'sword', power: 2, ...texts('sword') },
   { id: 'dagger', power: 1, ...texts('dagger') },
-  { id: 'wooden-shield', shieldCapacity: 1, ...texts('wooden-shield') },
+  { id: 'wooden-shield', ...texts('wooden-shield') },
   {
     id: 'health-potion',
     heal: 2,
@@ -75,9 +75,9 @@ export const BATTLE_ITEMS: Record<string, BattleItemDef> = byId(battleItemDefSch
     ...texts('health-potion'),
   },
   { id: 'bone-blade', power: 2, ...texts('bone-blade') },
-  { id: 'bone-buckler', shieldCapacity: 1, ...texts('bone-buckler') },
+  { id: 'bone-buckler', block: { sides: 1 }, ...texts('bone-buckler') },
   { id: 'king-cleaver', power: 1, ...texts('king-cleaver') },
-  { id: 'king-shield', shieldCapacity: 2, ...texts('king-shield') },
+  { id: 'king-shield', block: { sides: 2 }, ...texts('king-shield') },
   { id: 'bone-bow', power: 1, range: { min: 2, max: 3 }, ...texts('bone-bow') },
 ]);
 
@@ -156,7 +156,6 @@ export function battleItem(id: string): BattleItem {
   const item: BattleItem = { key: id };
   if (def.power) item.power = def.power;
   if (def.range) item.range = { ...def.range };
-  if (def.shieldCapacity) item.shieldCapacity = def.shieldCapacity;
   if (def.heal) item.heal = def.heal;
   if (def.usePrice) item.usePrice = def.usePrice;
   return item;

@@ -1,3 +1,5 @@
+import { itemShieldBase, itemShieldSides } from '@hexoflat/engine/battle/shield-stats';
+import { shieldCapacity } from '@hexoflat/engine/battle/defend';
 import { usePriceFor } from '@hexoflat/engine/inventory/use-price';
 import { battleHeroStats } from '@hexoflat/engine/battle/hero-stats';
 import type { BattleCreature, BattleHand, BattleItem } from '@hexoflat/engine/battle/battle-state';
@@ -94,7 +96,7 @@ function handMeta(
       key: 'battle.hand.consumable',
       params: { hearts: item!.heal! / 2, cost },
     };
-  return { key: 'battle.hand.shield', params: { sides: item!.shieldCapacity ?? 0 } };
+  return { key: 'battle.hand.shield', params: { sides: itemShieldSides(item) } };
 }
 
 function handDisabled(
@@ -158,11 +160,8 @@ function defendView(
 ): BattleDefendView {
   const { rules } = input;
   const strikes = view.pending.filter((s) => s.targetId === self.id);
-  const shieldHand = BATTLE_HANDS.find((h) => !!self.hands[h]?.shieldCapacity);
-  const capacity = Math.min(
-    rules.maxShieldSides,
-    BATTLE_HANDS.reduce((sum, h) => sum + (self.hands[h]?.shieldCapacity ?? 0), 0),
-  );
+  const shieldHand = BATTLE_HANDS.find((h) => itemShieldBase(self.hands[h]).sides > 0);
+  const capacity = shieldCapacity(self, rules);
   const placed = view.placedShields.length;
   return {
     strikes: strikes.length,

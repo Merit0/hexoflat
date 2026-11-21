@@ -204,6 +204,7 @@ describe('real content', () => {
           for (const { key } of rollFor(real, type, tier, seed))
             expect([
               'heart',
+              'shield',
               'will',
               'fog',
               'trophy',

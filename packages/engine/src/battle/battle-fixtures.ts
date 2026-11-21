@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { BattleState } from './battle-state';
 import { isFreeHex } from './battle-board';
-import { battleDistance, hexKey } from './hex-battle-geom';
+import { battleDistance, hexKey, hexNeighbours } from './hex-battle-geom';
 import { enterCollectPhase } from './collect';
 import { issueTask } from './timed-task';
 import { performAction } from './perform-action';
@@ -9,7 +9,7 @@ import { BATTLE_RULES } from './battle-content';
 
 export const battleFixtureSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('trophy-target') }).strict(),
-  z.object({ kind: z.literal('shield-strike') }).strict(),
+  z.object({ kind: z.literal('shield-strike'), openDirections: z.boolean().optional() }).strict(),
   z.object({ kind: z.literal('saw-task') }).strict(),
   z.object({ kind: z.literal('hero-turn'), will: z.number().int().min(0).max(50) }).strict(),
   z.object({ kind: z.literal('enemy-turn'), will: z.number().int().min(0).max(50) }).strict(),
@@ -101,6 +101,31 @@ export function applyBattleFixture(
   const battle = structuredClone(source);
   switch (fixture.kind) {
     case 'shield-strike': {
+      if (fixture.openDirections) {
+        const hero = battle.creatures.find((creature) => creature.side === 'heroes')!;
+        const center = floorHexes(battle).find(
+          (hex) =>
+            isFreeHex(battle, hex, hero.id) &&
+            hexNeighbours(hex).every(
+              (near) =>
+                battle.board[hexKey(near)] !== undefined &&
+                !battle.creatures.some(
+                  (creature) =>
+                    creature.hp > 0 &&
+                    creature.id !== hero.id &&
+                    creature.pos.q === near.q &&
+                    creature.pos.r === near.r,
+                ),
+            ),
+        );
+        if (!center) throw new Error('No six-side block fixture position');
+        hero.pos = center;
+        const ring = hexNeighbours(center);
+        for (const hex of ring) battle.board[hexKey(hex)] = 'floor';
+        battle.boulders = battle.boulders.filter(
+          (boulder) => !ring.some((hex) => hex.q === boulder.pos.q && hex.r === boulder.pos.r),
+        );
+      }
       giveEnemyTurn(battle, BATTLE_RULES.strike);
       const enemy = battle.creatures.find((creature) => creature.id === battle.activeId)!;
       const hero = battle.creatures.find((creature) => creature.side === 'heroes')!;

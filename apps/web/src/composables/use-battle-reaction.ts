@@ -1,5 +1,6 @@
 import { onScopeDispose, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { itemShieldBase } from '@hexoflat/engine/battle/shield-stats';
 import { BATTLE_HANDS } from '@hexoflat/engine/battle/battle-state';
 import { msUntilServerTime } from '@/services/battle/battle-clock';
 import { useBattleStoreContext } from '@/composables/battle-store-context';
@@ -46,7 +47,7 @@ export function useBattleReaction(): void {
     };
     timer = setTimeout(() => void fire(), msUntilServerTime(reaction.deadlineMs));
     if (reaction.stage !== 'block') return;
-    const shield = BATTLE_HANDS.find((hand) => !!hero.hands[hand]?.shieldCapacity);
+    const shield = BATTLE_HANDS.find((hand) => itemShieldBase(hero.hands[hand]).sides > 0);
     if (shield) activateBattleHand(shield);
     heroToolStore.setActionMessage(t('battle.warn.underAttack'));
   }

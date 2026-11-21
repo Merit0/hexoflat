@@ -1,3 +1,4 @@
+import { itemShieldBase } from './shield-stats';
 import { describe, expect, it } from 'vitest';
 import { emptyInventoryState, mintItem } from '../inventory/inventory-state';
 import { upcastToken } from '../inventory/upcast-item-tokens';
@@ -35,7 +36,7 @@ describe('EA5 tokens in battle equipment', () => {
     expect(fighter.hands.left?.token).toEqual(inventory.equip.shield?.token);
     expect(battleHeroStats(fighter).maxHearts).toBe(3);
     expect(fighter.maxHp).toBe(9);
-    expect(fighter.hands.left?.shieldCapacity).toBe(1);
+    expect(itemShieldBase(fighter.hands.left).sides).toBe(1);
     expect(fighter.hands.right?.power).toBe(2);
     loadout.shield!.token!.attributes[0].value = 9;
     expect(inventory.equip.shield?.token?.attributes[0].value).toBe(3);

@@ -1,3 +1,4 @@
+import { itemShieldBase } from '@hexoflat/engine/battle/shield-stats';
 import { usePriceFor } from '@hexoflat/engine/inventory/use-price';
 import { battleHeroStats } from '@hexoflat/engine/battle/hero-stats';
 import type { BattleRules } from '@hexoflat/engine/battle/battle-content';
@@ -76,7 +77,7 @@ function toolAnchor(
     return preferred;
   }
   const around = hexNeighbours(self.pos).filter((hex) => terrainAt(view, hex) !== null);
-  if (item?.shieldCapacity) return around.find((hex) => inRing(view, self, hex)) ?? null;
+  if (itemShieldBase(item).sides > 0) return around.find((hex) => inRing(view, self, hex)) ?? null;
   if (!item || item.power) return around.find((hex) => foeAt(view, self, hex)) ?? around[0] ?? null;
   return around[0] ?? null;
 }
@@ -159,7 +160,7 @@ function decide(
 ): Decision {
   const item = self.hands[hand];
   if (!item || item.power) return attackDecision(view, self, hand, at, rules, chosenId);
-  if (item.shieldCapacity) return blockDecision(view, self, at, rules);
+  if (itemShieldBase(item).sides > 0) return blockDecision(view, self, at, rules);
   return useDecision(item, self);
 }
 
@@ -197,7 +198,7 @@ function eyeOverFallen(
   hand: BattleHand,
   self: BattleCreature,
 ): Decision {
-  const bare = !self.hands[hand]?.shieldCapacity;
+  const bare = itemShieldBase(self.hands[hand]).sides === 0;
   if (decision.action || !bare || !deadEnemyAt(view, at)) return decision;
   return { action: 'eye', targetId: null, price: 0 };
 }

@@ -236,9 +236,9 @@ export function battleTestHooks() {
     isBattleEngaged(): boolean {
       return useBattleStore().engagement !== null;
     },
-    async prepareShieldStrike(): Promise<void> {
+    async prepareShieldStrike(openDirections?: boolean): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
-      await serverFixture({ kind: 'shield-strike' });
+      await serverFixture({ kind: 'shield-strike', ...(openDirections ? { openDirections } : {}) });
     },
     async prepareTrophyTarget(): Promise<void> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');

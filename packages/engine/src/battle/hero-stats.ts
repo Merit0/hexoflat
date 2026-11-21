@@ -2,7 +2,7 @@ import { resolveHeroStats, type HeroStats } from '../tokens/equipment/hero-stats
 import { hexobjectOfBattleItem } from './battle-catalogue';
 import type { BattleCreature } from './battle-state';
 
-export function battleHeroStats(creature: BattleCreature): HeroStats {
+export function battleHeroStats(creature: Pick<BattleCreature, 'hands' | 'equipment'>): HeroStats {
   const hands = [creature.hands.right, creature.hands.left].flatMap((item) => {
     if (!item) return [];
     const key = item.token?.type ?? hexobjectOfBattleItem(item.key);

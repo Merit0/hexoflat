@@ -100,6 +100,7 @@ describe('EA1 EA-16a: attribute registry', () => {
       ),
     ).toEqual([
       'heart',
+      'shield',
       'will',
       'fog',
       'trophy',

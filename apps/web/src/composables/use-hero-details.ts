@@ -2,7 +2,7 @@ import { computed } from 'vue';
 import { getScoutProgress, toRoman } from '@hexoflat/engine/hero-movement/scout-progression';
 import { BATTLE_ITEMS, battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
 import { THREAT_RULES } from '@hexoflat/engine/battle/threat';
-import { sumShieldPoints } from '@hexoflat/engine/combat/shield-points';
+import { resolveHeroStats } from '@hexoflat/engine/tokens/equipment/hero-stats';
 import type { SkillProgress } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
@@ -132,7 +132,7 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
   };
 }
 
-function battleStat(key: THexobjectKey, stat: 'power' | 'shieldCapacity'): number {
+function battleStat(key: THexobjectKey, stat: 'power'): number {
   const item = battleItemOfHexobject(key);
   return item ? (BATTLE_ITEMS[item]?.[stat] ?? 0) : 0;
 }
@@ -171,13 +171,10 @@ export function useHeroDetails() {
       shieldItem && shieldItem.key !== HEXOBJECT_KEYS.HAND
         ? {
             item: toHandItem(shieldItem, skills),
-            sides: battleStat(shieldItem.key, 'shieldCapacity'),
+            sides: resolveHeroStats([shieldItem]).blockSides,
           }
         : null;
-    const defense = [weaponItem, shieldItem].reduce(
-      (sum, item) => sum + (item ? battleStat(item.key, 'shieldCapacity') : 0),
-      0,
-    );
+    const defense = resolveHeroStats(Object.values(equipped)).blockSides;
 
     return buildHeroDetails({
       name: hero.name || 'Hero',
@@ -189,7 +186,7 @@ export function useHeroDetails() {
       kills: hero.kills,
       carriedKg: inventory.carriedWeightKg,
       capacityKg: inventory.carryCapacityKg,
-      shieldPoints: sumShieldPoints(Object.values(equipped).map((item) => item?.key)),
+      shieldPoints: defense,
       extraShields: heroStore.extraShields,
       skills: knowledge?.skills ?? {},
       skillProgress: knowledge?.skillProgress ?? {},

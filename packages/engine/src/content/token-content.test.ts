@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { itemShieldBase } from '../battle/shield-stats';
 import { describe, expect, it } from 'vitest';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { BATTLE_ITEMS, battleItemOfHexobject } from '../battle/battle-catalogue';
@@ -106,7 +107,7 @@ describe('item token content', () => {
   it('gives the shield the block sides of its battle item', () => {
     const shieldItem = battleItemOfHexobject('shield');
     expect(types.get('shield').block?.sides).toBe(
-      shieldItem ? BATTLE_ITEMS[shieldItem]?.shieldCapacity : undefined,
+      shieldItem ? itemShieldBase({ key: shieldItem }).sides : undefined,
     );
   });
 
@@ -142,6 +143,7 @@ describe('implemented token attributes', () => {
       ),
     ).toEqual([
       'heart',
+      'shield',
       'will',
       'fog',
       'trophy',

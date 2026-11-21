@@ -1,5 +1,6 @@
 import type { DomainEvent } from '../commands/types';
 import { resolveItemStats } from '../tokens/equipment/item-stats';
+import { itemShieldBase } from './shield-stats';
 import type { BattleCreature } from './battle-state';
 import type { StrikeResolution } from './strike-pipeline';
 
@@ -16,7 +17,7 @@ export function healBlockedStrike(
   )
     return [];
   const bonus = [defender.hands.right, defender.hands.left].reduce((sum, item) => {
-    if (!item?.shieldCapacity || item.token?.type !== 'shield') return sum;
+    if (!item || itemShieldBase(item).sides === 0 || item.token?.type !== 'shield') return sum;
     return sum + resolveItemStats({ key: item.token.type, token: item.token }).healOnBlock;
   }, 0);
   const healed = Math.min(4, bonus, Math.max(0, defender.maxHp - defender.hp));

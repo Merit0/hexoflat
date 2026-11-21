@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BATTLE_CREATURES, BATTLE_ITEMS } from './battle-catalogue';
 import { BATTLE_RULES } from './battle-content';
+import { battleShieldSides } from './shield-stats';
 import type { BattleItem } from './battle-state';
 
 export const threatRulesSchema = z.object({
@@ -46,7 +47,7 @@ export function handsProfile(
 ): ThreatProfile {
   const held = [hands.right, hands.left];
   const power = Math.max(0, ...held.map((item) => item?.power ?? 0));
-  const shield = held.reduce((sum, item) => sum + (item?.shieldCapacity ?? 0), 0);
+  const shield = Math.min(BATTLE_RULES.maxShieldSides, battleShieldSides({ hands }));
   return { hearts, power: power || rules.unarmedPower, shield };
 }
 
