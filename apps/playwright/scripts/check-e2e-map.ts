@@ -12,7 +12,7 @@ export interface MapCheck {
   unmapped: string[];
 }
 
-const SPEC_FOLDER = /^e2e\/([^/]+)\//;
+const SPEC_FOLDER = /^e2e\/(?:slow\/)?([^/]+)\//;
 
 function primaryGroup(file: string): string | null {
   return SPEC_FOLDER.exec(file)?.[1] ?? null;

@@ -1,5 +1,12 @@
 # hexoflat
 
+**E2E slow suite (2026-11-21):** 23 active scenarios whose latest successful local
+Allure run exceeded 30 seconds moved to `apps/playwright/e2e/slow/<group>/`.
+Default push checks exclude this folder; `pnpm test:e2e:slow` runs it with one
+worker, and `E2E_INCLUDE_SLOW=1 pnpm test:e2e:push` includes everything. CI and
+direct full Playwright runs retain both suites. Functional tags and impact
+selection cover both locations. Details: `apps/playwright/README.md`.
+
 Original cooperative tactical fantasy game: turn-based combat on a hex-grid map, card-based character abilities, progression, scenarios, persistent campaign.
 
 Inspired by general tactical dungeon-crawler concepts (including Frosthaven), but must not copy its names, characters, story, texts, artwork, terminology, balance, or other protected content. All mechanics, worldbuilding, classes, enemies, abilities, scenarios, and visual assets must be original.

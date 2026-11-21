@@ -26,6 +26,22 @@ pnpm --filter @hexoflat/playwright exec playwright install --with-deps chromium
 
 ## Running the suite
 
+The default push check (`pnpm test:e2e:push`, including impact-selected hooks)
+excludes `e2e/slow/`. That folder contains active scenarios whose latest successful
+local Allure run exceeded 30 seconds. Tests keep their functional group tag and
+live under `e2e/slow/<group>/`; faster cases from the same spec stay in the regular
+group folder. Classification is reviewed from timings, not changed during a run.
+
+```bash
+pnpm test:e2e:slow                              # dedicated slow suite, one worker
+E2E_INCLUDE_SLOW=1 pnpm test:e2e:push            # full push check including slow tests
+E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow/hero/quest-seeker.spec.ts
+```
+
+CI and direct full Playwright runs still include both suites. `E2E_ALL=1` selects
+all functional groups for a push; use `E2E_INCLUDE_SLOW=1` as well to include slow
+scenarios. Moving a test does not fix an existing flaky assertion.
+
 ```bash
 pnpm --filter @hexoflat/playwright run test:e2e            # headless
 pnpm --filter @hexoflat/playwright run test:e2e:headed      # watch it click

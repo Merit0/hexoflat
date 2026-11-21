@@ -26,11 +26,14 @@ export const impactMapSchema = z
       if (name === 'smoke') {
         ctx.addIssue({ code: 'custom', message: '"smoke" is a tag, not a group' });
       }
-      if (!group.specs.startsWith(`apps/playwright/e2e/${name}/`)) {
+      if (
+        !group.specs.startsWith(`apps/playwright/e2e/${name}/`) &&
+        group.specs !== `apps/playwright/e2e/{${name},slow/${name}}/**`
+      ) {
         ctx.addIssue({
           code: 'custom',
           path: ['groups', name, 'specs'],
-          message: `specs of "${name}" must live under apps/playwright/e2e/${name}/`,
+          message: `specs of "${name}" must live under e2e/${name}/ or e2e/slow/${name}/`,
         });
       }
     }
@@ -123,7 +126,7 @@ const impactMapInput = {
         `${WEB}/services/world/**`,
         `${WEB}/stores/world-map-*.ts`,
       ],
-      specs: 'apps/playwright/e2e/board/**',
+      specs: 'apps/playwright/e2e/{board,slow/board}/**',
     },
     camp: {
       roots: [
@@ -136,7 +139,7 @@ const impactMapInput = {
         `${WEB}/services/knowledge/**`,
         `${WEB}/render/portal-fx*.ts`,
       ],
-      specs: 'apps/playwright/e2e/camp/**',
+      specs: 'apps/playwright/e2e/{camp,slow/camp}/**',
     },
     combat: {
       roots: [
@@ -199,7 +202,7 @@ const impactMapInput = {
         `${WEB}/stores/gathering-store.ts`,
         `${WEB}/stores/game-events-store.ts`,
       ],
-      specs: 'apps/playwright/e2e/hero/**',
+      specs: 'apps/playwright/e2e/{hero,slow/hero}/**',
     },
     shell: {
       roots: [

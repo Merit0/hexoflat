@@ -59,6 +59,17 @@ Run a subset with `sh scripts/pre-push-e2e.sh e2e/<group>/<spec>.spec.ts` (own p
 
 ### Groups and tags
 
+Slow-suite split (2026-11-21): scenarios whose latest successful local Allure run
+exceeded 30 seconds live in `e2e/slow/<group>/`, retaining their functional
+`@<group>` tag. Push runs (`E2E_PRE_PUSH=1`) exclude that folder unless
+`E2E_INCLUDE_SLOW=1`; CI/direct full runs include it. Run the dedicated suite with
+`pnpm test:e2e:slow` (one worker), or a slow spec through
+`E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow/<group>/<spec>.spec.ts`.
+Impact-map globs include both locations and the map checker resolves the
+functional folder below `slow`. Keep faster cases in the regular folder when
+splitting a spec. `E2E_ALL=1` selects all groups but does not override the slow
+exclusion; combine it with `E2E_INCLUDE_SLOW=1` for a full local push run.
+
 Specs live in `e2e/<group>/` (`auth`, `board`, `camp`, `combat`, `hero`, `shell`). Each file wraps its tests in one `test.describe(title, { tag: ['@<group>'] }, ...)`, so the folder and the tag always agree. `@smoke` is an extra tag on single tests (login, hero movement). Run one group with `pnpm --filter @hexoflat/playwright e2e:group @board`.
 
 ### Impact selection (`apps/playwright/impact-map.ts`, `scripts/select-e2e*.ts`)

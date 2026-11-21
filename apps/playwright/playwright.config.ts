@@ -4,6 +4,10 @@ import { allureReporterOptions } from './src/config/allure';
 
 export default defineConfig({
   testDir: './e2e',
+  // Keep long scenarios in CI/full runs; pushes run the regular suite unless
+  // the caller explicitly opts in (test:e2e:slow / E2E_INCLUDE_SLOW=1).
+  testIgnore:
+    process.env.E2E_PRE_PUSH === '1' && process.env.E2E_INCLUDE_SLOW !== '1' ? ['**/slow/**'] : [],
   globalSetup: './global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI || process.env.E2E_PRE_PUSH === '1',
