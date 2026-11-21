@@ -231,11 +231,11 @@ the complete Deft Hands and Wisdom specs passed 3 repetitions each, 30/30 E2Es,
 one worker, no retries (4.7 min), through `scripts/pre-push-e2e.sh`. Full workspace
 typecheck, targeted lint, Prettier and `git diff --check` passed. No commit created.
 
-## Health label unit-test correction — 2026-11-21
+## Health label unit-test correction — 2026-11-21 [DONE]
 
 The full unit run exposed seven stale assertions in `tokens/factory/token-names.test.ts`
 and `tokens/legacy-tokens.test.ts`: they still expected Hearts/Серця after the
 approved Health:/Життя: rename. Updated the literal expectations in both locales,
 including saved v3 tokens whose description lines contain translation keys.
 The saved token fixtures and production formatter/translations are unchanged.
-Both corrected files pass all 22 cases; final workspace verification is recorded below.
+Both corrected files pass all 22 cases. Final workspace run: `pnpm test --concurrency=1 -- --maxWorkers=1` passed all packages: engine 2,366 passed / 2 existing skips, web 4,219, API 295, Playwright helpers 40 (6,920 passed total). Targeted ESLint, Prettier and `git diff --check` passed. No commit created.
