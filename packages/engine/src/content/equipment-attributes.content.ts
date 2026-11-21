@@ -119,6 +119,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     cap: 2,
     icon: 'skull',
     format: 'plus',
+    implemented: true,
   }),
   attribute('yield', {
     groups: ['weapon'],

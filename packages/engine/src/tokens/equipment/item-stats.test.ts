@@ -23,7 +23,7 @@ describe('EA-16 item stats', () => {
     const stats = resolveItemStats(item);
     expect(stats.harvestBonus).toBe(2);
     expect(stats.maxHearts).toBe(0);
-    expect(stats.graveLootBonus).toBe(0);
+    expect(stats.graveLootBonus).toBe(2);
     expect(resolveHeroStats([item]).harvestBonus).toBe(0);
     expect(resolveItemStats(null).harvestBonus).toBe(0);
   });

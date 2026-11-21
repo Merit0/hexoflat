@@ -236,6 +236,21 @@ export function battleTestHooks() {
     isBattleEngaged(): boolean {
       return useBattleStore().engagement !== null;
     },
+    async prepareTrophyTarget(): Promise<void> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'trophy-target' });
+    },
+    getBattleTrophy() {
+      const view = useBattleStore().projection;
+      return view
+        ? {
+            corpses: view.creatures
+              .filter((creature) => creature.side === 'enemies' && creature.hp === 0)
+              .map((creature) => ({ id: creature.id, bonus: creature.trophyBonus ?? 0 })),
+            items: view.collect?.items ?? [],
+          }
+        : null;
+    },
     async openBattleTask(): Promise<number> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
       await serverFixture({ kind: 'saw-task' });

@@ -92,12 +92,22 @@ describe('EA1 EA-16a: attribute registry', () => {
     expect([...keys].sort()).toEqual([...Object.keys(STAT_BY_KEY), ...BLOCKED_KEYS].sort());
   });
 
-  it('implements heart, will, fog, yield, smart-step, deft-hands and wisdom (with legacy focus)', () => {
+  it('implements heart, will, fog, trophy, yield, smart-step, deft-hands and wisdom (with legacy focus)', () => {
     expect(
       EQUIPMENT_ATTRIBUTES.filter((attribute) => attribute.implemented).map(
         (attribute) => attribute.key,
       ),
-    ).toEqual(['heart', 'will', 'fog', 'yield', 'smart-step', 'deft-hands', 'focus', 'wisdom']);
+    ).toEqual([
+      'heart',
+      'will',
+      'fog',
+      'trophy',
+      'yield',
+      'smart-step',
+      'deft-hands',
+      'focus',
+      'wisdom',
+    ]);
   });
 
   it('maps every open attribute to its hero stat and leaves blocked ones without a stat', () => {

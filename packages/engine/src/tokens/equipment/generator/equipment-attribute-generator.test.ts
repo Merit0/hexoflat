@@ -206,6 +206,7 @@ describe('real content', () => {
               'heart',
               'will',
               'fog',
+              'trophy',
               'yield',
               'smart-step',
               'deft-hands',

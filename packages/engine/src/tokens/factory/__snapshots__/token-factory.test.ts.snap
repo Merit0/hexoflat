@@ -291,8 +291,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 20,
+        "key": "trophy",
+        "value": 1,
       },
       {
         "key": "yield",
@@ -529,7 +529,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
+        "key": "trophy",
         "value": 1,
       },
     ],
@@ -766,8 +766,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 17,
+        "key": "trophy",
+        "value": 1,
       },
     ],
     "description": [
@@ -910,8 +910,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 21,
+        "key": "trophy",
+        "value": 2,
       },
     ],
     "description": [

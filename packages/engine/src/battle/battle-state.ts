@@ -48,6 +48,7 @@ export const battleCreatureSchema = z.object({
   hands: z.object({ right: battleItemSchema.nullable(), left: battleItemSchema.nullable() }),
   bag: z.array(battleItemSchema).default([]),
   equipment: z.array(battleEquipmentSchema).optional(),
+  trophyBonus: z.number().int().min(0).max(2).optional(),
 });
 export type BattleCreature = z.infer<typeof battleCreatureSchema>;
 
@@ -123,6 +124,7 @@ export const graveSchema = z.object({
   hex: axialSchema,
   tables: z.array(z.string().min(1)),
   examined: z.boolean(),
+  trophyBonuses: z.array(z.number().int().min(0).max(2)).optional(),
   container: containerStateSchema.optional(),
 });
 export type Grave = z.infer<typeof graveSchema>;

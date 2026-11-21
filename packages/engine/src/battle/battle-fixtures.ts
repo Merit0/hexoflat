@@ -7,6 +7,7 @@ import { issueTask } from './timed-task';
 import { BATTLE_RULES } from './battle-content';
 
 export const battleFixtureSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('trophy-target') }).strict(),
   z.object({ kind: z.literal('saw-task') }).strict(),
   z.object({ kind: z.literal('hero-turn'), will: z.number().int().min(0).max(50) }).strict(),
   z.object({ kind: z.literal('enemy-turn'), will: z.number().int().min(0).max(50) }).strict(),
@@ -97,6 +98,24 @@ export function applyBattleFixture(
 ): BattleState {
   const battle = structuredClone(source);
   switch (fixture.kind) {
+    case 'trophy-target': {
+      const hero = battle.creatures.find((creature) => creature.side === 'heroes');
+      const target = battle.creatures.find(
+        (creature) => creature.side === 'enemies' && creature.hp > 0,
+      );
+      if (!hero || !target || battle.phase === 'ended') throw new Error('No living Trophy target');
+      battle.creatures = [hero, target];
+      const spot = floorHexes(battle).find(
+        (hex) => battleDistance(hex, hero.pos) === 1 && isFreeHex(battle, hex, target.id),
+      );
+      if (!spot) throw new Error('No adjacent Trophy target hex');
+      target.pos = spot;
+      target.hp = 1;
+      target.hands = { right: null, left: null };
+      battle.order = [hero.id, target.id];
+      giveHeroTurn(battle, BATTLE_RULES.willPerTurn);
+      break;
+    }
     case 'saw-task': {
       giveHeroTurn(battle, BATTLE_RULES.willPerTurn);
       const hero = battle.creatures.find((creature) => creature.side === 'heroes')!;

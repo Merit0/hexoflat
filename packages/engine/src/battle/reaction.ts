@@ -11,6 +11,7 @@ import { creatureById, isAlive } from './battle-board';
 import { applyDamage } from './battle-end';
 import { resolveStrike } from './strike-pipeline';
 import { battleHeroStats } from './hero-stats';
+import { trophyBonusFor } from './trophy-bonus';
 import { isAdjacentHex, sameHex } from './hex-battle-geom';
 import { cheapestPaths, moveCreature, pathTo } from './movement';
 import { reject, type BattleRejection } from './battle-rejection';
@@ -125,7 +126,9 @@ function sweepAround(
     if (attacker.side === 'enemies') {
       state.wounds[victim.id] = [...(state.wounds[victim.id] ?? []), { ...attacker.pos }];
     }
-    events.push(...applyDamage(state, victim, resolved.result.damageDealt));
+    events.push(
+      ...applyDamage(state, victim, resolved.result.damageDealt, trophyBonusFor(attacker, weapon)),
+    );
   }
   return events;
 }
@@ -176,7 +179,7 @@ function resolveAt(
   return [
     ...events,
     ...resolved.events,
-    ...applyDamage(state, defender, resolved.result.damageDealt),
+    ...applyDamage(state, defender, resolved.result.damageDealt, trophyBonusFor(attacker, weapon)),
     ...(reaction.ranged
       ? []
       : sweepAround(state, attacker, defender, reaction.hand, strike, rules)),

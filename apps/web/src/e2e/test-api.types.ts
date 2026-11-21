@@ -135,6 +135,16 @@ export interface TestFogTile {
 }
 
 export interface HexoflatTestApi {
+  prepareTrophyTarget(): Promise<void>;
+  getBattleTrophy(): {
+    corpses: { id: string; bonus: number }[];
+    items: {
+      hex: { q: number; r: number };
+      itemKey: string;
+      amount: number;
+      token?: TestItemToken;
+    }[];
+  } | null;
   getHarvest(): {
     wood: number;
     stone: number;
