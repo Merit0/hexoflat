@@ -1,3 +1,4 @@
+import { shieldCapacity } from '@hexoflat/engine/battle/defend';
 import type { BattleCreature, BattleHex } from '@hexoflat/engine/battle/battle-state';
 import type { BattleProjection } from '@hexoflat/engine/battle/projection';
 import {
@@ -106,8 +107,7 @@ function selectedFoeDecoys(
   hero: BattleCreature,
   foe: BattleCreature,
 ): BattleMark[] {
-  const guarded =
-    (foe.hands.right?.shieldCapacity ?? 0) + (foe.hands.left?.shieldCapacity ?? 0) > 0;
+  const guarded = shieldCapacity(foe, BATTLE_RULES) > 0;
   const ranged = !!(hero.hands.right?.range ?? hero.hands.left?.range);
   if (!guarded || ranged || view.reaction) return [];
   return strikeSideHexes(view, foe.pos, hero.id).map((hex) => ({ hex, tone: 'decoy' as const }));

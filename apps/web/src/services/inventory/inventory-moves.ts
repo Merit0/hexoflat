@@ -8,6 +8,7 @@ import { dispatchInventory, type InventoryStores } from './inventory-store-io';
 export interface HandKeys {
   weapon: string | null;
   shield: string | null;
+  tokenIds?: { weapon: string | null; shield: string | null };
 }
 
 export type HandsApprover = (hands: HandKeys) => boolean;
@@ -46,13 +47,26 @@ export function locationOfSlotKey(slotKey: string): TItemLocation | null {
 }
 
 function handsOf(state: InventoryState): HandKeys {
-  return { weapon: state.equip.weapon?.key ?? null, shield: state.equip.shield?.key ?? null };
+  const weapon = state.equip.weapon;
+  const shield = state.equip.shield;
+  return {
+    weapon: weapon?.key ?? null,
+    shield: shield?.key ?? null,
+    ...(weapon?.token || shield?.token
+      ? { tokenIds: { weapon: weapon?.token?.id ?? null, shield: shield?.token?.id ?? null } }
+      : {}),
+  };
 }
 
 function handsDiffer(a: InventoryState, b: InventoryState): boolean {
   const before = handsOf(a);
   const after = handsOf(b);
-  return before.weapon !== after.weapon || before.shield !== after.shield;
+  return (
+    before.weapon !== after.weapon ||
+    before.shield !== after.shield ||
+    before.tokenIds?.weapon !== after.tokenIds?.weapon ||
+    before.tokenIds?.shield !== after.tokenIds?.shield
+  );
 }
 
 export function moveBySlot(stores: InventoryStores, itemId: string, targetSlotKey: string): void {

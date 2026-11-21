@@ -6,8 +6,10 @@ import {
   MAP_TIERS,
   createTokenFactory,
   flattenTextTree,
+  formatTokenAttributes,
   formatTokenDescription,
   formatTokenName,
+  withAdjectiveTexts,
   type TokenDictionary,
 } from '@hexoflat/engine';
 
@@ -16,8 +18,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const localesDir = path.resolve(here, '../src/locales');
 
 function dictionaryOf(lang: string): TokenDictionary {
-  return flattenTextTree(
-    JSON.parse(readFileSync(path.join(localesDir, lang, 'content.json'), 'utf-8')),
+  return withAdjectiveTexts(
+    flattenTextTree(JSON.parse(readFileSync(path.join(localesDir, lang, 'content.json'), 'utf-8'))),
+    lang,
   );
 }
 
@@ -40,11 +43,14 @@ for (let n = 0; n < SAMPLE_SIZE; n += 1) {
   }
   const token = result.value;
   console.log(
-    `#${n} ${token.id}  ${token.rarity} tier ${token.mapTier}  ${token.price} coins  ${token.sprite}`,
+    `#${n} ${token.id}  ${token.rarity} tier ${token.mapTier}  ${token.attributes.length} attr  ${token.price} coins  ${token.sprite}`,
   );
   for (const [lang, dictionary] of Object.entries(dictionaries)) {
     const name = formatTokenName(token.name, dictionary);
-    const description = formatTokenDescription(token.description, dictionary).join(' · ');
+    const description = [
+      ...formatTokenDescription(token.description, dictionary),
+      ...formatTokenAttributes(token, dictionary).map((row) => `${row.label} ${row.value}`),
+    ].join(' · ');
     console.log(`  ${lang}: ${name} — ${description}`);
   }
 }

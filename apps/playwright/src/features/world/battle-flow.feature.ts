@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { WINDOW_RESOLVES_MS } from '@config/battle-timing';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
@@ -9,9 +10,8 @@ import { DragInventoryItemFeature } from '@features/world/drag-inventory-item.fe
 import { EquipSlot } from '@config/equip-slot';
 import { UseEquippedToolFeature } from '@features/world/use-equipped-tool.feature';
 import { VerifyActionAlertFeature } from '@features/world/verify-action-alert.feature';
+import { VerifyInventoryFeature } from './verify-inventory.feature';
 import { HexobjectKeys } from '@config/test-data';
-
-const WINDOW_RESOLVES_MS = 20_000;
 
 type Snapshot = NonNullable<Awaited<ReturnType<CampingMapPage['hexBoard']['readBattleSnapshot']>>>;
 
@@ -61,7 +61,12 @@ export class BattleFlowFeature extends BaseFeature {
   }
 
   private async equipAShieldOnTheMap(): Promise<void> {
-    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.grantInventoryItem('shield', 1));
+    await new VerifyInventoryFeature().givenTokenItem({
+      type: 'shield',
+      realm: 'idol',
+      mapTier: 1,
+      attributes: [],
+    });
     await new SwitchHeroBoardTabFeature().switchTo('inventory');
     await new DragInventoryItemFeature().dragToEquipSlot(HexobjectKeys.shield, EquipSlot.SHIELD);
     await new SwitchHeroBoardTabFeature().switchTo('hero');

@@ -7,6 +7,7 @@ import { SPRITE_MANIFEST } from '../sprite-manifest';
 import { itemTokenSchema, emptyTokenExtensions, type ItemToken } from '../token-schema';
 import { createTokenFactory } from './create-token-factory';
 import { contextFor, defaultFactory, mixedContexts } from './factory-test-setup';
+import { priceBandOf } from './price-generator';
 import { TOKEN_GENERATOR_VERSION, type GenerationContext } from './token-generation';
 
 const { types, attributes } = createTokenRegistries();
@@ -42,21 +43,32 @@ describe('TokenFactory.createBase', () => {
     }
   });
 
-  it('TG-2: gives 0-2 implemented attributes without repeats at the tier value', () => {
+  it('TG-2: gives at most maxCount implemented attributes of the type group inside the tier range', () => {
     const counts = new Set<number>();
     for (const { token } of TOKENS) {
       const keys = token.attributes.map((attribute) => attribute.key);
+      const profile = TOKEN_CONTENT.profiles[`tier-${token.mapTier}`];
+      const type = types.get(token.type);
       counts.add(keys.length);
-      expect(keys.length).toBeLessThanOrEqual(2);
+      expect(keys.length).toBeLessThanOrEqual(profile.maxCount);
       expect(new Set(keys).size).toBe(keys.length);
       for (const attribute of token.attributes) {
         const definition = attributes.get(attribute.key);
+        const range = profile.attributes[attribute.key];
         expect(definition.implemented).toBe(true);
-        expect(attributes.generatableFor(token.type)).toContain(definition);
-        expect(attribute.value).toBe(definition.valueByTier[token.mapTier]);
+        expect(definition.groups).toContain(type.group);
+        expect(attribute.value).toBeGreaterThanOrEqual(range.min);
+        expect(attribute.value).toBeLessThanOrEqual(range.max);
       }
     }
-    expect(counts).toEqual(new Set([0, 1]));
+    expect(counts).toEqual(new Set([0, 1, 2]));
+  });
+
+  it('TG-2: gives the sword no heart, because heart is not a weapon attribute', () => {
+    const swords = TOKENS.filter(({ token }) => token.type === 'sword');
+    expect(swords.length).toBeGreaterThan(0);
+    for (const { token } of swords)
+      expect(token.attributes.some((attribute) => attribute.key === 'heart')).toBe(false);
   });
 
   it('TG-3: takes the sprite from the manifest of its type or the placeholder', () => {
@@ -76,9 +88,12 @@ describe('TokenFactory.createBase', () => {
 });
 
 describe('TokenFactory.createBase prices, determinism and text', () => {
-  it('TG-5: prices inside the realm range, no skills, default extensions', () => {
+  it('TG-5: prices inside the third of the realm range, no skills, default extensions', () => {
     for (const { token } of TOKENS) {
-      const [min, max] = TOKEN_CONTENT.priceRanges[token.rarity as ERarityKind.IDOL];
+      const [min, max] = priceBandOf(
+        TOKEN_CONTENT.priceRanges[token.rarity as ERarityKind.IDOL],
+        token.attributes.length,
+      );
       expect(Number.isInteger(token.price)).toBe(true);
       expect(token.price).toBeGreaterThanOrEqual(min);
       expect(token.price).toBeLessThanOrEqual(max);
@@ -107,25 +122,11 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
     expect(otherIndex).not.toEqual(base);
   });
 
-  it('names tools by their type and never pairs words of one theme', () => {
-    const { words } = createTokenRegistries();
-    const themeOf = new Map(
-      [...TOKEN_CONTENT.words.prefixes, ...TOKEN_CONTENT.words.suffixes].map((word) => [
-        word.key,
-        word.theme,
-      ]),
-    );
+  it('names tools by their type and the rest by an adjective and the type', () => {
     for (const { token } of TOKENS) {
       const type = types.get(token.type);
-      if (type.tool) {
-        expect(token.name).toEqual({ kind: 'noun', noun: token.type });
-        continue;
-      }
-      if (token.name.kind !== 'generated') throw new Error('expected a generated name');
-      const prefixTheme = themeOf.get(token.name.prefix);
-      if (prefixTheme) expect(themeOf.get(token.name.suffix)).not.toBe(prefixTheme);
-      expect(words.prefixes(token.rarity).map((word) => word.key)).toContain(token.name.prefix);
-      expect(words.suffixes(token.rarity).map((word) => word.key)).toContain(token.name.suffix);
+      if (type.tool) expect(token.name).toEqual({ kind: 'noun', noun: token.type });
+      else expect(token.name).toMatchObject({ kind: 'adjective', noun: token.type });
     }
   });
 
@@ -145,10 +146,30 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
       params: { tier: 3 },
     });
     for (const { token } of TOKENS) {
-      const hearts = token.attributes.find((attribute) => attribute.key === 'heart');
-      const line = token.description.find((entry) => entry.key === 'content.tokens.attr.heart');
-      expect(line?.params.value).toBe(hearts ? hearts.value / 2 : undefined);
+      expect(token.description.some((line) => line.key.startsWith('content.tokens.attr.'))).toBe(
+        false,
+      );
     }
+  });
+
+  it('keeps the top-level shape of a base token', () => {
+    expect(Object.keys(TOKENS[0].token).sort()).toEqual(
+      [
+        'attributes',
+        'description',
+        'ext',
+        'generatorVersion',
+        'id',
+        'mapTier',
+        'name',
+        'origin',
+        'price',
+        'rarity',
+        'skills',
+        'sprite',
+        'type',
+      ].sort(),
+    );
   });
 
   it('matches the golden tokens of 20 fixed seeds', () => {

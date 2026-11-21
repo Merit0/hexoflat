@@ -1,4 +1,5 @@
 import { travelStepBudget } from '@hexoflat/engine/knowledge/math';
+import { worldStepContext } from '@/services/hero-movement/world-step-context';
 import type { WillZoneContext } from '@hexoflat/engine/knowledge/will-zone';
 import type { StartHexActionCommand } from '@hexoflat/engine/commands/hex-engine-commands';
 import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
@@ -42,6 +43,7 @@ import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import {
   bindHealthListener,
   bindKillsListener,
+  bindPaidStepsListener,
   bindKnowledgeListener,
   bindPortalListener,
   endPlayerSession,
@@ -86,6 +88,7 @@ export const useHeroStore = defineStore('hero', {
   state: () => ({
     hero: new HeroModel(),
     knowledge: null as KnowledgeState | null,
+    paidSteps: 0,
     knowledgeError: false,
     nav: defaultNav(),
     heroCoordinates: null as IHexCoordinates | null,
@@ -100,6 +103,7 @@ export const useHeroStore = defineStore('hero', {
     heroHp: (s) => s.hero.currentHealth,
     heroHpMax: (s) => s.hero.getEffectiveMaxHealth(),
     skillBonuses: (s) => getSkillBonuses(s.knowledge?.skills ?? {}),
+    worldStepContext: (s) => worldStepContext(s.paidSteps),
     willZoneContext(): WillZoneContext {
       return {
         willZone: locationWillZone(useWorldMapStore().currentLocationKey),
@@ -122,6 +126,10 @@ export const useHeroStore = defineStore('hero', {
       bindKillsListener((kills) => {
         this.hero.setKills(kills);
       });
+      bindPaidStepsListener((paidSteps) => {
+        this.paidSteps = paidSteps;
+      });
+      this.paidSteps = inventorySession.paidSteps;
       if (inventorySession.health) this.hero.restoreHealth(inventorySession.health);
       this.hero.setKills(inventorySession.kills);
       this.portal = inventorySession.portal;
@@ -186,11 +194,6 @@ export const useHeroStore = defineStore('hero', {
         this.knowledgeError = true;
         return false;
       }
-    },
-
-    setMaxHealthBonus(bonus: number): void {
-      this.hero.setMaxHealthBonus(bonus);
-      this.saveProgressToStorage();
     },
 
     devAddShield(): void {
@@ -362,6 +365,7 @@ export const useHeroStore = defineStore('hero', {
       console.log('Resetting hero state');
       this.hero = new HeroModel();
       this.knowledge = null;
+      this.paidSteps = 0;
       this.knowledgeError = false;
       this.extraShields = 0;
       this.portal = null;
@@ -370,6 +374,7 @@ export const useHeroStore = defineStore('hero', {
       bindPortalListener(null);
       bindHealthListener(null);
       bindKillsListener(null);
+      bindPaidStepsListener(null);
       endPlayerSession();
       useHeroInventoryStore().reset();
       useHeroStashStore().reset();
@@ -417,6 +422,7 @@ export const useHeroStore = defineStore('hero', {
         route?.length ?? 0,
         this.knowledge?.current ?? 0,
         this.willZoneContext,
+        this.worldStepContext,
       );
       const affordable = !route || route.length <= budget;
       const ambush = events.some((e) => e.type === 'AMBUSH') ? (planned.engagement ?? null) : null;

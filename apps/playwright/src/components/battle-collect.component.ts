@@ -106,6 +106,14 @@ export class BattleCollectComponent extends BaseComponent {
     return x >= tool.x && x <= tool.x + tool.width && y >= tool.y && y <= tool.y + tool.height;
   }
 
+  async verifyToolHidden(): Promise<void> {
+    await expect(this.toolHex).toBeHidden();
+  }
+
+  async verifyToolVisible(): Promise<void> {
+    await expect(this.toolHex).toBeVisible();
+  }
+
   async openTheHandTool(): Promise<void> {
     if ((await this.toolHex.count()) === 0) {
       await this.page.getByTestId('battle-board-area').hover();

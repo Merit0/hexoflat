@@ -6,6 +6,7 @@ import {
   AGGREGATES,
   AGGREGATE_KINDS,
   PLAYER_COMMAND_AGGREGATES,
+  playerCommandAggregate,
   applyQuestFixture,
   applyTraderFixture,
   questFixtureSchema,
@@ -134,7 +135,8 @@ export class PlayerCommandService {
     const command = parsed.data;
     const kinds = PLAYER_COMMAND_AGGREGATES[command.type];
     if (command.payload.heroId !== heroId) throw new PlayerCommandError('FORBIDDEN');
-    if (aggregate !== kinds[0]) throw new PlayerCommandError('AGGREGATE_MISMATCH');
+    if (aggregate !== playerCommandAggregate(command.type))
+      throw new PlayerCommandError('AGGREGATE_MISMATCH');
     const revisionRule = PLAYER_COMMAND_REVISION[command.type];
     if (
       revisionRule === 'aggregate' &&
@@ -145,7 +147,7 @@ export class PlayerCommandService {
 
     const devGrantAllowed = e2eFixturesEnabled();
     const guarded =
-      kinds.includes('inventory') ||
+      (command.type !== 'KNOWLEDGE' && kinds.includes('inventory')) ||
       command.type === 'DEV_SET_HEALTH' ||
       command.type === 'SHOP_REFRESH';
     const expeditionId = guarded ? await ensureExpedition(this.db, userId, heroId) : null;

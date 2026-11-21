@@ -6,7 +6,7 @@ import {
   battleItemOfHexobject,
   hexobjectOfBattleItem,
 } from '../battle/battle-catalogue';
-import type { BattleCreature, BattleState } from '../battle/battle-state';
+import type { BattleCreature, BattleEquipment, BattleState } from '../battle/battle-state';
 import { battlefieldSeed, generateBattlefield, type Battlefield } from '../battle/battlefield';
 import {
   approachDirection,
@@ -28,14 +28,17 @@ export interface HeroLoadout {
   id: string;
   hearts: number;
   maxHearts?: number;
-  weapon: string | null;
-  shield: string | null;
-  bag: string[];
+  weapon: BattleEquipment | null;
+  shield: BattleEquipment | null;
+  bag: BattleEquipment[];
+  equipment?: BattleEquipment[];
 }
 
-function itemFrom(hexobjectKey: string | null) {
-  const key = hexobjectKey ? battleItemOfHexobject(hexobjectKey) : null;
-  return key ? battleItem(key) : null;
+function itemFrom(source: BattleEquipment | null) {
+  const key = source ? battleItemOfHexobject(source.key) : null;
+  return key
+    ? { ...battleItem(key), ...(source?.token ? { token: structuredClone(source.token) } : {}) }
+    : null;
 }
 
 export function heroBattleCreature(loadout: HeroLoadout): BattleCreature {
@@ -53,6 +56,7 @@ export function heroBattleCreature(loadout: HeroLoadout): BattleCreature {
     force: def.force,
     hands: { right: itemFrom(loadout.weapon), left: itemFrom(loadout.shield) },
     bag: loadout.bag.map(itemFrom).filter((item) => item !== null),
+    ...(loadout.equipment ? { equipment: structuredClone(loadout.equipment) } : {}),
   };
 }
 
@@ -62,8 +66,8 @@ export function withInventoryLoadout(
 ): BattleCreature {
   if (!inventory || inventory.heroId !== creature.id) return creature;
   const loadout = loadoutFromInventory(inventory, creature.hp / 2, creature.maxHp / 2);
-  const { hands, bag } = heroBattleCreature(loadout);
-  return { ...creature, hands, bag };
+  const { hands, bag, equipment } = heroBattleCreature(loadout);
+  return { ...creature, hands, bag, equipment };
 }
 
 export interface SquadBattlePlan {

@@ -10,6 +10,7 @@ import { HEXOBJECT_KEYS } from './hexobjects-registry';
 import { THeroToolKey } from '../content/equipment.content';
 import { objectActionDestination } from '../map/object-transition';
 import { toolActionOf, toolWearOf } from '../tokens/tool-action';
+import { harvestBonusFor } from '../tokens/equipment/harvest-bonus';
 
 export type StartResult = { ok: true; endsAt: number } | { ok: false; message: string };
 
@@ -94,6 +95,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     tile.pendingAction = {
       type: EHexActionType.CUT,
+      harvestBonus: harvestBonusFor(tool, EHexActionType.CUT, ctx),
       startedAt: now,
       endsAt,
       hexobjectKey: obj.hexobjectKey,
@@ -147,6 +149,7 @@ export const ACTION_STARTERS: Record<EHexActionType, ActionStarter> = {
 
     tile.pendingAction = {
       type: EHexActionType.MINE,
+      harvestBonus: harvestBonusFor(tool, EHexActionType.MINE, ctx),
       startedAt: now,
       endsAt,
       hexobjectKey: obj.hexobjectKey,

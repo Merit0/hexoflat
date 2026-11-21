@@ -1,3 +1,4 @@
+import { heroFogRadius } from '../map/hero-fog';
 import { revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { closePortalIfOpen } from '../portal/apply-portal';
 import type { BoardKind } from '../registry/board-kind';
@@ -37,7 +38,7 @@ export function respawnWorld(run: TravelRun): TravelOutcome {
   const touched = removeClosedPortals(closure, [origin, destination], run);
 
   destination.heroCoordinates = destination.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 };
-  revealAroundHero(destination.map, destination.heroCoordinates);
+  revealAroundHero(destination.map, destination.heroCoordinates, heroFogRadius(run.inventory));
   revealEntryTile(destination.map);
 
   progress.health.current = RESPAWN_HEARTS;

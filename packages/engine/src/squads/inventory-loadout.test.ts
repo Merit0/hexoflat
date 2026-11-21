@@ -48,9 +48,9 @@ describe('loadoutFromInventory', () => {
       id: HERO,
       hearts: 3,
       maxHearts: 4,
-      weapon: HEXOBJECT_KEYS.SWORD,
-      shield: HEXOBJECT_KEYS.SHIELD,
-      bag: [POTION, POTION],
+      weapon: { key: HEXOBJECT_KEYS.SWORD },
+      shield: { key: HEXOBJECT_KEYS.SHIELD },
+      bag: [{ key: POTION }, { key: POTION }],
     });
   });
 

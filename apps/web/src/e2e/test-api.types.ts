@@ -128,9 +128,48 @@ export interface TestChest {
   state: 'full' | 'empty';
 }
 
+export interface TestFogTile {
+  coordinates: TestHexCoordinates;
+  distance: number;
+  revealed: boolean;
+}
+
 export interface HexoflatTestApi {
+  prepareShieldStrike(openDirections?: boolean): Promise<void>;
+  prepareTrophyTarget(): Promise<void>;
+  prepareCritTarget(): Promise<void>;
+  getLastBattleStrike(): {
+    critical: boolean;
+    damageBeforeBlock: number;
+    damageDealt: number;
+  } | null;
+  getBattleTrophy(): {
+    corpses: { id: string; bonus: number }[];
+    items: {
+      hex: { q: number; r: number };
+      itemKey: string;
+      amount: number;
+      token?: TestItemToken;
+    }[];
+  } | null;
+  getHarvest(): {
+    wood: number;
+    stone: number;
+    counts: Partial<Record<string, number>>;
+    pending: (TestHexCoordinates & { type: string; bonus: number })[];
+  };
+  grantWillToken(bonus: number, mapTier?: TestTokenSpec['mapTier']): Promise<TestItemToken>;
+  grantLegacyDeftHandsToken(bonus: number): Promise<TestItemToken>;
+  grantLegacySightToken(bonus: number): Promise<TestItemToken>;
+  grantLegacySmartStepToken(every: number): Promise<TestItemToken>;
+  grantLegacyWisdomToken(bonus: number, legacyKey?: boolean): Promise<TestItemToken>;
+  getPaidSteps(): number;
+  findWorldStep(): TestHexCoordinates | null;
+  getFogTiles(center: TestHexCoordinates): TestFogTile[];
+  findFogStep(): TestHexCoordinates | null;
   getKnowledge(): {
     current: number;
+    capacity: number;
     status: string | null;
     index: number;
     options: number[];
@@ -166,6 +205,7 @@ export interface HexoflatTestApi {
   getInventoryItemKeys(): string[];
 
   getInventoryItemIdByKey(key: string): string | null;
+  getInventoryItemIdByTokenId(tokenId: string): string | null;
 
   getGridSize(): TestGridSize;
 
@@ -197,6 +237,7 @@ export interface HexoflatTestApi {
   isBattleEngaged(): boolean;
   finishBattle(outcome: 'victory' | 'defeat'): Promise<void>;
   giveHeroTheTurn(will?: number): Promise<void>;
+  openBattleTask(): Promise<number>;
   getBattleHands(): {
     right: string | null;
     left: string | null;

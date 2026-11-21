@@ -4,14 +4,11 @@ import {
   type ContainerState,
   type SpaceApplied,
 } from '../containers';
-import { lootTableOf } from '../content/loot-tables.content';
 import { applySpreadPlan, lootNeighbours } from '../loot';
-import { rollContainerContents } from '../containers/create-container';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { withToken } from '../tokens/token-entry';
 import { isAlive, isFreeHex } from './battle-board';
 import type { BattleCreature, BattleHex, BattleState, CollectState, Grave } from './battle-state';
-import { graveLootSource, graveTokenSource } from './grave-token-source';
+import { createGraveContainer } from './grave-contents';
 import { hexKey, sameHex } from './hex-battle-geom';
 
 export type GraveCommandRefusal = 'BATTLE_ENDED' | 'NOT_YOUR_TURN';
@@ -55,13 +52,7 @@ export function graveSpace(): ContainerSpace<BattleState, BattleHex, GraveComman
     },
     neighbours: (state, container) => lootNeighbours(container.at, (hex) => isFreeHex(state, hex)),
     rollContents: (state, container) =>
-      rollContainerContents({
-        kind: 'grave',
-        tables: graveOf(state, container.at)!.tables.map((id) => lootTableOf(id)),
-        ...graveLootSource(state, hexKey(container.at)),
-        origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
-        tokenSource: graveTokenSource(state),
-      }),
+      createGraveContainer(state, graveOf(state, container.at)!).contents!,
     apply: (state, actorId, container, outcome, bag): SpaceApplied => {
       const actor = creatureOf(state, actorId);
       const grave = graveOf(state, container.at)!;

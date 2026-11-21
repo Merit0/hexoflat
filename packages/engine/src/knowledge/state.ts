@@ -36,6 +36,7 @@ export const hallSessionSchema = z
     correct: z.number().int().nonnegative(),
     earned: z.number().int().nonnegative(),
     lastAward: z.number().int().nonnegative(),
+    lastFast: z.boolean().optional(),
     recent: z.array(z.string()).max(16),
   })
   .refine(

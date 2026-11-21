@@ -89,7 +89,7 @@
         <div v-if="active.status === 'feedback'" role="status" aria-live="polite">
           <p v-if="hall && hall.lastAward > 0" class="gain" data-testid="knowledge-gain">
             {{ t('knowledge.gain', { will: hall.lastAward }) }}
-            <span v-if="hall.lastAward > 1">· {{ t('knowledge.fastBonus') }}</span>
+            <span v-if="hall.lastFast">· {{ t('knowledge.fastBonus') }}</span>
           </p>
           <p v-else-if="selectedAnswer === question.answer">{{ t('knowledge.correct') }}</p>
           <p v-else>{{ t('knowledge.wrong') }}</p>

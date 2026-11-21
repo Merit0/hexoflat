@@ -1,7 +1,10 @@
 import {
   flattenTextTree,
+  formatTokenAttributes,
   formatTokenDescription,
   formatTokenName,
+  withAdjectiveTexts,
+  type TokenAttributeRow,
   type TokenDictionary,
 } from '@hexoflat/engine/tokens/factory/format-token';
 import { getMeta } from '@hexoflat/engine';
@@ -19,7 +22,10 @@ function messagesOf(locale: string): Record<string, string> {
 export function tokenDictionary(locale: string): TokenDictionary {
   const cached = dictionaries.get(locale);
   if (cached) return cached;
-  const dictionary = { ...messagesOf(FALLBACK_LOCALE), ...messagesOf(locale) };
+  const dictionary = withAdjectiveTexts(
+    { ...messagesOf(FALLBACK_LOCALE), ...messagesOf(locale) },
+    locale,
+  );
   dictionaries.set(locale, dictionary);
   return dictionary;
 }
@@ -34,6 +40,13 @@ export function tokenName(token: ItemToken, locale = currentTokenLocale()): stri
 
 export function tokenDescription(token: ItemToken, locale = currentTokenLocale()): string[] {
   return formatTokenDescription(token.description, tokenDictionary(locale));
+}
+
+export function tokenAttributeRows(
+  token: ItemToken,
+  locale = currentTokenLocale(),
+): TokenAttributeRow[] {
+  return formatTokenAttributes(token, tokenDictionary(locale));
 }
 
 export function itemTitle(

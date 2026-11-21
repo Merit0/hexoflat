@@ -1,4 +1,6 @@
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ADJECTIVE_BANDS } from '../tokens/equipment/equipment-keys';
+import { adjectivesForType } from '../tokens/factory/name-generator';
 import { hasGeneratedName, tokenPriceRangesSchema } from '../tokens/token-content-schema';
 import { wordKeyOf } from '../tokens/token-keys';
 import { attributeFailure } from '../tokens/attribute-rules';
@@ -12,7 +14,7 @@ import {
   type TokenContent,
 } from './token-content';
 
-export const TOKEN_NAME_MIN_COMBINATIONS = 1000;
+const UNIQUE_CHECK = { origin: 'unique' } as const;
 
 function registriesOf(content: TokenContent) {
   try {
@@ -53,8 +55,9 @@ export function uniqueContentFailures(
       failures.push(`unique ${unique.key} names unknown type ${unique.type}`);
       continue;
     }
+    const type = registries.types.get(unique.type);
     for (const attribute of unique.attributes) {
-      const failure = attributeFailure(registries.attributes, unique.type, attribute);
+      const failure = attributeFailure(registries.attributes, type, attribute, UNIQUE_CHECK, 1);
       if (failure) failures.push(`unique ${unique.key}: ${failure}`);
     }
   }
@@ -64,14 +67,8 @@ export function uniqueContentFailures(
 export function tokenContentFailures(content: TokenContent = TOKEN_CONTENT): string[] {
   const built = registriesOf(content);
   if (!built.ok) return [built.message, ...priceFailures(content)];
-  const { types, attributes, words } = built.registries;
+  const { types } = built.registries;
   const failures: string[] = [];
-
-  for (const attribute of attributes.all()) {
-    for (const type of attribute.allowedTypes ?? []) {
-      if (!types.has(type)) failures.push(`attribute ${attribute.key} names unknown type ${type}`);
-    }
-  }
 
   for (const type of types.all()) {
     if (type.nounKey !== wordKeyOf('noun', type.key)) {
@@ -79,15 +76,15 @@ export function tokenContentFailures(content: TokenContent = TOKEN_CONTENT): str
         `type ${type.key} has noun key ${type.nounKey}, expected ${wordKeyOf('noun', type.key)}`,
       );
     }
+    if (!type.group || !type.gender || !type.materials) {
+      failures.push(`type ${type.key} needs a group, a gender and materials`);
+    }
   }
 
   for (const type of types.all().filter(hasGeneratedName)) {
-    for (const realm of type.realms) {
-      const count = words.combinations(realm);
-      if (count < TOKEN_NAME_MIN_COMBINATIONS) {
-        failures.push(
-          `${realm}+${type.key} has ${count} name combinations, needs ${TOKEN_NAME_MIN_COMBINATIONS}`,
-        );
+    for (const band of ADJECTIVE_BANDS) {
+      if (adjectivesForType(type, band, content.adjectives).length === 0) {
+        failures.push(`type ${type.key} has no ${band} adjective`);
       }
     }
   }

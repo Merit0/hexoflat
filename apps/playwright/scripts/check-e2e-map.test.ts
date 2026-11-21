@@ -26,6 +26,19 @@ describe('checkE2EMap', () => {
     expect(checkE2EMap(good, map, {}).problems).toEqual([]);
   });
 
+  it('keeps slow specs in their original functional group', () => {
+    expect(
+      checkE2EMap([test('e2e/slow/board/a.spec.ts', ['@board']), good[1] as ListedTest], map, {})
+        .problems,
+    ).toEqual([]);
+  });
+
+  it('still requires the functional group tag on slow tests', () => {
+    expect(
+      checkE2EMap([...good, test('e2e/slow/hero/slow.spec.ts', ['@board'])], map, {}).problems,
+    ).toEqual(['e2e/slow/hero/slow.spec.ts: "a test" is missing its primary tag @hero']);
+  });
+
   it('accepts @smoke and a known extra group tag next to the primary tag', () => {
     const tests = [
       test('e2e/board/a.spec.ts', ['@board', '@smoke', '@hero']),

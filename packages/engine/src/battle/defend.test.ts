@@ -1,3 +1,4 @@
+import { upcastToken } from '../inventory/upcast-item-tokens';
 import { describe, expect, it } from 'vitest';
 import { BATTLE_RULES } from './battle-content';
 import type { BattleState } from './battle-state';
@@ -46,6 +47,10 @@ describe('REQ-BTL-006 block window', () => {
 
   it('lets the enemy choose from where to strike once the shields are down, and blocks the shielded side', () => {
     let battle = heroUnderAttack();
+    battle.creatures.find((creature) => creature.side === 'heroes')!.hands.left!.token = {
+      ...upcastToken('hero', 'block', 'shield')!,
+      attributes: [{ key: 'shield', value: 1 }],
+    };
     battle = heroDoes(battle, { kind: 'place-shield', hex: EAST }).battle;
     battle = heroDoes(battle, { kind: 'place-shield', hex: WEST }).battle;
     const done = heroDoes(battle, { kind: 'reaction-timeout' });
@@ -68,6 +73,10 @@ describe('REQ-BTL-006 block window', () => {
 
   it('lets a strike from an unshielded side through, and the enemy walks there', () => {
     let battle = heroUnderAttack();
+    battle.creatures.find((creature) => creature.side === 'heroes')!.hands.left!.token = {
+      ...upcastToken('hero', 'block', 'shield')!,
+      attributes: [{ key: 'shield', value: 1 }],
+    };
     battle = heroDoes(battle, { kind: 'place-shield', hex: EAST }).battle;
     const aiming = heroDoes(battle, { kind: 'reaction-timeout' }).battle;
     const { battle: after, events } = aimAt(aiming, SOUTH);
@@ -107,6 +116,10 @@ describe('REQ-BTL-006 block window', () => {
 
   it('caps shields at the capacity of the shield in hand', () => {
     let battle = heroUnderAttack();
+    battle.creatures.find((creature) => creature.side === 'heroes')!.hands.left!.token = {
+      ...upcastToken('hero', 'block', 'shield')!,
+      attributes: [{ key: 'shield', value: 1 }],
+    };
     battle = heroDoes(battle, { kind: 'place-shield', hex: EAST }).battle;
     battle = heroDoes(battle, { kind: 'place-shield', hex: SOUTH }).battle;
     expect(rejectionOf(heroDoes(battle, { kind: 'place-shield', hex: WEST }).events)).toBe(

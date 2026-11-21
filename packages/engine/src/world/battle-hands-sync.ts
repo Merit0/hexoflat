@@ -19,8 +19,14 @@ function freeBagCell(inventory: InventoryState): number {
   return inventory.bag.findIndex((cell) => cell === null);
 }
 
-function takeFromBag(inventory: InventoryState, key: THexobjectKey): InventoryStateItem | null {
-  const index = inventory.bag.findIndex((cell) => cell?.key === key);
+function takeFromBag(
+  inventory: InventoryState,
+  key: THexobjectKey,
+  tokenId?: string,
+): InventoryStateItem | null {
+  const index = inventory.bag.findIndex(
+    (cell) => cell?.key === key && (!tokenId || cell.token?.id === tokenId),
+  );
   if (index < 0) return null;
   const cell = inventory.bag[index]!;
   if (cell.amount <= 1) {
@@ -31,39 +37,50 @@ function takeFromBag(inventory: InventoryState, key: THexobjectKey): InventorySt
   return mintItem(inventory, key, 1);
 }
 
-function placeHand(inventory: InventoryState, slot: TEquipSlot, wanted: THexobjectKey | null) {
-  const current = inventory.equip[slot];
-  if (wanted === null) {
-    if (!current) return true;
-    const free = freeBagCell(inventory);
-    if (free < 0) return false;
-    inventory.bag[free] = current;
-    inventory.equip[slot] = null;
-    return true;
-  }
-  if (current?.key === wanted) return true;
-  const incoming = takeFromBag(inventory, wanted);
-  if (!incoming) return false;
-  inventory.equip[slot] = incoming;
-  if (!current) return true;
-  const free = freeBagCell(inventory);
-  if (free < 0) return false;
-  inventory.bag[free] = current;
-  return true;
-}
-
 export function syncHandsToInventory(
   inventory: InventoryState,
   before: BattleCreature,
   after: BattleCreature,
 ): InventoryState | null {
   const next = structuredClone(inventory);
-  let changed = false;
-  for (const hand of Object.keys(SLOT_OF_HAND) as BattleHand[]) {
-    if ((before.hands[hand]?.key ?? null) === (after.hands[hand]?.key ?? null)) continue;
-    if (!placeHand(next, SLOT_OF_HAND[hand], handItemKey(after, hand))) return null;
-    changed = true;
+  const changed = (Object.keys(SLOT_OF_HAND) as BattleHand[]).filter(
+    (hand) =>
+      (before.hands[hand]?.key ?? null) !== (after.hands[hand]?.key ?? null) ||
+      before.hands[hand]?.token?.id !== after.hands[hand]?.token?.id,
+  );
+  const stowed: InventoryStateItem[] = [];
+  for (const hand of changed) {
+    const slot = SLOT_OF_HAND[hand];
+    const outgoing = next.equip[slot];
+    if (outgoing) stowed.push(outgoing);
+    next.equip[slot] = null;
   }
-  if (changed) next.revision += 1;
+  for (const hand of changed) {
+    const key = handItemKey(after, hand);
+    if (!key) continue;
+    const tokenId = after.hands[hand]?.token?.id;
+    const held = stowed.findIndex(
+      (item) => item.key === key && (!tokenId || item.token?.id === tokenId),
+    );
+    const incoming = held >= 0 ? stowed.splice(held, 1)[0] : takeFromBag(next, key, tokenId);
+    if (!incoming) return null;
+    next.equip[SLOT_OF_HAND[hand]] = incoming;
+  }
+  for (const item of stowed) {
+    const free = freeBagCell(next);
+    if (free < 0) return null;
+    next.bag[free] = item;
+  }
+  if (changed.length > 0) next.revision += 1;
   return next;
+}
+
+export function restoreHandTokens(creature: BattleCreature, inventory: InventoryState): void {
+  for (const hand of Object.keys(SLOT_OF_HAND) as BattleHand[]) {
+    const item = creature.hands[hand];
+    if (!item) continue;
+    const token = inventory.equip[SLOT_OF_HAND[hand]]?.token;
+    if (token) item.token = structuredClone(token);
+    else delete item.token;
+  }
 }

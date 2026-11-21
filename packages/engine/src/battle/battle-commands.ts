@@ -23,6 +23,9 @@ export const battleActionSchema = z.discriminatedUnion('kind', [
     kind: z.literal('set-hands'),
     right: z.string().min(1).nullable(),
     left: z.string().min(1).nullable(),
+    tokenIds: z
+      .object({ right: z.string().min(1).nullable(), left: z.string().min(1).nullable() })
+      .optional(),
   }),
   z.object({ kind: z.literal('end-turn') }),
   z.object({ kind: z.literal('loot-grave'), hex: axialSchema }),

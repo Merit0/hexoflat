@@ -1,6 +1,7 @@
+import { CRIT_RESOLVERS } from '@hexoflat/engine/battle/crit-resolver';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { CONTENT, TRADERS, tokenLocaleKeys } from '@hexoflat/engine';
+import { CONTENT, TRADERS, equipmentLocaleKeys, tokenLocaleKeys } from '@hexoflat/engine';
 import { SKILL_BRANCHES, SKILL_IDS } from '@hexoflat/engine/skills/skill-content';
 import {
   BATTLE_CREATURES,
@@ -70,7 +71,10 @@ export function collectContentLocaleKeys(): string[] {
     keys.add(def.tableRule);
   }
 
+  for (const resolver of CRIT_RESOLVERS) keys.add(resolver.describe(0).key);
+
   for (const key of tokenLocaleKeys()) keys.add(key);
+  for (const key of equipmentLocaleKeys()) keys.add(key);
 
   return [...keys].sort();
 }

@@ -207,6 +207,12 @@ export class HeroInventoryComponent extends BaseComponent {
     await expect(this.page.getByTestId('item-tooltip-title')).toHaveText(title);
   }
 
+  async verifyTooltipAttributeLabel(label: RegExp): Promise<void> {
+    await expect(
+      this.page.getByTestId('item-tooltip-attribute').filter({ hasText: label }),
+    ).toBeVisible();
+  }
+
   async readGridItemLook(itemId: string): Promise<BagItemLook> {
     await this.hoverGridItem(itemId);
     await expect(this.tooltip).toBeVisible();

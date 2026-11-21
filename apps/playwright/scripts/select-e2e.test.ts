@@ -66,6 +66,19 @@ const graph: DepGraph = {
 const select = (...files: string[]) => selectE2E(files, map, graph);
 
 describe('selectE2E', () => {
+  it('selects the original group for slow specs and their feature dependencies', () => {
+    const spec = 'apps/playwright/e2e/slow/hero/quest-seeker.spec.ts';
+    const feature = 'apps/playwright/src/features/world/quest-run.feature.ts';
+    const deps = { [spec]: [feature], [feature]: [] };
+    for (const file of [spec, feature]) {
+      expect(selectE2E([file], realMap, deps)).toMatchObject({
+        mode: 'groups',
+        groups: ['hero'],
+        grep: '@hero',
+      });
+    }
+  });
+
   it('skips e2e when only markdown, docs and unit tests changed', () => {
     const result = select('README.md', 'docs/e2e/plan.md', 'apps/web/src/render/fog-look.test.ts');
     expect(result.mode).toBe('none');

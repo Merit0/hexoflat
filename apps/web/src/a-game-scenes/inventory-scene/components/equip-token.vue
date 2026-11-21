@@ -63,6 +63,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { useHeroToolStore } from '@/stores/hero-tool-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { activateBattleHand } from '@/composables/use-battle-view';
+import { collectHero } from '@/composables/battle-collect';
 import { useActiveMapContext } from '@/composables/use-active-map-context';
 import { useOverlayStore } from '@/stores/overlay-store';
 import { THeroToolKey } from '@hexoflat/engine/content/equipment.content';
@@ -123,7 +124,13 @@ function resolveToolType(): THeroToolKey | null {
 }
 
 const blockedInBattle = computed(
-  () => battleStore.isOpen && !battleItemOfHexobject(props.item.key),
+  () =>
+    battleStore.isOpen &&
+    !(
+      props.item.key === HEXOBJECT_KEYS.HAND &&
+      collectHero(battleStore.projection, battleStore.localHeroIds)
+    ) &&
+    !battleItemOfHexobject(props.item.key),
 );
 
 function useToolToken() {
@@ -145,7 +152,7 @@ function useToolToken() {
   const heroCoords = activeMap.value.heroPosition;
   if (!heroCoords) return;
 
-  heroToolStore.useTool(toolType, heroCoords);
+  heroToolStore.useTool(toolType, heroCoords, null, props.item.id);
   overlayStore.closeOverlay();
 }
 

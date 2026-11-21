@@ -1,14 +1,13 @@
 import type { DomainEvent } from '../commands/types';
 import type { BattleRules } from './battle-content';
 import type { BattleCreature, BattleHex, BattleState, PendingStrike } from './battle-state';
+import { battleShieldSides } from './shield-stats';
 import { sameHex } from './hex-battle-geom';
 import { reject, type BattleRejection } from './battle-rejection';
 import { aimTimeout, finishBlock } from './reaction';
 
 export function shieldCapacity(creature: BattleCreature, rules: BattleRules): number {
-  const total =
-    (creature.hands.right?.shieldCapacity ?? 0) + (creature.hands.left?.shieldCapacity ?? 0);
-  return Math.min(rules.maxShieldSides, total);
+  return Math.min(rules.maxShieldSides, battleShieldSides(creature));
 }
 
 export function strikesOn(state: BattleState, creatureId: string): PendingStrike[] {

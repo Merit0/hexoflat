@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { TOKEN_ATTRIBUTES } from '../content/token-attributes.content';
+import { EQUIPMENT_ATTRIBUTES } from '../content/equipment-attributes.content';
 import { gameTokenFactory, isTokenType, tokenSourceIdOf } from './game-tokens';
 import type { TokenResult } from './factory/token-generation';
 import { baseRealmSchema, itemTypeKeySchema, mapTierSchema } from './token-keys';
 import { tokenAttributeSchema, type ItemToken } from './token-schema';
 
-const ATTRIBUTE_KEYS: ReadonlySet<string> = new Set(TOKEN_ATTRIBUTES.map((entry) => entry.key));
+const ATTRIBUTE_KEYS: ReadonlySet<string> = new Set(EQUIPMENT_ATTRIBUTES.map((entry) => entry.key));
 
 export const tokenSpecSchema = z.strictObject({
   type: itemTypeKeySchema.refine(isTokenType, 'not an item token type'),

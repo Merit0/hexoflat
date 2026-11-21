@@ -5,8 +5,8 @@ import { emptyProgressState, progressStateSchema } from './progress-state';
 const HERO = 'hero-1';
 
 describe('progress.ownedUniques (LG5a)', () => {
-  it('declares progress schema version 10 and starts a new hero with no uniques', () => {
-    expect(AGGREGATES.progress.schemaVersion).toBe(10);
+  it('declares progress schema version 11 and starts a new hero with no uniques', () => {
+    expect(AGGREGATES.progress.schemaVersion).toBe(11);
     expect(emptyProgressState(HERO).ownedUniques).toEqual([]);
   });
 

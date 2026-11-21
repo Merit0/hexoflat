@@ -11,6 +11,7 @@ export type ActionMessageTone = 'warn' | 'info' | 'success';
 
 interface HeroToolState {
   activeTool: THeroToolKey | null;
+  activeItemId: string | null;
   isDragging: boolean;
   origin: IHexCoordinates | null;
   hover: IHexCoordinates | null;
@@ -34,6 +35,7 @@ interface HeroToolState {
 export const useHeroToolStore = defineStore('heroTool', {
   state: (): HeroToolState & { allowedKeys: string[] } => ({
     activeTool: HEXOBJECT_KEYS.HAND,
+    activeItemId: null,
     isDragging: false,
     origin: null,
     hover: null,
@@ -67,9 +69,11 @@ export const useHeroToolStore = defineStore('heroTool', {
       tool: THeroToolKey,
       heroCoords: IHexCoordinates,
       preferredHover?: IHexCoordinates | null,
+      itemId: string | null = null,
     ) {
       if (this.isLocked) return;
       this.activeTool = tool;
+      this.activeItemId = itemId;
       this.isDragging = true;
       this.origin = { ...heroCoords };
       this.hover = null;
@@ -127,6 +131,7 @@ export const useHeroToolStore = defineStore('heroTool', {
 
     stopTool() {
       this.activeTool = null;
+      this.activeItemId = null;
       this.isDragging = false;
       this.origin = null;
       this.hover = null;

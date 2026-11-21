@@ -4,13 +4,14 @@ import {
   type TokenContent,
 } from '../../content/token-content';
 import { TOKEN_UNIQUES } from '../../content/token-uniques.content';
+import { attributeProfilesSchema } from '../equipment/attribute-profile-schema';
+import { createEquipmentAttributeGenerator } from '../equipment/generator/create-equipment-attribute-generator';
 import type { SpriteManifest } from '../sprite-files';
 import type { UniqueTokenDefinition } from '../unique-schema';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
 import { ManifestSpriteRegistry } from '../sprite-registry';
-import { WeightedAttributeGenerator } from './attribute-generator';
 import { SpecSheetDescriptionBuilder } from './description-builder';
-import { WordPoolNameGenerator } from './name-generator';
+import { AdjectiveNameGenerator } from './name-generator';
 import { RangePriceGenerator } from './price-generator';
 import { EmptySkillGenerator } from './skill-generator';
 import { ManifestSpriteResolver } from './sprite-resolver';
@@ -25,20 +26,21 @@ export function createTokenFactory(
   uniqueDefinitions: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
   steps: Partial<Omit<TokenFactoryParts, 'validator'>> = {},
 ): TokenFactory {
-  const { types, attributes, words, uniques } = createTokenRegistries(content, uniqueDefinitions);
-  validateFactoryContent({ types, attributes, words, uniques });
+  const profiles = attributeProfilesSchema.parse(content.profiles);
+  const { types, attributes, uniques } = createTokenRegistries(content, uniqueDefinitions);
+  validateFactoryContent({ types, attributes, uniques, content });
   const spriteResolver = new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest));
   return new TokenFactory(
     {
       typePicker: new RealmTypePicker(types),
-      nameGenerator: new WordPoolNameGenerator(words),
+      nameGenerator: new AdjectiveNameGenerator(content.adjectives),
       spriteResolver,
-      attributeGenerator: new WeightedAttributeGenerator(attributes),
+      attributeGenerator: createEquipmentAttributeGenerator(content.attributes, profiles),
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(content.priceRanges),
-      descriptionBuilder: new SpecSheetDescriptionBuilder(attributes),
+      descriptionBuilder: new SpecSheetDescriptionBuilder(),
       ...steps,
-      validator: new ZodTokenValidator(types, attributes),
+      validator: new ZodTokenValidator(types, attributes, profiles),
     },
     { types, uniques, spriteResolver },
   );

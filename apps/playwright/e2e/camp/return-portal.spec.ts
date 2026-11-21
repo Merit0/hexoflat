@@ -6,10 +6,6 @@ test.describe('return portal', { tag: ['@camp'] }, () => {
     await new VerifyReturnPortalFeature().verifyRoundTripThroughThePortals();
   });
 
-  test('Leaving the camp by its own gate removes both portals', async () => {
-    await new VerifyReturnPortalFeature().verifyLeavingByTheGateClosesThePair();
-  });
-
   test('A scroll without the Teleport skill refuses: only Angels can fly', async () => {
     await new VerifyReturnPortalFeature().verifyScrollRefusedWithoutTeleportSkill();
   });

@@ -36,6 +36,15 @@ describe('initFog', () => {
 });
 
 describe('revealAroundHero', () => {
+  it('A01 characterization: reveals seven tiles at the center and reports them again on a repeated reveal', () => {
+    const map = buildMap(9, 9);
+    const hero = { columnIndex: 4, rowIndex: 4 };
+    const first = revealAroundHero(map, hero);
+    expect(first).toHaveLength(7);
+    expect(revealAroundHero(map, hero)).toEqual(first);
+    expect(map.tiles.filter((tile) => tile.isRevealed)).toHaveLength(7);
+  });
+
   it('reveals the hero tile and its neighbours, and nothing else', () => {
     const map = buildMap();
     const hero = { columnIndex: 2, rowIndex: 2 };

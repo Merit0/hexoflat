@@ -11,7 +11,7 @@ import {
 import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
 import { RARITY_COLOR, getObjectRarity, getObjectRarityTone } from '@/render/rarity';
 import { tokenRarityTone } from '@/render/token-look';
-import { tokenDescription, tokenName } from '@/services/tokens/token-text';
+import { tokenAttributeRows, tokenDescription, tokenName } from '@/services/tokens/token-text';
 import { tokenHeartPoints } from '@hexoflat/engine/combat/heart-points';
 import { strikeHeartsOf } from '@hexoflat/engine/tokens/tool-action';
 import { ITEM_ICON_BY_KEY, type TIconName } from '@/components/gui/icons/item-icons';
@@ -363,7 +363,10 @@ export function buildHexInfo(
     kind: groupLabel,
     subtitle: meta.subtitle ? localize(ctx, meta.subtitle) : null,
     description: token
-      ? tokenDescription(token).join(' · ')
+      ? [
+          ...tokenDescription(token),
+          ...tokenAttributeRows(token).map((row) => `${row.label} ${row.value}`),
+        ].join(' · ')
       : obj.description
         ? localize(ctx, obj.description)
         : null,

@@ -1,3 +1,5 @@
+import { usePriceFor } from '../inventory/use-price';
+import { battleHeroStats } from './hero-stats';
 import type { DomainEvent } from '../commands/types';
 import type { RandomNumberGenerator } from '../utils/random';
 import { deriveStream } from '../utils/random-seeded';
@@ -40,7 +42,7 @@ export function heroBotAction(view: BattleProjection, rules: BattleRules): Battl
   const aim = aimAction(view, self, rules);
   if (aim) return aim;
   const potionHand = (['right', 'left'] as BattleHand[]).find((h) => self.hands[h]?.usePrice);
-  const potionPrice = potionHand ? self.hands[potionHand]!.usePrice! : 0;
+  const potionPrice = potionHand ? usePriceFor(self.hands[potionHand]!, battleHeroStats(self)) : 0;
   if (view.phase === 'act' && potionHand && self.hp <= 2 && view.turnWill >= potionPrice) {
     return { kind: 'use-item', hand: potionHand };
   }

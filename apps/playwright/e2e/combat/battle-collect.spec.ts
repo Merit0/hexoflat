@@ -5,6 +5,14 @@ import { RenderHealthFeature } from '@features/world/render-health.feature';
 import { HexobjectKeys } from '@config/test-data';
 
 test.describe('battle collection phase', { tag: ['@combat'] }, () => {
+  for (const via of ['wheel', 'inventory'] as const) {
+    test(`Verify Hero tool hex can be activated after killing all enemies using ${via === 'wheel' ? 'mouse scroll' : 'inventory USE action'}`, async () => {
+      const collect = new BattleCollectFeature();
+      await collect.winTheBattle();
+      await collect.verifyToolActivationAfterVictory(via);
+    });
+  }
+
   test('Verify a won battle leaves graves, the hand looks through them and picks the loot up, then the hero leaves', async () => {
     const collect = new BattleCollectFeature();
 

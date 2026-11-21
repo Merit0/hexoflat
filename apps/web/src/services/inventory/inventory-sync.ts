@@ -89,6 +89,12 @@ export function bindKillsListener(listener: typeof killsListener): void {
   killsListener = listener;
 }
 
+let paidStepsListener: ((paidSteps: number) => void) | null = null;
+
+export function bindPaidStepsListener(listener: typeof paidStepsListener): void {
+  paidStepsListener = listener;
+}
+
 export function bindPortalListener(listener: typeof portalListener): void {
   portalListener = listener;
 }
@@ -104,6 +110,7 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
     knowledge?: KnowledgeState;
     presence?: ServerPresence | null;
     steps?: number;
+    paidSteps?: number;
     sealedUntil?: Record<string, number>;
     portal?: PortalLink | null;
     health?: { current: number; bonus: number; debt: number };
@@ -118,6 +125,8 @@ export function applyProgress(projection: ProjectedAggregate | undefined): void 
   inventorySession.knowledge = progress.knowledge ?? null;
   inventorySession.presence = progress.presence ?? null;
   inventorySession.steps = progress.steps ?? 0;
+  inventorySession.paidSteps = progress.paidSteps ?? 0;
+  paidStepsListener?.(inventorySession.paidSteps);
   inventorySession.sealedUntil = progress.sealedUntil ?? {};
   inventorySession.portal = progress.portal ?? null;
   portalListener?.(inventorySession.portal);

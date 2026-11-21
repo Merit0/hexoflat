@@ -19,7 +19,6 @@ export const TOKEN_UNIQUES: readonly UniqueTokenDefinition[] = [
     attributes: [{ key: 'heart', value: 1 }],
     skills: [],
     price: 900,
-    rolled: { attributes: 1 },
     revision: 1,
   },
   {

@@ -1,3 +1,5 @@
+import { SwitchHeroBoardTabFeature } from './switch-hero-board-tab.feature';
+import { UseEquippedToolFeature } from './use-equipped-tool.feature';
 import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
@@ -23,6 +25,35 @@ export class BattleCollectFeature extends BaseFeature {
       await this.collect.waitForCollecting();
       await this.collect.waitForBoardStill();
     });
+  }
+
+  async verifyToolActivationAfterVictory(via: 'wheel' | 'inventory'): Promise<void> {
+    await this.step(
+      `Activate the hero tool through ${via} after all enemies are dead and read a grave`,
+      async () => {
+        const battle = await this.campingMap.hexBoard.readBattleSnapshot();
+        const enemies = battle!.creatures.filter((creature) => creature.side === 'enemies');
+        expect(enemies.length).toBeGreaterThan(0);
+        expect(enemies.every((creature) => creature.hp === 0)).toBe(true);
+        const grave = (await this.collect.read()).graves[0];
+        const stand = await this.collect.clickFirstUncoveredHex(grave.standHexes);
+        await this.collect.verifyHeroStandsAt(stand);
+        await this.collect.waitForBoardStill();
+        await this.collect.verifyToolHidden();
+        if (via === 'wheel') await this.collect.openTheHandTool();
+        else {
+          const tabs = new SwitchHeroBoardTabFeature();
+          await tabs.switchTo('inventory');
+          await new UseEquippedToolFeature().use('hand');
+          await tabs.switchTo('battle');
+        }
+        await this.collect.verifyToolVisible();
+        await this.collect.hoverHex(grave);
+        await this.collect.verifyToolOffers(/^(Read|Читати)$/);
+        await this.collect.pressToolAction();
+        await this.collect.verifyExamined(grave, true);
+      },
+    );
   }
 
   async verifyTheBoardStaysOpenWithGraves(): Promise<void> {

@@ -1,3 +1,4 @@
+import { EquipmentUseComponent } from '@components/equipment-use.component';
 import { KnowledgeBoardComponent } from '@components/knowledge-board.component';
 import { expect } from '@playwright/test';
 import { BasePage } from '@framework/base-page';
@@ -19,6 +20,12 @@ import { QuestBoardComponent } from '@components/quest-board.component';
 import { QuestFieldComponent } from '@components/quest-field.component';
 import { LootBoardComponent } from '@components/loot-board.component';
 import { ActiveBoardComponent } from '@components/active-board.component';
+import { EquipmentFogComponent } from '@components/equipment-fog.component';
+import { EquipmentWillComponent } from '@components/equipment-will.component';
+import { EquipmentSmartStepComponent } from '@components/equipment-smart-step.component';
+import { EquipmentWisdomComponent } from '@components/equipment-wisdom.component';
+import { EquipmentYieldComponent } from '@components/equipment-yield.component';
+import { EquipmentTrophyComponent } from '@components/equipment-trophy.component';
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
@@ -41,6 +48,13 @@ export class CampingMapPage extends BasePage {
   readonly lootBoard = new LootBoardComponent();
   readonly pageErrors = new PageErrorsComponent();
   readonly activeBoard = new ActiveBoardComponent();
+  readonly equipmentFog = new EquipmentFogComponent();
+  readonly equipmentUse = new EquipmentUseComponent();
+  readonly equipmentWill = new EquipmentWillComponent();
+  readonly equipmentSmartStep = new EquipmentSmartStepComponent();
+  readonly equipmentWisdom = new EquipmentWisdomComponent();
+  readonly equipmentYield = new EquipmentYieldComponent();
+  readonly equipmentTrophy = new EquipmentTrophyComponent();
 
   async goto(): Promise<void> {
     await this.page.goto('/world/camping');

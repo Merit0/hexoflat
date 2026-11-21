@@ -1,3 +1,4 @@
+import { heroFogRadius } from '../map/hero-fog';
 import { applyCommand, type HexEngineState } from '../commands/apply-command';
 import type { StartHexActionCommand } from '../commands/hex-engine-commands';
 import type { DomainEvent } from '../commands/types';
@@ -154,7 +155,7 @@ export function stepWorld(
       action: { kind: 'step', target },
     },
   } as PlayerCommand;
-  const paid = executeProgressCommand(progress, stepCommand);
+  const paid = executeProgressCommand(progress, stepCommand, false, run.inventory);
   if (!paid || !paid.ok)
     return refuse(paid && !paid.ok ? paid.code : 'REJECTED', paid?.events ?? []);
 
@@ -163,7 +164,7 @@ export function stepWorld(
     heroCoordinates: { ...target },
     engagement: planning.engagement ?? run.world.engagement,
   };
-  revealAroundHero(world.map, target);
+  revealAroundHero(world.map, target, heroFogRadius(run.inventory));
   return {
     ok: true,
     world,

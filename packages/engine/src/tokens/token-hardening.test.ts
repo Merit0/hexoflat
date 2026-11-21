@@ -107,12 +107,16 @@ describe('token audit regressions', () => {
     ).toBe(true);
   });
 
-  it('refuses fixed unique attributes above the source tier', () => {
+  it('checks fixed unique attributes against the attribute cap, not the source tier', () => {
     const factory = createTokenFactory();
-    expect(factory.createUnique('last-verdict', { ...CONTEXT, ownedUniques: [] }).ok).toBe(false);
     expect(
-      factory.createUnique('last-verdict', { ...CONTEXT, mapTier: 3, ownedUniques: [] }).ok,
+      factory.createUnique('last-verdict', { ...CONTEXT, mapTier: 1, ownedUniques: [] }).ok,
     ).toBe(true);
+    expect(() =>
+      createTokenFactory(TOKEN_CONTENT, undefined, [
+        { ...TOKEN_UNIQUES[0], attributes: [{ key: 'heart', value: 11 }] },
+      ]),
+    ).toThrow(/above the cap 10/);
   });
 
   it('rejects incompatible unique content at construction', () => {

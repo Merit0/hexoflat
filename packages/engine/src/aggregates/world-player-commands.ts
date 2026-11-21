@@ -14,6 +14,7 @@ const clientHint = z
     tool: z
       .object({
         dragging: z.boolean(),
+        itemId: z.string().min(1).max(256).optional(),
         hover: coordinates.strict().nullable(),
         active: z
           .string()

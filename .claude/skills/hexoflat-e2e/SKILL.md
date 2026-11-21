@@ -59,6 +59,17 @@ Run a subset with `sh scripts/pre-push-e2e.sh e2e/<group>/<spec>.spec.ts` (own p
 
 ### Groups and tags
 
+Slow-suite split (2026-11-21): scenarios whose latest successful local Allure run
+exceeded 30 seconds live in `e2e/slow/<group>/`, retaining their functional
+`@<group>` tag. Push runs (`E2E_PRE_PUSH=1`) exclude that folder unless
+`E2E_INCLUDE_SLOW=1`; CI/direct full runs include it. Run the dedicated suite with
+`pnpm test:e2e:slow` (one worker), or a slow spec through
+`E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow/<group>/<spec>.spec.ts`.
+Impact-map globs include both locations and the map checker resolves the
+functional folder below `slow`. Keep faster cases in the regular folder when
+splitting a spec. `E2E_ALL=1` selects all groups but does not override the slow
+exclusion; combine it with `E2E_INCLUDE_SLOW=1` for a full local push run.
+
 Specs live in `e2e/<group>/` (`auth`, `board`, `camp`, `combat`, `hero`, `shell`). Each file wraps its tests in one `test.describe(title, { tag: ['@<group>'] }, ...)`, so the folder and the tag always agree. `@smoke` is an extra tag on single tests (login, hero movement). Run one group with `pnpm --filter @hexoflat/playwright e2e:group @board`.
 
 ### Impact selection (`apps/playwright/impact-map.ts`, `scripts/select-e2e*.ts`)
@@ -190,3 +201,62 @@ Quest pickup refusal feedback (2026-11-16): `useQuestRunActions` sends every ref
 - `VerifyInventoryFeature.givenTokenItem(spec)` (hook `grantTokenItem`, sender `grantTokenFixture` in `inventory-sync.ts`) sends `DEV_GRANT_ITEM` with a token spec `{ type, realm, mapTier, attributes?, price? }`: the server mints the token with `TokenFactory.createBase(ctx, overrides)` and sets the given attributes and price; it is refused (`FORBIDDEN`) unless the API runs with the e2e fixtures flag outside production. It returns the minted token. Use it for gear with a fixed price or fixed attributes; `ShopBoardFeature.givenTokenInBag` / `givenDiscountedToken` (the minted token is passed into `setTrader` goods, so a discount has a whole-coin result).
 - `verifyTraderGoods`/`verifyTraderBuyback` compare cells without `token`; read tokens with `ShopBoardComponent.readGoodsToken`.
 - `shield-max-health.spec.ts`: hearts come only from the `heart` attribute in half-hearts (`NO_ATTRIBUTES` = 0, `ONE_HALF_HEART` = +0.5, so 3/3 -> 3.5/3.5). The fireplace refuses with «already full» while less than one whole heart is missing (`missingHealth < 1` in `action-starters-registry.ts`), so the heal test starts at 2.5/3.5.
+
+## Equipment sight (A01, 2026-11-19)
+
+- `e2e/board/dungeon-fog.spec.ts` includes `EquipmentFogFeature` scenarios for `fog` +1/+2. Each walks once with the token in the bag (radius 1), equips it through the real shield-slot drag, walks again (radius 2/3), then reloads and compares the complete explored-fog snapshot.
+- Helm generation is disabled. `grantLegacySightToken(bonus)` in `inventory-hooks.ts` grants a normal shield token, adds the owned legacy `fog` attribute, and persists it through existing `pushInventoryFixture`/dev-only `DEV_SET_INVENTORY`. This tests retained owned attributes without enabling helmets or relaxing the factory restrictions. Production content stays unchanged.
+- `fog-hooks.ts` answers `findFogStep` and `getFogTiles(center)` using engine enterability/hex-distance functions. A candidate must have still-hidden tiles at distances 2 and 3, preventing assertions from passing on explored fog. Geometry stays inside the app.
+- `EquipmentFogComponent` checks every tile against its pre-step state: only the requested radius becomes newly revealed; explored tiles remain visible. It waits for actual hero coordinates/fog, settles inventory before reload, and compares the saved snapshot afterward.
+- Run `sh scripts/pre-push-e2e.sh e2e/board/dungeon-fog.spec.ts` (4 tests: 2 attribute scenarios + 2 existing dungeon checks).
+
+## Equipment Will (A02, 2026-11-19)
+
+- `e2e/hero/equipment-will.spec.ts` uses `EquipmentWillFeature`/`EquipmentWillComponent`: bag has no effect; real shield-slot drag raises 50→55 with no refill; a filled bonus is clamped back to 50 by the hand-icon unequip; reload/re-equip retain the correct values. A +10 token verifies a low balance stays unchanged with capacity 60 and after removal.
+- `grantWillToken(bonus, mapTier = 1)` mints a shield at the source tier with `will` through the standard dev token grant and factory validation. Will is available to every equipment group with a +1…(10 × source tier) range, without a total equipment cap (Oleh correction after A02). The sight fixture remains legacy-only because fog is restricted to helmets. Both hooks keep inline E2E guards and validate bonuses.
+- `getKnowledge` now exposes actual `capacity`; `getKnowledgeRules().capacity` is still the base constant. The component checks both server knowledge projection and visible `hero-will-value`. `setWill(55)` is valid only after equipping capacity 55; settle before reload.
+- Run `sh scripts/pre-push-e2e.sh e2e/hero/equipment-will.spec.ts e2e/board/dungeon-fog.spec.ts` to cover Will plus the shared sight fixture.
+
+- Will scaling correction: a third scenario grants a tier-4 +40 shield through the normal factory, verifies 50/90 without refill, fills/reloads at 90/90 and unequips back to 50/50.
+
+## Equipment Deft Hands (A03, 2026-11-19)
+
+`combat/equipment-use.spec.ts` uses `EquipmentUseFeature` and `CampingMapPage.equipmentUse`: owned legacy shield with `deft-hands`, real equip drag, potion in right hand, battle at exactly its use cost. Bag bonus leaves price 3; equipped +1/+2 costs 2/1. Hand enabled state/meta, healing, consumed hand and remaining Will are checked. Potion is dragged from Inventory into the right hand while the battle is open; the hands gate sends set-hands to the server. Wheel opens the action stage. Tool cost is covered by web unit tests. Hook `grantLegacyDeftHandsToken(1|2)` uses the dev-only owned-token replacement, because glove generation remains disabled. Run through `scripts/pre-push-e2e.sh`.
+
+A03 extended coverage (2026-11-19): `equipment-use.spec.ts` has 6 cases. New cases: insufficient Will with disabled hand and unchanged persisted hero/hands/balance after reload; actual hand-icon removal restores price 3; same-type equipment replacement changes price 2→1 and survives reload. Feature grants the spare before battle and selects it via the read-only `getInventoryItemIdByTokenId` hook, then real Inventory drag. No force-click on disabled USE. This test exposed the token identity bug in hand syncing; the engine and inventory gate now carry optional token IDs.
+
+Dungeon return and victory tools (2026-11-19): `DungeonExitFeature` / `board/dungeon-exit.spec.ts` walks to the real Silesia cave entrance and performs three ENTER/exit/reload cycles, checking engine-reported distance 1 and unchanged saved coordinates. Use `activeBoard.waitForReady` after non-camp routes; `CampingMapPage.waitUntilReady` expects camping. `BattleCollectFeature.verifyToolActivationAfterVictory(wheel|inventory)` requires a hidden tool first, verifies all enemies dead, activates through the chosen real input, then READs a grave. The Inventory route must not fall back to a wheel action. Collection component exposes `verifyToolHidden/Visible`.
+
+## Equipment Smart Step (A04, 2026-11-20)
+
+`hero/equipment-smart-step.spec.ts` uses EquipmentSmartStepFeature / CampingMapPage.equipmentSmartStep. Real Inventory equip/replace and hand-icon removal, actual map clicks, server reload; test timeouts 120 s cover the twenty-step scenario. `grantLegacySmartStepToken(1…5)` uses the existing dev-only owned shield fixture because boots are disabled. Read-only hooks `getPaidSteps` and `findWorldStep` use the app's projection/engine enterability; tests never derive geometry. Assertions cover 20 steps → 16 Will for N=5, camp exclusion, bag exclusion, a free step at zero Will followed by refusal, swapping N=5→3 without reset, removal, reload, and consecutive free N=1 steps. Switch to the Hero tab before checking its Will label: the initial grant can leave Inventory open. Run with `sh scripts/pre-push-e2e.sh e2e/hero/equipment-smart-step.spec.ts --retries=0`.
+
+## Equipment Wisdom (A05, 2026-11-20)
+
+`hero/equipment-wisdom.spec.ts` uses EquipmentWisdomFeature / EquipmentWisdomComponent. Real Hall answers and real battle task option clicks verify persistent hero Will, bag exclusion, equip/removal, wrong answers, capacity and reload. Hall assertions allow its real 1/2 base award and require the additional Wisdom amount. `grantLegacyWisdomToken(1…5)` is an owned shield fixture while amulets remain disabled. `openBattleTask` uses the guarded dev-only saw-task fixture (real issueTask with server time), returns its correct index through the dev response, then the component clicks the actual option. No duplicated answer calculation, reward command or production projection leak. Battle Wisdom restores the persistent reserve; it never raises turnWill. Run through scripts/pre-push-e2e.sh, with 120 s scenario timeout.
+
+Wisdom rename: canonical wisdom, legacy focus deprecated but still implemented for owned tokens, same reward stat/cap 5 and localized name. No focus generation profile. The obsolete Hall-only wisdom effect and hallWillReward reserve are removed. A06 is merged into A05, not another attribute to implement.
+
+## Equipment Yield (A08, 2026-11-20)
+
+`hero/equipment-yield.spec.ts` uses EquipmentYieldFeature / EquipmentYieldComponent. Normal factory-granted axe/pickaxe tokens (tier 1 +1 or tier 3 +2), exact-token Inventory drag, real USE and mouse wheel, real timed CUT/MINE, server reload including pending work. `getHarvest` is a read-only hook in harvest-hooks.ts exposing existing resource counters and pending bonuses; it does not grant resources. Tests verify bag exclusion, replacement/removal of the bonus, +1/+2 rewards with base quest progress, pending reload, and selection between two axes. Counters retain their existing session lifetime, so post-reload assertions measure the new session's gain; quests and equipped tokens persist. `isBattleEngaged` moved unchanged into battle-hooks.ts to keep createTestApi within its existing size limit. Run with scripts/pre-push-e2e.sh; 120 s timeout covers real mining duration.
+
+## Equipment Trophy (A09, 2026-11-20)
+
+`combat/equipment-trophy.spec.ts` uses EquipmentTrophyFeature / EquipmentTrophyComponent: normal factory +1 tier 1 / +2 tier 4 swords, exact-token equip, real Inventory USE + ATTACK, real grave READ and reload. Bag exclusion has a plain lethal sword. Start a lone-skeleton battle and wait for the board to settle before the guarded trophy-target fixture; it only positions a live enemy with 1 HP and gives the hero a turn, never kills or awards loot. getBattleTrophy exposes captured corpse bonuses and already-public collect items, never unopened containers or secret seeds. Run via scripts/pre-push-e2e.sh.
+
+## Shield Heal on Block (2026-11-21)
+
+`combat/heal-on-block.spec.ts` uses HealOnBlockFeature with normal factory shield tokens and real equip, a board tap to block the visible attacker or TAKE HIT, and reload. `prepareShieldStrike` invokes guarded shield-strike fixture: a living adjacent enemy spends its last strike Will through performAction, opening a real timed block window with one reachable attack side. The fixture never places shields or heals. Assertions use public battle HP; PostgreSQL integration verifies progress health and replay. Run with scripts/pre-push-e2e.sh and one worker to avoid overloading the user's Mac.
+
+## Equipment Block sides (2026-11-21)
+
+combat/equipment-block.spec.ts uses EquipmentBlockFeature: normal shield tokens, real equip and board taps, visible shield counter, over-cap attempt, pending-window reload, and same-type replacement. prepareShieldStrike(true) asks the dev-only fixture for six clear directions before the real incoming strike, then holdTheWindowOpen keeps the window available for UI assertions. This arranges terrain only; tests still place shields through actual clicks. Existing heal-on-block tests call the same hook without the optional flag. Run via pre-push script, one worker.
+
+Block scaling coverage: the tier-4 +4 case grants a normal factory token, places five sides through real board taps, attempts a sixth and reloads. The sixth direction is the visible attacker hex from the public battle snapshot; free neighbours exclude occupied hexes.
+
+Weapon critical coverage (2026-11-21): combat/equipment-crit.spec.ts uses EquipmentCritFeature / EquipmentCritComponent. Normal factory gear, real Inventory drag/USE and ATTACK, tooltip +2%/+10%/×N, actual health and event results, reload and same-type replacement. `prepareCritTarget` is dev-only: a living 30-HP unshielded target on flat ground, hero turn, and a strike sequence whose real seeded next roll is below 2%. It neither grants attributes nor forces a critical outcome or applies damage. A plain weapon still cannot crit. getLastBattleStrike reads existing public STRIKE_LANDED results only. Run via pre-push script, one worker/no retries. Tooltip attribute assertions filter the requested row because a token can have multiple attributes.
+
+Heal-on-block wait regression (2026-11-21): real reaction completion must use WINDOW_RESOLVES_MS from src/config/battle-timing.ts, shared with BattleFlowFeature. The default expect timeout is 5 s, equal to the real block window, so it can expire before the server reply/projection arrives. Keep actual automatic closure and HP/reload assertions; do not substitute TAKE HIT, force expiry or retry the scenario to hide the race. The shared 20 s bound covers block/possible aim and server round trips without changing the game's 5 s window or the per-test timeout.
+
+Deft Hands setup regression (2026-11-21): `giveHeroTheTurn` / `giveEnemyTheTurn` must clear a pending timed task in the dev-only engine fixture, alongside reactions and pending strikes. A previous enemy turn can leave a Saw task open; the real inventory hands gate then correctly refuses the potion drag with TASK_OPEN. EquipmentUseFeature waits for the board to settle and the ACT card after granting the turn, before dragging. Keep the real equip/use assertions and existing timeouts.

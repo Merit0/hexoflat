@@ -1,16 +1,14 @@
 import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import { pickupStack } from '../loot';
-import { createContainer, openInSpace } from '../containers';
-import { lootTableOf } from '../content/loot-tables.content';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { openInSpace } from '../containers';
 import { lootTableIdOfKind } from './battle-catalogue';
-import { graveLootSource, graveTokenSource } from './grave-token-source';
+import { createGraveContainer } from './grave-contents';
 import { collectActorRefusal, graveAt, graveSpace } from './grave-container-space';
 import { isAlive, isFreeHex } from './battle-board';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleHex, BattleState, CollectState, Grave } from './battle-state';
-import { hexKey, isAdjacentHex, sameHex } from './hex-battle-geom';
+import { isAdjacentHex, sameHex } from './hex-battle-geom';
 import { reject, type BattleRejection } from './battle-rejection';
 
 export { graveAt };
@@ -50,15 +48,11 @@ export function enterCollectPhase(state: BattleState): DomainEvent[] {
     else graves.push({ hex: { ...creature.pos }, tables, examined: false });
   }
   for (const grave of graves) {
-    grave.container = createContainer({
-      id: hexKey(grave.hex),
-      kind: 'grave',
-      at: grave.hex,
-      tables: grave.tables.map((id) => lootTableOf(id)),
-      ...graveLootSource(state, hexKey(grave.hex)),
-      origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
-      tokenSource: graveTokenSource(state),
-    });
+    const bonuses = deathOrder(state, dead)
+      .filter((creature) => sameHex(creature.pos, grave.hex) && lootTableIdOfKind(creature.kind))
+      .map((creature) => creature.trophyBonus ?? 0);
+    if (bonuses.some((bonus) => bonus > 0)) grave.trophyBonuses = bonuses;
+    grave.container = createGraveContainer(state, grave);
   }
   state.collect = { graves, items: [] };
   return [

@@ -3,7 +3,6 @@ import type { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import {
-  attributeDefinitionSchema,
   itemTypeDefinitionSchema,
   tokenPriceRangesSchema,
   wordPoolDataSchema,
@@ -23,12 +22,6 @@ const AXE = {
   tool: { action: EHexActionType.CUT, durabilityCostPct: 0.1 },
   nounKey: 'content.tokens.noun.axe',
   realms: [ERarityKind.IDOL],
-};
-const HEART = {
-  key: 'heart',
-  valueByTier: { 1: 1, 2: 1, 3: 2, 4: 2 },
-  weight: 1,
-  implemented: true,
 };
 const RANGES = { gloom: [60, 800], idol: [40, 600], spark: [100, 1200] };
 const WORDS = {
@@ -50,16 +43,6 @@ const CASES: SchemaCase[] = [
       ],
       ['a tool without wear', { ...AXE, tool: { action: EHexActionType.CUT } }],
       ['a wear above 1', { ...AXE, tool: { action: EHexActionType.CUT, durabilityCostPct: 2 } }],
-    ],
-  },
-  {
-    name: 'AttributeDefinition',
-    schema: attributeDefinitionSchema,
-    valid: HEART,
-    invalid: [
-      ['no tier 4', { ...HEART, valueByTier: { 1: 1, 2: 1, 3: 2 } }],
-      ['a half value', { ...HEART, valueByTier: { 1: 0.5, 2: 1, 3: 2, 4: 2 } }],
-      ['zero weight', { ...HEART, weight: 0 }],
     ],
   },
   {

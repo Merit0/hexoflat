@@ -782,10 +782,14 @@ export class WorldService {
       const now = Date.now();
       const world = mapId ? await loadWorld(tx, expeditionId, mapId, now, heroId) : null;
       if (!world?.battle) throw new PlayerCommandError('INVALID_COMMAND');
-      world.battle = applyBattleFixture(world.battle, fixture.data);
+      world.battle = applyBattleFixture(world.battle, fixture.data, now);
       world.battle.turnClockMs = now;
       await saveWorld(tx, expeditionId, world);
-      return { battleView: projectBattleForViewer(world.battle, 'heroes'), serverNowMs: now };
+      return {
+        battleView: projectBattleForViewer(world.battle, 'heroes'),
+        serverNowMs: now,
+        taskCorrectOption: world.battle.task?.options.indexOf(world.battle.task.answer) ?? null,
+      };
     });
   }
 

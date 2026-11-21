@@ -4,7 +4,7 @@ import { HexObjectFactory } from '../factory/hex-object-factory';
 import { emptyInventoryState } from '../inventory/inventory-state';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import type { LocationKey } from '../registry/location-key';
-import { getHexNeighbors } from '../utils/hex-utils';
+import { hexDistance, getHexNeighbors } from '../utils/hex-utils';
 import { createServerWorld, type ServerWorld } from './server-world';
 import { travelWorld, type TravelRun, type TravelVia } from './travel';
 import * as contentAccessors from '../content/content-accessors';
@@ -255,4 +255,22 @@ describe('a gate on the server', () => {
     expect(outcome.replaced?.mapId).not.toBe('cave-1');
     expect(outcome.progress.sealedUntil.cave).toBeGreaterThan(1_000);
   });
+});
+
+describe('reciprocal gate arrivals', () => {
+  it.each(['exit-0', 'exit-1', 'exit-2', 'exit-3', 'exit-4'])(
+    'returns from the cave beside the cave entrance rather than the general Silesia entry (%s)',
+    (seed) => {
+      const cave = createServerWorld('cave', 'cave-return', SEED, HERO);
+      const exit = placeBeside(cave, HEXOBJECT_KEYS.CAVE_EXIT);
+      const silesia = createServerWorld('silesia', 'silesia-return', seed, HERO);
+      const entrance = silesia.map.tiles.find(
+        (tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.CAVE_ENTRANCE,
+      )!.coordinates;
+      const outcome = travelWorld(runOf(cave, { silesia }), { kind: 'gate', coordinates: exit });
+      if (!outcome.ok) throw new Error(outcome.code);
+      expect(hexDistance(outcome.destination.heroCoordinates!, entrance)).toBe(1);
+      expect(outcome.progress.presence?.coordinates).toEqual(outcome.destination.heroCoordinates);
+    },
+  );
 });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { critResolverIdSchema } from './crit-resolver';
 
 export const battleRulesSchema = z.object({
   willPerTurn: z.number().int().positive(),
@@ -22,6 +23,7 @@ export const battleRulesSchema = z.object({
   boulderWeight: z.number().int().min(0),
   fallDamage: z.number().int().min(0),
   graveLootEnabled: z.boolean().default(true),
+  critResolver: critResolverIdSchema.default('rng-chance'),
 });
 export type BattleRules = z.infer<typeof battleRulesSchema>;
 

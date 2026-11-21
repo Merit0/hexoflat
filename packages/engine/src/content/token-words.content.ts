@@ -175,3 +175,20 @@ export const TOKEN_WORDS: WordPoolData = {
 };
 
 export const TOKEN_NAME_TEMPLATE_KEY = 'content.tokens.nameTemplate';
+
+export const TOKEN_NAME_TEMPLATE_KEYS = {
+  full: TOKEN_NAME_TEMPLATE_KEY,
+  prefix: 'content.tokens.nameTemplatePrefix',
+  suffix: 'content.tokens.nameTemplateSuffix',
+} as const;
+
+export type TokenNameShape = keyof typeof TOKEN_NAME_TEMPLATE_KEYS;
+
+export const TOKEN_ADJECTIVE_NAME_TEMPLATE_KEY = 'content.tokens.nameTemplateAdjective';
+
+export const TOKEN_NAME_RULES = {
+  maxWords: 3,
+  maxWordLetters: 10,
+  shortWordLetters: 7,
+  minShortWordShare: 0.9,
+} as const;

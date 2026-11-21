@@ -8,6 +8,7 @@ export const itemTypeKeySchema = z.string().regex(SLUG);
 export const attributeKeySchema = z.string().regex(SLUG);
 export const aspectKeySchema = z.string().regex(SLUG);
 export const uniqueKeySchema = z.string().regex(SLUG);
+export const adjectiveKeySchema = z.string().regex(SLUG);
 export const i18nKeySchema = z.string().regex(/^content(?:\.[A-Za-z0-9_-]+)+$/);
 export const spriteKeySchema = z.string().regex(/^_?[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
@@ -41,6 +42,7 @@ export type ItemTypeKey = z.infer<typeof itemTypeKeySchema>;
 export type AttributeKey = z.infer<typeof attributeKeySchema>;
 export type AspectKey = z.infer<typeof aspectKeySchema>;
 export type UniqueKey = z.infer<typeof uniqueKeySchema>;
+export type AdjectiveKey = z.infer<typeof adjectiveKeySchema>;
 export type I18nKey = z.infer<typeof i18nKeySchema>;
 export type SpriteKey = z.infer<typeof spriteKeySchema>;
 export type ItemTokenId = z.infer<typeof itemTokenIdSchema>;

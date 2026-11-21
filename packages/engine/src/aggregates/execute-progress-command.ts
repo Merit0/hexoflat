@@ -15,6 +15,8 @@ import { getPortalAbility } from '../skills/skill-rules';
 import { hexDistance } from '../utils/hex-utils';
 import type { PlayerCommand } from './player-commands';
 import type { Presence, ProgressState } from './progress-state';
+import type { InventoryState } from '../inventory/inventory-state';
+import { resolveHeroStats } from '../tokens/equipment/hero-stats';
 
 export type ProgressOutcome =
   | { ok: true; progress: ProgressState; events: DomainEvent[] }
@@ -90,9 +92,16 @@ export function executeProgressCommand(
   progress: ProgressState,
   command: PlayerCommand,
   devAllowed = false,
+  inventory?: InventoryState,
 ): ProgressOutcome | null {
   const next: ProgressState = structuredClone(progress);
   const ctx = serverKnowledgeContext(next.presence);
+  const stats = resolveHeroStats(Object.values(inventory?.equip ?? {}));
+  ctx.answerWillReward = stats.answerWillReward;
+  ctx.step = {
+    paidSteps: next.paidSteps,
+    stepFreeEvery: stats.stepFreeEvery,
+  };
   let events: DomainEvent[];
   switch (command.type) {
     case 'ARRIVE': {
@@ -136,6 +145,7 @@ export function executeProgressCommand(
       if (action.kind === 'step' && action.target && !rejection(events)) {
         next.presence = next.presence && { ...next.presence, coordinates: { ...action.target } };
         next.steps += 1;
+        if (willZoneCharges(ctx)) next.paidSteps += 1;
       }
       break;
     }

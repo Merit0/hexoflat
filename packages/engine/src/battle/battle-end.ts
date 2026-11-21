@@ -42,6 +42,7 @@ export function applyDamage(
   state: BattleState,
   creature: BattleCreature,
   amount: number,
+  trophyBonus = 0,
 ): DomainEvent[] {
   if (amount <= 0 || !isAlive(creature)) return [];
   creature.hp = Math.max(0, creature.hp - amount);
@@ -49,6 +50,8 @@ export function applyDamage(
     { type: 'CREATURE_DAMAGED', payload: { creatureId: creature.id, amount, hp: creature.hp } },
   ];
   if (creature.hp > 0) return events;
+
+  if (creature.side === 'enemies' && trophyBonus > 0) creature.trophyBonus = trophyBonus;
 
   state.pending = state.pending.filter((s) => s.targetId !== creature.id);
   if (state.lootEnabled) state.fallen = [...(state.fallen ?? []), creature.id];

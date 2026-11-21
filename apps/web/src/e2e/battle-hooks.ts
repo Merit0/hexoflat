@@ -1,3 +1,4 @@
+import type { StrikeResolution } from '@hexoflat/engine/battle/strike-pipeline';
 import { aimOptions } from '@hexoflat/engine/battle/reaction';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleDistance, hexKey, hexNeighbours } from '@hexoflat/engine/battle/hex-battle-geom';
@@ -13,7 +14,10 @@ import { useBattleStore } from '@/stores/battle-store';
 interface FixtureAnswer {
   battleView: BattleProjection | null;
   serverNowMs: number;
+  taskCorrectOption: number | null;
 }
+
+let taskCorrectOption: number | null = null;
 
 async function serverFixture(body: Record<string, unknown>): Promise<void> {
   const sentAt = Date.now();
@@ -29,6 +33,7 @@ async function serverFixture(body: Record<string, unknown>): Promise<void> {
   }
   observeServerClock(answer.serverNowMs, sentAt, Date.now());
   useBattleStore().projection = answer.battleView;
+  taskCorrectOption = answer.taskCorrectOption;
 }
 
 export function finishOpenBattle(outcome: 'victory' | 'defeat'): Promise<void> {
@@ -229,6 +234,42 @@ export function readBattleCollect(): BattleCollectSnapshot | null {
 
 export function battleTestHooks() {
   return {
+    isBattleEngaged(): boolean {
+      return useBattleStore().engagement !== null;
+    },
+    async prepareShieldStrike(openDirections?: boolean): Promise<void> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'shield-strike', ...(openDirections ? { openDirections } : {}) });
+    },
+    async prepareCritTarget(): Promise<void> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'crit-target' });
+    },
+    getLastBattleStrike() {
+      const event = useBattleStore().lastHeroEvents.find((entry) => entry.type === 'STRIKE_LANDED');
+      return event?.type === 'STRIKE_LANDED' ? (event.payload as StrikeResolution) : null;
+    },
+    async prepareTrophyTarget(): Promise<void> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'trophy-target' });
+    },
+    getBattleTrophy() {
+      const view = useBattleStore().projection;
+      return view
+        ? {
+            corpses: view.creatures
+              .filter((creature) => creature.side === 'enemies' && creature.hp === 0)
+              .map((creature) => ({ id: creature.id, bonus: creature.trophyBonus ?? 0 })),
+            items: view.collect?.items ?? [],
+          }
+        : null;
+    },
+    async openBattleTask(): Promise<number> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'saw-task' });
+      if (taskCorrectOption === null || taskCorrectOption < 0) throw new Error('No task answer');
+      return taskCorrectOption;
+    },
     getBattleHands(): BattleHandsSnapshot | null {
       return readBattleHands();
     },

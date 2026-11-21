@@ -1,3 +1,4 @@
+import { upcastToken } from '@hexoflat/engine/inventory/upcast-item-tokens';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
@@ -77,9 +78,14 @@ describe('battle view', () => {
   });
 
   it('plays a full turn: defend with a shield, act, undo a step, end turn into WAIT', async () => {
+    const player = hero({ q: 0, r: 0 });
+    player.hands.left!.token = {
+      ...upcastToken('hero', 'block-view', 'shield')!,
+      attributes: [{ key: 'shield', value: 1 }],
+    };
     const store = await startedOn(
       ['s1', 'hero', 's2'],
-      [hero({ q: 0, r: 0 }), skeleton('s1', { q: 2, r: 0 }), skeleton('s2', { q: -3, r: 3 })],
+      [player, skeleton('s1', { q: 2, r: 0 }), skeleton('s2', { q: -3, r: 3 })],
     );
     await localBattle().runEnemyTurn(0);
 

@@ -1,18 +1,35 @@
 import { pickRandom, type RandomNumberGenerator } from '../../utils/random';
-import type { WordPool } from '../registries';
+import { adjectiveFits, type Adjective } from '../equipment/adjective-schema';
+import { ADJECTIVE_BANDS, type TAdjectiveBand } from '../equipment/equipment-keys';
 import { hasGeneratedName, type ItemTypeDefinition } from '../token-content-schema';
-import type { TBaseRealm } from '../token-keys';
 import type { TokenName } from '../token-schema';
-import type { INameGenerator } from './token-generation';
+import type { INameGenerator, NameRequest } from './token-generation';
 
-export class WordPoolNameGenerator implements INameGenerator {
-  constructor(private readonly words: WordPool) {}
+export function adjectiveBandFor(attributeCount: number): TAdjectiveBand {
+  return ADJECTIVE_BANDS[Math.min(Math.max(attributeCount, 0), ADJECTIVE_BANDS.length - 1)];
+}
 
-  generate(type: ItemTypeDefinition, realm: TBaseRealm, rng: RandomNumberGenerator): TokenName {
+export function adjectivesForType(
+  type: ItemTypeDefinition,
+  band: TAdjectiveBand,
+  adjectives: readonly Adjective[],
+): Adjective[] {
+  if (!type.group || !type.materials) return [];
+  const target = { group: type.group, materials: type.materials };
+  return adjectives.filter(
+    (adjective) => adjective.band === band && adjectiveFits(adjective, target),
+  );
+}
+
+export class AdjectiveNameGenerator implements INameGenerator {
+  constructor(private readonly adjectives: readonly Adjective[]) {}
+
+  generate(request: NameRequest, rng: RandomNumberGenerator): TokenName {
+    const { type, attributeCount } = request;
     if (!hasGeneratedName(type)) return { kind: 'noun', noun: type.key };
-    const prefix = pickRandom([...this.words.prefixes(realm)], rng);
-    const suffix = prefix ? pickRandom([...this.words.suffixesAfter(realm, prefix)], rng) : null;
-    if (!prefix || !suffix) throw new Error(`No name words for ${realm}+${type.key}`);
-    return { kind: 'generated', prefix: prefix.key, noun: type.key, suffix: suffix.key };
+    const band = adjectiveBandFor(attributeCount);
+    const adjective = pickRandom(adjectivesForType(type, band, this.adjectives), rng);
+    if (!adjective) throw new Error(`No ${band} adjective for ${type.key}`);
+    return { kind: 'adjective', adjective: adjective.key, noun: type.key };
   }
 }

@@ -1,6 +1,6 @@
 import {
   AGGREGATES,
-  PLAYER_COMMAND_AGGREGATES,
+  playerCommandAggregate,
   PLAYER_COMMAND_REVISION,
   PLAYER_COMMAND_SCHEMAS,
   executePlayerCommand,
@@ -99,7 +99,7 @@ function handle(envelope: PlayerEnvelope): PlayerCommandResponse {
   const parsed = PLAYER_COMMAND_SCHEMAS[type].safeParse(envelope.command);
   if (!parsed.success) return respond('rejected', 'INVALID_COMMAND');
   const command = parsed.data;
-  const primary = PLAYER_COMMAND_AGGREGATES[command.type][0];
+  const primary = playerCommandAggregate(command.type);
   if (s[primary].revision !== envelope.expectedRevision)
     return respond('conflict', 'REVISION_CONFLICT');
   if (

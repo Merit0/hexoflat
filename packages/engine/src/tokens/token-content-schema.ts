@@ -1,12 +1,8 @@
 import { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
-import {
-  attributeKeySchema,
-  baseRealmSchema,
-  itemTypeKeySchema,
-  wordKeySchemaFor,
-} from './token-keys';
+import { equipmentTypeFieldShape } from './equipment/equipment-keys';
+import { baseRealmSchema, itemTypeKeySchema, wordKeySchemaFor } from './token-keys';
 
 function distinct<T>(values: readonly T[]): boolean {
   return new Set(values).size === values.length;
@@ -29,32 +25,17 @@ export const itemTypeDefinitionSchema = z.strictObject({
     .nullable(),
   nounKey: wordKeySchemaFor('noun'),
   realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice'),
+  group: equipmentTypeFieldShape.group.optional(),
+  gender: equipmentTypeFieldShape.gender.optional(),
+  materials: equipmentTypeFieldShape.materials.optional(),
+  enabled: equipmentTypeFieldShape.enabled.optional(),
+  base: equipmentTypeFieldShape.base.optional(),
 });
 export type ItemTypeDefinition = z.infer<typeof itemTypeDefinitionSchema>;
 
 export function hasGeneratedName(type: ItemTypeDefinition): boolean {
   return type.tool === null;
 }
-
-const tierValueSchema = z.number().int().positive();
-
-export const ATTRIBUTE_UNITS = ['half-heart', 'side', 'point', 'hex', 'kg'] as const;
-export type TAttributeUnit = (typeof ATTRIBUTE_UNITS)[number];
-
-export const attributeDefinitionSchema = z.strictObject({
-  key: attributeKeySchema,
-  valueByTier: z.strictObject({
-    1: tierValueSchema,
-    2: tierValueSchema,
-    3: tierValueSchema,
-    4: tierValueSchema,
-  }),
-  weight: z.number().int().positive(),
-  allowedTypes: z.array(itemTypeKeySchema).refine(distinct, 'a type is listed twice').optional(),
-  implemented: z.boolean(),
-  unit: z.enum(ATTRIBUTE_UNITS).optional(),
-});
-export type AttributeDefinition = z.infer<typeof attributeDefinitionSchema>;
 
 const priceRangeSchema = z
   .tuple([z.number().int().positive(), z.number().int().positive()])
@@ -81,9 +62,6 @@ export const suffixWordSchema = z.strictObject({
   theme: wordThemeSchema.optional(),
 });
 
-export function sharesTheme(first: TokenWord, second: TokenWord): boolean {
-  return first.theme !== undefined && first.theme === second.theme;
-}
 export type TokenWord = z.infer<typeof prefixWordSchema>;
 
 export const wordPoolDataSchema = z.strictObject({

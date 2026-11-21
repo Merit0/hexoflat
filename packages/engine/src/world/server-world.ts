@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { restoreQuestEntrances, type QuestEntranceAssociations } from '../quests/quest-map-state';
 import { CONTENT_VERSION } from '../content/content-version';
-import { initFog, revealAroundHero, revealEntryTile } from '../map/fog-service';
+import { BASE_FOG_RADIUS, initFog, revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { installCampBook } from '../knowledge/camp-book';
 import { createChestContainers } from '../chests/create-chest-containers';
 import { installCampFacilities } from './camp-facilities';
@@ -172,7 +172,7 @@ export function createServerWorld(
   const entry = findEntryHex(map, locationKey, deriveStream(worldSeed, 'world')) ?? {
     ...MAP_ORIGIN,
   };
-  revealAroundHero(map, entry);
+  revealAroundHero(map, entry, BASE_FOG_RADIUS);
   revealEntryTile(map);
 
   return {

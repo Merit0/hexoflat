@@ -59,7 +59,7 @@ describe('source tier and injected generation policies', () => {
     const normal = createTokenFactory().createBase(context);
     const changed = createTokenFactory(TOKEN_CONTENT, undefined, undefined, {
       nameGenerator: {
-        generate: (type, _realm, rng) => {
+        generate: ({ type }, rng) => {
           for (let n = 0; n < 100; n++) rng();
           return { kind: 'noun', noun: type.key };
         },

@@ -24,13 +24,14 @@ import { applyTileDiffs, type TileDiff } from '@hexoflat/engine/world/tile-diff'
 import { apiClient } from '@/api/client';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import type HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
-import { useBattleStore } from '@/stores/battle-store';
 import { battleTestHooks } from './battle-hooks';
 import { stashTestApi } from './stash-hooks';
 import { shopTestApi } from './shop-hooks';
 import { questTestApi } from './quest-hooks';
 import { lootTestApi } from './loot-hooks';
 import { inventoryTestApi } from './inventory-hooks';
+import { harvestTestApi } from './harvest-hooks';
+import { fogTestApi } from './fog-hooks';
 import { eventsTestApi } from './events-hooks';
 import { findTilesWithKeyIn, relocateHero } from './relocate-hooks';
 import { renderStats } from '@/render/render-stats';
@@ -100,6 +101,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
   }
 
   return {
+    ...harvestTestApi,
     getKnowledge() {
       const state = heroStore.knowledge;
       if (!state) return null;
@@ -107,6 +109,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       const question = session?.question;
       return {
         current: state.current,
+        capacity: state.capacity,
         status: session?.status ?? null,
         index: session?.index ?? 0,
         options: question?.options ?? [],
@@ -241,6 +244,10 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       return heroInventoryStore.items.find((item) => item.key === key)?.id ?? null;
     },
 
+    getInventoryItemIdByTokenId(tokenId: string): string | null {
+      return heroInventoryStore.items.find((item) => item.token?.id === tokenId)?.id ?? null;
+    },
+
     getGridSize(): TestGridSize {
       const map = worldStore.map;
       return { width: map?.width ?? 0, height: map?.height ?? 0 };
@@ -276,6 +283,7 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
     },
 
     ...inventoryTestApi,
+    ...fogTestApi,
     ...eventsTestApi,
     ...stashTestApi,
     ...shopTestApi,
@@ -289,9 +297,6 @@ export function createTestApi(options: CreateTestApiOptions): HexoflatTestApi {
       await pushHealthFixture(current);
     },
     placeHexobjectNextToHero: (key: string) => placeHexobjectOnServer(worldStore, key),
-    isBattleEngaged(): boolean {
-      return useBattleStore().engagement !== null;
-    },
     ...battleTestHooks(),
 
     previewPortalOpening(coordinates: TestHexCoordinates): TestPortalPreview {
