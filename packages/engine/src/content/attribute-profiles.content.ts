@@ -63,10 +63,10 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
   heart: {
     weight: { defense: 40, clothing: 35 },
     tiers: [
-      [1, 1],
-      [1, 1],
       [1, 2],
-      [1, 2],
+      [1, 4],
+      [1, 6],
+      [1, 8],
     ],
   },
   'heal-on-block': {

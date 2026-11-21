@@ -162,10 +162,10 @@ describe('implemented token attributes', () => {
         return [min, max];
       }),
     ).toEqual([
-      [1, 1],
-      [1, 1],
       [1, 2],
-      [1, 2],
+      [1, 4],
+      [1, 6],
+      [1, 8],
     ]);
   });
 });

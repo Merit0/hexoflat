@@ -88,10 +88,14 @@ describe('EA-13: attribute rows of a new token', () => {
     );
   });
 
-  it('shows the heart in hearts, not in half-hearts', () => {
-    expect(tokenAttributeRows(shieldWith([{ key: 'heart', value: 1 }]), 'en')[0].value).toBe(
-      '+0.5',
-    );
+  it.each([
+    ['en', 'Health:'],
+    ['uk', 'Життя:'],
+  ])('labels health bonuses correctly in %s', (locale, label) => {
+    expect(tokenAttributeRows(shieldWith([{ key: 'heart', value: 1 }]), locale)[0]).toMatchObject({
+      label,
+      value: '+0.5',
+    });
   });
 
   it('stores no attribute line, so the description lines hold no attribute', async () => {
@@ -100,7 +104,7 @@ describe('EA-13: attribute rows of a new token', () => {
     const lines = [...host.querySelectorAll('[data-testid="item-tooltip-line"]')].map(
       (node) => node.textContent?.trim() ?? '',
     );
-    expect(lines.some((line) => line.startsWith('Hearts'))).toBe(false);
+    expect(lines.some((line) => line.startsWith('Health:'))).toBe(false);
   });
 
   it('names a new token by an adjective and the noun in both languages', async () => {

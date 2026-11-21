@@ -289,3 +289,7 @@ User defers Thorns and adds `heal-on-block` for shields before A10. Item-scoped 
 ## Weapon crit and generator freeze (2026-11-21)
 
 Oleh stopped other attribute work: only weapon `crit` / `crit-dmg` are now connected; hero-crit, absorb, thorns, trade, future Focus and remaining A10 stay deferred. Chance tiers: 2 / 2…4 / 2…6 / 2…10 percent, cap 10. Default crit ×2; `crit-dmg` is now a full multiplier (max aggregate, cap 5, display multiplier), omitted from tier 1 and rolls ×3 / ×3…4 / ×3…5 on tiers 2–4. `resolveStrike` reads only the striking weapon through resolveItemStats; no other-hand/bag/hero/enemy crit. Multiply before full block, deterministic streams and event results remain. A Crit Damage-only weapon is still possible under the original independent-roll rule and currently has no effect without its own Crit Chance: recorded balance issue. Do not expand the generator; audit/fixes only. Factory snapshots profiles for consistent validation; nested generator profiles are frozen and factory construction rejects unknown/wrong-group/over-cap profile entries.
+
+Heart range correction (Oleh, 2026-11-21): optional heart bonus is +½…tier whole hearts (tiers 1–4), step ½ heart. Profiles use half-heart units [1,2]/[1,4]/[1,6]/[1,8], step 1. Higher difficulty raises only the maximum; lower rolls stay possible. Total equipment cap remains +5 hearts; owned tokens never reroll.
+
+Health attribute label (2026-11-21): `heart` renders as «Життя: +…» / “Health: +…” in current and legacy item descriptions. Keep the stable internal key and heart icon.

@@ -277,7 +277,7 @@
         "god-executor": "God Executor"
       },
       "attr": {
-        "heart": "Hearts +{value}",
+        "heart": "Health: +{value}",
         "shield": "Shield +{value}",
         "force": "Force +{value}",
         "mass": "Mass +{value}",
@@ -300,7 +300,7 @@
         }
       },
       "attrLabel": {
-        "heart": "Heart",
+        "heart": "Health:",
         "shield": "Block",
         "will": "Will Reserve",
         "fog": "Sight",
@@ -333,7 +333,7 @@
         "rest": "Rest"
       },
       "attrHint": {
-        "heart": "Raises the hero's maximum hearts.",
+        "heart": "Raises the hero's maximum health.",
         "shield": "Adds sides the hero can block each turn.",
         "will": "Raises the hero's maximum Will.",
         "fog": "Reveals the fog farther around the hero.",

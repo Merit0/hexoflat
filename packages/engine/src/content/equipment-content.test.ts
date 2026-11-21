@@ -187,10 +187,10 @@ describe('EA1 attribute profiles', () => {
       [2, 10],
     ]);
     expect(ranges('heart')).toEqual([
-      [1, 1],
-      [1, 1],
       [1, 2],
-      [1, 2],
+      [1, 4],
+      [1, 6],
+      [1, 8],
     ]);
     expect(ranges('smart-step')).toEqual([
       [5, 5],

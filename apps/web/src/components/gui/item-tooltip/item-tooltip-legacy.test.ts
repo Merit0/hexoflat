@@ -45,8 +45,8 @@ afterEach(() => {
 
 describe('the item tooltip of a saved generator v3 token (characterization)', () => {
   it.each([
-    [LEGACY_SWORD, "Weaver's Bitter Sword", ['Sword · Gloom', 'Strike 1', 'Hearts +1', 'Tier 3']],
-    [LEGACY_SHIELD, "Bridge's Shield", ['Shield · Gloom', 'Strike 0.5', 'Hearts +1', 'Tier 3']],
+    [LEGACY_SWORD, "Weaver's Bitter Sword", ['Sword · Gloom', 'Strike 1', 'Health: +1', 'Tier 3']],
+    [LEGACY_SHIELD, "Bridge's Shield", ['Shield · Gloom', 'Strike 0.5', 'Health: +1', 'Tier 3']],
     [
       LEGACY_UNIQUE,
       'Lantern-Eater',
@@ -54,7 +54,7 @@ describe('the item tooltip of a saved generator v3 token (characterization)', ()
         'Forged in a shaft where no lamp stayed lit.',
         'Sword · Gloom',
         'Strike 1',
-        'Hearts +0.5',
+        'Health: +0.5',
         'Tier 3',
       ],
     ],
@@ -71,6 +71,6 @@ describe('the item tooltip of a saved generator v3 token (characterization)', ()
     await showTooltip(LEGACY_SWORD);
 
     expect(text('item-tooltip-title')).toBe('Меч Полину Ткача');
-    expect(all('item-tooltip-line')).toEqual(['Меч · Морок', 'Удар 1', 'Серця +1', 'Рівень 3']);
+    expect(all('item-tooltip-line')).toEqual(['Меч · Морок', 'Удар 1', 'Життя: +1', 'Рівень 3']);
   });
 });
