@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { AttributeRegistry } from '../tokens/registries';
+import { attributeFailure } from '../tokens/attribute-rules';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { AGGREGATES, upcastAggregate } from '../aggregates/registry';
 import { executePlayerCommand } from '../aggregates/execute-player-command';
@@ -44,6 +46,13 @@ function walk(run: WorldRun): WorldRun {
 }
 
 describe('A04 Smart Step', () => {
+  it.each([2, 3, 4, 5])('makes every %s-th paid-zone step free', (every) => {
+    let run = scene(every);
+    const initialWill = run.progress.knowledge.current;
+    for (let index = 0; index < 10; index++) run = walk(run);
+    expect(initialWill - run.progress.knowledge.current).toBe(10 - Math.floor(10 / every));
+  });
+
   it('EA-11: waives four of twenty steps and persists the phase across reload', () => {
     let run = scene();
     const costs: number[] = [];
@@ -163,7 +172,7 @@ describe('A04 content and progress compatibility', () => {
     expect(boots.enabled).toBe(false);
     for (const level of [1, 2, 3, 4] as const) {
       const values = new Set<number>();
-      for (let seed = 0; seed < 100; seed++) {
+      for (let seed = 0; seed < 500; seed++) {
         const rolled = generator.generate({
           level,
           group: boots.group,
@@ -174,7 +183,19 @@ describe('A04 content and progress compatibility', () => {
         const step = rolled.find((attribute) => attribute.key === 'smart-step');
         if (step) values.add(step.value);
       }
-      expect([...values].sort()).toEqual([[5], [4, 5], [3, 4], [3]][level - 1]);
+      const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
+      const check = { origin: 'base', profiles: ATTRIBUTE_PROFILES } as const;
+      for (const value of values) {
+        expect(
+          attributeFailure(registry, boots, { key: 'smart-step', value }, check, level),
+        ).toBeNull();
+      }
+      for (const value of [5 - level, 6]) {
+        expect(
+          attributeFailure(registry, boots, { key: 'smart-step', value }, check, level),
+        ).not.toBeNull();
+      }
+      expect([...values].sort()).toEqual([[5], [4, 5], [3, 4, 5], [2, 3, 4, 5]][level - 1]);
     }
     for (const type of EQUIPMENT_TYPES.filter((entry) => entry.key !== 'boots')) {
       for (let seed = 0; seed < 30; seed++) {

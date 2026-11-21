@@ -119,8 +119,8 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
     tiers: [
       [5, 5],
       [4, 5],
-      [3, 4],
-      [3, 3],
+      [3, 5],
+      [2, 5],
     ],
   },
   'deft-hands': {

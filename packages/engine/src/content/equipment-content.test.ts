@@ -195,8 +195,8 @@ describe('EA1 attribute profiles', () => {
     expect(ranges('smart-step')).toEqual([
       [5, 5],
       [4, 5],
-      [3, 4],
-      [3, 3],
+      [3, 5],
+      [2, 5],
     ]);
     expect(ATTRIBUTE_PROFILES['tier-1'].attributes.heart.weight).toEqual({
       defense: 40,
@@ -204,9 +204,9 @@ describe('EA1 attribute profiles', () => {
     });
   });
 
-  it('never lets the base generator roll a Smart Step below 3', () => {
+  it('never lets the base generator roll a Smart Step below 2', () => {
     for (const tier of ATTRIBUTE_PROFILE_TIERS) {
-      expect(ATTRIBUTE_PROFILES[tier].attributes['smart-step'].min).toBeGreaterThanOrEqual(3);
+      expect(ATTRIBUTE_PROFILES[tier].attributes['smart-step'].min).toBeGreaterThanOrEqual(2);
     }
   });
 
