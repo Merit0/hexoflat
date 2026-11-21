@@ -11,7 +11,7 @@ import { sampleToken } from '../../token-test-setup';
 describe('A10 Block generator audit', () => {
   const generator = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
   it.each([1, 2, 3, 4] as const)('tier %s rolls only on shields', (tier) => {
-    const max = tier === 4 ? 2 : 1;
+    const max = tier;
     expect(ATTRIBUTE_PROFILES[`tier-${tier}`].attributes.shield).toMatchObject({
       min: 1,
       max,
@@ -29,10 +29,20 @@ describe('A10 Block generator audit', () => {
         else absent = true;
       }
       if (type.key === 'shield') {
-        expect([...values].sort()).toEqual(max === 1 ? [1] : [1, 2]);
+        expect([...values].sort()).toEqual(Array.from({ length: max }, (_, index) => index + 1));
         expect(absent).toBe(true);
       }
     }
+  });
+
+  it.each([1, 2, 3, 4] as const)('factory enforces the tier %s ceiling', (tier) => {
+    const context = contextFor(1, { type: 'shield', mapTier: tier });
+    expect(
+      defaultFactory.createBase(context, { attributes: [{ key: 'shield', value: tier }] }),
+    ).toMatchObject({ ok: true });
+    expect(
+      defaultFactory.createBase(context, { attributes: [{ key: 'shield', value: tier + 1 }] }),
+    ).toMatchObject({ ok: false });
   });
 
   it.each(['sword', 'axe', 'pickaxe'])('refuses Block overrides on %s', (type) => {

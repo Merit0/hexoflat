@@ -22,4 +22,10 @@ test.describe('equipment Block sides', { tag: ['@combat'] }, () => {
     await block.replaceWithPlainShield();
     await block.raiseShields(1);
   });
+  test('Verify tier-4 Block +4 grants five sides and refuses a sixth and survives reload', async () => {
+    const block = new EquipmentBlockFeature();
+    await block.start(4, true);
+    await block.raiseShields(5);
+    await block.reloadAndVerify(5);
+  });
 });

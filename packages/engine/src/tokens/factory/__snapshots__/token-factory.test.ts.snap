@@ -626,7 +626,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       },
       {
         "key": "shield",
-        "value": 1,
+        "value": 2,
       },
     ],
     "description": [
@@ -720,7 +720,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
     "attributes": [
       {
         "key": "shield",
-        "value": 1,
+        "value": 2,
       },
     ],
     "description": [

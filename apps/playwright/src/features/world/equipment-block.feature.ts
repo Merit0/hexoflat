@@ -12,7 +12,7 @@ export class EquipmentBlockFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
   private replacement = '';
 
-  async start(bonus: 1 | 2, equipped: boolean): Promise<void> {
+  async start(bonus: 1 | 2 | 3 | 4, equipped: boolean): Promise<void> {
     await this.step(`Enter battle with Block +${bonus}, equipped: ${equipped}`, async () => {
       await new OpenCampingMapFeature().open();
       const grants = new VerifyInventoryFeature();
@@ -25,7 +25,7 @@ export class EquipmentBlockFeature extends BaseFeature {
       const shield = await grants.givenTokenItem({
         type: 'shield',
         realm: 'idol',
-        mapTier: bonus === 2 ? 4 : 1,
+        mapTier: bonus,
         attributes: [{ key: 'shield', value: bonus }],
       });
       this.replacement = plain.id;
@@ -46,7 +46,13 @@ export class EquipmentBlockFeature extends BaseFeature {
         await window.__HEXOFLAT_TEST__!.holdTheWindowOpen(60_000);
       });
       const state = await this.map.hexBoard.readBattleSnapshot();
-      const hexes = state!.heroFreeNeighbours.slice(0, capacity + 1);
+      const attacker = state!.creatures.find(
+        (creature) => creature.id === state!.reaction!.attackerId,
+      )!;
+      const hexes = [...state!.heroFreeNeighbours, { q: attacker.q, r: attacker.r }].slice(
+        0,
+        capacity + 1,
+      );
       if (hexes.length <= capacity) throw new Error('Not enough shield directions');
       for (const hex of hexes) {
         const point = await this.map.hexBoard.battleHexPoint(hex);

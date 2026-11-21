@@ -53,9 +53,9 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
     weight: { defense: 40 },
     tiers: [
       [1, 1],
-      [1, 1],
-      [1, 1],
       [1, 2],
+      [1, 3],
+      [1, 4],
     ],
   },
   heart: {

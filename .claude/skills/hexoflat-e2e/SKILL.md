@@ -241,3 +241,5 @@ Wisdom rename: canonical wisdom, legacy focus deprecated but still implemented f
 ## Equipment Block sides (2026-11-21)
 
 combat/equipment-block.spec.ts uses EquipmentBlockFeature: normal shield tokens, real equip and board taps, visible shield counter, over-cap attempt, pending-window reload, and same-type replacement. prepareShieldStrike(true) asks the dev-only fixture for six clear directions before the real incoming strike, then holdTheWindowOpen keeps the window available for UI assertions. This arranges terrain only; tests still place shields through actual clicks. Existing heal-on-block tests call the same hook without the optional flag. Run via pre-push script, one worker.
+
+Block scaling coverage: the tier-4 +4 case grants a normal factory token, places five sides through real board taps, attempts a sixth and reloads. The sixth direction is the visible attacker hex from the public battle snapshot; free neighbours exclude occupied hexes.
