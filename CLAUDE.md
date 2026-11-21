@@ -302,3 +302,5 @@ Heart range correction (Oleh, 2026-11-21): optional heart bonus is +½…tier wh
 Health attribute label (2026-11-21): `heart` renders as «Життя: +…» / “Health: +…” in current and legacy item descriptions. Keep the stable internal key and heart icon.
 
 Heal-on-block E2E timing fix (2026-11-21): HealOnBlockFeature waits for real reaction completion with shared WINDOW_RESOLVES_MS from Playwright config/battle-timing.ts (existing BattleFlow budget 20 s). Default 5 s assertion raced the game's 5 s block deadline plus response/projection. No gameplay timer change or forced reaction resolution; successful block, HP, reload and TAKE HIT checks remain.
+
+Deft Hands E2E setup (2026-11-21): dev battle turn fixtures clear pending timed tasks; otherwise an enemy Saw task survives `giveHeroTheTurn` and the real hands gate refuses the potion equip. EquipmentUseFeature waits for the post-fixture board/ACT state before dragging. Production task rules and test timeouts are unchanged.

@@ -44,6 +44,7 @@ function clearTurnState(battle: BattleState, will: number): void {
   battle.turnWill = will;
   battle.pending = [];
   battle.reaction = undefined;
+  battle.task = undefined;
   battle.placedShields = [];
   battle.struckHands = [];
   battle.undo = [];

@@ -42,6 +42,8 @@ export class EquipmentUseFeature extends BaseFeature {
       await squad.startBattle();
       await this.map.battleTab.waitForBoardStill();
       await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.giveHeroTheTurn(20));
+      await this.map.battleTab.waitForBoardStill();
+      await this.map.battleTab.verifyHeroCardState('act');
       await tabs.switchTo('inventory');
       await drag.dragToEquipSlot(HexobjectKeys.healthBottle, EquipSlot.WEAPON);
       await tabs.switchTo('battle');

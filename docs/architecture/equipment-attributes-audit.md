@@ -214,3 +214,19 @@ Reader через HeroStats.blockSides підсумовує базу 1 й атр
 Профілі виправлені за рішенням Олега: 5 / 4…5 / 3…5 / 2…5. Старі tier 3 [3,4] і tier 4 [3,3] звужували випадковий діапазон; тепер кожний наступний tier додає одне сильніше значення, зберігаючи всі слабші. Аудит: 500 seeds × 4 tiers з усіма можливими N, boots-only, shared factory attribute validation приймає дозволені значення й відхиляє занадто сильне N і N=6; реальна оплата кроків перевірена для N=2/3/4/5. Наявні owned N=1, збереження й disabled boots не змінені.
 
 Перевірки уточнення Smart Step: 175 цільових тестів пройшли; повний typecheck усіх пакетів, lint зміненого TypeScript, Prettier і git diff --check пройшли. Golden tokens не змінилися: boots залишаються disabled. Коміт не створено.
+
+## Deft Hands fixture flake — 2026-11-21 [DONE]
+
+The failure snapshot retained an active Saw task after `giveHeroTheTurn`.
+The dev-only `clearTurnState` reset phase/reaction but left `task`, so the real
+hands gate correctly refused the potion equip. Fresh hero/enemy turn fixtures
+now clear pending tasks; EquipmentUseFeature waits for the post-fixture board
+and ACT card before the real drag. Production task resolution and timeouts are
+unchanged.
+
+Two deterministic regression cases failed before the fix and pass afterward,
+including unchanged source state. Targeted fixtures/hands/Deft Hands/timed-task
+unit tests: 30 passed. The original flaky case passed 5 baseline repetitions;
+the complete Deft Hands and Wisdom specs passed 3 repetitions each, 30/30 E2Es,
+one worker, no retries (4.7 min), through `scripts/pre-push-e2e.sh`. Full workspace
+typecheck, targeted lint, Prettier and `git diff --check` passed. No commit created.

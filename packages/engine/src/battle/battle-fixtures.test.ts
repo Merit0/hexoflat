@@ -19,6 +19,18 @@ function fresh() {
 }
 
 describe('battle fixtures (e2e only)', () => {
+  it.each(['hero-turn', 'enemy-turn'] as const)(
+    '%s clears a pending task without changing the source',
+    (kind) => {
+      const source = applyBattleFixture(fresh(), { kind: 'saw-task' }, 10_000);
+      const next = applyBattleFixture(source, { kind, will: 20 });
+      expect(next.task).toBeUndefined();
+      expect(next.phase).toBe('act');
+      expect(next.turnWill).toBe(20);
+      expect(source.task).toMatchObject({ kind: 'saw', deadlineMs: 15_000 });
+    },
+  );
+
   it('opens a real incoming strike without blocking or awarding healing', () => {
     const source = fresh();
     source.creatures[0].hp = 2;
