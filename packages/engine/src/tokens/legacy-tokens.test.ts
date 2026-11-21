@@ -28,8 +28,8 @@ describe('saved generator v3 tokens (characterization)', () => {
   });
 
   it.each([
-    [LEGACY_SWORD, "Weaver's Bitter Sword", ['Sword · Gloom', 'Strike 1', 'Hearts +1', 'Tier 3']],
-    [LEGACY_SHIELD, "Bridge's Shield", ['Shield · Gloom', 'Strike 0.5', 'Hearts +1', 'Tier 3']],
+    [LEGACY_SWORD, "Weaver's Bitter Sword", ['Sword · Gloom', 'Strike 1', 'Health: +1', 'Tier 3']],
+    [LEGACY_SHIELD, "Bridge's Shield", ['Shield · Gloom', 'Strike 0.5', 'Health: +1', 'Tier 3']],
     [
       LEGACY_UNIQUE,
       'Lantern-Eater',
@@ -37,7 +37,7 @@ describe('saved generator v3 tokens (characterization)', () => {
         'Forged in a shaft where no lamp stayed lit.',
         'Sword · Gloom',
         'Strike 1',
-        'Hearts +0.5',
+        'Health: +0.5',
         'Tier 3',
       ],
     ],
@@ -47,8 +47,8 @@ describe('saved generator v3 tokens (characterization)', () => {
   });
 
   it.each([
-    [LEGACY_SWORD, 'Меч Полину Ткача', ['Меч · Морок', 'Удар 1', 'Серця +1', 'Рівень 3']],
-    [LEGACY_SHIELD, 'Щит Мостаря', ['Щит · Морок', 'Удар 0.5', 'Серця +1', 'Рівень 3']],
+    [LEGACY_SWORD, 'Меч Полину Ткача', ['Меч · Морок', 'Удар 1', 'Життя: +1', 'Рівень 3']],
+    [LEGACY_SHIELD, 'Щит Мостаря', ['Щит · Морок', 'Удар 0.5', 'Життя: +1', 'Рівень 3']],
     [
       LEGACY_UNIQUE,
       'Пожирач Ліхтарів',
@@ -56,7 +56,7 @@ describe('saved generator v3 tokens (characterization)', () => {
         'Викуваний у шахті, де не втримався жоден ліхтар.',
         'Меч · Морок',
         'Удар 1',
-        'Серця +0.5',
+        'Життя: +0.5',
         'Рівень 3',
       ],
     ],

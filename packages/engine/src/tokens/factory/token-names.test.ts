@@ -123,13 +123,13 @@ describe('token names and descriptions', () => {
     expect(formatTokenDescription(lines, DICTIONARIES.en)).toEqual([
       'Sword · Gloom',
       'Strike 1',
-      'Hearts +0.5',
+      'Health: +0.5',
       'Tier 2',
     ]);
     expect(formatTokenDescription(lines, DICTIONARIES.uk)).toEqual([
       'Меч · Морок',
       'Удар 1',
-      'Серця +0.5',
+      'Життя: +0.5',
       'Рівень 2',
     ]);
   });
