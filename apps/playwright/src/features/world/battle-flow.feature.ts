@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { WINDOW_RESOLVES_MS } from '@config/battle-timing';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
@@ -11,8 +12,6 @@ import { UseEquippedToolFeature } from '@features/world/use-equipped-tool.featur
 import { VerifyActionAlertFeature } from '@features/world/verify-action-alert.feature';
 import { VerifyInventoryFeature } from './verify-inventory.feature';
 import { HexobjectKeys } from '@config/test-data';
-
-const WINDOW_RESOLVES_MS = 20_000;
 
 type Snapshot = NonNullable<Awaited<ReturnType<CampingMapPage['hexBoard']['readBattleSnapshot']>>>;
 

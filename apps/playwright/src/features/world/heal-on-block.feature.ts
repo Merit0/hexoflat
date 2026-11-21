@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { WINDOW_RESOLVES_MS } from '@config/battle-timing';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
 import { OpenCampingMapFeature } from './open-camping-map.feature';
@@ -68,8 +69,9 @@ export class HealOnBlockFeature extends BaseFeature {
         await this.map.battleTab.verifyShieldCount(1, 1);
       }
       await expect
-        .poll(() =>
-          this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleSnapshot()?.reaction),
+        .poll(
+          () => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleSnapshot()?.reaction),
+          { timeout: WINDOW_RESOLVES_MS },
         )
         .toBeNull();
       await this.verifyHp(hp);
