@@ -59,7 +59,6 @@ describe('coinPrice: what an item costs at a trader', () => {
       [HEXOBJECT_KEYS.AXE]: 60,
       [HEXOBJECT_KEYS.PICKAXE]: 60,
       [HEXOBJECT_KEYS.RETURN_SCROLL]: 60,
-      [HEXOBJECT_KEYS.CROWN_SHARD]: 80,
       [HEXOBJECT_KEYS.SWORD]: 500,
     });
   });

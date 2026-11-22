@@ -90,10 +90,6 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
           "amount": 41,
           "itemKey": "coins",
         },
-        {
-          "amount": 1,
-          "itemKey": "crown-shard",
-        },
       ],
     },
     "type": "CONTAINER_OPENED",
@@ -117,28 +113,6 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
     "payload": {
       "heroId": "hero",
       "revision": 1,
-    },
-    "type": "INVENTORY_CHANGED",
-  },
-  {
-    "payload": {
-      "amount": 1,
-      "heroId": "hero",
-      "key": "crown-shard",
-      "placedAt": [
-        {
-          "container": "bag",
-          "index": 1,
-        },
-      ],
-      "source": "loot",
-    },
-    "type": "ITEM_GRANTED",
-  },
-  {
-    "payload": {
-      "heroId": "hero",
-      "revision": 2,
     },
     "type": "INVENTORY_CHANGED",
   },

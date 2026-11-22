@@ -49,7 +49,6 @@ describe('REQ-LOOT-083 a boss grave with no free place', () => {
     const looted = play(state, lootAt(TARGET));
     expect(looted.refused).toBeNull();
     expect(looted.battle.collect!.items).toEqual([]);
-    expect(countItem(toAggregate(looted.inventory!), HEXOBJECT_KEYS.CROWN_SHARD)).toBe(1);
     expect(countItem(toAggregate(looted.inventory!), HEXOBJECT_KEYS.COINS)).toBeGreaterThanOrEqual(
       30,
     );
@@ -57,10 +56,7 @@ describe('REQ-LOOT-083 a boss grave with no free place', () => {
     const payload = looted.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
       toBag: { itemKey: string }[];
     };
-    expect(payload.toBag.map((drop) => drop.itemKey)).toEqual([
-      HEXOBJECT_KEYS.COINS,
-      HEXOBJECT_KEYS.CROWN_SHARD,
-    ]);
+    expect(payload.toBag.map((drop) => drop.itemKey)).toEqual([HEXOBJECT_KEYS.COINS]);
   });
 
   it('refuses with a full bag and then gives the same list once the bag has room', () => {

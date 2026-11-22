@@ -51,7 +51,6 @@ export function drop(itemKey: LootDrop['itemKey'], amount: number, guaranteed = 
 export const COINS = HEXOBJECT_KEYS.COINS;
 export const POTION = HEXOBJECT_KEYS.HEALTH_BOTTLE;
 export const ENERGY = HEXOBJECT_KEYS.ENERGY_BOTTLE;
-export const SHARD = HEXOBJECT_KEYS.CROWN_SHARD;
 export const SCROLL = HEXOBJECT_KEYS.RETURN_SCROLL;
 export const SWORD = HEXOBJECT_KEYS.SWORD;
 
@@ -70,7 +69,7 @@ export const BOSS_TABLE: LootTable = {
   rolls: [3, 4],
   guaranteed: [
     { itemKey: COINS, amount: [10, 20] },
-    { itemKey: SHARD, amount: [1, 1] },
+    { itemKey: SCROLL, amount: [1, 1] },
   ],
   entries: [
     { itemKey: SWORD, weight: 1, amount: [1, 1] },

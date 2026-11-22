@@ -128,8 +128,6 @@ describe('shared and private loot availability', () => {
       for (const itemKey of ['coins', 'return-scroll', 'health-bottle'] as const)
         expect(dropAvailableIn({ itemKey }, dimension)).toBe(true);
     }
-    expect(dropAvailableIn({ itemKey: 'crown-shard' }, EDimension.EARTH)).toBe(false);
-    expect(dropAvailableIn({ itemKey: 'crown-shard' }, EDimension.HEAVEN)).toBe(false);
     expect(availableInDimension({ dimension: EDimension.EARTH }, EDimension.HEAVEN)).toBe(false);
   });
 

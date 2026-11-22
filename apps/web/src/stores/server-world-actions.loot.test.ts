@@ -196,7 +196,7 @@ describe('a chest answer reaches the client state', () => {
       placed: { hex: Axial; itemKey: string }[];
       toBag: { itemKey: string; amount: number }[];
     };
-    raw.toBag = [{ itemKey: 'crown-shard', amount: 1 }];
+    raw.toBag = [{ itemKey: 'return-scroll', amount: 1 }];
     const payload = {
       placed: raw.placed.map((item) => ({
         coordinates: axialToOffset(item.hex),

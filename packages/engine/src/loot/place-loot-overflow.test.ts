@@ -8,7 +8,7 @@ import {
   ENERGY,
   COINS,
   POTION,
-  SHARD,
+  SCROLL,
   BOSS_TABLE,
   SWORD,
   TARGET,
@@ -21,7 +21,7 @@ import {
 const THREE_PLACES = allFreeExcept('E', 'SW', 'W');
 const FOUR_GUARANTEED = [
   drop(SWORD, 1, true),
-  drop(SHARD, 1, true),
+  drop(SCROLL, 1, true),
   drop(POTION, 1, true),
   drop(ENERGY, 1, true),
 ];
@@ -35,21 +35,21 @@ describe('placeLoot characterization: truncation with guaranteed drops (before L
     const result = place();
     expect(result.kind).toBe('placed');
     if (result.kind !== 'placed') return;
-    expect(result.placements.map((entry) => entry.itemKey)).toEqual([SWORD, SHARD, POTION]);
+    expect(result.placements.map((entry) => entry.itemKey)).toEqual([SWORD, SCROLL, POTION]);
     expect(result.toBag).toEqual([drop(ENERGY, 1, true)]);
   });
 
   it('REQ-LOOT-110 3 places, 2 guaranteed + 3 rolled: 2 guaranteed and 1 rolled placed, 2 rolled discarded', () => {
     const result = place(THREE_PLACES, [
       drop(SWORD, 1, true),
-      drop(SHARD, 1, true),
+      drop(SCROLL, 1, true),
       drop(COINS, 4),
       drop(POTION, 1),
       drop(ENERGY, 1),
     ]);
     expect(result.kind).toBe('placed');
     if (result.kind !== 'placed') return;
-    expect(result.placements.map((entry) => entry.itemKey)).toEqual([SWORD, SHARD, COINS]);
+    expect(result.placements.map((entry) => entry.itemKey)).toEqual([SWORD, SCROLL, COINS]);
     expect(result.toBag).toEqual([]);
   });
 

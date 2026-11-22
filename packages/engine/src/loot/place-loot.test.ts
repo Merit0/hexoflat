@@ -7,7 +7,6 @@ import {
   SCREEN_CLOCKWISE_AFTER,
   SCREEN_RING,
   SCROLL,
-  SHARD,
   SWORD,
   TARGET,
   allFreeExcept,
@@ -92,21 +91,21 @@ describe('placeLoot', () => {
     const neighbours = allFreeExcept('E', 'SE', 'SW', 'W', 'NW', 'NE');
     const result = run({
       neighbours,
-      drops: [[drop(SHARD, 1, true), drop(POTION, 1), drop(ENERGY, 1)]],
+      drops: [[drop(SCROLL, 1, true), drop(POTION, 1), drop(ENERGY, 1)]],
     });
-    expect(result).toEqual({ kind: 'placed', placements: [], toBag: [drop(SHARD, 1, true)] });
+    expect(result).toEqual({ kind: 'placed', placements: [], toBag: [drop(SCROLL, 1, true)] });
   });
 
   it('REQ-LOOT-014 zero free with two guaranteed entries: both go to the bag', () => {
     const neighbours = neighboursWith({ E: false, SE: false, SW: false });
     const result = run({
       neighbours,
-      drops: [[drop(COINS, 12, true), drop(SHARD, 1, true), drop(POTION, 1)]],
+      drops: [[drop(COINS, 12, true), drop(SCROLL, 1, true), drop(POTION, 1)]],
     });
     expect(result).toEqual({
       kind: 'placed',
       placements: [],
-      toBag: [drop(COINS, 12, true), drop(SHARD, 1, true)],
+      toBag: [drop(COINS, 12, true), drop(SCROLL, 1, true)],
     });
   });
 });
@@ -116,12 +115,12 @@ describe('placeLoot guaranteed and coins', () => {
     const neighbours = allFreeExcept('E', 'SE', 'SW', 'W');
     const result = run({
       neighbours,
-      drops: [[drop(COINS, 12, true), drop(SHARD, 1, true), drop(POTION, 1), drop(ENERGY, 1)]],
+      drops: [[drop(COINS, 12, true), drop(SCROLL, 1, true), drop(POTION, 1), drop(ENERGY, 1)]],
     });
-    expect(placed(result).map((entry) => entry.itemKey)).toEqual([COINS, SHARD]);
+    expect(placed(result).map((entry) => entry.itemKey)).toEqual([COINS, SCROLL]);
     const single = run({
       neighbours: neighboursWith({ NW: true }),
-      drops: [[drop(COINS, 12, true), drop(SHARD, 1, true), drop(POTION, 1)]],
+      drops: [[drop(COINS, 12, true), drop(SCROLL, 1, true), drop(POTION, 1)]],
     });
     expect(placed(single).map((entry) => entry.itemKey)).toEqual([COINS]);
   });

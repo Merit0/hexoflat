@@ -334,7 +334,6 @@ N. Конфлікти з цим планом і питання до Олега.
 | coins                     | `hex-assets/hex-loot/coins-hex.png`                                      | 512×512 PNG      | engine `content/loot.content.ts` (spritePath) |
 | health/energy/mana bottle | `hex-assets/hex-loot/{health,energy,mana}-bottle-token-image.png`        | 512×512 PNG      | engine `content/loot.content.ts`              |
 | return-scroll             | `hex-assets/hex-loot/teleport-scroll-token.png`                          | 512×512 PNG      | engine `content/loot.content.ts`              |
-| crown-shard               | `enemy-assets/boss-hex-images/emitter-token-image.png` (плейсхолдер)     | 1000×1000 PNG    | engine `content/loot.content.ts:160-161`      |
 | (не використовується)     | `hex-assets/hex-equipment/hex-weapons/hex-sword/guard-sword-token.png`   | 1000×1000 PNG    | ніде (grep `guard-sword-token` — 0)           |
 | (не використовується)     | `hex-assets/hex-tools/equipment-placeholder-hex.png`                     | 1226×1283 PNG    | ніде (grep `equipment-placeholder-hex` — 0)   |
 | blue-light                | `hex-assets/hex-frames/blue-light.png`                                   | 512×512 PNG RGBA | web `render/rarity.ts:14`                     |

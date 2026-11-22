@@ -383,7 +383,7 @@ describe('stash filters, actions and the bag overflow button', () => {
         K.PICKAXE,
         K.HEALTH_BOTTLE,
         K.COINS,
-        K.CROWN_SHARD,
+        K.MANA_BOTTLE,
         K.ENERGY_BOTTLE,
         K.RETURN_SCROLL,
       ]) {
@@ -411,7 +411,7 @@ describe('stash filters, actions and the bag overflow button', () => {
         K.PICKAXE,
         K.HEALTH_BOTTLE,
         K.COINS,
-        K.CROWN_SHARD,
+        K.MANA_BOTTLE,
         K.ENERGY_BOTTLE,
       ]) {
         inventory.putToInventory(key, 1);
