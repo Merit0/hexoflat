@@ -224,6 +224,8 @@ export interface HexoflatTestApi {
   getInventoryItemAmount(key: string): number;
   grantInventoryItem(key: string, amount: number): void;
   grantTokenItem(spec: TestTokenSpec): Promise<TestItemToken>;
+  grantUniqueTokenItem(uniqueKey: string): Promise<TestItemToken>;
+  getInventoryToken(tokenId: string): TestItemToken | null;
   getStash(): ({ key: string; amount: number; id: string } | null)[];
   getBag(): ({ key: string; amount: number; id: string } | null)[];
   getStashChests(): number;

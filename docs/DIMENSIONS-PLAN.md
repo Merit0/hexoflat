@@ -3,7 +3,7 @@
 ## Status and scope
 
 D0 [DONE — 2026-11-21]: repository audit and implementation specification recorded.
-D1–D5 are complete. D6 integration and closeout remains planned.
+D0–D6 are complete. The planned dimension implementation, compatibility audit and integration verification are finished.
 Work branch: `implement-game-dimensions`. The user explicitly authorized continuing subsequent phases in this chat. Do not commit without authorization.
 
 ## Decisions
@@ -52,28 +52,28 @@ The following is the explicit assignment for all 39 current HEXOBJECT_KEYS. Defi
 | HEAVEN     | return-scroll, return-portal                                                                                                                                                                                                                                                                                                 |
 | NOWHERE    | No current HEXOBJECT_KEY; last-verdict is a separate unique-token definition                                                                                                                                                                                                                                                 |
 
-These are authored defaults to implement, not evidence of dimensions already stored in content. A generic sword key currently also serves as a token type; D2 must distinguish the EARTH catalogue object from the dimension-owned generated variants without reclassifying existing GLOOM/SPARK tokens.
+This D0 assignment inventory is now implemented and validated by D1–D6. A generic sword key still identifies shared type mechanics; concrete baseKey/token ownership distinguishes the EARTH catalogue object from generated dimension-owned variants without reclassifying existing GLOOM/SPARK tokens.
 
-| Other content                                                       | Assignment / concrete resolution                                                                                                   |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| camping, silesia, silesia-north                                     | EARTH                                                                                                                              |
-| cave / Skeletor Kingdom                                             | UNDERWORLD                                                                                                                         |
-| crypt battlefield                                                   | UNDERWORLD; other future battlefield variants declare ownership                                                                    |
-| seeker field instances                                              | Capture origin location dimension at creation; generic field recipe is reusable                                                    |
-| skeleton-warrior, skeleton-archer, skeleton-king battle enemies     | UNDERWORLD                                                                                                                         |
-| hero instances                                                      | EARTH initially; acquiring a skill school does not change ownership                                                                |
-| ilva trader                                                         | EARTH                                                                                                                              |
-| woodcutter, stonebreaker, scholar board quests                      | EARTH: Silesia resource gathering, camping Book of Will                                                                            |
-| bone-hunter board quest                                             | UNDERWORLD: cave execution; accepted and claimed at the Earth board                                                                |
-| seeker-1, seeker-2, seeker-3 cards                                  | EARTH; runs record field source and reward context separately                                                                      |
-| bionic / demonic / angelic skill definitions                        | EARTH / UNDERWORLD / HEAVEN respectively; cross-school learning remains allowed                                                    |
-| lantern-eater / last-verdict uniques                                | UNDERWORLD / NOWHERE                                                                                                               |
-| generated equipment (including disabled types)                      | Concrete variant has one dimension; disabled types stay disabled                                                                   |
-| battlefield terrain objects, spawned resources, derived open chests | Resolve an authored concrete variant at creation, preserve through transformations; no unowned runtime object                      |
-| profiles, loot tables, board recipes                                | Dimension-owned concrete configurations over shared algorithms; reused tables/recipes require explicit scoped variants or bindings |
-| names, adjectives, sprites, materials, stat algorithms              | Reusable supporting data; eligible references validated by dimensional profile, not treated as world objects                       |
+| Other content                                                       | Assignment / concrete resolution                                                                                                       |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| camping, silesia, silesia-north                                     | EARTH                                                                                                                                  |
+| cave / Skeletor Kingdom                                             | UNDERWORLD                                                                                                                             |
+| crypt battlefield                                                   | UNDERWORLD; other future battlefield variants declare ownership                                                                        |
+| seeker field instances                                              | Capture origin location dimension at creation; generic field recipe is reusable                                                        |
+| skeleton-warrior, skeleton-archer, skeleton-king battle enemies     | UNDERWORLD                                                                                                                             |
+| hero instances                                                      | EARTH initially; acquiring a skill school does not change ownership                                                                    |
+| ilva trader                                                         | EARTH                                                                                                                                  |
+| woodcutter, stonebreaker, scholar board quests                      | EARTH: Silesia resource gathering, camping Book of Will                                                                                |
+| bone-hunter board quest                                             | UNDERWORLD: cave execution; accepted and claimed at the Earth board                                                                    |
+| seeker-1, seeker-2, seeker-3 cards                                  | EARTH; runs record field source and reward context separately                                                                          |
+| bionic / demonic / angelic skill definitions                        | EARTH / UNDERWORLD / HEAVEN respectively; cross-school learning remains allowed                                                        |
+| lantern-eater / last-verdict uniques                                | UNDERWORLD / NOWHERE                                                                                                                   |
+| generated equipment (including disabled types)                      | Concrete variant has one dimension; disabled types stay disabled                                                                       |
+| battlefield terrain objects, spawned resources, derived open chests | Resolve an authored concrete variant at creation, preserve through transformations; no unowned runtime object                          |
+| profiles, loot tables, board recipes                                | Owned board configurations and trusted source bindings for reused loot/profile algorithms; private/shared item eligibility is explicit |
+| names, adjectives, sprites, materials, stat algorithms              | Reusable supporting data; eligible references validated by dimensional profile, not treated as world objects                           |
 
-D1/D2 must turn this inventory into exhaustive registry checks, including battle-only and dynamically created objects. New registry entries must fail validation until assigned. Counts are an audit aid, never a substitute for exhaustive validation.
+The registry/content validators and tests now cover this inventory, including battle-only definitions and generated item ownership. New concrete entries must declare an owner before validation passes. Counts are an audit aid, never a substitute for exhaustive validation.
 
 ## Explicit relationships to preserve
 
@@ -226,11 +226,39 @@ D5 implementation (2026-11-22):
 
 D5 verification: `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm test --concurrency=3 --continue -- --maxWorkers=1` passed. 7,038 tests passed: 2,450 engine, 4,251 web, 297 API with real PostgreSQL and 40 Playwright framework tests; two existing battle-balance tests remain skipped. Focused regressions cover source recovery/idempotence, legacy checksummed snapshots and attributes, journal replay without duplicate ledger writes, localized labels, token-owned hover details and loot sprite/light updates with cleanup. Browser E2E remains D6. Existing lint/build warnings remain; no thresholds were raised or new import cycles introduced.
 
-### D6 — Integration and closeout [PLANNED]
+### D6 — Integration and closeout [DONE — 2026-11-22]
 
 Verify acquire → inventory → equip/trade → travel → reload across dimensions, including ALIEN and invalid client scope. Cover real API persistence and selector-free Feature/Page/Component E2E flows.
 
 Acceptance: pnpm lint/typecheck/test and relevant API/E2E checks pass; rebuild engine before web checks; run E2E through `sh scripts/pre-push-e2e.sh <spec> [options]`. Registry completeness covers authored and generated objects; all acquisition routes reviewed. Update plan, CLAUDE and canonical skills. No threshold increases or duplicate frontend rules.
+
+D6 implementation and final audit (2026-11-22):
+
+- Added selector-free `hero/dimensions.spec.ts` with DimensionItemsFeature → CampingMapPage → DimensionItemsComponent. Five scenarios verify GLOOM/SPARK equipment through real Earth/Underworld gates and reload, ALIEN/Nowhere unique equipment through the same travel, and GLOOM/ALIEN sale, persisted buyback and repurchase. Each check compares the entire stored token, including id, ownership, base/unique identity, attributes, skills, price, sprite, tier and generator version, plus the visible dimension labels.
+- Guarded E2E hooks read an owned token and arrange an existing authored unique with the normal factory, then save through the existing DEV_SET_INVENTORY fixture pipeline. The fixture seed is separate from the encoded public source id. No production acquisition mechanic, entity or dimension location was introduced. Heaven's equipment is exercised as carried gear because Heaven has no location yet.
+- Added six real-PostgreSQL boundary regressions: forged dimension/origin/tokenOrigin/client metadata is refused before world state changes; private EARTH bases requested from SPARK/GLOOM are refused without an inventory change. Existing replay, save/load and source-pool tests remain in the full suite.
+- Browser acquisition coverage includes real chest OPEN/TAKE/reload, quest sword pickup and token look after reload, and Return Scroll portal checks (including the one-way Underworld route and skill refusal). Tests use the dedicated pre-push stack, one Chromium worker and zero retries; the existing slow quest acquisition case is explicitly included.
+- Registry completeness is enforced by the existing exhaustive content/board/base/unique/skill/quest/battle validators and their tests. The audit covers 39 hexobjects, twelve enabled concrete equipment bases, the two authored uniques, all existing locations/quests/skills and native battle definitions. Supporting mechanics/profile tables remain shared algorithms with explicit source bindings; disabled equipment categories stay disabled.
+
+| Acquisition / lifecycle route           | Trusted scope and final coverage                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| World chest, grave and Trophy loot      | Captured world/battle source → scoped table/pool → token factory; source/loot/API tests and browser chest pickup/reload                                |
+| Quest chest and quest board rewards     | Saved run source or authored execution/reward source; quest source/reward tests and real browser quest acquisition                                     |
+| First camp chest                        | Explicit camp origin through the ordinary factory; existing camp-claim/API tests                                                                       |
+| Trader fresh stock                      | Authored trader source or stall owner, with own/shared pools; existing stock generation and API tests                                                  |
+| Trader buyback and listings             | Existing token retained instead of reminting; API persistence/replay tests and GLOOM/ALIEN browser buyback                                             |
+| Raw placed pickup / stock grants        | Stored token retained; catalogue-owned legacy materialization or explicitly supplied source required; pickup/source tests                              |
+| Legacy tokenless inventory              | Established historical upcaster only; current owned tokens never reroll; snapshot/aggregate/API compatibility tests                                    |
+| Developer fixtures                      | Explicit scoped base specs refuse foreign keys; unique fixture uses authored content, guarded fixture pipeline and independent seed/source identifiers |
+| Inventory, equipment, travel and reload | Full token equality after real equip/gates/reload; own/shared availability never recolors a carried item                                               |
+
+D6 verification (2026-11-22):
+
+- `E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/hero/dimensions.spec.ts e2e/slow/hero/token-look.spec.ts e2e/camp/return-portal.spec.ts e2e/hero/loot-chest.spec.ts --workers=1 --retries=0`: **15 Chromium scenarios passed**, including all five new dimension cases. Dedicated servers ran the current code; database schema check reported no changes.
+- `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm e2e:map:check` and `pnpm test --concurrency=3 --continue -- --maxWorkers=1` passed. **7,044 workspace tests passed**: 2,450 engine, 4,251 web, 303 API with real PostgreSQL and 40 Playwright framework tests. Two existing battle-balance tests remain skipped. Existing lint/build and unmapped-file informational warnings remain; no thresholds were raised or new import cycles added.
+- Production build inspection found none of the new E2E-only unique fixture/read hook identifiers in its JavaScript bundles. No content/aggregate/generator version changes, database reset, new playable dimension locations or unique-spawn mechanics were needed.
+
+All planned implementation acceptance criteria are met. Heaven locations, new dimension content, deferred equipment categories and a full QuestsGenerator remain intentionally outside this completed plan.
 
 ## Migration invariants and completion gate
 

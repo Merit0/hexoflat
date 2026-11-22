@@ -1,3 +1,4 @@
+import { gameTokenFactory, tokenSourceIdOf } from '@hexoflat/engine/tokens/game-tokens';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
@@ -55,6 +56,29 @@ export const inventoryTestApi = {
     if (!result.ok) throw new Error(`Cannot grant ${amount} x ${key}`);
   },
   grantTokenItem,
+  getInventoryToken(tokenId: string): ItemToken | null {
+    if (import.meta.env.VITE_E2E_HOOKS !== 'true') return null;
+    const token = heldTokens().find((entry) => entry.id === tokenId);
+    return token ? (JSON.parse(JSON.stringify(token)) as ItemToken) : null;
+  },
+  async grantUniqueTokenItem(uniqueKey: string): Promise<ItemToken> {
+    if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+    const base = await grantTokenItem({ type: 'sword', realm: 'idol', mapTier: 1, attributes: [] });
+    const made = gameTokenFactory().createUnique(uniqueKey, {
+      seed: 'e2e-unique-fixture',
+      sourceId: tokenSourceIdOf('dev', base.id, 'unique'),
+      n: 0,
+      mapTier: 3,
+      ownedUniques: heldTokens().flatMap((token) => (token.uniqueKey ? [token.uniqueKey] : [])),
+    });
+    if (!made.ok) throw new Error(made.refusal.code);
+    const item = useHeroInventoryStore().items.find((entry) => entry.token?.id === base.id);
+    if (!item || item.key !== made.value.type) throw new Error('Unique fixture type mismatch');
+    item.token = made.value;
+    pushInventoryFixture();
+    await settleInventorySync();
+    return made.value;
+  },
   async grantWillToken(bonus: number, mapTier: TestTokenSpec['mapTier'] = 1): Promise<ItemToken> {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
     if (!Number.isInteger(bonus) || bonus < 1 || bonus > mapTier * 10)

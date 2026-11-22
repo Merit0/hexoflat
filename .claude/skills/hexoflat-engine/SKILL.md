@@ -53,9 +53,9 @@ Skills and portals follow the same recipe: pure rules in `src/skills/` and `src/
 
 Will capacity (W0, 2026-11-10): a new hero starts full at 50/50 (`KNOWLEDGE_RULES.startingWill`/`capacity`). Capacity is stored per hero in `knowledge.capacity` and computed only by `willCapacityOf(modifiers)` (`knowledge/math.ts`, base + modifiers); gear passes `HeroStats.maxWill` there through `syncEquipmentWill` (A02); future skill sources must also pass modifiers there and must not refill Will on a raise (clamp `current` on a drop, like `HeroModel.setMaxHealthBonus`). Tests that count Will down from a fresh hero start at 50; `boards/will-budget.test.ts` (REQ-BOARD-008) guards that a cave round trip (up to 38) fits the capacity.
 
-## Dimensions (D5, 2026-11-22)
+## Dimensions (D6, 2026-11-22)
 
-`docs/DIMENSIONS-PLAN.md` tracks implementation; D4 wires world/quest relations; D5 audits persistence/presentation, with D6 closeout remaining. `dimension` is immutable ownership. `sharedWith: 'all' | Dimension[]` extends availability without changing owner. Default is private. Coins, scroll and potions are shared everywhere; Use `availableInDimension` for this rule, never duplicate comparisons in web code.
+`docs/DIMENSIONS-PLAN.md` tracks implementation; D1–D6 cover ownership, source-scoped generation, relations, compatibility/presentation and lifecycle verification. `dimension` is immutable ownership. `sharedWith: 'all' | Dimension[]` extends availability without changing owner. Default is private. Coins, scroll and potions are shared everywhere; Use `availableInDimension` for this rule, never duplicate comparisons in web code.
 
 `content/base-items.content.ts` authors separate concrete base definitions referencing shared mechanical `type`s. A new base needs a unique key, one owner and optional sharing/attribute allowlist; the registry validates/snapshots it. `GenerationContext.baseKey?` explicitly requests a base; generic type requests resolve only inside the source dimension's own/shared catalogue. Never recolor an EARTH definition to make it HEAVEN. Base attribute allowlists filter before RNG and validate overrides. No disabled type can generate. Uniques keep authored stats/skills/price; scoped selection/minting respects own/shared availability.
 
@@ -78,6 +78,10 @@ New worlds, expedition runs, copied fields, pending actions and squad battles sn
 Token metadata normalization belongs in persisted schema readers, not ad hoc UI or per-entity migrations. Keep legacy ids, rolled stats, deprecated owned attributes, prices, tiers and generatorVersion. Existing inventory/progress upcasters remain unchanged; no version bump for additive dimension metadata. Generic snapshot checksums validate the original payload before normalizing tokens. A null legacy container stays unrolled during hydration. Journal replay returns its historical events plus current normalized aggregate projections; it must never repeat a move/grant or ledger write.
 
 `parseQuestRun` snapshots a missing source from its saved field origin/tier (or the documented historical camp fallback). `deserializeWorld` fills only a missing battle tokenOrigin from that world's captured origin. Never replace a source already stored. `projectQuestForClient` carries complete normalized tokens only for visible ground loot and exposes the run dimension; unopened contents and generation secrets remain hidden. Battle projection exposes public dimension when known, removes tokenOrigin/tokenSecret/seed, and its TypeScript shape must match those omissions.
+
+### Integration contract (D6)
+
+Normal player commands never accept client dimension/origin/tokenOrigin as generation authority. Strict world schemas refuse those extra fields before mutation; scoped dev base specifications still refuse a named private foreign base. Keep complete owned token identity through inventory, equipment, trade/buyback/listings, travel and reload. Carrying a foreign token is allowed; fresh generation uses own/shared pools. Browser dimension tests verify deep token equality and public labels; real API tests verify private base and forged-source refusals. E2E unique arrangement uses existing authored content through guarded fixtures, not a new production spawn path. Source ids encode their parts; never put the generation seed (even encoded) inside them.
 
 ## Item rarity
 
