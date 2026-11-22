@@ -1,3 +1,5 @@
+import { dimensionSchema, EDimension } from '../dimensions/dimensions';
+import { sharedWithSchema } from '../dimensions/availability';
 import { z } from 'zod';
 import { usePriceOf } from '../content/content-accessors';
 import {
@@ -13,6 +15,8 @@ const i18nKey = z.string().regex(/^content\.battle\.[a-z0-9-]+\.[a-zA-Z]+$/);
 export const battleItemDefSchema = z
   .object({
     id: z.string().min(1),
+    dimension: dimensionSchema,
+    sharedWith: sharedWithSchema.optional(),
     power: z.number().int().positive().optional(),
     range: z.object({ min: z.number().int().min(2), max: z.number().int().min(2) }).optional(),
     block: z.object({ sides: z.number().int().positive() }).optional(),
@@ -32,6 +36,7 @@ export type BattleBehaviour = (typeof BATTLE_BEHAVIOURS)[number];
 
 export const battleCreatureDefSchema = z.object({
   id: z.string().min(1),
+  dimension: dimensionSchema,
   behaviour: z.enum(BATTLE_BEHAVIOURS),
   hp: z.number().int().positive(),
   weight: z.number().int().min(0),
@@ -45,6 +50,7 @@ export type BattleCreatureDef = z.infer<typeof battleCreatureDefSchema>;
 
 export const battleObjectDefSchema = z.object({
   id: z.string().min(1),
+  dimension: dimensionSchema,
   title: i18nKey,
   tableRule: i18nKey,
 });
@@ -65,25 +71,44 @@ function byId<T extends { id: string }>(schema: z.ZodType<T>, defs: T[]): Record
 }
 
 export const BATTLE_ITEMS: Record<string, BattleItemDef> = byId(battleItemDefSchema, [
-  { id: 'sword', power: 2, ...texts('sword') },
-  { id: 'dagger', power: 1, ...texts('dagger') },
-  { id: 'wooden-shield', ...texts('wooden-shield') },
+  { id: 'sword', dimension: EDimension.EARTH, power: 2, ...texts('sword') },
+  { id: 'dagger', dimension: EDimension.EARTH, power: 1, ...texts('dagger') },
+  { id: 'wooden-shield', dimension: EDimension.EARTH, ...texts('wooden-shield') },
   {
     id: 'health-potion',
+    dimension: EDimension.EARTH,
+    sharedWith: 'all',
     heal: 2,
     usePrice: requiredUsePrice(HEXOBJECT_KEYS.HEALTH_BOTTLE),
     ...texts('health-potion'),
   },
-  { id: 'bone-blade', power: 2, ...texts('bone-blade') },
-  { id: 'bone-buckler', block: { sides: 1 }, ...texts('bone-buckler') },
-  { id: 'king-cleaver', power: 1, ...texts('king-cleaver') },
-  { id: 'king-shield', block: { sides: 2 }, ...texts('king-shield') },
-  { id: 'bone-bow', power: 1, range: { min: 2, max: 3 }, ...texts('bone-bow') },
+  { id: 'bone-blade', dimension: EDimension.UNDERWORLD, power: 2, ...texts('bone-blade') },
+  {
+    id: 'bone-buckler',
+    dimension: EDimension.UNDERWORLD,
+    block: { sides: 1 },
+    ...texts('bone-buckler'),
+  },
+  { id: 'king-cleaver', dimension: EDimension.UNDERWORLD, power: 1, ...texts('king-cleaver') },
+  {
+    id: 'king-shield',
+    dimension: EDimension.UNDERWORLD,
+    block: { sides: 2 },
+    ...texts('king-shield'),
+  },
+  {
+    id: 'bone-bow',
+    dimension: EDimension.UNDERWORLD,
+    power: 1,
+    range: { min: 2, max: 3 },
+    ...texts('bone-bow'),
+  },
 ]);
 
 export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCreatureDefSchema, [
   {
     id: 'hero',
+    dimension: EDimension.EARTH,
     behaviour: 'hero',
     hp: 6,
     weight: 1,
@@ -93,6 +118,7 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
   },
   {
     id: 'skeleton-warrior',
+    dimension: EDimension.UNDERWORLD,
     behaviour: 'warrior',
     hp: 5,
     weight: 1,
@@ -103,6 +129,7 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
   },
   {
     id: 'skeleton-king',
+    dimension: EDimension.UNDERWORLD,
     behaviour: 'king',
     hp: 13,
     weight: 3,
@@ -113,6 +140,7 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
   },
   {
     id: 'skeleton-archer',
+    dimension: EDimension.UNDERWORLD,
     behaviour: 'archer',
     hp: 2,
     weight: 1,
@@ -125,7 +153,11 @@ export const BATTLE_CREATURES: Record<string, BattleCreatureDef> = byId(battleCr
 
 export const BATTLE_OBJECTS: Record<string, BattleObjectDef> = byId(
   battleObjectDefSchema,
-  ['wall', 'rubble', 'ledge', 'oil', 'saw', 'boulder'].map((id) => ({ id, ...texts(id) })),
+  ['wall', 'rubble', 'ledge', 'oil', 'saw', 'boulder'].map((id) => ({
+    id,
+    dimension: EDimension.UNDERWORLD,
+    ...texts(id),
+  })),
 );
 
 const BATTLE_KIND_BY_HEXOBJECT: Record<string, string> = {

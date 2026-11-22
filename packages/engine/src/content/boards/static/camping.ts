@@ -1,7 +1,9 @@
+import { EDimension } from '../../../dimensions/dimensions';
 import type { StaticBoardDrawing } from '../schemas';
 
 export const CAMPING_BOARD = {
   id: 'camping',
+  dimension: EDimension.EARTH,
   background: '/hex-assets/board-hexes/stone-hex.png',
   legend: {
     F: { hexobjectKey: 'fireplace' },

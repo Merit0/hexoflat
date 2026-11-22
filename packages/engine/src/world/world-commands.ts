@@ -85,6 +85,7 @@ export function stateOf(run: WorldRun, hero: HeroState): HexEngineState {
     knowledge: run.progress.knowledge,
     knowledgeContext: serverKnowledgeContext(presence),
     location: locationOf(run.world),
+    placementScope: MapRegistry.get(run.world.locationKey).recipe,
     inventory: run.inventory,
     inventoryContext: { stashOpen: false, battleOpen: false },
     engagement: run.world.engagement ?? undefined,

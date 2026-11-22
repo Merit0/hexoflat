@@ -606,7 +606,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     const { userId, heroId } = await kit.newPlayer();
     const first = await arrive(userId, heroId, 'cave');
     const oldMapId = first.hero!.mapId;
-    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CAMPING_ENTRANCE);
+    const { spot } = await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.CAVE_EXIT);
     await placeBesideHero(userId, heroId, HEXOBJECT_KEYS.GRAVE);
     const travelled = await send(userId, heroId, 'WORLD_TRAVEL', {
       via: { kind: 'gate', coordinates: spot },
@@ -616,7 +616,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     const again = (await world.ensure(userId, heroId, 'cave')) as { mapId: string };
     expect(again.mapId).not.toBe(oldMapId);
     const state = await presenceOf(userId, heroId);
-    expect(state.presence.locationKey).toBe('camping');
+    expect(state.presence.locationKey).toBe('silesia');
     expect(state.sealedUntil.cave).toBeGreaterThan(Date.now());
     const back = await send(userId, heroId, 'WORLD_TRAVEL', {
       via: { kind: 'gate', coordinates: { columnIndex: 0, rowIndex: 0 } },

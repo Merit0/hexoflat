@@ -1,7 +1,10 @@
+import { EDimension } from '../../../dimensions/dimensions';
 import type { BoardRecipeInput } from '../recipe-schema';
 
 export const TREASURE_SEEKER_MAP_MODEL = {
   id: 'treasure-seeker-map',
+  dimension: EDimension.EARTH,
+  foreignPlacements: [],
   version: 1,
   kind: 'generated',
   layout: 'extended',

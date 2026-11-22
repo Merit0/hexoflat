@@ -132,7 +132,10 @@ describe('CH-P0 payload snapshots: grave', () => {
     expect({
       LOOT_PICKED: play(state, pickAt(stack.hex)).events,
       NO_LOOT_THERE: play(state, pickAt({ q: -3, r: 0 })).events,
-      NOT_ADJACENT: play(away, pickAt(away.collect!.items.find((i) => i.hex.q === 2)!.hex)).events,
+      NOT_ADJACENT: play(
+        play(away, stepTo({ q: -1, r: 0 })).battle,
+        pickAt(away.collect!.items[0].hex),
+      ).events,
       BAG_FULL: play(state, pickAt(stack.hex), { ...fullBag(), capacityKg: 1000 }).events,
     }).toMatchSnapshot();
   });

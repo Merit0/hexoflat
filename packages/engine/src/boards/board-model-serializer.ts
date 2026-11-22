@@ -79,6 +79,9 @@ export function boardModelConstName(id: string): string {
 export function serializeBoardModel(recipe: BoardRecipeInput): string {
   const prefix = `export const ${boardModelConstName(recipe.id)} = `;
   const suffix = ' satisfies BoardRecipeInput;';
-  const body = format(recipe as Json, 0, prefix.length);
-  return `import type { BoardRecipeInput } from '../recipe-schema';\n\n${prefix}${body}${suffix}\n`;
+  const body = format(recipe as Json, 0, prefix.length).replace(
+    /dimension: '(heaven|earth|underworld|nowhere)'/,
+    (_, dimension: string) => `dimension: EDimension.${dimension.toUpperCase()}`,
+  );
+  return `import { EDimension } from '../../../dimensions/dimensions';\nimport type { BoardRecipeInput } from '../recipe-schema';\n\n${prefix}${body}${suffix}\n`;
 }

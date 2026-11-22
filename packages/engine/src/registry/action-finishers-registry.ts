@@ -7,7 +7,7 @@ import { tokenSourceIdOf } from '../tokens/game-tokens';
 import { coordinateKey } from '../utils/hex-utils';
 import { IActionContext } from '../abstraction/abstract-action';
 import { getMeta, CONTENT } from '../content';
-import { itemFamilyOfDimension } from '../dimensions/dimensions';
+import { dimensionOfItemFamily, itemFamilyOfDimension } from '../dimensions/dimensions';
 import { baseRealmSchema } from '../tokens/token-keys';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from './hexobjects-registry';
@@ -78,7 +78,12 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     logAction(ctx, 'Cut the Tree');
     ctx.emit?.({
       type: 'RESOURCE_GATHERED',
-      payload: { action: 'CUT', hexobjectKey: action.hexobjectKey, amount: 1 },
+      payload: {
+        action: 'CUT',
+        hexobjectKey: action.hexobjectKey,
+        amount: 1,
+        ...(ctx.loot?.origin ? { dimension: dimensionOfItemFamily(ctx.loot.origin.realm) } : {}),
+      },
     });
 
     consumeTileHexobject(tile);
@@ -104,7 +109,12 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
     ctx.gathering.add(action.hexobjectKey, amount);
     ctx.emit?.({
       type: 'RESOURCE_GATHERED',
-      payload: { action: 'MINE', hexobjectKey: action.hexobjectKey, amount: stone },
+      payload: {
+        action: 'MINE',
+        hexobjectKey: action.hexobjectKey,
+        amount: stone,
+        ...(ctx.loot?.origin ? { dimension: dimensionOfItemFamily(ctx.loot.origin.realm) } : {}),
+      },
     });
 
     if (stone > 0 && ctx.heroToolStore.stoneCollected) {
@@ -180,6 +190,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
           endsAt: nextEndsAt,
           hexobjectKey: action.hexobjectKey,
           cancelled: false,
+          tokenOrigin: action.tokenOrigin,
           meta: { healAmount: heal.amountPerTick },
         };
 

@@ -1,3 +1,4 @@
+import type { BoardPlacementScope } from '../boards/board-dimension';
 import type { TokenOrigin } from '../tokens/token-origin';
 import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
@@ -67,6 +68,7 @@ export interface IActionContext {
   inventory: IInventoryDraft;
   emit?: (event: DomainEvent) => void;
   heroId?: string;
+  placementScope?: BoardPlacementScope;
   loot?: { seed: string; sourceId: string; origin?: TokenOrigin };
   events: IEventsPort;
   worldMap: IWorldMapPort;

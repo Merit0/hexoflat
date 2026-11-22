@@ -1,3 +1,5 @@
+import { gateConnects } from '../dimensions/world-connections';
+import { LOCATION_DIMENSIONS } from '../registry/location-key';
 import { heroFogRadius } from '../map/hero-fog';
 import type { ExitSide } from '../boards/exits';
 import { planBoardCrossing } from '../hero-movement/board-crossing';
@@ -71,6 +73,8 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
     });
     if (!plan.ok) return refuse(plan.reason);
     to = plan.crossing.to;
+    if (LOCATION_DIMENSIONS[world.locationKey] !== LOCATION_DIMENSIONS[to])
+      return refuse('DIMENSION_RELATION_FORBIDDEN');
     arrivalSide = plan.crossing.arrivalSide;
     resting = plan.crossing.restingSpot;
   } else {
@@ -89,6 +93,8 @@ export function travelWorld(run: TravelRun, via: TravelVia): TravelOutcome {
     );
     if (blocked) return refuse(blocked);
     to = enter.locationKey;
+    if (!gateConnects(world.locationKey, to, tile.hexobject!.hexobjectKey))
+      return refuse('DIMENSION_RELATION_FORBIDDEN');
     if (isSealed(progress, to, now)) return refuse('SEALED');
     const charge = actWorld(
       { ...run, progress },

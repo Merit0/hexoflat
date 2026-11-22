@@ -6,9 +6,11 @@ import type { QuestRun } from './quest-state';
 
 const QUEST_RUN_ID_LENGTH = 32;
 
-export function questTokenOrigin(run: Pick<QuestRun, 'field'>): TokenOrigin {
+export function questTokenOrigin(run: Pick<QuestRun, 'field' | 'tokenOrigin'>): TokenOrigin {
+  if (run.tokenOrigin) return { ...run.tokenOrigin };
   // Compatibility for fieldless runs authored before location-backed quests; their source was camp.
   if (!run.field) return campTokenOrigin();
+  if (run.field.tokenOrigin) return { ...run.field.tokenOrigin };
   return {
     realm: locationTokenOrigin(run.field.origin).realm,
     mapTier: run.field.mapTier ?? DEFAULT_MAP_TIER,

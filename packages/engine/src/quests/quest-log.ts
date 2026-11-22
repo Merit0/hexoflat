@@ -1,6 +1,6 @@
-import { dimensionOfItemFamily } from '../dimensions/dimensions';
+import { dimensionOfItemFamily, itemFamilyOfDimension } from '../dimensions/dimensions';
 import { dropAvailableIn } from '../loot/dimension-pool';
-import { campTokenOrigin } from '../registry/location-token-origin';
+import { baseRealmSchema } from '../tokens/token-keys';
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { consumeFromDraft, countInDraft, grantToDraft } from '../inventory/apply-stock';
@@ -183,7 +183,10 @@ export function planClaim(
   for (const [rewardIndex, reward] of quest.rewards.entries()) {
     if (reward.kind === 'item') {
       if (!inventory) return reject(progress, questId, 'NO_INVENTORY');
-      const origin = quest.rewardOrigin ?? campTokenOrigin();
+      const origin = quest.rewardOrigin ?? {
+        realm: baseRealmSchema.parse(itemFamilyOfDimension(quest.dimension)),
+        mapTier: 1,
+      };
       if (!dropAvailableIn({ itemKey: reward.itemKey }, dimensionOfItemFamily(origin.realm)))
         throw new Error(`QUEST_REWARD_OUTSIDE_DIMENSION: ${questId}:${reward.itemKey}`);
       const supply = isTokenType(reward.itemKey)
@@ -225,6 +228,14 @@ export function applyQuestEvents(
     active = active.map((entry) => {
       const quest = catalogue[entry.questId];
       if (!quest || entry.state !== 'active') return entry;
+      const payload = event.payload;
+      if (
+        !payload ||
+        typeof payload !== 'object' ||
+        !('dimension' in payload) ||
+        payload.dimension !== quest.dimension
+      )
+        return entry;
       const handler = handlerFor(quest.objective, registry);
       const advanced = handler.onEvent(quest.objective, entry.progress, event);
       if (advanced === entry.progress) return entry;

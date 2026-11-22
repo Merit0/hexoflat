@@ -1,3 +1,4 @@
+import { EDimension } from '../../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
 import { objectKeysWithTag } from '../../content/content-accessors';
@@ -12,6 +13,8 @@ type RuleInput = Record<string, unknown>;
 function caveWith(rules: RuleInput[]): BoardRecipeInput {
   return {
     id: 'rules-probe',
+    dimension: EDimension.UNDERWORLD,
+    foreignPlacements: ['stone-wall', 'rock', 'chest', 'fireplace', 'healing-spring'],
     version: 1,
     kind: 'generated',
     frame: { columns: BOARD_COLUMNS, rows: BOARD_ROWS },

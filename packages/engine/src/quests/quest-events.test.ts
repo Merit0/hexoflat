@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { applyKnowledgeCommand } from '../knowledge/reducer';
 import { createKnowledgeState, type HallSession } from '../knowledge/state';
@@ -33,7 +34,10 @@ describe('events the quests listen to', () => {
       answer: wrong,
     });
     expect(events.filter((e) => e.type === 'HALL_ANSWERED')).toEqual([
-      { type: 'HALL_ANSWERED', payload: { heroId: 'hero', correct: false } },
+      {
+        type: 'HALL_ANSWERED',
+        payload: { heroId: 'hero', correct: false, dimension: EDimension.EARTH },
+      },
     ]);
     send({ kind: 'next', sessionId: session().id, questionId: question.id });
     const next = session().question;
@@ -46,6 +50,7 @@ describe('events the quests listen to', () => {
     expect(right.find((e) => e.type === 'HALL_ANSWERED')?.payload).toEqual({
       heroId: 'hero',
       correct: true,
+      dimension: EDimension.EARTH,
     });
   });
 });

@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
@@ -16,6 +17,7 @@ import {
 function tinyDrawing(): StaticBoardDrawing {
   return {
     id: 'test',
+    dimension: EDimension.EARTH,
     background: '',
     legend: { A: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 25000 } } },
     rows: ['. . .', ' . A .', '. . .'],
@@ -103,6 +105,7 @@ describe('terrain brushes', () => {
 describe('listBoardObjects / removeAllOfKind', () => {
   const field: StaticBoardDrawing = {
     id: 'field',
+    dimension: EDimension.EARTH,
     background: '',
     legend: {
       A: { hexobjectKey: HEXOBJECT_KEYS.TREE, overrides: { regrowMs: 25000 } },

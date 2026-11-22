@@ -142,6 +142,22 @@ describe('gate arrival with an active quest', () => {
   });
 });
 
+describe('gate dimension relations', () => {
+  it('refuses an unauthored gate relation before charging Will or changing the world', () => {
+    const world = createServerWorld('camping', 'camp', SEED, HERO);
+    const spot = placeBeside(world, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const run = runOf(world);
+    const before = structuredClone(run.progress);
+    const tiles = world.map.toJSON();
+    expect(travelWorld(run, { kind: 'gate', coordinates: spot })).toMatchObject({
+      ok: false,
+      code: 'DIMENSION_RELATION_FORBIDDEN',
+    });
+    expect(run.progress).toEqual(before);
+    expect(world.map.toJSON()).toEqual(tiles);
+  });
+});
+
 describe('a gate on the server', () => {
   it('enters a world configured entirely through its action destination', () => {
     const getMeta = contentAccessors.getMeta;
@@ -214,7 +230,7 @@ describe('a gate on the server', () => {
     expect(run.progress.trips).toBe(3);
 
     const cave = createServerWorld('cave', 'cave-2', SEED, HERO);
-    const exit = placeBeside(cave, HEXOBJECT_KEYS.CAMPING_ENTRANCE);
+    const exit = placeBeside(cave, HEXOBJECT_KEYS.CAVE_EXIT);
     const back = runOf(cave);
     back.progress.trips = 4;
     const left = travelWorld(back, { kind: 'gate', coordinates: exit });
@@ -244,13 +260,13 @@ describe('a gate on the server', () => {
 
   it('replaces a left dungeon with a fresh one, and seals it when the hero cleared it', () => {
     const cave = createServerWorld('cave', 'cave-1', SEED, HERO);
-    const spot = placeBeside(cave, HEXOBJECT_KEYS.CAMPING_ENTRANCE);
+    const spot = placeBeside(cave, HEXOBJECT_KEYS.CAVE_EXIT);
     const grave = placeBeside(cave, HEXOBJECT_KEYS.GRAVE);
     expect(grave).toBeDefined();
     const outcome = travelWorld(runOf(cave), { kind: 'gate', coordinates: spot });
     if (!outcome.ok) throw new Error(outcome.code);
     expect(outcome.progress.knowledge.current).toBe(50);
-    expect(outcome.destination.locationKey).toBe('camping');
+    expect(outcome.destination.locationKey).toBe('silesia');
     expect(outcome.replaced?.locationKey).toBe('cave');
     expect(outcome.replaced?.mapId).not.toBe('cave-1');
     expect(outcome.progress.sealedUntil.cave).toBeGreaterThan(1_000);

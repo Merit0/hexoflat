@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
 import { findShortestPath } from '../hero-movement/pathfinding-service';
@@ -12,7 +13,7 @@ import { serializeStaticBoardDrawing } from './static-board-serializer';
 import { deserializeStaticBoardDrawing } from './static-board-deserializer';
 
 function drawing(rows: string[], legend: StaticBoardDrawing['legend'] = {}): StaticBoardDrawing {
-  return { id: 'terrain-probe', background: '', legend, rows };
+  return { id: 'terrain-probe', dimension: EDimension.EARTH, background: '', legend, rows };
 }
 
 const RIVER = drawing([

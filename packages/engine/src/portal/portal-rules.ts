@@ -1,3 +1,4 @@
+import { returnPortalConnects } from '../dimensions/world-connections';
 import { CAMP_PORTAL_SPOT } from '../content/boards/camp-portal-spot';
 import { isTerrainPassable } from '../boards/terrain';
 import type { HeroState } from '../hero-movement/hero-state';
@@ -61,6 +62,7 @@ export function planPortalOpening(
   combatActive: boolean,
 ): { ok: true; link: PortalLink } | { ok: false; reason: OpenPortalRejection } {
   if (location.locationKey === 'camping') return { ok: false, reason: 'IN_CAMPING' };
+  if (!returnPortalConnects(location.locationKey)) return { ok: false, reason: 'NO_LOCATION' };
   if (combatActive) return { ok: false, reason: 'IN_COMBAT' };
   if (heroPortal(hero)) return { ok: false, reason: 'PORTAL_ALREADY_OPEN' };
   if (hexDistance(hero.coordinates, target) !== 1) return { ok: false, reason: 'NOT_ADJACENT' };
@@ -134,6 +136,7 @@ export function planPortalEntry(
     ? adjacent.find((t) => isPairPortal(link, location, t.coordinates))
     : undefined;
   if (!link || !owned) return { ok: false, reason: 'NOT_YOUR_PORTAL' };
+  if (!returnPortalConnects(link.originLocationKey)) return { ok: false, reason: 'NO_LOCATION' };
 
   if (location.locationKey === 'camping') {
     return {

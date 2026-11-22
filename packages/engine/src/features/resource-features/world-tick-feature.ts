@@ -14,7 +14,7 @@ export class WorldTickFeature {
     let changed = false;
 
     changed = new FinishPendingActionsFeature(this.map).finish(ctx) || changed;
-    changed = new SpawnResourceFeature(this.map).spawn(ctx.now) || changed;
+    changed = new SpawnResourceFeature(this.map).spawn(ctx.now, ctx.placementScope) || changed;
 
     return changed;
   }

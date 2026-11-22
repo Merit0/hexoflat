@@ -1,3 +1,4 @@
+import { assertBoardPlacement, type BoardPlacementScope } from '../boards/board-dimension';
 import { stockTokenSupply } from '../inventory/stock-token-supply';
 import { isEnterableTile } from '../hero-movement/move-planner';
 import { coordinateKey, hexDistance } from '../utils/hex-utils';
@@ -67,6 +68,7 @@ export interface HexEngineState {
   inventory?: InventoryState;
   inventoryContext?: InventoryContext;
   loot?: ChestLootContext;
+  placementScope?: BoardPlacementScope;
 }
 
 /** Everything applyCommand needs beyond map/now — built by the caller from its own stores/ports. */
@@ -106,6 +108,7 @@ export function applyCommand(
     emit: (event) => emitted.push(event),
     heroId: soleHeroId(state),
     loot: state.loot,
+    placementScope: state.placementScope,
   };
 
   switch (parsed.type) {
@@ -148,6 +151,11 @@ export function applyCommand(
         break;
       }
 
+      if (state.placementScope)
+        assertBoardPlacement(
+          state.placementScope,
+          (hexobject as HexObjectPlacementRef).hexobjectKey,
+        );
       new AddResourceSpawnerFeature(tile, hexobject as HexObjectPlacementRef).add();
       events.push({ type: 'RESOURCE_SPAWNER_ADDED', payload: { coordinates } });
       break;

@@ -174,7 +174,11 @@ function squadWorldOf(session: Session): SquadWorld | null {
     battle: session.world.battle ?? undefined,
     engagement: session.world.engagement ?? undefined,
     inventory: session.inventory,
-    loot: { seed: session.world.worldSeed, sourceId: session.world.mapId },
+    loot: {
+      seed: session.world.worldSeed,
+      sourceId: session.world.mapId,
+      origin: worldTokenOrigin(session.world),
+    },
   };
 }
 

@@ -1,7 +1,10 @@
+import { EDimension } from '../../../dimensions/dimensions';
 import type { BoardRecipeInput } from '../recipe-schema';
 
 export const BATTLEFIELD_CRYPT_MODEL = {
   id: 'battlefield-crypt',
+  dimension: EDimension.UNDERWORLD,
+  foreignPlacements: ['rock', 'stone-wall'],
   version: 1,
   kind: 'generated',
   frame: { columns: 13, rows: 11 },

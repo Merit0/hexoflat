@@ -3,7 +3,7 @@
 ## Status and scope
 
 D0 [DONE — 2026-11-21]: repository audit and implementation specification recorded.
-D1–D3 are complete. D4–D6 remain planned.
+D1–D4 are complete. D5–D6 remain planned.
 Work branch: `implement-game-dimensions`. The user explicitly authorized continuing subsequent phases in this chat. Do not commit without authorization.
 
 ## Decisions
@@ -63,7 +63,8 @@ These are authored defaults to implement, not evidence of dimensions already sto
 | skeleton-warrior, skeleton-archer, skeleton-king battle enemies     | UNDERWORLD                                                                                                                         |
 | hero instances                                                      | EARTH initially; acquiring a skill school does not change ownership                                                                |
 | ilva trader                                                         | EARTH                                                                                                                              |
-| woodcutter, stonebreaker, scholar, bone-hunter board quests         | EARTH; bone-hunter may target UNDERWORLD enemies                                                                                   |
+| woodcutter, stonebreaker, scholar board quests                      | EARTH: Silesia resource gathering, camping Book of Will                                                                            |
+| bone-hunter board quest                                             | UNDERWORLD: cave execution; accepted and claimed at the Earth board                                                                |
 | seeker-1, seeker-2, seeker-3 cards                                  | EARTH; runs record field source and reward context separately                                                                      |
 | bionic / demonic / angelic skill definitions                        | EARTH / UNDERWORLD / HEAVEN respectively; cross-school learning remains allowed                                                    |
 | lantern-eater / last-verdict uniques                                | UNDERWORLD / NOWHERE                                                                                                               |
@@ -78,9 +79,9 @@ D1/D2 must turn this inventory into exhaustive registry checks, including battle
 
 - UNDERWORLD cave loot may contain EARTH coins and health potions; skeleton archer/king tables may contain HEAVEN return-scroll. GLOOM equipment remains generated from the cave's own scope.
 - EARTH Ilva stock may contain HEAVEN return-scroll. Buyback/listings preserve the sold item's dimension; they are not fresh stock generation.
-- EARTH map placements may include UNDERWORLD enemies, graves and HEAVEN portals. Audit drawings/recipes at implementation and enumerate actual foreign keys; do not add an unrestricted allow-all rule.
+- Current UNDERWORLD cave/crypt recipes explicitly reuse EARTH terrain and the cave chest. HEAVEN return portals use their own endpoint relation. Any future foreign enemy/grave placement must be authored for that specific placement; there is no unrestricted allow-all rule.
 - EARTH cave-entrance connects to UNDERWORLD cave-exit; reciprocal travel is explicitly allowed. Return portals are HEAVEN objects connecting the source and camp.
-- EARTH bone-hunter objectives may observe UNDERWORLD enemy kills. Preserve current objective semantics; unrelated quest redesign is excluded.
+- Every quest has one execution dimension and one or more existing execution locations. Bone-hunter belongs to UNDERWORLD/cave; accepting or claiming it at the EARTH board does not change its scope. Earth gathering quests cannot count cave work. HEAVEN has no location or current quest. This user clarification supersedes the original D0 bone-hunter assignment.
 - NOWHERE last-verdict may carry EARTH b_strike. Unique authored skills/attributes are checked by authored relations, not rerolled against a new random pool.
 - Coins stay EARTH and retain their existing no-rarity-light presentation in every location.
 
@@ -94,7 +95,7 @@ Generation receives trusted source dimension, source tier, stable source ID, see
 
 Validate eligible entries before RNG. Invalid guaranteed drops are content errors, not silently omitted rewards. Empty optional pools have an explicit empty result; empty required pools refuse without mutation. Preserve independent RNG streams, including Trophy bonus rolls. Any changed output contract needs an explicit generator-version decision and regression fixtures.
 
-Future QuestsGenerator contract: trusted source dimension/tier, eligible objective targets, reward policy, seed and version; output one owned quest plus captured target/reward context. Implement only contracts consumed by existing quests now, not an unused generator framework.
+Future QuestsGenerator contract: trusted execution dimension and existing location keys, source tier, eligible objective targets, reward policy, seed and version. Output must pass QuestDefinitionSchema (required dimension + nonempty matching locations); map-object placement must target one of those locations and an own/shared object. New runs capture tokenOrigin before any deferred generation. Generated reward pools use that source; an authored rewardOrigin is an explicit reward-source relation. Only execution-dimension events advance counting objectives. Heaven becomes eligible only after a real Heaven location is authored. No generator class or unused framework is implemented.
 
 ## Phases and acceptance
 
@@ -172,11 +173,30 @@ D3 implementation:
 | New token output version               | 5                        | 6                                             |
 | Legacy owned tokens                    | retained                 | retained, concrete identity normalized        |
 
-### D4 — World and quest relations [PLANNED]
+### D4 — World and quest relations [DONE — 2026-11-22]
 
 Validate drawings/recipes, spawns, battle terrain/creatures, gates/portals, skills and existing quest references. Capture immutable source context for quest runs, battles and deferred actions.
 
 Acceptance: placement errors identify owner/key/operation; legal foreign placements work; quest rewards and deferred loot retain context after travel/reload; future quest generation contract documented without implementing it.
+
+Implementation (2026-11-22):
+
+- Drawings and recipes require dimension. Location registry ownership derives from the recipe and is checked against the execution-location catalogue. The cave explicitly permits existing EARTH chest/rock/stone-wall placements; crypt recipes permit rock/stone-wall. These placement permissions never grant drop eligibility. Resolved pipeline output, static legends/editor saves and authoritative resource spawners/respawns enforce ownership/sharing with errors naming recipe, operation, key and dimensions. Board serializers preserve the new metadata.
+- Concrete battle actors, hand items and terrain have dimensions. Enemy deployment validates creature, hand and battlefield relations; traveling heroes and their existing inventory remain portable. Skills declare their school ownership and parse through the skill schema; cross-school learning remains allowed.
+- Physical gates enumerate their exact existing endpoints. Unauthored gates refuse before Will cost or world mutation. Border travel remains within one dimension. The Heaven return portal explicitly connects Silesia/north/cave to the Earth camp without introducing a Heaven location.
+- All seven current quests require an execution dimension and existing locations. Bone-hunter executes in UNDERWORLD/cave; woodcutter/stonebreaker execute in EARTH Silesia sectors, scholar in EARTH camping, seekers in EARTH Silesia. Entrance placement/entry enforce those relations. RESOURCE_GATHERED, HALL_ANSWERED and BATTLE_CLOSED carry trusted execution dimensions; missing/foreign dimensions cannot advance counting objectives. Base rewards default to the quest dimension, so the dungeon shield remains GLOOM at the camp board.
+- New worlds, expedition runs/copied fields, pending tile actions and squad battles capture tokenOrigin. Reloads, descriptor changes, travel and later caller contexts do not replace it. Existing metadata-free saves retain the established source fallback; hydrated worlds snapshot it on their next write. Historical quest fields retain their stored origin/tier fallback. No rerolls or version/schema reset. New fieldless test/standalone expedition creation also captures the authored quest source.
+- Characterization passed before implementation. New regressions cover missing/foreign quest scopes, absence of Heaven quest locations, dungeon rewards at camp, illegal placement/gates, legal existing foreign objects and source stability through reloads. Existing grave expectations/snapshots were refreshed to the current drop table; no loot weights or content were added.
+
+D4 verification: `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm test --concurrency=3 --continue -- --maxWorkers=1` passed. 7,004 tests passed: 2,445 engine, 4,223 web, 296 API with real PostgreSQL and 40 Playwright framework tests; two existing battle-balance tests remain skipped. Browser E2E was not part of this phase. Existing lint/build warnings remain; no limits were raised and no new import cycles were added.
+
+| Boundary                | Before D4                                | After D4                                                   |
+| ----------------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| Current quests          | no execution dimension/location contract | seven scoped quests; no Heaven execution location          |
+| Counting progress       | event shape alone                        | matching trusted execution dimension required              |
+| Dungeon board reward    | camp source by default                   | captured/authored quest source; GLOOM shield at camp       |
+| Placement and travel    | structural validation                    | own/shared or explicit operation/endpoint relation         |
+| Deferred source context | partial location/tier derivation         | snapshots on new worlds, runs, pending actions and battles |
 
 ### D5 — Compatibility and presentation [PLANNED]
 

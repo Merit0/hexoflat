@@ -2,7 +2,7 @@ import { EDimension, dimensionSchema } from '../dimensions/dimensions';
 import type HexMapModel from '../map/models/hex-map-model';
 import type { TFogPolicy } from '../map/models/hex-map-model';
 import type { THexobjectKey } from './hexobjects-registry';
-import type { LocationKey } from './location-key';
+import { LOCATION_DIMENSIONS, type LocationKey } from './location-key';
 import type { BoardKind } from './board-kind';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { runBoardPipeline } from '../boards/pipeline/run-board-pipeline';
@@ -32,6 +32,7 @@ export type MapDefinition = {
   title: string;
   boardKind: BoardKind;
   dimension: EDimension;
+  recipe: BoardRecipeInput;
   create: (ctx: CreateBoardContext) => CreatedBoard;
   staticDrawing?: StaticBoardDrawing;
   entryHexobjectKey?: THexobjectKey;
@@ -49,7 +50,6 @@ export type MapDefinition = {
 function staticLocation(
   key: LocationKey,
   title: string,
-  dimension: EDimension,
   recipe: BoardRecipeInput,
   drawing: StaticBoardDrawing,
   extra: Partial<MapDefinition> = {},
@@ -58,7 +58,8 @@ function staticLocation(
     key,
     title,
     boardKind: 'STATIC',
-    dimension,
+    dimension: recipe.dimension,
+    recipe,
     create: () => runBoardPipeline(recipe, { seed: '' }),
     staticDrawing: drawing,
     entryHexobjectKey: recipe.entryObject,
@@ -70,14 +71,13 @@ function staticLocation(
 
 export class MapRegistry {
   private static defs: Record<LocationKey, MapDefinition> = {
-    camping: staticLocation('camping', 'Camping', EDimension.EARTH, CAMPING_RECIPE, CAMPING_BOARD, {
+    camping: staticLocation('camping', 'Camping', CAMPING_RECIPE, CAMPING_BOARD, {
       willZone: 'free',
     }),
-    silesia: staticLocation('silesia', 'Silesia', EDimension.EARTH, SILESIA_RECIPE, SILESIA_BOARD),
+    silesia: staticLocation('silesia', 'Silesia', SILESIA_RECIPE, SILESIA_BOARD),
     'silesia-north': staticLocation(
       'silesia-north',
       'Silesia North',
-      EDimension.EARTH,
       SILESIA_NORTH_RECIPE,
       SILESIA_NORTH_BOARD,
     ),
@@ -85,7 +85,8 @@ export class MapRegistry {
       key: 'cave',
       title: 'Skeletor Kingdom',
       boardKind: 'DUNGEON',
-      dimension: EDimension.UNDERWORLD,
+      dimension: CAVE_MODEL.dimension,
+      recipe: CAVE_MODEL,
       create: (ctx) => runBoardPipeline(CAVE_MODEL, { seed: ctx.seed, params: ctx.params }),
       entryHexobjectKey: CAVE_MODEL.entryObject,
       safeZoneRadius: 1,
@@ -97,6 +98,8 @@ export class MapRegistry {
   static get(key: LocationKey): MapDefinition {
     const definition = this.defs[key];
     dimensionSchema.parse(definition.dimension);
+    if (definition.dimension !== LOCATION_DIMENSIONS[key])
+      throw new Error(`location:${key}: owner differs from its execution dimension`);
     return definition;
   }
 }

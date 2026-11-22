@@ -1,3 +1,4 @@
+import { assertBoardPlacement, assertDrawingDimension } from '../board-dimension';
 import { deriveStream } from '../../utils/random-seeded';
 import {
   RecipeSchema,
@@ -132,6 +133,10 @@ function finalize(
     cellAt: (coord) => draft.cellMap.get(coord) ?? VOID_CELL,
   });
 
+  if (draft.drawing) assertDrawingDimension(recipe, draft.drawing);
+  for (const tile of map.tiles) {
+    if (tile.hexobject) assertBoardPlacement(recipe, tile.hexobject.hexobjectKey);
+  }
   return {
     map,
     descriptor: describeBoard(recipe, draft, seed, attempt, params),

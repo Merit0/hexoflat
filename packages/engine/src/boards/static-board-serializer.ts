@@ -75,10 +75,12 @@ export function serializeStaticBoardDrawing(drawing: StaticBoardDrawing): string
 
   const constName = constNameFor(drawing.id);
 
-  return `import type { StaticBoardDrawing } from '../schemas';
+  return `import { EDimension } from '../../../dimensions/dimensions';
+import type { StaticBoardDrawing } from '../schemas';
 
 export const ${constName} = {
   id: '${drawing.id}',
+  dimension: EDimension.${drawing.dimension.toUpperCase()},
   background: '${drawing.background}',
   legend: {
 ${legendBody}

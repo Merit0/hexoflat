@@ -163,20 +163,12 @@ exports[`CH-P0 payload snapshots: grave > the full loot: CONTAINER_OPENED 1`] = 
       "nothing": false,
       "placed": [
         {
-          "amount": 10,
+          "amount": 18,
           "hex": {
             "q": 1,
             "r": -1,
           },
           "itemKey": "coins",
-        },
-        {
-          "amount": 1,
-          "hex": {
-            "q": 2,
-            "r": -1,
-          },
-          "itemKey": "health-bottle",
         },
       ],
       "toBag": [],
@@ -200,7 +192,7 @@ exports[`CH-P0 payload snapshots: grave > the pickup event and its refusals 1`] 
   "LOOT_PICKED": [
     {
       "payload": {
-        "amount": 10,
+        "amount": 18,
         "creatureId": "hero",
         "hex": {
           "q": 1,
@@ -212,7 +204,7 @@ exports[`CH-P0 payload snapshots: grave > the pickup event and its refusals 1`] 
     },
     {
       "payload": {
-        "amount": 10,
+        "amount": 18,
         "heroId": "hero",
         "key": "coins",
         "placedAt": [

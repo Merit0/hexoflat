@@ -1,3 +1,4 @@
+import { assertDrawingDimension } from '../../boards/board-dimension';
 import { StaticBoardDrawingSchema } from './schemas';
 import { RecipeSchema } from './recipe-schema';
 import { BOARD_ATLAS, BoardAtlasSchema } from './atlas';
@@ -31,6 +32,10 @@ export function validateBoardContent(): void {
       throw new Error(
         `recipe "${recipe.id}" failed content schema validation:\n${result.error.message}`,
       );
+    }
+    for (const piece of result.data.stages.form) {
+      if (piece.kind === 'drawing')
+        assertDrawingDimension(result.data, StaticBoardDrawingSchema.parse(piece.drawing));
     }
   }
 }

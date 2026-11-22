@@ -1,3 +1,4 @@
+import { assertBattleDimensions } from './battle-dimension';
 import { z } from 'zod';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { axialToPixelPointy, offsetToAxial } from '../utils/hex-utils';
@@ -118,6 +119,7 @@ export interface Deployment {
 
 export function deployBattle(input: DeploymentInput): Deployment {
   const { field, direction, ambush } = input;
+  assertBattleDimensions(field, input.members);
   const zones = deploymentZones(field, direction, ambush, input.rules);
   const heroSpots = farthestFirst(zones.heroes, direction, 1);
   const heroes = input.heroes.map((hero, i) => ({ ...hero, pos: heroSpots[i] }));

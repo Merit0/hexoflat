@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import type { ProgressState } from '../aggregates/progress-state';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { inventoryWith, HERO } from '../trade/trade-test-setup';
@@ -27,6 +28,8 @@ export function counting(
 ): QuestDefinition {
   return {
     id,
+    dimension: EDimension.EARTH,
+    locations: ['camping', 'silesia', 'silesia-north'],
     nameKey: `quest.${id}.name`,
     descKey: `quest.${id}.desc`,
     repeat: 'repeatable',
@@ -45,5 +48,5 @@ export function catalogueWith(...quests: QuestDefinition[]): QuestCatalogue {
 }
 
 export function event(type: string, payload: Record<string, unknown> = {}): DomainEvent {
-  return { type, payload };
+  return { type, payload: { dimension: EDimension.EARTH, ...payload } };
 }

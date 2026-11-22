@@ -2,7 +2,8 @@ import { tokenOriginSchema } from '../tokens/token-origin';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
 import { TreasureSeekerParamsSchema } from './seeker-content';
-import { LOCATION_KEYS } from '../registry/location-key';
+import { dimensionSchema } from '../dimensions/dimensions';
+import { LOCATION_DIMENSIONS, LOCATION_KEYS } from '../registry/location-key';
 
 export const CostSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('free') }).strict(),
@@ -104,6 +105,8 @@ export const QuestMapObjectPlacementSchema = z
 export const QuestDefinitionSchema = z
   .object({
     id: z.string().min(1),
+    dimension: dimensionSchema,
+    locations: z.array(z.enum(LOCATION_KEYS)).min(1),
     nameKey: z.string().min(1),
     descKey: z.string().min(1),
     repeat: z.enum(['once', 'repeatable']),
@@ -117,7 +120,23 @@ export const QuestDefinitionSchema = z
     maxSellValue: z.number().int().min(0).optional(),
     tableRule: z.string().min(1),
   })
-  .strict();
+  .strict()
+  .superRefine((quest, ctx) => {
+    for (const location of quest.locations) {
+      if (LOCATION_DIMENSIONS[location] !== quest.dimension)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['locations'],
+          message: `quest:${quest.id}: execute ${location} in ${quest.dimension}; location belongs to ${LOCATION_DIMENSIONS[location]}`,
+        });
+    }
+    if (quest.mapObjectPlacement && !quest.locations.includes(quest.mapObjectPlacement.targetMap))
+      ctx.addIssue({
+        code: 'custom',
+        path: ['mapObjectPlacement'],
+        message: `quest:${quest.id}: placement must use an execution location`,
+      });
+  });
 export type QuestDefinition = z.infer<typeof QuestDefinitionSchema>;
 
 export type QuestCatalogue = Readonly<Record<string, QuestDefinition>>;

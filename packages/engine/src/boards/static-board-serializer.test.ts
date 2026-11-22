@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,6 +32,7 @@ describe('static board serializer/deserializer', () => {
   it('sorts the legend and drops letters no longer used by any cell', () => {
     const drawing = {
       id: 'test',
+      dimension: EDimension.EARTH,
       background: '',
       legend: {
         Z: { hexobjectKey: 'rock' as const },

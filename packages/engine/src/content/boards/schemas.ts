@@ -1,3 +1,4 @@
+import { dimensionSchema } from '../../dimensions/dimensions';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content-schema';
 import { BOARD_COLUMNS, BOARD_ROWS } from '../../boards/board-size';
@@ -22,6 +23,7 @@ const legendSchema = z.record(z.string().regex(LEGEND_LETTER), LegendEntrySchema
 
 export const StaticBoardDrawingSchema = z.object({
   id: z.string().min(1),
+  dimension: dimensionSchema,
   background: z.string(),
   legend: legendSchema,
   rows: rowsSchema,
