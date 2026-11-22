@@ -1,3 +1,6 @@
+import { BASE_ITEMS } from './base-items.content';
+import { BaseItemRegistry } from '../tokens/base-item-registry';
+import type { BaseItemDefinition } from '../tokens/base-item';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { attributeFormatKeys } from '../tokens/attribute-display';
 import type { Adjective } from '../tokens/equipment/adjective-schema';
@@ -25,6 +28,7 @@ import {
 
 export interface TokenContent {
   types: readonly ItemTypeDefinition[];
+  baseItems: readonly BaseItemDefinition[];
   attributes: readonly EquipmentAttributeDefinition[];
   profiles: AttributeProfiles;
   adjectives: readonly Adjective[];
@@ -34,6 +38,7 @@ export interface TokenContent {
 
 export const TOKEN_CONTENT: TokenContent = {
   types: ITEM_TYPES,
+  baseItems: BASE_ITEMS,
   attributes: EQUIPMENT_ATTRIBUTES,
   profiles: ATTRIBUTE_PROFILES,
   adjectives: TOKEN_ADJECTIVES,
@@ -47,9 +52,12 @@ export function createTokenRegistries(
   content: TokenContent = TOKEN_CONTENT,
   uniques: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
 ) {
+  const types = new TypeRegistry(content.types);
+  const attributes = new AttributeRegistry(content.attributes);
   return {
-    types: new TypeRegistry(content.types),
-    attributes: new AttributeRegistry(content.attributes),
+    types,
+    baseItems: new BaseItemRegistry(content.baseItems, types, attributes),
+    attributes,
     uniques: new UniqueRegistry(uniques),
   };
 }

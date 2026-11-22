@@ -85,11 +85,11 @@ describe('REQ-LOOT-103 loot content is validated at load', () => {
       rolls: [1, 1],
       entries: [
         { itemKey: HEXOBJECT_KEYS.COINS, weight: 1, amount: [1, 1] },
-        { itemKey: HEXOBJECT_KEYS.BONE_CHARM, weight: 1, amount: [1, 1] },
+        { itemKey: HEXOBJECT_KEYS.RETURN_SCROLL, weight: 1, amount: [1, 1] },
       ],
     };
     expect(lootTableProblems({ unpriced: table }, () => null)).toEqual([
-      '[loot:unpriced] bone-charm is sellable loot without a coinPrice',
+      '[loot:unpriced] return-scroll is sellable loot without a coinPrice',
     ]);
   });
 
@@ -139,16 +139,16 @@ describe('REQ-LOOT-104 the tables hold what the plan says', () => {
     }
   });
 
-  it('drops the boss coins and the crown shard in 10 000 of 10 000 rolls', () => {
+  it('drops the guaranteed boss coins in 10 000 of 10 000 rolls', () => {
     const boss = lootTableOf(SKELETON_KING_TABLE_ID)!;
-    let withBoth = 0;
+    let withCoins = 0;
     for (let i = 0; i < ROLLS; i += 1) {
       const keys = rollLoot(boss, deriveStream(`boss-${i}`, 'boss')).map((drop) => drop.itemKey);
-      if (keys.includes(HEXOBJECT_KEYS.COINS) && keys.includes(HEXOBJECT_KEYS.CROWN_SHARD)) {
-        withBoth += 1;
+      if (keys.includes(HEXOBJECT_KEYS.COINS)) {
+        withCoins += 1;
       }
     }
-    expect(withBoth).toBe(ROLLS);
+    expect(withCoins).toBe(ROLLS);
   });
 
   it('sends the guaranteed boss drops to the bag when no place is free, with the real table', () => {
@@ -172,9 +172,7 @@ describe('REQ-LOOT-104 the tables hold what the plan says', () => {
       expect(result.kind).toBe('placed');
       if (result.kind !== 'placed') continue;
       expect(result.placements).toEqual([]);
-      expect(result.toBag.map((drop) => drop.itemKey).sort()).toEqual(
-        [HEXOBJECT_KEYS.COINS, HEXOBJECT_KEYS.CROWN_SHARD].sort(),
-      );
+      expect(result.toBag.map((drop) => drop.itemKey).sort()).toEqual([HEXOBJECT_KEYS.COINS]);
     }
   });
 
@@ -184,7 +182,6 @@ describe('REQ-LOOT-104 the tables hold what the plan says', () => {
     expect(looted.refused).toBeNull();
     const carried = looted.inventory!.bag.flatMap((cell) => (cell ? [cell.key] : []));
     expect(carried).toContain(HEXOBJECT_KEYS.COINS);
-    expect(carried).toContain(HEXOBJECT_KEYS.CROWN_SHARD);
     expect(looted.battle.collect!.items).toEqual([]);
   });
 });
@@ -265,8 +262,9 @@ describe('REQ-LOOT-106 ten thousand cave runs with the real tables and the real 
     const rolled = runs.reduce((sum, run) => sum + run.rolledDrops, 0);
     const lost = runs.reduce((sum, run) => sum + run.lostDrops, 0);
     console.info(`drops lost to cramped surroundings: ${((lost / rolled) * 100).toFixed(1)}%`);
-    expect(lost / rolled).toBeGreaterThan(0.14);
-    expect(lost / rolled).toBeLessThan(0.17);
+    // One guaranteed boss stack leaves more room for the optional drops.
+    expect(lost / rolled).toBeGreaterThan(0.09);
+    expect(lost / rolled).toBeLessThan(0.12);
   });
 });
 

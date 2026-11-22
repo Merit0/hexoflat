@@ -156,7 +156,9 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
     expect(Object.keys(TOKENS[0].token).sort()).toEqual(
       [
         'attributes',
+        'baseKey',
         'description',
+        'dimension',
         'ext',
         'generatorVersion',
         'id',

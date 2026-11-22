@@ -1,3 +1,4 @@
+import type { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 import { computed } from 'vue';
 import { getScoutProgress, toRoman } from '@hexoflat/engine/hero-movement/scout-progression';
 import { BATTLE_ITEMS, battleItemOfHexobject } from '@hexoflat/engine/battle/battle-catalogue';
@@ -35,6 +36,7 @@ export interface HandItem {
 export interface HeroDetailsInput {
   name: string;
   locationTitle: string;
+  locationDimension?: EDimension;
   steps: number;
   currentHealth: number;
   maxHealth: number;
@@ -56,6 +58,7 @@ export interface HeroDetailsInput {
 export interface HeroDetailsView {
   name: string;
   locationTitle: string;
+  locationDimension?: EDimension;
   steps: number;
   rank: { roman: string; title: string };
   hearts: { current: number; max: number; count: number };
@@ -110,6 +113,7 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
   return {
     name: input.name,
     locationTitle: input.locationTitle,
+    locationDimension: input.locationDimension,
     steps: scout.steps,
     rank: { roman: scout.roman, title: scout.title },
     hearts: { current: round1(current), max: round1(max), count: Math.ceil(max) },
@@ -179,6 +183,7 @@ export function useHeroDetails() {
     return buildHeroDetails({
       name: hero.name || 'Hero',
       locationTitle: key ? (MapRegistry.get(key)?.title ?? key) : 'Nowhere',
+      locationDimension: key ? MapRegistry.get(key).dimension : undefined,
       steps: hero.heroSteps,
       currentHealth: hero.currentHealth,
       maxHealth: hero.getEffectiveMaxHealth(),

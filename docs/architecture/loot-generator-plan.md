@@ -324,27 +324,25 @@ N. Конфлікти з цим планом і питання до Олега.
 
 Ключ → файл: поле `spritePath` прототипу (повний URL від `public/`); інвентар бере його через `resolveInventoryView(key).iconPath` (engine `utils/inventory/traits-resolver.ts:28`, :130), карта — `tile.hexobject.spritePath` (web `render/layers/tiles-layer.ts:162-169`), бойові руки — `getPrototype(toolKey).spritePath` (web `render/layers/battle-fx-layer.ts:84`, `battle/battle-creature-row.vue:86`). Окремого «ключа спрайта» немає.
 
-| Предмет / світло          | Шлях (від `apps/web/public/`)                                            | Розмір, формат      | Оголошено                                     |
-| ------------------------- | ------------------------------------------------------------------------ | ------------------- | --------------------------------------------- |
-| sword                     | `hex-assets/hex-loot/sword-hex.png`                                      | 512×512 PNG RGBA    | engine `content/equipment.content.ts:26`      |
-| shield                    | `hex-assets/hex-equipment/hex-weapons/hex-shield/shield-token-image.png` | 512×512 PNG RGBA    | engine `content/equipment.content.ts:52`      |
-| axe                       | `hex-assets/hex-loot/axe-token.png`                                      | 512×512 PNG RGBA    | engine `content/tools.content.ts:19`          |
-| pickaxe                   | `hex-assets/hex-tools/pickaxe-token-image.png`                           | 512×512 PNG RGBA    | engine `content/tools.content.ts:40`          |
-| hand                      | `hex-assets/hex-tools/hand-hex.png`                                      | 512×512 PNG RGBA    | engine `content/tools.content.ts:59`          |
-| coins                     | `hex-assets/hex-loot/coins-hex.png`                                      | 512×512 PNG         | engine `content/loot.content.ts` (spritePath) |
-| health/energy/mana bottle | `hex-assets/hex-loot/{health,energy,mana}-bottle-token-image.png`        | 512×512 PNG         | engine `content/loot.content.ts`              |
-| return-scroll             | `hex-assets/hex-loot/teleport-scroll-token.png`                          | 512×512 PNG         | engine `content/loot.content.ts`              |
-| bone-charm                | `hex-assets/hex-loot/bone-charm-token.svg`                               | SVG viewBox 256×256 | engine `content/loot.content.ts`              |
-| crown-shard               | `enemy-assets/boss-hex-images/emitter-token-image.png` (плейсхолдер)     | 1000×1000 PNG       | engine `content/loot.content.ts:160-161`      |
-| (не використовується)     | `hex-assets/hex-equipment/hex-weapons/hex-sword/guard-sword-token.png`   | 1000×1000 PNG       | ніде (grep `guard-sword-token` — 0)           |
-| (не використовується)     | `hex-assets/hex-tools/equipment-placeholder-hex.png`                     | 1226×1283 PNG       | ніде (grep `equipment-placeholder-hex` — 0)   |
-| blue-light                | `hex-assets/hex-frames/blue-light.png`                                   | 512×512 PNG RGBA    | web `render/rarity.ts:14`                     |
-| violet-light              | `hex-assets/hex-frames/violet-light.png`                                 | 512×512 PNG RGBA    | web `render/rarity.ts:15`                     |
-| gray-light                | `hex-assets/hex-frames/gray-light.png`                                   | 512×512 PNG RGBA    | web `render/rarity.ts:16`                     |
-| green-light               | `hex-assets/hex-frames/green-light.png`                                  | 512×512 PNG RGBA    | web `render/rarity.ts:17`                     |
-| yellow-light              | `hex-assets/hex-frames/yellow-light.png`                                 | 512×512 PNG RGBA    | web `render/rarity.ts:18`                     |
-| orange-light              | `hex-assets/hex-frames/orange-light.png`                                 | 512×512 PNG RGBA    | web `render/rarity.ts:19`                     |
-| red-light                 | `hex-assets/hex-frames/red-light.png`                                    | 512×512 PNG RGBA    | web `render/rarity.ts:20`                     |
+| Предмет / світло          | Шлях (від `apps/web/public/`)                                            | Розмір, формат   | Оголошено                                     |
+| ------------------------- | ------------------------------------------------------------------------ | ---------------- | --------------------------------------------- |
+| sword                     | `hex-assets/hex-loot/sword-hex.png`                                      | 512×512 PNG RGBA | engine `content/equipment.content.ts:26`      |
+| shield                    | `hex-assets/hex-equipment/hex-weapons/hex-shield/shield-token-image.png` | 512×512 PNG RGBA | engine `content/equipment.content.ts:52`      |
+| axe                       | `hex-assets/hex-loot/axe-token.png`                                      | 512×512 PNG RGBA | engine `content/tools.content.ts:19`          |
+| pickaxe                   | `hex-assets/hex-tools/pickaxe-token-image.png`                           | 512×512 PNG RGBA | engine `content/tools.content.ts:40`          |
+| hand                      | `hex-assets/hex-tools/hand-hex.png`                                      | 512×512 PNG RGBA | engine `content/tools.content.ts:59`          |
+| coins                     | `hex-assets/hex-loot/coins-hex.png`                                      | 512×512 PNG      | engine `content/loot.content.ts` (spritePath) |
+| health/energy/mana bottle | `hex-assets/hex-loot/{health,energy,mana}-bottle-token-image.png`        | 512×512 PNG      | engine `content/loot.content.ts`              |
+| return-scroll             | `hex-assets/hex-loot/teleport-scroll-token.png`                          | 512×512 PNG      | engine `content/loot.content.ts`              |
+| (не використовується)     | `hex-assets/hex-equipment/hex-weapons/hex-sword/guard-sword-token.png`   | 1000×1000 PNG    | ніде (grep `guard-sword-token` — 0)           |
+| (не використовується)     | `hex-assets/hex-tools/equipment-placeholder-hex.png`                     | 1226×1283 PNG    | ніде (grep `equipment-placeholder-hex` — 0)   |
+| blue-light                | `hex-assets/hex-frames/blue-light.png`                                   | 512×512 PNG RGBA | web `render/rarity.ts:14`                     |
+| violet-light              | `hex-assets/hex-frames/violet-light.png`                                 | 512×512 PNG RGBA | web `render/rarity.ts:15`                     |
+| gray-light                | `hex-assets/hex-frames/gray-light.png`                                   | 512×512 PNG RGBA | web `render/rarity.ts:16`                     |
+| green-light               | `hex-assets/hex-frames/green-light.png`                                  | 512×512 PNG RGBA | web `render/rarity.ts:17`                     |
+| yellow-light              | `hex-assets/hex-frames/yellow-light.png`                                 | 512×512 PNG RGBA | web `render/rarity.ts:18`                     |
+| orange-light              | `hex-assets/hex-frames/orange-light.png`                                 | 512×512 PNG RGBA | web `render/rarity.ts:19`                     |
+| red-light                 | `hex-assets/hex-frames/red-light.png`                                    | 512×512 PNG RGBA | web `render/rarity.ts:20`                     |
 
 Висновок для §7: розмір спрайта предмета = **512×512 PNG RGBA** (усі чотири типи плану). Відсутніх світел для §2: **немає**. Теки `hex-assets/items/` немає.
 

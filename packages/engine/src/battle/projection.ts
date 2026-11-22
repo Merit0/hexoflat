@@ -1,3 +1,4 @@
+import { dimensionOfItemFamily, type EDimension } from '../dimensions/dimensions';
 import type { DomainEvent } from '../commands/types';
 import type { BattleHex, BattleSide, BattleState, GroundItem, PendingStrike } from './battle-state';
 import { lootLeft } from './collect';
@@ -14,13 +15,15 @@ type HiddenFields =
   | 'lootEnabled'
   | 'fallen'
   | 'collect'
-  | 'tokenSecret';
+  | 'tokenSecret'
+  | 'tokenOrigin';
 export interface ProjectedCollect {
   graves: { hex: BattleHex; examined: boolean }[];
   items: GroundItem[];
 }
 export type BattleProjection = Omit<BattleState, HiddenFields> & {
   viewer: BattleSide;
+  dimension?: EDimension;
   collect?: ProjectedCollect;
   lootLeft?: boolean;
   pending: ProjectedStrike[];
@@ -110,6 +113,7 @@ export function projectBattleForViewer(state: BattleState, viewer: BattleSide): 
   const view = {
     ...publicPart(state, viewer),
     viewer,
+    ...(state.tokenOrigin ? { dimension: dimensionOfItemFamily(state.tokenOrigin.realm) } : {}),
     pending,
     reaction,
     shieldsRaised: false,

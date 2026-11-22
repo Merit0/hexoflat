@@ -1,3 +1,4 @@
+import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import type { QuestProjection } from '@hexoflat/engine/quests/projection';
 import { questExitHex } from '@hexoflat/engine/quests/treasure-field';
@@ -43,6 +44,7 @@ export interface QuestFieldStack {
   hex: IHexCoordinates;
   itemKey: string;
   amount: number;
+  token?: ItemToken;
 }
 
 export const EMPTY_FIELD: QuestFieldModel = {

@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { BATTLE_ITEMS, battleItem, battleItemDefSchema } from './battle-catalogue';
 
@@ -12,6 +13,7 @@ describe('usable battle items carry their own use price', () => {
   it('refuses a usable item without a use price', () => {
     const def = {
       id: 'broken-tonic',
+      dimension: EDimension.EARTH,
       heal: 1,
       title: 'content.battle.broken-tonic.title',
       tableRule: 'content.battle.broken-tonic.tableRule',

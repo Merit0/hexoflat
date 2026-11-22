@@ -1,3 +1,4 @@
+import { EDimension } from '../../dimensions/dimensions';
 import { ERarityKind } from '../../abstraction/hexobject-abstraction';
 import { TOKEN_CONTENT, type TokenContent } from '../../content/token-content';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
@@ -62,6 +63,10 @@ export const WARD_ATTRIBUTE: EquipmentAttributeDefinition = {
 export function extendedContent(): TokenContent {
   return {
     ...TOKEN_CONTENT,
+    baseItems: [
+      ...TOKEN_CONTENT.baseItems,
+      { key: 'heaven-hammer', dimension: EDimension.HEAVEN, type: 'hammer' },
+    ],
     types: [
       ...TOKEN_CONTENT.types,
       {

@@ -1,3 +1,4 @@
+import { worldTokenOrigin } from '../world/server-world';
 import { describe, expect, it } from 'vitest';
 import { CHEST_REFUSAL_MESSAGES, type ChestWorld } from '../chests/open-chest';
 import { worldChestSpace } from '../chests/world-container-space';
@@ -25,7 +26,11 @@ function worldOf(scene: ReturnType<typeof chestScene>, hero = scene.entry): Ches
   return {
     map: scene.world.map,
     heroes: { [HERO]: { coordinates: { ...hero } } } as unknown as ChestWorld['heroes'],
-    loot: { seed: scene.world.worldSeed, sourceId: scene.world.mapId },
+    loot: {
+      seed: scene.world.worldSeed,
+      sourceId: scene.world.mapId,
+      origin: worldTokenOrigin(scene.world),
+    },
   };
 }
 

@@ -1,3 +1,5 @@
+import { itemDimensionOf } from '../../inventory/item-dimension';
+import type { EDimension } from '../../dimensions/dimensions';
 import {
   EHexobjectGroup,
   type IItemRarity,
@@ -53,6 +55,7 @@ export type TooltipWillUse = { kind: 'cost' | 'locked'; will: number; skillId?: 
 
 export interface ItemTooltipView {
   key: THexobjectKey;
+  dimension: EDimension;
   title: string;
   subtitle?: string;
   description?: string;
@@ -179,6 +182,7 @@ export function resolveItemTooltip(
 
   return {
     key,
+    dimension: itemDimensionOf({ key }),
     title: view.title,
     subtitle: meta?.subtitle,
     description: proto.description,

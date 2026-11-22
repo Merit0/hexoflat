@@ -9,6 +9,7 @@ export function staticRecipe(
 ): BoardRecipeInput {
   return {
     id: drawing.id,
+    dimension: drawing.dimension,
     version: 1,
     kind: 'static',
     frame: { columns: BOARD_COLUMNS, rows: BOARD_ROWS },

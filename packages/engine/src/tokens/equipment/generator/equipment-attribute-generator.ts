@@ -36,7 +36,12 @@ export class EquipmentAttributeGenerator implements IAttributeGenerator {
 
   generate(ctx: AttributeGenerationContext): TokenAttribute[] {
     const profile = this.parts.profiles.profileFor(ctx.level);
-    const pool = this.parts.pool.poolFor({ profile, group: ctx.group, type: ctx.type });
+    const pool = this.parts.pool.poolFor({
+      profile,
+      group: ctx.group,
+      type: ctx.type,
+      allowedKeys: ctx.allowedKeys,
+    });
     const count = this.parts.counts.roll(
       { countWeights: profile.countWeights, maxCount: profile.maxCount, poolSize: pool.length },
       ctx.rng(ATTRIBUTE_STREAM_LABELS.count(ctx.tokenId)),

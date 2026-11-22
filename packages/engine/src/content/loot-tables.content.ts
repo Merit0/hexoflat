@@ -61,7 +61,6 @@ const SKELETON_WARRIOR: LootTable = {
   entries: [
     { itemKey: HEXOBJECT_KEYS.COINS, weight: 6, amount: [3, 9] },
     { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 2, amount: [1, 1] },
-    { itemKey: HEXOBJECT_KEYS.BONE_CHARM, weight: 2, amount: [1, 1] },
   ],
 };
 
@@ -78,10 +77,7 @@ const SKELETON_ARCHER: LootTable = {
 const SKELETON_KING: LootTable = {
   id: SKELETON_KING_TABLE_ID,
   rolls: [2, 3],
-  guaranteed: [
-    { itemKey: HEXOBJECT_KEYS.COINS, amount: [30, 50] },
-    { itemKey: HEXOBJECT_KEYS.CROWN_SHARD, amount: [1, 1] },
-  ],
+  guaranteed: [{ itemKey: HEXOBJECT_KEYS.COINS, amount: [30, 50] }],
   entries: [
     { itemKey: HEXOBJECT_KEYS.SWORD, weight: 1, amount: [1, 1] },
     { itemKey: HEXOBJECT_KEYS.SHIELD, weight: 4, amount: [1, 1] },

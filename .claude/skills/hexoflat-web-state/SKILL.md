@@ -55,6 +55,12 @@ Three composables (`use-move-preview`, `use-hex-board-sizing`, `use-hex-board-in
 
 After extracting anything, verify the old call site actually imports it and the inline copy is deleted.
 
+## Dimension presentation (D5, 2026-11-22)
+
+Use engine ownership (`itemDimensionOf`, token.dimension or authored location/quest/battle-object dimension), never the hero's current map or item family guessed from a generic key. `components/gui/dimension-label.vue` is the shared English/Ukrainian label for item/map hover cards, current-location header, battle panel and quest details/run panels. Tooltip `withToken` overrides catalogue dimension with the concrete token owner. Optional wire metadata from older projections stays absent until known; do not invent an Earth fallback.
+
+Quest ground projections retain complete normalized tokens. Carry that token through QuestFieldStack and questHoverObject into the ordinary hex-info builder; battle ground hover does the same. Do not rebuild a generic tokenless sword for display when the server supplied an owned variant. Rarity helpers prioritize the token. UI only presents ownership; sharing/generation/travel eligibility remains in engine rules.
+
 ## Worked example: the skill tree
 
 - Rules and numbers live in the engine (`packages/engine/src/skills/`: statuses, sacrifice options, previews' maths). The web view-model `composables/skill-tree-view.ts` only shapes them for the UI — `buildSkillTreeView`, `findSkillNode`, `previewSacrifice` call engine functions and never recompute a price, status or option amount.
@@ -330,3 +336,7 @@ Wisdom rename: canonical wisdom, legacy focus deprecated but still implemented f
 Yield (A08, 2026-11-20): hero-tool-store tracks activeItemId alongside activeTool. Inventory USE and useHexBoardInput pass the actual equipped item id to useTool; stopTool clears it. buildClientHint includes it as optional tool.itemId; only the engine resolves the bonus from trusted equipped state. Wheel cycling prefers item identity before its key, so two axes with different attributes select correctly. Existing gather/treeCut/stones effects carry the extra resource amount; quest events keep base amounts. Resource-counter persistence stays unchanged.
 
 Block sides (A10 connection, 2026-11-21): battle-hero-card, battle-tool-hex and use-battle-reaction read itemShieldBase/itemShieldSides/shieldCapacity from engine. useHeroDetails resolves equipped tokens through resolveHeroStats for actual sides, including the individual shield and total cap. Never inspect or add legacy BattleItem.shieldCapacity in UI. Existing event/command paths remain unchanged.
+
+## Dimension identity (D2, 2026-11-22)
+
+Token ownership is engine data: `ItemToken.dimension`; tokenless items use authored catalogue ownership. Use engine `itemDimensionOf`, never current location or duplicated family mapping. ALIEN replaces God Executor in labels; persisted legacy normalization is handled by engine readers.

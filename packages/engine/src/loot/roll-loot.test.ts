@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { lootStreamLabel, rollLoot } from './roll-loot';
 import { deriveStream } from '../utils/random-seeded';
-import { BOSS_TABLE, CHEST_TABLE, COINS, SHARD, SKIP_TABLE, streamFor } from './loot-test-setup';
+import { BOSS_TABLE, CHEST_TABLE, COINS, SCROLL, SKIP_TABLE, streamFor } from './loot-test-setup';
 
 describe('rollLoot', () => {
   it('REQ-LOOT-006 lists guaranteed drops first in table order, then the rolled ones', () => {
     for (let index = 0; index < 50; index += 1) {
       const drops = rollLoot(BOSS_TABLE, streamFor(`seed-${index}`));
       expect(drops[0]).toMatchObject({ itemKey: COINS, guaranteed: true });
-      expect(drops[1]).toMatchObject({ itemKey: SHARD, guaranteed: true });
+      expect(drops[1]).toMatchObject({ itemKey: SCROLL, guaranteed: true });
       expect(drops.slice(2).every((drop) => !drop.guaranteed)).toBe(true);
       expect(drops.length).toBeGreaterThanOrEqual(5);
       expect(drops.length).toBeLessThanOrEqual(6);

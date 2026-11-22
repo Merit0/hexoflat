@@ -8,7 +8,7 @@ import { TOKEN_UNIQUES } from './token-uniques.content';
 import { TOKEN_WORDS } from './token-words.content';
 import { uniqueContentFailures } from './validate-tokens';
 
-const [GLOOM_SWORD, EXECUTOR_SWORD] = TOKEN_UNIQUES;
+const [GLOOM_SWORD, ALIEN_SWORD] = TOKEN_UNIQUES;
 
 function withUnique(changes: Partial<UniqueTokenDefinition>): UniqueTokenDefinition[] {
   return [{ ...GLOOM_SWORD, ...changes }];
@@ -41,11 +41,11 @@ describe('unique token content', () => {
     expect('rolled' in GLOOM_SWORD).toBe(false);
   });
 
-  it('has a god-executor sword with fixed attributes', () => {
-    expect(EXECUTOR_SWORD.type).toBe('sword');
-    expect(EXECUTOR_SWORD.rarity).toBe(ERarityKind.GOD_EXECUTOR);
-    expect(EXECUTOR_SWORD.attributes.length).toBeGreaterThan(0);
-    expect('rolled' in EXECUTOR_SWORD).toBe(false);
+  it('has an alien sword with fixed attributes', () => {
+    expect(ALIEN_SWORD.type).toBe('sword');
+    expect(ALIEN_SWORD.rarity).toBe(ERarityKind.ALIEN);
+    expect(ALIEN_SWORD.attributes.length).toBeGreaterThan(0);
+    expect('rolled' in ALIEN_SWORD).toBe(false);
   });
 
   it('lists the name and description keys of every unique among the locale keys', () => {
@@ -54,7 +54,7 @@ describe('unique token content', () => {
       expect(keys).toContain(unique.name.nameKey);
       expect(keys).toContain(unique.descriptionKey);
     }
-    expect(keys).toContain('content.tokens.realm.god-executor');
+    expect(keys).toContain('content.tokens.realm.alien');
   });
 
   it.each<[string, Partial<UniqueTokenDefinition>, RegExp]>([
@@ -80,7 +80,8 @@ describe('unique token content', () => {
     expect(bad({ rolled: { attributes: 1 } })).toBe(false);
     expect(bad({ price: 1.5 })).toBe(false);
     expect(bad({ attributes: [GLOOM_SWORD.attributes[0], GLOOM_SWORD.attributes[0]] })).toBe(false);
-    expect(bad({ rarity: ERarityKind.GOD_EXECUTOR })).toBe(true);
+    expect(bad({ rarity: ERarityKind.ALIEN })).toBe(false);
+    expect(bad({ rarity: ERarityKind.ALIEN, dimension: 'nowhere' })).toBe(true);
     expect(() => new UniqueRegistry([GLOOM_SWORD, GLOOM_SWORD])).toThrow(/listed twice/);
     expect(() => new UniqueRegistry(TOKEN_UNIQUES).get('dragon-crown')).toThrow(/Unknown unique/);
   });

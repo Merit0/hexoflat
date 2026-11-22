@@ -153,8 +153,8 @@ describe('LG5d: rarity comes from the token', () => {
     expect(rarityToneOf(gloom as InventoryItem)).toBe('gloom');
     const unique = {
       ...ITEMS[SWORD],
-      token: sampleToken({ origin: 'unique', rarity: ERarityKind.GOD_EXECUTOR }),
+      token: sampleToken({ origin: 'unique', rarity: ERarityKind.ALIEN }),
     };
-    expect(rarityToneOf(unique as InventoryItem)).toBe('god-executor');
+    expect(rarityToneOf(unique as InventoryItem)).toBe('alien');
   });
 });

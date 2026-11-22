@@ -1,3 +1,4 @@
+import { EDimension } from '../../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
 import type { BoardRecipeInput } from '../../content/boards/recipe-schema';
@@ -10,6 +11,7 @@ type Piece = { kind: string; [key: string]: unknown };
 
 const OPEN_FIELD: StaticBoardDrawing = {
   id: 'open-field',
+  dimension: EDimension.EARTH,
   background: '',
   legend: {},
   rows: Array.from({ length: BOARD_ROWS }, (_, row) => {
@@ -21,6 +23,7 @@ const OPEN_FIELD: StaticBoardDrawing = {
 function fieldWith(relief: Piece[], objects: Piece[] = []): BoardRecipeInput {
   return {
     id: 'relief-probe',
+    dimension: EDimension.EARTH,
     version: 1,
     kind: 'generated',
     frame: { columns: BOARD_COLUMNS, rows: BOARD_ROWS },

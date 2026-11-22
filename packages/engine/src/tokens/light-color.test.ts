@@ -10,7 +10,7 @@ describe('light colour of a token', () => {
     ['unique', ERarityKind.GLOOM, 'violet-light.png'],
     ['unique', ERarityKind.IDOL, 'green-light.png'],
     ['unique', ERarityKind.SPARK, 'orange-light.png'],
-    ['unique', ERarityKind.GOD_EXECUTOR, 'red-light.png'],
+    ['unique', ERarityKind.ALIEN, 'red-light.png'],
   ] as const)('%s %s shines with %s', (origin, rarity, file) => {
     expect(lightFrameFile(lightTone(origin, rarity))).toBe(file);
   });

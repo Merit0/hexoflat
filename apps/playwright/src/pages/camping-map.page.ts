@@ -1,3 +1,4 @@
+import { DimensionItemsComponent } from '@components/dimension-items.component';
 import { EquipmentUseComponent } from '@components/equipment-use.component';
 import { KnowledgeBoardComponent } from '@components/knowledge-board.component';
 import { expect } from '@playwright/test';
@@ -29,6 +30,7 @@ import { EquipmentTrophyComponent } from '@components/equipment-trophy.component
 
 /** The `/world/camping` route — the game board and everything layered on it. */
 export class CampingMapPage extends BasePage {
+  readonly dimensionItems = new DimensionItemsComponent();
   readonly knowledge = new KnowledgeBoardComponent();
   readonly heroBoardPanel = new HeroBoardPanelComponent();
   readonly mapSessionControls = new MapSessionControlsComponent();

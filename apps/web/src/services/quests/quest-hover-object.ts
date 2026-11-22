@@ -23,5 +23,8 @@ export function questHoverObject(model: QuestFieldModel, hex: IHexCoordinates): 
   }
   const stack = model.ground.find((entry) => coordinateKey(entry.hex) === key);
   if (!stack) return null;
-  return HexObjectFactory.create(stack.itemKey as THexobjectKey, hex, { quantity: stack.amount });
+  return HexObjectFactory.create(stack.itemKey as THexobjectKey, hex, {
+    quantity: stack.amount,
+    ...(stack.token ? { token: stack.token } : {}),
+  });
 }

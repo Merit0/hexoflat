@@ -1,3 +1,4 @@
+import { dimensionSchema, EDimension } from '../dimensions/dimensions';
 import { z } from 'zod';
 
 export const SKILL_BRANCHES = ['demonic', 'bionic', 'angelic'] as const;
@@ -51,6 +52,7 @@ export type SkillEffect = z.infer<typeof skillEffectSchema>;
 export const skillDefinitionSchema = z
   .object({
     id: skillIdSchema,
+    dimension: dimensionSchema,
     branch: z.enum(SKILL_BRANCHES),
     slot: z.enum(SKILL_SLOTS),
     maxRank: z.number().int().positive(),
@@ -73,6 +75,12 @@ export const skillDefinitionSchema = z
     { message: 'willCostByRank must have one entry per rank' },
   );
 export type SkillDefinition = z.infer<typeof skillDefinitionSchema>;
+
+const SCHOOL_DIMENSIONS = {
+  demonic: EDimension.UNDERWORLD,
+  bionic: EDimension.EARTH,
+  angelic: EDimension.HEAVEN,
+} as const;
 
 const BIONIC_CAP_COSTS = [30];
 const CREST_FORM_COSTS = [1000];
@@ -98,6 +106,7 @@ function node(
 ): SkillDefinition {
   return {
     id,
+    dimension: SCHOOL_DIMENSIONS[branch],
     branch,
     slot,
     maxRank: rankCosts.length,
@@ -152,5 +161,5 @@ const DEFINITIONS: SkillDefinition[] = [
 ];
 
 export const SKILLS = Object.fromEntries(
-  DEFINITIONS.map((definition) => [definition.id, definition]),
+  DEFINITIONS.map((definition) => [definition.id, skillDefinitionSchema.parse(definition)]),
 ) as Record<SkillId, SkillDefinition>;

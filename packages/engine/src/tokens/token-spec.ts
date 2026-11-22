@@ -10,6 +10,7 @@ const ATTRIBUTE_KEYS: ReadonlySet<string> = new Set(EQUIPMENT_ATTRIBUTES.map((en
 export const tokenSpecSchema = z.strictObject({
   type: itemTypeKeySchema.refine(isTokenType, 'not an item token type'),
   realm: baseRealmSchema,
+  baseKey: z.string().optional(),
   mapTier: mapTierSchema,
   attributes: z
     .array(
@@ -39,6 +40,7 @@ export function mintSpecTokens(spec: TokenSpec, mint: SpecMint): TokenResult<Ite
         sourceId,
         n,
         realm: spec.realm,
+        baseKey: spec.baseKey,
         mapTier: spec.mapTier,
         type: spec.type,
       },

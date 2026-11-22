@@ -21,7 +21,11 @@ export class FinishPendingActionsFeature {
 
       const finisher = ACTION_FINISHERS[action.type];
       if (finisher) {
-        changed = finisher(tile, action, ctx) || changed;
+        const scoped =
+          action.tokenOrigin && ctx.loot
+            ? { ...ctx, loot: { ...ctx.loot, origin: action.tokenOrigin } }
+            : ctx;
+        changed = finisher(tile, action, scoped) || changed;
       } else {
         changed = true;
       }

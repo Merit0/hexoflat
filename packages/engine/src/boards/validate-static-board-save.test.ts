@@ -1,8 +1,14 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { SILESIA_BOARD } from '../content/boards/static/silesia';
 import { validateStaticBoardForSave } from './validate-static-board-save';
 
 describe('validateStaticBoardForSave', () => {
+  it('rejects foreign legend objects before saving a static drawing', () => {
+    const result = validateStaticBoardForSave({ ...SILESIA_BOARD, dimension: EDimension.HEAVEN });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toMatch(/place .* in heaven; object belongs to earth/);
+  });
   it('accepts a drawing that matches the schema and passes the linter', () => {
     const result = validateStaticBoardForSave(SILESIA_BOARD);
     expect(result.ok).toBe(true);
@@ -17,6 +23,7 @@ describe('validateStaticBoardForSave', () => {
   it('rejects a schema-valid drawing that the linter flags, e.g. wrong dimensions', () => {
     const tooSmall = {
       id: 'test',
+      dimension: EDimension.EARTH,
       background: '',
       legend: {},
       rows: ['. .', ' . .'],

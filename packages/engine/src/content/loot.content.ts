@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
@@ -8,13 +9,13 @@ export type TLootKeys =
   | typeof HEXOBJECT_KEYS.HEALTH_BOTTLE
   | typeof HEXOBJECT_KEYS.ENERGY_BOTTLE
   | typeof HEXOBJECT_KEYS.MANA_BOTTLE
-  | typeof HEXOBJECT_KEYS.RETURN_SCROLL
-  | typeof HEXOBJECT_KEYS.BONE_CHARM
-  | typeof HEXOBJECT_KEYS.CROWN_SHARD;
+  | typeof HEXOBJECT_KEYS.RETURN_SCROLL;
 
 export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.COINS]: {
     hexobjectKey: HEXOBJECT_KEYS.COINS,
+    dimension: EDimension.EARTH,
+    sharedWith: 'all',
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Coins',
@@ -35,6 +36,8 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.HEALTH_BOTTLE]: {
     hexobjectKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
+    dimension: EDimension.EARTH,
+    sharedWith: 'all',
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Health Potion',
@@ -59,6 +62,8 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.ENERGY_BOTTLE]: {
     hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
+    dimension: EDimension.EARTH,
+    sharedWith: 'all',
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Energy Potion',
@@ -82,6 +87,8 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.MANA_BOTTLE]: {
     hexobjectKey: HEXOBJECT_KEYS.MANA_BOTTLE,
+    dimension: EDimension.EARTH,
+    sharedWith: 'all',
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Mana Potion',
@@ -105,6 +112,8 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.RETURN_SCROLL]: {
     hexobjectKey: HEXOBJECT_KEYS.RETURN_SCROLL,
+    dimension: EDimension.HEAVEN,
+    sharedWith: 'all',
     tags: ['portal', 'rare'],
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
@@ -130,53 +139,6 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
         stackKey: HEXOBJECT_KEYS.RETURN_SCROLL,
         maxStack: 50,
         weightKG: 0.05,
-      },
-    },
-  },
-
-  [HEXOBJECT_KEYS.BONE_CHARM]: {
-    hexobjectKey: HEXOBJECT_KEYS.BONE_CHARM,
-    groupType: EHexobjectGroup.LOOT,
-    isInteractable: true,
-    title: 'Bone Charm',
-    subtitle: 'Carved from a fallen guard',
-    description: 'A small charm of bone, still cold from the crypt.',
-    coinPrice: 40,
-    collision: EHexCollision.SOLID,
-    spritePath: '/hex-assets/hex-loot/bone-charm-token.svg',
-    loot: {
-      name: 'Bone Charm',
-      amount: 1,
-      rarity: { kind: ERarityKind.GLOOM, boss: false },
-      traits: {
-        stackable: true,
-        stackKey: HEXOBJECT_KEYS.BONE_CHARM,
-        maxStack: 10,
-        weightKG: 0.05,
-      },
-    },
-  },
-
-  [HEXOBJECT_KEYS.CROWN_SHARD]: {
-    hexobjectKey: HEXOBJECT_KEYS.CROWN_SHARD,
-    tags: ['rare'],
-    groupType: EHexobjectGroup.LOOT,
-    isInteractable: true,
-    title: 'Crown Shard',
-    subtitle: 'A piece of a broken crown',
-    description: 'A shard of the crown worn by the king of the crypt.',
-    coinPrice: 80,
-    collision: EHexCollision.SOLID,
-    spritePath: '/enemy-assets/boss-hex-images/emitter-token-image.png',
-    loot: {
-      name: 'Crown Shard',
-      amount: 1,
-      rarity: { kind: ERarityKind.GLOOM, boss: true },
-      traits: {
-        stackable: true,
-        stackKey: HEXOBJECT_KEYS.CROWN_SHARD,
-        maxStack: 10,
-        weightKG: 0.1,
       },
     },
   },

@@ -1,4 +1,5 @@
-import { itemTokenSchema, type ItemToken } from '../token-schema';
+import type { BaseItemRegistry } from '../base-item-registry';
+import { currentItemTokenSchema, type ItemToken } from '../token-schema';
 import {
   refuseToken,
   type AttributeSheet,
@@ -18,6 +19,7 @@ export class ZodTokenValidator implements ITokenValidator {
     private readonly types: TypeRegistry,
     private readonly attributes: AttributeRegistry,
     private readonly profiles: AttributeProfiles,
+    private readonly bases: BaseItemRegistry,
   ) {}
 
   validateAttributes(sheet: AttributeSheet): TokenResult<true> {
@@ -52,10 +54,20 @@ export class ZodTokenValidator implements ITokenValidator {
   }
 
   validate(candidate: unknown): TokenResult<ItemToken> {
-    const parsed = itemTokenSchema.safeParse(candidate);
+    const parsed = currentItemTokenSchema.safeParse(candidate);
     if (parsed.success) {
       const token = parsed.data;
       if (!this.types.has(token.type)) return refuseToken('INVALID_TOKEN', 'Unknown token type');
+      if (token.origin === 'base') {
+        const base = this.bases.get(token.baseKey!);
+        if (!base || base.dimension !== token.dimension || base.type !== token.type)
+          return refuseToken('INVALID_TOKEN', 'Invalid concrete base item identity');
+        if (
+          base.attributes &&
+          token.attributes.some((entry) => !base.attributes!.includes(entry.key))
+        )
+          return refuseToken('INVALID_TOKEN', 'Attribute is outside the base item pool');
+      }
       const checked = this.validateAttributes({
         type: this.types.get(token.type),
         origin: token.origin,

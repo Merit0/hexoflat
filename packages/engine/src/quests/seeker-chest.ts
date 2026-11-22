@@ -6,7 +6,7 @@ import {
   rollContainerContents,
   type ContainerState,
 } from '../containers';
-import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
+import { type TokenOrigin } from '../tokens/token-origin';
 import { questTokenOrigin, questTokenSource } from './quest-token-origin';
 import { lootTableOf } from '../content/loot-tables.content';
 import type { IInventoryDraft } from '../inventory/apply-stock';
@@ -36,13 +36,14 @@ export function generateChestDrop(input: {
   tableId: string | undefined;
   origin?: TokenOrigin;
 }): LootDrop[] {
+  if (!input.origin) throw new Error('TOKEN_ORIGIN_REQUIRED: quest chest');
   const [drops] = rollContainerContents({
     kind: 'quest-chest',
     tables: [lootTableOf(input.tableId)],
     seed: input.seed,
     sourceId: input.seed,
     targetKey: coordinateKey(input.chestHex),
-    origin: input.origin ?? DEFAULT_TOKEN_ORIGIN,
+    origin: input.origin,
     tokenSource: questTokenSource({ seed: input.seed }),
   });
   return drops ?? [];

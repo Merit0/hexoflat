@@ -27,11 +27,15 @@ export function createTokenFactory(
   steps: Partial<Omit<TokenFactoryParts, 'validator'>> = {},
 ): TokenFactory {
   const profiles = attributeProfilesSchema.parse(content.profiles);
-  const { types, attributes, uniques } = createTokenRegistries(content, uniqueDefinitions);
+  const { types, attributes, uniques, baseItems } = createTokenRegistries(
+    content,
+    uniqueDefinitions,
+  );
   validateFactoryContent({ types, attributes, uniques, content });
   const spriteResolver = new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest));
   return new TokenFactory(
     {
+      baseItems,
       typePicker: new RealmTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(content.adjectives),
       spriteResolver,
@@ -40,7 +44,7 @@ export function createTokenFactory(
       priceGenerator: new RangePriceGenerator(content.priceRanges),
       descriptionBuilder: new SpecSheetDescriptionBuilder(),
       ...steps,
-      validator: new ZodTokenValidator(types, attributes, profiles),
+      validator: new ZodTokenValidator(types, attributes, profiles, baseItems),
     },
     { types, uniques, spriteResolver },
   );

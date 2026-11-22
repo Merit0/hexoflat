@@ -1,3 +1,6 @@
+import { tokenOriginOfBoard } from '../registry/location-token-origin';
+import { questTokenOrigin } from './quest-token-origin';
+import { LOCATION_DIMENSIONS } from '../registry/location-key';
 import type { ProgressState } from '../aggregates/progress-state';
 import { questAnswerReview } from './quest-answer-review';
 import { resolveSeekerPath } from './resolve-seeker-path';
@@ -64,6 +67,12 @@ export function enterQuest(
   if (!quest || quest.objective.kind !== 'expedition') {
     return reject(progress, input.questId, 'UNKNOWN_QUEST');
   }
+  if (
+    input.field &&
+    (LOCATION_DIMENSIONS[input.field.origin] !== quest.dimension ||
+      !quest.locations.includes(input.field.origin))
+  )
+    return reject(progress, input.questId, 'NOT_AT_BOARD');
   if (input.hasRun) return reject(progress, input.questId, 'QUEST_IN_PROGRESS');
   if (!input.atBoard) return reject(progress, input.questId, 'NOT_AT_BOARD');
   if (!progress.quests.active.some((entry) => entry.questId === input.questId)) {
@@ -91,6 +100,9 @@ export function enterQuest(
 
   const run: QuestRun = {
     offerId: input.questId,
+    tokenOrigin: input.field
+      ? questTokenOrigin({ field: input.field })
+      : tokenOriginOfBoard(quest, null),
     seed: input.seed,
     rule: sequence.rule,
     terms: sequence.terms,

@@ -1,23 +1,15 @@
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { itemFamilyOfDimension, type EDimension } from '../dimensions/dimensions';
 import type { BoardDescriptor } from '../boards/board-descriptors';
-import { MAP_TIERS, type TBaseRealm, type TMapTier } from '../tokens/token-keys';
+import { baseRealmSchema, MAP_TIERS, type TBaseRealm, type TMapTier } from '../tokens/token-keys';
 import { DEFAULT_MAP_TIER, type TokenOrigin } from '../tokens/token-origin';
-import { assertNever } from '../utils/assert-never';
-import type { BoardKind } from './board-kind';
 import type { LocationKey } from './location-key';
 import { MapRegistry } from './world-map-registry';
 
 export const CAMP_LOCATION: LocationKey = 'camping';
 
-export function realmOfBoard(board: { boardKind: BoardKind }): TBaseRealm {
-  switch (board.boardKind) {
-    case 'DUNGEON':
-      return ERarityKind.GLOOM;
-    case 'STATIC':
-      return ERarityKind.IDOL;
-    default:
-      return assertNever(board.boardKind);
-  }
+/** Adapter to the existing base-token contract; NOWHERE cannot generate base tokens. */
+export function realmOfBoard(board: { dimension: EDimension }): TBaseRealm {
+  return baseRealmSchema.parse(itemFamilyOfDimension(board.dimension));
 }
 
 function isMapTier(value: unknown): value is TMapTier {
@@ -31,7 +23,7 @@ export function tierOfBoard(descriptor: BoardDescriptor | null | undefined): TMa
 }
 
 export function tokenOriginOfBoard(
-  board: { boardKind: BoardKind },
+  board: { dimension: EDimension },
   descriptor: BoardDescriptor | null | undefined,
 ): TokenOrigin {
   return { realm: realmOfBoard(board), mapTier: tierOfBoard(descriptor) };

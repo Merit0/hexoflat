@@ -11,7 +11,7 @@ import { hexKey, hexNeighbours, sameHex } from '@hexoflat/engine/battle/hex-batt
 import { rollContainerContents } from '@hexoflat/engine/containers/create-container';
 import type { LootLists } from '@hexoflat/engine/containers/container';
 import { lootTableOf } from '@hexoflat/engine/content/loot-tables.content';
-import { DEFAULT_TOKEN_ORIGIN } from '@hexoflat/engine/tokens/token-origin';
+import { locationTokenOrigin } from '@hexoflat/engine/registry/location-token-origin';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { LOOT_TABLES } from '@hexoflat/engine/content/loot-tables.content';
 import { lootStreamLabel } from '@hexoflat/engine/loot/roll-loot';
@@ -396,7 +396,7 @@ describe.skipIf(!dbAvailable)(
             seed,
             sourceId: view.id,
             targetKey: hexKey(hex),
-            origin: DEFAULT_TOKEN_ORIGIN,
+            origin: locationTokenOrigin('cave'),
           }),
         );
       });

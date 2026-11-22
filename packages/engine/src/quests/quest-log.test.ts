@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { fullBag } from '../trade/trade-test-setup';
@@ -141,8 +142,16 @@ describe('quest log: progress', () => {
     const active = take(progressWith(20), 'scholar', 'bone-hunter');
     const wrong = event('HALL_ANSWERED', { correct: false });
     const right = event('HALL_ANSWERED', { correct: true });
-    const lost = event('BATTLE_CLOSED', { outcome: 'defeat', kills: 0 });
-    const won = event('BATTLE_CLOSED', { outcome: 'victory', kills: 2 });
+    const lost = event('BATTLE_CLOSED', {
+      dimension: EDimension.UNDERWORLD,
+      outcome: 'defeat',
+      kills: 0,
+    });
+    const won = event('BATTLE_CLOSED', {
+      dimension: EDimension.UNDERWORLD,
+      outcome: 'victory',
+      kills: 2,
+    });
     const after = applyQuestEvents(active, [wrong, right, lost, won], QUESTS).progress;
     expect(after.quests.active.map((entry) => entry.progress)).toEqual([1, 2]);
   });
@@ -164,7 +173,11 @@ describe('quest log: progress', () => {
 
   it('REQ-QB-004: a kill count that overshoots is capped at the target', () => {
     const active = take(progressWith(20), 'bone-hunter');
-    const big = event('BATTLE_CLOSED', { outcome: 'victory', kills: 9 });
+    const big = event('BATTLE_CLOSED', {
+      dimension: EDimension.UNDERWORLD,
+      outcome: 'victory',
+      kills: 9,
+    });
     const { progress, events } = applyQuestEvents(active, [big], QUESTS);
     expect(progress.quests.active[0]).toMatchObject({ progress: 3, state: 'ready' });
     expect(events).toHaveLength(1);

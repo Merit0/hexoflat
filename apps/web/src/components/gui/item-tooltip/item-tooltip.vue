@@ -16,6 +16,7 @@
           </div>
           <h4 class="tip__title" data-testid="item-tooltip-title">{{ title }}</h4>
           <p class="tip__type">{{ typeLabel }}</p>
+          <DimensionLabel :dimension="view.dimension" />
         </header>
 
         <section v-if="view.headline" class="tip__headline">
@@ -120,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { InventoryTooltipView } from '@/composables/use-item-tooltip';

@@ -1,3 +1,4 @@
+import { EDimension } from '../../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { HEXOBJECT_KEYS } from '../../registry/hexobjects-registry';
 import type { BoardRecipeInput } from '../../content/boards/recipe-schema';
@@ -10,6 +11,8 @@ const SEEDS = 500;
 function caveShape(link: 'chain' | 'branch' | 'loop', count: number | [number, number] = [4, 5]) {
   return {
     id: 'blobs-probe',
+    dimension: EDimension.UNDERWORLD,
+    foreignPlacements: ['stone-wall', 'rock', 'chest', 'fireplace'],
     version: 1,
     kind: 'generated',
     frame: { columns: BOARD_COLUMNS, rows: BOARD_ROWS },

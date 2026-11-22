@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
@@ -38,6 +39,7 @@ function squadContent(
 ): TContentDefinition {
   return {
     hexobjectKey: key,
+    dimension: EDimension.UNDERWORLD,
     tags: ['enemy'],
     groupType: EHexobjectGroup.CREATURE,
     isInteractable: true,
@@ -81,6 +83,7 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.SKELETOR]: {
     hexobjectKey: HEXOBJECT_KEYS.SKELETOR,
+    dimension: EDimension.UNDERWORLD,
     tags: ['enemy'],
     groupType: EHexobjectGroup.CREATURE,
     isInteractable: true,
@@ -101,6 +104,7 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.EMITTER]: {
     hexobjectKey: HEXOBJECT_KEYS.EMITTER,
+    dimension: EDimension.UNDERWORLD,
     tags: ['enemy'],
     groupType: EHexobjectGroup.CREATURE,
     isInteractable: true,
@@ -121,6 +125,7 @@ export const CREATURE_CONTENT: Record<TCreatureKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.INFERNO]: {
     hexobjectKey: HEXOBJECT_KEYS.INFERNO,
+    dimension: EDimension.UNDERWORLD,
     tags: ['enemy'],
     groupType: EHexobjectGroup.CREATURE,
     isInteractable: true,

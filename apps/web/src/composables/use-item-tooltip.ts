@@ -40,6 +40,7 @@ export function withToken(
   return {
     ...view,
     token,
+    dimension: token.dimension,
     rarity: tokenRarity(token),
     rarityTone: tokenRarityTone(token),
     hearts: tokenHeartPoints(token),

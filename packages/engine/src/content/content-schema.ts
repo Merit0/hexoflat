@@ -1,3 +1,6 @@
+import { sharedWithSchema } from '../dimensions/availability';
+import { dimensionSchema } from '../dimensions/dimensions';
+import { validateContentDimension } from './content-dimension';
 import { tokenOriginSchema } from '../tokens/token-origin';
 import { z } from 'zod';
 import {
@@ -64,6 +67,8 @@ export type ObjectTag = z.infer<typeof objectTagSchema>;
 
 const baseContentFields = {
   hexobjectKey: hexobjectKeySchema,
+  dimension: dimensionSchema,
+  sharedWith: sharedWithSchema.optional(),
   tags: z.array(objectTagSchema).optional(),
   isInteractable: z.boolean(),
   collision: z.enum(EHexCollision),
@@ -213,14 +218,16 @@ const EquipmentContentSchema = z.object({
   weapon: weaponSchema.optional(),
 });
 
-export const ContentDefinitionSchema = z.discriminatedUnion('groupType', [
-  ResourceContentSchema,
-  LootContentSchema,
-  CreatureContentSchema,
-  ToolContentSchema,
-  ConstructionContentSchema,
-  EquipmentContentSchema,
-]);
+export const ContentDefinitionSchema = z
+  .discriminatedUnion('groupType', [
+    ResourceContentSchema,
+    LootContentSchema,
+    CreatureContentSchema,
+    ToolContentSchema,
+    ConstructionContentSchema,
+    EquipmentContentSchema,
+  ])
+  .superRefine(validateContentDimension);
 
 export type TContentDefinition = z.infer<typeof ContentDefinitionSchema>;
 

@@ -1,3 +1,4 @@
+import { itemDimensionOf } from './item-dimension';
 import { getMeta, getPrototype, usePriceOf } from '../content';
 import { DEFAULT_RARITY, rarityTone, tokenRarity, type TRarityTone } from '../content/rarity-rules';
 import { EHexobjectGroup, type TEquipSlot } from '../abstraction/hexobject-abstraction';
@@ -18,7 +19,7 @@ export const CATEGORY_ORDER: readonly TItemCategory[] = [
 ];
 
 export const TONE_SORT_ORDER: readonly TRarityTone[] = [
-  'god-executor',
+  'alien',
   'spark-boss',
   'gloom-boss',
   'idol-boss',
@@ -34,7 +35,9 @@ export function stackLimit(item: InventoryItem): number | null {
 }
 
 export function canStackTogether(a: InventoryItem, b: InventoryItem): boolean {
+  if (a.token || b.token) return false;
   if (!a.stackKey || a.stackKey !== b.stackKey) return false;
+  if (itemDimensionOf(a) !== itemDimensionOf(b)) return false;
   return stackLimit(a) !== null && stackLimit(b) !== null;
 }
 

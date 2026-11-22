@@ -1,3 +1,6 @@
+import { CONTENT } from '../content/content-map';
+import { availableInDimension } from '../dimensions/availability';
+import { EDimension } from '../dimensions/dimensions';
 import { TRADERS } from '../content/traders.content';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { sellUnitPrice } from '../trade/trader-view';
@@ -11,6 +14,8 @@ import {
 export const BOARD_QUESTS: readonly QuestDefinition[] = [
   {
     id: 'woodcutter',
+    dimension: EDimension.EARTH,
+    locations: ['silesia', 'silesia-north'],
     nameKey: 'quest.woodcutter.name',
     descKey: 'quest.woodcutter.desc',
     repeat: 'repeatable',
@@ -30,6 +35,8 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
   },
   {
     id: 'stonebreaker',
+    dimension: EDimension.EARTH,
+    locations: ['silesia', 'silesia-north'],
     nameKey: 'quest.stonebreaker.name',
     descKey: 'quest.stonebreaker.desc',
     repeat: 'repeatable',
@@ -49,6 +56,8 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
   },
   {
     id: 'scholar',
+    dimension: EDimension.EARTH,
+    locations: ['camping'],
     nameKey: 'quest.scholar.name',
     descKey: 'quest.scholar.desc',
     repeat: 'repeatable',
@@ -68,6 +77,8 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
   },
   {
     id: 'bone-hunter',
+    dimension: EDimension.UNDERWORLD,
+    locations: ['cave'],
     nameKey: 'quest.bone-hunter.name',
     descKey: 'quest.bone-hunter.desc',
     repeat: 'once',
@@ -110,6 +121,13 @@ export function questContentFailures(quests: readonly QuestDefinition[] = BOARD_
   for (const quest of quests) {
     const parsed = QuestDefinitionSchema.safeParse(quest);
     if (!parsed.success) failures.push(`${quest.id}: ${parsed.error.message}`);
+    if (
+      quest.mapObjectPlacement &&
+      !availableInDimension(CONTENT[quest.mapObjectPlacement.objectKey], quest.dimension)
+    )
+      failures.push(
+        `${quest.id}: place ${quest.mapObjectPlacement.objectKey} outside its dimension`,
+      );
     if (ids.has(quest.id)) failures.push(`${quest.id}: duplicate id`);
     ids.add(quest.id);
     if (quest.rewards.length === 0 && quest.turnIn === 'board') {

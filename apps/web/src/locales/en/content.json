@@ -274,7 +274,7 @@
         "gloom": "Gloom",
         "idol": "Idol",
         "spark": "Spark",
-        "god-executor": "God Executor"
+        "alien": "Alien"
       },
       "attr": {
         "heart": "Health: +{value}",

@@ -2,6 +2,7 @@ import type { BattleSide, BattleTerrain } from '@hexoflat/engine/battle/battle-s
 import { CONTENT } from '@hexoflat/engine/content/content-map';
 import { BATTLEFIELD_BIOMES, type BattlefieldBiome } from '@hexoflat/engine/battle/battlefield';
 import { CREATURE_SPRITES } from '@/render/creature-sprites';
+import { RARITY_FRAME_URLS } from '@/render/rarity';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 
 const BATTLE_TOKEN_DIR = '/hex-assets/battle-tokens';
@@ -40,6 +41,7 @@ export function battleAssetPaths(biome: BattlefieldBiome): string[] {
     battleShieldSprite(),
     '/board-assets/hero-board/cracker-heart-icon.png',
     ...Object.values(BATTLE_TERRAIN_TOKENS),
+    ...Object.values(RARITY_FRAME_URLS),
     ...Object.values(CREATURE_SPRITES),
     ...Object.values(BATTLE_GRAVE_SPRITES),
   ].filter(Boolean);

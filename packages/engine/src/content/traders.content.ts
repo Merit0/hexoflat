@@ -16,7 +16,6 @@ export const TRADERS = {
     pool: [
       { key: HEXOBJECT_KEYS.ENERGY_BOTTLE, weight: 4, min: 1, max: 4 },
       { key: HEXOBJECT_KEYS.MANA_BOTTLE, weight: 4, min: 1, max: 4 },
-      { key: HEXOBJECT_KEYS.BONE_CHARM, weight: 2, min: 1, max: 1 },
       { key: HEXOBJECT_KEYS.AXE, weight: 2, min: 1, max: 1 },
       { key: HEXOBJECT_KEYS.PICKAXE, weight: 2, min: 1, max: 1 },
       { key: HEXOBJECT_KEYS.SWORD, weight: 1, min: 1, max: 1 },

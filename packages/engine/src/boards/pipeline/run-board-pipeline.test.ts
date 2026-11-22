@@ -1,3 +1,4 @@
+import { EDimension } from '../../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { buildStaticBoard } from '../build-static-board';
 import { SILESIA_BOARD } from '../../content/boards/static/silesia';
@@ -87,6 +88,7 @@ describe('runBoardPipeline', () => {
   it('BOUNDS:wall turns wall cells with no floor beside them into void', () => {
     const drawing: StaticBoardDrawing = {
       id: 'wall-probe',
+      dimension: EDimension.EARTH,
       background: '',
       legend: {},
       rows: ['. # ~ # #', ' ~ ~ ~ # #'],
@@ -135,7 +137,13 @@ describe('piece RNG streams', () => {
       (_, row) =>
         (row % 2 === 1 ? ' ' : '') + Array.from({ length: BOARD_COLUMNS }, () => '.').join(' '),
     );
-    const field: StaticBoardDrawing = { id: 'field', background: '', legend: {}, rows };
+    const field: StaticBoardDrawing = {
+      id: 'field',
+      dimension: EDimension.EARTH,
+      background: '',
+      legend: {},
+      rows,
+    };
     const twoLakes = (seed: string) =>
       runBoardPipeline(
         {

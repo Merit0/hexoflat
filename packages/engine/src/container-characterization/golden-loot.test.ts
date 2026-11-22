@@ -1,3 +1,4 @@
+import { locationTokenOrigin, campTokenOrigin } from '../registry/location-token-origin';
 import { describe, expect, it } from 'vitest';
 import { chestScene, tileOf } from '../chests/chest-test-setup';
 import { rollChestLoot } from '../chests/plan-chest-loot';
@@ -43,19 +44,19 @@ const WORLD: string[] = [
 const WARRIOR_GRAVE: string[] = [
   '1,-1=coinsx14;2,-1=health-bottlex1 | bag -',
   'nothing - | bag -',
-  '1,-1=coinsx5;2,-1=bone-charmx1 | bag -',
+  '1,-1=coinsx5;2,-1=health-bottlex1 | bag -',
   'nothing - | bag -',
   '1,-1=coinsx12 | bag -',
   'nothing - | bag -',
-  '1,-1=coinsx10;2,-1=bone-charmx1 | bag -',
+  '1,-1=coinsx10;2,-1=health-bottlex1 | bag -',
   'nothing - | bag -',
-  '1,-1=coinsx4;2,-1=bone-charmx1;2,0=health-bottlex1 | bag -',
+  '1,-1=coinsx12;2,-1=health-bottlex1 | bag -',
   '1,-1=health-bottlex1 | bag -',
-  '1,-1=bone-charmx1 | bag -',
-  '1,-1=coinsx8;2,-1=health-bottlex1;2,0=bone-charmx1 | bag -',
+  '1,-1=health-bottlex1 | bag -',
+  '1,-1=coinsx11;2,-1=health-bottlex1 | bag -',
   '1,-1=coinsx18 | bag -',
-  '1,-1=coinsx12;2,-1=bone-charmx1 | bag -',
-  '1,-1=bone-charmx1 | bag -',
+  '1,-1=coinsx12;2,-1=health-bottlex1 | bag -',
+  '1,-1=health-bottlex1 | bag -',
   '1,-1=coinsx11 | bag -',
   'nothing - | bag -',
   '1,-1=coinsx7 | bag -',
@@ -64,26 +65,26 @@ const WARRIOR_GRAVE: string[] = [
 ];
 
 const KING_GRAVE: string[] = [
-  '1,-1=coinsx37;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=health-bottlex2;0,1=swordx1 | bag -',
-  '1,-1=coinsx45;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=return-scrollx1 | bag -',
-  '1,-1=coinsx41;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=health-bottlex2;0,1=return-scrollx1 | bag -',
-  '1,-1=coinsx34;2,-1=crown-shardx1;2,0=shieldx1;1,1=swordx1 | bag -',
-  '1,-1=coinsx32;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=shieldx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx48;2,-1=crown-shardx1;2,0=shieldx1;1,1=return-scrollx1 | bag -',
-  '1,-1=coinsx37;2,-1=crown-shardx1;2,0=shieldx1;1,1=health-bottlex2;0,1=return-scrollx1 | bag -',
-  '1,-1=coinsx31;2,-1=crown-shardx1;2,0=health-bottlex2;1,1=return-scrollx1 | bag -',
-  '1,-1=coinsx41;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=return-scrollx1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=return-scrollx1;1,1=health-bottlex2 | bag -',
-  '1,-1=coinsx50;2,-1=crown-shardx1;2,0=shieldx1;1,1=shieldx1 | bag -',
-  '1,-1=coinsx30;2,-1=crown-shardx1;2,0=health-bottlex1;1,1=health-bottlex2;0,1=shieldx1 | bag -',
-  '1,-1=coinsx39;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex1;0,1=shieldx1 | bag -',
-  '1,-1=coinsx32;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex1;0,1=return-scrollx1 | bag -',
-  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=shieldx1;1,1=shieldx1 | bag -',
-  '1,-1=coinsx42;2,-1=crown-shardx1;2,0=shieldx1;1,1=shieldx1;0,1=return-scrollx1 | bag -',
-  '1,-1=coinsx38;2,-1=crown-shardx1;2,0=shieldx1;1,1=health-bottlex1 | bag -',
-  '1,-1=coinsx40;2,-1=crown-shardx1;2,0=swordx1;1,1=health-bottlex1 | bag -',
-  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=shieldx1;1,1=return-scrollx1 | bag -',
-  '1,-1=coinsx46;2,-1=crown-shardx1;2,0=health-bottlex2;1,1=health-bottlex2 | bag -',
+  '1,-1=coinsx37;2,-1=health-bottlex2;2,0=return-scrollx1;1,1=health-bottlex1 | bag -',
+  '1,-1=coinsx45;2,-1=health-bottlex1;2,0=swordx1 | bag -',
+  '1,-1=coinsx41;2,-1=shieldx1;2,0=return-scrollx1;1,1=health-bottlex2 | bag -',
+  '1,-1=coinsx34;2,-1=shieldx1;2,0=swordx1 | bag -',
+  '1,-1=coinsx32;2,-1=swordx1;2,0=shieldx1;1,1=shieldx1 | bag -',
+  '1,-1=coinsx48;2,-1=swordx1;2,0=health-bottlex1 | bag -',
+  '1,-1=coinsx37;2,-1=return-scrollx1;2,0=shieldx1;1,1=health-bottlex2 | bag -',
+  '1,-1=coinsx31;2,-1=return-scrollx1;2,0=return-scrollx1 | bag -',
+  '1,-1=coinsx41;2,-1=shieldx1;2,0=shieldx1;1,1=health-bottlex1 | bag -',
+  '1,-1=coinsx46;2,-1=health-bottlex1;2,0=health-bottlex2 | bag -',
+  '1,-1=coinsx50;2,-1=return-scrollx1;2,0=shieldx1 | bag -',
+  '1,-1=coinsx30;2,-1=health-bottlex2;2,0=shieldx1;1,1=return-scrollx1 | bag -',
+  '1,-1=coinsx39;2,-1=health-bottlex1;2,0=health-bottlex2;1,1=shieldx1 | bag -',
+  '1,-1=coinsx32;2,-1=return-scrollx1;2,0=return-scrollx1;1,1=shieldx1 | bag -',
+  '1,-1=coinsx46;2,-1=swordx1;2,0=health-bottlex1 | bag -',
+  '1,-1=coinsx42;2,-1=shieldx1;2,0=health-bottlex1;1,1=health-bottlex1 | bag -',
+  '1,-1=coinsx38;2,-1=swordx1;2,0=health-bottlex2 | bag -',
+  '1,-1=coinsx40;2,-1=health-bottlex1;2,0=return-scrollx1 | bag -',
+  '1,-1=coinsx46;2,-1=swordx1;2,0=health-bottlex1 | bag -',
+  '1,-1=coinsx46;2,-1=return-scrollx1;2,0=return-scrollx1 | bag -',
 ];
 
 const QUEST_STORED: string[] = [
@@ -141,6 +142,7 @@ describe('CH-P0 golden loot: the exact drop of 20 fixed seeds per space (guards 
     const viaRule = rollChestLoot(tileOf(scene.world, scene.chest), {
       seed: scene.world.worldSeed,
       sourceId: scene.world.mapId,
+      origin: locationTokenOrigin('cave'),
     });
     const byLabel = rollLoot(
       lootTableOf('cave-chest-loot')!,
@@ -151,7 +153,8 @@ describe('CH-P0 golden loot: the exact drop of 20 fixed seeds per space (guards 
   });
 
   it('warrior grave: placements, bag and the empty answer for 20 seeds, and the exact label loot:grave:<mapId>.<battleId>:<q,r> over the token secret', () => {
-    expect(GOLDEN_SEEDS.map((seed) => graveGolden(seed, 'warrior'))).toEqual(WARRIOR_GRAVE);
+    const actual = GOLDEN_SEEDS.map((seed) => graveGolden(seed, 'warrior'));
+    expect(actual).toEqual(WARRIOR_GRAVE);
     const source = graveLootSource(
       { id: 'b1', tokenSecret: { seed: 'golden-3', mapId: GOLDEN_GRAVE_MAP } },
       hexKey(TARGET),
@@ -162,7 +165,7 @@ describe('CH-P0 golden loot: the exact drop of 20 fixed seeds per space (guards 
       lootTableOf('skeleton-warrior-loot')!,
       deriveStream('golden-3', 'loot:grave:golden-map.b1:1,0'),
     );
-    expect(listOf(byLabel)).toBe('coinsx5,bone-charmx1');
+    expect(listOf(byLabel)).toBe('coinsx5,health-bottlex1');
   });
 
   it('king grave: placements and bag for 20 seeds', () => {
@@ -182,6 +185,7 @@ describe('CH-P0 golden loot: the exact drop of 20 fixed seeds per space (guards 
     expect(
       listOf(
         generateChestDrop({
+          origin: campTokenOrigin(),
           seed: 'golden-3',
           chestHex: { columnIndex: 14, rowIndex: 16 },
           tableId: 'seeker-1-chest-loot',

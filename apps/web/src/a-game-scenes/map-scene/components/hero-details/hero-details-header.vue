@@ -12,6 +12,7 @@
       </div>
       <div class="chips" data-testid="hero-details-chips">
         <span class="chip" data-testid="topbar-map-chip">{{ view.locationTitle }}</span>
+        <DimensionLabel v-if="view.locationDimension" :dimension="view.locationDimension" />
       </div>
     </div>
     <template v-if="view.will">
@@ -28,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+import DimensionLabel from '@/components/gui/dimension-label.vue';
 import {
   HERO_PORTRAIT_URL,
   WILL_ICON_URL,

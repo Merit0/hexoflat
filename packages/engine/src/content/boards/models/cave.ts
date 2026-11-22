@@ -1,7 +1,10 @@
+import { EDimension } from '../../../dimensions/dimensions';
 import type { BoardRecipeInput } from '../recipe-schema';
 
 export const CAVE_MODEL = {
   id: 'cave',
+  dimension: EDimension.UNDERWORLD,
+  foreignPlacements: ['chest', 'rock', 'stone-wall'],
   version: 1,
   kind: 'generated',
   frame: { columns: 18, rows: 17 },

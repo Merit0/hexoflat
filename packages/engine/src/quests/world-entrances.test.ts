@@ -71,6 +71,7 @@ describe('Treasure Seeker world entrance', () => {
       ...ALL_QUESTS,
       'seeker-1': {
         ...ALL_QUESTS['seeker-1'],
+        locations: ['silesia-north' as const],
         mapObjectPlacement: {
           targetMap: 'silesia-north' as const,
           objectKey: HEXOBJECT_KEYS.TREASURE_MAP,

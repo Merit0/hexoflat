@@ -1,7 +1,9 @@
+import { EDimension } from '../../../dimensions/dimensions';
 import type { StaticBoardDrawing } from '../schemas';
 
 export const SILESIA_BOARD = {
   id: 'silesia',
+  dimension: EDimension.EARTH,
   background: '/hex-assets/board-hexes/grass-hex.png',
   legend: {
     A: { hexobjectKey: 'tree', overrides: { regrowMs: 25000 } },

@@ -1,3 +1,7 @@
+import { CONTENT } from '../content/content-map';
+import { assertDimensionRelation } from '../dimensions/relation';
+import { LOCATION_DIMENSIONS } from '../registry/location-key';
+import { QuestDefinitionSchema } from './quest-definition';
 import type { ProgressState } from '../aggregates/progress-state';
 import { isTerrainPassable } from '../boards/terrain';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
@@ -58,6 +62,11 @@ export function installQuestEntrances(
   const quests = progress.quests.active.filter(
     ({ questId }) => catalogue[questId]?.mapObjectPlacement?.targetMap === world.locationKey,
   );
+  for (const { questId } of quests) {
+    const quest = QuestDefinitionSchema.parse(catalogue[questId]);
+    const key = quest.mapObjectPlacement!.objectKey;
+    assertDimensionRelation(`quest:${questId}`, 'place', key, CONTENT[key], quest.dimension);
+  }
   const bindings = (world.questEntrances ??= {});
   const wanted = new Set(quests.map(({ questId }) => questId));
   let changed = false;
@@ -105,7 +114,9 @@ function entranceTile(
   questId: string,
   catalogue: QuestCatalogue,
 ): HexTileModel | null {
-  const placement = catalogue[questId]?.mapObjectPlacement;
+  const quest = catalogue[questId];
+  if (quest?.dimension !== LOCATION_DIMENSIONS[world.locationKey]) return null;
+  const placement = quest?.mapObjectPlacement;
   if (world.locationKey !== placement?.targetMap) return null;
   const tile = world.map.tiles.find(
     (entry) =>

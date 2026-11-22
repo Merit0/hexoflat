@@ -1,3 +1,4 @@
+import { baseItemKeySchema } from '../tokens/base-item';
 import { z } from 'zod';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import type { ItemToken } from '../tokens/token-schema';
@@ -11,6 +12,7 @@ const amountRangeSchema = z
 export const lootEntrySchema = z.object({
   itemKey: z.enum(itemKeys),
   amount: amountRangeSchema,
+  baseKey: baseItemKeySchema.optional(),
 });
 export type LootEntry = z.infer<typeof lootEntrySchema>;
 
@@ -41,4 +43,5 @@ export interface LootDrop {
   amount: number;
   guaranteed: boolean;
   token?: ItemToken;
+  baseKey?: string;
 }

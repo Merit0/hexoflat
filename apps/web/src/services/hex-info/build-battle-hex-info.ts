@@ -1,3 +1,6 @@
+import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
+import { itemDimensionOf } from '@hexoflat/engine/inventory/item-dimension';
+import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { BATTLE_OBJECTS } from '@hexoflat/engine/battle/battle-catalogue';
 import { isAlive } from '@hexoflat/engine/battle/battle-board';
 import { hexKey } from '@hexoflat/engine/battle/hex-battle-geom';
@@ -18,7 +21,7 @@ export interface BattleHexInfoScene {
   creatures: BattleCreature[];
   collect?: {
     graves: { hex: BattleHex; examined: boolean }[];
-    items: { hex: BattleHex; itemKey: string; amount: number }[];
+    items: { hex: BattleHex; itemKey: string; amount: number; token?: ItemToken }[];
   } | null;
 }
 
@@ -48,6 +51,7 @@ function objectView(
   return {
     variant: saw ? 'construction' : 'item',
     key: `battle-object-${id}`,
+    dimension: def.dimension,
     title: label(t, def.title, te),
     kind: t('itemTooltip.group.construction'),
     subtitle: null,
@@ -73,6 +77,7 @@ function graveView(examined: boolean, t: HexInfoTranslate): HexInfoView {
   return {
     variant: 'construction',
     key: 'battle-grave',
+    dimension: itemDimensionOf({ key: HEXOBJECT_KEYS.GRAVE }),
     title: t('hexInfo.grave.title'),
     kind: t('itemTooltip.group.construction'),
     subtitle: null,
@@ -95,14 +100,14 @@ function graveView(examined: boolean, t: HexInfoTranslate): HexInfoView {
 }
 
 function groundItemView(
-  item: { hex: BattleHex; itemKey: string; amount: number },
+  item: { hex: BattleHex; itemKey: string; amount: number; token?: ItemToken },
   t: HexInfoTranslate,
   te: (key: string) => boolean,
 ): HexInfoView {
   const obj = HexObjectFactory.create(
     item.itemKey as THexobjectKey,
     { columnIndex: 0, rowIndex: 0 },
-    { quantity: item.amount },
+    { quantity: item.amount, ...(item.token ? { token: item.token } : {}) },
   );
   return buildHexInfo(obj, t(`itemTooltip.group.${obj.groupType}`), t, te);
 }

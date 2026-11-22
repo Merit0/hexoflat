@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { makeResource } from '../utils/resource/resource-utils';
@@ -10,6 +11,7 @@ export type TResourceKeys =
 export const RESOURCE_CONTENT: Record<TResourceKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.TREE]: {
     hexobjectKey: HEXOBJECT_KEYS.TREE,
+    dimension: EDimension.EARTH,
     tags: ['resource'],
     groupType: EHexobjectGroup.RESOURCE,
     isInteractable: true,
@@ -32,6 +34,7 @@ export const RESOURCE_CONTENT: Record<TResourceKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.ROCK]: {
     hexobjectKey: HEXOBJECT_KEYS.ROCK,
+    dimension: EDimension.EARTH,
     tags: ['resource'],
     groupType: EHexobjectGroup.RESOURCE,
     isInteractable: true,
@@ -54,6 +57,7 @@ export const RESOURCE_CONTENT: Record<TResourceKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.MOUNTAIN]: {
     hexobjectKey: HEXOBJECT_KEYS.MOUNTAIN,
+    dimension: EDimension.EARTH,
     tags: ['resource', 'barrier'],
     groupType: EHexobjectGroup.RESOURCE,
     isInteractable: true,

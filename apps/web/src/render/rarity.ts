@@ -5,6 +5,8 @@ import {
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import {
   DEFAULT_RARITY,
+  tokenRarity,
+  type RarityCarrier,
   rarityTone,
   type TRarityTone,
 } from '@hexoflat/engine/content/rarity-rules';
@@ -17,7 +19,7 @@ export const RARITY_FRAME_URLS: Record<TRarityTone, string> = {
   'idol-boss': '/hex-assets/hex-frames/green-light.png',
   spark: '/hex-assets/hex-frames/yellow-light.png',
   'spark-boss': '/hex-assets/hex-frames/orange-light.png',
-  'god-executor': '/hex-assets/hex-frames/red-light.png',
+  alien: '/hex-assets/hex-frames/red-light.png',
 };
 
 export const RARITY_COLOR: Record<TRarityTone, string> = {
@@ -27,10 +29,11 @@ export const RARITY_COLOR: Record<TRarityTone, string> = {
   'idol-boss': '#4FD27A',
   spark: '#F5D33B',
   'spark-boss': '#FF8A2A',
-  'god-executor': '#FF3B3B',
+  alien: '#FF3B3B',
 };
 
 interface IRaritySource {
+  token?: RarityCarrier;
   groupType: EHexobjectGroup;
   tool?: { rarity?: IItemRarity };
   equipment?: { rarity?: IItemRarity };
@@ -38,6 +41,7 @@ interface IRaritySource {
 }
 
 export function getObjectRarity(obj: IRaritySource): IItemRarity | null {
+  if (obj.token) return tokenRarity(obj.token);
   if (obj.groupType === EHexobjectGroup.TOOL) return obj.tool?.rarity ?? DEFAULT_RARITY;
   if (obj.groupType === EHexobjectGroup.EQUIPMENT) {
     return obj.equipment?.rarity ?? DEFAULT_RARITY;

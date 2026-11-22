@@ -1,3 +1,4 @@
+import { locationTokenOrigin } from '../registry/location-token-origin';
 import { describe, expect, it } from 'vitest';
 import type { DomainEvent } from '../commands/types';
 import { createSeededRandom } from '../utils/random-seeded';
@@ -155,6 +156,7 @@ function playBattle(n: number): { bad: string[]; outcome: string; log: string[] 
     ambush: n % 4 === 0,
   });
   let battle = startBattle({ ...setup, tokenSecret: TEST_TOKEN_SECRET }, BATTLE_RULES).battle;
+  battle.tokenOrigin = locationTokenOrigin('cave');
   const log: string[] = [];
   const bad: string[] = [];
   for (let i = 0, atMs = 0; i < MAX_COMMANDS && battle.phase !== 'ended'; i++, atMs += 400) {

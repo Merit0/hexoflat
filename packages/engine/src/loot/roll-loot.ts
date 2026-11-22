@@ -1,3 +1,5 @@
+import { dimensionLootTable } from './dimension-pool';
+import type { EDimension } from '../dimensions/dimensions';
 import type { RandomNumberGenerator } from '../utils/random';
 import type { LootDrop, LootEntry, LootTable, WeightedLootEntry } from './loot-table';
 
@@ -12,6 +14,7 @@ function intInRange(min: number, max: number, rng: RandomNumberGenerator): numbe
 function guaranteedDrop(entry: LootEntry, rng: RandomNumberGenerator): LootDrop {
   return {
     itemKey: entry.itemKey,
+    ...(entry.baseKey ? { baseKey: entry.baseKey } : {}),
     amount: intInRange(entry.amount[0], entry.amount[1], rng),
     guaranteed: true,
   };
@@ -30,13 +33,19 @@ function pickWeighted(
   return entries[entries.length - 1];
 }
 
-export function rollLoot(table: LootTable, rng: RandomNumberGenerator): LootDrop[] {
+export function rollLoot(
+  table: LootTable,
+  rng: RandomNumberGenerator,
+  dimension?: EDimension,
+): LootDrop[] {
+  if (dimension !== undefined) table = dimensionLootTable(table, dimension);
   const rolls = intInRange(table.rolls[0], table.rolls[1], rng);
   const drops = (table.guaranteed ?? []).map((entry) => guaranteedDrop(entry, rng));
   for (let roll = 0; roll < rolls; roll += 1) {
     const entry = pickWeighted(table.entries, rng);
     drops.push({
       itemKey: entry.itemKey,
+      ...(entry.baseKey ? { baseKey: entry.baseKey } : {}),
       amount: intInRange(entry.amount[0], entry.amount[1], rng),
       guaranteed: false,
     });

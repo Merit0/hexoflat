@@ -1,3 +1,4 @@
+import { dimensionOfItemFamily } from '../dimensions/dimensions';
 import { rollLootLists, tokenizeLootLists, type LootTable } from '../loot';
 import { tokenSourceIdOf } from '../tokens/game-tokens';
 import type { TTokenSourceKind } from '../tokens/token-keys';
@@ -38,6 +39,7 @@ export function rollContainerContents(input: ContainerRollInput): LootLists {
     seed: input.seed,
     sourceId: input.sourceId,
     targetKey: input.targetKey,
+    dimension: dimensionOfItemFamily(input.origin.realm),
   });
   const tokens = input.tokenSource ?? { seed: input.seed, scope: [input.sourceId] };
   return tokenizeLootLists(lists, {

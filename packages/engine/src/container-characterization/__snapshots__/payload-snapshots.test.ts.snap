@@ -90,10 +90,6 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
           "amount": 41,
           "itemKey": "coins",
         },
-        {
-          "amount": 1,
-          "itemKey": "crown-shard",
-        },
       ],
     },
     "type": "CONTAINER_OPENED",
@@ -120,28 +116,6 @@ exports[`CH-P0 payload snapshots: grave > the full loot of a boss grave with no 
     },
     "type": "INVENTORY_CHANGED",
   },
-  {
-    "payload": {
-      "amount": 1,
-      "heroId": "hero",
-      "key": "crown-shard",
-      "placedAt": [
-        {
-          "container": "bag",
-          "index": 1,
-        },
-      ],
-      "source": "loot",
-    },
-    "type": "ITEM_GRANTED",
-  },
-  {
-    "payload": {
-      "heroId": "hero",
-      "revision": 2,
-    },
-    "type": "INVENTORY_CHANGED",
-  },
 ]
 `;
 
@@ -163,20 +137,12 @@ exports[`CH-P0 payload snapshots: grave > the full loot: CONTAINER_OPENED 1`] = 
       "nothing": false,
       "placed": [
         {
-          "amount": 10,
+          "amount": 18,
           "hex": {
             "q": 1,
             "r": -1,
           },
           "itemKey": "coins",
-        },
-        {
-          "amount": 1,
-          "hex": {
-            "q": 2,
-            "r": -1,
-          },
-          "itemKey": "health-bottle",
         },
       ],
       "toBag": [],
@@ -200,7 +166,7 @@ exports[`CH-P0 payload snapshots: grave > the pickup event and its refusals 1`] 
   "LOOT_PICKED": [
     {
       "payload": {
-        "amount": 10,
+        "amount": 18,
         "creatureId": "hero",
         "hex": {
           "q": 1,
@@ -212,7 +178,7 @@ exports[`CH-P0 payload snapshots: grave > the pickup event and its refusals 1`] 
     },
     {
       "payload": {
-        "amount": 10,
+        "amount": 18,
         "heroId": "hero",
         "key": "coins",
         "placedAt": [

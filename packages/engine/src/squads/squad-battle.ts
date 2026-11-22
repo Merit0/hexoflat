@@ -1,3 +1,4 @@
+import { dimensionOfItemFamily } from '../dimensions/dimensions';
 import type { DomainEvent } from '../commands/types';
 import type HexMapModel from '../map/models/hex-map-model';
 import {
@@ -162,6 +163,7 @@ export function beginBattle(
     tokenSecret: { seed: world.loot.seed, mapId: world.loot.sourceId },
   };
   const result = startBattle(setup, rules);
+  if (world.loot.origin) result.battle.tokenOrigin = { ...world.loot.origin };
   world.battle = result.battle;
   engagement.startItems = startItemsOf(fighters);
   return done(result.events);
@@ -185,6 +187,7 @@ export function closeBattle(world: SquadWorld): Outcome {
   if (!placed) return refuse('UNKNOWN_SQUAD');
   const { squad, tile } = placed;
   const events: DomainEvent[] = [];
+  const origin = battle.tokenOrigin ?? world.loot?.origin;
   const victory = battle.outcome === 'victory';
   if (victory) {
     tile.hexobject = null;
@@ -200,6 +203,7 @@ export function closeBattle(world: SquadWorld): Outcome {
       heroAt: { ...engagement.heroAt },
       heroes: heroSummaries(battle, engagement),
       kills: victory ? enemiesIn(battle) : 0,
+      ...(origin ? { dimension: dimensionOfItemFamily(origin.realm) } : {}),
     },
   });
   events.push(...spendConsumables(world, heroSummaries(battle, engagement)));

@@ -1,7 +1,9 @@
+import { questTokenOrigin } from './quest-token-origin';
 import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
 import { itemTokenSchema } from '../tokens/token-schema';
+import { tokenOriginSchema } from '../tokens/token-origin';
 import { mapTierSchema } from '../tokens/token-keys';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
@@ -60,6 +62,7 @@ export const seekerFieldSchema = z
     exit: hexSchema,
     tiles: z.array(fieldTileSchema).min(1),
     mapTier: mapTierSchema.optional(),
+    tokenOrigin: tokenOriginSchema.optional(),
   })
   .strict();
 export type SeekerField = z.infer<typeof seekerFieldSchema>;
@@ -77,6 +80,7 @@ export type SeekerOutcome = (typeof SEEKER_OUTCOMES)[number];
 export const QuestRunSchema = z
   .object({
     offerId: z.string().min(1),
+    tokenOrigin: tokenOriginSchema.optional(),
     seed: z.string().min(1),
     rule: z.object({ kind: z.string().min(1) }).passthrough(),
     terms: z.array(z.number().int()).min(1),
@@ -129,7 +133,8 @@ export type QuestRun = Omit<z.infer<typeof QuestRunSchema>, 'rule' | 'collect'> 
 };
 
 export function parseQuestRun(raw: unknown): QuestRun {
-  return QuestRunSchema.parse(raw) as unknown as QuestRun;
+  const run = QuestRunSchema.parse(raw) as unknown as QuestRun;
+  return { ...run, tokenOrigin: questTokenOrigin(run) };
 }
 
 export interface SeekerBoard {

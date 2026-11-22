@@ -107,6 +107,7 @@ describe.skipIf(!dbAvailable)('LG5b game rules read item tokens (real Postgres)'
       const { expeditionId, docKey, loaded } = await heldWorld(userId, heroId);
       if (loaded.descriptor?.kind !== 'RECIPE') throw new Error('the cave is not a recipe board');
       loaded.descriptor.params = { ...loaded.descriptor.params, tier: TIER };
+      loaded.tokenOrigin = { ...worldTokenOrigin(loaded), mapTier: TIER };
       const tile = chestSpotWithGear(loaded);
       if (!tile) continue;
       tile.isRevealed = true;

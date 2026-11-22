@@ -1,3 +1,4 @@
+import { campTokenOrigin } from '../registry/location-token-origin';
 import { describe, expect, it } from 'vitest';
 import { LOOT_TABLES } from '../content/loot-tables.content';
 import { emptyInventoryState } from '../inventory/inventory-state';
@@ -182,6 +183,7 @@ describe('REQ-QST-038 the chest drop is generated once and stays hidden', () => 
       for (let i = 0; i < 10_000; i += 1) {
         const drop = generateChestDrop({
           seed: `gen-${i}`,
+          origin: campTokenOrigin(),
           chestHex: { columnIndex: 12, rowIndex: 12 },
           tableId: card.params.chestLootTableId,
         });

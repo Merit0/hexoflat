@@ -3,7 +3,7 @@ import { rollLoot } from './roll-loot';
 import { placeLoot } from './place-loot';
 import {
   FIXTURE_TABLES,
-  CHARM,
+  ENERGY,
   POTION,
   SCREEN_RING,
   TARGET,
@@ -68,7 +68,7 @@ describe('loot seed sweep', () => {
         counts.set(drop.itemKey, (counts.get(drop.itemKey) ?? 0) + 1);
       }
     }
-    expect(counts.get(POTION) ?? 0).toBeGreaterThan(counts.get(CHARM) ?? 0);
-    expect(counts.get(CHARM) ?? 0).toBeGreaterThan(0);
+    expect(counts.get(POTION) ?? 0).toBeGreaterThan(counts.get(ENERGY) ?? 0);
+    expect(counts.get(ENERGY) ?? 0).toBeGreaterThan(0);
   });
 });

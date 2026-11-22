@@ -52,6 +52,39 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
   const inventoryOf = async (userId: string, heroId: string) =>
     (await kit.service.snapshot(userId, heroId)).aggregates.inventory!.state as InventoryState;
 
+  it('loads legacy God Executor tokens as ALIEN/NOWHERE without rerolling (D2)', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const inventory = await inventoryOf(userId, heroId);
+    const made = createTokenFactory().createUnique('last-verdict', {
+      seed: 'dimension-migration',
+      sourceId: 'test:stored-alien',
+      n: 0,
+      mapTier: 4,
+      ownedUniques: [],
+    });
+    if (!made.ok) throw new Error(made.refusal.code);
+    const fields: Record<string, unknown> = { ...made.value };
+    delete fields.dimension;
+    const legacy = { ...fields, rarity: 'god-executor', generatorVersion: 4 };
+    const cell = mintItem(inventory, 'sword', 1);
+    const raw = { ...inventory, bag: [{ ...cell, token: legacy }, ...inventory.bag.slice(1)] };
+    await kit.db
+      .update(heroAggregates)
+      .set({ state: raw })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+    const loaded = await inventoryOf(userId, heroId);
+    expect(loaded.bag[0]).toEqual({
+      ...cell,
+      token: {
+        ...legacy,
+        rarity: 'alien',
+        dimension: 'nowhere',
+      },
+    });
+    expect(await inventoryOf(userId, heroId)).toEqual(loaded);
+    expect(loaded.revision).toBe(inventory.revision);
+  });
+
   describe('characterization', () => {
     it('loads a stored v1 inventory with the same items in the same places', async () => {
       const { userId, heroId } = await kit.newPlayer();
@@ -158,6 +191,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       const { userId, heroId } = await kit.newPlayer();
       const token = newShield();
       expect(token.name.kind).toBe('adjective');
+      expect(token).toMatchObject({ baseKey: 'underworld-shield', dimension: 'underworld' });
       const stored = await storeTokens(userId, heroId, [token]);
 
       const moved = await kit.service.execute(

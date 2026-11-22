@@ -45,7 +45,7 @@ describe('item look from a token (LG5c step 1)', () => {
     expect(tokenSpriteUrl(gloom)).toBe(PLACEHOLDER);
     expect(tokenLightUrl(gloom)).toBe('/hex-assets/hex-frames/violet-light.png');
     expect(tokenLightUrl(verdict)).toBe('/hex-assets/hex-frames/red-light.png');
-    expect(itemRarityTone({ key: K.SWORD, token: verdict })).toBe('god-executor');
+    expect(itemRarityTone({ key: K.SWORD, token: verdict })).toBe('alien');
     expect(tokenLightColor(gloom)).toBe('#A855F7');
   });
 

@@ -11,7 +11,7 @@ import { findTilesMissingSpawners } from '../map/resource-hydration';
 import { LOCATION_KEYS, type LocationKey } from '../registry/location-key';
 import { MapRegistry } from '../registry/world-map-registry';
 import { locationTokenOrigin } from '../registry/location-token-origin';
-import type { TokenOrigin } from '../tokens/token-origin';
+import { tokenOriginSchema, type TokenOrigin } from '../tokens/token-origin';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { deriveStream } from '../utils/random-seeded';
 import { applyCommand } from '../commands/apply-command';
@@ -29,6 +29,7 @@ export interface ServerWorld {
   mapId: string;
   map: HexMapModel;
   descriptor: BoardDescriptor | null;
+  tokenOrigin?: TokenOrigin;
   heroCoordinates: IHexCoordinates | null;
   worldSeed: string;
   engagement: Engagement | null;
@@ -44,6 +45,7 @@ export const serializedWorldSchema = z.object({
   mapId: z.string().min(1),
   map: z.custom<ISerializedHexMap>((value) => typeof value === 'object' && value !== null),
   descriptor: z.unknown().nullable(),
+  tokenOrigin: tokenOriginSchema.optional(),
   heroCoordinates: z
     .object({ columnIndex: z.number().int(), rowIndex: z.number().int() })
     .nullable(),
@@ -62,6 +64,7 @@ export function serializeWorld(world: ServerWorld): SerializedWorld {
     mapId: world.mapId,
     map: world.map.toJSON(),
     descriptor: world.descriptor,
+    tokenOrigin: worldTokenOrigin(world),
     heroCoordinates: world.heroCoordinates,
     worldSeed: world.worldSeed,
     engagement: world.engagement,
@@ -100,9 +103,9 @@ export function staleWorldOf(raw: unknown): StaleWorldError | null {
 }
 
 export function worldTokenOrigin(
-  world: Pick<ServerWorld, 'locationKey' | 'descriptor'>,
+  world: Pick<ServerWorld, 'locationKey' | 'descriptor' | 'tokenOrigin'>,
 ): TokenOrigin {
-  return locationTokenOrigin(world.locationKey, world.descriptor);
+  return { ...(world.tokenOrigin ?? locationTokenOrigin(world.locationKey, world.descriptor)) };
 }
 
 export function worldTokenSecret(
@@ -127,15 +130,21 @@ export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   const parsed = serializedWorldSchema.parse(withBattleSecret(raw));
   const map = HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true });
   if (parsed.locationKey === 'camping') installCampFacilities(map, parsed.heroCoordinates);
+  const tokenOrigin =
+    parsed.tokenOrigin ??
+    locationTokenOrigin(parsed.locationKey, parsed.descriptor as BoardDescriptor | null);
   return {
     locationKey: parsed.locationKey,
     mapId: parsed.mapId,
     map,
     descriptor: parsed.descriptor as BoardDescriptor | null,
+    tokenOrigin,
     heroCoordinates: parsed.heroCoordinates,
     worldSeed: parsed.worldSeed,
     engagement: parsed.engagement,
-    battle: parsed.battle,
+    battle: parsed.battle
+      ? { ...parsed.battle, tokenOrigin: parsed.battle.tokenOrigin ?? { ...tokenOrigin } }
+      : null,
     questEntrances: restoreQuestEntrances(parsed.map, map, parsed.questEntrances),
   };
 }
@@ -154,7 +163,7 @@ export function createServerWorld(
   const { ctx } = createRecordingPorts();
   for (const { tile, hexobject } of findTilesMissingSpawners(map)) {
     applyCommand(
-      { map, heroes: {} },
+      { map, heroes: {}, placementScope: MapRegistry.get(locationKey).recipe },
       {
         type: 'ADD_RESOURCE_SPAWNER',
         payload: { heroId, coordinates: tile.coordinates, hexobject },
@@ -180,6 +189,7 @@ export function createServerWorld(
     mapId,
     map,
     descriptor: created.descriptor,
+    tokenOrigin: locationTokenOrigin(locationKey, created.descriptor),
     heroCoordinates: entry,
     worldSeed,
     engagement: null,

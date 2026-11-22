@@ -1,3 +1,4 @@
+import { EDimension } from '../../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { STATIC_DRAWINGS } from './index';
 import { validateBoardContent } from './validate-board-content';
@@ -51,7 +52,13 @@ describe('board content library', () => {
 
   describe('REQ-BOARD-001: frame is at most BOARD_COLUMNS x BOARD_ROWS', () => {
     const cells = (count: number) => Array.from({ length: count }, () => '.').join(' ');
-    const drawing = (rows: string[]) => ({ id: 'x', background: '', legend: {}, rows });
+    const drawing = (rows: string[]) => ({
+      id: 'x',
+      dimension: EDimension.EARTH,
+      background: '',
+      legend: {},
+      rows,
+    });
 
     it('accepts a full-frame drawing', () => {
       const rows = Array.from({ length: BOARD_ROWS }, () => cells(BOARD_COLUMNS));

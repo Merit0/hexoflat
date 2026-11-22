@@ -9,6 +9,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 16,
       },
     ],
+    "baseKey": "earth-pickaxe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -34,11 +35,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "earth",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:0",
     "mapTier": 2,
     "name": {
@@ -59,6 +61,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 3,
       },
     ],
+    "baseKey": "heaven-sword",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -80,11 +83,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "heaven",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:1",
     "mapTier": 2,
     "name": {
@@ -106,6 +110,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 1,
       },
     ],
+    "baseKey": "underworld-pickaxe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -131,11 +136,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "underworld",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:2",
     "mapTier": 3,
     "name": {
@@ -156,6 +162,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 1,
       },
     ],
+    "baseKey": "earth-axe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -181,11 +188,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "earth",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:3",
     "mapTier": 3,
     "name": {
@@ -206,6 +214,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 11,
       },
     ],
+    "baseKey": "heaven-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -227,11 +236,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "heaven",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:4",
     "mapTier": 3,
     "name": {
@@ -248,6 +258,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   },
   {
     "attributes": [],
+    "baseKey": "underworld-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -269,11 +280,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "underworld",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:5",
     "mapTier": 4,
     "name": {
@@ -299,6 +311,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 20,
       },
     ],
+    "baseKey": "earth-pickaxe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -324,11 +337,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "earth",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:6",
     "mapTier": 4,
     "name": {
@@ -349,6 +363,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 1,
       },
     ],
+    "baseKey": "heaven-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -370,11 +385,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "heaven",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:7",
     "mapTier": 4,
     "name": {
@@ -396,6 +412,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 6,
       },
     ],
+    "baseKey": "underworld-axe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -421,11 +438,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "underworld",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:8",
     "mapTier": 1,
     "name": {
@@ -441,6 +459,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   },
   {
     "attributes": [],
+    "baseKey": "earth-pickaxe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -466,11 +485,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "earth",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:9",
     "mapTier": 1,
     "name": {
@@ -486,6 +506,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   },
   {
     "attributes": [],
+    "baseKey": "heaven-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -507,11 +528,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "heaven",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:10",
     "mapTier": 1,
     "name": {
@@ -533,6 +555,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 3,
       },
     ],
+    "baseKey": "underworld-sword",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -554,11 +577,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "underworld",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:11",
     "mapTier": 2,
     "name": {
@@ -575,6 +599,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   },
   {
     "attributes": [],
+    "baseKey": "earth-pickaxe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -600,11 +625,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "earth",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:12",
     "mapTier": 2,
     "name": {
@@ -629,6 +655,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 2,
       },
     ],
+    "baseKey": "heaven-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -650,11 +677,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "heaven",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:13",
     "mapTier": 2,
     "name": {
@@ -676,6 +704,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 9,
       },
     ],
+    "baseKey": "underworld-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -697,11 +726,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "underworld",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:14",
     "mapTier": 3,
     "name": {
@@ -723,6 +753,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 2,
       },
     ],
+    "baseKey": "earth-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -744,11 +775,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "earth",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:15",
     "mapTier": 3,
     "name": {
@@ -770,6 +802,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 5,
       },
     ],
+    "baseKey": "heaven-axe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -795,11 +828,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "heaven",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:16",
     "mapTier": 3,
     "name": {
@@ -820,6 +854,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 22,
       },
     ],
+    "baseKey": "underworld-sword",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -841,11 +876,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "underworld",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:17",
     "mapTier": 4,
     "name": {
@@ -867,6 +903,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 1,
       },
     ],
+    "baseKey": "earth-shield",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -888,11 +925,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "earth",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:18",
     "mapTier": 4,
     "name": {
@@ -914,6 +952,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         "value": 9,
       },
     ],
+    "baseKey": "heaven-axe",
     "description": [
       {
         "key": "content.tokens.line.kind",
@@ -939,11 +978,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
         },
       },
     ],
+    "dimension": "heaven",
     "ext": {
       "aspects": [],
       "heroGrade": null,
     },
-    "generatorVersion": 4,
+    "generatorVersion": 6,
     "id": "test:golden:19",
     "mapTier": 4,
     "name": {

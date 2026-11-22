@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import type { KnowledgeAction, KnowledgeCommand, KnowledgeContext } from './commands';
 import type { HallSession, KnowledgeState } from './state';
 import { generateHallQuestion, hallAward, KNOWLEDGE_RULES, stepCost } from './math';
@@ -53,7 +54,10 @@ function answerHall(
   )
     return false;
   const correct = action.answer === question.answer;
-  willEvents.push({ type: 'HALL_ANSWERED', payload: { heroId: state.heroId, correct } });
+  willEvents.push({
+    type: 'HALL_ANSWERED',
+    payload: { heroId: state.heroId, correct, dimension: EDimension.EARTH },
+  });
   const granted = correct
     ? grantWill(state, hallAward(action.elapsedMs) + bonus, {
         kind: 'hall',

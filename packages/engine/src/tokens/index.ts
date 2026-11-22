@@ -48,3 +48,5 @@ export * from './sprite-files';
 export { ManifestSpriteRegistry, type SpriteRef } from './sprite-registry';
 export { SPRITE_MANIFEST } from './sprite-manifest';
 export * from './factory';
+export * from './base-item';
+export { BASE_ITEMS } from '../content/base-items.content';

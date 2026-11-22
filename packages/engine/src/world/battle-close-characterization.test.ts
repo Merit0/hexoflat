@@ -196,17 +196,19 @@ describe('REQ-LOOT-074 characterization: WORLD_BATTLE close after a defeat', () 
 });
 
 describe('REQ-LOOT-075 characterization: restoring a battle session', () => {
-  it('projects an ended victory with the same public keys and no secrets', () => {
+  it('projects an ended victory with its public dimension and no secrets', () => {
     const run = ended(startedRun(), 'victory');
     const view = projectBattleForViewer(run.world.battle!, 'heroes');
     expect(view.phase).toBe('ended');
     expect(view.outcome).toBe('victory');
+    expect(view.dimension).toBe('underworld');
     expect(Object.keys(view).sort()).toEqual([
       'activeId',
       'advantage',
       'board',
       'boulders',
       'creatures',
+      'dimension',
       'draws',
       'id',
       'order',

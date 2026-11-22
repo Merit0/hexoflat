@@ -2,7 +2,7 @@ import { DEFAULT_TERRAIN, isTerrainPassable, type TerrainId } from '../boards/te
 import { TREASURE_SEEKER_MAP_MODEL } from '../content/boards/models/treasure-seeker-map';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
-import { tierOfBoard } from '../registry/location-token-origin';
+import { worldTokenOrigin } from '../world/server-world';
 import { coordinateKey } from '../utils/hex-utils';
 import type { ServerWorld } from '../world/server-world';
 import type { QuestRun, SeekerBoard, SeekerField } from './quest-state';
@@ -39,7 +39,8 @@ export function cloneOriginField(world: ServerWorld, door: IHexCoordinates): See
   const doorKey = coordinateKey(door);
   return {
     origin: world.locationKey,
-    mapTier: tierOfBoard(world.descriptor),
+    mapTier: worldTokenOrigin(world).mapTier,
+    tokenOrigin: worldTokenOrigin(world),
     background: backgroundOf(world, doorKey),
     exit: { columnIndex: door.columnIndex, rowIndex: door.rowIndex },
     tiles: world.map.tiles.map((tile) => {

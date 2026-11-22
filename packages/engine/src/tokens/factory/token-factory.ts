@@ -1,3 +1,7 @@
+import { availableInDimension } from '../../dimensions/availability';
+import { pickBaseItem } from './base-item-picker';
+import type { BaseItemRegistry } from '../base-item-registry';
+import { dimensionOfItemFamily, itemFamilyOfDimension } from '../../dimensions/dimensions';
 import { decodedSourceId } from '../source-id';
 import { ERarityKind } from '../../abstraction/hexobject-abstraction';
 import { deriveStream } from '../../utils/random-seeded';
@@ -33,6 +37,7 @@ import {
 } from './token-generation';
 
 export interface TokenFactoryParts {
+  baseItems: BaseItemRegistry;
   typePicker: ITypePicker;
   nameGenerator: INameGenerator;
   spriteResolver: ISpriteResolver;
@@ -96,7 +101,7 @@ function contextRefusal(ctx: GenerationContext): TokenResult<never> | null {
   const refusal = sourceRefusal(ctx);
   if (refusal) return refusal;
   if (baseRealmOf(ctx.realm) === null) {
-    return refuseToken('GOD_EXECUTOR_NOT_BASE', `${ctx.realm} items are unique only`);
+    return refuseToken('ALIEN_NOT_BASE', `${ctx.realm} items are unique only`);
   }
   return null;
 }
@@ -110,16 +115,19 @@ export class TokenFactory {
   createBase(ctx: GenerationContext, overrides: TokenOverrides = {}): TokenResult<ItemToken> {
     const refusal = contextRefusal(ctx);
     if (refusal) return refusal;
-    const realm = baseRealmOf(ctx.realm) as TBaseRealm;
     const id = itemTokenIdOf(ctx.sourceId, ctx.n);
     const stream = (step: TTokenStep) => deriveStream(ctx.seed, tokenStreamLabel(id, step));
-    const picked = this.parts.typePicker.pick(realm, ctx.type, stream('type'));
+    const base = pickBaseItem(this.parts.baseItems, ctx, stream('type'));
+    if (!base.ok) return base;
+    const realm = baseRealmOf(itemFamilyOfDimension(base.value.dimension)) as TBaseRealm;
+    const picked = this.parts.typePicker.pick(realm, base.value.type, stream('type'));
     if (!picked.ok) return picked;
     const type = picked.value;
     if (!type.group) return refuseToken('INVALID_TOKEN', `item type "${type.key}" has no group`);
     const attributes = overrides.attributes
       ? overrides.attributes.map((attribute) => ({ ...attribute }))
       : this.parts.attributeGenerator.generate({
+          allowedKeys: base.value.attributes,
           level: resolveGenerationLevel(null, ctx.mapTier),
           group: type.group,
           type,
@@ -133,12 +141,19 @@ export class TokenFactory {
       attributes,
     });
     if (!checked.ok) return checked;
+    if (
+      base.value.attributes &&
+      attributes.some((entry) => !base.value.attributes!.includes(entry.key))
+    )
+      return refuseToken('INVALID_TOKEN', 'Attribute is outside the base item pool');
     const attributeCount = attributes.length;
     return this.parts.validator.validate({
       id,
       origin: 'base',
+      baseKey: base.value.key,
       type: type.key,
       rarity: realm,
+      dimension: dimensionOfItemFamily(realm),
       name: this.parts.nameGenerator.generate({ type, attributeCount }, stream('name')),
       description: this.parts.descriptionBuilder.build({ type, realm, mapTier: ctx.mapTier }),
       attributes,
@@ -164,6 +179,8 @@ export class TokenFactory {
       return refuseToken('UNIQUE_ALREADY_OWNED', `the hero already owns unique "${uniqueKey}"`);
     }
     const definition = unique.uniques.get(uniqueKey);
+    if (ctx.dimension !== undefined && !availableInDimension(definition, ctx.dimension))
+      return refuseToken('UNIQUE_NOT_IN_DIMENSION', 'Unique is outside the source dimension pool');
     if (!unique.types.has(definition.type)) {
       return refuseToken('UNKNOWN_TYPE', `item type "${definition.type}" is not in the registry`);
     }
@@ -191,6 +208,7 @@ export class TokenFactory {
       uniqueKey: definition.key,
       type: type.key,
       rarity: definition.rarity,
+      dimension: definition.dimension,
       name: { ...definition.name },
       description: this.parts.descriptionBuilder.build({
         type,

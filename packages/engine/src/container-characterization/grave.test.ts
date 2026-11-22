@@ -87,7 +87,7 @@ describe('CH-P0 grave: price, hero move, room, bag', () => {
         container: { id: '1,0', kind: 'grave', at: TARGET, contents: [], status: 'empty' },
       },
     ]);
-    expect(looted.battle.collect!.items.length).toBe(2);
+    expect(looted.battle.collect!.items.length).toBe(1);
   });
 
   it('no free place and a bag with room: guaranteed drops go to the bag, the hero still moves', () => {
@@ -174,7 +174,7 @@ describe('CH-P0 grave: pickup', () => {
     const stack = state.collect!.items[0];
     const picked = play(state, pickAt(stack.hex));
     expect(picked.refused).toBeNull();
-    expect(picked.battle.collect!.items).toHaveLength(1);
+    expect(picked.battle.collect!.items).toHaveLength(0);
     const event = picked.events.find((candidate) => candidate.type === 'LOOT_PICKED')!;
     expect(keysOf(event.payload)).toEqual(['amount', 'creatureId', 'hex', 'itemKey']);
     expect(event.payload).toMatchObject({ itemKey: stack.itemKey, amount: stack.amount });
@@ -186,8 +186,8 @@ describe('CH-P0 grave: pickup', () => {
   });
 
   it('a far stack is NOT_ADJACENT, and it comes before BAG_FULL', () => {
-    const away = play(withStacks(), stepTo(ORIGIN)).battle;
-    const far = away.collect!.items.find((item) => item.hex.q === 2)!;
+    const away = play(play(withStacks(), stepTo(ORIGIN)).battle, stepTo(OTHER)).battle;
+    const far = away.collect!.items[0];
     expectRefused(away, pickAt(far.hex), 'NOT_ADJACENT', fullBag());
   });
 

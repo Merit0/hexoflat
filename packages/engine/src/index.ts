@@ -14,3 +14,6 @@ export * from './trade';
 export * from './quests';
 export * from './loot';
 export * from './tokens';
+export * from './dimensions/dimensions';
+export { itemDimensionOf } from './inventory/item-dimension';
+export * from './dimensions/availability';

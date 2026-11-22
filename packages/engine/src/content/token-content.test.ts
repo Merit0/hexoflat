@@ -61,6 +61,7 @@ describe('item token content', () => {
   it('needs no adjective for tool types', () => {
     const toolsOnly = {
       ...TOKEN_CONTENT,
+      baseItems: TOKEN_CONTENT.baseItems.filter((item) => ['axe', 'pickaxe'].includes(item.type)),
       types: TOKEN_CONTENT.types.filter((type) => type.tool !== null),
       adjectives: [],
     };
@@ -131,7 +132,7 @@ describe('item token content', () => {
     const [min, max] = TOKEN_PRICE_RANGES[ERarityKind.IDOL];
     expect(coinPriceOf('sword')).toBeGreaterThanOrEqual(min);
     expect(coinPriceOf('sword')).toBeLessThanOrEqual(max);
-    expect(ERarityKind.GOD_EXECUTOR in TOKEN_PRICE_RANGES).toBe(false);
+    expect(ERarityKind.ALIEN in TOKEN_PRICE_RANGES).toBe(false);
   });
 });
 

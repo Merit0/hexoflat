@@ -1,3 +1,7 @@
+import { availableInDimension } from '../dimensions/availability';
+import type { EDimension } from '../dimensions/dimensions';
+import { TOKEN_UNIQUES } from '../content/token-uniques.content';
+import type { UniqueTokenDefinition } from './unique-schema';
 import { z } from 'zod';
 import type { RandomNumberGenerator } from '../utils/random';
 import { uniqueKeySchema, type UniqueKey } from './token-keys';
@@ -58,13 +62,22 @@ export function resolveUniqueDrop(
   rules: readonly UniqueDropRule[],
   ownedUniques: readonly UniqueKey[],
   rng: RandomNumberGenerator,
+  scope?: { dimension: EDimension; definitions?: readonly UniqueTokenDefinition[] },
 ): UniqueKey | null {
-  const parsed = uniqueDropRulesSchema.parse(rules);
+  const parsed = uniqueDropRulesSchema.parse(rules).filter((rule) => {
+    if (!scope) return true;
+    const definition = (scope.definitions ?? TOKEN_UNIQUES).find(
+      (entry) => entry.key === rule.uniqueKey,
+    );
+    if (!definition) throw new Error(`UNKNOWN_UNIQUE_DROP: ${rule.uniqueKey}`);
+    return availableInDimension(definition, scope.dimension);
+  });
   const owned = new Set(ownedUniques);
   const roll = rng();
   let floor = 0;
   for (const rule of parsed) {
     if (owned.has(rule.uniqueKey)) continue;
+
     const { num, den } = fractionOf(rule);
     const ceiling = floor + num / den;
     if (roll < ceiling) return rule.uniqueKey;

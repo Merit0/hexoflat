@@ -12,7 +12,7 @@ export function tokenizeLootLists(lists: readonly (readonly LootDrop[])[], mint:
       return Array.from({ length: drop.amount }, () => ({
         ...drop,
         amount: 1,
-        token: mintBaseToken(mint, drop.itemKey, n++),
+        token: mintBaseToken(mint, drop.itemKey, n++, drop.baseKey),
       }));
     }),
   );

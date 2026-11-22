@@ -1,3 +1,4 @@
+import { locationTokenOrigin } from '../registry/location-token-origin';
 import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { expect } from 'vitest';
 import { createContainer } from '../containers';
@@ -52,7 +53,7 @@ export function fight(
     tokenSecret?: BattleTokenSecret;
   } = {},
 ): BattleState {
-  return startBattle(
+  const battle = startBattle(
     {
       id: options.id ?? 'b1',
       seed: options.seed ?? 'loot-seed',
@@ -62,6 +63,8 @@ export function fight(
     },
     ON,
   ).battle;
+  battle.tokenOrigin = locationTokenOrigin('cave');
+  return battle;
 }
 
 export function slay(state: BattleState, ...ids: string[]): void {

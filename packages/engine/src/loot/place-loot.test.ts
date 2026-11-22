@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { placeLoot, type LootPlacement, type PlaceLootInput } from './place-loot';
 import {
-  CHARM,
+  ENERGY,
   COINS,
   POTION,
   SCREEN_CLOCKWISE_AFTER,
   SCREEN_RING,
   SCROLL,
-  SHARD,
   SWORD,
   TARGET,
   allFreeExcept,
@@ -44,26 +43,26 @@ function expectNothingOnEntryOrTarget(result: ReturnType<typeof placeLoot>, entr
   }
 }
 
-const THREE = [drop(COINS, 4), drop(POTION, 1), drop(CHARM, 1)];
+const THREE = [drop(COINS, 4), drop(POTION, 1), drop(ENERGY, 1)];
 
 describe('placeLoot', () => {
   it('REQ-LOOT-009 five free places, three drops: the first three hexes clockwise on screen after E', () => {
     const result = run({ drops: [THREE] });
     expect(hexesOf(placed(result))).toEqual([hexAt('SE'), hexAt('SW'), hexAt('W')]);
-    expect(placed(result).map((entry) => entry.itemKey)).toEqual([COINS, POTION, CHARM]);
+    expect(placed(result).map((entry) => entry.itemKey)).toEqual([COINS, POTION, ENERGY]);
   });
 
   it('REQ-LOOT-010 five drops, two free places: two placed, the last three discarded', () => {
     const five = [
       drop(POTION, 1),
-      drop(CHARM, 1),
+      drop(ENERGY, 1),
       drop(SWORD, 1),
       drop(SCROLL, 1),
       drop(POTION, 2),
     ];
     const neighbours = allFreeExcept('E', 'SW', 'W', 'NW');
     const result = run({ drops: [five], neighbours });
-    expect(placed(result).map((entry) => entry.itemKey)).toEqual([POTION, CHARM]);
+    expect(placed(result).map((entry) => entry.itemKey)).toEqual([POTION, ENERGY]);
     expect(hexesOf(placed(result))).toEqual([hexAt('SE'), hexAt('NE')]);
   });
 
@@ -92,21 +91,21 @@ describe('placeLoot', () => {
     const neighbours = allFreeExcept('E', 'SE', 'SW', 'W', 'NW', 'NE');
     const result = run({
       neighbours,
-      drops: [[drop(SHARD, 1, true), drop(POTION, 1), drop(CHARM, 1)]],
+      drops: [[drop(SCROLL, 1, true), drop(POTION, 1), drop(ENERGY, 1)]],
     });
-    expect(result).toEqual({ kind: 'placed', placements: [], toBag: [drop(SHARD, 1, true)] });
+    expect(result).toEqual({ kind: 'placed', placements: [], toBag: [drop(SCROLL, 1, true)] });
   });
 
   it('REQ-LOOT-014 zero free with two guaranteed entries: both go to the bag', () => {
     const neighbours = neighboursWith({ E: false, SE: false, SW: false });
     const result = run({
       neighbours,
-      drops: [[drop(COINS, 12, true), drop(SHARD, 1, true), drop(POTION, 1)]],
+      drops: [[drop(COINS, 12, true), drop(SCROLL, 1, true), drop(POTION, 1)]],
     });
     expect(result).toEqual({
       kind: 'placed',
       placements: [],
-      toBag: [drop(COINS, 12, true), drop(SHARD, 1, true)],
+      toBag: [drop(COINS, 12, true), drop(SCROLL, 1, true)],
     });
   });
 });
@@ -116,18 +115,24 @@ describe('placeLoot guaranteed and coins', () => {
     const neighbours = allFreeExcept('E', 'SE', 'SW', 'W');
     const result = run({
       neighbours,
-      drops: [[drop(COINS, 12, true), drop(SHARD, 1, true), drop(POTION, 1), drop(CHARM, 1)]],
+      drops: [[drop(COINS, 12, true), drop(SCROLL, 1, true), drop(POTION, 1), drop(ENERGY, 1)]],
     });
-    expect(placed(result).map((entry) => entry.itemKey)).toEqual([COINS, SHARD]);
+    expect(placed(result).map((entry) => entry.itemKey)).toEqual([COINS, SCROLL]);
     const single = run({
       neighbours: neighboursWith({ NW: true }),
-      drops: [[drop(COINS, 12, true), drop(SHARD, 1, true), drop(POTION, 1)]],
+      drops: [[drop(COINS, 12, true), drop(SCROLL, 1, true), drop(POTION, 1)]],
     });
     expect(placed(single).map((entry) => entry.itemKey)).toEqual([COINS]);
   });
 
   it('REQ-LOOT-016 several coin drops become one stack at the first coin position, merged before truncation', () => {
-    const drops = [drop(POTION, 1), drop(COINS, 3), drop(CHARM, 1), drop(COINS, 4), drop(COINS, 5)];
+    const drops = [
+      drop(POTION, 1),
+      drop(COINS, 3),
+      drop(ENERGY, 1),
+      drop(COINS, 4),
+      drop(COINS, 5),
+    ];
     const result = run({
       drops: [drops],
       neighbours: neighboursWith({ SE: true, SW: true, W: true }),
@@ -135,7 +140,7 @@ describe('placeLoot guaranteed and coins', () => {
     expect(placed(result).map((entry) => [entry.itemKey, entry.amount])).toEqual([
       [POTION, 1],
       [COINS, 12],
-      [CHARM, 1],
+      [ENERGY, 1],
     ]);
   });
 
@@ -146,12 +151,12 @@ describe('placeLoot guaranteed and coins', () => {
 
   it('REQ-LOOT-017 two drop lists are concatenated in order and coins merge across both', () => {
     const first = [drop(COINS, 2), drop(POTION, 1)];
-    const second = [drop(CHARM, 1), drop(COINS, 5)];
+    const second = [drop(ENERGY, 1), drop(COINS, 5)];
     const result = run({ drops: [first, second] });
     expect(placed(result).map((entry) => [entry.itemKey, entry.amount])).toEqual([
       [COINS, 7],
       [POTION, 1],
-      [CHARM, 1],
+      [ENERGY, 1],
     ]);
   });
 });
@@ -188,7 +193,7 @@ describe('placeLoot order and edges', () => {
 
   it('REQ-LOOT-020 a board edge with fewer than six neighbours supplied', () => {
     const neighbours = neighboursWith({ E: false, SE: true, W: true });
-    const result = run({ neighbours, drops: [[drop(POTION, 1), drop(CHARM, 1), drop(SWORD, 1)]] });
+    const result = run({ neighbours, drops: [[drop(POTION, 1), drop(ENERGY, 1), drop(SWORD, 1)]] });
     expect(hexesOf(placed(result))).toEqual([hexAt('SE'), hexAt('W')]);
     const none = run({ neighbours: [], drops: [THREE] });
     expect(none.kind).toBe('refused');
@@ -200,7 +205,7 @@ describe('placeLoot purity', () => {
     const list = [
       drop(COINS, 3, true),
       drop(POTION, 1),
-      drop(CHARM, 1),
+      drop(ENERGY, 1),
       drop(SWORD, 1),
       drop(SCROLL, 1),
     ];
@@ -222,7 +227,7 @@ describe('placeLoot purity', () => {
       target: TARGET,
       entry: hexAt('E'),
       neighbours: allFreeExcept('E', 'W'),
-      drops: [[drop(COINS, 3), drop(COINS, 4), drop(POTION, 1)], [drop(CHARM, 1, true)]],
+      drops: [[drop(COINS, 3), drop(COINS, 4), drop(POTION, 1)], [drop(ENERGY, 1, true)]],
     });
     const first = placeLoot(input);
     const second = placeLoot(input);

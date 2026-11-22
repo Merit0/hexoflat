@@ -50,8 +50,7 @@ export function drop(itemKey: LootDrop['itemKey'], amount: number, guaranteed = 
 
 export const COINS = HEXOBJECT_KEYS.COINS;
 export const POTION = HEXOBJECT_KEYS.HEALTH_BOTTLE;
-export const CHARM = HEXOBJECT_KEYS.BONE_CHARM;
-export const SHARD = HEXOBJECT_KEYS.CROWN_SHARD;
+export const ENERGY = HEXOBJECT_KEYS.ENERGY_BOTTLE;
 export const SCROLL = HEXOBJECT_KEYS.RETURN_SCROLL;
 export const SWORD = HEXOBJECT_KEYS.SWORD;
 
@@ -61,7 +60,7 @@ export const CHEST_TABLE: LootTable = {
   entries: [
     { itemKey: COINS, weight: 5, amount: [3, 9] },
     { itemKey: POTION, weight: 3, amount: [1, 2] },
-    { itemKey: CHARM, weight: 1, amount: [1, 1] },
+    { itemKey: ENERGY, weight: 1, amount: [1, 1] },
   ],
 };
 
@@ -70,7 +69,7 @@ export const BOSS_TABLE: LootTable = {
   rolls: [3, 4],
   guaranteed: [
     { itemKey: COINS, amount: [10, 20] },
-    { itemKey: SHARD, amount: [1, 1] },
+    { itemKey: SCROLL, amount: [1, 1] },
   ],
   entries: [
     { itemKey: SWORD, weight: 1, amount: [1, 1] },
@@ -90,7 +89,7 @@ export const WEIGHT_TABLE: LootTable = {
   rolls: [1, 1],
   entries: [
     { itemKey: POTION, weight: 9, amount: [1, 1] },
-    { itemKey: CHARM, weight: 1, amount: [1, 1] },
+    { itemKey: ENERGY, weight: 1, amount: [1, 1] },
   ],
 };
 

@@ -11,6 +11,7 @@
     >
       <header>
         <h3>{{ t(row.quest.nameKey) }}</h3>
+        <DimensionLabel :dimension="row.quest.dimension" />
       </header>
       <p v-if="row.timesDone > 0" class="tags">
         {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
@@ -99,6 +100,7 @@
 </template>
 
 <script setup lang="ts">
+import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useHeroStore } from '@/stores/hero-store';

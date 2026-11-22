@@ -109,12 +109,10 @@
   | health-bottle | 12          | 4            |
   | energy-bottle | 12          | 4            |
   | mana-bottle   | 12          | 4            |
-  | bone-charm    | 24          | 9            |
   | shield        | 40          | 16           |
   | axe           | 48          | 19           |
   | pickaxe       | 48          | 19           |
   | return-scroll | 60          | 24           |
-  | crown-shard   | 80          | 32           |
   | sword         | 500         | 200          |
 
   Меч — D19, сокира й кайло — D24 (48 замість 50, щоб ціна ділилась на 4). Ресурсів-предметів у сумці нема: дерево й камінь — лічильники, а `pickable` не ввімкнено ні в кого (SH0 перевірив), тож ціна 4 для ресурсів не знадобилась. У сумку потрапляють лише LOOT, TOOL і EQUIPMENT; ціну має кожен, крім `coins` і `hand`, і нічого поза цими групами ціни не має (`content/coin-price.test.ts`).
@@ -137,7 +135,6 @@
       pool: [
         { key: 'energy-bottle', weight: 4, min: 1, max: 4 },
         { key: 'mana-bottle', weight: 4, min: 1, max: 4 },
-        { key: 'bone-charm', weight: 2, min: 1, max: 1 },
         { key: 'axe', weight: 2, min: 1, max: 1 },
         { key: 'pickaxe', weight: 2, min: 1, max: 1 },
         { key: 'sword', weight: 1, min: 1, max: 1 },

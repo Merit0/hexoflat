@@ -177,7 +177,7 @@ export enum ERarityKind {
   GLOOM = 'gloom',
   IDOL = 'idol',
   SPARK = 'spark',
-  GOD_EXECUTOR = 'god-executor',
+  ALIEN = 'alien',
 }
 
 export interface IItemRarity {

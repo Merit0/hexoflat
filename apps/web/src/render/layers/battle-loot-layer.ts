@@ -1,3 +1,5 @@
+import { itemLook } from '@/render/token-look';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { Container, Sprite } from 'pixi.js';
 import { getPrototype } from '@hexoflat/engine';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -37,21 +39,27 @@ export function createBattleLootLayer(deps: BattleLootLayerDeps): BattleLootLaye
     for (const item of items) {
       if (deps.isHidden(item.hex)) continue;
       const meta = getPrototype(item.itemKey as THexobjectKey);
-      const path = meta?.spritePath;
-      if (!path) continue;
-      const sprite = new Sprite(getTexture(path));
-      const fit = () => applyObjectFit(sprite, w, h, meta.groupType);
-      fit();
-      unsubscribers.push(
-        onTextureReady(path, () => {
-          sprite.texture = getTexture(path);
-          fit();
-        }),
-      );
+      const look = itemLook({ key: item.itemKey as THexobjectKey, token: item.token });
+      if (!look.sprite) continue;
       const { x, y } = deps.positionOf(item.hex);
       const holder = new Container();
       holder.position.set(x, y);
-      holder.addChild(sprite);
+      for (const [path, group] of [
+        [look.light, EHexobjectGroup.CONSTRUCTION],
+        [look.sprite, meta.groupType],
+      ] as const) {
+        if (!path) continue;
+        const sprite = new Sprite(getTexture(path));
+        const fit = () => applyObjectFit(sprite, w, h, group);
+        fit();
+        unsubscribers.push(
+          onTextureReady(path, () => {
+            sprite.texture = getTexture(path);
+            fit();
+          }),
+        );
+        holder.addChild(sprite);
+      }
       container.addChild(holder);
     }
   }

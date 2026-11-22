@@ -10,13 +10,13 @@ describe('rarityTone', () => {
     [ERarityKind.IDOL, true, 'idol-boss'],
     [ERarityKind.SPARK, false, 'spark'],
     [ERarityKind.SPARK, true, 'spark-boss'],
-    [ERarityKind.GOD_EXECUTOR, false, 'god-executor'],
+    [ERarityKind.ALIEN, false, 'alien'],
   ] as const)('maps %s boss=%s to %s', (kind, boss, tone) => {
     expect(rarityTone({ kind, boss })).toBe(tone);
   });
 
-  it('ignores boss on god-executor', () => {
-    expect(rarityTone({ kind: ERarityKind.GOD_EXECUTOR, boss: true })).toBe('god-executor');
+  it('ignores boss on alien', () => {
+    expect(rarityTone({ kind: ERarityKind.ALIEN, boss: true })).toBe('alien');
   });
 
   it('covers every tone the legend lists', () => {

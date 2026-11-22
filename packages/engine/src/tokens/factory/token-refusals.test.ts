@@ -37,7 +37,7 @@ describe('TokenFactory.createBase refusals', () => {
       'TYPE_NOT_IN_REALM',
       sparkOnly,
     ],
-    ['the god-executor realm', { realm: ERarityKind.GOD_EXECUTOR }, 'GOD_EXECUTOR_NOT_BASE'],
+    ['the alien realm', { realm: ERarityKind.ALIEN }, 'ALIEN_NOT_BASE'],
     ['a source id without a kind', { sourceId: 'cave-chest-4-7' }, 'BAD_SOURCE_ID'],
     ['an invalid source kind', { sourceId: 'Boss:king' }, 'BAD_SOURCE_ID'],
     ['a source key with capitals', { sourceId: 'chest:Cave' }, 'BAD_SOURCE_ID'],
@@ -50,6 +50,7 @@ describe('TokenFactory.createBase refusals', () => {
     const noIdol = createTokenFactory(
       {
         ...TOKEN_CONTENT,
+        baseItems: extendedContent().baseItems.filter((item) => item.type === 'hammer'),
         types: extendedContent().types.filter((type) => type.key === 'hammer'),
       },
       extendedManifest(),
@@ -59,12 +60,13 @@ describe('TokenFactory.createBase refusals', () => {
   });
 
   it('returns the validator refusal for a token that fails the schema', () => {
-    const { types } = createTokenRegistries();
+    const { types, baseItems } = createTokenRegistries();
     const failing: ITokenValidator = {
       validateAttributes: () => ({ ok: true, value: true }),
       validate: () => ({ ok: false, refusal: { code: 'INVALID_TOKEN', message: 'test' } }),
     };
     const factory = new TokenFactory({
+      baseItems,
       typePicker: new RealmTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(TOKEN_CONTENT.adjectives),
       spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(SPRITE_MANIFEST)),

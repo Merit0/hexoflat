@@ -1,3 +1,4 @@
+import { dimensionSchema } from '../../dimensions/dimensions';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content-schema';
 import { BOARD_COLUMNS, BOARD_ROWS } from '../../boards/board-size';
@@ -14,6 +15,8 @@ const stageSchema = z.array(PieceParamsSchema);
 export const RecipeSchema = z
   .object({
     id: z.string().min(1),
+    dimension: dimensionSchema,
+    foreignPlacements: z.array(hexobjectKeySchema).default([]),
     version: z.number().int().min(1),
     kind: z.enum(['static', 'generated']),
     layout: z.enum(['world', 'extended']).default('world'),

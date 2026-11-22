@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
 import { findShortestPath } from '../hero-movement/pathfinding-service';
@@ -19,7 +20,7 @@ import { findFreeHexNear, findFreeHexNearExit } from '../map/free-hex-finder';
 import { runBoardPipeline } from './pipeline/run-board-pipeline';
 
 function drawing(rows: string[]): StaticBoardDrawing {
-  return { id: 'exit-probe', background: '', legend: {}, rows };
+  return { id: 'exit-probe', dimension: EDimension.EARTH, background: '', legend: {}, rows };
 }
 
 describe('exit sides', () => {

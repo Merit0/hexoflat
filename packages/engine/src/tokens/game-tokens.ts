@@ -25,7 +25,12 @@ export function isTokenType(key: string): boolean {
   return TOKEN_TYPES.has(key);
 }
 
-export function mintBaseToken(mint: TokenMint, type: string, n: number): ItemToken {
+export function mintBaseToken(
+  mint: TokenMint,
+  type: string,
+  n: number,
+  baseKey?: string,
+): ItemToken {
   const result = (mint.factory ?? gameTokenFactory()).createBase({
     seed: mint.seed,
     sourceId: mint.sourceId,
@@ -33,6 +38,7 @@ export function mintBaseToken(mint: TokenMint, type: string, n: number): ItemTok
     realm: mint.origin.realm,
     mapTier: mint.origin.mapTier,
     type,
+    baseKey,
   });
   if (!result.ok) throw new Error(`TOKEN_REFUSED:${result.refusal.code}:${result.refusal.message}`);
   return result.value;

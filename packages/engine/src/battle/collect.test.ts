@@ -118,7 +118,7 @@ describe('REQ-LOOT-078 several deaths on one hex give one grave', () => {
     const placed = looted.battle.collect!.items;
     const coins = placed.filter((item) => item.itemKey === HEXOBJECT_KEYS.COINS);
     expect(coins.length).toBeLessThanOrEqual(1);
-    expect(placed.some((item) => item.itemKey === HEXOBJECT_KEYS.CROWN_SHARD)).toBe(true);
+    expect(coins[0].amount).toBeGreaterThanOrEqual(30);
     expect(looted.battle.collect!.graves[0].examined).toBe(true);
   });
 
