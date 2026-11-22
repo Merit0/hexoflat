@@ -3,7 +3,7 @@
 ## Status and scope
 
 D0 [DONE — 2026-11-21]: repository audit and implementation specification recorded.
-D1–D4 are complete. D5–D6 remain planned.
+D1–D5 are complete. D6 integration and closeout remains planned.
 Work branch: `implement-game-dimensions`. The user explicitly authorized continuing subsequent phases in this chat. Do not commit without authorization.
 
 ## Decisions
@@ -198,11 +198,33 @@ D4 verification: `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm test --co
 | Placement and travel    | structural validation                    | own/shared or explicit operation/endpoint relation         |
 | Deferred source context | partial location/tier derivation         | snapshots on new worlds, runs, pending actions and battles |
 
-### D5 — Compatibility and presentation [PLANNED]
+### D5 — Compatibility and presentation [DONE — 2026-11-22]
 
 Audit aggregate upcasters, worlds, unopened containers, battle snapshots, quests, stock/buyback/listings, journal/replay and client projections. Update both locales, hover/tooltips, rarity/light helpers and sprite tooling. Update relevant canonical web/render skills when those areas change.
 
 Acceptance: old saves load without rerolls/loss/reassignment; God Executor legacy strings remain only in explicit migration readers/tests or clearly historical docs. Owned legacy attributes remain effective. Labels show ALIEN and dimension consistently; no hidden seed/loot disclosure. No blanket content-version bump without examining each persistence contract.
+
+D5 implementation (2026-11-22):
+
+- Existing token readers already normalize stored families/owners/base keys across inventory, traders, listings, containers, world objects and battle/quest drops. Characterization and round-trip tests verify identity, version, attributes, prices, quantities and tiers survive. Unrolled legacy chest contents stay null during hydration; no regeneration or loot-table change is introduced.
+- Quest parsing now snapshots a missing source from the stored field dimension/tier (or the explicit historical camp origin). World hydration fills only a missing battle source from the saved world source. Existing explicit sources remain authoritative. No CONTENT_VERSION, aggregate schema version or token generator version change is needed.
+- Quest projections now carry the visible ground item's complete normalized token, fixing loss of its dimension/name/sprite/rarity on the client. Quest and battle projections expose public dimension metadata while keeping seed, token secret and unopened container contents private. BattleProjection's type now agrees with the runtime removal of tokenOrigin.
+- Inventory/map/battle hover cards, current-location header, battle panel and quest details/run panels share an English/Ukrainian DimensionLabel. Ownership comes from the token first, otherwise the authored catalogue; no current-location recoloring. ALIEN is shown as the Nowhere-owned unique family. Coins retain Earth ownership and no rarity light.
+- Quest and battle loot render the existing stored token sprite/light through itemLook. Quest render signatures include concrete token identity/appearance so replacing a same-key token refreshes the display. Lights are preloaded; dynamic textures retain ready-listener cleanup, hidden loot remains hidden and coins have no frame.
+- Sprite tooling already uses canonical family names and rejects ALIEN base sprites; the audit found no legacy names outside the compatibility reader/tests. No sprites, content entities or entity-specific cleanup helpers were added.
+
+| Audited boundary                              | Compatibility outcome                                                                                                                                 |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inventory v1–v3 and progress v1–v11 upcasters | Existing historical upcasters retained; current schema readers normalize metadata without rerolls                                                     |
+| Stock, buyback and listings                   | Stored tokens, prices, serials and quantities preserved; repeated parsing is idempotent                                                               |
+| Worlds and unopened containers                | Existing catalogue/token hydration retained; null contents stay unrolled; hidden contents excluded from projection                                    |
+| Battle snapshots and quest documents          | Missing source captured from known saved context; existing source and rolled loot preserved                                                           |
+| Generic checksummed snapshots                 | Raw checksum verified before token normalization; legacy attributes and ids survive load/save                                                         |
+| Journal/replay and item ledger                | Historical events retained; replay returns current normalized aggregate projections without another move or ledger write (real PostgreSQL regression) |
+| Client projections and hover/render helpers   | Visible token identity retained; public dimension shown; private generation data stays server-side                                                    |
+| Locales and sprite tooling                    | English/Ukrainian labels wired to shared presentation; canonical families and unique-only ALIEN remain enforced                                       |
+
+D5 verification: `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm test --concurrency=3 --continue -- --maxWorkers=1` passed. 7,038 tests passed: 2,450 engine, 4,251 web, 297 API with real PostgreSQL and 40 Playwright framework tests; two existing battle-balance tests remain skipped. Focused regressions cover source recovery/idempotence, legacy checksummed snapshots and attributes, journal replay without duplicate ledger writes, localized labels, token-owned hover details and loot sprite/light updates with cleanup. Browser E2E remains D6. Existing lint/build warnings remain; no thresholds were raised or new import cycles introduced.
 
 ### D6 — Integration and closeout [PLANNED]
 

@@ -5,6 +5,8 @@ import {
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import {
   DEFAULT_RARITY,
+  tokenRarity,
+  type RarityCarrier,
   rarityTone,
   type TRarityTone,
 } from '@hexoflat/engine/content/rarity-rules';
@@ -31,6 +33,7 @@ export const RARITY_COLOR: Record<TRarityTone, string> = {
 };
 
 interface IRaritySource {
+  token?: RarityCarrier;
   groupType: EHexobjectGroup;
   tool?: { rarity?: IItemRarity };
   equipment?: { rarity?: IItemRarity };
@@ -38,6 +41,7 @@ interface IRaritySource {
 }
 
 export function getObjectRarity(obj: IRaritySource): IItemRarity | null {
+  if (obj.token) return tokenRarity(obj.token);
   if (obj.groupType === EHexobjectGroup.TOOL) return obj.tool?.rarity ?? DEFAULT_RARITY;
   if (obj.groupType === EHexobjectGroup.EQUIPMENT) {
     return obj.equipment?.rarity ?? DEFAULT_RARITY;

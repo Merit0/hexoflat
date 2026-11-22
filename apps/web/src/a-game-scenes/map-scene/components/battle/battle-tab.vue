@@ -1,5 +1,9 @@
 <template>
   <section class="battle-tab" data-testid="battle-tab">
+    <DimensionLabel
+      v-if="battleStore.projection?.dimension"
+      :dimension="battleStore.projection.dimension"
+    />
     <div
       v-if="battleStore.waiting || battleStore.connectionLost"
       class="battle-tab__status"
@@ -46,6 +50,7 @@
 </template>
 
 <script setup lang="ts">
+import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { useI18n } from 'vue-i18n';
 import { useBattleView } from '@/composables/use-battle-view';
 import BattleInitiativeStrip from './battle-initiative-strip.vue';

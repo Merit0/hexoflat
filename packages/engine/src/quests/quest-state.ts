@@ -1,3 +1,4 @@
+import { questTokenOrigin } from './quest-token-origin';
 import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
@@ -132,7 +133,8 @@ export type QuestRun = Omit<z.infer<typeof QuestRunSchema>, 'rule' | 'collect'> 
 };
 
 export function parseQuestRun(raw: unknown): QuestRun {
-  return QuestRunSchema.parse(raw) as unknown as QuestRun;
+  const run = QuestRunSchema.parse(raw) as unknown as QuestRun;
+  return { ...run, tokenOrigin: questTokenOrigin(run) };
 }
 
 export interface SeekerBoard {

@@ -22,6 +22,7 @@
         }}</span>
         <span v-else>{{ t('quest.run.statusInProgress') }}</span>
       </p>
+      <DimensionLabel v-if="run.projection.dimension" :dimension="run.projection.dimension" />
       <p class="step" data-testid="quest-run-step">
         {{ t('quest.run.step', { n: run.step, total: run.steps }) }}
       </p>
@@ -140,6 +141,7 @@
 </template>
 
 <script setup lang="ts">
+import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuestRunView } from '@/composables/use-quest-run-view';

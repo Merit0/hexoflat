@@ -55,6 +55,12 @@ Three composables (`use-move-preview`, `use-hex-board-sizing`, `use-hex-board-in
 
 After extracting anything, verify the old call site actually imports it and the inline copy is deleted.
 
+## Dimension presentation (D5, 2026-11-22)
+
+Use engine ownership (`itemDimensionOf`, token.dimension or authored location/quest/battle-object dimension), never the hero's current map or item family guessed from a generic key. `components/gui/dimension-label.vue` is the shared English/Ukrainian label for item/map hover cards, current-location header, battle panel and quest details/run panels. Tooltip `withToken` overrides catalogue dimension with the concrete token owner. Optional wire metadata from older projections stays absent until known; do not invent an Earth fallback.
+
+Quest ground projections retain complete normalized tokens. Carry that token through QuestFieldStack and questHoverObject into the ordinary hex-info builder; battle ground hover does the same. Do not rebuild a generic tokenless sword for display when the server supplied an owned variant. Rarity helpers prioritize the token. UI only presents ownership; sharing/generation/travel eligibility remains in engine rules.
+
 ## Worked example: the skill tree
 
 - Rules and numbers live in the engine (`packages/engine/src/skills/`: statuses, sacrifice options, previews' maths). The web view-model `composables/skill-tree-view.ts` only shapes them for the UI — `buildSkillTreeView`, `findSkillNode`, `previewSacrifice` call engine functions and never recompute a price, status or option amount.

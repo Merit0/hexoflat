@@ -1063,5 +1063,12 @@
       "DUPLICATE_TOKEN": "You already have this exact item.",
       "INVALID_AMOUNT": "The amount must be a whole number above zero."
     }
+  },
+  "dimensions": {
+    "label": "Dimension: {name}",
+    "heaven": "Heaven",
+    "earth": "Earth",
+    "underworld": "Underworld",
+    "nowhere": "Nowhere"
   }
 }

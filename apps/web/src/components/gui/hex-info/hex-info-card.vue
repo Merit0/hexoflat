@@ -4,6 +4,7 @@
       <div class="card__titles">
         <h4 class="card__title" data-testid="hex-info-title">{{ view.title }}</h4>
         <span class="card__kind" data-testid="hex-info-kind">{{ view.kind }}</span>
+        <DimensionLabel :dimension="view.dimension" />
         <span v-if="view.subtitle" class="card__subtitle">{{ view.subtitle }}</span>
       </div>
     </header>
@@ -89,6 +90,7 @@
 </template>
 
 <script setup lang="ts">
+import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ICON_PATHS, type TIconName } from '@/components/gui/icons/item-icons';

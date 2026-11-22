@@ -1,3 +1,4 @@
+import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { describe, expect, it } from 'vitest';
 import { buildHeroDetails, SHIELD_SLOTS, type HeroDetailsInput } from './use-hero-details';
 
@@ -26,6 +27,22 @@ const swordItem = { titleKey: 'content.sword.title', rarity: null, willCost: nul
 const shieldItem = { titleKey: 'content.shield.title', rarity: null, willCost: null };
 const sword = { item: swordItem, power: 2 };
 const shield = { item: shieldItem, sides: 2 };
+
+describe('location ownership in hero details', () => {
+  it.each(['camping', 'silesia', 'silesia-north', 'cave'] as const)(
+    'keeps %s dimension beside its name',
+    (key) => {
+      const location = MapRegistry.get(key);
+      expect(
+        buildHeroDetails({
+          ...base,
+          locationTitle: location.title,
+          locationDimension: location.dimension,
+        }),
+      ).toMatchObject({ locationTitle: location.title, locationDimension: location.dimension });
+    },
+  );
+});
 
 describe('buildHeroDetails', () => {
   it('counts one heart per max health point with half-heart precision', () => {

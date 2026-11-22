@@ -1,3 +1,6 @@
+import { dimensionOfItemFamily, type EDimension } from '../dimensions/dimensions';
+import type { ItemToken } from '../tokens/token-schema';
+import { questTokenOrigin } from './quest-token-origin';
 import { seekerBoardOf } from './origin-field';
 import type { TerrainId } from '../boards/terrain';
 import type { TreasureSeekerMapKey } from '../registry/quest-map-key';
@@ -20,6 +23,7 @@ export interface QuestBoardProjection {
 export interface QuestProjection {
   board?: QuestBoardProjection;
   offerId: string;
+  dimension?: EDimension;
   phase: QuestRun['phase'];
   outcome: SeekerOutcome | null;
   start: IHexCoordinates;
@@ -29,7 +33,7 @@ export interface QuestProjection {
   hintHex: IHexCoordinates | null;
   chest: { hex: IHexCoordinates; empty?: boolean } | null;
   collect?: {
-    ground: { hex: IHexCoordinates; itemKey: string; amount: number }[];
+    ground: { hex: IHexCoordinates; itemKey: string; amount: number; token?: ItemToken }[];
     seen: IHexCoordinates[];
   } | null;
   stepCost: number;
@@ -61,6 +65,7 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
       exit: field.exit,
     },
     offerId: run.offerId,
+    dimension: dimensionOfItemFamily(questTokenOrigin(run).realm),
     phase: run.phase,
     outcome: run.outcome,
     start: run.start,
@@ -77,7 +82,12 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
     chest: run.chest ? { hex: run.chest.hex, empty: run.collect !== null } : null,
     collect: run.collect
       ? {
-          ground: run.collect.ground.map(({ hex, itemKey, amount }) => ({ hex, itemKey, amount })),
+          ground: run.collect.ground.map(({ hex, itemKey, amount, token }) => ({
+            hex: { ...hex },
+            itemKey,
+            amount,
+            ...(token ? { token: structuredClone(token) } : {}),
+          })),
           seen: run.collect.seen.map(parseKey),
         }
       : null,

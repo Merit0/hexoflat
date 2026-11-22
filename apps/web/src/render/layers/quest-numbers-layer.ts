@@ -1,3 +1,6 @@
+import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
+import { itemLook } from '@/render/token-look';
+import { RARITY_FRAME_URLS } from '@/render/rarity';
 import { CREATURE_SPRITES } from '@/render/creature-sprites';
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { getPrototype } from '@hexoflat/engine';
@@ -45,6 +48,7 @@ export function questLayerAssetPaths(floorSprite: string): string[] {
     floorSprite,
     '/hex-assets/hex-constructs/camping-door-hex.png',
     QUEST_CHEST_SPRITE,
+    ...Object.values(RARITY_FRAME_URLS),
     CREATURE_SPRITES.hero,
     hiddenTileLook('mist').url,
     ...terrainLookPaths(),
@@ -140,10 +144,12 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
     return g;
   }
 
-  function stackSprite(itemKey: string, amount: number): Container[] {
+  function stackSprite(itemKey: string, amount: number, token?: ItemToken): Container[] {
     const meta = getPrototype(itemKey as THexobjectKey);
     const parts: Container[] = [];
-    if (meta?.spritePath) parts.push(textured(meta.spritePath, meta.groupType));
+    const look = itemLook({ key: itemKey as THexobjectKey, token });
+    if (look.light) parts.push(textured(look.light));
+    if (look.sprite) parts.push(textured(look.sprite, meta.groupType));
     if (amount > 1) {
       const count = new Text({
         text: String(amount),
@@ -240,8 +246,9 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
       place(
         marks,
         `g:${coordinateKey(stack.hex)}`,
-        `${stack.itemKey}|${stack.amount}|${model.collect}`,
-        () => tileAt(stack.hex, stackSprite(stack.itemKey, stack.amount), model.collect),
+        `${stack.itemKey}|${stack.amount}|${model.collect}|${stack.token?.id}|${stack.token?.sprite}|${stack.token?.rarity}|${stack.token?.origin}`,
+        () =>
+          tileAt(stack.hex, stackSprite(stack.itemKey, stack.amount, stack.token), model.collect),
       );
     }
     for (const entry of entries.values()) release(entry);

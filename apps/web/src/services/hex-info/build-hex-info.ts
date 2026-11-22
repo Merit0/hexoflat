@@ -1,3 +1,5 @@
+import { itemDimensionOf } from '@hexoflat/engine/inventory/item-dimension';
+import type { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 import { getShieldPoints } from '@hexoflat/engine/combat/shield-points';
 import { getMeta } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -68,6 +70,7 @@ export type HexInfoVariant = 'creature' | 'resource' | 'construction' | 'weapon'
 
 export interface HexInfoView {
   variant: HexInfoVariant;
+  dimension: EDimension;
   key: string;
   title: string;
   kind: string;
@@ -358,6 +361,7 @@ export function buildHexInfo(
 
   return {
     variant: part.variant,
+    dimension: itemDimensionOf({ key: obj.hexobjectKey, token: obj.token }),
     key: obj.hexobjectKey,
     title,
     kind: groupLabel,
