@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { EChestType, EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { EHexActionType } from '../enums/hex-action-type';
@@ -5,29 +6,13 @@ import type { TContentDefinition } from './content-schema';
 import { CAVE_CHEST_TABLE_ID } from './loot-tables.content';
 import { TREASURE_SEEKER_MAP_KEY } from '../registry/quest-map-key';
 
-export type TConstructionKeys =
-  | typeof HEXOBJECT_KEYS.KNOWLEDGE_BOOK
-  | typeof HEXOBJECT_KEYS.CAMPING_ENTRANCE
-  | typeof HEXOBJECT_KEYS.CAVE_ENTRANCE
-  | typeof HEXOBJECT_KEYS.CAVE_EXIT
-  | typeof HEXOBJECT_KEYS.HOMELAND_GATE
-  | typeof HEXOBJECT_KEYS.FIREPLACE
-  | typeof HEXOBJECT_KEYS.HEALING_SPRING
-  | typeof HEXOBJECT_KEYS.WOOD_AND_LEAVES
-  | typeof HEXOBJECT_KEYS.GRAVE
-  | typeof HEXOBJECT_KEYS.CHEST
-  | typeof HEXOBJECT_KEYS.CHEST_OPEN
-  | typeof HEXOBJECT_KEYS.STASH_CHEST
-  | typeof HEXOBJECT_KEYS.TRADER_STALL
-  | typeof HEXOBJECT_KEYS.TRAINING_GROUNDS
-  | typeof HEXOBJECT_KEYS.TREASURE_MAP
-  | typeof HEXOBJECT_KEYS.QUEST_BOARD
-  | typeof HEXOBJECT_KEYS.STONE_WALL
-  | typeof HEXOBJECT_KEYS.RETURN_PORTAL;
+import type { TConstructionKeys } from './construction-keys';
+export type { TConstructionKeys } from './construction-keys';
 
 export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.TREASURE_MAP]: {
     hexobjectKey: HEXOBJECT_KEYS.TREASURE_MAP,
+    dimension: EDimension.EARTH,
     tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -48,6 +33,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
   },
   [HEXOBJECT_KEYS.KNOWLEDGE_BOOK]: {
     hexobjectKey: HEXOBJECT_KEYS.KNOWLEDGE_BOOK,
+    dimension: EDimension.EARTH,
     tags: ['challenge'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -67,6 +53,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
   },
   [HEXOBJECT_KEYS.CAMPING_ENTRANCE]: {
     hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE,
+    dimension: EDimension.EARTH,
     tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -89,6 +76,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.CAVE_ENTRANCE]: {
     hexobjectKey: HEXOBJECT_KEYS.CAVE_ENTRANCE,
+    dimension: EDimension.EARTH,
     tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -111,6 +99,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.CAVE_EXIT]: {
     hexobjectKey: HEXOBJECT_KEYS.CAVE_EXIT,
+    dimension: EDimension.UNDERWORLD,
     tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -133,6 +122,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.HOMELAND_GATE]: {
     hexobjectKey: HEXOBJECT_KEYS.HOMELAND_GATE,
+    dimension: EDimension.EARTH,
     tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -155,6 +145,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.FIREPLACE]: {
     hexobjectKey: HEXOBJECT_KEYS.FIREPLACE,
+    dimension: EDimension.EARTH,
     tags: ['rest'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -177,6 +168,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.HEALING_SPRING]: {
     hexobjectKey: HEXOBJECT_KEYS.HEALING_SPRING,
+    dimension: EDimension.EARTH,
     tags: ['rest'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -200,6 +192,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.WOOD_AND_LEAVES]: {
     hexobjectKey: HEXOBJECT_KEYS.WOOD_AND_LEAVES,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: false,
     title: 'Nature',
@@ -212,6 +205,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.CHEST]: {
     hexobjectKey: HEXOBJECT_KEYS.CHEST,
+    dimension: EDimension.EARTH,
     tags: ['treasure'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
@@ -237,6 +231,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.CHEST_OPEN]: {
     hexobjectKey: HEXOBJECT_KEYS.CHEST_OPEN,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: false,
     title: 'Open Chest',
@@ -249,6 +244,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.STASH_CHEST]: {
     hexobjectKey: HEXOBJECT_KEYS.STASH_CHEST,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'Stash Chest',
@@ -268,6 +264,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.TRADER_STALL]: {
     hexobjectKey: HEXOBJECT_KEYS.TRADER_STALL,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'content.traderStall.title',
@@ -287,6 +284,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.TRAINING_GROUNDS]: {
     hexobjectKey: HEXOBJECT_KEYS.TRAINING_GROUNDS,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'content.trainingGrounds.title',
@@ -306,6 +304,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.QUEST_BOARD]: {
     hexobjectKey: HEXOBJECT_KEYS.QUEST_BOARD,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,
     title: 'content.questBoard.title',
@@ -325,6 +324,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.STONE_WALL]: {
     hexobjectKey: HEXOBJECT_KEYS.STONE_WALL,
+    dimension: EDimension.EARTH,
     tags: ['blocker'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: false,
@@ -338,6 +338,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.GRAVE]: {
     hexobjectKey: HEXOBJECT_KEYS.GRAVE,
+    dimension: EDimension.UNDERWORLD,
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: false,
     title: 'Grave',
@@ -349,6 +350,7 @@ export const CONSTRUCTION_CONTENT: Record<TConstructionKeys, TContentDefinition>
 
   [HEXOBJECT_KEYS.RETURN_PORTAL]: {
     hexobjectKey: HEXOBJECT_KEYS.RETURN_PORTAL,
+    dimension: EDimension.HEAVEN,
     tags: ['portal'],
     groupType: EHexobjectGroup.CONSTRUCTION,
     isInteractable: true,

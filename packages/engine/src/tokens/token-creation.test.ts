@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { claimCampChest } from '../aggregates/claim-camp-chest';
@@ -30,8 +31,8 @@ function heldTokens(cells: (InventoryStateItem | null)[]) {
 
 describe('LG5b step 3: realmOfBoard', () => {
   it('gives gloom under ground and idol on the earth', () => {
-    expect(realmOfBoard({ boardKind: 'DUNGEON' })).toBe(ERarityKind.GLOOM);
-    expect(realmOfBoard({ boardKind: 'STATIC' })).toBe(ERarityKind.IDOL);
+    expect(realmOfBoard({ dimension: EDimension.UNDERWORLD })).toBe(ERarityKind.GLOOM);
+    expect(realmOfBoard({ dimension: EDimension.EARTH })).toBe(ERarityKind.IDOL);
     expect(locationTokenOrigin('cave').realm).toBe(ERarityKind.GLOOM);
     expect(locationTokenOrigin('camping').realm).toBe(ERarityKind.IDOL);
     expect(locationTokenOrigin('silesia').realm).toBe(ERarityKind.IDOL);
@@ -51,7 +52,7 @@ describe('LG5b step 3: realmOfBoard', () => {
     expect(tierOfBoard(recipe({ tier: 7 }))).toBe(1);
     expect(tierOfBoard({ kind: 'STATIC', id: 'camping' })).toBe(1);
     expect(tierOfBoard(null)).toBe(1);
-    expect(tokenOriginOfBoard({ boardKind: 'DUNGEON' }, recipe({ tier: 2 }))).toEqual({
+    expect(tokenOriginOfBoard({ dimension: EDimension.UNDERWORLD }, recipe({ tier: 2 }))).toEqual({
       realm: ERarityKind.GLOOM,
       mapTier: 2,
     });

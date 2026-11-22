@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
@@ -8,6 +9,7 @@ export type TToolKeys =
 export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.AXE]: {
     hexobjectKey: HEXOBJECT_KEYS.AXE,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.TOOL,
     isInteractable: true,
     title: 'Axe',
@@ -28,6 +30,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.PICKAXE]: {
     hexobjectKey: HEXOBJECT_KEYS.PICKAXE,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.TOOL,
     isInteractable: true,
     title: 'Pickaxe',
@@ -48,6 +51,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.HAND]: {
     hexobjectKey: HEXOBJECT_KEYS.HAND,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.TOOL,
     isInteractable: true,
     title: 'Hand',

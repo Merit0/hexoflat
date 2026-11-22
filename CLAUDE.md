@@ -1,5 +1,7 @@
 # hexoflat
 
+**Gameplay dimensions (D1, 2026-11-21):** [`docs/DIMENSIONS-PLAN.md`](./docs/DIMENSIONS-PLAN.md). `dimensions/dimensions.ts` owns EARTH/IDOL, UNDERWORLD/GLOOM, HEAVEN/SPARK and NOWHERE/ALIENT. All 40 authored hexobjects require one `dimension`; content validation rejects conflicting item families (including the existing tool/equipment rarity fallback). Registered maps declare ownership: camping, Silesia and Silesia North EARTH; cave UNDERWORLD. `location-token-origin.ts` reads dimension instead of boardKind, preserving existing generated families/tiers; NOWHERE refuses base-token generation. Token schemas, runtime object copies and saves remain unchanged: D2 owns concrete token variants and God Executor → ALIENT migration. Do not resolve a generated token's identity from its generic catalogue key.
+
 **E2E slow suite (2026-11-21):** 23 active scenarios whose latest successful local
 Allure run exceeded 30 seconds moved to `apps/playwright/e2e/slow/<group>/`.
 Default push checks exclude this folder; `pnpm test:e2e:slow` runs it with one

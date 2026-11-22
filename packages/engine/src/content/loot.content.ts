@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
@@ -15,6 +16,7 @@ export type TLootKeys =
 export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.COINS]: {
     hexobjectKey: HEXOBJECT_KEYS.COINS,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Coins',
@@ -35,6 +37,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.HEALTH_BOTTLE]: {
     hexobjectKey: HEXOBJECT_KEYS.HEALTH_BOTTLE,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Health Potion',
@@ -59,6 +62,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.ENERGY_BOTTLE]: {
     hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Energy Potion',
@@ -82,6 +86,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.MANA_BOTTLE]: {
     hexobjectKey: HEXOBJECT_KEYS.MANA_BOTTLE,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Mana Potion',
@@ -105,6 +110,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.RETURN_SCROLL]: {
     hexobjectKey: HEXOBJECT_KEYS.RETURN_SCROLL,
+    dimension: EDimension.HEAVEN,
     tags: ['portal', 'rare'],
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
@@ -136,6 +142,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.BONE_CHARM]: {
     hexobjectKey: HEXOBJECT_KEYS.BONE_CHARM,
+    dimension: EDimension.UNDERWORLD,
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,
     title: 'Bone Charm',
@@ -159,6 +166,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.CROWN_SHARD]: {
     hexobjectKey: HEXOBJECT_KEYS.CROWN_SHARD,
+    dimension: EDimension.UNDERWORLD,
     tags: ['rare'],
     groupType: EHexobjectGroup.LOOT,
     isInteractable: true,

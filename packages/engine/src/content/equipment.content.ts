@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { EHexCollision, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
@@ -16,6 +17,7 @@ export type THeroToolKey =
 export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
   [HEXOBJECT_KEYS.SWORD]: {
     hexobjectKey: HEXOBJECT_KEYS.SWORD,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.EQUIPMENT,
     isInteractable: true,
     title: 'Guard Sword',
@@ -38,6 +40,7 @@ export const EQUIPMENT_CONTENT: Record<TEquipmentKeys, TContentDefinition> = {
 
   [HEXOBJECT_KEYS.SHIELD]: {
     hexobjectKey: HEXOBJECT_KEYS.SHIELD,
+    dimension: EDimension.EARTH,
     groupType: EHexobjectGroup.EQUIPMENT,
     isInteractable: true,
     title: 'Field Shield',

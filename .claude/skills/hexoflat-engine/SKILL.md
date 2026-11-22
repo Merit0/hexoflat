@@ -53,6 +53,12 @@ Skills and portals follow the same recipe: pure rules in `src/skills/` and `src/
 
 Will capacity (W0, 2026-11-10): a new hero starts full at 50/50 (`KNOWLEDGE_RULES.startingWill`/`capacity`). Capacity is stored per hero in `knowledge.capacity` and computed only by `willCapacityOf(modifiers)` (`knowledge/math.ts`, base + modifiers); gear passes `HeroStats.maxWill` there through `syncEquipmentWill` (A02); future skill sources must also pass modifiers there and must not refill Will on a raise (clamp `current` on a drop, like `HeroModel.setMaxHealthBonus`). Tests that count Will down from a fresh hero start at 50; `boards/will-budget.test.ts` (REQ-BOARD-008) guards that a cave round trip (up to 38) fits the capacity.
 
+## Dimensions (D1, 2026-11-21)
+
+`docs/DIMENSIONS-PLAN.md` tracks implementation; D2 is next. `dimensions/dimensions.ts` exports the dimension schema, immutable registry and canonical family mapping. Every authored hexobject needs one explicit `dimension`; `ContentDefinitionSchema` rejects mismatched item rarity. Tools/equipment without authored rarity are validated against their existing DEFAULT_RARITY fallback. Every MapDefinition also requires a dimension; origin generation reads it, never boardKind. Current locations retain their original loot families and tiers. NOWHERE maps to ALIENT but cannot produce base tokens.
+
+D1 does not change persisted tokens/runtime objects. D2 must replace active God Executor with ALIENT and upcast saved tokens without rerolling. Catalogue ownership is not a generated token's identity: a generic sword key can represent owned GLOOM/SPARK tokens. Preserve explicit foreign relations and migration rules from the plan; never infer an owned token's dimension from current location.
+
 ## Item rarity
 
 Rarity is `{ kind: ERarityKind, boss }` printed on tool/equipment/loot content. Read it through `DEFAULT_RARITY` and `rarityTone()` in `src/content/rarity-rules.ts` — never re-declare a fallback. Write rarity explicitly on every new item.
