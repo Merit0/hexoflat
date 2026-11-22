@@ -62,9 +62,7 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
         expect(token.generatorVersion).toBe(TOKEN_GENERATOR_VERSION);
         expect(token.ext).toEqual(emptyTokenExtensions());
         expect(lightTone(token.origin, token.rarity)).toBe(
-          unique.rarity === ERarityKind.GOD_EXECUTOR
-            ? 'god-executor-unique'
-            : `${unique.rarity}-unique`,
+          unique.rarity === ERarityKind.ALIEN ? 'alien-unique' : `${unique.rarity}-unique`,
         );
       }
     });

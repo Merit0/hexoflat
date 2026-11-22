@@ -1,6 +1,6 @@
 import { isTokenType } from '../tokens/game-tokens';
 import { itemTokenIdOf } from '../tokens/token-keys';
-import { itemTokenSchema } from '../tokens/token-schema';
+import { currentItemTokenSchema } from '../tokens/token-schema';
 import type { InventoryState } from './inventory-state';
 import type { TokenSupply } from './apply-stock';
 
@@ -26,7 +26,8 @@ export function tokenSupplyFailure(
       ids.add(id);
       continue;
     }
-    if (token.type !== key || !itemTokenSchema.safeParse(token).success) return 'INVALID_TOKEN';
+    if (token.type !== key || !currentItemTokenSchema.safeParse(token).success)
+      return 'INVALID_TOKEN';
     if (ids.has(token.id)) return 'DUPLICATE_TOKEN';
     ids.add(token.id);
   }

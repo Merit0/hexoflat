@@ -8,7 +8,7 @@ export function useItemTooltipLabels() {
       gloom: t('itemTooltip.rarity.gloom'),
       idol: t('itemTooltip.rarity.idol'),
       spark: t('itemTooltip.rarity.spark'),
-      'god-executor': t('itemTooltip.rarity.god-executor'),
+      alien: t('itemTooltip.rarity.alien'),
     },
     group: {
       resource: t('itemTooltip.group.resource'),

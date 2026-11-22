@@ -32,17 +32,19 @@ function tokenFits(drop: LootDrop): boolean {
   );
 }
 
-const lootDropSchema = z.custom<LootDrop>(
-  (value) =>
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as LootDrop).itemKey === 'string' &&
-    (value as LootDrop).itemKey.length > 0 &&
-    Number.isInteger((value as LootDrop).amount) &&
-    (value as LootDrop).amount >= 1 &&
-    typeof (value as LootDrop).guaranteed === 'boolean' &&
-    tokenFits(value as LootDrop),
-);
+const lootDropSchema = z
+  .custom<LootDrop>(
+    (value) =>
+      typeof value === 'object' &&
+      value !== null &&
+      typeof (value as LootDrop).itemKey === 'string' &&
+      (value as LootDrop).itemKey.length > 0 &&
+      Number.isInteger((value as LootDrop).amount) &&
+      (value as LootDrop).amount >= 1 &&
+      typeof (value as LootDrop).guaranteed === 'boolean' &&
+      tokenFits(value as LootDrop),
+  )
+  .transform((drop) => (drop.token ? { ...drop, token: itemTokenSchema.parse(drop.token) } : drop));
 
 export const containerStateSchema = z.object({
   id: z.string().min(1),

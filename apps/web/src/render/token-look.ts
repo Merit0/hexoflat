@@ -16,7 +16,7 @@ const RARITY_TONE_BY_LIGHT: Record<TLightTone, TRarityTone> = {
   'idol-unique': 'idol-boss',
   'spark-base': 'spark',
   'spark-unique': 'spark-boss',
-  'god-executor-unique': 'god-executor',
+  'alien-unique': 'alien',
 };
 
 export interface ItemLook {

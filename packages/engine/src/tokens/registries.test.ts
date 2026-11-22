@@ -26,7 +26,7 @@ describe('TypeRegistry', () => {
       'axe',
       'pickaxe',
     ]);
-    expect(registry.forRealm(ERarityKind.GOD_EXECUTOR)).toEqual([]);
+    expect(registry.forRealm(ERarityKind.ALIEN)).toEqual([]);
   });
 });
 

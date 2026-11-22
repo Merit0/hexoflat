@@ -1,3 +1,5 @@
+import { dimensionSchema, itemFamilyOfDimension } from '../dimensions/dimensions';
+import { upcastTokenDimension } from './upcast-token-dimension';
 import { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
@@ -65,13 +67,14 @@ function hasDuplicates(values: readonly string[]): boolean {
   return new Set(values).size !== values.length;
 }
 
-export const itemTokenSchema = z
+export const currentItemTokenSchema = z
   .strictObject({
     id: itemTokenIdSchema,
     origin: z.enum(TOKEN_ORIGINS),
     uniqueKey: uniqueKeySchema.optional(),
     type: itemTypeKeySchema,
     rarity: z.enum(ERarityKind),
+    dimension: dimensionSchema,
     name: tokenNameSchema,
     description: z.array(descriptionLineSchema),
     attributes: z.array(tokenAttributeSchema),
@@ -83,6 +86,13 @@ export const itemTokenSchema = z
     ext: tokenExtensionsSchema,
   })
   .superRefine((token, ctx) => {
+    if (itemFamilyOfDimension(token.dimension) !== token.rarity) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['dimension'],
+        message: 'Dimension differs from item family',
+      });
+    }
     const unique = token.origin === 'unique';
     if (unique !== (token.uniqueKey !== undefined)) {
       ctx.addIssue({
@@ -91,11 +101,11 @@ export const itemTokenSchema = z
         message: 'uniqueKey is set only on a unique token',
       });
     }
-    if (!unique && token.rarity === ERarityKind.GOD_EXECUTOR) {
+    if (!unique && token.rarity === ERarityKind.ALIEN) {
       ctx.addIssue({
         code: 'custom',
         path: ['rarity'],
-        message: 'god-executor tokens are unique only',
+        message: 'alien tokens are unique only',
       });
     }
     if (token.name.kind === 'generated' && !token.name.prefix && !token.name.suffix) {
@@ -123,7 +133,9 @@ export const itemTokenSchema = z
       ctx.addIssue({ code: 'custom', path: ['skills'], message: 'a skill is listed twice' });
     }
   });
-export type ItemToken = z.infer<typeof itemTokenSchema>;
+/** Persisted readers normalize legacy family/ownership before strict validation. */
+export const itemTokenSchema = z.preprocess(upcastTokenDimension, currentItemTokenSchema);
+export type ItemToken = z.infer<typeof currentItemTokenSchema>;
 
 const KNOWN_ITEM_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));
 

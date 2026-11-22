@@ -50,7 +50,7 @@ const CASES: SchemaCase[] = [
     schema: tokenPriceRangesSchema,
     valid: RANGES,
     invalid: [
-      ['a god-executor range', { ...RANGES, 'god-executor': [500, 3000] }],
+      ['a alien range', { ...RANGES, alien: [500, 3000] }],
       ['min above max', { ...RANGES, idol: [600, 40] }],
       ['a missing realm', { gloom: [60, 800], idol: [40, 600] }],
     ],
@@ -65,8 +65,8 @@ const CASES: SchemaCase[] = [
         { ...WORDS, prefixes: [{ key: 'content.tokens.suffix.warden' }] },
       ],
       [
-        'a god-executor realm tag',
-        { ...WORDS, prefixes: [{ key: 'content.tokens.prefix.ash', realms: ['god-executor'] }] },
+        'a alien realm tag',
+        { ...WORDS, prefixes: [{ key: 'content.tokens.prefix.ash', realms: ['alien'] }] },
       ],
       [
         'an empty realm list',

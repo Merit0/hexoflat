@@ -118,8 +118,8 @@ function rarityLabel(ctx: Ctx, kind: ERarityKind): string {
       return ctx.t('itemTooltip.rarity.gloom');
     case ERarityKind.SPARK:
       return ctx.t('itemTooltip.rarity.spark');
-    case ERarityKind.GOD_EXECUTOR:
-      return ctx.t('itemTooltip.rarity.god-executor');
+    case ERarityKind.ALIEN:
+      return ctx.t('itemTooltip.rarity.alien');
     default:
       return ctx.t('itemTooltip.rarity.idol');
   }

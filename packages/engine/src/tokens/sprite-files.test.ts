@@ -96,9 +96,9 @@ describe('buildSpriteManifest', () => {
     ]);
   });
 
-  it('rejects god-executor in base/', () => {
-    const file = spriteFile('base/god-executor-sword/god-executor-sword-01.png');
-    expect(failureCodes(withFile(file))).toEqual(['GOD_EXECUTOR_IN_BASE']);
+  it('rejects alien in base/', () => {
+    const file = spriteFile('base/alien-sword/alien-sword-01.png');
+    expect(failureCodes(withFile(file))).toEqual(['ALIEN_IN_BASE']);
   });
 
   it('rejects a type that is not in the TypeRegistry', () => {
@@ -142,7 +142,7 @@ describe('buildSpriteManifest', () => {
       types,
     );
     expect(result.ok ? [] : result.failures.map((failure) => failure.message)).toEqual([
-      'base/fire-sword/fire-sword-01.png: realm "fire" is not one of gloom, idol, spark, god-executor',
+      'base/fire-sword/fire-sword-01.png: realm "fire" is not one of gloom, idol, spark, alien',
     ]);
   });
 

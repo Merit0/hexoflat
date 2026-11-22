@@ -3,22 +3,22 @@
 ## Status and scope
 
 D0 [DONE — 2026-11-21]: repository audit and implementation specification recorded.
-D1 foundation is implemented; validation results are recorded below. D2–D6 remain planned. Full runtime/token dimension support does not yet exist.
-Work branch: `implement-game-dimensions`. Execute one phase per chat; do not commit without authorization.
+D1 foundation and D2 token identity/migration are complete. D3–D6 remain planned.
+Work branch: `implement-game-dimensions`. The user explicitly authorized continuing D2 in the same chat. Do not commit without authorization.
 
 ## Decisions
 
 User requirements:
 
 - Every concrete gameplay object belongs to exactly one dimension.
-- HEAVEN → SPARK; EARTH → IDOL; UNDERWORLD → GLOOM; NOWHERE → ALIENT.
-- ALIENT replaces God Executor, including existing saved tokens. Use the user's spelling ALIENT (serialized `alient`).
+- HEAVEN → SPARK; EARTH → IDOL; UNDERWORLD → GLOOM; NOWHERE → ALIEN.
+- ALIEN replaces God Executor, including existing saved tokens. User spelling correction: ALIEN (serialized `alien`).
 - Silesia and camping belong to EARTH.
 - Dimensions govern generation scope and explicit object relationships.
 
 Implementation defaults proposed by this audit (not additional user decisions):
 
-- NOWHERE is an ownership value, not a new playable location. ALIENT initially retains the old unique-only generation restriction and red presentation; no new drop rate is introduced.
+- NOWHERE is an ownership value, not a new playable location. ALIEN initially retains the old unique-only generation restriction and red presentation; no new drop rate is introduced.
 - Preserve cave's current UNDERWORLD generation; Silesia North is EARTH.
 - Preserve existing foreign drops, shop stock, placements and skill access through explicit relations. Do not introduce equipment-use restrictions or alter balance in this feature.
 - Ownership is immutable through travel, pickup, equip, trade and reload. Source location and current location are separate from ownership.
@@ -36,7 +36,7 @@ Implementation defaults proposed by this audit (not additional user decisions):
 - `loot/roll-for.ts`, `loot/tokenize-drops.ts`: table selection precedes token minting. Eligibility must apply before draws, including guaranteed entries, stackables and unique rewards.
 - `quests/quest-token-origin.ts`: seeker reward realm follows its source location; mapTier is captured. Quest runs need stable dimension context, not the hero's later location.
 - `battle/battle-state.ts`, `world/battle-world.ts`: battle captures token origin; grave rolls consume it. Keep foreign creature identity independent of battlefield identity.
-- `content/token-uniques.content.ts`: lantern-eater is GLOOM; last-verdict is God Executor and carries b_strike. The latter becomes ALIENT/NOWHERE without changing its key, ID, price, attributes or skill.
+- `content/token-uniques.content.ts`: lantern-eater is GLOOM; last-verdict is God Executor and carries b_strike. The latter becomes ALIEN/NOWHERE without changing its key, ID, price, attributes or skill.
 
 ## Object ownership inventory
 
@@ -105,7 +105,7 @@ Add dimension schemas/registry/mapping, explicit location ownership and content 
 
 Acceptance: EARTH dungeon and UNDERWORLD static fixtures resolve correctly; all authored hexobject definitions assigned; missing owners and contradictory family mappings rejected; no new production EARTH fallback. Existing consumers compile through deliberate adapters until D2/D3.
 
-D1 implementation: dimension enum/schema, frozen registry and canonical family mapping; all 40 authored definitions assigned (27 EARTH, 11 UNDERWORLD, 2 HEAVEN); all four registered locations assigned. Content schema validates ownership and item-family agreement. Location generation now reads explicit ownership through the existing base-token adapter, which refuses NOWHERE. No token/save/content version change. Construction key types moved into `content/construction-keys.ts` to respect the file-size limit; existing type imports remain compatible. Characterization tests passed before implementation (14 tests); targeted foundation/content/acquisition coverage passed afterward (118 tests). Validation complete: engine build, workspace `pnpm lint` (existing warnings only), `pnpm typecheck`, and `pnpm test --concurrency=1 -- --maxWorkers=1` passed. Results: 2,394 engine tests, 295 API tests, 4,223 web tests and 40 Playwright-framework unit tests passed; 2 existing engine tests skipped. Browser E2E was not run: D1 changes authored metadata and origin resolution, covered by engine acquisition characterization and API/web suites; no browser flow changed. `git diff --check` passed. Changes remain uncommitted.
+D1 implementation: dimension enum/schema, frozen registry and canonical family mapping; all 40 authored definitions assigned (27 EARTH, 11 UNDERWORLD, 2 HEAVEN); all four registered locations assigned. Content schema validates ownership and item-family agreement. Location generation now reads explicit ownership through the existing base-token adapter, which refuses NOWHERE. No token/save/content version change. Construction key types moved into `content/construction-keys.ts` to respect the file-size limit; existing type imports remain compatible. Characterization tests passed before implementation (14 tests); targeted foundation/content/acquisition coverage passed afterward (118 tests). Validation complete: engine build, workspace `pnpm lint` (existing warnings only), `pnpm typecheck`, and `pnpm test --concurrency=1 -- --maxWorkers=1` passed. Results: 2,394 engine tests, 295 API tests, 4,223 web tests and 40 Playwright-framework unit tests passed; 2 existing engine tests skipped. Browser E2E was not run: D1 changes authored metadata and origin resolution, covered by engine acquisition characterization and API/web suites; no browser flow changed. `git diff --check` passed. D1 was subsequently committed as `22ed19b7` before D2 began.
 
 | Foundation metric                        | Before D1           | After D1           |
 | ---------------------------------------- | ------------------- | ------------------ |
@@ -113,13 +113,33 @@ D1 implementation: dimension enum/schema, frozen registry and canonical family m
 | Registered locations with explicit owner | 0/4                 | 4/4                |
 | Location family source                   | boardKind inference | explicit dimension |
 | Invalid content owner / family           | unchecked           | schema rejection   |
-| Owned-token dimension / ALIENT migration | absent              | deferred to D2     |
+| Owned-token dimension / ALIEN migration  | absent              | deferred to D2     |
 
-### D2 — Objects and token identity [PLANNED]
+### D2 — Objects and token identity [DONE — 2026-11-22]
 
-Wire concrete variants, stacks, unique definitions, factory validation, inventory identity and ALIENT replacement. Add migration alongside each persisted schema change.
+Wire concrete variants, stacks, unique definitions, factory validation, inventory identity and ALIEN replacement. Add migration alongside each persisted schema change.
 
-Acceptance: ALIENT replaces God Executor in active code/content; old tokens migrate idempotently with identical IDs/values. Every generated item owns one dimension; foreign variants never merge; transforms preserve ownership. Catalogue lookups cannot override a token's dimensional identity. No disabled types enabled.
+Acceptance: ALIEN replaces God Executor in active code/content; old tokens migrate idempotently with identical IDs/values. Every generated item owns one dimension; foreign variants never merge; transforms preserve ownership. Catalogue lookups cannot override a token's dimensional identity. No disabled types enabled.
+
+D2 implementation:
+
+- User corrected the family spelling to **ALIEN** / `alien` on 2026-11-22; this supersedes the earlier spelling everywhere.
+- New tokens carry a required `dimension`. The strict current schema and factory validator reject contradictory or missing ownership. Unique definitions declare one owner and validate it against family. Concrete token variants are identified by their type and dimension; they retain individual token IDs.
+- `itemTokenSchema` is the compatibility reader used at persisted nesting points. It derives missing ownership from stored family, maps legacy `god-executor` to `alien`, and updates the legacy realm description reference. It is idempotent, leaves caller data untouched and never rerolls stored values. Explicit invalid ownership is rejected.
+- Token generator version is 5 for the new output metadata. All 20 seeded golden tokens are otherwise byte-for-byte unchanged after stripping dimension and restoring the previous version. Stored tokens retain their original generatorVersion.
+- Tokenless stackables resolve ownership from their existing authored key through `itemDimensionOf`; no foreign variants of stackable definitions are introduced. Tokens use their own dimension instead of generic sword/shield catalogue ownership. Stack merging rejects tokens and different owners even when stack identifiers coincide.
+- Container parsing now returns normalized tokens instead of only validating them. World hydration validates supplied tokens/containers and reports corrupt identity rather than silently dropping equipment/contents.
+- Active enum, factory errors, sprite tooling, rarity/light helpers, sorting, tooltips and both locales use ALIEN; unique-only eligibility and red appearance are preserved. No disabled equipment type is enabled.
+- No CONTENT_VERSION or aggregate version bump: existing aggregate/nested readers normalize the additive metadata at read time, including current-version records. A subsequent ordinary save persists canonical output. Snapshot checksums are verified before normalization. No RNG policy or loot pool change.
+- Tests cover nested inventory/progress/trader/listing/battle-ground/container readers, world round trips, strict refusals, foreign gear equip/sell/buyback/list/reload, stack boundaries and real PostgreSQL legacy-token loading. Characterization passed before changes (10 tests). Validation: engine build, workspace lint (existing warnings only), typecheck, formatting of changed code and `git diff --check` passed. Full workspace suite passed: 2,406 engine tests (2 existing skipped), 4,223 web tests, 296 API tests including real PostgreSQL migration, and 40 Playwright-framework unit tests. Browser E2E was not run; no interaction flow changed, and existing tooltip/render/locale tests cover the family rename. D2 remains uncommitted.
+
+| Token identity metric       | Before D2              | After D2                              |
+| --------------------------- | ---------------------- | ------------------------------------- |
+| Stored concrete token owner | family only            | explicit validated dimension          |
+| Exceptional family          | God Executor           | ALIEN / NOWHERE                       |
+| New token output version    | 4                      | 5                                     |
+| Legacy token values         | retained               | retained, metadata normalized         |
+| Container reader            | validates nested token | validates and normalizes nested token |
 
 ### D3 — Generators and acquisition [PLANNED]
 
@@ -137,18 +157,18 @@ Acceptance: placement errors identify owner/key/operation; legal foreign placeme
 
 Audit aggregate upcasters, worlds, unopened containers, battle snapshots, quests, stock/buyback/listings, journal/replay and client projections. Update both locales, hover/tooltips, rarity/light helpers and sprite tooling. Update relevant canonical web/render skills when those areas change.
 
-Acceptance: old saves load without rerolls/loss/reassignment; God Executor legacy strings remain only in explicit migration readers/tests or clearly historical docs. Owned legacy attributes remain effective. Labels show ALIENT and dimension consistently; no hidden seed/loot disclosure. No blanket content-version bump without examining each persistence contract.
+Acceptance: old saves load without rerolls/loss/reassignment; God Executor legacy strings remain only in explicit migration readers/tests or clearly historical docs. Owned legacy attributes remain effective. Labels show ALIEN and dimension consistently; no hidden seed/loot disclosure. No blanket content-version bump without examining each persistence contract.
 
 ### D6 — Integration and closeout [PLANNED]
 
-Verify acquire → inventory → equip/trade → travel → reload across dimensions, including ALIENT and invalid client scope. Cover real API persistence and selector-free Feature/Page/Component E2E flows.
+Verify acquire → inventory → equip/trade → travel → reload across dimensions, including ALIEN and invalid client scope. Cover real API persistence and selector-free Feature/Page/Component E2E flows.
 
 Acceptance: pnpm lint/typecheck/test and relevant API/E2E checks pass; rebuild engine before web checks; run E2E through `sh scripts/pre-push-e2e.sh <spec> [options]`. Registry completeness covers authored and generated objects; all acquisition routes reviewed. Update plan, CLAUDE and canonical skills. No threshold increases or duplicate frontend rules.
 
 ## Migration invariants and completion gate
 
-Legacy GLOOM/IDOL/SPARK tokens map to UNDERWORLD/EARTH/HEAVEN from stored family, never current location. God Executor maps to ALIENT/NOWHERE. Static stackables resolve through their authored key; old map objects use the explicit catalogue/variant migration. Unknown or ambiguous data must produce a diagnostic, not a blanket EARTH assignment. Migration must be idempotent and preserve IDs, attributes, quantities, prices, skill references and source tier.
+Legacy GLOOM/IDOL/SPARK tokens map to UNDERWORLD/EARTH/HEAVEN from stored family, never current location. God Executor maps to ALIEN/NOWHERE. Static stackables resolve through their authored key; old map objects use the explicit catalogue/variant migration. Unknown or ambiguous data must produce a diagnostic, not a blanket EARTH assignment. Migration must be idempotent and preserve IDs, attributes, quantities, prices, skill references and source tier.
 
 No phase may defer compatibility for schemas it already changes. D5 verifies the whole chain. Metadata-only migration does not reroll stored tokens or containers. Regeneration/version behavior for unopened legacy containers must be characterized and explicitly tested before changing it.
 
-Feature done: zero unassigned concrete objects; canonical family mapping; all generation uses trusted context; explicit foreign relations; immutable ownership throughout lifecycle; ALIENT migration verified; future quest scope usable; required checks green. New playable realms, new abilities, balance changes, exclusive attribute design and a full QuestsGenerator are outside this plan.
+Feature done: zero unassigned concrete objects; canonical family mapping; all generation uses trusted context; explicit foreign relations; immutable ownership throughout lifecycle; ALIEN migration verified; future quest scope usable; required checks green. New playable realms, new abilities, balance changes, exclusive attribute design and a full QuestsGenerator are outside this plan.

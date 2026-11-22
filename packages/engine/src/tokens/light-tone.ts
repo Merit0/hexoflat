@@ -1,7 +1,7 @@
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import type { TBaseRealm, TTokenOrigin } from './token-keys';
 
-export type TLightTone = `${TBaseRealm}-${TTokenOrigin}` | 'god-executor-unique';
+export type TLightTone = `${TBaseRealm}-${TTokenOrigin}` | 'alien-unique';
 
 export const LIGHT_TONES: readonly TLightTone[] = [
   'gloom-base',
@@ -10,13 +10,13 @@ export const LIGHT_TONES: readonly TLightTone[] = [
   'idol-unique',
   'spark-base',
   'spark-unique',
-  'god-executor-unique',
+  'alien-unique',
 ];
 
 export function lightTone(origin: TTokenOrigin, rarity: ERarityKind): TLightTone {
-  if (rarity !== ERarityKind.GOD_EXECUTOR) return `${rarity}-${origin}`;
-  if (origin === 'base') throw new Error('god-executor tokens are unique only');
-  return 'god-executor-unique';
+  if (rarity !== ERarityKind.ALIEN) return `${rarity}-${origin}`;
+  if (origin === 'base') throw new Error('alien tokens are unique only');
+  return 'alien-unique';
 }
 
 export type TLightColor = 'blue' | 'violet' | 'gray' | 'green' | 'yellow' | 'orange' | 'red';
@@ -28,7 +28,7 @@ export const LIGHT_COLOR_BY_TONE: Readonly<Record<TLightTone, TLightColor>> = {
   'idol-unique': 'green',
   'spark-base': 'yellow',
   'spark-unique': 'orange',
-  'god-executor-unique': 'red',
+  'alien-unique': 'red',
 };
 
 export function lightFrameFile(tone: TLightTone): string {

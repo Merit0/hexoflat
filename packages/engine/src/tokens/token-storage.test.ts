@@ -13,12 +13,22 @@ import { listingSchema, emptyListings } from '../trade/listing-state';
 import { sellPriceOf } from '../trade/price-of';
 import { HERO, ILVA, SWORD, inventoryWith, traderWith } from '../trade/trade-test-setup';
 import { upcastToken } from '../inventory/upcast-item-tokens';
+import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import type { InventoryState } from '../inventory/inventory-state';
 import { createTokenFactory } from './factory/create-token-factory';
 import type { ItemToken } from './token-schema';
 
 function swordToken(): ItemToken {
-  return upcastToken(HERO, 'bag.0', 'sword')!;
+  const result = createTokenFactory().createBase({
+    seed: 'foreign-token',
+    sourceId: 'test:foreign',
+    n: 0,
+    realm: ERarityKind.GLOOM,
+    mapTier: 3,
+    type: 'sword',
+  });
+  if (!result.ok) throw new Error(result.refusal.code);
+  return result.value;
 }
 
 function heroWithTokenSword(): InventoryState {

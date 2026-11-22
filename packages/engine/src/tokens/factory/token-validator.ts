@@ -1,4 +1,4 @@
-import { itemTokenSchema, type ItemToken } from '../token-schema';
+import { currentItemTokenSchema, type ItemToken } from '../token-schema';
 import {
   refuseToken,
   type AttributeSheet,
@@ -52,7 +52,7 @@ export class ZodTokenValidator implements ITokenValidator {
   }
 
   validate(candidate: unknown): TokenResult<ItemToken> {
-    const parsed = itemTokenSchema.safeParse(candidate);
+    const parsed = currentItemTokenSchema.safeParse(candidate);
     if (parsed.success) {
       const token = parsed.data;
       if (!this.types.has(token.type)) return refuseToken('INVALID_TOKEN', 'Unknown token type');

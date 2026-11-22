@@ -3,7 +3,7 @@ import { ERarityKind, type IItemRarity } from '../abstraction/hexobject-abstract
 export const DEFAULT_RARITY: IItemRarity = { kind: ERarityKind.IDOL, boss: false };
 
 export type TRarityTone =
-  'gloom' | 'gloom-boss' | 'idol' | 'idol-boss' | 'spark' | 'spark-boss' | 'god-executor';
+  'gloom' | 'gloom-boss' | 'idol' | 'idol-boss' | 'spark' | 'spark-boss' | 'alien';
 
 export const RARITY_TONES: readonly TRarityTone[] = [
   'gloom',
@@ -12,11 +12,11 @@ export const RARITY_TONES: readonly TRarityTone[] = [
   'idol-boss',
   'spark',
   'spark-boss',
-  'god-executor',
+  'alien',
 ];
 
 export function rarityTone(rarity: IItemRarity): TRarityTone {
-  if (rarity.kind === ERarityKind.GOD_EXECUTOR) return 'god-executor';
+  if (rarity.kind === ERarityKind.ALIEN) return 'alien';
 
   return rarity.boss ? `${rarity.kind}-boss` : rarity.kind;
 }

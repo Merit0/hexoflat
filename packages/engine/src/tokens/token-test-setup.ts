@@ -1,3 +1,4 @@
+import { dimensionOfItemFamily } from '../dimensions/dimensions';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import type { ItemToken } from './token-schema';
 
@@ -7,6 +8,7 @@ export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
     origin: 'base',
     type: 'sword',
     rarity: ERarityKind.IDOL,
+    dimension: dimensionOfItemFamily(overrides.rarity ?? ERarityKind.IDOL),
     name: {
       kind: 'generated',
       prefix: 'content.tokens.prefix.ash',

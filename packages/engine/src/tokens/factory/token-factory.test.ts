@@ -157,6 +157,7 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
       [
         'attributes',
         'description',
+        'dimension',
         'ext',
         'generatorVersion',
         'id',

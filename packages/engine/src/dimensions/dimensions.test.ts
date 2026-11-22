@@ -9,7 +9,7 @@ describe('dimension ownership', () => {
     [EDimension.HEAVEN, 'spark'],
     [EDimension.EARTH, 'idol'],
     [EDimension.UNDERWORLD, 'gloom'],
-    [EDimension.NOWHERE, 'alient'],
+    [EDimension.NOWHERE, 'alien'],
   ] as const)('%s owns the %s item family', (dimension, family) => {
     expect(itemFamilyOfDimension(dimension)).toBe(family);
   });

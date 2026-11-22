@@ -154,3 +154,7 @@ Quest camera scale (2026-11-16): the board host supplies the saved world frame t
 - **Ticker subscriptions go through one helper (MAPFIX-3b, 2026-11-17).** Never call `ticker.add`/`addOnce` (shared or app ticker) in `render/`; use `subscribeTicker(ticker, callback, { source, priority?, once?, onFailure? })` from `render/ticker-subscription.ts`, keep the returned unsubscribe as the owner's handle and null it in `onFailure`. A throwing callback is removed and logged once (`[ticker] <source> …`); every other listener keeps running. `render/ticker-guard.test.ts` enforces this (test files may still add raw listeners).
 
 Block sides (2026-11-21): battle-tool-key identifies native shield tools through engine itemShieldBase; battle-overlay-model uses shieldCapacity for guarded foe decoys. Renderer never derives capacity from obsolete BattleItem.shieldCapacity fields. No layer/camera/geometry changes.
+
+## Dimension identity (D2, 2026-11-22)
+
+The exceptional token family/light tone is ALIEN (`alien`, `alien-unique`), replacing God Executor. Keep the existing red frame asset. Render tokens from their own family/identity, not their generic catalogue key. Saved legacy family normalization belongs to the engine token reader.

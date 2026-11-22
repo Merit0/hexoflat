@@ -118,8 +118,8 @@ describe('LG5e: DEV_GRANT_ITEM with a token spec', () => {
       { key: HEXOBJECT_KEYS.COINS, token: { ...shieldSpec, type: HEXOBJECT_KEYS.COINS } },
     ],
     [
-      'the god-executor realm',
-      { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, realm: ERarityKind.GOD_EXECUTOR } },
+      'the alien realm',
+      { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, realm: ERarityKind.ALIEN } },
     ],
     ['a zero price', { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, price: 0 } }],
     ['tier 5', { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, mapTier: 5 } }],

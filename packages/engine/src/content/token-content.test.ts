@@ -131,7 +131,7 @@ describe('item token content', () => {
     const [min, max] = TOKEN_PRICE_RANGES[ERarityKind.IDOL];
     expect(coinPriceOf('sword')).toBeGreaterThanOrEqual(min);
     expect(coinPriceOf('sword')).toBeLessThanOrEqual(max);
-    expect(ERarityKind.GOD_EXECUTOR in TOKEN_PRICE_RANGES).toBe(false);
+    expect(ERarityKind.ALIEN in TOKEN_PRICE_RANGES).toBe(false);
   });
 });
 

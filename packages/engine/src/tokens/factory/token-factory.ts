@@ -1,3 +1,4 @@
+import { dimensionOfItemFamily } from '../../dimensions/dimensions';
 import { decodedSourceId } from '../source-id';
 import { ERarityKind } from '../../abstraction/hexobject-abstraction';
 import { deriveStream } from '../../utils/random-seeded';
@@ -96,7 +97,7 @@ function contextRefusal(ctx: GenerationContext): TokenResult<never> | null {
   const refusal = sourceRefusal(ctx);
   if (refusal) return refusal;
   if (baseRealmOf(ctx.realm) === null) {
-    return refuseToken('GOD_EXECUTOR_NOT_BASE', `${ctx.realm} items are unique only`);
+    return refuseToken('ALIEN_NOT_BASE', `${ctx.realm} items are unique only`);
   }
   return null;
 }
@@ -139,6 +140,7 @@ export class TokenFactory {
       origin: 'base',
       type: type.key,
       rarity: realm,
+      dimension: dimensionOfItemFamily(realm),
       name: this.parts.nameGenerator.generate({ type, attributeCount }, stream('name')),
       description: this.parts.descriptionBuilder.build({ type, realm, mapTier: ctx.mapTier }),
       attributes,
@@ -191,6 +193,7 @@ export class TokenFactory {
       uniqueKey: definition.key,
       type: type.key,
       rarity: definition.rarity,
+      dimension: definition.dimension,
       name: { ...definition.name },
       description: this.parts.descriptionBuilder.build({
         type,

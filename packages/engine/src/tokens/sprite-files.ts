@@ -68,7 +68,7 @@ export type SpriteManifest = z.infer<typeof spriteManifestSchema>;
 export type TSpriteFailureCode =
   | 'NAME_PATTERN'
   | 'UNKNOWN_REALM'
-  | 'GOD_EXECUTOR_IN_BASE'
+  | 'ALIEN_IN_BASE'
   | 'UNKNOWN_TYPE'
   | 'WRONG_SIZE'
   | 'NOT_PNG_RGBA'
@@ -139,7 +139,7 @@ function nameBaseFile(
     return fail('UNKNOWN_REALM', path, `realm "${given}" is not one of ${REALM_VALUES.join(', ')}`);
   }
   if (!BASE_REALM_VALUES.includes(realm)) {
-    return fail('GOD_EXECUTOR_IN_BASE', path, `${realm} items are unique only, not base`);
+    return fail('ALIEN_IN_BASE', path, `${realm} items are unique only, not base`);
   }
   const type = folder.slice(realm.length + 1);
   if (!types.has(type)) {

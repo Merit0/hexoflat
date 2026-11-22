@@ -34,10 +34,13 @@ export class HexObjectFactory {
 
   private static applyOverrides(obj: THexobject, overrides: Record<string, unknown>) {
     if (isPieceCount(overrides.quantity)) obj.quantity = overrides.quantity;
-    const container = containerStateSchema.safeParse(overrides.container);
-    if (container.success) obj.container = container.data;
-    const token = itemTokenSchema.safeParse(overrides.token);
-    if (token.success && token.data.type === obj.hexobjectKey) obj.token = token.data;
+    if (overrides.container != null)
+      obj.container = containerStateSchema.parse(overrides.container);
+    if (overrides.token !== undefined) {
+      const token = itemTokenSchema.parse(overrides.token);
+      if (token.type !== obj.hexobjectKey) throw new Error('Token type differs from hexobject key');
+      obj.token = token;
+    }
 
     if (obj.groupType === EHexobjectGroup.RESOURCE) {
       if (typeof overrides.regrowMs === 'number') obj.resource.regrowMs = overrides.regrowMs;

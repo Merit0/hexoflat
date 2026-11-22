@@ -37,7 +37,7 @@ describe('TokenFactory.createBase refusals', () => {
       'TYPE_NOT_IN_REALM',
       sparkOnly,
     ],
-    ['the god-executor realm', { realm: ERarityKind.GOD_EXECUTOR }, 'GOD_EXECUTOR_NOT_BASE'],
+    ['the alien realm', { realm: ERarityKind.ALIEN }, 'ALIEN_NOT_BASE'],
     ['a source id without a kind', { sourceId: 'cave-chest-4-7' }, 'BAD_SOURCE_ID'],
     ['an invalid source kind', { sourceId: 'Boss:king' }, 'BAD_SOURCE_ID'],
     ['a source key with capitals', { sourceId: 'chest:Cave' }, 'BAD_SOURCE_ID'],

@@ -12,7 +12,7 @@ import type {
 } from '../token-keys';
 import type { DescriptionLine, ItemToken, TokenAttribute, TokenName } from '../token-schema';
 
-export const TOKEN_GENERATOR_VERSION = 4;
+export const TOKEN_GENERATOR_VERSION = 5;
 
 export const TOKEN_STEPS = ['type', 'name', 'sprite', 'skills', 'price'] as const;
 export type TTokenStep = (typeof TOKEN_STEPS)[number];
@@ -22,7 +22,7 @@ export const TOKEN_REFUSALS = [
   'BAD_SOURCE_ID',
   'BAD_ITEM_INDEX',
   'SOURCE_ID_CONTAINS_SEED',
-  'GOD_EXECUTOR_NOT_BASE',
+  'ALIEN_NOT_BASE',
   'UNKNOWN_TYPE',
   'TYPE_NOT_IN_REALM',
   'NO_TYPE_IN_REALM',
