@@ -7,6 +7,11 @@ export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
     id: 'chest:cave.4-7:0',
     origin: 'base',
     type: 'sword',
+    ...(overrides.origin !== 'unique'
+      ? {
+          baseKey: `${dimensionOfItemFamily(overrides.rarity ?? ERarityKind.IDOL)}-${overrides.type ?? 'sword'}`,
+        }
+      : {}),
     rarity: ERarityKind.IDOL,
     dimension: dimensionOfItemFamily(overrides.rarity ?? ERarityKind.IDOL),
     name: {

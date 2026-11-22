@@ -1,3 +1,4 @@
+import { sharedWithSchema } from '../dimensions/availability';
 import { dimensionSchema, itemFamilyOfDimension } from '../dimensions/dimensions';
 import { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
@@ -33,6 +34,7 @@ export const uniqueTokenDefinitionSchema = z
     type: itemTypeKeySchema,
     rarity: z.enum(ERarityKind),
     dimension: dimensionSchema,
+    sharedWith: sharedWithSchema.optional(),
     name: z.strictObject({ kind: z.literal('authored'), nameKey: i18nKeySchema }),
     descriptionKey: i18nKeySchema.optional(),
     attributes: z

@@ -1,3 +1,4 @@
+import { locationTokenOrigin } from '../registry/location-token-origin';
 import { describe, expect, it } from 'vitest';
 import { createContainer } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
@@ -29,7 +30,12 @@ function ready(bonus = 0): BattleState {
   player.hands.right!.token = sampleToken({
     attributes: bonus ? [{ key: 'trophy', value: bonus }] : [],
   });
-  return giveTurn(battleWith([player, skeleton('target', TARGET, { hp: 1 })]), ['hero', 'target']);
+  const state = giveTurn(battleWith([player, skeleton('target', TARGET, { hp: 1 })]), [
+    'hero',
+    'target',
+  ]);
+  state.tokenOrigin = locationTokenOrigin('cave');
+  return state;
 }
 
 function kill(state: BattleState) {

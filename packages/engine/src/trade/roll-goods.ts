@@ -1,3 +1,6 @@
+import { dimensionOfItemFamily } from '../dimensions/dimensions';
+import { CONTENT } from '../content/content-map';
+import { dropAvailableIn } from '../loot/dimension-pool';
 import type { TTraderDefinition } from '../content/content-schema';
 import type { RandomNumberGenerator } from '../utils/random';
 import type { TraderGood } from './trade-state';
@@ -23,11 +26,18 @@ export function rollGoods(
   def: TTraderDefinition,
   rng: RandomNumberGenerator,
 ): (TraderGood | null)[] {
+  const dimension = def.tokenOrigin
+    ? dimensionOfItemFamily(def.tokenOrigin.realm)
+    : CONTENT[def.stallHexobjectKey].dimension;
+  for (const entry of def.guaranteed) {
+    if (!dropAvailableIn({ itemKey: entry.key }, dimension))
+      throw new Error(`TRADER_GUARANTEED_OUTSIDE_DIMENSION: ${entry.key}`);
+  }
   const goods: (TraderGood | null)[] = def.guaranteed.map((range) => ({
     key: range.key,
     amount: rollAmount(range, rng),
   }));
-  const pool = def.pool.slice();
+  const pool = def.pool.filter((entry) => dropAvailableIn({ itemKey: entry.key }, dimension));
   for (let roll = 0; roll < def.rolls && pool.length > 0; roll += 1) {
     const [picked] = pool.splice(pickWeighted(pool, rng), 1);
     goods.push({ key: picked.key, amount: rollAmount(picked, rng) });

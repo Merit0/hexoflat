@@ -45,7 +45,6 @@ const OWNERS = {
     'bone-court',
     'cave-exit',
     'grave',
-    'bone-charm',
     'crown-shard',
   ],
   heaven: ['return-scroll', 'return-portal'],
@@ -67,7 +66,7 @@ describe('authored content dimensions', () => {
     },
   );
 
-  it.each(['health-bottle', 'return-scroll', 'bone-charm', 'axe', 'sword'] as const)(
+  it.each(['health-bottle', 'return-scroll', 'crown-shard', 'axe', 'sword'] as const)(
     'rejects conflicting item family on %s, including implicit prototype rarity',
     (key) => {
       const result = ContentDefinitionSchema.safeParse({
@@ -81,7 +80,7 @@ describe('authored content dimensions', () => {
 
   it('keeps foreign items owned by their catalogue dimension regardless of where they drop', () => {
     expect(CONTENT['return-scroll'].dimension).toBe(EDimension.HEAVEN);
-    expect(CONTENT['bone-charm'].dimension).toBe(EDimension.UNDERWORLD);
+    expect(CONTENT['crown-shard'].dimension).toBe(EDimension.UNDERWORLD);
     expect(CONTENT.coins.dimension).toBe(EDimension.EARTH);
     expect('loot' in CONTENT.coins && CONTENT.coins.loot.rarity).toBeUndefined();
   });

@@ -4,10 +4,11 @@ import type { HexTileModel } from '../map/models/hex-tile-model';
 import type { IPendingTileAction } from '../abstraction/hex-tile-abstraction';
 import { grantToDraft, type TokenSupply } from '../inventory/apply-stock';
 import { tokenSourceIdOf } from '../tokens/game-tokens';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { coordinateKey } from '../utils/hex-utils';
 import { IActionContext } from '../abstraction/abstract-action';
-import { getMeta } from '../content';
+import { getMeta, CONTENT } from '../content';
+import { itemFamilyOfDimension } from '../dimensions/dimensions';
+import { baseRealmSchema } from '../tokens/token-keys';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from './hexobjects-registry';
 
@@ -52,12 +53,18 @@ const FINISH_UNLOCK_ONLY: ActionFinisher = (_tile, _action, ctx) => {
 
 function takeSupply(tile: HexTileModel, ctx: IActionContext): TokenSupply {
   const token = tile.hexobject?.token;
-  if (token || !ctx.loot) return { tokens: [token] };
+  if (token || !ctx.loot?.origin || !tile.hexobject) return { tokens: [token] };
   return {
     mint: {
       seed: ctx.loot.seed,
       sourceId: tokenSourceIdOf('dev', ctx.loot.sourceId, coordinateKey(tile.coordinates)),
-      origin: ctx.loot.origin ?? DEFAULT_TOKEN_ORIGIN,
+      // This materializes an already placed catalogue object; pickup must not recolor it.
+      origin: {
+        ...ctx.loot.origin,
+        realm: baseRealmSchema.parse(
+          itemFamilyOfDimension(CONTENT[tile.hexobject.hexobjectKey].dimension),
+        ),
+      },
     },
   };
 }

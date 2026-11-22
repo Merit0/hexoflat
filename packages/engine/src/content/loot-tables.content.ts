@@ -61,7 +61,6 @@ const SKELETON_WARRIOR: LootTable = {
   entries: [
     { itemKey: HEXOBJECT_KEYS.COINS, weight: 6, amount: [3, 9] },
     { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 2, amount: [1, 1] },
-    { itemKey: HEXOBJECT_KEYS.BONE_CHARM, weight: 2, amount: [1, 1] },
   ],
 };
 

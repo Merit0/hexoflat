@@ -4,7 +4,7 @@ import { showsCounter } from './item-counter';
 
 describe('showsCounter', () => {
   it('gives every stackable item a counter, like Will has, even a stack of one', () => {
-    for (const key of [K.COINS, K.HEALTH_BOTTLE, K.RETURN_SCROLL, K.BONE_CHARM]) {
+    for (const key of [K.COINS, K.HEALTH_BOTTLE, K.RETURN_SCROLL, K.CROWN_SHARD]) {
       expect(showsCounter({ key })).toBe(true);
     }
   });

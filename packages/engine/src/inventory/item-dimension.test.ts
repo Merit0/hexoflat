@@ -8,7 +8,7 @@ import { ERarityKind } from '../abstraction/hexobject-abstraction';
 describe('concrete item ownership', () => {
   it('resolves stackables from their own definition and tokens from their own family', () => {
     expect(itemDimensionOf({ key: 'coins' })).toBe('earth');
-    expect(itemDimensionOf({ key: 'bone-charm' })).toBe('underworld');
+    expect(itemDimensionOf({ key: 'crown-shard' })).toBe('underworld');
     expect(itemDimensionOf({ key: 'return-scroll' })).toBe('heaven');
     for (const rarity of [ERarityKind.GLOOM, ERarityKind.SPARK, ERarityKind.ALIEN]) {
       const token = sampleToken({ rarity, origin: 'unique', uniqueKey: 'test-unique' });
@@ -21,7 +21,7 @@ describe('concrete item ownership', () => {
     const state = emptyInventoryState('hero');
     const earth = { ...mintItem(state, 'health-bottle', 1), slotKey: 'bag-0', isNew: false };
     const foreign = {
-      ...mintItem(state, 'bone-charm', 1),
+      ...mintItem(state, 'crown-shard', 1),
       slotKey: 'bag-1',
       isNew: false,
       stackKey: earth.stackKey,

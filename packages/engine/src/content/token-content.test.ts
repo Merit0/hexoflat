@@ -61,6 +61,7 @@ describe('item token content', () => {
   it('needs no adjective for tool types', () => {
     const toolsOnly = {
       ...TOKEN_CONTENT,
+      baseItems: TOKEN_CONTENT.baseItems.filter((item) => ['axe', 'pickaxe'].includes(item.type)),
       types: TOKEN_CONTENT.types.filter((type) => type.tool !== null),
       adjectives: [],
     };

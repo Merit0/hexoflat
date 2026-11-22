@@ -191,6 +191,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       const { userId, heroId } = await kit.newPlayer();
       const token = newShield();
       expect(token.name.kind).toBe('adjective');
+      expect(token).toMatchObject({ baseKey: 'underworld-shield', dimension: 'underworld' });
       const stored = await storeTokens(userId, heroId, [token]);
 
       const moved = await kit.service.execute(

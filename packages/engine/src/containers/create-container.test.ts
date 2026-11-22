@@ -1,3 +1,4 @@
+import { locationTokenOrigin } from '../registry/location-token-origin';
 import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
 import { describe, expect, it } from 'vitest';
 import { SEEKER_CHEST_TABLE_IDS, lootTableOf } from '../content/loot-tables.content';
@@ -17,7 +18,7 @@ describe('CH-P6 createContainer', () => {
       seed: 's',
       sourceId: 'b1',
       targetKey: '2,-1',
-      origin: DEFAULT_TOKEN_ORIGIN,
+      origin: locationTokenOrigin('cave'),
     });
     expect(made.status).toBe('full');
     expect(made.at).toEqual(AT);

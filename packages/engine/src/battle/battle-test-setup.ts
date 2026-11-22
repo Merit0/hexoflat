@@ -1,3 +1,4 @@
+import { locationTokenOrigin } from '../registry/location-token-origin';
 import type { DomainEvent } from '../commands/types';
 import { BATTLE_RULES } from './battle-content';
 import type { BattleAction } from './battle-commands';
@@ -78,8 +79,15 @@ export function battleWith(
   seed = 'test-seed',
   boulders: Boulder[] = [],
 ): BattleState {
-  return startBattle({ id: 'b1', seed, board, creatures, boulders, tokenSecret: TEST_TOKEN_SECRET })
-    .battle;
+  const battle = startBattle({
+    id: 'b1',
+    seed,
+    board,
+    creatures,
+    boulders,
+    tokenSecret: TEST_TOKEN_SECRET,
+  }).battle;
+  return { ...battle, tokenOrigin: locationTokenOrigin('cave') };
 }
 
 export function rightAnswer(battle: BattleState): number {

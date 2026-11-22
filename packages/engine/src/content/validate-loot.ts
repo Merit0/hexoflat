@@ -1,3 +1,4 @@
+import { BASE_ITEMS } from './base-items.content';
 import { EChestType, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { BATTLE_CREATURES } from '../battle/battle-catalogue';
 import { lootTableSchema } from '../loot/loot-table';
@@ -31,7 +32,9 @@ export function lootTableProblems(
     }
     const table = parsed.data;
     if (table.id !== recordKey) problems.push(`[loot:${recordKey}] id "${table.id}" differs`);
-    for (const { itemKey } of [...(table.guaranteed ?? []), ...table.entries]) {
+    for (const { itemKey, baseKey } of [...(table.guaranteed ?? []), ...table.entries]) {
+      if (baseKey && !BASE_ITEMS.some((entry) => entry.key === baseKey && entry.type === itemKey))
+        problems.push(`[loot:${table.id}] invalid base reference ${baseKey} for ${itemKey}`);
       if (itemKey !== HEXOBJECT_KEYS.COINS && priceOf(itemKey) === null) {
         problems.push(`[loot:${table.id}] ${itemKey} is sellable loot without a coinPrice`);
       }

@@ -1,3 +1,5 @@
+import { availableInDimension } from '../dimensions/availability';
+import type { EDimension } from '../dimensions/dimensions';
 import type { ERarityKind } from '../abstraction/hexobject-abstraction';
 import {
   equipmentAttributeDefinitionSchema,
@@ -99,6 +101,10 @@ export class UniqueRegistry {
     const definition = this.byKey.get(key);
     if (!definition) throw new Error(`Unknown unique "${key}"`);
     return definition;
+  }
+
+  forDimension(dimension: EDimension): readonly UniqueTokenDefinition[] {
+    return this.all().filter((entry) => availableInDimension(entry, dimension));
   }
 
   all(): readonly UniqueTokenDefinition[] {

@@ -1,3 +1,5 @@
+import { BASE_ITEMS } from '../content/base-items.content';
+import { baseItemKeySchema } from './base-item';
 import { dimensionSchema, itemFamilyOfDimension } from '../dimensions/dimensions';
 import { upcastTokenDimension } from './upcast-token-dimension';
 import { z } from 'zod';
@@ -72,6 +74,7 @@ export const currentItemTokenSchema = z
     id: itemTokenIdSchema,
     origin: z.enum(TOKEN_ORIGINS),
     uniqueKey: uniqueKeySchema.optional(),
+    baseKey: baseItemKeySchema.optional(),
     type: itemTypeKeySchema,
     rarity: z.enum(ERarityKind),
     dimension: dimensionSchema,
@@ -94,6 +97,23 @@ export const currentItemTokenSchema = z
       });
     }
     const unique = token.origin === 'unique';
+    const base = token.baseKey
+      ? BASE_ITEMS.find((entry) => entry.key === token.baseKey)
+      : undefined;
+    if (base && (base.dimension !== token.dimension || base.type !== token.type)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['baseKey'],
+        message: 'Concrete base identity differs from token ownership/type',
+      });
+    }
+    if (unique ? token.baseKey !== undefined : token.baseKey === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['baseKey'],
+        message: 'baseKey is required only on base tokens',
+      });
+    }
     if (unique !== (token.uniqueKey !== undefined)) {
       ctx.addIssue({
         code: 'custom',

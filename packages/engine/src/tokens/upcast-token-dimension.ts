@@ -11,6 +11,9 @@ export function upcastTokenDimension(raw: unknown): unknown {
   return {
     ...token,
     rarity,
+    ...(token.origin === 'base' && token.baseKey === undefined && typeof token.type === 'string'
+      ? { baseKey: `${dimensionOfItemFamily(family.data)}-${token.type}` }
+      : {}),
     ...(token.dimension === undefined ? { dimension: dimensionOfItemFamily(family.data) } : {}),
     ...(legacyAlien && Array.isArray(token.description)
       ? { description: token.description.map(upcastDescriptionLine) }

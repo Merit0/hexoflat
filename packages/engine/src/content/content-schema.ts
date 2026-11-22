@@ -1,3 +1,4 @@
+import { sharedWithSchema } from '../dimensions/availability';
 import { dimensionSchema } from '../dimensions/dimensions';
 import { validateContentDimension } from './content-dimension';
 import { tokenOriginSchema } from '../tokens/token-origin';
@@ -67,6 +68,7 @@ export type ObjectTag = z.infer<typeof objectTagSchema>;
 const baseContentFields = {
   hexobjectKey: hexobjectKeySchema,
   dimension: dimensionSchema,
+  sharedWith: sharedWithSchema.optional(),
   tags: z.array(objectTagSchema).optional(),
   isInteractable: z.boolean(),
   collision: z.enum(EHexCollision),

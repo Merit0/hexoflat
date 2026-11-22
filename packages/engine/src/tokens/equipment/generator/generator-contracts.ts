@@ -10,6 +10,7 @@ export type RandomStreams = (label: string) => RandomNumberGenerator;
 export type AttributeTypeTarget = Pick<EquipmentTypeDefinition, 'key' | 'tool'>;
 
 export interface AttributeGenerationContext {
+  allowedKeys?: readonly string[];
   level: TMapTier;
   group: TItemGroup;
   type: AttributeTypeTarget;
@@ -29,6 +30,7 @@ export interface PoolEntry extends ValueRange {
 }
 
 export interface PoolRequest {
+  allowedKeys?: readonly string[];
   profile: AttributeProfile;
   group: TItemGroup;
   type: AttributeTypeTarget;

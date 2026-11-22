@@ -1,7 +1,10 @@
+import { dimensionOfItemFamily } from '../dimensions/dimensions';
+import { dropAvailableIn } from '../loot/dimension-pool';
+import { campTokenOrigin } from '../registry/location-token-origin';
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { consumeFromDraft, countInDraft, grantToDraft } from '../inventory/apply-stock';
-import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
+import { type TokenOrigin } from '../tokens/token-origin';
 import { isTokenType, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -180,15 +183,12 @@ export function planClaim(
   for (const [rewardIndex, reward] of quest.rewards.entries()) {
     if (reward.kind === 'item') {
       if (!inventory) return reject(progress, questId, 'NO_INVENTORY');
+      const origin = quest.rewardOrigin ?? campTokenOrigin();
+      if (!dropAvailableIn({ itemKey: reward.itemKey }, dimensionOfItemFamily(origin.realm)))
+        throw new Error(`QUEST_REWARD_OUTSIDE_DIMENSION: ${questId}:${reward.itemKey}`);
       const supply = isTokenType(reward.itemKey)
         ? {
-            mint: rewardMint(
-              progress,
-              questId,
-              ctx.rngSeed,
-              rewardIndex,
-              quest.rewardOrigin ?? DEFAULT_TOKEN_ORIGIN,
-            ),
+            mint: rewardMint(progress, questId, ctx.rngSeed, rewardIndex, origin),
           }
         : undefined;
       if (!grantToDraft(draft, reward.itemKey, reward.amount, 'reward', supply)) {

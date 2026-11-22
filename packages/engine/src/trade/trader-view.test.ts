@@ -12,7 +12,6 @@ const APPROVED_SELL_PRICES: Partial<Record<THexobjectKey, number>> = {
   [HEXOBJECT_KEYS.HEALTH_BOTTLE]: 8,
   [HEXOBJECT_KEYS.ENERGY_BOTTLE]: 8,
   [HEXOBJECT_KEYS.MANA_BOTTLE]: 8,
-  [HEXOBJECT_KEYS.BONE_CHARM]: 16,
   [HEXOBJECT_KEYS.SHIELD]: 16,
   [HEXOBJECT_KEYS.AXE]: 24,
   [HEXOBJECT_KEYS.PICKAXE]: 24,
@@ -39,7 +38,7 @@ describe('sellUnitPrice', () => {
     expect(sellUnitPrice(stingy, HEXOBJECT_KEYS.HEALTH_BOTTLE)).toBe(1);
     const third = { ...ILVA, sellRate: { num: 1, den: 3 } };
     expect(sellUnitPrice(third, HEXOBJECT_KEYS.RETURN_SCROLL)).toBe(20);
-    expect(sellUnitPrice(third, HEXOBJECT_KEYS.BONE_CHARM)).toBe(13);
+    expect(sellUnitPrice(third, HEXOBJECT_KEYS.CROWN_SHARD)).toBe(26);
   });
 });
 

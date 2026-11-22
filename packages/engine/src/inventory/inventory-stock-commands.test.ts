@@ -1,3 +1,4 @@
+import { campTokenOrigin } from '../registry/location-token-origin';
 import { describe, expect, it } from 'vitest';
 import { applyCommand, type HexEngineState } from '../commands/apply-command';
 import type { HexEngineCommand } from '../commands/hex-engine-commands';
@@ -18,7 +19,7 @@ function world(inventory?: InventoryState): HexEngineState {
   return {
     map,
     heroes: {},
-    loot: { seed: 'server-stock-secret', sourceId: 'stock-test' },
+    loot: { seed: 'server-stock-secret', sourceId: 'stock-test', origin: campTokenOrigin() },
     inventory,
   };
 }

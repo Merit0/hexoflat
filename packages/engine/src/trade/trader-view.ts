@@ -1,3 +1,5 @@
+import { CONTENT } from '../content/content-map';
+import { realmOfBoard } from '../registry/location-token-origin';
 import { EQUIP_SLOTS } from '../abstraction/hexobject-abstraction';
 import type { TTraderDefinition } from '../content/content-schema';
 import { TRADERS, TRADER_KEYS, type TTraderKey } from '../content/traders.content';
@@ -10,7 +12,7 @@ import { applyDiscounts } from './discount-math';
 import { sellPriceOf } from './price-of';
 import { emptyBuyback, rollGoods } from './roll-goods';
 import type { TraderGood, TraderState } from './trade-state';
-import { DEFAULT_TOKEN_ORIGIN, type TokenOrigin } from '../tokens/token-origin';
+import { type TokenOrigin } from '../tokens/token-origin';
 import { isTokenType, mintBaseToken, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { ItemToken } from '../tokens/token-schema';
 
@@ -57,7 +59,7 @@ function slotMintBase(
     namespace: shopNamespace(rngSeed),
     key,
     serial,
-    origin: def.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+    origin: def.tokenOrigin ?? { realm: realmOfBoard(CONTENT[def.stallHexobjectKey]), mapTier: 1 },
   };
 }
 

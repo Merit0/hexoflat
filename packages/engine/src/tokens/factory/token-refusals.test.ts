@@ -50,6 +50,7 @@ describe('TokenFactory.createBase refusals', () => {
     const noIdol = createTokenFactory(
       {
         ...TOKEN_CONTENT,
+        baseItems: extendedContent().baseItems.filter((item) => item.type === 'hammer'),
         types: extendedContent().types.filter((type) => type.key === 'hammer'),
       },
       extendedManifest(),
@@ -59,12 +60,13 @@ describe('TokenFactory.createBase refusals', () => {
   });
 
   it('returns the validator refusal for a token that fails the schema', () => {
-    const { types } = createTokenRegistries();
+    const { types, baseItems } = createTokenRegistries();
     const failing: ITokenValidator = {
       validateAttributes: () => ({ ok: true, value: true }),
       validate: () => ({ ok: false, refusal: { code: 'INVALID_TOKEN', message: 'test' } }),
     };
     const factory = new TokenFactory({
+      baseItems,
       typePicker: new RealmTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(TOKEN_CONTENT.adjectives),
       spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(SPRITE_MANIFEST)),

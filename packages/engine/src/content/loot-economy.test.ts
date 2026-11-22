@@ -85,11 +85,11 @@ describe('REQ-LOOT-103 loot content is validated at load', () => {
       rolls: [1, 1],
       entries: [
         { itemKey: HEXOBJECT_KEYS.COINS, weight: 1, amount: [1, 1] },
-        { itemKey: HEXOBJECT_KEYS.BONE_CHARM, weight: 1, amount: [1, 1] },
+        { itemKey: HEXOBJECT_KEYS.CROWN_SHARD, weight: 1, amount: [1, 1] },
       ],
     };
     expect(lootTableProblems({ unpriced: table }, () => null)).toEqual([
-      '[loot:unpriced] bone-charm is sellable loot without a coinPrice',
+      '[loot:unpriced] crown-shard is sellable loot without a coinPrice',
     ]);
   });
 

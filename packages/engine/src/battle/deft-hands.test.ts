@@ -40,6 +40,7 @@ function gloves(value: number) {
     token: {
       ...upcastToken('hero', 'gloves', 'shield')!,
       type: 'gloves',
+      baseKey: 'earth-gloves',
       name: { kind: 'noun' as const, noun: 'gloves' },
       attributes: [{ key: 'deft-hands', value }],
     },

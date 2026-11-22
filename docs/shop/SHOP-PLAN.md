@@ -109,7 +109,6 @@
   | health-bottle | 12          | 4            |
   | energy-bottle | 12          | 4            |
   | mana-bottle   | 12          | 4            |
-  | bone-charm    | 24          | 9            |
   | shield        | 40          | 16           |
   | axe           | 48          | 19           |
   | pickaxe       | 48          | 19           |
@@ -137,7 +136,6 @@
       pool: [
         { key: 'energy-bottle', weight: 4, min: 1, max: 4 },
         { key: 'mana-bottle', weight: 4, min: 1, max: 4 },
-        { key: 'bone-charm', weight: 2, min: 1, max: 1 },
         { key: 'axe', weight: 2, min: 1, max: 1 },
         { key: 'pickaxe', weight: 2, min: 1, max: 1 },
         { key: 'sword', weight: 1, min: 1, max: 1 },
