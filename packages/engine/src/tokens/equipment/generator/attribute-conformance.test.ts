@@ -39,15 +39,6 @@ const STAT_READS: Partial<Record<THeroStat, Reach>> = {
   harvestBonus: 'tool',
 };
 
-const AWAITING_AG3 = [
-  'crit:axe',
-  'crit:pickaxe',
-  'crit-dmg:axe',
-  'crit-dmg:pickaxe',
-  'trophy:axe',
-  'trophy:pickaxe',
-];
-
 const HAND_SLOTS: readonly string[] = ['weapon', 'shield', 'any'];
 
 const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
@@ -203,7 +194,7 @@ describe('AG2 readers', () => {
     }
   });
 
-  it('lists every attribute that rolls on a type its reader never sees', () => {
+  it('rolls no attribute on a type its reader never sees', () => {
     const dead = rolled.flatMap((attribute) =>
       EQUIPMENT_TYPES.filter(
         (type) =>
@@ -211,6 +202,6 @@ describe('AG2 readers', () => {
           !reaches(type, STAT_READS[attribute.stat!]!),
       ).map((type) => `${attribute.key}:${type.key}`),
     );
-    expect(dead).toEqual(AWAITING_AG3);
+    expect(dead).toEqual([]);
   });
 });

@@ -41,7 +41,7 @@ describe('EA2 generator parts', () => {
     ).toEqual(['crit', 'trophy', 'will']);
     expect(
       pool.poolFor({ profile, group: 'weapon', type: typeOf('axe') }).map((e) => e.key),
-    ).toEqual(['crit', 'trophy', 'will', 'yield']);
+    ).toEqual(['will', 'yield']);
   });
 
   it('an empty pool stops the generator without an error', () => {

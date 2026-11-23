@@ -296,3 +296,23 @@ Not in AG1: unique attributes still skip the group check (see the review note on
 
 The test "crit-dmg appears without crit" (`equipment-attribute-generator.test.ts`) stays until AG4 replaces it.
 Engine 2537 passed, 2 skipped; typecheck and lint passed.
+
+### AG3 — done (2026-11-23)
+
+1. Schema: `EquipmentAttributeDefinition.excludes?: { tool: true }`, the mirror of `requires.tool`. An attribute
+   cannot have both.
+2. One eligibility rule: `attributeFitsType` (pool filter and content rules) and `typeFailure` (factory validator)
+   refuse an attribute with `excludes.tool` on a type with `tool !== null`. The content check refuses an exclusion when
+   the attribute's groups hold no type without a tool.
+3. Content: `crit`, `crit-dmg` and `trophy` have `excludes: { tool: true }`. New axes and pickaxes roll only `will`
+   and `yield`.
+4. Owned tokens are not rerolled: stored tokens are read by `itemTokenSchema`, which does not check attribute rules,
+   and the tooltip still shows their lines. Only new mints and factory overrides are refused.
+5. The conformance suite now requires an empty list of attributes that roll on a type their reader never sees
+   (`AWAITING_AG3` removed), so the F1 share of new mints is 0%.
+6. Golden tokens: only the axe and pickaxe entries changed. `TOKEN_GENERATOR_VERSION` stays, like the earlier pool
+   content changes (A08, A09, crit).
+
+Tests: `equipment-content-rules.test.ts` AG3 block (marked attributes, schema refusal, content refusal, owned axe with
+`crit` read and shown, new override refused), `generator-parts.test.ts` axe pool. Engine 2541 passed, 2 skipped; API
+312 and web 4417 passed; typecheck, lint and engine build passed.

@@ -97,6 +97,16 @@ function attributeTypeFailures(
     );
     if (tools.length === 0) failures.push(`attribute ${attribute.key} needs a tool no type has`);
   }
+  if (attribute.excludes?.tool) {
+    const others = [...types.values()].filter(
+      (type) => type.tool === null && attribute.groups.includes(type.group),
+    );
+    if (others.length === 0) {
+      failures.push(
+        `attribute ${attribute.key} excludes tools, but no other type is in its groups`,
+      );
+    }
+  }
   return failures;
 }
 

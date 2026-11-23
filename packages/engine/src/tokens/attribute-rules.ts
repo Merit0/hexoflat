@@ -20,6 +20,9 @@ function typeFailure(
   if (definition.onlyTypes && !definition.onlyTypes.includes(type.key)) {
     return `Attribute ${definition.key} is not allowed on type ${type.key}`;
   }
+  if (definition.excludes?.tool && type.tool !== null) {
+    return `Attribute ${definition.key} is not allowed on tool type ${type.key}`;
+  }
   if (definition.requires?.tool && type.tool === null) {
     return `Attribute ${definition.key} needs a tool, type ${type.key} is not one`;
   }

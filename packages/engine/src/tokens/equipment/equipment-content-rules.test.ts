@@ -3,7 +3,10 @@ import { ATTRIBUTE_PROFILES } from '../../content/attribute-profiles.content';
 import { TOKEN_CONTENT, type TokenContent } from '../../content/token-content';
 import { EQUIPMENT_CONTENT, equipmentContentFailures } from '../../content/validate-equipment';
 import { tokenContentFailures } from '../../content/validate-tokens';
+import { attributeRowsOf } from '../attribute-display';
 import { createTokenFactory } from '../factory/create-token-factory';
+import { contextFor, defaultFactory } from '../factory/factory-test-setup';
+import { itemTokenSchema } from '../token-schema';
 import type { EquipmentAttributeDefinition } from './equipment-attribute-schema';
 import { resolveHeroStats } from './hero-stats';
 
@@ -126,5 +129,41 @@ describe('AG1 F12: one profile rule for content and factory', () => {
     expect(() => createTokenFactory({ ...TOKEN_CONTENT, profiles })).toThrow(
       'tier-1: attribute sweep is blocked',
     );
+  });
+});
+
+describe('AG3 F1: combat attributes stay off tools', () => {
+  it('marks crit, crit-dmg and trophy as not for tools', () => {
+    const excluded = EQUIPMENT_CONTENT.attributes
+      .filter((attribute) => attribute.excludes?.tool)
+      .map((attribute) => attribute.key);
+    expect(excluded).toEqual(['crit', 'crit-dmg', 'trophy']);
+  });
+
+  it('refuses an attribute that both requires and excludes a tool', () => {
+    expect(failuresWith(withAttribute('yield', { excludes: { tool: true } })).join('\n')).toMatch(
+      /cannot both require and exclude a tool/,
+    );
+  });
+
+  it('refuses a tool exclusion when its groups hold only tools', () => {
+    const types = EQUIPMENT_CONTENT.types.filter((type) => type.key !== 'sword');
+    expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, types })).toContain(
+      'attribute crit excludes tools, but no other type is in its groups',
+    );
+  });
+
+  it('keeps an owned axe with crit readable and shown', () => {
+    const made = defaultFactory.createBase(contextFor(1, { type: 'axe', mapTier: 2 }), {
+      attributes: [],
+    });
+    if (!made.ok) throw new Error(made.refusal.message);
+    const owned = itemTokenSchema.parse({ ...made.value, attributes: [{ key: 'crit', value: 4 }] });
+    expect(attributeRowsOf(owned).map((row) => row.icon)).toEqual(['bolt']);
+    expect(
+      defaultFactory.createBase(contextFor(1, { type: 'axe', mapTier: 2 }), {
+        attributes: [{ key: 'crit', value: 4 }],
+      }).ok,
+    ).toBe(false);
   });
 });

@@ -35,6 +35,7 @@ export const equipmentAttributeDefinitionSchema = z
       .refine(distinctValues, 'a type is listed twice')
       .optional(),
     requires: z.strictObject({ tool: z.literal(true) }).optional(),
+    excludes: z.strictObject({ tool: z.literal(true) }).optional(),
     stat: heroStatSchema.nullable(),
     aggregate: z.enum(STAT_AGGREGATES),
     scope: z.enum(ATTRIBUTE_SCOPES),
@@ -44,6 +45,13 @@ export const equipmentAttributeDefinitionSchema = z
     deprecated: z.boolean().optional(),
   })
   .superRefine((attribute, ctx) => {
+    if (attribute.requires?.tool && attribute.excludes?.tool) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['excludes', 'tool'],
+        message: 'an attribute cannot both require and exclude a tool',
+      });
+    }
     if (attribute.stat === null && attribute.implemented) {
       ctx.addIssue({
         code: 'custom',

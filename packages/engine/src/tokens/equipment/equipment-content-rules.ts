@@ -19,6 +19,7 @@ export function attributeFitsType(
 ): boolean {
   if (!type.group || !definition.groups.includes(type.group)) return false;
   if (definition.onlyTypes && !definition.onlyTypes.includes(type.key)) return false;
+  if (definition.excludes?.tool && type.tool !== null) return false;
   return definition.requires?.tool !== true || type.tool !== null;
 }
 

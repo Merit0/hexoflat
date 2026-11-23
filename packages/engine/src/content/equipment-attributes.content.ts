@@ -100,6 +100,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   }),
   attribute('crit', {
     groups: ['weapon'],
+    excludes: { tool: true },
     stat: 'critPoints',
     ...ITEM_SUM,
     cap: 10,
@@ -109,6 +110,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   }),
   attribute('crit-dmg', {
     groups: ['weapon'],
+    excludes: { tool: true },
     stat: 'critDamage',
     aggregate: 'max',
     scope: 'item',
@@ -119,6 +121,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   }),
   attribute('trophy', {
     groups: ['weapon'],
+    excludes: { tool: true },
     stat: 'graveLootBonus',
     ...ITEM_SUM,
     cap: 2,
