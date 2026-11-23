@@ -4,7 +4,6 @@ import { QuestRunFeature } from '@features/world/quest-run.feature';
 import { TokenLookFeature } from '@features/world/token-look.feature';
 import { HexobjectKeys } from '@config/test-data';
 
-const STEPS = 10;
 const OLD_SWORD_TITLE = /^Guard Sword$/;
 
 test.describe('item token look', { tag: ['@hero'] }, () => {
@@ -14,8 +13,8 @@ test.describe('item token look', { tag: ['@hero'] }, () => {
     await new OpenCampingMapFeature().open();
     const quest = new QuestRunFeature();
     await quest.openBoard();
-    await quest.startFirstTrail();
-    await quest.walkOnTrail(STEPS);
+    const offer = await quest.startFirstTrail();
+    await quest.walkOnTrail(offer.goal.target);
     await quest.openChest();
     await quest.verifyHeroOnTheEmptiedChest();
     await quest.takeStackOf(HexobjectKeys.sword);
