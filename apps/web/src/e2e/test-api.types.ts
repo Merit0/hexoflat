@@ -1,3 +1,11 @@
+import type {
+  QuestOfferBoardProjection,
+  QuestOfferProjection,
+} from '@hexoflat/engine/quests/quest-board-projection';
+
+export type TestQuestBoard = QuestOfferBoardProjection;
+export type TestQuestOffer = QuestOfferProjection;
+
 export interface TestHexCoordinates {
   columnIndex: number;
   rowIndex: number;
@@ -80,6 +88,7 @@ export interface TestTraderFixture {
 export interface TestQuestFixture {
   active?: { questId: string; progress: number; state: 'active' | 'ready' }[];
   done?: Record<string, number>;
+  previousUtcDay?: true;
 }
 
 export interface TestQuests {
@@ -302,6 +311,8 @@ export interface HexoflatTestApi {
   getWalletCoins(): number;
   setTrader(fixture: TestTraderFixture): Promise<void>;
   getQuests(): TestQuests;
+  getQuestBoard(): TestQuestBoard | null;
+  followQuestApproach(route: TestHexCoordinates[]): Promise<void>;
   getOpenQuestBoard(): boolean;
   setQuests(fixture: TestQuestFixture): Promise<void>;
   getQuestField(): TestQuestField | null;

@@ -3,14 +3,12 @@ import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature'
 import { QuestRunFeature } from '@features/world/quest-run.feature';
 import { RenderHealthFeature } from '@features/world/render-health.feature';
 
-const STEPS = 10;
-
 async function reachTheOpenedChest() {
   await new OpenCampingMapFeature().open();
   const quest = new QuestRunFeature();
   await quest.openBoard();
-  await quest.startFirstTrail();
-  await quest.walkOnTrail(STEPS);
+  const offer = await quest.startFirstTrail();
+  await quest.walkOnTrail(offer.goal.target);
   await quest.openChest();
   await quest.verifyHeroOnTheEmptiedChest();
   return quest;
@@ -33,8 +31,8 @@ test.describe('Treasure Seeker chest loot', { tag: ['@hero'] }, () => {
       await test.step(`Complete run ${run} of 3`, async () => {
         await quest.setWill(50);
         await quest.emptyTheBag();
-        await quest.startFirstTrail();
-        await quest.walkOnTrail(STEPS);
+        const offer = await quest.startFirstTrail();
+        await quest.walkOnTrail(offer.goal.target);
         await quest.openChest();
         await quest.verifyHeroOnTheEmptiedChest();
         await quest.takeEveryStack();
@@ -42,7 +40,7 @@ test.describe('Treasure Seeker chest loot', { tag: ['@hero'] }, () => {
         await quest.dismissResult();
         await quest.verifyFieldGone();
         await quest.board.verifyDoneCount('seeker-1', run);
-        await quest.board.verifyWill(20);
+        await quest.board.verifyWill(50 - 20 - offer.goal.target);
         await quest.verifyNextCardOpen('seeker-2');
       });
     }
@@ -82,8 +80,8 @@ test.describe('Treasure Seeker chest loot', { tag: ['@hero'] }, () => {
     await render.recordTheIdleWorldBoard();
     const quest = new QuestRunFeature();
     await quest.openBoard();
-    await quest.startFirstTrail();
-    await quest.walkOnTrail(STEPS);
+    const offer = await quest.startFirstTrail();
+    await quest.walkOnTrail(offer.goal.target);
     await quest.openTheChestAndReturnWhileTheLootFlies();
     await quest.dismissResult();
     await quest.verifyFieldGone();

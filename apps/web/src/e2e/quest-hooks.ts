@@ -3,10 +3,16 @@ import { knowledgePanelMode } from '@/composables/use-knowledge-panel';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { applyProgress, settleInventorySync } from '@/services/inventory/inventory-sync';
 import type { ProjectedAggregate } from '@/services/player/player-socket';
-import { questProjection } from '@/services/quests/quest-projection';
+import { questBoardProjection, questProjection } from '@/services/quests/quest-projection';
 import { questRun } from '@/services/quests/quest-run-projection';
 import { buildQuestField } from '@/services/quests/quest-field-model';
-import type { TestQuestField, TestQuestFixture, TestQuests } from './test-api.types';
+import { useHeroStore } from '@/stores/hero-store';
+import type {
+  TestHexCoordinates,
+  TestQuestField,
+  TestQuestFixture,
+  TestQuests,
+} from './test-api.types';
 
 export interface QuestHexPoint {
   x: number;
@@ -40,6 +46,15 @@ export const questTestApi = {
   getQuests(): TestQuests {
     const log = questProjection.value;
     return { active: log.active.map((entry) => ({ ...entry })), done: { ...log.done } };
+  },
+  getQuestBoard: () => questBoardProjection.value,
+  async followQuestApproach(route: TestHexCoordinates[]): Promise<void> {
+    if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;
+    const hero = useHeroStore();
+    for (const hex of route) {
+      if (!(await hero.moveHeroTo(hex)))
+        throw new Error(`Quest approach stopped before ${JSON.stringify(hex)}`);
+    }
   },
   getOpenQuestBoard(): boolean {
     return knowledgePanelMode.value === 'quests';

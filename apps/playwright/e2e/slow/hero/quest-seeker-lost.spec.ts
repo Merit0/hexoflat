@@ -2,14 +2,12 @@ import { test } from '@fixtures';
 import { OpenCampingMapFeature } from '@features/world/open-camping-map.feature';
 import { QuestRunFeature } from '@features/world/quest-run.feature';
 
-const STEPS = 10;
-
 async function reachTheLostTreasure() {
   await new OpenCampingMapFeature().open();
   const quest = new QuestRunFeature();
   await quest.openBoard();
-  await quest.startFirstTrail();
-  await quest.walkOnTrail(STEPS - 2);
+  const offer = await quest.startFirstTrail();
+  await quest.walkOnTrail(offer.goal.target - 2);
   await quest.stepOffTrail();
   await quest.followAFalseTrailUntilTheTreasureIsLost();
   await quest.verifyTheTreasureIsLost();

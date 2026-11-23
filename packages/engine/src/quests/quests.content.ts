@@ -96,6 +96,27 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
     turnIn: 'board',
     tableRule: 'quest.bone-hunter.table',
   },
+  {
+    id: 'camp-lectern',
+    dimension: EDimension.EARTH,
+    locations: ['camping'],
+    nameKey: 'quest.camp-lectern.name',
+    descKey: 'quest.camp-lectern.desc',
+    repeat: 'repeatable',
+    requires: [{ kind: 'questDone', questId: 'scholar' }],
+    accept: { kind: 'free' },
+    objective: {
+      kind: 'count',
+      event: 'HALL_ANSWERED',
+      where: { correct: true },
+      target: 4,
+      unitKey: 'quest.unit.answers',
+    },
+    rewards: [{ kind: 'item', itemKey: HEXOBJECT_KEYS.COINS, amount: 6 }],
+    turnIn: 'board',
+    maxSellValue: 10,
+    tableRule: 'quest.camp-lectern.table',
+  },
 ];
 
 export function catalogueOf(quests: readonly QuestDefinition[]): QuestCatalogue {

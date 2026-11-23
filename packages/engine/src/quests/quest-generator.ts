@@ -101,6 +101,7 @@ function candidatesFor(
 function chooseCandidate(
   pool: Candidate[],
   usedCategories: ReadonlyMap<string, number>,
+  representedTemplates: ReadonlySet<string>,
   recentGoals: ReadonlySet<string>,
   random: (label: string) => RandomNumberGenerator,
 ): Candidate {
@@ -108,8 +109,12 @@ function chooseCandidate(
     usedCategories.get(candidate.profile.category) ?? 0;
   const minimum = Math.min(...pool.map(categoryCount));
   const diverse = pool.filter((candidate) => categoryCount(candidate) === minimum);
-  const fresh = diverse.filter(({ definition }) => !recentGoals.has(goalKey(definition)));
-  const eligible = fresh.length ? fresh : diverse;
+  const unrepresented = diverse.filter(
+    ({ definition }) => !representedTemplates.has(definition.id),
+  );
+  const preferred = unrepresented.length ? unrepresented : diverse;
+  const fresh = preferred.filter(({ definition }) => !recentGoals.has(goalKey(definition)));
+  const eligible = fresh.length ? fresh : preferred;
   const templateIds = [...new Set(eligible.map(({ profile }) => profile.templateId))];
   const templateId = pickRandom(templateIds, random('template'));
   return pickRandom(
@@ -172,6 +177,7 @@ export function generateQuestOffers(
     (id) => questDefinitionFor(input.log, id, catalogue) ?? [],
   );
   const recentGoals = new Set(input.recentOffers?.map(({ definition }) => goalKey(definition)));
+  const representedTemplates = new Set(occupied.map(({ id }) => id));
   const usedCategories = new Map<string, number>();
   const categoryByTemplate = new Map(
     profiles.map(({ templateId, category }) => [templateId, category]),
@@ -188,9 +194,16 @@ export function generateQuestOffers(
     const serial = input.issuedToday + offers.length + 1;
     const label = JSON.stringify([input.heroId, input.dayId, serial, QUEST_GENERATOR_VERSION]);
     const random = (part: string) => deriveStream(input.rngSeed, `${label}:${part}`);
-    const selected = chooseCandidate(pool, usedCategories, recentGoals, random);
+    const selected = chooseCandidate(
+      pool,
+      usedCategories,
+      representedTemplates,
+      recentGoals,
+      random,
+    );
     offers.push(materialize(input, serial, label, selected));
     const { definition, profile } = selected;
+    representedTemplates.add(definition.id);
     usedCategories.set(profile.category, (usedCategories.get(profile.category) ?? 0) + 1);
     pool = pool.filter((candidate) =>
       definition.repeat === 'once'

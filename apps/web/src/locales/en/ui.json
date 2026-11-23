@@ -943,6 +943,12 @@
         "goal": "Defeat {target} skeletons in battles you win in the cave.",
         "how": "Descend into the cave.\nWin battles against {target} skeletons.\nClaim your reward at the board."
       },
+      "camp-lectern": {
+        "names": { "fireside-review": "Fireside Review", "scribe-notes": "The Scribe’s Notes" },
+        "desc": "The camp scribe left a few questions beside the fire.",
+        "goal": "Give {target, plural, one {# correct answer} other {# correct answers}} in the Book of Will.",
+        "how": "Open the Book of Will in camp.\nGive {target, plural, one {# correct answer} other {# correct answers}}.\nClaim your reward at the board."
+      },
       "seeker-1": {
         "names": { "mist-trail": "Trail in the Mist", "first-trail": "First Trail" },
         "desc": "Old numbers lead to a hidden chest.",
@@ -989,6 +995,13 @@
       "table": "Defeat 3 skeletons in battles, get a wooden shield.",
       "how": "Take a sword in your hand.\nAttack skeleton squads in the crypt.\nWin battles until 3 skeletons fall.\nWalk back to the quest board and press Claim.",
       "rule": "Costs {entry} Will to take. Only skeletons you defeat in a battle you win count; a lost battle adds nothing."
+    },
+    "camp-lectern": {
+      "name": "The Camp Lectern",
+      "desc": "The camp scribe left a few questions beside the fire.",
+      "table": "Give 4 correct answers in the Book of Will for 6 coins.",
+      "how": "Open the Book of Will in camp.\nGive 4 correct answers.\nClaim your reward at the board.",
+      "rule": "Free to take. Only correct answers in the Book of Will count."
     },
     "unit": {
       "trees": "trees",

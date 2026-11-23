@@ -53,13 +53,16 @@ export class QuestFieldComponent extends BaseComponent {
   async fogAround(hexes: QuestHex[]): Promise<number[]> {
     return this.page.evaluate((targets) => {
       const api = window.__HEXOFLAT_TEST__!;
-      const fog = new Set(
-        (api.getQuestField()?.fog ?? []).map((hex) => `${hex.columnIndex},${hex.rowIndex}`),
-      );
+      const field = api.getQuestField();
+      const key = (hex: { columnIndex: number; rowIndex: number }) =>
+        `${hex.columnIndex},${hex.rowIndex}`;
+      const blocked = new Set([
+        ...(field?.terrain ?? []).map(({ hex }) => key(hex)),
+        ...(field?.border ?? []).map(({ hex }) => key(hex)),
+      ]);
+      const open = new Set((field?.fog ?? []).map(key).filter((hex) => !blocked.has(hex)));
       return targets.map(
-        (target) =>
-          api.getNeighbors(target).filter((hex) => fog.has(`${hex.columnIndex},${hex.rowIndex}`))
-            .length,
+        (target) => api.getNeighbors(target).filter((hex) => open.has(key(hex))).length,
       );
     }, hexes);
   }

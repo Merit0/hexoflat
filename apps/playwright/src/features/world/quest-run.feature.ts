@@ -4,10 +4,12 @@ import { CampingMapPage } from '@pages/camping-map.page';
 import { QuestBoardFeature } from '@features/world/quest-board.feature';
 import { QuestWorldEntryFeature } from './quest-world-entry.feature';
 import type { QuestFieldHex, QuestFieldSnapshot } from '@components/quest-field.component';
+import type { TestQuestOffer } from '@web-test-api';
 
 export class QuestRunFeature extends BaseFeature {
   private readonly campingMap = new CampingMapPage();
   readonly board = new QuestBoardFeature();
+  private offerId: string | null = null;
 
   private get field() {
     return this.campingMap.questField;
@@ -21,13 +23,15 @@ export class QuestRunFeature extends BaseFeature {
     await this.board.open();
   }
 
-  async startFirstTrail(): Promise<void> {
-    await this.step('Start the First Trail', async () => {
+  async startFirstTrail(): Promise<TestQuestOffer> {
+    return this.step('Start the issued first-level trail', async () => {
       const entrance = new QuestWorldEntryFeature();
-      await entrance.accept();
-      await entrance.enterFromSilesia(true);
+      const offer = await entrance.accept();
+      await entrance.enterFromSilesia({ preserveQuestWill: true, approachWithPointer: false });
       await this.field.waitForReady();
       await this.panel.verifyRunCard();
+      this.offerId = offer.id;
+      return offer;
     });
   }
 
@@ -124,7 +128,7 @@ export class QuestRunFeature extends BaseFeature {
   async verifyQuestResolved(outcome: 'treasure' | 'lost'): Promise<void> {
     await this.step('Verify the last step resolves the quest before leaving its map', async () => {
       const log = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getQuests());
-      expect(log.active.some((entry) => entry.questId === 'seeker-1')).toBe(false);
+      expect(log.active.some((entry) => entry.questId === this.offerId)).toBe(false);
       expect(log.done['seeker-1'] ?? 0).toBe(outcome === 'treasure' ? 1 : 0);
       await this.field.waitForReady();
     });
@@ -308,10 +312,11 @@ export class QuestRunFeature extends BaseFeature {
     });
   }
 
-  async verifyNextCardOpen(questId: string): Promise<void> {
-    await this.step(`Verify the card ${questId} is open on the board`, () =>
-      this.board.verifyCardState(questId, 'open'),
-    );
+  async verifyNextCardOpen(templateId: string): Promise<void> {
+    await this.step(`Verify a new "${templateId}" offer is open on the board`, async () => {
+      const offer = await this.board.offer(templateId);
+      await this.board.verifyCardState(offer.id, 'open');
+    });
   }
 
   private async countBag(): Promise<number> {

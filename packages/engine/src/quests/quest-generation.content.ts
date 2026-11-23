@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { weightedLootEntrySchema, type WeightedLootEntry } from '../loot/loot-table';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 
-export const QUEST_GENERATOR_VERSION = 1;
+export const QUEST_GENERATOR_VERSION = 2;
 
 const positiveInteger = z.number().int().positive();
 const contentId = z.string().regex(/^[a-z][a-z0-9-]*$/);
@@ -90,6 +90,14 @@ export const QUEST_GENERATION_PROFILES: readonly QuestGenerationProfile[] = [
           entries: [{ itemKey: HEXOBJECT_KEYS.SHIELD, amount: [1, 1], weight: 1 }],
         },
       },
+    ],
+  },
+  {
+    templateId: 'camp-lectern',
+    category: 'learn',
+    variants: [
+      { id: 'fireside-review', target: 4, reward: { maxSellValue: 6, entries: [coins(5, 6)] } },
+      { id: 'scribe-notes', target: 6, reward: { maxSellValue: 10, entries: [coins(8, 10)] } },
     ],
   },
   {

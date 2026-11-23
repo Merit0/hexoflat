@@ -17,29 +17,30 @@ test.describe('Treasure Seeker', { tag: ['@hero'] }, () => {
 
   test('Verify the First Trail rule states its four prices and no total', async () => {
     const quest = await openBoard();
+    const offer = await quest.board.offer('seeker-1');
 
-    await quest.board.verifyRule('seeker-1', [
+    await quest.board.verifyRule(offer.id, [
       'Entry costs 20 Will',
       'Every step costs 1 Will',
       'step back costs 3',
-      '10 steps long',
+      `${offer.goal.target} steps long`,
     ]);
-    await quest.board.verifyCardTextAbsent('seeker-1', /total|усього|разом/i);
+    await quest.board.verifyCardTextAbsent(offer.id, /total|усього|разом/i);
   });
 
   test('Verify the second trail is not on the board until the first is done', async () => {
     const quest = await openBoard();
 
-    await quest.board.verifyCardNotOnBoard('seeker-2');
-    await quest.board.verifyNoStartButton('seeker-2');
+    await quest.board.verifyTemplateAbsent('seeker-2');
   });
 
   test('Verify START is refused with a reason when the Will is below the entry price', async () => {
     const quest = await openBoard();
+    const offer = await quest.board.offer('seeker-1');
 
     await quest.setWill(SHORT_OF_ENTRY);
 
-    await quest.board.verifyStartDisabled('seeker-1', true);
-    await quest.board.verifyShortOfWillReason('seeker-1', true);
+    await quest.board.verifyStartDisabled(offer.id, true);
+    await quest.board.verifyShortOfWillReason(offer.id, true);
   });
 });

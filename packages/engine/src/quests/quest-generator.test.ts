@@ -129,6 +129,60 @@ describe('generated quest offers', () => {
     expect(northOnly.length).toBeGreaterThan(0);
     for (const offer of northOnly) expect(offer.definition.locations).toEqual(['silesia-north']);
   });
+
+  it('fills a category with distinct templates before repeating one', () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const offers = generateQuestOffers({
+        ...input,
+        rngSeed: `pilot:${seed}`,
+        log: { active: [], done: { scholar: 1, 'seeker-1': 1 } },
+      });
+      expect(offers.map(({ templateId }) => templateId)).toEqual(
+        expect.arrayContaining([
+          'woodcutter',
+          'stonebreaker',
+          'scholar',
+          'camp-lectern',
+          'seeker-1',
+          'seeker-2',
+        ]),
+      );
+    }
+  });
+});
+
+describe('the camp lectern pilot', () => {
+  it('unlocks the shipped pilot after Scholar and counts correct answers through the existing objective', () => {
+    expect(generateQuestOffers(input).some(({ templateId }) => templateId === 'camp-lectern')).toBe(
+      false,
+    );
+    const log = { active: [], done: { scholar: 1 } };
+    const offer = generateQuestOffers({ ...input, log }).find(
+      ({ templateId }) => templateId === 'camp-lectern',
+    )!;
+    const target = describeQuest(offer.definition).target;
+    const progress = {
+      ...emptyProgressState(input.heroId),
+      quests: {
+        ...log,
+        active: [{ questId: offer.id, state: 'active' as const, progress: 0 }],
+        offers: [offer],
+      },
+    };
+    const correct = event('HALL_ANSWERED', { correct: true });
+    const incorrect = event('HALL_ANSWERED', { correct: false });
+    const events = Array.from({ length: target }, () => correct);
+    expect(applyQuestEvents(progress, [incorrect], ALL_QUESTS, undefined, 'camping').progress).toBe(
+      progress,
+    );
+    expect(applyQuestEvents(progress, events, ALL_QUESTS, undefined, 'silesia').progress).toBe(
+      progress,
+    );
+    expect(
+      applyQuestEvents(progress, [incorrect, ...events], ALL_QUESTS, undefined, 'camping').progress
+        .quests.active,
+    ).toEqual([{ questId: offer.id, progress: target, state: 'ready' }]);
+  });
 });
 
 describe('generated quest rewards', () => {

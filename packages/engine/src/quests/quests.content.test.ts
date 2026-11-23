@@ -5,12 +5,13 @@ import { counting } from './quest-test-setup';
 import { validateContent } from '../content/validate-content';
 
 describe('board quest content', () => {
-  it('has the four plan quests, valid and unique', () => {
+  it('includes the original board quests and the pilot, all valid and unique', () => {
     expect(BOARD_QUESTS.map((quest) => quest.id)).toEqual([
       'woodcutter',
       'stonebreaker',
       'scholar',
       'bone-hunter',
+      'camp-lectern',
     ]);
     expect(questContentFailures()).toEqual([]);
   });
@@ -18,7 +19,7 @@ describe('board quest content', () => {
   it('REQ-QB-012: no repeatable reward sells for more than its limit', () => {
     expect(
       BOARD_QUESTS.filter((quest) => quest.repeat === 'repeatable').map(questSellValue),
-    ).toEqual([120, 30, 20]);
+    ).toEqual([120, 30, 20, 6]);
     const factory = counting('axe-farm', 'X', 1, {
       rewards: [{ kind: 'item', itemKey: HEXOBJECT_KEYS.SWORD, amount: 1 }],
       maxSellValue: 100,
