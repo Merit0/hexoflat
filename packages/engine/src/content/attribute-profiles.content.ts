@@ -14,7 +14,7 @@ interface ProfileRow {
 }
 
 const ROWS: Readonly<Record<string, ProfileRow>> = {
-  crit: {
+  'crit-chance': {
     weight: { weapon: 45 },
     tiers: [
       [2, 2],

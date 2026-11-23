@@ -34,7 +34,20 @@ export const equipmentAttributeDefinitionSchema = z
       .min(1)
       .refine(distinctValues, 'a type is listed twice')
       .optional(),
-    requires: z.strictObject({ tool: z.literal(true) }).optional(),
+    requires: z
+      .strictObject({
+        tool: z.literal(true).optional(),
+        attributes: z
+          .array(attributeKeySchema)
+          .min(1)
+          .refine(distinctValues, 'a required attribute is listed twice')
+          .optional(),
+      })
+      .refine(
+        (requires) => requires.tool !== undefined || requires.attributes !== undefined,
+        'requires needs a tool or attributes',
+      )
+      .optional(),
     excludes: z.strictObject({ tool: z.literal(true) }).optional(),
     stat: heroStatSchema.nullable(),
     aggregate: z.enum(STAT_AGGREGATES),
@@ -45,6 +58,13 @@ export const equipmentAttributeDefinitionSchema = z
     deprecated: z.boolean().optional(),
   })
   .superRefine((attribute, ctx) => {
+    if (attribute.requires?.attributes?.includes(attribute.key)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['requires', 'attributes'],
+        message: 'an attribute cannot require itself',
+      });
+    }
     if (attribute.requires?.tool && attribute.excludes?.tool) {
       ctx.addIssue({
         code: 'custom',

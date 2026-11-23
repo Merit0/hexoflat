@@ -4,7 +4,7 @@ import { ADJECTIVE_BANDS } from '../tokens/equipment/equipment-keys';
 import { adjectivesFor, baseAllowlistFailures } from '../tokens/equipment/equipment-content-rules';
 import { hasGeneratedName, tokenPriceRangesSchema } from '../tokens/token-content-schema';
 import { wordKeyOf } from '../tokens/token-keys';
-import { attributeFailure } from '../tokens/attribute-rules';
+import { attributeFailure, dependencyFailure } from '../tokens/attribute-rules';
 import type { UniqueTokenDefinition } from '../tokens/unique-schema';
 import { coinPriceOf } from './content-accessors';
 import { TOKEN_UNIQUES } from './token-uniques.content';
@@ -61,6 +61,8 @@ export function uniqueContentFailures(
       const failure = attributeFailure(registries.attributes, type, attribute, UNIQUE_CHECK, 1);
       if (failure) failures.push(`unique ${unique.key}: ${failure}`);
     }
+    const missing = dependencyFailure(registries.attributes, unique.attributes);
+    if (missing) failures.push(`unique ${unique.key}: ${missing}`);
   }
   return failures;
 }

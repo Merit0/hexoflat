@@ -42,7 +42,7 @@ const STAT_BY_KEY = {
   shield: 'blockSides',
   will: 'maxWill',
   fog: 'fogRadius',
-  crit: 'critPoints',
+  'crit-chance': 'critPoints',
   'crit-dmg': 'critDamage',
   trophy: 'graveLootBonus',
   yield: 'harvestBonus',
@@ -53,7 +53,6 @@ const STAT_BY_KEY = {
   'smart-step': 'stepFreeEvery',
   'deft-hands': 'useWillDiscount',
   trade: 'shopBuyDiscountPct',
-  focus: 'answerWillReward',
   wisdom: 'answerWillReward',
   force: 'strikeForce',
   mass: 'pushMass',
@@ -103,14 +102,13 @@ describe('EA1 EA-16a: attribute registry', () => {
       'shield',
       'will',
       'fog',
-      'crit',
+      'crit-chance',
       'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',
       'smart-step',
       'deft-hands',
-      'focus',
       'wisdom',
     ]);
   });
@@ -212,7 +210,7 @@ describe('EA1 attribute profiles', () => {
     [
       'min above max',
       (profiles) => {
-        profiles['tier-3'].attributes.crit.min = 11;
+        profiles['tier-3'].attributes['crit-chance'].min = 11;
       },
       /min is above max/,
     ],
@@ -226,9 +224,9 @@ describe('EA1 attribute profiles', () => {
     [
       'a weight for a foreign group',
       (profiles) => {
-        profiles['tier-1'].attributes.crit.weight = { weapon: 45, jewelry: 5 };
+        profiles['tier-1'].attributes['crit-chance'].weight = { weapon: 45, jewelry: 5 };
       },
-      /crit has a weight for group jewelry/,
+      /crit-chance has a weight for group jewelry/,
     ],
     [
       'an absorb max above its cap',
@@ -342,15 +340,6 @@ describe('EA1 EA-6a: adjectives', () => {
 });
 
 describe('Wisdom definition', () => {
-  it.each(['en', 'uk'])('shows the Wisdom name and hint for both keys in %s', (lang) => {
-    const root = 'content.tokens';
-    expect(localeText(lang, `${root}.attrLabel.focus`)).toBe(
-      localeText(lang, `${root}.attrLabel.wisdom`),
-    );
-    expect(localeText(lang, `${root}.attrHint.focus`)).toBe(
-      localeText(lang, `${root}.attrHint.wisdom`),
-    );
-  });
   it('defines Wisdom as a Will reward capped at five, with its reader enabled', () => {
     expect(EQUIPMENT_ATTRIBUTES.find((attribute) => attribute.key === 'wisdom')).toMatchObject({
       stat: 'answerWillReward',

@@ -10,7 +10,7 @@ function context(chance = 10, multiplier = 0): StrikeContext {
   const attacker = hero({ q: 0, r: 0 });
   attacker.hands.right!.token = sampleToken({
     attributes: [
-      { key: 'crit', value: chance },
+      { key: 'crit-chance', value: chance },
       ...(multiplier ? [{ key: 'crit-dmg', value: multiplier }] : []),
     ],
   });

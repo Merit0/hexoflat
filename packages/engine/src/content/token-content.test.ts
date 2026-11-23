@@ -147,14 +147,13 @@ describe('implemented token attributes', () => {
       'shield',
       'will',
       'fog',
-      'crit',
+      'crit-chance',
       'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',
       'smart-step',
       'deft-hands',
-      'focus',
       'wisdom',
     ]);
     expect(

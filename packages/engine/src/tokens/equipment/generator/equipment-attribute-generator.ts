@@ -54,12 +54,17 @@ export class EquipmentAttributeGenerator implements IAttributeGenerator {
     const remaining = [...pool];
     const picked: TokenAttribute[] = [];
     for (let index = 0; index < count; index += 1) {
+      const keys = new Set(picked.map((attribute) => attribute.key));
+      const open = remaining.filter((entry) =>
+        (entry.requires ?? []).every((key) => keys.has(key)),
+      );
       const chosen = this.parts.picker.pick(
-        remaining.map((entry) => entry.weight),
+        open.map((entry) => entry.weight),
         ctx.rng(ATTRIBUTE_STREAM_LABELS.pick(ctx.tokenId, index)),
       );
       if (chosen === null) break;
-      const [entry] = remaining.splice(chosen, 1);
+      const entry = open[chosen];
+      remaining.splice(remaining.indexOf(entry), 1);
       const value = this.parts.values.roll(
         entry,
         ctx.rng(ATTRIBUTE_STREAM_LABELS.value(ctx.tokenId, entry.key)),

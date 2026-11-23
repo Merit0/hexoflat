@@ -35,7 +35,7 @@ describe('decided attribute ranges [min, max, step] per source tier', () => {
         [1, 1, 1],
         [1, 2, 1],
       ],
-      crit: [
+      'crit-chance': [
         [2, 2, 1],
         [2, 4, 1],
         [2, 6, 1],

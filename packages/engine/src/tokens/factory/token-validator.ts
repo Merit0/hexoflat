@@ -6,7 +6,7 @@ import {
   type ITokenValidator,
   type TokenResult,
 } from './token-generation';
-import { attributeFailure } from '../attribute-rules';
+import { attributeFailure, dependencyFailure } from '../attribute-rules';
 import type { AttributeProfiles } from '../equipment/attribute-profile-schema';
 import type { AttributeRegistry, TypeRegistry } from '../registries';
 import { mapTierSchema } from '../token-keys';
@@ -43,6 +43,8 @@ export class ZodTokenValidator implements ITokenValidator {
       );
       if (failure) return refuseToken('INVALID_TOKEN', failure);
     }
+    const missing = dependencyFailure(this.attributes, sheet.attributes);
+    if (missing) return refuseToken('INVALID_TOKEN', missing);
     const sides =
       (sheet.type.block?.sides ?? 0) +
       sheet.attributes

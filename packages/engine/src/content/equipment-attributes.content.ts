@@ -98,7 +98,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     icon: 'weight',
     format: 'plus',
   }),
-  attribute('crit', {
+  attribute('crit-chance', {
     groups: ['weapon'],
     excludes: { tool: true },
     stat: 'critPoints',
@@ -111,6 +111,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   attribute('crit-dmg', {
     groups: ['weapon'],
     excludes: { tool: true },
+    requires: { attributes: ['crit-chance'] },
     stat: 'critDamage',
     aggregate: 'max',
     scope: 'item',
@@ -204,17 +205,6 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     cap: 10,
     icon: 'coins',
     format: 'pct',
-  }),
-  attribute('focus', {
-    groups: ['jewelry'],
-    onlyTypes: ['amulet'],
-    stat: 'answerWillReward',
-    ...HERO_SUM,
-    cap: 5,
-    deprecated: true,
-    icon: 'book',
-    format: 'plus',
-    implemented: true,
   }),
   attribute('wisdom', {
     groups: ['jewelry'],

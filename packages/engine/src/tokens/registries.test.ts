@@ -33,7 +33,7 @@ describe('TypeRegistry', () => {
 describe('AttributeRegistry', () => {
   const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
 
-  it('holds the equipment attributes with heart, will, fog, trophy, yield, smart-step, deft-hands and wisdom (with legacy focus) implemented', () => {
+  it('holds the equipment attributes with heart, will, fog, trophy, yield, smart-step, deft-hands, wisdom and crit-chance implemented', () => {
     expect(registry.all()).toHaveLength(EQUIPMENT_ATTRIBUTES.length);
     expect(
       registry
@@ -45,14 +45,13 @@ describe('AttributeRegistry', () => {
       'shield',
       'will',
       'fog',
-      'crit',
+      'crit-chance',
       'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',
       'smart-step',
       'deft-hands',
-      'focus',
       'wisdom',
     ]);
   });

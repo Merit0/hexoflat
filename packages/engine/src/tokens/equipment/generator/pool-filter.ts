@@ -37,7 +37,15 @@ export class RegistryAttributePoolFilter implements IAttributePoolFilter {
       const definition = this.attributes.get(key);
       const weight = entry.weight[request.group];
       if (!definition || weight === undefined || !generatable(definition, request)) continue;
-      pool.push({ key, weight, min: entry.min, max: entry.max, step: entry.step });
+      const requires = definition.requires?.attributes;
+      pool.push({
+        key,
+        weight,
+        min: entry.min,
+        max: entry.max,
+        step: entry.step,
+        ...(requires ? { requires } : {}),
+      });
     }
     return pool.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   }

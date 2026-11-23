@@ -94,12 +94,14 @@ describe('EA-3: pool rules', () => {
     }
   });
 
-  it('crit-dmg appears without crit on the same item', () => {
-    const lone = rolls.filter(
-      ({ attributes }) =>
-        attributes.some((a) => a.key === 'crit-dmg') && !attributes.some((a) => a.key === 'crit'),
+  it('crit-dmg appears only together with crit-chance', () => {
+    const withDamage = rolls.filter(({ attributes }) =>
+      attributes.some((a) => a.key === 'crit-dmg'),
     );
-    expect(lone.length).toBeGreaterThan(0);
+    expect(withDamage.length).toBeGreaterThan(0);
+    for (const { attributes } of withDamage) {
+      expect(attributes.map((a) => a.key)).toContain('crit-chance');
+    }
   });
 });
 
@@ -203,7 +205,7 @@ describe('real content', () => {
         for (const seed of seeds(100)) {
           for (const { key } of rollFor(real, type, tier, seed))
             expect([
-              'crit',
+              'crit-chance',
               'crit-dmg',
               'heart',
               'shield',

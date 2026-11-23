@@ -77,7 +77,7 @@ describe('separate concrete dimensional catalogues', () => {
     const restricted = createTokenFactory({
       ...TOKEN_CONTENT,
       baseItems: TOKEN_CONTENT.baseItems.map((item) =>
-        item.key === 'heaven-sword' ? { ...item, attributes: ['crit'] } : item,
+        item.key === 'heaven-sword' ? { ...item, attributes: ['crit-chance'] } : item,
       ),
     });
     const rolled = Array.from({ length: 50 }, (_, n) => {
@@ -85,7 +85,7 @@ describe('separate concrete dimensional catalogues', () => {
       if (!made.ok) throw new Error(made.refusal.code);
       return made.value.attributes.map((entry) => entry.key);
     });
-    expect(rolled.flat().every((key) => key === 'crit')).toBe(true);
+    expect(rolled.flat().every((key) => key === 'crit-chance')).toBe(true);
     expect(rolled.flat().length).toBeGreaterThan(0);
     expect(
       restricted.createBase(

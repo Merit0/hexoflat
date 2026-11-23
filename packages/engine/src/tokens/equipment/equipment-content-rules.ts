@@ -203,9 +203,90 @@ export function baseAllowlistFailures(
       const failure = allowlistKeyFailure(base, key, type, known.get(key));
       return failure ? [failure] : [];
     });
+    for (const key of base.attributes) {
+      const missing = (known.get(key)?.requires?.attributes ?? []).filter(
+        (required) => !base.attributes!.includes(required),
+      );
+      if (missing.length > 0) {
+        failures.push(`base item ${base.key} allows ${key} without ${missing.join(', ')}`);
+      }
+    }
     if (!base.attributes.some((key) => rolledSomewhere(profiles, key, type.group))) {
       failures.push(`base item ${base.key} allows no attribute that a tier rolls on ${type.key}`);
     }
     return failures;
+  });
+}
+
+function eligibleAt(
+  attribute: EquipmentAttributeDefinition,
+  type: RuleType,
+  profiles: AttributeProfiles,
+  tier: (typeof ATTRIBUTE_PROFILE_TIERS)[number],
+): boolean {
+  return (
+    type.group !== undefined &&
+    attributeGeneratable(attribute, type) &&
+    profiles[tier].attributes[attribute.key]?.weight[type.group] !== undefined
+  );
+}
+
+function cycleFrom(
+  key: string,
+  known: ReadonlyMap<string, EquipmentAttributeDefinition>,
+  path: readonly string[] = [],
+): string[] | null {
+  if (path.includes(key)) return [...path, key];
+  for (const required of known.get(key)?.requires?.attributes ?? []) {
+    const cycle = cycleFrom(required, known, [...path, key]);
+    if (cycle) return cycle;
+  }
+  return null;
+}
+
+function reachFailures(
+  attribute: EquipmentAttributeDefinition,
+  required: EquipmentAttributeDefinition,
+  profiles: AttributeProfiles,
+  types: readonly RuleType[],
+): string[] {
+  return ATTRIBUTE_PROFILE_TIERS.flatMap((tier) =>
+    types
+      .filter((type) => eligibleAt(attribute, type, profiles, tier))
+      .filter((type) => !eligibleAt(required, type, profiles, tier))
+      .map(
+        (type) =>
+          `${tier}: attribute ${attribute.key} rolls on ${type.key} only after ${required.key}, which cannot roll there`,
+      ),
+  );
+}
+
+export function dependencyFailures(
+  profiles: AttributeProfiles,
+  attributes: readonly EquipmentAttributeDefinition[],
+  types: readonly RuleType[],
+): string[] {
+  const known = byKey(attributes);
+  return attributes.flatMap((attribute) => {
+    const requires = attribute.requires?.attributes ?? [];
+    if (requires.length === 0) return [];
+    const unknown = requires.filter((key) => !known.has(key));
+    if (unknown.length > 0) {
+      return [`attribute ${attribute.key} requires unknown ${unknown.join(', ')}`];
+    }
+    const cycle = cycleFrom(attribute.key, known);
+    if (cycle) return [`attribute ${attribute.key} has a requirement cycle: ${cycle.join(' -> ')}`];
+    const room = ATTRIBUTE_PROFILE_TIERS.filter(
+      (tier) =>
+        profiles[tier].attributes[attribute.key] !== undefined &&
+        requires.length + 1 > profiles[tier].maxCount,
+    ).map(
+      (tier) =>
+        `${tier}: attribute ${attribute.key} needs ${requires.length + 1} attributes, maxCount is ${profiles[tier].maxCount}`,
+    );
+    return [
+      ...room,
+      ...requires.flatMap((key) => reachFailures(attribute, known.get(key)!, profiles, types)),
+    ];
   });
 }

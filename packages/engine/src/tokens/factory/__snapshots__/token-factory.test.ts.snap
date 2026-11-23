@@ -57,8 +57,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "crit-dmg",
-        "value": 3,
+        "key": "trophy",
+        "value": 1,
       },
     ],
     "baseKey": "heaven-sword",
@@ -551,7 +551,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "crit",
+        "key": "crit-chance",
         "value": 3,
       },
     ],

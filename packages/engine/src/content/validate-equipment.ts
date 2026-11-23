@@ -8,6 +8,7 @@ import {
   adjectivesFor as adjectivesForRule,
   bandFailures,
   blockSidesFailures,
+  dependencyFailures,
   profileEntryFailures,
   statRuleFailures,
   unprofiledAttributeFailures,
@@ -133,6 +134,7 @@ function profileFailures(content: EquipmentContent): string[] {
     ...profileEntryFailures(parsed.data, content.attributes),
     ...unreachableWeightFailures(parsed.data, content.attributes, content.types),
     ...unprofiledAttributeFailures(parsed.data, content.attributes),
+    ...dependencyFailures(parsed.data, content.attributes, content.types),
     ...bandFailures(parsed.data, Math.min(ADJECTIVE_BANDS.length, PRICE_BANDS)),
   ];
 }

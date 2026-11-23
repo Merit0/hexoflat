@@ -4,9 +4,9 @@ import { EquipmentWisdomFeature } from '@features/world/equipment-wisdom.feature
 test.describe('equipment Wisdom', { tag: ['@hero'] }, () => {
   test.describe.configure({ timeout: 120_000 });
 
-  test('legacy focus tokens display Wisdom and retain their reward after reload', async () => {
+  test('Wisdom tokens display Wisdom and retain their reward after reload', async () => {
     const wisdom = new EquipmentWisdomFeature();
-    await wisdom.start(4, false, true);
+    await wisdom.start(4, false);
     await wisdom.verifyWisdomName();
     await wisdom.openHall();
     await wisdom.equipFromHall();

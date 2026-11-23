@@ -12,33 +12,27 @@ export class EquipmentWisdomFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
   private readonly shield = new ShieldMaxHealthFeature();
 
-  async start(bonus: number, equipped: boolean, legacyKey = false): Promise<void> {
+  async start(bonus: number, equipped: boolean): Promise<void> {
     await this.step(`Start with Wisdom +${bonus}, equipped: ${equipped}`, async () => {
       await new OpenCampingMapFeature().open();
-      await this.page.evaluate(
-        async ({ bonus, legacyKey }) => {
-          await window.__HEXOFLAT_TEST__!.grantLegacyWisdomToken(bonus, legacyKey);
-          window.__HEXOFLAT_TEST__!.setWill(10);
-          await window.__HEXOFLAT_TEST__!.settleInventorySync();
-        },
-        { bonus, legacyKey },
-      );
+      await this.page.evaluate(async (bonus) => {
+        await window.__HEXOFLAT_TEST__!.grantLegacyWisdomToken(bonus);
+        window.__HEXOFLAT_TEST__!.setWill(10);
+        await window.__HEXOFLAT_TEST__!.settleInventorySync();
+      }, bonus);
       if (equipped) await this.shield.equipShield();
     });
   }
 
   async verifyWisdomName(): Promise<void> {
-    await this.step(
-      'The item tooltip calls the attribute Wisdom, including old focus tokens',
-      async () => {
-        await new SwitchHeroBoardTabFeature().switchTo('inventory');
-        const id = await this.map.inventory.getItemIdByKey(HexobjectKeys.shield);
-        await this.map.inventory.hoverGridItem(id);
-        await this.map.inventory.verifyTooltipAttributeLabel(/Wisdom|Мудрість/);
-        await this.map.inventory.moveMouseAway();
-        await new SwitchHeroBoardTabFeature().switchTo('hero');
-      },
-    );
+    await this.step('The item tooltip calls the attribute Wisdom', async () => {
+      await new SwitchHeroBoardTabFeature().switchTo('inventory');
+      const id = await this.map.inventory.getItemIdByKey(HexobjectKeys.shield);
+      await this.map.inventory.hoverGridItem(id);
+      await this.map.inventory.verifyTooltipAttributeLabel(/Wisdom|Мудрість/);
+      await this.map.inventory.moveMouseAway();
+      await new SwitchHeroBoardTabFeature().switchTo('hero');
+    });
   }
 
   async openHall(): Promise<void> {

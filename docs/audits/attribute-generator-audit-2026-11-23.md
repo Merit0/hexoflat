@@ -316,3 +316,42 @@ Engine 2537 passed, 2 skipped; typecheck and lint passed.
 Tests: `equipment-content-rules.test.ts` AG3 block (marked attributes, schema refusal, content refusal, owned axe with
 `crit` read and shown, new override refused), `generator-parts.test.ts` axe pool. Engine 2541 passed, 2 skipped; API
 312 and web 4417 passed; typecheck, lint and engine build passed.
+
+### AG4 — done (2026-11-23)
+
+1. Schema: `requires` is `{ tool?: true, attributes?: string[] }` (at least one field, no self requirement).
+   Content: `crit-dmg` has `requires: { attributes: ['crit'] }`.
+2. Generator: before every pick it offers only pool entries whose requirements are already picked. The pick and
+   value streams are unchanged, so a token changes only when a dependent attribute was eligible too early.
+3. Validator: `dependencyFailure` (`attribute-rules.ts`) refuses a sheet where an attribute misses its requirement.
+   The factory validator and both unique checks call it.
+4. Content rules (`dependencyFailures`, base allowlists): unknown requirement, requirement cycle,
+   `requirements + 1 > maxCount`, a requirement that cannot roll on a type and tier where the dependent rolls, and a
+   base allowlist that holds a dependent without its requirement.
+5. Tests: the old "crit-dmg appears without crit" is now "crit-dmg appears only together with crit"; the conformance
+   suite checks requirements in every rolled token and refuses a dependent override without its requirement; the
+   AG4 block in `equipment-content-rules.test.ts` has one failing-content test per rule. Mutation check: a generator
+   that ignores requirements fails 4 tests. Golden tokens: one sword changed (`crit-dmg` alone became `trophy`).
+6. Probe, 20 000 swords per tier:
+
+   | tier | crit (before → after) | crit-dmg (before → after) | crit-dmg without crit |
+   | ---- | --------------------- | ------------------------- | --------------------- |
+   | 2    | ≈ 26% → 30.8%         | ≈ 12% → 1.5%              | 0                     |
+   | 3    | ≈ 35% → 40.4%         | ≈ 17% → 2.6%              | 0                     |
+   | 4    | ≈ 44% → 51.8%         | ≈ 22% → 4.4%              | 0                     |
+
+   The "before" values are computed from the weights. Every `crit-dmg` now works. `crit` is more common, because
+   `crit-dmg` no longer takes the first pick. **Decision for Oleh:** keep this, or raise the `crit-dmg` weight
+   (content only, `attribute-profiles.content.ts`).
+
+Engine 2549 passed, 2 skipped; API 312 and web 4417 passed; typecheck, lint and engine build passed.
+
+### Key rename `crit` → `crit-chance` (2026-11-23, done)
+
+Decision (Oleh): rename the key and the label. Delete all outdated code, with no read-time key translation.
+
+1. Content: `crit-chance` (en "Crit Chance", uk «Шанс криту»), same stat, values, cap, icon and `excludes.tool`. `crit-dmg` has `requires: { attributes: ['crit-chance'] }`.
+2. Deleted: the `crit` and `focus` definitions, their profile rows and their `attrLabel`/`attrHint` texts in en and uk; `wisdom-compatibility.test.ts`; the legacy `focus` path of the e2e hook `grantLegacyWisdomToken` and its spec.
+3. Effect on saves: a stored token that holds `crit` or `focus` keeps the line, but has no effect and shows no row.
+4. Golden tokens: one sword changed only the key `crit` → `crit-chance` (the value stream is named by key).
+5. Checks: engine 2545 passed, 2 skipped; API 312; web 4408; typecheck, lint, engine build; e2e `combat/equipment-crit.spec.ts` and `hero/equipment-wisdom.spec.ts` 9/9 passed.

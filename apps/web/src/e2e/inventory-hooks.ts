@@ -25,7 +25,7 @@ async function grantTokenItem(spec: TestTokenSpec): Promise<ItemToken> {
 }
 
 async function grantLegacyAttribute(
-  key: 'fog' | 'will' | 'deft-hands' | 'smart-step' | 'wisdom' | 'focus',
+  key: 'fog' | 'will' | 'deft-hands' | 'smart-step' | 'wisdom',
   bonus: number,
 ): Promise<ItemToken> {
   const token = await grantTokenItem({
@@ -45,10 +45,10 @@ async function grantLegacyAttribute(
 }
 
 export const inventoryTestApi = {
-  async grantLegacyWisdomToken(bonus: number, legacyKey = false): Promise<ItemToken> {
+  async grantLegacyWisdomToken(bonus: number): Promise<ItemToken> {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
     if (!Number.isInteger(bonus) || bonus < 1 || bonus > 5) throw new Error('Invalid Wisdom bonus');
-    return grantLegacyAttribute(legacyKey ? 'focus' : 'wisdom', bonus);
+    return grantLegacyAttribute('wisdom', bonus);
   },
   grantInventoryItem(key: string, amount: number) {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') return;

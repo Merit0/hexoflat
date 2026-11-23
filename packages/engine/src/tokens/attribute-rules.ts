@@ -60,6 +60,23 @@ function uniqueFailure(
   return null;
 }
 
+export function dependencyFailure(
+  registry: AttributeRegistry,
+  attributes: readonly TokenAttribute[],
+): string | null {
+  const keys = new Set(attributes.map((attribute) => attribute.key));
+  for (const attribute of attributes) {
+    if (!registry.has(attribute.key)) continue;
+    const missing = (registry.get(attribute.key).requires?.attributes ?? []).filter(
+      (key) => !keys.has(key),
+    );
+    if (missing.length > 0) {
+      return `Attribute ${attribute.key} needs ${missing.join(', ')} on the same item`;
+    }
+  }
+  return null;
+}
+
 export function attributeFailure(
   registry: AttributeRegistry,
   type: AttributeTarget,

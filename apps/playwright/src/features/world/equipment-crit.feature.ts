@@ -32,7 +32,7 @@ export class EquipmentCritFeature extends BaseFeature {
           realm: 'idol',
           mapTier: multiplier === 2 ? 1 : 4,
           attributes: [
-            { key: 'crit', value: multiplier === 2 ? 2 : 10 },
+            { key: 'crit-chance', value: multiplier === 2 ? 2 : 10 },
             ...(multiplier === 2 ? [] : [{ key: 'crit-dmg', value: multiplier }]),
           ],
         });

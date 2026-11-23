@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_PROFILES } from '../../content/attribute-profiles.content';
 import { TOKEN_CONTENT, type TokenContent } from '../../content/token-content';
 import { EQUIPMENT_CONTENT, equipmentContentFailures } from '../../content/validate-equipment';
-import { tokenContentFailures } from '../../content/validate-tokens';
+import { TOKEN_UNIQUES } from '../../content/token-uniques.content';
+import { tokenContentFailures, uniqueContentFailures } from '../../content/validate-tokens';
 import { attributeRowsOf } from '../attribute-display';
 import { createTokenFactory } from '../factory/create-token-factory';
 import { contextFor, defaultFactory } from '../factory/factory-test-setup';
 import { itemTokenSchema } from '../token-schema';
 import type { EquipmentAttributeDefinition } from './equipment-attribute-schema';
-import { resolveHeroStats } from './hero-stats';
+import { resolveItemStats } from './item-stats';
 
 function withAttribute(
   key: string,
@@ -41,11 +42,15 @@ describe('AG1 real content', () => {
 
 describe('AG1 F3: one aggregate per stat', () => {
   it('refuses two attributes of one stat with different aggregates', () => {
-    const attributes = withAttribute('focus', { aggregate: 'max' });
+    const attributes = withAttribute('hero-crit', {
+      aggregate: 'max',
+      scope: 'item',
+      implemented: true,
+    });
     expect(failuresWith(attributes)).toContain(
-      'stat answerWillReward mixes aggregates: focus max, wisdom sum',
+      'stat critPoints mixes aggregates: crit-chance sum, hero-crit max',
     );
-    expect(() => resolveHeroStats([], { attributes, types: [] })).toThrow(/same aggregate/);
+    expect(() => resolveItemStats(null, attributes)).toThrow(/same aggregate/);
   });
 });
 
@@ -53,7 +58,7 @@ describe('AG1 F8: one scope per implemented stat', () => {
   it('lets a planned attribute share a stat with another scope until it is implemented', () => {
     expect(failuresWith(withAttribute('hero-crit', {})).join('\n')).not.toMatch(/mixes scopes/);
     expect(failuresWith(withAttribute('hero-crit', { implemented: true }))).toContain(
-      'stat critPoints mixes scopes: crit item, hero-crit hero',
+      'stat critPoints mixes scopes: crit-chance item, hero-crit hero',
     );
   });
 });
@@ -66,8 +71,8 @@ describe('AG1 F6: silent no-ops', () => {
   });
 
   it('does not ask a deprecated attribute for a profile', () => {
-    expect(EQUIPMENT_CONTENT.attributes.find(({ key }) => key === 'focus')?.deprecated).toBe(true);
-    expect(failuresWith(withAttribute('focus', {})).join('\n')).not.toMatch(/focus is implemented/);
+    const attributes = withAttribute('force', { implemented: true, deprecated: true });
+    expect(failuresWith(attributes).join('\n')).not.toMatch(/force is implemented/);
   });
 
   it('refuses a profile weight for a group whose types cannot carry the attribute', () => {
@@ -117,8 +122,10 @@ describe('AG1 F4: base item allowlists', () => {
   });
 
   it('accepts an allowlist that rolls on its type', () => {
-    expect(tokenContentFailures(withBaseAllowlist('earth-sword', ['crit']))).toEqual([]);
-    expect(() => createTokenFactory(withBaseAllowlist('earth-sword', ['crit']))).not.toThrow();
+    expect(tokenContentFailures(withBaseAllowlist('earth-sword', ['crit-chance']))).toEqual([]);
+    expect(() =>
+      createTokenFactory(withBaseAllowlist('earth-sword', ['crit-chance'])),
+    ).not.toThrow();
   });
 });
 
@@ -133,11 +140,11 @@ describe('AG1 F12: one profile rule for content and factory', () => {
 });
 
 describe('AG3 F1: combat attributes stay off tools', () => {
-  it('marks crit, crit-dmg and trophy as not for tools', () => {
+  it('marks crit-chance, crit-dmg and trophy as not for tools', () => {
     const excluded = EQUIPMENT_CONTENT.attributes
       .filter((attribute) => attribute.excludes?.tool)
       .map((attribute) => attribute.key);
-    expect(excluded).toEqual(['crit', 'crit-dmg', 'trophy']);
+    expect(excluded).toEqual(['crit-chance', 'crit-dmg', 'trophy']);
   });
 
   it('refuses an attribute that both requires and excludes a tool', () => {
@@ -149,21 +156,105 @@ describe('AG3 F1: combat attributes stay off tools', () => {
   it('refuses a tool exclusion when its groups hold only tools', () => {
     const types = EQUIPMENT_CONTENT.types.filter((type) => type.key !== 'sword');
     expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, types })).toContain(
-      'attribute crit excludes tools, but no other type is in its groups',
+      'attribute crit-chance excludes tools, but no other type is in its groups',
     );
   });
 
-  it('keeps an owned axe with crit readable and shown', () => {
+  it('keeps an owned axe with crit-chance readable and shown', () => {
     const made = defaultFactory.createBase(contextFor(1, { type: 'axe', mapTier: 2 }), {
       attributes: [],
     });
     if (!made.ok) throw new Error(made.refusal.message);
-    const owned = itemTokenSchema.parse({ ...made.value, attributes: [{ key: 'crit', value: 4 }] });
+    const owned = itemTokenSchema.parse({
+      ...made.value,
+      attributes: [{ key: 'crit-chance', value: 4 }],
+    });
     expect(attributeRowsOf(owned).map((row) => row.icon)).toEqual(['bolt']);
     expect(
       defaultFactory.createBase(contextFor(1, { type: 'axe', mapTier: 2 }), {
-        attributes: [{ key: 'crit', value: 4 }],
+        attributes: [{ key: 'crit-chance', value: 4 }],
       }).ok,
     ).toBe(false);
+  });
+});
+
+describe('AG4 F2: attribute requirements', () => {
+  it('lets crit-dmg roll only after crit-chance', () => {
+    expect(EQUIPMENT_CONTENT.attributes.find(({ key }) => key === 'crit-dmg')?.requires).toEqual({
+      attributes: ['crit-chance'],
+    });
+  });
+
+  it('refuses a self requirement and an empty requires in the schema', () => {
+    expect(
+      failuresWith(withAttribute('crit-dmg', { requires: { attributes: ['crit-dmg'] } })).join(
+        '\n',
+      ),
+    ).toMatch(/cannot require itself/);
+    expect(failuresWith(withAttribute('crit-dmg', { requires: {} })).join('\n')).toMatch(
+      /requires needs a tool or attributes/,
+    );
+  });
+
+  it('refuses an unknown requirement and a requirement cycle', () => {
+    expect(
+      failuresWith(withAttribute('crit-dmg', { requires: { attributes: ['luck'] } })),
+    ).toContain('attribute crit-dmg requires unknown luck');
+    const cycle = withAttribute('crit-chance', { requires: { attributes: ['crit-dmg'] } });
+    expect(failuresWith(cycle)).toContain(
+      'attribute crit-chance has a requirement cycle: crit-chance -> crit-dmg -> crit-chance',
+    );
+  });
+
+  it('refuses a requirement that cannot roll where the dependent rolls', () => {
+    const attributes = withAttribute('crit-dmg', { requires: { attributes: ['heart'] } });
+    expect(failuresWith(attributes)).toContain(
+      'tier-2: attribute crit-dmg rolls on sword only after heart, which cannot roll there',
+    );
+  });
+
+  it('refuses a requirement chain longer than maxCount', () => {
+    const profiles = structuredClone(ATTRIBUTE_PROFILES);
+    profiles['tier-3'].maxCount = 1;
+    profiles['tier-3'].countWeights = [50, 50];
+    expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, profiles })).toContain(
+      'tier-3: attribute crit-dmg needs 2 attributes, maxCount is 1',
+    );
+  });
+
+  it('refuses a base allowlist that holds a dependent without its requirement', () => {
+    expect(tokenContentFailures(withBaseAllowlist('earth-sword', ['crit-dmg', 'will']))).toEqual([
+      'base item earth-sword allows crit-dmg without crit-chance',
+    ]);
+    expect(
+      tokenContentFailures(withBaseAllowlist('earth-sword', ['crit-chance', 'crit-dmg'])),
+    ).toEqual([]);
+  });
+
+  it('refuses a unique whose attribute misses its requirement', () => {
+    const unique = TOKEN_UNIQUES[0];
+    const uniques = [{ ...unique, type: 'sword', attributes: [{ key: 'crit-dmg', value: 3 }] }];
+    expect(uniqueContentFailures(uniques)).toContain(
+      `unique ${unique.key}: Attribute crit-dmg needs crit-chance on the same item`,
+    );
+    expect(() => createTokenFactory(TOKEN_CONTENT, undefined, uniques)).toThrow(
+      /needs crit-chance on the same item/,
+    );
+  });
+
+  it('refuses a factory override that misses the requirement', () => {
+    const context = contextFor(1, { type: 'sword', mapTier: 3 });
+    const alone = defaultFactory.createBase(context, {
+      attributes: [{ key: 'crit-dmg', value: 3 }],
+    });
+    expect(alone).toMatchObject({ ok: false, refusal: { code: 'INVALID_TOKEN' } });
+    expect(
+      defaultFactory.createBase(context, {
+        attributes: [
+          { key: 'crit-chance', value: 2 },
+          { key: 'crit-dmg', value: 3 },
+        ],
+      }).ok,
+    ).toBe(true);
   });
 });

@@ -38,7 +38,7 @@ describe('EA2 generator parts', () => {
     const profile = new ContentAttributeProfileProvider(ATTRIBUTE_PROFILES).profileFor(1);
     expect(
       pool.poolFor({ profile, group: 'weapon', type: typeOf('sword') }).map((e) => e.key),
-    ).toEqual(['crit', 'trophy', 'will']);
+    ).toEqual(['crit-chance', 'trophy', 'will']);
     expect(
       pool.poolFor({ profile, group: 'weapon', type: typeOf('axe') }).map((e) => e.key),
     ).toEqual(['will', 'yield']);

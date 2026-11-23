@@ -1,5 +1,5 @@
 import type { TokenContent } from '../../content/token-content';
-import { attributeFailure } from '../attribute-rules';
+import { attributeFailure, dependencyFailure } from '../attribute-rules';
 import { attributeProfilesSchema } from '../equipment/attribute-profile-schema';
 import {
   adjectivesFor,
@@ -32,7 +32,7 @@ function uniqueFailures(
 ): string[] {
   return uniques.all().flatMap((unique) => {
     if (!types.has(unique.type)) return [`Unknown unique type ${unique.type}`];
-    return unique.attributes.flatMap((attribute) => {
+    const failures = unique.attributes.flatMap((attribute) => {
       const failure = attributeFailure(
         attributes,
         types.get(unique.type),
@@ -42,6 +42,8 @@ function uniqueFailures(
       );
       return failure ? [`Unique ${unique.key}: ${failure}`] : [];
     });
+    const missing = dependencyFailure(attributes, unique.attributes);
+    return missing ? [...failures, `Unique ${unique.key}: ${missing}`] : failures;
   });
 }
 

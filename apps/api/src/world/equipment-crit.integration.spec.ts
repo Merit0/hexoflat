@@ -35,7 +35,7 @@ describe.skipIf(!inject('dbAvailable'))('Weapon crit persistence (real Postgres)
         ...upcastToken(heroId, 'trophy', 'sword')!,
         attributes: bonus
           ? [
-              { key: 'crit', value: 10 },
+              { key: 'crit-chance', value: 10 },
               { key: 'crit-dmg', value: bonus },
             ]
           : [],

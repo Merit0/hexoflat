@@ -123,19 +123,27 @@ describe('AG2 eligibility: pool = validator = content rule', () => {
 });
 
 describe('AG2 rolled values', () => {
-  it.each(cases)('%s tier %s rolls every allowed value and nothing else', (_key, tier, type) => {
-    const seen = new Map<string, Set<number>>();
-    for (let seed = 0; seed < SAMPLE_SEEDS; seed++) {
-      for (const { key, value } of rollFor(generator, type, tier, seed)) {
-        seen.set(key, (seen.get(key) ?? new Set()).add(value));
+  it.each(cases)(
+    '%s tier %s rolls every allowed value, nothing else, with its requirements',
+    (_key, tier, type) => {
+      const seen = new Map<string, Set<number>>();
+      for (let seed = 0; seed < SAMPLE_SEEDS; seed++) {
+        const attributes = rollFor(generator, type, tier, seed);
+        const keys = attributes.map((entry) => entry.key);
+        for (const { key, value } of attributes) {
+          seen.set(key, (seen.get(key) ?? new Set()).add(value));
+          const needs = EQUIPMENT_ATTRIBUTES.find((entry) => entry.key === key)?.requires
+            ?.attributes;
+          for (const requiredKey of needs ?? []) expect(keys, key).toContain(requiredKey);
+        }
       }
-    }
-    for (const attribute of EQUIPMENT_ATTRIBUTES) {
-      const values = [...(seen.get(attribute.key) ?? [])].sort((a, b) => a - b);
-      const expected = eligible(attribute, type, tier) ? allowedValues(attribute.key, tier) : [];
-      expect(values, attribute.key).toEqual(expected);
-    }
-  });
+      for (const attribute of EQUIPMENT_ATTRIBUTES) {
+        const values = [...(seen.get(attribute.key) ?? [])].sort((a, b) => a - b);
+        const expected = eligible(attribute, type, tier) ? allowedValues(attribute.key, tier) : [];
+        expect(values, attribute.key).toEqual(expected);
+      }
+    },
+  );
 });
 
 describe('AG2 factory overrides', () => {
@@ -146,9 +154,13 @@ describe('AG2 factory overrides', () => {
   it.each(tokenCases)('%s tier %s accepts the range, refuses the rest', (key, tier) => {
     const type = EQUIPMENT_TYPES.find((candidate) => candidate.key === key)!;
     const context = contextFor(1, { type: key, mapTier: tier });
-    const make = (attribute: TokenAttribute) =>
-      defaultFactory.createBase(context, { attributes: [attribute] });
     for (const attribute of rolled) {
+      const required = (attribute.requires?.attributes ?? []).map((requiredKey) => ({
+        key: requiredKey,
+        value: entryOf(requiredKey, tier)?.min ?? 1,
+      }));
+      const make = (entry: TokenAttribute) =>
+        defaultFactory.createBase(context, { attributes: [...required, entry] });
       if (!eligible(attribute, type, tier)) {
         const value = entryOf(attribute.key, tier)?.min ?? 1;
         expect(make({ key: attribute.key, value }).ok, attribute.key).toBe(false);
@@ -162,6 +174,15 @@ describe('AG2 factory overrides', () => {
       }
       for (const value of [min - 1, max + 1].filter((candidate) => candidate >= 1)) {
         expect(make({ key: attribute.key, value }).ok, `${attribute.key} ${value}`).toBe(false);
+      }
+      if (required.length > 0) {
+        const alone = defaultFactory.createBase(context, {
+          attributes: [{ key: attribute.key, value: min }],
+        });
+        expect(
+          alone.ok,
+          `${attribute.key} without ${required.map((entry) => entry.key).join(', ')}`,
+        ).toBe(false);
       }
     }
   });
