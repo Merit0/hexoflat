@@ -1,6 +1,6 @@
 export * from './token-generation';
 export { RealmTypePicker } from './type-picker';
-export { AdjectiveNameGenerator, adjectiveBandFor, adjectivesForType } from './name-generator';
+export { AdjectiveNameGenerator, adjectiveBandFor } from './name-generator';
 export { ManifestSpriteResolver } from './sprite-resolver';
 export { EmptySkillGenerator } from './skill-generator';
 export { RangePriceGenerator, priceBandOf, PRICE_BANDS } from './price-generator';

@@ -1,23 +1,25 @@
 import type { z } from 'zod';
-import {
-  adjectiveFits,
-  adjectiveSchema,
-  type Adjective,
-} from '../tokens/equipment/adjective-schema';
+import { adjectiveSchema, type Adjective } from '../tokens/equipment/adjective-schema';
 import {
   attributeProfilesSchema,
   type AttributeProfiles,
 } from '../tokens/equipment/attribute-profile-schema';
 import {
+  adjectivesFor as adjectivesForRule,
+  bandFailures,
+  blockSidesFailures,
+  profileEntryFailures,
+  statRuleFailures,
+  unprofiledAttributeFailures,
+  unreachableWeightFailures,
+  type AdjectiveTargetType,
+} from '../tokens/equipment/equipment-content-rules';
+import { PRICE_BANDS } from '../tokens/factory/price-generator';
+import {
   equipmentAttributeDefinitionSchema,
   type EquipmentAttributeDefinition,
 } from '../tokens/equipment/equipment-attribute-schema';
-import {
-  ADJECTIVE_BANDS,
-  ATTRIBUTE_PROFILE_TIERS,
-  type TAdjectiveBand,
-  type TItemGroup,
-} from '../tokens/equipment/equipment-keys';
+import { ADJECTIVE_BANDS, type TAdjectiveBand } from '../tokens/equipment/equipment-keys';
 import {
   equipmentTypeDefinitionSchema,
   type EquipmentTypeDefinition,
@@ -114,45 +116,23 @@ function attributeFailures(content: EquipmentContent): string[] {
   return failures;
 }
 
-function profileEntryFailures(
-  tier: (typeof ATTRIBUTE_PROFILE_TIERS)[number],
-  key: string,
-  entry: AttributeProfiles['tier-1']['attributes'][string],
-  content: EquipmentContent,
-): string[] {
-  const attribute = content.attributes.find((candidate) => candidate.key === key);
-  if (!attribute) return [`${tier}: attribute ${key} is unknown`];
-  const failures: string[] = [];
-  if (attribute.stat === null) failures.push(`${tier}: attribute ${key} is blocked`);
-  for (const group of Object.keys(entry.weight) as TItemGroup[]) {
-    if (!attribute.groups.includes(group)) {
-      failures.push(`${tier}: attribute ${key} has a weight for group ${group}`);
-    }
-  }
-  if (attribute.cap !== undefined && entry.max > attribute.cap) {
-    failures.push(`${tier}: attribute ${key} max ${entry.max} is above its cap ${attribute.cap}`);
-  }
-  return failures;
-}
-
 function profileFailures(content: EquipmentContent): string[] {
   const parsed = attributeProfilesSchema.safeParse(content.profiles);
   if (!parsed.success) return [`profiles: ${parsed.error.message}`];
-  return ATTRIBUTE_PROFILE_TIERS.flatMap((tier) =>
-    Object.entries(parsed.data[tier].attributes).flatMap(([key, entry]) =>
-      profileEntryFailures(tier, key, entry, content),
-    ),
-  );
+  return [
+    ...profileEntryFailures(parsed.data, content.attributes),
+    ...unreachableWeightFailures(parsed.data, content.attributes, content.types),
+    ...unprofiledAttributeFailures(parsed.data, content.attributes),
+    ...bandFailures(parsed.data, Math.min(ADJECTIVE_BANDS.length, PRICE_BANDS)),
+  ];
 }
 
 export function adjectivesFor(
-  type: Pick<EquipmentTypeDefinition, 'group' | 'materials'>,
+  type: AdjectiveTargetType,
   band: TAdjectiveBand,
   adjectives: readonly Adjective[] = TOKEN_ADJECTIVES,
 ): Adjective[] {
-  return adjectives.filter(
-    (adjective) => adjective.band === band && adjectiveFits(adjective, type),
-  );
+  return adjectivesForRule(type, band, adjectives);
 }
 
 function adjectiveFailures(content: EquipmentContent): string[] {
@@ -177,6 +157,8 @@ export function equipmentContentFailures(content: EquipmentContent = EQUIPMENT_C
   return [
     ...typeFailures(content),
     ...attributeFailures(content),
+    ...statRuleFailures(content.attributes),
+    ...blockSidesFailures(content.types),
     ...profileFailures(content),
     ...adjectiveFailures(content),
   ];
