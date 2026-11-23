@@ -167,7 +167,10 @@ describe('A04 content and progress compatibility', () => {
   });
 
   it('rolls the approved tier ranges on boots only, without enabling the type', () => {
-    const generator = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
+    const generator = createEquipmentAttributeGenerator(
+      new AttributeRegistry(EQUIPMENT_ATTRIBUTES),
+      ATTRIBUTE_PROFILES,
+    );
     const boots = EQUIPMENT_TYPES.find((type) => type.key === 'boots')!;
     expect(boots.enabled).toBe(false);
     for (const level of [1, 2, 3, 4] as const) {

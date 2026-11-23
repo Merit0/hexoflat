@@ -7,6 +7,7 @@ export type CritResolverId = z.infer<typeof critResolverIdSchema>;
 
 export interface CritContext {
   rating: number;
+  cap: number;
   rng: RandomNumberGenerator;
 }
 
@@ -18,24 +19,24 @@ export interface CritOutcome {
 export interface ICritResolver {
   readonly id: CritResolverId;
   resolve(ctx: CritContext): CritOutcome;
-  describe(rating: number): DescriptionLine;
+  describe(rating: number, cap: number): DescriptionLine;
 }
 
-function chanceOf(rating: number): number {
-  return Math.max(0, Math.min(25, rating));
+function chanceOf(rating: number, cap: number): number {
+  return Math.max(0, Math.min(cap, rating));
 }
 
 export class RngChanceCritResolver implements ICritResolver {
   readonly id = 'rng-chance';
 
   resolve(ctx: CritContext): CritOutcome {
-    const chance = chanceOf(ctx.rating);
+    const chance = chanceOf(ctx.rating, ctx.cap);
     const roll = ctx.rng();
     return { critical: roll < chance / 100, detail: { rating: ctx.rating, chance, roll } };
   }
 
-  describe(rating: number): DescriptionLine {
-    return { key: 'content.battle.crit.chance', params: { chance: chanceOf(rating) } };
+  describe(rating: number, cap: number): DescriptionLine {
+    return { key: 'content.battle.crit.chance', params: { chance: chanceOf(rating, cap) } };
   }
 }
 

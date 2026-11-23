@@ -16,7 +16,7 @@ describe('D5 persistence source and identity', () => {
       rarity: ERarityKind.SPARK,
       mapTier: 4,
       generatorVersion: 2,
-      attributes: [{ key: 'focus', value: 2 }],
+      attributes: [{ key: 'wisdom', value: 2 }],
     });
     const inventory = emptyInventoryState('hero');
     inventory.equip.weapon = { ...mintItem(inventory, 'sword', 1), token };

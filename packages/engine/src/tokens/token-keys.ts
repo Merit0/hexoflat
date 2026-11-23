@@ -75,4 +75,4 @@ export type TTokenOrigin = (typeof TOKEN_ORIGINS)[number];
 
 export const MAP_TIERS = [1, 2, 3, 4] as const;
 export type TMapTier = (typeof MAP_TIERS)[number];
-export const mapTierSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
+export const mapTierSchema = z.literal(MAP_TIERS);

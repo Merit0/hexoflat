@@ -5,8 +5,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 16,
+        "key": "yield",
+        "value": 1,
       },
     ],
     "baseKey": "earth-pickaxe",
@@ -106,8 +106,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "trophy",
-        "value": 1,
+        "key": "will",
+        "value": 6,
       },
     ],
     "baseKey": "underworld-pickaxe",
@@ -158,8 +158,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "trophy",
-        "value": 1,
+        "key": "will",
+        "value": 19,
       },
     ],
     "baseKey": "earth-axe",
@@ -303,12 +303,12 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "crit",
-        "value": 5,
-      },
-      {
         "key": "will",
         "value": 20,
+      },
+      {
+        "key": "yield",
+        "value": 2,
       },
     ],
     "baseKey": "earth-pickaxe",
@@ -408,8 +408,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "will",
-        "value": 6,
+        "key": "yield",
+        "value": 1,
       },
     ],
     "baseKey": "underworld-axe",
@@ -551,7 +551,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "crit",
+        "key": "crit-chance",
         "value": 3,
       },
     ],
@@ -798,8 +798,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "crit",
-        "value": 5,
+        "key": "will",
+        "value": 17,
       },
     ],
     "baseKey": "heaven-axe",
@@ -948,8 +948,8 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
   {
     "attributes": [
       {
-        "key": "crit",
-        "value": 9,
+        "key": "will",
+        "value": 21,
       },
     ],
     "baseKey": "heaven-axe",

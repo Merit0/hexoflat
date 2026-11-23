@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AttributeRegistry } from '../tokens/registries';
 import { EQUIPMENT_ATTRIBUTES } from '../content/equipment-attributes.content';
 import { EQUIPMENT_TYPES } from '../content/item-types.content';
 import { upcastToken } from '../inventory/upcast-item-tokens';
@@ -20,7 +21,10 @@ function jewel(type: string, value: number) {
 
 describe('A02 equipment Will stats', () => {
   it('raises the Will roll ceiling by 10 per source tier on every equipment type', () => {
-    const generator = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
+    const generator = createEquipmentAttributeGenerator(
+      new AttributeRegistry(EQUIPMENT_ATTRIBUTES),
+      ATTRIBUTE_PROFILES,
+    );
     for (const type of EQUIPMENT_TYPES) {
       for (const level of [1, 2, 3, 4] as const) {
         const values = new Set<number>();
@@ -57,7 +61,10 @@ describe('A02 equipment Will stats', () => {
   });
 
   it('EA-16: the live registry rolls will for jewelry and deprecated owned attributes still work', () => {
-    const generator = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
+    const generator = createEquipmentAttributeGenerator(
+      new AttributeRegistry(EQUIPMENT_ATTRIBUTES),
+      ATTRIBUTE_PROFILES,
+    );
     const type = EQUIPMENT_TYPES.find((entry) => entry.key === 'ring')!;
     let seen = false;
     for (let seed = 0; seed < 100; seed++) {

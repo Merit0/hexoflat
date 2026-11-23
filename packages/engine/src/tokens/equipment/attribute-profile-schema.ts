@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { attributeKeySchema } from '../token-keys';
-import { ITEM_GROUPS, type TItemGroup } from './equipment-keys';
+import {
+  ATTRIBUTE_PROFILE_TIERS,
+  ITEM_GROUPS,
+  type TAttributeProfileTier,
+  type TItemGroup,
+} from './equipment-keys';
 
 export const COUNT_WEIGHT_TOTAL = 100;
 
@@ -44,10 +49,9 @@ export const attributeProfileSchema = z
   );
 export type AttributeProfile = z.infer<typeof attributeProfileSchema>;
 
-export const attributeProfilesSchema = z.strictObject({
-  'tier-1': attributeProfileSchema,
-  'tier-2': attributeProfileSchema,
-  'tier-3': attributeProfileSchema,
-  'tier-4': attributeProfileSchema,
-});
+export const attributeProfilesSchema = z.strictObject(
+  Object.fromEntries(
+    ATTRIBUTE_PROFILE_TIERS.map((tier) => [tier, attributeProfileSchema]),
+  ) as Record<TAttributeProfileTier, typeof attributeProfileSchema>,
+);
 export type AttributeProfiles = z.infer<typeof attributeProfilesSchema>;

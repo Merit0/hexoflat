@@ -1070,6 +1070,31 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     }
   });
 
+  it('sets the hero base crit override only through the e2e fixture and never shows it', async () => {
+    const { userId, heroId, expeditionId, mapId } = await openBattle();
+    expect((await storedWorld(expeditionId, mapId)).battle!.critOverride).toBeUndefined();
+    delete process.env.HEXOFLAT_E2E_FIXTURES;
+    await expect(
+      world.battleFixture(userId, heroId, { kind: 'hero-base-crit', heroBaseCrit: 0 }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect((await storedWorld(expeditionId, mapId)).battle!.critOverride).toBeUndefined();
+
+    process.env.HEXOFLAT_E2E_FIXTURES = '1';
+    try {
+      const view = await world.battleFixture(userId, heroId, {
+        kind: 'hero-base-crit',
+        heroBaseCrit: 0,
+      });
+      expect(JSON.stringify(view)).not.toContain('critOverride');
+      expect((await storedWorld(expeditionId, mapId)).battle!.critOverride).toEqual({
+        heroBaseCrit: 0,
+      });
+      expect(JSON.stringify(await world.snapshot(userId, heroId))).not.toContain('critOverride');
+    } finally {
+      delete process.env.HEXOFLAT_E2E_FIXTURES;
+    }
+  });
+
   it('places an object beside the hero with a world fixture only when the e2e flag is on', async () => {
     const { userId, heroId } = await kit.newPlayer();
     await enter(userId, heroId, 'camping');

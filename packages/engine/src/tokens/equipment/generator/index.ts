@@ -19,7 +19,6 @@ export { RegistryAttributePoolFilter } from './pool-filter';
 export { CumulativeWeightedPicker } from './weighted-picker';
 export { WeightedCountRoller } from './count-roller';
 export { SteppedValueRoller } from './value-roller';
-export { resolveGenerationLevel, DEFAULT_GENERATION_LEVEL } from './generation-level';
 export {
   EquipmentAttributeGenerator,
   type EquipmentAttributeGeneratorParts,

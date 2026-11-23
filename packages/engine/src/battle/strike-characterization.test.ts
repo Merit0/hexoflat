@@ -6,6 +6,7 @@ import {
   giveTurn,
   hero,
   hexagonBoard,
+  NO_BASE_CRIT_RULES,
   skeleton,
   strikeOpened,
 } from './battle-test-setup';
@@ -41,7 +42,13 @@ describe('EA5 strike characterization', () => {
           { kind: 'place-shield', hex: { q: 0, r: 0 } },
           'target',
         ).battle;
-      const { battle, events } = enemyDoes(pending, { kind: 'reaction-timeout' }, 'target');
+      const { battle, events } = enemyDoes(
+        pending,
+        { kind: 'reaction-timeout' },
+        'target',
+        0,
+        NO_BASE_CRIT_RULES,
+      );
       expect(battle.creatures.map((creature) => creature.hp)).toEqual([
         6,
         8 - damage,

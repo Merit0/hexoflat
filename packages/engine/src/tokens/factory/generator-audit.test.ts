@@ -10,10 +10,10 @@ describe('final generator audit: content boundaries', () => {
   it('keeps generator and validator on the same immutable profile snapshot', () => {
     const content = structuredClone(TOKEN_CONTENT);
     const factory = createTokenFactory(content);
-    const before = factory.createBase(context, { attributes: [{ key: 'crit', value: 2 }] });
+    const before = factory.createBase(context, { attributes: [{ key: 'crit-chance', value: 2 }] });
     expect(before).toMatchObject({ ok: true });
-    content.profiles['tier-1'].attributes.crit.max = 1;
-    expect(factory.createBase(context, { attributes: [{ key: 'crit', value: 2 }] })).toEqual(
+    content.profiles['tier-1'].attributes['crit-chance'].max = 1;
+    expect(factory.createBase(context, { attributes: [{ key: 'crit-chance', value: 2 }] })).toEqual(
       before,
     );
   });
@@ -21,13 +21,13 @@ describe('final generator audit: content boundaries', () => {
   it('does not expose mutable nested generator profiles', () => {
     const provider = new ContentAttributeProfileProvider(TOKEN_CONTENT.profiles);
     expect(() => {
-      provider.profileFor(1).attributes.crit.max = 99;
+      provider.profileFor(1).attributes['crit-chance'].max = 99;
     }).toThrow(TypeError);
     expect(() => {
       provider.profileFor(1).countWeights[0] = 100;
     }).toThrow(TypeError);
     expect(() => {
-      provider.profileFor(1).attributes.crit.weight.weapon = 99;
+      provider.profileFor(1).attributes['crit-chance'].weight.weapon = 99;
     }).toThrow(TypeError);
   });
 
@@ -36,9 +36,9 @@ describe('final generator audit: content boundaries', () => {
     (fault) => {
       const content = structuredClone(TOKEN_CONTENT);
       const entries = content.profiles['tier-1'].attributes;
-      if (fault === 'unknown') entries['missing-attribute'] = { ...entries.crit };
-      if (fault === 'wrong-group') entries.crit.weight = { defense: 45 };
-      if (fault === 'above-cap') entries.crit.max = 11;
+      if (fault === 'unknown') entries['missing-attribute'] = { ...entries['crit-chance'] };
+      if (fault === 'wrong-group') entries['crit-chance'].weight = { defense: 45 };
+      if (fault === 'above-cap') entries['crit-chance'].max = 11;
       expect(() => createTokenFactory(content)).toThrow();
     },
   );

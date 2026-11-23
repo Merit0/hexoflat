@@ -1,9 +1,10 @@
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { attributeProfilesSchema } from '../tokens/equipment/attribute-profile-schema';
 import { ADJECTIVE_BANDS } from '../tokens/equipment/equipment-keys';
-import { adjectivesForType } from '../tokens/factory/name-generator';
+import { adjectivesFor, baseAllowlistFailures } from '../tokens/equipment/equipment-content-rules';
 import { hasGeneratedName, tokenPriceRangesSchema } from '../tokens/token-content-schema';
 import { wordKeyOf } from '../tokens/token-keys';
-import { attributeFailure } from '../tokens/attribute-rules';
+import { attributeFailure, attributeSetFailure } from '../tokens/attribute-rules';
 import type { UniqueTokenDefinition } from '../tokens/unique-schema';
 import { coinPriceOf } from './content-accessors';
 import { TOKEN_UNIQUES } from './token-uniques.content';
@@ -60,6 +61,8 @@ export function uniqueContentFailures(
       const failure = attributeFailure(registries.attributes, type, attribute, UNIQUE_CHECK, 1);
       if (failure) failures.push(`unique ${unique.key}: ${failure}`);
     }
+    const missing = attributeSetFailure(registries.attributes, type, unique.attributes);
+    if (missing) failures.push(`unique ${unique.key}: ${missing}`);
   }
   return failures;
 }
@@ -83,11 +86,17 @@ export function tokenContentFailures(content: TokenContent = TOKEN_CONTENT): str
 
   for (const type of types.all().filter(hasGeneratedName)) {
     for (const band of ADJECTIVE_BANDS) {
-      if (adjectivesForType(type, band, content.adjectives).length === 0) {
+      if (adjectivesFor(type, band, content.adjectives).length === 0) {
         failures.push(`type ${type.key} has no ${band} adjective`);
       }
     }
   }
 
+  const profiles = attributeProfilesSchema.safeParse(content.profiles);
+  if (profiles.success) {
+    failures.push(
+      ...baseAllowlistFailures(content.baseItems, content.types, content.attributes, profiles.data),
+    );
+  }
   return [...failures, ...priceFailures(content)];
 }

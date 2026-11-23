@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AttributeRegistry } from '../registries';
 import { ERarityKind } from '../../abstraction/hexobject-abstraction';
 import { createTokenFactory } from './create-token-factory';
 import {
@@ -71,7 +72,7 @@ describe('TokenFactory.createBase refusals', () => {
       nameGenerator: new AdjectiveNameGenerator(TOKEN_CONTENT.adjectives),
       spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(SPRITE_MANIFEST)),
       attributeGenerator: createEquipmentAttributeGenerator(
-        TOKEN_CONTENT.attributes,
+        new AttributeRegistry(TOKEN_CONTENT.attributes),
         TOKEN_CONTENT.profiles,
       ),
       skillGenerator: new EmptySkillGenerator(),

@@ -20,7 +20,9 @@ export interface EquipmentAttributeGeneratorParts {
   values: IValueRoller;
 }
 
-function generatedAttributesSchema(maxCount: number) {
+const OUTPUT_SCHEMAS = new Map<number, ReturnType<typeof buildOutputSchema>>();
+
+function buildOutputSchema(maxCount: number) {
   return z
     .array(tokenAttributeSchema)
     .max(maxCount)
@@ -29,6 +31,14 @@ function generatedAttributesSchema(maxCount: number) {
         new Set(attributes.map((attribute) => attribute.key)).size === attributes.length,
       'an attribute is generated twice',
     );
+}
+
+function generatedAttributesSchema(maxCount: number) {
+  const cached = OUTPUT_SCHEMAS.get(maxCount);
+  if (cached) return cached;
+  const schema = buildOutputSchema(maxCount);
+  OUTPUT_SCHEMAS.set(maxCount, schema);
+  return schema;
 }
 
 export class EquipmentAttributeGenerator implements IAttributeGenerator {
@@ -54,12 +64,17 @@ export class EquipmentAttributeGenerator implements IAttributeGenerator {
     const remaining = [...pool];
     const picked: TokenAttribute[] = [];
     for (let index = 0; index < count; index += 1) {
+      const keys = new Set(picked.map((attribute) => attribute.key));
+      const open = remaining.filter((entry) =>
+        (entry.requires ?? []).every((key) => keys.has(key)),
+      );
       const chosen = this.parts.picker.pick(
-        remaining.map((entry) => entry.weight),
+        open.map((entry) => entry.weight),
         ctx.rng(ATTRIBUTE_STREAM_LABELS.pick(ctx.tokenId, index)),
       );
       if (chosen === null) break;
-      const [entry] = remaining.splice(chosen, 1);
+      const entry = open[chosen];
+      remaining.splice(remaining.indexOf(entry), 1);
       const value = this.parts.values.roll(
         entry,
         ctx.rng(ATTRIBUTE_STREAM_LABELS.value(ctx.tokenId, entry.key)),

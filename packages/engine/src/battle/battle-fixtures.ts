@@ -26,6 +26,9 @@ export const battleFixtureSchema = z.discriminatedUnion('kind', [
     .object({ kind: z.literal('hold-window'), extraMs: z.number().int().min(0).max(600_000) })
     .strict(),
   z.object({ kind: z.literal('finish'), outcome: z.enum(['victory', 'defeat']) }).strict(),
+  z
+    .object({ kind: z.literal('hero-base-crit'), heroBaseCrit: z.number().int().min(0).max(100) })
+    .strict(),
 ]);
 
 export type BattleFixture = z.infer<typeof battleFixtureSchema>;
@@ -190,6 +193,9 @@ export function applyBattleFixture(
       break;
     case 'finish':
       finish(battle, fixture.outcome);
+      break;
+    case 'hero-base-crit':
+      battle.critOverride = { heroBaseCrit: fixture.heroBaseCrit };
       break;
   }
   return battle;

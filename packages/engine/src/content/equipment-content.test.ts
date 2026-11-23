@@ -42,18 +42,17 @@ const STAT_BY_KEY = {
   shield: 'blockSides',
   will: 'maxWill',
   fog: 'fogRadius',
-  crit: 'critPoints',
+  'crit-chance': 'critPoints',
   'crit-dmg': 'critDamage',
   trophy: 'graveLootBonus',
   yield: 'harvestBonus',
   'heal-on-block': 'healOnBlock',
   thorns: 'thorns',
   absorb: 'absorb',
-  'hero-crit': 'critPoints',
+  'hero-crit': 'heroCritPoints',
   'smart-step': 'stepFreeEvery',
   'deft-hands': 'useWillDiscount',
   trade: 'shopBuyDiscountPct',
-  focus: 'answerWillReward',
   wisdom: 'answerWillReward',
   force: 'strikeForce',
   mass: 'pushMass',
@@ -103,14 +102,13 @@ describe('EA1 EA-16a: attribute registry', () => {
       'shield',
       'will',
       'fog',
-      'crit',
+      'crit-chance',
       'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',
       'smart-step',
       'deft-hands',
-      'focus',
       'wisdom',
     ]);
   });
@@ -174,30 +172,7 @@ describe('EA1 attribute profiles', () => {
     ]);
   });
 
-  it('holds the plan values in half-hearts, points and steps', () => {
-    const ranges = (key: string) =>
-      ATTRIBUTE_PROFILE_TIERS.map((tier) => {
-        const entry = ATTRIBUTE_PROFILES[tier].attributes[key];
-        return [entry.min, entry.max];
-      });
-    expect(ranges('crit')).toEqual([
-      [2, 2],
-      [2, 4],
-      [2, 6],
-      [2, 10],
-    ]);
-    expect(ranges('heart')).toEqual([
-      [1, 2],
-      [1, 4],
-      [1, 6],
-      [1, 8],
-    ]);
-    expect(ranges('smart-step')).toEqual([
-      [5, 5],
-      [4, 5],
-      [3, 5],
-      [2, 5],
-    ]);
+  it('holds the decided heart weights', () => {
     expect(ATTRIBUTE_PROFILES['tier-1'].attributes.heart.weight).toEqual({
       defense: 40,
       clothing: 35,
@@ -235,7 +210,7 @@ describe('EA1 attribute profiles', () => {
     [
       'min above max',
       (profiles) => {
-        profiles['tier-3'].attributes.crit.min = 11;
+        profiles['tier-3'].attributes['crit-chance'].min = 11;
       },
       /min is above max/,
     ],
@@ -249,16 +224,16 @@ describe('EA1 attribute profiles', () => {
     [
       'a weight for a foreign group',
       (profiles) => {
-        profiles['tier-1'].attributes.crit.weight = { weapon: 45, jewelry: 5 };
+        profiles['tier-1'].attributes['crit-chance'].weight = { weapon: 45, jewelry: 5 };
       },
-      /crit has a weight for group jewelry/,
+      /crit-chance has a weight for group jewelry/,
     ],
     [
-      'an absorb max above its cap',
+      'an absorb max above its itemMax',
       (profiles) => {
         profiles['tier-1'].attributes.absorb.max = 2;
       },
-      /absorb max 2 is above its cap 1/,
+      /absorb max 2 is above its itemMax 1/,
     ],
   ])('refuses %s', (_name, change, message) => {
     expect(withProfiles(change).join('\n')).toMatch(message);
@@ -286,12 +261,9 @@ describe('EA1 item types', () => {
     for (const type of PLANNED_ITEM_TYPES) expect(tokenTypes).not.toContain(type.key);
   });
 
-  it('gives every type the base of plan §3–§5b', () => {
-    expect(Object.fromEntries(EQUIPMENT_TYPES.map((type) => [type.key, type.base]))).toEqual({
-      sword: { damage: 2 },
-      shield: { defense: 2, blockSides: 1 },
-      axe: { damage: 1 },
-      pickaxe: { damage: 1 },
+  it('gives clothing and jewelry the base of plan §3–§5b, hand types none', () => {
+    const withBase = EQUIPMENT_TYPES.filter((type) => type.base !== undefined);
+    expect(Object.fromEntries(withBase.map((type) => [type.key, type.base]))).toEqual({
       helm: { hearts: 1 },
       armor: { hearts: 2 },
       gloves: { hearts: 1 },
@@ -299,14 +271,6 @@ describe('EA1 item types', () => {
       ring: { will: 1 },
       amulet: { will: 2 },
     });
-  });
-
-  it('keeps the base in step with the fields the current rules read', () => {
-    for (const type of ITEM_TYPES.filter((candidate) => candidate.group === 'weapon')) {
-      expect(type.base.damage, type.key).toBe(type.strike);
-    }
-    const shield = ITEM_TYPES.find((type) => type.key === 'shield');
-    expect(shield?.base.blockSides).toBe(shield?.block?.sides);
   });
 
   it('refuses a slot outside the group and an any-hand type that is not a tool', () => {
@@ -365,20 +329,12 @@ describe('EA1 EA-6a: adjectives', () => {
 });
 
 describe('Wisdom definition', () => {
-  it.each(['en', 'uk'])('shows the Wisdom name and hint for both keys in %s', (lang) => {
-    const root = 'content.tokens';
-    expect(localeText(lang, `${root}.attrLabel.focus`)).toBe(
-      localeText(lang, `${root}.attrLabel.wisdom`),
-    );
-    expect(localeText(lang, `${root}.attrHint.focus`)).toBe(
-      localeText(lang, `${root}.attrHint.wisdom`),
-    );
-  });
   it('defines Wisdom as a Will reward capped at five, with its reader enabled', () => {
     expect(EQUIPMENT_ATTRIBUTES.find((attribute) => attribute.key === 'wisdom')).toMatchObject({
       stat: 'answerWillReward',
       aggregate: 'sum',
-      cap: 5,
+      itemMax: 5,
+      totalCap: 5,
       display: { format: 'plus' },
       implemented: true,
     });

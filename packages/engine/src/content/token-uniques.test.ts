@@ -60,7 +60,11 @@ describe('unique token content', () => {
   it.each<[string, Partial<UniqueTokenDefinition>, RegExp]>([
     ['an unknown type', { type: 'dragon-lance' }, /unknown type/],
     ['an unknown attribute', { attributes: [{ key: 'luck', value: 1 }] }, /luck is unknown/],
-    ['a value above the cap', { attributes: [{ key: 'heart', value: 11 }] }, /above the cap 10/],
+    [
+      'a value above the itemMax',
+      { attributes: [{ key: 'heart', value: 11 }] },
+      /above its itemMax 10/,
+    ],
     [
       'an attribute that is not implemented',
       { attributes: [{ key: 'force', value: 1 }] },

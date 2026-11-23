@@ -1,3 +1,4 @@
+import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { CRIT_RESOLVERS } from '@hexoflat/engine/battle/crit-resolver';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -72,7 +73,8 @@ export function collectContentLocaleKeys(): string[] {
     keys.add(def.tableRule);
   }
 
-  for (const resolver of CRIT_RESOLVERS) keys.add(resolver.describe(0).key);
+  for (const resolver of CRIT_RESOLVERS)
+    keys.add(resolver.describe(0, BATTLE_RULES.critChanceCap).key);
 
   for (const key of tokenLocaleKeys()) keys.add(key);
   for (const key of equipmentLocaleKeys()) keys.add(key);

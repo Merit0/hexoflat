@@ -24,8 +24,17 @@ export const battleRulesSchema = z.object({
   fallDamage: z.number().int().min(0),
   graveLootEnabled: z.boolean().default(true),
   critResolver: critResolverIdSchema.default('rng-chance'),
+  critMultiplier: z.number().int().min(2),
+  heroBaseCrit: z.number().int().min(0).default(5),
+  critChanceCap: z.number().int().min(1).max(100).default(25),
 });
 export type BattleRules = z.infer<typeof battleRulesSchema>;
+
+export function battleRulesFailures(rules: BattleRules): string[] {
+  return rules.heroBaseCrit > rules.critChanceCap
+    ? [`heroBaseCrit ${rules.heroBaseCrit} is above critChanceCap ${rules.critChanceCap}`]
+    : [];
+}
 
 export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   willPerTurn: 20,
@@ -44,4 +53,7 @@ export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   boulderWeight: 2,
   fallDamage: 1,
   graveLootEnabled: true,
+  critMultiplier: 2,
+  heroBaseCrit: 5,
+  critChanceCap: 25,
 });

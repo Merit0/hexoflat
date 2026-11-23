@@ -11,7 +11,10 @@ type AttributeFields = Omit<EquipmentAttributeDefinition, 'key' | 'display' | 'i
   implemented?: boolean;
 };
 
-function attribute(key: string, fields: AttributeFields): EquipmentAttributeDefinition {
+function attribute<K extends string>(
+  key: K,
+  fields: AttributeFields,
+): EquipmentAttributeDefinition & { key: K } {
   const { icon, format, implemented = false, ...rest } = fields;
   return {
     key,
@@ -21,11 +24,11 @@ function attribute(key: string, fields: AttributeFields): EquipmentAttributeDefi
   };
 }
 
-function blocked(
-  key: string,
+function blocked<K extends string>(
+  key: K,
   groups: EquipmentAttributeDefinition['groups'],
   icon: string,
-): EquipmentAttributeDefinition {
+): EquipmentAttributeDefinition & { key: K } {
   return attribute(key, {
     groups,
     stat: null,
@@ -39,12 +42,13 @@ function blocked(
 const HERO_SUM = { aggregate: 'sum', scope: 'hero' } as const;
 const ITEM_SUM = { aggregate: 'sum', scope: 'item' } as const;
 
-export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
+const DEFINITIONS = [
   attribute('heart', {
     groups: ['defense', 'clothing'],
     stat: 'maxHearts',
     ...HERO_SUM,
-    cap: 10,
+    itemMax: 10,
+    totalCap: 10,
     icon: 'heart',
     format: 'hearts',
     implemented: true,
@@ -55,7 +59,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     implemented: true,
     stat: 'blockSides',
     ...HERO_SUM,
-    cap: 6,
+    itemMax: 5,
+    totalCap: 6,
     icon: 'shield',
     format: 'plus',
   }),
@@ -63,6 +68,7 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     groups: [...ITEM_GROUPS],
     stat: 'maxWill',
     ...HERO_SUM,
+    itemMax: 40,
     icon: 'flame',
     format: 'plus',
     implemented: true,
@@ -72,7 +78,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     onlyTypes: ['helm'],
     stat: 'fogRadius',
     ...HERO_SUM,
-    cap: 2,
+    itemMax: 2,
+    totalCap: 2,
     icon: 'sun',
     format: 'plus',
     implemented: true,
@@ -98,30 +105,36 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     icon: 'weight',
     format: 'plus',
   }),
-  attribute('crit', {
+  attribute('crit-chance', {
     groups: ['weapon'],
+    excludes: { tool: true },
     stat: 'critPoints',
     ...ITEM_SUM,
-    cap: 10,
+    itemMax: 10,
+    totalCap: 10,
     icon: 'bolt',
     format: 'pct',
     implemented: true,
   }),
   attribute('crit-dmg', {
     groups: ['weapon'],
+    excludes: { tool: true },
     stat: 'critDamage',
     aggregate: 'max',
     scope: 'item',
-    cap: 5,
+    itemMax: 5,
+    totalCap: 5,
     icon: 'drop',
     format: 'multiplier',
     implemented: true,
   }),
   attribute('trophy', {
     groups: ['weapon'],
+    excludes: { tool: true },
     stat: 'graveLootBonus',
     ...ITEM_SUM,
-    cap: 2,
+    itemMax: 2,
+    totalCap: 2,
     icon: 'skull',
     format: 'plus',
     implemented: true,
@@ -131,7 +144,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     requires: { tool: true },
     stat: 'harvestBonus',
     ...ITEM_SUM,
-    cap: 2,
+    itemMax: 2,
+    totalCap: 2,
     icon: 'stack',
     format: 'plus',
     implemented: true,
@@ -141,7 +155,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     onlyTypes: ['shield'],
     stat: 'healOnBlock',
     ...ITEM_SUM,
-    cap: 4,
+    itemMax: 4,
+    totalCap: 4,
     icon: 'heart',
     format: 'hearts',
     implemented: true,
@@ -150,7 +165,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     groups: ['defense'],
     stat: 'thorns',
     ...HERO_SUM,
-    cap: 2,
+    itemMax: 2,
+    totalCap: 2,
     icon: 'star',
     format: 'hearts',
   }),
@@ -160,16 +176,18 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     stat: 'absorb',
     aggregate: 'max',
     scope: 'hero',
-    cap: 1,
+    itemMax: 1,
+    totalCap: 1,
     icon: 'ward',
     format: 'hearts',
   }),
   attribute('hero-crit', {
     groups: ['clothing'],
     onlyTypes: ['gloves'],
-    stat: 'critPoints',
+    stat: 'heroCritPoints',
     ...HERO_SUM,
-    cap: 25,
+    itemMax: 25,
+    totalCap: 25,
     icon: 'target',
     format: 'pct',
   }),
@@ -188,7 +206,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     onlyTypes: ['gloves'],
     stat: 'useWillDiscount',
     ...HERO_SUM,
-    cap: 2,
+    itemMax: 2,
+    totalCap: 2,
     icon: 'gloves',
     format: 'minus',
     implemented: true,
@@ -198,27 +217,18 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
     onlyTypes: ['ring'],
     stat: 'shopBuyDiscountPct',
     ...HERO_SUM,
-    cap: 10,
+    itemMax: 10,
+    totalCap: 10,
     icon: 'coins',
     format: 'pct',
-  }),
-  attribute('focus', {
-    groups: ['jewelry'],
-    onlyTypes: ['amulet'],
-    stat: 'answerWillReward',
-    ...HERO_SUM,
-    cap: 5,
-    deprecated: true,
-    icon: 'book',
-    format: 'plus',
-    implemented: true,
   }),
   attribute('wisdom', {
     groups: ['jewelry'],
     onlyTypes: ['amulet'],
     stat: 'answerWillReward',
     ...HERO_SUM,
-    cap: 5,
+    itemMax: 5,
+    totalCap: 5,
     icon: 'book',
     format: 'plus',
     implemented: true,
@@ -234,4 +244,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   blocked('counter', ['defense'], 'cross'),
   blocked('steadfast', ['defense'], 'tower'),
   blocked('rest', ['clothing'], 'moon'),
-];
+] as const;
+
+export type EquipmentAttributeKey = (typeof DEFINITIONS)[number]['key'];
+
+export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = DEFINITIONS;

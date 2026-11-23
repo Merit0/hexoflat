@@ -6,6 +6,7 @@ import type { EquipmentAttributeDefinition } from './equipment-attribute-schema'
 import type { EquipmentTypeDefinition } from './equipment-type-schema';
 import { HERO_STATS, type THeroStat } from './equipment-keys';
 import { resolveStat } from './stat-values';
+import { typeBaseStats } from './type-base-stats';
 
 /** Equipment bonuses, in content units (maxHearts is measured in half-hearts). */
 export type HeroStats = Record<THeroStat, number>;
@@ -22,17 +23,13 @@ const DEFAULT_REGISTRY: HeroStatRegistry = {
 
 function baseValues(cell: HeartCell, registry: HeroStatRegistry): Partial<HeroStats> {
   const type = registry.types.find((type) => type.key === (cell.token?.type ?? cell.key));
-  const base = type?.base;
+  const base = type ? typeBaseStats(type) : {};
   if (!cell.token)
     return {
       maxHearts: getHeartPoints(cell.key as THexobjectKey) * 2,
-      blockSides: type?.block?.sides ?? base?.blockSides ?? 0,
+      blockSides: base.blockSides ?? 0,
     };
-  return {
-    maxHearts: base?.hearts ?? 0,
-    maxWill: base?.will ?? 0,
-    blockSides: type?.block?.sides ?? base?.blockSides ?? 0,
-  };
+  return base;
 }
 
 export function resolveHeroStats(

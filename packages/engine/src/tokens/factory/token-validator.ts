@@ -6,13 +6,10 @@ import {
   type ITokenValidator,
   type TokenResult,
 } from './token-generation';
-import { attributeFailure } from '../attribute-rules';
+import { attributeFailure, attributeSetFailure } from '../attribute-rules';
 import type { AttributeProfiles } from '../equipment/attribute-profile-schema';
 import type { AttributeRegistry, TypeRegistry } from '../registries';
 import { mapTierSchema } from '../token-keys';
-
-const MAX_BLOCK_SIDES = 6;
-const BLOCK_ATTRIBUTE_KEY = 'shield';
 
 export class ZodTokenValidator implements ITokenValidator {
   constructor(
@@ -43,13 +40,8 @@ export class ZodTokenValidator implements ITokenValidator {
       );
       if (failure) return refuseToken('INVALID_TOKEN', failure);
     }
-    const sides =
-      (sheet.type.block?.sides ?? 0) +
-      sheet.attributes
-        .filter((attribute) => attribute.key === BLOCK_ATTRIBUTE_KEY)
-        .reduce((sum, attribute) => sum + attribute.value, 0);
-    if (sides > MAX_BLOCK_SIDES)
-      return refuseToken('INVALID_TOKEN', 'A shield cannot exceed six block sides');
+    const combined = attributeSetFailure(this.attributes, sheet.type, sheet.attributes);
+    if (combined) return refuseToken('INVALID_TOKEN', combined);
     return { ok: true, value: true };
   }
 

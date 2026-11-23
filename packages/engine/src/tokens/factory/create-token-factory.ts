@@ -39,7 +39,7 @@ export function createTokenFactory(
       typePicker: new RealmTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(content.adjectives),
       spriteResolver,
-      attributeGenerator: createEquipmentAttributeGenerator(content.attributes, profiles),
+      attributeGenerator: createEquipmentAttributeGenerator(attributes, profiles),
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(content.priceRanges),
       descriptionBuilder: new SpecSheetDescriptionBuilder(),

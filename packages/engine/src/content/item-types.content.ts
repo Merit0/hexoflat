@@ -18,7 +18,6 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     gender: 'm',
     materials: ['iron', 'bronze', 'copper', 'bone'],
     enabled: true,
-    base: { damage: 2 },
   },
   {
     key: 'shield',
@@ -32,7 +31,6 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     gender: 'm',
     materials: ['wood', 'iron', 'bronze', 'leather', 'bone'],
     enabled: true,
-    base: { defense: 2, blockSides: 1 },
   },
   {
     key: 'axe',
@@ -45,7 +43,6 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     gender: 'f',
     materials: ['iron', 'bronze', 'copper', 'stone'],
     enabled: true,
-    base: { damage: 1 },
   },
   {
     key: 'pickaxe',
@@ -58,7 +55,6 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     gender: 'n',
     materials: ['iron', 'bronze', 'copper', 'stone'],
     enabled: true,
-    base: { damage: 1 },
   },
 ];
 

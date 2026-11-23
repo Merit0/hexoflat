@@ -1,6 +1,5 @@
 import { availableInDimension } from '../dimensions/availability';
 import type { EDimension } from '../dimensions/dimensions';
-import type { ERarityKind } from '../abstraction/hexobject-abstraction';
 import {
   equipmentAttributeDefinitionSchema,
   type EquipmentAttributeDefinition,
@@ -51,10 +50,6 @@ export class TypeRegistry {
 
   all(): readonly ItemTypeDefinition[] {
     return [...this.byKey.values()];
-  }
-
-  forRealm(realm: ERarityKind): readonly ItemTypeDefinition[] {
-    return this.all().filter((definition) => (definition.realms as ERarityKind[]).includes(realm));
   }
 }
 

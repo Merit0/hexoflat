@@ -34,16 +34,66 @@ export const equipmentAttributeDefinitionSchema = z
       .min(1)
       .refine(distinctValues, 'a type is listed twice')
       .optional(),
-    requires: z.strictObject({ tool: z.literal(true) }).optional(),
+    requires: z
+      .strictObject({
+        tool: z.literal(true).optional(),
+        attributes: z
+          .array(attributeKeySchema)
+          .min(1)
+          .refine(distinctValues, 'a required attribute is listed twice')
+          .optional(),
+      })
+      .refine(
+        (requires) => requires.tool !== undefined || requires.attributes !== undefined,
+        'requires needs a tool or attributes',
+      )
+      .optional(),
+    excludes: z.strictObject({ tool: z.literal(true) }).optional(),
     stat: heroStatSchema.nullable(),
     aggregate: z.enum(STAT_AGGREGATES),
     scope: z.enum(ATTRIBUTE_SCOPES),
-    cap: z.number().int().positive().optional(),
+    itemMax: z.number().int().positive().optional(),
+    totalCap: z.number().int().positive().optional(),
     display: attributeDisplaySchema,
     implemented: z.boolean(),
     deprecated: z.boolean().optional(),
   })
   .superRefine((attribute, ctx) => {
+    if (
+      attribute.aggregate === 'min' &&
+      (attribute.itemMax !== undefined || attribute.totalCap !== undefined)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['aggregate'],
+        message: 'a min aggregate cannot have itemMax or totalCap',
+      });
+    }
+    if (
+      attribute.itemMax !== undefined &&
+      attribute.totalCap !== undefined &&
+      attribute.itemMax > attribute.totalCap
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['itemMax'],
+        message: 'itemMax cannot be above totalCap',
+      });
+    }
+    if (attribute.requires?.attributes?.includes(attribute.key)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['requires', 'attributes'],
+        message: 'an attribute cannot require itself',
+      });
+    }
+    if (attribute.requires?.tool && attribute.excludes?.tool) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['excludes', 'tool'],
+        message: 'an attribute cannot both require and exclude a tool',
+      });
+    }
     if (attribute.stat === null && attribute.implemented) {
       ctx.addIssue({
         code: 'custom',

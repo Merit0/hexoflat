@@ -29,7 +29,7 @@ export const itemTypeDefinitionSchema = z.strictObject({
   gender: equipmentTypeFieldShape.gender.optional(),
   materials: equipmentTypeFieldShape.materials.optional(),
   enabled: equipmentTypeFieldShape.enabled.optional(),
-  base: equipmentTypeFieldShape.base.optional(),
+  base: equipmentTypeFieldShape.base,
 });
 export type ItemTypeDefinition = z.infer<typeof itemTypeDefinitionSchema>;
 

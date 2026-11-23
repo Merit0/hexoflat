@@ -6,13 +6,17 @@ import { CRIT_RESOLVERS, critResolverOf } from './crit-resolver';
 describe.each(CRIT_RESOLVERS)('EA-8 crit resolver $id', (resolver) => {
   it('never crits at rating zero, while still resolving every roll', () => {
     const rng = vi.fn(() => 0);
-    expect(resolver.resolve({ rating: 0, rng }).critical).toBe(false);
+    expect(resolver.resolve({ rating: 0, cap: 25, rng }).critical).toBe(false);
     expect(rng).toHaveBeenCalledOnce();
   });
 
   it('is deterministic for the same seed, strike and rating', () => {
     const resolve = () =>
-      resolver.resolve({ rating: 12, rng: deriveStream('seed', 'combat:b1:strike:3:crit') });
+      resolver.resolve({
+        rating: 12,
+        cap: 25,
+        rng: deriveStream('seed', 'combat:b1:strike:3:crit'),
+      });
     expect(resolve()).toEqual(resolve());
     expect(critResolverOf(resolver.id)).toBe(resolver);
   });
@@ -24,7 +28,7 @@ describe.each(CRIT_RESOLVERS)('EA-8 crit resolver $id', (resolver) => {
         'utf8',
       ),
     ) as Record<string, unknown>;
-    const line = resolver.describe(12);
+    const line = resolver.describe(12, 25);
     const text = line.key
       .split('.')
       .reduce<unknown>((value, key) => (value as Record<string, unknown>)[key], dictionary);

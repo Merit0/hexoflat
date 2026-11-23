@@ -80,7 +80,6 @@ export function extendedContent(): TokenContent {
         gender: 'm',
         materials: ['iron'],
         enabled: true,
-        base: { damage: 3 },
       },
     ],
     attributes: [...TOKEN_CONTENT.attributes, WARD_ATTRIBUTE],

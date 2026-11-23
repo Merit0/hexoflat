@@ -183,6 +183,7 @@ export const battleStateSchema = z.object({
   collect: collectSchema.optional(),
   tokenOrigin: tokenOriginSchema.optional(),
   tokenSecret: battleTokenSecretSchema,
+  critOverride: z.strictObject({ heroBaseCrit: z.number().int().min(0).max(100) }).optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
 

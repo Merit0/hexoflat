@@ -27,6 +27,7 @@ export interface ValueRange {
 export interface PoolEntry extends ValueRange {
   key: string;
   weight: number;
+  requires?: readonly string[];
 }
 
 export interface PoolRequest {

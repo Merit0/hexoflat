@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { sampleToken } from '../tokens/token-test-setup';
 import { BATTLE_RULES } from './battle-content';
 import { battleHeroStats } from './hero-stats';
-import { battleWith, hero, skeleton, giveTurn, heroDoes } from './battle-test-setup';
+import {
+  battleWith,
+  hero,
+  skeleton,
+  giveTurn,
+  heroDoes,
+  NO_BASE_CRIT_RULES,
+} from './battle-test-setup';
 import { battleStateSchema } from './battle-state';
 import { resolveStrike, type StrikeContext } from './strike-pipeline';
 
@@ -10,7 +17,7 @@ function context(chance = 10, multiplier = 0): StrikeContext {
   const attacker = hero({ q: 0, r: 0 });
   attacker.hands.right!.token = sampleToken({
     attributes: [
-      { key: 'crit', value: chance },
+      { key: 'crit-chance', value: chance },
       ...(multiplier ? [{ key: 'crit-dmg', value: multiplier }] : []),
     ],
   });
@@ -54,7 +61,7 @@ describe('weapon critical strikes', () => {
       damageDealt: 2 * multiplier,
     });
     ctx.weapon!.token!.attributes = [{ key: 'crit-dmg', value: multiplier }];
-    expect(resolveStrike(ctx, BATTLE_RULES).result).toMatchObject({
+    expect(resolveStrike(ctx, NO_BASE_CRIT_RULES).result).toMatchObject({
       critical: false,
       damageBeforeBlock: 2,
       damageDealt: 2,
@@ -81,10 +88,10 @@ describe('weapon critical strikes', () => {
     ctx.attacker.bag = [bonus];
     ctx.attackerStats.critPoints = 25;
     ctx.weapon = { key: 'unarmed', power: 1 };
-    expect(resolveStrike(ctx, BATTLE_RULES).result.critical).toBe(false);
+    expect(resolveStrike(ctx, NO_BASE_CRIT_RULES).result.critical).toBe(false);
     ctx.weapon = bonus;
     ctx.attacker.side = 'enemies';
-    expect(resolveStrike(ctx, BATTLE_RULES).result.critical).toBe(false);
+    expect(resolveStrike(ctx, NO_BASE_CRIT_RULES).result.critical).toBe(false);
   });
 
   it.each([2, 10, 99])('10 000 rolls follow %s percent, capped at 10', (rating) => {
@@ -93,7 +100,7 @@ describe('weapon critical strikes', () => {
     for (let index = 0; index < 10_000; index++) {
       ctx.strike.id = `frequency:strike:${index}`;
       ctx.blocked = index % 2 === 0;
-      if (resolveStrike(ctx, BATTLE_RULES).result.critical) critical++;
+      if (resolveStrike(ctx, NO_BASE_CRIT_RULES).result.critical) critical++;
     }
     expect(Math.abs(critical / 100 - Math.min(10, rating))).toBeLessThan(1);
   });

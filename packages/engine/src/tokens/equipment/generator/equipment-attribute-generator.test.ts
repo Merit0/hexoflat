@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AttributeRegistry } from '../../registries';
 import { ATTRIBUTE_PROFILES } from '../../../content/attribute-profiles.content';
 import { EQUIPMENT_ATTRIBUTES } from '../../../content/equipment-attributes.content';
 import { EQUIPMENT_TYPES } from '../../../content/item-types.content';
@@ -16,7 +17,6 @@ import {
   withProfileRow,
 } from './generator-test-setup';
 import { createEquipmentAttributeGenerator } from './create-equipment-attribute-generator';
-import { resolveGenerationLevel } from './generation-level';
 
 const byKey = new Map(FIXTURE_ATTRIBUTES.map((attribute) => [attribute.key, attribute]));
 const generator = fixtureGenerator();
@@ -94,26 +94,36 @@ describe('EA-3: pool rules', () => {
     }
   });
 
-  it('crit-dmg appears without crit on the same item', () => {
+  it('crit-dmg also appears without crit-chance on the same item', () => {
     const lone = rolls.filter(
       ({ attributes }) =>
-        attributes.some((a) => a.key === 'crit-dmg') && !attributes.some((a) => a.key === 'crit'),
+        attributes.some((a) => a.key === 'crit-dmg') &&
+        !attributes.some((a) => a.key === 'crit-chance'),
     );
     expect(lone.length).toBeGreaterThan(0);
   });
+
+  it('a dependent attribute appears only together with its requirement', () => {
+    const dependent = fixtureGenerator(
+      FIXTURE_ATTRIBUTES.map((attribute) =>
+        attribute.key === 'crit-dmg'
+          ? { ...attribute, requires: { attributes: ['crit-chance'] } }
+          : attribute,
+      ),
+    );
+    const withDamage = typesOf('weapon')
+      .flatMap((type) =>
+        TIERS.flatMap((tier) =>
+          seeds().map((seed) => rollFor(dependent, type, tier, seed).map((a) => a.key)),
+        ),
+      )
+      .filter((keys) => keys.includes('crit-dmg'));
+    expect(withDamage.length).toBeGreaterThan(0);
+    for (const keys of withDamage) expect(keys).toContain('crit-chance');
+  });
 });
 
-describe('EA-4: level and determinism', () => {
-  it('container level wins over the board tier, the default is 1', () => {
-    expect(resolveGenerationLevel(3, 2)).toBe(3);
-    expect(resolveGenerationLevel(undefined, 2)).toBe(2);
-    expect(resolveGenerationLevel(null, 4)).toBe(4);
-    expect(resolveGenerationLevel()).toBe(1);
-    expect(resolveGenerationLevel(null, null)).toBe(1);
-    expect(resolveGenerationLevel(7, 9)).toBe(1);
-    expect(resolveGenerationLevel(0, 3)).toBe(3);
-  });
-
+describe('EA-4: determinism', () => {
   it('the same seed and context give the same attributes', () => {
     const again = fixtureGenerator();
     for (const type of EQUIPMENT_TYPES) {
@@ -126,7 +136,7 @@ describe('EA-4: level and determinism', () => {
   it('an attribute of another group changes nothing', () => {
     const extra = fixtureAttribute('lucky-charm', { groups: ['jewelry'], stat: 'maxWill' });
     const extended = createEquipmentAttributeGenerator(
-      [...FIXTURE_ATTRIBUTES, extra],
+      new AttributeRegistry([...FIXTURE_ATTRIBUTES, extra]),
       withProfileRow(FIXTURE_PROFILES, extra.key, {
         weight: { jewelry: 90 },
         min: 1,
@@ -144,7 +154,7 @@ describe('EA-4: level and determinism', () => {
   it('a new attribute in the same group does not change the count stream', () => {
     const extra = fixtureAttribute('keen-edge', { groups: ['weapon'], stat: 'critPoints' });
     const extended = createEquipmentAttributeGenerator(
-      [...FIXTURE_ATTRIBUTES, extra],
+      new AttributeRegistry([...FIXTURE_ATTRIBUTES, extra]),
       withProfileRow(FIXTURE_PROFILES, extra.key, {
         weight: { weapon: 500 },
         min: 1,
@@ -179,7 +189,10 @@ describe('closed attributes are never generated', () => {
       }),
     FIXTURE_PROFILES,
   );
-  const closed = createEquipmentAttributeGenerator([...FIXTURE_ATTRIBUTES, ...hidden], profiles);
+  const closed = createEquipmentAttributeGenerator(
+    new AttributeRegistry([...FIXTURE_ATTRIBUTES, ...hidden]),
+    profiles,
+  );
 
   it('an attribute with implemented false or deprecated true never appears in 500 seeds', () => {
     for (const type of typesOf('weapon')) {
@@ -195,7 +208,10 @@ describe('closed attributes are never generated', () => {
 });
 
 describe('real content', () => {
-  const real = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
+  const real = createEquipmentAttributeGenerator(
+    new AttributeRegistry(EQUIPMENT_ATTRIBUTES),
+    ATTRIBUTE_PROFILES,
+  );
 
   it('gives only implemented attributes for every group and tier', () => {
     for (const type of EQUIPMENT_TYPES) {
@@ -203,7 +219,7 @@ describe('real content', () => {
         for (const seed of seeds(100)) {
           for (const { key } of rollFor(real, type, tier, seed))
             expect([
-              'crit',
+              'crit-chance',
               'crit-dmg',
               'heart',
               'shield',

@@ -3,18 +3,20 @@ import type {
   AttributeProfiles,
   GroupWeights,
 } from '../tokens/equipment/attribute-profile-schema';
-import type { TAttributeProfileTier } from '../tokens/equipment/equipment-keys';
+import type { PerMapTier } from '../tokens/equipment/equipment-keys';
+import { MAP_TIERS, type TMapTier } from '../tokens/token-keys';
+import type { EquipmentAttributeKey } from './equipment-attributes.content';
 
 type Range = readonly [min: number, max: number];
 
 interface ProfileRow {
   weight: GroupWeights;
-  minTier?: number;
-  tiers: readonly [Range, Range, Range, Range];
+  minTier?: TMapTier;
+  tiers: PerMapTier<Range>;
 }
 
-const ROWS: Readonly<Record<string, ProfileRow>> = {
-  crit: {
+const ROWS: Readonly<Partial<Record<EquipmentAttributeKey, ProfileRow>>> = {
+  'crit-chance': {
     weight: { weapon: 45 },
     tiers: [
       [2, 2],
@@ -161,22 +163,23 @@ const ROWS: Readonly<Record<string, ProfileRow>> = {
   },
 };
 
-const COUNT_WEIGHTS: Readonly<Record<TAttributeProfileTier, readonly number[]>> = {
-  'tier-1': [55, 40, 5],
-  'tier-2': [40, 45, 15],
-  'tier-3': [25, 50, 25],
-  'tier-4': [10, 50, 40],
-};
+const COUNT_WEIGHTS: PerMapTier<readonly number[]> = [
+  [55, 40, 5],
+  [40, 45, 15],
+  [25, 50, 25],
+  [10, 50, 40],
+];
 
 export const ATTRIBUTE_MAX_COUNT = 2;
 
-function profileFor(tier: TAttributeProfileTier, index: number): AttributeProfile {
+function profileFor(tier: TMapTier): AttributeProfile {
+  const index = MAP_TIERS.indexOf(tier);
   return {
     maxCount: ATTRIBUTE_MAX_COUNT,
-    countWeights: [...COUNT_WEIGHTS[tier]],
+    countWeights: [...COUNT_WEIGHTS[index]],
     attributes: Object.fromEntries(
       Object.entries(ROWS)
-        .filter(([, row]) => index + 1 >= (row.minTier ?? 1))
+        .filter(([, row]) => tier >= (row.minTier ?? MAP_TIERS[0]))
         .map(([key, row]) => {
           const [min, max] = row.tiers[index];
           return [key, { weight: { ...row.weight }, min, max, step: 1 }];
@@ -185,9 +188,6 @@ function profileFor(tier: TAttributeProfileTier, index: number): AttributeProfil
   };
 }
 
-export const ATTRIBUTE_PROFILES: AttributeProfiles = {
-  'tier-1': profileFor('tier-1', 0),
-  'tier-2': profileFor('tier-2', 1),
-  'tier-3': profileFor('tier-3', 2),
-  'tier-4': profileFor('tier-4', 3),
-};
+export const ATTRIBUTE_PROFILES = Object.fromEntries(
+  MAP_TIERS.map((tier) => [`tier-${tier}`, profileFor(tier)]),
+) as AttributeProfiles;

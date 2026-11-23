@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { ITEM_TYPES } from '../content/item-types.content';
 import { EQUIPMENT_ATTRIBUTES } from '../content/equipment-attributes.content';
 import { AttributeRegistry, TypeRegistry } from './registries';
@@ -18,22 +17,12 @@ describe('TypeRegistry', () => {
   it('refuses a type listed twice', () => {
     expect(() => new TypeRegistry([ITEM_TYPES[0], ITEM_TYPES[0]])).toThrow(/listed twice/);
   });
-
-  it('lists the types of a realm', () => {
-    expect(registry.forRealm(ERarityKind.IDOL).map((type) => type.key)).toEqual([
-      'sword',
-      'shield',
-      'axe',
-      'pickaxe',
-    ]);
-    expect(registry.forRealm(ERarityKind.ALIEN)).toEqual([]);
-  });
 });
 
 describe('AttributeRegistry', () => {
   const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
 
-  it('holds the equipment attributes with heart, will, fog, trophy, yield, smart-step, deft-hands and wisdom (with legacy focus) implemented', () => {
+  it('holds the equipment attributes with heart, will, fog, trophy, yield, smart-step, deft-hands, wisdom and crit-chance implemented', () => {
     expect(registry.all()).toHaveLength(EQUIPMENT_ATTRIBUTES.length);
     expect(
       registry
@@ -45,14 +34,13 @@ describe('AttributeRegistry', () => {
       'shield',
       'will',
       'fog',
-      'crit',
+      'crit-chance',
       'crit-dmg',
       'trophy',
       'yield',
       'heal-on-block',
       'smart-step',
       'deft-hands',
-      'focus',
       'wisdom',
     ]);
   });

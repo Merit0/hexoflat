@@ -77,14 +77,16 @@ describe('separate concrete dimensional catalogues', () => {
     const restricted = createTokenFactory({
       ...TOKEN_CONTENT,
       baseItems: TOKEN_CONTENT.baseItems.map((item) =>
-        item.key === 'heaven-sword' ? { ...item, attributes: ['heart'] } : item,
+        item.key === 'heaven-sword' ? { ...item, attributes: ['crit-chance'] } : item,
       ),
     });
-    for (let n = 0; n < 50; n++) {
+    const rolled = Array.from({ length: 50 }, (_, n) => {
       const made = restricted.createBase({ ...context, baseKey: 'heaven-sword', n });
       if (!made.ok) throw new Error(made.refusal.code);
-      expect(made.value.attributes.every((entry) => entry.key === 'heart')).toBe(true);
-    }
+      return made.value.attributes.map((entry) => entry.key);
+    });
+    expect(rolled.flat().every((key) => key === 'crit-chance')).toBe(true);
+    expect(rolled.flat().length).toBeGreaterThan(0);
     expect(
       restricted.createBase(
         { ...context, baseKey: 'heaven-sword' },
