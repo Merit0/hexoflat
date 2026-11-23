@@ -22,6 +22,12 @@ export const RARITY_TONES: readonly TRarityTone[] = Object.freeze(
   DIMENSION_TIERS.map((view) => toneName(view.tokenType, view.tier)),
 );
 
+export const RARITY_TONES_BY_SORT_RANK: readonly TRarityTone[] = Object.freeze(
+  [...DIMENSION_TIERS]
+    .sort((a, b) => a.sortRank - b.sortRank)
+    .map((view) => toneName(view.tokenType, view.tier)),
+);
+
 export const RARITY_TONE_LIGHTS: Readonly<Record<TRarityTone, TierLight>> = Object.freeze(
   Object.fromEntries(
     DIMENSION_TIERS.map((view) => [toneName(view.tokenType, view.tier), view.light]),

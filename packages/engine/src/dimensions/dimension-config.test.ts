@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { RARITY_TONES, RARITY_TONE_LIGHTS, rarityTone } from '../content/rarity-rules';
 import { TOKEN_PRICE_RANGES } from '../content/token-prices.content';
+import { TONE_SORT_ORDER } from '../inventory/item-queries';
 import { LIGHT_COLOR_BY_TONE, LIGHT_TONES } from '../tokens/light-tone';
 import { BASE_REALMS, TOKEN_ORIGINS } from '../tokens/token-keys';
 import {
@@ -17,6 +18,7 @@ import {
 const VALID_TIER = {
   light: { id: 'white', color: '#FFFFFF' },
   price: { kind: 'range', range: [1, 2] },
+  sortRank: 99,
 };
 
 function recordWith(change: Record<string, unknown>) {
@@ -30,7 +32,7 @@ describe('DA3a-4: the dimension record is complete', () => {
   });
 
   it.each(DIMENSION_TIERS.map((view) => [view.dimension, view.tier, view] as const))(
-    '%s %s has a light and a price',
+    '%s %s has a light, a price rule (base = range, unique = manual) and a sort rank',
     (_dimension, tier, view) => {
       expect(view.light.id).toMatch(/^[a-z]+$/);
       expect(view.light.color).toMatch(/^#[0-9A-F]{6}$/);
@@ -39,8 +41,15 @@ describe('DA3a-4: the dimension record is complete', () => {
       } else {
         expect(view.price).toEqual({ kind: 'manual' });
       }
+      expect(Number.isInteger(view.sortRank)).toBe(true);
+      expect(view.sortRank).toBeGreaterThanOrEqual(0);
     },
   );
+
+  it('every tier has its own sort rank', () => {
+    const ranks = DIMENSION_TIERS.map((view) => view.sortRank);
+    expect(new Set(ranks).size).toBe(ranks.length);
+  });
 
   it('Alien (Nowhere) is unique only; the other dimensions have base and unique', () => {
     expect(tiersOfDimension(EDimension.NOWHERE)).toEqual(['unique']);
@@ -84,6 +93,36 @@ describe('DA3a-4: the dimension record is complete', () => {
         [EDimension.HEAVEN]: {
           tokenType: ERarityKind.SPARK,
           tiers: { base: { ...VALID_TIER, price: { kind: 'range', range: [9, 1] } } },
+        },
+      }),
+    ],
+    [
+      'a tier without a sort rank',
+      recordWith({
+        [EDimension.HEAVEN]: {
+          tokenType: ERarityKind.SPARK,
+          tiers: { base: { light: VALID_TIER.light, price: VALID_TIER.price } },
+        },
+      }),
+    ],
+    [
+      'a unique tier priced by a range',
+      recordWith({
+        [EDimension.NOWHERE]: { tokenType: ERarityKind.ALIEN, tiers: { unique: VALID_TIER } },
+      }),
+    ],
+    [
+      'two tiers with one sort rank',
+      recordWith({
+        [EDimension.NOWHERE]: {
+          tokenType: ERarityKind.ALIEN,
+          tiers: {
+            unique: {
+              light: { id: 'white', color: '#FFFFFF' },
+              price: { kind: 'manual' },
+              sortRank: 1,
+            },
+          },
         },
       }),
     ],
@@ -152,6 +191,18 @@ describe('DA3a: derived views keep the values and order they had before', () => 
     });
     expect(rarityTone({ kind: ERarityKind.ALIEN, boss: false })).toBe('alien');
     expect(rarityTone({ kind: ERarityKind.ALIEN, boss: true })).toBe('alien');
+  });
+
+  it('the inventory sort order of rarity tones', () => {
+    expect(TONE_SORT_ORDER).toEqual([
+      'alien',
+      'spark-boss',
+      'gloom-boss',
+      'idol-boss',
+      'spark',
+      'gloom',
+      'idol',
+    ]);
   });
 
   it('base price ranges', () => {

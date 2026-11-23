@@ -38,7 +38,11 @@ const tierPriceSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('manual') }),
 ]);
 
-const tierConfigSchema = z.strictObject({ light: lightSchema, price: tierPriceSchema });
+const tierConfigSchema = z.strictObject({
+  light: lightSchema,
+  price: tierPriceSchema,
+  sortRank: z.number().int().nonnegative(),
+});
 
 const dimensionConfigSchema = z.strictObject({
   tokenType: itemFamilySchema,
@@ -70,11 +74,24 @@ export const dimensionConfigRecordSchema = z
         ),
       ),
     { message: 'a light is used twice' },
+  )
+  .refine(
+    (record) =>
+      distinct(
+        Object.values(record).flatMap((config) =>
+          TOKEN_TIERS.flatMap((tier) => {
+            const rank = config.tiers[tier]?.sortRank;
+            return rank === undefined ? [] : [String(rank)];
+          }),
+        ),
+      ),
+    { message: 'a sort rank is used twice' },
   );
 
 interface TierShape {
   readonly light: DimensionLight;
   readonly price: TierPrice;
+  readonly sortRank: number;
 }
 
 interface DimensionShape {
@@ -89,8 +106,13 @@ const DIMENSION_CONFIG = {
       base: {
         light: { id: 'blue', color: '#3E8BFF' },
         price: { kind: 'range', range: [60, 800] },
+        sortRank: 5,
       },
-      unique: { light: { id: 'violet', color: '#A855F7' }, price: { kind: 'manual' } },
+      unique: {
+        light: { id: 'violet', color: '#A855F7' },
+        price: { kind: 'manual' },
+        sortRank: 2,
+      },
     },
   },
   [EDimension.EARTH]: {
@@ -99,8 +121,13 @@ const DIMENSION_CONFIG = {
       base: {
         light: { id: 'gray', color: '#A9AEB4' },
         price: { kind: 'range', range: [40, 600] },
+        sortRank: 6,
       },
-      unique: { light: { id: 'green', color: '#4FD27A' }, price: { kind: 'manual' } },
+      unique: {
+        light: { id: 'green', color: '#4FD27A' },
+        price: { kind: 'manual' },
+        sortRank: 3,
+      },
     },
   },
   [EDimension.HEAVEN]: {
@@ -109,14 +136,19 @@ const DIMENSION_CONFIG = {
       base: {
         light: { id: 'yellow', color: '#F5D33B' },
         price: { kind: 'range', range: [100, 1200] },
+        sortRank: 4,
       },
-      unique: { light: { id: 'orange', color: '#FF8A2A' }, price: { kind: 'manual' } },
+      unique: {
+        light: { id: 'orange', color: '#FF8A2A' },
+        price: { kind: 'manual' },
+        sortRank: 1,
+      },
     },
   },
   [EDimension.NOWHERE]: {
     tokenType: ERarityKind.ALIEN,
     tiers: {
-      unique: { light: { id: 'red', color: '#FF3B3B' }, price: { kind: 'manual' } },
+      unique: { light: { id: 'red', color: '#FF3B3B' }, price: { kind: 'manual' }, sortRank: 0 },
     },
   },
 } as const satisfies Record<EDimension, DimensionShape>;
@@ -170,6 +202,7 @@ export interface DimensionTierView {
   tier: TTokenTier;
   light: TierLight;
   price: TierPrice;
+  sortRank: number;
 }
 
 export interface TierLight {
@@ -195,6 +228,7 @@ export const DIMENSION_TIERS: readonly DimensionTierView[] = Object.freeze(
           tier,
           light: config.light as TierLight,
           price: config.price,
+          sortRank: config.sortRank,
         }),
       ];
     }),

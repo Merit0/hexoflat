@@ -1,6 +1,12 @@
 import { itemDimensionOf } from './item-dimension';
 import { getMeta, getPrototype, usePriceOf } from '../content';
-import { DEFAULT_RARITY, rarityTone, tokenRarity, type TRarityTone } from '../content/rarity-rules';
+import {
+  DEFAULT_RARITY,
+  RARITY_TONES_BY_SORT_RANK,
+  rarityTone,
+  tokenRarity,
+  type TRarityTone,
+} from '../content/rarity-rules';
 import { EHexobjectGroup, type TEquipSlot } from '../abstraction/hexobject-abstraction';
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
 import { calculateCarriedWeightKg } from '../utils/inventory/traits-resolver';
@@ -18,15 +24,7 @@ export const CATEGORY_ORDER: readonly TItemCategory[] = [
   'quest',
 ];
 
-export const TONE_SORT_ORDER: readonly TRarityTone[] = [
-  'alien',
-  'spark-boss',
-  'gloom-boss',
-  'idol-boss',
-  'spark',
-  'gloom',
-  'idol',
-];
+export const TONE_SORT_ORDER: readonly TRarityTone[] = RARITY_TONES_BY_SORT_RANK;
 
 export function stackLimit(item: InventoryItem): number | null {
   const traits = getMeta(item.key)?.traits;
