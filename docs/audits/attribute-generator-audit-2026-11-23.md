@@ -432,6 +432,10 @@ Oleh's decisions: every hero has a base crit chance of 5%; enemies keep 0; the t
    fixture's < 2% roll now crits ×2 = 4). Engine 2559, API 312, web 4408 passed; e2e equipment-crit 5/5.
 6. Not done: hero-crit and gloves stay disabled; no UI shows the hero's total crit chance (`content.battle.crit.chance` is only
    registered as a locale key); no `tableRule` describes crit.
+7. For the separate task «show all hero attributes in the UI» (Oleh, 2026-11-23): no attribute hint (`attrHint`) is shown
+   anywhere yet. The `crit-chance` hint must read «Base chance {base}%, +1% per point, {cap}% in total» (uk «Базовий шанс
+   {base}%, +1% за очко, загалом не більше {cap}%»), with `base` = `BATTLE_RULES.heroBaseCrit` and `cap` = the crit chance cap
+   from `BATTLE_RULES` given by the engine, never written into the locale string.
 
 ### Requirement crit-dmg -> crit-chance removed (2026-11-23)
 
