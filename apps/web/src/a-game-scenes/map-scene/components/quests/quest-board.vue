@@ -14,7 +14,24 @@
       close-testid="quest-board-close"
       :close-label="t('quest.close')"
       @close="closeKnowledgePanel()"
-    />
+    >
+      <template v-if="quote && !run && !result" #actions>
+        <quest-action-button
+          testid="quest-board-refresh"
+          :aria-label="t('quest.board.refresh.label', { n: quote.refreshPrice })"
+          :disabled="boardBusy || questBusy"
+          @click="refresh"
+        >
+          <span class="refresh-copy">
+            {{ t('quest.board.refresh.action') }}
+            <span class="refresh-price">
+              <img :src="WILL_ICON_URL" alt="" />
+              {{ quote.refreshPrice }}
+            </span>
+          </span>
+        </quest-action-button>
+      </template>
+    </board-header>
     <quest-run-panel v-if="run || result" />
     <template v-else>
       <div class="banner" data-testid="quest-board-resources">
@@ -104,6 +121,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { closeKnowledgePanel } from '@/composables/use-knowledge-panel';
 import { useQuestBoardView } from '@/composables/use-quest-board-view';
+import { useQuestBoardSession } from '@/composables/use-quest-board-session';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { questDrag, targetOf } from '@/composables/use-quest-drag';
 import { useQuestDetails } from '@/composables/use-quest-details';
@@ -119,6 +137,7 @@ import QuestTakenBar from './quest-taken-bar.vue';
 import QuestTip from './quest-tip.vue';
 import QuestDragGhost from './quest-drag-ghost.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
+import QuestActionButton from './quest-action-button.vue';
 
 const { t } = useI18n();
 const { active, available, rowById, will, coins, slots } = useQuestBoardView();
@@ -127,7 +146,12 @@ const extra = QUEST_SLOTS.extraCost;
 const COIN_SRC = getPrototype(HEXOBJECT_KEYS.COINS).spritePath ?? '';
 const { run, result } = useQuestRunView();
 const { message: startMessage } = useQuestRunActions();
-const { message, status } = useQuestActions();
+const { message, status, busy: questBusy } = useQuestActions();
+const {
+  quote,
+  busy: boardBusy,
+  refresh,
+} = useQuestBoardSession(computed(() => !run.value && !result.value));
 
 function dropClass(group: 'active' | 'available') {
   if (!questDrag.active || !questDrag.from) return {};
@@ -169,6 +193,22 @@ onBeforeUnmount(() => {
 }
 .header {
   margin: -16px -16px 0;
+}
+.refresh-copy {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-size: 1rem;
+}
+.refresh-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #ffe98a;
+}
+.refresh-price img {
+  width: 14px;
+  height: 14px;
 }
 .banner {
   --diamond: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5 0L10 5L5 10L0 5Z' fill='%23b8864a'/></svg>");

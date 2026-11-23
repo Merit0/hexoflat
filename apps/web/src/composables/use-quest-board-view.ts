@@ -1,4 +1,5 @@
 import { computed } from 'vue';
+import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
 import { QUEST_SLOTS } from '@hexoflat/engine/quests/quest-definition';
 import { slotSurcharge } from '@hexoflat/engine/quests/quest-log';
 import { walletCoins } from '@hexoflat/engine/trade/trader-view';
@@ -38,33 +39,28 @@ export function useQuestBoardView() {
     const slotsFull = store.activeCount >= QUEST_SLOTS.max;
     const surcharge = slotSurcharge(store.activeCount) ?? 0;
     return capQuests(
-      cards.value
-        .filter((card) => card.state !== 'locked')
-        .map((card) => {
-          const entry = progressOf.get(card.quest.id);
-          return {
-            ...card,
-            category: categoryOf(card.quest),
-            sprite: spritePathOf(card.quest),
-            timesDone: store.log.done[card.quest.id] ?? 0,
-            progress: entry?.progress ?? 0,
-            ready: entry?.ready ?? false,
-            entry: card.quest.accept.kind === 'will' ? card.quest.accept.amount : 0,
-            surcharge,
-            slotNumber: store.activeCount + 1,
-            reason: reasonOf({ state: card.state, slotsFull, willShort: card.willShort }),
-            taken: card.state === 'taken',
-          };
-        }),
+      cards.value.map((card) => {
+        const entry = progressOf.get(card.quest.id);
+        const template = ALL_QUESTS[card.quest.templateId];
+        const category = template ? categoryOf(template) : card.seeker ? 'exp' : 'gather';
+        return {
+          ...card,
+          category,
+          sprite: spritePathOf(card.quest.templateId, category),
+          timesDone: store.log.done[card.quest.templateId] ?? 0,
+          progress: entry?.progress ?? 0,
+          ready: entry?.ready ?? false,
+          entry: card.quest.accept.kind === 'will' ? card.quest.accept.amount : 0,
+          surcharge,
+          slotNumber: store.activeCount + 1,
+          reason: reasonOf({ state: card.state, slotsFull, willShort: card.willShort }),
+          taken: card.state === 'taken',
+        };
+      }),
     );
   });
 
-  const active = computed(() => {
-    const order = store.log.active.map((entry) => entry.questId);
-    return rows.value
-      .filter((row) => row.taken)
-      .sort((a, b) => order.indexOf(a.quest.id) - order.indexOf(b.quest.id));
-  });
+  const active = computed(() => rows.value.filter((row) => row.taken));
   const available = computed(() => rows.value.filter((row) => row.state === 'open'));
   return {
     active,

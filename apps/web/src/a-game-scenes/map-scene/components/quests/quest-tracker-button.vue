@@ -30,7 +30,7 @@
           :class="{ 'is-ready': entry.ready }"
           :data-testid="`quest-tracker-item-${entry.quest.id}`"
         >
-          <span class="name">{{ t(entry.quest.nameKey) }}</span>
+          <span class="name">{{ t(entry.quest.nameKey, { target: entry.target }) }}</span>
           <span class="progress">
             <template v-if="entry.ready">{{ t('quest.tracker.ready') }}</template>
             <template v-else

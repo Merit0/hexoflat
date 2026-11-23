@@ -1,12 +1,17 @@
-import type { QuestLog } from '@hexoflat/engine/quests/quest-log-state';
-import { applyQuestProjection, resetQuestProjection } from '@/services/quests/quest-projection';
+import {
+  applyQuestProjection,
+  resetQuestProjection,
+  type QuestProgressProjection,
+} from '@/services/quests/quest-projection';
 import { resetQuestRun } from '@/services/quests/quest-run-projection';
+import { dismissQuestResult } from '@/services/quests/quest-result';
 import {
   restoreQuestRun,
   runQuestCommand,
   type QuestRunAnswer,
 } from '@/services/quests/quest-run-transport';
 import type { HexEngineCommand } from '@hexoflat/engine/commands/hex-engine-commands';
+import type { ProgressState } from '@hexoflat/engine/aggregates/progress-state';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { getAuthToken } from '@/api/auth-token';
 import { apiClient } from '@/api/client';
@@ -47,7 +52,7 @@ import { MAP_MISMATCH } from '@hexoflat/engine/world/map-guard';
 import { bindInventoryMirror } from './inventory-mirror';
 import type { PortalLink } from '@hexoflat/engine/portal/portal-state';
 import type { KnowledgeState } from '@hexoflat/engine/knowledge/state';
-import { inventorySession, resetInventorySession, type ServerPresence } from './inventory-session';
+import { inventorySession, resetInventorySession } from './inventory-session';
 import { readInventoryState, writeInventoryState } from './inventory-store-io';
 import { applyTraderProjection, resetTraderProjection } from '@/services/trade/trader-projection';
 import type { TraderProjection } from '@/services/trade/trader-projection';
@@ -57,6 +62,11 @@ export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
 const socket = new PlayerSocket();
 let chain: Promise<unknown> = Promise.resolve();
 let epoch = 0;
+
+export function currentPlayerSession(): () => boolean {
+  const started = epoch;
+  return () => started === epoch && inventorySession.status === 'live';
+}
 
 function stores() {
   return { inventory: useHeroInventoryStore(), stash: useHeroStashStore() };
@@ -105,19 +115,9 @@ export function bindKnowledgeListener(listener: KnowledgeListener | null): void 
 
 export function applyProgress(projection: ProjectedAggregate | undefined): void {
   if (!projection) return;
-  const progress = projection.state as {
-    claimedRewards?: string[];
-    knowledge?: KnowledgeState;
-    presence?: ServerPresence | null;
-    steps?: number;
-    paidSteps?: number;
-    sealedUntil?: Record<string, number>;
-    portal?: PortalLink | null;
-    health?: { current: number; bonus: number; debt: number };
-    kills?: number;
-    graveExitWarningAcknowledged?: boolean;
-    quests?: QuestLog;
-  } & Partial<TraderProjection>;
+  const progress = projection.state as Partial<Omit<ProgressState, 'quests' | 'traders'>> &
+    QuestProgressProjection &
+    Partial<TraderProjection>;
   applyTraderProjection(progress);
   applyQuestProjection(progress);
   inventorySession.claimedRewards = progress.claimedRewards ?? [];
@@ -153,15 +153,21 @@ function envelope(
   type: string,
   payload: Record<string, unknown>,
   expectedRevision: number,
+  aggregate: PlayerEnvelope['aggregate'] = 'inventory',
+  revision: number | null = expectedRevision,
 ): PlayerEnvelope {
   return {
     commandId: crypto.randomUUID(),
     heroId: inventorySession.heroId,
-    aggregate: 'inventory',
+    aggregate,
     expectedRevision,
     command: {
       type,
-      payload: { heroId: inventorySession.heroId, revision: expectedRevision, ...payload },
+      payload: {
+        heroId: inventorySession.heroId,
+        ...(revision === null ? {} : { revision }),
+        ...payload,
+      },
     },
   };
 }
@@ -264,6 +270,7 @@ export function endPlayerSession(): void {
   resetTraderProjection();
   resetQuestProjection();
   resetQuestRun();
+  dismissQuestResult();
 }
 
 export function settleInventorySync(): Promise<void> {
@@ -292,9 +299,13 @@ export function sendInventoryCommand(
   if (inventorySession.status !== 'live') {
     return Promise.resolve({ ok: false, code: 'OFFLINE', events: [] });
   }
+  const isCurrent = currentPlayerSession();
+  const changed = { ok: false, code: 'CONTEXT_CHANGED', events: [] };
   return enqueue(async (): Promise<InventoryCommandResult> => {
+    if (!isCurrent()) return changed;
     try {
       const response = await socket.send(envelope(type, payload, inventorySession.revision));
+      if (!isCurrent()) return changed;
       applySnapshot(response.aggregates);
       const ok = response.result === 'applied';
       return {
@@ -303,6 +314,7 @@ export function sendInventoryCommand(
         events: response.events,
       };
     } catch (error) {
+      if (!isCurrent()) return changed;
       lost(error);
       const code = error instanceof PlayerSocketError ? error.code : 'OFFLINE';
       return { ok: false, code, events: [] };
@@ -332,36 +344,31 @@ export interface ProgressResult {
 export function sendProgress(
   type: string,
   payload: Record<string, unknown>,
-  options: { withKnowledgeRevision?: boolean } = {},
+  options: { withKnowledgeRevision?: boolean; withProgressRevision?: boolean } = {},
 ): Promise<ProgressResult> {
-  const withRevision = options.withKnowledgeRevision !== false;
   if (inventorySession.status !== 'live') {
     return Promise.resolve({ ok: false, code: 'OFFLINE', knowledge: inventorySession.knowledge });
   }
+  const isCurrent = currentPlayerSession();
+  const changed = { ok: false, code: 'CONTEXT_CHANGED', knowledge: null };
   return enqueue(async (): Promise<ProgressResult> => {
+    if (!isCurrent()) return changed;
     const expectedRevision = inventorySession.progressRevision;
-    const env: PlayerEnvelope = {
-      commandId: crypto.randomUUID(),
-      heroId: inventorySession.heroId,
-      aggregate: 'progress',
-      expectedRevision,
-      command: {
-        type,
-        payload: {
-          heroId: inventorySession.heroId,
-          ...(withRevision ? { revision: inventorySession.knowledge?.revision ?? 0 } : {}),
-          ...payload,
-        },
-      },
-    };
+    const revision = options.withProgressRevision
+      ? expectedRevision
+      : options.withKnowledgeRevision !== false
+        ? (inventorySession.knowledge?.revision ?? 0)
+        : null;
     let response: PlayerCommandResponse;
     try {
-      response = await socket.send(env);
+      response = await socket.send(envelope(type, payload, expectedRevision, 'progress', revision));
     } catch (error) {
+      if (!isCurrent()) return changed;
       lost(error);
       const code = error instanceof PlayerSocketError ? error.code : 'OFFLINE';
       return { ok: false, code, knowledge: inventorySession.knowledge };
     }
+    if (!isCurrent()) return changed;
     applyProgress(response.aggregates.progress);
     if (response.result === 'conflict') warn(i18n.global.t('player.sync.restored'));
     return {

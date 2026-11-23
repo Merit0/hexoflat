@@ -1,7 +1,9 @@
 <template>
   <div class="run" data-testid="quest-run-panel">
     <div v-if="run || result" class="will">
-      <h3>{{ t(run?.nameKey ?? result?.nameKey ?? '') }}</h3>
+      <h3>
+        {{ t(run?.nameKey ?? result?.nameKey ?? '', { target: run?.target ?? result?.target }) }}
+      </h3>
       <span class="separator" aria-hidden="true"></span>
       <span class="will-counter" :aria-label="t('quest.board.will')">
         <img :src="WILL_ICON_URL" alt="" aria-hidden="true" />
@@ -35,20 +37,29 @@
         :answer-review="run.projection.answerReview"
         testid="quest-trail-row"
       />
-      <p v-if="run.descKey" class="desc">{{ t(run.descKey) }}</p>
+      <p v-if="run.descKey" class="desc">{{ t(run.descKey, { target: run.target }) }}</p>
       <dl class="info" data-testid="quest-run-details">
         <template v-if="run.goalKey">
           <dt>{{ t('quest.board.label.goal') }}</dt>
-          <dd class="goal">{{ t(run.goalKey) }}</dd>
+          <dd class="goal">{{ t(run.goalKey, { target: run.target }) }}</dd>
         </template>
-        <dt>{{ t('quest.board.label.rule') }}</dt>
-        <dd data-testid="quest-run-rule">{{ t(`quest.${run.questId}.rule`, run.ruleParams) }}</dd>
-        <dt>{{ t('quest.board.label.how') }}</dt>
-        <dd data-testid="quest-run-how">
-          <ol class="how">
-            <li v-for="(line, index) in howLines(run.questId)" :key="index">{{ line }}</li>
-          </ol>
-        </dd>
+        <template v-if="run.ruleKey">
+          <dt>{{ t('quest.board.label.rule') }}</dt>
+          <dd data-testid="quest-run-rule">{{ t(run.ruleKey, run.ruleParams) }}</dd>
+        </template>
+        <template v-if="run.howKey">
+          <dt>{{ t('quest.board.label.how') }}</dt>
+          <dd data-testid="quest-run-how">
+            <ol class="how">
+              <li
+                v-for="(line, index) in t(run.howKey, { target: run.target }).split('\n')"
+                :key="index"
+              >
+                {{ line }}
+              </li>
+            </ol>
+          </dd>
+        </template>
       </dl>
       <template v-if="run.lost">
         <p class="note" data-testid="quest-run-lost">{{ t('quest.run.lost') }}</p>
@@ -162,9 +173,6 @@ const confirming = ref(false);
 async function leave() {
   confirming.value = false;
   await giveUp();
-}
-function howLines(id: string): string[] {
-  return t(`quest.${id}.how`).split('\n');
 }
 async function giveReturn() {
   await returnToCamp();

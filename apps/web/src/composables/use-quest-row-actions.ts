@@ -7,7 +7,7 @@ export function useQuestRowActions() {
   const { t } = useI18n();
   const actions = useQuestActions();
 
-  const nameOf = (row: QuestRowView) => t(row.quest.nameKey);
+  const nameOf = (row: QuestRowView) => t(row.quest.nameKey, { target: row.target });
 
   return {
     busy: actions.busy,

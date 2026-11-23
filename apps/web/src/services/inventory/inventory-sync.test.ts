@@ -11,6 +11,8 @@ import type { PlayerCommandResponse, PlayerEnvelope } from '@/services/player/pl
 import { inventorySession, resetInventorySession } from './inventory-session';
 import { inventoryStateFromStores } from './inventory-bridge';
 import { moveItem } from './stash-transfer';
+import { generatedQuestBoard } from '@/test-support/generated-quest-board';
+import { questBoardProjection } from '@/services/quests/quest-projection';
 
 vi.mock('@/services/player/expedition-sync', () => ({
   flushExpedition: () => Promise.resolve(),
@@ -59,6 +61,7 @@ vi.mock('@/services/player/player-socket', () => {
 
 const { startPlayerSession, endPlayerSession, settleInventorySync, claimCampChest } =
   await import('./inventory-sync');
+const { refreshQuestBoard, syncQuestBoard } = await import('@/services/quests/quest-commands');
 const { PlayerSocketError } = await import('@/services/player/player-socket');
 
 const HERO = '11111111-1111-4111-8111-111111111111';
@@ -104,6 +107,49 @@ describe('inventory sync with the server', () => {
     expect(inventorySession.heroId).toBe(HERO);
     expect(inventory.items.every((item) => item.key === K.HAND)).toBe(true);
     expect(stash.chests).toBe(0);
+  });
+
+  it('sends quest board commands at the progress revision and applies the server quote', async () => {
+    await live();
+    inventorySession.progressRevision = 11;
+    const board = generatedQuestBoard();
+    reply = (envelope) => ({
+      commandId: envelope.commandId,
+      result: 'applied',
+      events: [],
+      aggregates: {
+        progress: {
+          revision: envelope.expectedRevision + 1,
+          state: {
+            questBoard: {
+              ...board,
+              refreshPrice: envelope.command.type === 'QUEST_BOARD_REFRESH' ? 75 : 50,
+            },
+          },
+        },
+      },
+    });
+    expect(await syncQuestBoard()).toEqual({ ok: true });
+    expect(questBoardProjection.value).toEqual(board);
+    expect(await refreshQuestBoard(board)).toEqual({ ok: true });
+    expect(sent).toMatchObject([
+      {
+        aggregate: 'progress',
+        expectedRevision: 11,
+        command: { type: 'QUEST_BOARD_SYNC', payload: { heroId: HERO, revision: 11 } },
+      },
+      {
+        aggregate: 'progress',
+        expectedRevision: 12,
+        command: {
+          type: 'QUEST_BOARD_REFRESH',
+          payload: { heroId: HERO, revision: 12, dayId: board.dayId, expectedPrice: 50 },
+        },
+      },
+    ]);
+    expect(questBoardProjection.value?.refreshPrice).toBe(75);
+    endPlayerSession();
+    expect(questBoardProjection.value).toBeNull();
   });
 
   it('mirrors a local move to the server with the revision it started from, in order', async () => {

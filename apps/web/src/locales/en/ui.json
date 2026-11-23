@@ -885,6 +885,11 @@
       "AUTO_TURN_IN": "This quest is handed in by itself.",
       "BAG_FULL": "Your bag is too full for the reward.",
       "NO_INVENTORY": "Your bag is not available.",
+      "QUEST_OFFER_EXPIRED": "This offer is no longer on the board.",
+      "QUEST_BOARD_STALE": "The board has changed. Check the current offers and price.",
+      "QUEST_BOARD_UNCHANGED": "No new set of quests is available right now.",
+      "QUEST_BOARD_LIMIT": "The board has reached its daily limit.",
+      "NO_ROOM_FOR_QUEST_ENTRANCE": "There is no room for a treasure map in Silesia.",
       "OTHER": "The quest board refused this.",
       "QUEST_IN_PROGRESS": "You are already on a trail.",
       "NOT_ADJACENT": "Too far away.",
@@ -1050,6 +1055,11 @@
       "will": "Will",
       "coins": "Coins",
       "hint": "Hover a quest to see its details. On touch screens, tap it.",
+      "refresh": {
+        "action": "Refresh",
+        "label": "Refresh the quest board for {n} Will",
+        "done": "The quest board has been refreshed."
+      },
       "rowLabel": "{name}, {meta}. Show details.",
       "takeFor": "Take {name} for {n} Will",
       "detailsLabel": "{name} details",

@@ -1,10 +1,10 @@
 import { i18n } from '@/i18n';
 import { questLootRefusalKey } from '@/services/quests/quest-loot';
-import type { QuestRefusal } from '@hexoflat/engine/quests/quest-definition';
+import type { QuestBoardRefusal, QuestRefusal } from '@hexoflat/engine/quests/quest-definition';
 
 export function questRefusalText(reason: string): string {
   const t = i18n.global.t;
-  const known: Record<QuestRefusal, () => string> = {
+  const known: Record<QuestRefusal | QuestBoardRefusal, () => string> = {
     UNKNOWN_QUEST: () => t('quest.refusal.UNKNOWN_QUEST'),
     NOT_AT_BOARD: () => t('quest.refusal.NOT_AT_BOARD'),
     QUEST_ALREADY_ACTIVE: () => t('quest.refusal.QUEST_ALREADY_ACTIVE'),
@@ -17,6 +17,12 @@ export function questRefusalText(reason: string): string {
     AUTO_TURN_IN: () => t('quest.refusal.AUTO_TURN_IN'),
     BAG_FULL: () => t('quest.refusal.BAG_FULL'),
     NO_INVENTORY: () => t('quest.refusal.NO_INVENTORY'),
+    QUEST_OFFER_EXPIRED: () => t('quest.refusal.QUEST_OFFER_EXPIRED'),
+    QUEST_OFFER_REQUIRED: () => t('quest.refusal.QUEST_OFFER_EXPIRED'),
+    QUEST_BOARD_STALE: () => t('quest.refusal.QUEST_BOARD_STALE'),
+    QUEST_BOARD_UNCHANGED: () => t('quest.refusal.QUEST_BOARD_UNCHANGED'),
+    QUEST_BOARD_LIMIT: () => t('quest.refusal.QUEST_BOARD_LIMIT'),
+    NO_ROOM_FOR_QUEST_ENTRANCE: () => t('quest.refusal.NO_ROOM_FOR_QUEST_ENTRANCE'),
   };
   const seeker: Record<string, () => string> = {
     NOT_AT_QUEST_ENTRANCE: () => t('quest.refusal.NOT_AT_QUEST_ENTRANCE'),
@@ -35,6 +41,7 @@ export function questRefusalText(reason: string): string {
     HEX_BLOCKED: () => t('quest.refusal.HEX_BLOCKED'),
     NO_LOOT_THERE: () => t('quest.refusal.NO_LOOT_THERE'),
     OFFLINE: () => t('quest.refusal.OFFLINE'),
+    REVISION_CONFLICT: () => t('quest.refusal.QUEST_BOARD_STALE'),
   };
   const lootKey = questLootRefusalKey(reason);
   return (

@@ -1,9 +1,11 @@
 import { shallowRef } from 'vue';
 import type { DomainEvent } from '@hexoflat/engine/commands/types';
+import type { QuestOfferProjection } from '@hexoflat/engine/quests/quest-board-projection';
 
 export interface QuestResult {
   questId: string;
   outcome: string;
+  offer?: QuestOfferProjection;
   numbers: number[];
   answerReview?: boolean[];
   firstDeviation: { number: number; expected: number } | null;
@@ -29,10 +31,11 @@ export function resultFromEvents(events: readonly DomainEvent[]): QuestResult | 
       firstDeviation: QuestResult['firstDeviation'];
     };
   };
-  const { outcome } = summary.payload as { outcome: string };
+  const { outcome, offer } = summary.payload as Pick<QuestResult, 'outcome' | 'offer'>;
   return {
     questId: payload.questId,
     outcome,
+    ...(offer ? { offer } : {}),
     numbers: payload.recap.numbers,
     ...(payload.recap.answerReview ? { answerReview: payload.recap.answerReview } : {}),
     firstDeviation: payload.recap.firstDeviation,

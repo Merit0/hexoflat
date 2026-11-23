@@ -1,108 +1,67 @@
 import { computed } from 'vue';
-import { BOARD_QUESTS } from '@hexoflat/engine/quests/quests.content';
-import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
-import { SEEKER_QUESTS } from '@hexoflat/engine/quests/seeker-quests';
-import { seekerQuestsEnabled } from '@/composables/seeker-flag';
-import { describeQuest } from '@hexoflat/engine/quests/objectives';
-import { questBoardState, slotSurcharge } from '@hexoflat/engine/quests/quest-log';
-import {
-  QUEST_SLOTS,
-  type QuestDefinition,
-  type Reward,
-} from '@hexoflat/engine/quests/quest-definition';
+import { slotSurcharge } from '@hexoflat/engine/quests/quest-log';
+import { legacyQuestCard, type QuestCardContent } from '@/services/quests/quest-card-content';
 import { useQuestStore } from '@/stores/quest-store';
 import { useHeroStore } from '@/stores/hero-store';
 
 export interface QuestCardView {
-  quest: QuestDefinition;
-  state: 'open' | 'locked' | 'taken' | 'finished';
+  quest: QuestCardContent;
+  state: 'open' | 'taken';
   price: number;
-  itemCost: { key: string; amount: number } | null;
   target: number;
   unitKey: string;
-  rewards: readonly Reward[];
-  repeat: QuestDefinition['repeat'];
-  seeker: SeekerChips | null;
+  rewards: QuestCardContent['rewards'];
+  repeat: QuestCardContent['repeat'];
+  seeker: boolean;
   willShort: boolean;
-}
-
-export interface SeekerChips {
-  entry: number;
-  steps: number;
-  stepCost: number;
-  backCost: number;
-}
-
-export interface TrackedQuestView {
-  quest: QuestDefinition;
-  progress: number;
-  target: number;
-  unitKey: string;
-  ready: boolean;
 }
 
 export function useQuestView() {
   const store = useQuestStore();
   const hero = useHeroStore();
-  const listed = () => (seekerQuestsEnabled() ? [...BOARD_QUESTS, ...SEEKER_QUESTS] : BOARD_QUESTS);
-
-  const slotLine = computed(() => ({
-    used: store.activeCount,
-    max: QUEST_SLOTS.max,
-    nextSurcharge: slotSurcharge(store.activeCount),
-  }));
-
-  const cards = computed<QuestCardView[]>(() =>
-    listed()
-      .map((quest) => {
-        const described = describeQuest(quest);
-        const surcharge = slotSurcharge(store.activeCount) ?? 0;
-        const base = quest.accept.kind === 'will' ? quest.accept.amount : 0;
-        const price = base + surcharge;
-        const objective = quest.objective;
-        return {
-          quest,
-          state: questBoardState(store.log, quest),
-          price,
-          seeker:
-            objective.kind === 'expedition'
-              ? {
-                  entry: price,
-                  steps: objective.params.steps,
-                  stepCost: objective.params.stepCost,
-                  backCost: objective.params.stepCost * objective.params.backMultiplier,
-                }
-              : null,
-          willShort: (hero.knowledge?.current ?? 0) < price,
-          itemCost:
-            quest.accept.kind === 'item'
-              ? { key: quest.accept.itemKey, amount: quest.accept.amount }
-              : null,
-          target: described.target,
-          unitKey: described.unitKey,
-          rewards: quest.rewards,
-          repeat: quest.repeat,
-        };
-      })
-      .filter((card) => card.state !== 'finished'),
+  const offers = computed(
+    () => new Map((store.board?.offers ?? []).map((offer) => [offer.id, offer])),
   );
 
-  const tracked = computed<TrackedQuestView[]>(() =>
+  const tracked = computed(() =>
     store.log.active.flatMap((entry) => {
-      const quest = ALL_QUESTS[entry.questId];
+      const quest = offers.value.get(entry.questId) ?? legacyQuestCard(entry.questId);
       if (!quest) return [];
-      const described = describeQuest(quest);
       return [
         {
           quest,
           progress: entry.progress,
-          target: described.target,
-          unitKey: described.unitKey,
+          target: quest.goal.target,
+          unitKey: quest.goal.unitKey,
           ready: entry.state === 'ready',
         },
       ];
     }),
   );
 
-  return { cards, tracked, slotLine, readyCount: computed(() => store.readyCount) };
+  const cards = computed<QuestCardView[]>(() => {
+    const active = new Set(store.log.active.map(({ questId }) => questId));
+    const surcharge = slotSurcharge(store.activeCount) ?? 0;
+    const quests = [
+      ...tracked.value.map(({ quest }) => quest),
+      ...[...offers.value.values()].filter(({ id }) => !active.has(id)),
+    ];
+    return quests.map((quest) => {
+      const base = quest.accept.kind === 'will' ? quest.accept.amount : 0;
+      const price = base + surcharge;
+      return {
+        quest,
+        state: active.has(quest.id) ? 'taken' : 'open',
+        price,
+        target: quest.goal.target,
+        unitKey: quest.goal.unitKey,
+        rewards: quest.rewards,
+        repeat: quest.repeat,
+        seeker: !!quest.expedition,
+        willShort: (hero.knowledge?.current ?? 0) < price,
+      };
+    });
+  });
+
+  return { cards, tracked };
 }
