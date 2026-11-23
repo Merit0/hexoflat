@@ -191,10 +191,15 @@ describe('AG3 F1: combat attributes stay off tools', () => {
 });
 
 describe('AG4 F2: attribute requirements', () => {
-  it('lets crit-dmg roll only after crit-chance', () => {
-    expect(EQUIPMENT_CONTENT.attributes.find(({ key }) => key === 'crit-dmg')?.requires).toEqual({
-      attributes: ['crit-chance'],
-    });
+  const dependent = withAttribute('crit-dmg', { requires: { attributes: ['crit-chance'] } });
+  const dependentContent: TokenContent = { ...TOKEN_CONTENT, attributes: dependent };
+  const dependentFactory = createTokenFactory(dependentContent);
+
+  it('lets crit-dmg roll without crit-chance in real content (Oleh, 2026-11-23)', () => {
+    expect(
+      EQUIPMENT_CONTENT.attributes.find(({ key }) => key === 'crit-dmg')?.requires,
+    ).toBeUndefined();
+    expect(failuresWith(dependent)).toEqual([]);
   });
 
   it('refuses a self requirement and an empty requires in the schema', () => {
@@ -212,7 +217,11 @@ describe('AG4 F2: attribute requirements', () => {
     expect(
       failuresWith(withAttribute('crit-dmg', { requires: { attributes: ['luck'] } })),
     ).toContain('attribute crit-dmg requires unknown luck');
-    const cycle = withAttribute('crit-chance', { requires: { attributes: ['crit-dmg'] } });
+    const cycle = dependent.map((attribute) =>
+      attribute.key === 'crit-chance'
+        ? { ...attribute, requires: { attributes: ['crit-dmg'] } }
+        : attribute,
+    );
     expect(failuresWith(cycle)).toContain(
       'attribute crit-chance has a requirement cycle: crit-chance -> crit-dmg -> crit-chance',
     );
@@ -229,45 +238,56 @@ describe('AG4 F2: attribute requirements', () => {
     const profiles = structuredClone(ATTRIBUTE_PROFILES);
     profiles['tier-3'].maxCount = 1;
     profiles['tier-3'].countWeights = [50, 50];
-    expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, profiles })).toContain(
-      'tier-3: attribute crit-dmg needs 2 attributes, maxCount is 1',
+    expect(
+      equipmentContentFailures({ ...EQUIPMENT_CONTENT, attributes: dependent, profiles }),
+    ).toContain('tier-3: attribute crit-dmg needs 2 attributes, maxCount is 1');
+    expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, profiles }).join('\n')).not.toMatch(
+      /needs 2 attributes/,
     );
   });
 
   it('refuses a base allowlist that holds a dependent without its requirement', () => {
-    expect(tokenContentFailures(withBaseAllowlist('earth-sword', ['crit-dmg', 'will']))).toEqual([
+    const allowlist = (attributes: string[]): TokenContent => ({
+      ...dependentContent,
+      baseItems: withBaseAllowlist('earth-sword', attributes).baseItems,
+    });
+    expect(tokenContentFailures(allowlist(['crit-dmg', 'will']))).toEqual([
       'base item earth-sword allows crit-dmg without crit-chance',
     ]);
-    expect(
-      tokenContentFailures(withBaseAllowlist('earth-sword', ['crit-chance', 'crit-dmg'])),
-    ).toEqual([]);
+    expect(tokenContentFailures(allowlist(['crit-chance', 'crit-dmg']))).toEqual([]);
+    expect(tokenContentFailures(withBaseAllowlist('earth-sword', ['crit-dmg', 'will']))).toEqual(
+      [],
+    );
   });
 
   it('refuses a unique whose attribute misses its requirement', () => {
     const unique = TOKEN_UNIQUES[0];
     const uniques = [{ ...unique, type: 'sword', attributes: [{ key: 'crit-dmg', value: 3 }] }];
-    expect(uniqueContentFailures(uniques)).toContain(
+    expect(uniqueContentFailures(uniques, dependentContent)).toContain(
       `unique ${unique.key}: Attribute crit-dmg needs crit-chance on the same item`,
     );
-    expect(() => createTokenFactory(TOKEN_CONTENT, undefined, uniques)).toThrow(
+    expect(() => createTokenFactory(dependentContent, undefined, uniques)).toThrow(
       /needs crit-chance on the same item/,
     );
+    expect(uniqueContentFailures(uniques)).toEqual([]);
   });
 
   it('refuses a factory override that misses the requirement', () => {
     const context = contextFor(1, { type: 'sword', mapTier: 3 });
-    const alone = defaultFactory.createBase(context, {
-      attributes: [{ key: 'crit-dmg', value: 3 }],
+    const lone = { attributes: [{ key: 'crit-dmg', value: 3 }] };
+    expect(dependentFactory.createBase(context, lone)).toMatchObject({
+      ok: false,
+      refusal: { code: 'INVALID_TOKEN' },
     });
-    expect(alone).toMatchObject({ ok: false, refusal: { code: 'INVALID_TOKEN' } });
     expect(
-      defaultFactory.createBase(context, {
+      dependentFactory.createBase(context, {
         attributes: [
           { key: 'crit-chance', value: 2 },
           { key: 'crit-dmg', value: 3 },
         ],
       }).ok,
     ).toBe(true);
+    expect(defaultFactory.createBase(context, lone).ok).toBe(true);
   });
 });
 

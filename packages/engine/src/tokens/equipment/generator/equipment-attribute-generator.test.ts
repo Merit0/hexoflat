@@ -94,14 +94,32 @@ describe('EA-3: pool rules', () => {
     }
   });
 
-  it('crit-dmg appears only together with crit-chance', () => {
-    const withDamage = rolls.filter(({ attributes }) =>
-      attributes.some((a) => a.key === 'crit-dmg'),
+  it('crit-dmg also appears without crit-chance on the same item', () => {
+    const lone = rolls.filter(
+      ({ attributes }) =>
+        attributes.some((a) => a.key === 'crit-dmg') &&
+        !attributes.some((a) => a.key === 'crit-chance'),
     );
+    expect(lone.length).toBeGreaterThan(0);
+  });
+
+  it('a dependent attribute appears only together with its requirement', () => {
+    const dependent = fixtureGenerator(
+      FIXTURE_ATTRIBUTES.map((attribute) =>
+        attribute.key === 'crit-dmg'
+          ? { ...attribute, requires: { attributes: ['crit-chance'] } }
+          : attribute,
+      ),
+    );
+    const withDamage = typesOf('weapon')
+      .flatMap((type) =>
+        TIERS.flatMap((tier) =>
+          seeds().map((seed) => rollFor(dependent, type, tier, seed).map((a) => a.key)),
+        ),
+      )
+      .filter((keys) => keys.includes('crit-dmg'));
     expect(withDamage.length).toBeGreaterThan(0);
-    for (const { attributes } of withDamage) {
-      expect(attributes.map((a) => a.key)).toContain('crit-chance');
-    }
+    for (const keys of withDamage) expect(keys).toContain('crit-chance');
   });
 });
 

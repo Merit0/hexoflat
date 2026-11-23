@@ -119,7 +119,6 @@ const DEFINITIONS = [
   attribute('crit-dmg', {
     groups: ['weapon'],
     excludes: { tool: true },
-    requires: { attributes: ['crit-chance'] },
     stat: 'critDamage',
     aggregate: 'max',
     scope: 'item',

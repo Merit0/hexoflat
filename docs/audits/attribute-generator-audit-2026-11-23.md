@@ -432,3 +432,18 @@ Oleh's decisions: every hero has a base crit chance of 5%; enemies keep 0; the t
    fixture's < 2% roll now crits ×2 = 4). Engine 2559, API 312, web 4408 passed; e2e equipment-crit 5/5.
 6. Not done: hero-crit and gloves stay disabled; no UI shows the hero's total crit chance (`content.battle.crit.chance` is only
    registered as a locale key); no `tableRule` describes crit.
+
+### Requirement crit-dmg -> crit-chance removed (2026-11-23)
+
+Oleh: the requirement made sense while a weapon without `crit-chance` had a crit chance of 0. With the hero base chance of 5%
+every weapon crits, so `crit-dmg` alone is useful. Content: `crit-dmg` has no `requires`; the `requires.attributes` mechanism
+stays. Its tests now use a fixture dependency (`AG4 F2` block in `equipment-content-rules.test.ts`, generator test "a dependent
+attribute appears only together with its requirement"), and real content is checked the other way (lone `crit-dmg` rolls, is
+accepted as an override, a unique and a base allowlist). Golden tokens: one heaven sword rolls `crit-dmg` ×3 instead of
+`trophy` +1 (same attribute count, so name and price band are unchanged); no `generatorVersion` bump, as in AG4.
+
+Balance probe with the hero bot (500 seeds, grave loot off, `heroBaseCrit` 0 -> 5): 1 hero vs 2 warriors 6.6% -> 7.2%,
+2 heroes vs the full crypt squad 11.2% -> 13.4%. The base crit is a small gain. The bands are far from the last recorded numbers
+(93.8% and 65.2%, 2026-11-02) for a reason that is not the crit: 184 of 200 one-hero battles are real defeats, not stalemates.
+`balance.test.ts` (still `it.skip`) also cannot run now: `deployBattle` sets no `tokenOrigin`, so the first grave throws
+`TOKEN_ORIGIN_REQUIRED`.
