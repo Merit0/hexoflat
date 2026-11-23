@@ -443,7 +443,9 @@ accepted as an override, a unique and a base allowlist). Golden tokens: one heav
 `trophy` +1 (same attribute count, so name and price band are unchanged); no `generatorVersion` bump, as in AG4.
 
 Balance probe with the hero bot (500 seeds, grave loot off, `heroBaseCrit` 0 -> 5): 1 hero vs 2 warriors 6.6% -> 7.2%,
-2 heroes vs the full crypt squad 11.2% -> 13.4%. The base crit is a small gain. The bands are far from the last recorded numbers
-(93.8% and 65.2%, 2026-11-02) for a reason that is not the crit: 184 of 200 one-hero battles are real defeats, not stalemates.
+2 heroes vs the full crypt squad 11.2% -> 13.4%. The base crit is a small gain. The bands of the skipped test (last measured 93.8% and
+65.2%, 2026-11-02) are outdated, not a defect (Oleh): a fresh hero is not meant to win at once; upgrades, purchases for Will
+and other mechanics will change the result. A real battle evaluation is a separate task after the ranged strike for token
+heroes.
 `balance.test.ts` (still `it.skip`) also cannot run now: `deployBattle` sets no `tokenOrigin`, so the first grave throws
 `TOKEN_ORIGIN_REQUIRED`.
