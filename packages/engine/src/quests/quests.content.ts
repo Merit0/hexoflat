@@ -3,7 +3,7 @@ import { availableInDimension } from '../dimensions/availability';
 import { EDimension } from '../dimensions/dimensions';
 import { TRADERS } from '../content/traders.content';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { sellUnitPrice } from '../trade/trader-view';
+import { sellPriceOf } from '../trade/price-of';
 import {
   QuestDefinitionSchema,
   type QuestCatalogue,
@@ -107,7 +107,7 @@ export const QUESTS: QuestCatalogue = catalogueOf(BOARD_QUESTS);
 export function rewardSellValue(reward: Reward): number {
   if (reward.kind === 'will') return 0;
   if (reward.itemKey === HEXOBJECT_KEYS.COINS) return reward.amount;
-  const unit = sellUnitPrice(TRADERS.ilva, reward.itemKey);
+  const unit = sellPriceOf(TRADERS.ilva, { key: reward.itemKey, token: reward.token });
   return (unit ?? 0) * reward.amount;
 }
 

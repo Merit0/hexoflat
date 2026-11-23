@@ -903,6 +903,60 @@
       "OTHER_QUEST_SUSPENDED": "Another treasure map is still open. Finish it first.",
       "NO_ROOM_FOR_TRAIL": "No room for a trail here. Stand on the other side of the map."
     },
+    "generated": {
+      "woodcutter": {
+        "names": {
+          "evening-kindling": "Evening Kindling",
+          "camp-firewood": "Firewood for Camp",
+          "winter-supply": "Winter Supply"
+        },
+        "desc": "The camp needs wood for its fires before the cold sets in.",
+        "goal": "Chop {target} trees in Silesia.",
+        "how": "Equip an axe.\nChop {target} trees in Silesia.\nClaim your reward at the board."
+      },
+      "stonebreaker": {
+        "names": {
+          "trail-stones": "Trail Stones",
+          "camp-wall": "Stone for the Wall"
+        },
+        "desc": "The camp needs stone for its building work.",
+        "goal": "Finish {target} mining actions in Silesia.",
+        "how": "Equip a pickaxe.\nFinish {target} mining actions.\nClaim your reward at the board."
+      },
+      "scholar": {
+        "names": {
+          "first-lesson": "Morning Lesson",
+          "will-study": "Lessons in Will"
+        },
+        "desc": "The Book of Will waits by the campfire.",
+        "goal": "Answer {target} questions correctly in the Book of Will.",
+        "how": "Open the Book of Will in camp.\nAnswer {target} questions correctly.\nClaim your reward at the board."
+      },
+      "bone-hunter": {
+        "names": { "quiet-crypt": "A Quiet Crypt" },
+        "desc": "The rattle of bones echoes from the crypt again.",
+        "goal": "Defeat {target} skeletons in battles you win in the cave.",
+        "how": "Descend into the cave.\nWin battles against {target} skeletons.\nClaim your reward at the board."
+      },
+      "seeker-1": {
+        "names": { "mist-trail": "Trail in the Mist", "first-trail": "First Trail" },
+        "desc": "Old numbers lead to a hidden chest.",
+        "goal": "Follow the trail for {target} steps to the chest.",
+        "how": "Open the treasure map in Silesia.\nFollow the number trail to the chest."
+      },
+      "seeker-2": {
+        "names": { "uneven-trail": "Uneven Path", "jumping-trail": "Leaping Trail" },
+        "desc": "The distance between the numbers is your clue.",
+        "goal": "Follow the trail for {target} steps to the chest.",
+        "how": "Open the treasure map in Silesia.\nFind the pattern and follow it to the chest."
+      },
+      "seeker-3": {
+        "names": { "hidden-trail": "Hidden Path", "twisted-trail": "Twisted Trail" },
+        "desc": "The trail winds. Save your Will for the way ahead.",
+        "goal": "Follow the trail for {target} steps to the chest.",
+        "how": "Open the treasure map in Silesia.\nUse the number pattern to choose your next hex."
+      }
+    },
     "woodcutter": {
       "name": "Woodcutter",
       "desc": "The camp needs timber. Cut trees in the wild.",

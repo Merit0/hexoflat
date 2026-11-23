@@ -1,4 +1,5 @@
 import { tokenOriginSchema } from '../tokens/token-origin';
+import { itemTokenSchema } from '../tokens/token-schema';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
 import { TreasureSeekerParamsSchema } from './seeker-content';
@@ -29,8 +30,14 @@ export const RewardSchema = z.discriminatedUnion('kind', [
       kind: z.literal('item'),
       itemKey: hexobjectKeySchema,
       amount: z.number().int().min(1),
+      token: itemTokenSchema.optional(),
     })
-    .strict(),
+    .strict()
+    .refine(
+      ({ token, itemKey, amount }) =>
+        !token || (token.origin === 'base' && token.type === itemKey && amount === 1),
+      { path: ['token'], message: 'A stored reward token must be one matching base item' },
+    ),
   z.object({ kind: z.literal('will'), amount: z.number().int().min(1) }).strict(),
 ]);
 export type Reward = z.infer<typeof RewardSchema>;

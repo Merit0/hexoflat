@@ -4,7 +4,8 @@ import { CONTENT } from './content-map';
 import { ContentDefinitionSchema, traderDefinitionSchema } from './content-schema';
 import { lootContentFailures } from './validate-loot';
 import { TRADERS } from './traders.content';
-import { ALL_QUESTS } from '../quests/all-quests';
+import { ALL_QUEST_DEFINITIONS } from '../quests/all-quests';
+import { questGenerationFailures } from '../quests/validate-quest-generation';
 import { questContentFailures } from '../quests/quests.content';
 import { seekerCardFailures } from '../quests/seeker-content';
 import { tokenContentFailures, uniqueContentFailures } from './validate-tokens';
@@ -29,7 +30,8 @@ export function validateContent(): void {
 
   failures.push(...traderFailures(TRADERS));
   failures.push(...lootContentFailures());
-  failures.push(...questContentFailures(Object.values(ALL_QUESTS)));
+  failures.push(...questContentFailures(ALL_QUEST_DEFINITIONS));
+  failures.push(...questGenerationFailures());
   failures.push(...seekerCardFailures());
   failures.push(...tokenContentFailures().map((failure) => `[tokens] ${failure}`));
   failures.push(...uniqueContentFailures().map((failure) => `[uniques] ${failure}`));

@@ -11,6 +11,7 @@ import type { InventoryState } from '../inventory/inventory-state';
 import { grantWill, spendWill } from '../knowledge/will';
 import { handlerFor, OBJECTIVES, type ObjectiveRegistry } from './objectives';
 import type { QuestLog } from './quest-log-state';
+import { questDefinitionFor } from './quest-lookup';
 import {
   QUEST_SLOTS,
   type QuestCatalogue,
@@ -226,7 +227,7 @@ export function applyQuestEvents(
   let active = progress.quests.active;
   for (const event of incoming) {
     active = active.map((entry) => {
-      const quest = catalogue[entry.questId];
+      const quest = questDefinitionFor(progress.quests, entry.questId, catalogue);
       if (!quest || entry.state !== 'active') return entry;
       const payload = event.payload;
       if (
