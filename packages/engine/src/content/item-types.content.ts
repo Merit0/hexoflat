@@ -1,10 +1,9 @@
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import type { EquipmentTypeDefinition } from '../tokens/equipment/equipment-type-schema';
 import type { ItemTypeDefinition } from '../tokens/token-content-schema';
-import { wordKeyOf } from '../tokens/token-keys';
+import { BASE_REALMS, wordKeyOf } from '../tokens/token-keys';
 
-const ALL_REALMS = [ERarityKind.GLOOM, ERarityKind.IDOL, ERarityKind.SPARK] as const;
+const ALL_REALMS = BASE_REALMS;
 
 export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)[] = [
   {

@@ -5,32 +5,42 @@ import {
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import {
   DEFAULT_RARITY,
+  RARITY_TONE_LIGHTS,
+  RARITY_TONES,
   tokenRarity,
   type RarityCarrier,
   rarityTone,
   type TRarityTone,
 } from '@hexoflat/engine/content/rarity-rules';
+import type { TLightColor } from '@hexoflat/engine/tokens/light-tone';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 
-export const RARITY_FRAME_URLS: Record<TRarityTone, string> = {
-  gloom: '/hex-assets/hex-frames/blue-light.png',
-  'gloom-boss': '/hex-assets/hex-frames/violet-light.png',
-  idol: '/hex-assets/hex-frames/gray-light.png',
-  'idol-boss': '/hex-assets/hex-frames/green-light.png',
-  spark: '/hex-assets/hex-frames/yellow-light.png',
-  'spark-boss': '/hex-assets/hex-frames/orange-light.png',
-  alien: '/hex-assets/hex-frames/red-light.png',
+export const LIGHT_FRAMES_DIR = '/hex-assets/hex-frames/';
+
+export const LIGHT_FRAME_URLS: Record<TLightColor, string> = {
+  blue: `${LIGHT_FRAMES_DIR}blue-light.png`,
+  violet: `${LIGHT_FRAMES_DIR}violet-light.png`,
+  gray: `${LIGHT_FRAMES_DIR}gray-light.png`,
+  green: `${LIGHT_FRAMES_DIR}green-light.png`,
+  yellow: `${LIGHT_FRAMES_DIR}yellow-light.png`,
+  orange: `${LIGHT_FRAMES_DIR}orange-light.png`,
+  red: `${LIGHT_FRAMES_DIR}red-light.png`,
 };
 
-export const RARITY_COLOR: Record<TRarityTone, string> = {
-  gloom: '#3E8BFF',
-  'gloom-boss': '#A855F7',
-  idol: '#A9AEB4',
-  'idol-boss': '#4FD27A',
-  spark: '#F5D33B',
-  'spark-boss': '#FF8A2A',
-  alien: '#FF3B3B',
-};
+function byRarityTone<T>(value: (tone: TRarityTone) => T): Record<TRarityTone, T> {
+  return Object.fromEntries(RARITY_TONES.map((tone) => [tone, value(tone)])) as Record<
+    TRarityTone,
+    T
+  >;
+}
+
+export const RARITY_FRAME_URLS: Record<TRarityTone, string> = byRarityTone(
+  (tone) => LIGHT_FRAME_URLS[RARITY_TONE_LIGHTS[tone].id],
+);
+
+export const RARITY_COLOR: Record<TRarityTone, string> = byRarityTone(
+  (tone) => RARITY_TONE_LIGHTS[tone].color,
+);
 
 interface IRaritySource {
   token?: RarityCarrier;

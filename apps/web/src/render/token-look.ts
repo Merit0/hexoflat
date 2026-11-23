@@ -1,23 +1,22 @@
 import { getPrototype } from '@hexoflat/engine';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
-import { lightFrameFile, lightTone, type TLightTone } from '@hexoflat/engine/tokens/light-tone';
+import {
+  LIGHT_COLOR_BY_TONE,
+  lightTone,
+  type TLightTone,
+} from '@hexoflat/engine/tokens/light-tone';
 import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import type { SpriteManifest } from '@hexoflat/engine/tokens/sprite-files';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
-import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
-import { getObjectRarityTone, RARITY_COLOR, rarityFrameUrlForKey } from './rarity';
+import { rarityToneOfLightTone, type TRarityTone } from '@hexoflat/engine/content/rarity-rules';
+import {
+  getObjectRarityTone,
+  LIGHT_FRAME_URLS,
+  RARITY_COLOR,
+  rarityFrameUrlForKey,
+} from './rarity';
 
-export const LIGHT_FRAMES_DIR = '/hex-assets/hex-frames/';
-
-const RARITY_TONE_BY_LIGHT: Record<TLightTone, TRarityTone> = {
-  'gloom-base': 'gloom',
-  'gloom-unique': 'gloom-boss',
-  'idol-base': 'idol',
-  'idol-unique': 'idol-boss',
-  'spark-base': 'spark',
-  'spark-unique': 'spark-boss',
-  'alien-unique': 'alien',
-};
+export { LIGHT_FRAMES_DIR } from './rarity';
 
 export interface ItemLook {
   sprite: string | null;
@@ -42,11 +41,11 @@ export function tokenLightTone(token: ItemToken): TLightTone {
 }
 
 export function tokenLightUrl(token: ItemToken): string {
-  return `${LIGHT_FRAMES_DIR}${lightFrameFile(tokenLightTone(token))}`;
+  return LIGHT_FRAME_URLS[LIGHT_COLOR_BY_TONE[tokenLightTone(token)]];
 }
 
 export function tokenRarityTone(token: ItemToken): TRarityTone {
-  return RARITY_TONE_BY_LIGHT[tokenLightTone(token)];
+  return rarityToneOfLightTone(tokenLightTone(token));
 }
 
 export function tokenLightColor(token: ItemToken): string {

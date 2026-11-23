@@ -341,4 +341,6 @@ Block sides (A10 connection, 2026-11-21): battle-hero-card, battle-tool-hex and 
 
 ## Dimension identity (D2, 2026-11-22)
 
+**Light colours come from the engine (DA3a, 2026-11-24).** `render/rarity.ts` keeps only `LIGHT_FRAME_URLS: Record<TLightColor, string>` (engine light id → frame file; a new light id in the engine record is a type error here); `RARITY_COLOR` and `RARITY_FRAME_URLS` are built from engine `RARITY_TONES`/`RARITY_TONE_LIGHTS`, and `token-look.ts` maps a light tone with `rarityToneOfLightTone`. Never write a hex colour or a tone list for a rarity in the web.
+
 Token ownership is engine data: `ItemToken.dimension`; tokenless items use authored catalogue ownership. Use engine `itemDimensionOf`, never current location or duplicated family mapping. ALIEN replaces God Executor in labels; persisted legacy normalization is handled by engine readers.

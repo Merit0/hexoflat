@@ -1,6 +1,11 @@
 import { BASE_ITEMS } from '../content/base-items.content';
 import { baseItemKeySchema } from './base-item';
-import { dimensionSchema, itemFamilyOfDimension } from '../dimensions/dimensions';
+import {
+  dimensionSchema,
+  itemFamilyOfDimension,
+  tiersOfTokenType,
+  tokenTypeAllowsTier,
+} from '../dimensions/dimensions';
 import { upcastTokenDimension } from './upcast-token-dimension';
 import { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
@@ -121,11 +126,11 @@ export const currentItemTokenSchema = z
         message: 'uniqueKey is set only on a unique token',
       });
     }
-    if (!unique && token.rarity === ERarityKind.ALIEN) {
+    if (!tokenTypeAllowsTier(token.rarity, token.origin)) {
       ctx.addIssue({
         code: 'custom',
         path: ['rarity'],
-        message: 'alien tokens are unique only',
+        message: `${token.rarity} tokens are ${tiersOfTokenType(token.rarity).join(' and ')} only`,
       });
     }
     if (token.name.kind === 'generated' && !token.name.prefix && !token.name.suffix) {

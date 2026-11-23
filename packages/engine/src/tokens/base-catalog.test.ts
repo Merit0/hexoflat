@@ -6,7 +6,7 @@ import { HexMapBuilder } from '../map/builders/hex-map-builder';
 import { locationTokenOrigin } from '../registry/location-token-origin';
 import { describe, expect, it } from 'vitest';
 import { createTokenFactory } from './factory/create-token-factory';
-import { TOKEN_CONTENT, type TokenContent } from '../content/token-content';
+import { TOKEN_CONTENT } from '../content/token-content';
 import { EDimension } from '../dimensions/dimensions';
 import { createServerWorld } from '../world/server-world';
 import { rollChestLoot } from '../chests/plan-chest-loot';
@@ -24,9 +24,7 @@ describe('catalogue validation and generation context', () => {
     { baseItems: [{ ...base, attributes: ['unknown'] }] },
     { baseItems: [{ ...base, attributes: ['heart', 'heart'] }] },
   ])('refuses invalid authored catalogue entries at construction', (changes) => {
-    expect(() =>
-      createTokenFactory({ ...TOKEN_CONTENT, ...changes } as unknown as TokenContent),
-    ).toThrow();
+    expect(() => createTokenFactory({ ...TOKEN_CONTENT, ...changes })).toThrow();
   });
 
   it('does not enable disabled type mechanics through a new base definition', () => {

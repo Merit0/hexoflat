@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { TOKEN_TYPES, tokenTypeAllowsTier } from '../dimensions/dimensions';
 import {
-  BASE_REALMS,
   baseRealmSchema,
   itemTypeKeySchema,
   uniqueKeySchema,
@@ -19,8 +19,7 @@ const PNG_RGBA_COLOR_TYPE = 6;
 const PNG_RGBA_BIT_DEPTH = 8;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BASE_NUMBER = /^(?:0[1-9]|[1-9]\d)$/;
-const REALM_VALUES = Object.values(ERarityKind) as string[];
-const BASE_REALM_VALUES = BASE_REALMS as readonly string[];
+const REALM_VALUES: readonly string[] = TOKEN_TYPES;
 
 export interface PngHeader {
   width: number;
@@ -138,7 +137,7 @@ function nameBaseFile(
     const given = folder.split('-')[0];
     return fail('UNKNOWN_REALM', path, `realm "${given}" is not one of ${REALM_VALUES.join(', ')}`);
   }
-  if (!BASE_REALM_VALUES.includes(realm)) {
+  if (!tokenTypeAllowsTier(realm, 'base')) {
     return fail('ALIEN_IN_BASE', path, `${realm} items are unique only, not base`);
   }
   const type = folder.slice(realm.length + 1);

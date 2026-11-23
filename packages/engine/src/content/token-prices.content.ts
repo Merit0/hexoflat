@@ -1,8 +1,8 @@
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { DIMENSION_TIERS } from '../dimensions/dimensions';
 import type { TokenPriceRanges } from '../tokens/token-content-schema';
 
-export const TOKEN_PRICE_RANGES: TokenPriceRanges = {
-  [ERarityKind.GLOOM]: [60, 800],
-  [ERarityKind.IDOL]: [40, 600],
-  [ERarityKind.SPARK]: [100, 1200],
-};
+export const TOKEN_PRICE_RANGES: TokenPriceRanges = Object.fromEntries(
+  DIMENSION_TIERS.flatMap((view) =>
+    view.price.kind === 'range' ? [[view.tokenType, [...view.price.range]]] : [],
+  ),
+) as TokenPriceRanges;

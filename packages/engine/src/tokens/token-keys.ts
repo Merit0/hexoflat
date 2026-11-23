@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { TOKEN_TIERS, tokenTypesWithTier, type TTokenTypeWithTier } from '../dimensions/dimensions';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SLUG_PART = '[a-z0-9]+(?:-[a-z0-9]+)*';
@@ -66,11 +66,11 @@ export const wordKeySchema = z
   .regex(new RegExp(`^content\\.tokens\\.(?:${WORD_SLOTS.join('|')})\\.${SLUG_PART}$`));
 export type WordKey = z.infer<typeof wordKeySchema>;
 
-export const BASE_REALMS = [ERarityKind.GLOOM, ERarityKind.IDOL, ERarityKind.SPARK] as const;
-export type TBaseRealm = (typeof BASE_REALMS)[number];
+export type TBaseRealm = TTokenTypeWithTier<'base'>;
+export const BASE_REALMS: readonly TBaseRealm[] = Object.freeze(tokenTypesWithTier('base'));
 export const baseRealmSchema = z.enum(BASE_REALMS);
 
-export const TOKEN_ORIGINS = ['base', 'unique'] as const;
+export const TOKEN_ORIGINS = TOKEN_TIERS;
 export type TTokenOrigin = (typeof TOKEN_ORIGINS)[number];
 
 export const MAP_TIERS = [1, 2, 3, 4] as const;

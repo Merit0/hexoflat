@@ -1,17 +1,15 @@
 import { availableInDimension } from '../../dimensions/availability';
 import { pickBaseItem } from './base-item-picker';
 import type { BaseItemRegistry } from '../base-item-registry';
-import { dimensionOfItemFamily, itemFamilyOfDimension } from '../../dimensions/dimensions';
+import {
+  dimensionOfItemFamily,
+  itemFamilyOfDimension,
+  tokenTypeAllowsTier,
+} from '../../dimensions/dimensions';
 import { decodedSourceId } from '../source-id';
 import { ERarityKind } from '../../abstraction/hexobject-abstraction';
 import { deriveStream } from '../../utils/random-seeded';
-import {
-  BASE_REALMS,
-  itemTokenIdOf,
-  tokenSourceIdSchema,
-  mapTierSchema,
-  type TBaseRealm,
-} from '../token-keys';
+import { itemTokenIdOf, tokenSourceIdSchema, mapTierSchema, type TBaseRealm } from '../token-keys';
 import type { TypeRegistry, UniqueRegistry } from '../registries';
 import { emptyTokenExtensions, type ItemToken } from '../token-schema';
 import type { UniqueTokenDefinition } from '../unique-schema';
@@ -58,7 +56,7 @@ export function tokenStreamLabel(id: string, step: TTokenStep): string {
 }
 
 function baseRealmOf(realm: ERarityKind): TBaseRealm | null {
-  return (BASE_REALMS as readonly ERarityKind[]).includes(realm) ? (realm as TBaseRealm) : null;
+  return tokenTypeAllowsTier(realm, 'base') ? (realm as TBaseRealm) : null;
 }
 
 function plainText(value: string): string {

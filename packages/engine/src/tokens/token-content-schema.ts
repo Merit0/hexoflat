@@ -1,8 +1,14 @@
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { priceRangeSchema, type PriceRange } from '../dimensions/dimensions';
 import { EHexActionType } from '../enums/hex-action-type';
 import { equipmentTypeFieldShape } from './equipment/equipment-keys';
-import { baseRealmSchema, itemTypeKeySchema, wordKeySchemaFor } from './token-keys';
+import {
+  BASE_REALMS,
+  baseRealmSchema,
+  itemTypeKeySchema,
+  wordKeySchemaFor,
+  type TBaseRealm,
+} from './token-keys';
 
 function distinct<T>(values: readonly T[]): boolean {
   return new Set(values).size === values.length;
@@ -37,16 +43,14 @@ export function hasGeneratedName(type: ItemTypeDefinition): boolean {
   return type.tool === null;
 }
 
-const priceRangeSchema = z
-  .tuple([z.number().int().positive(), z.number().int().positive()])
-  .refine(([min, max]) => min <= max, 'min is above max');
-export type PriceRange = z.infer<typeof priceRangeSchema>;
+export { priceRangeSchema, type PriceRange };
 
-export const tokenPriceRangesSchema = z.strictObject({
-  [ERarityKind.GLOOM]: priceRangeSchema,
-  [ERarityKind.IDOL]: priceRangeSchema,
-  [ERarityKind.SPARK]: priceRangeSchema,
-});
+export const tokenPriceRangesSchema = z.strictObject(
+  Object.fromEntries(BASE_REALMS.map((realm) => [realm, priceRangeSchema])) as Record<
+    TBaseRealm,
+    typeof priceRangeSchema
+  >,
+);
 export type TokenPriceRanges = z.infer<typeof tokenPriceRangesSchema>;
 
 const wordThemeSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);

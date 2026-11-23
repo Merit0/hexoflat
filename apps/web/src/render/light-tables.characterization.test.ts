@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import { rarityTone } from '@hexoflat/engine/content/rarity-rules';
+import { DIMENSION_TIERS } from '@hexoflat/engine/dimensions/dimensions';
+import {
+  RARITY_TONE_LIGHTS,
+  RARITY_TONES,
+  rarityTone,
+} from '@hexoflat/engine/content/rarity-rules';
 import { LIGHT_TONES, lightFrameFile } from '@hexoflat/engine/tokens/light-tone';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
-import { RARITY_COLOR, RARITY_FRAME_URLS } from './rarity';
+import { LIGHT_FRAME_URLS, RARITY_COLOR, RARITY_FRAME_URLS } from './rarity';
 import { LIGHT_FRAMES_DIR, tokenLightTone, tokenLightUrl, tokenRarityTone } from './token-look';
 
 const PAIRS = [
@@ -20,14 +25,22 @@ function lightOf(origin: 'base' | 'unique', rarity: ERarityKind): ItemToken {
   return { origin, rarity } as ItemToken;
 }
 
-describe('DA2 B7: web light tables duplicate the engine light table', () => {
-  it('CURRENT (B7): the web tables hold one entry per engine light tone', () => {
-    expect(Object.keys(RARITY_FRAME_URLS)).toHaveLength(LIGHT_TONES.length);
-    expect(Object.keys(RARITY_COLOR).sort()).toEqual(Object.keys(RARITY_FRAME_URLS).sort());
+describe('DA3a B7: web light tables are derived from the engine dimension record', () => {
+  it('B7: web light colors are the engine values by construction', () => {
+    expect(Object.keys(RARITY_COLOR)).toEqual([...RARITY_TONES]);
+    expect(Object.keys(RARITY_FRAME_URLS)).toEqual([...RARITY_TONES]);
+    for (const tone of RARITY_TONES) {
+      const light = RARITY_TONE_LIGHTS[tone];
+      expect(RARITY_COLOR[tone]).toBe(light.color);
+      expect(RARITY_FRAME_URLS[tone]).toBe(LIGHT_FRAME_URLS[light.id]);
+    }
+    expect(Object.keys(LIGHT_FRAME_URLS).sort()).toEqual(
+      DIMENSION_TIERS.map((view) => view.light.id).sort(),
+    );
   });
 
   it.each(PAIRS)(
-    'CURRENT (B7): %s %s has the same frame in render/rarity.ts and the engine',
+    'B7: %s %s has the same frame in render/rarity.ts and the engine',
     (origin, rarity) => {
       const token = lightOf(origin, rarity);
       const engineUrl = `${LIGHT_FRAMES_DIR}${lightFrameFile(tokenLightTone(token))}`;
@@ -37,7 +50,7 @@ describe('DA2 B7: web light tables duplicate the engine light table', () => {
     },
   );
 
-  it('CURRENT (B7): token-look maps every engine light tone to a different web tone', () => {
+  it('B7: token-look maps every engine light tone to a different web tone', () => {
     const webTones = PAIRS.map(([origin, rarity]) => tokenRarityTone(lightOf(origin, rarity)));
     expect(new Set(webTones).size).toBe(LIGHT_TONES.length);
     expect(new Set(webTones)).toEqual(new Set(Object.keys(RARITY_FRAME_URLS)));
