@@ -1,10 +1,24 @@
-import type {
-  QuestOfferBoardProjection,
-  QuestOfferProjection,
-} from '@hexoflat/engine/quests/quest-board-projection';
+export type TestQuestReward =
+  | { kind: 'item'; itemKey: string; amount: number; token?: { id: string } }
+  | { kind: 'will'; amount: number };
 
-export type TestQuestBoard = QuestOfferBoardProjection;
-export type TestQuestOffer = QuestOfferProjection;
+export interface TestQuestOffer {
+  id: string;
+  templateId: string;
+  dayId: number;
+  nameKey: string;
+  descKey: string;
+  goal: { unitKey: string; target: number };
+  rewards: TestQuestReward[];
+  expedition?: { steps: number; stepCost: number; backMultiplier: number };
+}
+
+export interface TestQuestBoard {
+  dayId: number;
+  refreshPrice: number;
+  remaining: number | null;
+  offers: TestQuestOffer[];
+}
 
 export interface TestHexCoordinates {
   columnIndex: number;
