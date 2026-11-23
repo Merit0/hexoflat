@@ -413,3 +413,22 @@ deleted (Oleh: delete all outdated code).
 
 Still open from §5: AG7 (power-based band and price, Will total review), only on request. Not in any phase: unique attributes skip
 the group check (AG1 note).
+
+### AG4 revised — hero base crit chance and split crit stat (2026-11-23)
+
+Oleh's decisions: every hero has a base crit chance of 5%; enemies keep 0; the total cap 25% stays.
+
+1. `BATTLE_RULES.heroBaseCrit` (int 0..25, default 5) is content. `critRatingOf(ctx, rules)` in `battle/strike-pipeline.ts`:
+   hero rating = `heroBaseCrit` + striking weapon `critPoints` (`resolveItemStats`) + `ctx.attackerStats.heroCritPoints`
+   (`battleHeroStats(attacker)`, built by `reaction.ts`); enemies 0. `chanceOf` still caps at 25. Stream labels unchanged.
+2. Stat split: item `crit-chance` keeps `critPoints`; `hero-crit` maps to the new hero stat `heroCritPoints`. Tokens store
+   attribute keys, so no migration (test reads a stored `hero-crit` line into `heroCritPoints` with a fixture registry).
+3. `statRuleFailures`: one scope per stat for every attribute, implemented or not (was: implemented only).
+4. Behaviour change: a plain weapon, or one with only `crit-dmg`, now crits 5% of the time (×2 default, or its multiplier).
+   Tests that characterize weapon-only crit pass `NO_BASE_CRIT_RULES` (`battle-test-setup.ts`; `enemyDoes` takes `rules`).
+5. Tests: `battle/hero-base-crit.test.ts` (characterization + AG4-1…4, no-migration), `AG4-5` block in
+   `equipment-content-rules.test.ts`; updated `equipment-crit.test.ts`, `strike-characterization.test.ts`,
+   `strike-pipeline.test.ts`, API `equipment-crit.integration.spec.ts`, e2e `combat/equipment-crit.spec.ts` (plain weapon on the
+   fixture's < 2% roll now crits ×2 = 4). Engine 2559, API 312, web 4408 passed; e2e equipment-crit 5/5.
+6. Not done: hero-crit and gloves stay disabled; no UI shows the hero's total crit chance (`content.battle.crit.chance` is only
+   registered as a locale key); no `tableRule` describes crit.

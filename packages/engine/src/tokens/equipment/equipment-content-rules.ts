@@ -138,11 +138,7 @@ function disagreement(
 export function statRuleFailures(attributes: readonly EquipmentAttributeDefinition[]): string[] {
   return [...groupByStat(attributes)].flatMap(([stat, definitions]) => [
     ...disagreement(stat, definitions, 'aggregate'),
-    ...disagreement(
-      stat,
-      definitions.filter((definition) => definition.implemented),
-      'scope',
-    ),
+    ...disagreement(stat, definitions, 'scope'),
   ]);
 }
 

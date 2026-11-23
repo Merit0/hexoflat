@@ -123,6 +123,13 @@ export interface StrikePipeline {
   effects: IStrikeEffects;
 }
 
+export function critRatingOf(ctx: StrikeContext, rules: BattleRules): number {
+  if (ctx.attacker.side !== 'heroes') return 0;
+  return (
+    rules.heroBaseCrit + resolveItemStats(ctx.weapon).critPoints + ctx.attackerStats.heroCritPoints
+  );
+}
+
 export function resolveStrike(
   ctx: StrikeContext,
   rules: BattleRules,
@@ -135,7 +142,7 @@ export function resolveStrike(
 ): { result: StrikeResolution; events: DomainEvent[] } {
   const suffix = ctx.sweep ? `:sweep:${ctx.target.id}` : '';
   const rng = deriveStream(ctx.state.seed, `combat:${ctx.strike.id}${suffix}:crit`);
-  const rating = ctx.attacker.side === 'heroes' ? resolveItemStats(ctx.weapon).critPoints : 0;
+  const rating = critRatingOf(ctx, rules);
   const crit = parts.crit.resolve({ rating, rng });
   const damageBeforeBlock = parts.damage.resolve(ctx, crit);
   const result: StrikeResolution = {

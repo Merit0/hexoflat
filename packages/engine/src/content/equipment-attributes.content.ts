@@ -185,7 +185,7 @@ const DEFINITIONS = [
   attribute('hero-crit', {
     groups: ['clothing'],
     onlyTypes: ['gloves'],
-    stat: 'critPoints',
+    stat: 'heroCritPoints',
     ...HERO_SUM,
     itemMax: 25,
     totalCap: 25,

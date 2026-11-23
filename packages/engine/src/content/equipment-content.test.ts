@@ -49,7 +49,7 @@ const STAT_BY_KEY = {
   'heal-on-block': 'healOnBlock',
   thorns: 'thorns',
   absorb: 'absorb',
-  'hero-crit': 'critPoints',
+  'hero-crit': 'heroCritPoints',
   'smart-step': 'stepFreeEvery',
   'deft-hands': 'useWillDiscount',
   trade: 'shopBuyDiscountPct',

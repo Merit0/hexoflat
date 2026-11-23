@@ -72,7 +72,7 @@ describe('EA5 strike pipeline', () => {
         },
       });
       expect(order).toEqual(['crit', 'damage', 'block', 'effects']);
-      expect(resolve.mock.calls[0][0].rating).toBe(0);
+      expect(resolve.mock.calls[0][0].rating).toBe(BATTLE_RULES.heroBaseCrit);
       expect(outcome.result).toEqual({
         critical: false,
         resolverId: 'rng-chance',

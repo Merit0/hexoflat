@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import type { ProgressState } from '@hexoflat/engine/aggregates/progress-state';
 import { mintItem, type InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { upcastToken } from '@hexoflat/engine/inventory/upcast-item-tokens';
+import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
 import { battleWith, giveTurn, hero, skeleton } from '@hexoflat/engine/battle/battle-test-setup';
 import { prepareCritTarget } from '@hexoflat/engine/battle/crit-fixture';
 import { createTestKit, envelope, type TestKit } from '../player/player-test-kit';
@@ -24,7 +25,7 @@ describe.skipIf(!inject('dbAvailable'))('Weapon crit persistence (real Postgres)
   afterAll(async () => kit.close());
 
   it.each([0, 2, 3, 4, 5])(
-    'a real strike applies multiplier %s once and preserves health through replay',
+    'a favourable real roll crits with crit-dmg %s (base chance) once and preserves health through replay',
     async (bonus) => {
       const { userId, heroId } = await kit.newPlayer();
       await placeHeroIn(world, userId, heroId, 'camping');
@@ -97,17 +98,16 @@ describe.skipIf(!inject('dbAvailable'))('Weapon crit persistence (real Postgres)
           },
         },
       };
+      const damage = 2 * Math.max(BATTLE_RULES.critMultiplier, bonus);
       const answer = await world.execute(userId, sent);
       expect(answer.result).toBe('applied');
       expect(answer.events.find((event) => event.type === 'STRIKE_LANDED')?.payload).toMatchObject({
-        critical: bonus > 0,
-        damageBeforeBlock: bonus ? 2 * bonus : 2,
-        damageDealt: bonus ? 2 * bonus : 2,
+        critical: true,
+        damageBeforeBlock: damage,
+        damageDealt: damage,
       });
       const saved = (await load()).battle!;
-      expect(saved.creatures.find((creature) => creature.id === 'target')!.hp).toBe(
-        30 - (bonus ? 2 * bonus : 2),
-      );
+      expect(saved.creatures.find((creature) => creature.id === 'target')!.hp).toBe(30 - damage);
       expect((await world.execute(userId, sent)).replayed).toBe(true);
       expect((await load()).battle).toEqual(saved);
       world = new WorldService(kit.db, kit.heroes);

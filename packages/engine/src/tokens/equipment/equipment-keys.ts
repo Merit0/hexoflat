@@ -42,6 +42,7 @@ export const HERO_STATS = [
   'maxHearts',
   'maxWill',
   'critPoints',
+  'heroCritPoints',
   'critDamage',
   'blockSides',
   'thorns',

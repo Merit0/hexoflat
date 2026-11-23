@@ -51,6 +51,7 @@ describe('AG1 real content', () => {
 describe('AG1 F3: one aggregate per stat', () => {
   it('refuses two attributes of one stat with different aggregates', () => {
     const attributes = withAttribute('hero-crit', {
+      stat: 'critPoints',
       aggregate: 'max',
       scope: 'item',
       implemented: true,
@@ -62,13 +63,25 @@ describe('AG1 F3: one aggregate per stat', () => {
   });
 });
 
-describe('AG1 F8: one scope per implemented stat', () => {
-  it('lets a planned attribute share a stat with another scope until it is implemented', () => {
-    expect(failuresWith(withAttribute('hero-crit', {})).join('\n')).not.toMatch(/mixes scopes/);
-    expect(failuresWith(withAttribute('hero-crit', { implemented: true }))).toContain(
-      'stat critPoints mixes scopes: crit-chance item, hero-crit hero',
-    );
+describe('AG4-5: one scope per stat', () => {
+  it('keeps the weapon and the hero crit on separate stats', () => {
+    const scopes = (stat: string) =>
+      EQUIPMENT_CONTENT.attributes
+        .filter((attribute) => attribute.stat === stat)
+        .map((attribute) => `${attribute.key} ${attribute.scope}`);
+    expect(scopes('critPoints')).toEqual(['crit-chance item']);
+    expect(scopes('heroCritPoints')).toEqual(['hero-crit hero']);
   });
+
+  it.each([false, true])(
+    'refuses a stat used by item and hero scope (implemented: %s)',
+    (implemented) => {
+      const attributes = withAttribute('hero-crit', { stat: 'critPoints', implemented });
+      expect(failuresWith(attributes)).toContain(
+        'stat critPoints mixes scopes: crit-chance item, hero-crit hero',
+      );
+    },
+  );
 });
 
 describe('AG1 F6: silent no-ops', () => {

@@ -1,6 +1,8 @@
 import { locationTokenOrigin } from '../registry/location-token-origin';
 import type { DomainEvent } from '../commands/types';
-import { BATTLE_RULES } from './battle-content';
+import { BATTLE_RULES, type BattleRules } from './battle-content';
+
+export const NO_BASE_CRIT_RULES: BattleRules = { ...BATTLE_RULES, heroBaseCrit: 0 };
 import type { BattleAction } from './battle-commands';
 import type {
   BattleCreature,
@@ -144,9 +146,10 @@ export function enemyDoes(
   action: BattleAction,
   enemyId = 's1',
   atMs = 0,
+  rules: BattleRules = BATTLE_RULES,
 ): { battle: BattleState; events: DomainEvent[] } {
   const next = structuredClone(battle);
-  const result = performAction(next, creatureById(next, enemyId)!, action, atMs, BATTLE_RULES);
+  const result = performAction(next, creatureById(next, enemyId)!, action, atMs, rules);
   if (isRejection(result)) {
     return {
       battle,
