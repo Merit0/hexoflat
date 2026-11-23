@@ -1,6 +1,6 @@
 # Dimensions audit plan (Path of Will / hexoflat)
 
-Status: DA0 done, DA1 triage done, DA2 ready. Q1–Q5 and D1–D9 decided; open items in §2e. Owner: Oleh. Source of data about code: Oleh's Claude Code (read-only audit first).
+Status: DA0 done, DA1 triage done, DA2 done. Q1–Q5 and D1–D9 decided; open items in §2e. Owner: Oleh. Source of data about code: Oleh's Claude Code (read-only audit first).
 
 ## 1. Concept contract (target behaviour)
 
@@ -55,6 +55,12 @@ Bugs from the DA0 report:
 - B1 — `resolveUniqueDrop` filters an Alien unique (owner Nowhere, no `sharedWith`) out of every location scope, so it never drops (`tokens/unique-drop.ts:66-73`). Fix = D6.
 - B2 — `progress.ownedUniques` is never written, so there is no real duplicate guard. REVERSED by Q5: the guard itself is wrong.
 - B3 — the drop world is the map world, not `creature.dimension` (`world/battle-world.ts:202`, `battle/grave-contents.ts:16-17`).
+- B4 — `nowhere` is accepted by the location / board drawing / recipe schemas (fails late in `realmOfBoard`).
+- B5 — `nowhere` is accepted by the map creature and battle creature schemas.
+- B6 — gloom and spark base tokens fall back to the idol sprite (only `idol-*` base folders exist).
+- B7 — two light tables: web `render/rarity.ts` + `token-look.ts` duplicate engine `tokens/light-tone.ts`.
+- B8 — Idol BASE light colour: CLOSED, gray is correct (D1); covered by the DA2 light test only.
+- B9 — a shared base gives the token the base owner's dimension, not the carrier's (`tokens/factory/token-factory.ts:121`); D4 changes it.
 
 Findings:
 
@@ -127,6 +133,7 @@ One phase = one chat with Claude Code. Phases after DA1 can change from the DA0 
 | DA0   | Read-only audit: dependency map + finding per C-rule with file:line                                                                                                                                                                                                            | all         |
 | DA1   | Triage in planning chat: each finding → concept gap / bug / unexpected behaviour / OK; Oleh answers Q1–Q5; final fix order                                                                                                                                                     | —           |
 | DA2   | Characterization tests for the current behaviour of every path that DA3–DA7 will change (incl. D4 shared base, D8 `updateLocation` write path, Q4 buyback)                                                                                                                     | —           |
+| DA2 ✓ | DONE 2026-11-24: 13 characterization test files (engine, web, API) lock B1–B7, B9, C2–C5, C7/F9, C10, C11/F5, C14/D3, D8 as CURRENT behaviour; C4 500-run invariant; Q4 buyback not built, no test (DA5). Zero diff outside test files and this plan.                          | —           |
 | DA3a  | Config record as single source: tiers, lights, price ranges, flags; web derives; remove Alien `if`s                                                                                                                                                                            | C1, C3, C10 |
 | DA3b  | Rename to one vocabulary; token `origin` → `tier`; one i18n key; update e2e features that use `realm`                                                                                                                                                                          | C11, C13    |
 | DA4   | Generator and sprite validator; 500-iteration test asserts no BASE Alien; unique two-layer attributes (Q5)                                                                                                                                                                     | C4, C5      |
