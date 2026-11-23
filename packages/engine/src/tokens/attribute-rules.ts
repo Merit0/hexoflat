@@ -1,4 +1,6 @@
 import type { AttributeProfiles } from './equipment/attribute-profile-schema';
+import { aggregateValues, totalCapOf } from './equipment/stat-values';
+import { typeBaseStats } from './equipment/type-base-stats';
 import type { EquipmentAttributeDefinition } from './equipment/equipment-attribute-schema';
 import type { AttributeRegistry } from './registries';
 import type { ItemTypeDefinition } from './token-content-schema';
@@ -54,13 +56,13 @@ function uniqueFailure(
   definition: EquipmentAttributeDefinition,
   attribute: TokenAttribute,
 ): string | null {
-  if (definition.cap !== undefined && attribute.value > definition.cap) {
-    return `Attribute ${definition.key} value ${attribute.value} is above the cap ${definition.cap}`;
+  if (definition.itemMax !== undefined && attribute.value > definition.itemMax) {
+    return `Attribute ${definition.key} value ${attribute.value} is above its itemMax ${definition.itemMax}`;
   }
   return null;
 }
 
-export function dependencyFailure(
+function dependencyFailure(
   registry: AttributeRegistry,
   attributes: readonly TokenAttribute[],
 ): string | null {
@@ -95,4 +97,35 @@ export function attributeFailure(
   return check.origin === 'base'
     ? baseFailure(definition, type, attribute, { profiles: check.profiles, tier })
     : uniqueFailure(definition, attribute);
+}
+
+function totalCapFailure(
+  registry: AttributeRegistry,
+  type: Pick<ItemTypeDefinition, 'block' | 'base'>,
+  attributes: readonly TokenAttribute[],
+): string | null {
+  const base = typeBaseStats(type);
+  const implemented = registry.all().filter((definition) => definition.implemented);
+  for (const stat of new Set(implemented.map((definition) => definition.stat))) {
+    if (stat === null) continue;
+    const definitions = implemented.filter((definition) => definition.stat === stat);
+    const cap = totalCapOf(definitions);
+    const keys = new Set(definitions.map((definition) => definition.key));
+    const values = attributes
+      .filter((attribute) => keys.has(attribute.key))
+      .map((attribute) => attribute.value);
+    if (cap === Infinity || values.length === 0) continue;
+    const own = definitions[0].scope === 'hero' && base[stat] ? [base[stat]] : [];
+    const total = aggregateValues([...own, ...values], definitions[0].aggregate);
+    if (total > cap) return `Item stat ${stat} ${total} is above its totalCap ${cap}`;
+  }
+  return null;
+}
+
+export function attributeSetFailure(
+  registry: AttributeRegistry,
+  type: Pick<ItemTypeDefinition, 'block' | 'base'>,
+  attributes: readonly TokenAttribute[],
+): string | null {
+  return dependencyFailure(registry, attributes) ?? totalCapFailure(registry, type, attributes);
 }

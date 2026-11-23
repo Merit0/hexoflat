@@ -355,3 +355,31 @@ Decision (Oleh): rename the key and the label. Delete all outdated code, with no
 3. Effect on saves: a stored token that holds `crit` or `focus` keeps the line, but has no effect and shows no row.
 4. Golden tokens: one sword changed only the key `crit` → `crit-chance` (the value stream is named by key).
 5. Checks: engine 2545 passed, 2 skipped; API 312; web 4408; typecheck, lint, engine build; e2e `combat/equipment-crit.spec.ts` and `hero/equipment-wisdom.spec.ts` 9/9 passed.
+
+### AG5 — cap model (2026-11-23, done)
+
+Field names as proposed in §5: `itemMax` and `totalCap`. No floor field: no `min` aggregate needs one, so the schema forbids both
+fields on a `min` aggregate.
+
+1. Schema `equipment-attribute-schema.ts`: `cap` is replaced by optional `itemMax` and `totalCap`. Refusals: "a min aggregate
+   cannot have itemMax or totalCap", "itemMax cannot be above totalCap".
+2. `itemMax` is checked by `profileEntryFailures` (profile `max`) and by `uniqueFailure` (unique values).
+   New content rule `itemMaxFailures`: an implemented, not deprecated, non-`min` attribute without `itemMax` fails.
+3. `totalCap` is applied by `resolveStat` to the equipped total (`totalCapOf`, the strictest of one stat), as `cap` was.
+4. F7: `MAX_BLOCK_SIDES` and `BLOCK_ATTRIBUTE_KEY` are deleted. The generic rule `totalCapFailure` checks one item: type base of
+   the stat (`typeBaseStats`, new `tokens/equipment/type-base-stats.ts`, also used by `resolveHeroStats`) plus its token values,
+   aggregated, against `totalCap`. It runs with the requirement check as `attributeSetFailure` in the token validator, in
+   `uniqueContentFailures` and in the factory content check (before, uniques in content were never checked for sides).
+   Probe P7 again: `shield` `itemMax 7`, `totalCap 8` accepts a 7-side unique shield; with `totalCap 6` it is refused as
+   "Item stat blockSides 7 is above its totalCap 6".
+5. Content values. Every old `cap` became `itemMax` = `totalCap` with the same number, except:
+   - `shield`: `itemMax 5`, `totalCap 6` (one shield is base 1 + 5; the old validator constant gave the same limit);
+   - `will`: `itemMax 40` (tier-4 maximum), no `totalCap` (Oleh, 2026-11-19). Before, a unique `will` had no limit.
+   - `smart-step` (`min`): neither field, as before.
+6. F10: the default crit multiplier ×2 is `BATTLE_RULES.critMultiplier` (schema `int ≥ 2`), passed to `BaseStrikeDamage`.
+   `BATTLE_RULES.maxShieldSides` (6) stays: it is the battle limit for every creature, enemies included.
+7. Behaviour of the game is unchanged: golden tokens are unchanged, no stored token is rechecked.
+8. Tests: `equipment-content-rules.test.ts` block "AG5 F5" (schema refusals, missing `itemMax`, unique `will` 41, total rule
+   from content, equipped total), `strike-pipeline.test.ts` "AG5 default crit multiplier"; old `cap` messages updated.
+   Mutations (remove the total rule, the `itemMax` rule, either schema refusal, hardcode ×2, drop `totalCap` in `resolveStat`)
+   each fail a test. Engine 2551 passed, 2 skipped; API 312; web 4408; typecheck, lint, engine build passed.

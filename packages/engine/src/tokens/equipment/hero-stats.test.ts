@@ -79,7 +79,7 @@ describe('EA4 hero stats', () => {
       {
         ...fixtureAttribute('absorb', { groups: ['clothing'], stat: 'absorb' }),
         aggregate: 'max' as const,
-        cap: 1,
+        totalCap: 1,
       },
     ];
     const stats = resolveHeroStats(

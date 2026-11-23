@@ -1,7 +1,7 @@
 import type { EquipmentAttributeDefinition } from './equipment-attribute-schema';
 import type { TStatAggregate } from './equipment-keys';
 
-function aggregate(values: readonly number[], rule: TStatAggregate): number {
+export function aggregateValues(values: readonly number[], rule: TStatAggregate): number {
   if (values.length === 0) return 0;
   if (rule === 'min') return Math.min(...values);
   if (rule === 'max') return Math.max(...values);
@@ -16,6 +16,9 @@ export function resolveStat(
   if (definitions.some((definition) => definition.aggregate !== rule)) {
     throw new Error('Attributes of one hero stat must use the same aggregate');
   }
-  const cap = Math.min(...definitions.map((definition) => definition.cap ?? Infinity));
-  return Math.min(cap, aggregate(values, rule));
+  return Math.min(totalCapOf(definitions), aggregateValues(values, rule));
+}
+
+export function totalCapOf(definitions: readonly EquipmentAttributeDefinition[]): number {
+  return Math.min(...definitions.map((definition) => definition.totalCap ?? Infinity));
 }

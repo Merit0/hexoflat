@@ -8,8 +8,13 @@ import { attributeRowsOf } from '../attribute-display';
 import { createTokenFactory } from '../factory/create-token-factory';
 import { contextFor, defaultFactory } from '../factory/factory-test-setup';
 import { itemTokenSchema } from '../token-schema';
-import type { EquipmentAttributeDefinition } from './equipment-attribute-schema';
+import {
+  equipmentAttributeDefinitionSchema,
+  type EquipmentAttributeDefinition,
+} from './equipment-attribute-schema';
+import { resolveHeroStats } from './hero-stats';
 import { resolveItemStats } from './item-stats';
+import { sampleToken } from '../token-test-setup';
 
 function withAttribute(
   key: string,
@@ -256,5 +261,62 @@ describe('AG4 F2: attribute requirements', () => {
         ],
       }).ok,
     ).toBe(true);
+  });
+});
+
+describe('AG5 F5: itemMax and totalCap', () => {
+  const byKey = (key: string) => EQUIPMENT_CONTENT.attributes.find((entry) => entry.key === key)!;
+  const shieldUnique = (value: number) => [
+    { ...TOKEN_UNIQUES[0], type: 'shield', attributes: [{ key: 'shield', value }] },
+  ];
+
+  it('refuses a cap on a min aggregate and an itemMax above totalCap', () => {
+    const step = byKey('smart-step');
+    expect(equipmentAttributeDefinitionSchema.safeParse({ ...step, itemMax: 3 }).success).toBe(
+      false,
+    );
+    expect(equipmentAttributeDefinitionSchema.safeParse({ ...step, totalCap: 3 }).success).toBe(
+      false,
+    );
+    const crit = byKey('crit-chance');
+    expect(
+      equipmentAttributeDefinitionSchema.safeParse({ ...crit, itemMax: 11, totalCap: 10 }).success,
+    ).toBe(false);
+  });
+
+  it('refuses an implemented attribute without itemMax', () => {
+    expect(failuresWith(withAttribute('will', { itemMax: undefined }))).toContain(
+      'attribute will is implemented but has no itemMax',
+    );
+  });
+
+  it('bounds a unique by itemMax, also for an attribute without totalCap', () => {
+    const uniques = [
+      { ...TOKEN_UNIQUES[0], type: 'sword', attributes: [{ key: 'will', value: 41 }] },
+    ];
+    expect(uniqueContentFailures(uniques)).toContain(
+      `unique ${TOKEN_UNIQUES[0].key}: Attribute will value 41 is above its itemMax 40`,
+    );
+  });
+
+  it('checks type base plus token values against totalCap, read from content', () => {
+    const raised = { ...TOKEN_CONTENT, attributes: withAttribute('shield', { itemMax: 6 }) };
+    expect(uniqueContentFailures(shieldUnique(6), raised)).toContain(
+      `unique ${TOKEN_UNIQUES[0].key}: Item stat blockSides 7 is above its totalCap 6`,
+    );
+    expect(uniqueContentFailures(shieldUnique(5), raised)).toEqual([]);
+    const wider = {
+      ...TOKEN_CONTENT,
+      attributes: withAttribute('shield', { itemMax: 7, totalCap: 8 }),
+    };
+    expect(uniqueContentFailures(shieldUnique(7), wider)).toEqual([]);
+  });
+
+  it('applies totalCap to the equipped total', () => {
+    const shield = (value: number) => ({
+      key: 'shield',
+      token: { ...sampleToken({ type: 'shield' }), attributes: [{ key: 'shield', value }] },
+    });
+    expect(resolveHeroStats([shield(4), shield(4)]).blockSides).toBe(6);
   });
 });

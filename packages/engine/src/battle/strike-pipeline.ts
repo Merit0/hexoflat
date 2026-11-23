@@ -53,8 +53,10 @@ export interface IStrikeEffects {
 }
 
 export class BaseStrikeDamage implements IStrikeDamage {
+  constructor(private readonly critMultiplier: number) {}
+
   resolve(ctx: StrikeContext, crit: CritOutcome): number {
-    const multiplier = Math.max(2, resolveItemStats(ctx.weapon).critDamage);
+    const multiplier = Math.max(this.critMultiplier, resolveItemStats(ctx.weapon).critDamage);
     return ctx.power * (crit.critical ? multiplier : 1);
   }
 }
@@ -126,7 +128,7 @@ export function resolveStrike(
   rules: BattleRules,
   parts: StrikePipeline = {
     crit: critResolverOf(rules.critResolver),
-    damage: new BaseStrikeDamage(),
+    damage: new BaseStrikeDamage(rules.critMultiplier),
     block: new FullStrikeBlock(),
     effects: new StrikeEvents(),
   },

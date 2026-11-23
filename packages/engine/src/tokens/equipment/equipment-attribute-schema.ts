@@ -52,12 +52,34 @@ export const equipmentAttributeDefinitionSchema = z
     stat: heroStatSchema.nullable(),
     aggregate: z.enum(STAT_AGGREGATES),
     scope: z.enum(ATTRIBUTE_SCOPES),
-    cap: z.number().int().positive().optional(),
+    itemMax: z.number().int().positive().optional(),
+    totalCap: z.number().int().positive().optional(),
     display: attributeDisplaySchema,
     implemented: z.boolean(),
     deprecated: z.boolean().optional(),
   })
   .superRefine((attribute, ctx) => {
+    if (
+      attribute.aggregate === 'min' &&
+      (attribute.itemMax !== undefined || attribute.totalCap !== undefined)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['aggregate'],
+        message: 'a min aggregate cannot have itemMax or totalCap',
+      });
+    }
+    if (
+      attribute.itemMax !== undefined &&
+      attribute.totalCap !== undefined &&
+      attribute.itemMax > attribute.totalCap
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['itemMax'],
+        message: 'itemMax cannot be above totalCap',
+      });
+    }
     if (attribute.requires?.attributes?.includes(attribute.key)) {
       ctx.addIssue({
         code: 'custom',

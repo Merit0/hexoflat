@@ -43,7 +43,7 @@ describe('EA5 strike pipeline', () => {
     (blocked) => {
       const order: string[] = [];
       const crit = critResolverOf('rng-chance');
-      const damage = new BaseStrikeDamage();
+      const damage = new BaseStrikeDamage(BATTLE_RULES.critMultiplier);
       const block = new FullStrikeBlock();
       const effects = new StrikeEvents();
       const resolve = vi.fn((ctx: CritContext) => {
@@ -103,5 +103,20 @@ describe('EA5 strike pipeline', () => {
       damageBeforeBlock: 2,
       damageDealt: 2,
     });
+  });
+});
+
+describe('AG5 default crit multiplier', () => {
+  it('reads the default multiplier from the battle rules', () => {
+    const ctx = { ...context(false), weapon: null, power: 2 };
+    expect(BATTLE_RULES.critMultiplier).toBe(2);
+    expect(
+      new BaseStrikeDamage(BATTLE_RULES.critMultiplier).resolve(ctx, {
+        critical: true,
+        detail: {},
+      }),
+    ).toBe(4);
+    expect(new BaseStrikeDamage(3).resolve(ctx, { critical: true, detail: {} })).toBe(6);
+    expect(new BaseStrikeDamage(3).resolve(ctx, { critical: false, detail: {} })).toBe(2);
   });
 });

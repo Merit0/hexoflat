@@ -71,8 +71,10 @@ export function profileEntryFailures(
         failures.push(`${tier}: attribute ${key} has a weight for group ${group}`);
       }
     }
-    if (attribute.cap !== undefined && entry.max > attribute.cap) {
-      failures.push(`${tier}: attribute ${key} max ${entry.max} is above its cap ${attribute.cap}`);
+    if (attribute.itemMax !== undefined && entry.max > attribute.itemMax) {
+      failures.push(
+        `${tier}: attribute ${key} max ${entry.max} is above its itemMax ${attribute.itemMax}`,
+      );
     }
     return failures;
   });
@@ -141,6 +143,14 @@ export function statRuleFailures(attributes: readonly EquipmentAttributeDefiniti
       'scope',
     ),
   ]);
+}
+
+export function itemMaxFailures(attributes: readonly EquipmentAttributeDefinition[]): string[] {
+  return attributes
+    .filter((attribute) => attribute.implemented && attribute.deprecated !== true)
+    .filter((attribute) => attribute.aggregate !== 'min')
+    .filter((attribute) => attribute.itemMax === undefined)
+    .map((attribute) => `attribute ${attribute.key} is implemented but has no itemMax`);
 }
 
 export function blockSidesFailures(types: readonly RuleType[]): string[] {

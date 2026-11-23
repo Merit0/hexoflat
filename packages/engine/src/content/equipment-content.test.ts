@@ -229,11 +229,11 @@ describe('EA1 attribute profiles', () => {
       /crit-chance has a weight for group jewelry/,
     ],
     [
-      'an absorb max above its cap',
+      'an absorb max above its itemMax',
       (profiles) => {
         profiles['tier-1'].attributes.absorb.max = 2;
       },
-      /absorb max 2 is above its cap 1/,
+      /absorb max 2 is above its itemMax 1/,
     ],
   ])('refuses %s', (_name, change, message) => {
     expect(withProfiles(change).join('\n')).toMatch(message);
@@ -344,7 +344,8 @@ describe('Wisdom definition', () => {
     expect(EQUIPMENT_ATTRIBUTES.find((attribute) => attribute.key === 'wisdom')).toMatchObject({
       stat: 'answerWillReward',
       aggregate: 'sum',
-      cap: 5,
+      itemMax: 5,
+      totalCap: 5,
       display: { format: 'plus' },
       implemented: true,
     });

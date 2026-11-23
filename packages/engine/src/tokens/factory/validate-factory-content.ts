@@ -1,5 +1,5 @@
 import type { TokenContent } from '../../content/token-content';
-import { attributeFailure, dependencyFailure } from '../attribute-rules';
+import { attributeFailure, attributeSetFailure } from '../attribute-rules';
 import { attributeProfilesSchema } from '../equipment/attribute-profile-schema';
 import {
   adjectivesFor,
@@ -42,7 +42,7 @@ function uniqueFailures(
       );
       return failure ? [`Unique ${unique.key}: ${failure}`] : [];
     });
-    const missing = dependencyFailure(attributes, unique.attributes);
+    const missing = attributeSetFailure(attributes, types.get(unique.type), unique.attributes);
     return missing ? [...failures, `Unique ${unique.key}: ${missing}`] : failures;
   });
 }

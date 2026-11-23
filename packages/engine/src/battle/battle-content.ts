@@ -24,6 +24,7 @@ export const battleRulesSchema = z.object({
   fallDamage: z.number().int().min(0),
   graveLootEnabled: z.boolean().default(true),
   critResolver: critResolverIdSchema.default('rng-chance'),
+  critMultiplier: z.number().int().min(2),
 });
 export type BattleRules = z.infer<typeof battleRulesSchema>;
 
@@ -44,4 +45,5 @@ export const BATTLE_RULES: BattleRules = battleRulesSchema.parse({
   boulderWeight: 2,
   fallDamage: 1,
   graveLootEnabled: true,
+  critMultiplier: 2,
 });
