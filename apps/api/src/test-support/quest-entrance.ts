@@ -11,11 +11,12 @@ export async function arriveAtQuestEntrance(
   userId: string,
   heroId: string,
   adjacent = true,
+  questId = 'seeker-1',
 ) {
   await world.ensure(userId, heroId, 'camping');
   const held = deserializeWorld(await world.ensure(userId, heroId, 'silesia'), Date.now());
   const marker = held.map.tiles.find(
-    (tile) => tile.hexobject?.id === held.questEntrances?.['seeker-1'],
+    (tile) => tile.hexobject?.id === held.questEntrances?.[questId],
   )!;
   const stand = getHexNeighbors(marker.coordinates).find((hex) =>
     held.map.tiles.some(

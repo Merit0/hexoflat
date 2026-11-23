@@ -1,6 +1,7 @@
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { GAME_DAY_RULES } from '../content/game-day.content';
+import { questBoardForDay } from '../quests/quest-board-state';
 import type { GameDay } from './game-day-state';
 
 const UTC_DAY_MS = 86_400_000;
@@ -14,6 +15,21 @@ function startReason(day: GameDay | undefined, now: number): DayStartReason | nu
   if (day.questsCompleted >= GAME_DAY_RULES.questsCompleted) return 'quests-completed';
   if (day.caveTrips >= GAME_DAY_RULES.caveTrips) return 'cave-trips';
   return null;
+}
+
+export function gameDayAt(previous: GameDay | undefined, now: number) {
+  const reason = startReason(previous, now);
+  const day =
+    !reason && previous
+      ? previous
+      : {
+          id: (previous?.id ?? 0) + 1,
+          startedAt: Math.max(now, previous?.startedAt ?? now),
+          willSpent: 0,
+          questsCompleted: 0,
+          caveTrips: 0,
+        };
+  return { day, reason };
 }
 
 function willSpent(event: DomainEvent, heroId: string): number {
@@ -59,18 +75,7 @@ export function trackGameDay<T extends { progress: ProgressState; events: Domain
   now: number,
   seeker?: { alreadyResolved: boolean },
 ): T {
-  const previous = before.day;
-  const reason = startReason(previous, now);
-  const current =
-    !reason && previous
-      ? previous
-      : {
-          id: (previous?.id ?? 0) + 1,
-          startedAt: Math.max(now, previous?.startedAt ?? now),
-          willSpent: 0,
-          questsCompleted: 0,
-          caveTrips: 0,
-        };
+  const { reason, day: current } = gameDayAt(before.day, now);
   const heroId = before.knowledge.heroId;
   const spent = outcome.events.reduce((total, event) => total + willSpent(event, heroId), 0);
   const completed = questCompletions(outcome.events, heroId, seeker);
@@ -92,5 +97,10 @@ export function trackGameDay<T extends { progress: ProgressState; events: Domain
         ...outcome.events,
       ]
     : outcome.events;
-  return { ...outcome, progress: { ...outcome.progress, day }, events };
+  const progress = { ...outcome.progress, day };
+  return {
+    ...outcome,
+    progress: progress.quests.board ? questBoardForDay(progress, day.id) : progress,
+    events,
+  };
 }

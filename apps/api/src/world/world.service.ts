@@ -109,7 +109,10 @@ function trackWorldProgress<T extends { ok: boolean; events: DomainEvent[] }>(
   now: number,
 ): T {
   if (!outcome.ok || !('progress' in outcome)) return outcome;
-  const folded = foldQuestEvents(outcome as T & { progress: ProgressState });
+  const folded = foldQuestEvents(
+    outcome as T & { progress: ProgressState },
+    before.presence?.locationKey,
+  );
   return 'rejected' in outcome && outcome.rejected ? folded : trackGameDay(before, folded, now);
 }
 

@@ -9,14 +9,23 @@ import { emptyQuestLog } from '../quests/quest-log-state';
 import { emptyListings } from '../trade/listing-state';
 import { emptyProgressState, progressStateSchema, type ProgressState } from './progress-state';
 import { tradersForClient } from '../trade/trader-view';
+import { projectQuestBoard } from '../quests/quest-board-projection';
 
 export interface AggregateServerState {
   rngSeed?: string;
 }
 
-function projectProgress(state: ProgressState, server: AggregateServerState): ProgressState {
+function projectProgress(state: ProgressState, server: AggregateServerState) {
   if (!server.rngSeed) throw new Error(`Progress of ${state.knowledge.heroId} has no rngSeed`);
-  return { ...state, traders: tradersForClient(state, server.rngSeed) };
+  const { active, done, placementActivations } = state.quests;
+  const quests = { active, done, ...(placementActivations ? { placementActivations } : {}) };
+  const questBoard = projectQuestBoard(state.quests);
+  return {
+    ...state,
+    quests,
+    traders: tradersForClient(state, server.rngSeed),
+    ...(questBoard ? { questBoard } : {}),
+  };
 }
 
 export interface IAggregateDefinition<TState> {

@@ -10,12 +10,19 @@ export const activeQuestSchema = z
   .strict();
 export type ActiveQuest = z.infer<typeof activeQuestSchema>;
 
+export const questBoardStateSchema = z.strictObject({
+  dayId: z.number().int().positive(),
+  issued: z.number().int().nonnegative(),
+  refreshes: z.number().int().nonnegative(),
+});
+
 export const questLogSchema = z
   .object({
     active: z.array(activeQuestSchema).max(16),
     done: z.record(z.string(), z.number().int().positive()),
     placementActivations: z.record(z.string(), z.number().int().positive()).optional(),
     offers: z.array(questOfferSchema).max(QUEST_BOARD_SIZE).optional(),
+    board: questBoardStateSchema.optional(),
   })
   .strict()
   .refine(({ offers = [] }) => new Set(offers.map((offer) => offer.id)).size === offers.length, {

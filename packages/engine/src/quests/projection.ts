@@ -10,6 +10,7 @@ import type { THexobjectKey } from '../registry/hexobjects-registry';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '../utils/hex-utils';
 import { positionOf, type QuestRun, type SeekerOutcome } from './quest-state';
+import { projectQuestOffer, type QuestOfferProjection } from './quest-board-projection';
 
 export interface QuestBoardProjection {
   mapId: TreasureSeekerMapKey;
@@ -23,6 +24,7 @@ export interface QuestBoardProjection {
 export interface QuestProjection {
   board?: QuestBoardProjection;
   offerId: string;
+  offer?: QuestOfferProjection;
   dimension?: EDimension;
   phase: QuestRun['phase'];
   outcome: SeekerOutcome | null;
@@ -65,6 +67,7 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
       exit: field.exit,
     },
     offerId: run.offerId,
+    ...(run.generatedOffer ? { offer: projectQuestOffer(run.generatedOffer) } : {}),
     dimension: dimensionOfItemFamily(questTokenOrigin(run).realm),
     phase: run.phase,
     outcome: run.outcome,

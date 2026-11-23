@@ -204,7 +204,7 @@ describe('generated quest execution and persistence', () => {
     );
     expect(questDefinitionFor(restored.quests, offer.id)).toEqual(offer.definition);
     const events = Array.from({ length: 7 }, () => event('RESOURCE_GATHERED', { action: 'CUT' }));
-    const advanced = applyQuestEvents(restored, events, ALL_QUESTS);
+    const advanced = applyQuestEvents(restored, events, ALL_QUESTS, undefined, 'silesia');
     expect(advanced.progress.quests.active).toEqual([
       { questId: offer.id, state: 'ready', progress: 7 },
     ]);

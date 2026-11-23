@@ -10,11 +10,14 @@ import {
   projectQuestForClient,
   type DomainEvent,
   type Presence,
+  type ProgressState,
   type QuestProjection,
   type QuestRunDoc,
   type SeekerEntrance,
 } from '@hexoflat/engine';
 import { trackGameDay } from '@hexoflat/engine/game-day/game-day';
+import { refillQuestBoard } from '@hexoflat/engine/quests/quest-board';
+import { questDefinitionFor } from '@hexoflat/engine/quests/quest-lookup';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
 import {
@@ -45,6 +48,8 @@ import {
   PlayerCommandError,
   type ProjectedAggregates,
 } from '../player/player-command.types';
+import { questBoardContext } from './quest-board-context';
+import { reconcileQuestWorld } from './reconcile-quest-world';
 
 export const QUEST_RUN_KEY = 'srv-quest';
 
@@ -82,12 +87,15 @@ async function entranceOf(
   tx: Tx,
   expeditionId: string,
   heroId: string,
-  presence: Presence | null,
+  progress: ProgressState,
   questId: string,
   now: number,
 ): Promise<SeekerEntrance | null> {
+  const { presence } = progress;
+  const definition = questDefinitionFor(progress.quests, questId);
+  if (!definition) return null;
   const world = presence ? await loadWorldDoc(tx, expeditionId, heroId, presence.mapId, now) : null;
-  return world ? questEntranceFor(world, questId) : null;
+  return world ? questEntranceFor(world, questId, { [questId]: definition }) : null;
 }
 
 async function campPlace(
@@ -218,14 +226,7 @@ export class QuestRunService {
       const now = Date.now();
       const entering = command.type === 'QUEST_ENTER';
       const entrance = entering
-        ? await entranceOf(
-            tx,
-            expeditionId,
-            heroId,
-            progress.state.presence,
-            command.payload.questId,
-            now,
-          )
+        ? await entranceOf(tx, expeditionId, heroId, progress.state, command.payload.questId, now)
         : null;
       const seed = await expeditionSeed(tx, expeditionId);
       const executed = executeQuestRunCommand({
@@ -241,12 +242,20 @@ export class QuestRunService {
         await journal('rejected', executed.events, executed.code, null);
         return respond('rejected', executed.events, executed.code, doc);
       }
-      const outcome = trackGameDay(
+      let outcome = trackGameDay(
         progress.state,
         executed,
         now,
         doc ? { alreadyResolved: doc.run.resolution !== undefined } : undefined,
       );
+      if (
+        outcome.progress.quests.board &&
+        outcome.progress.quests.active.length < progress.state.quests.active.length
+      ) {
+        const ctx = await questBoardContext(tx, expeditionId, progress);
+        outcome = refillQuestBoard(progress.state, outcome, now, ctx);
+        await reconcileQuestWorld(tx, expeditionId, outcome.progress, now);
+      }
 
       const revision = await saveAggregate(
         tx,
