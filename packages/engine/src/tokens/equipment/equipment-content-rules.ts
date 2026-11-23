@@ -6,6 +6,7 @@ import type { EquipmentAttributeDefinition } from './equipment-attribute-schema'
 import {
   ATTRIBUTE_PROFILE_TIERS,
   type TAdjectiveBand,
+  type TAttributeProfileTier,
   type THeroStat,
   type TItemGroup,
 } from './equipment-keys';
@@ -153,15 +154,6 @@ export function itemMaxFailures(attributes: readonly EquipmentAttributeDefinitio
     .map((attribute) => `attribute ${attribute.key} is implemented but has no itemMax`);
 }
 
-export function blockSidesFailures(types: readonly RuleType[]): string[] {
-  return types.flatMap((type) => {
-    const sides = type.block?.sides;
-    const base = type.base?.blockSides;
-    if (sides === undefined || base === undefined || sides === base) return [];
-    return [`type ${type.key} has block.sides ${sides} but base.blockSides ${base}`];
-  });
-}
-
 export function bandFailures(profiles: AttributeProfiles, bandCount: number): string[] {
   return ATTRIBUTE_PROFILE_TIERS.flatMap((tier) => {
     const { maxCount } = profiles[tier];
@@ -232,7 +224,7 @@ function eligibleAt(
   attribute: EquipmentAttributeDefinition,
   type: RuleType,
   profiles: AttributeProfiles,
-  tier: (typeof ATTRIBUTE_PROFILE_TIERS)[number],
+  tier: TAttributeProfileTier,
 ): boolean {
   return (
     type.group !== undefined &&

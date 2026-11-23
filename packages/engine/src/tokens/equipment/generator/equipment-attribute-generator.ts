@@ -20,7 +20,9 @@ export interface EquipmentAttributeGeneratorParts {
   values: IValueRoller;
 }
 
-function generatedAttributesSchema(maxCount: number) {
+const OUTPUT_SCHEMAS = new Map<number, ReturnType<typeof buildOutputSchema>>();
+
+function buildOutputSchema(maxCount: number) {
   return z
     .array(tokenAttributeSchema)
     .max(maxCount)
@@ -29,6 +31,14 @@ function generatedAttributesSchema(maxCount: number) {
         new Set(attributes.map((attribute) => attribute.key)).size === attributes.length,
       'an attribute is generated twice',
     );
+}
+
+function generatedAttributesSchema(maxCount: number) {
+  const cached = OUTPUT_SCHEMAS.get(maxCount);
+  if (cached) return cached;
+  const schema = buildOutputSchema(maxCount);
+  OUTPUT_SCHEMAS.set(maxCount, schema);
+  return schema;
 }
 
 export class EquipmentAttributeGenerator implements IAttributeGenerator {

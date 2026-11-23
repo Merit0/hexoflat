@@ -1,4 +1,5 @@
 import { ATTRIBUTE_PROFILES } from '../../../content/attribute-profiles.content';
+import { AttributeRegistry } from '../../registries';
 import { EQUIPMENT_ATTRIBUTES } from '../../../content/equipment-attributes.content';
 import { EQUIPMENT_TYPES } from '../../../content/item-types.content';
 import type { TMapTier } from '../../token-keys';
@@ -10,7 +11,7 @@ import {
   attributeLabelKey,
   type EquipmentAttributeDefinition,
 } from '../equipment-attribute-schema';
-import type { THeroStat, TItemGroup } from '../equipment-keys';
+import { ATTRIBUTE_PROFILE_TIERS, type THeroStat, type TItemGroup } from '../equipment-keys';
 import type { EquipmentTypeDefinition } from '../equipment-type-schema';
 import { seededRandomStreams } from './attribute-streams';
 import { createEquipmentAttributeGenerator } from './create-equipment-attribute-generator';
@@ -67,23 +68,19 @@ export function withProfileRow(
   key: string,
   row: ProfileAttribute,
 ): AttributeProfiles {
-  const add = (tier: keyof AttributeProfiles) => ({
-    ...profiles[tier],
-    attributes: { ...profiles[tier].attributes, [key]: row },
-  });
-  return {
-    'tier-1': add('tier-1'),
-    'tier-2': add('tier-2'),
-    'tier-3': add('tier-3'),
-    'tier-4': add('tier-4'),
-  };
+  return Object.fromEntries(
+    ATTRIBUTE_PROFILE_TIERS.map((tier) => [
+      tier,
+      { ...profiles[tier], attributes: { ...profiles[tier].attributes, [key]: row } },
+    ]),
+  ) as AttributeProfiles;
 }
 
 export function fixtureGenerator(
   attributes: readonly EquipmentAttributeDefinition[] = FIXTURE_ATTRIBUTES,
   profiles: AttributeProfiles = FIXTURE_PROFILES,
 ): EquipmentAttributeGenerator {
-  return createEquipmentAttributeGenerator(attributes, profiles);
+  return createEquipmentAttributeGenerator(new AttributeRegistry(attributes), profiles);
 }
 
 export function rollFor(

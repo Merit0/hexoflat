@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { AttributeRegistry } from '../../registries';
 import { ATTRIBUTE_PROFILES } from '../../../content/attribute-profiles.content';
 import { ATTRIBUTE_STREAM_LABELS } from './attribute-streams';
 import { WeightedCountRoller } from './count-roller';
 import { createEquipmentAttributeGenerator } from './create-equipment-attribute-generator';
-import { FIXTURE_ATTRIBUTES, fixtureAttribute, typeOf } from './generator-test-setup';
+import { FIXTURE_ATTRIBUTES, typeOf } from './generator-test-setup';
 import { RegistryAttributePoolFilter } from './pool-filter';
 import { ContentAttributeProfileProvider } from './profile-provider';
 import { SteppedValueRoller } from './value-roller';
@@ -28,13 +29,8 @@ describe('EA2 generator parts', () => {
     expect(counts.roll({ ...request, poolSize: 0 }, fixed(0.5))).toBe(0);
   });
 
-  it('the pool filter refuses a duplicate attribute key', () => {
-    const twice = fixtureAttribute('twice', { groups: ['weapon'], stat: 'critPoints' });
-    expect(() => new RegistryAttributePoolFilter([twice, twice])).toThrow(/DUPLICATE_ATTRIBUTE/);
-  });
-
   it('the pool needs a group weight in the profile', () => {
-    const pool = new RegistryAttributePoolFilter(FIXTURE_ATTRIBUTES);
+    const pool = new RegistryAttributePoolFilter(new AttributeRegistry(FIXTURE_ATTRIBUTES));
     const profile = new ContentAttributeProfileProvider(ATTRIBUTE_PROFILES).profileFor(1);
     expect(
       pool.poolFor({ profile, group: 'weapon', type: typeOf('sword') }).map((e) => e.key),
@@ -45,7 +41,10 @@ describe('EA2 generator parts', () => {
   });
 
   it('an empty pool stops the generator without an error', () => {
-    const generator = createEquipmentAttributeGenerator([], ATTRIBUTE_PROFILES);
+    const generator = createEquipmentAttributeGenerator(
+      new AttributeRegistry([]),
+      ATTRIBUTE_PROFILES,
+    );
     const ctx = {
       level: 4,
       group: 'weapon',
@@ -57,7 +56,10 @@ describe('EA2 generator parts', () => {
 
   it('asks for one named stream per step', () => {
     const labels: string[] = [];
-    const generator = createEquipmentAttributeGenerator(FIXTURE_ATTRIBUTES, ATTRIBUTE_PROFILES);
+    const generator = createEquipmentAttributeGenerator(
+      new AttributeRegistry(FIXTURE_ATTRIBUTES),
+      ATTRIBUTE_PROFILES,
+    );
     const attributes = generator.generate({
       level: 4,
       group: 'weapon',

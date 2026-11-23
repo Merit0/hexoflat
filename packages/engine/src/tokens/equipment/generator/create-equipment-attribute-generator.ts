@@ -1,5 +1,5 @@
 import type { AttributeProfiles } from '../attribute-profile-schema';
-import type { EquipmentAttributeDefinition } from '../equipment-attribute-schema';
+import type { AttributeRegistry } from '../../registries';
 import { WeightedCountRoller } from './count-roller';
 import {
   EquipmentAttributeGenerator,
@@ -11,7 +11,7 @@ import { SteppedValueRoller } from './value-roller';
 import { CumulativeWeightedPicker } from './weighted-picker';
 
 export function createEquipmentAttributeGenerator(
-  attributes: readonly EquipmentAttributeDefinition[],
+  attributes: AttributeRegistry,
   profiles: AttributeProfiles,
   overrides: Partial<EquipmentAttributeGeneratorParts> = {},
 ): EquipmentAttributeGenerator {

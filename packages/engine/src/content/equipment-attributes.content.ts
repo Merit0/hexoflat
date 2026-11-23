@@ -11,7 +11,10 @@ type AttributeFields = Omit<EquipmentAttributeDefinition, 'key' | 'display' | 'i
   implemented?: boolean;
 };
 
-function attribute(key: string, fields: AttributeFields): EquipmentAttributeDefinition {
+function attribute<K extends string>(
+  key: K,
+  fields: AttributeFields,
+): EquipmentAttributeDefinition & { key: K } {
   const { icon, format, implemented = false, ...rest } = fields;
   return {
     key,
@@ -21,11 +24,11 @@ function attribute(key: string, fields: AttributeFields): EquipmentAttributeDefi
   };
 }
 
-function blocked(
-  key: string,
+function blocked<K extends string>(
+  key: K,
   groups: EquipmentAttributeDefinition['groups'],
   icon: string,
-): EquipmentAttributeDefinition {
+): EquipmentAttributeDefinition & { key: K } {
   return attribute(key, {
     groups,
     stat: null,
@@ -39,7 +42,7 @@ function blocked(
 const HERO_SUM = { aggregate: 'sum', scope: 'hero' } as const;
 const ITEM_SUM = { aggregate: 'sum', scope: 'item' } as const;
 
-export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
+const DEFINITIONS = [
   attribute('heart', {
     groups: ['defense', 'clothing'],
     stat: 'maxHearts',
@@ -242,4 +245,8 @@ export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = [
   blocked('counter', ['defense'], 'cross'),
   blocked('steadfast', ['defense'], 'tower'),
   blocked('rest', ['clothing'], 'moon'),
-];
+] as const;
+
+export type EquipmentAttributeKey = (typeof DEFINITIONS)[number]['key'];
+
+export const EQUIPMENT_ATTRIBUTES: readonly EquipmentAttributeDefinition[] = DEFINITIONS;

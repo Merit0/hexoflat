@@ -94,11 +94,7 @@ export interface NameRequest {
 }
 
 export interface ITypePicker {
-  pick(
-    realm: TBaseRealm,
-    requested: ItemTypeKey | undefined,
-    rng: RandomNumberGenerator,
-  ): TokenResult<ItemTypeDefinition>;
+  pick(realm: TBaseRealm, key: ItemTypeKey): TokenResult<ItemTypeDefinition>;
 }
 
 export interface INameGenerator {

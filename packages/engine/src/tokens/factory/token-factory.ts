@@ -17,7 +17,6 @@ import { emptyTokenExtensions, type ItemToken } from '../token-schema';
 import type { UniqueTokenDefinition } from '../unique-schema';
 import type { IAttributeGenerator as IEquipmentAttributeGenerator } from '../equipment/generator/generator-contracts';
 import { seededRandomStreams } from '../equipment/generator/attribute-streams';
-import { resolveGenerationLevel } from '../equipment/generator/generation-level';
 import {
   refuseToken,
   TOKEN_GENERATOR_VERSION,
@@ -120,7 +119,7 @@ export class TokenFactory {
     const base = pickBaseItem(this.parts.baseItems, ctx, stream('type'));
     if (!base.ok) return base;
     const realm = baseRealmOf(itemFamilyOfDimension(base.value.dimension)) as TBaseRealm;
-    const picked = this.parts.typePicker.pick(realm, base.value.type, stream('type'));
+    const picked = this.parts.typePicker.pick(realm, base.value.type);
     if (!picked.ok) return picked;
     const type = picked.value;
     if (!type.group) return refuseToken('INVALID_TOKEN', `item type "${type.key}" has no group`);
@@ -128,24 +127,12 @@ export class TokenFactory {
       ? overrides.attributes.map((attribute) => ({ ...attribute }))
       : this.parts.attributeGenerator.generate({
           allowedKeys: base.value.attributes,
-          level: resolveGenerationLevel(null, ctx.mapTier),
+          level: ctx.mapTier,
           group: type.group,
           type,
           tokenId: id,
           rng: seededRandomStreams(ctx.seed),
         });
-    const checked = this.parts.validator.validateAttributes({
-      type,
-      origin: 'base',
-      mapTier: ctx.mapTier,
-      attributes,
-    });
-    if (!checked.ok) return checked;
-    if (
-      base.value.attributes &&
-      attributes.some((entry) => !base.value.attributes!.includes(entry.key))
-    )
-      return refuseToken('INVALID_TOKEN', 'Attribute is outside the base item pool');
     const attributeCount = attributes.length;
     return this.parts.validator.validate({
       id,

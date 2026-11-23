@@ -7,6 +7,6 @@ export function typeBaseStats(type: Pick<ItemTypeDefinition, 'block' | 'base'>):
   return {
     maxHearts: type.base?.hearts ?? 0,
     maxWill: type.base?.will ?? 0,
-    blockSides: type.block?.sides ?? type.base?.blockSides ?? 0,
+    blockSides: type.block?.sides ?? 0,
   };
 }

@@ -261,12 +261,9 @@ describe('EA1 item types', () => {
     for (const type of PLANNED_ITEM_TYPES) expect(tokenTypes).not.toContain(type.key);
   });
 
-  it('gives every type the base of plan §3–§5b', () => {
-    expect(Object.fromEntries(EQUIPMENT_TYPES.map((type) => [type.key, type.base]))).toEqual({
-      sword: { damage: 2 },
-      shield: { defense: 2, blockSides: 1 },
-      axe: { damage: 1 },
-      pickaxe: { damage: 1 },
+  it('gives clothing and jewelry the base of plan §3–§5b, hand types none', () => {
+    const withBase = EQUIPMENT_TYPES.filter((type) => type.base !== undefined);
+    expect(Object.fromEntries(withBase.map((type) => [type.key, type.base]))).toEqual({
       helm: { hearts: 1 },
       armor: { hearts: 2 },
       gloves: { hearts: 1 },
@@ -274,14 +271,6 @@ describe('EA1 item types', () => {
       ring: { will: 1 },
       amulet: { will: 2 },
     });
-  });
-
-  it('keeps the base in step with the fields the current rules read', () => {
-    for (const type of ITEM_TYPES.filter((candidate) => candidate.group === 'weapon')) {
-      expect(type.base.damage, type.key).toBe(type.strike);
-    }
-    const shield = ITEM_TYPES.find((type) => type.key === 'shield');
-    expect(shield?.base.blockSides).toBe(shield?.block?.sides);
   });
 
   it('refuses a slot outside the group and an any-hand type that is not a tool', () => {

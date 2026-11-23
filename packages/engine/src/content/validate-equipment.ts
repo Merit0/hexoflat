@@ -7,7 +7,6 @@ import {
 import {
   adjectivesFor as adjectivesForRule,
   bandFailures,
-  blockSidesFailures,
   itemMaxFailures,
   dependencyFailures,
   profileEntryFailures,
@@ -171,7 +170,6 @@ export function equipmentContentFailures(content: EquipmentContent = EQUIPMENT_C
     ...typeFailures(content),
     ...attributeFailures(content),
     ...statRuleFailures(content.attributes),
-    ...blockSidesFailures(content.types),
     ...itemMaxFailures(content.attributes),
     ...profileFailures(content),
     ...adjectiveFailures(content),

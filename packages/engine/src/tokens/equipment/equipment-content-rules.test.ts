@@ -7,11 +7,14 @@ import { tokenContentFailures, uniqueContentFailures } from '../../content/valid
 import { attributeRowsOf } from '../attribute-display';
 import { createTokenFactory } from '../factory/create-token-factory';
 import { contextFor, defaultFactory } from '../factory/factory-test-setup';
+import { MAP_TIERS, mapTierSchema } from '../token-keys';
 import { itemTokenSchema } from '../token-schema';
 import {
   equipmentAttributeDefinitionSchema,
   type EquipmentAttributeDefinition,
 } from './equipment-attribute-schema';
+import { attributeProfilesSchema } from './attribute-profile-schema';
+import { ATTRIBUTE_PROFILE_TIERS } from './equipment-keys';
 import { resolveHeroStats } from './hero-stats';
 import { resolveItemStats } from './item-stats';
 import { sampleToken } from '../token-test-setup';
@@ -86,15 +89,6 @@ describe('AG1 F6: silent no-ops', () => {
     profiles['tier-2'].attributes['deft-hands'].weight = { clothing: 30, defense: 10 };
     expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, attributes, profiles })).toContain(
       'tier-2: attribute deft-hands has a weight for group defense, but no type there can carry it',
-    );
-  });
-
-  it('refuses a shield whose two sides fields disagree', () => {
-    const types = EQUIPMENT_CONTENT.types.map((type) =>
-      type.key === 'shield' ? { ...type, base: { ...type.base, blockSides: 2 } } : type,
-    );
-    expect(equipmentContentFailures({ ...EQUIPMENT_CONTENT, types })).toContain(
-      'type shield has block.sides 1 but base.blockSides 2',
     );
   });
 });
@@ -318,5 +312,19 @@ describe('AG5 F5: itemMax and totalCap', () => {
       token: { ...sampleToken({ type: 'shield' }), attributes: [{ key: 'shield', value }] },
     });
     expect(resolveHeroStats([shield(4), shield(4)]).blockSides).toBe(6);
+  });
+});
+
+describe('AG6 F10: tiers come from MAP_TIERS', () => {
+  it('names one profile per map tier and refuses a missing or extra tier', () => {
+    expect(ATTRIBUTE_PROFILE_TIERS).toEqual(MAP_TIERS.map((tier) => `tier-${tier}`));
+    expect(Object.keys(ATTRIBUTE_PROFILES)).toEqual([...ATTRIBUTE_PROFILE_TIERS]);
+    const missing: Record<string, unknown> = { ...ATTRIBUTE_PROFILES };
+    delete missing['tier-4'];
+    expect(attributeProfilesSchema.safeParse(missing).success).toBe(false);
+    const extra = { ...ATTRIBUTE_PROFILES, 'tier-5': ATTRIBUTE_PROFILES['tier-4'] };
+    expect(attributeProfilesSchema.safeParse(extra).success).toBe(false);
+    expect(mapTierSchema.safeParse(5).success).toBe(false);
+    expect(MAP_TIERS.every((tier) => mapTierSchema.safeParse(tier).success)).toBe(true);
   });
 });

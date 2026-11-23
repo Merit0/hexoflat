@@ -10,6 +10,7 @@ import { usePriceFor } from '../inventory/use-price';
 import { battleHeroStats } from './hero-stats';
 import { rejectionOf } from './battle-test-setup';
 import { describe, expect, it } from 'vitest';
+import { AttributeRegistry } from '../tokens/registries';
 import { battleItem } from './battle-catalogue';
 import { battleWith, giveTurn, hero, heroDoes, skeleton } from './battle-test-setup';
 
@@ -88,7 +89,10 @@ describe('A03 deft hands', () => {
 
 describe('A03 EA-16 registry and saved battle', () => {
   it('rolls gloves with the live registry, retains deprecated attributes and restores USE behavior', () => {
-    const generator = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
+    const generator = createEquipmentAttributeGenerator(
+      new AttributeRegistry(EQUIPMENT_ATTRIBUTES),
+      ATTRIBUTE_PROFILES,
+    );
     const rolls = Array.from({ length: 100 }, (_, seed) =>
       rollFor(generator, typeOf('gloves'), 4, seed),
     );

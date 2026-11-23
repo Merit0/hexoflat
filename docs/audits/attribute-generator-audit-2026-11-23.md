@@ -383,3 +383,33 @@ fields on a `min` aggregate.
    from content, equipped total), `strike-pipeline.test.ts` "AG5 default crit multiplier"; old `cap` messages updated.
    Mutations (remove the total rule, the `itemMax` rule, either schema refusal, hardcode ×2, drop `totalCap` in `resolveStat`)
    each fail a test. Engine 2551 passed, 2 skipped; API 312; web 4408; typecheck, lint, engine build passed.
+
+### AG6 — content cleanup (2026-11-23, done)
+
+Decision (Oleh): keep `strike` and `block.sides`, delete the `base` copies. `containerLevel`: no production path passes it, so it is
+deleted (Oleh: delete all outdated code).
+
+1. F9: `base.damage`, `base.defense` and `base.blockSides` are deleted from the schema and from sword, shield, axe and pickaxe.
+   Hand types have no `base`; `base` is optional and holds `hearts` and `will`. The readers `block?.sides ?? base?.blockSides`
+   (`hero-stats.ts`, `shield-stats.ts`, `type-base-stats.ts`) read only `block.sides`. The AG1 rule `blockSidesFailures` and
+   its test are deleted, because there is one field now.
+2. F10 tiers: `mapTierSchema = z.literal(MAP_TIERS)`; `ATTRIBUTE_PROFILE_TIERS` is mapped from `MAP_TIERS` and
+   `TAttributeProfileTier` is `tier-${TMapTier}`; `attributeProfilesSchema` keys come from it; `ATTRIBUTE_PROFILES` is built
+   from `MAP_TIERS`; `ROWS.tiers` and `COUNT_WEIGHTS` are `PerMapTier<T>`, a tuple with the length of `MAP_TIERS`. Probe: a
+   fifth range in one row is a type error ("Source has 5 element(s) but target allows only 4").
+3. F10 `ROWS` keys: `EQUIPMENT_ATTRIBUTES` keeps literal keys (`attribute<K>()`, `as const`), exported as
+   `EquipmentAttributeKey`; `ROWS` is `Partial<Record<EquipmentAttributeKey, ProfileRow>>`. Probe: `crit-chanse` is a type error.
+4. F12 registry: `RegistryAttributePoolFilter` and `createEquipmentAttributeGenerator` take an `AttributeRegistry`; the factory
+   passes its own. The pool filter's own parse and `DUPLICATE_ATTRIBUTE` check are deleted (the registry refuses duplicates).
+5. F12 duplicate checks: `createBase` no longer calls `validateAttributes` and the allowlist check before `validator.validate`,
+   which runs both.
+6. F12 dead paths: `generation-level.ts` (`resolveGenerationLevel`, `DEFAULT_GENERATION_LEVEL`) and its test are deleted, the
+   level is `ctx.mapTier` (already checked by `sourceRefusal`). `RealmTypePicker.pick(realm, key)` lost its random branch and
+   its `rng`; `TypeRegistry.forRealm` (used only there) and its test are deleted.
+7. F12 schema: the generator caches its output schema per `maxCount`.
+8. Golden tokens are unchanged. Tests: block "AG6 F10" in `equipment-content-rules.test.ts` (profile keys = `MAP_TIERS`, missing
+   or extra tier refused, `mapTierSchema`), base table test rewritten. Engine 2547 passed, 2 skipped; API 312; web 4408;
+   typecheck, lint, engine build passed.
+
+Still open from §5: AG7 (power-based band and price, Will total review), only on request. Not in any phase: unique attributes skip
+the group check (AG1 note).

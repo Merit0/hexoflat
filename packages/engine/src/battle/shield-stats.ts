@@ -13,10 +13,7 @@ export function itemShieldBase(item: BattleItem | null | undefined): {
   if (prototype && prototype.group !== 'defense') return { sides: 0 };
   const typeKey = item.token?.type ?? hexobjectOfBattleItem(item.key) ?? item.key;
   const type = EQUIPMENT_TYPES.find((type) => type.key === typeKey);
-  if (type)
-    return {
-      sides: type.block?.sides ?? type.base.blockSides ?? 0,
-    };
+  if (type) return { sides: type.block?.sides ?? 0 };
   const native = BATTLE_ITEMS[item.key]?.block;
   if (native) return native;
   // Keep unknown legacy battle items loadable; known gear always reads current content.

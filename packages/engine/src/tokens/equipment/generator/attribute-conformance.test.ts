@@ -42,8 +42,11 @@ const STAT_READS: Partial<Record<THeroStat, Reach>> = {
 const HAND_SLOTS: readonly string[] = ['weapon', 'shield', 'any'];
 
 const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
-const pool = new RegistryAttributePoolFilter(EQUIPMENT_ATTRIBUTES);
-const generator = createEquipmentAttributeGenerator(EQUIPMENT_ATTRIBUTES, ATTRIBUTE_PROFILES);
+const pool = new RegistryAttributePoolFilter(new AttributeRegistry(EQUIPMENT_ATTRIBUTES));
+const generator = createEquipmentAttributeGenerator(
+  new AttributeRegistry(EQUIPMENT_ATTRIBUTES),
+  ATTRIBUTE_PROFILES,
+);
 const rolled = EQUIPMENT_ATTRIBUTES.filter(
   (attribute) => attribute.implemented && attribute.deprecated !== true,
 );
@@ -195,7 +198,10 @@ describe('AG2 deprecated attributes', () => {
       const attributes = EQUIPMENT_ATTRIBUTES.map((definition) =>
         definition.key === attribute.key ? { ...definition, deprecated: true } : definition,
       );
-      const deprecated = createEquipmentAttributeGenerator(attributes, ATTRIBUTE_PROFILES);
+      const deprecated = createEquipmentAttributeGenerator(
+        new AttributeRegistry(attributes),
+        ATTRIBUTE_PROFILES,
+      );
       const type = EQUIPMENT_TYPES.find((candidate) => eligible(attribute, candidate, 4))!;
       for (let seed = 0; seed < DEPRECATED_SEEDS; seed++) {
         const keys = rollFor(deprecated, type, 4, seed).map((entry) => entry.key);

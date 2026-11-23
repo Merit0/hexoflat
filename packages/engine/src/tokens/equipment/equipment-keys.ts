@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { EQUIP_SLOTS } from '../../abstraction/hexobject-abstraction';
+import { MAP_TIERS, type TMapTier } from '../token-keys';
 
 export function distinctValues<T>(values: readonly T[]): boolean {
   return new Set(values).size === values.length;
@@ -24,9 +25,6 @@ export const nounGenderSchema = z.enum(NOUN_GENDERS);
 const baseValueSchema = z.number().int().positive();
 
 export const itemTypeBaseSchema = z.strictObject({
-  damage: baseValueSchema.optional(),
-  defense: baseValueSchema.optional(),
-  blockSides: baseValueSchema.optional(),
   hearts: baseValueSchema.optional(),
   will: baseValueSchema.optional(),
 });
@@ -37,7 +35,7 @@ export const equipmentTypeFieldShape = {
   gender: nounGenderSchema,
   materials: z.array(materialSchema).min(1).refine(distinctValues, 'a material is listed twice'),
   enabled: z.boolean(),
-  base: itemTypeBaseSchema,
+  base: itemTypeBaseSchema.optional(),
 };
 
 export const HERO_STATS = [
@@ -83,5 +81,9 @@ export type TAttributeFormat = (typeof ATTRIBUTE_FORMATS)[number];
 export const ADJECTIVE_BANDS = ['poor', 'plain', 'fine'] as const;
 export type TAdjectiveBand = (typeof ADJECTIVE_BANDS)[number];
 
-export const ATTRIBUTE_PROFILE_TIERS = ['tier-1', 'tier-2', 'tier-3', 'tier-4'] as const;
-export type TAttributeProfileTier = (typeof ATTRIBUTE_PROFILE_TIERS)[number];
+export type TAttributeProfileTier = `tier-${TMapTier}`;
+export const ATTRIBUTE_PROFILE_TIERS: readonly TAttributeProfileTier[] = MAP_TIERS.map(
+  (tier) => `tier-${tier}` as const,
+);
+type SameLength<Tuple extends readonly unknown[], T> = { readonly [I in keyof Tuple]: T };
+export type PerMapTier<T> = SameLength<typeof MAP_TIERS, T>;
