@@ -4,33 +4,30 @@
       ref="card"
       class="details"
       :style="{ left: `${left}px`, top: `${top}px` }"
-      :aria-label="t('quest.board.detailsLabel', { name: t(row.quest.nameKey) })"
+      :aria-label="t('quest.board.detailsLabel', { name })"
       :data-testid="`quest-details-${row.quest.id}`"
       @mouseenter="details.keepOpen()"
       @mouseleave="details.leave()"
     >
       <header>
-        <h3>{{ t(row.quest.nameKey) }}</h3>
+        <h3>{{ name }}</h3>
         <DimensionLabel :dimension="row.quest.dimension" />
       </header>
       <p v-if="row.timesDone > 0" class="tags">
         {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
       </p>
       <i class="line" aria-hidden="true"></i>
-      <p class="desc">{{ t(row.quest.descKey) }}</p>
+      <p class="desc">{{ t(row.quest.descKey, { target: row.target }) }}</p>
       <dl>
         <dt>{{ t('quest.board.label.goal') }}</dt>
         <dd>
-          <template v-if="row.seeker">
-            <span class="goal">{{ t(row.quest.tableRule) }}</span>
-          </template>
-          <template v-else-if="row.taken">
+          <template v-if="row.taken && !row.seeker">
             <span class="bar" aria-hidden="true"><i :style="{ width: `${percent}%` }"></i></span>
             <span>{{ row.progress }} / {{ row.target }} {{ t(row.unitKey) }}</span>
           </template>
           <template v-else
             ><span class="goal">{{
-              t('quest.board.meta.goal', { n: row.target, unit: t(row.unitKey) })
+              t(row.quest.tableRule, { target: row.target })
             }}</span></template
           >
         </dd>
@@ -105,7 +102,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useHeroStore } from '@/stores/hero-store';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
-import { questRuleParams } from '@/services/quests/quest-rule-params';
+import { questCardRuleParams } from '@/services/quests/quest-card-content';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
@@ -118,6 +115,7 @@ const MARGIN = 8;
 
 const props = defineProps<{ row: QuestRowView; anchor: DOMRect }>();
 const { t } = useI18n();
+const name = computed(() => t(props.row.quest.nameKey, { target: props.row.target }));
 const details = useQuestDetails();
 const hero = useHeroStore();
 const actions = useQuestRowActions();
@@ -142,10 +140,10 @@ const reasonText = computed(() => {
 });
 
 const ruleText = computed(() =>
-  t(`quest.${props.row.quest.id}.rule`, { ...questRuleParams(props.row.quest) }),
+  t(`quest.${props.row.quest.templateId}.rule`, questCardRuleParams(props.row.quest)),
 );
 
-const steps = computed(() => t(`quest.${props.row.quest.id}.how`).split('\n'));
+const steps = computed(() => t(props.row.quest.howKey, { target: props.row.target }).split('\n'));
 
 function place() {
   const height = card.value?.getBoundingClientRect().height ?? 0;

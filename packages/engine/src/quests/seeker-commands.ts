@@ -222,7 +222,7 @@ export function executeQuestRunCommand(input: QuestRunInput): QuestRunOutcome {
         : command.type === 'QUEST_OPEN_CHEST'
           ? seekerOpenChest(progress, run, board, {
               inventory: input.inventory,
-              tableId: chestTableOf(run.offerId),
+              tableId: run.chestLootTableId ?? chestTableOf(run.offerId),
             })
           : command.type === 'QUEST_PICKUP'
             ? seekerPickup(progress, run, command.payload.hex, input.inventory)

@@ -104,7 +104,10 @@ function foldQuest(
 ): PlayerCommandOutcome {
   if (!outcome.ok) return outcome;
   const progress = outcome.changed.progress ?? aggregates.progress;
-  const folded = foldQuestEvents({ progress, events: outcome.events });
+  const folded = foldQuestEvents(
+    { progress, events: outcome.events },
+    aggregates.progress.presence?.locationKey,
+  );
   if (folded.progress === progress) return outcome;
   return {
     ...outcome,
@@ -203,8 +206,11 @@ function executeCore(
     }
     case 'QUEST_ACCEPT':
     case 'QUEST_ABANDON':
-    case 'QUEST_CLAIM': {
+    case 'QUEST_CLAIM':
+    case 'QUEST_BOARD_SYNC':
+    case 'QUEST_BOARD_REFRESH': {
       const result = applyQuestCommand(aggregates, command, {
+        ...ctx.quest,
         atBoard: ctx.quest?.atBoard ?? false,
         rngSeed: ctx.rngSeed,
       });

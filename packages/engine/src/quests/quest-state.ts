@@ -1,5 +1,6 @@
 import { questTokenOrigin } from './quest-token-origin';
 import { z } from 'zod';
+import { questOfferSchema } from './quest-offer';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
 import { itemTokenSchema } from '../tokens/token-schema';
@@ -80,6 +81,7 @@ export type SeekerOutcome = (typeof SEEKER_OUTCOMES)[number];
 export const QuestRunSchema = z
   .object({
     offerId: z.string().min(1),
+    generatedOffer: questOfferSchema.optional(),
     tokenOrigin: tokenOriginSchema.optional(),
     seed: z.string().min(1),
     rule: z.object({ kind: z.string().min(1) }).passthrough(),

@@ -82,7 +82,9 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     const entered = await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });
     expect(entered.result).toBe('applied');
     expect(entered.quest).toMatchObject({ phase: 'walking' });
-    expect((await stateOf(userId, heroId)).presence).toBeNull();
+    const start = await stateOf(userId, heroId);
+    expect(start.presence).toBeNull();
+    expect(start.day?.questsCompleted).toBe(0);
 
     const trail = (await trailOf(userId, heroId))!;
     for (const hex of trail) {
@@ -90,6 +92,7 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     }
     const before = await stateOf(userId, heroId);
     expect(before.knowledge.current).toBe(50 - 20 - 10);
+    expect(before.day).toMatchObject({ willSpent: start.day!.willSpent + 10, questsCompleted: 1 });
     const opened = await send(userId, heroId, 'QUEST_OPEN_CHEST');
     expect(opened.quest).toMatchObject({ phase: 'collect' });
     const left = await send(userId, heroId, 'QUEST_RETURN');
@@ -97,6 +100,7 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     expect(left.quest).toBeNull();
 
     const after = await stateOf(userId, heroId);
+    expect(after.day).toEqual(before.day);
     expect(after.quests.done['seeker-1']).toBe(1);
     expect(after.quests.active).toEqual([]);
     expect(after.presence).toMatchObject({ locationKey: 'camping' });
@@ -364,6 +368,7 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     expect(paused.result).toBe('applied');
     expect(paused.quest).toBeNull();
     expect((await stateOf(userId, heroId)).presence?.locationKey).toBe('camping');
+    expect((await stateOf(userId, heroId)).day?.questsCompleted).toBe(0);
     expect((await quests.snapshot(userId, heroId)).quest).toBeNull();
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);
     const stored = parseQuestRunDoc((await readServerDocument(kit.db, expeditionId, 'srv-quest'))!);

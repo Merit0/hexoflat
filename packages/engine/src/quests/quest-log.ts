@@ -11,9 +11,13 @@ import type { InventoryState } from '../inventory/inventory-state';
 import { grantWill, spendWill } from '../knowledge/will';
 import { handlerFor, OBJECTIVES, type ObjectiveRegistry } from './objectives';
 import type { QuestLog } from './quest-log-state';
+import { questDefinitionFor } from './quest-lookup';
+import { questOfferFor, removeQuest } from './quest-board-state';
+import type { LocationKey } from '../registry/location-key';
 import {
   QUEST_SLOTS,
   type QuestCatalogue,
+  type QuestBoardRefusal,
   type QuestDefinition,
   type QuestRefusal,
   type QuestSlots,
@@ -25,6 +29,7 @@ export interface QuestContext {
   slots?: QuestSlots;
   freeSlots?: number;
   rngSeed?: string;
+  dayId?: number;
 }
 
 export type QuestPlan =
@@ -34,14 +39,14 @@ export type QuestPlan =
       inventory: InventoryState | undefined;
       events: DomainEvent[];
     }
-  | { ok: false; reason: QuestRefusal; events: DomainEvent[] };
+  | { ok: false; reason: QuestRefusal | QuestBoardRefusal; events: DomainEvent[] };
 
 export type QuestBoardState = 'open' | 'locked' | 'taken' | 'finished';
 
 function reject(
   progress: ProgressState,
   questId: string,
-  reason: QuestRefusal,
+  reason: QuestRefusal | QuestBoardRefusal,
   detail?: Record<string, number>,
 ): QuestPlan {
   return {
@@ -83,10 +88,25 @@ export function planAccept(
   questId: string,
   ctx: QuestContext,
 ): QuestPlan {
-  const quest = ctx.catalogue[questId];
-  if (!quest) return reject(progress, questId, 'UNKNOWN_QUEST');
-  if (!ctx.atBoard) return reject(progress, questId, 'NOT_AT_BOARD');
   const log = progress.quests;
+  const quest = questDefinitionFor(log, questId, ctx.catalogue);
+  if (!quest)
+    return reject(
+      progress,
+      questId,
+      questId.startsWith('qo-') ? 'QUEST_OFFER_EXPIRED' : 'UNKNOWN_QUEST',
+    );
+  if (!ctx.atBoard) return reject(progress, questId, 'NOT_AT_BOARD');
+  const offer = questOfferFor(log, questId);
+  if (log.board && !offer) return reject(progress, questId, 'QUEST_OFFER_REQUIRED');
+  if (offer && offer.dayId !== (ctx.dayId ?? progress.day?.id))
+    return reject(progress, questId, 'QUEST_OFFER_EXPIRED');
+  if (
+    log.active.some(
+      (entry) => questDefinitionFor(log, entry.questId, ctx.catalogue)?.id === quest.id,
+    )
+  )
+    return reject(progress, questId, 'QUEST_ALREADY_ACTIVE');
   const state = questBoardState(log, quest);
   if (state === 'taken') return reject(progress, questId, 'QUEST_ALREADY_ACTIVE');
   if (state !== 'open') return reject(progress, questId, 'REQUIREMENTS_NOT_MET');
@@ -137,7 +157,8 @@ export function planAbandon(
     return reject(progress, questId, 'NOT_ACTIVE');
   }
   const next = structuredClone(progress);
-  next.quests.active = next.quests.active.filter((entry) => entry.questId !== questId);
+  const offer = questOfferFor(next.quests, questId);
+  removeQuest(next.quests, questId, offer?.dayId !== next.day?.id);
   return {
     ok: true,
     progress: next,
@@ -169,7 +190,7 @@ export function planClaim(
   questId: string,
   ctx: QuestContext,
 ): QuestPlan {
-  const quest = ctx.catalogue[questId];
+  const quest = questDefinitionFor(progress.quests, questId, ctx.catalogue);
   if (!quest) return reject(progress, questId, 'UNKNOWN_QUEST');
   if (!ctx.atBoard) return reject(progress, questId, 'NOT_AT_BOARD');
   const entry = progress.quests.active.find((candidate) => candidate.questId === questId);
@@ -187,13 +208,20 @@ export function planClaim(
         realm: baseRealmSchema.parse(itemFamilyOfDimension(quest.dimension)),
         mapTier: 1,
       };
-      if (!dropAvailableIn({ itemKey: reward.itemKey }, dimensionOfItemFamily(origin.realm)))
+      if (
+        !dropAvailableIn(
+          { itemKey: reward.itemKey, baseKey: reward.token?.baseKey },
+          dimensionOfItemFamily(origin.realm),
+        )
+      )
         throw new Error(`QUEST_REWARD_OUTSIDE_DIMENSION: ${questId}:${reward.itemKey}`);
-      const supply = isTokenType(reward.itemKey)
-        ? {
-            mint: rewardMint(progress, questId, ctx.rngSeed, rewardIndex, origin),
-          }
-        : undefined;
+      const supply = reward.token
+        ? { tokens: [reward.token] }
+        : isTokenType(reward.itemKey)
+          ? {
+              mint: rewardMint(progress, questId, ctx.rngSeed, rewardIndex, origin),
+            }
+          : undefined;
       if (!grantToDraft(draft, reward.itemKey, reward.amount, 'reward', supply)) {
         return reject(progress, questId, 'BAG_FULL');
       }
@@ -206,12 +234,12 @@ export function planClaim(
     if (granted.length > 0) next.knowledge.revision++;
     events.push(...granted);
   }
-  next.quests.active = next.quests.active.filter((candidate) => candidate.questId !== questId);
-  next.quests.done[questId] = (next.quests.done[questId] ?? 0) + 1;
+  removeQuest(next.quests, questId);
+  next.quests.done[quest.id] = (next.quests.done[quest.id] ?? 0) + 1;
   events.unshift(...draft.events);
   events.push({
     type: 'QUEST_CLAIMED',
-    payload: { heroId: next.knowledge.heroId, questId, times: next.quests.done[questId] },
+    payload: { heroId: next.knowledge.heroId, questId, times: next.quests.done[quest.id] },
   });
   return { ok: true, progress: next, inventory: draft.current, events };
 }
@@ -221,13 +249,16 @@ export function applyQuestEvents(
   incoming: readonly DomainEvent[],
   catalogue: QuestCatalogue,
   registry: ObjectiveRegistry = OBJECTIVES,
+  locationKey?: LocationKey,
 ): { progress: ProgressState; events: DomainEvent[] } {
   const events: DomainEvent[] = [];
   let active = progress.quests.active;
   for (const event of incoming) {
     active = active.map((entry) => {
-      const quest = catalogue[entry.questId];
+      const quest = questDefinitionFor(progress.quests, entry.questId, catalogue);
       if (!quest || entry.state !== 'active') return entry;
+      if (quest.id !== entry.questId && (!locationKey || !quest.locations.includes(locationKey)))
+        return entry;
       const payload = event.payload;
       if (
         !payload ||

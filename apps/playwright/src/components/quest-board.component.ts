@@ -1,10 +1,11 @@
 import { expect, type Locator } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
+import type { TestQuestBoard, TestQuestFixture, TestQuests } from '@web-test-api';
 
 const POLL = { timeout: 5_000, intervals: [100] };
 
-export type QuestFixtureEntry = { questId: string; progress: number; state: 'active' | 'ready' };
-export type QuestFixture = { active?: QuestFixtureEntry[]; done?: Record<string, number> };
+export type QuestFixtureEntry = TestQuests['active'][number];
+export type QuestFixture = TestQuestFixture;
 
 /**
  * The quest board that replaces the hero panel after OPEN (the eye) with the hand on the board
@@ -18,6 +19,22 @@ export class QuestBoardComponent extends BaseComponent {
 
   private card(questId: string): Locator {
     return this.page.getByTestId(`quest-card-${questId}`);
+  }
+
+  private get refreshButton(): Locator {
+    return this.board.getByTestId('quest-board-refresh');
+  }
+
+  async readBoard(): Promise<TestQuestBoard> {
+    const read = () => this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getQuestBoard());
+    await expect.poll(read, POLL).not.toBeNull();
+    const board = await read();
+    if (!board) throw new Error('The server has not issued a quest board');
+    return board;
+  }
+
+  async readLog(): Promise<TestQuests> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getQuests());
   }
 
   async verifyIsOpen(): Promise<void> {
@@ -37,6 +54,89 @@ export class QuestBoardComponent extends BaseComponent {
 
   async accept(questId: string): Promise<void> {
     await this.page.getByTestId(`quest-accept-${questId}`).click();
+  }
+
+  async refresh(): Promise<void> {
+    await this.refreshButton.click();
+  }
+
+  async verifyRefreshPrice(price: number): Promise<void> {
+    await expect(this.refreshButton).toHaveAccessibleName(new RegExp(`\\b${price}\\b`));
+  }
+
+  async verifyBoard(expected: TestQuestBoard): Promise<void> {
+    await expect.poll(() => this.readBoard(), POLL).toEqual(expected);
+  }
+
+  async verifyReplacement(
+    before: TestQuestBoard,
+    retained: string,
+    dayId: number,
+    price: number,
+  ): Promise<void> {
+    await expect
+      .poll(async () => {
+        const board = await this.readBoard();
+        return { dayId: board.dayId, price: board.refreshPrice, count: board.offers.length };
+      }, POLL)
+      .toEqual({ dayId, price, count: before.offers.length });
+    const after = await this.readBoard();
+    expect(after.offers).toHaveLength(before.offers.length);
+    expect(after.offers.find(({ id }) => id === retained)).toEqual(
+      before.offers.find(({ id }) => id === retained),
+    );
+    const previousIds = new Set(before.offers.map(({ id }) => id));
+    expect(after.offers.filter(({ id }) => previousIds.has(id)).map(({ id }) => id)).toEqual([
+      retained,
+    ]);
+  }
+
+  async verifyRefill(before: TestQuestBoard, retired: string) {
+    const retained = before.offers.filter(({ id }) => id !== retired);
+    await expect
+      .poll(async () => {
+        const { offers } = await this.readBoard();
+        return {
+          count: offers.length,
+          retired: offers.some(({ id }) => id === retired),
+          retained: offers.filter(({ id }) => retained.some((offer) => offer.id === id)),
+        };
+      }, POLL)
+      .toEqual({ count: before.offers.length, retired: false, retained });
+  }
+
+  async dragToActive(questId: string): Promise<void> {
+    await this.page
+      .getByTestId(`quest-row-${questId}`)
+      .dragTo(this.board.getByTestId('quest-group-active'));
+  }
+
+  async tapRow(questId: string): Promise<void> {
+    await this.page.getByTestId(`quest-row-${questId}`).tap();
+    await expect(this.page.getByTestId(`quest-details-${questId}`)).toBeVisible();
+  }
+
+  async verifyBoardLayout(): Promise<void> {
+    const active = this.board.getByTestId('quest-group-active');
+    const available = this.board.getByTestId('quest-group-available');
+    const header = this.board.locator('header');
+    await expect(header.getByTestId('quest-board-refresh')).toBeVisible();
+    const [title, refresh, close, first, second] = await Promise.all([
+      header.getByRole('heading').boundingBox(),
+      this.refreshButton.boundingBox(),
+      header.getByTestId('quest-board-close').boundingBox(),
+      active.boundingBox(),
+      available.boundingBox(),
+    ]);
+    if (!title || !refresh || !close || !first || !second)
+      throw new Error('The quest board layout is incomplete');
+    expect(title.x + title.width).toBeLessThanOrEqual(refresh.x);
+    expect(refresh.x + refresh.width).toBeLessThanOrEqual(close.x);
+    expect(first.y + first.height).toBeLessThanOrEqual(second.y);
+  }
+
+  async tapAccept(questId: string): Promise<void> {
+    await this.page.getByTestId(`quest-accept-${questId}`).tap();
   }
 
   async claim(questId: string): Promise<void> {
@@ -125,6 +225,16 @@ export class QuestBoardComponent extends BaseComponent {
         POLL,
       )
       .toBe(amount);
+  }
+
+  async verifyRewardToken(tokenId: string): Promise<void> {
+    await expect
+      .poll(
+        () =>
+          this.page.evaluate((id) => window.__HEXOFLAT_TEST__!.getInventoryToken(id)?.id, tokenId),
+        POLL,
+      )
+      .toBe(tokenId);
   }
 
   async start(questId: string): Promise<void> {

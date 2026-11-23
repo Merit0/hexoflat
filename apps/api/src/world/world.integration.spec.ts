@@ -10,6 +10,7 @@ import {
 } from './world-test-support';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
+import type { GameDay } from '@hexoflat/engine/game-day/game-day-state';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { axialToOffset, getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
 import { commandJournal, expeditionBlobs, heroAggregates, itemLedger } from '../db/schema';
@@ -569,6 +570,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
       sealedUntil: Record<string, number>;
       knowledge: { current: number };
       trips: number;
+      day?: GameDay;
     };
   }
 
@@ -584,6 +586,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     const after = await presenceOf(userId, heroId);
     expect(after.presence).toMatchObject({ locationKey: 'cave' });
     expect(after.knowledge.current).toBe(48);
+    expect(after.day).toMatchObject({ willSpent: 2, caveTrips: 1 });
     expect(travelled.hero).toMatchObject({ locationKey: 'cave' });
   });
 

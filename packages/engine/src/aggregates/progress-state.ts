@@ -7,6 +7,7 @@ import { portalLinkSchema } from '../portal/portal-state';
 import { emptyListings, listingsSchema } from '../trade/listing-state';
 import { tradersStateSchema } from '../trade/trade-state';
 import { uniqueKeySchema } from '../tokens/token-keys';
+import { gameDaySchema } from '../game-day/game-day-state';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
 
@@ -45,6 +46,7 @@ export const progressStateSchema = z
     traders: tradersStateSchema,
     listings: listingsSchema,
     quests: questLogSchema,
+    day: gameDaySchema.optional(),
     graveExitWarningAcknowledged: z.boolean(),
     ownedUniques: z.array(uniqueKeySchema).max(1000).default([]),
   })

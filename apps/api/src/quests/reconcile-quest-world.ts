@@ -2,6 +2,7 @@ import {
   installQuestEntrances,
   isStaleSuspendedRun,
   parseQuestRunDoc,
+  questEntrancePlacementIsValid,
   serializeWorld,
   type ProgressState,
 } from '@hexoflat/engine';
@@ -14,10 +15,16 @@ import {
 import type { Tx } from '../player/aggregate-store';
 import { loadWorldDocument, worldDocumentKey } from '../world/world-documents';
 
+export class QuestEntrancePlacementError extends Error {
+  readonly code = 'NO_ROOM_FOR_QUEST_ENTRANCE';
+}
+
 export async function reconcileQuestWorld(
   tx: Tx,
   expeditionId: string,
   progress: ProgressState,
+  now: number,
+  requiredEntrance?: string,
 ): Promise<void> {
   const rawQuest = await readServerDocument(tx, expeditionId, 'srv-quest');
   if (rawQuest && isStaleSuspendedRun(parseQuestRunDoc(rawQuest), progress))
@@ -31,11 +38,14 @@ export async function reconcileQuestWorld(
           expeditionId,
           heroId: progress.knowledge.heroId,
           mapId,
-          now: Date.now(),
+          now,
         })
       : null;
     if (!world) continue;
-    if (!installQuestEntrances(world, progress)) continue;
+    const changed = installQuestEntrances(world, progress);
+    if (requiredEntrance && !questEntrancePlacementIsValid(world, progress, requiredEntrance))
+      throw new QuestEntrancePlacementError('No reachable tile for the quest entrance');
+    if (!changed) continue;
     await writeServerDocument(
       tx,
       expeditionId,

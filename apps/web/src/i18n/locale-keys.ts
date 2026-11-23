@@ -9,6 +9,7 @@ import {
   BATTLE_OBJECTS,
 } from '@hexoflat/engine/battle/battle-catalogue';
 import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
+import { generatedQuestLocaleKeys } from '@hexoflat/engine/quests/quest-generation.content';
 import { describeQuest } from '@hexoflat/engine/quests/objectives';
 import { QUEST_CATEGORIES } from '@/services/quests/quest-board-model';
 import { SQUAD_REJECTIONS } from '@hexoflat/engine/squads/engagement';
@@ -128,6 +129,7 @@ export function questLocaleKeys(): string[] {
   return [
     ...results,
     ...filters,
+    ...generatedQuestLocaleKeys(),
     ...Object.values(ALL_QUESTS).flatMap((quest) => [
       quest.nameKey,
       quest.descKey,

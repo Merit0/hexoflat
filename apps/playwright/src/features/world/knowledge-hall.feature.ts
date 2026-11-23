@@ -95,6 +95,12 @@ export class KnowledgeHallFeature extends BaseFeature {
       },
     );
   }
+  async close(): Promise<void> {
+    await this.step('Close the Book of Will', async () => {
+      await this.camp.knowledge.pressEscape();
+      await this.camp.knowledge.verifyClosed();
+    });
+  }
   async verifyHeroCannotMoveWhileOpen(): Promise<void> {
     await this.step(
       'Clicking a hex while the Hall is open explains why the hero stays',

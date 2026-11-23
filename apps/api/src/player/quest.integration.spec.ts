@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 import type { ProgressState } from '@hexoflat/engine';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -24,6 +24,8 @@ describe.skipIf(!dbAvailable)('the quest board on the server (real Postgres)', (
     (await kit.service.snapshot(userId, heroId)).aggregates.progress!;
   const questsOf = async (userId: string, heroId: string) =>
     ((await progressOf(userId, heroId)).state as ProgressState).quests;
+  const dayOf = async (userId: string, heroId: string) =>
+    ((await progressOf(userId, heroId)).state as ProgressState).day;
 
   async function heroAt(at: typeof NEAR) {
     const { userId, heroId } = await kit.newPlayer();
@@ -70,5 +72,51 @@ describe.skipIf(!dbAvailable)('the quest board on the server (real Postgres)', (
     expect(answer.result).toBe('rejected');
     expect(answer.code).toBe('NOT_AT_BOARD');
     expect((await questsOf(userId, heroId)).active).toEqual([]);
+  });
+
+  it('rolls over on the first applied command after midnight and preserves taken quests', async () => {
+    const midnight = Date.UTC(2026, 10, 24);
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(midnight - 1);
+    try {
+      const { userId, heroId } = await heroAt(NEAR);
+      const command = await accept(userId, heroId);
+      expect((await kit.service.execute(userId, command)).result).toBe('applied');
+      const previous = await dayOf(userId, heroId);
+      clock.mockReturnValue(midnight);
+
+      const replay = await kit.service.execute(userId, command);
+      expect(replay.replayed).toBe(true);
+      const revision = command.expectedRevision;
+      const claim = envelope(heroId, 'QUEST_CLAIM', { questId: 'woodcutter' }, revision);
+      expect(await kit.service.execute(userId, claim)).toMatchObject({ result: 'rejected' });
+      expect(await dayOf(userId, heroId)).toEqual(previous);
+
+      const take = envelope(heroId, 'QUEST_ACCEPT', { questId: 'stonebreaker' }, revision);
+      const result = await kit.service.execute(userId, take);
+      expect(result.events).toContainEqual({
+        type: 'GAME_DAY_STARTED',
+        payload: { heroId, dayId: 2, startedAt: midnight, reason: 'utc' },
+      });
+      expect(await dayOf(userId, heroId)).toMatchObject({ id: 2, willSpent: 5 });
+      expect((await questsOf(userId, heroId)).active.map((quest) => quest.questId)).toEqual([
+        'woodcutter',
+        'stonebreaker',
+      ]);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('records one completion only after the reward claim succeeds', async () => {
+    const { userId, heroId } = await heroAt(NEAR);
+    await kit.service.questFixture(userId, heroId, {
+      active: [{ questId: 'scholar', progress: 15, state: 'ready' }],
+    });
+    const inventory = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
+    const claim = envelope(heroId, 'QUEST_CLAIM', { questId: 'scholar' }, inventory.revision);
+    expect((await dayOf(userId, heroId))?.questsCompleted).toBe(0);
+    expect((await kit.service.execute(userId, claim)).result).toBe('applied');
+    expect((await kit.service.execute(userId, claim)).replayed).toBe(true);
+    expect((await dayOf(userId, heroId))?.questsCompleted).toBe(1);
   });
 });

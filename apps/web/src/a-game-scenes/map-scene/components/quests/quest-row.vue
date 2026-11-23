@@ -26,7 +26,7 @@
         :class="{ 'cursor-grab': draggable }"
         :data-testid="`quest-row-${row.quest.id}`"
         :aria-expanded="detailsOpen"
-        :aria-label="t('quest.board.rowLabel', { name: t(row.quest.nameKey), meta: metaText })"
+        :aria-label="t('quest.board.rowLabel', { name, meta: metaText })"
         @mouseenter="onHover"
         @mouseleave="details.leave()"
         @pointerdown="onPress"
@@ -41,7 +41,7 @@
         />
         <span class="text">
           <span class="title-line">
-            <span class="name">{{ t(row.quest.nameKey) }}</span>
+            <span class="name">{{ name }}</span>
             <svg
               v-if="row.repeat === 'repeatable'"
               class="repeat"
@@ -112,7 +112,7 @@
           interactive
           :testid="`quest-progress-${row.quest.id}`"
           :disabled="busy"
-          :aria-label="t('quest.board.returnLabel', { name: t(row.quest.nameKey) })"
+          :aria-label="t('quest.board.returnLabel', { name })"
           @mouseenter="returnHover = true"
           @mouseleave="returnHover = false"
           @focus="returnHover = true"
@@ -126,7 +126,7 @@
             compact
             :testid="row.seeker ? `quest-start-${row.quest.id}` : `quest-accept-${row.quest.id}`"
             :disabled="busy || row.reason === 'will'"
-            :aria-label="t('quest.board.takeFor', { name: t(row.quest.nameKey), n: row.price })"
+            :aria-label="t('quest.board.takeFor', { name, n: row.price })"
             @click="actions.take(row)"
           >
             <img class="will-icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" /><span
@@ -166,6 +166,7 @@ const rowEl = ref<HTMLElement | null>(null);
 const returnHover = ref(false);
 
 const detailsOpen = computed(() => details.openId.value === props.row.quest.id);
+const name = computed(() => t(props.row.quest.nameKey, { target: props.row.target }));
 const mainReward = computed(() => props.row.rewards[0] ?? null);
 const showBar = computed(() => props.row.taken && !props.row.seeker);
 const percent = computed(() =>
@@ -218,7 +219,7 @@ function onPress(event: PointerEvent) {
   details.close();
   beginQuestPress(event, {
     questId: row.quest.id,
-    label: t(row.quest.nameKey),
+    label: name.value,
     element: rowEl.value,
     from: row.taken ? 'active' : 'available',
     onDrop: (target) => {

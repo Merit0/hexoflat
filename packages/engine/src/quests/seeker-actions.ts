@@ -2,8 +2,9 @@ import { tokenOriginOfBoard } from '../registry/location-token-origin';
 import { questTokenOrigin } from './quest-token-origin';
 import { LOCATION_DIMENSIONS } from '../registry/location-key';
 import type { ProgressState } from '../aggregates/progress-state';
-import { questAnswerReview } from './quest-answer-review';
-import { resolveSeekerPath } from './resolve-seeker-path';
+import { questDefinitionFor } from './quest-lookup';
+import { questOfferFor } from './quest-board-state';
+import { finishSeekerRun, resolveSeekerPath } from './resolve-seeker-path';
 import type { DomainEvent } from '../commands/types';
 import { spendWill } from '../knowledge/will';
 import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
@@ -17,7 +18,6 @@ import {
   type QuestRun,
   type SeekerBoard,
   type SeekerField,
-  type SeekerOutcome,
 } from './quest-state';
 import { generateSequence } from './sequences/generate';
 import { RULES, continueFrom, type RuleRegistry } from './sequences/rules';
@@ -63,7 +63,7 @@ export function enterQuest(
   options: SeekerOptions = {},
 ): SeekerResult {
   const registry = options.registry ?? RULES;
-  const quest = input.catalogue[input.questId];
+  const quest = questDefinitionFor(progress.quests, input.questId, input.catalogue);
   if (!quest || quest.objective.kind !== 'expedition') {
     return reject(progress, input.questId, 'UNKNOWN_QUEST');
   }
@@ -98,8 +98,10 @@ export function enterQuest(
   );
   if (!trail) return reject(progress, input.questId, 'NO_ROOM_FOR_TRAIL');
 
+  const generatedOffer = questOfferFor(progress.quests, input.questId);
   const run: QuestRun = {
     offerId: input.questId,
+    ...(generatedOffer ? { generatedOffer } : {}),
     tokenOrigin: input.field
       ? questTokenOrigin({ field: input.field })
       : tokenOriginOfBoard(quest, null),
@@ -143,52 +145,12 @@ export function enterQuest(
   };
 }
 
-function finish(
-  progress: ProgressState,
-  run: QuestRun,
-  outcome: SeekerOutcome,
-  reason: string | null,
-): { progress: ProgressState; events: DomainEvent[] } {
-  const next = structuredClone(progress);
-  next.quests.active = next.quests.active.filter((entry) => entry.questId !== run.offerId);
-  if (run.resolution) {
-    outcome = run.resolution;
-    reason = outcome === 'treasure' ? null : 'TREASURE_LOST';
-  }
-  if (outcome === 'treasure' && !run.resolution) {
-    next.quests.done[run.offerId] = (next.quests.done[run.offerId] ?? 0) + 1;
-  }
-  const answerReview = questAnswerReview(run);
-  run.phase = 'ended';
-  run.outcome = outcome;
-  const heroId = next.knowledge.heroId;
-  const recap = {
-    numbers: run.path.map((step) => step.number),
-    firstDeviation: run.firstDeviation,
-    ...(answerReview ? { answerReview } : {}),
-  };
-  const closing: DomainEvent =
-    reason === null
-      ? { type: 'QUEST_COMPLETED', payload: { heroId, questId: run.offerId, outcome, recap } }
-      : { type: 'QUEST_FAILED', payload: { heroId, questId: run.offerId, reason, recap } };
-  const summary: DomainEvent = {
-    type: 'QUEST_SUMMARY',
-    payload: {
-      offerId: run.offerId,
-      selfSteps: run.stepsTaken,
-      deviationsTotal: run.deviationsTotal,
-      outcome,
-    },
-  };
-  return { progress: next, events: [closing, summary] };
-}
-
 function strandedCheck(
   progress: ProgressState,
   run: QuestRun,
 ): { progress: ProgressState; events: DomainEvent[] } | null {
   if (run.chest || run.phase === 'lost' || progress.knowledge.current >= run.stepCost) return null;
-  return finish(progress, run, 'stranded', 'STRANDED');
+  return finishSeekerRun(progress, run, 'stranded', 'STRANDED');
 }
 
 function placeLure(run: QuestRun, board: SeekerBoard): IHexCoordinates | null {
@@ -377,16 +339,16 @@ export function seekerGiveUp(progress: ProgressState, source: QuestRun): SeekerR
   }
   const run = structuredClone(source);
   if (run.phase === 'lost') {
-    const lost = finish(progress, run, 'lost', 'TREASURE_LOST');
+    const lost = finishSeekerRun(progress, run, 'lost', 'TREASURE_LOST');
     return { ok: true, progress: lost.progress, run, events: lost.events };
   }
-  const closing = finish(progress, run, 'left', 'LEFT');
+  const closing = finishSeekerRun(progress, run, 'left', 'LEFT');
   return { ok: true, progress: closing.progress, run, events: closing.events };
 }
 
 export function seekerReturn(progress: ProgressState, source: QuestRun): SeekerResult {
   if (source.phase !== 'collect') return reject(progress, source, 'WRONG_PHASE');
   const run = structuredClone(source);
-  const closing = finish(progress, run, 'treasure', null);
+  const closing = finishSeekerRun(progress, run, 'treasure', null);
   return { ok: true, progress: closing.progress, run, events: closing.events };
 }

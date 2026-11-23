@@ -1,8 +1,7 @@
 import { computed } from 'vue';
-import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
 import { useQuestStore } from '@/stores/quest-store';
 import { questResult } from '@/services/quests/quest-result';
-import { questRuleParams } from '@/services/quests/quest-rule-params';
+import { legacyQuestCard, questCardRuleParams } from '@/services/quests/quest-card-content';
 import { buildQuestField } from '@/services/quests/quest-field-model';
 
 export function useQuestRunView() {
@@ -11,17 +10,18 @@ export function useQuestRunView() {
   const run = computed(() => {
     const projection = store.run;
     if (!projection) return null;
-    const quest = ALL_QUESTS[projection.offerId];
-    const objective = quest?.objective.kind === 'expedition' ? quest.objective : null;
+    const quest = projection.offer ?? legacyQuestCard(projection.offerId);
     return {
       projection,
       nameKey: quest?.nameKey ?? projection.offerId,
       descKey: quest?.descKey ?? null,
       goalKey: quest?.tableRule ?? null,
-      ruleParams: quest ? { ...questRuleParams(quest) } : {},
-      questId: projection.offerId,
+      howKey: quest?.howKey ?? null,
+      ruleKey: quest ? `quest.${quest.templateId}.rule` : null,
+      target: quest?.goal.target ?? 0,
+      ruleParams: quest ? questCardRuleParams(quest) : {},
       step: projection.path.length,
-      steps: objective?.params.steps ?? projection.path.length,
+      steps: quest?.expedition?.steps ?? projection.path.length,
       stepCost: projection.stepCost,
       backCost: projection.backCost,
       trail: projection.path.map((entry) => entry.number),
@@ -39,8 +39,8 @@ export function useQuestRunView() {
   const result = computed(() => {
     const value = questResult.value;
     if (!value) return null;
-    const quest = ALL_QUESTS[value.questId];
-    return { ...value, nameKey: quest?.nameKey ?? value.questId };
+    const quest = value.offer ?? legacyQuestCard(value.questId);
+    return { ...value, nameKey: quest?.nameKey ?? value.questId, target: quest?.goal.target };
   });
 
   return { run, field, result };

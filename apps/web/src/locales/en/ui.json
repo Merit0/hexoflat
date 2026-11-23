@@ -885,6 +885,11 @@
       "AUTO_TURN_IN": "This quest is handed in by itself.",
       "BAG_FULL": "Your bag is too full for the reward.",
       "NO_INVENTORY": "Your bag is not available.",
+      "QUEST_OFFER_EXPIRED": "This offer is no longer on the board.",
+      "QUEST_BOARD_STALE": "The board has changed. Check the current offers and price.",
+      "QUEST_BOARD_UNCHANGED": "No new set of quests is available right now.",
+      "QUEST_BOARD_LIMIT": "The board has reached its daily limit.",
+      "NO_ROOM_FOR_QUEST_ENTRANCE": "There is no room for a treasure map in Silesia.",
       "OTHER": "The quest board refused this.",
       "QUEST_IN_PROGRESS": "You are already on a trail.",
       "NOT_ADJACENT": "Too far away.",
@@ -902,6 +907,66 @@
       "QUEST_SUSPENDED": "Re-enter through your treasure map in Silesia.",
       "OTHER_QUEST_SUSPENDED": "Another treasure map is still open. Finish it first.",
       "NO_ROOM_FOR_TRAIL": "No room for a trail here. Stand on the other side of the map."
+    },
+    "generated": {
+      "woodcutter": {
+        "names": {
+          "evening-kindling": "Evening Kindling",
+          "camp-firewood": "Firewood for Camp",
+          "winter-supply": "Winter Supply"
+        },
+        "desc": "The camp needs wood for its fires before the cold sets in.",
+        "goal": "Chop {target} trees in Silesia.",
+        "how": "Equip an axe.\nChop {target} trees in Silesia.\nClaim your reward at the board."
+      },
+      "stonebreaker": {
+        "names": {
+          "trail-stones": "Trail Stones",
+          "camp-wall": "Stone for the Wall"
+        },
+        "desc": "The camp needs stone for its building work.",
+        "goal": "Finish {target} mining actions in Silesia.",
+        "how": "Equip a pickaxe.\nFinish {target} mining actions.\nClaim your reward at the board."
+      },
+      "scholar": {
+        "names": {
+          "first-lesson": "Morning Lesson",
+          "will-study": "Lessons in Will"
+        },
+        "desc": "The Book of Will waits by the campfire.",
+        "goal": "Answer {target} questions correctly in the Book of Will.",
+        "how": "Open the Book of Will in camp.\nAnswer {target} questions correctly.\nClaim your reward at the board."
+      },
+      "bone-hunter": {
+        "names": { "quiet-crypt": "A Quiet Crypt" },
+        "desc": "The rattle of bones echoes from the crypt again.",
+        "goal": "Defeat {target} skeletons in battles you win in the cave.",
+        "how": "Descend into the cave.\nWin battles against {target} skeletons.\nClaim your reward at the board."
+      },
+      "camp-lectern": {
+        "names": { "fireside-review": "Fireside Review", "scribe-notes": "The Scribe’s Notes" },
+        "desc": "The camp scribe left a few questions beside the fire.",
+        "goal": "Give {target, plural, one {# correct answer} other {# correct answers}} in the Book of Will.",
+        "how": "Open the Book of Will in camp.\nGive {target, plural, one {# correct answer} other {# correct answers}}.\nClaim your reward at the board."
+      },
+      "seeker-1": {
+        "names": { "mist-trail": "Trail in the Mist", "first-trail": "First Trail" },
+        "desc": "Old numbers lead to a hidden chest.",
+        "goal": "Follow the trail for {target} steps to the chest.",
+        "how": "Open the treasure map in Silesia.\nFollow the number trail to the chest."
+      },
+      "seeker-2": {
+        "names": { "uneven-trail": "Uneven Path", "jumping-trail": "Leaping Trail" },
+        "desc": "The distance between the numbers is your clue.",
+        "goal": "Follow the trail for {target} steps to the chest.",
+        "how": "Open the treasure map in Silesia.\nFind the pattern and follow it to the chest."
+      },
+      "seeker-3": {
+        "names": { "hidden-trail": "Hidden Path", "twisted-trail": "Twisted Trail" },
+        "desc": "The trail winds. Save your Will for the way ahead.",
+        "goal": "Follow the trail for {target} steps to the chest.",
+        "how": "Open the treasure map in Silesia.\nUse the number pattern to choose your next hex."
+      }
     },
     "woodcutter": {
       "name": "Woodcutter",
@@ -930,6 +995,13 @@
       "table": "Defeat 3 skeletons in battles, get a wooden shield.",
       "how": "Take a sword in your hand.\nAttack skeleton squads in the crypt.\nWin battles until 3 skeletons fall.\nWalk back to the quest board and press Claim.",
       "rule": "Costs {entry} Will to take. Only skeletons you defeat in a battle you win count; a lost battle adds nothing."
+    },
+    "camp-lectern": {
+      "name": "The Camp Lectern",
+      "desc": "The camp scribe left a few questions beside the fire.",
+      "table": "Give 4 correct answers in the Book of Will for 6 coins.",
+      "how": "Open the Book of Will in camp.\nGive 4 correct answers.\nClaim your reward at the board.",
+      "rule": "Free to take. Only correct answers in the Book of Will count."
     },
     "unit": {
       "trees": "trees",
@@ -996,6 +1068,11 @@
       "will": "Will",
       "coins": "Coins",
       "hint": "Hover a quest to see its details. On touch screens, tap it.",
+      "refresh": {
+        "action": "Refresh",
+        "label": "Refresh the quest board for {n} Will",
+        "done": "The quest board has been refreshed."
+      },
       "rowLabel": "{name}, {meta}. Show details.",
       "takeFor": "Take {name} for {n} Will",
       "detailsLabel": "{name} details",

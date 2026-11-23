@@ -1,3 +1,25 @@
+export type TestQuestReward =
+  | { kind: 'item'; itemKey: string; amount: number; token?: { id: string } }
+  | { kind: 'will'; amount: number };
+
+export interface TestQuestOffer {
+  id: string;
+  templateId: string;
+  dayId: number;
+  nameKey: string;
+  descKey: string;
+  goal: { unitKey: string; target: number };
+  rewards: TestQuestReward[];
+  expedition?: { steps: number; stepCost: number; backMultiplier: number };
+}
+
+export interface TestQuestBoard {
+  dayId: number;
+  refreshPrice: number;
+  remaining: number | null;
+  offers: TestQuestOffer[];
+}
+
 export interface TestHexCoordinates {
   columnIndex: number;
   rowIndex: number;
@@ -80,6 +102,7 @@ export interface TestTraderFixture {
 export interface TestQuestFixture {
   active?: { questId: string; progress: number; state: 'active' | 'ready' }[];
   done?: Record<string, number>;
+  previousUtcDay?: true;
 }
 
 export interface TestQuests {
@@ -302,6 +325,8 @@ export interface HexoflatTestApi {
   getWalletCoins(): number;
   setTrader(fixture: TestTraderFixture): Promise<void>;
   getQuests(): TestQuests;
+  getQuestBoard(): TestQuestBoard | null;
+  followQuestApproach(route: TestHexCoordinates[]): Promise<void>;
   getOpenQuestBoard(): boolean;
   setQuests(fixture: TestQuestFixture): Promise<void>;
   getQuestField(): TestQuestField | null;

@@ -29,6 +29,10 @@ import {
 } from '@hexoflat/engine';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { emptyInventoryState } from '@hexoflat/engine/inventory/inventory-state';
+import { gameDayAt, trackGameDay } from '@hexoflat/engine/game-day/game-day';
+import { refillQuestBoard, type QuestBoardContext } from '@hexoflat/engine/quests/quest-board';
+import { questOfferFor } from '@hexoflat/engine/quests/quest-board-state';
+import { isQuestBoardCommand } from '@hexoflat/engine/quests/quest-commands';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
@@ -48,7 +52,8 @@ import {
   ensureExpedition,
   readServerDocument,
 } from '../expedition/expedition-store';
-import { reconcileQuestWorld } from '../quests/reconcile-quest-world';
+import { QuestEntrancePlacementError, reconcileQuestWorld } from '../quests/reconcile-quest-world';
+import { questBoardContext } from '../quests/quest-board-context';
 import { isStaleWorldDocument, worldDocumentKey } from '../world/world-documents';
 import { e2eFixturesEnabled } from '../common/e2e-fixtures';
 import { ledgerEntriesFor } from './item-ledger';
@@ -70,7 +75,12 @@ interface LockedRun {
   aggregateKind: TAggregateKind;
   expectedRevision: number | null;
   kinds: readonly TAggregateKind[];
-  run: (aggregates: PlayerAggregates, loaded: LoadedAggregates) => PlayerCommandOutcome;
+  run: (
+    aggregates: PlayerAggregates,
+    loaded: LoadedAggregates,
+    now: number,
+    board: QuestBoardContext | undefined,
+  ) => PlayerCommandOutcome;
   blockedBy?: (tx: Tx, loaded: LoadedAggregates) => Promise<string | null>;
 }
 
@@ -149,7 +159,8 @@ export class PlayerCommandService {
     const guarded =
       (command.type !== 'KNOWLEDGE' && kinds.includes('inventory')) ||
       command.type === 'DEV_SET_HEALTH' ||
-      command.type === 'SHOP_REFRESH';
+      command.type === 'SHOP_REFRESH' ||
+      isQuestBoardCommand(command.type);
     const expeditionId = guarded ? await ensureExpedition(this.db, userId, heroId) : null;
     return this.db.transaction((tx) =>
       this.runLocked(tx, {
@@ -164,7 +175,7 @@ export class PlayerCommandService {
         blockedBy: expeditionId
           ? (locked, loaded) => battleOpen(locked, expeditionId, loaded)
           : undefined,
-        run: (aggregates, loaded) =>
+        run: (aggregates, loaded, now, board) =>
           executePlayerCommand(aggregates, command, {
             devGrantAllowed,
             inventory: serverInventoryContext(aggregates.progress.presence),
@@ -173,7 +184,13 @@ export class PlayerCommandService {
               ? { trade: serverTradeContext(aggregates.progress.presence, rngSeedOf(loaded)) }
               : {}),
             ...(command.type.startsWith('QUEST_')
-              ? { quest: serverQuestContext(aggregates.progress.presence) }
+              ? {
+                  quest: {
+                    ...serverQuestContext(aggregates.progress.presence),
+                    dayId: gameDayAt(aggregates.progress.day, now).day.id,
+                    board,
+                  },
+                }
               : {}),
           }),
       }),
@@ -420,30 +437,65 @@ export class PlayerCommandService {
       };
     }
 
+    const reject = async (
+      code: string,
+      events: DomainEvent[] = [],
+    ): Promise<PlayerCommandResponse> => {
+      await journal('rejected', events, code, null);
+      return {
+        commandId,
+        result: 'rejected',
+        code,
+        events,
+        aggregates: projectAll(loaded),
+      };
+    };
     const blocked = await input.blockedBy?.(tx, loaded);
-    if (blocked) {
-      await journal('rejected', [], blocked, null);
-      return {
-        commandId,
-        result: 'rejected',
-        code: blocked,
-        events: [],
-        aggregates: projectAll(loaded),
-      };
-    }
+    if (blocked) return reject(blocked);
 
-    const outcome = input.run(asAggregates(heroId, loaded), loaded);
-    if (!outcome.ok) {
-      await journal('rejected', outcome.events, outcome.code, null);
-      return {
-        commandId,
-        result: 'rejected',
-        code: outcome.code,
-        events: outcome.events,
-        aggregates: projectAll(loaded),
-      };
+    const now = Date.now();
+    const beforeProgress = loaded.progress?.state;
+    const boardCommand = isQuestBoardCommand(input.commandType);
+    const board =
+      questExpedition &&
+      loaded.progress &&
+      (boardCommand || (input.commandType === 'QUEST_CLAIM' && beforeProgress?.quests.board))
+        ? await questBoardContext(tx, questExpedition, loaded.progress)
+        : undefined;
+    const outcome = input.run(asAggregates(heroId, loaded), loaded, now, board);
+    if (!outcome.ok) return reject(outcome.code, outcome.events);
+    if (beforeProgress && !input.commandType.startsWith('DEV_')) {
+      const progress = outcome.changed.progress ?? beforeProgress;
+      const tracked = trackGameDay(beforeProgress, { progress, events: outcome.events }, now);
+      const final = board ? refillQuestBoard(beforeProgress, tracked, now, board) : tracked;
+      if (final.progress !== progress) outcome.changed.progress = final.progress;
+      outcome.events = final.events;
     }
-
+    const next = outcome.changed.progress;
+    if (questExpedition && next && beforeProgress?.quests.active !== next.quests.active) {
+      const accepted = outcome.events.find((event) => event.type === 'QUEST_ACCEPTED');
+      const questId = (accepted?.payload as { questId: string } | undefined)?.questId;
+      const placement =
+        questId && questOfferFor(next.quests, questId)?.definition.mapObjectPlacement;
+      try {
+        if (placement) {
+          // A refused placement must discard all world writes before journaling the refusal.
+          await tx.transaction((attempt) =>
+            reconcileQuestWorld(attempt, questExpedition, next, now, questId),
+          );
+        } else {
+          await reconcileQuestWorld(tx, questExpedition, next, now);
+        }
+      } catch (error) {
+        if (!(error instanceof QuestEntrancePlacementError)) throw error;
+        return reject(error.code, [
+          {
+            type: 'QUEST_REJECTED',
+            payload: { heroId, questId, reason: error.code },
+          },
+        ]);
+      }
+    }
     const changedKinds = (Object.keys(outcome.changed) as TAggregateKind[]).filter(
       (kind) => outcome.changed[kind] !== undefined,
     );
@@ -473,8 +525,7 @@ export class PlayerCommandService {
     }
 
     const primaryAfter = aggregates[input.aggregateKind];
-    if (questExpedition && outcome.changed.progress)
-      await reconcileQuestWorld(tx, questExpedition, outcome.changed.progress);
+    if (boardCommand && loaded.progress) aggregates.progress ??= projectAggregate(loaded.progress);
     await journal('applied', outcome.events, null, primaryAfter?.revision ?? primary.revision);
     return { commandId, result: 'applied', events: outcome.events, aggregates };
   }

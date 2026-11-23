@@ -3,7 +3,7 @@ import { availableInDimension } from '../dimensions/availability';
 import { EDimension } from '../dimensions/dimensions';
 import { TRADERS } from '../content/traders.content';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { sellUnitPrice } from '../trade/trader-view';
+import { sellPriceOf } from '../trade/price-of';
 import {
   QuestDefinitionSchema,
   type QuestCatalogue,
@@ -96,6 +96,27 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
     turnIn: 'board',
     tableRule: 'quest.bone-hunter.table',
   },
+  {
+    id: 'camp-lectern',
+    dimension: EDimension.EARTH,
+    locations: ['camping'],
+    nameKey: 'quest.camp-lectern.name',
+    descKey: 'quest.camp-lectern.desc',
+    repeat: 'repeatable',
+    requires: [{ kind: 'questDone', questId: 'scholar' }],
+    accept: { kind: 'free' },
+    objective: {
+      kind: 'count',
+      event: 'HALL_ANSWERED',
+      where: { correct: true },
+      target: 4,
+      unitKey: 'quest.unit.answers',
+    },
+    rewards: [{ kind: 'item', itemKey: HEXOBJECT_KEYS.COINS, amount: 6 }],
+    turnIn: 'board',
+    maxSellValue: 10,
+    tableRule: 'quest.camp-lectern.table',
+  },
 ];
 
 export function catalogueOf(quests: readonly QuestDefinition[]): QuestCatalogue {
@@ -107,7 +128,7 @@ export const QUESTS: QuestCatalogue = catalogueOf(BOARD_QUESTS);
 export function rewardSellValue(reward: Reward): number {
   if (reward.kind === 'will') return 0;
   if (reward.itemKey === HEXOBJECT_KEYS.COINS) return reward.amount;
-  const unit = sellUnitPrice(TRADERS.ilva, reward.itemKey);
+  const unit = sellPriceOf(TRADERS.ilva, { key: reward.itemKey, token: reward.token });
   return (unit ?? 0) * reward.amount;
 }
 

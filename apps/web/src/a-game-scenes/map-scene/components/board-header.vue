@@ -8,6 +8,7 @@
         :text="helpText"
       />
       <h2>{{ title }}</h2>
+      <div v-if="$slots.actions" class="actions"><slot name="actions" /></div>
       <board-close-button :testid="closeTestid" :label="closeLabel" @close="emit('close')" />
     </header>
     <board-ornament />
@@ -43,6 +44,18 @@ const emit = defineEmits<{ close: [] }>();
   box-sizing: border-box;
   min-height: 70px;
   padding: 0 70px;
+}
+.board-header:has(.actions) {
+  display: grid;
+  grid-template-columns: 1fr auto minmax(max-content, 1fr);
+  column-gap: 4px;
+  padding: 0 60px;
+}
+.board-header:has(.actions) h2 {
+  grid-column: 2;
+}
+.actions {
+  justify-self: end;
 }
 h2 {
   margin: 0;

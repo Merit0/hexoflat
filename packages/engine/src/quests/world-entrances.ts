@@ -8,7 +8,7 @@ import { EHexCollision } from '../abstraction/hexobject-abstraction';
 import { placeMapObject } from '../map/object-placement';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { objectDestinationAction, objectTransitionRefusal } from '../map/object-transition';
-import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
+import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { deriveStream } from '../utils/random-seeded';
 import type { ServerWorld } from '../world/server-world';
 import { ALL_QUESTS } from './all-quests';
@@ -16,6 +16,7 @@ import type { QuestCatalogue } from './quest-definition';
 import type { LocationKey } from '../registry/location-key';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import { cloneOriginField, type SeekerEntrance } from './origin-field';
+import { questDefinitionFor } from './quest-lookup';
 
 export const questEntranceId = (questId: string) => `quest-entrance:${questId}`;
 
@@ -47,7 +48,11 @@ export function questPlacementMaps(
   return [
     ...new Set(
       progress.quests.active.flatMap(({ questId }) => {
-        const placement = catalogue[questId]?.mapObjectPlacement;
+        const placement = questDefinitionFor(
+          progress.quests,
+          questId,
+          catalogue,
+        )?.mapObjectPlacement;
         return placement ? [placement.targetMap] : [];
       }),
     ),
@@ -59,14 +64,15 @@ export function installQuestEntrances(
   progress: ProgressState,
   catalogue: QuestCatalogue = ALL_QUESTS,
 ): boolean {
-  const quests = progress.quests.active.filter(
-    ({ questId }) => catalogue[questId]?.mapObjectPlacement?.targetMap === world.locationKey,
-  );
-  for (const { questId } of quests) {
-    const quest = QuestDefinitionSchema.parse(catalogue[questId]);
-    const key = quest.mapObjectPlacement!.objectKey;
+  const quests = progress.quests.active.flatMap(({ questId }) => {
+    const quest = questDefinitionFor(progress.quests, questId, catalogue);
+    const placement = quest?.mapObjectPlacement;
+    if (!quest || placement?.targetMap !== world.locationKey) return [];
+    QuestDefinitionSchema.parse(quest);
+    const key = placement.objectKey;
     assertDimensionRelation(`quest:${questId}`, 'place', key, CONTENT[key], quest.dimension);
-  }
+    return [{ questId, placement }];
+  });
   const bindings = (world.questEntrances ??= {});
   const wanted = new Set(quests.map(({ questId }) => questId));
   let changed = false;
@@ -77,19 +83,14 @@ export function installQuestEntrances(
     delete bindings[questId];
     changed = true;
   }
-  const missing = quests.filter(({ questId }) => {
-    const objectKey = catalogue[questId].mapObjectPlacement!.objectKey;
-    return !world.map.tiles.some(
-      (tile) =>
-        tile.hexobject?.hexobjectKey === objectKey && tile.hexobject.id === bindings[questId],
-    );
-  });
+  const missing = quests.filter(
+    ({ questId, placement }) => !placedEntranceTile(world, questId, placement.objectKey),
+  );
   if (!missing.length) return changed;
   const reachable = reachableHexes(world);
-  for (const { questId } of missing) {
+  for (const { questId, placement } of missing) {
     const id = questEntranceId(questId);
     const activation = progress.quests.placementActivations?.[questId];
-    const placement = catalogue[questId].mapObjectPlacement!;
     const result = placeMapObject(
       world.map,
       placement.objectKey,
@@ -109,6 +110,31 @@ export function installQuestEntrances(
   return changed;
 }
 
+function placedEntranceTile(
+  world: ServerWorld,
+  questId: string,
+  objectKey: THexobjectKey,
+): HexTileModel | undefined {
+  const objectId = world.questEntrances?.[questId];
+  return objectId
+    ? world.map.tiles.find(
+        (tile) => tile.hexobject?.hexobjectKey === objectKey && tile.hexobject.id === objectId,
+      )
+    : undefined;
+}
+
+export function questEntrancePlacementIsValid(
+  world: ServerWorld,
+  progress: ProgressState,
+  questId: string,
+): boolean {
+  const placement = questDefinitionFor(progress.quests, questId)?.mapObjectPlacement;
+  return (
+    placement?.targetMap !== world.locationKey ||
+    !!placedEntranceTile(world, questId, placement.objectKey)
+  );
+}
+
 function entranceTile(
   world: ServerWorld,
   questId: string,
@@ -118,11 +144,7 @@ function entranceTile(
   if (quest?.dimension !== LOCATION_DIMENSIONS[world.locationKey]) return null;
   const placement = quest?.mapObjectPlacement;
   if (world.locationKey !== placement?.targetMap) return null;
-  const tile = world.map.tiles.find(
-    (entry) =>
-      entry.hexobject?.hexobjectKey === placement.objectKey &&
-      entry.hexobject.id === world.questEntrances?.[questId],
-  );
+  const tile = placedEntranceTile(world, questId, placement.objectKey);
   if (!tile?.hexobject) return null;
   const action = objectDestinationAction(tile.hexobject, 'QUEST');
   if (action === null) return null;

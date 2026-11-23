@@ -23,6 +23,7 @@ import type { Reward } from '@hexoflat/engine/quests/quest-definition';
 import { WILL_ICON_URL } from '@/composables/use-hero-details';
 import { hideItemTooltip, showItemTooltip } from '@/composables/use-item-tooltip';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
+import { tokenSpriteUrl } from '@/render/token-look';
 
 const props = withDefaults(defineProps<{ reward: Reward; size?: number; tooltip?: boolean }>(), {
   size: 18,
@@ -33,7 +34,7 @@ function showTip(event: MouseEvent) {
   const reward = props.reward;
   if (!props.tooltip || reward.kind !== 'item') return;
   const view = resolveInventoryView(reward.itemKey);
-  const id = `quest-reward-${reward.itemKey}`;
+  const id = reward.token?.id ?? `quest-reward-${reward.itemKey}`;
   showItemTooltip(id, event.currentTarget as HTMLElement, {
     item: {
       id,
@@ -42,6 +43,7 @@ function showTip(event: MouseEvent) {
       amount: reward.amount,
       slotKey: id,
       isNew: false,
+      ...(reward.token ? { token: reward.token } : {}),
     },
   });
 }
@@ -49,8 +51,13 @@ function showTip(event: MouseEvent) {
 onBeforeUnmount(hideItemTooltip);
 
 const style = computed(() => {
+  const reward = props.reward;
   const path =
-    props.reward.kind === 'item' ? resolveInventoryView(props.reward.itemKey).iconPath : '';
+    reward.kind === 'item'
+      ? reward.token
+        ? tokenSpriteUrl(reward.token)
+        : resolveInventoryView(reward.itemKey).iconPath
+      : '';
   return {
     width: `${props.size}px`,
     height: `${props.size}px`,

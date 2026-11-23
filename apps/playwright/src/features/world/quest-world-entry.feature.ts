@@ -11,28 +11,32 @@ export class QuestWorldEntryFeature extends BaseFeature {
   private readonly board = new QuestBoardFeature();
   private marker: QuestHex | null = null;
   private origin: QuestOrigin | null = null;
+  private offerId: string | null = null;
 
   async accept() {
-    await this.step(
+    return this.step(
       'Accept Treasure Seeker into My Quests without entering the quest map',
       async () => {
         if (!(await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getOpenQuestBoard())))
           await this.board.open();
-        const active = await this.page.evaluate(() =>
-          window
-            .__HEXOFLAT_TEST__!.getQuests()
-            .active.some((entry) => entry.questId === 'seeker-1'),
+        const offer = await this.board.offer('seeker-1');
+        this.offerId = offer.id;
+        const active = await this.page.evaluate(
+          (id) =>
+            window.__HEXOFLAT_TEST__!.getQuests().active.some((entry) => entry.questId === id),
+          offer.id,
         );
-        if (!active) await this.map.questBoard.start('seeker-1');
-        await this.map.questBoard.verifyCardState('seeker-1', 'taken');
+        if (!active) await this.map.questBoard.start(offer.id);
+        await this.map.questBoard.verifyCardState(offer.id, 'taken');
         await this.entrance.verifyFieldClosed();
         await this.map.activeBoard.verifyOnly('world');
         await this.map.questBoard.close();
+        return offer;
       },
     );
   }
 
-  async enterFromSilesia(preserveQuestWill = false) {
+  async enterFromSilesia({ preserveQuestWill = false, approachWithPointer = true } = {}) {
     await this.step(
       'Travel to Silesia, walk next to the treasure map and OPEN it with the hand',
       async () => {
@@ -45,10 +49,13 @@ export class QuestWorldEntryFeature extends BaseFeature {
         const { marker, route } = await this.entrance.approachRoute();
         if (this.marker) expect(marker).toEqual(this.marker);
         this.marker = marker;
-        for (const hex of route) {
-          await this.map.hexBoard.clickTile(hex);
-          await this.map.hexBoard.verifyHeroSettledAt(hex);
-        }
+        if (approachWithPointer) await this.walkViaPointer(route);
+        else
+          await this.page.evaluate(
+            (path) => window.__HEXOFLAT_TEST__!.followQuestApproach(path),
+            route,
+          );
+        await this.map.activeBoard.verifyHeroTokenSettled();
         if (preserveQuestWill) {
           await this.page.evaluate((will) => window.__HEXOFLAT_TEST__!.setWill(will), questWill);
           await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
@@ -70,6 +77,13 @@ export class QuestWorldEntryFeature extends BaseFeature {
         }
       },
     );
+  }
+
+  private async walkViaPointer(route: QuestHex[]): Promise<void> {
+    for (const hex of route) {
+      await this.map.hexBoard.clickTile(hex);
+      await this.map.hexBoard.verifyHeroSettledAt(hex);
+    }
   }
 
   async walkTrailAndReloadBeforeReturningToPortal() {
@@ -167,7 +181,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
         await this.map.hexBoard.verifyLocation('camping');
         await this.map.activeBoard.verifyOnly('world');
         const active = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getQuests());
-        expect(active.active.some((entry) => entry.questId === 'seeker-1')).toBe(true);
+        expect(active.active.some((entry) => entry.questId === this.offerId)).toBe(true);
         return before;
       },
     );

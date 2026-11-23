@@ -28,6 +28,8 @@ import {
 import {
   QuestAbandonCommandSchema,
   QuestAcceptCommandSchema,
+  QuestBoardRefreshCommandSchema,
+  QuestBoardSyncCommandSchema,
   QuestClaimCommandSchema,
 } from '../quests/quest-commands';
 import type { TAggregateKind } from './aggregate-kinds';
@@ -161,6 +163,8 @@ export const PLAYER_COMMAND_SCHEMAS = {
   QUEST_ACCEPT: strict(QuestAcceptCommandSchema),
   QUEST_ABANDON: strict(QuestAbandonCommandSchema),
   QUEST_CLAIM: strict(QuestClaimCommandSchema),
+  QUEST_BOARD_SYNC: strict(QuestBoardSyncCommandSchema),
+  QUEST_BOARD_REFRESH: strict(QuestBoardRefreshCommandSchema),
   ACK_GRAVE_EXIT_WARNING: strict(AckGraveExitWarningCommandSchema),
 } as const;
 
@@ -195,6 +199,8 @@ export const PLAYER_COMMAND_AGGREGATES: Record<TPlayerCommandType, readonly TAgg
   QUEST_ACCEPT: ['inventory', 'progress'],
   QUEST_ABANDON: ['inventory', 'progress'],
   QUEST_CLAIM: ['inventory', 'progress'],
+  QUEST_BOARD_SYNC: ['progress'],
+  QUEST_BOARD_REFRESH: ['progress'],
   ACK_GRAVE_EXIT_WARNING: ['progress'],
 };
 
@@ -234,6 +240,8 @@ export const PLAYER_COMMAND_REVISION: Record<
   QUEST_ACCEPT: 'aggregate',
   QUEST_ABANDON: 'aggregate',
   QUEST_CLAIM: 'aggregate',
+  QUEST_BOARD_SYNC: 'aggregate',
+  QUEST_BOARD_REFRESH: 'aggregate',
   ACK_GRAVE_EXIT_WARNING: 'none',
 };
 
