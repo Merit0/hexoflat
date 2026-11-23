@@ -36,6 +36,7 @@ import {
   openPortalWorld,
   travelWorld,
 } from '@hexoflat/engine';
+import { trackGameDay } from '@hexoflat/engine/game-day/game-day';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 import { projectBattleForViewer } from '@hexoflat/engine/battle/projection';
 import { BATTLE_RULES, type BattleRules } from '@hexoflat/engine/battle/battle-content';
@@ -102,9 +103,14 @@ const worldKey = (mapId: string) => `srv-world:${mapId}`;
 
 type Index = Partial<Record<LocationKey, string>>;
 
-function foldWorldQuests<T extends { ok: boolean; events: DomainEvent[] }>(outcome: T): T {
+function trackWorldProgress<T extends { ok: boolean; events: DomainEvent[] }>(
+  before: ProgressState,
+  outcome: T,
+  now: number,
+): T {
   if (!outcome.ok || !('progress' in outcome)) return outcome;
-  return foldQuestEvents(outcome as T & { progress: ProgressState });
+  const folded = foldQuestEvents(outcome as T & { progress: ProgressState });
+  return 'rejected' in outcome && outcome.rejected ? folded : trackGameDay(before, folded, now);
 }
 
 async function readIndex(tx: Tx, expeditionId: string): Promise<Index> {
@@ -133,11 +139,12 @@ async function placeHeroIn(
     index: Index;
     locationKey: LocationKey;
     progress: ProgressState;
+    now: number;
   },
 ): Promise<ServerWorld> {
-  const { expeditionId, heroId, index, locationKey, progress } = input;
+  const { expeditionId, heroId, index, locationKey, progress, now } = input;
   const known = index[locationKey];
-  let world = known ? await loadWorld(tx, expeditionId, known, Date.now(), heroId) : null;
+  let world = known ? await loadWorld(tx, expeditionId, known, now, heroId) : null;
   if (!world) {
     const mapId = randomUUID();
     world = createServerWorld(locationKey, mapId, await expeditionSeed(tx, expeditionId), heroId);
@@ -301,17 +308,23 @@ export class WorldService {
         index,
         locationKey,
         progress: progressState,
+        now,
       });
-      const saved = await saveAggregate(tx, heroId, 'progress', progress.revision, progressState);
-      const events: DomainEvent[] = [
-        { type: 'WORLD_ENTERED', payload: { heroId, locationKey, mapId: world.mapId } },
-      ];
+      const { progress: next, events } = trackGameDay(
+        progress.state,
+        {
+          progress: progressState,
+          events: [{ type: 'WORLD_ENTERED', payload: { heroId, locationKey, mapId: world.mapId } }],
+        },
+        now,
+      );
+      const saved = await saveAggregate(tx, heroId, 'progress', progress.revision, next);
       await journal('applied', events, null, saved);
       return {
         ...respond('applied', undefined, events, [], world),
         aggregates: {
           inventory: projectAggregate(inventory),
-          progress: projectAggregate({ ...progress, revision: saved, state: progressState }),
+          progress: projectAggregate({ ...progress, revision: saved, state: next }),
         },
       };
     }
@@ -364,10 +377,13 @@ export class WorldService {
     };
     if (command.type === 'WORLD_TRAVEL' || command.type === 'WORLD_PORTAL_ENTER') {
       const travelRun: TravelRun & PortalRun = { ...run, ...finders };
-      const travelled =
+      const travelled = trackWorldProgress(
+        progress.state,
         command.type === 'WORLD_TRAVEL'
           ? travelWorld(travelRun, command.payload.via)
-          : enterPortalWorld(travelRun);
+          : enterPortalWorld(travelRun),
+        now,
+      );
       if (!travelled.ok) {
         await journal('rejected', travelled.events, travelled.code, null);
         return respond('rejected', travelled.code, travelled.events, [], world, travelled.effects);
@@ -431,8 +447,10 @@ export class WorldService {
       };
     }
     if (command.type === 'WORLD_BATTLE') {
-      const fought = foldWorldQuests(
+      const fought = trackWorldProgress(
+        progress.state,
         battleWorld({ ...run, ...finders }, command.payload, this.battleRules),
+        now,
       );
       if (!fought.ok) {
         await journal('rejected', fought.events, fought.code, null);
@@ -450,7 +468,8 @@ export class WorldService {
       await journal('applied', fought.events, null, committed.progressRevision);
       return { commandId, ...committed.response };
     }
-    const outcome: WorldOutcome = foldWorldQuests(
+    const outcome: WorldOutcome = trackWorldProgress(
+      progress.state,
       command.type === 'WORLD_STEP'
         ? stepWorld(run, command.payload.target)
         : command.type === 'WORLD_ACTION'
@@ -466,6 +485,7 @@ export class WorldService {
             : command.type === 'WORLD_PORTAL_CLOSE'
               ? closePortalWorld({ ...run, ...finders })
               : tickWorld(run),
+      now,
     );
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
@@ -832,6 +852,7 @@ export class WorldService {
         index: await readIndex(tx, expeditionId),
         locationKey: fixture.data.locationKey,
         progress: state,
+        now: Date.now(),
       });
       const revision = await saveAggregate(tx, heroId, 'progress', progress.revision, state);
       return {

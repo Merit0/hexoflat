@@ -29,6 +29,7 @@ import {
 } from '@hexoflat/engine';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { emptyInventoryState } from '@hexoflat/engine/inventory/inventory-state';
+import { trackGameDay } from '@hexoflat/engine/game-day/game-day';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
@@ -432,6 +433,7 @@ export class PlayerCommandService {
       };
     }
 
+    const now = Date.now();
     const outcome = input.run(asAggregates(heroId, loaded), loaded);
     if (!outcome.ok) {
       await journal('rejected', outcome.events, outcome.code, null);
@@ -444,6 +446,13 @@ export class PlayerCommandService {
       };
     }
 
+    const beforeProgress = loaded.progress?.state;
+    if (beforeProgress && !input.commandType.startsWith('DEV_')) {
+      const progress = outcome.changed.progress ?? beforeProgress;
+      const tracked = trackGameDay(beforeProgress, { progress, events: outcome.events }, now);
+      if (tracked.progress !== progress) outcome.changed.progress = tracked.progress;
+      outcome.events = tracked.events;
+    }
     const changedKinds = (Object.keys(outcome.changed) as TAggregateKind[]).filter(
       (kind) => outcome.changed[kind] !== undefined,
     );
@@ -474,7 +483,7 @@ export class PlayerCommandService {
 
     const primaryAfter = aggregates[input.aggregateKind];
     if (questExpedition && outcome.changed.progress)
-      await reconcileQuestWorld(tx, questExpedition, outcome.changed.progress);
+      await reconcileQuestWorld(tx, questExpedition, outcome.changed.progress, now);
     await journal('applied', outcome.events, null, primaryAfter?.revision ?? primary.revision);
     return { commandId, result: 'applied', events: outcome.events, aggregates };
   }

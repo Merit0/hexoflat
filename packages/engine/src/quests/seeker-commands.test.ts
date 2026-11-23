@@ -125,20 +125,24 @@ describe('the seeker run commands', () => {
         );
         progress = out.progress;
         doc = out.doc;
+        return out.events.map((event) => event.type);
       };
       const trail = doc!.run.trail;
       for (const hex of trail.slice(0, -1))
         send({ type: 'QUEST_STEP', payload: { heroId: HERO, hex } });
       expect(progress.quests.active).toHaveLength(1);
       expect(progress.quests.done['seeker-1']).toBeUndefined();
-      send({ type: 'QUEST_STEP', payload: { heroId: HERO, hex: trail.at(-1)! } });
+      const resolved = send({ type: 'QUEST_STEP', payload: { heroId: HERO, hex: trail.at(-1)! } });
+      expect(resolved.filter((event) => event === 'QUEST_RESOLVED')).toHaveLength(1);
       expect(progress.quests.active).toEqual([]);
       expect(progress.quests.done['seeker-1']).toBe(1);
       expect(doc!.run.resolution).toBe('treasure');
       send({ type: 'QUEST_OPEN_CHEST', payload: { heroId: HERO } });
       expect(doc!.run.phase).toBe('collect');
       if (type === 'QUEST_PAUSE') doc!.run.collect!.hero = doc!.run.start;
-      send({ type, payload: { heroId: HERO } });
+      const closed = send({ type, payload: { heroId: HERO } });
+      expect(closed).not.toContain('QUEST_RESOLVED');
+      expect(closed).toContain(type === 'QUEST_PAUSE' ? 'QUEST_PAUSED' : 'QUEST_SUMMARY');
       if (type === 'QUEST_PAUSE') expect(doc?.suspended).toBe(true);
       else expect(doc).toBeNull();
       expect(progress.quests.done['seeker-1']).toBe(1);

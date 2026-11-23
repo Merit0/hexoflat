@@ -14,6 +14,7 @@ import {
   type QuestRunDoc,
   type SeekerEntrance,
 } from '@hexoflat/engine';
+import { trackGameDay } from '@hexoflat/engine/game-day/game-day';
 import { DB, type Db } from '../db/db.module';
 import { commandJournal, itemLedger } from '../db/schema';
 import {
@@ -73,8 +74,8 @@ async function battleOpen(
   return !!(JSON.parse(raw) as { battle?: unknown }).battle;
 }
 
-function loadWorldDoc(tx: Tx, expeditionId: string, heroId: string, mapId: string) {
-  return loadWorldDocument(tx, { expeditionId, heroId, mapId, now: Date.now() });
+function loadWorldDoc(tx: Tx, expeditionId: string, heroId: string, mapId: string, now: number) {
+  return loadWorldDocument(tx, { expeditionId, heroId, mapId, now });
 }
 
 async function entranceOf(
@@ -83,15 +84,21 @@ async function entranceOf(
   heroId: string,
   presence: Presence | null,
   questId: string,
+  now: number,
 ): Promise<SeekerEntrance | null> {
-  const world = presence ? await loadWorldDoc(tx, expeditionId, heroId, presence.mapId) : null;
+  const world = presence ? await loadWorldDoc(tx, expeditionId, heroId, presence.mapId, now) : null;
   return world ? questEntranceFor(world, questId) : null;
 }
 
-async function campPlace(tx: Tx, expeditionId: string, heroId: string): Promise<Presence | null> {
+async function campPlace(
+  tx: Tx,
+  expeditionId: string,
+  heroId: string,
+  now: number,
+): Promise<Presence | null> {
   const rawIndex = await readServerDocument(tx, expeditionId, 'srv-index');
   const campId = rawIndex ? (JSON.parse(rawIndex) as Record<string, string>).camping : undefined;
-  const camp = campId ? await loadWorldDoc(tx, expeditionId, heroId, campId) : null;
+  const camp = campId ? await loadWorldDoc(tx, expeditionId, heroId, campId, now) : null;
   return camp?.heroCoordinates
     ? { locationKey: 'camping', mapId: camp.mapId, coordinates: { ...camp.heroCoordinates } }
     : null;
@@ -208,6 +215,7 @@ export class QuestRunService {
         return respond('rejected', [], 'BATTLE_OPEN', doc);
       }
 
+      const now = Date.now();
       const entering = command.type === 'QUEST_ENTER';
       const entrance = entering
         ? await entranceOf(
@@ -216,22 +224,29 @@ export class QuestRunService {
             heroId,
             progress.state.presence,
             command.payload.questId,
+            now,
           )
         : null;
       const seed = await expeditionSeed(tx, expeditionId);
-      const outcome = executeQuestRunCommand({
+      const executed = executeQuestRunCommand({
         progress: progress.state,
         doc,
         command,
         entrance,
-        camp: entering ? await campPlace(tx, expeditionId, heroId) : null,
+        camp: entering ? await campPlace(tx, expeditionId, heroId, now) : null,
         inventory: inventory.state,
         newSeed: () => `${seed}:quest:${randomUUID()}`,
       });
-      if (!outcome.ok) {
-        await journal('rejected', outcome.events, outcome.code, null);
-        return respond('rejected', outcome.events, outcome.code, doc);
+      if (!executed.ok) {
+        await journal('rejected', executed.events, executed.code, null);
+        return respond('rejected', executed.events, executed.code, doc);
       }
+      const outcome = trackGameDay(
+        progress.state,
+        executed,
+        now,
+        doc ? { alreadyResolved: doc.run.resolution !== undefined } : undefined,
+      );
 
       const revision = await saveAggregate(
         tx,

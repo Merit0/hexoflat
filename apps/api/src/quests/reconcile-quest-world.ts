@@ -18,6 +18,7 @@ export async function reconcileQuestWorld(
   tx: Tx,
   expeditionId: string,
   progress: ProgressState,
+  now: number,
 ): Promise<void> {
   const rawQuest = await readServerDocument(tx, expeditionId, 'srv-quest');
   if (rawQuest && isStaleSuspendedRun(parseQuestRunDoc(rawQuest), progress))
@@ -31,7 +32,7 @@ export async function reconcileQuestWorld(
           expeditionId,
           heroId: progress.knowledge.heroId,
           mapId,
-          now: Date.now(),
+          now,
         })
       : null;
     if (!world) continue;
