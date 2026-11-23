@@ -275,3 +275,24 @@ AG6 keeps `strike` and `block.sides` and deletes `base.damage`, `base.defense` a
 Tests: `equipment-content-rules.test.ts` (one failing-content test per rule, 12 tests). Engine 2482 passed, 2 skipped;
 typecheck, lint and engine build passed. Token golden snapshots did not change, so generation is the same.
 Not in AG1: unique attributes still skip the group check (see the review note on F1/F11), F12 dead paths stay for AG6.
+
+### AG2 — done (2026-11-23)
+
+1. `packages/engine/src/tokens/equipment/generator/attribute-conformance.test.ts` (110 tests, about 1 s) is driven by
+   the real content: every attribute × every equipment type (enabled and planned) × every tier.
+   - Eligibility: the generator pool, the factory validator and `attributeGeneratable` + a profile weight agree.
+   - Rolled values: 1000 seeds per type and tier roll every allowed value of each eligible attribute and nothing else.
+   - Factory overrides: on every token type and tier, `min` and `max` are accepted and reach the stat reader with that
+     value; `min − 1`, `max + 1` and ineligible attributes are refused.
+   - Deprecated: each rolled attribute, when deprecated, stops rolling and still works on an owned token.
+   - Readers: `STAT_READS` names where each implemented stat is read (`inventory`, `battle`, `tool`); a new implemented
+     stat fails until it is listed. Attributes that roll on a type the reader never sees must equal `AWAITING_AG3`
+     (crit, crit-dmg and trophy on axe and pickaxe). AG3 empties that list.
+2. The decided ranges `[min, max, step]` per tier for every rolled attribute are pinned in one table:
+   `content/attribute-profile-decisions.test.ts`. A new rolled attribute fails until its decided ranges are added.
+3. Deleted, because the suite covers them: `block-`, `crit-`, `heal-on-block-`, `heart-`, `trophy-`, `wisdom-` and
+   `yield-generation.test.ts`. Effect tests (battle, world, API, E2E) stay.
+4. Mutation check: dropping the `onlyTypes` rule fails 20 tests; dropping the tool rule of the validator fails 8 tests.
+
+The test "crit-dmg appears without crit" (`equipment-attribute-generator.test.ts`) stays until AG4 replaces it.
+Engine 2537 passed, 2 skipped; typecheck and lint passed.

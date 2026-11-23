@@ -174,30 +174,7 @@ describe('EA1 attribute profiles', () => {
     ]);
   });
 
-  it('holds the plan values in half-hearts, points and steps', () => {
-    const ranges = (key: string) =>
-      ATTRIBUTE_PROFILE_TIERS.map((tier) => {
-        const entry = ATTRIBUTE_PROFILES[tier].attributes[key];
-        return [entry.min, entry.max];
-      });
-    expect(ranges('crit')).toEqual([
-      [2, 2],
-      [2, 4],
-      [2, 6],
-      [2, 10],
-    ]);
-    expect(ranges('heart')).toEqual([
-      [1, 2],
-      [1, 4],
-      [1, 6],
-      [1, 8],
-    ]);
-    expect(ranges('smart-step')).toEqual([
-      [5, 5],
-      [4, 5],
-      [3, 5],
-      [2, 5],
-    ]);
+  it('holds the decided heart weights', () => {
     expect(ATTRIBUTE_PROFILES['tier-1'].attributes.heart.weight).toEqual({
       defense: 40,
       clothing: 35,
