@@ -93,12 +93,6 @@
     "rejected": "Action not completed. Check your answer and the current challenge state."
   },
   "itemTooltip": {
-    "rarity": {
-      "gloom": "Gloom",
-      "idol": "Idol",
-      "spark": "Spark",
-      "alien": "Alien"
-    },
     "equipped": "Equipped",
     "willUse": "Use: {will} Will",
     "willLocked": "Needs the Teleport skill",

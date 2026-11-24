@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dimensionSchema, EDimension, itemFamilyOfDimension } from './dimensions';
-import { realmOfBoard, tokenOriginOfBoard } from '../registry/location-token-origin';
+import { dimensionSchema, EDimension, tokenTypeOfDimension } from './dimensions';
+import { tokenTypeOfBoard, dropContextOfBoard } from '../registry/location-drop-context';
 import { MapRegistry } from '../registry/world-map-registry';
 import { LOCATION_KEYS } from '../registry/location-key';
 
@@ -11,28 +11,28 @@ describe('dimension ownership', () => {
     [EDimension.UNDERWORLD, 'gloom'],
     [EDimension.NOWHERE, 'alien'],
   ] as const)('%s owns the %s item family', (dimension, family) => {
-    expect(itemFamilyOfDimension(dimension)).toBe(family);
+    expect(tokenTypeOfDimension(dimension)).toBe(family);
   });
 
   it.each([undefined, null, 'unknown', [], ['earth', 'heaven']])(
     'rejects missing, unknown and multiple owners: %j',
     (value) => {
       expect(dimensionSchema.safeParse(value).success).toBe(false);
-      expect(() => itemFamilyOfDimension(value as EDimension)).toThrow();
+      expect(() => tokenTypeOfDimension(value as EDimension)).toThrow();
     },
   );
 
-  it('uses explicit ownership even when board construction suggests another realm', () => {
+  it('uses explicit ownership even when board construction suggests another tokenType', () => {
     const earthDungeon = { boardKind: 'DUNGEON', dimension: EDimension.EARTH };
     const underworldStatic = { boardKind: 'STATIC', dimension: EDimension.UNDERWORLD };
-    expect(tokenOriginOfBoard(earthDungeon, null)).toEqual({ realm: 'idol', mapTier: 1 });
-    expect(tokenOriginOfBoard(underworldStatic, null)).toEqual({ realm: 'gloom', mapTier: 1 });
-    expect(realmOfBoard({ dimension: EDimension.HEAVEN })).toBe('spark');
+    expect(dropContextOfBoard(earthDungeon, null)).toEqual({ tokenType: 'idol', mapTier: 1 });
+    expect(dropContextOfBoard(underworldStatic, null)).toEqual({ tokenType: 'gloom', mapTier: 1 });
+    expect(tokenTypeOfBoard({ dimension: EDimension.HEAVEN })).toBe('spark');
   });
 
   it('does not fall back to EARTH when ownership is absent or NOWHERE is used for base loot', () => {
-    expect(() => realmOfBoard({} as { dimension: EDimension })).toThrow();
-    expect(() => realmOfBoard({ dimension: EDimension.NOWHERE })).toThrow();
+    expect(() => tokenTypeOfBoard({} as { dimension: EDimension })).toThrow();
+    expect(() => tokenTypeOfBoard({ dimension: EDimension.NOWHERE })).toThrow();
   });
 
   it('assigns every registered location explicitly', () => {

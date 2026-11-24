@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { createTokenRegistries, TOKEN_CONTENT, tokenLocaleKeys } from '../../content/token-content';
 import { TOKEN_NAME_RULES } from '../../content/token-words.content';
 import type { DescriptionLine, ItemToken, TokenName } from '../token-schema';
@@ -114,7 +114,7 @@ describe('token names and descriptions', () => {
     const lines: DescriptionLine[] = [
       {
         key: 'content.tokens.line.kind',
-        params: { type: 'content.tokens.noun.sword', realm: 'content.tokens.realm.gloom' },
+        params: { type: 'content.tokens.noun.sword', tokenType: 'content.tokens.tokenType.gloom' },
       },
       { key: 'content.tokens.line.strike', params: { strike: 1 } },
       { key: 'content.tokens.attr.heart', params: { value: 0.5 } },
@@ -181,7 +181,7 @@ describe('TG-9: extension by data only', () => {
   const factory = createTokenFactory(extendedContent(), extendedManifest());
   const tokens = tokensOf(
     Array.from({ length: 300 }, (_, index) =>
-      contextFor(index + 1, { realm: ERarityKind.SPARK, type: 'hammer', mapTier: 4 }),
+      contextFor(index + 1, { tokenType: ETokenType.SPARK, type: 'hammer', mapTier: 4 }),
     ),
     factory,
   );
@@ -225,7 +225,7 @@ describe('TG-9: extension by data only', () => {
   it('keeps the new attribute away from other types', () => {
     const swords = tokensOf(
       Array.from({ length: 100 }, (_, index) =>
-        contextFor(index + 1, { realm: ERarityKind.SPARK, type: 'sword' }),
+        contextFor(index + 1, { tokenType: ETokenType.SPARK, type: 'sword' }),
       ),
       factory,
     );

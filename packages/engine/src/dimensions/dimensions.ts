@@ -1,4 +1,4 @@
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { z } from 'zod';
 
 export enum EDimension {
@@ -9,8 +9,8 @@ export enum EDimension {
 }
 
 export const dimensionSchema = z.enum(EDimension);
-export const itemFamilySchema = z.enum(ERarityKind);
-export type TItemFamily = z.infer<typeof itemFamilySchema>;
+export const tokenTypeSchema = z.enum(ETokenType);
+export type TTokenType = z.infer<typeof tokenTypeSchema>;
 
 export const TOKEN_TIERS = ['base', 'unique'] as const;
 export type TTokenTier = (typeof TOKEN_TIERS)[number];
@@ -45,7 +45,7 @@ const tierConfigSchema = z.strictObject({
 });
 
 const dimensionConfigSchema = z.strictObject({
-  tokenType: itemFamilySchema,
+  tokenType: tokenTypeSchema,
   tiers: z
     .strictObject({ base: tierConfigSchema.optional(), unique: tierConfigSchema.optional() })
     .refine((tiers) => TOKEN_TIERS.some((tier) => tiers[tier]), 'a dimension needs a tier')
@@ -95,13 +95,13 @@ interface TierShape {
 }
 
 interface DimensionShape {
-  readonly tokenType: TItemFamily;
+  readonly tokenType: TTokenType;
   readonly tiers: { readonly base?: TierShape; readonly unique?: TierShape };
 }
 
 const DIMENSION_CONFIG = {
   [EDimension.UNDERWORLD]: {
-    tokenType: ERarityKind.GLOOM,
+    tokenType: ETokenType.GLOOM,
     tiers: {
       base: {
         light: { id: 'blue', color: '#3E8BFF' },
@@ -116,7 +116,7 @@ const DIMENSION_CONFIG = {
     },
   },
   [EDimension.EARTH]: {
-    tokenType: ERarityKind.IDOL,
+    tokenType: ETokenType.IDOL,
     tiers: {
       base: {
         light: { id: 'gray', color: '#A9AEB4' },
@@ -131,7 +131,7 @@ const DIMENSION_CONFIG = {
     },
   },
   [EDimension.HEAVEN]: {
-    tokenType: ERarityKind.SPARK,
+    tokenType: ETokenType.SPARK,
     tiers: {
       base: {
         light: { id: 'yellow', color: '#F5D33B' },
@@ -146,7 +146,7 @@ const DIMENSION_CONFIG = {
     },
   },
   [EDimension.NOWHERE]: {
-    tokenType: ERarityKind.ALIEN,
+    tokenType: ETokenType.ALIEN,
     tiers: {
       unique: { light: { id: 'red', color: '#FF3B3B' }, price: { kind: 'manual' }, sortRank: 0 },
     },
@@ -198,7 +198,7 @@ export const DIMENSIONS: DimensionConfigs = deepFreeze(DIMENSION_CONFIG);
 
 export interface DimensionTierView {
   dimension: EDimension;
-  tokenType: TItemFamily;
+  tokenType: TTokenType;
   tier: TTokenTier;
   light: TierLight;
   price: TierPrice;
@@ -267,16 +267,16 @@ export function tokenTypesWithTier<T extends TTokenTier>(
   );
 }
 
-export const TOKEN_TYPES: readonly TItemFamily[] = Object.freeze(
+export const TOKEN_TYPES: readonly TTokenType[] = Object.freeze(
   Object.values(DIMENSIONS).map((config) => config.tokenType),
 );
 
-export function itemFamilyOfDimension(dimension: EDimension): TItemFamily {
+export function tokenTypeOfDimension(dimension: EDimension): TTokenType {
   return DIMENSIONS[dimensionSchema.parse(dimension)].tokenType;
 }
 
-export function dimensionOfItemFamily(family: TItemFamily): EDimension {
-  const parsed = itemFamilySchema.parse(family);
+export function dimensionOfTokenType(family: TTokenType): EDimension {
+  const parsed = tokenTypeSchema.parse(family);
   const dimension = Object.values(EDimension).find(
     (owner) => DIMENSIONS[owner].tokenType === parsed,
   );

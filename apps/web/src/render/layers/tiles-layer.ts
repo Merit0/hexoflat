@@ -10,7 +10,7 @@ import { getTexture, onTextureReady } from '@/render/texture-cache';
 import { applyObjectFit } from '@/render/object-fit';
 import { terrainLook } from '@/render/terrain-look';
 import { hiddenTileLook, type FogLook } from '@/render/fog-look';
-import { getObjectRarityTone, RARITY_FRAME_URLS } from '@/render/rarity';
+import { getObjectLightName, LIGHT_NAME_FRAME_URLS } from '@/render/light';
 import { tokenLightUrl, tokenSpriteUrl } from '@/render/token-look';
 import type { useWorldMapStore } from '@/stores/world-map-store';
 
@@ -105,8 +105,8 @@ function gearLightUrl(tile: IHexTile): string | null {
   const hexobject = tile.hexobject;
   if (!hexobject) return null;
   if (hexobject.token) return tokenLightUrl(hexobject.token);
-  const tone = getObjectRarityTone(hexobject);
-  return tone ? RARITY_FRAME_URLS[tone] : null;
+  const tone = getObjectLightName(hexobject);
+  return tone ? LIGHT_NAME_FRAME_URLS[tone] : null;
 }
 
 function objectSpritePath(tile: IHexTile): string | undefined {

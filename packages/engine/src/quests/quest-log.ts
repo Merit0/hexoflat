@@ -1,10 +1,10 @@
-import { dimensionOfItemFamily, itemFamilyOfDimension } from '../dimensions/dimensions';
+import { dimensionOfTokenType, tokenTypeOfDimension } from '../dimensions/dimensions';
 import { dropAvailableIn } from '../loot/dimension-pool';
-import { baseRealmSchema } from '../tokens/token-keys';
+import { baseTokenTypeSchema } from '../tokens/token-keys';
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { consumeFromDraft, countInDraft, grantToDraft } from '../inventory/apply-stock';
-import { type TokenOrigin } from '../tokens/token-origin';
+import { type DropContext } from '../tokens/drop-context';
 import { isTokenType, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -172,7 +172,7 @@ function rewardMint(
   questId: string,
   rngSeed: string | undefined,
   rewardIndex: number,
-  origin: TokenOrigin,
+  dropContext: DropContext,
 ): TokenMint {
   if (!rngSeed) throw new Error('NO_SERVER_SECRET');
   const heroId = progress.knowledge.heroId;
@@ -180,7 +180,7 @@ function rewardMint(
   return {
     seed: rngSeed,
     sourceId: tokenSourceIdOf('quest', questId, heroId, String(times), String(rewardIndex)),
-    origin,
+    dropContext,
   };
 }
 
@@ -204,14 +204,14 @@ export function planClaim(
   for (const [rewardIndex, reward] of quest.rewards.entries()) {
     if (reward.kind === 'item') {
       if (!inventory) return reject(progress, questId, 'NO_INVENTORY');
-      const origin = quest.rewardOrigin ?? {
-        realm: baseRealmSchema.parse(itemFamilyOfDimension(quest.dimension)),
+      const dropContext = quest.rewardDropContext ?? {
+        tokenType: baseTokenTypeSchema.parse(tokenTypeOfDimension(quest.dimension)),
         mapTier: 1,
       };
       if (
         !dropAvailableIn(
           { itemKey: reward.itemKey, baseKey: reward.token?.baseKey },
-          dimensionOfItemFamily(origin.realm),
+          dimensionOfTokenType(dropContext.tokenType),
         )
       )
         throw new Error(`QUEST_REWARD_OUTSIDE_DIMENSION: ${questId}:${reward.itemKey}`);
@@ -219,7 +219,7 @@ export function planClaim(
         ? { tokens: [reward.token] }
         : isTokenType(reward.itemKey)
           ? {
-              mint: rewardMint(progress, questId, ctx.rngSeed, rewardIndex, origin),
+              mint: rewardMint(progress, questId, ctx.rngSeed, rewardIndex, dropContext),
             }
           : undefined;
       if (!grantToDraft(draft, reward.itemKey, reward.amount, 'reward', supply)) {

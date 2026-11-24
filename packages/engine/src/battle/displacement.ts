@@ -81,7 +81,7 @@ function settle(
   state: BattleState,
   actor: BattleCreature,
   target: Displaceable,
-  origin: BattleHex,
+  startHex: BattleHex,
   steps: BattleHex[],
   atMs: number,
   rules: BattleRules,
@@ -91,23 +91,23 @@ function settle(
     state,
     target,
     last,
-    directionIndex(steps.length > 1 ? steps[steps.length - 2] : origin, last),
+    directionIndex(steps.length > 1 ? steps[steps.length - 2] : startHex, last),
   );
   if (slid) setPos(target, slid);
   const path = slid ? [...steps, slid] : steps;
   const final = path[path.length - 1];
-  const fell = heightAt(state, origin) > heightAt(state, final);
+  const fell = heightAt(state, startHex) > heightAt(state, final);
 
   const events: DomainEvent[] = [
     {
       type: 'DISPLACED',
-      payload: { targetId: target.id, mode: 'push', from: origin, path, slid: !!slid, fell },
+      payload: { targetId: target.id, mode: 'push', from: startHex, path, slid: !!slid, fell },
     },
   ];
   if (target.kind !== 'creature') return events;
   if (fell) events.push(...applyDamage(state, target.creature, rules.fallDamage));
   if (!isAlive(target.creature) || terrainAt(state, final) !== 'saw') return events;
-  const backHex = path.length > 1 ? path[path.length - 2] : origin;
+  const backHex = path.length > 1 ? path[path.length - 2] : startHex;
   return [...events, ...enterSaw(state, target.creature, backHex, actor.pos, atMs, rules)];
 }
 
@@ -118,10 +118,10 @@ export function resolvePush(
   atMs: number,
   rules: BattleRules,
 ): DomainEvent[] {
-  const origin = { ...target.pos };
+  const startHex = { ...target.pos };
   const first = pushTarget(state, actor, target);
   if (!first)
     return [{ type: 'DISPLACE_FAILED', payload: { targetId: target.id, reason: 'NO_SPACE' } }];
   setPos(target, first);
-  return settle(state, actor, target, origin, [first], atMs, rules);
+  return settle(state, actor, target, startHex, [first], atMs, rules);
 }

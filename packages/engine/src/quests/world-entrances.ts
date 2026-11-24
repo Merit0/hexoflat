@@ -15,7 +15,7 @@ import { ALL_QUESTS } from './all-quests';
 import type { QuestCatalogue } from './quest-definition';
 import type { LocationKey } from '../registry/location-key';
 import type { HexTileModel } from '../map/models/hex-tile-model';
-import { cloneOriginField, type SeekerEntrance } from './origin-field';
+import { cloneWorldField, type SeekerEntrance } from './cloned-field';
 import { questDefinitionFor } from './quest-lookup';
 
 export const questEntranceId = (questId: string) => `quest-entrance:${questId}`;
@@ -166,7 +166,7 @@ export function questEntranceFor(
   const tile = entranceTile(world, questId, catalogue);
   if (!tile || !world.heroCoordinates) return null;
   return {
-    field: cloneOriginField(world, tile.coordinates),
+    field: cloneWorldField(world, tile.coordinates),
     start: { ...world.heroCoordinates },
   };
 }

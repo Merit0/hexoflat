@@ -9,7 +9,7 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { isTokenType } from '@hexoflat/engine/tokens/game-tokens';
 import { sellPriceOf } from '@hexoflat/engine/trade/price-of';
 import { getHexNeighbors } from '@hexoflat/engine/utils/hex-utils';
-import { worldTokenOrigin } from '@hexoflat/engine/world/server-world';
+import { worldDropContext } from '@hexoflat/engine/world/server-world';
 import {
   ensureExpedition,
   readServerDocument,
@@ -70,7 +70,7 @@ describe.skipIf(!dbAvailable)('LG5b game rules read item tokens (real Postgres)'
     const loot = {
       seed: loaded.worldSeed,
       sourceId: loaded.mapId,
-      origin: worldTokenOrigin(loaded),
+      dropContext: worldDropContext(loaded),
     };
     const tileAt = (spot: { columnIndex: number; rowIndex: number }) =>
       loaded.map.tiles.find(
@@ -107,7 +107,7 @@ describe.skipIf(!dbAvailable)('LG5b game rules read item tokens (real Postgres)'
       const { expeditionId, docKey, loaded } = await heldWorld(userId, heroId);
       if (loaded.descriptor?.kind !== 'RECIPE') throw new Error('the cave is not a recipe board');
       loaded.descriptor.params = { ...loaded.descriptor.params, tier: TIER };
-      loaded.tokenOrigin = { ...worldTokenOrigin(loaded), mapTier: TIER };
+      loaded.dropContext = { ...worldDropContext(loaded), mapTier: TIER };
       const tile = chestSpotWithGear(loaded);
       if (!tile) continue;
       tile.isRevealed = true;
@@ -139,7 +139,7 @@ describe.skipIf(!dbAvailable)('LG5b game rules read item tokens (real Postgres)'
     const tokens = [...onMap.map((object) => object!.token), ...inBag.map((cell) => cell!.token)];
     expect(tokens.length).toBeGreaterThan(0);
     for (const token of tokens) {
-      expect(token).toMatchObject({ rarity: 'gloom', mapTier: TIER, origin: 'base' });
+      expect(token).toMatchObject({ tokenType: 'gloom', mapTier: TIER, tier: 'base' });
       expect(token!.id.startsWith('chest:')).toBe(true);
     }
   });

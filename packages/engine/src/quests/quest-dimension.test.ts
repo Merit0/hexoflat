@@ -8,9 +8,9 @@ import { event, inventoryWith, progressWith, AT_BOARD } from './quest-test-setup
 import { createServerWorld, serializeWorld } from '../world/server-world';
 import { installQuestEntrances } from './world-entrances';
 import { enterQuest } from './seeker-actions';
-import { cloneOriginField } from './origin-field';
+import { cloneWorldField } from './cloned-field';
 import { discBoard, seekerProgress } from './seeker-test-setup';
-import { questTokenOrigin } from './quest-token-origin';
+import { questDropContext } from './quest-drop-context';
 import { parseQuestRun } from './quest-state';
 
 describe('quest run source', () => {
@@ -34,8 +34,8 @@ describe('quest run source', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       const saved = parseQuestRun(JSON.parse(JSON.stringify(result.run)));
-      expect(saved.tokenOrigin).toEqual({ realm: 'gloom', mapTier: 1 });
-      expect(questTokenOrigin(saved).realm).toBe('gloom');
+      expect(saved.dropContext).toEqual({ tokenType: 'gloom', mapTier: 1 });
+      expect(questDropContext(saved).tokenType).toBe('gloom');
     }
   });
 });
@@ -103,7 +103,7 @@ describe('quest execution dimensions', () => {
     if (result.ok)
       expect(result.inventory?.bag.find((item) => item?.key === 'shield')?.token).toMatchObject({
         dimension: EDimension.UNDERWORLD,
-        rarity: 'gloom',
+        tokenType: 'gloom',
         baseKey: 'underworld-shield',
       });
   });
@@ -134,7 +134,7 @@ describe('quest execution dimensions', () => {
       seed: 'scope',
       board,
       start: board.start,
-      field: cloneOriginField(world, world.heroCoordinates!),
+      field: cloneWorldField(world, world.heroCoordinates!),
       atBoard: true,
       hasRun: false,
     });

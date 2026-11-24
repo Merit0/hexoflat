@@ -1,5 +1,5 @@
 import { CONTENT } from '../content/content-map';
-import { realmOfBoard } from '../registry/location-token-origin';
+import { tokenTypeOfBoard } from '../registry/location-drop-context';
 import { EQUIP_SLOTS } from '../abstraction/hexobject-abstraction';
 import type { TTraderDefinition } from '../content/content-schema';
 import { TRADERS, TRADER_KEYS, type TTraderKey } from '../content/traders.content';
@@ -12,7 +12,7 @@ import { applyDiscounts } from './discount-math';
 import { sellPriceOf } from './price-of';
 import { emptyBuyback, rollGoods } from './roll-goods';
 import type { TraderGood, TraderState } from './trade-state';
-import { type TokenOrigin } from '../tokens/token-origin';
+import { type DropContext } from '../tokens/drop-context';
 import { isTokenType, mintBaseToken, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { ItemToken } from '../tokens/token-schema';
 
@@ -37,14 +37,14 @@ interface SlotMintBase {
   namespace: string;
   key: TTraderKey;
   serial: number;
-  origin: TokenOrigin;
+  dropContext: DropContext;
 }
 
 function slotMint(base: SlotMintBase, slot: string): TokenMint {
   return {
     seed: base.rngSeed,
     sourceId: tokenSourceIdOf('shop', base.namespace, base.key, String(base.serial), slot),
-    origin: base.origin,
+    dropContext: base.dropContext,
   };
 }
 
@@ -59,7 +59,10 @@ function slotMintBase(
     namespace: shopNamespace(rngSeed),
     key,
     serial,
-    origin: def.tokenOrigin ?? { realm: realmOfBoard(CONTENT[def.stallHexobjectKey]), mapTier: 1 },
+    dropContext: def.dropContext ?? {
+      tokenType: tokenTypeOfBoard(CONTENT[def.stallHexobjectKey]),
+      mapTier: 1,
+    },
   };
 }
 

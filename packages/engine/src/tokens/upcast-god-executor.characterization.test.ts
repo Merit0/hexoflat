@@ -30,27 +30,35 @@ function godExecutorSave(): Record<string, unknown> {
 }
 
 describe('DA2 C14/D3: an old God Executor save', () => {
-  it('CURRENT (C14/D3): upcastTokenDimension maps god-executor to alien/nowhere and keeps origin', () => {
+  it('CURRENT (C14/D3): upcastTokenDimension maps god-executor to alien/nowhere and keeps the tier', () => {
     const saved = godExecutorSave();
     const before = structuredClone(saved);
     const upcast = upcastTokenDimension(saved) as Record<string, unknown>;
 
     expect(saved).toEqual(before);
+    const kept = { ...saved };
+    delete kept.origin;
+    delete kept.rarity;
     expect(upcast).toEqual({
-      ...saved,
-      rarity: 'alien',
+      ...kept,
+      tier: 'unique',
+      tokenType: 'alien',
       dimension: EDimension.NOWHERE,
       description: [
         { key: 'content.tokens.unique.last-verdict.desc', params: {} },
         {
           key: 'content.tokens.line.kind',
-          params: { type: 'content.tokens.noun.sword', realm: 'content.tokens.realm.alien' },
+          params: {
+            type: 'content.tokens.noun.sword',
+            tokenType: 'content.tokens.tokenType.alien',
+          },
         },
         { key: 'content.tokens.line.tier', params: { tier: 4 } },
       ],
     });
-    expect(upcast.origin).toBe('unique');
-    expect(upcast).not.toHaveProperty('tier');
+    expect(upcast.tier).toBe('unique');
+    expect(upcast).not.toHaveProperty('origin');
+    expect(upcast).not.toHaveProperty('rarity');
     expect(upcast).not.toHaveProperty('baseKey');
   });
 

@@ -6,7 +6,7 @@ const HERO = 'hero-1';
 
 describe('progress.ownedUniques (LG5a)', () => {
   it('declares progress schema version 11 and starts a new hero with no uniques', () => {
-    expect(AGGREGATES.progress.schemaVersion).toBe(11);
+    expect(AGGREGATES.progress.schemaVersion).toBe(12);
     expect(emptyProgressState(HERO).ownedUniques).toEqual([]);
   });
 

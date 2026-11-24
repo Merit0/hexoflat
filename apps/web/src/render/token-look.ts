@@ -8,15 +8,15 @@ import {
 import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import type { SpriteManifest } from '@hexoflat/engine/tokens/sprite-files';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
-import { rarityToneOfLightTone, type TRarityTone } from '@hexoflat/engine/content/rarity-rules';
+import { lightNameOfTone, type TLightName } from '@hexoflat/engine/content/token-type-rules';
 import {
-  getObjectRarityTone,
+  getObjectLightName,
   LIGHT_FRAME_URLS,
-  RARITY_COLOR,
-  rarityFrameUrlForKey,
-} from './rarity';
+  LIGHT_NAME_COLOR,
+  lightFrameUrlForKey,
+} from './light';
 
-export { LIGHT_FRAMES_DIR } from './rarity';
+export { LIGHT_FRAMES_DIR } from './light';
 
 export interface ItemLook {
   sprite: string | null;
@@ -37,24 +37,24 @@ export function tokenSpriteUrl(
 }
 
 export function tokenLightTone(token: ItemToken): TLightTone {
-  return lightTone(token.origin, token.rarity);
+  return lightTone(token.tier, token.tokenType);
 }
 
 export function tokenLightUrl(token: ItemToken): string {
   return LIGHT_FRAME_URLS[LIGHT_COLOR_BY_TONE[tokenLightTone(token)]];
 }
 
-export function tokenRarityTone(token: ItemToken): TRarityTone {
-  return rarityToneOfLightTone(tokenLightTone(token));
+export function tokenLightName(token: ItemToken): TLightName {
+  return lightNameOfTone(tokenLightTone(token));
 }
 
 export function tokenLightColor(token: ItemToken): string {
-  return RARITY_COLOR[tokenRarityTone(token)];
+  return LIGHT_NAME_COLOR[tokenLightName(token)];
 }
 
-export function itemRarityTone(source: LookSource): TRarityTone | null {
-  if (source.token) return tokenRarityTone(source.token);
-  return getObjectRarityTone(getPrototype(source.key));
+export function itemLightName(source: LookSource): TLightName | null {
+  if (source.token) return tokenLightName(source.token);
+  return getObjectLightName(getPrototype(source.key));
 }
 
 export function itemLook(source: LookSource): ItemLook {
@@ -63,6 +63,6 @@ export function itemLook(source: LookSource): ItemLook {
   }
   return {
     sprite: getPrototype(source.key).spritePath ?? null,
-    light: rarityFrameUrlForKey(source.key),
+    light: lightFrameUrlForKey(source.key),
   };
 }

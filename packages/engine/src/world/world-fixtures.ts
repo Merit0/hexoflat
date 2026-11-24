@@ -6,7 +6,7 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { LOCATION_KEYS } from '../registry/location-key';
 import { isTokenType, mintBaseToken, tokenSourceIdOf } from '../tokens/game-tokens';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
-import { worldTokenOrigin, type ServerWorld } from './server-world';
+import { worldDropContext, type ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles, type TileDiff } from './tile-diff';
 
 const KNOWN_KEYS = new Set<string>(Object.values(HEXOBJECT_KEYS));
@@ -53,7 +53,7 @@ export function applyWorldFixture(
         {
           seed: world.worldSeed,
           sourceId: tokenSourceIdOf('dev', world.mapId, coordinateKey(spot)),
-          origin: worldTokenOrigin(world),
+          dropContext: worldDropContext(world),
         },
         key,
         0,

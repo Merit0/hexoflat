@@ -6,13 +6,13 @@ const SPARK = /Dimension: Heaven|Вимір: Небо/;
 const ALIEN = /Dimension: Nowhere|Вимір: Ніде/;
 
 test.describe('dimension ownership through the game', { tag: ['@hero'] }, () => {
-  for (const [realm, label] of [
+  for (const [tokenType, label] of [
     ['gloom', GLOOM],
     ['spark', SPARK],
   ] as const) {
-    test(`${realm} equipment keeps its full token through gates and reload`, async () => {
+    test(`${tokenType} equipment keeps its full token through gates and reload`, async () => {
       const items = new DimensionItemsFeature();
-      await items.startWithBase(realm);
+      await items.startWithBase(tokenType);
       await items.equipAndVerify(label);
       await items.travelToUnderworldAndReload(label);
     });

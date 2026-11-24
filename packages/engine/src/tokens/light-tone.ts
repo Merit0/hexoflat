@@ -3,10 +3,10 @@ import {
   tiersOfTokenType,
   tokenTypeAllowsTier,
   type TDimensionLightId,
-  type TItemFamily,
+  type TTokenTier,
+  type TTokenType,
   type TTierTone,
 } from '../dimensions/dimensions';
-import type { TTokenOrigin } from './token-keys';
 
 export type TLightTone = TTierTone;
 
@@ -14,11 +14,11 @@ export const LIGHT_TONES: readonly TLightTone[] = Object.freeze(
   DIMENSION_TIERS.map((view) => `${view.tokenType}-${view.tier}` as TLightTone),
 );
 
-export function lightTone(origin: TTokenOrigin, rarity: TItemFamily): TLightTone {
-  if (!tokenTypeAllowsTier(rarity, origin)) {
-    throw new Error(`${rarity} tokens are ${tiersOfTokenType(rarity).join(' and ')} only`);
+export function lightTone(tier: TTokenTier, tokenType: TTokenType): TLightTone {
+  if (!tokenTypeAllowsTier(tokenType, tier)) {
+    throw new Error(`${tokenType} tokens are ${tiersOfTokenType(tokenType).join(' and ')} only`);
   }
-  return `${rarity}-${origin}` as TLightTone;
+  return `${tokenType}-${tier}` as TLightTone;
 }
 
 export type TLightColor = TDimensionLightId;

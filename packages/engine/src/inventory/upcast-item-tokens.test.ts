@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { AGGREGATES, upcastAggregate } from '../aggregates/registry';
 import { itemTokenSchema } from '../tokens/token-schema';
 import {
@@ -22,7 +22,7 @@ const upcast = () => upcastAggregate('inventory', 1, stored(), { heroId: V1_HERO
 
 describe('inventory upcast v1 -> v2 (LG5a, D2, D5)', () => {
   it('declares inventory schema version 3', () => {
-    expect(AGGREGATES.inventory.schemaVersion).toBe(3);
+    expect(AGGREGATES.inventory.schemaVersion).toBe(4);
   });
 
   it('gives a valid v2 document with the same item count', () => {
@@ -38,7 +38,7 @@ describe('inventory upcast v1 -> v2 (LG5a, D2, D5)', () => {
     for (const cell of gear) {
       const token = cell!.token!;
       expect(itemTokenSchema.safeParse(token).success).toBe(true);
-      expect(token).toMatchObject({ origin: 'base', rarity: ERarityKind.IDOL, mapTier: 1 });
+      expect(token).toMatchObject({ tier: 'base', tokenType: ETokenType.IDOL, mapTier: 1 });
       expect(cell!.key).toBe(token.type);
       expect(cell!.amount).toBe(1);
     }

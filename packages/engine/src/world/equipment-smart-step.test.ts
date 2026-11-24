@@ -149,7 +149,7 @@ describe('A04 content and progress compatibility', () => {
     old.steps = 123;
     old.kills = 7;
     old.ownedUniques = ['lantern-eater'];
-    expect(AGGREGATES.progress.schemaVersion).toBe(11);
+    expect(AGGREGATES.progress.schemaVersion).toBe(12);
     expect(upcastAggregate('progress', 10, old, { heroId: 'hero-1' })).toEqual({
       ...old,
       paidSteps: 0,
@@ -187,7 +187,7 @@ describe('A04 content and progress compatibility', () => {
         if (step) values.add(step.value);
       }
       const registry = new AttributeRegistry(EQUIPMENT_ATTRIBUTES);
-      const check = { origin: 'base', profiles: ATTRIBUTE_PROFILES } as const;
+      const check = { tier: 'base', profiles: ATTRIBUTE_PROFILES } as const;
       for (const value of values) {
         expect(
           attributeFailure(registry, boots, { key: 'smart-step', value }, check, level),

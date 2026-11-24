@@ -1,4 +1,4 @@
-import { dimensionOfItemFamily, type EDimension } from '../dimensions/dimensions';
+import { dimensionOfTokenType, type EDimension } from '../dimensions/dimensions';
 import type { DomainEvent } from '../commands/types';
 import type { BattleHex, BattleSide, BattleState, GroundItem, PendingStrike } from './battle-state';
 import { lootLeft } from './collect';
@@ -16,7 +16,7 @@ type HiddenFields =
   | 'fallen'
   | 'collect'
   | 'tokenSecret'
-  | 'tokenOrigin'
+  | 'dropContext'
   | 'critOverride';
 export interface ProjectedCollect {
   graves: { hex: BattleHex; examined: boolean }[];
@@ -59,7 +59,7 @@ function publicPart(state: BattleState, viewer: BattleSide): Omit<BattleState, H
   delete copy.taskHistory;
   delete copy.wounds;
   delete copy.turnClockMs;
-  delete copy.tokenOrigin;
+  delete copy.dropContext;
   delete copy.tokenSecret;
   delete copy.critOverride;
   delete copy.lootEnabled;
@@ -115,7 +115,7 @@ export function projectBattleForViewer(state: BattleState, viewer: BattleSide): 
   const view = {
     ...publicPart(state, viewer),
     viewer,
-    ...(state.tokenOrigin ? { dimension: dimensionOfItemFamily(state.tokenOrigin.realm) } : {}),
+    ...(state.dropContext ? { dimension: dimensionOfTokenType(state.dropContext.tokenType) } : {}),
     pending,
     reaction,
     shieldsRaised: false,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { TOKEN_CONTENT } from '../content/token-content';
 import { EDimension } from '../dimensions/dimensions';
 import { createTokenFactory } from './factory/create-token-factory';
@@ -19,7 +19,7 @@ function underworldDrop(n: number, extra: Partial<GenerationContext> = {}): Item
     seed: `da2-b9-${n}`,
     sourceId: 'test:da2.b9',
     n,
-    realm: ERarityKind.GLOOM,
+    tokenType: ETokenType.GLOOM,
     mapTier: 2,
     type: 'sword',
     ...extra,
@@ -34,9 +34,9 @@ describe('DA2 B9/D4: an EARTH base shared with UNDERWORLD, dropped in UNDERWORLD
     expect(token).toMatchObject({
       baseKey: 'earth-sword',
       dimension: EDimension.EARTH,
-      rarity: ERarityKind.IDOL,
+      tokenType: ETokenType.IDOL,
     });
-    expect(lightTone(token.origin, token.rarity)).toBe('idol-base');
+    expect(lightTone(token.tier, token.tokenType)).toBe('idol-base');
     expect(itemTokenSchema.parse(token)).toEqual(token);
   });
 
@@ -46,14 +46,15 @@ describe('DA2 B9/D4: an EARTH base shared with UNDERWORLD, dropped in UNDERWORLD
     const own = tokens.filter((token) => token.baseKey === 'underworld-sword');
     expect(picked.length).toBeGreaterThan(0);
     expect(own.length).toBeGreaterThan(0);
-    for (const token of picked) expect(token).toMatchObject({ dimension: 'earth', rarity: 'idol' });
+    for (const token of picked)
+      expect(token).toMatchObject({ dimension: 'earth', tokenType: 'idol' });
     for (const token of own)
-      expect(token).toMatchObject({ dimension: 'underworld', rarity: 'gloom' });
+      expect(token).toMatchObject({ dimension: 'underworld', tokenType: 'gloom' });
   });
 
   it('B9: the schema refuses a shared-base token recoloured to the drop dimension', () => {
     const token = underworldDrop(0, { baseKey: 'earth-sword' });
-    const recoloured = { ...token, dimension: EDimension.UNDERWORLD, rarity: ERarityKind.GLOOM };
+    const recoloured = { ...token, dimension: EDimension.UNDERWORLD, tokenType: ETokenType.GLOOM };
     expect(itemTokenSchema.safeParse(recoloured).success).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { EDimension } from '../dimensions/dimensions';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import type { UniqueTokenDefinition } from '../tokens/unique-schema';
 import { uniqueTextKeys } from '../tokens/unique-schema';
 
@@ -16,7 +16,7 @@ export const TOKEN_UNIQUES: readonly UniqueTokenDefinition[] = [
   {
     ...authored('lantern-eater'),
     type: 'sword',
-    rarity: ERarityKind.GLOOM,
+    tokenType: ETokenType.GLOOM,
     dimension: EDimension.UNDERWORLD,
     attributes: [{ key: 'heart', value: 1 }],
     skills: [],
@@ -26,7 +26,7 @@ export const TOKEN_UNIQUES: readonly UniqueTokenDefinition[] = [
   {
     ...authored('last-verdict'),
     type: 'sword',
-    rarity: ERarityKind.ALIEN,
+    tokenType: ETokenType.ALIEN,
     dimension: EDimension.NOWHERE,
     attributes: [{ key: 'heart', value: 2 }],
     skills: ['b_strike'],

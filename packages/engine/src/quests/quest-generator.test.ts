@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { AGGREGATES, upcastAggregate } from '../aggregates/registry';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { DEFAULT_DROP_CONTEXT } from '../tokens/drop-context';
 import { deriveStream } from '../utils/random-seeded';
 import { ALL_QUESTS } from './all-quests';
 import { describeQuest } from './objectives';
@@ -13,15 +13,15 @@ import { generateQuestOffers, type QuestGenerationInput } from './quest-generato
 import { applyQuestEvents } from './quest-log';
 import { questDefinitionFor } from './quest-lookup';
 import { questOfferSchema } from './quest-offer';
-import { seekerFieldView } from './origin-field';
+import { seekerFieldView } from './cloned-field';
 import { enterQuest } from './seeker-actions';
 import { generatedEntrance } from './seeker-entrance-setup';
 import { counting, event } from './quest-test-setup';
 import { questSellValue } from './quests.content';
 import { questGenerationFailures } from './validate-quest-generation';
 
-const earth = DEFAULT_TOKEN_ORIGIN;
-const cave = { realm: ERarityKind.GLOOM, mapTier: 3 } as const;
+const earth = DEFAULT_DROP_CONTEXT;
+const cave = { tokenType: ETokenType.GLOOM, mapTier: 3 } as const;
 const input: QuestGenerationInput = {
   heroId: 'hero',
   rngSeed: 'private-hero-seed',
@@ -29,7 +29,7 @@ const input: QuestGenerationInput = {
   issuedToday: 0,
   count: 7,
   log: { active: [], done: {} },
-  locationOrigins: { camping: earth, silesia: earth, 'silesia-north': earth, cave },
+  locationDropContexts: { camping: earth, silesia: earth, 'silesia-north': earth, cave },
 };
 const wood = QUEST_GENERATION_PROFILES.find((profile) => profile.templateId === 'woodcutter')!;
 
@@ -112,7 +112,7 @@ describe('generated quest offers', () => {
   });
 
   it('considers reachable locations, remaining board slots and recent goals', () => {
-    expect(generateQuestOffers({ ...input, locationOrigins: { cave: earth } })).toEqual([]);
+    expect(generateQuestOffers({ ...input, locationDropContexts: { cave: earth } })).toEqual([]);
     const options = { profiles: [wood] };
     const first = generateQuestOffers({ ...input, count: 1 }, options)[0];
     const second = generateQuestOffers(
@@ -124,7 +124,7 @@ describe('generated quest offers', () => {
     expect(generateQuestOffers({ ...input, issuedToday: 6, log })).toHaveLength(1);
     const northOnly = generateQuestOffers({
       ...input,
-      locationOrigins: { 'silesia-north': earth },
+      locationDropContexts: { 'silesia-north': earth },
     });
     expect(northOnly.length).toBeGreaterThan(0);
     for (const offer of northOnly) expect(offer.definition.locations).toEqual(['silesia-north']);
@@ -209,7 +209,7 @@ describe('generated quest rewards', () => {
     }
     expect(rewardKinds).toEqual(new Set(['coins', 'health-bottle', 'base']));
     expect(amounts.size).toBeGreaterThan(3);
-    const [hunter] = generateQuestOffers({ ...input, locationOrigins: { cave } });
+    const [hunter] = generateQuestOffers({ ...input, locationDropContexts: { cave } });
     expect(hunter.definition.rewards[0]).toMatchObject({
       itemKey: HEXOBJECT_KEYS.SHIELD,
       amount: 1,
@@ -226,7 +226,7 @@ describe('generated quest rewards', () => {
         entries: [{ itemKey: 'axe', weight: 1, amount: [1, 1] }],
       },
       deriveStream(seed, 'reward'),
-      { seed, sourceId: 'quest:fallback', origin: earth },
+      { seed, sourceId: 'quest:fallback', dropContext: earth },
     );
     expect(reward).toEqual({ kind: 'item', itemKey: 'coins', amount: 1 });
   });
@@ -288,7 +288,7 @@ describe('generated quest execution and persistence', () => {
     const offers = generateQuestOffers(
       {
         ...input,
-        locationOrigins: { silesia: earth },
+        locationDropContexts: { silesia: earth },
         log: { active: [], done: { 'seeker-1': 1, 'seeker-2': 1 } },
       },
       { profiles: QUEST_GENERATION_PROFILES.filter(({ category }) => category === 'exp') },

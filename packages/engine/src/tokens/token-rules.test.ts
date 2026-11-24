@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { executePlayerCommand, type PlayerAggregates } from '../aggregates/execute-player-command';
 import { PLAYER_COMMAND_SCHEMAS } from '../aggregates/player-commands';
 import { emptyProgressState } from '../aggregates/progress-state';
@@ -106,7 +106,7 @@ describe('LG5b step 5: moving an item keeps its token', () => {
     }
     const swords = heldOf(inventory);
     expect(swords[0].token).toEqual(token);
-    expect(swords[1].token).toMatchObject({ type: SWORD, rarity: ERarityKind.IDOL });
+    expect(swords[1].token).toMatchObject({ type: SWORD, tokenType: ETokenType.IDOL });
     expect(swords[1].token!.id).not.toBe(token.id);
   });
 

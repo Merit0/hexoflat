@@ -2,7 +2,7 @@
   <tool-hex-anchor
     v-slot="{ flipped }"
     :at="anchor"
-    :origin="heroToolStore.origin"
+    :hero-hex="heroToolStore.heroHex"
     :tile-width="tileWidth"
     :tile-height="tileHeight"
     data-testid="tool-hex-tile"
@@ -432,7 +432,7 @@ async function executeAction() {
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%) scale(0.9);
-  transform-origin: center bottom;
+  transform-herohex: center bottom;
 
   z-index: 121;
   min-width: 38px;

@@ -7,7 +7,7 @@ import { RecipeSchema } from '../content/boards/recipe-schema';
 import { StaticBoardDrawingSchema } from '../content/boards/schemas';
 import { CAMPING_BOARD } from '../content/boards/static/camping';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { realmOfBoard } from '../registry/location-token-origin';
+import { tokenTypeOfBoard } from '../registry/location-drop-context';
 import { MapRegistry } from '../registry/world-map-registry';
 import { dimensionSchema, EDimension } from './dimensions';
 
@@ -23,9 +23,9 @@ describe('DA2 B4: location, drawing and recipe schemas accept nowhere', () => {
     expect(() => MapRegistry.get('cave')).not.toThrow();
   });
 
-  it('CURRENT (B4): a Nowhere board fails only late, when a token realm is read', () => {
-    expect(() => realmOfBoard({ dimension: NOWHERE })).toThrow();
-    expect(realmOfBoard({ dimension: EDimension.UNDERWORLD })).toBe('gloom');
+  it('CURRENT (B4): a Nowhere board fails only late, when a token tokenType is read', () => {
+    expect(() => tokenTypeOfBoard({ dimension: NOWHERE })).toThrow();
+    expect(tokenTypeOfBoard({ dimension: EDimension.UNDERWORLD })).toBe('gloom');
   });
 
   it('CURRENT (B4): a static board drawing in nowhere parses', () => {

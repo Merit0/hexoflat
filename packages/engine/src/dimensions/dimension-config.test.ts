@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
-import { RARITY_TONES, RARITY_TONE_LIGHTS, rarityTone } from '../content/rarity-rules';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
+import { LIGHT_NAMES, LIGHTS_BY_NAME, lightNameOf } from '../content/token-type-rules';
 import { TOKEN_PRICE_RANGES } from '../content/token-prices.content';
 import { TONE_SORT_ORDER } from '../inventory/item-queries';
 import { LIGHT_COLOR_BY_TONE, LIGHT_TONES } from '../tokens/light-tone';
-import { BASE_REALMS, TOKEN_ORIGINS } from '../tokens/token-keys';
+import { BASE_TOKEN_TYPES } from '../tokens/token-keys';
 import {
   DIMENSIONS,
   DIMENSION_TIERS,
@@ -27,7 +27,7 @@ function recordWith(change: Record<string, unknown>) {
 
 describe('DA3a-4: the dimension record is complete', () => {
   it.each(Object.values(EDimension))('%s has a token type and at least one tier', (dimension) => {
-    expect(Object.values(ERarityKind)).toContain(DIMENSIONS[dimension].tokenType);
+    expect(Object.values(ETokenType)).toContain(DIMENSIONS[dimension].tokenType);
     expect(tiersOfDimension(dimension).length).toBeGreaterThan(0);
   });
 
@@ -67,13 +67,13 @@ describe('DA3a-4: the dimension record is complete', () => {
     ['a missing dimension', { ...structuredClone(DIMENSIONS), [EDimension.HEAVEN]: undefined }],
     [
       'a dimension without tiers',
-      recordWith({ [EDimension.HEAVEN]: { tokenType: ERarityKind.SPARK, tiers: {} } }),
+      recordWith({ [EDimension.HEAVEN]: { tokenType: ETokenType.SPARK, tiers: {} } }),
     ],
     [
       'a tier without a light',
       recordWith({
         [EDimension.HEAVEN]: {
-          tokenType: ERarityKind.SPARK,
+          tokenType: ETokenType.SPARK,
           tiers: { base: { price: VALID_TIER.price } },
         },
       }),
@@ -82,7 +82,7 @@ describe('DA3a-4: the dimension record is complete', () => {
       'a base tier priced manually',
       recordWith({
         [EDimension.HEAVEN]: {
-          tokenType: ERarityKind.SPARK,
+          tokenType: ETokenType.SPARK,
           tiers: { base: { ...VALID_TIER, price: { kind: 'manual' } } },
         },
       }),
@@ -91,7 +91,7 @@ describe('DA3a-4: the dimension record is complete', () => {
       'a range with min above max',
       recordWith({
         [EDimension.HEAVEN]: {
-          tokenType: ERarityKind.SPARK,
+          tokenType: ETokenType.SPARK,
           tiers: { base: { ...VALID_TIER, price: { kind: 'range', range: [9, 1] } } },
         },
       }),
@@ -100,7 +100,7 @@ describe('DA3a-4: the dimension record is complete', () => {
       'a tier without a sort rank',
       recordWith({
         [EDimension.HEAVEN]: {
-          tokenType: ERarityKind.SPARK,
+          tokenType: ETokenType.SPARK,
           tiers: { base: { light: VALID_TIER.light, price: VALID_TIER.price } },
         },
       }),
@@ -108,14 +108,14 @@ describe('DA3a-4: the dimension record is complete', () => {
     [
       'a unique tier priced by a range',
       recordWith({
-        [EDimension.NOWHERE]: { tokenType: ERarityKind.ALIEN, tiers: { unique: VALID_TIER } },
+        [EDimension.NOWHERE]: { tokenType: ETokenType.ALIEN, tiers: { unique: VALID_TIER } },
       }),
     ],
     [
       'two tiers with one sort rank',
       recordWith({
         [EDimension.NOWHERE]: {
-          tokenType: ERarityKind.ALIEN,
+          tokenType: ETokenType.ALIEN,
           tiers: {
             unique: {
               light: { id: 'white', color: '#FFFFFF' },
@@ -143,8 +143,8 @@ describe('DA3a-4: the dimension record is complete', () => {
 
 describe('DA3a: derived views keep the values and order they had before', () => {
   it('base token types', () => {
-    expect(BASE_REALMS).toEqual(['gloom', 'idol', 'spark']);
-    expect(TOKEN_ORIGINS).toEqual(['base', 'unique']);
+    expect(BASE_TOKEN_TYPES).toEqual(['gloom', 'idol', 'spark']);
+    expect(TOKEN_TIERS).toEqual(['base', 'unique']);
   });
 
   it('light tones and their lights', () => {
@@ -168,8 +168,8 @@ describe('DA3a: derived views keep the values and order they had before', () => 
     });
   });
 
-  it('rarity tones, their colours and the alien tone for any boss flag', () => {
-    expect(RARITY_TONES).toEqual([
+  it('tokenType tones, their colours and the alien tone for any boss flag', () => {
+    expect(LIGHT_NAMES).toEqual([
       'gloom',
       'gloom-boss',
       'idol',
@@ -179,7 +179,7 @@ describe('DA3a: derived views keep the values and order they had before', () => 
       'alien',
     ]);
     expect(
-      Object.fromEntries(RARITY_TONES.map((tone) => [tone, RARITY_TONE_LIGHTS[tone].color])),
+      Object.fromEntries(LIGHT_NAMES.map((tone) => [tone, LIGHTS_BY_NAME[tone].color])),
     ).toEqual({
       gloom: '#3E8BFF',
       'gloom-boss': '#A855F7',
@@ -189,11 +189,11 @@ describe('DA3a: derived views keep the values and order they had before', () => 
       'spark-boss': '#FF8A2A',
       alien: '#FF3B3B',
     });
-    expect(rarityTone({ kind: ERarityKind.ALIEN, boss: false })).toBe('alien');
-    expect(rarityTone({ kind: ERarityKind.ALIEN, boss: true })).toBe('alien');
+    expect(lightNameOf({ kind: ETokenType.ALIEN, boss: false })).toBe('alien');
+    expect(lightNameOf({ kind: ETokenType.ALIEN, boss: true })).toBe('alien');
   });
 
-  it('the inventory sort order of rarity tones', () => {
+  it('the inventory sort order of tokenType tones', () => {
     expect(TONE_SORT_ORDER).toEqual([
       'alien',
       'spark-boss',

@@ -16,8 +16,8 @@ export class ExecuteHexActionFeature {
     if (!starter) return { ok: false, message: `No starters for Action -> [ ${actionType} ]` };
 
     const result = starter(this.tile, tool, ctx.now, ctx);
-    if (result.ok && this.tile.pendingAction && ctx.loot?.origin)
-      this.tile.pendingAction.tokenOrigin = { ...ctx.loot.origin };
+    if (result.ok && this.tile.pendingAction && ctx.loot?.dropContext)
+      this.tile.pendingAction.dropContext = { ...ctx.loot.dropContext };
     return result;
   }
 }

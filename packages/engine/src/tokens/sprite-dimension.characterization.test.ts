@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { ITEM_TYPES } from '../content/item-types.content';
-import { EDimension, itemFamilyOfDimension } from '../dimensions/dimensions';
+import { EDimension, tokenTypeOfDimension } from '../dimensions/dimensions';
 import { createTokenFactory } from './factory/create-token-factory';
 import { TypeRegistry } from './registries';
 import { buildSpriteManifest } from './sprite-files';
@@ -15,17 +15,17 @@ const TYPES = ITEM_TYPES.map((type) => type.key);
 
 describe('DA2 B6: base sprites of gloom and spark tokens', () => {
   it('CURRENT (B6): the manifest holds only idol base folders', () => {
-    const realms = new Set(
-      SPRITE_MANIFEST.entries.filter((entry) => entry.origin === 'base').map((e) => e.realm),
+    const tokenTypes = new Set(
+      SPRITE_MANIFEST.entries.filter((entry) => entry.tier === 'base').map((e) => e.tokenType),
     );
-    expect([...realms]).toEqual([ERarityKind.IDOL]);
+    expect([...tokenTypes]).toEqual([ETokenType.IDOL]);
   });
 
-  it.each([ERarityKind.GLOOM, ERarityKind.SPARK])(
+  it.each([ETokenType.GLOOM, ETokenType.SPARK])(
     'CURRENT (B6): %s base sprites fall back to the idol sprite of the same type',
-    (realm) => {
+    (tokenType) => {
       for (const type of TYPES) {
-        const sprites = registry.spritesFor('base', realm, type);
+        const sprites = registry.spritesFor('base', tokenType, type);
         expect(sprites.length).toBeGreaterThan(0);
         for (const sprite of sprites)
           expect(sprite.key).toMatch(new RegExp(`^idol-${type}-\\d{2}$`));
@@ -41,7 +41,7 @@ describe('DA2 B6: base sprites of gloom and spark tokens', () => {
           seed: `da2-b6-${index}`,
           sourceId: 'test:da2.b6',
           n: index,
-          realm: itemFamilyOfDimension(dimension),
+          tokenType: tokenTypeOfDimension(dimension),
           mapTier: 1,
           type,
         });

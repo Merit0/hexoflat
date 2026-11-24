@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
-import { BASE_REALMS } from '../tokens/token-keys';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
+import { BASE_TOKEN_TYPES } from '../tokens/token-keys';
 import { uniqueTokenDefinitionSchema, type UniqueTokenDefinition } from '../tokens/unique-schema';
 import { UniqueRegistry } from '../tokens/registries';
 import { tokenLocaleKeys } from './token-content';
@@ -15,14 +15,18 @@ function withUnique(changes: Partial<UniqueTokenDefinition>): UniqueTokenDefinit
 }
 
 describe('word pools (D17)', () => {
-  it('has at least 48 shared prefixes and 48 shared suffixes and keeps the realm words', () => {
-    const shared = (words: readonly { realms?: unknown }[]) =>
-      words.filter((word) => !word.realms).length;
+  it('has at least 48 shared prefixes and 48 shared suffixes and keeps the tokenType words', () => {
+    const shared = (words: readonly { tokenTypes?: unknown }[]) =>
+      words.filter((word) => !word.tokenTypes).length;
     expect(shared(TOKEN_WORDS.prefixes)).toBeGreaterThanOrEqual(48);
     expect(shared(TOKEN_WORDS.suffixes)).toBeGreaterThanOrEqual(48);
-    for (const realm of BASE_REALMS) {
-      expect(TOKEN_WORDS.prefixes.filter((word) => word.realms?.includes(realm))).toHaveLength(2);
-      expect(TOKEN_WORDS.suffixes.filter((word) => word.realms?.includes(realm))).toHaveLength(2);
+    for (const tokenType of BASE_TOKEN_TYPES) {
+      expect(
+        TOKEN_WORDS.prefixes.filter((word) => word.tokenTypes?.includes(tokenType)),
+      ).toHaveLength(2);
+      expect(
+        TOKEN_WORDS.suffixes.filter((word) => word.tokenTypes?.includes(tokenType)),
+      ).toHaveLength(2);
     }
   });
 });
@@ -35,7 +39,7 @@ describe('unique token content', () => {
   it('has a gloom sword with one fixed heart', () => {
     expect(GLOOM_SWORD).toMatchObject({
       type: 'sword',
-      rarity: ERarityKind.GLOOM,
+      tokenType: ETokenType.GLOOM,
       attributes: [{ key: 'heart', value: 1 }],
     });
     expect('rolled' in GLOOM_SWORD).toBe(false);
@@ -43,7 +47,7 @@ describe('unique token content', () => {
 
   it('has an alien sword with fixed attributes', () => {
     expect(ALIEN_SWORD.type).toBe('sword');
-    expect(ALIEN_SWORD.rarity).toBe(ERarityKind.ALIEN);
+    expect(ALIEN_SWORD.tokenType).toBe(ETokenType.ALIEN);
     expect(ALIEN_SWORD.attributes.length).toBeGreaterThan(0);
     expect('rolled' in ALIEN_SWORD).toBe(false);
   });
@@ -54,7 +58,7 @@ describe('unique token content', () => {
       expect(keys).toContain(unique.name.nameKey);
       expect(keys).toContain(unique.descriptionKey);
     }
-    expect(keys).toContain('content.tokens.realm.alien');
+    expect(keys).toContain('content.tokens.tokenType.alien');
   });
 
   it.each<[string, Partial<UniqueTokenDefinition>, RegExp]>([
@@ -84,8 +88,8 @@ describe('unique token content', () => {
     expect(bad({ rolled: { attributes: 1 } })).toBe(false);
     expect(bad({ price: 1.5 })).toBe(false);
     expect(bad({ attributes: [GLOOM_SWORD.attributes[0], GLOOM_SWORD.attributes[0]] })).toBe(false);
-    expect(bad({ rarity: ERarityKind.ALIEN })).toBe(false);
-    expect(bad({ rarity: ERarityKind.ALIEN, dimension: 'nowhere' })).toBe(true);
+    expect(bad({ tokenType: ETokenType.ALIEN })).toBe(false);
+    expect(bad({ tokenType: ETokenType.ALIEN, dimension: 'nowhere' })).toBe(true);
     expect(() => new UniqueRegistry([GLOOM_SWORD, GLOOM_SWORD])).toThrow(/listed twice/);
     expect(() => new UniqueRegistry(TOKEN_UNIQUES).get('dragon-crown')).toThrow(/Unknown unique/);
   });

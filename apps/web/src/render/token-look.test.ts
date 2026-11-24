@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { getPrototype } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
 import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import { baseTestToken, uniqueTestToken } from '@/test-support/token-fixtures';
-import { rarityFrameUrlForKey } from './rarity';
+import { lightFrameUrlForKey } from './light';
 import {
   itemLook,
-  itemRarityTone,
+  itemLightName,
   tokenLightColor,
   tokenLightUrl,
   tokenSpriteUrl,
@@ -16,8 +16,8 @@ import {
 const PLACEHOLDER = SPRITE_MANIFEST.placeholder;
 
 describe('item look from a token (LG5c step 1)', () => {
-  it('draws a base token with its manifest sprite and the base light of its realm', () => {
-    const token = baseTestToken('sword', ERarityKind.IDOL);
+  it('draws a base token with its manifest sprite and the base light of its tokenType', () => {
+    const token = baseTestToken('sword', ETokenType.IDOL);
     const entry = SPRITE_MANIFEST.entries.find((candidate) => candidate.key === token.sprite);
 
     expect(entry).toBeDefined();
@@ -29,11 +29,11 @@ describe('item look from a token (LG5c step 1)', () => {
     });
   });
 
-  it('gives each realm of a base token its own light', () => {
-    expect(tokenLightUrl(baseTestToken('shield', ERarityKind.GLOOM))).toBe(
+  it('gives each tokenType of a base token its own light', () => {
+    expect(tokenLightUrl(baseTestToken('shield', ETokenType.GLOOM))).toBe(
       '/hex-assets/hex-frames/blue-light.png',
     );
-    expect(tokenLightUrl(baseTestToken('shield', ERarityKind.SPARK))).toBe(
+    expect(tokenLightUrl(baseTestToken('shield', ETokenType.SPARK))).toBe(
       '/hex-assets/hex-frames/yellow-light.png',
     );
   });
@@ -45,14 +45,14 @@ describe('item look from a token (LG5c step 1)', () => {
     expect(tokenSpriteUrl(gloom)).toBe(PLACEHOLDER);
     expect(tokenLightUrl(gloom)).toBe('/hex-assets/hex-frames/violet-light.png');
     expect(tokenLightUrl(verdict)).toBe('/hex-assets/hex-frames/red-light.png');
-    expect(itemRarityTone({ key: K.SWORD, token: verdict })).toBe('alien');
+    expect(itemLightName({ key: K.SWORD, token: verdict })).toBe('alien');
     expect(tokenLightColor(gloom)).toBe('#A855F7');
   });
 
   it('keeps the prototype sprite and light for a stack without a token', () => {
     expect(itemLook({ key: K.COINS })).toEqual({
       sprite: getPrototype(K.COINS).spritePath ?? null,
-      light: rarityFrameUrlForKey(K.COINS),
+      light: lightFrameUrlForKey(K.COINS),
     });
   });
 });

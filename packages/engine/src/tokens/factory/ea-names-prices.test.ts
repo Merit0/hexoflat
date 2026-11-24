@@ -59,10 +59,10 @@ describe.each(CONTENTS)('EA-6 and EA-7 over %s', (_label, content) => {
     }
   });
 
-  it('EA-7: keeps the price inside the third of the realm range chosen by the attribute count', () => {
+  it('EA-7: keeps the price inside the third of the tokenType range chosen by the attribute count', () => {
     for (const token of tokens) {
       const [low, high] = priceBandOf(
-        content.priceRanges[token.rarity as keyof typeof content.priceRanges],
+        content.priceRanges[token.tokenType as keyof typeof content.priceRanges],
         token.attributes.length,
       );
       expect(token.price).toBeGreaterThanOrEqual(low);

@@ -1,8 +1,8 @@
-import { dimensionOfItemFamily } from '../dimensions/dimensions';
+import { dimensionOfTokenType } from '../dimensions/dimensions';
 import { rollLootLists, tokenizeLootLists, type LootTable } from '../loot';
 import { tokenSourceIdOf } from '../tokens/game-tokens';
 import type { TTokenSourceKind } from '../tokens/token-keys';
-import type { TokenOrigin } from '../tokens/token-origin';
+import type { DropContext } from '../tokens/drop-context';
 import type { TokenFactory } from '../tokens/factory/token-factory';
 import type { Axial } from '../utils/hex-utils';
 import type { ContainerKind, ContainerState, LootLists } from './container';
@@ -18,7 +18,7 @@ export interface ContainerRollInput {
   seed: string;
   sourceId: string;
   targetKey: string;
-  origin: TokenOrigin;
+  dropContext: DropContext;
   tokenSource?: ContainerTokenSource;
   tokenFactory?: TokenFactory;
 }
@@ -39,13 +39,13 @@ export function rollContainerContents(input: ContainerRollInput): LootLists {
     seed: input.seed,
     sourceId: input.sourceId,
     targetKey: input.targetKey,
-    dimension: dimensionOfItemFamily(input.origin.realm),
+    dimension: dimensionOfTokenType(input.dropContext.tokenType),
   });
   const tokens = input.tokenSource ?? { seed: input.seed, scope: [input.sourceId] };
   return tokenizeLootLists(lists, {
     seed: tokens.seed,
     sourceId: tokenSourceIdOf(TOKEN_SOURCE_OF[input.kind], ...tokens.scope, input.targetKey),
-    origin: input.origin,
+    dropContext: input.dropContext,
     factory: input.tokenFactory,
   });
 }

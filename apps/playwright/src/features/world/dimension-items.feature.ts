@@ -18,17 +18,17 @@ export class DimensionItemsFeature extends BaseFeature {
   private readonly items = this.map.dimensionItems;
   private token: TestItemToken | null = null;
 
-  async startWithBase(realm: TestTokenSpec['realm']): Promise<void> {
-    await this.step(`Start with a factory-authored ${realm} sword`, async () => {
+  async startWithBase(tokenType: TestTokenSpec['tokenType']): Promise<void> {
+    await this.step(`Start with a factory-authored ${tokenType} sword`, async () => {
       await new OpenCampingMapFeature().open();
       this.token = await this.page.evaluate(
-        (realm) =>
+        (tokenType) =>
           window.__HEXOFLAT_TEST__!.grantTokenItem({
             type: 'sword',
-            realm,
+            tokenType,
             mapTier: 3,
           }),
-        realm,
+        tokenType,
       );
     });
   }
@@ -41,7 +41,7 @@ export class DimensionItemsFeature extends BaseFeature {
       );
       expect(this.requireToken()).toMatchObject({
         dimension: 'nowhere',
-        rarity: 'alien',
+        tokenType: 'alien',
         uniqueKey: 'last-verdict',
         skills: ['b_strike'],
       });

@@ -63,7 +63,7 @@ describe('usePortal', () => {
       const tile = map.tiles.find((t) => coordinateKey(t.coordinates) === coordinateKey(c));
       return tile?.terrain === 'ground' && !tile.hexobject && !tile.exit;
     })!;
-    return { hero, world, inventory, target, origin: { ...hero.heroCoordinates! } };
+    return { hero, world, inventory, target, startHex: { ...hero.heroCoordinates! } };
   }
 
   it('opens a portal: spends 5 Will and one scroll, places the portal, stores the link', async () => {
@@ -175,7 +175,7 @@ describe('usePortal', () => {
   });
 
   it('puts the camp portal on the nearest free hex when the camp spot is taken', async () => {
-    const { hero, world, target, origin } = startInSilesia();
+    const { hero, world, target, startHex } = startInSilesia();
     const portal = usePortal();
     await portal.openPortal(target);
     const camp = fakeStoredWorldOf('camping')!.map;
@@ -185,7 +185,7 @@ describe('usePortal', () => {
     spotTile.hexobject = {
       ...camp.tiles.find((t) => t.hexobject?.hexobjectKey === HEXOBJECT_KEYS.FIREPLACE)!.hexobject!,
     };
-    hero.heroCoordinates = { ...origin };
+    hero.heroCoordinates = { ...startHex };
 
     await portal.enterPortal();
 

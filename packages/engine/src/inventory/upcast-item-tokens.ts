@@ -1,4 +1,4 @@
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { gameTokenFactory, isTokenType, tokenSourceIdOf } from '../tokens/game-tokens';
 import type { ItemToken } from '../tokens/token-schema';
 
@@ -40,7 +40,7 @@ export function upcastToken(heroId: string, slot: string, type: string): ItemTok
     seed: upcastSeed(heroId),
     sourceId: upcastSourceId(heroId, slot),
     n: 0,
-    realm: ERarityKind.IDOL,
+    tokenType: ETokenType.IDOL,
     mapTier: UPCAST_MAP_TIER,
     type,
   });

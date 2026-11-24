@@ -52,7 +52,7 @@ function sameCells(a: (InventoryItem | null)[], b: (InventoryItem | null)[]): bo
   return a.every((cell, index) => cell?.id === b[index]?.id && cell?.amount === b[index]?.amount);
 }
 
-/** Merges unfinished stacks, then orders by category, rarity and key (never by translated text). */
+/** Merges unfinished stacks, then orders by category, tokenType and key (never by translated text). */
 export function planSortStash(
   agg: IInventoryAggregate,
   opts: IStashActionOptions,

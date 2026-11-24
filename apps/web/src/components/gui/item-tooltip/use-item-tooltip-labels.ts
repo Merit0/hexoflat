@@ -4,12 +4,6 @@ import { useI18n } from 'vue-i18n';
 export function useItemTooltipLabels() {
   const { t } = useI18n();
   return computed(() => ({
-    rarity: {
-      gloom: t('itemTooltip.rarity.gloom'),
-      idol: t('itemTooltip.rarity.idol'),
-      spark: t('itemTooltip.rarity.spark'),
-      alien: t('itemTooltip.rarity.alien'),
-    },
     group: {
       resource: t('itemTooltip.group.resource'),
       creature: t('itemTooltip.group.creature'),

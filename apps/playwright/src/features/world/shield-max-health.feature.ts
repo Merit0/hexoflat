@@ -36,7 +36,7 @@ export class ShieldMaxHealthFeature extends BaseFeature {
       const inventory = new VerifyInventoryFeature();
       const shield = await inventory.givenTokenItem({
         type: HexobjectKeys.shield,
-        realm: 'idol',
+        tokenType: 'idol',
         mapTier: 1,
         attributes,
       });

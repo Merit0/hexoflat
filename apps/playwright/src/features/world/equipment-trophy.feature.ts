@@ -19,14 +19,14 @@ export class EquipmentTrophyFeature extends BaseFeature {
       const grants = new VerifyInventoryFeature();
       const plain = await grants.givenTokenItem({
         type: 'sword',
-        realm: 'idol',
+        tokenType: 'idol',
         mapTier: 1,
         attributes: [],
       });
       await this.equip(plain.id);
       const trophy = await grants.givenTokenItem({
         type: 'sword',
-        realm: 'idol',
+        tokenType: 'idol',
         mapTier: bonus === 2 ? 4 : 1,
         attributes: [{ key: 'trophy', value: bonus }],
       });

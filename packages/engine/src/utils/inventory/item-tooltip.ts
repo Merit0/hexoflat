@@ -2,12 +2,16 @@ import { itemDimensionOf } from '../../inventory/item-dimension';
 import type { EDimension } from '../../dimensions/dimensions';
 import {
   EHexobjectGroup,
-  type IItemRarity,
+  type IItemTokenType,
   type THexobjectPrototype,
   type TEquipSlot,
 } from '../../abstraction/hexobject-abstraction';
 import { getMeta, getPrototype, usePriceOf } from '../../content';
-import { DEFAULT_RARITY, rarityTone, type TRarityTone } from '../../content/rarity-rules';
+import {
+  DEFAULT_ITEM_TOKEN_TYPE,
+  lightNameOf,
+  type TLightName,
+} from '../../content/token-type-rules';
 import { getShieldPoints } from '../../combat/shield-points';
 import { getHeartPoints } from '../../combat/heart-points';
 import {
@@ -60,8 +64,8 @@ export interface ItemTooltipView {
   subtitle?: string;
   description?: string;
   group: EHexobjectGroup;
-  rarity: IItemRarity;
-  rarityTone: TRarityTone;
+  tokenType: IItemTokenType;
+  lightName: TLightName;
   equipSlot?: TEquipSlot;
   equipped: boolean;
   headline?: TooltipHeadline;
@@ -93,16 +97,16 @@ const CAPABILITY_BY_FLAG: Array<[keyof ToolCapabilities, TooltipCapability]> = [
   ['canBlock', 'block'],
 ];
 
-function rarityOf(proto: THexobjectPrototype): IItemRarity {
+function tokenTypeOfPrototype(proto: THexobjectPrototype): IItemTokenType {
   switch (proto.groupType) {
     case EHexobjectGroup.TOOL:
-      return proto.tool.rarity ?? DEFAULT_RARITY;
+      return proto.tool.tokenType ?? DEFAULT_ITEM_TOKEN_TYPE;
     case EHexobjectGroup.EQUIPMENT:
-      return proto.equipment.rarity ?? DEFAULT_RARITY;
+      return proto.equipment.tokenType ?? DEFAULT_ITEM_TOKEN_TYPE;
     case EHexobjectGroup.LOOT:
-      return proto.loot.rarity ?? DEFAULT_RARITY;
+      return proto.loot.tokenType ?? DEFAULT_ITEM_TOKEN_TYPE;
     default:
-      return DEFAULT_RARITY;
+      return DEFAULT_ITEM_TOKEN_TYPE;
   }
 }
 
@@ -174,7 +178,7 @@ export function resolveItemTooltip(
   const view = resolveInventoryView(key);
   const meta = getMeta(key);
 
-  const rarity = rarityOf(proto);
+  const tokenType = tokenTypeOfPrototype(proto);
   const headline = headlineOf(proto);
   if (headline && options.compareWith && options.compareWith !== key) {
     headline.comparison = compareHeadlines(headline, headlineOf(getPrototype(options.compareWith)));
@@ -187,8 +191,8 @@ export function resolveItemTooltip(
     subtitle: meta?.subtitle,
     description: proto.description,
     group: view.group,
-    rarity,
-    rarityTone: rarityTone(rarity),
+    tokenType,
+    lightName: lightNameOf(tokenType),
     equipSlot: view.equipSlot,
     equipped: options.equipped ?? false,
     headline,

@@ -6,13 +6,14 @@ import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { EHexActionType } from '@hexoflat/engine/enums/hex-action-type';
 import {
   EChestType,
-  ERarityKind,
+  ETokenType,
   EHexobjectGroup,
   type THexobject,
 } from '@hexoflat/engine/abstraction/hexobject-abstraction';
-import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
-import { RARITY_COLOR, getObjectRarity, getObjectRarityTone } from '@/render/rarity';
-import { tokenRarityTone } from '@/render/token-look';
+import type { TLightName } from '@hexoflat/engine/content/token-type-rules';
+import { LIGHT_NAME_COLOR, getObjectTokenType, getObjectLightName } from '@/render/light';
+import { tokenLightName } from '@/render/token-look';
+import { tokenTypeTextKey } from '@hexoflat/engine/tokens/factory/description-builder';
 import { tokenAttributeRows, tokenDescription, tokenName } from '@/services/tokens/token-text';
 import { tokenHeartPoints } from '@hexoflat/engine/combat/heart-points';
 import { strikeHeartsOf } from '@hexoflat/engine/tokens/tool-action';
@@ -56,10 +57,10 @@ export interface HexInfoHeadline {
   label: string;
 }
 
-export interface HexInfoRarity {
+export interface HexInfoTokenType {
   label: string;
   color: string;
-  tone: TRarityTone;
+  tone: TLightName;
 }
 
 export interface HexInfoEffect {
@@ -78,7 +79,7 @@ export interface HexInfoView {
   description: string | null;
   accent: string;
   icon: TIconName | null;
-  rarity: HexInfoRarity | null;
+  tokenType: HexInfoTokenType | null;
   hearts: HexInfoHearts | null;
   supply: HexInfoSupply | null;
   headline: HexInfoHeadline | null;
@@ -115,17 +116,8 @@ const GROUP_ACCENT: Record<EHexobjectGroup, string> = {
   [EHexobjectGroup.EQUIPMENT]: '#b78fe6',
 };
 
-function rarityLabel(ctx: Ctx, kind: ERarityKind): string {
-  switch (kind) {
-    case ERarityKind.GLOOM:
-      return ctx.t('itemTooltip.rarity.gloom');
-    case ERarityKind.SPARK:
-      return ctx.t('itemTooltip.rarity.spark');
-    case ERarityKind.ALIEN:
-      return ctx.t('itemTooltip.rarity.alien');
-    default:
-      return ctx.t('itemTooltip.rarity.idol');
-  }
+function tokenTypeLabel(ctx: Ctx, kind: ETokenType): string {
+  return ctx.t(tokenTypeTextKey(kind));
 }
 
 const GROUP_ICON: Partial<Record<EHexobjectGroup, TIconName>> = {
@@ -319,7 +311,7 @@ export function buildHexInfo(
   const ctx: Ctx = { t, te };
   const meta = getMeta(obj.hexobjectKey);
   const token = obj.token;
-  const tone = token ? tokenRarityTone(token) : getObjectRarityTone(obj);
+  const tone = token ? tokenLightName(token) : getObjectLightName(obj);
   let part: Part;
 
   switch (obj.groupType) {
@@ -338,12 +330,12 @@ export function buildHexInfo(
     default:
       part = gearInfo(ctx, obj);
   }
-  const rarity = token ? { kind: token.rarity } : getObjectRarity(obj);
+  const tokenType = token ? { kind: token.tokenType } : getObjectTokenType(obj);
   const icon =
     ITEM_ICON_BY_KEY[obj.hexobjectKey] ??
     RESOURCE_ICON_BY_KEY[obj.hexobjectKey] ??
     (part.headline ? 'sword' : (GROUP_ICON[obj.groupType] ?? null));
-  const accent = tone ? RARITY_COLOR[tone] : (part.accent ?? GROUP_ACCENT[obj.groupType]);
+  const accent = tone ? LIGHT_NAME_COLOR[tone] : (part.accent ?? GROUP_ACCENT[obj.groupType]);
 
   const title = token
     ? tokenName(token)
@@ -376,9 +368,9 @@ export function buildHexInfo(
         : null,
     accent,
     icon,
-    rarity:
-      rarity && tone
-        ? { label: rarityLabel(ctx, rarity.kind), color: RARITY_COLOR[tone], tone }
+    tokenType:
+      tokenType && tone
+        ? { label: tokenTypeLabel(ctx, tokenType.kind), color: LIGHT_NAME_COLOR[tone], tone }
         : null,
     hearts: part.hearts ?? null,
     supply: part.supply ?? null,

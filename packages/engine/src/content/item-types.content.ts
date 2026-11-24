@@ -1,9 +1,9 @@
 import { EHexActionType } from '../enums/hex-action-type';
 import type { EquipmentTypeDefinition } from '../tokens/equipment/equipment-type-schema';
 import type { ItemTypeDefinition } from '../tokens/token-content-schema';
-import { BASE_REALMS, wordKeyOf } from '../tokens/token-keys';
+import { BASE_TOKEN_TYPES, wordKeyOf } from '../tokens/token-keys';
 
-const ALL_REALMS = BASE_REALMS;
+const ALL_TOKEN_TYPES = BASE_TOKEN_TYPES;
 
 export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)[] = [
   {
@@ -12,7 +12,7 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     strike: 2,
     tool: null,
     nounKey: wordKeyOf('noun', 'sword'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'weapon',
     gender: 'm',
     materials: ['iron', 'bronze', 'copper', 'bone'],
@@ -25,7 +25,7 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     block: { sides: 1 },
     tool: null,
     nounKey: wordKeyOf('noun', 'shield'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'defense',
     gender: 'm',
     materials: ['wood', 'iron', 'bronze', 'leather', 'bone'],
@@ -37,7 +37,7 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     strike: 1,
     tool: { action: EHexActionType.CUT, durabilityCostPct: 0.1 },
     nounKey: wordKeyOf('noun', 'axe'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'weapon',
     gender: 'f',
     materials: ['iron', 'bronze', 'copper', 'stone'],
@@ -49,7 +49,7 @@ export const ITEM_TYPES: readonly (ItemTypeDefinition & EquipmentTypeDefinition)
     strike: 1,
     tool: { action: EHexActionType.MINE, durabilityCostPct: 0.1 },
     nounKey: wordKeyOf('noun', 'pickaxe'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'weapon',
     gender: 'n',
     materials: ['iron', 'bronze', 'copper', 'stone'],
@@ -63,7 +63,7 @@ export const PLANNED_ITEM_TYPES: readonly EquipmentTypeDefinition[] = [
     slot: 'helm',
     tool: null,
     nounKey: wordKeyOf('noun', 'helm'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'clothing',
     gender: 'm',
     materials: ['iron', 'bronze', 'copper', 'leather', 'bone'],
@@ -75,7 +75,7 @@ export const PLANNED_ITEM_TYPES: readonly EquipmentTypeDefinition[] = [
     slot: 'armor',
     tool: null,
     nounKey: wordKeyOf('noun', 'armor'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'clothing',
     gender: 'f',
     materials: ['iron', 'bronze', 'leather', 'bone'],
@@ -87,7 +87,7 @@ export const PLANNED_ITEM_TYPES: readonly EquipmentTypeDefinition[] = [
     slot: 'gloves',
     tool: null,
     nounKey: wordKeyOf('noun', 'gloves'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'clothing',
     gender: 'pl',
     materials: ['leather', 'iron', 'bronze'],
@@ -99,7 +99,7 @@ export const PLANNED_ITEM_TYPES: readonly EquipmentTypeDefinition[] = [
     slot: 'boots',
     tool: null,
     nounKey: wordKeyOf('noun', 'boots'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'clothing',
     gender: 'pl',
     materials: ['leather', 'wood', 'iron'],
@@ -111,7 +111,7 @@ export const PLANNED_ITEM_TYPES: readonly EquipmentTypeDefinition[] = [
     slot: 'ring',
     tool: null,
     nounKey: wordKeyOf('noun', 'ring'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'jewelry',
     gender: 'f',
     materials: ['iron', 'bronze', 'copper', 'bone', 'stone'],
@@ -123,7 +123,7 @@ export const PLANNED_ITEM_TYPES: readonly EquipmentTypeDefinition[] = [
     slot: 'amulet',
     tool: null,
     nounKey: wordKeyOf('noun', 'amulet'),
-    realms: [...ALL_REALMS],
+    tokenTypes: [...ALL_TOKEN_TYPES],
     group: 'jewelry',
     gender: 'm',
     materials: ['wood', 'bronze', 'copper', 'bone', 'stone'],

@@ -1,4 +1,4 @@
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 import { getPrototype } from '@hexoflat/engine';
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -8,14 +8,14 @@ import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 
 export function baseTestToken(
   type = 'sword',
-  realm: ERarityKind = ERarityKind.IDOL,
+  tokenType: ETokenType = ETokenType.IDOL,
   mapTier: TMapTier = 1,
 ): ItemToken {
   const result = gameTokenFactory().createBase({
     seed: 'web-test',
     sourceId: 'test:web.base',
     n: 0,
-    realm,
+    tokenType,
     mapTier,
     type,
   });

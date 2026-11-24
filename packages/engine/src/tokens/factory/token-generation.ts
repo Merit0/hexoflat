@@ -1,5 +1,5 @@
 import type { EDimension } from '../../dimensions/dimensions';
-import type { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import type { ETokenType } from '../../abstraction/hexobject-abstraction';
 import type { SkillId } from '../../skills/skill-content';
 import type { RandomNumberGenerator } from '../../utils/random';
 import type { ItemTypeDefinition } from '../token-content-schema';
@@ -7,7 +7,7 @@ import type {
   I18nKey,
   ItemTypeKey,
   SpriteKey,
-  TBaseRealm,
+  TBaseTokenType,
   TMapTier,
   UniqueKey,
 } from '../token-keys';
@@ -54,7 +54,7 @@ export interface GenerationContext {
   seed: string;
   sourceId: string;
   n: number;
-  realm: ERarityKind;
+  tokenType: ETokenType;
   mapTier: TMapTier;
   type?: ItemTypeKey;
   baseKey?: string;
@@ -76,14 +76,14 @@ export interface UniqueGenerationContext {
 
 export interface TokenSheet {
   type: ItemTypeDefinition;
-  realm: ERarityKind;
+  tokenType: ETokenType;
   mapTier: TMapTier;
   descriptionKey?: I18nKey;
 }
 
 export interface AttributeSheet {
   type: ItemTypeDefinition;
-  origin: 'base' | 'unique';
+  tier: 'base' | 'unique';
   mapTier: TMapTier;
   attributes: readonly TokenAttribute[];
 }
@@ -94,7 +94,7 @@ export interface NameRequest {
 }
 
 export interface ITypePicker {
-  pick(realm: TBaseRealm, key: ItemTypeKey): TokenResult<ItemTypeDefinition>;
+  pick(tokenType: TBaseTokenType, key: ItemTypeKey): TokenResult<ItemTypeDefinition>;
 }
 
 export interface INameGenerator {
@@ -102,7 +102,11 @@ export interface INameGenerator {
 }
 
 export interface ISpriteResolver {
-  resolve(type: ItemTypeDefinition, realm: TBaseRealm, rng: RandomNumberGenerator): SpriteKey;
+  resolve(
+    type: ItemTypeDefinition,
+    tokenType: TBaseTokenType,
+    rng: RandomNumberGenerator,
+  ): SpriteKey;
 }
 
 export interface IUniqueSpriteResolver {
@@ -114,7 +118,7 @@ export interface ISkillGenerator {
 }
 
 export interface IPriceGenerator {
-  generate(realm: TBaseRealm, attributeCount: number, rng: RandomNumberGenerator): number;
+  generate(tokenType: TBaseTokenType, attributeCount: number, rng: RandomNumberGenerator): number;
 }
 
 export interface IDescriptionBuilder {

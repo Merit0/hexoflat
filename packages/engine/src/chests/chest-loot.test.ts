@@ -1,4 +1,4 @@
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
 import { describe, expect, it } from 'vitest';
 import { EHexActionType } from '../enums/hex-action-type';
 import { toAggregate } from '../inventory/inventory-adapter';
@@ -38,7 +38,7 @@ function expectedPlacements(scene: ReturnType<typeof chestScene>) {
   const drops = rollChestLoot(tileOf(world, chest), {
     seed: world.worldSeed,
     sourceId: world.mapId,
-    origin: locationTokenOrigin('cave'),
+    dropContext: locationDropContext('cave'),
   });
   const target = offsetToAxial(chest);
   const neighbours = AXIAL_DIRS.flatMap((dir) => {
@@ -102,7 +102,7 @@ describe('loot from a chest', () => {
     const rolled = rollChestLoot(tileOf(world, chest), {
       seed: world.worldSeed,
       sourceId: world.mapId,
-      origin: locationTokenOrigin('cave'),
+      dropContext: locationDropContext('cave'),
     });
 
     const tile = tileOf(world, spot);
@@ -127,7 +127,7 @@ describe('loot from a chest', () => {
         rollChestLoot(tile, {
           seed: world.worldSeed,
           sourceId,
-          origin: locationTokenOrigin('cave'),
+          dropContext: locationDropContext('cave'),
         }),
       );
     expect(roll('map-1')).toBe(roll('map-1'));

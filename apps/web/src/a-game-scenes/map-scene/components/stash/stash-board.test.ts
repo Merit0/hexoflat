@@ -81,7 +81,7 @@ describe('stash board layout', () => {
     expect(all('stash-equip-')).toHaveLength(0);
   });
 
-  it('lists every bag item first, sorted by category, rarity and key, free cells after them', async () => {
+  it('lists every bag item first, sorted by category, tokenType and key, free cells after them', async () => {
     const inventory = useHeroInventoryStore();
     for (const key of [K.COINS, K.SWORD, K.HEALTH_BOTTLE, K.AXE, K.SHIELD, K.RETURN_SCROLL]) {
       inventory.putToInventory(key, key === K.COINS ? 5 : 1);
@@ -179,7 +179,7 @@ describe('stash board layout', () => {
       expect(byId('stash-cell-42')).toBeNull();
     });
 
-    it('marks a stash cell with the item, its amount and its rarity tone', async () => {
+    it('marks a stash cell with the item, its amount and its tokenType tone', async () => {
       const stash = useHeroStashStore();
       const cells = stash.ownedCells.slice();
       cells[5] = stashItem(K.SWORD, 1, 5);

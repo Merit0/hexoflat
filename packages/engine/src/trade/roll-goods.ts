@@ -1,4 +1,4 @@
-import { dimensionOfItemFamily } from '../dimensions/dimensions';
+import { dimensionOfTokenType } from '../dimensions/dimensions';
 import { CONTENT } from '../content/content-map';
 import { dropAvailableIn } from '../loot/dimension-pool';
 import type { TTraderDefinition } from '../content/content-schema';
@@ -26,8 +26,8 @@ export function rollGoods(
   def: TTraderDefinition,
   rng: RandomNumberGenerator,
 ): (TraderGood | null)[] {
-  const dimension = def.tokenOrigin
-    ? dimensionOfItemFamily(def.tokenOrigin.realm)
+  const dimension = def.dropContext
+    ? dimensionOfTokenType(def.dropContext.tokenType)
     : CONTENT[def.stallHexobjectKey].dimension;
   for (const entry of def.guaranteed) {
     if (!dropAvailableIn({ itemKey: entry.key }, dimension))

@@ -11,7 +11,7 @@ import type { AttributeRegistry, TypeRegistry, UniqueRegistry } from '../registr
 import { hasGeneratedName } from '../token-content-schema';
 import { wordKeyOf } from '../token-keys';
 
-const UNIQUE_CHECK = { origin: 'unique' } as const;
+const UNIQUE_CHECK = { tier: 'unique' } as const;
 
 function typeFailures(types: TypeRegistry, content: Pick<TokenContent, 'adjectives'>): string[] {
   return types.all().flatMap((type) => {

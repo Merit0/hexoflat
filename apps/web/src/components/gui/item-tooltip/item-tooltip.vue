@@ -2,14 +2,14 @@
   <div
     class="tip"
     :class="{ 'tip--square': square }"
-    :style="{ '--rarity': rarityColor }"
+    :style="{ '--rarity': lightColor }"
     data-testid="item-tooltip"
   >
     <div class="tip__frame">
       <div class="tip__body">
         <header class="tip__head">
           <div class="tip__rarity-row">
-            <span class="tip__rarity">{{ rarityLabel }}</span>
+            <span class="tip__rarity">{{ tokenTypeLabel }}</span>
             <span v-if="view.equipped" class="tip__badge" data-testid="item-tooltip-equipped">{{
               t('itemTooltip.equipped')
             }}</span>
@@ -133,7 +133,8 @@ import {
   type TIconName,
 } from '@/components/gui/icons/item-icons';
 import { SKILL_ICON } from '@/components/gui/icons/skill-presentation';
-import { RARITY_COLOR } from '@/render/rarity';
+import { LIGHT_NAME_COLOR } from '@/render/light';
+import { tokenTypeTextKey } from '@hexoflat/engine/tokens/factory/description-builder';
 import { useItemTooltipLabels } from './use-item-tooltip-labels';
 
 const SHIELD_ICON_URL = '/board-assets/hero-board/shield-icon.png';
@@ -153,8 +154,8 @@ const attributeRows = computed(() =>
 );
 const labels = useItemTooltipLabels();
 
-const rarityColor = computed(() => RARITY_COLOR[props.view.rarityTone]);
-const rarityLabel = computed(() => labels.value.rarity[props.view.rarity.kind]);
+const lightColor = computed(() => LIGHT_NAME_COLOR[props.view.lightName]);
+const tokenTypeLabel = computed(() => t(tokenTypeTextKey(props.view.tokenType.kind)));
 const typeLabel = computed(() =>
   props.view.equipSlot
     ? labels.value.slot[props.view.equipSlot]

@@ -266,11 +266,11 @@
         "morning-star": "Денниці"
       },
       "line": {
-        "kind": "{type} · {realm}",
+        "kind": "{type} · {tokenType}",
         "strike": "Удар {strike}",
         "tier": "Рівень {tier}"
       },
-      "realm": {
+      "tokenType": {
         "gloom": "Морок",
         "idol": "Кумир",
         "spark": "Іскра",

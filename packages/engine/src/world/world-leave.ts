@@ -44,20 +44,20 @@ export function removeClosedPortals(
   return touched;
 }
 
-export function leaveOrigin(
+export function leaveDepartedWorld(
   finders: Pick<WorldFinders, 'create'>,
   progress: ProgressState,
-  origin: ServerWorld,
+  departed: ServerWorld,
   now: number,
 ): ServerWorld | null {
-  const definition = MapRegistry.get(origin.locationKey);
+  const definition = MapRegistry.get(departed.locationKey);
   if (
     definition.respawnAfterClearedMs &&
-    origin.map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE)
+    departed.map.tiles.some((tile) => tile.hexobject?.hexobjectKey === HEXOBJECT_KEYS.GRAVE)
   ) {
-    progress.sealedUntil[origin.locationKey] = now + definition.respawnAfterClearedMs;
+    progress.sealedUntil[departed.locationKey] = now + definition.respawnAfterClearedMs;
   }
-  return freshAfterLeave(definition.boardKind) ? finders.create(origin.locationKey) : null;
+  return freshAfterLeave(definition.boardKind) ? finders.create(departed.locationKey) : null;
 }
 
 function freshAfterLeave(kind: BoardKind): boolean {

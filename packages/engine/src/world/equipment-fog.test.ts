@@ -70,7 +70,7 @@ describe('A01 server fog readers', () => {
   );
 
   it('a board crossing reveals the arrival with the equipped bonus', () => {
-    const world = createServerWorld('silesia', 'origin', 'seed', HERO);
+    const world = createServerWorld('silesia', 'fog-map', 'seed', HERO);
     world.heroCoordinates = { ...world.map.tiles.find((tile) => tile.exit)!.coordinates };
     const outcome = travelWorld(travelRun(world), { kind: 'exit' });
     if (!outcome.ok) throw new Error(outcome.code);
@@ -78,14 +78,14 @@ describe('A01 server fog readers', () => {
   });
 
   it('respawning reveals the camp around the hero with his equipment', () => {
-    const world = createServerWorld('silesia', 'origin', 'seed', HERO);
+    const world = createServerWorld('silesia', 'fog-map', 'seed', HERO);
     const outcome = respawnWorld(travelRun(world));
     if (!outcome.ok) throw new Error(outcome.code);
     expectSight(outcome.destination, 3);
   });
 
   it('entering a portal reveals the destination with the equipped bonus', () => {
-    const world = createServerWorld('silesia', 'origin', 'seed', HERO);
+    const world = createServerWorld('silesia', 'fog-map', 'seed', HERO);
     const run = travelRun(world);
     run.progress.knowledge.skills = { a_crest: 1, a_teleport: 6 };
     const draft = { current: run.inventory, events: [] };

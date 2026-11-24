@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import enContent from '@/locales/en/content.json';
 import ukContent from '@/locales/uk/content.json';
 import enUi from '@/locales/en/ui.json';
@@ -11,39 +11,28 @@ const LOCALES = [
   ['uk', ukUi, ukContent],
 ] as const;
 
-const KINDS = Object.values(ERarityKind);
+const KINDS = Object.values(ETokenType);
 
 function text(tree: unknown, key: string): unknown {
   return getByPath(tree, key);
 }
 
-describe('DA2 C11: token-type names exist in both locales', () => {
-  it.each(LOCALES)('C11: %s has itemTooltip.rarity.* for every token type', (_locale, ui) => {
-    for (const kind of KINDS) {
-      const value = text(ui, `itemTooltip.rarity.${kind}`);
-      expect(typeof value, kind).toBe('string');
-      expect((value as string).length, kind).toBeGreaterThan(0);
-    }
-  });
+const NAMES = {
+  en: { gloom: 'Gloom', idol: 'Idol', spark: 'Spark', alien: 'Alien' },
+  uk: { gloom: 'Морок', idol: 'Кумир', spark: 'Іскра', alien: 'Прибулець' },
+} as const;
 
+describe('DA3b C11: one key family for token-type names', () => {
   it.each(LOCALES)(
-    'C11: %s has content.tokens.realm.* for every token type',
-    (_locale, _ui, content) => {
-      for (const kind of KINDS) {
-        const value = text(content, `content.tokens.realm.${kind}`);
-        expect(typeof value, kind).toBe('string');
-        expect((value as string).length, kind).toBeGreaterThan(0);
-      }
-    },
-  );
-
-  it.each(LOCALES)(
-    'CURRENT (C11/F5): %s keeps the same name in two keys (itemTooltip.rarity and content.tokens.realm)',
-    (_locale, ui, content) => {
+    'C11: %s has content.tokens.tokenType.* for every token type with the old text',
+    (locale, _ui, content) => {
       for (const kind of KINDS)
-        expect(text(ui, `itemTooltip.rarity.${kind}`), kind).toBe(
-          text(content, `content.tokens.realm.${kind}`),
-        );
+        expect(text(content, `content.tokens.tokenType.${kind}`), kind).toBe(NAMES[locale][kind]);
     },
   );
+
+  it.each(LOCALES)('F5: %s has no second key family for the same names', (_locale, ui, content) => {
+    expect(text(ui, 'itemTooltip.rarity')).toBeUndefined();
+    expect(text(content, 'content.tokens.realm')).toBeUndefined();
+  });
 });

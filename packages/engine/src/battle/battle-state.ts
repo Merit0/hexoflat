@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
 import { itemTokenSchema } from '../tokens/token-schema';
-import { tokenOriginSchema } from '../tokens/token-origin';
+import { dropContextSchema } from '../tokens/drop-context';
 
 export const axialSchema = z.object({ q: z.number().int(), r: z.number().int() });
 export type BattleHex = z.infer<typeof axialSchema>;
@@ -181,7 +181,7 @@ export const battleStateSchema = z.object({
   lootEnabled: z.boolean().optional(),
   fallen: z.array(z.string()).optional(),
   collect: collectSchema.optional(),
-  tokenOrigin: tokenOriginSchema.optional(),
+  dropContext: dropContextSchema.optional(),
   tokenSecret: battleTokenSecretSchema,
   critOverride: z.strictObject({ heroBaseCrit: z.number().int().min(0).max(100) }).optional(),
 });

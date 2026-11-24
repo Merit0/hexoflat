@@ -3,7 +3,7 @@ import { createApp, nextTick, type App } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { mintBaseToken, tokenSourceIdOf } from '@hexoflat/engine/tokens/game-tokens';
-import { DEFAULT_TOKEN_ORIGIN } from '@hexoflat/engine/tokens/token-origin';
+import { DEFAULT_DROP_CONTEXT } from '@hexoflat/engine/tokens/drop-context';
 import { i18n } from '@/i18n';
 import { applyQuestProjection, resetQuestProjection } from '@/services/quests/quest-projection';
 import {
@@ -228,7 +228,7 @@ describe('quest board layout and details', () => {
       {
         seed: 'quest-reward',
         sourceId: tokenSourceIdOf('quest', wood.id),
-        origin: DEFAULT_TOKEN_ORIGIN,
+        dropContext: DEFAULT_DROP_CONTEXT,
       },
       itemKey,
       0,

@@ -266,11 +266,11 @@
         "morning-star": "Daystar's"
       },
       "line": {
-        "kind": "{type} · {realm}",
+        "kind": "{type} · {tokenType}",
         "strike": "Strike {strike}",
         "tier": "Tier {tier}"
       },
-      "realm": {
+      "tokenType": {
         "gloom": "Gloom",
         "idol": "Idol",
         "spark": "Spark",

@@ -1,5 +1,5 @@
 import { EDimension } from '../dimensions/dimensions';
-import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
+import { EHexCollision, EHexobjectGroup, ETokenType } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
 
@@ -64,7 +64,7 @@ export const TOOL_CONTENT: Record<TToolKeys, TContentDefinition> = {
       durabilityMax: 1000000,
       attackMultiplier: 0.1,
       defense: 0.1,
-      rarity: { kind: ERarityKind.IDOL, boss: false },
+      tokenType: { kind: ETokenType.IDOL, boss: false },
       capabilities: {
         canPickup: true,
         canEnter: true,

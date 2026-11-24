@@ -3,7 +3,7 @@ import { EHexActionType } from '../enums/hex-action-type';
 import { createContext } from '../commands/command-test-context';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
 import { describe, expect, it } from 'vitest';
 import { createTokenFactory } from './factory/create-token-factory';
 import { TOKEN_CONTENT } from '../content/token-content';
@@ -74,14 +74,18 @@ describe('ownership during raw legacy pickup', () => {
         map,
         now: 1,
         inventory,
-        loot: { seed: 'secret', sourceId: 'underworld-map', origin: locationTokenOrigin('cave') },
+        loot: {
+          seed: 'secret',
+          sourceId: 'underworld-map',
+          dropContext: locationDropContext('cave'),
+        },
       },
     );
     expect(result).toBe(true);
     expect(inventory.current.bag[0]!.token).toMatchObject({
       baseKey: 'earth-sword',
       dimension: 'earth',
-      rarity: 'idol',
+      tokenType: 'idol',
     });
     expect(tile.hexobject).toBeNull();
   });

@@ -10,7 +10,7 @@ import type { QuestBoardRefusal, QuestRefusal } from './quest-definition';
 import { generateQuestOffers, type QuestGenerationInput } from './quest-generator';
 import type { QuestOffer } from './quest-offer';
 
-export type QuestBoardContext = Pick<QuestGenerationInput, 'rngSeed' | 'locationOrigins'> & {
+export type QuestBoardContext = Pick<QuestGenerationInput, 'rngSeed' | 'locationDropContexts'> & {
   rules?: QuestBoardRules;
 };
 

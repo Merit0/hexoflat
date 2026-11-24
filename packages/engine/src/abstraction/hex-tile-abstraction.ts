@@ -1,4 +1,4 @@
-import type { TokenOrigin } from '../tokens/token-origin';
+import type { DropContext } from '../tokens/drop-context';
 import { EHexActionType } from '../enums/hex-action-type';
 import { THexobjectKey } from '../registry/hexobjects-registry';
 
@@ -10,7 +10,7 @@ export interface IPendingTileAction {
 
   cancelled?: boolean;
   harvestBonus?: number;
-  tokenOrigin?: TokenOrigin;
+  dropContext?: DropContext;
   cancelReason?: 'ESC' | 'HIDE' | 'MOVE';
 
   meta?: Record<string, any>;

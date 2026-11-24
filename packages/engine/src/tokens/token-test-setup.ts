@@ -1,19 +1,19 @@
-import { dimensionOfItemFamily } from '../dimensions/dimensions';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { dimensionOfTokenType } from '../dimensions/dimensions';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import type { ItemToken } from './token-schema';
 
 export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
   return {
     id: 'chest:cave.4-7:0',
-    origin: 'base',
+    tier: 'base',
     type: 'sword',
-    ...(overrides.origin !== 'unique'
+    ...(overrides.tier !== 'unique'
       ? {
-          baseKey: `${dimensionOfItemFamily(overrides.rarity ?? ERarityKind.IDOL)}-${overrides.type ?? 'sword'}`,
+          baseKey: `${dimensionOfTokenType(overrides.tokenType ?? ETokenType.IDOL)}-${overrides.type ?? 'sword'}`,
         }
       : {}),
-    rarity: ERarityKind.IDOL,
-    dimension: dimensionOfItemFamily(overrides.rarity ?? ERarityKind.IDOL),
+    tokenType: ETokenType.IDOL,
+    dimension: dimensionOfTokenType(overrides.tokenType ?? ETokenType.IDOL),
     name: {
       kind: 'generated',
       prefix: 'content.tokens.prefix.ash',

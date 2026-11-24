@@ -2,14 +2,19 @@ import { availableInDimension } from '../../dimensions/availability';
 import { pickBaseItem } from './base-item-picker';
 import type { BaseItemRegistry } from '../base-item-registry';
 import {
-  dimensionOfItemFamily,
-  itemFamilyOfDimension,
+  dimensionOfTokenType,
+  tokenTypeOfDimension,
   tokenTypeAllowsTier,
 } from '../../dimensions/dimensions';
 import { decodedSourceId } from '../source-id';
-import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { deriveStream } from '../../utils/random-seeded';
-import { itemTokenIdOf, tokenSourceIdSchema, mapTierSchema, type TBaseRealm } from '../token-keys';
+import {
+  itemTokenIdOf,
+  tokenSourceIdSchema,
+  mapTierSchema,
+  type TBaseTokenType,
+} from '../token-keys';
 import type { TypeRegistry, UniqueRegistry } from '../registries';
 import { emptyTokenExtensions, type ItemToken } from '../token-schema';
 import type { UniqueTokenDefinition } from '../unique-schema';
@@ -55,8 +60,8 @@ export function tokenStreamLabel(id: string, step: TTokenStep): string {
   return `token:${id}:${step}`;
 }
 
-function baseRealmOf(realm: ERarityKind): TBaseRealm | null {
-  return tokenTypeAllowsTier(realm, 'base') ? (realm as TBaseRealm) : null;
+function baseTokenTypeOf(tokenType: ETokenType): TBaseTokenType | null {
+  return tokenTypeAllowsTier(tokenType, 'base') ? (tokenType as TBaseTokenType) : null;
 }
 
 function plainText(value: string): string {
@@ -97,8 +102,8 @@ function sourceRefusal(ctx: {
 function contextRefusal(ctx: GenerationContext): TokenResult<never> | null {
   const refusal = sourceRefusal(ctx);
   if (refusal) return refusal;
-  if (baseRealmOf(ctx.realm) === null) {
-    return refuseToken('ALIEN_NOT_BASE', `${ctx.realm} items are unique only`);
+  if (baseTokenTypeOf(ctx.tokenType) === null) {
+    return refuseToken('ALIEN_NOT_BASE', `${ctx.tokenType} items are unique only`);
   }
   return null;
 }
@@ -116,8 +121,8 @@ export class TokenFactory {
     const stream = (step: TTokenStep) => deriveStream(ctx.seed, tokenStreamLabel(id, step));
     const base = pickBaseItem(this.parts.baseItems, ctx, stream('type'));
     if (!base.ok) return base;
-    const realm = baseRealmOf(itemFamilyOfDimension(base.value.dimension)) as TBaseRealm;
-    const picked = this.parts.typePicker.pick(realm, base.value.type);
+    const tokenType = baseTokenTypeOf(tokenTypeOfDimension(base.value.dimension)) as TBaseTokenType;
+    const picked = this.parts.typePicker.pick(tokenType, base.value.type);
     if (!picked.ok) return picked;
     const type = picked.value;
     if (!type.group) return refuseToken('INVALID_TOKEN', `item type "${type.key}" has no group`);
@@ -134,19 +139,19 @@ export class TokenFactory {
     const attributeCount = attributes.length;
     return this.parts.validator.validate({
       id,
-      origin: 'base',
+      tier: 'base',
       baseKey: base.value.key,
       type: type.key,
-      rarity: realm,
-      dimension: dimensionOfItemFamily(realm),
+      tokenType: tokenType,
+      dimension: dimensionOfTokenType(tokenType),
       name: this.parts.nameGenerator.generate({ type, attributeCount }, stream('name')),
-      description: this.parts.descriptionBuilder.build({ type, realm, mapTier: ctx.mapTier }),
+      description: this.parts.descriptionBuilder.build({ type, tokenType, mapTier: ctx.mapTier }),
       attributes,
       skills: this.parts.skillGenerator.generate(type, stream('skills')),
       price:
         overrides.price ??
-        this.parts.priceGenerator.generate(realm, attributeCount, stream('price')),
-      sprite: this.parts.spriteResolver.resolve(type, realm, stream('sprite')),
+        this.parts.priceGenerator.generate(tokenType, attributeCount, stream('price')),
+      sprite: this.parts.spriteResolver.resolve(type, tokenType, stream('sprite')),
       mapTier: ctx.mapTier,
       generatorVersion: TOKEN_GENERATOR_VERSION,
       ext: emptyTokenExtensions(),
@@ -182,22 +187,22 @@ export class TokenFactory {
     const attributes = definition.attributes.map((attribute) => ({ ...attribute }));
     const checked = this.parts.validator.validateAttributes({
       type,
-      origin: 'unique',
+      tier: 'unique',
       mapTier: ctx.mapTier,
       attributes,
     });
     if (!checked.ok) return checked;
     return this.parts.validator.validate({
       id,
-      origin: 'unique',
+      tier: 'unique',
       uniqueKey: definition.key,
       type: type.key,
-      rarity: definition.rarity,
+      tokenType: definition.tokenType,
       dimension: definition.dimension,
       name: { ...definition.name },
       description: this.parts.descriptionBuilder.build({
         type,
-        realm: definition.rarity,
+        tokenType: definition.tokenType,
         mapTier: ctx.mapTier,
         descriptionKey: definition.descriptionKey,
       }),

@@ -17,7 +17,7 @@ import { EmptySkillGenerator } from './skill-generator';
 import { ManifestSpriteResolver } from './sprite-resolver';
 import { TokenFactory, type TokenFactoryParts } from './token-factory';
 import { ZodTokenValidator } from './token-validator';
-import { RealmTypePicker } from './type-picker';
+import { BaseTypePicker } from './type-picker';
 import { validateFactoryContent } from './validate-factory-content';
 
 export function createTokenFactory(
@@ -36,7 +36,7 @@ export function createTokenFactory(
   return new TokenFactory(
     {
       baseItems,
-      typePicker: new RealmTypePicker(types),
+      typePicker: new BaseTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(content.adjectives),
       spriteResolver,
       attributeGenerator: createEquipmentAttributeGenerator(attributes, profiles),

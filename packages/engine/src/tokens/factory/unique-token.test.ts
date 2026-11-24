@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { TOKEN_CONTENT } from '../../content/token-content';
 import { TOKEN_UNIQUES } from '../../content/token-uniques.content';
 import { lightTone } from '../light-tone';
@@ -51,18 +51,18 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
 
     it('copies the fixed fields of the definition', () => {
       for (const token of tokens) {
-        expect(token.origin).toBe('unique');
+        expect(token.tier).toBe('unique');
         expect(token.uniqueKey).toBe(unique.key);
         expect(token.type).toBe(unique.type);
-        expect(token.rarity).toBe(unique.rarity);
+        expect(token.tokenType).toBe(unique.tokenType);
         expect(token.name).toEqual(unique.name);
         expect(token.skills).toEqual(unique.skills);
         expect(token.price).toBe(unique.price);
         expect(token.description[0]).toEqual({ key: unique.descriptionKey, params: {} });
         expect(token.generatorVersion).toBe(TOKEN_GENERATOR_VERSION);
         expect(token.ext).toEqual(emptyTokenExtensions());
-        expect(lightTone(token.origin, token.rarity)).toBe(
-          unique.rarity === ERarityKind.ALIEN ? 'alien-unique' : `${unique.rarity}-unique`,
+        expect(lightTone(token.tier, token.tokenType)).toBe(
+          unique.tokenType === ETokenType.ALIEN ? 'alien-unique' : `${unique.tokenType}-unique`,
         );
       }
     });
@@ -102,7 +102,7 @@ describe('EA-5: createUnique never calls the attribute generator', () => {
       seed: '1',
       sourceId: 'test:spy',
       n: 0,
-      realm: ERarityKind.IDOL,
+      tokenType: ETokenType.IDOL,
       mapTier: 1,
       type: 'shield',
     });
@@ -126,8 +126,8 @@ describe('EA-5: createUnique never calls the attribute generator', () => {
         ...SPRITE_MANIFEST.entries,
         {
           key: 'unique-lantern-eater',
-          origin: 'unique' as const,
-          realm: null,
+          tier: 'unique' as const,
+          tokenType: null,
           type: null,
           path: '/hex-assets/items/unique/unique-lantern-eater.png',
         },

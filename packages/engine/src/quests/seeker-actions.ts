@@ -1,5 +1,5 @@
-import { tokenOriginOfBoard } from '../registry/location-token-origin';
-import { questTokenOrigin } from './quest-token-origin';
+import { dropContextOfBoard } from '../registry/location-drop-context';
+import { questDropContext } from './quest-drop-context';
 import { LOCATION_DIMENSIONS } from '../registry/location-key';
 import type { ProgressState } from '../aggregates/progress-state';
 import { questDefinitionFor } from './quest-lookup';
@@ -102,9 +102,9 @@ export function enterQuest(
   const run: QuestRun = {
     offerId: input.questId,
     ...(generatedOffer ? { generatedOffer } : {}),
-    tokenOrigin: input.field
-      ? questTokenOrigin({ field: input.field })
-      : tokenOriginOfBoard(quest, null),
+    dropContext: input.field
+      ? questDropContext({ field: input.field })
+      : dropContextOfBoard(quest, null),
     seed: input.seed,
     rule: sequence.rule,
     terms: sequence.terms,

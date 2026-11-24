@@ -1,7 +1,7 @@
 import { sharedWithSchema } from '../dimensions/availability';
-import { dimensionSchema, itemFamilyOfDimension } from '../dimensions/dimensions';
+import { dimensionSchema, tokenTypeOfDimension } from '../dimensions/dimensions';
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { skillIdSchema } from '../skills/skill-content';
 import {
   i18nKeySchema,
@@ -32,7 +32,7 @@ export const uniqueTokenDefinitionSchema = z
   .strictObject({
     key: uniqueKeySchema,
     type: itemTypeKeySchema,
-    rarity: z.enum(ERarityKind),
+    tokenType: z.enum(ETokenType),
     dimension: dimensionSchema,
     sharedWith: sharedWithSchema.optional(),
     name: z.strictObject({ kind: z.literal('authored'), nameKey: i18nKeySchema }),
@@ -46,8 +46,8 @@ export const uniqueTokenDefinitionSchema = z
     price: z.number().int().positive(),
     revision: z.number().int().positive(),
   })
-  .refine((definition) => itemFamilyOfDimension(definition.dimension) === definition.rarity, {
+  .refine((definition) => tokenTypeOfDimension(definition.dimension) === definition.tokenType, {
     path: ['dimension'],
-    message: 'Unique dimension differs from item family',
+    message: 'Unique dimension differs from token type',
   });
 export type UniqueTokenDefinition = z.infer<typeof uniqueTokenDefinitionSchema>;

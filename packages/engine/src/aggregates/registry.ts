@@ -1,3 +1,4 @@
+import { upcastDimensionVocabulary } from '../dimensions/upcast-vocabulary';
 import { upcastTokenIdentities } from '../inventory/upcast-token-identities';
 import type { z } from 'zod';
 import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventory-state';
@@ -39,11 +40,12 @@ export interface IAggregateDefinition<TState> {
 
 const inventoryDefinition: IAggregateDefinition<InventoryState> = {
   kind: 'inventory',
-  schemaVersion: 3,
+  schemaVersion: 4,
   schema: inventoryStateSchema as unknown as z.ZodType<InventoryState>,
   upcasters: {
     1: upcastInventoryTokens,
     2: upcastTokenIdentities,
+    3: upcastDimensionVocabulary,
   },
   createInitial: ({ heroId }) => emptyInventoryState(heroId),
   project: (state) => state,
@@ -53,7 +55,7 @@ const LEGACY_GRAVE_EXIT_REWARD = 'grave-exit-warning-acknowledged';
 
 const progressDefinition: IAggregateDefinition<ProgressState> = {
   kind: 'progress',
-  schemaVersion: 11,
+  schemaVersion: 12,
   schema: progressStateSchema,
   upcasters: {
     1: (old, { heroId }) => ({
@@ -78,6 +80,7 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
     },
     9: (old) => ({ ...(old as object), ownedUniques: [] }),
     10: (old) => ({ ...(old as object), paidSteps: 0 }),
+    11: upcastDimensionVocabulary,
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
   project: projectProgress,

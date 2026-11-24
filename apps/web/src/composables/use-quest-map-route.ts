@@ -5,7 +5,7 @@ import { arrivalTarget } from '@/services/world/presence-location';
 import { closeKnowledgePanel } from './use-knowledge-panel';
 import type { LocationKey } from '@hexoflat/engine/registry/location-key';
 
-export function useQuestMapRoute(origin: () => LocationKey) {
+export function useQuestMapRoute(fallbackLocation: () => LocationKey) {
   watch(
     [
       () => questRun.value !== null,
@@ -19,7 +19,7 @@ export function useQuestMapRoute(origin: () => LocationKey) {
       } else if (known && name === ROUTES.QUEST_MAP) {
         void router.replace({
           name: ROUTES.WORLD,
-          params: { locationKey: arrivalTarget() ?? origin() },
+          params: { locationKey: arrivalTarget() ?? fallbackLocation() },
         });
       }
     },

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  BASE_REALMS,
+  BASE_TOKEN_TYPES,
   MAP_TIERS,
   createTokenFactory,
   flattenTextTree,
@@ -33,7 +33,7 @@ for (let n = 0; n < SAMPLE_SIZE; n += 1) {
     seed,
     sourceId: 'dev:token-sample',
     n,
-    realm: BASE_REALMS[n % BASE_REALMS.length],
+    tokenType: BASE_TOKEN_TYPES[n % BASE_TOKEN_TYPES.length],
     mapTier: MAP_TIERS[n % MAP_TIERS.length],
   });
   if (!result.ok) {
@@ -43,7 +43,7 @@ for (let n = 0; n < SAMPLE_SIZE; n += 1) {
   }
   const token = result.value;
   console.log(
-    `#${n} ${token.id}  ${token.rarity} tier ${token.mapTier}  ${token.attributes.length} attr  ${token.price} coins  ${token.sprite}`,
+    `#${n} ${token.id}  ${token.tokenType} tier ${token.mapTier}  ${token.attributes.length} attr  ${token.price} coins  ${token.sprite}`,
   );
   for (const [lang, dictionary] of Object.entries(dictionaries)) {
     const name = formatTokenName(token.name, dictionary);

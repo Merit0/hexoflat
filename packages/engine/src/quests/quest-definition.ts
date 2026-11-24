@@ -1,4 +1,4 @@
-import { tokenOriginSchema } from '../tokens/token-origin';
+import { dropContextSchema } from '../tokens/drop-context';
 import { itemTokenSchema } from '../tokens/token-schema';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
@@ -35,7 +35,7 @@ export const RewardSchema = z.discriminatedUnion('kind', [
     .strict()
     .refine(
       ({ token, itemKey, amount }) =>
-        !token || (token.origin === 'base' && token.type === itemKey && amount === 1),
+        !token || (token.tier === 'base' && token.type === itemKey && amount === 1),
       { path: ['token'], message: 'A stored reward token must be one matching base item' },
     ),
   z.object({ kind: z.literal('will'), amount: z.number().int().min(1) }).strict(),
@@ -129,7 +129,7 @@ export const QuestDefinitionSchema = z
     objective: ObjectiveSchema,
     mapObjectPlacement: QuestMapObjectPlacementSchema.optional(),
     rewards: z.array(RewardSchema),
-    rewardOrigin: tokenOriginSchema.optional(),
+    rewardDropContext: dropContextSchema.optional(),
     turnIn: z.enum(['board', 'auto']),
     maxSellValue: z.number().int().min(0).optional(),
     tableRule: z.string().min(1),

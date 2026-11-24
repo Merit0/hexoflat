@@ -1,4 +1,4 @@
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { attributeProfilesSchema } from '../tokens/equipment/attribute-profile-schema';
 import { ADJECTIVE_BANDS } from '../tokens/equipment/equipment-keys';
 import { adjectivesFor, baseAllowlistFailures } from '../tokens/equipment/equipment-content-rules';
@@ -15,7 +15,7 @@ import {
   type TokenContent,
 } from './token-content';
 
-const UNIQUE_CHECK = { origin: 'unique' } as const;
+const UNIQUE_CHECK = { tier: 'unique' } as const;
 
 function registriesOf(content: TokenContent) {
   try {
@@ -29,7 +29,7 @@ function priceFailures(content: TokenContent): string[] {
   const parsed = tokenPriceRangesSchema.safeParse(content.priceRanges);
   if (!parsed.success) return [parsed.error.message];
   const anchor = coinPriceOf(TOKEN_PRICE_ANCHOR_KEY);
-  const [min, max] = parsed.data[ERarityKind.IDOL];
+  const [min, max] = parsed.data[ETokenType.IDOL];
   if (anchor === null || anchor < min || anchor > max) {
     return [
       `idol price range [${min}, ${max}] does not hold the ${TOKEN_PRICE_ANCHOR_KEY} price ${anchor}`,

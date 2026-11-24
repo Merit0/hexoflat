@@ -12,9 +12,9 @@ export function gateConnects(from: LocationKey, to: LocationKey, key: string): b
   return GATES.some((gate) => gate.from === from && gate.to === to && gate.key === key);
 }
 
-const PORTAL_ORIGINS: readonly LocationKey[] = ['silesia', 'silesia-north', 'cave'];
+const PORTAL_LOCATIONS: readonly LocationKey[] = ['silesia', 'silesia-north', 'cave'];
 
 /** The Heaven-owned portal connects existing locations to the Earth camp. */
-export function returnPortalConnects(origin: LocationKey): boolean {
-  return PORTAL_ORIGINS.includes(origin);
+export function returnPortalConnects(from: LocationKey): boolean {
+  return PORTAL_LOCATIONS.includes(from);
 }

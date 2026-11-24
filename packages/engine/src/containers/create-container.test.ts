@@ -1,5 +1,5 @@
-import { locationTokenOrigin } from '../registry/location-token-origin';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
+import { DEFAULT_DROP_CONTEXT } from '../tokens/drop-context';
 import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { SEEKER_CHEST_TABLE_IDS, lootTableOf } from '../content/loot-tables.content';
@@ -19,7 +19,7 @@ describe('CH-P6 createContainer', () => {
       seed: 's',
       sourceId: 'b1',
       targetKey: '2,-1',
-      origin: locationTokenOrigin('cave'),
+      dropContext: locationDropContext('cave'),
     });
     expect(made.status).toBe('full');
     expect(made.at).toEqual(AT);
@@ -48,7 +48,7 @@ describe('CH-P6 createContainer', () => {
       seed: 's',
       sourceId: 'm',
       targetKey: 'x',
-      origin: DEFAULT_TOKEN_ORIGIN,
+      dropContext: DEFAULT_DROP_CONTEXT,
     });
     expect(made.contents).toEqual([]);
   });
@@ -63,7 +63,7 @@ describe('CH-P6 createContainer', () => {
         seed: `seed-${index}`,
         sourceId: `run-${index}`,
         targetKey: `${index},0`,
-        origin: DEFAULT_TOKEN_ORIGIN,
+        dropContext: DEFAULT_DROP_CONTEXT,
       });
       expect(made.contents![0].length).toBeGreaterThan(0);
     }

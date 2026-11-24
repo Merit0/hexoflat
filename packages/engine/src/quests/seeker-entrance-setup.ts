@@ -1,5 +1,5 @@
 import { TREASURE_SEEKER_MAP_MODEL } from '../content/boards/models/treasure-seeker-map';
-import type { SeekerEntrance } from './origin-field';
+import type { SeekerEntrance } from './cloned-field';
 import { createTreasureField } from './treasure-field';
 
 export function generatedEntrance(seed: string): SeekerEntrance {

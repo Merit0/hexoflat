@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { TOKEN_TYPES, tokenTypeAllowsTier } from '../dimensions/dimensions';
 import {
-  baseRealmSchema,
+  baseTokenTypeSchema,
   itemTypeKeySchema,
   uniqueKeySchema,
   type ItemTypeKey,
@@ -19,7 +19,7 @@ const PNG_RGBA_COLOR_TYPE = 6;
 const PNG_RGBA_BIT_DEPTH = 8;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BASE_NUMBER = /^(?:0[1-9]|[1-9]\d)$/;
-const REALM_VALUES: readonly string[] = TOKEN_TYPES;
+const TOKEN_TYPE_VALUES: readonly string[] = TOKEN_TYPES;
 
 export interface PngHeader {
   width: number;
@@ -37,21 +37,21 @@ const spritePathSchema = z.string().startsWith(`${SPRITE_ROOT}/`);
 
 export const baseSpriteEntrySchema = z.strictObject({
   key: z.string().regex(SLUG),
-  origin: z.literal('base'),
-  realm: baseRealmSchema,
+  tier: z.literal('base'),
+  tokenType: baseTokenTypeSchema,
   type: itemTypeKeySchema,
   path: spritePathSchema,
 });
 
 export const uniqueSpriteEntrySchema = z.strictObject({
   key: uniqueKeySchema,
-  origin: z.literal('unique'),
-  realm: z.null(),
+  tier: z.literal('unique'),
+  tokenType: z.null(),
   type: z.null(),
   path: spritePathSchema,
 });
 
-export const spriteManifestEntrySchema = z.discriminatedUnion('origin', [
+export const spriteManifestEntrySchema = z.discriminatedUnion('tier', [
   baseSpriteEntrySchema,
   uniqueSpriteEntrySchema,
 ]);
@@ -113,8 +113,8 @@ function fail(code: TSpriteFailureCode, path: string, message: string): NamedFil
   return { kind: 'failure', failure: { code, path, message: `${path}: ${message}` } };
 }
 
-function realmOf(folder: string): string | null {
-  const matches = REALM_VALUES.filter((realm) => folder.startsWith(`${realm}-`));
+function tokenTypeOfFolder(folder: string): string | null {
+  const matches = TOKEN_TYPE_VALUES.filter((tokenType) => folder.startsWith(`${tokenType}-`));
   return matches.sort((a, b) => b.length - a.length)[0] ?? null;
 }
 
@@ -129,25 +129,29 @@ function nameBaseFile(
     return fail(
       'NAME_PATTERN',
       path,
-      `expected base/<realm>-<type>/<realm>-<type>-<NN>.png with NN = 01..99`,
+      `expected base/<tokenType>-<type>/<tokenType>-<type>-<NN>.png with NN = 01..99`,
     );
   }
-  const realm = realmOf(folder);
-  if (realm === null) {
+  const tokenType = tokenTypeOfFolder(folder);
+  if (tokenType === null) {
     const given = folder.split('-')[0];
-    return fail('UNKNOWN_REALM', path, `realm "${given}" is not one of ${REALM_VALUES.join(', ')}`);
+    return fail(
+      'UNKNOWN_REALM',
+      path,
+      `tokenType "${given}" is not one of ${TOKEN_TYPE_VALUES.join(', ')}`,
+    );
   }
-  if (!tokenTypeAllowsTier(realm, 'base')) {
-    return fail('ALIEN_IN_BASE', path, `${realm} items are unique only, not base`);
+  if (!tokenTypeAllowsTier(tokenType, 'base')) {
+    return fail('ALIEN_IN_BASE', path, `${tokenType} items are unique only, not base`);
   }
-  const type = folder.slice(realm.length + 1);
+  const type = folder.slice(tokenType.length + 1);
   if (!types.has(type)) {
     return fail('UNKNOWN_TYPE', path, `type "${type}" is not in the TypeRegistry`);
   }
   const entry = {
     key: `${folder}-${number}`,
-    origin: 'base',
-    realm,
+    tier: 'base',
+    tokenType,
     type,
     path: `${SPRITE_ROOT}/${path}`,
   };
@@ -159,7 +163,13 @@ function nameUniqueFile(path: string, file: string): NamedFile {
   if (!SLUG.test(key)) {
     return fail('NAME_PATTERN', path, `expected unique/<uniqueKey>.png with a lower-case slug key`);
   }
-  const entry = { key, origin: 'unique', realm: null, type: null, path: `${SPRITE_ROOT}/${path}` };
+  const entry = {
+    key,
+    tier: 'unique',
+    tokenType: null,
+    type: null,
+    path: `${SPRITE_ROOT}/${path}`,
+  };
   return { kind: 'entry', entry: uniqueSpriteEntrySchema.parse(entry) };
 }
 
@@ -173,7 +183,7 @@ function nameFile(path: string, types: SpriteTypeLookup): NamedFile {
   return fail(
     'NAME_PATTERN',
     path,
-    `expected base/<realm>-<type>/<realm>-<type>-<NN>.png or unique/<uniqueKey>.png`,
+    `expected base/<tokenType>-<type>/<tokenType>-<type>-<NN>.png or unique/<uniqueKey>.png`,
   );
 }
 
@@ -237,18 +247,18 @@ export function buildSpriteManifest(
   return { ok: true, manifest: spriteManifestSchema.parse(manifest) };
 }
 
-function realmSource(realm: ERarityKind | null): string {
-  if (realm === null) return 'null';
-  const member = Object.entries(ERarityKind).find(([, value]) => value === realm);
-  return `ERarityKind.${member?.[0] ?? ''}`;
+function tokenTypeSource(tokenType: ETokenType | null): string {
+  if (tokenType === null) return 'null';
+  const member = Object.entries(ETokenType).find(([, value]) => value === tokenType);
+  return `ETokenType.${member?.[0] ?? ''}`;
 }
 
 function entrySource(entry: SpriteManifestEntry): string {
   return [
     '    {',
     `      key: '${entry.key}',`,
-    `      origin: '${entry.origin}',`,
-    `      realm: ${realmSource(entry.realm)},`,
+    `      tier: '${entry.tier}',`,
+    `      tokenType: ${tokenTypeSource(entry.tokenType)},`,
     `      type: ${entry.type === null ? 'null' : `'${entry.type}'`},`,
     `      path: '${entry.path}',`,
     '    },',
@@ -257,9 +267,11 @@ function entrySource(entry: SpriteManifestEntry): string {
 
 export function spriteManifestSource(manifest: SpriteManifest): string {
   const entries = manifest.entries.map(entrySource);
-  const usesRealm = manifest.entries.some((entry) => entry.realm !== null);
+  const usesTokenType = manifest.entries.some((entry) => entry.tokenType !== null);
   return [
-    ...(usesRealm ? [`import { ERarityKind } from '../abstraction/hexobject-abstraction';`] : []),
+    ...(usesTokenType
+      ? [`import { ETokenType } from '../abstraction/hexobject-abstraction';`]
+      : []),
     `import type { SpriteManifest } from './sprite-files';`,
     '',
     'export const SPRITE_MANIFEST: SpriteManifest = {',

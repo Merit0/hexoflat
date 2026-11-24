@@ -7,8 +7,8 @@ import { tokenSourceIdOf } from '../tokens/game-tokens';
 import { coordinateKey } from '../utils/hex-utils';
 import { IActionContext } from '../abstraction/abstract-action';
 import { getMeta, CONTENT } from '../content';
-import { dimensionOfItemFamily, itemFamilyOfDimension } from '../dimensions/dimensions';
-import { baseRealmSchema } from '../tokens/token-keys';
+import { dimensionOfTokenType, tokenTypeOfDimension } from '../dimensions/dimensions';
+import { baseTokenTypeSchema } from '../tokens/token-keys';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from './hexobjects-registry';
 
@@ -53,16 +53,16 @@ const FINISH_UNLOCK_ONLY: ActionFinisher = (_tile, _action, ctx) => {
 
 function takeSupply(tile: HexTileModel, ctx: IActionContext): TokenSupply {
   const token = tile.hexobject?.token;
-  if (token || !ctx.loot?.origin || !tile.hexobject) return { tokens: [token] };
+  if (token || !ctx.loot?.dropContext || !tile.hexobject) return { tokens: [token] };
   return {
     mint: {
       seed: ctx.loot.seed,
       sourceId: tokenSourceIdOf('dev', ctx.loot.sourceId, coordinateKey(tile.coordinates)),
       // This materializes an already placed catalogue object; pickup must not recolor it.
-      origin: {
-        ...ctx.loot.origin,
-        realm: baseRealmSchema.parse(
-          itemFamilyOfDimension(CONTENT[tile.hexobject.hexobjectKey].dimension),
+      dropContext: {
+        ...ctx.loot.dropContext,
+        tokenType: baseTokenTypeSchema.parse(
+          tokenTypeOfDimension(CONTENT[tile.hexobject.hexobjectKey].dimension),
         ),
       },
     },
@@ -82,7 +82,9 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         action: 'CUT',
         hexobjectKey: action.hexobjectKey,
         amount: 1,
-        ...(ctx.loot?.origin ? { dimension: dimensionOfItemFamily(ctx.loot.origin.realm) } : {}),
+        ...(ctx.loot?.dropContext
+          ? { dimension: dimensionOfTokenType(ctx.loot.dropContext.tokenType) }
+          : {}),
       },
     });
 
@@ -113,7 +115,9 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
         action: 'MINE',
         hexobjectKey: action.hexobjectKey,
         amount: stone,
-        ...(ctx.loot?.origin ? { dimension: dimensionOfItemFamily(ctx.loot.origin.realm) } : {}),
+        ...(ctx.loot?.dropContext
+          ? { dimension: dimensionOfTokenType(ctx.loot.dropContext.tokenType) }
+          : {}),
       },
     });
 
@@ -190,7 +194,7 @@ export const ACTION_FINISHERS: Record<EHexActionType, ActionFinisher> = {
           endsAt: nextEndsAt,
           hexobjectKey: action.hexobjectKey,
           cancelled: false,
-          tokenOrigin: action.tokenOrigin,
+          dropContext: action.dropContext,
           meta: { healAmount: heal.amountPerTick },
         };
 

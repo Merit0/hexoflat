@@ -1,7 +1,10 @@
 import { expect } from '@playwright/test';
 import { BaseFeature } from '@framework/base-feature';
 import { CampingMapPage } from '@pages/camping-map.page';
-import { QuestEntranceComponent, type QuestOrigin } from '@components/quest-entrance.component';
+import {
+  QuestEntranceComponent,
+  type ClonedFieldSource,
+} from '@components/quest-entrance.component';
 import { QuestBoardFeature } from './quest-board.feature';
 import type { QuestFieldSnapshot, QuestHex } from '@components/quest-field.component';
 
@@ -10,7 +13,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
   private readonly entrance = new QuestEntranceComponent();
   private readonly board = new QuestBoardFeature();
   private marker: QuestHex | null = null;
-  private origin: QuestOrigin | null = null;
+  private source: ClonedFieldSource | null = null;
   private offerId: string | null = null;
 
   async accept() {
@@ -60,7 +63,7 @@ export class QuestWorldEntryFeature extends BaseFeature {
           await this.page.evaluate((will) => window.__HEXOFLAT_TEST__!.setWill(will), questWill);
           await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
         }
-        const origin = await this.entrance.readOrigin(marker);
+        const source = await this.entrance.readFieldSource(marker);
         await this.map.hexBoard.armHandTool();
         await this.map.hexBoard.hoverTile(marker);
         await this.map.toolActionOverlay.verifyOfferedAction(/Open|Відкрити/i);
@@ -71,9 +74,9 @@ export class QuestWorldEntryFeature extends BaseFeature {
         await this.entrance.verifyQuestHexSpacing(worldHexSpacing);
         await this.entrance.verifyQuestUrl();
         await this.entrance.verifyQuestTabs();
-        if (!this.origin) {
-          this.origin = origin;
-          await this.entrance.verifyClonedField(origin);
+        if (!this.source) {
+          this.source = source;
+          await this.entrance.verifyClonedField(source);
         }
       },
     );

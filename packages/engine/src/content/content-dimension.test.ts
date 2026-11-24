@@ -66,7 +66,7 @@ describe('authored content dimensions', () => {
   );
 
   it.each(['health-bottle', 'return-scroll', 'axe', 'sword'] as const)(
-    'rejects conflicting item family on %s, including implicit prototype rarity',
+    'rejects conflicting item family on %s, including implicit prototype tokenType',
     (key) => {
       const result = ContentDefinitionSchema.safeParse({
         ...CONTENT[key],
@@ -80,6 +80,6 @@ describe('authored content dimensions', () => {
   it('keeps foreign items owned by their catalogue dimension regardless of where they drop', () => {
     expect(CONTENT['return-scroll'].dimension).toBe(EDimension.HEAVEN);
     expect(CONTENT.coins.dimension).toBe(EDimension.EARTH);
-    expect('loot' in CONTENT.coins && CONTENT.coins.loot.rarity).toBeUndefined();
+    expect('loot' in CONTENT.coins && CONTENT.coins.loot.tokenType).toBeUndefined();
   });
 });

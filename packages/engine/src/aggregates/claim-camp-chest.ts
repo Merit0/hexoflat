@@ -1,7 +1,7 @@
 import type { DomainEvent } from '../commands/types';
 import { CAMP_CHEST_ITEMS, STASH_CHEST_CELLS } from '../inventory/stash-constants';
 import { mintItem, type InventoryState } from '../inventory/inventory-state';
-import { campTokenOrigin } from '../registry/location-token-origin';
+import { campDropContext } from '../registry/location-drop-context';
 import { isTokenType, mintBaseToken, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import { withToken } from '../tokens/token-entry';
 import { CAMP_FIRST_CHEST_REWARD, type ProgressState } from './progress-state';
@@ -26,7 +26,7 @@ function campChestMint(heroId: string, rngSeed: string): TokenMint {
   return {
     seed: rngSeed,
     sourceId: tokenSourceIdOf('chest', 'camp-first', heroId),
-    origin: campTokenOrigin(),
+    dropContext: campDropContext(),
   };
 }
 

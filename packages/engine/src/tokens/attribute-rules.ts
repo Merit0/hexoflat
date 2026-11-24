@@ -7,7 +7,7 @@ import type { ItemTypeDefinition } from './token-content-schema';
 import type { TMapTier } from './token-keys';
 import type { TokenAttribute } from './token-schema';
 
-export type AttributeCheck = { origin: 'base'; profiles: AttributeProfiles } | { origin: 'unique' };
+export type AttributeCheck = { tier: 'base'; profiles: AttributeProfiles } | { tier: 'unique' };
 
 export type AttributeTarget = Pick<ItemTypeDefinition, 'key' | 'tool' | 'group'>;
 
@@ -94,7 +94,7 @@ export function attributeFailure(
   }
   const failure = typeFailure(definition, type);
   if (failure) return failure;
-  return check.origin === 'base'
+  return check.tier === 'base'
     ? baseFailure(definition, type, attribute, { profiles: check.profiles, tier })
     : uniqueFailure(definition, attribute);
 }

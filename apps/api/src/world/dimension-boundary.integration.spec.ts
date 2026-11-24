@@ -17,8 +17,8 @@ describe.skipIf(!inject('dbAvailable'))('trusted dimension boundaries (real Post
 
   it.each([
     { dimension: 'heaven' },
-    { origin: { realm: 'spark', mapTier: 4 } },
     { tokenOrigin: { realm: 'spark', mapTier: 4 } },
+    { dropContext: { tokenType: 'spark', mapTier: 4 } },
     { client: { dimension: 'heaven' } },
   ])('rejects forged world source metadata %j before mutation', async (spoof) => {
     const { userId, heroId } = await kit.newPlayer();
@@ -50,24 +50,27 @@ describe.skipIf(!inject('dbAvailable'))('trusted dimension boundaries (real Post
     expect((await kit.service.snapshot(userId, heroId)).aggregates).toEqual(before.aggregates);
   });
 
-  it.each(['spark', 'gloom'])('refuses a private Earth base requested from %s', async (realm) => {
-    const { userId, heroId } = await kit.newPlayer();
-    const before = await kit.service.snapshot(userId, heroId);
-    const inventory = before.aggregates.inventory!;
-    const result = await kit.service.execute(
-      userId,
-      envelope(
-        heroId,
-        'DEV_GRANT_ITEM',
-        {
-          key: 'sword',
-          amount: 1,
-          token: { type: 'sword', baseKey: 'earth-sword', realm, mapTier: 4 },
-        },
-        inventory.revision,
-      ),
-    );
-    expect(result).toMatchObject({ result: 'rejected', code: 'BASE_ITEM_NOT_IN_DIMENSION' });
-    expect((await kit.service.snapshot(userId, heroId)).aggregates).toEqual(before.aggregates);
-  });
+  it.each(['spark', 'gloom'])(
+    'refuses a private Earth base requested from %s',
+    async (tokenType) => {
+      const { userId, heroId } = await kit.newPlayer();
+      const before = await kit.service.snapshot(userId, heroId);
+      const inventory = before.aggregates.inventory!;
+      const result = await kit.service.execute(
+        userId,
+        envelope(
+          heroId,
+          'DEV_GRANT_ITEM',
+          {
+            key: 'sword',
+            amount: 1,
+            token: { type: 'sword', baseKey: 'earth-sword', tokenType, mapTier: 4 },
+          },
+          inventory.revision,
+        ),
+      );
+      expect(result).toMatchObject({ result: 'rejected', code: 'BASE_ITEM_NOT_IN_DIMENSION' });
+      expect((await kit.service.snapshot(userId, heroId)).aggregates).toEqual(before.aggregates);
+    },
+  );
 });

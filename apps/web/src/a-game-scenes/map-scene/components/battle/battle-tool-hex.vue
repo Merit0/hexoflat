@@ -2,7 +2,7 @@
   <tool-hex-anchor
     v-slot="{ flipped }"
     :at="at"
-    :origin="origin"
+    :hero-hex="heroHex"
     :tile-width="tileWidth"
     :tile-height="tileHeight"
     data-testid="battle-tool-hex"
@@ -42,7 +42,7 @@ const emit = defineEmits<{ act: []; hide: [] }>();
 const { t } = useI18n();
 
 const at = computed(() => battleHexToOffset(props.biome, props.tool.at));
-const origin = computed(() => battleHexToOffset(props.biome, props.tool.origin));
+const heroHex = computed(() => battleHexToOffset(props.biome, props.tool.heroHex));
 const iconPath = computed(() => getPrototype(props.tool.toolKey as THexobjectKey).spritePath ?? '');
 const label = computed(() => {
   if (props.tool.action === 'attack') return t('battle.tool.attack');

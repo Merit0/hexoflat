@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { TOKEN_CONTENT } from '../content/token-content';
 import { TRADERS } from '../content/traders.content';
 import { planClaim } from '../quests/quest-log';
@@ -9,9 +9,9 @@ import { TypeRegistry } from './registries';
 import { tokenSourceIdOf } from './source-id';
 import { createTokenFactory } from './factory/create-token-factory';
 
-const origin = { realm: ERarityKind.GLOOM, mapTier: 4 } as const;
+const dropContext = { tokenType: ETokenType.GLOOM, mapTier: 4 } as const;
 const context = {
-  ...origin,
+  ...dropContext,
   seed: 'secret-0123456789abcdef',
   sourceId: 'boss:dragon',
   n: 0,
@@ -21,7 +21,7 @@ const context = {
 describe('source tier and injected generation policies', () => {
   it('uses the quest reward source tier even when claimed at the camp board', () => {
     const quest = counting('audit', 'TEST', 1, {
-      rewardOrigin: origin,
+      rewardDropContext: dropContext,
       rewards: [{ kind: 'item', itemKey: 'shield', amount: 1 }],
     });
     const progress = progressWith(50);
@@ -33,19 +33,19 @@ describe('source tier and injected generation policies', () => {
     });
     expect(result.ok).toBe(true);
     if (result.ok)
-      expect(result.inventory!.bag[0]!.token).toMatchObject({ mapTier: 4, rarity: 'gloom' });
+      expect(result.inventory!.bag[0]!.token).toMatchObject({ mapTier: 4, tokenType: 'gloom' });
   });
 
   it('uses the trader content tier rather than the current player location', () => {
     const goods = rollTraderGoods(
-      { ...TRADERS.ilva, tokenOrigin: origin },
+      { ...TRADERS.ilva, dropContext: dropContext },
       context.seed,
       'ilva',
       0,
     );
     const tokens = goods.flatMap((good) => (good?.token ? [good.token] : []));
     expect(tokens.length).toBeGreaterThan(0);
-    for (const token of tokens) expect(token).toMatchObject({ mapTier: 4, rarity: 'gloom' });
+    for (const token of tokens) expect(token).toMatchObject({ mapTier: 4, tokenType: 'gloom' });
   });
 
   it('validates the output of injected generators against the source ceiling', () => {

@@ -1,7 +1,7 @@
-import { dimensionOfItemFamily, type EDimension } from '../dimensions/dimensions';
+import { dimensionOfTokenType, type EDimension } from '../dimensions/dimensions';
 import type { ItemToken } from '../tokens/token-schema';
-import { questTokenOrigin } from './quest-token-origin';
-import { seekerBoardOf } from './origin-field';
+import { questDropContext } from './quest-drop-context';
+import { seekerBoardOf } from './cloned-field';
 import type { TerrainId } from '../boards/terrain';
 import type { TreasureSeekerMapKey } from '../registry/quest-map-key';
 import { TREASURE_SEEKER_MAP_KEY } from '../registry/quest-map-key';
@@ -68,7 +68,7 @@ export function projectQuestForClient(run: QuestRun): QuestProjection {
     },
     offerId: run.offerId,
     ...(run.generatedOffer ? { offer: projectQuestOffer(run.generatedOffer) } : {}),
-    dimension: dimensionOfItemFamily(questTokenOrigin(run).realm),
+    dimension: dimensionOfTokenType(questDropContext(run).tokenType),
     phase: run.phase,
     outcome: run.outcome,
     start: run.start,

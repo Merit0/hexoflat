@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import {
   itemTypeDefinitionSchema,
@@ -21,12 +21,12 @@ const AXE = {
   strike: 1,
   tool: { action: EHexActionType.CUT, durabilityCostPct: 0.1 },
   nounKey: 'content.tokens.noun.axe',
-  realms: [ERarityKind.IDOL],
+  tokenTypes: [ETokenType.IDOL],
 };
 const RANGES = { gloom: [60, 800], idol: [40, 600], spark: [100, 1200] };
 const WORDS = {
   prefixes: [{ key: 'content.tokens.prefix.ash' }],
-  suffixes: [{ key: 'content.tokens.suffix.warden', realms: [ERarityKind.GLOOM] }],
+  suffixes: [{ key: 'content.tokens.suffix.warden', tokenTypes: [ETokenType.GLOOM] }],
 };
 
 const CASES: SchemaCase[] = [
@@ -52,7 +52,7 @@ const CASES: SchemaCase[] = [
     invalid: [
       ['a alien range', { ...RANGES, alien: [500, 3000] }],
       ['min above max', { ...RANGES, idol: [600, 40] }],
-      ['a missing realm', { gloom: [60, 800], idol: [40, 600] }],
+      ['a missing tokenType', { gloom: [60, 800], idol: [40, 600] }],
     ],
   },
   {
@@ -65,12 +65,12 @@ const CASES: SchemaCase[] = [
         { ...WORDS, prefixes: [{ key: 'content.tokens.suffix.warden' }] },
       ],
       [
-        'a alien realm tag',
-        { ...WORDS, prefixes: [{ key: 'content.tokens.prefix.ash', realms: ['alien'] }] },
+        'a alien tokenType tag',
+        { ...WORDS, prefixes: [{ key: 'content.tokens.prefix.ash', tokenTypes: ['alien'] }] },
       ],
       [
-        'an empty realm list',
-        { ...WORDS, prefixes: [{ key: 'content.tokens.prefix.ash', realms: [] }] },
+        'an empty tokenType list',
+        { ...WORDS, prefixes: [{ key: 'content.tokens.prefix.ash', tokenTypes: [] }] },
       ],
     ],
   },

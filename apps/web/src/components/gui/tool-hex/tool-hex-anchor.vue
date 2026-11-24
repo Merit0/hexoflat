@@ -11,7 +11,7 @@ import { calcHexPixelPosition } from '@hexoflat/engine/utils/hex-utils';
 
 const props = defineProps<{
   at: IHexCoordinates | null;
-  origin: IHexCoordinates | null;
+  heroHex: IHexCoordinates | null;
   tileWidth: number;
   tileHeight: number;
 }>();
@@ -26,8 +26,8 @@ const posStyle = computed(() => {
 });
 
 const flipped = computed(() => {
-  if (!props.at || !props.origin) return false;
-  return pixelOf(props.at).x < pixelOf(props.origin).x;
+  if (!props.at || !props.heroHex) return false;
+  return pixelOf(props.at).x < pixelOf(props.heroHex).x;
 });
 </script>
 

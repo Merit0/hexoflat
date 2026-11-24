@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 import { CONTENT_VERSION } from '@hexoflat/engine';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { inventoryV1Fixture } from '@hexoflat/engine/inventory/inventory-v1-fixture';
 import { mintItem } from '@hexoflat/engine/inventory/inventory-state';
 import { createTokenFactory } from '@hexoflat/engine/tokens/factory/create-token-factory';
@@ -49,6 +49,27 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
     return stored;
   }
 
+  function preDa3bToken(token: ItemToken): Record<string, unknown> {
+    const { tier, tokenType, description, ...rest } = JSON.parse(
+      JSON.stringify(token),
+    ) as ItemToken;
+    return {
+      ...rest,
+      origin: tier,
+      rarity: tokenType,
+      description: description.map(({ key, params }) => {
+        const { tokenType: name, ...others } = params;
+        return {
+          key,
+          params:
+            name === undefined
+              ? others
+              : { ...others, realm: String(name).replace('.tokenType.', '.realm.') },
+        };
+      }),
+    };
+  }
+
   const inventoryOf = async (userId: string, heroId: string) =>
     (await kit.service.snapshot(userId, heroId)).aggregates.inventory!.state as InventoryState;
 
@@ -63,9 +84,12 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       ownedUniques: [],
     });
     if (!made.ok) throw new Error(made.refusal.code);
-    const fields: Record<string, unknown> = { ...made.value };
-    delete fields.dimension;
-    const legacy = { ...fields, rarity: 'god-executor', generatorVersion: 4 };
+    const legacy: Record<string, unknown> = {
+      ...preDa3bToken(made.value),
+      rarity: 'god-executor',
+      generatorVersion: 4,
+    };
+    delete legacy.dimension;
     const cell = mintItem(inventory, 'sword', 1);
     const raw = { ...inventory, bag: [{ ...cell, token: legacy }, ...inventory.bag.slice(1)] };
     await kit.db
@@ -75,14 +99,53 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
     const loaded = await inventoryOf(userId, heroId);
     expect(loaded.bag[0]).toEqual({
       ...cell,
-      token: {
-        ...legacy,
-        rarity: 'alien',
-        dimension: 'nowhere',
-      },
+      token: { ...made.value, generatorVersion: 4 },
     });
     expect(await inventoryOf(userId, heroId)).toEqual(loaded);
     expect(loaded.revision).toBe(inventory.revision);
+  });
+
+  it('DA3b-3: loads a pre-DA3b inventory v3 and progress v11 with identical tokens', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const before = await kit.service.snapshot(userId, heroId);
+    const inventory = before.aggregates.inventory!.state as InventoryState;
+    const progress = before.aggregates.progress!.state as Record<string, unknown> & {
+      listings: unknown[];
+    };
+    const sword = mintItem(inventory, 'sword', 1);
+    const shield = mintItem(inventory, 'shield', 1);
+    const oldInventory = {
+      ...inventory,
+      bag: [
+        { ...sword, token: preDa3bToken(LEGACY_SWORD) },
+        { ...shield, token: preDa3bToken(LEGACY_SHIELD) },
+        ...inventory.bag.slice(2),
+      ],
+    };
+    const oldProgress = {
+      ...progress,
+      listings: [
+        { key: 'sword', amount: 1, unitPrice: 100, token: preDa3bToken(LEGACY_SWORD) },
+        ...progress.listings.slice(1),
+      ],
+    };
+    await kit.db
+      .update(heroAggregates)
+      .set({ schemaVersion: 3, state: oldInventory })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+    await kit.db
+      .update(heroAggregates)
+      .set({ schemaVersion: 11, state: oldProgress })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+
+    const loaded = await kit.service.snapshot(userId, heroId);
+    const bag = (loaded.aggregates.inventory!.state as InventoryState).bag;
+    expect(bag[0]).toEqual({ ...sword, token: LEGACY_SWORD });
+    expect(bag[1]).toEqual({ ...shield, token: LEGACY_SHIELD });
+    const listings = (loaded.aggregates.progress!.state as { listings: { token?: unknown }[] })
+      .listings;
+    expect(listings[0].token).toEqual(LEGACY_SWORD);
+    expect(loaded.aggregates.inventory!.revision).toBe(before.aggregates.inventory!.revision);
   });
 
   describe('characterization', () => {
@@ -138,7 +201,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
         .select()
         .from(heroAggregates)
         .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
-      expect(row.schemaVersion).toBe(3);
+      expect(row.schemaVersion).toBe(4);
       expect((row.state as InventoryState).bag[10]!.token).toEqual(loaded.equip.weapon!.token);
 
       const reloaded = await inventoryOf(userId, heroId);
@@ -155,7 +218,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
           seed: 'tg-12-ea3',
           sourceId: 'test:tg12',
           n: 0,
-          realm: ERarityKind.GLOOM,
+          tokenType: ETokenType.GLOOM,
           mapTier: 4,
           type: 'shield',
         },

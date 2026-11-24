@@ -15,7 +15,7 @@ import {
   type SeekerResult,
 } from './seeker-actions';
 import { hexDistance } from '../utils/hex-utils';
-import { seekerBoardOf, seekerFieldView, type SeekerEntrance } from './origin-field';
+import { seekerBoardOf, seekerFieldView, type SeekerEntrance } from './cloned-field';
 
 const hero = { heroId: z.string().min(1) };
 

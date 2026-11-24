@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TOKEN_TIERS, tokenTypesWithTier, type TTokenTypeWithTier } from '../dimensions/dimensions';
+import { tokenTypesWithTier, type TTokenTypeWithTier } from '../dimensions/dimensions';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SLUG_PART = '[a-z0-9]+(?:-[a-z0-9]+)*';
@@ -66,12 +66,11 @@ export const wordKeySchema = z
   .regex(new RegExp(`^content\\.tokens\\.(?:${WORD_SLOTS.join('|')})\\.${SLUG_PART}$`));
 export type WordKey = z.infer<typeof wordKeySchema>;
 
-export type TBaseRealm = TTokenTypeWithTier<'base'>;
-export const BASE_REALMS: readonly TBaseRealm[] = Object.freeze(tokenTypesWithTier('base'));
-export const baseRealmSchema = z.enum(BASE_REALMS);
-
-export const TOKEN_ORIGINS = TOKEN_TIERS;
-export type TTokenOrigin = (typeof TOKEN_ORIGINS)[number];
+export type TBaseTokenType = TTokenTypeWithTier<'base'>;
+export const BASE_TOKEN_TYPES: readonly TBaseTokenType[] = Object.freeze(
+  tokenTypesWithTier('base'),
+);
+export const baseTokenTypeSchema = z.enum(BASE_TOKEN_TYPES);
 
 export const MAP_TIERS = [1, 2, 3, 4] as const;
 export type TMapTier = (typeof MAP_TIERS)[number];

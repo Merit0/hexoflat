@@ -1,4 +1,4 @@
-import { locationTokenOrigin, campTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext, campDropContext } from '../registry/location-drop-context';
 import { describe, expect, it } from 'vitest';
 import { chestScene, tileOf } from '../chests/chest-test-setup';
 import { rollChestLoot } from '../chests/plan-chest-loot';
@@ -142,7 +142,7 @@ describe('CH-P0 golden loot: the exact drop of 20 fixed seeds per space (guards 
     const viaRule = rollChestLoot(tileOf(scene.world, scene.chest), {
       seed: scene.world.worldSeed,
       sourceId: scene.world.mapId,
-      origin: locationTokenOrigin('cave'),
+      dropContext: locationDropContext('cave'),
     });
     const byLabel = rollLoot(
       lootTableOf('cave-chest-loot')!,
@@ -185,7 +185,7 @@ describe('CH-P0 golden loot: the exact drop of 20 fixed seeds per space (guards 
     expect(
       listOf(
         generateChestDrop({
-          origin: campTokenOrigin(),
+          dropContext: campDropContext(),
           seed: 'golden-3',
           chestHex: { columnIndex: 14, rowIndex: 16 },
           tableId: 'seeker-1-chest-loot',

@@ -1,11 +1,12 @@
-import type { ERarityKind } from '../abstraction/hexobject-abstraction';
+import type { ETokenType } from '../abstraction/hexobject-abstraction';
 import {
   PLACEHOLDER_SPRITE_KEY,
   spriteManifestSchema,
   type SpriteManifest,
   type SpriteManifestEntry,
 } from './sprite-files';
-import type { ItemTypeKey, TTokenOrigin, UniqueKey } from './token-keys';
+import type { TTokenTier } from '../dimensions/dimensions';
+import type { ItemTypeKey, UniqueKey } from './token-keys';
 import { uniqueSpriteKey } from './unique-schema';
 
 export interface SpriteRef {
@@ -31,9 +32,9 @@ export class ManifestSpriteRegistry {
     return this.entries;
   }
 
-  spritesFor(origin: TTokenOrigin, realm: ERarityKind, type: ItemTypeKey): readonly SpriteRef[] {
-    const ofType = this.entries.filter((entry) => entry.origin === origin && entry.type === type);
-    const exact = ofType.filter((entry) => entry.realm === realm);
+  spritesFor(tier: TTokenTier, tokenType: ETokenType, type: ItemTypeKey): readonly SpriteRef[] {
+    const ofType = this.entries.filter((entry) => entry.tier === tier && entry.type === type);
+    const exact = ofType.filter((entry) => entry.tokenType === tokenType);
     if (exact.length > 0) return exact;
     if (ofType.length > 0) return ofType;
     return [this.placeholderRef];
@@ -42,7 +43,7 @@ export class ManifestSpriteRegistry {
   uniqueSprite(uniqueKey: UniqueKey): SpriteRef {
     const key = uniqueSpriteKey(uniqueKey);
     const entry = this.entries.find(
-      (candidate) => candidate.origin === 'unique' && candidate.key === key,
+      (candidate) => candidate.tier === 'unique' && candidate.key === key,
     );
     return entry ?? this.placeholderRef;
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { createTokenRegistries } from '../content/token-content';
 import {
   buildSpriteManifest,
@@ -53,29 +53,29 @@ describe('buildSpriteManifest', () => {
         entries: [
           {
             key: 'gloom-shield-01',
-            origin: 'base',
-            realm: 'gloom',
+            tier: 'base',
+            tokenType: 'gloom',
             type: 'shield',
             path: '/hex-assets/items/base/gloom-shield/gloom-shield-01.png',
           },
           {
             key: 'idol-sword-01',
-            origin: 'base',
-            realm: 'idol',
+            tier: 'base',
+            tokenType: 'idol',
             type: 'sword',
             path: '/hex-assets/items/base/idol-sword/idol-sword-01.png',
           },
           {
             key: 'idol-sword-02',
-            origin: 'base',
-            realm: 'idol',
+            tier: 'base',
+            tokenType: 'idol',
             type: 'sword',
             path: '/hex-assets/items/base/idol-sword/idol-sword-02.png',
           },
           {
             key: 'ash-crown-blade',
-            origin: 'unique',
-            realm: null,
+            tier: 'unique',
+            tokenType: null,
             type: null,
             path: '/hex-assets/items/unique/ash-crown-blade.png',
           },
@@ -90,7 +90,7 @@ describe('buildSpriteManifest', () => {
     ]);
   });
 
-  it('rejects a realm that is not an ERarityKind value', () => {
+  it('rejects a tokenType that is not an ETokenType value', () => {
     expect(failureCodes(withFile(spriteFile('base/fire-sword/fire-sword-01.png')))).toEqual([
       'UNKNOWN_REALM',
     ]);
@@ -142,7 +142,7 @@ describe('buildSpriteManifest', () => {
       types,
     );
     expect(result.ok ? [] : result.failures.map((failure) => failure.message)).toEqual([
-      'base/fire-sword/fire-sword-01.png: realm "fire" is not one of gloom, idol, spark, alien',
+      'base/fire-sword/fire-sword-01.png: tokenType "fire" is not one of gloom, idol, spark, alien',
     ]);
   });
 
@@ -162,7 +162,7 @@ describe('buildSpriteManifest', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const sprites = new ManifestSpriteRegistry(result.manifest);
-    expect(sprites.spritesFor('base', ERarityKind.SPARK, 'hammer').map((ref) => ref.key)).toEqual([
+    expect(sprites.spritesFor('base', ETokenType.SPARK, 'hammer').map((ref) => ref.key)).toEqual([
       'spark-hammer-01',
     ]);
   });

@@ -53,7 +53,7 @@ export interface TestTokenAttribute {
 
 export interface TestTokenSpec {
   type: string;
-  realm: 'gloom' | 'idol' | 'spark';
+  tokenType: 'gloom' | 'idol' | 'spark';
   mapTier: 1 | 2 | 3 | 4;
   attributes?: TestTokenAttribute[];
   price?: number;
@@ -62,7 +62,7 @@ export interface TestTokenSpec {
 export interface TestItemToken {
   id: string;
   type: string;
-  rarity: string;
+  tokenType: string;
   price: number;
   attributes: TestTokenAttribute[];
   [field: string]: unknown;

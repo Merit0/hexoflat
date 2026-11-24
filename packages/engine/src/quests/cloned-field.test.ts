@@ -5,7 +5,7 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { coordinateKey, getHexNeighbors, hexDistance } from '../utils/hex-utils';
 import { createServerWorld } from '../world/server-world';
 import { ALL_QUESTS } from './all-quests';
-import { seekerBoardOf } from './origin-field';
+import { seekerBoardOf } from './cloned-field';
 import { projectQuestForClient } from './projection';
 import { planAccept } from './quest-log';
 import { executeQuestRunCommand, parseQuestRunDoc } from './seeker-commands';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { executePlayerCommand, type PlayerAggregates } from '../aggregates/execute-player-command';
 import { PLAYER_COMMAND_SCHEMAS } from '../aggregates/player-commands';
 import { emptyProgressState } from '../aggregates/progress-state';
@@ -45,9 +45,9 @@ describe('DA2 B1: an Alien unique in a location scope', () => {
     }
     const token = lastVerdict();
     expect(token).toMatchObject({
-      origin: 'unique',
+      tier: 'unique',
       uniqueKey: 'last-verdict',
-      rarity: ERarityKind.ALIEN,
+      tokenType: ETokenType.ALIEN,
       dimension: EDimension.NOWHERE,
     });
   });

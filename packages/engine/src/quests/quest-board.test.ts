@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { QUEST_BOARD_RULES } from '../content/quest-board.content';
 import { gameDayAt, trackGameDay } from '../game-day/game-day';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { DEFAULT_DROP_CONTEXT } from '../tokens/drop-context';
 import { ALL_QUESTS } from './all-quests';
 import { planQuestBoard, refillQuestBoard } from './quest-board';
 import { applyQuestEvents } from './quest-log';
@@ -13,7 +13,7 @@ const now = Date.UTC(2026, 10, 23);
 const initial = { ...emptyProgressState(heroId), day: gameDayAt(undefined, now).day };
 const ctx = {
   rngSeed: 'server-board-secret',
-  locationOrigins: { silesia: DEFAULT_TOKEN_ORIGIN },
+  locationDropContexts: { silesia: DEFAULT_DROP_CONTEXT },
   rules: { ...QUEST_BOARD_RULES, dailyLimit: 1 },
 };
 const sync = { type: 'QUEST_BOARD_SYNC', payload: { heroId, revision: 0 } } as const;
@@ -74,7 +74,11 @@ describe('quest board policy', () => {
   it('does not charge when the refresh cannot generate a replacement', () => {
     const before = opened();
     expect(
-      planQuestBoard(before, refresh, 1, { ...ctx, rules: QUEST_BOARD_RULES, locationOrigins: {} }),
+      planQuestBoard(before, refresh, 1, {
+        ...ctx,
+        rules: QUEST_BOARD_RULES,
+        locationDropContexts: {},
+      }),
     ).toBe('QUEST_BOARD_UNCHANGED');
     expect(before.knowledge.current).toBe(50);
   });

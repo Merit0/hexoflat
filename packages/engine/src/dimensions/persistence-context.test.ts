@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { emptyInventoryState, mintItem } from '../inventory/inventory-state';
 import { sampleToken } from '../tokens/token-test-setup';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
@@ -13,7 +13,7 @@ describe('D5 persistence source and identity', () => {
   it('preserves owned legacy attributes, ids and generator versions through snapshots', () => {
     const map = new HexMapBuilder().name('dimension-save').width(2).height(1).build();
     const token = sampleToken({
-      rarity: ERarityKind.SPARK,
+      tokenType: ETokenType.SPARK,
       mapTier: 4,
       generatorVersion: 2,
       attributes: [{ key: 'wisdom', value: 2 }],
@@ -36,18 +36,18 @@ describe('D5 persistence source and identity', () => {
   it('fills missing battle source from its saved world while retaining an existing source', () => {
     const world = createServerWorld('cave', 'legacy-battle', 'private-world-seed', 'hero');
     const battle = fight([warrior('w', { q: 1, r: 0 })]);
-    delete battle.tokenOrigin;
+    delete battle.dropContext;
     world.battle = battle;
-    world.tokenOrigin = { realm: ERarityKind.GLOOM, mapTier: 4 };
+    world.dropContext = { tokenType: ETokenType.GLOOM, mapTier: 4 };
     const restored = deserializeWorld(serializeWorld(world), 0);
-    expect(restored.battle!.tokenOrigin).toEqual(world.tokenOrigin);
+    expect(restored.battle!.dropContext).toEqual(world.dropContext);
     const view = projectBattleForViewer(restored.battle!, 'heroes');
     expect(view.dimension).toBe('underworld');
-    expect(view).not.toHaveProperty('tokenOrigin');
+    expect(view).not.toHaveProperty('dropContext');
     expect(view).not.toHaveProperty('tokenSecret');
     expect(view).not.toHaveProperty('seed');
-    restored.battle!.tokenOrigin = { realm: ERarityKind.IDOL, mapTier: 2 };
+    restored.battle!.dropContext = { tokenType: ETokenType.IDOL, mapTier: 2 };
     const again = deserializeWorld(serializeWorld(restored), 0);
-    expect(again.battle!.tokenOrigin).toEqual({ realm: 'idol', mapTier: 2 });
+    expect(again.battle!.dropContext).toEqual({ tokenType: 'idol', mapTier: 2 });
   });
 });

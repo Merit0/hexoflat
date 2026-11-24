@@ -30,7 +30,7 @@ export function typesWithHammer(): TypeRegistry {
       strike: 2,
       tool: null,
       nounKey: wordKeyOf('noun', 'hammer'),
-      realms: ITEM_TYPES[0].realms,
+      tokenTypes: ITEM_TYPES[0].tokenTypes,
     },
   ]);
 }

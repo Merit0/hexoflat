@@ -3,11 +3,11 @@ import { priceRangeSchema, type PriceRange } from '../dimensions/dimensions';
 import { EHexActionType } from '../enums/hex-action-type';
 import { equipmentTypeFieldShape } from './equipment/equipment-keys';
 import {
-  BASE_REALMS,
-  baseRealmSchema,
+  BASE_TOKEN_TYPES,
+  baseTokenTypeSchema,
   itemTypeKeySchema,
   wordKeySchemaFor,
-  type TBaseRealm,
+  type TBaseTokenType,
 } from './token-keys';
 
 function distinct<T>(values: readonly T[]): boolean {
@@ -30,7 +30,7 @@ export const itemTypeDefinitionSchema = z.strictObject({
     })
     .nullable(),
   nounKey: wordKeySchemaFor('noun'),
-  realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice'),
+  tokenTypes: z.array(baseTokenTypeSchema).min(1).refine(distinct, 'a token type is listed twice'),
   group: equipmentTypeFieldShape.group.optional(),
   gender: equipmentTypeFieldShape.gender.optional(),
   materials: equipmentTypeFieldShape.materials.optional(),
@@ -46,8 +46,8 @@ export function hasGeneratedName(type: ItemTypeDefinition): boolean {
 export { priceRangeSchema, type PriceRange };
 
 export const tokenPriceRangesSchema = z.strictObject(
-  Object.fromEntries(BASE_REALMS.map((realm) => [realm, priceRangeSchema])) as Record<
-    TBaseRealm,
+  Object.fromEntries(BASE_TOKEN_TYPES.map((tokenType) => [tokenType, priceRangeSchema])) as Record<
+    TBaseTokenType,
     typeof priceRangeSchema
   >,
 );
@@ -57,12 +57,20 @@ const wordThemeSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 export const prefixWordSchema = z.strictObject({
   key: wordKeySchemaFor('prefix'),
-  realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice').optional(),
+  tokenTypes: z
+    .array(baseTokenTypeSchema)
+    .min(1)
+    .refine(distinct, 'a token type is listed twice')
+    .optional(),
   theme: wordThemeSchema.optional(),
 });
 export const suffixWordSchema = z.strictObject({
   key: wordKeySchemaFor('suffix'),
-  realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice').optional(),
+  tokenTypes: z
+    .array(baseTokenTypeSchema)
+    .min(1)
+    .refine(distinct, 'a token type is listed twice')
+    .optional(),
   theme: wordThemeSchema.optional(),
 });
 

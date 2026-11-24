@@ -14,7 +14,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.idol",
+          "tokenType": "content.tokens.tokenType.idol",
           "type": "content.tokens.noun.pickaxe",
         },
       },
@@ -47,11 +47,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "pickaxe",
     },
-    "origin": "base",
     "price": 368,
-    "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
+    "tier": "base",
+    "tokenType": "idol",
     "type": "pickaxe",
   },
   {
@@ -66,7 +66,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.spark",
+          "tokenType": "content.tokens.tokenType.spark",
           "type": "content.tokens.noun.sword",
         },
       },
@@ -96,11 +96,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "sword",
     },
-    "origin": "base",
     "price": 716,
-    "rarity": "spark",
     "skills": [],
     "sprite": "idol-sword-01",
+    "tier": "base",
+    "tokenType": "spark",
     "type": "sword",
   },
   {
@@ -115,7 +115,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.gloom",
+          "tokenType": "content.tokens.tokenType.gloom",
           "type": "content.tokens.noun.pickaxe",
         },
       },
@@ -148,11 +148,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "pickaxe",
     },
-    "origin": "base",
     "price": 397,
-    "rarity": "gloom",
     "skills": [],
     "sprite": "idol-pickaxe-01",
+    "tier": "base",
+    "tokenType": "gloom",
     "type": "pickaxe",
   },
   {
@@ -167,7 +167,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.idol",
+          "tokenType": "content.tokens.tokenType.idol",
           "type": "content.tokens.noun.axe",
         },
       },
@@ -200,11 +200,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "axe",
     },
-    "origin": "base",
     "price": 307,
-    "rarity": "idol",
     "skills": [],
     "sprite": "idol-axe-01",
+    "tier": "base",
+    "tokenType": "idol",
     "type": "axe",
   },
   {
@@ -219,7 +219,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.spark",
+          "tokenType": "content.tokens.tokenType.spark",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -249,11 +249,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 731,
-    "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "spark",
     "type": "shield",
   },
   {
@@ -263,7 +263,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.gloom",
+          "tokenType": "content.tokens.tokenType.gloom",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -293,11 +293,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 197,
-    "rarity": "gloom",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "gloom",
     "type": "shield",
   },
   {
@@ -316,7 +316,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.idol",
+          "tokenType": "content.tokens.tokenType.idol",
           "type": "content.tokens.noun.pickaxe",
         },
       },
@@ -349,11 +349,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "pickaxe",
     },
-    "origin": "base",
     "price": 561,
-    "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
+    "tier": "base",
+    "tokenType": "idol",
     "type": "pickaxe",
   },
   {
@@ -368,7 +368,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.spark",
+          "tokenType": "content.tokens.tokenType.spark",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -398,11 +398,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 662,
-    "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "spark",
     "type": "shield",
   },
   {
@@ -417,7 +417,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.gloom",
+          "tokenType": "content.tokens.tokenType.gloom",
           "type": "content.tokens.noun.axe",
         },
       },
@@ -450,11 +450,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "axe",
     },
-    "origin": "base",
     "price": 365,
-    "rarity": "gloom",
     "skills": [],
     "sprite": "idol-axe-01",
+    "tier": "base",
+    "tokenType": "gloom",
     "type": "axe",
   },
   {
@@ -464,7 +464,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.idol",
+          "tokenType": "content.tokens.tokenType.idol",
           "type": "content.tokens.noun.pickaxe",
         },
       },
@@ -497,11 +497,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "pickaxe",
     },
-    "origin": "base",
     "price": 58,
-    "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
+    "tier": "base",
+    "tokenType": "idol",
     "type": "pickaxe",
   },
   {
@@ -511,7 +511,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.spark",
+          "tokenType": "content.tokens.tokenType.spark",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -541,11 +541,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 135,
-    "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "spark",
     "type": "shield",
   },
   {
@@ -560,7 +560,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.gloom",
+          "tokenType": "content.tokens.tokenType.gloom",
           "type": "content.tokens.noun.sword",
         },
       },
@@ -590,11 +590,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "sword",
     },
-    "origin": "base",
     "price": 385,
-    "rarity": "gloom",
     "skills": [],
     "sprite": "idol-sword-01",
+    "tier": "base",
+    "tokenType": "gloom",
     "type": "sword",
   },
   {
@@ -604,7 +604,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.idol",
+          "tokenType": "content.tokens.tokenType.idol",
           "type": "content.tokens.noun.pickaxe",
         },
       },
@@ -637,11 +637,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "pickaxe",
     },
-    "origin": "base",
     "price": 205,
-    "rarity": "idol",
     "skills": [],
     "sprite": "idol-pickaxe-01",
+    "tier": "base",
+    "tokenType": "idol",
     "type": "pickaxe",
   },
   {
@@ -660,7 +660,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.spark",
+          "tokenType": "content.tokens.tokenType.spark",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -690,11 +690,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 1039,
-    "rarity": "spark",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "spark",
     "type": "shield",
   },
   {
@@ -709,7 +709,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.gloom",
+          "tokenType": "content.tokens.tokenType.gloom",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -739,11 +739,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 310,
-    "rarity": "gloom",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "gloom",
     "type": "shield",
   },
   {
@@ -758,7 +758,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.idol",
+          "tokenType": "content.tokens.tokenType.idol",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -788,11 +788,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 319,
-    "rarity": "idol",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "idol",
     "type": "shield",
   },
   {
@@ -807,7 +807,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.spark",
+          "tokenType": "content.tokens.tokenType.spark",
           "type": "content.tokens.noun.axe",
         },
       },
@@ -840,11 +840,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "axe",
     },
-    "origin": "base",
     "price": 696,
-    "rarity": "spark",
     "skills": [],
     "sprite": "idol-axe-01",
+    "tier": "base",
+    "tokenType": "spark",
     "type": "axe",
   },
   {
@@ -859,7 +859,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.gloom",
+          "tokenType": "content.tokens.tokenType.gloom",
           "type": "content.tokens.noun.sword",
         },
       },
@@ -889,11 +889,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "sword",
     },
-    "origin": "base",
     "price": 332,
-    "rarity": "gloom",
     "skills": [],
     "sprite": "idol-sword-01",
+    "tier": "base",
+    "tokenType": "gloom",
     "type": "sword",
   },
   {
@@ -908,7 +908,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.idol",
+          "tokenType": "content.tokens.tokenType.idol",
           "type": "content.tokens.noun.shield",
         },
       },
@@ -938,11 +938,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "adjective",
       "noun": "shield",
     },
-    "origin": "base",
     "price": 300,
-    "rarity": "idol",
     "skills": [],
     "sprite": "idol-shield-01",
+    "tier": "base",
+    "tokenType": "idol",
     "type": "shield",
   },
   {
@@ -957,7 +957,7 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       {
         "key": "content.tokens.line.kind",
         "params": {
-          "realm": "content.tokens.realm.spark",
+          "tokenType": "content.tokens.tokenType.spark",
           "type": "content.tokens.noun.axe",
         },
       },
@@ -990,11 +990,11 @@ exports[`TokenFactory.createBase prices, determinism and text > matches the gold
       "kind": "noun",
       "noun": "axe",
     },
-    "origin": "base",
     "price": 739,
-    "rarity": "spark",
     "skills": [],
     "sprite": "idol-axe-01",
+    "tier": "base",
+    "tokenType": "spark",
     "type": "axe",
   },
 ]

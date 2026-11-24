@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CAVE_CHEST_TABLE_ID } from '../content/loot-tables.content';
 import { EDimension } from '../dimensions/dimensions';
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
 import type { ItemToken } from '../tokens/token-schema';
 import { BATTLE_CREATURES } from './battle-catalogue';
 import type { BattleCreature, BattleState } from './battle-state';
@@ -29,7 +29,7 @@ function tokensOfKills(
 ): ItemToken[] {
   return BATTLE_IDS.flatMap((id) => {
     const state = fight([carrier('e1')], { id });
-    state.tokenOrigin = locationTokenOrigin(location);
+    state.dropContext = locationDropContext(location);
     slay(state, 'e1');
     return graveTokens(state);
   });
@@ -42,7 +42,7 @@ describe('DA2 B3: the drop world of a grave', () => {
     expect(tokens.length).toBeGreaterThan(0);
     for (const token of tokens) {
       expect(token.dimension).toBe(EDimension.UNDERWORLD);
-      expect(token.rarity).toBe('gloom');
+      expect(token.tokenType).toBe('gloom');
     }
   });
 
@@ -52,7 +52,7 @@ describe('DA2 B3: the drop world of a grave', () => {
     expect(tokens.length).toBeGreaterThan(0);
     for (const token of tokens) {
       expect(token.dimension).toBe(EDimension.EARTH);
-      expect(token.rarity).toBe('idol');
+      expect(token.tokenType).toBe('idol');
     }
   });
 });

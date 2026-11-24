@@ -1,31 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { LIGHT_TONES, lightTone } from './light-tone';
-import { BASE_REALMS, TOKEN_ORIGINS } from './token-keys';
+import { TOKEN_TIERS } from '../dimensions/dimensions';
+import { BASE_TOKEN_TYPES } from './token-keys';
 
 describe('lightTone', () => {
   it.each([
-    ['base', ERarityKind.GLOOM, 'gloom-base'],
-    ['unique', ERarityKind.GLOOM, 'gloom-unique'],
-    ['base', ERarityKind.IDOL, 'idol-base'],
-    ['unique', ERarityKind.IDOL, 'idol-unique'],
-    ['base', ERarityKind.SPARK, 'spark-base'],
-    ['unique', ERarityKind.SPARK, 'spark-unique'],
-    ['unique', ERarityKind.ALIEN, 'alien-unique'],
-  ] as const)('%s %s gives %s', (origin, rarity, tone) => {
-    expect(lightTone(origin, rarity)).toBe(tone);
+    ['base', ETokenType.GLOOM, 'gloom-base'],
+    ['unique', ETokenType.GLOOM, 'gloom-unique'],
+    ['base', ETokenType.IDOL, 'idol-base'],
+    ['unique', ETokenType.IDOL, 'idol-unique'],
+    ['base', ETokenType.SPARK, 'spark-base'],
+    ['unique', ETokenType.SPARK, 'spark-unique'],
+    ['unique', ETokenType.ALIEN, 'alien-unique'],
+  ] as const)('%s %s gives %s', (tier, tokenType, tone) => {
+    expect(lightTone(tier, tokenType)).toBe(tone);
   });
 
   it('gives exactly the 7 tones of the plan', () => {
-    const tones = BASE_REALMS.flatMap((realm) =>
-      TOKEN_ORIGINS.map((origin) => lightTone(origin, realm)),
+    const tones = BASE_TOKEN_TYPES.flatMap((tokenType) =>
+      TOKEN_TIERS.map((tier) => lightTone(tier, tokenType)),
     );
-    tones.push(lightTone('unique', ERarityKind.ALIEN));
+    tones.push(lightTone('unique', ETokenType.ALIEN));
     expect(new Set(tones)).toEqual(new Set(LIGHT_TONES));
     expect(LIGHT_TONES).toHaveLength(7);
   });
 
   it('refuses a base alien token', () => {
-    expect(() => lightTone('base', ERarityKind.ALIEN)).toThrow(/unique only/);
+    expect(() => lightTone('base', ETokenType.ALIEN)).toThrow(/unique only/);
   });
 });

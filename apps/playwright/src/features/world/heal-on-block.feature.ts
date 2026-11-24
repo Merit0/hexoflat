@@ -20,13 +20,13 @@ export class HealOnBlockFeature extends BaseFeature {
         const grants = new VerifyInventoryFeature();
         const plain = await grants.givenTokenItem({
           type: 'shield',
-          realm: 'idol',
+          tokenType: 'idol',
           mapTier: 1,
           attributes: [],
         });
         const healing = await grants.givenTokenItem({
           type: 'shield',
-          realm: 'idol',
+          tokenType: 'idol',
           mapTier: bonus as 1 | 2 | 3 | 4,
           attributes: [{ key: 'heal-on-block', value: bonus }],
         });

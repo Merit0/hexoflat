@@ -23,11 +23,11 @@ export class ZodTokenValidator implements ITokenValidator {
     if (!mapTierSchema.safeParse(sheet.mapTier).success)
       return refuseToken('INVALID_TOKEN', 'Invalid source tier');
     const check =
-      sheet.origin === 'base'
-        ? { origin: 'base' as const, profiles: this.profiles }
-        : { origin: 'unique' as const };
+      sheet.tier === 'base'
+        ? { tier: 'base' as const, profiles: this.profiles }
+        : { tier: 'unique' as const };
     const maxCount = this.profiles[`tier-${sheet.mapTier}`].maxCount;
-    if (sheet.origin === 'base' && sheet.attributes.length > maxCount) {
+    if (sheet.tier === 'base' && sheet.attributes.length > maxCount) {
       return refuseToken('INVALID_TOKEN', 'Too many base token attributes');
     }
     for (const attribute of sheet.attributes) {
@@ -50,7 +50,7 @@ export class ZodTokenValidator implements ITokenValidator {
     if (parsed.success) {
       const token = parsed.data;
       if (!this.types.has(token.type)) return refuseToken('INVALID_TOKEN', 'Unknown token type');
-      if (token.origin === 'base') {
+      if (token.tier === 'base') {
         const base = this.bases.get(token.baseKey!);
         if (!base || base.dimension !== token.dimension || base.type !== token.type)
           return refuseToken('INVALID_TOKEN', 'Invalid concrete base item identity');
@@ -62,7 +62,7 @@ export class ZodTokenValidator implements ITokenValidator {
       }
       const checked = this.validateAttributes({
         type: this.types.get(token.type),
-        origin: token.origin,
+        tier: token.tier,
         mapTier: token.mapTier,
         attributes: token.attributes,
       });

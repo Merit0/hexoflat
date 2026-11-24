@@ -1,11 +1,11 @@
 import { sharedWithSchema } from '../dimensions/availability';
 import { dimensionSchema } from '../dimensions/dimensions';
 import { validateContentDimension } from './content-dimension';
-import { tokenOriginSchema } from '../tokens/token-origin';
+import { dropContextSchema } from '../tokens/drop-context';
 import { z } from 'zod';
 import {
   EChestType,
-  ERarityKind,
+  ETokenType,
   EHexCollision,
   EHexobjectGroup,
 } from '../abstraction/hexobject-abstraction';
@@ -100,15 +100,15 @@ const resourceSchema = z.object({
   }),
 });
 
-const raritySchema = z.object({
-  kind: z.enum(ERarityKind),
+const itemTokenTypeSchema = z.object({
+  kind: z.enum(ETokenType),
   boss: z.boolean().default(false),
 });
 
 const lootSchema = z.object({
   name: z.string(),
   amount: z.number().optional(),
-  rarity: raritySchema.optional(),
+  tokenType: itemTokenTypeSchema.optional(),
   usePrice: z.number().int().positive().optional(),
   traits: z.object({
     stackable: z.boolean().optional(),
@@ -141,7 +141,7 @@ const toolSchema = z.object({
   durabilityMax: z.number(),
   attackMultiplier: z.number().optional(),
   defense: z.number().optional(),
-  rarity: raritySchema.optional(),
+  tokenType: itemTokenTypeSchema.optional(),
   capabilities: z.object({
     canPickup: z.boolean().optional(),
     canEnter: z.boolean().optional(),
@@ -171,7 +171,7 @@ const equipmentSchema = z.object({
   durabilityMax: z.number(),
   defense: z.number().optional(),
   hearts: z.number().int().min(0).max(MAX_EQUIPMENT_HEARTS).optional(),
-  rarity: raritySchema.optional(),
+  tokenType: itemTokenTypeSchema.optional(),
   capabilities: z
     .object({
       canAttack: z.boolean().optional(),
@@ -249,7 +249,7 @@ export const traderDefinitionSchema = z
     sellRate: z
       .object({ num: z.number().int().positive(), den: z.number().int().positive() })
       .strict(),
-    tokenOrigin: tokenOriginSchema.optional(),
+    dropContext: dropContextSchema.optional(),
     goodsSlots: z.number().int().positive(),
     buybackSlots: z.number().int().positive(),
     refresh: z

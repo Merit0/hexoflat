@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { createTokenRegistries, TOKEN_CONTENT } from '../../content/token-content';
 import { lightTone } from '../light-tone';
 import { ManifestSpriteRegistry } from '../sprite-registry';
@@ -23,13 +23,13 @@ function created(ctx: GenerationContext): ItemToken {
 const TOKENS = MIXED.map((ctx) => ({ ctx, token: created(ctx) }));
 
 describe('TokenFactory.createBase', () => {
-  it('TG-1: makes 500 mixed realm x tier x type tokens that pass the schema', () => {
+  it('TG-1: makes 500 mixed tokenType x tier x type tokens that pass the schema', () => {
     expect(TOKENS).toHaveLength(500);
     for (const { token } of TOKENS) expect(itemTokenSchema.safeParse(token).success).toBe(true);
-    const realms = new Set(TOKENS.map(({ token }) => token.rarity));
+    const tokenTypes = new Set(TOKENS.map(({ token }) => token.tokenType));
     const tiers = new Set(TOKENS.map(({ token }) => token.mapTier));
     const kinds = new Set(TOKENS.map(({ token }) => token.type));
-    expect(realms.size).toBe(3);
+    expect(tokenTypes.size).toBe(3);
     expect(tiers.size).toBe(4);
     expect(kinds.size).toBe(types.all().length);
   });
@@ -37,7 +37,7 @@ describe('TokenFactory.createBase', () => {
   it('TG-1: keeps the requested type and the context fields', () => {
     for (const { ctx, token } of TOKENS) {
       if (ctx.type) expect(token.type).toBe(ctx.type);
-      expect(token.rarity).toBe(ctx.realm);
+      expect(token.tokenType).toBe(ctx.tokenType);
       expect(token.mapTier).toBe(ctx.mapTier);
       expect(token.id).toBe(`${ctx.sourceId}:${ctx.n}`);
     }
@@ -74,9 +74,9 @@ describe('TokenFactory.createBase', () => {
   it('TG-3: takes the sprite from the manifest of its type or the placeholder', () => {
     const sprites = new ManifestSpriteRegistry(SPRITE_MANIFEST);
     for (const { token } of TOKENS) {
-      const allowed = sprites.spritesFor('base', token.rarity, token.type).map((ref) => ref.key);
+      const allowed = sprites.spritesFor('base', token.tokenType, token.type).map((ref) => ref.key);
       expect(allowed).toContain(token.sprite);
-      expect(lightTone(token.origin, token.rarity)).toBe(`${token.rarity}-base`);
+      expect(lightTone(token.tier, token.tokenType)).toBe(`${token.tokenType}-base`);
     }
   });
 
@@ -88,10 +88,10 @@ describe('TokenFactory.createBase', () => {
 });
 
 describe('TokenFactory.createBase prices, determinism and text', () => {
-  it('TG-5: prices inside the third of the realm range, no skills, default extensions', () => {
+  it('TG-5: prices inside the third of the tokenType range, no skills, default extensions', () => {
     for (const { token } of TOKENS) {
       const [min, max] = priceBandOf(
-        TOKEN_CONTENT.priceRanges[token.rarity as ERarityKind.IDOL],
+        TOKEN_CONTENT.priceRanges[token.tokenType as ETokenType.IDOL],
         token.attributes.length,
       );
       expect(Number.isInteger(token.price)).toBe(true);
@@ -99,7 +99,7 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
       expect(token.price).toBeLessThanOrEqual(max);
       expect(token.skills).toEqual([]);
       expect(token.ext).toEqual(emptyTokenExtensions());
-      expect(token.origin).toBe('base');
+      expect(token.tier).toBe('base');
       expect(token.uniqueKey).toBeUndefined();
       expect(token.generatorVersion).toBe(TOKEN_GENERATOR_VERSION);
     }
@@ -131,10 +131,10 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
   });
 
   it('builds the spec sheet description from the token data', () => {
-    const axe = created(contextFor(2, { type: 'axe', realm: ERarityKind.GLOOM, mapTier: 3 }));
+    const axe = created(contextFor(2, { type: 'axe', tokenType: ETokenType.GLOOM, mapTier: 3 }));
     expect(axe.description[0]).toEqual({
       key: 'content.tokens.line.kind',
-      params: { type: 'content.tokens.noun.axe', realm: 'content.tokens.realm.gloom' },
+      params: { type: 'content.tokens.noun.axe', tokenType: 'content.tokens.tokenType.gloom' },
     });
     expect(axe.description[1]).toEqual({
       key: 'content.tokens.line.strike',
@@ -164,9 +164,9 @@ describe('TokenFactory.createBase prices, determinism and text', () => {
         'id',
         'mapTier',
         'name',
-        'origin',
+        'tier',
         'price',
-        'rarity',
+        'tokenType',
         'skills',
         'sprite',
         'type',

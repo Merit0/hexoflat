@@ -1,15 +1,20 @@
-import { itemFamilyOfDimension, type EDimension } from '../dimensions/dimensions';
+import { tokenTypeOfDimension, type EDimension } from '../dimensions/dimensions';
 import type { BoardDescriptor } from '../boards/board-descriptors';
-import { baseRealmSchema, MAP_TIERS, type TBaseRealm, type TMapTier } from '../tokens/token-keys';
-import { DEFAULT_MAP_TIER, type TokenOrigin } from '../tokens/token-origin';
+import {
+  baseTokenTypeSchema,
+  MAP_TIERS,
+  type TBaseTokenType,
+  type TMapTier,
+} from '../tokens/token-keys';
+import { DEFAULT_MAP_TIER, type DropContext } from '../tokens/drop-context';
 import type { LocationKey } from './location-key';
 import { MapRegistry } from './world-map-registry';
 
 export const CAMP_LOCATION: LocationKey = 'camping';
 
 /** Adapter to the existing base-token contract; NOWHERE cannot generate base tokens. */
-export function realmOfBoard(board: { dimension: EDimension }): TBaseRealm {
-  return baseRealmSchema.parse(itemFamilyOfDimension(board.dimension));
+export function tokenTypeOfBoard(board: { dimension: EDimension }): TBaseTokenType {
+  return baseTokenTypeSchema.parse(tokenTypeOfDimension(board.dimension));
 }
 
 function isMapTier(value: unknown): value is TMapTier {
@@ -22,20 +27,20 @@ export function tierOfBoard(descriptor: BoardDescriptor | null | undefined): TMa
   return isMapTier(tier) ? tier : DEFAULT_MAP_TIER;
 }
 
-export function tokenOriginOfBoard(
+export function dropContextOfBoard(
   board: { dimension: EDimension },
   descriptor: BoardDescriptor | null | undefined,
-): TokenOrigin {
-  return { realm: realmOfBoard(board), mapTier: tierOfBoard(descriptor) };
+): DropContext {
+  return { tokenType: tokenTypeOfBoard(board), mapTier: tierOfBoard(descriptor) };
 }
 
-export function locationTokenOrigin(
+export function locationDropContext(
   locationKey: LocationKey,
   descriptor: BoardDescriptor | null = null,
-): TokenOrigin {
-  return tokenOriginOfBoard(MapRegistry.get(locationKey), descriptor);
+): DropContext {
+  return dropContextOfBoard(MapRegistry.get(locationKey), descriptor);
 }
 
-export function campTokenOrigin(): TokenOrigin {
-  return locationTokenOrigin(CAMP_LOCATION);
+export function campDropContext(): DropContext {
+  return locationDropContext(CAMP_LOCATION);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { TOKEN_CONTENT } from '../content/token-content';
 import { TOKEN_UNIQUES } from '../content/token-uniques.content';
 import { TRADERS } from '../content/traders.content';
@@ -14,7 +14,7 @@ const CONTEXT = {
   seed: 'audit-secret',
   sourceId: 'test:audit',
   n: 0,
-  realm: ERarityKind.IDOL,
+  tokenType: ETokenType.IDOL,
   mapTier: 1 as const,
   type: 'shield',
 };

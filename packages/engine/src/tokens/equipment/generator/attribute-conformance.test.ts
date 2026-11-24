@@ -117,7 +117,7 @@ describe('AG2 eligibility: pool = validator = content rule', () => {
         registry,
         type,
         { key: attribute.key, value },
-        { origin: 'base', profiles: ATTRIBUTE_PROFILES },
+        { tier: 'base', profiles: ATTRIBUTE_PROFILES },
         tier,
       );
       expect(failure === null, `${attribute.key}: ${failure}`).toBe(expected);

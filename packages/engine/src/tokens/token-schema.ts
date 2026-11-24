@@ -2,13 +2,14 @@ import { BASE_ITEMS } from '../content/base-items.content';
 import { baseItemKeySchema } from './base-item';
 import {
   dimensionSchema,
-  itemFamilyOfDimension,
+  tokenTypeOfDimension,
   tiersOfTokenType,
+  TOKEN_TIERS,
   tokenTypeAllowsTier,
 } from '../dimensions/dimensions';
 import { upcastTokenDimension } from './upcast-token-dimension';
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { skillIdSchema } from '../skills/skill-content';
 import {
@@ -20,7 +21,6 @@ import {
   itemTypeKeySchema,
   mapTierSchema,
   spriteKeySchema,
-  TOKEN_ORIGINS,
   uniqueKeySchema,
   wordKeySchemaFor,
 } from './token-keys';
@@ -77,11 +77,11 @@ function hasDuplicates(values: readonly string[]): boolean {
 export const currentItemTokenSchema = z
   .strictObject({
     id: itemTokenIdSchema,
-    origin: z.enum(TOKEN_ORIGINS),
+    tier: z.enum(TOKEN_TIERS),
     uniqueKey: uniqueKeySchema.optional(),
     baseKey: baseItemKeySchema.optional(),
     type: itemTypeKeySchema,
-    rarity: z.enum(ERarityKind),
+    tokenType: z.enum(ETokenType),
     dimension: dimensionSchema,
     name: tokenNameSchema,
     description: z.array(descriptionLineSchema),
@@ -94,14 +94,14 @@ export const currentItemTokenSchema = z
     ext: tokenExtensionsSchema,
   })
   .superRefine((token, ctx) => {
-    if (itemFamilyOfDimension(token.dimension) !== token.rarity) {
+    if (tokenTypeOfDimension(token.dimension) !== token.tokenType) {
       ctx.addIssue({
         code: 'custom',
         path: ['dimension'],
-        message: 'Dimension differs from item family',
+        message: 'Dimension differs from token type',
       });
     }
-    const unique = token.origin === 'unique';
+    const unique = token.tier === 'unique';
     const base = token.baseKey
       ? BASE_ITEMS.find((entry) => entry.key === token.baseKey)
       : undefined;
@@ -126,11 +126,11 @@ export const currentItemTokenSchema = z
         message: 'uniqueKey is set only on a unique token',
       });
     }
-    if (!tokenTypeAllowsTier(token.rarity, token.origin)) {
+    if (!tokenTypeAllowsTier(token.tokenType, token.tier)) {
       ctx.addIssue({
         code: 'custom',
-        path: ['rarity'],
-        message: `${token.rarity} tokens are ${tiersOfTokenType(token.rarity).join(' and ')} only`,
+        path: ['tokenType'],
+        message: `${token.tokenType} tokens are ${tiersOfTokenType(token.tokenType).join(' and ')} only`,
       });
     }
     if (token.name.kind === 'generated' && !token.name.prefix && !token.name.suffix) {

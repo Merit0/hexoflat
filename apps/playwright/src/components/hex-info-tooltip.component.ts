@@ -32,17 +32,17 @@ export class HexInfoTooltipComponent extends BaseComponent {
     await expect(this.page.getByTestId('hex-info-icon')).toHaveCount(0);
   }
 
-  async verifyRarity(label: RegExp): Promise<void> {
+  async verifyTokenType(label: RegExp): Promise<void> {
     await expect(this.tooltip).toBeVisible();
     await expect(this.page.getByTestId('hex-info-rarity')).toHaveText(label);
   }
 
-  async verifyNoRarity(): Promise<void> {
+  async verifyNoTokenType(): Promise<void> {
     await expect(this.tooltip).toBeVisible();
     await expect(this.page.getByTestId('hex-info-rarity')).toHaveCount(0);
   }
 
-  async verifyDividerFollowsRarity(): Promise<void> {
+  async verifyDividerFollowsLight(): Promise<void> {
     const tone = await this.page.getByTestId('hex-info-rarity').getAttribute('data-rarity-tone');
     await expect(this.page.getByTestId('hex-info-divider')).toHaveAttribute(
       'data-rarity-tone',
@@ -50,7 +50,7 @@ export class HexInfoTooltipComponent extends BaseComponent {
     );
   }
 
-  async verifyDividerHasNoRarity(): Promise<void> {
+  async verifyDividerHasNoLight(): Promise<void> {
     await expect(this.page.getByTestId('hex-info-divider')).toHaveAttribute(
       'data-rarity-tone',
       'none',

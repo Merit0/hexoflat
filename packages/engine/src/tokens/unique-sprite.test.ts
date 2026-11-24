@@ -9,8 +9,8 @@ const WITH_UNIQUE = {
     ...SPRITE_MANIFEST.entries,
     {
       key: 'unique-last-verdict',
-      origin: 'unique' as const,
-      realm: null,
+      tier: 'unique' as const,
+      tokenType: null,
       type: null,
       path: '/hex-assets/items/unique/unique-last-verdict.png',
     },

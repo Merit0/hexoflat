@@ -2,7 +2,7 @@ import { tokenSupplyFailure } from './token-supply-rules';
 import type { DomainEvent } from '../commands/types';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { isTokenType, mintBaseToken, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { DEFAULT_DROP_CONTEXT } from '../tokens/drop-context';
 import type { ItemToken } from '../tokens/token-schema';
 import { applyAggregate, toAggregate } from './inventory-adapter';
 import type { ConsumeItemCommand, GrantItemCommand } from './inventory-commands';
@@ -31,7 +31,7 @@ export function devTokenMint(state: InventoryState): TokenMint {
   return {
     seed: `grant:${state.heroId}`,
     sourceId: tokenSourceIdOf('dev', state.heroId, String(state.idSeq)),
-    origin: DEFAULT_TOKEN_ORIGIN,
+    dropContext: DEFAULT_DROP_CONTEXT,
   };
 }
 

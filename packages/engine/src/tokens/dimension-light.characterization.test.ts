@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { EDimension, itemFamilyOfDimension } from '../dimensions/dimensions';
+import { EDimension, TOKEN_TIERS, tokenTypeOfDimension } from '../dimensions/dimensions';
 import { LIGHT_COLOR_BY_TONE, LIGHT_TONES, lightFrameFile, lightTone } from './light-tone';
-import { TOKEN_ORIGINS } from './token-keys';
 
 const EXPECTED = [
   [EDimension.UNDERWORLD, 'base', 'gloom-base', 'blue'],
@@ -15,26 +14,26 @@ const EXPECTED = [
 
 describe('DA2 C3: light of every dimension x tier', () => {
   it.each(EXPECTED)('C3: %s %s shines %s (%s)', (dimension, tier, tone, color) => {
-    const result = lightTone(tier, itemFamilyOfDimension(dimension));
+    const result = lightTone(tier, tokenTypeOfDimension(dimension));
     expect(result).toBe(tone);
     expect(LIGHT_COLOR_BY_TONE[result]).toBe(color);
     expect(lightFrameFile(result)).toBe(`${color}-light.png`);
   });
 
   it('C3/D1: Idol BASE light stays gray', () => {
-    expect(LIGHT_COLOR_BY_TONE[lightTone('base', itemFamilyOfDimension(EDimension.EARTH))]).toBe(
+    expect(LIGHT_COLOR_BY_TONE[lightTone('base', tokenTypeOfDimension(EDimension.EARTH))]).toBe(
       'gray',
     );
   });
 
   it('C3: every dimension x tier pair gives a tone, except Nowhere BASE which is refused', () => {
     const tones = Object.values(EDimension).flatMap((dimension) =>
-      TOKEN_ORIGINS.flatMap((tier) => {
+      TOKEN_TIERS.flatMap((tier) => {
         if (dimension === EDimension.NOWHERE && tier === 'base') {
-          expect(() => lightTone(tier, itemFamilyOfDimension(dimension))).toThrow(/unique only/);
+          expect(() => lightTone(tier, tokenTypeOfDimension(dimension))).toThrow(/unique only/);
           return [];
         }
-        return [lightTone(tier, itemFamilyOfDimension(dimension))];
+        return [lightTone(tier, tokenTypeOfDimension(dimension))];
       }),
     );
     expect([...tones].sort()).toEqual(EXPECTED.map(([, , tone]) => tone).sort());

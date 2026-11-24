@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { EQUIPMENT_ATTRIBUTES } from '../content/equipment-attributes.content';
 import { gameTokenFactory, isTokenType, tokenSourceIdOf } from './game-tokens';
 import type { TokenResult } from './factory/token-generation';
-import { baseRealmSchema, itemTypeKeySchema, mapTierSchema } from './token-keys';
+import { baseTokenTypeSchema, itemTypeKeySchema, mapTierSchema } from './token-keys';
 import { tokenAttributeSchema, type ItemToken } from './token-schema';
 
 const ATTRIBUTE_KEYS: ReadonlySet<string> = new Set(EQUIPMENT_ATTRIBUTES.map((entry) => entry.key));
 
 export const tokenSpecSchema = z.strictObject({
   type: itemTypeKeySchema.refine(isTokenType, 'not an item token type'),
-  realm: baseRealmSchema,
+  tokenType: baseTokenTypeSchema,
   baseKey: z.string().optional(),
   mapTier: mapTierSchema,
   attributes: z
@@ -39,7 +39,7 @@ export function mintSpecTokens(spec: TokenSpec, mint: SpecMint): TokenResult<Ite
         seed: `grant:${mint.heroId}`,
         sourceId,
         n,
-        realm: spec.realm,
+        tokenType: spec.tokenType,
         baseKey: spec.baseKey,
         mapTier: spec.mapTier,
         type: spec.type,

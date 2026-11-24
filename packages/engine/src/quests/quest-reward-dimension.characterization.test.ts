@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { EDimension } from '../dimensions/dimensions';
-import type { TokenOrigin } from '../tokens/token-origin';
+import type { DropContext } from '../tokens/drop-context';
 import type { QuestDefinition } from './quest-definition';
 import { planClaim } from './quest-log';
 import { catalogueWith, counting, inventoryWith, progressWith } from './quest-test-setup';
@@ -30,29 +30,29 @@ function claimedToken(quest: QuestDefinition) {
 }
 
 describe('DA2 C7/F9: dimension of a quest item reward (quest-log.ts:206-209)', () => {
-  it('CURRENT (F9): an EARTH quest without rewardOrigin rewards an EARTH idol token of tier 1', () => {
+  it('CURRENT (F9): an EARTH quest without rewardDropContext rewards an EARTH idol token of tier 1', () => {
     expect(claimedToken(swordQuest())).toMatchObject({
       dimension: EDimension.EARTH,
-      rarity: ERarityKind.IDOL,
+      tokenType: ETokenType.IDOL,
       mapTier: 1,
-      origin: 'base',
+      tier: 'base',
     });
   });
 
-  it('CURRENT (F9): an UNDERWORLD quest without rewardOrigin rewards a gloom token (quest.dimension)', () => {
+  it('CURRENT (F9): an UNDERWORLD quest without rewardDropContext rewards a gloom token (quest.dimension)', () => {
     const quest = swordQuest({ dimension: EDimension.UNDERWORLD, locations: ['cave'] });
     expect(claimedToken(quest)).toMatchObject({
       dimension: EDimension.UNDERWORLD,
-      rarity: ERarityKind.GLOOM,
+      tokenType: ETokenType.GLOOM,
       mapTier: 1,
     });
   });
 
-  it('CURRENT (F9): rewardOrigin overrides quest.dimension and the tier', () => {
-    const rewardOrigin: TokenOrigin = { realm: ERarityKind.SPARK, mapTier: 3 };
-    expect(claimedToken(swordQuest({ rewardOrigin }))).toMatchObject({
+  it('CURRENT (F9): rewardDropContext overrides quest.dimension and the tier', () => {
+    const rewardDropContext: DropContext = { tokenType: ETokenType.SPARK, mapTier: 3 };
+    expect(claimedToken(swordQuest({ rewardDropContext }))).toMatchObject({
       dimension: EDimension.HEAVEN,
-      rarity: ERarityKind.SPARK,
+      tokenType: ETokenType.SPARK,
       mapTier: 3,
     });
   });

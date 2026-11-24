@@ -23,12 +23,12 @@
             <span v-else class="hex-info__gem is-top" aria-hidden="true" />
             <hex-info-card :view="view" />
             <span
-              v-if="view.rarity"
+              v-if="view.tokenType"
               class="hex-info__rarity is-bottom"
-              :style="{ '--rarity': view.rarity.color }"
+              :style="{ '--rarity': view.tokenType.color }"
               data-testid="hex-info-rarity"
-              :data-rarity-tone="view.rarity.tone"
-              >{{ view.rarity.label }}</span
+              :data-rarity-tone="view.tokenType.tone"
+              >{{ view.tokenType.label }}</span
             >
             <span v-else class="hex-info__gem is-bottom" aria-hidden="true" />
           </div>

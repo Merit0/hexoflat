@@ -23,7 +23,7 @@ import type { BattleStage } from './battle-stage';
 export type BattleToolAction = 'attack' | 'block' | 'unblock' | 'use' | 'eye' | 'take';
 
 export interface BattleToolHex {
-  origin: BattleHex;
+  heroHex: BattleHex;
   at: BattleHex;
   hand: BattleHand;
   toolKey: string;
@@ -180,7 +180,7 @@ function buildCollectToolHex(input: BattleToolInput): BattleToolHex | null {
   const target = collectToolTarget(view, self, input.ui.toolAt);
   if (!target) return null;
   return {
-    origin: { ...self.pos },
+    heroHex: { ...self.pos },
     at: target.at,
     hand: input.ui.hand,
     toolKey: HEXOBJECT_KEYS.HAND,
@@ -238,7 +238,7 @@ export function buildBattleToolHex(input: BattleToolInput): BattleToolHex | null
     self,
   );
   return {
-    origin: { ...self.pos },
+    heroHex: { ...self.pos },
     at: { ...at },
     hand,
     toolKey: battleToolKey(item),

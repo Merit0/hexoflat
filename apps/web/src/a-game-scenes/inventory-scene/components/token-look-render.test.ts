@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp, nextTick, type App, type Component } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { i18n } from '@/i18n';
@@ -38,7 +38,7 @@ function background(selector: string): string {
   return host.querySelector<HTMLElement>(selector)?.style.backgroundImage ?? '';
 }
 
-const BASE = () => baseTestToken('sword', ERarityKind.GLOOM);
+const BASE = () => baseTestToken('sword', ETokenType.GLOOM);
 const UNIQUE = () => uniqueTestToken('lantern-eater');
 
 const CASES = [
