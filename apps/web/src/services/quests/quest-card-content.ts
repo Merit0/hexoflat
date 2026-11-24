@@ -3,12 +3,12 @@ import { describeQuest } from '@hexoflat/engine/quests/objectives';
 import type { QuestOfferProjection } from '@hexoflat/engine/quests/quest-board-projection';
 import { questRuleParams } from './quest-rule-params';
 
-export type QuestCardContent = Omit<QuestOfferProjection, 'dayId' | 'locations' | 'turnIn'>;
+export type QuestCardContent = Omit<QuestOfferProjection, 'dayId' | 'turnIn'>;
 
 export function legacyQuestCard(id: string): QuestCardContent | undefined {
   const definition = ALL_QUESTS[id];
   if (!definition) return;
-  const { nameKey, descKey, tableRule, accept, rewards, repeat, objective } = definition;
+  const { nameKey, descKey, tableRule, locations, accept, rewards, repeat, objective } = definition;
   return {
     id,
     templateId: id,
@@ -16,6 +16,7 @@ export function legacyQuestCard(id: string): QuestCardContent | undefined {
     descKey,
     tableRule,
     howKey: `quest.${id}.how`,
+    locations,
     accept,
     rewards,
     repeat,

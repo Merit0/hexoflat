@@ -249,6 +249,34 @@ describe('quest board layout and details', () => {
     );
   });
 
+  it.each([
+    ['an EARTH location', wood, 'dimensions.earth'],
+    ['an UNDERWORLD location', bone, 'dimensions.underworld'],
+    ['a moved quest', { ...wood, locations: ['cave' as const] }, 'dimensions.underworld'],
+  ])('shows the dimension of %s in the details', async (_case, offer, dimensionKey) => {
+    expect(offer).not.toHaveProperty('dimension');
+    applyQuestProjection({ questBoard: { ...board, offers: [offer] } });
+    mount();
+    byId(`quest-row-${offer.id}`)!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    const label = document.querySelector(`[data-testid="quest-details-${offer.id}"] .dimension`);
+    expect(label?.textContent).toBe(
+      i18n.global.t('dimensions.label', { name: i18n.global.t(dimensionKey) }),
+    );
+  });
+
+  it('shows the location dimension of a quest accepted in an older save', async () => {
+    applyQuestProjection({
+      quests: { active: [{ questId: 'bone-hunter', progress: 0, state: 'active' }], done: {} },
+    });
+    mount();
+    byId('quest-row-bone-hunter')!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    expect(
+      document.querySelector('[data-testid="quest-details-bone-hunter"] .dimension')?.textContent,
+    ).toBe(i18n.global.t('dimensions.label', { name: i18n.global.t('dimensions.underworld') }));
+  });
+
   it('opens the details on hover only and closes them after the pointer leaves', async () => {
     vi.useFakeTimers();
     mount();
