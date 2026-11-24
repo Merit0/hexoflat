@@ -9,17 +9,18 @@
       <div class="tip__body">
         <header class="tip__head">
           <div class="tip__token-type-row">
-            <span class="tip__token-type">{{ tokenTypeLabel }}</span>
+            <span class="tip__token-type" data-testid="item-tooltip-token-type">{{
+              tokenTypeLabel
+            }}</span>
             <span v-if="view.equipped" class="tip__badge" data-testid="item-tooltip-equipped">{{
               t('itemTooltip.equipped')
             }}</span>
           </div>
           <h4 class="tip__title" data-testid="item-tooltip-title">{{ title }}</h4>
-          <p class="tip__type">{{ typeLabel }}</p>
-          <DimensionLabel :dimension="view.dimension" />
+          <p v-if="typeLabel" class="tip__type">{{ typeLabel }}</p>
         </header>
 
-        <section v-if="view.headline" class="tip__headline">
+        <section v-if="shownHeadline" class="tip__headline">
           <span class="tip__value" data-testid="item-tooltip-headline">{{ headlineValue }}</span>
           <span class="tip__label">{{ headlineLabel }}</span>
           <span
@@ -35,10 +36,6 @@
           </span>
         </section>
 
-        <ul v-if="capabilityLabels.length" class="tip__chips">
-          <li v-for="label in capabilityLabels" :key="label" class="tip__chip">{{ label }}</li>
-        </ul>
-
         <p
           v-if="view.use?.kind === 'locked'"
           class="tip__will-note"
@@ -47,18 +44,22 @@
           {{ t('itemTooltip.willLocked') }}
         </p>
 
-        <ul v-if="view.shields > 0 || view.hearts > 0" class="tip__bonuses">
+        <ul v-if="view.shields > 0 || bonusHearts > 0" class="tip__bonuses">
           <li v-if="view.shields > 0" class="tip__bonus" data-testid="item-tooltip-shields">
             <img class="tip__bonus-icon" :src="SHIELD_ICON_URL" alt="" />
             {{ t('itemTooltip.shields', { count: view.shields }) }}
           </li>
-          <li v-if="view.hearts > 0" class="tip__bonus" data-testid="item-tooltip-hearts">
+          <li v-if="bonusHearts > 0" class="tip__bonus" data-testid="item-tooltip-hearts">
             <img class="tip__bonus-icon" :src="HEART_ICON_URL" alt="" />
-            {{ t('itemTooltip.hearts', { count: view.hearts }) }}
+            {{ t('itemTooltip.hearts', { count: bonusHearts }) }}
           </li>
         </ul>
 
-        <div v-if="view.token" class="tip__lines" data-testid="item-tooltip-description">
+        <div
+          v-if="tokenLines.length || attributeRows.length"
+          class="tip__lines"
+          data-testid="item-tooltip-description"
+        >
           <p
             v-for="(line, index) in tokenLines"
             :key="index"
@@ -81,7 +82,9 @@
             </span>
           </p>
         </div>
-        <p v-else-if="view.description" class="tip__flavor">{{ t(view.description) }}</p>
+        <p v-else-if="!view.token && view.description" class="tip__flavor">
+          {{ t(view.description) }}
+        </p>
 
         <footer class="tip__foot">
           <span class="tip__stat" :title="t('itemTooltip.footer.weight')">
@@ -121,11 +124,11 @@
 </template>
 
 <script setup lang="ts">
-import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { InventoryTooltipView } from '@/composables/use-item-tooltip';
-import { tokenAttributeRows, tokenDescription, tokenName } from '@/services/tokens/token-text';
+import { tokenDescription, tokenAttributeRows, tokenName } from '@/services/tokens/token-text';
+import { strikeHeartsOf } from '@hexoflat/engine/tokens/tool-action';
 import {
   EQUIP_SLOT_ICON,
   ICON_PATHS,
@@ -134,7 +137,11 @@ import {
 } from '@/components/gui/icons/item-icons';
 import { SKILL_ICON } from '@/components/gui/icons/skill-presentation';
 import { LIGHT_NAME_COLOR } from '@/render/light';
-import { tokenTypeTextKey } from '@hexoflat/engine/tokens/factory/description-builder';
+import { EHexobjectGroup } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import {
+  TOKEN_LINE_KEYS,
+  tokenTypeTextKey,
+} from '@hexoflat/engine/tokens/factory/description-builder';
 import { useItemTooltipLabels } from './use-item-tooltip-labels';
 
 const SHIELD_ICON_URL = '/board-assets/hero-board/shield-icon.png';
@@ -146,9 +153,20 @@ const { t, locale } = useI18n();
 const title = computed(() =>
   props.view.token ? tokenName(props.view.token, locale.value) : t(props.view.title),
 );
-const tokenLines = computed(() =>
-  props.view.token ? tokenDescription(props.view.token, locale.value) : [],
-);
+const shownHeadline = computed(() => {
+  const headline = props.view.headline;
+  if (headline?.kind !== 'multiplier') return headline;
+  const strike = strikeHeartsOf(props.view.key);
+  return strike === null ? undefined : { kind: 'damage' as const, min: strike, max: strike };
+});
+const tokenLines = computed(() => {
+  const { token } = props.view;
+  if (!token) return [];
+  const hidden: string[] = [TOKEN_LINE_KEYS.kind, TOKEN_LINE_KEYS.tier];
+  if (shownHeadline.value?.kind === 'damage') hidden.push(TOKEN_LINE_KEYS.strike);
+  const description = token.description.filter((line) => !hidden.includes(line.key));
+  return tokenDescription({ ...token, description }, locale.value);
+});
 const attributeRows = computed(() =>
   props.view.token ? tokenAttributeRows(props.view.token, locale.value) : [],
 );
@@ -156,11 +174,11 @@ const labels = useItemTooltipLabels();
 
 const lightColor = computed(() => LIGHT_NAME_COLOR[props.view.lightName]);
 const tokenTypeLabel = computed(() => t(tokenTypeTextKey(props.view.tokenType.kind)));
-const typeLabel = computed(() =>
-  props.view.equipSlot
-    ? labels.value.slot[props.view.equipSlot]
-    : labels.value.group[props.view.group],
+const isGear = computed(
+  () => props.view.group === EHexobjectGroup.TOOL || props.view.group === EHexobjectGroup.EQUIPMENT,
 );
+const typeLabel = computed(() => (isGear.value ? null : labels.value.group[props.view.group]));
+const bonusHearts = computed(() => (props.view.token ? 0 : props.view.hearts));
 const iconName = computed<TIconName>(
   () =>
     ITEM_ICON_BY_KEY[props.view.key] ??
@@ -168,12 +186,11 @@ const iconName = computed<TIconName>(
 );
 
 const headlineLabel = computed(() =>
-  props.view.headline ? labels.value.headline[props.view.headline.kind] : '',
+  shownHeadline.value ? labels.value.headline[shownHeadline.value.kind] : '',
 );
 const headlineValue = computed(() => {
-  const headline = props.view.headline;
+  const headline = shownHeadline.value;
   if (!headline) return '';
-  if (headline.kind === 'multiplier') return `×${headline.max}`;
   return headline.min === headline.max ? `${headline.max}` : `${headline.min}–${headline.max}`;
 });
 const useSkillId = computed(() => props.view.use?.skillId ?? null);
@@ -181,7 +198,8 @@ const useIcon = computed(() =>
   useSkillId.value ? ICON_PATHS[SKILL_ICON[useSkillId.value]] : null,
 );
 const comparison = computed(() => {
-  const result = props.view.headline?.comparison;
+  const headline = props.view.headline;
+  const result = headline?.kind === 'multiplier' ? undefined : headline?.comparison;
   if (!result || result.direction === 'same') return null;
   const better = result.direction === 'better';
   return {
@@ -191,9 +209,6 @@ const comparison = computed(() => {
   };
 });
 
-const capabilityLabels = computed(() =>
-  props.view.capabilities.map((capability) => labels.value.capability[capability]),
-);
 const durabilityText = computed(
   () => `${t('itemTooltip.footer.durability')} ${props.view.footer.durabilityMax}`,
 );
@@ -348,22 +363,6 @@ const stackText = computed(() => {
 .tip__compare.is-worse {
   color: #f08a7a;
   background: rgba(240, 138, 122, 0.12);
-}
-.tip__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.tip__chip {
-  padding: 2px 10px;
-  border: 1px solid #2e281f;
-  border-radius: 999px;
-  background: #1b1812;
-  color: #cfc5b2;
-  font-size: 0.78rem;
 }
 .tip__bonuses {
   display: grid;

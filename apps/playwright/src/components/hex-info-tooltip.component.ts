@@ -13,10 +13,6 @@ export class HexInfoTooltipComponent extends BaseComponent {
     await expect(this.page.getByTestId('hex-info-title')).toHaveText(title);
   }
 
-  async verifyKindIsShown(): Promise<void> {
-    await expect(this.page.getByTestId('hex-info-kind')).toHaveText(/\S/);
-  }
-
   async verifySealState(state: HexInfoSealState): Promise<void> {
     await expect(this.tooltip).toBeVisible();
     await expect(this.page.getByTestId('hex-info-seal')).toHaveAttribute('data-state', state);

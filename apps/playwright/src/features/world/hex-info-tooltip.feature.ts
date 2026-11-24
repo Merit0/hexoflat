@@ -27,10 +27,9 @@ export class HexInfoTooltipFeature extends BaseFeature {
     });
   }
 
-  async verifyShowsTitleAndKind(title: RegExp): Promise<void> {
-    await this.step(`Verify the hover card shows "${title}" with its kind`, async () => {
+  async verifyShowsTitle(title: RegExp): Promise<void> {
+    await this.step(`Verify the hover card shows "${title}"`, async () => {
       await this.campingMap.hexInfoTooltip.verifyTitle(title);
-      await this.campingMap.hexInfoTooltip.verifyKindIsShown();
     });
   }
 

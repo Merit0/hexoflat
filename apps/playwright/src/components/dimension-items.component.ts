@@ -11,8 +11,8 @@ export class DimensionItemsComponent extends BaseComponent {
       .toEqual(token);
   }
 
-  async verifyTooltipDimension(label: RegExp): Promise<void> {
-    await expect(this.page.getByTestId('item-tooltip').getByText(label)).toBeVisible();
+  async verifyTooltipTokenType(label: RegExp): Promise<void> {
+    await expect(this.page.getByTestId('item-tooltip-token-type')).toHaveText(label);
   }
 
   async verifyBuybackToken(token: TestItemToken): Promise<void> {

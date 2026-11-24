@@ -4,13 +4,13 @@ import { HexInfoTooltipFeature } from '@features/world/hex-info-tooltip.feature'
 import { HexobjectKeys } from '@config/test-data';
 
 test.describe('hex hover card', { tag: ['@board'] }, () => {
-  test('Hovering an item on the map shows its name and kind', async () => {
+  test('Hovering an item on the map shows its name', async () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
 
     await hexInfo.placeItemAndHover(HexobjectKeys.axe);
 
-    await hexInfo.verifyShowsTitleAndKind(/Axe/i);
+    await hexInfo.verifyShowsTitle(/Axe/i);
   });
 
   test('The stash chest shows as interactable', async () => {
@@ -53,7 +53,7 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
     await hexInfo.placeItemAndHover(HexobjectKeys.axe);
-    await hexInfo.verifyShowsTitleAndKind(/Axe/i);
+    await hexInfo.verifyShowsTitle(/Axe/i);
 
     await hexInfo.leaveTheBoard();
 
