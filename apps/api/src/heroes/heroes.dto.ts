@@ -58,19 +58,16 @@ export function readHeroData(stored: unknown): { data: HeroData; unknownKeys: st
   return { data: parsed.data, unknownKeys };
 }
 
-export function newHeroData(data: HeroData): HeroData {
+export function checkedHeroData(data: unknown): HeroData {
   const parsed = HeroDataSchema.safeParse(data);
   if (!parsed.success) throw invalid(parsed.error);
   return parsed.data;
 }
 
-export function mergeHeroData(stored: unknown, patch: unknown): Record<string, unknown> {
-  const { data } = readHeroData(stored);
+export function mergeHeroData(stored: HeroData, patch: unknown): HeroData {
   const parsed = HeroDataPatchSchema.safeParse(patch);
   if (!parsed.success) throw invalid(parsed.error);
-  const refusal = heroOriginRefusal(data.origin, parsed.data.origin);
-  if (refusal) throw new HeroDataError(refusal, `${data.origin} -> ${parsed.data.origin}`);
-  const merged = { ...(stored as object), ...parsed.data, origin: data.origin };
-  readHeroData(merged);
-  return merged;
+  const refusal = heroOriginRefusal(stored.origin, parsed.data.origin);
+  if (refusal) throw new HeroDataError(refusal, `${stored.origin} -> ${parsed.data.origin}`);
+  return checkedHeroData({ ...stored, ...parsed.data, origin: stored.origin });
 }

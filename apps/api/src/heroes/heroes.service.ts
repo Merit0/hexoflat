@@ -7,8 +7,9 @@ import { DB, type Db } from '../db/db.module';
 import { heroes, users } from '../db/schema';
 import { createInitialAggregates } from '../player/aggregate-store';
 import {
+  HeroDataError,
+  checkedHeroData,
   mergeHeroData,
-  newHeroData,
   readHeroData,
   type HeroData,
   type HeroDataPatch,
@@ -25,10 +26,21 @@ function reportUnknownKeys(heroId: string, keys: readonly string[]): void {
   logger.warn(`Hero ${heroId} stores unknown fields, ignored: ${keys.join(', ')}`);
 }
 
+function storedHeroData(heroId: string, stored: unknown): HeroData {
+  try {
+    const { data, unknownKeys } = readHeroData(stored);
+    reportUnknownKeys(heroId, unknownKeys);
+    return data;
+  } catch (error) {
+    if (error instanceof HeroDataError) {
+      logger.error(`Hero ${heroId} has an unreadable row: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
 function heroView(record: typeof heroes.$inferSelect): IHero {
-  const { data, unknownKeys } = readHeroData(record.data);
-  reportUnknownKeys(record.id, unknownKeys);
-  return { id: record.id, name: record.name, ...data };
+  return { id: record.id, name: record.name, ...storedHeroData(record.id, record.data) };
 }
 
 // A fresh hero's base stats. HP starts small (3 hearts, not the 100 a hero can
@@ -117,7 +129,7 @@ export class HeroesService {
         .where(eq(users.id, userId))
         .limit(1);
 
-      const data = newHeroData(starterHeroData());
+      const data = checkedHeroData(starterHeroData());
       const [record] = await tx
         .insert(heroes)
         .values({ userId, name: userRecord?.name ?? 'Hero', data })
@@ -148,9 +160,10 @@ export class HeroesService {
         .where(eq(heroes.id, heroId))
         .for('update');
       if (!record) return;
+      const data = mergeHeroData(storedHeroData(heroId, record.data), patch);
       await tx
         .update(heroes)
-        .set({ data: mergeHeroData(record.data, patch), updatedAt: new Date().toISOString() })
+        .set({ data, updatedAt: new Date().toISOString() })
         .where(eq(heroes.id, heroId));
     });
 }

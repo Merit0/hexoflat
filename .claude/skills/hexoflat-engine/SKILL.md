@@ -93,6 +93,12 @@ One meaning per word: `dimension` = world (Heaven/Earth/Underworld/Nowhere); `to
 
 Old saves are read, never rewritten by hand: `upcastTokenDimension` (token `origin`/`rarity`, description param `realm`, `content.tokens.realm.*`, God Executor), `upcastDropContext` (`{realm}`), and `upcastDimensionVocabulary` (`dimensions/upcast-vocabulary.ts`: `tokenOrigin`/`rewardOrigin` and old tokens anywhere in a document), used by `deserializeWorld`, `parseQuestRun`, the aggregate upcasters inventory 3→4 and progress 11→12, and `upcastJournalEvents` for the events of an idempotent replay (all three API services). A new rename of a persisted field needs the same: a reader plus an aggregate version step, never a `CONTENT_VERSION` bump. `tokens/legacy-token-fixtures.ts` keeps the old shape on purpose.
 
+Hero origin (DA6): `hero.origin` is an immutable Dimension, default Nowhere; the rule is `heroOriginRefusal` in `dimensions/hero-origin.ts`. Never derive a gameplay effect from it before C9 is decided.
+
+`heroes.data` is written only through `HeroesService.updateData` (row lock, strict patch merged into the parsed row; legacy unknown keys are dropped). Never write the column directly.
+
+A new writer of `aggregate_snapshots` must store `schemaVersion` of the state it saves; `hero-rollback` upcasts from it (no version = inventory 6 / progress 14).
+
 ## Item token type
 
 Content prints `tokenType: { kind: ETokenType, boss }` on tool/equipment/loot. Read it through `DEFAULT_ITEM_TOKEN_TYPE`, `lightNameOf()` and `itemTokenTypeOf(token)` in `src/content/token-type-rules.ts` — never re-declare a fallback. Write the token type explicitly on every new item. The UI name is `content.tokens.tokenType.<kind>` (`tokenTypeTextKey`); there is no second key family.

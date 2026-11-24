@@ -126,10 +126,27 @@ describe.skipIf(!dbAvailable)('D8, DA6: heroes.data read and write path (real Po
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('DA6-5: a write keeps a legacy unknown key in the row and does not break on it', async () => {
-    const { heroId } = await withLegacyKey();
+  it('DA6-5: a write removes a legacy unknown key; origin and the known fields do not change', async () => {
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    const { heroId } = await heroWith((data) => ({ ...data, origin: 'heaven', coins: 42 }));
+    const { coins, ...known } = await storedData(heroId);
+    expect(coins).toBe(42);
     await kit.heroes.updateLocation(heroId, { columnIndex: 6, rowIndex: 6 }, 2);
-    expect(await storedData(heroId)).toMatchObject({ coins: 42, heroSteps: 2, origin: 'nowhere' });
+    expect(await storedData(heroId)).toEqual({
+      ...known,
+      heroLocation: { columnIndex: 6, rowIndex: 6 },
+      heroSteps: 2,
+    });
+  });
+
+  it('DA6-5: a refused write leaves the legacy unknown key in the row', async () => {
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    const { heroId } = await withLegacyKey();
+    const before = await storedData(heroId);
+    expect(await refusalOf(heroId, { origin: 'heaven' })).toMatchObject({
+      code: 'HERO_ORIGIN_IMMUTABLE',
+    });
+    expect(await storedData(heroId)).toEqual(before);
   });
 
   it.each([
@@ -137,19 +154,31 @@ describe.skipIf(!dbAvailable)('D8, DA6: heroes.data read and write path (real Po
     ['an explicitly missing value', { heroSteps: undefined }],
     ['an unknown dimension', { origin: 'mars' }],
   ])('DA6: %s on write is refused and the row does not change', async (_name, patch) => {
+    const errorLog = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     const { heroId } = await withOrigin('nowhere');
     const before = await storedData(heroId);
     expect(await refusalOf(heroId, patch)).toMatchObject({ code: 'HERO_DATA_INVALID' });
     expect(await storedData(heroId)).toEqual(before);
+    expect(errorLog).not.toHaveBeenCalled();
   });
 
-  it('C8: a stored unknown dimension is rejected, never read as Nowhere', async () => {
+  it('C8: a stored unknown dimension is rejected and logged with the hero id, never read as Nowhere', async () => {
+    const errorLog = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    vi.stubEnv('NODE_ENV', 'production');
     const { userId, heroId } = await withOrigin('mars');
+    const before = await storedData(heroId);
     await expect(kit.heroes.findByUserId(userId)).rejects.toMatchObject({
       code: 'HERO_DATA_INVALID',
     });
     await expect(
       kit.heroes.updateLocation(heroId, { columnIndex: 0, rowIndex: 0 }, 0),
     ).rejects.toMatchObject({ code: 'HERO_DATA_INVALID' });
+    expect(await storedData(heroId)).toEqual(before);
+    const mine = errorLog.mock.calls.map(([message]) => String(message));
+    expect(mine).toHaveLength(2);
+    for (const message of mine) {
+      expect(message).toContain(heroId);
+      expect(message).toContain('HERO_DATA_INVALID');
+    }
   });
 });
