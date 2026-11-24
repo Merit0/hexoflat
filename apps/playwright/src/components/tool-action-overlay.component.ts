@@ -23,6 +23,12 @@ export class ToolActionOverlayComponent extends BaseComponent {
     await expect(this.page.getByTestId('tool-hex-tile')).toBeVisible();
   }
 
+  async verifyToolShown(itemKey: string): Promise<void> {
+    const icon = this.page.getByTestId('tool-hex-tile').locator('.tool-icon');
+    await expect(icon).toBeVisible();
+    await expect(icon).toHaveCSS('background-image', new RegExp(`/${itemKey}-[^/]*$`));
+  }
+
   async verifyToolHexHidden(): Promise<void> {
     await expect(this.page.getByTestId('tool-hex-tile')).toBeHidden();
   }

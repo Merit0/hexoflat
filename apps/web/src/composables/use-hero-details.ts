@@ -12,7 +12,7 @@ import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/he
 import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-resolver';
 import { useHeroStore } from '@/stores/hero-store';
-import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
+import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { useBattleStore } from '@/stores/battle-store';
 import { itemLightName } from '@/render/token-look';
 import { SHIELD_SLOTS } from '@/constants/shield-slots';
@@ -32,6 +32,11 @@ export interface HandItem {
   willCost: number | null;
 }
 
+interface HeldItem {
+  item: HandItem;
+  power: number;
+}
+
 export interface HeroDetailsInput {
   name: string;
   locationTitle: string | null;
@@ -48,8 +53,8 @@ export interface HeroDetailsInput {
   skillProgress: SkillProgress;
   skillsLocked: boolean;
   will: { current: number; capacity: number } | null;
-  weapon: { item: HandItem; power: number } | null;
-  shield: { item: HandItem; sides: number } | null;
+  weapon: HeldItem | null;
+  shield: HeldItem | null;
   defense: number;
 }
 
@@ -103,7 +108,10 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
   const scout = scoutView(input.steps);
   const max = Math.max(1, input.maxHealth);
   const current = Math.max(0, Math.min(max, input.currentHealth));
-  const attack = input.weapon?.power ?? THREAT_RULES.unarmedPower;
+  const attack = Math.max(
+    input.weapon?.power ?? THREAT_RULES.unarmedPower,
+    input.shield?.power ?? THREAT_RULES.unarmedPower,
+  );
   const defense = round2(input.defense);
 
   return {
@@ -145,6 +153,14 @@ function toHandItem(item: { key: THexobjectKey; token?: ItemToken }, skills: Ski
   };
 }
 
+function heldItem(item: InventoryItem | null, skills: SkillRanks): HeldItem | null {
+  if (!item || item.key === HEXOBJECT_KEYS.HAND) return null;
+  return {
+    item: toHandItem(item, skills),
+    power: battleStat(item.key, 'power') || THREAT_RULES.unarmedPower,
+  };
+}
+
 export function useHeroDetails() {
   const heroStore = useHeroStore();
   const inventory = useHeroInventoryStore();
@@ -156,22 +172,6 @@ export function useHeroDetails() {
     const knowledge = heroStore.knowledge;
     const skills = knowledge?.skills ?? {};
     const equipped = inventory.equippedItems;
-    const weaponItem = equipped.weapon;
-    const shieldItem = equipped.shield;
-    const weapon =
-      weaponItem && weaponItem.key !== HEXOBJECT_KEYS.HAND
-        ? {
-            item: toHandItem(weaponItem, skills),
-            power: battleStat(weaponItem.key, 'power') || THREAT_RULES.unarmedPower,
-          }
-        : null;
-    const shield =
-      shieldItem && shieldItem.key !== HEXOBJECT_KEYS.HAND
-        ? {
-            item: toHandItem(shieldItem, skills),
-            sides: resolveHeroStats([shieldItem]).blockSides,
-          }
-        : null;
     const defense = resolveHeroStats(Object.values(equipped)).blockSides;
 
     return buildHeroDetails({
@@ -190,8 +190,8 @@ export function useHeroDetails() {
       skillProgress: knowledge?.skillProgress ?? {},
       skillsLocked: heroStore.isHeroMoving || battle.inBattle,
       will: knowledge ? { current: knowledge.current, capacity: knowledge.capacity } : null,
-      weapon,
-      shield,
+      weapon: heldItem(equipped.weapon, skills),
+      shield: heldItem(equipped.shield, skills),
       defense,
     });
   });

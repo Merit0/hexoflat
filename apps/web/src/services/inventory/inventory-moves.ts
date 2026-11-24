@@ -2,6 +2,7 @@ import { EQUIP_SLOTS, type TEquipSlot } from '@hexoflat/engine/abstraction/hexob
 import { BAG_WILL_SLOT_KEY, bagIndexOfSlotKey } from '@hexoflat/engine/inventory/bag-layout';
 import type { TItemLocation } from '@hexoflat/engine/inventory/item-location';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
+import type { TTransferError } from '@hexoflat/engine/inventory/item-transfer';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { dispatchInventory, type InventoryStores } from './inventory-store-io';
 
@@ -69,13 +70,17 @@ function handsDiffer(a: InventoryState, b: InventoryState): boolean {
   );
 }
 
-export function moveBySlot(stores: InventoryStores, itemId: string, targetSlotKey: string): void {
+export function moveBySlot(
+  stores: InventoryStores,
+  itemId: string,
+  targetSlotKey: string,
+): TTransferError | null {
   const item = stores.inventory.items.find((candidate) => candidate.id === itemId);
-  if (!item || item.key === HEXOBJECT_KEYS.HAND) return;
-  if (item.slotKey === targetSlotKey || targetSlotKey === BAG_WILL_SLOT_KEY) return;
+  if (!item || item.key === HEXOBJECT_KEYS.HAND) return null;
+  if (item.slotKey === targetSlotKey || targetSlotKey === BAG_WILL_SLOT_KEY) return null;
   const from = locationOfSlotKey(item.slotKey);
   const to = locationOfSlotKey(targetSlotKey);
-  if (!from || !to) return;
+  if (!from || !to) return null;
 
   const build = ({ heroId, revision }: { heroId: string; revision: number }) => ({
     type: 'MOVE_ITEM' as const,
@@ -84,9 +89,10 @@ export function moveBySlot(stores: InventoryStores, itemId: string, targetSlotKe
   const context = { stashOpen: stores.stash.isOpen, battleOpen: false };
 
   const preview = dispatchInventory(stores, build, context, { commit: false });
-  if (!preview.ok) return;
+  if (!preview.ok) return (preview.reason as TTransferError | undefined) ?? null;
   if (gate && handsDiffer(preview.before, preview.after) && !gate.approve(handsOf(preview.after))) {
-    return;
+    return null;
   }
-  dispatchInventory(stores, build, context);
+  const result = dispatchInventory(stores, build, context);
+  return result.ok ? null : ((result.reason as TTransferError | undefined) ?? null);
 }

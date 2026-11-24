@@ -188,7 +188,10 @@ watch(
     for (const tool of tools) {
       const priority = topPriority(tool, tile);
       const beatsHandOnTie =
-        priority === bestPriority && best === HEXOBJECT_KEYS.HAND && tool !== HEXOBJECT_KEYS.HAND;
+        bestPriority >= 0 &&
+        priority === bestPriority &&
+        best === HEXOBJECT_KEYS.HAND &&
+        tool !== HEXOBJECT_KEYS.HAND;
       if (priority > bestPriority || beatsHandOnTie) {
         best = tool;
         bestPriority = priority;

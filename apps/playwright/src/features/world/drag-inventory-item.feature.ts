@@ -32,4 +32,11 @@ export class DragInventoryItemFeature extends BaseFeature {
       await this.campingMap.inventory.dragEquippedItemToGridSlot(itemId, targetSlotKey);
     });
   }
+
+  async dragEquippedToEquipSlot(itemKey: string, slot: EquipSlot): Promise<void> {
+    await this.step(`Drag equipped "${itemKey}" to the "${slot}" equip slot`, async () => {
+      const itemId = await this.campingMap.inventory.getItemIdByKey(itemKey);
+      await this.campingMap.inventory.dragEquippedItemToEquipSlot(itemId, slot);
+    });
+  }
 }

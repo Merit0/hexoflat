@@ -25,7 +25,7 @@ const base: HeroDetailsInput = {
 const swordItem = { titleKey: 'content.sword.title', lightName: null, willCost: null };
 const shieldItem = { titleKey: 'content.shield.title', lightName: null, willCost: null };
 const sword = { item: swordItem, power: 2 };
-const shield = { item: shieldItem, sides: 2 };
+const shield = { item: shieldItem, power: 1 };
 
 describe('buildHeroDetails', () => {
   it('counts one heart per max health point with half-heart precision', () => {
@@ -46,6 +46,11 @@ describe('buildHeroDetails', () => {
     const view = buildHeroDetails({ ...base, weapon: sword, shield, defense: 2 });
     expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('2');
     expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2');
+  });
+
+  it('shows the same attack whichever hand holds the weapon', () => {
+    const view = buildHeroDetails({ ...base, weapon: shield, shield: sword, defense: 2 });
+    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('2');
   });
 
   it('falls back to the unarmed power and zero shield sides with nothing equipped', () => {

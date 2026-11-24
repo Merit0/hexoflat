@@ -4,6 +4,7 @@ import {
   useHeroInventoryStore,
   type TEquipSlot,
 } from '@/stores/hero-inventory-store';
+import { stashErrorText, warnHero } from './stash-messages';
 
 type InventoryDragTarget =
   { kind: 'grid'; slotKey: string } | { kind: 'equip'; equipSlot: TEquipSlot } | null;
@@ -73,6 +74,16 @@ export function startInventoryDrag(
   inventoryDragState.dragHeight = rect.height;
 }
 
+function moveOrWarn(
+  inventoryStore: ReturnType<typeof useHeroInventoryStore>,
+  itemId: string,
+  slotKey: string,
+): void {
+  const refusal = inventoryStore.moveItemToSlot(itemId, slotKey);
+  const text = refusal && stashErrorText(refusal);
+  if (text) warnHero(text);
+}
+
 export function dropInventoryDragToSlot(
   inventoryStore: ReturnType<typeof useHeroInventoryStore>,
   targetSlot: string | null,
@@ -80,7 +91,7 @@ export function dropInventoryDragToSlot(
   const { isDragging, draggingId, dragFromSlot } = inventoryDragState;
 
   if (isDragging && draggingId && dragFromSlot && targetSlot && targetSlot !== dragFromSlot) {
-    inventoryStore.moveItemToSlot(draggingId, targetSlot);
+    moveOrWarn(inventoryStore, draggingId, targetSlot);
   }
 
   resetInventoryDragState();
@@ -93,7 +104,7 @@ export function dropInventoryDragToEquip(
   const { isDragging, draggingId } = inventoryDragState;
 
   if (isDragging && draggingId && targetEquipSlot) {
-    inventoryStore.moveItemToSlot(draggingId, equipSlotKey(targetEquipSlot));
+    moveOrWarn(inventoryStore, draggingId, equipSlotKey(targetEquipSlot));
   }
 
   resetInventoryDragState();

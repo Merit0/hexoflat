@@ -90,11 +90,11 @@ describe('stash drag controller', () => {
   it('refuses a wrong slot with a message, a shake, and leaves everything in place', () => {
     const { index, item } = put(K.SHIELD);
     lift(bag(index), item);
-    dragMoveTo(cellTarget(equip('weapon')));
+    dragMoveTo(cellTarget(equip('armor')));
     expect(stashDrag.preview).toMatchObject({ ok: false, reason: 'WRONG_SLOT' });
     dragRelease();
     expect(useHeroToolStore().actionMessage).toBeTruthy();
-    expect(stashFx.shake).toBe('equip:weapon');
+    expect(stashFx.shake).toBe('equip:armor');
     expect(readInventoryAggregate().bag[index]?.id).toBe(item.id);
   });
 
