@@ -140,6 +140,7 @@
     "hearts": "{count, plural, one {+# heart} other {+# hearts}}"
   },
   "heroDetails": {
+    "noLocation": "No location",
     "vitals": {
       "hearts": "Hearts",
       "shields": "Shields",

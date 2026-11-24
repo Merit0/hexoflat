@@ -330,11 +330,11 @@ export function tokenTypeOfDimension(dimension: EDimension): TTokenType {
   return DIMENSIONS[dimensionSchema.parse(dimension)].tokenType;
 }
 
-export function dimensionOfTokenType(family: TTokenType): EDimension {
-  const parsed = tokenTypeSchema.parse(family);
+export function dimensionOfTokenType(tokenType: TTokenType): EDimension {
+  const parsed = tokenTypeSchema.parse(tokenType);
   const dimension = Object.values(EDimension).find(
     (owner) => DIMENSIONS[owner].tokenType === parsed,
   );
-  if (!dimension) throw new Error(`Unknown item family: ${parsed}`);
+  if (!dimension) throw new Error(`Unknown token type: ${parsed}`);
   return dimension;
 }

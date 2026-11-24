@@ -35,7 +35,7 @@ export interface HandItem {
 
 export interface HeroDetailsInput {
   name: string;
-  locationTitle: string;
+  locationTitle: string | null;
   locationDimension?: EDimension;
   origin: EDimension;
   steps: number;
@@ -58,7 +58,7 @@ export interface HeroDetailsInput {
 
 export interface HeroDetailsView {
   name: string;
-  locationTitle: string;
+  locationTitle: string | null;
   locationDimension?: EDimension;
   origin: EDimension;
   steps: number;
@@ -185,7 +185,7 @@ export function useHeroDetails() {
 
     return buildHeroDetails({
       name: hero.name || 'Hero',
-      locationTitle: key ? (MapRegistry.get(key)?.title ?? key) : 'Nowhere',
+      locationTitle: key ? (MapRegistry.get(key)?.title ?? key) : null,
       locationDimension: key ? MapRegistry.get(key).dimension : undefined,
       origin: hero.origin,
       steps: hero.heroSteps,

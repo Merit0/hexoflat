@@ -63,7 +63,7 @@ Slow-suite split (2026-11-21): scenarios whose latest successful local Allure ru
 exceeded 30 seconds live in `e2e/slow/<group>/`, retaining their functional
 `@<group>` tag. Push runs (`E2E_PRE_PUSH=1`) exclude that folder unless
 `E2E_INCLUDE_SLOW=1`; CI/direct full runs include it. Run the dedicated suite with
-`pnpm test:e2e:slow` (one worker), or a slow spec through
+`pnpm test:e2e:slow --workers=2` (two workers), or a slow spec through
 `E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow/<group>/<spec>.spec.ts`.
 Impact-map globs include both locations and the map checker resolves the
 functional folder below `slow`. Keep faster cases in the regular folder when

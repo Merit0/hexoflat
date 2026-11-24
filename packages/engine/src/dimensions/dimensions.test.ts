@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { dimensionSchema, EDimension, tokenTypeOfDimension } from './dimensions';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  dimensionOfTokenType,
+  dimensionSchema,
+  DIMENSIONS,
+  EDimension,
+  tokenTypeOfDimension,
+  type TTokenType,
+} from './dimensions';
 import { tokenTypeOfBoard, dropContextOfBoard } from '../registry/location-drop-context';
 import { MapRegistry } from '../registry/world-map-registry';
 import { LOCATION_KEYS } from '../registry/location-key';
@@ -39,5 +46,23 @@ describe('dimension ownership', () => {
     expect(
       Object.fromEntries(LOCATION_KEYS.map((key) => [key, MapRegistry.get(key).dimension])),
     ).toEqual({ camping: 'earth', silesia: 'earth', 'silesia-north': 'earth', cave: 'underworld' });
+  });
+});
+
+describe('DA8b: the dimension of a token type', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it.each(Object.values(EDimension))('gives %s back from its token type', (dimension) => {
+    expect(dimensionOfTokenType(DIMENSIONS[dimension].tokenType)).toBe(dimension);
+  });
+
+  it('refuses a token type that no dimension owns', () => {
+    expect(() => dimensionOfTokenType('unknown' as TTokenType)).toThrow();
+    vi.spyOn(Object, 'values').mockReturnValue([]);
+    expect(() => dimensionOfTokenType(DIMENSIONS[EDimension.EARTH].tokenType)).toThrow(
+      'Unknown token type: idol',
+    );
   });
 });

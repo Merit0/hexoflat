@@ -140,6 +140,7 @@
     "hearts": "{count, plural, one {+# серце} few {+# серця} many {+# сердець} other {+# сердець}}"
   },
   "heroDetails": {
+    "noLocation": "Без локації",
     "vitals": {
       "hearts": "Серця",
       "shields": "Щити",
