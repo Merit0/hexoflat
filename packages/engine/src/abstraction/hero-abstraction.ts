@@ -1,3 +1,4 @@
+import type { EDimension } from '../dimensions/dimensions';
 import { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 
 export interface IHero {
@@ -13,4 +14,5 @@ export interface IHero {
   imgPath: string;
   heroLocation: IHexCoordinates;
   heroSteps: number;
+  readonly origin: EDimension;
 }

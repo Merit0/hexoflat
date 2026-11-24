@@ -327,6 +327,7 @@ export const useHeroStore = defineStore('hero', {
         await loadServerBattleView();
         this.restoreFromExpedition();
         this.hero.id = hero.id;
+        this.hero.origin = hero.origin;
         this.loadKnowledge();
 
         this.hero

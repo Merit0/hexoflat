@@ -1,5 +1,10 @@
 import { and, asc, desc, eq } from 'drizzle-orm';
-import { upcastAggregate, type TAggregateKind, AGGREGATES } from '@hexoflat/engine';
+import {
+  upcastAggregate,
+  type AggregateStates,
+  type TAggregateKind,
+  AGGREGATES,
+} from '@hexoflat/engine';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { Db } from '../db/db.module';
 import {
@@ -83,6 +88,26 @@ export interface RollbackPlan {
   newRevision: number;
 }
 
+export const UNVERSIONED_SNAPSHOT_SCHEMA = {
+  inventory: 6,
+  progress: 14,
+} as const satisfies Record<TAggregateKind, number>;
+
+function restoreSnapshot<K extends TAggregateKind>(
+  kind: K,
+  snapshot: typeof aggregateSnapshots.$inferSelect,
+): AggregateStates[K] {
+  const version = snapshot.schemaVersion ?? UNVERSIONED_SNAPSHOT_SCHEMA[kind];
+  try {
+    return upcastAggregate(kind, version, snapshot.state, { heroId: snapshot.heroId });
+  } catch (error) {
+    throw new AdminToolError(
+      `The snapshot of ${kind} at revision ${snapshot.revision} cannot be read as schema v${version}.`,
+      { cause: error },
+    );
+  }
+}
+
 export async function rollbackAggregate(
   db: Db,
   heroId: string,
@@ -121,13 +146,12 @@ export async function rollbackAggregate(
     };
     if (!options.confirm) return plan;
 
-    const restored = upcastAggregate(kind, AGGREGATES[kind].schemaVersion, snapshot.state, {
-      heroId,
-    });
+    const restored = restoreSnapshot(kind, snapshot);
     await tx.insert(aggregateSnapshots).values({
       heroId,
       kind,
       revision: current.revision,
+      schemaVersion: current.schemaVersion,
       state: current.state,
       reason: 'rollback',
     });

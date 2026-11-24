@@ -1,0 +1,1 @@
+ALTER TABLE "aggregate_snapshots" ADD COLUMN "schema_version" integer;

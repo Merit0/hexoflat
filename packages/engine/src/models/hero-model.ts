@@ -1,4 +1,6 @@
 import { IHero } from '../abstraction/hero-abstraction';
+import type { EDimension } from '../dimensions/dimensions';
+import { DEFAULT_HERO_ORIGIN } from '../dimensions/hero-origin';
 import { IHexCoordinates } from '../map/interfaces/hex-tile-config-interface';
 import { normalizeHealthValue, roundToSingleDecimal } from '../utils/combat/health-format';
 
@@ -26,6 +28,7 @@ export class HeroModel implements IHero {
   imgPath = '';
   heroLocation: IHexCoordinates = { columnIndex: 0, rowIndex: 0 };
   heroSteps: number;
+  origin: EDimension = DEFAULT_HERO_ORIGIN;
 
   constructor() {
     this.maxHealth = 100;

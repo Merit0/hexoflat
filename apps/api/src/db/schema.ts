@@ -128,6 +128,7 @@ export const aggregateSnapshots = pgTable(
       .references(() => heroes.id, { onDelete: 'cascade' }),
     kind: text('kind').notNull(),
     revision: integer('revision').notNull(),
+    schemaVersion: integer('schema_version'),
     state: jsonb('state').notNull(),
     reason: text('reason').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })

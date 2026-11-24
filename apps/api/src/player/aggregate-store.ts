@@ -157,9 +157,14 @@ export async function saveAggregate<K extends TAggregateKind>(
     .returning({ revision: heroAggregates.revision });
   if (updated.length === 0) throw new RevisionConflictError(kind);
   if (revision % SNAPSHOT_EVERY_REVISIONS === 0) {
-    await tx
-      .insert(aggregateSnapshots)
-      .values({ heroId, kind, revision, state, reason: 'periodic' });
+    await tx.insert(aggregateSnapshots).values({
+      heroId,
+      kind,
+      revision,
+      schemaVersion: AGGREGATES[kind].schemaVersion,
+      state,
+      reason: 'periodic',
+    });
   }
   return revision;
 }

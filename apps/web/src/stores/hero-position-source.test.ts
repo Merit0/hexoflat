@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 import { apiClient } from '@/api/client';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { coordinateKey } from '@hexoflat/engine/utils/hex-utils';
@@ -201,6 +202,7 @@ const FAKE_HERO: IHero = {
   imgPath: '',
   heroLocation: { columnIndex: 0, rowIndex: 0 },
   heroSteps: 0,
+  origin: EDimension.NOWHERE,
 };
 
 describe('where the hero stands right after login', () => {
