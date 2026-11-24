@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ETokenType } from '../abstraction/hexobject-abstraction';
-import { rollUniqueDrops, type UniqueDropOverride } from '../containers/unique-drops';
+import {
+  carriesUniqueDrops,
+  rollUniqueDrops,
+  type UniqueDropOverride,
+} from '../containers/unique-drops';
 import { LOOT_TABLES, SKELETON_KING_TABLE_ID, lootTableOf } from '../content/loot-tables.content';
 import { ALIEN_UNIQUE_CHANCE_BP } from '../content/unique-rules.content';
 import { bossAlienProblems, lootTableProblems } from '../content/validate-loot';
@@ -65,6 +69,10 @@ function dropsOf(state: BattleState): LootDrop[] {
 const uniquesOf = (drops: LootDrop[]) => drops.filter((drop) => drop.token?.tier === 'unique');
 const baseOf = (drops: LootDrop[]) => drops.filter((drop) => drop.token?.tier !== 'unique');
 
+const aliensOf = (drops: LootDrop[]) =>
+  uniquesOf(drops).filter((drop) => drop.token!.tokenType === ETokenType.ALIEN);
+const keysOf = (drops: LootDrop[]) => uniquesOf(drops).map((drop) => drop.token!.uniqueKey);
+
 const IDS = Array.from({ length: 40 }, (_, index) => `da5b-${index}`);
 
 describe('DA5b-1 a boss grave holds the base loot plus a unique by the rules of its table', () => {
@@ -125,7 +133,7 @@ describe('DA5b-2 the Alien drops from a boss of any dimension, at most once per 
     '10000 bp gives one Alien from a boss of %s and 0 bp gives none',
     (dimension) => {
       for (const id of IDS) {
-        const aliens = uniquesOf(dropsOf(killed(KINDS[dimension], id, { chanceBp: 10_000 })));
+        const aliens = aliensOf(dropsOf(killed(KINDS[dimension], id, { chanceBp: 10_000 })));
         expect(aliens).toHaveLength(1);
         expect(aliens[0].token).toMatchObject({
           tokenType: ETokenType.ALIEN,
@@ -146,6 +154,29 @@ describe('DA5b-2 the Alien drops from a boss of any dimension, at most once per 
     const drops = uniquesOf(dropsOf(killed(RULED_KIND, 'da5b-both', { chanceBp: 10_000 })));
     expect(drops.map((drop) => drop.token!.uniqueKey)).toEqual(['lantern-eater', 'last-verdict']);
     expect(new Set(drops.map((drop) => drop.token!.id)).size).toBe(2);
+  });
+
+  it('two bosses on one hex: one Alien roll per body in one grave', () => {
+    const stacked = (id: string, chanceBp: number) => {
+      const state = fight([king('e1', TARGET), king('e2', TARGET)], { id });
+      for (const creature of state.creatures) if (creature.side === 'enemies') creature.hp = 0;
+      state.uniqueDropOverride = { chanceBp };
+      enterCollectPhase(state);
+      expect(state.collect!.graves).toHaveLength(1);
+      return state.collect!.graves[0].container!.contents!.map(aliensOf);
+    };
+    const forced = stacked('da5b-stacked', 10_000);
+    expect(forced.map((aliens) => aliens.length)).toEqual([1, 1]);
+    const tokens = forced.flat().map((drop) => drop.token!);
+    expect(new Set(tokens.map(({ id }) => id)).size).toBe(2);
+    expect(new Set(tokens.map(({ instanceId }) => instanceId)).size).toBe(2);
+    expect(stacked('da5b-stacked', 0)).toEqual([[], []]);
+    const outcomes = IDS.map((id) =>
+      stacked(id, 5_000)
+        .map((aliens) => aliens.length)
+        .join(),
+    );
+    expect(new Set(outcomes)).toEqual(new Set(['0,0', '0,1', '1,0', '1,1']));
   });
 
   it('an ordinary enemy carries no unique roll even when the chance is forced', () => {
@@ -173,24 +204,44 @@ describe('DA5b-2 the Alien drops from a boss of any dimension, at most once per 
   });
 });
 
-describe('DA5b-3 the real chance of an Alien', () => {
+describe('DA5b-3 the real chances of the Skeleton King', () => {
   const KILLS = 10_000;
   const SIGMAS = 4;
+  const LANTERN_EATER_CHANCE_BP = 500;
 
-  it('10 000 seeded kills of the Skeleton King stay within four sigmas of 50 bp', () => {
-    const chance = ALIEN_UNIQUE_CHANCE_BP / 10_000;
+  it('the table names lantern-eater at 500 bp and the Alien chance is 50 bp', () => {
+    expect(lootTableOf(SKELETON_KING_TABLE_ID)).toMatchObject({
+      uniqueDrops: [{ uniqueKey: 'lantern-eater', chanceBp: LANTERN_EATER_CHANCE_BP }],
+      alienRoll: true,
+    });
+    expect(ALIEN_UNIQUE_CHANCE_BP).toBe(50);
+  });
+
+  it('no other table rolls an Alien or names a unique', () => {
+    const carriers = Object.values(LOOT_TABLES).filter(
+      (table) => table.id !== RULED_TABLE_ID && carriesUniqueDrops(table),
+    );
+    expect(carriers.map(({ id }) => id)).toEqual([SKELETON_KING_TABLE_ID]);
+  });
+
+  it('10 000 seeded kills stay within four sigmas of 500 bp and 50 bp', () => {
     const state = killed('skeleton-king', 'da5b-rate');
     const grave = { ...state.collect!.graves[0], container: undefined };
-    let aliens = 0;
+    const counts = { 'lantern-eater': 0, 'last-verdict': 0 };
     for (let kill = 0; kill < KILLS; kill += 1) {
       state.id = `da5b-rate-${kill}`;
-      const drops = uniquesOf(createGraveContainer(state, grave).contents!.flat());
-      expect(drops.length).toBeLessThanOrEqual(1);
-      if (drops[0]?.token?.tokenType === ETokenType.ALIEN) aliens += 1;
+      const keys = keysOf(createGraveContainer(state, grave).contents!.flat());
+      expect(new Set(keys).size).toBe(keys.length);
+      for (const key of keys) counts[key as keyof typeof counts] += 1;
     }
-    const bound = SIGMAS * Math.sqrt(KILLS * chance * (1 - chance));
-    expect(ALIEN_UNIQUE_CHANCE_BP).toBe(50);
-    expect(Math.abs(aliens - KILLS * chance)).toBeLessThanOrEqual(bound);
+    for (const [count, chanceBp] of [
+      [counts['lantern-eater'], LANTERN_EATER_CHANCE_BP],
+      [counts['last-verdict'], ALIEN_UNIQUE_CHANCE_BP],
+    ]) {
+      const chance = chanceBp / 10_000;
+      const bound = SIGMAS * Math.sqrt(KILLS * chance * (1 - chance));
+      expect(Math.abs(count - KILLS * chance)).toBeLessThanOrEqual(bound);
+    }
   }, 120_000);
 });
 
@@ -207,7 +258,7 @@ describe('the force hook is a fixture for one carrier event and never reaches th
     );
     const won = applyBattleFixture(forced, { kind: 'finish', outcome: 'victory' });
     expect(won.uniqueDropOverride).toBeUndefined();
-    expect(uniquesOf(dropsOf(won)).map((drop) => drop.token!.uniqueKey)).toEqual(['last-verdict']);
+    expect(keysOf(dropsOf(won))).toEqual(['lantern-eater', 'last-verdict']);
     expect(open.uniqueDropOverride).toBeUndefined();
   });
 
@@ -216,10 +267,8 @@ describe('the force hook is a fixture for one carrier event and never reaches th
     for (const creature of state.creatures) if (creature.side === 'enemies') creature.hp = 0;
     state.uniqueDropOverride = { chanceBp: 10_000 };
     enterCollectPhase(state);
-    const counts = state.collect!.graves.map(
-      (grave) => uniquesOf(grave.container!.contents!.flat()).length,
-    );
-    expect(counts).toEqual([1, 0]);
+    const keys = state.collect!.graves.map((grave) => keysOf(grave.container!.contents!.flat()));
+    expect(keys).toEqual([['lantern-eater', 'last-verdict'], []]);
   });
 
   it('a table without rules rolls nothing', () => {

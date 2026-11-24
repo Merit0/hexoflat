@@ -73,7 +73,7 @@ const KING_GRAVE: string[] = [
   '1,-1=coinsx48;2,-1=swordx1;2,0=health-bottlex1 | bag -',
   '1,-1=coinsx37;2,-1=return-scrollx1;2,0=shieldx1;1,1=health-bottlex2 | bag -',
   '1,-1=coinsx31;2,-1=return-scrollx1;2,0=return-scrollx1 | bag -',
-  '1,-1=coinsx41;2,-1=shieldx1;2,0=shieldx1;1,1=health-bottlex1 | bag -',
+  '1,-1=coinsx41;2,-1=shieldx1;2,0=shieldx1;1,1=health-bottlex1;0,1=swordx1 | bag -',
   '1,-1=coinsx46;2,-1=health-bottlex1;2,0=health-bottlex2 | bag -',
   '1,-1=coinsx50;2,-1=return-scrollx1;2,0=shieldx1 | bag -',
   '1,-1=coinsx30;2,-1=health-bottlex2;2,0=shieldx1;1,1=return-scrollx1 | bag -',

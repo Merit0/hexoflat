@@ -397,9 +397,12 @@ describe.skipIf(!dbAvailable)(
       const held = (await heldWorld(c.userId, c.heroId)).loaded.battle!;
       expect(held.uniqueDropOverride).toBeUndefined();
       const stored = held.collect!.graves.find((grave) => sameHex(grave.hex, c.grave))!;
-      const aliens = stored.container!.contents!.flat().filter((drop) => drop.token?.uniqueKey);
-      expect(aliens.map((drop) => drop.token!.uniqueKey)).toEqual(['last-verdict']);
-      const { instanceId } = aliens[0].token!;
+      const uniques = stored.container!.contents!.flat().filter((drop) => drop.token?.uniqueKey);
+      expect(uniques.map((drop) => drop.token!.uniqueKey)).toEqual([
+        'lantern-eater',
+        'last-verdict',
+      ]);
+      const { instanceId } = uniques[1].token!;
       const before = await world.snapshot(c.userId, c.heroId);
       expectNoSecrets('battle view before loot', before, [c.seed, instanceId!], c.seeds);
       const looted = await sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', {
@@ -411,7 +414,9 @@ describe.skipIf(!dbAvailable)(
       expectNoSecrets('loot answer', looted, [c.seed], c.seeds);
       const view = (await world.snapshot(c.userId, c.heroId)) as { battleView: BattleProjection };
       expectNoSecrets('battle view after loot', view, [c.seed], c.seeds);
-      const item = view.battleView.collect!.items.find(({ token }) => token?.tier === 'unique');
+      const item = view.battleView.collect!.items.find(
+        ({ token }) => token?.uniqueKey === 'last-verdict',
+      );
       expect(item?.token).toMatchObject({ instanceId, tokenType: 'alien' });
       const picked = await sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', {
         kind: 'hero',

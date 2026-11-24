@@ -56,7 +56,12 @@ describe('REQ-LOOT-083 a boss grave with no free place', () => {
     const payload = looted.events.find((event) => event.type === 'CONTAINER_OPENED')!.payload as {
       toBag: { itemKey: string }[];
     };
-    expect(payload.toBag.map((drop) => drop.itemKey)).toEqual([HEXOBJECT_KEYS.COINS]);
+    expect(payload.toBag.map((drop) => drop.itemKey)).toEqual([
+      HEXOBJECT_KEYS.COINS,
+      HEXOBJECT_KEYS.SWORD,
+    ]);
+    const gear = looted.inventory!.bag.flatMap((cell) => (cell?.token ? [cell.token] : []));
+    expect(gear.map((token) => token.uniqueKey)).toEqual(['lantern-eater']);
   });
 
   it('refuses with a full bag and then gives the same list once the bag has room', () => {

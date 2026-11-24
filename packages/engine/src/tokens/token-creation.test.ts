@@ -96,9 +96,9 @@ describe('LG5b step 4: every creation point gives tokens', () => {
         mapTier: 2,
         type: drop.itemKey,
       });
-      expect(drop.token!.id.startsWith(`${tokenSourceIdOf('grave', 'battle-1', '0,0')}:`)).toBe(
-        true,
-      );
+      const source = tokenSourceIdOf('grave', 'battle-1', '0,0');
+      const separator = drop.token!.tier === 'unique' ? '.unique.' : ':';
+      expect(drop.token!.id.startsWith(`${source}${separator}`)).toBe(true);
     }
     expect(new Set(gear.map((drop) => drop.token!.id)).size).toBe(gear.length);
   });

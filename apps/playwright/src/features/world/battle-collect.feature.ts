@@ -8,6 +8,12 @@ import type { CollectGrave, CollectItem } from '@components/battle-collect.compo
 
 const GRAVE_FLIGHT_START_MS = 2_000;
 
+export interface ExpectedUnique {
+  uniqueKey: string;
+  tokenType: string;
+  light: RegExp;
+}
+
 /**
  * What the player does after a won battle: walk to a grave, look through it with the hand (the eye),
  * pick up what lies around it and leave. The win itself is granted by the fixture hook.
@@ -38,12 +44,8 @@ export class BattleCollectFeature extends BaseFeature {
     });
   }
 
-  async findTheUniqueAndVerifyItsLight(expected: {
-    uniqueKey: string;
-    tokenType: string;
-    light: RegExp;
-  }): Promise<void> {
-    await this.step('Read the graves until the unique lies on the field', async () => {
+  async findTheUniquesAndVerifyTheirLight(expected: ExpectedUnique[]): Promise<void> {
+    await this.step('Read the graves until the uniques lie on the field', async () => {
       const graves = (await this.collect.read()).graves.sort(
         (a, b) => b.standHexes.length - a.standHexes.length,
       );
@@ -51,28 +53,33 @@ export class BattleCollectFeature extends BaseFeature {
         await this.lookThrough(grave);
         if ((await this.collect.uniqueItems()).length > 0) break;
       }
-      expect(await this.collect.uniqueItems()).toEqual([
-        expect.objectContaining({
-          uniqueKey: expected.uniqueKey,
-          tokenType: expected.tokenType,
-          tier: 'unique',
-          light: expect.stringMatching(expected.light),
-        }),
-      ]);
+      await this.verifyUniquesOnTheField(expected);
     });
   }
 
-  async verifyOnlyOneUniqueAfterEveryGrave(): Promise<void> {
-    await this.step('Read the other graves and verify there is still one unique', async () => {
+  async verifyNoMoreUniquesAfterEveryGrave(expected: ExpectedUnique[]): Promise<void> {
+    await this.step('Read the other graves and verify no more uniques appear', async () => {
       for (const grave of (await this.collect.read()).graves)
         if (!grave.examined) await this.lookThrough(grave);
-      expect(await this.collect.uniqueItems()).toHaveLength(1);
+      await this.verifyUniquesOnTheField(expected);
     });
   }
 
-  async pickUpTheUniqueAndVerifyTheBag(): Promise<void> {
-    await this.step('Pick the unique up with the hand and find it in the bag', async () => {
-      const [unique] = await this.collect.uniqueItems();
+  private async verifyUniquesOnTheField(expected: ExpectedUnique[]): Promise<void> {
+    const found = await this.collect.uniqueItems();
+    expect(found).toHaveLength(expected.length);
+    for (const { light, ...unique } of expected) {
+      const item = found.find(({ uniqueKey }) => uniqueKey === unique.uniqueKey);
+      expect(item).toMatchObject({ ...unique, tier: 'unique' });
+      expect(item!.light).toMatch(light);
+    }
+  }
+
+  async pickUpTheUniqueAndVerifyTheBag(uniqueKey: string): Promise<void> {
+    await this.step(`Pick "${uniqueKey}" up with the hand and find it in the bag`, async () => {
+      const unique = (await this.collect.uniqueItems()).find(
+        (entry) => entry.uniqueKey === uniqueKey,
+      )!;
       const item = (await this.collect.read()).items.find(
         ({ q, r }) => q === unique.q && r === unique.r,
       )!;
