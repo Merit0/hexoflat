@@ -14,7 +14,11 @@ export class EquipmentCritFeature extends BaseFeature {
   private replacement = '';
   private tokenId = '';
 
-  async start(multiplier: 2 | 3 | 4 | 5, equipped: boolean): Promise<void> {
+  async start(
+    multiplier: 2 | 3 | 4 | 5,
+    equipped: boolean,
+    hand: EquipSlot = EquipSlot.WEAPON,
+  ): Promise<void> {
     await this.step(
       `Start with a critical weapon x${multiplier}, equipped: ${equipped}`,
       async () => {
@@ -42,7 +46,7 @@ export class EquipmentCritFeature extends BaseFeature {
         await this.map.inventory.verifyTooltipAttributeLabel(multiplier === 2 ? /\+2%/ : /\+10%/);
         if (multiplier !== 2)
           await this.map.inventory.verifyTooltipAttributeLabel(new RegExp(`×${multiplier}`));
-        await this.equip(equipped ? weapon.id : plain.id);
+        await this.equip(equipped ? weapon.id : plain.id, hand);
         const squad = new SquadActionsFeature();
         await squad.placeSquadNextToHero('lone-skeleton');
         await squad.aimHandAtSquad();
@@ -85,11 +89,11 @@ export class EquipmentCritFeature extends BaseFeature {
     });
   }
 
-  private async equip(tokenId: string): Promise<void> {
+  private async equip(tokenId: string, hand: EquipSlot = EquipSlot.WEAPON): Promise<void> {
     this.tokenId = tokenId;
     const tabs = new SwitchHeroBoardTabFeature();
     await tabs.switchTo('inventory');
-    await this.map.inventory.dragTokenToEquipSlot(await this.itemId(tokenId), EquipSlot.WEAPON);
+    await this.map.inventory.dragTokenToEquipSlot(await this.itemId(tokenId), hand);
     await tabs.switchTo('hero');
   }
 

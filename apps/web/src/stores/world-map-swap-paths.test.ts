@@ -135,7 +135,7 @@ describe('REQ-1: loading and travelling end in the same store state', () => {
           "sameMap": true,
         },
         "descriptor": "STATIC",
-        "dirtyTick": 34,
+        "dirtyTick": 32,
         "failed": false,
         "hero": {
           "columnIndex": 8,
@@ -192,7 +192,7 @@ describe('REQ-1: loading and travelling end in the same store state', () => {
           "sameMap": true,
         },
         "descriptor": "STATIC",
-        "dirtyTick": 34,
+        "dirtyTick": 32,
         "failed": false,
         "hero": {
           "columnIndex": 8,
@@ -230,7 +230,7 @@ describe('REQ-1: loading and travelling end in the same store state', () => {
           "sameMap": true,
         },
         "descriptor": "STATIC",
-        "dirtyTick": 149,
+        "dirtyTick": 146,
         "failed": false,
         "hero": {
           "columnIndex": 7,
@@ -270,7 +270,7 @@ describe('REQ-1: loading and travelling end in the same store state', () => {
           "sameMap": true,
         },
         "descriptor": "STATIC",
-        "dirtyTick": 66,
+        "dirtyTick": 64,
         "failed": false,
         "hero": {
           "columnIndex": 8,
@@ -314,7 +314,7 @@ describe('REQ-1: returns, pushed maps, dev boards and logout end in the same sto
           "sameMap": true,
         },
         "descriptor": "STATIC",
-        "dirtyTick": 65,
+        "dirtyTick": 63,
         "failed": false,
         "hero": {
           "columnIndex": 7,
@@ -360,7 +360,7 @@ describe('REQ-1: returns, pushed maps, dev boards and logout end in the same sto
           "sameMap": true,
         },
         "descriptor": "STATIC",
-        "dirtyTick": 65,
+        "dirtyTick": 63,
         "failed": false,
         "hero": {
           "columnIndex": 7,
@@ -408,7 +408,7 @@ describe('REQ-1: returns, pushed maps, dev boards and logout end in the same sto
           "sameMap": true,
         },
         "descriptor": "STATIC",
-        "dirtyTick": 35,
+        "dirtyTick": 33,
         "failed": false,
         "hero": {
           "columnIndex": 9,
@@ -472,7 +472,7 @@ describe('REQ-1: returns, pushed maps, dev boards and logout end in the same sto
         "battle": false,
         "cache": null,
         "descriptor": null,
-        "dirtyTick": 34,
+        "dirtyTick": 32,
         "failed": false,
         "hero": null,
         "locationKey": "camping",

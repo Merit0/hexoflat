@@ -22,8 +22,5 @@ export function resolveEquipCompatibility(
 ): TEquipCompatibility {
   if (!item || !isHandSlot(slot)) return 'mismatch';
 
-  const typeSlot = itemSlotOf(item.key);
-  if (typeSlot) return typeSlot === 'any' || typeSlot === slot ? 'effect' : 'mismatch';
-
-  return canUseInHand(item) ? 'effect' : 'mismatch';
+  return itemSlotOf(item.key) || canUseInHand(item) ? 'effect' : 'mismatch';
 }

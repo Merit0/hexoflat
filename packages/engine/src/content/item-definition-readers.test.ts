@@ -51,8 +51,8 @@ function start(action: EHexActionType, objectKey: THexobjectKey, tool: THeroTool
 
 describe('LG5d characterization: equip slot readers', () => {
   it.each([
-    [SWORD, 'effect', 'mismatch'],
-    [SHIELD, 'mismatch', 'effect'],
+    [SWORD, 'effect', 'effect'],
+    [SHIELD, 'effect', 'effect'],
     [AXE, 'effect', 'effect'],
     [PICKAXE, 'effect', 'effect'],
     [HAND, 'effect', 'effect'],

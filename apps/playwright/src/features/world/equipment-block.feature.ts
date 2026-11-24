@@ -12,7 +12,11 @@ export class EquipmentBlockFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
   private replacement = '';
 
-  async start(bonus: 1 | 2 | 3 | 4, equipped: boolean): Promise<void> {
+  async start(
+    bonus: 1 | 2 | 3 | 4,
+    equipped: boolean,
+    hand: EquipSlot = EquipSlot.SHIELD,
+  ): Promise<void> {
     await this.step(`Enter battle with Block +${bonus}, equipped: ${equipped}`, async () => {
       await new OpenCampingMapFeature().open();
       const grants = new VerifyInventoryFeature();
@@ -29,7 +33,7 @@ export class EquipmentBlockFeature extends BaseFeature {
         attributes: [{ key: 'shield', value: bonus }],
       });
       this.replacement = plain.id;
-      await this.equip(equipped ? shield.id : plain.id);
+      await this.equip(equipped ? shield.id : plain.id, hand);
       const squad = new SquadActionsFeature();
       await squad.placeSquadNextToHero('lone-skeleton');
       await squad.aimHandAtSquad();
@@ -85,7 +89,7 @@ export class EquipmentBlockFeature extends BaseFeature {
     });
   }
 
-  private async equip(tokenId: string): Promise<void> {
+  private async equip(tokenId: string, hand: EquipSlot = EquipSlot.SHIELD): Promise<void> {
     const id = await this.page.evaluate(
       (token) => window.__HEXOFLAT_TEST__!.getInventoryItemIdByTokenId(token),
       tokenId,
@@ -93,7 +97,7 @@ export class EquipmentBlockFeature extends BaseFeature {
     if (!id) throw new Error('No shield token');
     const tabs = new SwitchHeroBoardTabFeature();
     await tabs.switchTo('inventory');
-    await this.map.inventory.dragTokenToEquipSlot(id, EquipSlot.SHIELD);
+    await this.map.inventory.dragTokenToEquipSlot(id, hand);
     await tabs.switchTo('hero');
   }
 }

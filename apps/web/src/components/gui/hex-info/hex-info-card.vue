@@ -3,9 +3,8 @@
     <header class="card__head">
       <div class="card__titles">
         <h4 class="card__title" data-testid="hex-info-title">{{ view.title }}</h4>
-        <span class="card__kind" data-testid="hex-info-kind">{{ view.kind }}</span>
-        <DimensionLabel :dimension="view.dimension" />
-        <span v-if="view.subtitle" class="card__subtitle">{{ view.subtitle }}</span>
+        <span v-if="view.kind" class="card__kind" data-testid="hex-info-kind">{{ view.kind }}</span>
+        <span v-if="subtitle" class="card__subtitle">{{ subtitle }}</span>
       </div>
     </header>
 
@@ -74,23 +73,17 @@
           <path :d="ICON_PATHS[row.icon]" />
         </svg>
         <span class="card__stat-label">{{ row.label }}</span>
-        <strong
-          class="card__stat-value"
-          :class="{ 'is-gain': row.value.startsWith('+') || row.id === 'headline' }"
-          :data-testid="row.id === 'headline' ? 'hex-info-headline' : undefined"
-          >{{ row.value }}</strong
-        >
+        <strong class="card__stat-value">{{ row.value }}</strong>
       </li>
     </ul>
 
-    <hex-info-tags :tags="view.tags" center />
+    <hex-info-tags :tags="tags" center />
 
     <hex-info-actions :actions="view.actions" class="card__actions" />
   </div>
 </template>
 
 <script setup lang="ts">
-import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ICON_PATHS, type TIconName } from '@/components/gui/icons/item-icons';
@@ -115,6 +108,7 @@ const ICON_BY_STAT: Record<string, TIconName> = {
   stash: 'chest',
   loot: 'chest',
 };
+const ROWS_SAID_BY_THE_TITLE = new Set(['stash', 'loot']);
 
 const props = defineProps<{ view: HexInfoView }>();
 const { t } = useI18n();
@@ -152,16 +146,20 @@ const litPips = computed(() => {
   return Math.ceil((supply.value / supply.max) * pipCount.value);
 });
 
-const rows = computed(() => {
-  const headline = props.view.headline;
-  const entries = headline
-    ? [{ id: 'headline', label: headline.label, value: headline.value }, ...props.view.stats]
-    : props.view.stats;
-  return entries.map((entry) => ({
-    ...entry,
-    icon: ICON_BY_STAT[entry.id === 'headline' ? 'attack' : entry.id] ?? 'star',
-  }));
+const subtitle = computed(() => {
+  const { empty, subtitle: text, description } = props.view;
+  return empty || text === description ? null : text;
 });
+const tags = computed(() =>
+  props.view.variant === 'construction'
+    ? props.view.tags.filter((tag) => tag.id !== 'locked')
+    : props.view.tags,
+);
+const rows = computed(() =>
+  props.view.stats
+    .filter((entry) => !ROWS_SAID_BY_THE_TITLE.has(entry.id))
+    .map((entry) => ({ ...entry, icon: ICON_BY_STAT[entry.id] ?? 'star' })),
+);
 </script>
 
 <style scoped>
@@ -354,9 +352,6 @@ const rows = computed(() => {
   color: #f4efe2;
   font-size: 1.1rem;
   font-weight: 800;
-}
-.card__stat-value.is-gain {
-  color: #5fe04e;
 }
 .card .card__actions {
   margin: 0;

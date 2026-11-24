@@ -16,7 +16,7 @@ export class VerifyCampingBoardFeature extends BaseFeature {
   async verifyMapChipIsCamping(): Promise<void> {
     await this.step('Verify the hero board names the camping map', async () => {
       await this.campingMap.heroBoardPanel.clickTab('hero');
-      await this.campingMap.heroBoardPanel.verifyMapChipContains('Camping');
+      await this.campingMap.heroBoardPanel.verifyLocationContains('Camping');
     });
   }
 

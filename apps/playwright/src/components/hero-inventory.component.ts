@@ -94,6 +94,10 @@ export class HeroInventoryComponent extends BaseComponent {
     await this.dragBetween(this.equipToken(itemId), this.gridCell(targetSlotKey));
   }
 
+  async dragEquippedItemToEquipSlot(itemId: string, slot: EquipSlot): Promise<void> {
+    await this.dragBetween(this.equipToken(itemId), this.equipSlot(slot));
+  }
+
   private async dragBetween(source: Locator, target: Locator): Promise<void> {
     await expect(source).toBeVisible();
     await source.scrollIntoViewIfNeeded();

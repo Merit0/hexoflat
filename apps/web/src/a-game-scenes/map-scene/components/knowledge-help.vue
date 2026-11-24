@@ -2,7 +2,7 @@
   <div class="help">
     <button
       type="button"
-      class="help-btn"
+      class="board-icon-button help-btn"
       :aria-label="label ?? t('knowledge.help')"
       :aria-describedby="`${testid}-tip`"
       :data-testid="testid"
@@ -31,6 +31,7 @@ withDefaults(
 const { t } = useI18n();
 </script>
 
+<style scoped src="../../../components/gui/board/board-icon-button.css"></style>
 <style scoped>
 .help {
   position: absolute;
@@ -38,55 +39,8 @@ const { t } = useI18n();
   left: 10px;
   z-index: 5;
 }
-.help-btn {
-  --face: linear-gradient(180deg, #3d4d5c, #2a3744);
-  position: relative;
-  isolation: isolate;
-  width: 50px;
-  height: 50px;
-  padding: 0;
-  border: 0;
-  color: #f3e8d2;
-  font-family: inherit;
-  font-size: 1.7rem;
-  font-weight: 700;
-  line-height: 1;
+.board-icon-button.help-btn {
   cursor: help;
-  background: linear-gradient(180deg, #7a8da0, #1b2630 60%, #46586a);
-  clip-path: polygon(
-    10px 0,
-    calc(100% - 10px) 0,
-    100% 10px,
-    100% calc(100% - 10px),
-    calc(100% - 10px) 100%,
-    10px 100%,
-    0 calc(100% - 10px),
-    0 10px
-  );
-}
-.help-btn::before {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  z-index: -1;
-  background: var(--face);
-  clip-path: polygon(
-    8px 0,
-    calc(100% - 8px) 0,
-    100% 8px,
-    100% calc(100% - 8px),
-    calc(100% - 8px) 100%,
-    8px 100%,
-    0 calc(100% - 8px),
-    0 8px
-  );
-}
-.help-btn:hover {
-  --face: linear-gradient(180deg, #4a5d6e, #34444f);
-}
-.help-btn:focus-visible {
-  outline: 3px solid #f5c26b;
-  outline-offset: 3px;
 }
 .help-tip {
   position: absolute;
@@ -101,9 +55,15 @@ const { t } = useI18n();
   background: rgba(14, 11, 9, 0.97);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.65);
   color: rgba(241, 228, 204, 0.95);
+  font-family: 'Alegreya Sans', system-ui, sans-serif;
   font-size: 0.85rem;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 400;
   line-height: 1.4;
+  letter-spacing: normal;
   text-align: left;
+  text-transform: none;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;

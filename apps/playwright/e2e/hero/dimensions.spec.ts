@@ -1,9 +1,9 @@
 import { test } from '@fixtures';
 import { DimensionItemsFeature } from '@features/world/dimension-items.feature';
 
-const GLOOM = /Dimension: Underworld|Вимір: Підземний світ/;
-const SPARK = /Dimension: Heaven|Вимір: Небо/;
-const ALIEN = /Dimension: Nowhere|Вимір: Ніде/;
+const GLOOM = /Gloom|Морок/;
+const SPARK = /Spark|Іскра/;
+const ALIEN = /Alien|Прибулець/;
 
 test.describe('dimension ownership through the game', { tag: ['@hero'] }, () => {
   for (const [tokenType, label] of [

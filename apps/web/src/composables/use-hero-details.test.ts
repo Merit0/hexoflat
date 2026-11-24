@@ -1,12 +1,9 @@
-import { EDimension } from '@hexoflat/engine/dimensions/dimensions';
-import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { describe, expect, it } from 'vitest';
 import { buildHeroDetails, SHIELD_SLOTS, type HeroDetailsInput } from './use-hero-details';
 
 const base: HeroDetailsInput = {
   name: 'Aria',
   locationTitle: 'Camp',
-  origin: EDimension.NOWHERE,
   steps: 0,
   currentHealth: 3,
   maxHealth: 3,
@@ -28,23 +25,7 @@ const base: HeroDetailsInput = {
 const swordItem = { titleKey: 'content.sword.title', lightName: null, willCost: null };
 const shieldItem = { titleKey: 'content.shield.title', lightName: null, willCost: null };
 const sword = { item: swordItem, power: 2 };
-const shield = { item: shieldItem, sides: 2 };
-
-describe('location ownership in hero details', () => {
-  it.each(['camping', 'silesia', 'silesia-north', 'cave'] as const)(
-    'keeps %s dimension beside its name',
-    (key) => {
-      const location = MapRegistry.get(key);
-      expect(
-        buildHeroDetails({
-          ...base,
-          locationTitle: location.title,
-          locationDimension: location.dimension,
-        }),
-      ).toMatchObject({ locationTitle: location.title, locationDimension: location.dimension });
-    },
-  );
-});
+const shield = { item: shieldItem, power: 1 };
 
 describe('buildHeroDetails', () => {
   it('counts one heart per max health point with half-heart precision', () => {
@@ -65,6 +46,11 @@ describe('buildHeroDetails', () => {
     const view = buildHeroDetails({ ...base, weapon: sword, shield, defense: 2 });
     expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('2');
     expect(view.tiles.find((tile) => tile.id === 'defense')?.value).toBe('2');
+  });
+
+  it('shows the same attack whichever hand holds the weapon', () => {
+    const view = buildHeroDetails({ ...base, weapon: shield, shield: sword, defense: 2 });
+    expect(view.tiles.find((tile) => tile.id === 'attack')?.value).toBe('2');
   });
 
   it('falls back to the unarmed power and zero shield sides with nothing equipped', () => {
@@ -125,16 +111,16 @@ describe('buildHeroDetails', () => {
 
   it('computes progress toward the next scout rank', () => {
     const start = buildHeroDetails({ ...base, steps: 0 });
-    expect(start.rank.roman).toBe('I');
+    expect(start.scout.roman).toBe('I');
     expect(start.scout).toMatchObject({ nextAt: 100, percent: 0 });
     const middle = buildHeroDetails({ ...base, steps: 150 });
-    expect(middle.rank.roman).toBe('II');
+    expect(middle.scout.roman).toBe('II');
     expect(middle.scout).toMatchObject({ nextAt: 200, percent: 50 });
   });
 
   it('fills the progress bar at the top scout rank', () => {
     const top = buildHeroDetails({ ...base, steps: 5000 });
-    expect(top.rank.roman).toBe('X');
+    expect(top.scout.roman).toBe('X');
     expect(top.scout.nextAt).toBeNull();
     expect(top.scout.percent).toBe(100);
   });

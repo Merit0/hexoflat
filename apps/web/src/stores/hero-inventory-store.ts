@@ -152,7 +152,7 @@ export const useHeroInventoryStore = defineStore('heroInventory', {
     },
 
     moveItemToSlot(itemId: string, targetSlotKey: string) {
-      moveBySlot({ inventory: this, stash: useHeroStashStore() }, itemId, targetSlotKey);
+      return moveBySlot({ inventory: this, stash: useHeroStashStore() }, itemId, targetSlotKey);
     },
 
     isCellBlocked(r: number, c: number) {

@@ -116,7 +116,12 @@ export function resolveInventoryItemTooltip(
   const equippedItems = inventory.equippedItems;
   const equipSlot = resolveInventoryView(item.key).equipSlot;
   const equipped = Object.values(equippedItems).some((entry) => entry?.id === item.id);
-  const compareWith = !equipped && equipSlot ? equippedItems[equipSlot]?.key : undefined;
+  const compareWith =
+    !equipped && equipSlot
+      ? Object.values(equippedItems).find(
+          (entry) => entry && resolveInventoryView(entry.key).equipSlot === equipSlot,
+        )?.key
+      : undefined;
   const view = resolveItemTooltip(item.key, { equipped, compareWith, amount: item.amount, skills });
   return withToken(view, item.token);
 }

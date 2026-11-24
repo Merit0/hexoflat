@@ -56,6 +56,7 @@ const emit = defineEmits<{ close: [] }>();
 }
 .actions {
   justify-self: end;
+  margin-right: 10px;
 }
 h2 {
   margin: 0;

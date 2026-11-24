@@ -1,0 +1,73 @@
+.board-icon-button {
+  --face: linear-gradient(180deg, #3d4d5c, #2a3744);
+  --edge: linear-gradient(180deg, #7a8da0, #1b2630 60%, #46586a);
+  position: relative;
+  isolation: isolate;
+  flex: none;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 50px;
+  min-height: 50px;
+  height: 50px;
+  padding: 0;
+  border: 0;
+  color: #f3e8d2;
+  font-family: 'Alegreya Sans', system-ui, sans-serif;
+  font-size: 1.7rem;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: center;
+  text-indent: 0;
+  text-transform: none;
+  text-shadow: none;
+  cursor: pointer;
+  background: var(--edge);
+  clip-path: polygon(
+    14px 0,
+    calc(100% - 14px) 0,
+    100% 14px,
+    100% calc(100% - 14px),
+    calc(100% - 14px) 100%,
+    14px 100%,
+    0 calc(100% - 14px),
+    0 14px
+  );
+  transition: transform 0.06s ease;
+}
+.board-icon-button::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: var(--face);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  clip-path: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
+}
+.board-icon-button:not(:disabled):hover {
+  --face: linear-gradient(180deg, #4a5d6e, #34444f);
+}
+.board-icon-button:not(:disabled):active {
+  --face: linear-gradient(180deg, #1f2a34, #2a3744);
+  transform: translateY(1px) scale(0.95);
+}
+.board-icon-button:focus-visible {
+  outline: 3px solid #f5c26b;
+  outline-offset: 3px;
+}
+.board-icon-button:disabled {
+  opacity: 0.5;
+}

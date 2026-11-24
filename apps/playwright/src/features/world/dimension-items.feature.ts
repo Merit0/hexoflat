@@ -10,9 +10,6 @@ import { UseHeroToolFeature } from './use-hero-tool.feature';
 import { OpenShopFeature } from './open-shop.feature';
 import { ShopBoardFeature } from './shop-board.feature';
 
-const EARTH = /Dimension: Earth|Вимір: Земля/;
-const UNDERWORLD = /Dimension: Underworld|Вимір: Підземний світ/;
-
 export class DimensionItemsFeature extends BaseFeature {
   private readonly map = new CampingMapPage();
   private readonly items = this.map.dimensionItems;
@@ -49,13 +46,13 @@ export class DimensionItemsFeature extends BaseFeature {
   }
 
   async equipAndVerify(label: RegExp): Promise<void> {
-    await this.step('Equip the exact token and verify its ownership in the tooltip', async () => {
+    await this.step('Equip the exact token and verify its token type in the tooltip', async () => {
       await this.map.heroBoardPanel.clickTab('inventory');
       const id = await this.itemId();
       await this.map.inventory.dragTokenToEquipSlot(id, EquipSlot.WEAPON);
       await this.map.inventory.verifyItemEquipped(id, EquipSlot.WEAPON);
       await this.map.inventory.hoverEquippedItem(id);
-      await this.items.verifyTooltipDimension(label);
+      await this.items.verifyTooltipTokenType(label);
       await this.map.inventory.moveMouseAway();
       await this.items.verifyTokenUnchanged(this.requireToken());
     });
@@ -68,19 +65,17 @@ export class DimensionItemsFeature extends BaseFeature {
         await this.enterGate('homelandGate');
         await this.map.verifyUrlMatches(/\/world\/silesia$/);
         await this.map.activeBoard.waitForReady();
-        await this.map.heroBoardPanel.clickTab('hero');
-        await this.items.verifyLocationDimension(EARTH);
+        await this.map.hexBoard.verifyLocation('silesia');
         await this.enterGate('caveEntrance');
         await this.map.verifyUrlMatches(/\/world\/cave$/);
         await this.map.activeBoard.waitForReady();
         await this.reloadCurrentMap();
-        await this.map.heroBoardPanel.clickTab('hero');
-        await this.items.verifyLocationDimension(UNDERWORLD);
+        await this.map.hexBoard.verifyLocation('cave');
         await this.map.heroBoardPanel.clickTab('inventory');
         const id = await this.itemId();
         await this.map.inventory.verifyItemEquipped(id, EquipSlot.WEAPON);
         await this.map.inventory.hoverEquippedItem(id);
-        await this.items.verifyTooltipDimension(label);
+        await this.items.verifyTooltipTokenType(label);
         await this.map.inventory.moveMouseAway();
         await this.items.verifyTokenUnchanged(this.requireToken());
       },
@@ -104,7 +99,7 @@ export class DimensionItemsFeature extends BaseFeature {
         await this.map.heroBoardPanel.clickTab('inventory');
         const id = await this.itemId();
         await this.map.inventory.hoverGridItem(id);
-        await this.items.verifyTooltipDimension(label);
+        await this.items.verifyTooltipTokenType(label);
         await this.items.verifyTokenUnchanged(this.requireToken());
       },
     );

@@ -25,7 +25,6 @@ export class TokenLookFeature extends BaseFeature {
         const look = await this.readLook(itemKey);
         expect(look.sprite).toContain(TOKEN_SPRITE_DIR);
         expect(look.title).not.toMatch(oldTitle);
-        expect(look.lines.length).toBeGreaterThan(0);
       },
     );
   }

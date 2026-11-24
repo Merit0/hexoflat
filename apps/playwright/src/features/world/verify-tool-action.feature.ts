@@ -10,6 +10,12 @@ export class VerifyToolActionFeature extends BaseFeature {
     );
   }
 
+  async verifyToolShown(itemKey: string): Promise<void> {
+    await this.step(`Verify the tool hex on the map shows the "${itemKey}"`, () =>
+      this.campingMap.toolActionOverlay.verifyToolShown(itemKey),
+    );
+  }
+
   async verifyToolHexHidden(): Promise<void> {
     await this.step('Verify the tool hex is gone from the map', () =>
       this.campingMap.toolActionOverlay.verifyToolHexHidden(),

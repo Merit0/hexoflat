@@ -1071,7 +1071,6 @@
       "coins": "Coins",
       "hint": "Hover a quest to see its details. On touch screens, tap it.",
       "refresh": {
-        "action": "Refresh",
         "label": "Refresh the quest board for {n} Will",
         "done": "The quest board has been refreshed."
       },
@@ -1145,7 +1144,6 @@
   },
   "dimensions": {
     "label": "Dimension: {name}",
-    "origin": "Origin: {name}",
     "heaven": "Heaven",
     "earth": "Earth",
     "underworld": "Underworld",

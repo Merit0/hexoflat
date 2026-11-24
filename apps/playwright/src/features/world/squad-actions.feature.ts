@@ -38,6 +38,12 @@ export class SquadActionsFeature extends BaseFeature {
     });
   }
 
+  async hoverSquad(): Promise<void> {
+    await this.step('Point the active tool at the squad', () =>
+      this.campingMap.hexBoard.hoverTile(this.requireSquad()),
+    );
+  }
+
   async verifyHandOffersAttack(): Promise<void> {
     await this.step('The tool hex offers ATTACK on the squad', async () => {
       await this.campingMap.toolActionOverlay.verifyOfferedAction(/Атакувати|Attack/);

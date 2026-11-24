@@ -16,44 +16,35 @@
       @close="closeKnowledgePanel()"
     >
       <template v-if="quote && !run && !result" #actions>
-        <quest-action-button
+        <board-refresh-button
           testid="quest-board-refresh"
-          :aria-label="t('quest.board.refresh.label', { n: quote.refreshPrice })"
+          tip-below
+          :label="t('quest.board.refresh.label', { n: quote.refreshPrice })"
+          :price="quote.refreshPrice"
+          :affordable="will.value >= quote.refreshPrice"
           :disabled="boardBusy || questBusy"
-          @click="refresh"
-        >
-          <span class="refresh-copy">
-            {{ t('quest.board.refresh.action') }}
-            <span class="refresh-price">
-              <img :src="WILL_ICON_URL" alt="" />
-              {{ quote.refreshPrice }}
-            </span>
-          </span>
-        </quest-action-button>
+          @refresh="refresh"
+        />
       </template>
     </board-header>
     <quest-run-panel v-if="run || result" />
     <template v-else>
       <div class="banner" data-testid="quest-board-resources">
-        <quest-tip :text="t('quest.board.coins')">
-          <span class="cell" data-testid="quest-board-coins">
-            <img class="icon" :src="COIN_SRC" alt="" aria-hidden="true" />
-            <span class="figures">
-              <span class="label">{{ t('quest.board.coins') }}</span>
-              <span class="value">{{ coins }}</span>
-            </span>
+        <span class="cell" data-testid="quest-board-coins">
+          <img class="icon" :src="COIN_SRC" alt="" aria-hidden="true" />
+          <span class="figures">
+            <span class="label">{{ t('quest.board.coins') }}</span>
+            <span class="value">{{ coins }}</span>
           </span>
-        </quest-tip>
+        </span>
         <i class="divider" aria-hidden="true"></i>
-        <quest-tip :text="t('quest.board.will')">
-          <span class="cell" data-testid="quest-board-will">
-            <img class="icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" />
-            <span class="figures">
-              <span class="label">{{ t('quest.board.will') }}</span>
-              <span class="value"><will-number :current="will.value" /> / {{ will.cap }}</span>
-            </span>
+        <span class="cell" data-testid="quest-board-will">
+          <img class="icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" />
+          <span class="figures">
+            <span class="label">{{ t('quest.board.will') }}</span>
+            <span class="value"><will-number :current="will.value" /> / {{ will.cap }}</span>
           </span>
-        </quest-tip>
+        </span>
       </div>
       <board-ornament />
       <quest-taken-bar />
@@ -131,13 +122,12 @@ import { useQuestRunActions } from '@/composables/use-quest-run-actions';
 import WillNumber from '@/components/gui/will-number.vue';
 import QuestRow from './quest-row.vue';
 import QuestRunPanel from './quest-run-panel.vue';
+import BoardRefreshButton from '@/components/gui/board/board-refresh-button.vue';
 import BoardHeader from '../board-header.vue';
 import BoardOrnament from '../board-ornament.vue';
 import QuestTakenBar from './quest-taken-bar.vue';
-import QuestTip from './quest-tip.vue';
 import QuestDragGhost from './quest-drag-ghost.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
-import QuestActionButton from './quest-action-button.vue';
 
 const { t } = useI18n();
 const { active, available, rowById, will, coins, slots } = useQuestBoardView();
@@ -194,22 +184,6 @@ onBeforeUnmount(() => {
 .header {
   margin: -16px -16px 0;
 }
-.refresh-copy {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  font-size: 1rem;
-}
-.refresh-price {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  color: #ffe98a;
-}
-.refresh-price img {
-  width: 14px;
-  height: 14px;
-}
 .banner {
   --diamond: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5 0L10 5L5 10L0 5Z' fill='%23b8864a'/></svg>");
   position: relative;
@@ -251,12 +225,6 @@ onBeforeUnmount(() => {
     0 calc(100% - 10px),
     0 10px
   );
-}
-.banner :deep(.tip-host) {
-  display: flex;
-  align-self: stretch;
-  justify-content: center;
-  min-width: 0;
 }
 .cell {
   display: flex;

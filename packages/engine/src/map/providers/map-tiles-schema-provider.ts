@@ -16,10 +16,6 @@ export const homelandMapConfig: IHexMapPlacement[] = [
     coordinates: [{ rowIndex: 5, columnIndex: 1 }],
   },
   {
-    hexobject: { hexobjectKey: HEXOBJECT_KEYS.MANA_BOTTLE },
-    coordinates: [{ rowIndex: 5, columnIndex: 6 }],
-  },
-  {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAVE_ENTRANCE },
     coordinates: [{ rowIndex: 5, columnIndex: 14 }],
   },
@@ -31,10 +27,6 @@ export const homelandMapConfig: IHexMapPlacement[] = [
       { rowIndex: 6, columnIndex: 14 },
       { rowIndex: 5, columnIndex: 13 },
     ],
-  },
-  {
-    hexobject: { hexobjectKey: HEXOBJECT_KEYS.ENERGY_BOTTLE },
-    coordinates: [{ rowIndex: 5, columnIndex: 9 }],
   },
   {
     hexobject: { hexobjectKey: HEXOBJECT_KEYS.CAMPING_ENTRANCE },

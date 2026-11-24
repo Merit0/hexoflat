@@ -55,8 +55,27 @@ describe('planItemMove', () => {
 
     it('refuses an item that does not fit the slot', () => {
       const agg = aggregate({ bag: { 0: item(K.SHIELD), 1: item(K.HEALTH_BOTTLE) } });
-      expect(failure(planItemMove(agg, bag(0), equip('weapon'), options()))).toBe('WRONG_SLOT');
+      expect(failure(planItemMove(agg, bag(0), equip('armor'), options()))).toBe('WRONG_SLOT');
       expect(failure(planItemMove(agg, bag(1), equip('armor'), options()))).toBe('WRONG_SLOT');
+    });
+
+    it('swaps the sword and the shield between the hands', () => {
+      const agg = aggregate({
+        worn: { weapon: item(K.SWORD, 1, 'sword'), shield: item(K.SHIELD, 1, 'shield') },
+      });
+      const done = success(planItemMove(agg, equip('weapon'), equip('shield'), options()));
+      expect(done.kind).toBe('swap');
+      expect(done.next.equip.weapon?.id).toBe('shield');
+      expect(done.next.equip.shield?.id).toBe('sword');
+    });
+
+    it('moves the sword or the shield into the empty other hand', () => {
+      const sword = aggregate({ worn: { weapon: item(K.SWORD, 1, 'sword') } });
+      const left = success(planItemMove(sword, equip('weapon'), equip('shield'), options()));
+      expect(left.next.equip).toMatchObject({ weapon: null, shield: { id: 'sword' } });
+      const shield = aggregate({ worn: { shield: item(K.SHIELD, 1, 'shield') } });
+      const right = success(planItemMove(shield, equip('shield'), equip('weapon'), options()));
+      expect(right.next.equip).toMatchObject({ weapon: { id: 'shield' }, shield: null });
     });
 
     it('keeps letting a usable item and a tool into a hand slot', () => {
@@ -77,7 +96,8 @@ describe('planItemMove', () => {
     });
 
     it('refuses a swap that would put a wrong item back into the slot', () => {
-      const agg = aggregate({ bag: { 0: item(K.SHIELD) }, worn: { weapon: item(K.SWORD) } });
+      const helm = { ...item(K.SHIELD), key: 'helm' as typeof K.SHIELD };
+      const agg = aggregate({ bag: { 0: helm }, worn: { weapon: item(K.SWORD) } });
       expect(failure(planItemMove(agg, equip('weapon'), bag(0), options()))).toBe(
         'SWAP_WRONG_SLOT',
       );

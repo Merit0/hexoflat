@@ -11,7 +11,6 @@
     >
       <header>
         <h3>{{ name }}</h3>
-        <DimensionLabel :dimension="questDimension(row.quest)" />
       </header>
       <p v-if="row.timesDone > 0" class="tags">
         {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
@@ -105,8 +104,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { questDimension } from '@hexoflat/engine/quests/quest-definition';
-import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { useHeroStore } from '@/stores/hero-store';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { questCardRuleParams } from '@/services/quests/quest-card-content';
