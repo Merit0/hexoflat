@@ -11,8 +11,7 @@ import {
   type SpriteManifest,
   type SpriteManifestEntry,
 } from './sprite-files';
-import type { ItemTypeKey, UniqueKey } from './token-keys';
-import { uniqueSpriteKey } from './unique-schema';
+import type { ItemTypeKey } from './token-keys';
 
 export class ManifestSpriteRegistry {
   private readonly manifest: SpriteManifest;
@@ -37,13 +36,5 @@ export class ManifestSpriteRegistry {
 
   spritesFor(tier: TTokenTier, tokenType: ETokenType, type: ItemTypeKey): readonly SpriteRef[] {
     return tier === 'base' ? this.resolveBase(tokenType, type).refs : [this.placeholderSprite];
-  }
-
-  uniqueSprite(uniqueKey: UniqueKey): SpriteRef {
-    const key = uniqueSpriteKey(uniqueKey);
-    const entry = this.manifest.entries.find(
-      (candidate) => candidate.tier === 'unique' && candidate.key === key,
-    );
-    return entry ?? this.placeholderSprite;
   }
 }

@@ -5,7 +5,7 @@ import { LIGHT_COLOR_BY_TONE, lightTone } from './light-tone';
 import { createTokenFactory } from './factory/create-token-factory';
 import { TOKEN_CONTENT } from '../content/token-content';
 import { spriteCoverage } from './sprite-coverage';
-import { resolveBaseSprites } from './sprite-fallback';
+import { resolveBaseSprites, resolveTokenSprite } from './sprite-fallback';
 import { reportSpriteFallback, setSpriteFallbackLog } from './sprite-fallback-log';
 import type { SpriteManifest } from './sprite-files';
 import { BASE_TOKEN_TYPES, type TBaseTokenType } from './token-keys';
@@ -82,7 +82,7 @@ describe('DA4-3: the sprite fallback chain', () => {
     ['own', manifestOf([GLOOM, 'sword', '01']), 'gloom-sword-01'],
     ['borrowed', manifestOf([SPARK, 'sword', '01']), 'spark-sword-01'],
     ['placeholder', manifestOf(), '_placeholder'],
-  ] as const)('the light follows the token on step %s', (_step, manifest, sprite) => {
+  ] as const)('the light follows the token on step %s', (step, manifest, sprite) => {
     const result = createTokenFactory(TOKEN_CONTENT, manifest).createBase({
       seed: 'da4-light',
       sourceId: 'test:da4.light',
@@ -92,8 +92,69 @@ describe('DA4-3: the sprite fallback chain', () => {
       type: 'sword',
     });
     if (!result.ok) throw new Error(result.refusal.code);
-    expect(result.value.sprite).toBe(sprite);
+    expect(resolveTokenSprite(manifest, result.value).key).toBe(sprite);
+    expect(result.value.sprite).toBe(step === 'own' ? sprite : null);
     expect(LIGHT_COLOR_BY_TONE[lightTone(result.value.tier, result.value.tokenType)]).toBe('blue');
+  });
+});
+
+function mint(manifest: SpriteManifest, tokenType: TBaseTokenType, n = 0) {
+  const result = createTokenFactory(TOKEN_CONTENT, manifest).createBase({
+    seed: 'da4-render',
+    sourceId: 'test:da4.render',
+    n,
+    tokenType,
+    mapTier: 1,
+    type: 'sword',
+  });
+  if (!result.ok) throw new Error(result.refusal.code);
+  return result.value;
+}
+
+describe('DA4 O10: the fallback is chosen when a token is drawn', () => {
+  const idolOnly = manifestOf([IDOL, 'sword', '01']);
+
+  it('a fallback gloom sword takes the gloom sprite once it is in the pool', () => {
+    const token = mint(idolOnly, GLOOM);
+    expect(token.sprite).toBeNull();
+    expect(resolveTokenSprite(idolOnly, token).key).toBe('idol-sword-01');
+    const grown = manifestOf([IDOL, 'sword', '01'], [GLOOM, 'sword', '01']);
+    expect(resolveTokenSprite(grown, token).key).toBe('gloom-sword-01');
+  });
+
+  it('an exact-match token never changes when the pool grows', () => {
+    const grown = manifestOf(
+      ...['01', '02', '03', '04', '05'].map((n): [TBaseTokenType, string, string] => [
+        GLOOM,
+        'sword',
+        n,
+      ]),
+      [IDOL, 'sword', '01'],
+    );
+    const small = manifestOf([GLOOM, 'sword', '02'], [IDOL, 'sword', '01']);
+    for (let n = 0; n < 50; n += 1) {
+      const token = mint(small, GLOOM, n);
+      expect(token.sprite).toBe('gloom-sword-02');
+      expect(resolveTokenSprite(grown, token).key).toBe('gloom-sword-02');
+    }
+  });
+
+  it('picks over the pool by token id: the same id always gets the same sprite, ids spread', () => {
+    const pool = manifestOf([IDOL, 'sword', '01'], [IDOL, 'sword', '02'], [IDOL, 'sword', '03']);
+    const keys = Array.from({ length: 60 }, (_, n) => {
+      const token = mint(pool, SPARK, n);
+      const { key } = resolveTokenSprite(pool, token);
+      expect(resolveTokenSprite(pool, structuredClone(token)).key).toBe(key);
+      return key;
+    });
+    expect(new Set(keys)).toEqual(new Set(['idol-sword-01', 'idol-sword-02', 'idol-sword-03']));
+  });
+
+  it('follows the chain when the stored own sprite is gone from the pool', () => {
+    const token = mint(manifestOf([GLOOM, 'sword', '07']), GLOOM);
+    expect(token.sprite).toBe('gloom-sword-07');
+    expect(resolveTokenSprite(idolOnly, token).key).toBe('idol-sword-01');
+    expect(resolveTokenSprite(manifestOf(), token).key).toBe('_placeholder');
   });
 });
 

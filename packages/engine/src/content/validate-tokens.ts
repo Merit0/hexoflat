@@ -5,7 +5,7 @@ import { adjectivesFor, baseAllowlistFailures } from '../tokens/equipment/equipm
 import { hasGeneratedName, tokenPriceRangesSchema } from '../tokens/token-content-schema';
 import { wordKeyOf } from '../tokens/token-keys';
 import { attributeFailure, attributeSetFailure } from '../tokens/attribute-rules';
-import type { UniqueTokenDefinition } from '../tokens/unique-schema';
+import type { UniqueTokenContent } from '../tokens/unique-schema';
 import { coinPriceOf } from './content-accessors';
 import { TOKEN_UNIQUES } from './token-uniques.content';
 import {
@@ -41,7 +41,7 @@ function priceFailures(content: TokenContent): string[] {
 type TokenRegistries = ReturnType<typeof createTokenRegistries>;
 
 export function uniqueContentFailures(
-  uniques: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
+  uniques: readonly UniqueTokenContent[] = TOKEN_UNIQUES,
   content: TokenContent = TOKEN_CONTENT,
 ): string[] {
   let registries: TokenRegistries;

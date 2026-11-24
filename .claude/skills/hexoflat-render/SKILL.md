@@ -165,4 +165,4 @@ Light frames (DA3a, 2026-11-24): the frame URL of a token or light name comes fr
 
 The exceptional token family/light tone is ALIEN (`alien`, `alien-unique`), replacing God Executor. Keep the existing red frame asset. Render tokens from their own family/identity, not their generic catalogue key. Saved legacy family normalization belongs to the engine token reader.
 
-Sprite fallback (DA4, 2026-11-24): `tokenSpriteUrl` draws the stored manifest sprite; when it is missing, a base token follows the engine chain `resolveBaseSprites` and a unique gets the placeholder. The light comes from the token itself. Do not write another fallback in a layer.
+Sprite fallback (DA4, 2026-11-24): `tokenSpriteUrl` is the engine `resolveTokenSprite(manifest, token)`. Never read `token.sprite` to draw: it is `null` for a fallback and absent on a unique. The light comes from the token itself. Do not write another fallback in a layer.

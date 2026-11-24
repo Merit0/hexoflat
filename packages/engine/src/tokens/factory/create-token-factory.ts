@@ -7,7 +7,7 @@ import { TOKEN_UNIQUES } from '../../content/token-uniques.content';
 import { attributeProfilesSchema } from '../equipment/attribute-profile-schema';
 import { createEquipmentAttributeGenerator } from '../equipment/generator/create-equipment-attribute-generator';
 import type { SpriteManifest } from '../sprite-files';
-import type { UniqueTokenDefinition } from '../unique-schema';
+import type { UniqueTokenContent } from '../unique-schema';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
 import { ManifestSpriteRegistry } from '../sprite-registry';
 import { SpecSheetDescriptionBuilder } from './description-builder';
@@ -23,7 +23,7 @@ import { validateFactoryContent } from './validate-factory-content';
 export function createTokenFactory(
   content: TokenContent = TOKEN_CONTENT,
   manifest: SpriteManifest = SPRITE_MANIFEST,
-  uniqueDefinitions: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
+  uniqueDefinitions: readonly UniqueTokenContent[] = TOKEN_UNIQUES,
   steps: Partial<Omit<TokenFactoryParts, 'validator'>> = {},
 ): TokenFactory {
   const profiles = attributeProfilesSchema.parse(content.profiles);
@@ -32,13 +32,12 @@ export function createTokenFactory(
     uniqueDefinitions,
   );
   validateFactoryContent({ types, attributes, uniques, content });
-  const spriteResolver = new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest));
   return new TokenFactory(
     {
       baseItems,
       typePicker: new BaseTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(content.adjectives),
-      spriteResolver,
+      spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest)),
       attributeGenerator: createEquipmentAttributeGenerator(attributes, profiles),
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(content.priceRanges),
@@ -46,6 +45,6 @@ export function createTokenFactory(
       ...steps,
       validator: new ZodTokenValidator(types, attributes, profiles, baseItems),
     },
-    { types, uniques, spriteResolver },
+    { types, uniques },
   );
 }

@@ -1,7 +1,7 @@
 import { availableInDimension } from '../dimensions/availability';
 import type { EDimension } from '../dimensions/dimensions';
 import { TOKEN_UNIQUES } from '../content/token-uniques.content';
-import type { UniqueTokenDefinition } from './unique-schema';
+import type { UniqueTokenContent } from './unique-schema';
 import { z } from 'zod';
 import type { RandomNumberGenerator } from '../utils/random';
 import { uniqueKeySchema, type UniqueKey } from './token-keys';
@@ -62,7 +62,7 @@ export function resolveUniqueDrop(
   rules: readonly UniqueDropRule[],
   ownedUniques: readonly UniqueKey[],
   rng: RandomNumberGenerator,
-  scope?: { dimension: EDimension; definitions?: readonly UniqueTokenDefinition[] },
+  scope?: { dimension: EDimension; definitions?: readonly UniqueTokenContent[] },
 ): UniqueKey | null {
   const parsed = uniqueDropRulesSchema.parse(rules).filter((rule) => {
     if (!scope) return true;

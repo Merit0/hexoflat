@@ -3,11 +3,11 @@ import type { SpriteManifest } from './sprite-files';
 import type { ItemTypeDefinition } from './token-content-schema';
 import {
   BASE_TOKEN_TYPES,
+  uniqueSpriteKey,
   type ItemTypeKey,
   type TBaseTokenType,
   type UniqueKey,
 } from './token-keys';
-import { uniqueSpriteKey } from './unique-schema';
 
 export interface SpriteCoverageContent {
   types: { all(): readonly Pick<ItemTypeDefinition, 'key' | 'tokenTypes'>[] };

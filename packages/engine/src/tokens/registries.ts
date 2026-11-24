@@ -6,7 +6,11 @@ import {
 } from './equipment/equipment-attribute-schema';
 import { itemTypeDefinitionSchema, type ItemTypeDefinition } from './token-content-schema';
 import type { AttributeKey, ItemTypeKey, UniqueKey } from './token-keys';
-import { uniqueTokenDefinitionSchema, type UniqueTokenDefinition } from './unique-schema';
+import {
+  uniqueTokenDefinitionSchema,
+  type UniqueTokenContent,
+  type UniqueTokenDefinition,
+} from './unique-schema';
 
 function freezeContent<T>(value: T): T {
   if (value && typeof value === 'object') {
@@ -81,7 +85,7 @@ export class AttributeRegistry {
 export class UniqueRegistry {
   private readonly byKey: ReadonlyMap<string, UniqueTokenDefinition>;
 
-  constructor(definitions: readonly UniqueTokenDefinition[]) {
+  constructor(definitions: readonly UniqueTokenContent[]) {
     this.byKey = indexByKey(
       'Unique',
       definitions.map((definition) => uniqueTokenDefinitionSchema.parse(definition)),

@@ -79,8 +79,8 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
       }
     });
 
-    it('uses the placeholder while the sprite <key> is not in the manifest', () => {
-      for (const token of tokens) expect(token.sprite).toBe('_placeholder');
+    it('stores no sprite', () => {
+      for (const token of tokens) expect(token).not.toHaveProperty('sprite');
     });
   },
 );
@@ -119,7 +119,7 @@ describe('EA-5: createUnique never calls the attribute generator', () => {
     }
   });
 
-  it('takes the unique sprite from the manifest when it is there', () => {
+  it('stores no sprite even when the file is in the manifest', () => {
     const manifest = {
       ...SPRITE_MANIFEST,
       entries: [
@@ -135,7 +135,7 @@ describe('EA-5: createUnique never calls the attribute generator', () => {
     };
     const factory = createTokenFactory(TOKEN_CONTENT, manifest);
     const token = valueOf(factory.createUnique('lantern-eater', uniqueContext(1)));
-    expect(token.sprite).toBe('lantern-eater');
+    expect(token).not.toHaveProperty('sprite');
   });
 });
 

@@ -1,5 +1,6 @@
 import { upcastDimensionVocabulary } from '../dimensions/upcast-vocabulary';
 import { upcastTokenIdentities } from '../inventory/upcast-token-identities';
+import { upcastTokenSprites } from '../tokens/upcast-token-sprite';
 import type { z } from 'zod';
 import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventory-state';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -40,12 +41,13 @@ export interface IAggregateDefinition<TState> {
 
 const inventoryDefinition: IAggregateDefinition<InventoryState> = {
   kind: 'inventory',
-  schemaVersion: 4,
+  schemaVersion: 5,
   schema: inventoryStateSchema as unknown as z.ZodType<InventoryState>,
   upcasters: {
     1: upcastInventoryTokens,
     2: upcastTokenIdentities,
     3: upcastDimensionVocabulary,
+    4: upcastTokenSprites,
   },
   createInitial: ({ heroId }) => emptyInventoryState(heroId),
   project: (state) => state,

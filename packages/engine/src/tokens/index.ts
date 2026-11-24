@@ -48,6 +48,7 @@ export * from './sprite-files';
 export * from './sprite-coverage';
 export {
   resolveBaseSprites,
+  resolveTokenSprite,
   placeholderRef,
   type SpriteRef,
   type SpriteResolution,

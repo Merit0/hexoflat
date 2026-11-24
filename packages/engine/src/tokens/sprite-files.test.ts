@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ETokenType } from '../abstraction/hexobject-abstraction';
+import { TOKEN_UNIQUES } from '../content/token-uniques.content';
 import { tokenTypeAllowsTier } from '../dimensions/dimensions';
 import {
   buildSpriteManifest,
@@ -17,6 +18,7 @@ import {
   spriteFile,
   typesWithHammer,
 } from './sprite-test-setup';
+import { uniqueTokenDefinitionSchema } from './unique-schema';
 
 const catalogue = spriteCatalogue();
 
@@ -50,7 +52,7 @@ describe('buildSpriteManifest', () => {
     const result = buildSpriteManifest(cleanSpriteFiles(), catalogue);
     expect(result).toEqual({
       ok: true,
-      gaps: [],
+      warnings: [],
       manifest: {
         placeholder: '/hex-assets/items/base/_placeholder.png',
         entries: [
@@ -262,12 +264,37 @@ describe('DA4-1: unique files and templates', () => {
     expect(reported(cleanSpriteFiles())).toEqual([]);
   });
 
-  it('reports a template without its file and still builds the manifest', () => {
-    expect(reported(withoutUnique)).toEqual([
+  it('art pending: a missing file is a warning and the manifest is built', () => {
+    const content = spriteCatalogue([
+      { key: 'ash-crown-blade', tokenType: 'gloom', art: 'pending' },
+    ]);
+    expect(reported(withoutUnique, content)).toEqual([
+      ['UNIQUE_ART_PENDING', 'unique/ash-crown-blade.png'],
+    ]);
+    const result = buildSpriteManifest(withoutUnique, content);
+    expect(result.ok && result.warnings.map(({ code, path }) => [code, path])).toEqual([
+      ['UNIQUE_ART_PENDING', 'unique/ash-crown-blade.png'],
+    ]);
+  });
+
+  it('art ready: a missing file is UNIQUE_FILE_MISSING and blocks the manifest', () => {
+    const content = spriteCatalogue([{ key: 'ash-crown-blade', tokenType: 'gloom', art: 'ready' }]);
+    const result = buildSpriteManifest(withoutUnique, content);
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.failures.map(({ code, path }) => [code, path])).toEqual([
       ['UNIQUE_FILE_MISSING', 'unique/ash-crown-blade.png'],
     ]);
-    const result = buildSpriteManifest(withoutUnique, catalogue);
-    expect(result.ok && result.gaps.map((gap) => gap.path)).toEqual(['unique/ash-crown-blade.png']);
+    expect(buildSpriteManifest(cleanSpriteFiles(), content)).toMatchObject({
+      ok: true,
+      warnings: [],
+    });
+  });
+
+  it('a template without the field has its art pending; another value is refused', () => {
+    const unique = { ...TOKEN_UNIQUES[0], art: undefined };
+    expect(uniqueTokenDefinitionSchema.parse(unique).art).toBe('pending');
+    expect(uniqueTokenDefinitionSchema.parse({ ...unique, art: 'ready' }).art).toBe('ready');
+    expect(uniqueTokenDefinitionSchema.safeParse({ ...unique, art: 'done' }).success).toBe(false);
   });
 
   it.each(['unique/nobody.png', 'unique/unique-ash-crown-blade.png'])(
@@ -315,7 +342,7 @@ describe('DA4-1: unique files and templates', () => {
     const files = [...withoutUnique, spriteFile('unique/nobody.png')];
     expect(reported(files)).toEqual([
       ['ORPHAN_UNIQUE', 'unique/nobody.png'],
-      ['UNIQUE_FILE_MISSING', 'unique/ash-crown-blade.png'],
+      ['UNIQUE_ART_PENDING', 'unique/ash-crown-blade.png'],
     ]);
   });
 });

@@ -5,8 +5,7 @@ import {
   lightTone,
   type TLightTone,
 } from '@hexoflat/engine/tokens/light-tone';
-import { resolveBaseSprites } from '@hexoflat/engine/tokens/sprite-fallback';
-import { reportSpriteFallback } from '@hexoflat/engine/tokens/sprite-fallback-log';
+import { resolveTokenSprite } from '@hexoflat/engine/tokens/sprite-fallback';
 import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import type { SpriteManifest } from '@hexoflat/engine/tokens/sprite-files';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
@@ -34,11 +33,7 @@ export function tokenSpriteUrl(
   token: ItemToken,
   manifest: SpriteManifest = SPRITE_MANIFEST,
 ): string {
-  const entry = manifest.entries.find((candidate) => candidate.key === token.sprite);
-  if (token.tier !== 'base') return entry?.path ?? manifest.placeholder;
-  const resolution = resolveBaseSprites(manifest, token.tokenType, token.type);
-  reportSpriteFallback(token.tokenType, token.type, resolution);
-  return entry?.path ?? resolution.refs[0].path;
+  return resolveTokenSprite(manifest, token).path;
 }
 
 export function tokenLightTone(token: ItemToken): TLightTone {

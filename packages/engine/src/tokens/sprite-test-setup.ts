@@ -1,6 +1,6 @@
 import { ITEM_TYPES } from '../content/item-types.content';
 import { TypeRegistry } from './registries';
-import type { PngHeader, SpriteCatalogue, SpriteFile } from './sprite-files';
+import type { PngHeader, SpriteCatalogue, SpriteFile, SpriteUniqueTemplate } from './sprite-files';
 import { wordKeyOf } from './token-keys';
 
 export function rgbaHeader(width = 512, height = width): PngHeader {
@@ -22,7 +22,7 @@ export function cleanSpriteFiles(): SpriteFile[] {
 }
 
 export function spriteCatalogue(
-  uniques: readonly { key: string; tokenType: string }[] = [
+  uniques: readonly (Omit<SpriteUniqueTemplate, 'art'> & Partial<SpriteUniqueTemplate>)[] = [
     { key: 'ash-crown-blade', tokenType: 'gloom' },
   ],
   types: SpriteCatalogue['types'] = new TypeRegistry(ITEM_TYPES),
@@ -31,7 +31,7 @@ export function spriteCatalogue(
     types,
     uniques: {
       has: (key) => uniques.some((unique) => unique.key === key),
-      all: () => uniques,
+      all: () => uniques.map((unique) => ({ art: 'pending', ...unique })),
     },
   };
 }

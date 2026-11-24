@@ -13,6 +13,16 @@ export const i18nKeySchema = z.string().regex(/^content(?:\.[A-Za-z0-9_-]+)+$/);
 export const spriteKeySchema = z.string().regex(/^_?[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 export const PLACEHOLDER_SPRITE_KEY = '_placeholder';
+const SPRITE_NUMBER = /^(?:0[1-9]|[1-9]\d)$/;
+
+export function isOwnSpriteKey(tokenType: string, type: string, key: string): boolean {
+  const prefix = `${tokenType}-${type}-`;
+  return key.startsWith(prefix) && SPRITE_NUMBER.test(key.slice(prefix.length));
+}
+
+export function uniqueSpriteKey(uniqueKey: UniqueKey): SpriteKey {
+  return uniqueKey;
+}
 
 export const TOKEN_SOURCE_KINDS = [
   'chest',

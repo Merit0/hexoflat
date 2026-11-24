@@ -10,6 +10,7 @@ export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
     ...(overrides.tier !== 'unique'
       ? {
           baseKey: `${dimensionOfTokenType(overrides.tokenType ?? ETokenType.IDOL)}-${overrides.type ?? 'sword'}`,
+          sprite: `${overrides.tokenType ?? ETokenType.IDOL}-${overrides.type ?? 'sword'}-01`,
         }
       : {}),
     tokenType: ETokenType.IDOL,
@@ -24,7 +25,6 @@ export function sampleToken(overrides: Partial<ItemToken> = {}): ItemToken {
     attributes: [{ key: 'heart', value: 1 }],
     skills: [],
     price: 500,
-    sprite: 'idol-sword-01',
     mapTier: 1,
     generatorVersion: 1,
     ext: { aspects: [], heroGrade: null },

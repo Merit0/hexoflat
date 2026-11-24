@@ -6,10 +6,11 @@ import {
   baseTokenTypeSchema,
   itemTypeKeySchema,
   uniqueKeySchema,
+  uniqueSpriteKey,
   type ItemTypeKey,
   type UniqueKey,
 } from './token-keys';
-import { uniqueSpriteKey } from './unique-schema';
+import type { TUniqueArt } from './unique-schema';
 
 export const SPRITE_SIZE = 512;
 export const SPRITE_ROOT = '/hex-assets/items';
@@ -78,6 +79,7 @@ export type TSpriteFailureCode =
   | 'DUPLICATE_KEY'
   | 'ORPHAN_UNIQUE'
   | 'UNIQUE_FILE_MISSING'
+  | 'UNIQUE_ART_PENDING'
   | 'UNIQUE_TIER_NOT_ALLOWED'
   | 'NO_PLACEHOLDER';
 
@@ -88,7 +90,7 @@ export interface SpriteFailure {
 }
 
 export type SpriteManifestResult =
-  | { ok: true; manifest: SpriteManifest; gaps: SpriteFailure[] }
+  | { ok: true; manifest: SpriteManifest; warnings: SpriteFailure[] }
   | { ok: false; failures: SpriteFailure[] };
 
 export interface SpriteTypeLookup {
@@ -98,6 +100,7 @@ export interface SpriteTypeLookup {
 export interface SpriteUniqueTemplate {
   key: UniqueKey;
   tokenType: string;
+  art: TUniqueArt;
 }
 
 export interface SpriteCatalogue {
@@ -252,13 +255,19 @@ function templateFailures(rules: SpriteRules): SpriteFailure[] {
     });
 }
 
-function uniqueGaps(files: readonly SpriteFile[], catalogue: SpriteCatalogue): SpriteFailure[] {
+function missingUniques(
+  files: readonly SpriteFile[],
+  catalogue: SpriteCatalogue,
+  art: TUniqueArt,
+): SpriteFailure[] {
   const paths = new Set(files.map((file) => file.path));
   return catalogue.uniques.all().flatMap((unique): SpriteFailure[] => {
     const path = `unique/${uniqueSpriteKey(unique.key)}.png`;
-    if (paths.has(path)) return [];
+    if (unique.art !== art || paths.has(path)) return [];
     const message = `${path}: unique "${unique.key}" has no sprite file, the placeholder is used`;
-    return [{ code: 'UNIQUE_FILE_MISSING', path, message }];
+    return [
+      { code: art === 'ready' ? 'UNIQUE_FILE_MISSING' : 'UNIQUE_ART_PENDING', path, message },
+    ];
   });
 }
 
@@ -279,7 +288,11 @@ export function buildSpriteManifest(
     if (named.kind === 'placeholder') placeholder = true;
     if (named.kind !== 'failure') failures.push(...imageFailures(file));
   }
-  failures.push(...duplicateFailures(entries), ...templateFailures(rules));
+  failures.push(
+    ...duplicateFailures(entries),
+    ...templateFailures(rules),
+    ...missingUniques(sorted, catalogue, 'ready'),
+  );
   if (!placeholder) {
     const message = `${PLACEHOLDER_SPRITE_FILE}: the placeholder sprite is missing`;
     failures.push({ code: 'NO_PLACEHOLDER', path: PLACEHOLDER_SPRITE_FILE, message });
@@ -289,7 +302,7 @@ export function buildSpriteManifest(
   return {
     ok: true,
     manifest: spriteManifestSchema.parse(manifest),
-    gaps: uniqueGaps(sorted, catalogue),
+    warnings: missingUniques(sorted, catalogue, 'pending'),
   };
 }
 
@@ -299,7 +312,8 @@ export function validateSpriteFiles(
   allowsTier: AllowsTier = tokenTypeAllowsTier,
 ): SpriteFailure[] {
   const result = buildSpriteManifest(files, catalogue, allowsTier);
-  return result.ok ? result.gaps : [...result.failures, ...uniqueGaps(files, catalogue)];
+  const failures = result.ok ? [] : result.failures;
+  return [...failures, ...missingUniques(files, catalogue, 'pending')];
 }
 
 function tokenTypeSource(tokenType: ETokenType | null): string {

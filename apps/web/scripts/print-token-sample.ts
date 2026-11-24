@@ -43,7 +43,7 @@ for (let n = 0; n < SAMPLE_SIZE; n += 1) {
   }
   const token = result.value;
   console.log(
-    `#${n} ${token.id}  ${token.tokenType} tier ${token.mapTier}  ${token.attributes.length} attr  ${token.price} coins  ${token.sprite}`,
+    `#${n} ${token.id}  ${token.tokenType} tier ${token.mapTier}  ${token.attributes.length} attr  ${token.price} coins  ${token.sprite ?? 'fallback'}`,
   );
   for (const [lang, dictionary] of Object.entries(dictionaries)) {
     const name = formatTokenName(token.name, dictionary);

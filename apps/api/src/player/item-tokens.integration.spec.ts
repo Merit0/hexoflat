@@ -8,6 +8,8 @@ import { inventoryV1Fixture } from '@hexoflat/engine/inventory/inventory-v1-fixt
 import { mintItem } from '@hexoflat/engine/inventory/inventory-state';
 import { createTokenFactory } from '@hexoflat/engine/tokens/factory/create-token-factory';
 import { LEGACY_SHIELD, LEGACY_SWORD } from '@hexoflat/engine/tokens/legacy-token-fixtures';
+import { resolveTokenSprite } from '@hexoflat/engine/tokens/sprite-fallback';
+import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import type {
   InventoryState,
@@ -148,6 +150,59 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
     expect(loaded.aggregates.inventory!.revision).toBe(before.aggregates.inventory!.revision);
   });
 
+  it('DA4: an old inventory v4 with fallback sprites loads with null and draws the same sprites', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const before = await kit.service.snapshot(userId, heroId);
+    const inventory = before.aggregates.inventory!.state as InventoryState;
+    const factory = createTokenFactory();
+    const base = (tokenType: ETokenType.GLOOM | ETokenType.IDOL, n: number) => {
+      const made = factory.createBase({
+        seed: 'da4-old-save',
+        sourceId: 'test:da4.old.save',
+        n,
+        tokenType,
+        mapTier: 2,
+        type: 'sword',
+      });
+      if (!made.ok) throw new Error(made.refusal.code);
+      return made.value;
+    };
+    const made = factory.createUnique('last-verdict', {
+      seed: 'da4-old-save',
+      sourceId: 'test:da4.old.save',
+      n: 9,
+      mapTier: 4,
+      ownedUniques: [],
+    });
+    if (!made.ok) throw new Error(made.refusal.code);
+    const stored = [
+      { token: base(ETokenType.GLOOM, 0), sprite: 'idol-sword-01', loaded: null },
+      { token: base(ETokenType.IDOL, 1), sprite: 'idol-sword-01', loaded: 'idol-sword-01' },
+      { token: made.value, sprite: '_placeholder', loaded: undefined },
+    ];
+    const state = structuredClone(inventory);
+    const cells = stored.map(({ token, sprite }) => {
+      const item = mintItem(state, 'sword', 1);
+      state.idSeq += 1;
+      return { ...item, token: { ...token, sprite } };
+    });
+    const old = { ...state, bag: [...cells, ...state.bag.slice(cells.length)] };
+    await kit.db
+      .update(heroAggregates)
+      .set({ schemaVersion: 4, state: old })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+
+    const after = await kit.service.snapshot(userId, heroId);
+    const bag = (after.aggregates.inventory!.state as InventoryState).bag;
+    stored.forEach(({ token, sprite, loaded }, index) => {
+      expect(bag[index]!.token).toEqual(token);
+      expect(bag[index]!.token!.sprite).toBe(loaded);
+      expect(resolveTokenSprite(SPRITE_MANIFEST, bag[index]!.token!).key).toBe(sprite);
+    });
+    expect(bag[2]!.token).not.toHaveProperty('sprite');
+    expect(after.aggregates.inventory!.revision).toBe(before.aggregates.inventory!.revision);
+  });
+
   describe('characterization', () => {
     it('loads a stored v1 inventory with the same items in the same places', async () => {
       const { userId, heroId } = await kit.newPlayer();
@@ -201,7 +256,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
         .select()
         .from(heroAggregates)
         .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
-      expect(row.schemaVersion).toBe(4);
+      expect(row.schemaVersion).toBe(5);
       expect((row.state as InventoryState).bag[10]!.token).toEqual(loaded.equip.weapon!.token);
 
       const reloaded = await inventoryOf(userId, heroId);

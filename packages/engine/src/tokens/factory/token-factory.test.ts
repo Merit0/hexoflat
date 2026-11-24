@@ -71,19 +71,20 @@ describe('TokenFactory.createBase', () => {
       expect(token.attributes.some((attribute) => attribute.key === 'heart')).toBe(false);
   });
 
-  it('TG-3: takes the sprite from the manifest of its type or the placeholder', () => {
+  it('TG-3: stores an own sprite of its tokenType and type, else null', () => {
     const sprites = new ManifestSpriteRegistry(SPRITE_MANIFEST);
     for (const { token } of TOKENS) {
-      const allowed = sprites.spritesFor('base', token.tokenType, token.type).map((ref) => ref.key);
-      expect(allowed).toContain(token.sprite);
+      const { step, refs } = sprites.resolveBase(token.tokenType, token.type);
+      if (step === 'own') expect(refs.map((ref) => ref.key)).toContain(token.sprite);
+      else expect(token.sprite).toBeNull();
       expect(lightTone(token.tier, token.tokenType)).toBe(`${token.tokenType}-base`);
     }
   });
 
-  it('TG-3: uses the placeholder for a type without sprites', () => {
+  it('TG-3: stores null for a type without sprites', () => {
     const empty = createTokenFactory(TOKEN_CONTENT, { ...SPRITE_MANIFEST, entries: [] });
     const result = empty.createBase(contextFor(1, { type: 'sword' }));
-    expect(result.ok && result.value.sprite).toBe('_placeholder');
+    expect(result.ok && result.value.sprite).toBeNull();
   });
 });
 

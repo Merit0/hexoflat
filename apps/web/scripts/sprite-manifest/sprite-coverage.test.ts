@@ -42,11 +42,11 @@ describe('sprites:coverage on a fixture folder', () => {
     });
   });
 
-  it('tokens:manifest lists only the uniques without a file as gaps', () => {
+  it('tokens:manifest lists only the uniques with pending art as warnings', () => {
     const run = runSpriteManifest({ itemsDir, outFile: path.join(root, 'manifest.ts') });
     expect(run).toMatchObject({
       ok: true,
-      gaps: [{ code: 'UNIQUE_FILE_MISSING', path: 'unique/lantern-eater.png' }],
+      warnings: [{ code: 'UNIQUE_ART_PENDING', path: 'unique/lantern-eater.png' }],
     });
   });
 });

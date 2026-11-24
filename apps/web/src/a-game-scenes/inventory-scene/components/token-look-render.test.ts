@@ -18,10 +18,9 @@ let app: App | null = null;
 let host: HTMLElement;
 
 function spriteOf(token: ItemToken): string {
-  return (
-    SPRITE_MANIFEST.entries.find((entry) => entry.key === token.sprite)?.path ??
-    SPRITE_MANIFEST.placeholder
-  );
+  return token.tier === 'unique'
+    ? SPRITE_MANIFEST.placeholder
+    : '/hex-assets/items/base/idol-sword/idol-sword-01.png';
 }
 
 async function mount(component: Component, props: Record<string, unknown> = {}) {

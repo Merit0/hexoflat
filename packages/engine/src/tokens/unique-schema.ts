@@ -8,7 +8,6 @@ import {
   itemTypeKeySchema,
   uniqueKeySchema,
   WORD_KEY_ROOT,
-  type SpriteKey,
   type UniqueKey,
 } from './token-keys';
 import { tokenAttributeSchema } from './token-schema';
@@ -17,14 +16,13 @@ function distinct(values: readonly string[]): boolean {
   return new Set(values).size === values.length;
 }
 
-export function uniqueSpriteKey(uniqueKey: UniqueKey): SpriteKey {
-  return uniqueKey;
-}
-
 export function uniqueTextKeys(uniqueKey: UniqueKey): { name: string; description: string } {
   const root = `${WORD_KEY_ROOT}.unique.${uniqueKey}`;
   return { name: `${root}.name`, description: `${root}.desc` };
 }
+
+export const UNIQUE_ART = ['pending', 'ready'] as const;
+export type TUniqueArt = (typeof UNIQUE_ART)[number];
 
 export const uniqueTokenDefinitionSchema = z
   .strictObject({
@@ -43,9 +41,11 @@ export const uniqueTokenDefinitionSchema = z
     skills: z.array(skillIdSchema).refine(distinct, 'a skill is listed twice'),
     price: z.number().int().positive(),
     revision: z.number().int().positive(),
+    art: z.enum(UNIQUE_ART).default('pending'),
   })
   .refine((definition) => tokenTypeOfDimension(definition.dimension) === definition.tokenType, {
     path: ['dimension'],
     message: 'Unique dimension differs from token type',
   });
-export type UniqueTokenDefinition = z.infer<typeof uniqueTokenDefinitionSchema>;
+export type UniqueTokenDefinition = z.output<typeof uniqueTokenDefinitionSchema>;
+export type UniqueTokenContent = z.input<typeof uniqueTokenDefinitionSchema>;

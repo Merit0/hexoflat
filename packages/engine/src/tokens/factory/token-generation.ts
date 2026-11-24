@@ -106,11 +106,7 @@ export interface ISpriteResolver {
     type: ItemTypeDefinition,
     tokenType: TBaseTokenType,
     rng: RandomNumberGenerator,
-  ): SpriteKey;
-}
-
-export interface IUniqueSpriteResolver {
-  resolveUnique(uniqueKey: UniqueKey): SpriteKey;
+  ): SpriteKey | null;
 }
 
 export interface ISkillGenerator {

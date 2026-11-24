@@ -1,6 +1,7 @@
 import type { DomainEvent } from '../commands/types';
 import { upcastDropContext } from '../tokens/drop-context';
 import { upcastTokenDimension } from '../tokens/upcast-token-dimension';
+import { upcastTokenSprites } from '../tokens/upcast-token-sprite';
 
 const RENAMED_DROP_CONTEXT_KEYS: Readonly<Record<string, string>> = {
   tokenOrigin: 'dropContext',
@@ -30,5 +31,5 @@ export function upcastDimensionVocabulary(raw: unknown): unknown {
 
 /** Old-save reader for journal replies: events written before DA3b leave the server in the new vocabulary. */
 export function upcastJournalEvents(raw: unknown): DomainEvent[] {
-  return upcastDimensionVocabulary(raw) as DomainEvent[];
+  return upcastTokenSprites(upcastDimensionVocabulary(raw)) as DomainEvent[];
 }

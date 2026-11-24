@@ -1,6 +1,6 @@
 import { EDimension } from '../dimensions/dimensions';
 import { ETokenType } from '../abstraction/hexobject-abstraction';
-import type { UniqueTokenDefinition } from '../tokens/unique-schema';
+import type { UniqueTokenContent } from '../tokens/unique-schema';
 import { uniqueTextKeys } from '../tokens/unique-schema';
 
 function authored(key: string) {
@@ -12,7 +12,7 @@ function authored(key: string) {
   };
 }
 
-export const TOKEN_UNIQUES: readonly UniqueTokenDefinition[] = [
+export const TOKEN_UNIQUES: readonly UniqueTokenContent[] = [
   {
     ...authored('lantern-eater'),
     type: 'sword',

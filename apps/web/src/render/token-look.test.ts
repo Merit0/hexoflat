@@ -83,7 +83,8 @@ describe('DA4: sprite fallback while drawing a token', () => {
   });
 
   it('never gives a unique token a base sprite', () => {
-    const token = { ...uniqueTestToken('lantern-eater'), sprite: 'unique-lantern-eater' };
+    const token = uniqueTestToken('lantern-eater');
+    expect(token).not.toHaveProperty('sprite');
     expect(tokenSpriteUrl(token)).toBe(PLACEHOLDER);
   });
 });

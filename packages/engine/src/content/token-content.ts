@@ -13,7 +13,7 @@ import type {
   TokenPriceRanges,
   WordPoolData,
 } from '../tokens/token-content-schema';
-import type { UniqueTokenDefinition } from '../tokens/unique-schema';
+import type { UniqueTokenContent } from '../tokens/unique-schema';
 import { ATTRIBUTE_PROFILES } from './attribute-profiles.content';
 import { EQUIPMENT_ATTRIBUTES } from './equipment-attributes.content';
 import { ITEM_TYPES } from './item-types.content';
@@ -50,7 +50,7 @@ export const TOKEN_PRICE_ANCHOR_KEY = HEXOBJECT_KEYS.SWORD;
 
 export function createTokenRegistries(
   content: TokenContent = TOKEN_CONTENT,
-  uniques: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
+  uniques: readonly UniqueTokenContent[] = TOKEN_UNIQUES,
 ) {
   const types = new TypeRegistry(content.types);
   const attributes = new AttributeRegistry(content.attributes);
@@ -64,7 +64,7 @@ export function createTokenRegistries(
 
 export function tokenLocaleKeys(
   content: TokenContent = TOKEN_CONTENT,
-  uniques: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
+  uniques: readonly UniqueTokenContent[] = TOKEN_UNIQUES,
 ): string[] {
   return [
     ...Object.values(TOKEN_NAME_TEMPLATE_KEYS),

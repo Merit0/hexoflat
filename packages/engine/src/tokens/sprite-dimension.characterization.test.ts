@@ -4,6 +4,7 @@ import { ITEM_TYPES } from '../content/item-types.content';
 import { EDimension, tokenTypeOfDimension } from '../dimensions/dimensions';
 import { createTokenFactory } from './factory/create-token-factory';
 import { LIGHT_COLOR_BY_TONE, lightTone } from './light-tone';
+import { resolveTokenSprite } from './sprite-fallback';
 import { setSpriteFallbackLog } from './sprite-fallback-log';
 import { buildSpriteManifest } from './sprite-files';
 import { SPRITE_MANIFEST } from './sprite-manifest';
@@ -64,7 +65,8 @@ describe('DA4 B6: base sprites of gloom and spark tokens', () => {
       for (let n = 0; n < 5; n += 1) {
         const token = made(dimension, 'sword', n);
         expect(token.dimension).toBe(dimension);
-        expect(token.sprite).toBe('idol-sword-01');
+        expect(token.sprite).toBeNull();
+        expect(resolveTokenSprite(SPRITE_MANIFEST, token).key).toBe('idol-sword-01');
         expect(lightTone(token.tier, token.tokenType)).toBe(tone);
         expect(LIGHT_COLOR_BY_TONE[lightTone(token.tier, token.tokenType)]).toBe(light);
       }

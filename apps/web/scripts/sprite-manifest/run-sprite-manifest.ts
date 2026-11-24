@@ -25,7 +25,7 @@ export interface SpriteManifestRun {
 }
 
 export type SpriteManifestRunResult =
-  | { ok: true; count: number; changed: boolean; gaps: SpriteFailure[] }
+  | { ok: true; count: number; changed: boolean; warnings: SpriteFailure[] }
   | { ok: false; failures: SpriteFailure[] };
 
 export function runSpriteManifest(run: SpriteManifestRun): SpriteManifestRunResult {
@@ -35,5 +35,5 @@ export function runSpriteManifest(run: SpriteManifestRun): SpriteManifestRunResu
   const source = spriteManifestSource(result.manifest);
   const changed = !existsSync(run.outFile) || readFileSync(run.outFile, 'utf-8') !== source;
   if (changed) writeFileSync(run.outFile, source);
-  return { ok: true, count: result.manifest.entries.length, changed, gaps: result.gaps };
+  return { ok: true, count: result.manifest.entries.length, changed, warnings: result.warnings };
 }

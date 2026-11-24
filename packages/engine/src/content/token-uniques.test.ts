@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { BASE_TOKEN_TYPES } from '../tokens/token-keys';
-import { uniqueTokenDefinitionSchema, type UniqueTokenDefinition } from '../tokens/unique-schema';
+import { uniqueTokenDefinitionSchema, type UniqueTokenContent } from '../tokens/unique-schema';
 import { UniqueRegistry } from '../tokens/registries';
 import { tokenLocaleKeys } from './token-content';
 import { TOKEN_UNIQUES } from './token-uniques.content';
@@ -10,7 +10,7 @@ import { uniqueContentFailures } from './validate-tokens';
 
 const [GLOOM_SWORD, ALIEN_SWORD] = TOKEN_UNIQUES;
 
-function withUnique(changes: Partial<UniqueTokenDefinition>): UniqueTokenDefinition[] {
+function withUnique(changes: Partial<UniqueTokenContent>): UniqueTokenContent[] {
   return [{ ...GLOOM_SWORD, ...changes }];
 }
 
@@ -61,7 +61,7 @@ describe('unique token content', () => {
     expect(keys).toContain('content.tokens.tokenType.alien');
   });
 
-  it.each<[string, Partial<UniqueTokenDefinition>, RegExp]>([
+  it.each<[string, Partial<UniqueTokenContent>, RegExp]>([
     ['an unknown type', { type: 'dragon-lance' }, /unknown type/],
     ['an unknown attribute', { attributes: [{ key: 'luck', value: 1 }] }, /luck is unknown/],
     [

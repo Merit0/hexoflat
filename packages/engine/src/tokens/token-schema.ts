@@ -8,6 +8,7 @@ import {
   tokenTypeAllowsTier,
 } from '../dimensions/dimensions';
 import { upcastTokenDimension } from './upcast-token-dimension';
+import { upcastTokenSprite } from './upcast-token-sprite';
 import { z } from 'zod';
 import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
@@ -20,6 +21,7 @@ import {
   itemTokenIdSchema,
   itemTypeKeySchema,
   mapTierSchema,
+  isOwnSpriteKey,
   spriteKeySchema,
   uniqueKeySchema,
   wordKeySchemaFor,
@@ -88,7 +90,7 @@ export const currentItemTokenSchema = z
     attributes: z.array(tokenAttributeSchema),
     skills: z.array(skillIdSchema),
     price: z.number().int().positive(),
-    sprite: spriteKeySchema,
+    sprite: spriteKeySchema.nullable().optional(),
     mapTier: mapTierSchema,
     generatorVersion: z.number().int().positive(),
     ext: tokenExtensionsSchema,
@@ -126,6 +128,20 @@ export const currentItemTokenSchema = z
         message: 'uniqueKey is set only on a unique token',
       });
     }
+    if (unique !== (token.sprite === undefined)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sprite'],
+        message: 'a base token stores its sprite or null, a unique token stores none',
+      });
+    }
+    if (token.sprite && !isOwnSpriteKey(token.tokenType, token.type, token.sprite)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sprite'],
+        message: 'a fallback sprite is never stored',
+      });
+    }
     if (!tokenTypeAllowsTier(token.tokenType, token.tier)) {
       ctx.addIssue({
         code: 'custom',
@@ -159,7 +175,10 @@ export const currentItemTokenSchema = z
     }
   });
 /** Persisted readers normalize legacy family/ownership before strict validation. */
-export const itemTokenSchema = z.preprocess(upcastTokenDimension, currentItemTokenSchema);
+export const itemTokenSchema = z.preprocess(
+  (raw) => upcastTokenSprite(upcastTokenDimension(raw)),
+  currentItemTokenSchema,
+);
 export type ItemToken = z.infer<typeof currentItemTokenSchema>;
 
 const KNOWN_ITEM_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));

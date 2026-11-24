@@ -11,7 +11,7 @@ if (!result.ok) {
   const state = result.changed ? 'written' : 'unchanged';
   console.log(`tokens:manifest: ${result.count} sprite(s), ${MANIFEST_FILE} ${state}.`);
   if (result.changed) console.log('Rebuild the engine: pnpm --filter @hexoflat/engine build');
-  for (const gap of result.gaps) {
-    console.warn(`tokens:manifest: warning: [${gap.code}] ${gap.message}`);
+  for (const warning of result.warnings) {
+    console.warn(`tokens:manifest: warning: [${warning.code}] ${warning.message}`);
   }
 }

@@ -34,12 +34,12 @@ describe('TG-10: item sprites in apps/web/public/hex-assets/items', () => {
     }
   });
 
-  it('DA4-2: the only violations of the real folder are the two unique files without art', () => {
+  it('DA4-2: the real folder has no violations, only the two uniques with pending art', () => {
     expect(
       validateSpriteFiles(files, catalogue).map(({ code, path: file }) => [code, file]),
     ).toEqual([
-      ['UNIQUE_FILE_MISSING', 'unique/lantern-eater.png'],
-      ['UNIQUE_FILE_MISSING', 'unique/last-verdict.png'],
+      ['UNIQUE_ART_PENDING', 'unique/lantern-eater.png'],
+      ['UNIQUE_ART_PENDING', 'unique/last-verdict.png'],
     ]);
   });
 
@@ -88,9 +88,9 @@ describe('runSpriteManifest on a fixture folder', () => {
       ok: true,
       count: 1,
       changed: true,
-      gaps: [
-        expect.objectContaining({ code: 'UNIQUE_FILE_MISSING', path: 'unique/lantern-eater.png' }),
-        expect.objectContaining({ code: 'UNIQUE_FILE_MISSING', path: 'unique/last-verdict.png' }),
+      warnings: [
+        expect.objectContaining({ code: 'UNIQUE_ART_PENDING', path: 'unique/lantern-eater.png' }),
+        expect.objectContaining({ code: 'UNIQUE_ART_PENDING', path: 'unique/last-verdict.png' }),
       ],
     });
     expect(readFileSync(outFile, 'utf-8')).toContain(`key: 'idol-sword-01'`);

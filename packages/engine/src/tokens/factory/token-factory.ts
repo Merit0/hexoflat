@@ -31,7 +31,6 @@ import {
   type ISpriteResolver,
   type ITokenValidator,
   type ITypePicker,
-  type IUniqueSpriteResolver,
   type TokenOverrides,
   type TokenResult,
   type TTokenStep,
@@ -53,7 +52,6 @@ export interface TokenFactoryParts {
 export interface UniqueTokenParts {
   types: TypeRegistry;
   uniques: UniqueRegistry;
-  spriteResolver: IUniqueSpriteResolver;
 }
 
 export function tokenStreamLabel(id: string, step: TTokenStep): string {
@@ -209,7 +207,6 @@ export class TokenFactory {
       attributes,
       skills: [...definition.skills],
       price: definition.price,
-      sprite: unique.spriteResolver.resolveUnique(definition.key),
       mapTier: ctx.mapTier,
       generatorVersion: TOKEN_GENERATOR_VERSION,
       ext: emptyTokenExtensions(),

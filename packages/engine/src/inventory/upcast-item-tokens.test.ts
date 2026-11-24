@@ -21,8 +21,8 @@ function stored(): unknown {
 const upcast = () => upcastAggregate('inventory', 1, stored(), { heroId: V1_HERO });
 
 describe('inventory upcast v1 -> v2 (LG5a, D2, D5)', () => {
-  it('declares inventory schema version 3', () => {
-    expect(AGGREGATES.inventory.schemaVersion).toBe(4);
+  it('declares inventory schema version 5', () => {
+    expect(AGGREGATES.inventory.schemaVersion).toBe(5);
   });
 
   it('gives a valid v2 document with the same item count', () => {
