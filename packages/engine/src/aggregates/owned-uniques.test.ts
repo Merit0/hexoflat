@@ -5,8 +5,8 @@ import { emptyProgressState, progressStateSchema } from './progress-state';
 const HERO = 'hero-1';
 
 describe('progress.ownedUniques is removed (DA5a-2, Q5)', () => {
-  it('declares progress schema version 13 without the field', () => {
-    expect(AGGREGATES.progress.schemaVersion).toBe(13);
+  it('declares progress schema version 14 without the field', () => {
+    expect(AGGREGATES.progress.schemaVersion).toBe(14);
     expect(emptyProgressState(HERO)).not.toHaveProperty('ownedUniques');
     expect(
       progressStateSchema.safeParse({ ...emptyProgressState(HERO), ownedUniques: [] }).success,

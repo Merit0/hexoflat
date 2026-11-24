@@ -94,10 +94,11 @@ export class DimensionItemsFeature extends BaseFeature {
         await new OpenShopFeature().open();
         const shop = new ShopBoardFeature();
         await shop.sellByRightClick('sword');
-        await this.items.verifyBuybackToken(this.requireToken());
+        await this.verifyHeldByTrader();
         await new OpenShopFeature().openAfterReload();
-        await this.items.verifyBuybackToken(this.requireToken());
-        await shop.buyBackByRightClick(0);
+        await this.verifyHeldByTrader();
+        if (this.isUnique()) await this.map.shopBoard.buyBackUnique(0);
+        else await shop.buyBackByRightClick(0);
         await new OpenShopFeature().close();
         await this.reloadCurrentMap();
         await this.map.heroBoardPanel.clickTab('inventory');
@@ -107,6 +108,16 @@ export class DimensionItemsFeature extends BaseFeature {
         await this.items.verifyTokenUnchanged(this.requireToken());
       },
     );
+  }
+
+  private isUnique(): boolean {
+    return this.requireToken().tier === 'unique';
+  }
+
+  private async verifyHeldByTrader(): Promise<void> {
+    const token = this.requireToken();
+    if (this.isUnique()) await this.map.shopBoard.verifyUniqueBuybackHolds(token);
+    else await this.items.verifyBuybackToken(token);
   }
 
   private async enterGate(name: 'homelandGate' | 'caveEntrance'): Promise<void> {

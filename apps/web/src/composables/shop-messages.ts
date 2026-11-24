@@ -16,6 +16,8 @@ export function shopErrorText(reason: string): string {
   switch (reason) {
     case 'EMPTY_SOURCE':
       return t('shop.error.EMPTY_SOURCE');
+    case 'BUY_BACK_GONE':
+      return t('shop.error.BUY_BACK_GONE');
     case 'PRICE_CHANGED':
       return t('shop.error.PRICE_CHANGED');
     case 'NOT_ENOUGH_COINS':

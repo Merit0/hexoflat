@@ -116,7 +116,7 @@ function handle(envelope: PlayerEnvelope): PlayerCommandResponse {
       devGrantAllowed: true,
       inventory: serverInventoryContext(s.progress.state.presence),
       rngSeed: FAKE_RNG_SEED,
-      trade: serverTradeContext(s.progress.state.presence, FAKE_RNG_SEED),
+      trade: { ...serverTradeContext(s.progress.state.presence, FAKE_RNG_SEED), dayId: 1 },
       quest: serverQuestContext(s.progress.state.presence),
     },
   );

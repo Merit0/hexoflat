@@ -38,6 +38,7 @@
           :price-testid="`shop-buyback-price-${cell.index}`"
         />
       </div>
+      <shop-unique-buyback />
       <p v-if="buybackCount === 0" class="empty" data-testid="shop-buyback-empty">
         <b>{{ t('shop.buyback.emptyTitle') }}</b>
         {{ t('shop.buyback.emptyHint') }}
@@ -52,9 +53,12 @@ import { useI18n } from 'vue-i18n';
 import { shopZoneClass } from '@/composables/shop-drag-state';
 import { shopTab } from '@/composables/shop-tab';
 import type { ShopTradeCell as TradeCell } from '@/composables/use-shop-board-data';
+import { heldUniques } from '@/services/trade/trade-commands';
 import type { RefreshPreview } from '@/services/trade/trade-preview';
+import { useTraderStore } from '@/stores/trader-store';
 import ShopTabsRow from './shop-tabs-row.vue';
 import ShopTradeCell from './shop-trade-cell.vue';
+import ShopUniqueBuyback from './shop-unique-buyback.vue';
 
 const props = defineProps<{
   goods: TradeCell[];
@@ -65,7 +69,13 @@ const props = defineProps<{
 const { t } = useI18n();
 const zoneClass = computed(() => (shopTab.value === 'trade' ? '' : shopZoneClass(shopTab.value)));
 const tradeCount = computed(() => props.own.filter((cell) => cell.item !== null).length);
-const buybackCount = computed(() => props.buyback.filter((cell) => cell.item !== null).length);
+const traderStore = useTraderStore();
+const uniqueCount = computed(() =>
+  traderStore.traderKey ? heldUniques(traderStore.traderKey).length : 0,
+);
+const buybackCount = computed(
+  () => props.buyback.filter((cell) => cell.item !== null).length + uniqueCount.value,
+);
 </script>
 
 <style scoped src="./shop-pane.css"></style>

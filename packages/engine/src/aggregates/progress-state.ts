@@ -6,6 +6,7 @@ import { emptyQuestLog, questLogSchema } from '../quests/quest-log-state';
 import { portalLinkSchema } from '../portal/portal-state';
 import { emptyListings, listingsSchema } from '../trade/listing-state';
 import { tradersStateSchema } from '../trade/trade-state';
+import { uniqueBuybackSchema } from '../trade/unique-buyback';
 import { gameDaySchema } from '../game-day/game-day-state';
 
 export const CAMP_FIRST_CHEST_REWARD = 'camp-first-chest';
@@ -44,6 +45,7 @@ export const progressStateSchema = z
     trips: z.number().int().nonnegative(),
     traders: tradersStateSchema,
     listings: listingsSchema,
+    uniqueBuyback: uniqueBuybackSchema,
     quests: questLogSchema,
     day: gameDaySchema.optional(),
     graveExitWarningAcknowledged: z.boolean(),
@@ -65,6 +67,7 @@ export function emptyProgressState(heroId: string): ProgressState {
     trips: 0,
     traders: {},
     listings: emptyListings(),
+    uniqueBuyback: {},
     quests: emptyQuestLog(),
     graveExitWarningAcknowledged: false,
   };

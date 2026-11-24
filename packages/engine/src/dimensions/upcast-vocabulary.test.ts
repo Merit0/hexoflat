@@ -100,7 +100,7 @@ describe('DA3b-3: pre-DA3b saves load with identical tokens', () => {
   });
 
   it('upcasts progress v11 with quest offers, rewards, listings and drop contexts', () => {
-    expect(AGGREGATES.progress.schemaVersion).toBe(13);
+    expect(AGGREGATES.progress.schemaVersion).toBe(14);
     const progress = emptyProgressState('hero');
     const cave = { tokenType: ETokenType.GLOOM, mapTier: 3 } as const;
     const offers = generateQuestOffers({

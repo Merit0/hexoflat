@@ -1,6 +1,7 @@
 import type { TTraderKey } from '@hexoflat/engine/content/traders.content';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import type { ITradeSource, ITraderRef, TBuyTarget } from '@hexoflat/engine/trade/trade-types';
+import type { UniqueBuybackEntry } from '@hexoflat/engine/trade/unique-buyback';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { readInventoryState } from '@/services/inventory/inventory-store-io';
 import {
@@ -23,6 +24,10 @@ export function currentInventory(): InventoryState {
 export function traderRef(key: TTraderKey): ITraderRef | null {
   const state = traderProjection.value.traders[key];
   return state ? { key, state } : null;
+}
+
+export function heldUniques(key: TTraderKey): UniqueBuybackEntry[] {
+  return traderProjection.value.uniqueBuyback[key] ?? [];
 }
 
 function outcomeOf(answer: Pick<InventoryCommandResult, 'ok' | 'code' | 'events'>): TradeOutcome {
@@ -124,6 +129,14 @@ export async function sellToTrader(
   const from = { container: 'bag', index: fromBagIndex };
   const payload = { trader: key, from, split, amount, expectedPrice: preview.price };
   return outcomeOf(await sendInventoryCommand('SHOP_SELL', payload));
+}
+
+export async function buyBackUniqueFromTrader(
+  key: TTraderKey,
+  instanceId: string,
+): Promise<TradeOutcome> {
+  if (!traderRef(key)) return NO_TRADER;
+  return outcomeOf(await sendInventoryCommand('SHOP_BUY_BACK_UNIQUE', { trader: key, instanceId }));
 }
 
 export async function refreshTrader(key: TTraderKey): Promise<TradeOutcome> {

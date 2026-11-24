@@ -81,6 +81,7 @@ export interface TestTrader {
     token?: TestItemToken;
   } | null)[];
   buyback: ({ key: string; amount: number; unitPrice: number; token?: TestItemToken } | null)[];
+  uniqueBuyback: { token: TestItemToken; price: number; dayId: number }[];
   refreshPrice: number;
 }
 

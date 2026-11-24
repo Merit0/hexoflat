@@ -2,8 +2,10 @@ import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstr
 import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import type { ITraderRef, TBuyTarget } from '@hexoflat/engine/trade/trade-types';
 import {
+  buyBackUniqueFromTrader,
   buyFromTrader,
   currentInventory,
+  heldUniques,
   sellToTrader,
   traderRef,
   type TradeOutcome,
@@ -117,6 +119,27 @@ function undoSale(key: THexobjectKey, amount: number): void {
   void quickTrade({ kind: 'trade', list: 'buyback', index }, false, amount);
 }
 
+export function buyBackUnique(instanceId: string): Promise<void> {
+  const trader = useTraderStore().traderKey;
+  const entry = trader
+    ? heldUniques(trader).find(({ token }) => token.instanceId === instanceId)
+    : undefined;
+  if (!trader || !entry || pending) return Promise.resolve();
+  const { token, price } = entry;
+  const run = buyBackUniqueFromTrader(trader, instanceId).then((outcome) => {
+    if (!outcome.ok) refuse(outcome.reason, outcome.price, `unique:${instanceId}`);
+    else {
+      const source: ShopDragSource = { kind: 'trade', list: 'buyback', index: 0 };
+      const preview: TradePreview = { ok: true, price, amount: 1 };
+      announceDeal(source, token.type as THexobjectKey, preview, undoSale);
+    }
+  });
+  pending = run.finally(() => {
+    pending = null;
+  });
+  return pending;
+}
+
 function send(
   source: ShopDragSource,
   to: TBuyTarget,
@@ -143,11 +166,14 @@ function deal(
     return Promise.resolve();
   }
   const key = readSourceItemKey(source);
+  const sold = source.kind === 'bag' ? currentInventory().bag[source.index]?.token : undefined;
+  const instanceId = sold?.instanceId;
+  const undo = instanceId ? () => void buyBackUnique(instanceId) : undoSale;
   const run = send(source, to, split, amount).then((outcome) => {
     if (!outcome.ok) refuse(outcome.reason, outcome.price, home);
     else {
       if (to !== 'auto') flashFor(stashFx, 'landed', `bag:${to.index}`);
-      if (key) announceDeal(source, key, preview, undoSale);
+      if (key) announceDeal(source, key, preview, undo);
     }
   });
   pending = run.finally(() => {

@@ -59,7 +59,7 @@ const LEGACY_GRAVE_EXIT_REWARD = 'grave-exit-warning-acknowledged';
 
 const progressDefinition: IAggregateDefinition<ProgressState> = {
   kind: 'progress',
-  schemaVersion: 13,
+  schemaVersion: 14,
   schema: progressStateSchema,
   upcasters: {
     1: (old, { heroId }) => ({
@@ -90,6 +90,7 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
       delete rest.ownedUniques;
       return rest;
     },
+    13: (old) => ({ ...(old as object), uniqueBuyback: {} }),
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
   project: projectProgress,

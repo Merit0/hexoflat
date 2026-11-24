@@ -230,7 +230,7 @@ describe.skipIf(!inject('dbAvailable'))('saves written before DA5a-2 (real Postg
       await saveAggregate(tx, player.heroId, 'progress', held!.revision, held!.state);
     });
     const written = await storedProgress(player.heroId);
-    expect(written.version).toBe(13);
+    expect(written.version).toBe(14);
     expect(written.state.quests).toEqual(progress.state.quests);
     expect(written.state).not.toHaveProperty('ownedUniques');
     for (const { definition } of written.state.quests.offers!) {

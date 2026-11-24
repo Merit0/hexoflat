@@ -2,6 +2,7 @@ import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { GAME_DAY_RULES } from '../content/game-day.content';
 import { questBoardForDay } from '../quests/quest-board-state';
+import { expireUniqueBuyback } from '../trade/unique-buyback';
 import type { GameDay } from './game-day-state';
 
 const UTC_DAY_MS = 86_400_000;
@@ -68,6 +69,20 @@ function caveTrips(before: ProgressState, after: ProgressState, events: readonly
   }).length;
 }
 
+function closeTraderDay(
+  progress: ProgressState,
+  dayId: number,
+): { progress: ProgressState; events: DomainEvent[] } {
+  const { held, expired } = expireUniqueBuyback(progress.uniqueBuyback, dayId);
+  if (expired.length === 0) return { progress, events: [] };
+  const instanceIds = expired.map((entry) => entry.token.instanceId);
+  const payload = { heroId: progress.knowledge.heroId, dayId, instanceIds };
+  return {
+    progress: { ...progress, uniqueBuyback: held },
+    events: [{ type: 'UNIQUE_BUY_BACK_EXPIRED', payload }],
+  };
+}
+
 /** Fold one successful, non-replayed command into the day it was executed in. */
 export function trackGameDay<T extends { progress: ProgressState; events: DomainEvent[] }>(
   before: ProgressState,
@@ -88,16 +103,19 @@ export function trackGameDay<T extends { progress: ProgressState; events: Domain
     questsCompleted: current.questsCompleted + completed,
     caveTrips: current.caveTrips + trips,
   };
+  const played = { ...outcome.progress, day };
+  const closed = reason ? closeTraderDay(played, day.id) : { progress: played, events: [] };
   const events = reason
     ? [
         {
           type: 'GAME_DAY_STARTED',
           payload: { heroId, dayId: day.id, startedAt: day.startedAt, reason },
         },
+        ...closed.events,
         ...outcome.events,
       ]
     : outcome.events;
-  const progress = { ...outcome.progress, day };
+  const { progress } = closed;
   return {
     ...outcome,
     progress: progress.quests.board ? questBoardForDay(progress, day.id) : progress,

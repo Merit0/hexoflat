@@ -190,6 +190,7 @@ function executeCore(
     }
     case 'SHOP_BUY':
     case 'SHOP_SELL':
+    case 'SHOP_BUY_BACK_UNIQUE':
     case 'SHOP_DEAL':
     case 'SHOP_LIST':
     case 'SHOP_UNLIST':

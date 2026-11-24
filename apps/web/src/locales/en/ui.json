@@ -743,6 +743,7 @@
     },
     "error": {
       "EMPTY_SOURCE": "There is nothing in that cell.",
+      "BUY_BACK_GONE": "The trader no longer has this item. The day has ended.",
       "PRICE_CHANGED": "The price has changed. Look again.",
       "NOT_ENOUGH_COINS": "Not enough coins.",
       "NOT_TRADEABLE": "The trader is not interested in that.",
@@ -810,6 +811,11 @@
     "buyback": {
       "emptyTitle": "Nothing to buy back",
       "emptyHint": "Items you sell wait here at the price Ilva paid, until she gets new goods."
+    },
+    "uniqueBuyback": {
+      "title": "Unique items you sold",
+      "hint": "Ilva keeps them until the end of the day.",
+      "action": "Buy back"
     },
     "toast": {
       "bought": "Bought {name} · −{price} coins",

@@ -182,7 +182,12 @@ export class PlayerCommandService {
             inventory: serverInventoryContext(aggregates.progress.presence),
             rngSeed: loaded.progress?.serverState.rngSeed,
             ...(command.type.startsWith('SHOP_')
-              ? { trade: serverTradeContext(aggregates.progress.presence, rngSeedOf(loaded)) }
+              ? {
+                  trade: {
+                    ...serverTradeContext(aggregates.progress.presence, rngSeedOf(loaded)),
+                    dayId: gameDayAt(aggregates.progress.day, now).day.id,
+                  },
+                }
               : {}),
             ...(command.type.startsWith('QUEST_')
               ? {

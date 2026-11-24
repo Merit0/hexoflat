@@ -167,7 +167,7 @@ describe('DA2 B2: unique duplicates', () => {
       {
         devGrantAllowed: false,
         inventory: { stashOpen: false, battleOpen: false },
-        trade: { atTrader: 'ilva', rngSeed: 'da2-trader-seed' },
+        trade: { atTrader: 'ilva', rngSeed: 'da2-trader-seed', dayId: 1 },
       },
     );
     if (!outcome.ok) throw new Error(outcome.code);

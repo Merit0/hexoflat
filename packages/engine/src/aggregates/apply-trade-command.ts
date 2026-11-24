@@ -8,13 +8,16 @@ import { planBuy } from '../trade/plan-buy';
 import { planRefresh } from '../trade/plan-refresh';
 import { planSell } from '../trade/plan-sell';
 import type { ShopCommand } from '../trade/trade-commands';
-import type { TTradeResult } from '../trade/trade-types';
+import type { ITradeOptions, ITraderRef, TTradeResult } from '../trade/trade-types';
 import { traderView } from '../trade/trader-view';
+import { addUniqueBuyback, holdsUnique, planUniqueBuyback } from '../trade/unique-buyback';
+import type { ItemToken } from '../tokens/token-schema';
 import type { ProgressState } from './progress-state';
 
 export interface TradeContext {
   atTrader: TTraderKey | null;
   rngSeed: string;
+  dayId?: number;
 }
 
 export interface TradeApplyResult {
@@ -70,6 +73,65 @@ function dealOutcome(input: TradeInput, result: TTradeResult): TradeApplyResult 
       progress: { ...progress, traders: { ...progress.traders, [trader]: result.trader } },
     },
     events: [event, { type: 'INVENTORY_CHANGED', payload: { heroId, revision } }],
+  };
+}
+
+function gameDayOf(trade: TradeContext): number {
+  if (!trade.dayId) throw new Error('NO_GAME_DAY');
+  return trade.dayId;
+}
+
+function uniqueEventPayload(input: TradeInput, token: ItemToken, price: number) {
+  const { heroId, trader } = input.command.payload;
+  const { instanceId, uniqueKey } = token;
+  return { heroId, trader, instanceId, uniqueKey, price, dayId: gameDayOf(input.trade) };
+}
+
+function runSell(
+  input: TradeInput & { command: { type: 'SHOP_SELL' } },
+  ref: ITraderRef,
+  opts: ITradeOptions,
+): TradeApplyResult {
+  const { inventory, progress, command, trade } = input;
+  const { from, trader } = command.payload;
+  const token = inventory.bag[from.index]?.token;
+  const result = planSell(inventory, ref, from.index, opts);
+  const sold = dealOutcome(input, result);
+  if (!result.ok || !holdsUnique(token)) return sold;
+  const entry = { token, price: result.price, dayId: gameDayOf(trade) };
+  const uniqueBuyback = addUniqueBuyback(progress.uniqueBuyback, trader, entry);
+  const held: DomainEvent = {
+    type: 'UNIQUE_HELD_FOR_BUY_BACK',
+    payload: uniqueEventPayload(input, token, result.price),
+  };
+  return {
+    changed: { ...sold.changed, progress: { ...progress, uniqueBuyback } },
+    events: [...sold.events, held],
+  };
+}
+
+function runBuyBackUnique(
+  input: TradeInput & { command: { type: 'SHOP_BUY_BACK_UNIQUE' } },
+): TradeApplyResult {
+  const { command, inventory, progress, trade } = input;
+  const { heroId, trader, instanceId } = command.payload;
+  const held = progress.uniqueBuyback[trader] ?? [];
+  const ref = { key: trader, state: traderView(progress, trader, trade.rngSeed) };
+  const result = planUniqueBuyback(inventory, ref, held, instanceId, gameDayOf(trade));
+  if (!result.ok) return rejected(command, result.reason, result.price);
+  const revision = inventory.revision + 1;
+  const { key, amount, price, entry, left } = result;
+  const bought = { heroId, trader, key, amount, price, from: 'unique-buyback' };
+  return {
+    changed: {
+      inventory: { ...result.inventory, revision },
+      progress: { ...progress, uniqueBuyback: { ...progress.uniqueBuyback, [trader]: left } },
+    },
+    events: [
+      { type: 'ITEM_BOUGHT', payload: bought },
+      { type: 'UNIQUE_BOUGHT_BACK', payload: uniqueEventPayload(input, entry.token, price) },
+      { type: 'INVENTORY_CHANGED', payload: { heroId, revision } },
+    ],
   };
 }
 
@@ -189,6 +251,7 @@ export function applyTradeCommand(
     return rejected(command, 'FREE_REFRESH_NOT_ALLOWED');
   }
   if (command.type === 'SHOP_REFRESH') return runRefresh({ ...input, command });
+  if (command.type === 'SHOP_BUY_BACK_UNIQUE') return runBuyBackUnique({ ...input, command });
   if (command.type === 'SHOP_DEAL') return runDeal({ ...input, command });
   if (
     command.type === 'SHOP_LIST' ||
@@ -201,9 +264,7 @@ export function applyTradeCommand(
   const { trader, expectedPrice, split, amount } = command.payload;
   const ref = { key: trader, state: traderView(input.progress, trader, trade.rngSeed) };
   const opts = { split, expectedPrice, amount };
-  const result =
-    command.type === 'SHOP_BUY'
-      ? planBuy(input.inventory, ref, command.payload.from, command.payload.to, opts)
-      : planSell(input.inventory, ref, command.payload.from.index, opts);
-  return dealOutcome(input, result);
+  if (command.type === 'SHOP_SELL') return runSell({ ...input, command }, ref, opts);
+  const { from, to } = command.payload;
+  return dealOutcome(input, planBuy(input.inventory, ref, from, to, opts));
 }
