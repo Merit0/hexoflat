@@ -6,26 +6,30 @@ import type { z } from 'zod';
 import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventory-state';
 import type { InventoryState } from '../inventory/inventory-state';
 import { upcastInventoryTokens } from '../inventory/upcast-item-tokens';
+import { gameDayAt } from '../game-day/game-day';
 import type { TAggregateKind } from './aggregate-kinds';
 import { createKnowledgeState } from '../knowledge/state';
 import { emptyQuestLog } from '../quests/quest-log-state';
 import { emptyListings } from '../trade/listing-state';
 import { emptyProgressState, progressStateSchema, type ProgressState } from './progress-state';
 import { tradersForClient } from '../trade/trader-view';
+import { expireUniqueBuyback } from '../trade/unique-buyback';
 import { projectQuestBoard } from '../quests/quest-board-projection';
 
 export interface AggregateServerState {
   rngSeed?: string;
 }
 
-function projectProgress(state: ProgressState, server: AggregateServerState) {
+function projectProgress(state: ProgressState, server: AggregateServerState, now: number) {
   if (!server.rngSeed) throw new Error(`Progress of ${state.knowledge.heroId} has no rngSeed`);
   const { active, done, placementActivations } = state.quests;
   const quests = { active, done, ...(placementActivations ? { placementActivations } : {}) };
   const questBoard = projectQuestBoard(state.quests);
+  const { day } = gameDayAt(state.day, now);
   return {
     ...state,
     quests,
+    uniqueBuyback: expireUniqueBuyback(state.uniqueBuyback, day.id).held,
     traders: tradersForClient(state, server.rngSeed),
     ...(questBoard ? { questBoard } : {}),
   };
@@ -37,7 +41,7 @@ export interface IAggregateDefinition<TState> {
   schema: z.ZodType<TState>;
   upcasters: Record<number, (old: unknown, ctx: { heroId: string }) => unknown>;
   createInitial(ctx: { heroId: string }): TState;
-  project(state: TState, server: AggregateServerState): unknown;
+  project(state: TState, server: AggregateServerState, now: number): unknown;
 }
 
 const inventoryDefinition: IAggregateDefinition<InventoryState> = {

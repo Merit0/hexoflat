@@ -65,7 +65,7 @@ export function resetFakePlayerServer(
 function projectProgress(progress: Store['progress']) {
   return {
     revision: progress.revision,
-    state: AGGREGATES.progress.project(progress.state, { rngSeed: FAKE_RNG_SEED }),
+    state: AGGREGATES.progress.project(progress.state, { rngSeed: FAKE_RNG_SEED }, Date.now()),
   };
 }
 

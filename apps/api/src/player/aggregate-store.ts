@@ -168,11 +168,11 @@ export function projectAggregate<K extends TAggregateKind>(
   loaded: LoadedAggregate<K>,
 ): { revision: number; state: unknown } {
   const definition: {
-    project(state: AggregateStates[K], server: AggregateServerState): unknown;
+    project(state: AggregateStates[K], server: AggregateServerState, now: number): unknown;
   } = AGGREGATES[kindOf(loaded)];
   return {
     revision: loaded.revision,
-    state: definition.project(loaded.state, loaded.serverState),
+    state: definition.project(loaded.state, loaded.serverState, Date.now()),
   };
 }
 

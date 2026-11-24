@@ -7,6 +7,6 @@ export function fakeTraderFixture(body: unknown) {
   if (!next) throw new Error('INVALID_COMMAND');
   row.revision += 1;
   row.state = next;
-  const state = AGGREGATES.progress.project(next, { rngSeed: FAKE_RNG_SEED });
+  const state = AGGREGATES.progress.project(next, { rngSeed: FAKE_RNG_SEED }, Date.now());
   return { aggregates: { progress: { revision: row.revision, state } } };
 }

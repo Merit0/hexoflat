@@ -34,22 +34,26 @@ describe('serverTradeContext', () => {
 describe('progress projection for the client', () => {
   it('fills every untouched trader with its serial 0 goods and keeps a stored one as it is', () => {
     const progress = emptyProgressState(HERO);
-    const projected = AGGREGATES.progress.project(progress, { rngSeed: SEED }) as typeof progress;
+    const projected = AGGREGATES.progress.project(
+      progress,
+      { rngSeed: SEED },
+      0,
+    ) as typeof progress;
     expect(Object.keys(projected.traders)).toEqual([...TRADER_KEYS]);
     expect(projected.traders.ilva).toEqual(traderView(progress, 'ilva', SEED));
     expect(progress.traders).toEqual({});
 
     const stored = { ...traderView(progress, 'ilva', 'other-seed'), serial: 4 };
     const held = { ...progress, traders: { ilva: stored } };
-    const again = AGGREGATES.progress.project(held, { rngSeed: SEED }) as typeof progress;
+    const again = AGGREGATES.progress.project(held, { rngSeed: SEED }, 0) as typeof progress;
     expect(again.traders.ilva).toEqual(stored);
   });
 
   it('never puts the seed into the projection and refuses to project without one', () => {
     const progress = emptyProgressState(HERO);
-    expect(JSON.stringify(AGGREGATES.progress.project(progress, { rngSeed: SEED }))).not.toContain(
-      SEED,
-    );
-    expect(() => AGGREGATES.progress.project(progress, {})).toThrow(/rngSeed/);
+    expect(
+      JSON.stringify(AGGREGATES.progress.project(progress, { rngSeed: SEED }, 0)),
+    ).not.toContain(SEED);
+    expect(() => AGGREGATES.progress.project(progress, {}, 0)).toThrow(/rngSeed/);
   });
 });

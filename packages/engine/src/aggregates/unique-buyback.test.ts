@@ -119,6 +119,8 @@ const buyBack = ({ inventory }: PlayerAggregates, token: ItemToken, heroId = HER
   },
 });
 
+const projected = (progress: ProgressState, now = NOON) =>
+  AGGREGATES.progress.project(progress, { rngSeed: SEED }, now) as ProgressState;
 const held = (progress: ProgressState) => progress.uniqueBuyback.ilva ?? [];
 const bagTokens = ({ bag }: InventoryState) => bag.flatMap((item) => item?.token ?? []);
 
@@ -220,6 +222,11 @@ describe('DA5c-2: the list ends with the game day', () => {
     const ending = { ...sold, progress: { ...sold.progress } };
     ending.progress.day = { ...sold.progress.day!, ...counters };
 
+    const stored = structuredClone(ending.progress);
+    expect(held(projected(sold.progress))).toEqual(held(sold.progress));
+    expect(projected(ending.progress, now).uniqueBuyback).toEqual({});
+    expect(ending.progress).toEqual(stored);
+
     expect(refusal(ending, buyBack(ending, token), now)).toBe('BUY_BACK_GONE');
 
     const opened = trackGameDay(ending.progress, { progress: ending.progress, events: [] }, now);
@@ -311,7 +318,7 @@ describe('DA5c-4: the list belongs to one hero', () => {
     const start = heroWith([token]);
     const sold = apply(start, sell(start)).aggregates;
     const other = heroWith([], OTHER, 100_000);
-    const seen = AGGREGATES.progress.project(other.progress, { rngSeed: SEED }) as ProgressState;
+    const seen = projected(other.progress);
 
     expect(seen.uniqueBuyback).toEqual({});
     expect(refusal(other, buyBack(other, token, OTHER))).toBe('BUY_BACK_GONE');

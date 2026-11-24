@@ -76,6 +76,14 @@ describe.skipIf(!inject('dbAvailable'))('DA5c: unique buy-back (real Postgres)',
       .set(set)
       .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, kind)));
 
+  const storedBuyback = async (heroId: string) => {
+    const [row] = await kit.db
+      .select()
+      .from(heroAggregates)
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+    return (row.state as ProgressState).uniqueBuyback;
+  };
+
   async function atStall(token?: ItemToken): Promise<Player> {
     const player = await kit.newPlayer();
     const { inventory, progress, progressRevision } = await read(player);
@@ -167,6 +175,33 @@ describe.skipIf(!inject('dbAvailable'))('DA5c: unique buy-back (real Postgres)',
     expect(await kit.service.execute(player.userId, await buyBack(player, token))).toMatchObject({
       code: 'BUY_BACK_GONE',
     });
+  });
+
+  it('DA5c-2: after midnight a read hides the entry and the stored state keeps it until a command', async () => {
+    const token = unique();
+    const player = await atStall(token);
+    const price = await sell(player, token);
+    const stored = { ilva: [{ token, price, dayId: 1 }] };
+    clock.mockReturnValue(MIDNIGHT - 1);
+    expect((await read(player)).progress.uniqueBuyback).toEqual(stored);
+
+    clock.mockReturnValue(MIDNIGHT);
+    const seen = await read(player);
+    expect(seen.progress.uniqueBuyback).toEqual({});
+    expect(seen.progress.day).toMatchObject({ id: 1 });
+    expect(await storedBuyback(player.heroId)).toEqual(stored);
+
+    const step = envelope(
+      player.heroId,
+      'ARRIVE',
+      { locationKey: 'camping', mapId: seen.progress.presence!.mapId, coordinates: NEAR },
+      seen.progressRevision,
+      { aggregate: 'progress' },
+    );
+    delete (step.command.payload as { revision?: number }).revision;
+    const answer = await kit.service.execute(player.userId, step);
+    expect(answer.events.map(({ type }) => type)).toContain('UNIQUE_BUY_BACK_EXPIRED');
+    expect(await storedBuyback(player.heroId)).toEqual({});
   });
 
   it('DA5c-4: another hero sees no entry and cannot buy it back', async () => {
