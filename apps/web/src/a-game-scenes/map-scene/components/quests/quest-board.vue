@@ -35,25 +35,21 @@
     <quest-run-panel v-if="run || result" />
     <template v-else>
       <div class="banner" data-testid="quest-board-resources">
-        <quest-tip :text="t('quest.board.coins')">
-          <span class="cell" data-testid="quest-board-coins">
-            <img class="icon" :src="COIN_SRC" alt="" aria-hidden="true" />
-            <span class="figures">
-              <span class="label">{{ t('quest.board.coins') }}</span>
-              <span class="value">{{ coins }}</span>
-            </span>
+        <span class="cell" data-testid="quest-board-coins">
+          <img class="icon" :src="COIN_SRC" alt="" aria-hidden="true" />
+          <span class="figures">
+            <span class="label">{{ t('quest.board.coins') }}</span>
+            <span class="value">{{ coins }}</span>
           </span>
-        </quest-tip>
+        </span>
         <i class="divider" aria-hidden="true"></i>
-        <quest-tip :text="t('quest.board.will')">
-          <span class="cell" data-testid="quest-board-will">
-            <img class="icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" />
-            <span class="figures">
-              <span class="label">{{ t('quest.board.will') }}</span>
-              <span class="value"><will-number :current="will.value" /> / {{ will.cap }}</span>
-            </span>
+        <span class="cell" data-testid="quest-board-will">
+          <img class="icon" :src="WILL_ICON_URL" alt="" aria-hidden="true" />
+          <span class="figures">
+            <span class="label">{{ t('quest.board.will') }}</span>
+            <span class="value"><will-number :current="will.value" /> / {{ will.cap }}</span>
           </span>
-        </quest-tip>
+        </span>
       </div>
       <board-ornament />
       <quest-taken-bar />
@@ -134,7 +130,6 @@ import QuestRunPanel from './quest-run-panel.vue';
 import BoardHeader from '../board-header.vue';
 import BoardOrnament from '../board-ornament.vue';
 import QuestTakenBar from './quest-taken-bar.vue';
-import QuestTip from './quest-tip.vue';
 import QuestDragGhost from './quest-drag-ghost.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
 import QuestActionButton from './quest-action-button.vue';
@@ -251,12 +246,6 @@ onBeforeUnmount(() => {
     0 calc(100% - 10px),
     0 10px
   );
-}
-.banner :deep(.tip-host) {
-  display: flex;
-  align-self: stretch;
-  justify-content: center;
-  min-width: 0;
 }
 .cell {
   display: flex;
