@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { EDimension } from '../dimensions/dimensions';
-import type { DropContext } from '../tokens/drop-context';
-import type { QuestDefinition } from './quest-definition';
+import { QuestDefinitionSchema, type QuestDefinition } from './quest-definition';
 import { planClaim } from './quest-log';
 import { catalogueWith, counting, inventoryWith, progressWith } from './quest-test-setup';
 
@@ -29,8 +28,8 @@ function claimedToken(quest: QuestDefinition) {
   return token!;
 }
 
-describe('DA2 C7/F9: dimension of a quest item reward (quest-log.ts:206-209)', () => {
-  it('CURRENT (F9): an EARTH quest without rewardDropContext rewards an EARTH idol token of tier 1', () => {
+describe('C7/F9 (DA5a-2): a quest item reward takes the dimension of the quest location', () => {
+  it('an EARTH location without rewardDropContext rewards an EARTH idol token of tier 1', () => {
     expect(claimedToken(swordQuest())).toMatchObject({
       dimension: EDimension.EARTH,
       tokenType: ETokenType.IDOL,
@@ -39,8 +38,8 @@ describe('DA2 C7/F9: dimension of a quest item reward (quest-log.ts:206-209)', (
     });
   });
 
-  it('CURRENT (F9): an UNDERWORLD quest without rewardDropContext rewards a gloom token (quest.dimension)', () => {
-    const quest = swordQuest({ dimension: EDimension.UNDERWORLD, locations: ['cave'] });
+  it('an UNDERWORLD location without rewardDropContext rewards a gloom token of tier 1', () => {
+    const quest = swordQuest({ locations: ['cave'] });
     expect(claimedToken(quest)).toMatchObject({
       dimension: EDimension.UNDERWORLD,
       tokenType: ETokenType.GLOOM,
@@ -48,12 +47,31 @@ describe('DA2 C7/F9: dimension of a quest item reward (quest-log.ts:206-209)', (
     });
   });
 
-  it('CURRENT (F9): rewardDropContext overrides quest.dimension and the tier', () => {
-    const rewardDropContext: DropContext = { tokenType: ETokenType.SPARK, mapTier: 3 };
-    expect(claimedToken(swordQuest({ rewardDropContext }))).toMatchObject({
-      dimension: EDimension.HEAVEN,
-      tokenType: ETokenType.SPARK,
-      mapTier: 3,
-    });
+  it.each([
+    [['silesia'], EDimension.EARTH, ETokenType.IDOL],
+    [['cave'], EDimension.UNDERWORLD, ETokenType.GLOOM],
+  ] as const)(
+    'rewardDropContext changes only the tier, never the dimension of %j',
+    (locations, dimension, tokenType) => {
+      const quest = swordQuest({
+        locations: [...locations],
+        rewardDropContext: { mapTier: 3 },
+      });
+      expect(claimedToken(quest)).toMatchObject({ dimension, tokenType, mapTier: 3 });
+    },
+  );
+
+  it('a definition can state neither a dimension nor a token type of the reward', () => {
+    const quest = swordQuest();
+    expect(QuestDefinitionSchema.safeParse(quest).success).toBe(true);
+    expect(QuestDefinitionSchema.safeParse({ ...quest, dimension: EDimension.EARTH }).success).toBe(
+      false,
+    );
+    expect(
+      QuestDefinitionSchema.safeParse({
+        ...quest,
+        rewardDropContext: { tokenType: ETokenType.SPARK, mapTier: 3 },
+      }).success,
+    ).toBe(false);
   });
 });

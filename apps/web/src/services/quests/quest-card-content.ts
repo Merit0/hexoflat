@@ -8,7 +8,7 @@ export type QuestCardContent = Omit<QuestOfferProjection, 'dayId' | 'locations' 
 export function legacyQuestCard(id: string): QuestCardContent | undefined {
   const definition = ALL_QUESTS[id];
   if (!definition) return;
-  const { nameKey, descKey, tableRule, dimension, accept, rewards, repeat, objective } = definition;
+  const { nameKey, descKey, tableRule, accept, rewards, repeat, objective } = definition;
   return {
     id,
     templateId: id,
@@ -16,7 +16,6 @@ export function legacyQuestCard(id: string): QuestCardContent | undefined {
     descKey,
     tableRule,
     howKey: `quest.${id}.how`,
-    dimension,
     accept,
     rewards,
     repeat,

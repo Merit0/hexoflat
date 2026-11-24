@@ -139,7 +139,7 @@ describe('DA2 B2: unique duplicates', () => {
     expect(inventoryStateSchema.safeParse(inventory).success).toBe(true);
   });
 
-  it('CURRENT (B2): progress.ownedUniques stays empty after createUnique and after a sale', () => {
+  it('B2 (DA5a-2): a sale of a unique works and progress keeps no list of owned uniques', () => {
     const token = lastVerdict();
     const inventory = emptyInventoryState(HERO);
     inventory.bag[0] = {
@@ -151,7 +151,6 @@ describe('DA2 B2: unique duplicates', () => {
     };
     inventory.idSeq = 1;
     const aggregates: PlayerAggregates = { inventory, progress: emptyProgressState(HERO) };
-    expect(aggregates.progress.ownedUniques).toEqual([]);
 
     const outcome = executePlayerCommand(
       aggregates,
@@ -173,6 +172,6 @@ describe('DA2 B2: unique duplicates', () => {
     );
     if (!outcome.ok) throw new Error(outcome.code);
     expect(outcome.events.map((event) => event.type)).toContain('ITEM_SOLD');
-    expect((outcome.changed.progress ?? aggregates.progress).ownedUniques).toEqual([]);
+    expect(outcome.changed.progress ?? aggregates.progress).not.toHaveProperty('ownedUniques');
   });
 });

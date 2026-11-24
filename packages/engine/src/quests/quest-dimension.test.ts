@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EDimension } from '../dimensions/dimensions';
 import { LOCATION_DIMENSIONS } from '../registry/location-key';
 import { ALL_QUESTS } from './all-quests';
-import { QuestDefinitionSchema } from './quest-definition';
+import { QuestDefinitionSchema, questDimension } from './quest-definition';
 import { applyQuestEvents, planClaim } from './quest-log';
 import { event, inventoryWith, progressWith, AT_BOARD } from './quest-test-setup';
 import { createServerWorld, serializeWorld } from '../world/server-world';
@@ -18,7 +18,6 @@ describe('quest run source', () => {
     const board = discBoard();
     const quest = {
       ...ALL_QUESTS['seeker-1'],
-      dimension: EDimension.UNDERWORLD,
       locations: ['cave' as const],
       mapObjectPlacement: undefined,
     };
@@ -46,19 +45,14 @@ describe('quest execution dimensions', () => {
       expect(QuestDefinitionSchema.safeParse(quest).success).toBe(true);
       expect(quest.locations.length).toBeGreaterThan(0);
       for (const location of quest.locations)
-        expect(LOCATION_DIMENSIONS[location]).toBe(quest.dimension);
-      expect(QuestDefinitionSchema.safeParse({ ...quest, dimension: undefined }).success).toBe(
-        false,
-      );
+        expect(LOCATION_DIMENSIONS[location]).toBe(questDimension(quest));
       expect(QuestDefinitionSchema.safeParse({ ...quest, locations: [] }).success).toBe(false);
       expect(
-        QuestDefinitionSchema.safeParse({ ...quest, dimension: EDimension.HEAVEN }).success,
+        QuestDefinitionSchema.safeParse({ ...quest, locations: ['silesia', 'cave'] }).success,
       ).toBe(false);
     }
-    expect(ALL_QUESTS['bone-hunter']).toMatchObject({
-      dimension: EDimension.UNDERWORLD,
-      locations: ['cave'],
-    });
+    expect(ALL_QUESTS['bone-hunter'].locations).toEqual(['cave']);
+    expect(questDimension(ALL_QUESTS['bone-hunter'])).toBe(EDimension.UNDERWORLD);
   });
 
   it('counts gathering where it happened, independently of the resource owner', () => {

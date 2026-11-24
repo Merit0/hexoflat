@@ -1,10 +1,10 @@
-import { dropContextSchema } from '../tokens/drop-context';
+import { mapTierSchema } from '../tokens/token-keys';
 import { itemTokenSchema } from '../tokens/token-schema';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
 import { TreasureSeekerParamsSchema } from './seeker-content';
-import { dimensionSchema } from '../dimensions/dimensions';
-import { LOCATION_DIMENSIONS, LOCATION_KEYS } from '../registry/location-key';
+import type { EDimension } from '../dimensions/dimensions';
+import { LOCATION_DIMENSIONS, LOCATION_KEYS, type LocationKey } from '../registry/location-key';
 
 export const CostSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('free') }).strict(),
@@ -116,10 +116,12 @@ export const QuestMapObjectPlacementSchema = z
   })
   .strict();
 
+export const RewardDropContextSchema = z.strictObject({ mapTier: mapTierSchema });
+export type RewardDropContext = z.infer<typeof RewardDropContextSchema>;
+
 export const QuestDefinitionSchema = z
   .object({
     id: z.string().min(1),
-    dimension: dimensionSchema,
     locations: z.array(z.enum(LOCATION_KEYS)).min(1),
     nameKey: z.string().min(1),
     descKey: z.string().min(1),
@@ -129,21 +131,20 @@ export const QuestDefinitionSchema = z
     objective: ObjectiveSchema,
     mapObjectPlacement: QuestMapObjectPlacementSchema.optional(),
     rewards: z.array(RewardSchema),
-    rewardDropContext: dropContextSchema.optional(),
+    rewardDropContext: RewardDropContextSchema.optional(),
     turnIn: z.enum(['board', 'auto']),
     maxSellValue: z.number().int().min(0).optional(),
     tableRule: z.string().min(1),
   })
   .strict()
   .superRefine((quest, ctx) => {
-    for (const location of quest.locations) {
-      if (LOCATION_DIMENSIONS[location] !== quest.dimension)
-        ctx.addIssue({
-          code: 'custom',
-          path: ['locations'],
-          message: `quest:${quest.id}: execute ${location} in ${quest.dimension}; location belongs to ${LOCATION_DIMENSIONS[location]}`,
-        });
-    }
+    const dimensions = new Set(quest.locations.map((location) => LOCATION_DIMENSIONS[location]));
+    if (dimensions.size > 1)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['locations'],
+        message: `quest:${quest.id}: locations belong to different dimensions: ${[...dimensions].join(', ')}`,
+      });
     if (quest.mapObjectPlacement && !quest.locations.includes(quest.mapObjectPlacement.targetMap))
       ctx.addIssue({
         code: 'custom',
@@ -152,5 +153,9 @@ export const QuestDefinitionSchema = z
       });
   });
 export type QuestDefinition = z.infer<typeof QuestDefinitionSchema>;
+
+export function questDimension(quest: { locations: readonly LocationKey[] }): EDimension {
+  return LOCATION_DIMENSIONS[quest.locations[0]];
+}
 
 export type QuestCatalogue = Readonly<Record<string, QuestDefinition>>;

@@ -1,6 +1,5 @@
 import { dropContextOfBoard } from '../registry/location-drop-context';
 import { questDropContext } from './quest-drop-context';
-import { LOCATION_DIMENSIONS } from '../registry/location-key';
 import type { ProgressState } from '../aggregates/progress-state';
 import { questDefinitionFor } from './quest-lookup';
 import { questOfferFor } from './quest-board-state';
@@ -11,7 +10,7 @@ import type { IHexCoordinates } from '../map/interfaces/hex-tile-config-interfac
 import { deriveStream } from '../utils/random-seeded';
 import { coordinateKey, getHexNeighbors } from '../utils/hex-utils';
 import { expectedNumber, revealRing, type RevealedHex } from './numbers';
-import type { QuestCatalogue } from './quest-definition';
+import { questDimension, type QuestCatalogue } from './quest-definition';
 import {
   floorKeys,
   positionOf,
@@ -67,11 +66,7 @@ export function enterQuest(
   if (!quest || quest.objective.kind !== 'expedition') {
     return reject(progress, input.questId, 'UNKNOWN_QUEST');
   }
-  if (
-    input.field &&
-    (LOCATION_DIMENSIONS[input.field.origin] !== quest.dimension ||
-      !quest.locations.includes(input.field.origin))
-  )
+  if (input.field && !quest.locations.includes(input.field.origin))
     return reject(progress, input.questId, 'NOT_AT_BOARD');
   if (input.hasRun) return reject(progress, input.questId, 'QUEST_IN_PROGRESS');
   if (!input.atBoard) return reject(progress, input.questId, 'NOT_AT_BOARD');
@@ -104,7 +99,7 @@ export function enterQuest(
     ...(generatedOffer ? { generatedOffer } : {}),
     dropContext: input.field
       ? questDropContext({ field: input.field })
-      : dropContextOfBoard(quest, null),
+      : dropContextOfBoard({ dimension: questDimension(quest) }, null),
     seed: input.seed,
     rule: sequence.rule,
     terms: sequence.terms,

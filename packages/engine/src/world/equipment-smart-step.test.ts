@@ -148,9 +148,9 @@ describe('A04 content and progress compatibility', () => {
     delete old.paidSteps;
     old.steps = 123;
     old.kills = 7;
-    old.ownedUniques = ['lantern-eater'];
-    expect(AGGREGATES.progress.schemaVersion).toBe(12);
-    expect(upcastAggregate('progress', 10, old, { heroId: 'hero-1' })).toEqual({
+    expect(AGGREGATES.progress.schemaVersion).toBe(13);
+    const stored = { ...old, ownedUniques: ['lantern-eater'] };
+    expect(upcastAggregate('progress', 10, stored, { heroId: 'hero-1' })).toEqual({
       ...old,
       paidSteps: 0,
     });

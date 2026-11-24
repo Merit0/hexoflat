@@ -422,7 +422,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       const raw = JSON.parse((await readServerDocument(kit.db, expeditionId, key))!) as {
         contentVersion: number;
       };
-      raw.contentVersion = CONTENT_VERSION - 1;
+      raw.contentVersion = 1;
       await kit.db.transaction((tx) =>
         writeServerDocument(tx, expeditionId, key, JSON.stringify(raw)),
       );

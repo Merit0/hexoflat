@@ -12,7 +12,7 @@ import { isTokenType, mintBaseToken, type TokenMint } from '../tokens/game-token
 import { baseTokenTypeSchema } from '../tokens/token-keys';
 import { sellPriceFrom } from '../trade/price-of';
 import type { RandomNumberGenerator } from '../utils/random';
-import type { QuestDefinition, Reward } from './quest-definition';
+import { questDimension, type QuestDefinition, type Reward } from './quest-definition';
 import type { QuestRewardProfile } from './quest-generation.content';
 import { rewardSellValue } from './quests.content';
 
@@ -41,9 +41,10 @@ export function questRewardProfileFailures(
   profile: QuestRewardProfile,
 ): string[] {
   const failures: string[] = [];
-  const dimension = quest.rewardDropContext
-    ? dimensionOfTokenType(quest.rewardDropContext.tokenType)
-    : quest.dimension;
+  const dimension = questDimension(quest);
+  const tokenType = baseTokenTypeSchema.parse(tokenTypeOfDimension(dimension));
+  const upperPrice = TOKEN_PRICE_RANGES[tokenType][1];
+  const canExceedBudget = (sellPriceFrom(TRADERS.ilva, upperPrice) ?? 0) > profile.maxSellValue;
   if (profile.fallbackCoins !== undefined && profile.fallbackCoins > profile.maxSellValue) {
     failures.push('coin fallback exceeds reward budget');
   }
@@ -61,11 +62,6 @@ export function questRewardProfileFailures(
         failures.push(`invalid base reward ${baseKey ?? itemKey} in ${dimension}`);
         continue;
       }
-      const canExceedBudget = bases.some((base) => {
-        const tokenType = baseTokenTypeSchema.parse(tokenTypeOfDimension(base.dimension));
-        const upperPrice = TOKEN_PRICE_RANGES[tokenType][1];
-        return (sellPriceFrom(TRADERS.ilva, upperPrice) ?? 0) > profile.maxSellValue;
-      });
       if (canExceedBudget && profile.fallbackCoins === undefined) {
         failures.push(`${itemKey} needs a coin fallback for items over budget`);
       }

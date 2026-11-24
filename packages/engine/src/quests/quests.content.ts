@@ -1,11 +1,11 @@
 import { CONTENT } from '../content/content-map';
 import { availableInDimension } from '../dimensions/availability';
-import { EDimension } from '../dimensions/dimensions';
 import { TRADERS } from '../content/traders.content';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { sellPriceOf } from '../trade/price-of';
 import {
   QuestDefinitionSchema,
+  questDimension,
   type QuestCatalogue,
   type QuestDefinition,
   type Reward,
@@ -14,7 +14,6 @@ import {
 export const BOARD_QUESTS: readonly QuestDefinition[] = [
   {
     id: 'woodcutter',
-    dimension: EDimension.EARTH,
     locations: ['silesia', 'silesia-north'],
     nameKey: 'quest.woodcutter.name',
     descKey: 'quest.woodcutter.desc',
@@ -35,7 +34,6 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
   },
   {
     id: 'stonebreaker',
-    dimension: EDimension.EARTH,
     locations: ['silesia', 'silesia-north'],
     nameKey: 'quest.stonebreaker.name',
     descKey: 'quest.stonebreaker.desc',
@@ -56,7 +54,6 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
   },
   {
     id: 'scholar',
-    dimension: EDimension.EARTH,
     locations: ['camping'],
     nameKey: 'quest.scholar.name',
     descKey: 'quest.scholar.desc',
@@ -77,7 +74,6 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
   },
   {
     id: 'bone-hunter',
-    dimension: EDimension.UNDERWORLD,
     locations: ['cave'],
     nameKey: 'quest.bone-hunter.name',
     descKey: 'quest.bone-hunter.desc',
@@ -98,7 +94,6 @@ export const BOARD_QUESTS: readonly QuestDefinition[] = [
   },
   {
     id: 'camp-lectern',
-    dimension: EDimension.EARTH,
     locations: ['camping'],
     nameKey: 'quest.camp-lectern.name',
     descKey: 'quest.camp-lectern.desc',
@@ -144,7 +139,7 @@ export function questContentFailures(quests: readonly QuestDefinition[] = BOARD_
     if (!parsed.success) failures.push(`${quest.id}: ${parsed.error.message}`);
     if (
       quest.mapObjectPlacement &&
-      !availableInDimension(CONTENT[quest.mapObjectPlacement.objectKey], quest.dimension)
+      !availableInDimension(CONTENT[quest.mapObjectPlacement.objectKey], questDimension(quest))
     )
       failures.push(
         `${quest.id}: place ${quest.mapObjectPlacement.objectKey} outside its dimension`,

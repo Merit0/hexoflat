@@ -21,7 +21,8 @@ const context = {
 describe('source tier and injected generation policies', () => {
   it('uses the quest reward source tier even when claimed at the camp board', () => {
     const quest = counting('audit', 'TEST', 1, {
-      rewardDropContext: dropContext,
+      locations: ['cave'],
+      rewardDropContext: { mapTier: dropContext.mapTier },
       rewards: [{ kind: 'item', itemKey: 'shield', amount: 1 }],
     });
     const progress = progressWith(50);

@@ -3,6 +3,7 @@ import { HexMapBuilder } from '../map/builders/hex-map-builder';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { CONTENT_VERSION } from '../content/content-version';
+import { sha256Hex } from '../utils/hash/sha256';
 import type { HeroState } from '../hero-movement/hero-state';
 import type { HexEngineState } from './apply-command';
 import {
@@ -56,9 +57,25 @@ describe('snapshot: serializeState / deserializeState', () => {
     expect(payloadA.checksum).not.toBe(payloadB.checksum);
   });
 
+  it('reads a version 2 snapshot and keeps version 1 stale (DA5a-2)', () => {
+    const state = buildState();
+    const stored = (version: number) => {
+      const { map, heroes, rngState } = serializeState(state);
+      const old = { version, map, heroes };
+      return { ...old, checksum: sha256Hex(JSON.stringify(old)), rngState };
+    };
+
+    const restored = deserializeState(stored(2), 0);
+    expect(restored.map.toJSON()).toEqual(state.map.toJSON());
+    expect(restored.heroes).toEqual(state.heroes);
+    expect(serializeState(restored).version).toBe(3);
+    expect(() => deserializeState({ ...stored(2), version: 3 }, 0)).toThrow(SnapshotChecksumError);
+    expect(() => deserializeState(stored(1), 0)).toThrow(StaleSnapshotError);
+  });
+
   it('throws StaleSnapshotError when the payload version does not match CONTENT_VERSION', () => {
     const payload = serializeState(buildState());
-    const stale = { ...payload, version: payload.version - 1 };
+    const stale = { ...payload, version: 1 };
 
     expect(() => deserializeState(stale, 0)).toThrow(StaleSnapshotError);
   });

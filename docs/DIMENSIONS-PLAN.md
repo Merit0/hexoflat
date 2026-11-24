@@ -16,7 +16,7 @@ User requirements:
 - Silesia and camping belong to EARTH.
 - Dimensions govern generation scope and explicit object relationships.
 - User clarification (2026-11-22): private base definitions cannot drop in another dimension. Dimensions may also share an explicitly authored group of items/tokens; coins and scrolls can drop everywhere. This supersedes a blanket ban on all foreign items.
-- Keep ownership separate from availability: `dimension` is the single owner; `sharedWith: 'all' | Dimension[]` extends the eligible source dimensions. Sharing never recolors/reclassifies the object.
+- Keep ownership separate from availability: `dimension` is the single owner; `sharedWith: 'all' | Dimension[]` extends the eligible source dimensions. Sharing never reclassifies the base; a token made from a shared base takes the carrier dimension and its light (D4 of the dimensions audit).
 - Unique gameplay properties, attributes and skills are manually authored and copied unchanged. Instance ID, source tier and generation metadata are provenance, not randomized unique properties.
 
 Implementation defaults proposed by this audit (not additional user decisions):
@@ -91,7 +91,7 @@ Relations must name the operation (placement, drop, stock, quest target/reward, 
 
 Engine-owned dimension schema and registry are authoritative. Use one family mapping and one ownership resolver per concrete entity category; avoid independent mutable dimension/family fields that can disagree. If both are serialized, validate their agreement.
 
-Generation receives trusted source dimension, source tier, stable source ID, seed/streams and version. Target ownership is determined by the selected same-dimension variant or an explicit foreign relation. Attributes/names/sprites/prices follow the target item's dimension; provenance retains the actual source. Clients cannot choose reward scope.
+Generation receives trusted source dimension, source tier, stable source ID, seed/streams and version. The token takes the trusted source (carrier) dimension, also from a shared base (D4 of the dimensions audit). Attributes/names/sprites/prices follow the target item's dimension; provenance retains the actual source. Clients cannot choose reward scope.
 
 Validate eligible entries before RNG. Invalid guaranteed drops are content errors, not silently omitted rewards. Empty optional pools have an explicit empty result; empty required pools refuse without mutation. Preserve independent RNG streams, including Trophy bonus rolls. Any changed output contract needs an explicit generator-version decision and regression fixtures.
 
@@ -154,9 +154,9 @@ Acceptance: private and explicitly shared cases tested for every acquisition pat
 D3 implementation:
 
 - `content/base-items.content.ts` authors twelve distinct concrete bases: sword/shield/axe/pickaxe for each of EARTH, UNDERWORLD and HEAVEN. They reference common mechanical archetypes; `ItemTypeDefinition.realms` is a compatibility constraint on mechanics, not the concrete item catalogue. No disabled type is enabled.
-- `BaseItemRegistry` snapshots and validates owners, references, duplicates, enabled types and optional attribute allowlists. Base selection considers only own/shared definitions. Explicit `baseKey` requests cannot bypass eligibility; a shared EARTH base minted in HEAVEN remains EARTH/IDOL.
-- Generated tokens persist `baseKey`; known base references must agree with owner/type. Old base tokens derive their historical concrete key from stored family/type at read time without changing IDs, rolled values or stored generatorVersion. New output version is 6. The twenty golden rolls differ only in baseKey and output version.
-- Selected base attribute allowlists filter the pool before count/pick RNG and also constrain explicit overrides/injected output. Existing caps, type/tool gates and tier ranges still apply. Names, sprites, prices and base skills consume the selected definition's owner mechanics/family; default shared algorithms and existing sprite fallback behavior are preserved.
+- `BaseItemRegistry` snapshots and validates owners, references, duplicates, enabled types and optional attribute allowlists. Base selection considers only own/shared definitions. Explicit `baseKey` requests cannot bypass eligibility; a shared EARTH base minted in HEAVEN makes a HEAVEN/SPARK token (D4 of the dimensions audit).
+- Generated tokens persist `baseKey`; known base references must agree with the type; the owner may differ for a shared base (D4 of the dimensions audit). Old base tokens derive their historical concrete key from stored family/type at read time without changing IDs, rolled values or stored generatorVersion. New output version is 6. The twenty golden rolls differ only in baseKey and output version.
+- Selected base attribute allowlists filter the pool before count/pick RNG and also constrain explicit overrides/injected output. Existing caps, type/tool gates and tier ranges still apply. Names, sprites, prices and base skills follow the token (carrier) dimension, not the base owner (D4 of the dimensions audit); default shared algorithms and existing sprite fallback behavior are preserved.
 - `sharedWith` is authored on concrete bases, unique definitions and ordinary catalogue objects. Default availability is owner only. Coins/scroll/potions explicitly allow all sources.
 - Loot validates guaranteed entries and filters weighted candidates before RNG, including named `baseKey` entries. Empty required pools and invalid guarantees report content errors without partial results. Containers, eager/lazy chest generation, quest chests and grave/Trophy streams use captured source origin. Existing loot weights/amounts are unchanged.
 - Trader refresh derives its source from authored token origin or stall ownership; quest rewards use authored reward origin or the known camp board. Fresh generation uses eligible definitions; carried goods/buyback/listings retain their original token identity. Camp claim and developer specifications use the same factory; dev specs can name baseKey and receive a refusal for a foreign private base.

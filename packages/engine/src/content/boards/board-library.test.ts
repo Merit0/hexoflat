@@ -11,8 +11,8 @@ import { CAVE_MODEL } from './models/cave';
 import { CONTENT_VERSION } from '../content-version';
 
 describe('board content library', () => {
-  it('does not need to bump CONTENT_VERSION', () => {
-    expect(CONTENT_VERSION).toBe(2);
+  it('is checked against content version 3', () => {
+    expect(CONTENT_VERSION).toBe(3);
   });
 
   it('passes Zod schema validation', () => {

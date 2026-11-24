@@ -6,8 +6,7 @@ import type { QuestOffer } from './quest-offer';
 
 export function projectQuestOffer(offer: QuestOffer) {
   const { definition, howKey, templateId, id, dayId } = offer;
-  const { nameKey, descKey, tableRule, dimension, locations, accept, rewards, repeat, turnIn } =
-    definition;
+  const { nameKey, descKey, tableRule, locations, accept, rewards, repeat, turnIn } = definition;
   const objective = definition.objective;
   return {
     id,
@@ -17,7 +16,6 @@ export function projectQuestOffer(offer: QuestOffer) {
     descKey,
     tableRule,
     howKey,
-    dimension,
     locations,
     accept,
     rewards,

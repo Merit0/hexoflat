@@ -1,5 +1,4 @@
-import { dimensionSchema, EDimension } from '../dimensions/dimensions';
-import { LOCATION_DIMENSIONS, LOCATION_KEYS } from '../registry/location-key';
+import { LOCATION_KEYS } from '../registry/location-key';
 import { z } from 'zod';
 import {
   LOOT_TABLES,
@@ -35,7 +34,6 @@ export type TreasureSeekerParams = z.infer<typeof TreasureSeekerParamsSchema>;
 export const SeekerCardSchema = z
   .object({
     id: z.string().min(1),
-    dimension: dimensionSchema,
     location: z.enum(LOCATION_KEYS),
     nameKey: z.string().min(1),
     descKey: z.string().min(1),
@@ -45,11 +43,7 @@ export const SeekerCardSchema = z
     maxSellValue: z.number().int().min(1),
     params: TreasureSeekerParamsSchema,
   })
-  .strict()
-  .refine((card) => LOCATION_DIMENSIONS[card.location] === card.dimension, {
-    message: 'Seeker location must belong to its execution dimension',
-    path: ['location'],
-  });
+  .strict();
 export type SeekerCard = z.infer<typeof SeekerCardSchema>;
 
 const MAX_DIGITS = 3;
@@ -59,7 +53,6 @@ const ENTRY_WILL = 20;
 export const SEEKER_CARDS: readonly SeekerCard[] = [
   {
     id: 'seeker-1',
-    dimension: EDimension.EARTH,
     location: 'silesia',
     nameKey: 'quest.seeker-1.name',
     descKey: 'quest.seeker-1.desc',
@@ -79,7 +72,6 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
   },
   {
     id: 'seeker-2',
-    dimension: EDimension.EARTH,
     location: 'silesia',
     nameKey: 'quest.seeker-2.name',
     descKey: 'quest.seeker-2.desc',
@@ -110,7 +102,6 @@ export const SEEKER_CARDS: readonly SeekerCard[] = [
   },
   {
     id: 'seeker-3',
-    dimension: EDimension.EARTH,
     location: 'silesia',
     nameKey: 'quest.seeker-3.name',
     descKey: 'quest.seeker-3.desc',

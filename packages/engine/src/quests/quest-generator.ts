@@ -1,5 +1,5 @@
 import { dimensionOfTokenType } from '../dimensions/dimensions';
-import type { LocationKey } from '../registry/location-key';
+import { LOCATION_DIMENSIONS, type LocationKey } from '../registry/location-key';
 import { tokenSourceIdOf } from '../tokens/game-tokens';
 import type { DropContext } from '../tokens/drop-context';
 import { sha256Hex } from '../utils/hash/sha256';
@@ -75,13 +75,19 @@ function candidatesFor(
 
       const locations = template.locations.filter((location) => {
         const dropContext = input.locationDropContexts[location];
-        return dropContext && dimensionOfTokenType(dropContext.tokenType) === template.dimension;
+        return (
+          dropContext &&
+          dimensionOfTokenType(dropContext.tokenType) === LOCATION_DIMENSIONS[location]
+        );
       });
       const placement = template.mapObjectPlacement;
       if (locations.length === 0 || (placement && !locations.includes(placement.targetMap)))
         return [];
       const sourceLocation = placement?.targetMap ?? locations[0];
-      const dropContext = template.rewardDropContext ?? input.locationDropContexts[sourceLocation]!;
+      const dropContext: DropContext = {
+        ...input.locationDropContexts[sourceLocation]!,
+        ...template.rewardDropContext,
+      };
 
       return [...profile.variants]
         .sort((a, b) => compareId(a.id, b.id))
@@ -135,7 +141,7 @@ function materialize(
   const generated: QuestDefinition = { ...definition, ...text };
   if (variant.reward) {
     const random = deriveStream(input.rngSeed, `${label}:reward`);
-    generated.rewardDropContext = dropContext;
+    generated.rewardDropContext = { mapTier: dropContext.mapTier };
     generated.rewards = [
       rollQuestReward(variant.reward, random, {
         seed: input.rngSeed,

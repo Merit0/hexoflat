@@ -28,7 +28,6 @@ export function counting(
 ): QuestDefinition {
   return {
     id,
-    dimension: EDimension.EARTH,
     locations: ['camping', 'silesia', 'silesia-north'],
     nameKey: `quest.${id}.name`,
     descKey: `quest.${id}.desc`,

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { restoreQuestEntrances, type QuestEntranceAssociations } from '../quests/quest-map-state';
-import { CONTENT_VERSION } from '../content/content-version';
+import { CONTENT_VERSION, isReadableContentVersion } from '../content/content-version';
 import { BASE_FOG_RADIUS, initFog, revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { installCampBook } from '../knowledge/camp-book';
 import { createChestContainers } from '../chests/create-chest-containers';
@@ -95,7 +95,7 @@ const staleWorldHeaderSchema = z.object({
 
 export function staleWorldOf(raw: unknown): StaleWorldError | null {
   const header = staleWorldHeaderSchema.safeParse(raw);
-  if (!header.success || header.data.contentVersion === CONTENT_VERSION) return null;
+  if (!header.success || isReadableContentVersion(header.data.contentVersion)) return null;
   return new StaleWorldError(
     header.data.contentVersion,
     header.data.locationKey,
@@ -125,10 +125,17 @@ function withBattleSecret(raw: unknown): unknown {
   return { ...world, battle: { ...battle, tokenSecret } };
 }
 
+function upcastWorldContent(raw: unknown): unknown {
+  const world = withBattleSecret(upcastDimensionVocabulary(raw));
+  const header = staleWorldHeaderSchema.safeParse(world);
+  if (!header.success || !isReadableContentVersion(header.data.contentVersion)) return world;
+  return { ...(world as object), contentVersion: CONTENT_VERSION };
+}
+
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   const stale = staleWorldOf(raw);
   if (stale) throw stale;
-  const parsed = serializedWorldSchema.parse(withBattleSecret(upcastDimensionVocabulary(raw)));
+  const parsed = serializedWorldSchema.parse(upcastWorldContent(raw));
   const map = HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true });
   if (parsed.locationKey === 'camping') installCampFacilities(map, parsed.heroCoordinates);
   const dropContext =

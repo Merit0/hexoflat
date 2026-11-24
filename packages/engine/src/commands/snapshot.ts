@@ -1,7 +1,7 @@
 import { knowledgeStateSchema, type KnowledgeState } from '../knowledge/state';
 import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model';
 import type { HeroState } from '../hero-movement/hero-state';
-import { CONTENT_VERSION } from '../content/content-version';
+import { CONTENT_VERSION, isReadableContentVersion } from '../content/content-version';
 import { normalizeHeroPortal } from '../portal/portal-state';
 import { sha256Hex } from '../utils/hash/sha256';
 import type { RngState } from '../utils/random-seeded';
@@ -73,7 +73,7 @@ export function serializeState(state: HexEngineState): SnapshotPayload {
 }
 
 export function deserializeState(payload: SnapshotPayload, now: number): HexEngineState {
-  if (payload.version !== CONTENT_VERSION) {
+  if (!isReadableContentVersion(payload.version)) {
     throw new StaleSnapshotError(payload.version, CONTENT_VERSION);
   }
 

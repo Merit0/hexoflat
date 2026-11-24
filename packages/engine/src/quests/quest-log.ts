@@ -1,10 +1,10 @@
-import { dimensionOfTokenType, tokenTypeOfDimension } from '../dimensions/dimensions';
+import { tokenTypeOfDimension } from '../dimensions/dimensions';
 import { dropAvailableIn } from '../loot/dimension-pool';
 import { baseTokenTypeSchema } from '../tokens/token-keys';
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { consumeFromDraft, countInDraft, grantToDraft } from '../inventory/apply-stock';
-import { type DropContext } from '../tokens/drop-context';
+import { DEFAULT_MAP_TIER, type DropContext } from '../tokens/drop-context';
 import { isTokenType, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -16,6 +16,7 @@ import { questOfferFor, removeQuest } from './quest-board-state';
 import type { LocationKey } from '../registry/location-key';
 import {
   QUEST_SLOTS,
+  questDimension,
   type QuestCatalogue,
   type QuestBoardRefusal,
   type QuestDefinition,
@@ -204,16 +205,12 @@ export function planClaim(
   for (const [rewardIndex, reward] of quest.rewards.entries()) {
     if (reward.kind === 'item') {
       if (!inventory) return reject(progress, questId, 'NO_INVENTORY');
-      const dropContext = quest.rewardDropContext ?? {
-        tokenType: baseTokenTypeSchema.parse(tokenTypeOfDimension(quest.dimension)),
-        mapTier: 1,
+      const dimension = questDimension(quest);
+      const dropContext: DropContext = {
+        tokenType: baseTokenTypeSchema.parse(tokenTypeOfDimension(dimension)),
+        mapTier: quest.rewardDropContext?.mapTier ?? DEFAULT_MAP_TIER,
       };
-      if (
-        !dropAvailableIn(
-          { itemKey: reward.itemKey, baseKey: reward.token?.baseKey },
-          dimensionOfTokenType(dropContext.tokenType),
-        )
-      )
+      if (!dropAvailableIn({ itemKey: reward.itemKey, baseKey: reward.token?.baseKey }, dimension))
         throw new Error(`QUEST_REWARD_OUTSIDE_DIMENSION: ${questId}:${reward.itemKey}`);
       const supply = reward.token
         ? { tokens: [reward.token] }
@@ -264,7 +261,7 @@ export function applyQuestEvents(
         !payload ||
         typeof payload !== 'object' ||
         !('dimension' in payload) ||
-        payload.dimension !== quest.dimension
+        payload.dimension !== questDimension(quest)
       )
         return entry;
       const handler = handlerFor(quest.objective, registry);

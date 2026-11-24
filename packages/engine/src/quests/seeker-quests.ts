@@ -6,7 +6,6 @@ import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 export function seekerQuestOf(card: SeekerCard): QuestDefinition {
   return {
     id: card.id,
-    dimension: card.dimension,
     locations: [card.location],
     nameKey: card.nameKey,
     descKey: card.descKey,
