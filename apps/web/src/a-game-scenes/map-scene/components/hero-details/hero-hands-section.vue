@@ -4,7 +4,7 @@
       v-for="(hand, index) in hands"
       :key="hand.id"
       class="hand"
-      :style="{ '--rarity': hand.color }"
+      :style="{ '--light': hand.color }"
       :data-testid="`hero-hand-${hand.id}`"
     >
       <button
@@ -146,8 +146,8 @@ const dividerBackground = computed(
 }
 .hand__icon.is-clickable:hover {
   animation: none;
-  color: var(--rarity);
-  filter: drop-shadow(0 0 6px var(--rarity));
+  color: var(--light);
+  filter: drop-shadow(0 0 6px var(--light));
 }
 .hand__icon svg {
   width: 30px;
@@ -172,7 +172,7 @@ const dividerBackground = computed(
 }
 .hand__name {
   min-width: 0;
-  color: var(--rarity);
+  color: var(--light);
   font-family: 'Alegreya SC', serif;
   font-size: 1.2rem;
   font-weight: 700;

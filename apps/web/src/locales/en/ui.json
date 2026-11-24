@@ -870,7 +870,8 @@
     "close": "Close the quest board",
     "claim": "Claim",
     "reward": {
-      "will": "{n} Will"
+      "will": "{n} Will",
+      "rolled": "Attributes are rolled on turn-in."
     },
     "refusal": {
       "UNKNOWN_QUEST": "This quest does not exist.",
@@ -1143,6 +1144,7 @@
   },
   "dimensions": {
     "label": "Dimension: {name}",
+    "origin": "Origin: {name}",
     "heaven": "Heaven",
     "earth": "Earth",
     "underworld": "Underworld",

@@ -24,7 +24,7 @@
           :role="t.kind === 'hero' ? 'button' : undefined"
           :tabindex="t.kind === 'hero' ? 0 : undefined"
           :data-testid="t.kind === 'slot' ? `equip-slot-${t.id}` : 'equip-hero-slot'"
-          :style="[tileStyle(t), slotRarityStyle(t), { width: HEX_W + 'px', height: HEX_H + 'px' }]"
+          :style="[tileStyle(t), slotLightStyle(t), { width: HEX_W + 'px', height: HEX_H + 'px' }]"
           @click="t.kind === 'hero' && emit('open-hero')"
           @keydown.enter="t.kind === 'hero' && emit('open-hero')"
         >
@@ -131,7 +131,7 @@ function isDropSlot(id: string): id is TEquipSlot {
   return EQUIP_SLOTS.includes(id as TEquipSlot);
 }
 
-function slotRarityStyle(t: PseudoTile): Record<string, string> {
+function slotLightStyle(t: PseudoTile): Record<string, string> {
   if (t.kind !== 'slot' || !isDropSlot(t.id)) return {};
 
   const item = getEquippedItem(t.id);

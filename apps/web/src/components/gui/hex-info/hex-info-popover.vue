@@ -24,10 +24,10 @@
             <hex-info-card :view="view" />
             <span
               v-if="view.tokenType"
-              class="hex-info__rarity is-bottom"
-              :style="{ '--rarity': view.tokenType.color }"
-              data-testid="hex-info-rarity"
-              :data-rarity-tone="view.tokenType.tone"
+              class="hex-info__token-type is-bottom"
+              :style="{ '--light': view.tokenType.color }"
+              data-testid="hex-info-token-type"
+              :data-light="view.tokenType.tone"
               >{{ view.tokenType.label }}</span
             >
             <span v-else class="hex-info__gem is-bottom" aria-hidden="true" />
@@ -160,7 +160,7 @@ const layerStyle = computed(() => {
   bottom: 12px;
 }
 .hex-info__badge,
-.hex-info__rarity {
+.hex-info__token-type {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -184,17 +184,17 @@ const layerStyle = computed(() => {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.hex-info__rarity {
+.hex-info__token-type {
   max-width: 120px;
   white-space: nowrap;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--rarity);
-  text-shadow: 0 0 8px color-mix(in srgb, var(--rarity) 55%, transparent);
+  color: var(--light);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--light) 55%, transparent);
 }
-.hex-info__rarity.is-bottom {
+.hex-info__token-type.is-bottom {
   bottom: 14px;
 }
 .hex-info-enter-active {

@@ -49,7 +49,10 @@ function pickByTokenId(refs: readonly SpriteRef[], tokenId: string): SpriteRef {
   return refs[Math.floor(deriveStream(tokenId, 'sprite')() * refs.length)];
 }
 
-function uniqueSprite(manifest: SpriteManifest, uniqueKey: string | undefined): SpriteRef {
+export function resolveUniqueSprite(
+  manifest: SpriteManifest,
+  uniqueKey: string | undefined,
+): SpriteRef {
   const key = uniqueKey === undefined ? null : uniqueSpriteKey(uniqueKey);
   const entry = manifest.entries.find(
     (candidate) => candidate.tier === 'unique' && candidate.key === key,
@@ -58,7 +61,7 @@ function uniqueSprite(manifest: SpriteManifest, uniqueKey: string | undefined): 
 }
 
 export function resolveTokenSprite(manifest: SpriteManifest, token: ItemToken): SpriteRef {
-  if (token.tier === 'unique') return uniqueSprite(manifest, token.uniqueKey);
+  if (token.tier === 'unique') return resolveUniqueSprite(manifest, token.uniqueKey);
   const resolution = resolveBaseSprites(manifest, token.tokenType, token.type);
   reportSpriteFallback(token.tokenType, token.type, resolution);
   const stored =

@@ -63,7 +63,7 @@ describe.each(CASES)('a $name token is drawn from its own data', ({ token, light
     await mount(InventoryToken, { item });
 
     expect(background('.icon')).toContain(spriteOf(item.token!));
-    expect(background('.rarity-glow')).toContain(light);
+    expect(background('.light-glow')).toContain(light);
   });
 
   it('equipped hand token: sprite', async () => {
@@ -95,7 +95,7 @@ describe.each(CASES)('a $name token is drawn from its own data', ({ token, light
     await mount(StashItemToken, { item, standalone: true, rotationDeg: 0 });
 
     expect(background('.icon')).toContain(spriteOf(item.token!));
-    expect(background('.rarity-glow')).toContain(light);
+    expect(background('.light-glow')).toContain(light);
   });
 
   it('shop goods cell: token name and light tone', async () => {
@@ -116,7 +116,7 @@ describe.each(CASES)('a $name token is drawn from its own data', ({ token, light
     });
 
     const cell = host.querySelector<HTMLElement>('[data-testid="cell"]')!;
-    expect(cell.dataset.rarity).toBe(tone);
+    expect(cell.dataset.light).toBe(tone);
     expect(cell.getAttribute('aria-label')).toBe(tokenName(item.token!, 'en'));
     expect(background('.icon')).toContain(spriteOf(item.token!));
   });

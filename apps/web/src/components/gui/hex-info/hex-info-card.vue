@@ -12,7 +12,7 @@
     <div
       class="card__divider"
       :style="{ '--gem': view.tokenType?.color ?? '#d9a553' }"
-      :data-rarity-tone="view.tokenType?.tone ?? 'none'"
+      :data-light="view.tokenType?.tone ?? 'none'"
       data-testid="hex-info-divider"
       aria-hidden="true"
     >

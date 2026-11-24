@@ -15,7 +15,7 @@
     @focus="showItemTooltip(item.id, $event.currentTarget as HTMLElement)"
     @blur="hideItemTooltip()"
   >
-    <div v-if="frameStyle" class="rarity-glow" :style="frameStyle" aria-hidden="true"></div>
+    <div v-if="frameStyle" class="light-glow" :style="frameStyle" aria-hidden="true"></div>
     <div class="icon" :style="iconStyle"></div>
   </div>
 
@@ -115,7 +115,7 @@ function onClick() {
 }
 
 /* Crop the round light sprite to the square slot, including its corners. */
-.rarity-glow {
+.light-glow {
   position: absolute;
   inset: 0;
   border-radius: 4px;

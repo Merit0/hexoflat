@@ -188,7 +188,7 @@ describe('stash board layout', () => {
       await nextTick();
 
       expect(byId('stash-cell-5')?.dataset.itemKey).toBe(K.SWORD);
-      expect(byId('stash-cell-5')?.dataset.rarity).toBeTruthy();
+      expect(byId('stash-cell-5')?.dataset.light).toBeTruthy();
       expect(byId('stash-cell-6')?.dataset.itemAmount).toBe('7');
       expect(byId('stash-cell-6')?.querySelector('.amount')?.textContent).toBe('7');
       expect(byId('stash-cell-0')?.dataset.itemKey).toBeUndefined();

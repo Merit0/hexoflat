@@ -5,7 +5,7 @@
     :data-testid="testid"
     :data-item-key="item?.key"
     :data-item-amount="item?.amount"
-    :data-rarity="lightName"
+    :data-light="lightName"
     :data-drop-container="location.container"
     :data-drop-index="location.container === 'equip' ? undefined : location.index"
     :data-drop-slot="location.container === 'equip' ? location.slot : undefined"

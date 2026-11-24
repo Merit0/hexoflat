@@ -16,7 +16,7 @@
         :data-testid="`shop-unique-buyback-${index}`"
         :data-instance-id="cell.instanceId"
       >
-        <div class="cell" :data-rarity="cell.light" :data-item-key="cell.item.key">
+        <div class="cell" :data-light="cell.light" :data-item-key="cell.item.key">
           <stash-item-token
             :item="cell.item"
             standalone

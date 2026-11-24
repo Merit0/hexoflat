@@ -6,7 +6,7 @@
     @mouseenter="onEnter"
     @mouseleave="hideItemTooltip()"
   >
-    <div v-if="glowStyle && !ghost" class="rarity-glow" :style="glowStyle" aria-hidden="true"></div>
+    <div v-if="glowStyle && !ghost" class="light-glow" :style="glowStyle" aria-hidden="true"></div>
     <div class="icon" :style="iconStyle"></div>
   </div>
 </template>
@@ -63,7 +63,7 @@ onBeforeUnmount(hideItemTooltip);
   z-index: 5;
   filter: brightness(1.08);
 }
-.rarity-glow {
+.light-glow {
   position: absolute;
   inset: 0;
   border-radius: 4px;

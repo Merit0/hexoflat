@@ -9,7 +9,7 @@
       :data-trade-index="cell.index"
       :data-item-key="cell.item?.key"
       :data-item-amount="cell.item?.amount"
-      :data-rarity="lightName"
+      :data-light="lightName"
       :data-price="cell.price ?? undefined"
       :tabindex="usable ? 0 : -1"
       :role="usable ? 'button' : undefined"

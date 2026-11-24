@@ -37,6 +37,7 @@ export interface HeroDetailsInput {
   name: string;
   locationTitle: string;
   locationDimension?: EDimension;
+  origin: EDimension;
   steps: number;
   currentHealth: number;
   maxHealth: number;
@@ -59,6 +60,7 @@ export interface HeroDetailsView {
   name: string;
   locationTitle: string;
   locationDimension?: EDimension;
+  origin: EDimension;
   steps: number;
   rank: { roman: string; title: string };
   hearts: { current: number; max: number; count: number };
@@ -114,6 +116,7 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
     name: input.name,
     locationTitle: input.locationTitle,
     locationDimension: input.locationDimension,
+    origin: input.origin,
     steps: scout.steps,
     rank: { roman: scout.roman, title: scout.title },
     hearts: { current: round1(current), max: round1(max), count: Math.ceil(max) },
@@ -184,6 +187,7 @@ export function useHeroDetails() {
       name: hero.name || 'Hero',
       locationTitle: key ? (MapRegistry.get(key)?.title ?? key) : 'Nowhere',
       locationDimension: key ? MapRegistry.get(key).dimension : undefined,
+      origin: hero.origin,
       steps: hero.heroSteps,
       currentHealth: hero.currentHealth,
       maxHealth: hero.getEffectiveMaxHealth(),

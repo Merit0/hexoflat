@@ -34,27 +34,24 @@ export class HexInfoTooltipComponent extends BaseComponent {
 
   async verifyTokenType(label: RegExp): Promise<void> {
     await expect(this.tooltip).toBeVisible();
-    await expect(this.page.getByTestId('hex-info-rarity')).toHaveText(label);
+    await expect(this.page.getByTestId('hex-info-token-type')).toHaveText(label);
   }
 
   async verifyNoTokenType(): Promise<void> {
     await expect(this.tooltip).toBeVisible();
-    await expect(this.page.getByTestId('hex-info-rarity')).toHaveCount(0);
+    await expect(this.page.getByTestId('hex-info-token-type')).toHaveCount(0);
   }
 
   async verifyDividerFollowsLight(): Promise<void> {
-    const tone = await this.page.getByTestId('hex-info-rarity').getAttribute('data-rarity-tone');
+    const tone = await this.page.getByTestId('hex-info-token-type').getAttribute('data-light');
     await expect(this.page.getByTestId('hex-info-divider')).toHaveAttribute(
-      'data-rarity-tone',
+      'data-light',
       tone ?? 'missing',
     );
   }
 
   async verifyDividerHasNoLight(): Promise<void> {
-    await expect(this.page.getByTestId('hex-info-divider')).toHaveAttribute(
-      'data-rarity-tone',
-      'none',
-    );
+    await expect(this.page.getByTestId('hex-info-divider')).toHaveAttribute('data-light', 'none');
   }
 
   async verifyIsHidden(): Promise<void> {

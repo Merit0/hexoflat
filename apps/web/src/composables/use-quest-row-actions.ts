@@ -29,7 +29,11 @@ export function useQuestRowActions() {
     },
     claim: (row: QuestRowView) =>
       actions.claim(row.quest.id, () =>
-        t('quest.board.status.claimed', { reward: row.rewards.map(rewardText).join(', ') }),
+        t('quest.board.status.claimed', {
+          reward: row.rewards
+            .map((reward) => rewardText(reward, row.quest.uniqueReward))
+            .join(', '),
+        }),
       ),
     abandon: (row: QuestRowView) =>
       actions.abandon(row.quest.id, () => t('quest.board.status.abandoned', { name: nameOf(row) })),

@@ -26,7 +26,7 @@ const nameText = () =>
 const color = () =>
   host
     .querySelector<HTMLElement>('[data-testid="hero-hand-right"]')
-    ?.style.getPropertyValue('--rarity');
+    ?.style.getPropertyValue('--light');
 
 afterEach(() => {
   app?.unmount();
