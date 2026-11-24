@@ -1,4 +1,4 @@
-import { worldTokenOrigin } from '../world/server-world';
+import { worldDropContext } from '../world/server-world';
 import { describe, expect, it } from 'vitest';
 import { actWorld, deserializeWorld, serializeWorld } from '../world';
 import { chestScene, openAction, runOf, tileOf } from '../chests/chest-test-setup';
@@ -17,7 +17,7 @@ function worldPayload(withContainer: boolean, seed: string) {
     createChestContainers(scene.world.map, {
       seed: scene.world.worldSeed,
       sourceId: scene.world.mapId,
-      origin: worldTokenOrigin(scene.world),
+      dropContext: worldDropContext(scene.world),
     });
   const stored = tileOf(scene.world, scene.chest).hexobject!.container;
   const outcome = actWorld(runOf(scene.world), openAction(scene.chest));
@@ -93,7 +93,7 @@ describe('CH-P6 the generated cave', () => {
           rollChestLoot(tile, {
             seed: world.worldSeed,
             sourceId: world.mapId,
-            origin: worldTokenOrigin(world),
+            dropContext: worldDropContext(world),
           }),
         ];
         expect(tile.hexobject!.container!.contents).toEqual(lazy);
@@ -115,7 +115,7 @@ describe('CH-P6 serialization keeps contents and status', () => {
     createChestContainers(fresh.world.map, {
       seed: fresh.world.worldSeed,
       sourceId: fresh.world.mapId,
-      origin: worldTokenOrigin(fresh.world),
+      dropContext: worldDropContext(fresh.world),
     });
     const full = tileOf(fresh.world, fresh.chest).hexobject!.container!;
     expect(full.status).toBe('full');

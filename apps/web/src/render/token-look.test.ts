@@ -1,13 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { afterEach, describe, expect, it } from 'vitest';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { getPrototype } from '@hexoflat/engine';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
+import { setSpriteFallbackLog } from '@hexoflat/engine/tokens/sprite-fallback-log';
 import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import { baseTestToken, uniqueTestToken } from '@/test-support/token-fixtures';
-import { rarityFrameUrlForKey } from './rarity';
+import { lightFrameUrlForKey } from './light';
 import {
   itemLook,
-  itemRarityTone,
+  itemLightName,
   tokenLightColor,
   tokenLightUrl,
   tokenSpriteUrl,
@@ -16,8 +17,8 @@ import {
 const PLACEHOLDER = SPRITE_MANIFEST.placeholder;
 
 describe('item look from a token (LG5c step 1)', () => {
-  it('draws a base token with its manifest sprite and the base light of its realm', () => {
-    const token = baseTestToken('sword', ERarityKind.IDOL);
+  it('draws a base token with its manifest sprite and the base light of its tokenType', () => {
+    const token = baseTestToken('sword', ETokenType.IDOL);
     const entry = SPRITE_MANIFEST.entries.find((candidate) => candidate.key === token.sprite);
 
     expect(entry).toBeDefined();
@@ -29,11 +30,11 @@ describe('item look from a token (LG5c step 1)', () => {
     });
   });
 
-  it('gives each realm of a base token its own light', () => {
-    expect(tokenLightUrl(baseTestToken('shield', ERarityKind.GLOOM))).toBe(
+  it('gives each tokenType of a base token its own light', () => {
+    expect(tokenLightUrl(baseTestToken('shield', ETokenType.GLOOM))).toBe(
       '/hex-assets/hex-frames/blue-light.png',
     );
-    expect(tokenLightUrl(baseTestToken('shield', ERarityKind.SPARK))).toBe(
+    expect(tokenLightUrl(baseTestToken('shield', ETokenType.SPARK))).toBe(
       '/hex-assets/hex-frames/yellow-light.png',
     );
   });
@@ -45,14 +46,45 @@ describe('item look from a token (LG5c step 1)', () => {
     expect(tokenSpriteUrl(gloom)).toBe(PLACEHOLDER);
     expect(tokenLightUrl(gloom)).toBe('/hex-assets/hex-frames/violet-light.png');
     expect(tokenLightUrl(verdict)).toBe('/hex-assets/hex-frames/red-light.png');
-    expect(itemRarityTone({ key: K.SWORD, token: verdict })).toBe('alien');
+    expect(itemLightName({ key: K.SWORD, token: verdict })).toBe('alien');
     expect(tokenLightColor(gloom)).toBe('#A855F7');
   });
 
   it('keeps the prototype sprite and light for a stack without a token', () => {
     expect(itemLook({ key: K.COINS })).toEqual({
       sprite: getPrototype(K.COINS).spritePath ?? null,
-      light: rarityFrameUrlForKey(K.COINS),
+      light: lightFrameUrlForKey(K.COINS),
     });
+  });
+});
+
+describe('DA4: sprite fallback while drawing a token', () => {
+  afterEach(() => setSpriteFallbackLog(null));
+
+  it('draws a gloom sword with the idol sprite and its own light, one warning for many draws', () => {
+    const token = baseTestToken('sword', ETokenType.GLOOM);
+    const warnings: string[] = [];
+    setSpriteFallbackLog((message) => warnings.push(message));
+
+    for (let i = 0; i < 3; i += 1) {
+      expect(itemLook({ key: K.SWORD, token })).toEqual({
+        sprite: '/hex-assets/items/base/idol-sword/idol-sword-01.png',
+        light: '/hex-assets/hex-frames/blue-light.png',
+      });
+    }
+    expect(warnings).toEqual(['[sprites] base/gloom-sword has no sprite, idol-sword is used']);
+  });
+
+  it('follows the same chain when the stored sprite key is not in the manifest', () => {
+    const token = { ...baseTestToken('sword', ETokenType.SPARK), sprite: 'spark-sword-77' };
+
+    expect(tokenSpriteUrl(token)).toBe('/hex-assets/items/base/idol-sword/idol-sword-01.png');
+    expect(tokenSpriteUrl(token, { ...SPRITE_MANIFEST, entries: [] })).toBe(PLACEHOLDER);
+  });
+
+  it('never gives a unique token a base sprite', () => {
+    const token = uniqueTestToken('lantern-eater');
+    expect(token).not.toHaveProperty('sprite');
+    expect(tokenSpriteUrl(token)).toBe(PLACEHOLDER);
   });
 });

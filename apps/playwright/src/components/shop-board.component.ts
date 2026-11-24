@@ -556,6 +556,40 @@ export class ShopBoardComponent extends BaseComponent {
       .toBe(tokenId);
   }
 
+  async verifyUniqueBuybackHolds(token: TestItemToken): Promise<void> {
+    await expect
+      .poll(async () => (await this.readTrader())?.uniqueBuyback.map((held) => held.token), POLL)
+      .toEqual([token]);
+  }
+
+  async verifyUniqueBuybackShows(instanceId: string, price: number): Promise<void> {
+    await this.openTab('buyback');
+    await expect(this.page.getByTestId('shop-unique-buyback')).toBeVisible();
+    await expect(this.page.getByTestId('shop-unique-buyback-0')).toHaveAttribute(
+      'data-instance-id',
+      instanceId,
+    );
+    await expect(this.page.getByTestId('shop-unique-buyback-price-0')).toHaveAttribute(
+      'data-price',
+      String(price),
+    );
+  }
+
+  async verifyUniqueBuybackHidden(): Promise<void> {
+    await this.openTab('buyback');
+    await expect(this.page.getByTestId('shop-buyback-pane')).toBeVisible();
+    await expect(this.page.getByTestId('shop-unique-buyback')).toHaveCount(0);
+  }
+
+  async buyBackUnique(index: number): Promise<void> {
+    await this.openTab('buyback');
+    await this.page.getByTestId(`shop-unique-buyback-action-${index}`).click();
+  }
+
+  async readWalletCoins(): Promise<number> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getWalletCoins());
+  }
+
   async readTradingCardPrice(): Promise<number> {
     const price = this.page.getByTestId('shop-card-trade-price').locator('b');
     await expect(price).toHaveAttribute('data-price', /^\d+$/);

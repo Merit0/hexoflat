@@ -668,7 +668,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
     await world.ensure(userId, heroId, 'camping');
     await arrive(userId, heroId, 'silesia');
     await equipForPortal(userId, heroId);
-    const origin = (await presenceOf(userId, heroId)).presence;
+    const before = (await presenceOf(userId, heroId)).presence;
     const held = deserializeWorld(await world.snapshot(userId, heroId), 0);
     const target = getHexNeighbors(held.heroCoordinates!).find((hex) => {
       const tile = held.map.tiles.find(
@@ -696,7 +696,7 @@ describe.skipIf(!dbAvailable)('the world the server holds (real Postgres)', () =
 
     const back = await send(userId, heroId, 'WORLD_PORTAL_ENTER', {});
     expect(back.result).toBe('applied');
-    expect((await presenceOf(userId, heroId)).presence.mapId).toBe(origin.mapId);
+    expect((await presenceOf(userId, heroId)).presence.mapId).toBe(before.mapId);
     const closedAgain = await send(userId, heroId, 'WORLD_PORTAL_CLOSE', {});
     expect(closedAgain).toMatchObject({ result: 'rejected', code: 'NO_PORTAL' });
   });

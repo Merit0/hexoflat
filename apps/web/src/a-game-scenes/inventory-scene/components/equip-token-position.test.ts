@@ -59,7 +59,7 @@ describe('Inventory hand position on the active map', () => {
       questRun.value = { position: questPosition } as QuestProjection;
       host.querySelector<HTMLElement>(selector)!.click();
       const tool = useHeroToolStore();
-      expect(tool.origin).toEqual(questPosition);
+      expect(tool.heroHex).toEqual(questPosition);
       expect(hexDistance(tool.hover!, questPosition)).toBe(1);
       const next = getHexNeighbors(questPosition)[1];
       tool.updateHover(next);
@@ -71,7 +71,7 @@ describe('Inventory hand position on the active map', () => {
   it('anchors beside the world hero when no quest is active', () => {
     host.querySelector<HTMLButtonElement>('button')!.click();
     const tool = useHeroToolStore();
-    expect(tool.origin).toEqual(worldPosition);
+    expect(tool.heroHex).toEqual(worldPosition);
     expect(hexDistance(tool.hover!, worldPosition)).toBe(1);
   });
 
@@ -79,11 +79,11 @@ describe('Inventory hand position on the active map', () => {
     questRun.value = { position: questPosition } as QuestProjection;
     host.querySelector<HTMLButtonElement>('button')!.click();
     const tool = useHeroToolStore();
-    expect(tool.origin).toEqual(questPosition);
+    expect(tool.heroHex).toEqual(questPosition);
     tool.stopTool();
     questRun.value = null;
     host.querySelector<HTMLButtonElement>('button')!.click();
-    expect(tool.origin).toEqual(worldPosition);
+    expect(tool.heroHex).toEqual(worldPosition);
   });
 });
 

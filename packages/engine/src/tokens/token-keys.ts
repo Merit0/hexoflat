@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { tokenTypesWithTier, type TTokenTypeWithTier } from '../dimensions/dimensions';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SLUG_PART = '[a-z0-9]+(?:-[a-z0-9]+)*';
@@ -11,6 +11,18 @@ export const uniqueKeySchema = z.string().regex(SLUG);
 export const adjectiveKeySchema = z.string().regex(SLUG);
 export const i18nKeySchema = z.string().regex(/^content(?:\.[A-Za-z0-9_-]+)+$/);
 export const spriteKeySchema = z.string().regex(/^_?[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
+export const PLACEHOLDER_SPRITE_KEY = '_placeholder';
+const SPRITE_NUMBER = /^(?:0[1-9]|[1-9]\d)$/;
+
+export function isOwnSpriteKey(tokenType: string, type: string, key: string): boolean {
+  const prefix = `${tokenType}-${type}-`;
+  return key.startsWith(prefix) && SPRITE_NUMBER.test(key.slice(prefix.length));
+}
+
+export function uniqueSpriteKey(uniqueKey: UniqueKey): SpriteKey {
+  return uniqueKey;
+}
 
 export const TOKEN_SOURCE_KINDS = [
   'chest',
@@ -34,6 +46,11 @@ export const itemTokenIdSchema = z
   .string()
   .regex(new RegExp(`^${SOURCE_ID_PART}:(?:0|[1-9]\\d*)$`));
 
+export const UNIQUE_INSTANCE_ID_LENGTH = 32;
+export const uniqueInstanceIdSchema = z
+  .string()
+  .regex(new RegExp(`^[0-9a-f]{${UNIQUE_INSTANCE_ID_LENGTH}}$`));
+
 export function itemTokenIdOf(sourceId: string, n: number): string {
   return `${sourceId}:${n}`;
 }
@@ -46,6 +63,7 @@ export type AdjectiveKey = z.infer<typeof adjectiveKeySchema>;
 export type I18nKey = z.infer<typeof i18nKeySchema>;
 export type SpriteKey = z.infer<typeof spriteKeySchema>;
 export type ItemTokenId = z.infer<typeof itemTokenIdSchema>;
+export type UniqueInstanceId = z.infer<typeof uniqueInstanceIdSchema>;
 export type TokenSourceId = z.infer<typeof tokenSourceIdSchema>;
 
 export const WORD_SLOTS = ['prefix', 'suffix', 'noun'] as const;
@@ -66,12 +84,14 @@ export const wordKeySchema = z
   .regex(new RegExp(`^content\\.tokens\\.(?:${WORD_SLOTS.join('|')})\\.${SLUG_PART}$`));
 export type WordKey = z.infer<typeof wordKeySchema>;
 
-export const BASE_REALMS = [ERarityKind.GLOOM, ERarityKind.IDOL, ERarityKind.SPARK] as const;
-export type TBaseRealm = (typeof BASE_REALMS)[number];
-export const baseRealmSchema = z.enum(BASE_REALMS);
+export type TBaseTokenType = TTokenTypeWithTier<'base'>;
+export const BASE_TOKEN_TYPES: readonly TBaseTokenType[] = Object.freeze(
+  tokenTypesWithTier('base'),
+);
+export const baseTokenTypeSchema = z.enum(BASE_TOKEN_TYPES);
 
-export const TOKEN_ORIGINS = ['base', 'unique'] as const;
-export type TTokenOrigin = (typeof TOKEN_ORIGINS)[number];
+export const BASIS_POINTS = 10_000;
+export const basisPointsSchema = z.number().int().min(0).max(BASIS_POINTS);
 
 export const MAP_TIERS = [1, 2, 3, 4] as const;
 export type TMapTier = (typeof MAP_TIERS)[number];

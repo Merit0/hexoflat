@@ -63,7 +63,7 @@ Slow-suite split (2026-11-21): scenarios whose latest successful local Allure ru
 exceeded 30 seconds live in `e2e/slow/<group>/`, retaining their functional
 `@<group>` tag. Push runs (`E2E_PRE_PUSH=1`) exclude that folder unless
 `E2E_INCLUDE_SLOW=1`; CI/direct full runs include it. Run the dedicated suite with
-`pnpm test:e2e:slow` (one worker), or a slow spec through
+`pnpm test:e2e:slow` (two workers), or a slow spec through
 `E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow/<group>/<spec>.spec.ts`.
 Impact-map globs include both locations and the map checker resolves the
 functional folder below `slow`. Keep faster cases in the regular folder when
@@ -202,7 +202,7 @@ Quest pickup refusal feedback (2026-11-16): `useQuestRunActions` sends every ref
 
 ## Token dev grant (LG5e, 2026-11-18)
 
-- `VerifyInventoryFeature.givenTokenItem(spec)` (hook `grantTokenItem`, sender `grantTokenFixture` in `inventory-sync.ts`) sends `DEV_GRANT_ITEM` with a token spec `{ type, realm, mapTier, attributes?, price? }`: the server mints the token with `TokenFactory.createBase(ctx, overrides)` and sets the given attributes and price; it is refused (`FORBIDDEN`) unless the API runs with the e2e fixtures flag outside production. It returns the minted token. Use it for gear with a fixed price or fixed attributes; `ShopBoardFeature.givenTokenInBag` / `givenDiscountedToken` (the minted token is passed into `setTrader` goods, so a discount has a whole-coin result).
+- `VerifyInventoryFeature.givenTokenItem(spec)` (hook `grantTokenItem`, sender `grantTokenFixture` in `inventory-sync.ts`) sends `DEV_GRANT_ITEM` with a token spec `{ type, tokenType, mapTier, attributes?, price? }` (`realm` before DA3b): the server mints the token with `TokenFactory.createBase(ctx, overrides)` and sets the given attributes and price; it is refused (`FORBIDDEN`) unless the API runs with the e2e fixtures flag outside production. It returns the minted token. Use it for gear with a fixed price or fixed attributes; `ShopBoardFeature.givenTokenInBag` / `givenDiscountedToken` (the minted token is passed into `setTrader` goods, so a discount has a whole-coin result).
 - `verifyTraderGoods`/`verifyTraderBuyback` compare cells without `token`; read tokens with `ShopBoardComponent.readGoodsToken`.
 - `shield-max-health.spec.ts`: hearts come only from the `heart` attribute in half-hearts (`NO_ATTRIBUTES` = 0, `ONE_HALF_HEART` = +0.5, so 3/3 -> 3.5/3.5). The fireplace refuses with «already full» while less than one whole heart is missing (`missingHealth < 1` in `action-starters-registry.ts`), so the heal test starts at 2.5/3.5.
 

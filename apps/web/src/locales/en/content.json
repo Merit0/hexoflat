@@ -1,5 +1,25 @@
 {
   "content": {
+    "dimension": {
+      "drop-world": {
+        "tableRule": "Loot comes from the dimension printed on the creature card, not from the map you stand on. A chest or a quest uses the dimension of its location."
+      },
+      "matrix-card": {
+        "tableRule": "Find the row of the dimension on the matrix card. Underworld: Gloom, base blue, unique violet. Earth: Idol, base gray, unique green. Heaven: Spark, base yellow, unique orange. Nowhere: Alien, unique red only. Place the light of that cell under the token."
+      },
+      "unique-roll": {
+        "tableRule": "Roll four d10 in order, one for each digit, and read a number from 0000 to 9999. The unique drops if the number is lower than its chance: Lantern-Eater 0500, an Alien 0050."
+      },
+      "alien-roll": {
+        "tableRule": "Only a boss can leave an Alien. Make one roll of four d10 for each boss: lower than 0050 and an Alien joins the rest of its loot."
+      },
+      "buy-back": {
+        "tableRule": "A unique you sell stays face up at the trader until the day ends. Buy it back for the coins you got for it. When the day ends, remove it from the game."
+      },
+      "hero-origin": {
+        "tableRule": "The origin is printed on the hero sheet and never changes."
+      }
+    },
     "skeletor": {
       "title": "Skeletor",
       "subtitle": "Boss",
@@ -266,11 +286,11 @@
         "morning-star": "Daystar's"
       },
       "line": {
-        "kind": "{type} · {realm}",
+        "kind": "{type} · {tokenType}",
         "strike": "Strike {strike}",
         "tier": "Tier {tier}"
       },
-      "realm": {
+      "tokenType": {
         "gloom": "Gloom",
         "idol": "Idol",
         "spark": "Spark",

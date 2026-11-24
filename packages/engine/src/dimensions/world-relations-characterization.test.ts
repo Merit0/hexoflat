@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { MapRegistry } from '../registry/world-map-registry';
 import { CONTENT } from '../content/content-map';
-import { locationTokenOrigin } from '../registry/location-token-origin';
-import { cloneOriginField } from '../quests/origin-field';
-import { questTokenOrigin } from '../quests/quest-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
+import { cloneWorldField } from '../quests/cloned-field';
+import { questDropContext } from '../quests/quest-drop-context';
 import { createServerWorld } from '../world/server-world';
 import { EDimension } from './dimensions';
 
@@ -26,7 +26,7 @@ describe('D4 existing world relations', () => {
   it.each(['camping', 'silesia', 'silesia-north'] as const)(
     '%s retains Earth source scope',
     (key) => {
-      expect(locationTokenOrigin(key)).toEqual({ realm: 'idol', mapTier: 1 });
+      expect(locationDropContext(key)).toEqual({ tokenType: 'idol', mapTier: 1 });
     },
   );
 
@@ -40,9 +40,9 @@ describe('D4 existing world relations', () => {
       attempt: 0,
       params: { tier: 3 },
     };
-    world.tokenOrigin = locationTokenOrigin('cave', world.descriptor);
-    const field = cloneOriginField(world, world.heroCoordinates!);
+    world.dropContext = locationDropContext('cave', world.descriptor);
+    const field = cloneWorldField(world, world.heroCoordinates!);
     expect(field.origin).toBe('cave');
-    expect(questTokenOrigin({ field })).toEqual({ realm: 'gloom', mapTier: 3 });
+    expect(questDropContext({ field })).toEqual({ tokenType: 'gloom', mapTier: 3 });
   });
 });

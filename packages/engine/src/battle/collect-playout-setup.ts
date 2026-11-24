@@ -1,4 +1,4 @@
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
 import { upcastToken } from '../inventory/upcast-item-tokens';
 import { deriveStream } from '../utils/random-seeded';
 import { applyBattleCommand } from './apply-battle';
@@ -32,7 +32,7 @@ export function playOutSquad(members: string[], battleId: string, fieldLabel: st
   });
   const rng = deriveStream(setup.seed, 'sim:answers');
   let battle = startBattle({ ...setup, tokenSecret: TEST_TOKEN_SECRET }, ON).battle;
-  battle.tokenOrigin = locationTokenOrigin('cave');
+  battle.dropContext = locationDropContext('cave');
   for (let i = 0, atMs = 0; i < MAX_COMMANDS && !battle.outcome; i++, atMs += 1_000) {
     if (battle.round > MAX_ROUNDS) break;
     const task = battle.task;

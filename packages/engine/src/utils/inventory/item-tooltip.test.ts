@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { EHexobjectGroup, ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { EHexobjectGroup, ETokenType } from '../../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../../registry/hexobjects-registry';
 import { resolveItemTooltip } from './item-tooltip';
 
 const ALL_KEYS = Object.values(HEXOBJECT_KEYS) as THexobjectKey[];
-const RARITY_KINDS = Object.values(ERarityKind);
+const TOKEN_TYPE_KINDS = Object.values(ETokenType);
 
 describe('resolveItemTooltip', () => {
   it.each(ALL_KEYS)('builds a complete model for "%s"', (key) => {
     const view = resolveItemTooltip(key);
     expect(view.key).toBe(key);
     expect(view.title).not.toBe('');
-    expect(RARITY_KINDS).toContain(view.rarity.kind);
+    expect(TOKEN_TYPE_KINDS).toContain(view.tokenType.kind);
     expect(Object.values(EHexobjectGroup)).toContain(view.group);
     expect(view.footer.weightKg).toBeGreaterThanOrEqual(0);
     expect(view.equipped).toBe(false);
@@ -114,10 +114,10 @@ describe('resolveItemTooltip Will price of use', () => {
   });
 });
 
-describe('resolveItemTooltip rarity', () => {
+describe('resolveItemTooltip tokenType', () => {
   it('marks camp gear as plain idol and the return scroll as spark', () => {
-    expect(resolveItemTooltip(HEXOBJECT_KEYS.SWORD).rarityTone).toBe('idol');
-    expect(resolveItemTooltip(HEXOBJECT_KEYS.HEALTH_BOTTLE).rarityTone).toBe('idol');
-    expect(resolveItemTooltip(HEXOBJECT_KEYS.RETURN_SCROLL).rarityTone).toBe('spark');
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.SWORD).lightName).toBe('idol');
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.HEALTH_BOTTLE).lightName).toBe('idol');
+    expect(resolveItemTooltip(HEXOBJECT_KEYS.RETURN_SCROLL).lightName).toBe('spark');
   });
 });

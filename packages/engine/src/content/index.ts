@@ -8,4 +8,9 @@ export {
   type TTraderDefinition,
 } from './content-schema';
 export { TRADERS, TRADER_KEYS, type TTraderKey } from './traders.content';
-export { DEFAULT_RARITY, RARITY_TONES, rarityTone, type TRarityTone } from './rarity-rules';
+export {
+  DEFAULT_ITEM_TOKEN_TYPE,
+  LIGHT_NAMES,
+  lightNameOf,
+  type TLightName,
+} from './token-type-rules';

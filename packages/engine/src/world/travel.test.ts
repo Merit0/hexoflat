@@ -58,9 +58,9 @@ const EXIT: TravelVia = { kind: 'exit' };
 
 describe('a crossing of the board edge on the server', () => {
   it('moves the hero to the neighbouring board, remembers where he rested and sets his presence', () => {
-    const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
-    standOnExit(origin);
-    const outcome = travelWorld(runOf(origin), EXIT);
+    const startWorld = createServerWorld('silesia', 'silesia-1', SEED, HERO);
+    standOnExit(startWorld);
+    const outcome = travelWorld(runOf(startWorld), EXIT);
     if (!outcome.ok) throw new Error(outcome.code);
     expect(outcome.destination.locationKey).not.toBe('silesia');
     expect(outcome.progress.presence).toMatchObject({
@@ -75,14 +75,14 @@ describe('a crossing of the board edge on the server', () => {
   });
 
   it('refuses when the hero does not stand on an exit', () => {
-    const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
-    expect(travelWorld(runOf(origin), EXIT)).toMatchObject({ ok: false, code: 'NOT_ON_EXIT' });
+    const startWorld = createServerWorld('silesia', 'silesia-1', SEED, HERO);
+    expect(travelWorld(runOf(startWorld), EXIT)).toMatchObject({ ok: false, code: 'NOT_ON_EXIT' });
   });
 
   it('refuses a sealed neighbour, and builds a fresh one once the seal has run out', () => {
-    const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
-    standOnExit(origin);
-    const probe = travelWorld(runOf(origin), EXIT);
+    const startWorld = createServerWorld('silesia', 'silesia-1', SEED, HERO);
+    standOnExit(startWorld);
+    const probe = travelWorld(runOf(startWorld), EXIT);
     if (!probe.ok) throw new Error(probe.code);
     const neighbour = probe.destination.locationKey;
 
@@ -104,10 +104,10 @@ describe('a crossing of the board edge on the server', () => {
 
 describe('gate arrival with an active quest', () => {
   it('arrives beside the Silesia camping door instead of the saved treasure-map position', () => {
-    const origin = createServerWorld('camping', 'camp', SEED, HERO);
-    const gate = placeBeside(origin, HEXOBJECT_KEYS.HOMELAND_GATE);
+    const startWorld = createServerWorld('camping', 'camp', SEED, HERO);
+    const gate = placeBeside(startWorld, HEXOBJECT_KEYS.HOMELAND_GATE);
     const stored = createServerWorld('silesia', 'silesia-saved', SEED, HERO);
-    const run = runOf(origin, { silesia: stored });
+    const run = runOf(startWorld, { silesia: stored });
     run.progress.quests.active.push({ questId: 'seeker-1', progress: 0, state: 'active' });
     installQuestEntrances(stored, run.progress);
     const marker = stored.map.tiles.find(
@@ -206,10 +206,10 @@ describe('a gate on the server', () => {
     expect(run.progress).toEqual(before);
   });
   it('charges the Will printed on the gate, takes the stored map and leaves a static board as it is', () => {
-    const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
-    const spot = placeBeside(origin, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const startWorld = createServerWorld('silesia', 'silesia-1', SEED, HERO);
+    const spot = placeBeside(startWorld, HEXOBJECT_KEYS.CAVE_ENTRANCE);
     const stored = createServerWorld('cave', 'cave-1', SEED, HERO);
-    const outcome = travelWorld(runOf(origin, { cave: stored }), {
+    const outcome = travelWorld(runOf(startWorld, { cave: stored }), {
       kind: 'gate',
       coordinates: spot,
     });
@@ -220,9 +220,9 @@ describe('a gate on the server', () => {
   });
 
   it('counts a trip each time the hero enters the cave, and never when he leaves it', () => {
-    const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
-    const spot = placeBeside(origin, HEXOBJECT_KEYS.CAVE_ENTRANCE);
-    const run = runOf(origin, { cave: createServerWorld('cave', 'cave-1', SEED, HERO) });
+    const startWorld = createServerWorld('silesia', 'silesia-1', SEED, HERO);
+    const spot = placeBeside(startWorld, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const run = runOf(startWorld, { cave: createServerWorld('cave', 'cave-1', SEED, HERO) });
     run.progress.trips = 3;
     const entered = travelWorld(run, { kind: 'gate', coordinates: spot });
     if (!entered.ok) throw new Error(entered.code);
@@ -239,18 +239,21 @@ describe('a gate on the server', () => {
   });
 
   it('refuses with too little Will, a hex that is no gate, a gate that is too far and a sealed one', () => {
-    const origin = createServerWorld('silesia', 'silesia-1', SEED, HERO);
-    const spot = placeBeside(origin, HEXOBJECT_KEYS.CAVE_ENTRANCE);
-    const poor = runOf(origin);
+    const startWorld = createServerWorld('silesia', 'silesia-1', SEED, HERO);
+    const spot = placeBeside(startWorld, HEXOBJECT_KEYS.CAVE_ENTRANCE);
+    const poor = runOf(startWorld);
     poor.progress.knowledge.current = 1;
     expect(travelWorld(poor, { kind: 'gate', coordinates: spot })).toMatchObject({
       ok: false,
       code: 'ACTION_REJECTED',
     });
     expect(
-      travelWorld(runOf(origin), { kind: 'gate', coordinates: { columnIndex: 0, rowIndex: 0 } }),
+      travelWorld(runOf(startWorld), {
+        kind: 'gate',
+        coordinates: { columnIndex: 0, rowIndex: 0 },
+      }),
     ).toMatchObject({ ok: false, code: 'NOT_A_GATE' });
-    const sealed = runOf(origin, {}, 1_000);
+    const sealed = runOf(startWorld, {}, 1_000);
     sealed.progress.sealedUntil.cave = 9_000;
     expect(travelWorld(sealed, { kind: 'gate', coordinates: spot })).toMatchObject({
       ok: false,

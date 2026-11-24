@@ -4,7 +4,7 @@ import {
   type PriceRange,
   type TokenPriceRanges,
 } from '../token-content-schema';
-import type { TBaseRealm } from '../token-keys';
+import type { TBaseTokenType } from '../token-keys';
 import type { IPriceGenerator } from './token-generation';
 
 export const PRICE_BANDS = 3;
@@ -25,8 +25,8 @@ export class RangePriceGenerator implements IPriceGenerator {
     this.ranges = tokenPriceRangesSchema.parse(ranges);
   }
 
-  generate(realm: TBaseRealm, attributeCount: number, rng: RandomNumberGenerator): number {
-    const [min, max] = priceBandOf(this.ranges[realm], attributeCount);
+  generate(tokenType: TBaseTokenType, attributeCount: number, rng: RandomNumberGenerator): number {
+    const [min, max] = priceBandOf(this.ranges[tokenType], attributeCount);
     return min + Math.floor(rng() * (max - min + 1));
   }
 }

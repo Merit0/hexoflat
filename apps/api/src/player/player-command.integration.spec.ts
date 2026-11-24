@@ -392,7 +392,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
         amount: 1,
         token: {
           type: HEXOBJECT_KEYS.SHIELD,
-          realm: 'idol',
+          tokenType: 'idol',
           mapTier: 1,
           attributes: [{ key: 'heart', value: 1 }],
           price: 77,
@@ -432,7 +432,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
     const [shield] = shieldsHeld(await inventoryOf(heroId));
     expect(shield?.token).toMatchObject({
       type: HEXOBJECT_KEYS.SHIELD,
-      rarity: 'idol',
+      tokenType: 'idol',
       attributes: [{ key: 'heart', value: 1 }],
       price: 77,
     });
@@ -608,7 +608,7 @@ describe.skipIf(!dbAvailable)('player command pipeline (real Postgres)', () => {
       .select()
       .from(heroAggregates)
       .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
-    expect(row.schemaVersion).toBe(11);
+    expect(row.schemaVersion).toBe(14);
   });
 
   it('takes a snapshot every 50 revisions', async () => {

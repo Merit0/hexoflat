@@ -1,8 +1,8 @@
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
 import { describe, expect, it } from 'vitest';
 import { createContainer } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { DEFAULT_DROP_CONTEXT } from '../tokens/drop-context';
 import { sampleToken } from '../tokens/token-test-setup';
 import {
   battleWith,
@@ -34,7 +34,7 @@ function ready(bonus = 0): BattleState {
     'hero',
     'target',
   ]);
-  state.tokenOrigin = locationTokenOrigin('cave');
+  state.dropContext = locationDropContext('cave');
   return state;
 }
 
@@ -50,7 +50,7 @@ function baseline(state: BattleState) {
     at: grave.hex,
     tables: grave.tables.map((id) => lootTableOf(id)),
     ...graveLootSource(state, hexKey(grave.hex)),
-    origin: state.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+    dropContext: state.dropContext ?? DEFAULT_DROP_CONTEXT,
     tokenSource: graveTokenSource(state),
   });
 }

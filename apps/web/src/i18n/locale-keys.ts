@@ -9,6 +9,7 @@ import {
   BATTLE_ITEMS,
   BATTLE_OBJECTS,
 } from '@hexoflat/engine/battle/battle-catalogue';
+import { DIMENSION_RULES } from '@hexoflat/engine/content/dimension-rules.content';
 import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
 import { generatedQuestLocaleKeys } from '@hexoflat/engine/quests/quest-generation.content';
 import { describeQuest } from '@hexoflat/engine/quests/objectives';
@@ -72,6 +73,8 @@ export function collectContentLocaleKeys(): string[] {
     keys.add(def.title);
     keys.add(def.tableRule);
   }
+
+  for (const { tableRule } of Object.values(DIMENSION_RULES)) keys.add(tableRule);
 
   for (const resolver of CRIT_RESOLVERS)
     keys.add(resolver.describe(0, BATTLE_RULES.critChanceCap).key);

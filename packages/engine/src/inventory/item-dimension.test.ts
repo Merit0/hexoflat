@@ -3,14 +3,14 @@ import { itemDimensionOf } from './item-dimension';
 import { canStackTogether } from './item-queries';
 import { emptyInventoryState, mintItem } from './inventory-state';
 import { sampleToken } from '../tokens/token-test-setup';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 
 describe('concrete item ownership', () => {
   it('resolves stackables from their own definition and tokens from their own family', () => {
     expect(itemDimensionOf({ key: 'coins' })).toBe('earth');
     expect(itemDimensionOf({ key: 'return-scroll' })).toBe('heaven');
-    for (const rarity of [ERarityKind.GLOOM, ERarityKind.SPARK, ERarityKind.ALIEN]) {
-      const token = sampleToken({ rarity, origin: 'unique', uniqueKey: 'test-unique' });
+    for (const tokenType of [ETokenType.GLOOM, ETokenType.SPARK, ETokenType.ALIEN]) {
+      const token = sampleToken({ tokenType, tier: 'unique', uniqueKey: 'test-unique' });
       expect(itemDimensionOf({ key: 'sword', token })).toBe(token.dimension);
       expect(itemDimensionOf({ key: 'sword', token })).not.toBe('earth');
     }

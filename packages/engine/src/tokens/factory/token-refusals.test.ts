@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AttributeRegistry } from '../registries';
-import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { createTokenFactory } from './create-token-factory';
 import {
   contextFor,
@@ -12,7 +12,7 @@ import { TokenFactory } from './token-factory';
 import type { GenerationContext, ITokenValidator } from './token-generation';
 import { TOKEN_CONTENT } from '../../content/token-content';
 import { createTokenRegistries } from '../../content/token-content';
-import { RealmTypePicker } from './type-picker';
+import { BaseTypePicker } from './type-picker';
 import { AdjectiveNameGenerator } from './name-generator';
 import { ManifestSpriteResolver } from './sprite-resolver';
 import { ManifestSpriteRegistry } from '../sprite-registry';
@@ -33,12 +33,12 @@ describe('TokenFactory.createBase refusals', () => {
   it.each<[string, Partial<GenerationContext>, string, TokenFactory?]>([
     ['an unknown type', { type: 'dragon-egg' }, 'UNKNOWN_TYPE'],
     [
-      'a type not allowed in the realm',
-      { type: 'hammer', realm: ERarityKind.GLOOM },
-      'TYPE_NOT_IN_REALM',
+      'a type not allowed in the tokenType',
+      { type: 'hammer', tokenType: ETokenType.GLOOM },
+      'TYPE_NOT_IN_TOKEN_TYPE',
       sparkOnly,
     ],
-    ['the alien realm', { realm: ERarityKind.ALIEN }, 'ALIEN_NOT_BASE'],
+    ['the alien tokenType', { tokenType: ETokenType.ALIEN }, 'ALIEN_NOT_BASE'],
     ['a source id without a kind', { sourceId: 'cave-chest-4-7' }, 'BAD_SOURCE_ID'],
     ['an invalid source kind', { sourceId: 'Boss:king' }, 'BAD_SOURCE_ID'],
     ['a source key with capitals', { sourceId: 'chest:Cave' }, 'BAD_SOURCE_ID'],
@@ -47,7 +47,7 @@ describe('TokenFactory.createBase refusals', () => {
     expect(refusalOf(contextFor(3, overrides), factory)).toBe(code);
   });
 
-  it('refuses a realm that allows no type', () => {
+  it('refuses a tokenType that allows no type', () => {
     const noIdol = createTokenFactory(
       {
         ...TOKEN_CONTENT,
@@ -57,7 +57,9 @@ describe('TokenFactory.createBase refusals', () => {
       extendedManifest(),
       [],
     );
-    expect(refusalOf(contextFor(3, { realm: ERarityKind.IDOL }), noIdol)).toBe('NO_TYPE_IN_REALM');
+    expect(refusalOf(contextFor(3, { tokenType: ETokenType.IDOL }), noIdol)).toBe(
+      'NO_TYPE_IN_TOKEN_TYPE',
+    );
   });
 
   it('returns the validator refusal for a token that fails the schema', () => {
@@ -66,15 +68,17 @@ describe('TokenFactory.createBase refusals', () => {
       validateAttributes: () => ({ ok: true, value: true }),
       validate: () => ({ ok: false, refusal: { code: 'INVALID_TOKEN', message: 'test' } }),
     };
+    const attributeGenerator = createEquipmentAttributeGenerator(
+      new AttributeRegistry(TOKEN_CONTENT.attributes),
+      TOKEN_CONTENT.profiles,
+    );
     const factory = new TokenFactory({
       baseItems,
-      typePicker: new RealmTypePicker(types),
+      typePicker: new BaseTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(TOKEN_CONTENT.adjectives),
       spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(SPRITE_MANIFEST)),
-      attributeGenerator: createEquipmentAttributeGenerator(
-        new AttributeRegistry(TOKEN_CONTENT.attributes),
-        TOKEN_CONTENT.profiles,
-      ),
+      attributeGenerator,
+      uniqueAttributeGenerator: attributeGenerator,
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(TOKEN_CONTENT.priceRanges),
       descriptionBuilder: new SpecSheetDescriptionBuilder(),
@@ -101,7 +105,6 @@ describe('TokenFactory.createBase refusals', () => {
         sourceId,
         n: 0,
         mapTier: 1,
-        ownedUniques: [],
       });
       expect(unique.ok ? null : unique.refusal.code).toBe('SOURCE_ID_CONTAINS_SEED');
     }

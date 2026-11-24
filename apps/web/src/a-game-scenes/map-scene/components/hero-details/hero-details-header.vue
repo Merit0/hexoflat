@@ -11,8 +11,11 @@
         {{ view.rank.roman }} · {{ view.rank.title }}
       </div>
       <div class="chips" data-testid="hero-details-chips">
-        <span class="chip" data-testid="topbar-map-chip">{{ view.locationTitle }}</span>
+        <span class="chip" data-testid="topbar-map-chip">{{
+          view.locationTitle ?? labels.noLocation
+        }}</span>
         <DimensionLabel v-if="view.locationDimension" :dimension="view.locationDimension" />
+        <DimensionLabel :dimension="view.origin" origin data-testid="hero-details-origin" />
       </div>
     </div>
     <template v-if="view.will">

@@ -1,3 +1,4 @@
+import { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
 import { describe, expect, it } from 'vitest';
 import { buildHeroDetails, SHIELD_SLOTS, type HeroDetailsInput } from './use-hero-details';
@@ -5,6 +6,7 @@ import { buildHeroDetails, SHIELD_SLOTS, type HeroDetailsInput } from './use-her
 const base: HeroDetailsInput = {
   name: 'Aria',
   locationTitle: 'Camp',
+  origin: EDimension.NOWHERE,
   steps: 0,
   currentHealth: 3,
   maxHealth: 3,
@@ -23,8 +25,8 @@ const base: HeroDetailsInput = {
   defense: 0,
 };
 
-const swordItem = { titleKey: 'content.sword.title', rarity: null, willCost: null };
-const shieldItem = { titleKey: 'content.shield.title', rarity: null, willCost: null };
+const swordItem = { titleKey: 'content.sword.title', lightName: null, willCost: null };
+const shieldItem = { titleKey: 'content.shield.title', lightName: null, willCost: null };
 const sword = { item: swordItem, power: 2 };
 const shield = { item: shieldItem, sides: 2 };
 

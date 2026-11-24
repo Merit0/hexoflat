@@ -4,6 +4,7 @@ import { Logger } from '@nestjs/common';
 import { serializeState, type HexEngineState } from '@hexoflat/engine';
 import HexMapModel from '@hexoflat/engine/map/models/hex-map-model';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 import { scenarios } from '../db/schema';
 import type { Db } from '../db/db.module';
 import type { HeroesService } from '../heroes/heroes.service';
@@ -94,6 +95,7 @@ const HERO: IHero = {
   imgPath: '/hero.png',
   heroLocation: { columnIndex: 3, rowIndex: 4 },
   heroSteps: 7,
+  origin: EDimension.NOWHERE,
 };
 
 describe('ScenarioStateService', () => {

@@ -93,12 +93,6 @@
     "rejected": "Action not completed. Check your answer and the current challenge state."
   },
   "itemTooltip": {
-    "rarity": {
-      "gloom": "Gloom",
-      "idol": "Idol",
-      "spark": "Spark",
-      "alien": "Alien"
-    },
     "equipped": "Equipped",
     "willUse": "Use: {will} Will",
     "willLocked": "Needs the Teleport skill",
@@ -146,6 +140,7 @@
     "hearts": "{count, plural, one {+# heart} other {+# hearts}}"
   },
   "heroDetails": {
+    "noLocation": "No location",
     "vitals": {
       "hearts": "Hearts",
       "shields": "Shields",
@@ -749,6 +744,7 @@
     },
     "error": {
       "EMPTY_SOURCE": "There is nothing in that cell.",
+      "BUY_BACK_GONE": "The trader no longer has this item. The day has ended.",
       "PRICE_CHANGED": "The price has changed. Look again.",
       "NOT_ENOUGH_COINS": "Not enough coins.",
       "NOT_TRADEABLE": "The trader is not interested in that.",
@@ -817,6 +813,11 @@
       "emptyTitle": "Nothing to buy back",
       "emptyHint": "Items you sell wait here at the price Ilva paid, until she gets new goods."
     },
+    "uniqueBuyback": {
+      "title": "Unique items you sold",
+      "hint": "Ilva keeps them until the end of the day.",
+      "action": "Buy back"
+    },
     "toast": {
       "bought": "Bought {name} · −{price} coins",
       "sold": "Sold {name} · +{price} coins",
@@ -870,7 +871,8 @@
     "close": "Close the quest board",
     "claim": "Claim",
     "reward": {
-      "will": "{n} Will"
+      "will": "{n} Will",
+      "rolled": "Attributes are rolled on turn-in."
     },
     "refusal": {
       "UNKNOWN_QUEST": "This quest does not exist.",
@@ -1143,6 +1145,7 @@
   },
   "dimensions": {
     "label": "Dimension: {name}",
+    "origin": "Origin: {name}",
     "heaven": "Heaven",
     "earth": "Earth",
     "underworld": "Underworld",

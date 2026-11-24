@@ -6,8 +6,8 @@ import {
   rollContainerContents,
   type ContainerState,
 } from '../containers';
-import { type TokenOrigin } from '../tokens/token-origin';
-import { questTokenOrigin, questTokenSource } from './quest-token-origin';
+import { type DropContext } from '../tokens/drop-context';
+import { questDropContext, questTokenSource } from './quest-drop-context';
 import { lootTableOf } from '../content/loot-tables.content';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
@@ -34,16 +34,16 @@ export function generateChestDrop(input: {
   seed: string;
   chestHex: IHexCoordinates;
   tableId: string | undefined;
-  origin?: TokenOrigin;
+  dropContext?: DropContext;
 }): LootDrop[] {
-  if (!input.origin) throw new Error('TOKEN_ORIGIN_REQUIRED: quest chest');
+  if (!input.dropContext) throw new Error('DROP_CONTEXT_REQUIRED: quest chest');
   const [drops] = rollContainerContents({
     kind: 'quest-chest',
     tables: [lootTableOf(input.tableId)],
     seed: input.seed,
     sourceId: input.seed,
     targetKey: coordinateKey(input.chestHex),
-    origin: input.origin,
+    dropContext: input.dropContext,
     tokenSource: questTokenSource({ seed: input.seed }),
   });
   return drops ?? [];
@@ -62,7 +62,7 @@ export function createSeekerChestContainer(
     seed: run.seed,
     sourceId: run.seed,
     targetKey: coordinateKey(hex),
-    origin: questTokenOrigin(run),
+    dropContext: questDropContext(run),
     tokenSource: questTokenSource(run),
   });
 }
@@ -98,7 +98,7 @@ const CHEST_SPACE = questChestSpace({
       seed: source.seed,
       chestHex: source.chest!.hex,
       tableId,
-      origin: questTokenOrigin(source),
+      dropContext: questDropContext(source),
     }),
   seen: seenAround,
 });

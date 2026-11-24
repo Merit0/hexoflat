@@ -1,4 +1,4 @@
-import { EDimension, dimensionSchema } from '../dimensions/dimensions';
+import { EDimension, locationDimensionSchema } from '../dimensions/dimensions';
 import type HexMapModel from '../map/models/hex-map-model';
 import type { TFogPolicy } from '../map/models/hex-map-model';
 import type { THexobjectKey } from './hexobjects-registry';
@@ -97,7 +97,7 @@ export class MapRegistry {
 
   static get(key: LocationKey): MapDefinition {
     const definition = this.defs[key];
-    dimensionSchema.parse(definition.dimension);
+    locationDimensionSchema.parse(definition.dimension);
     if (definition.dimension !== LOCATION_DIMENSIONS[key])
       throw new Error(`location:${key}: owner differs from its execution dimension`);
     return definition;

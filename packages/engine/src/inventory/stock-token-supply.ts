@@ -1,13 +1,13 @@
 import { tokenSourceIdOf } from '../tokens/game-tokens';
-import { type TokenOrigin } from '../tokens/token-origin';
+import { type DropContext } from '../tokens/drop-context';
 import type { InventoryState } from './inventory-state';
 import type { TokenSupply } from './apply-stock';
 
 export function stockTokenSupply(
   inventory: InventoryState | undefined,
-  source: { seed: string; sourceId: string; origin?: TokenOrigin } | undefined,
+  source: { seed: string; sourceId: string; dropContext?: DropContext } | undefined,
 ): TokenSupply | undefined {
-  if (!inventory || !source?.origin) return undefined;
+  if (!inventory || !source?.dropContext) return undefined;
   return {
     mint: {
       seed: source.seed,
@@ -17,7 +17,7 @@ export function stockTokenSupply(
         inventory.heroId,
         String(inventory.idSeq),
       ),
-      origin: source.origin,
+      dropContext: source.dropContext,
     },
   };
 }

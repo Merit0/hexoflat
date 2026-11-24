@@ -62,8 +62,8 @@ describe('REQ-SRV-RSP-001 a defeated hero is respawned in the camp by the server
     expect(out.destination.locationKey).toBe('camping');
     expect(out.progress.presence).toMatchObject({ locationKey: 'camping', mapId: 'camp-1' });
     expect(out.progress.health.current).toBe(1);
-    expect(out.origin.battle).toBeNull();
-    expect(out.origin.engagement).toBeNull();
+    expect(out.departed.battle).toBeNull();
+    expect(out.departed.engagement).toBeNull();
   });
 
   it('keeps a static location as it is and leaves the Will, skills and sealing alone', () => {

@@ -13,29 +13,29 @@ const RESPAWN_LOCATION = 'camping';
 const RESPAWN_HEARTS = 1;
 
 export function respawnWorld(run: TravelRun): TravelOutcome {
-  const { world: origin } = run;
+  const { world: departed } = run;
   const progress = structuredClone(run.progress);
   const hero = heroOf({ ...run, progress });
   if (!hero) return { ok: false, code: 'NO_POSITION', events: [], effects: [] };
 
   const closure = closePortalIfOpen(
-    { map: origin.map, heroes: { [run.heroId]: hero } },
+    { map: departed.map, heroes: { [run.heroId]: hero } },
     run.heroId,
     { kind: 'DEATH' },
   );
   progress.portal = hero.portal ?? null;
-  origin.battle = null;
-  origin.engagement = null;
+  departed.battle = null;
+  departed.engagement = null;
 
-  const inCamp = origin.locationKey === RESPAWN_LOCATION;
+  const inCamp = departed.locationKey === RESPAWN_LOCATION;
   const replaced =
-    !inCamp && freshAfterDeath(MapRegistry.get(origin.locationKey).boardKind)
-      ? run.create(origin.locationKey)
+    !inCamp && freshAfterDeath(MapRegistry.get(departed.locationKey).boardKind)
+      ? run.create(departed.locationKey)
       : null;
   const destination: ServerWorld = inCamp
-    ? origin
+    ? departed
     : (run.loadStored(RESPAWN_LOCATION) ?? run.create(RESPAWN_LOCATION));
-  const touched = removeClosedPortals(closure, [origin, destination], run);
+  const touched = removeClosedPortals(closure, [departed, destination], run);
 
   destination.heroCoordinates = destination.heroCoordinates ?? { columnIndex: 0, rowIndex: 0 };
   revealAroundHero(destination.map, destination.heroCoordinates, heroFogRadius(run.inventory));
@@ -51,12 +51,12 @@ export function respawnWorld(run: TravelRun): TravelOutcome {
     ...closure,
     {
       type: 'HERO_RESPAWNED',
-      payload: { heroId: run.heroId, from: origin.locationKey, to: RESPAWN_LOCATION },
+      payload: { heroId: run.heroId, from: departed.locationKey, to: RESPAWN_LOCATION },
     },
   ];
   return {
     ok: true,
-    origin,
+    departed,
     destination,
     replaced,
     touched,

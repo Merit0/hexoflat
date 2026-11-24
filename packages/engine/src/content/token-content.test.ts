@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { itemShieldBase } from '../battle/shield-stats';
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { BATTLE_ITEMS, battleItemOfHexobject } from '../battle/battle-catalogue';
 import { BATTLE_RULES } from '../battle/battle-content';
 import { EHexActionType } from '../enums/hex-action-type';
@@ -129,10 +129,10 @@ describe('item token content', () => {
   });
 
   it('keeps the current sword price inside the idol range', () => {
-    const [min, max] = TOKEN_PRICE_RANGES[ERarityKind.IDOL];
+    const [min, max] = TOKEN_PRICE_RANGES[ETokenType.IDOL];
     expect(coinPriceOf('sword')).toBeGreaterThanOrEqual(min);
     expect(coinPriceOf('sword')).toBeLessThanOrEqual(max);
-    expect(ERarityKind.ALIEN in TOKEN_PRICE_RANGES).toBe(false);
+    expect(ETokenType.ALIEN in TOKEN_PRICE_RANGES).toBe(false);
   });
 });
 

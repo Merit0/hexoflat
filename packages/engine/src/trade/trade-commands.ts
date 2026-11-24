@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { TRADER_KEYS } from '../content/traders.content';
 import { BAG_CAPACITY } from '../inventory/bag-layout';
+import { uniqueInstanceIdSchema } from '../tokens/token-keys';
 import { LISTING_MAX_PRICE, LISTING_SLOTS } from './listing-state';
 
 const base = {
@@ -105,7 +106,14 @@ export const ShopRefreshCommandSchema = z.object({
 });
 export type ShopRefreshCommand = z.infer<typeof ShopRefreshCommandSchema>;
 
+export const ShopBuyBackUniqueCommandSchema = z.object({
+  type: z.literal('SHOP_BUY_BACK_UNIQUE'),
+  payload: z.object({ ...listingBase, instanceId: uniqueInstanceIdSchema }),
+});
+export type ShopBuyBackUniqueCommand = z.infer<typeof ShopBuyBackUniqueCommandSchema>;
+
 export type ShopCommand =
+  | ShopBuyBackUniqueCommand
   | ShopListCommand
   | ShopUnlistCommand
   | ShopRepriceCommand

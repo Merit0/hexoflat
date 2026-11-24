@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import {
   descriptionLineSchema,
   emptyTokenExtensions,
@@ -25,8 +25,8 @@ const CASES: SchemaCase[] = [
     valid: sampleToken(),
     invalid: [
       ['an unknown field', { ...sampleToken(), durability: 30 }],
-      ['a base alien token', sampleToken({ rarity: ERarityKind.ALIEN })],
-      ['a unique token without uniqueKey', sampleToken({ origin: 'unique' })],
+      ['a base alien token', sampleToken({ tokenType: ETokenType.ALIEN })],
+      ['a unique token without uniqueKey', sampleToken({ tier: 'unique' })],
       [
         'a generated name with neither prefix nor suffix',
         sampleToken({ name: { kind: 'generated', noun: 'sword' } }),
@@ -57,7 +57,7 @@ const CASES: SchemaCase[] = [
   {
     name: 'DescriptionLine',
     schema: descriptionLineSchema,
-    valid: { key: 'content.tokens.noun.sword', params: { strike: 2, realm: 'idol' } },
+    valid: { key: 'content.tokens.noun.sword', params: { strike: 2, tokenType: 'idol' } },
     invalid: [
       ['a key outside content', { key: 'tokens.noun.sword', params: {} }],
       ['a boolean param', { key: 'content.tokens.noun.sword', params: { strike: true } }],

@@ -1,9 +1,9 @@
 import { EDimension } from '../../dimensions/dimensions';
-import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { TOKEN_CONTENT, type TokenContent } from '../../content/token-content';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
 import type { SpriteManifest } from '../sprite-files';
-import { BASE_REALMS, MAP_TIERS, wordKeyOf } from '../token-keys';
+import { BASE_TOKEN_TYPES, MAP_TIERS, wordKeyOf } from '../token-keys';
 import {
   attributeHintKey,
   attributeLabelKey,
@@ -21,8 +21,8 @@ export function contextFor(
     seed: String(index),
     sourceId: 'test:factory',
     n: index,
-    realm: BASE_REALMS[index % BASE_REALMS.length],
-    mapTier: MAP_TIERS[Math.floor(index / BASE_REALMS.length) % MAP_TIERS.length],
+    tokenType: BASE_TOKEN_TYPES[index % BASE_TOKEN_TYPES.length],
+    mapTier: MAP_TIERS[Math.floor(index / BASE_TOKEN_TYPES.length) % MAP_TIERS.length],
     ...overrides,
   };
 }
@@ -31,7 +31,7 @@ export function mixedContexts(
   count: number,
   typeKeys: readonly (string | undefined)[],
 ): GenerationContext[] {
-  const combos = BASE_REALMS.length * MAP_TIERS.length;
+  const combos = BASE_TOKEN_TYPES.length * MAP_TIERS.length;
   return Array.from({ length: count }, (_, offset) => {
     const index = offset + 1;
     return contextFor(index, { type: typeKeys[Math.floor(index / combos) % typeKeys.length] });
@@ -75,7 +75,7 @@ export function extendedContent(): TokenContent {
         strike: 3,
         tool: null,
         nounKey: wordKeyOf('noun', 'hammer'),
-        realms: [ERarityKind.SPARK],
+        tokenTypes: [ETokenType.SPARK],
         group: 'weapon',
         gender: 'm',
         materials: ['iron'],
@@ -103,8 +103,8 @@ export function extendedManifest(): SpriteManifest {
       ...SPRITE_MANIFEST.entries,
       {
         key: 'spark-hammer-01',
-        origin: 'base',
-        realm: ERarityKind.SPARK,
+        tier: 'base',
+        tokenType: ETokenType.SPARK,
         type: 'hammer',
         path: '/hex-assets/items/base/spark-hammer/spark-hammer-01.png',
       },

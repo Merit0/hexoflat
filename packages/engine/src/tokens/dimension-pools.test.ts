@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EDimension } from '../dimensions/dimensions';
 import { availableInDimension } from '../dimensions/availability';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { BASE_ITEMS } from '../content/base-items.content';
 import { TOKEN_CONTENT } from '../content/token-content';
 import { TOKEN_UNIQUES } from '../content/token-uniques.content';
@@ -18,24 +18,24 @@ const context = {
   sourceId: 'test:scope',
   n: 0,
   mapTier: 1 as const,
-  realm: ERarityKind.SPARK,
+  tokenType: ETokenType.SPARK,
 };
 const factory = createTokenFactory();
 
-function baseToken(baseKey: string, realm = ERarityKind.SPARK) {
-  const result = factory.createBase({ ...context, baseKey, realm });
+function baseToken(baseKey: string, tokenType = ETokenType.SPARK) {
+  const result = factory.createBase({ ...context, baseKey, tokenType });
   if (!result.ok) throw new Error(result.refusal.code);
   return result.value;
 }
 
 describe('separate concrete dimensional catalogues', () => {
   it.each([
-    [ERarityKind.IDOL, EDimension.EARTH],
-    [ERarityKind.GLOOM, EDimension.UNDERWORLD],
-    [ERarityKind.SPARK, EDimension.HEAVEN],
-  ] as const)('%s selects only owned base definitions', (realm, dimension) => {
+    [ETokenType.IDOL, EDimension.EARTH],
+    [ETokenType.GLOOM, EDimension.UNDERWORLD],
+    [ETokenType.SPARK, EDimension.HEAVEN],
+  ] as const)('%s selects only owned base definitions', (tokenType, dimension) => {
     for (let n = 0; n < 100; n++) {
-      const made = factory.createBase({ ...context, realm, n });
+      const made = factory.createBase({ ...context, tokenType, n });
       if (!made.ok) throw new Error(made.refusal.code);
       const definition = BASE_ITEMS.find((entry) => entry.key === made.value.baseKey)!;
       expect(definition.dimension).toBe(dimension);
@@ -49,14 +49,17 @@ describe('separate concrete dimensional catalogues', () => {
       ok: false,
       refusal: { code: 'BASE_ITEM_NOT_IN_DIMENSION' },
     });
-    expect(baseToken('heaven-sword')).toMatchObject({ baseKey: 'heaven-sword', rarity: 'spark' });
+    expect(baseToken('heaven-sword')).toMatchObject({
+      baseKey: 'heaven-sword',
+      tokenType: 'spark',
+    });
     expect(factory.createBase({ ...context, baseKey: 'missing' }).ok).toBe(false);
     expect(
-      itemTokenSchema.safeParse({ ...baseToken('heaven-sword'), baseKey: 'earth-sword' }).success,
+      itemTokenSchema.safeParse({ ...baseToken('heaven-sword'), baseKey: 'earth-shield' }).success,
     ).toBe(false);
   });
 
-  it('permits an explicitly shared base and preserves its owner in a foreign dimension', () => {
+  it('D4: an explicitly shared base takes the carrier dimension', () => {
     const shared = createTokenFactory({
       ...TOKEN_CONTENT,
       baseItems: TOKEN_CONTENT.baseItems.map((item) =>
@@ -67,8 +70,8 @@ describe('separate concrete dimensional catalogues', () => {
     if (!result.ok) throw new Error(result.refusal.code);
     expect(result.value).toMatchObject({
       baseKey: 'earth-sword',
-      dimension: 'earth',
-      rarity: 'idol',
+      dimension: 'heaven',
+      tokenType: 'spark',
     });
     expect(itemTokenSchema.parse(result.value)).toEqual(result.value);
   });
@@ -97,13 +100,17 @@ describe('separate concrete dimensional catalogues', () => {
     ).toBe(false);
   });
 
-  it('keeps manually authored unique stats and skills fixed and respects source scope', () => {
+  it('keeps the authored layer, skills and price of a unique and respects source scope', () => {
     const definition = TOKEN_UNIQUES.find((entry) => entry.key === 'lantern-eater')!;
-    const uniqueContext = { ...context, dimension: EDimension.UNDERWORLD, ownedUniques: [] };
+    const uniqueContext = { ...context, dimension: EDimension.UNDERWORLD };
     for (let n = 0; n < 10; n++) {
       const made = factory.createUnique(definition.key, { ...uniqueContext, n });
       if (!made.ok) throw new Error(made.refusal.code);
-      expect(made.value.attributes).toEqual(definition.attributes);
+      for (const { attribute, min, max } of definition.authoredAttributes) {
+        const rolled = made.value.attributes.find((entry) => entry.key === attribute);
+        expect(rolled?.value).toBeGreaterThanOrEqual(min);
+        expect(rolled?.value).toBeLessThanOrEqual(max);
+      }
       expect(made.value.skills).toEqual(definition.skills);
       expect(made.value.price).toBe(definition.price);
     }
@@ -175,7 +182,7 @@ describe('shared and private loot availability', () => {
       seed: 'scope',
       sourceId: 'scope',
       targetKey: '0,0',
-      origin: { realm: ERarityKind.SPARK, mapTier: 1 },
+      dropContext: { tokenType: ETokenType.SPARK, mapTier: 1 },
     });
     for (const drop of container.contents!.flat()) {
       expect(drop.baseKey).not.toBe('earth-sword');

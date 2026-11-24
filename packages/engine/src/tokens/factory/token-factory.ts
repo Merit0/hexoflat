@@ -1,19 +1,19 @@
-import { availableInDimension } from '../../dimensions/availability';
+import { uniqueAvailableInDimension } from '../../dimensions/availability';
 import { pickBaseItem } from './base-item-picker';
 import type { BaseItemRegistry } from '../base-item-registry';
-import { dimensionOfItemFamily, itemFamilyOfDimension } from '../../dimensions/dimensions';
+import { dimensionOfTokenType, tokenTypeAllowsTier } from '../../dimensions/dimensions';
 import { decodedSourceId } from '../source-id';
-import { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { deriveStream } from '../../utils/random-seeded';
 import {
-  BASE_REALMS,
   itemTokenIdOf,
   tokenSourceIdSchema,
   mapTierSchema,
-  type TBaseRealm,
+  type TBaseTokenType,
 } from '../token-keys';
 import type { TypeRegistry, UniqueRegistry } from '../registries';
 import { emptyTokenExtensions, type ItemToken } from '../token-schema';
+import { rollAuthoredAttributes, uniqueInstanceId } from '../unique-instance';
 import type { UniqueTokenDefinition } from '../unique-schema';
 import type { IAttributeGenerator as IEquipmentAttributeGenerator } from '../equipment/generator/generator-contracts';
 import { seededRandomStreams } from '../equipment/generator/attribute-streams';
@@ -28,7 +28,6 @@ import {
   type ISpriteResolver,
   type ITokenValidator,
   type ITypePicker,
-  type IUniqueSpriteResolver,
   type TokenOverrides,
   type TokenResult,
   type TTokenStep,
@@ -41,6 +40,7 @@ export interface TokenFactoryParts {
   nameGenerator: INameGenerator;
   spriteResolver: ISpriteResolver;
   attributeGenerator: IEquipmentAttributeGenerator;
+  uniqueAttributeGenerator: IEquipmentAttributeGenerator;
   skillGenerator: ISkillGenerator;
   priceGenerator: IPriceGenerator;
   descriptionBuilder: IDescriptionBuilder;
@@ -50,15 +50,14 @@ export interface TokenFactoryParts {
 export interface UniqueTokenParts {
   types: TypeRegistry;
   uniques: UniqueRegistry;
-  spriteResolver: IUniqueSpriteResolver;
 }
 
 export function tokenStreamLabel(id: string, step: TTokenStep): string {
   return `token:${id}:${step}`;
 }
 
-function baseRealmOf(realm: ERarityKind): TBaseRealm | null {
-  return (BASE_REALMS as readonly ERarityKind[]).includes(realm) ? (realm as TBaseRealm) : null;
+function baseTokenTypeOf(tokenType: ETokenType): TBaseTokenType | null {
+  return tokenTypeAllowsTier(tokenType, 'base') ? (tokenType as TBaseTokenType) : null;
 }
 
 function plainText(value: string): string {
@@ -96,15 +95,6 @@ function sourceRefusal(ctx: {
   return null;
 }
 
-function contextRefusal(ctx: GenerationContext): TokenResult<never> | null {
-  const refusal = sourceRefusal(ctx);
-  if (refusal) return refusal;
-  if (baseRealmOf(ctx.realm) === null) {
-    return refuseToken('ALIEN_NOT_BASE', `${ctx.realm} items are unique only`);
-  }
-  return null;
-}
-
 export class TokenFactory {
   constructor(
     private readonly parts: TokenFactoryParts,
@@ -112,14 +102,17 @@ export class TokenFactory {
   ) {}
 
   createBase(ctx: GenerationContext, overrides: TokenOverrides = {}): TokenResult<ItemToken> {
-    const refusal = contextRefusal(ctx);
+    const refusal = sourceRefusal(ctx);
     if (refusal) return refusal;
+    const tokenType = baseTokenTypeOf(ctx.tokenType);
+    if (tokenType === null) {
+      return refuseToken('ALIEN_NOT_BASE', `${ctx.tokenType} items are unique only`);
+    }
     const id = itemTokenIdOf(ctx.sourceId, ctx.n);
     const stream = (step: TTokenStep) => deriveStream(ctx.seed, tokenStreamLabel(id, step));
     const base = pickBaseItem(this.parts.baseItems, ctx, stream('type'));
     if (!base.ok) return base;
-    const realm = baseRealmOf(itemFamilyOfDimension(base.value.dimension)) as TBaseRealm;
-    const picked = this.parts.typePicker.pick(realm, base.value.type);
+    const picked = this.parts.typePicker.pick(tokenType, base.value.type);
     if (!picked.ok) return picked;
     const type = picked.value;
     if (!type.group) return refuseToken('INVALID_TOKEN', `item type "${type.key}" has no group`);
@@ -136,19 +129,19 @@ export class TokenFactory {
     const attributeCount = attributes.length;
     return this.parts.validator.validate({
       id,
-      origin: 'base',
+      tier: 'base',
       baseKey: base.value.key,
       type: type.key,
-      rarity: realm,
-      dimension: dimensionOfItemFamily(realm),
+      tokenType: tokenType,
+      dimension: dimensionOfTokenType(tokenType),
       name: this.parts.nameGenerator.generate({ type, attributeCount }, stream('name')),
-      description: this.parts.descriptionBuilder.build({ type, realm, mapTier: ctx.mapTier }),
+      description: this.parts.descriptionBuilder.build({ type, tokenType, mapTier: ctx.mapTier }),
       attributes,
       skills: this.parts.skillGenerator.generate(type, stream('skills')),
       price:
         overrides.price ??
-        this.parts.priceGenerator.generate(realm, attributeCount, stream('price')),
-      sprite: this.parts.spriteResolver.resolve(type, realm, stream('sprite')),
+        this.parts.priceGenerator.generate(tokenType, attributeCount, stream('price')),
+      sprite: this.parts.spriteResolver.resolve(type, tokenType, stream('sprite')),
       mapTier: ctx.mapTier,
       generatorVersion: TOKEN_GENERATOR_VERSION,
       ext: emptyTokenExtensions(),
@@ -162,11 +155,8 @@ export class TokenFactory {
     if (!unique?.uniques.has(uniqueKey)) {
       return refuseToken('UNKNOWN_UNIQUE', `unique "${uniqueKey}" is not in the UniqueRegistry`);
     }
-    if (ctx.ownedUniques.includes(uniqueKey)) {
-      return refuseToken('UNIQUE_ALREADY_OWNED', `the hero already owns unique "${uniqueKey}"`);
-    }
     const definition = unique.uniques.get(uniqueKey);
-    if (ctx.dimension !== undefined && !availableInDimension(definition, ctx.dimension))
+    if (ctx.dimension !== undefined && !uniqueAvailableInDimension(definition, ctx.dimension))
       return refuseToken('UNIQUE_NOT_IN_DIMENSION', 'Unique is outside the source dimension pool');
     if (!unique.types.has(definition.type)) {
       return refuseToken('UNKNOWN_TYPE', `item type "${definition.type}" is not in the registry`);
@@ -181,32 +171,35 @@ export class TokenFactory {
   ): TokenResult<ItemToken> {
     const id = itemTokenIdOf(ctx.sourceId, ctx.n);
     const type = unique.types.get(definition.type);
-    const attributes = definition.attributes.map((attribute) => ({ ...attribute }));
-    const checked = this.parts.validator.validateAttributes({
+    if (!type.group) return refuseToken('INVALID_TOKEN', `item type "${type.key}" has no group`);
+    const rng = seededRandomStreams(ctx.seed);
+    const generated = this.parts.uniqueAttributeGenerator.generate({
+      authoredKeys: definition.authoredAttributes.map((entry) => entry.attribute),
+      level: ctx.mapTier,
+      group: type.group,
       type,
-      origin: 'unique',
-      mapTier: ctx.mapTier,
-      attributes,
+      tokenId: id,
+      rng,
     });
-    if (!checked.ok) return checked;
+    const authored = rollAuthoredAttributes(definition.authoredAttributes, id, rng);
     return this.parts.validator.validate({
       id,
-      origin: 'unique',
+      tier: 'unique',
       uniqueKey: definition.key,
+      instanceId: uniqueInstanceId(ctx.seed, id),
       type: type.key,
-      rarity: definition.rarity,
+      tokenType: definition.tokenType,
       dimension: definition.dimension,
       name: { ...definition.name },
       description: this.parts.descriptionBuilder.build({
         type,
-        realm: definition.rarity,
+        tokenType: definition.tokenType,
         mapTier: ctx.mapTier,
         descriptionKey: definition.descriptionKey,
       }),
-      attributes,
+      attributes: [...generated, ...authored],
       skills: [...definition.skills],
       price: definition.price,
-      sprite: unique.spriteResolver.resolveUnique(definition.key),
       mapTier: ctx.mapTier,
       generatorVersion: TOKEN_GENERATOR_VERSION,
       ext: emptyTokenExtensions(),

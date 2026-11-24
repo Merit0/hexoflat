@@ -85,7 +85,11 @@
       >
         <template v-if="mainReward">
           <span class="reward-main">
-            <quest-reward-icon :reward="mainReward" :size="20" />
+            <quest-reward-icon
+              :reward="mainReward"
+              :unique-reward="row.quest.uniqueReward"
+              :size="20"
+            />
             <b v-if="rewardValue">{{ rewardValue }}</b>
           </span>
           <em v-if="row.rewards.length > 1">{{

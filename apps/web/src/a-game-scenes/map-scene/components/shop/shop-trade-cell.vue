@@ -9,7 +9,7 @@
       :data-trade-index="cell.index"
       :data-item-key="cell.item?.key"
       :data-item-amount="cell.item?.amount"
-      :data-rarity="rarity"
+      :data-light="lightName"
       :data-price="cell.price ?? undefined"
       :tabindex="usable ? 0 : -1"
       :role="usable ? 'button' : undefined"
@@ -66,7 +66,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { TTradeList } from '@hexoflat/engine/trade/trade-types';
-import { itemRarityTone } from '@/render/token-look';
+import { itemLightName } from '@/render/token-look';
 import { itemTitle } from '@/services/tokens/token-text';
 import { showsCounter } from '@/composables/item-counter';
 import type { TooltipPrice } from '@/composables/use-item-tooltip';
@@ -116,8 +116,8 @@ const classes = computed(() => ({
   'is-shake': stashFx.shake === key.value,
 }));
 
-const rarity = computed(() =>
-  props.cell.item ? (itemRarityTone(props.cell.item) ?? undefined) : undefined,
+const lightName = computed(() =>
+  props.cell.item ? (itemLightName(props.cell.item) ?? undefined) : undefined,
 );
 
 const label = computed(() =>

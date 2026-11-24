@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { restoreQuestEntrances, type QuestEntranceAssociations } from '../quests/quest-map-state';
-import { CONTENT_VERSION } from '../content/content-version';
+import { CONTENT_VERSION, isReadableContentVersion } from '../content/content-version';
 import { BASE_FOG_RADIUS, initFog, revealAroundHero, revealEntryTile } from '../map/fog-service';
 import { installCampBook } from '../knowledge/camp-book';
 import { createChestContainers } from '../chests/create-chest-containers';
@@ -10,8 +10,9 @@ import HexMapModel, { type ISerializedHexMap } from '../map/models/hex-map-model
 import { findTilesMissingSpawners } from '../map/resource-hydration';
 import { LOCATION_KEYS, type LocationKey } from '../registry/location-key';
 import { MapRegistry } from '../registry/world-map-registry';
-import { locationTokenOrigin } from '../registry/location-token-origin';
-import { tokenOriginSchema, type TokenOrigin } from '../tokens/token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
+import { upcastDimensionVocabulary } from '../dimensions/upcast-vocabulary';
+import { dropContextSchema, type DropContext } from '../tokens/drop-context';
 import type { BoardDescriptor } from '../boards/board-descriptors';
 import { deriveStream } from '../utils/random-seeded';
 import { applyCommand } from '../commands/apply-command';
@@ -29,7 +30,7 @@ export interface ServerWorld {
   mapId: string;
   map: HexMapModel;
   descriptor: BoardDescriptor | null;
-  tokenOrigin?: TokenOrigin;
+  dropContext?: DropContext;
   heroCoordinates: IHexCoordinates | null;
   worldSeed: string;
   engagement: Engagement | null;
@@ -45,7 +46,7 @@ export const serializedWorldSchema = z.object({
   mapId: z.string().min(1),
   map: z.custom<ISerializedHexMap>((value) => typeof value === 'object' && value !== null),
   descriptor: z.unknown().nullable(),
-  tokenOrigin: tokenOriginSchema.optional(),
+  dropContext: dropContextSchema.optional(),
   heroCoordinates: z
     .object({ columnIndex: z.number().int(), rowIndex: z.number().int() })
     .nullable(),
@@ -64,7 +65,7 @@ export function serializeWorld(world: ServerWorld): SerializedWorld {
     mapId: world.mapId,
     map: world.map.toJSON(),
     descriptor: world.descriptor,
-    tokenOrigin: worldTokenOrigin(world),
+    dropContext: worldDropContext(world),
     heroCoordinates: world.heroCoordinates,
     worldSeed: world.worldSeed,
     engagement: world.engagement,
@@ -94,7 +95,7 @@ const staleWorldHeaderSchema = z.object({
 
 export function staleWorldOf(raw: unknown): StaleWorldError | null {
   const header = staleWorldHeaderSchema.safeParse(raw);
-  if (!header.success || header.data.contentVersion === CONTENT_VERSION) return null;
+  if (!header.success || isReadableContentVersion(header.data.contentVersion)) return null;
   return new StaleWorldError(
     header.data.contentVersion,
     header.data.locationKey,
@@ -102,10 +103,10 @@ export function staleWorldOf(raw: unknown): StaleWorldError | null {
   );
 }
 
-export function worldTokenOrigin(
-  world: Pick<ServerWorld, 'locationKey' | 'descriptor' | 'tokenOrigin'>,
-): TokenOrigin {
-  return { ...(world.tokenOrigin ?? locationTokenOrigin(world.locationKey, world.descriptor)) };
+export function worldDropContext(
+  world: Pick<ServerWorld, 'locationKey' | 'descriptor' | 'dropContext'>,
+): DropContext {
+  return { ...(world.dropContext ?? locationDropContext(world.locationKey, world.descriptor)) };
 }
 
 export function worldTokenSecret(
@@ -124,26 +125,33 @@ function withBattleSecret(raw: unknown): unknown {
   return { ...world, battle: { ...battle, tokenSecret } };
 }
 
+function upcastWorldContent(raw: unknown): unknown {
+  const world = withBattleSecret(upcastDimensionVocabulary(raw));
+  const header = staleWorldHeaderSchema.safeParse(world);
+  if (!header.success || !isReadableContentVersion(header.data.contentVersion)) return world;
+  return { ...(world as object), contentVersion: CONTENT_VERSION };
+}
+
 export function deserializeWorld(raw: unknown, now: number): ServerWorld {
   const stale = staleWorldOf(raw);
   if (stale) throw stale;
-  const parsed = serializedWorldSchema.parse(withBattleSecret(raw));
+  const parsed = serializedWorldSchema.parse(upcastWorldContent(raw));
   const map = HexMapModel.fromJSON(parsed.map, now, { keepUseActions: true });
   if (parsed.locationKey === 'camping') installCampFacilities(map, parsed.heroCoordinates);
-  const tokenOrigin =
-    parsed.tokenOrigin ??
-    locationTokenOrigin(parsed.locationKey, parsed.descriptor as BoardDescriptor | null);
+  const dropContext =
+    parsed.dropContext ??
+    locationDropContext(parsed.locationKey, parsed.descriptor as BoardDescriptor | null);
   return {
     locationKey: parsed.locationKey,
     mapId: parsed.mapId,
     map,
     descriptor: parsed.descriptor as BoardDescriptor | null,
-    tokenOrigin,
+    dropContext,
     heroCoordinates: parsed.heroCoordinates,
     worldSeed: parsed.worldSeed,
     engagement: parsed.engagement,
     battle: parsed.battle
-      ? { ...parsed.battle, tokenOrigin: parsed.battle.tokenOrigin ?? { ...tokenOrigin } }
+      ? { ...parsed.battle, dropContext: parsed.battle.dropContext ?? { ...dropContext } }
       : null,
     questEntrances: restoreQuestEntrances(parsed.map, map, parsed.questEntrances),
   };
@@ -175,7 +183,7 @@ export function createServerWorld(
   createChestContainers(map, {
     seed: worldSeed,
     sourceId: mapId,
-    origin: locationTokenOrigin(locationKey, created.descriptor),
+    dropContext: locationDropContext(locationKey, created.descriptor),
   });
 
   const entry = findEntryHex(map, locationKey, deriveStream(worldSeed, 'world')) ?? {
@@ -189,7 +197,7 @@ export function createServerWorld(
     mapId,
     map,
     descriptor: created.descriptor,
-    tokenOrigin: locationTokenOrigin(locationKey, created.descriptor),
+    dropContext: locationDropContext(locationKey, created.descriptor),
     heroCoordinates: entry,
     worldSeed,
     engagement: null,

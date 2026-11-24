@@ -11,7 +11,7 @@
     >
       <header>
         <h3>{{ name }}</h3>
-        <DimensionLabel :dimension="row.quest.dimension" />
+        <DimensionLabel :dimension="questDimension(row.quest)" />
       </header>
       <p v-if="row.timesDone > 0" class="tags">
         {{ t('quest.board.doneTimes', { n: row.timesDone }) }}
@@ -34,8 +34,14 @@
 
         <dt>{{ t('quest.board.label.reward') }}</dt>
         <dd class="rewards">
-          <span v-for="(reward, index) in row.rewards" :key="index" class="pill">
-            <quest-reward-icon :reward="reward" tooltip />{{ rewardText(reward) }}
+          <span v-for="({ reward, unique }, index) in rewards" :key="index" class="pill">
+            <quest-reward-icon
+              :reward="reward"
+              :unique-reward="row.quest.uniqueReward"
+              tooltip
+            /><quest-unique-reward v-if="unique" :preview="unique" /><template v-else>{{
+              rewardText(reward)
+            }}</template>
           </span>
         </dd>
         <dt>{{ t('quest.board.label.rule') }}</dt>
@@ -97,15 +103,18 @@
 </template>
 
 <script setup lang="ts">
-import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { questDimension } from '@hexoflat/engine/quests/quest-definition';
+import DimensionLabel from '@/components/gui/dimension-label.vue';
 import { useHeroStore } from '@/stores/hero-store';
 import type { QuestRowView } from '@/composables/use-quest-board-view';
 import { questCardRuleParams } from '@/services/quests/quest-card-content';
+import { uniqueRewardPreview } from '@/services/quests/quest-unique-reward';
 import { useQuestDetails } from '@/composables/use-quest-details';
 import { useQuestRowActions } from '@/composables/use-quest-row-actions';
 import QuestActionButton from './quest-action-button.vue';
+import QuestUniqueReward from './quest-unique-reward.vue';
 import QuestRewardIcon from './quest-reward-icon.vue';
 import { rewardText } from './quest-reward-text';
 
@@ -124,6 +133,13 @@ const { busy } = actions;
 const card = ref<HTMLElement | null>(null);
 const top = ref(props.anchor.top);
 const left = computed(() => Math.max(MARGIN, props.anchor.left - WIDTH - GAP));
+
+const rewards = computed(() =>
+  props.row.rewards.map((reward) => ({
+    reward,
+    unique: uniqueRewardPreview(reward, props.row.quest.uniqueReward),
+  })),
+);
 
 const percent = computed(() =>
   Math.min(100, (props.row.progress / Math.max(1, props.row.target)) * 100),

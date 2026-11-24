@@ -13,7 +13,7 @@ import { listingSchema, emptyListings } from '../trade/listing-state';
 import { sellPriceOf } from '../trade/price-of';
 import { HERO, ILVA, SWORD, inventoryWith, traderWith } from '../trade/trade-test-setup';
 import { upcastToken } from '../inventory/upcast-item-tokens';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import type { InventoryState } from '../inventory/inventory-state';
 import { createTokenFactory } from './factory/create-token-factory';
 import type { ItemToken } from './token-schema';
@@ -23,7 +23,7 @@ function swordToken(): ItemToken {
     seed: 'foreign-token',
     sourceId: 'test:foreign',
     n: 0,
-    realm: ERarityKind.GLOOM,
+    tokenType: ETokenType.GLOOM,
     mapTier: 3,
     type: 'sword',
   });
@@ -181,7 +181,7 @@ describe('token entry schemas (LG0 B, K)', () => {
         seed: 'unit-seed',
         sourceId: 'test:entry',
         n: 0,
-        realm: token.rarity,
+        tokenType: token.tokenType,
         mapTier: 1,
         type,
       });

@@ -53,7 +53,7 @@ export interface TestTokenAttribute {
 
 export interface TestTokenSpec {
   type: string;
-  realm: 'gloom' | 'idol' | 'spark';
+  tokenType: 'gloom' | 'idol' | 'spark';
   mapTier: 1 | 2 | 3 | 4;
   attributes?: TestTokenAttribute[];
   price?: number;
@@ -62,7 +62,7 @@ export interface TestTokenSpec {
 export interface TestItemToken {
   id: string;
   type: string;
-  rarity: string;
+  tokenType: string;
   price: number;
   attributes: TestTokenAttribute[];
   [field: string]: unknown;
@@ -81,6 +81,7 @@ export interface TestTrader {
     token?: TestItemToken;
   } | null)[];
   buyback: ({ key: string; amount: number; unitPrice: number; token?: TestItemToken } | null)[];
+  uniqueBuyback: { token: TestItemToken; price: number; dayId: number }[];
   refreshPrice: number;
 }
 
@@ -103,6 +104,7 @@ export interface TestQuestFixture {
   active?: { questId: string; progress: number; state: 'active' | 'ready' }[];
   done?: Record<string, number>;
   previousUtcDay?: true;
+  uniqueReward?: true;
 }
 
 export interface TestQuests {
@@ -161,6 +163,16 @@ export interface HexoflatTestApi {
   prepareShieldStrike(openDirections?: boolean): Promise<void>;
   prepareTrophyTarget(): Promise<void>;
   prepareCritTarget(): Promise<void>;
+  forceUniqueDrops(): Promise<void>;
+  getBattleUniqueItems(): {
+    q: number;
+    r: number;
+    tokenId: string;
+    uniqueKey: string | null;
+    tokenType: string;
+    tier: string;
+    light: string | null;
+  }[];
   getLastBattleStrike(): {
     critical: boolean;
     damageBeforeBlock: number;

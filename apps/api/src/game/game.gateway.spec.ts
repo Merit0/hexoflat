@@ -9,6 +9,7 @@ import { io, type Socket as ClientSocket } from 'socket.io-client';
 import { serializeState, type HexEngineState, type SnapshotPayload } from '@hexoflat/engine';
 import { HexMapBuilder } from '@hexoflat/engine/map/builders/hex-map-builder';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 import { scenarios } from '../db/schema';
 import { DB, type Db } from '../db/db.module';
 import { JwtAuthModule } from '../auth/jwt-auth.module';
@@ -104,6 +105,7 @@ function buildHero(overrides: Partial<IHero>): IHero {
     imgPath: '',
     heroLocation: { columnIndex: 0, rowIndex: 0 },
     heroSteps: 0,
+    origin: EDimension.NOWHERE,
     ...overrides,
   };
 }

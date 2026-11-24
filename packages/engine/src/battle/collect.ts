@@ -2,10 +2,12 @@ import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import { pickupStack } from '../loot';
 import { openInSpace } from '../containers';
-import { lootTableIdOfKind } from './battle-catalogue';
+import { carriesUniqueDrops } from '../containers/unique-drops';
+import { lootTableOf } from '../content/loot-tables.content';
+import { fallenEnemies, graveCarriersAt } from './grave-carriers';
 import { createGraveContainer } from './grave-contents';
 import { collectActorRefusal, graveAt, graveSpace } from './grave-container-space';
-import { isAlive, isFreeHex } from './battle-board';
+import { isFreeHex } from './battle-board';
 import type { BattleAction } from './battle-commands';
 import type { BattleCreature, BattleHex, BattleState, CollectState, Grave } from './battle-state';
 import { isAdjacentHex, sameHex } from './hex-battle-geom';
@@ -31,28 +33,22 @@ export function lootLeft(collect: CollectState): boolean {
   return collect.items.length > 0 || collect.graves.some((grave) => !grave.examined);
 }
 
-function deathOrder(state: BattleState, dead: BattleCreature[]): BattleCreature[] {
-  const order = new Map((state.fallen ?? []).map((id, index) => [id, index]));
-  const rank = (creature: BattleCreature) => order.get(creature.id) ?? Number.MAX_SAFE_INTEGER;
-  return [...dead].sort((a, b) => rank(a) - rank(b));
-}
-
 export function enterCollectPhase(state: BattleState): DomainEvent[] {
-  const dead = state.creatures.filter((c) => c.side === 'enemies' && !isAlive(c));
   const graves: Grave[] = [];
-  for (const creature of deathOrder(state, dead)) {
-    const tableId = lootTableIdOfKind(creature.kind);
-    const tables = tableId ? [tableId] : [];
-    const grave = graves.find((g) => sameHex(g.hex, creature.pos));
-    if (grave) grave.tables.push(...tables);
-    else graves.push({ hex: { ...creature.pos }, tables, examined: false });
-  }
-  for (const grave of graves) {
-    const bonuses = deathOrder(state, dead)
-      .filter((creature) => sameHex(creature.pos, grave.hex) && lootTableIdOfKind(creature.kind))
-      .map((creature) => creature.trophyBonus ?? 0);
-    if (bonuses.some((bonus) => bonus > 0)) grave.trophyBonuses = bonuses;
-    grave.container = createGraveContainer(state, grave);
+  for (const { pos } of fallenEnemies(state)) {
+    if (graves.some((grave) => sameHex(grave.hex, pos))) continue;
+    const carriers = graveCarriersAt(state, pos);
+    const bonuses = carriers.map(({ creature }) => creature.trophyBonus ?? 0);
+    const grave: Grave = {
+      hex: { ...pos },
+      tables: carriers.map(({ tableId }) => tableId),
+      dimensions: carriers.map(({ dimension }) => dimension),
+      examined: false,
+      ...(bonuses.some((bonus) => bonus > 0) ? { trophyBonuses: bonuses } : {}),
+    };
+    graves.push({ ...grave, container: createGraveContainer(state, grave) });
+    if (grave.tables.some((id) => carriesUniqueDrops(lootTableOf(id))))
+      delete state.uniqueDropOverride;
   }
   state.collect = { graves, items: [] };
   return [

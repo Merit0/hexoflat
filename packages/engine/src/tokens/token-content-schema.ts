@@ -1,8 +1,14 @@
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { priceRangeSchema, type PriceRange } from '../dimensions/dimensions';
 import { EHexActionType } from '../enums/hex-action-type';
 import { equipmentTypeFieldShape } from './equipment/equipment-keys';
-import { baseRealmSchema, itemTypeKeySchema, wordKeySchemaFor } from './token-keys';
+import {
+  BASE_TOKEN_TYPES,
+  baseTokenTypeSchema,
+  itemTypeKeySchema,
+  wordKeySchemaFor,
+  type TBaseTokenType,
+} from './token-keys';
 
 function distinct<T>(values: readonly T[]): boolean {
   return new Set(values).size === values.length;
@@ -24,7 +30,7 @@ export const itemTypeDefinitionSchema = z.strictObject({
     })
     .nullable(),
   nounKey: wordKeySchemaFor('noun'),
-  realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice'),
+  tokenTypes: z.array(baseTokenTypeSchema).min(1).refine(distinct, 'a token type is listed twice'),
   group: equipmentTypeFieldShape.group.optional(),
   gender: equipmentTypeFieldShape.gender.optional(),
   materials: equipmentTypeFieldShape.materials.optional(),
@@ -37,28 +43,34 @@ export function hasGeneratedName(type: ItemTypeDefinition): boolean {
   return type.tool === null;
 }
 
-const priceRangeSchema = z
-  .tuple([z.number().int().positive(), z.number().int().positive()])
-  .refine(([min, max]) => min <= max, 'min is above max');
-export type PriceRange = z.infer<typeof priceRangeSchema>;
+export { priceRangeSchema, type PriceRange };
 
-export const tokenPriceRangesSchema = z.strictObject({
-  [ERarityKind.GLOOM]: priceRangeSchema,
-  [ERarityKind.IDOL]: priceRangeSchema,
-  [ERarityKind.SPARK]: priceRangeSchema,
-});
+export const tokenPriceRangesSchema = z.strictObject(
+  Object.fromEntries(BASE_TOKEN_TYPES.map((tokenType) => [tokenType, priceRangeSchema])) as Record<
+    TBaseTokenType,
+    typeof priceRangeSchema
+  >,
+);
 export type TokenPriceRanges = z.infer<typeof tokenPriceRangesSchema>;
 
 const wordThemeSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 export const prefixWordSchema = z.strictObject({
   key: wordKeySchemaFor('prefix'),
-  realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice').optional(),
+  tokenTypes: z
+    .array(baseTokenTypeSchema)
+    .min(1)
+    .refine(distinct, 'a token type is listed twice')
+    .optional(),
   theme: wordThemeSchema.optional(),
 });
 export const suffixWordSchema = z.strictObject({
   key: wordKeySchemaFor('suffix'),
-  realms: z.array(baseRealmSchema).min(1).refine(distinct, 'a realm is listed twice').optional(),
+  tokenTypes: z
+    .array(baseTokenTypeSchema)
+    .min(1)
+    .refine(distinct, 'a token type is listed twice')
+    .optional(),
   theme: wordThemeSchema.optional(),
 });
 

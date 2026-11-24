@@ -1,6 +1,6 @@
 import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { claimCampChest } from '../aggregates/claim-camp-chest';
 import { executePlayerCommand } from '../aggregates/execute-player-command';
 import { PLAYER_COMMAND_SCHEMAS } from '../aggregates/player-commands';
@@ -10,13 +10,13 @@ import { lootTableOf, SKELETON_KING_TABLE_ID } from '../content/loot-tables.cont
 import { emptyInventoryState, type InventoryStateItem } from '../inventory/inventory-state';
 import { planClaim } from '../quests/quest-log';
 import { QUESTS } from '../quests/quests.content';
-import { questTokenOrigin } from '../quests/quest-token-origin';
+import { questDropContext } from '../quests/quest-drop-context';
 import {
-  locationTokenOrigin,
-  realmOfBoard,
+  locationDropContext,
+  tokenTypeOfBoard,
   tierOfBoard,
-  tokenOriginOfBoard,
-} from '../registry/location-token-origin';
+  dropContextOfBoard,
+} from '../registry/location-drop-context';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { rollTraderGoods, traderView } from '../trade/trader-view';
 import { TRADERS } from '../content/traders.content';
@@ -29,13 +29,13 @@ function heldTokens(cells: (InventoryStateItem | null)[]) {
   return cells.filter((cell) => cell !== null && isTokenType(cell.key));
 }
 
-describe('LG5b step 3: realmOfBoard', () => {
+describe('LG5b step 3: tokenTypeOfBoard', () => {
   it('gives gloom under ground and idol on the earth', () => {
-    expect(realmOfBoard({ dimension: EDimension.UNDERWORLD })).toBe(ERarityKind.GLOOM);
-    expect(realmOfBoard({ dimension: EDimension.EARTH })).toBe(ERarityKind.IDOL);
-    expect(locationTokenOrigin('cave').realm).toBe(ERarityKind.GLOOM);
-    expect(locationTokenOrigin('camping').realm).toBe(ERarityKind.IDOL);
-    expect(locationTokenOrigin('silesia').realm).toBe(ERarityKind.IDOL);
+    expect(tokenTypeOfBoard({ dimension: EDimension.UNDERWORLD })).toBe(ETokenType.GLOOM);
+    expect(tokenTypeOfBoard({ dimension: EDimension.EARTH })).toBe(ETokenType.IDOL);
+    expect(locationDropContext('cave').tokenType).toBe(ETokenType.GLOOM);
+    expect(locationDropContext('camping').tokenType).toBe(ETokenType.IDOL);
+    expect(locationDropContext('silesia').tokenType).toBe(ETokenType.IDOL);
   });
 
   it('reads the tier of a recipe board and gives 1 to a board without one (D11)', () => {
@@ -52,8 +52,8 @@ describe('LG5b step 3: realmOfBoard', () => {
     expect(tierOfBoard(recipe({ tier: 7 }))).toBe(1);
     expect(tierOfBoard({ kind: 'STATIC', id: 'camping' })).toBe(1);
     expect(tierOfBoard(null)).toBe(1);
-    expect(tokenOriginOfBoard({ dimension: EDimension.UNDERWORLD }, recipe({ tier: 2 }))).toEqual({
-      realm: ERarityKind.GLOOM,
+    expect(dropContextOfBoard({ dimension: EDimension.UNDERWORLD }, recipe({ tier: 2 }))).toEqual({
+      tokenType: ETokenType.GLOOM,
       mapTier: 2,
     });
   });
@@ -68,7 +68,7 @@ describe('LG5b step 4: every creation point gives tokens', () => {
         for (const drop of tile.hexobject?.container?.contents?.flat() ?? []) {
           if (!isTokenType(drop.itemKey)) continue;
           expect(drop.amount).toBe(1);
-          expect(drop.token).toMatchObject({ rarity: ERarityKind.GLOOM, mapTier: 1 });
+          expect(drop.token).toMatchObject({ tokenType: ETokenType.GLOOM, mapTier: 1 });
           expect(drop.token!.id.startsWith('chest:')).toBe(true);
           checked += 1;
         }
@@ -86,35 +86,35 @@ describe('LG5b step 4: every creation point gives tokens', () => {
       seed: 'grave-seed',
       sourceId: 'battle-1',
       targetKey: '0,0',
-      origin: { realm: ERarityKind.GLOOM, mapTier: 2 },
+      dropContext: { tokenType: ETokenType.GLOOM, mapTier: 2 },
     });
     const gear = grave.contents!.flat().filter((drop) => isTokenType(drop.itemKey));
     expect(gear.length).toBeGreaterThan(0);
     for (const drop of gear) {
       expect(drop.token).toMatchObject({
-        rarity: ERarityKind.GLOOM,
+        tokenType: ETokenType.GLOOM,
         mapTier: 2,
         type: drop.itemKey,
       });
-      expect(drop.token!.id.startsWith(`${tokenSourceIdOf('grave', 'battle-1', '0,0')}:`)).toBe(
-        true,
-      );
+      const source = tokenSourceIdOf('grave', 'battle-1', '0,0');
+      const separator = drop.token!.tier === 'unique' ? '.unique.' : ':';
+      expect(drop.token!.id.startsWith(`${source}${separator}`)).toBe(true);
     }
     expect(new Set(gear.map((drop) => drop.token!.id)).size).toBe(gear.length);
   });
 
-  it('a quest chest takes the realm of the map the field was cloned from', () => {
+  it('a quest chest takes the token type of the map the field was cloned from', () => {
     const field = {
       origin: 'silesia' as const,
       background: 'b',
       exit: { columnIndex: 0, rowIndex: 0 },
     };
-    expect(questTokenOrigin({ field: { ...field, tiles: [], mapTier: 1 } })).toEqual({
-      realm: ERarityKind.IDOL,
+    expect(questDropContext({ field: { ...field, tiles: [], mapTier: 1 } })).toEqual({
+      tokenType: ETokenType.IDOL,
       mapTier: 1,
     });
-    expect(questTokenOrigin({ field: { ...field, origin: 'cave', tiles: [] } }).realm).toBe(
-      ERarityKind.GLOOM,
+    expect(questDropContext({ field: { ...field, origin: 'cave', tiles: [] } }).tokenType).toBe(
+      ETokenType.GLOOM,
     );
   });
 
@@ -129,7 +129,7 @@ describe('LG5b step 4: every creation point gives tokens', () => {
     const tokens = heldTokens(result.inventory.stash.cells);
     expect(tokens).toHaveLength(4);
     for (const cell of tokens) {
-      expect(cell!.token).toMatchObject({ rarity: ERarityKind.IDOL, type: cell!.key, mapTier: 1 });
+      expect(cell!.token).toMatchObject({ tokenType: 'idol', type: cell!.key, mapTier: 1 });
     }
   });
 

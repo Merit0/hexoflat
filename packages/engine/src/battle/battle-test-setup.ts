@@ -1,4 +1,4 @@
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
 import type { DomainEvent } from '../commands/types';
 import { BATTLE_RULES, type BattleRules } from './battle-content';
 
@@ -89,7 +89,7 @@ export function battleWith(
     boulders,
     tokenSecret: TEST_TOKEN_SECRET,
   }).battle;
-  return { ...battle, tokenOrigin: locationTokenOrigin('cave') };
+  return { ...battle, dropContext: locationDropContext('cave') };
 }
 
 export function rightAnswer(battle: BattleState): number {

@@ -1,5 +1,5 @@
-import { locationTokenOrigin } from '../registry/location-token-origin';
-import { DEFAULT_TOKEN_ORIGIN } from '../tokens/token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
+import { DEFAULT_DROP_CONTEXT } from '../tokens/drop-context';
 import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { applyBattleCommand } from '../battle/apply-battle';
 import { isFreeHex } from '../battle/battle-board';
@@ -137,7 +137,7 @@ function lootChest(pool: CavePool, runSeed: string, result: RunResult): void {
   const context = {
     seed: `${runSeed}:world`,
     sourceId: `cave-${runSeed}`,
-    origin: locationTokenOrigin('cave'),
+    dropContext: locationDropContext('cave'),
   };
   const rolled = mergedCount([rollChestLoot(pool.chest, context)]);
   const original = pool.chest.hexobject!;
@@ -154,7 +154,7 @@ function lootChest(pool: CavePool, runSeed: string, result: RunResult): void {
       seed: context.seed,
       sourceId: context.sourceId,
       targetKey: key,
-      origin: context.origin,
+      dropContext: context.dropContext,
     }),
   };
   const hero = 'economy-hero';
@@ -209,7 +209,7 @@ function lootGraves(source: BattleState, runSeed: string, label: string, result:
       at: grave.hex,
       tables: grave.tables.map((id) => lootTableOf(id)),
       ...graveLootSource(battle, hexKey(grave.hex)),
-      origin: battle.tokenOrigin ?? DEFAULT_TOKEN_ORIGIN,
+      dropContext: battle.dropContext ?? DEFAULT_DROP_CONTEXT,
       tokenSource: graveTokenSource(battle),
     });
   }

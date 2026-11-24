@@ -12,7 +12,7 @@ import { createRecordingPorts } from './server-ports';
 import type { ServerWorld } from './server-world';
 import { diffTiles, snapshotTiles } from './tile-diff';
 import type { TravelOutcome } from './travel';
-import { leaveOrigin, removeClosedPortals, type WorldFinders } from './world-leave';
+import { leaveDepartedWorld, removeClosedPortals, type WorldFinders } from './world-leave';
 import {
   heroOf,
   locationOf,
@@ -84,7 +84,7 @@ export function enterPortalWorld(run: PortalRun): TravelOutcome {
     toMapId: string | null;
     arrivalNear: IHexCoordinates | null;
   };
-  const replaced = leaveOrigin(run, progress, world, now);
+  const replaced = leaveDepartedWorld(run, progress, world, now);
   const destination =
     (to === 'camping' ? run.loadStored('camping') : toMapId ? run.loadById(toMapId) : null) ??
     run.create(to);
@@ -120,7 +120,7 @@ export function enterPortalWorld(run: PortalRun): TravelOutcome {
   });
   return {
     ok: true,
-    origin: world,
+    departed: world,
     destination,
     replaced,
     touched,

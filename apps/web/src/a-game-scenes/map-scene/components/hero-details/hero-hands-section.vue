@@ -4,7 +4,7 @@
       v-for="(hand, index) in hands"
       :key="hand.id"
       class="hand"
-      :style="{ '--rarity': hand.color }"
+      :style="{ '--light': hand.color }"
       :data-testid="`hero-hand-${hand.id}`"
     >
       <button
@@ -52,7 +52,7 @@ import { useI18n } from 'vue-i18n';
 import type { HandItem, HeroDetailsView } from '@/composables/use-hero-details';
 import { tokenName } from '@/services/tokens/token-text';
 import { ICON_PATHS } from '@/components/gui/icons/item-icons';
-import { RARITY_COLOR } from '@/render/rarity';
+import { LIGHT_NAME_COLOR } from '@/render/light';
 import HeroDetailsCard from './hero-details-card.vue';
 import { useHeroDetailsLabels } from './use-hero-details-labels';
 
@@ -75,7 +75,7 @@ const hands = computed(() =>
       label: labels.value.hands[id],
       title: item ? handTitle(item) : null,
       willCost: item?.willCost ?? null,
-      color: item?.rarity ? RARITY_COLOR[item.rarity] : EMPTY_COLOR,
+      color: item?.lightName ? LIGHT_NAME_COLOR[item.lightName] : EMPTY_COLOR,
     };
   }),
 );
@@ -146,8 +146,8 @@ const dividerBackground = computed(
 }
 .hand__icon.is-clickable:hover {
   animation: none;
-  color: var(--rarity);
-  filter: drop-shadow(0 0 6px var(--rarity));
+  color: var(--light);
+  filter: drop-shadow(0 0 6px var(--light));
 }
 .hand__icon svg {
   width: 30px;
@@ -172,7 +172,7 @@ const dividerBackground = computed(
 }
 .hand__name {
   min-width: 0;
-  color: var(--rarity);
+  color: var(--light);
   font-family: 'Alegreya SC', serif;
   font-size: 1.2rem;
   font-weight: 700;

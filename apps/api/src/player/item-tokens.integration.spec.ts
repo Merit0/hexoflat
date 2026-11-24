@@ -3,11 +3,14 @@ import { Logger } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 import { CONTENT_VERSION } from '@hexoflat/engine';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { inventoryV1Fixture } from '@hexoflat/engine/inventory/inventory-v1-fixture';
 import { mintItem } from '@hexoflat/engine/inventory/inventory-state';
+import { TOKEN_UNIQUES } from '@hexoflat/engine/content/token-uniques.content';
 import { createTokenFactory } from '@hexoflat/engine/tokens/factory/create-token-factory';
 import { LEGACY_SHIELD, LEGACY_SWORD } from '@hexoflat/engine/tokens/legacy-token-fixtures';
+import { resolveTokenSprite } from '@hexoflat/engine/tokens/sprite-fallback';
+import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import type {
   InventoryState,
@@ -49,6 +52,27 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
     return stored;
   }
 
+  function preDa3bToken(token: ItemToken): Record<string, unknown> {
+    const { tier, tokenType, description, ...rest } = JSON.parse(
+      JSON.stringify(token),
+    ) as ItemToken;
+    return {
+      ...rest,
+      origin: tier,
+      rarity: tokenType,
+      description: description.map(({ key, params }) => {
+        const { tokenType: name, ...others } = params;
+        return {
+          key,
+          params:
+            name === undefined
+              ? others
+              : { ...others, realm: String(name).replace('.tokenType.', '.realm.') },
+        };
+      }),
+    };
+  }
+
   const inventoryOf = async (userId: string, heroId: string) =>
     (await kit.service.snapshot(userId, heroId)).aggregates.inventory!.state as InventoryState;
 
@@ -60,12 +84,14 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       sourceId: 'test:stored-alien',
       n: 0,
       mapTier: 4,
-      ownedUniques: [],
     });
     if (!made.ok) throw new Error(made.refusal.code);
-    const fields: Record<string, unknown> = { ...made.value };
-    delete fields.dimension;
-    const legacy = { ...fields, rarity: 'god-executor', generatorVersion: 4 };
+    const legacy: Record<string, unknown> = {
+      ...preDa3bToken(made.value),
+      rarity: 'god-executor',
+      generatorVersion: 4,
+    };
+    delete legacy.dimension;
     const cell = mintItem(inventory, 'sword', 1);
     const raw = { ...inventory, bag: [{ ...cell, token: legacy }, ...inventory.bag.slice(1)] };
     await kit.db
@@ -75,14 +101,165 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
     const loaded = await inventoryOf(userId, heroId);
     expect(loaded.bag[0]).toEqual({
       ...cell,
-      token: {
-        ...legacy,
-        rarity: 'alien',
-        dimension: 'nowhere',
-      },
+      token: { ...made.value, generatorVersion: 4 },
     });
     expect(await inventoryOf(userId, heroId)).toEqual(loaded);
     expect(loaded.revision).toBe(inventory.revision);
+  });
+
+  it('DA3b-3: loads a pre-DA3b inventory v3 and progress v11 with identical tokens', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const before = await kit.service.snapshot(userId, heroId);
+    const inventory = before.aggregates.inventory!.state as InventoryState;
+    const progress = before.aggregates.progress!.state as Record<string, unknown> & {
+      listings: unknown[];
+    };
+    const sword = mintItem(inventory, 'sword', 1);
+    const shield = mintItem(inventory, 'shield', 1);
+    const oldInventory = {
+      ...inventory,
+      bag: [
+        { ...sword, token: preDa3bToken(LEGACY_SWORD) },
+        { ...shield, token: preDa3bToken(LEGACY_SHIELD) },
+        ...inventory.bag.slice(2),
+      ],
+    };
+    const oldProgress = {
+      ...progress,
+      listings: [
+        { key: 'sword', amount: 1, unitPrice: 100, token: preDa3bToken(LEGACY_SWORD) },
+        ...progress.listings.slice(1),
+      ],
+    };
+    await kit.db
+      .update(heroAggregates)
+      .set({ schemaVersion: 3, state: oldInventory })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+    await kit.db
+      .update(heroAggregates)
+      .set({ schemaVersion: 11, state: oldProgress })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'progress')));
+
+    const loaded = await kit.service.snapshot(userId, heroId);
+    const bag = (loaded.aggregates.inventory!.state as InventoryState).bag;
+    expect(bag[0]).toEqual({ ...sword, token: LEGACY_SWORD });
+    expect(bag[1]).toEqual({ ...shield, token: LEGACY_SHIELD });
+    const listings = (loaded.aggregates.progress!.state as { listings: { token?: unknown }[] })
+      .listings;
+    expect(listings[0].token).toEqual(LEGACY_SWORD);
+    expect(loaded.aggregates.inventory!.revision).toBe(before.aggregates.inventory!.revision);
+  });
+
+  it('DA4: an old inventory v4 with fallback sprites loads with null and draws the same sprites', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const before = await kit.service.snapshot(userId, heroId);
+    const inventory = before.aggregates.inventory!.state as InventoryState;
+    const factory = createTokenFactory();
+    const base = (tokenType: ETokenType.GLOOM | ETokenType.IDOL, n: number) => {
+      const made = factory.createBase({
+        seed: 'da4-old-save',
+        sourceId: 'test:da4.old.save',
+        n,
+        tokenType,
+        mapTier: 2,
+        type: 'sword',
+      });
+      if (!made.ok) throw new Error(made.refusal.code);
+      return made.value;
+    };
+    const made = factory.createUnique('last-verdict', {
+      seed: 'da4-old-save',
+      sourceId: 'test:da4.old.save',
+      n: 9,
+      mapTier: 4,
+    });
+    if (!made.ok) throw new Error(made.refusal.code);
+    const stored = [
+      { token: base(ETokenType.GLOOM, 0), sprite: 'idol-sword-01', loaded: null },
+      { token: base(ETokenType.IDOL, 1), sprite: 'idol-sword-01', loaded: 'idol-sword-01' },
+      { token: made.value, sprite: '_placeholder', loaded: undefined },
+    ];
+    const state = structuredClone(inventory);
+    const cells = stored.map(({ token, sprite }) => {
+      const item = mintItem(state, 'sword', 1);
+      state.idSeq += 1;
+      return { ...item, token: { ...token, sprite } };
+    });
+    const old = { ...state, bag: [...cells, ...state.bag.slice(cells.length)] };
+    await kit.db
+      .update(heroAggregates)
+      .set({ schemaVersion: 4, state: old })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+
+    const after = await kit.service.snapshot(userId, heroId);
+    const bag = (after.aggregates.inventory!.state as InventoryState).bag;
+    stored.forEach(({ token, sprite, loaded }, index) => {
+      expect(bag[index]!.token).toEqual(token);
+      expect(bag[index]!.token!.sprite).toBe(loaded);
+      expect(resolveTokenSprite(SPRITE_MANIFEST, bag[index]!.token!).key).toBe(sprite);
+    });
+    expect(bag[2]!.token).not.toHaveProperty('sprite');
+    expect(after.aggregates.inventory!.revision).toBe(before.aggregates.inventory!.revision);
+  });
+
+  it('DA4b-5: an old inventory v5 with a unique loads once with instanceId and authored attributes', async () => {
+    const { userId, heroId } = await kit.newPlayer();
+    const before = await kit.service.snapshot(userId, heroId);
+    const inventory = before.aggregates.inventory!.state as InventoryState;
+    const made = createTokenFactory().createUnique('lantern-eater', {
+      seed: 'da4b-old-save',
+      sourceId: 'test:da4b.old.save',
+      n: 0,
+      mapTier: 4,
+    });
+    if (!made.ok) throw new Error(made.refusal.code);
+    const authored = TOKEN_UNIQUES.find(
+      (unique) => unique.key === 'lantern-eater',
+    )!.authoredAttributes;
+    const oldToken = {
+      ...made.value,
+      instanceId: undefined,
+      attributes: authored.map(({ attribute, min }) => ({ key: attribute, value: min })),
+    };
+    const cell = { ...mintItem(inventory, 'sword', 1), token: oldToken };
+    await kit.db
+      .update(heroAggregates)
+      .set({
+        schemaVersion: 5,
+        state: { ...inventory, bag: [cell, ...inventory.bag.slice(1)] },
+      })
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+
+    const first = (await inventoryOf(userId, heroId)).bag[0]!.token!;
+    expect(first.instanceId).toMatch(/^[0-9a-f]{32}$/);
+    expect(first.attributes.map((attribute) => attribute.key)).toEqual(
+      authored.map((entry) => entry.attribute),
+    );
+    for (const { attribute, min, max } of authored) {
+      const { value } = first.attributes.find((entry) => entry.key === attribute)!;
+      expect(value).toBeGreaterThanOrEqual(min);
+      expect(value).toBeLessThanOrEqual(max);
+    }
+    expect({ ...first, instanceId: undefined, attributes: oldToken.attributes }).toEqual(oldToken);
+    expect((await inventoryOf(userId, heroId)).bag[0]!.token).toEqual(first);
+
+    const moved = await kit.service.execute(
+      userId,
+      envelope(
+        heroId,
+        'MOVE_ITEM',
+        { from: { container: 'bag', index: 0 }, to: { container: 'equip', slot: 'weapon' } },
+        before.aggregates.inventory!.revision,
+      ),
+    );
+    expect(moved.result).toBe('applied');
+    const [row] = await kit.db
+      .select()
+      .from(heroAggregates)
+      .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
+    expect(row.schemaVersion).toBe(6);
+    expect((row.state as InventoryState).equip.weapon!.token).toEqual(first);
+    expect((await inventoryOf(userId, heroId)).equip.weapon!.token).toEqual(first);
   });
 
   describe('characterization', () => {
@@ -138,7 +315,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
         .select()
         .from(heroAggregates)
         .where(and(eq(heroAggregates.heroId, heroId), eq(heroAggregates.kind, 'inventory')));
-      expect(row.schemaVersion).toBe(3);
+      expect(row.schemaVersion).toBe(6);
       expect((row.state as InventoryState).bag[10]!.token).toEqual(loaded.equip.weapon!.token);
 
       const reloaded = await inventoryOf(userId, heroId);
@@ -155,7 +332,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
           seed: 'tg-12-ea3',
           sourceId: 'test:tg12',
           n: 0,
-          realm: ERarityKind.GLOOM,
+          tokenType: ETokenType.GLOOM,
           mapTier: 4,
           type: 'shield',
         },
@@ -245,7 +422,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       const raw = JSON.parse((await readServerDocument(kit.db, expeditionId, key))!) as {
         contentVersion: number;
       };
-      raw.contentVersion = CONTENT_VERSION - 1;
+      raw.contentVersion = 1;
       await kit.db.transaction((tx) =>
         writeServerDocument(tx, expeditionId, key, JSON.stringify(raw)),
       );

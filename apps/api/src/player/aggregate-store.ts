@@ -157,9 +157,14 @@ export async function saveAggregate<K extends TAggregateKind>(
     .returning({ revision: heroAggregates.revision });
   if (updated.length === 0) throw new RevisionConflictError(kind);
   if (revision % SNAPSHOT_EVERY_REVISIONS === 0) {
-    await tx
-      .insert(aggregateSnapshots)
-      .values({ heroId, kind, revision, state, reason: 'periodic' });
+    await tx.insert(aggregateSnapshots).values({
+      heroId,
+      kind,
+      revision,
+      schemaVersion: AGGREGATES[kind].schemaVersion,
+      state,
+      reason: 'periodic',
+    });
   }
   return revision;
 }
@@ -168,11 +173,11 @@ export function projectAggregate<K extends TAggregateKind>(
   loaded: LoadedAggregate<K>,
 ): { revision: number; state: unknown } {
   const definition: {
-    project(state: AggregateStates[K], server: AggregateServerState): unknown;
+    project(state: AggregateStates[K], server: AggregateServerState, now: number): unknown;
   } = AGGREGATES[kindOf(loaded)];
   return {
     revision: loaded.revision,
-    state: definition.project(loaded.state, loaded.serverState),
+    state: definition.project(loaded.state, loaded.serverState, Date.now()),
   };
 }
 

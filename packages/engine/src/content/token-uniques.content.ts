@@ -1,6 +1,6 @@
 import { EDimension } from '../dimensions/dimensions';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
-import type { UniqueTokenDefinition } from '../tokens/unique-schema';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
+import type { UniqueTokenContent } from '../tokens/unique-schema';
 import { uniqueTextKeys } from '../tokens/unique-schema';
 
 function authored(key: string) {
@@ -12,13 +12,13 @@ function authored(key: string) {
   };
 }
 
-export const TOKEN_UNIQUES: readonly UniqueTokenDefinition[] = [
+export const TOKEN_UNIQUES: readonly UniqueTokenContent[] = [
   {
     ...authored('lantern-eater'),
     type: 'sword',
-    rarity: ERarityKind.GLOOM,
+    tokenType: ETokenType.GLOOM,
     dimension: EDimension.UNDERWORLD,
-    attributes: [{ key: 'heart', value: 1 }],
+    authoredAttributes: [{ attribute: 'heart', min: 1, max: 2 }],
     skills: [],
     price: 900,
     revision: 1,
@@ -26,9 +26,9 @@ export const TOKEN_UNIQUES: readonly UniqueTokenDefinition[] = [
   {
     ...authored('last-verdict'),
     type: 'sword',
-    rarity: ERarityKind.ALIEN,
+    tokenType: ETokenType.ALIEN,
     dimension: EDimension.NOWHERE,
-    attributes: [{ key: 'heart', value: 2 }],
+    authoredAttributes: [{ attribute: 'heart', min: 2, max: 3 }],
     skills: ['b_strike'],
     price: 2400,
     revision: 1,

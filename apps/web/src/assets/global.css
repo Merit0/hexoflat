@@ -50,7 +50,6 @@
   --status-danger: #c07a7a; /* muted red */
   --status-success: #8fb89a; /* muted green */
   --status-energy: #8fbfe6; /* muted cyan/blue */
-  --status-rare: #9aa4d6; /* muted violet/blue */
 
   /* Shadows */
   --shadow-soft: 0 8px 25px rgba(0, 0, 0, 0.45);
@@ -252,9 +251,6 @@ p,
 }
 .label-energy {
   color: var(--status-energy);
-}
-.label-rare {
-  color: var(--status-rare);
 }
 
 /* TOOLTIP */

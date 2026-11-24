@@ -1,6 +1,6 @@
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import type { TokenWord, WordPoolData } from '../tokens/token-content-schema';
-import { wordKeyOf, type TBaseRealm } from '../tokens/token-keys';
+import { wordKeyOf, type TBaseTokenType } from '../tokens/token-keys';
 
 const SHARED_PREFIXES = [
   'ash',
@@ -104,16 +104,16 @@ const SHARED_SUFFIXES = [
   'long-rain',
 ];
 
-const REALM_PREFIXES: Record<TBaseRealm, string[]> = {
-  [ERarityKind.GLOOM]: ['deep', 'lightless'],
-  [ERarityKind.IDOL]: ['clay', 'gilded'],
-  [ERarityKind.SPARK]: ['star', 'cloud'],
+const TOKEN_TYPE_PREFIXES: Record<TBaseTokenType, string[]> = {
+  [ETokenType.GLOOM]: ['deep', 'lightless'],
+  [ETokenType.IDOL]: ['clay', 'gilded'],
+  [ETokenType.SPARK]: ['star', 'cloud'],
 };
 
-const REALM_SUFFIXES: Record<TBaseRealm, string[]> = {
-  [ERarityKind.GLOOM]: ['deep-root', 'sunken-hall'],
-  [ERarityKind.IDOL]: ['clay-idol', 'painted-mask'],
-  [ERarityKind.SPARK]: ['high-wind', 'morning-star'],
+const TOKEN_TYPE_SUFFIXES: Record<TBaseTokenType, string[]> = {
+  [ETokenType.GLOOM]: ['deep-root', 'sunken-hall'],
+  [ETokenType.IDOL]: ['clay-idol', 'painted-mask'],
+  [ETokenType.SPARK]: ['high-wind', 'morning-star'],
 };
 
 const WORD_THEMES: Record<string, string> = {
@@ -149,11 +149,11 @@ const WORD_THEMES: Record<string, string> = {
   falconer: 'hawk',
 };
 
-function word(slot: 'prefix' | 'suffix', id: string, realms?: TBaseRealm[]): TokenWord {
+function word(slot: 'prefix' | 'suffix', id: string, tokenTypes?: TBaseTokenType[]): TokenWord {
   const theme = WORD_THEMES[id];
   return {
     key: wordKeyOf(slot, id),
-    ...(realms ? { realms } : {}),
+    ...(tokenTypes ? { tokenTypes } : {}),
     ...(theme ? { theme } : {}),
   };
 }
@@ -161,17 +161,17 @@ function word(slot: 'prefix' | 'suffix', id: string, realms?: TBaseRealm[]): Tok
 function words(
   slot: 'prefix' | 'suffix',
   shared: readonly string[],
-  byRealm: Record<TBaseRealm, string[]>,
+  byTokenType: Record<TBaseTokenType, string[]>,
 ): TokenWord[] {
-  const tagged = (Object.entries(byRealm) as [TBaseRealm, string[]][]).flatMap(([realm, ids]) =>
-    ids.map((id) => word(slot, id, [realm])),
+  const tagged = (Object.entries(byTokenType) as [TBaseTokenType, string[]][]).flatMap(
+    ([tokenType, ids]) => ids.map((id) => word(slot, id, [tokenType])),
   );
   return [...shared.map((id) => word(slot, id)), ...tagged];
 }
 
 export const TOKEN_WORDS: WordPoolData = {
-  prefixes: words('prefix', SHARED_PREFIXES, REALM_PREFIXES),
-  suffixes: words('suffix', SHARED_SUFFIXES, REALM_SUFFIXES),
+  prefixes: words('prefix', SHARED_PREFIXES, TOKEN_TYPE_PREFIXES),
+  suffixes: words('suffix', SHARED_SUFFIXES, TOKEN_TYPE_SUFFIXES),
 };
 
 export const TOKEN_NAME_TEMPLATE_KEY = 'content.tokens.nameTemplate';

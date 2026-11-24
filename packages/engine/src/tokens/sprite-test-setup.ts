@@ -1,6 +1,6 @@
 import { ITEM_TYPES } from '../content/item-types.content';
 import { TypeRegistry } from './registries';
-import type { PngHeader, SpriteFile } from './sprite-files';
+import type { PngHeader, SpriteCatalogue, SpriteFile, SpriteUniqueTemplate } from './sprite-files';
 import { wordKeyOf } from './token-keys';
 
 export function rgbaHeader(width = 512, height = width): PngHeader {
@@ -21,6 +21,21 @@ export function cleanSpriteFiles(): SpriteFile[] {
   ];
 }
 
+export function spriteCatalogue(
+  uniques: readonly (Omit<SpriteUniqueTemplate, 'art'> & Partial<SpriteUniqueTemplate>)[] = [
+    { key: 'ash-crown-blade', tokenType: 'gloom' },
+  ],
+  types: SpriteCatalogue['types'] = new TypeRegistry(ITEM_TYPES),
+): SpriteCatalogue {
+  return {
+    types,
+    uniques: {
+      has: (key) => uniques.some((unique) => unique.key === key),
+      all: () => uniques.map((unique) => ({ art: 'pending', ...unique })),
+    },
+  };
+}
+
 export function typesWithHammer(): TypeRegistry {
   return new TypeRegistry([
     ...ITEM_TYPES,
@@ -30,7 +45,7 @@ export function typesWithHammer(): TypeRegistry {
       strike: 2,
       tool: null,
       nounKey: wordKeyOf('noun', 'hammer'),
-      realms: ITEM_TYPES[0].realms,
+      tokenTypes: ITEM_TYPES[0].tokenTypes,
     },
   ]);
 }

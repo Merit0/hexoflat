@@ -13,7 +13,7 @@ interface HeroToolState {
   activeTool: THeroToolKey | null;
   activeItemId: string | null;
   isDragging: boolean;
-  origin: IHexCoordinates | null;
+  heroHex: IHexCoordinates | null;
   hover: IHexCoordinates | null;
   availableActions: ResolvedAction[] | [];
   hintLabel: string | null;
@@ -37,7 +37,7 @@ export const useHeroToolStore = defineStore('heroTool', {
     activeTool: HEXOBJECT_KEYS.HAND,
     activeItemId: null,
     isDragging: false,
-    origin: null,
+    heroHex: null,
     hover: null,
     allowedKeys: [],
     availableActions: [] as ResolvedAction[],
@@ -75,7 +75,7 @@ export const useHeroToolStore = defineStore('heroTool', {
       this.activeTool = tool;
       this.activeItemId = itemId;
       this.isDragging = true;
-      this.origin = { ...heroCoords };
+      this.heroHex = { ...heroCoords };
       this.hover = null;
 
       if (tool === HEXOBJECT_KEYS.HAND) {
@@ -120,7 +120,7 @@ export const useHeroToolStore = defineStore('heroTool', {
     },
 
     updateHover(coords: IHexCoordinates) {
-      if (!this.isDragging || !this.origin) return;
+      if (!this.isDragging || !this.heroHex) return;
       if (this.isLocked) return;
 
       const key = coordinateKey(coords);
@@ -133,7 +133,7 @@ export const useHeroToolStore = defineStore('heroTool', {
       this.activeTool = null;
       this.activeItemId = null;
       this.isDragging = false;
-      this.origin = null;
+      this.heroHex = null;
       this.hover = null;
       this.allowedKeys = [];
       this.clearResolvedActions();

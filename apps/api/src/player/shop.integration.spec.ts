@@ -5,7 +5,7 @@ import { TRADERS, traderView, type ProgressState } from '@hexoflat/engine';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
 import { coinPriceOf } from '@hexoflat/engine/content/content-accessors';
 import { mintBaseToken } from '@hexoflat/engine/tokens/game-tokens';
-import { DEFAULT_TOKEN_ORIGIN } from '@hexoflat/engine/tokens/token-origin';
+import { DEFAULT_DROP_CONTEXT } from '@hexoflat/engine/tokens/drop-context';
 import { priceOf, sellPriceFrom } from '@hexoflat/engine/trade/price-of';
 import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -306,7 +306,7 @@ describe.skipIf(!dbAvailable)('the camp trader on the server (real Postgres)', (
     const HALF = DISCOUNT_SWORD_PRICE / 2;
     const swordToken = () => ({
       ...mintBaseToken(
-        { seed: 'shop-spec', sourceId: 'test:shop.discount', origin: DEFAULT_TOKEN_ORIGIN },
+        { seed: 'shop-spec', sourceId: 'test:shop.discount', dropContext: DEFAULT_DROP_CONTEXT },
         SWORD,
         0,
       ),

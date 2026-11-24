@@ -9,7 +9,7 @@ import type { LootLists } from '../containers/container';
 import { fight, setGraveTables, slay, warrior } from '../battle/collect-test-setup';
 import { planClaim } from '../quests/quest-log';
 import { AT_BOARD } from '../quests/quest-test-setup';
-import { questRunId } from '../quests/quest-token-origin';
+import { questRunId } from '../quests/quest-drop-context';
 import { followTruth, startQuest } from '../quests/seeker-test-setup';
 import { traderView } from '../trade/trader-view';
 import { createServerWorld, worldTokenSecret } from '../world/server-world';

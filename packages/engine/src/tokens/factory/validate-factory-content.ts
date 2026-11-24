@@ -1,6 +1,8 @@
 import type { TokenContent } from '../../content/token-content';
-import { attributeFailure, attributeSetFailure } from '../attribute-rules';
-import { attributeProfilesSchema } from '../equipment/attribute-profile-schema';
+import {
+  attributeProfilesSchema,
+  type AttributeProfiles,
+} from '../equipment/attribute-profile-schema';
 import {
   adjectivesFor,
   baseAllowlistFailures,
@@ -10,8 +12,7 @@ import { ADJECTIVE_BANDS } from '../equipment/equipment-keys';
 import type { AttributeRegistry, TypeRegistry, UniqueRegistry } from '../registries';
 import { hasGeneratedName } from '../token-content-schema';
 import { wordKeyOf } from '../token-keys';
-
-const UNIQUE_CHECK = { origin: 'unique' } as const;
+import { uniqueTemplateFailures } from '../unique-content-rules';
 
 function typeFailures(types: TypeRegistry, content: Pick<TokenContent, 'adjectives'>): string[] {
   return types.all().flatMap((type) => {
@@ -25,41 +26,20 @@ function typeFailures(types: TypeRegistry, content: Pick<TokenContent, 'adjectiv
   });
 }
 
-function uniqueFailures(
-  types: TypeRegistry,
-  attributes: AttributeRegistry,
-  uniques: UniqueRegistry,
-): string[] {
-  return uniques.all().flatMap((unique) => {
-    if (!types.has(unique.type)) return [`Unknown unique type ${unique.type}`];
-    const failures = unique.attributes.flatMap((attribute) => {
-      const failure = attributeFailure(
-        attributes,
-        types.get(unique.type),
-        attribute,
-        UNIQUE_CHECK,
-        1,
-      );
-      return failure ? [`Unique ${unique.key}: ${failure}`] : [];
-    });
-    const missing = attributeSetFailure(attributes, types.get(unique.type), unique.attributes);
-    return missing ? [...failures, `Unique ${unique.key}: ${missing}`] : failures;
-  });
-}
-
 export function validateFactoryContent(registries: {
   types: TypeRegistry;
   attributes: AttributeRegistry;
   uniques: UniqueRegistry;
   content: Pick<TokenContent, 'profiles' | 'adjectives' | 'baseItems'>;
+  uniqueProfiles: AttributeProfiles;
 }): void {
-  const { types, attributes, uniques, content } = registries;
+  const { types, attributes, uniques, content, uniqueProfiles } = registries;
   const profiles = attributeProfilesSchema.parse(content.profiles);
   const definitions = attributes.all();
   const [failure] = [
     ...profileEntryFailures(profiles, definitions),
     ...typeFailures(types, content),
-    ...uniqueFailures(types, attributes, uniques),
+    ...uniqueTemplateFailures({ types, attributes, uniques, uniqueProfiles }),
     ...baseAllowlistFailures(content.baseItems, types.all(), definitions, profiles),
   ];
   if (failure) throw new Error(failure);

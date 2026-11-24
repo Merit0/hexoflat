@@ -1,14 +1,15 @@
 import { ITEM_TYPES } from '../content/item-types.content';
+import { dimensionOfTokenType } from '../dimensions/dimensions';
 import { createTokenFactory } from './factory/create-token-factory';
 import type { TokenFactory } from './factory/token-factory';
 export { tokenSourceIdOf } from './source-id';
-import type { TokenOrigin } from './token-origin';
+import type { DropContext } from './drop-context';
 import type { ItemToken } from './token-schema';
 
 export interface TokenMint {
   seed: string;
   sourceId: string;
-  origin: TokenOrigin;
+  dropContext: DropContext;
   factory?: TokenFactory;
 }
 
@@ -35,10 +36,22 @@ export function mintBaseToken(
     seed: mint.seed,
     sourceId: mint.sourceId,
     n,
-    realm: mint.origin.realm,
-    mapTier: mint.origin.mapTier,
+    tokenType: mint.dropContext.tokenType,
+    mapTier: mint.dropContext.mapTier,
     type,
     baseKey,
+  });
+  if (!result.ok) throw new Error(`TOKEN_REFUSED:${result.refusal.code}:${result.refusal.message}`);
+  return result.value;
+}
+
+export function mintUniqueToken(mint: TokenMint, uniqueKey: string, n: number): ItemToken {
+  const result = (mint.factory ?? gameTokenFactory()).createUnique(uniqueKey, {
+    seed: mint.seed,
+    sourceId: mint.sourceId,
+    n,
+    mapTier: mint.dropContext.mapTier,
+    dimension: dimensionOfTokenType(mint.dropContext.tokenType),
   });
   if (!result.ok) throw new Error(`TOKEN_REFUSED:${result.refusal.code}:${result.refusal.message}`);
   return result.value;

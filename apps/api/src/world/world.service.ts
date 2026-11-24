@@ -18,6 +18,7 @@ import {
   type BattleStep,
   type BattleWorldOutcome,
   type DomainEvent,
+  upcastJournalEvents,
   type ProgressState,
   foldQuestEvents,
   type ServerWorld,
@@ -230,7 +231,7 @@ export class WorldService {
         result: prior.result,
         ...(prior.reason ? { code: prior.reason } : {}),
         replayed: true,
-        events: prior.events as DomainEvent[],
+        events: upcastJournalEvents(prior.events),
         tileDiffs: [],
         effects: [],
         hero: null,
@@ -391,15 +392,15 @@ export class WorldService {
         await journal('rejected', travelled.events, travelled.code, null);
         return respond('rejected', travelled.code, travelled.events, [], world, travelled.effects);
       }
-      const { origin, destination, replaced, touched } = travelled;
+      const { departed, destination, replaced, touched } = travelled;
       installQuestEntrances(destination, travelled.progress);
       for (const other of touched) await saveWorld(tx, expeditionId, other);
       if (replaced) {
-        await deleteServerDocument(tx, expeditionId, worldKey(origin.mapId));
+        await deleteServerDocument(tx, expeditionId, worldKey(departed.mapId));
         await saveWorld(tx, expeditionId, replaced);
         index[replaced.locationKey] = replaced.mapId;
       } else {
-        await saveWorld(tx, expeditionId, origin);
+        await saveWorld(tx, expeditionId, departed);
       }
       await saveWorld(tx, expeditionId, destination);
       index[destination.locationKey] = destination.mapId;
@@ -435,7 +436,7 @@ export class WorldService {
       await journal('applied', travelled.events, null, savedProgress);
       return {
         ...respond('applied', undefined, travelled.events, [], destination, travelled.effects),
-        touched: [...(replaced ? [] : [origin]), ...touched].map((other) => ({
+        touched: [...(replaced ? [] : [departed]), ...touched].map((other) => ({
           locationKey: other.locationKey,
           world: clientWorld(other),
         })),
@@ -602,12 +603,12 @@ export class WorldService {
     if (respawn) {
       for (const other of respawn.touched) await saveWorld(tx, expeditionId, other);
       if (respawn.replaced) {
-        await deleteServerDocument(tx, expeditionId, worldKey(respawn.origin.mapId));
+        await deleteServerDocument(tx, expeditionId, worldKey(respawn.departed.mapId));
         await saveWorld(tx, expeditionId, respawn.replaced);
         index[respawn.replaced.locationKey] = respawn.replaced.mapId;
       } else {
-        await saveWorld(tx, expeditionId, respawn.origin);
-        touched.push(respawn.origin);
+        await saveWorld(tx, expeditionId, respawn.departed);
+        touched.push(respawn.departed);
       }
       await saveWorld(tx, expeditionId, respawn.destination);
       index[respawn.destination.locationKey] = respawn.destination.mapId;

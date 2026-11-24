@@ -1,12 +1,17 @@
-import { dimensionOfItemFamily, itemFamilyOfDimension } from '../dimensions/dimensions';
+import { tokenTypeOfDimension } from '../dimensions/dimensions';
 import { dropAvailableIn } from '../loot/dimension-pool';
-import { baseRealmSchema } from '../tokens/token-keys';
+import { baseTokenTypeSchema } from '../tokens/token-keys';
 import type { ProgressState } from '../aggregates/progress-state';
 import type { DomainEvent } from '../commands/types';
 import { consumeFromDraft, countInDraft, grantToDraft } from '../inventory/apply-stock';
-import { type TokenOrigin } from '../tokens/token-origin';
-import { isTokenType, tokenSourceIdOf, type TokenMint } from '../tokens/game-tokens';
-import type { IInventoryDraft } from '../inventory/apply-stock';
+import { DEFAULT_MAP_TIER, type DropContext } from '../tokens/drop-context';
+import {
+  isTokenType,
+  mintUniqueToken,
+  tokenSourceIdOf,
+  type TokenMint,
+} from '../tokens/game-tokens';
+import type { IInventoryDraft, TokenSupply } from '../inventory/apply-stock';
 import type { InventoryState } from '../inventory/inventory-state';
 import { grantWill, spendWill } from '../knowledge/will';
 import { handlerFor, OBJECTIVES, type ObjectiveRegistry } from './objectives';
@@ -16,11 +21,14 @@ import { questOfferFor, removeQuest } from './quest-board-state';
 import type { LocationKey } from '../registry/location-key';
 import {
   QUEST_SLOTS,
+  questDimension,
+  uniqueRewardKey,
   type QuestCatalogue,
   type QuestBoardRefusal,
   type QuestDefinition,
   type QuestRefusal,
   type QuestSlots,
+  type Reward,
 } from './quest-definition';
 
 export interface QuestContext {
@@ -172,7 +180,7 @@ function rewardMint(
   questId: string,
   rngSeed: string | undefined,
   rewardIndex: number,
-  origin: TokenOrigin,
+  dropContext: DropContext,
 ): TokenMint {
   if (!rngSeed) throw new Error('NO_SERVER_SECRET');
   const heroId = progress.knowledge.heroId;
@@ -180,8 +188,30 @@ function rewardMint(
   return {
     seed: rngSeed,
     sourceId: tokenSourceIdOf('quest', questId, heroId, String(times), String(rewardIndex)),
-    origin,
+    dropContext,
   };
+}
+
+function rewardSupply(
+  progress: ProgressState,
+  questId: string,
+  quest: QuestDefinition,
+  reward: Extract<Reward, { kind: 'item' }>,
+  rewardIndex: number,
+  rngSeed: string | undefined,
+): TokenSupply | undefined {
+  const dimension = questDimension(quest);
+  const dropContext: DropContext = {
+    tokenType: baseTokenTypeSchema.parse(tokenTypeOfDimension(dimension)),
+    mapTier: quest.rewardDropContext?.mapTier ?? DEFAULT_MAP_TIER,
+  };
+  const mint = () => rewardMint(progress, questId, rngSeed, rewardIndex, dropContext);
+  const templateKey = isTokenType(reward.itemKey) ? uniqueRewardKey(quest) : null;
+  if (templateKey) return { tokens: [mintUniqueToken(mint(), templateKey, 0)] };
+  if (!dropAvailableIn({ itemKey: reward.itemKey, baseKey: reward.token?.baseKey }, dimension))
+    throw new Error(`QUEST_REWARD_OUTSIDE_DIMENSION: ${questId}:${reward.itemKey}`);
+  if (reward.token) return { tokens: [reward.token] };
+  return isTokenType(reward.itemKey) ? { mint: mint() } : undefined;
 }
 
 export function planClaim(
@@ -204,24 +234,7 @@ export function planClaim(
   for (const [rewardIndex, reward] of quest.rewards.entries()) {
     if (reward.kind === 'item') {
       if (!inventory) return reject(progress, questId, 'NO_INVENTORY');
-      const origin = quest.rewardOrigin ?? {
-        realm: baseRealmSchema.parse(itemFamilyOfDimension(quest.dimension)),
-        mapTier: 1,
-      };
-      if (
-        !dropAvailableIn(
-          { itemKey: reward.itemKey, baseKey: reward.token?.baseKey },
-          dimensionOfItemFamily(origin.realm),
-        )
-      )
-        throw new Error(`QUEST_REWARD_OUTSIDE_DIMENSION: ${questId}:${reward.itemKey}`);
-      const supply = reward.token
-        ? { tokens: [reward.token] }
-        : isTokenType(reward.itemKey)
-          ? {
-              mint: rewardMint(progress, questId, ctx.rngSeed, rewardIndex, origin),
-            }
-          : undefined;
+      const supply = rewardSupply(progress, questId, quest, reward, rewardIndex, ctx.rngSeed);
       if (!grantToDraft(draft, reward.itemKey, reward.amount, 'reward', supply)) {
         return reject(progress, questId, 'BAG_FULL');
       }
@@ -264,7 +277,7 @@ export function applyQuestEvents(
         !payload ||
         typeof payload !== 'object' ||
         !('dimension' in payload) ||
-        payload.dimension !== quest.dimension
+        payload.dimension !== questDimension(quest)
       )
         return entry;
       const handler = handlerFor(quest.objective, registry);

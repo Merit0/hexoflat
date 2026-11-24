@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { upcastAggregate } from '../aggregates/registry';
 import { emptyProgressState } from '../aggregates/progress-state';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { sampleToken } from '../tokens/token-test-setup';
 import { itemTokenSchema } from '../tokens/token-schema';
 import { createServerWorld, deserializeWorld, serializeWorld } from '../world/server-world';
@@ -17,7 +17,7 @@ describe('D5 stored dimension characterization', () => {
       baseKey: _baseKey,
       ...legacy
     } = sampleToken({
-      rarity: ERarityKind.GLOOM,
+      tokenType: ETokenType.GLOOM,
       mapTier: 4,
       generatorVersion: 4,
     });
@@ -49,7 +49,7 @@ describe('D5 stored dimension characterization', () => {
   it('keeps an unrolled legacy chest unrolled during hydration and hides it from the client', () => {
     const world = createServerWorld('cave', 'legacy-cave', 'legacy-seed', 'hero');
     const saved = serializeWorld(world);
-    delete saved.tokenOrigin;
+    delete saved.dropContext;
     const chest = saved.map.tiles.find((tile) => tile.hexobject?.container)!;
     expect(chest).toBeDefined();
     chest.hexobject!.container = { ...chest.hexobject!.container!, contents: null };
@@ -58,7 +58,7 @@ describe('D5 stored dimension characterization', () => {
     expect(
       roundTrip.map.tiles.find((tile) => tile.hexobject?.container)?.hexobject?.container?.contents,
     ).toBeNull();
-    expect(roundTrip.tokenOrigin).toEqual({ realm: 'gloom', mapTier: 1 });
+    expect(roundTrip.dropContext).toEqual({ tokenType: 'gloom', mapTier: 1 });
     const publicWorld = projectWorldForClient(roundTrip);
     expect(publicWorld.map.tiles.every((tile) => !tile.hexobject?.container)).toBe(true);
     expect(publicWorld.worldSeed).not.toBe(world.worldSeed);
@@ -70,10 +70,10 @@ describe('D5 stored dimension characterization', () => {
       dimension: _dimension,
       baseKey: _baseKey,
       ...legacy
-    } = sampleToken({ rarity: ERarityKind.SPARK, mapTier: 3 });
+    } = sampleToken({ tokenType: ETokenType.SPARK, mapTier: 3 });
     const raw = {
       ...run,
-      tokenOrigin: undefined,
+      dropContext: undefined,
       field: {
         origin: 'silesia',
         mapTier: 3,
@@ -88,7 +88,7 @@ describe('D5 stored dimension characterization', () => {
       },
     };
     const loaded = parseQuestRun(raw);
-    expect(loaded.tokenOrigin).toEqual({ realm: 'idol', mapTier: 3 });
+    expect(loaded.dropContext).toEqual({ tokenType: 'idol', mapTier: 3 });
     expect(loaded.collect!.ground[0].token).toEqual(itemTokenSchema.parse(legacy));
     expect(parseQuestRun(loaded)).toEqual(loaded);
     const view = projectQuestForClient(loaded);

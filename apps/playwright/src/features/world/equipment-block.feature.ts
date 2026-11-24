@@ -18,13 +18,13 @@ export class EquipmentBlockFeature extends BaseFeature {
       const grants = new VerifyInventoryFeature();
       const plain = await grants.givenTokenItem({
         type: 'shield',
-        realm: 'idol',
+        tokenType: 'idol',
         mapTier: 1,
         attributes: [],
       });
       const shield = await grants.givenTokenItem({
         type: 'shield',
-        realm: 'idol',
+        tokenType: 'idol',
         mapTier: bonus,
         attributes: [{ key: 'shield', value: bonus }],
       });

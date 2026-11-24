@@ -65,7 +65,7 @@ export function resetFakePlayerServer(
 function projectProgress(progress: Store['progress']) {
   return {
     revision: progress.revision,
-    state: AGGREGATES.progress.project(progress.state, { rngSeed: FAKE_RNG_SEED }),
+    state: AGGREGATES.progress.project(progress.state, { rngSeed: FAKE_RNG_SEED }, Date.now()),
   };
 }
 
@@ -116,7 +116,7 @@ function handle(envelope: PlayerEnvelope): PlayerCommandResponse {
       devGrantAllowed: true,
       inventory: serverInventoryContext(s.progress.state.presence),
       rngSeed: FAKE_RNG_SEED,
-      trade: serverTradeContext(s.progress.state.presence, FAKE_RNG_SEED),
+      trade: { ...serverTradeContext(s.progress.state.presence, FAKE_RNG_SEED), dayId: 1 },
       quest: serverQuestContext(s.progress.state.presence),
     },
   );
@@ -382,11 +382,11 @@ function travelFake(
       aggregates: snapshot().aggregates,
     };
   }
-  const { origin, destination, replaced, touched } = outcome;
+  const { departed, destination, replaced, touched } = outcome;
   for (const [mapId, held] of storedWorlds) {
-    if (held.locationKey === origin.locationKey) storedWorlds.delete(mapId);
+    if (held.locationKey === departed.locationKey) storedWorlds.delete(mapId);
   }
-  storedWorlds.set((replaced ?? origin).mapId, replaced ?? origin);
+  storedWorlds.set((replaced ?? departed).mapId, replaced ?? departed);
   storedWorlds.set(destination.mapId, destination);
   for (const other of touched) storedWorlds.set(other.mapId, other);
   world = destination;
@@ -400,7 +400,7 @@ function travelFake(
     effects: outcome.effects,
     result: 'applied' as const,
     hero: null,
-    touched: [...(replaced ? [] : [origin]), ...touched].map((other) => ({
+    touched: [...(replaced ? [] : [departed]), ...touched].map((other) => ({
       locationKey: other.locationKey,
       world: serializeWorld(other),
     })),
@@ -438,11 +438,11 @@ function battleFake(
   let travel: { locationKey: string; world: unknown; refreshed: unknown } | undefined;
   let touched: { locationKey: string; world: unknown }[] = [];
   if (respawn) {
-    const { origin, destination, replaced } = respawn;
+    const { departed, destination, replaced } = respawn;
     for (const [mapId, held] of storedWorlds) {
-      if (held.locationKey === origin.locationKey) storedWorlds.delete(mapId);
+      if (held.locationKey === departed.locationKey) storedWorlds.delete(mapId);
     }
-    storedWorlds.set((replaced ?? origin).mapId, replaced ?? origin);
+    storedWorlds.set((replaced ?? departed).mapId, replaced ?? departed);
     storedWorlds.set(destination.mapId, destination);
     for (const other of respawn.touched) storedWorlds.set(other.mapId, other);
     nextWorld = destination;

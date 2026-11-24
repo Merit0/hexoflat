@@ -7,7 +7,7 @@ import { resolveHeroStats } from '@hexoflat/engine/tokens/equipment/hero-stats';
 import type { SkillProgress } from '@hexoflat/engine/skills/sacrifice-rules';
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { MapRegistry } from '@hexoflat/engine/registry/world-map-registry';
-import type { TRarityTone } from '@hexoflat/engine/content/rarity-rules';
+import type { TLightName } from '@hexoflat/engine/content/token-type-rules';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-tooltip';
@@ -15,7 +15,7 @@ import { resolveInventoryView } from '@hexoflat/engine/utils/inventory/traits-re
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore } from '@/stores/hero-inventory-store';
 import { useBattleStore } from '@/stores/battle-store';
-import { itemRarityTone } from '@/render/token-look';
+import { itemLightName } from '@/render/token-look';
 import { SHIELD_SLOTS } from '@/constants/shield-slots';
 import { buildSkillTreeView, type SkillTreeView } from './skill-tree-view';
 
@@ -29,14 +29,15 @@ export type HeroStatId = 'attack' | 'defense' | 'load' | 'victories';
 export interface HandItem {
   titleKey: string;
   token?: ItemToken;
-  rarity: TRarityTone | null;
+  lightName: TLightName | null;
   willCost: number | null;
 }
 
 export interface HeroDetailsInput {
   name: string;
-  locationTitle: string;
+  locationTitle: string | null;
   locationDimension?: EDimension;
+  origin: EDimension;
   steps: number;
   currentHealth: number;
   maxHealth: number;
@@ -57,8 +58,9 @@ export interface HeroDetailsInput {
 
 export interface HeroDetailsView {
   name: string;
-  locationTitle: string;
+  locationTitle: string | null;
   locationDimension?: EDimension;
+  origin: EDimension;
   steps: number;
   rank: { roman: string; title: string };
   hearts: { current: number; max: number; count: number };
@@ -114,6 +116,7 @@ export function buildHeroDetails(input: HeroDetailsInput): HeroDetailsView {
     name: input.name,
     locationTitle: input.locationTitle,
     locationDimension: input.locationDimension,
+    origin: input.origin,
     steps: scout.steps,
     rank: { roman: scout.roman, title: scout.title },
     hearts: { current: round1(current), max: round1(max), count: Math.ceil(max) },
@@ -146,7 +149,7 @@ function toHandItem(item: { key: THexobjectKey; token?: ItemToken }, skills: Ski
   return {
     titleKey: view.title,
     ...(item.token ? { token: item.token } : {}),
-    rarity: itemRarityTone(item),
+    lightName: itemLightName(item),
     willCost: resolveItemTooltip(item.key, { skills }).use?.will ?? null,
   };
 }
@@ -182,8 +185,9 @@ export function useHeroDetails() {
 
     return buildHeroDetails({
       name: hero.name || 'Hero',
-      locationTitle: key ? (MapRegistry.get(key)?.title ?? key) : 'Nowhere',
+      locationTitle: key ? (MapRegistry.get(key)?.title ?? key) : null,
       locationDimension: key ? MapRegistry.get(key).dimension : undefined,
+      origin: hero.origin,
       steps: hero.heroSteps,
       currentHealth: hero.currentHealth,
       maxHealth: hero.getEffectiveMaxHealth(),

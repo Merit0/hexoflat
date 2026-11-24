@@ -68,7 +68,7 @@ export interface IResource extends ITraitable<IResourceTraits> {
 export interface ILoot extends ITraitable<ILootTraits> {
   name: string;
   amount?: number;
-  rarity?: IItemRarity;
+  tokenType?: IItemTokenType;
   traits: ILootTraits;
 }
 
@@ -95,7 +95,7 @@ export interface ICreature {
 export interface ITool extends IDurable {
   attackMultiplier?: number;
   defense?: number;
-  rarity?: IItemRarity;
+  tokenType?: IItemTokenType;
   capabilities: {
     canPickup?: boolean;
     canEnter?: boolean;
@@ -127,7 +127,7 @@ export interface IEquipment extends IDurable {
   defense?: number;
   shields?: number;
   hearts?: number;
-  rarity?: IItemRarity;
+  tokenType?: IItemTokenType;
   capabilities?: {
     canAttack?: boolean;
     canBlock?: boolean;
@@ -173,15 +173,15 @@ export enum EHexobjectGroup {
   EQUIPMENT = 'equipment',
 }
 
-export enum ERarityKind {
+export enum ETokenType {
   GLOOM = 'gloom',
   IDOL = 'idol',
   SPARK = 'spark',
   ALIEN = 'alien',
 }
 
-export interface IItemRarity {
-  kind: ERarityKind;
+export interface IItemTokenType {
+  kind: ETokenType;
   boss: boolean;
 }
 

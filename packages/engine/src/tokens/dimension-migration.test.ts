@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 import { createTokenFactory } from './factory/create-token-factory';
 import { itemTokenSchema } from './token-schema';
 import { inventoryStateSchema, emptyInventoryState } from '../inventory/inventory-state';
-import { EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
+import { EHexobjectGroup, ETokenType } from '../abstraction/hexobject-abstraction';
 
 function legacyUnique() {
   const result = createTokenFactory().createUnique('last-verdict', {
@@ -22,7 +22,6 @@ function legacyUnique() {
     sourceId: 'test:legacy',
     n: 0,
     mapTier: 4,
-    ownedUniques: [],
   });
   if (!result.ok) throw new Error(result.refusal.code);
   return result.value;
@@ -48,9 +47,13 @@ describe('legacy unique persistence characterization', () => {
 
 function oldAlien() {
   const token: Record<string, unknown> = { ...legacyUnique() };
+  const tier = token.tier;
+  delete token.tier;
+  delete token.tokenType;
   delete token.dimension;
   return {
     ...token,
+    origin: tier,
     rarity: 'god-executor',
     generatorVersion: 4,
     description: [
@@ -70,16 +73,20 @@ describe('dimension compatibility reader', () => {
     const old = oldAlien();
     const before = structuredClone(old);
     const loaded = itemTokenSchema.parse(old);
+    const kept: Record<string, unknown> = { ...old };
+    delete kept.origin;
+    delete kept.rarity;
     expect(loaded).toEqual({
-      ...old,
-      rarity: 'alien',
+      ...kept,
+      tier: 'unique',
+      tokenType: 'alien',
       dimension: 'nowhere',
       description: [
         {
           key: 'content.tokens.line.kind',
           params: {
             type: 'content.tokens.noun.sword',
-            realm: 'content.tokens.realm.alien',
+            tokenType: 'content.tokens.tokenType.alien',
           },
         },
       ],
@@ -89,13 +96,13 @@ describe('dimension compatibility reader', () => {
     expect(itemTokenSchema.parse(loaded)).toEqual(loaded);
   });
 
-  it.each([ERarityKind.GLOOM, ERarityKind.IDOL, ERarityKind.SPARK])(
+  it.each([ETokenType.GLOOM, ETokenType.IDOL, ETokenType.SPARK])(
     'derives %s ownership from stored family',
-    (rarity) => {
-      const old: Record<string, unknown> = { ...sampleToken({ rarity }) };
+    (tokenType) => {
+      const old: Record<string, unknown> = { ...sampleToken({ tokenType }) };
       delete old.dimension;
       const loaded = itemTokenSchema.parse(old);
-      expect(loaded).toEqual({ ...old, dimension: sampleToken({ rarity }).dimension });
+      expect(loaded).toEqual({ ...old, dimension: sampleToken({ tokenType }).dimension });
       expect(itemDimensionOf({ key: 'sword', token: loaded })).toBe(loaded.dimension);
     },
   );

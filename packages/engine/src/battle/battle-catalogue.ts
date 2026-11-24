@@ -1,4 +1,4 @@
-import { dimensionSchema, EDimension } from '../dimensions/dimensions';
+import { dimensionSchema, EDimension, locationDimensionSchema } from '../dimensions/dimensions';
 import { sharedWithSchema } from '../dimensions/availability';
 import { z } from 'zod';
 import { usePriceOf } from '../content/content-accessors';
@@ -36,7 +36,7 @@ export type BattleBehaviour = (typeof BATTLE_BEHAVIOURS)[number];
 
 export const battleCreatureDefSchema = z.object({
   id: z.string().min(1),
-  dimension: dimensionSchema,
+  dimension: locationDimensionSchema,
   behaviour: z.enum(BATTLE_BEHAVIOURS),
   hp: z.number().int().positive(),
   weight: z.number().int().min(0),

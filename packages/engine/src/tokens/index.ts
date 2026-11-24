@@ -13,6 +13,8 @@ export { TypeRegistry, AttributeRegistry, UniqueRegistry } from './registries';
 export * from './attribute-display';
 export * from './unique-schema';
 export * from './unique-drop';
+export { uniqueAttributeProfiles, uniqueBounds } from './unique-attribute-profiles';
+export { UNIQUE_ATTRIBUTE_MULTIPLIER } from '../content/unique-rules.content';
 export { TOKEN_UNIQUES } from '../content/token-uniques.content';
 export * from './equipment';
 export { ITEM_TYPES, PLANNED_ITEM_TYPES, EQUIPMENT_TYPES } from '../content/item-types.content';
@@ -45,7 +47,20 @@ export {
 } from '../content/token-content';
 export { tokenContentFailures, uniqueContentFailures } from '../content/validate-tokens';
 export * from './sprite-files';
-export { ManifestSpriteRegistry, type SpriteRef } from './sprite-registry';
+export * from './sprite-coverage';
+export {
+  resolveBaseSprites,
+  resolveTokenSprite,
+  placeholderRef,
+  type SpriteRef,
+  type SpriteResolution,
+} from './sprite-fallback';
+export {
+  setSpriteFallbackLog,
+  reportSpriteFallback,
+  type SpriteFallbackLog,
+} from './sprite-fallback-log';
+export { ManifestSpriteRegistry } from './sprite-registry';
 export { SPRITE_MANIFEST } from './sprite-manifest';
 export * from './factory';
 export * from './base-item';

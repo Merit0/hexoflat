@@ -1,4 +1,5 @@
-import { EDimension } from '../dimensions/dimensions';
+import { z } from 'zod';
+import { EDimension, locationDimensionSchema } from '../dimensions/dimensions';
 
 export const LOCATION_KEYS = ['camping', 'silesia', 'silesia-north', 'cave'] as const;
 
@@ -11,3 +12,7 @@ export const LOCATION_DIMENSIONS = {
   'silesia-north': EDimension.EARTH,
   cave: EDimension.UNDERWORLD,
 } as const satisfies Record<LocationKey, EDimension>;
+
+export const locationDimensionsSchema = z.record(z.enum(LOCATION_KEYS), locationDimensionSchema);
+
+locationDimensionsSchema.parse(LOCATION_DIMENSIONS);

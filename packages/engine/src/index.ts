@@ -15,5 +15,7 @@ export * from './quests';
 export * from './loot';
 export * from './tokens';
 export * from './dimensions/dimensions';
+export * from './dimensions/hero-origin';
 export { itemDimensionOf } from './inventory/item-dimension';
 export * from './dimensions/availability';
+export * from './dimensions/upcast-vocabulary';

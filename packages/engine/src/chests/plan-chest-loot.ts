@@ -4,7 +4,7 @@ import { EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { isTerrainPassable } from '../boards/terrain';
 import { rollContainerContents } from '../containers/create-container';
 import { lootNeighbours, type LootDrop } from '../loot';
-import { type TokenOrigin } from '../tokens/token-origin';
+import { type DropContext } from '../tokens/drop-context';
 import type HexMapModel from '../map/models/hex-map-model';
 import type { HexTileModel } from '../map/models/hex-tile-model';
 import { axialToOffset, coordinateKey, type Axial } from '../utils/hex-utils';
@@ -12,7 +12,7 @@ import { axialToOffset, coordinateKey, type Axial } from '../utils/hex-utils';
 export interface ChestLootContext {
   seed: string;
   sourceId: string;
-  origin?: TokenOrigin;
+  dropContext?: DropContext;
 }
 
 export function rollChestLoot(
@@ -23,14 +23,14 @@ export function rollChestLoot(
   const tableId =
     proto?.groupType === EHexobjectGroup.CONSTRUCTION ? proto.construction.lootTableId : undefined;
   if (!context) return [];
-  if (!context.origin) throw new Error('TOKEN_ORIGIN_REQUIRED: chest');
+  if (!context.dropContext) throw new Error('DROP_CONTEXT_REQUIRED: chest');
   const [drops] = rollContainerContents({
     kind: 'chest',
     tables: [lootTableOf(tableId)],
     seed: context.seed,
     sourceId: context.sourceId,
     targetKey: coordinateKey(chest.coordinates),
-    origin: context.origin,
+    dropContext: context.dropContext,
   });
   return drops ?? [];
 }

@@ -1,10 +1,13 @@
-import { dimensionOfItemFamily } from '../dimensions/dimensions';
+import { dimensionOfTokenType, tokenTypeOfDimension } from '../dimensions/dimensions';
 import { createContainer, type ContainerState } from '../containers';
 import { lootTableOf } from '../content/loot-tables.content';
 import { rollLoot, tokenizeLootLists } from '../loot';
+import type { DropContext } from '../tokens/drop-context';
+import { baseTokenTypeSchema } from '../tokens/token-keys';
 import { tokenSourceIdOf } from '../tokens/game-tokens';
 import { deriveStream } from '../utils/random-seeded';
 import type { BattleState, Grave } from './battle-state';
+import { graveDimensions } from './grave-carriers';
 import { graveLootSource, graveTokenSource } from './grave-token-source';
 import { hexKey } from './hex-battle-geom';
 
@@ -13,8 +16,14 @@ export function createGraveContainer(state: BattleState, grave: Grave): Containe
   const id = hexKey(grave.hex);
   const source = graveLootSource(state, id);
   const tokens = graveTokenSource(state);
-  if (!state.tokenOrigin) throw new Error('TOKEN_ORIGIN_REQUIRED: grave');
-  const origin = state.tokenOrigin;
+  if (!state.dropContext) throw new Error('DROP_CONTEXT_REQUIRED: grave');
+  const dropContext = state.dropContext;
+  const tableContexts = graveDimensions(state, grave, dropContext).map(
+    (dimension): DropContext => ({
+      tokenType: baseTokenTypeSchema.parse(tokenTypeOfDimension(dimension)),
+      mapTier: dropContext.mapTier,
+    }),
+  );
   const tables = grave.tables.map((table) => lootTableOf(table));
   const container = createContainer({
     id,
@@ -22,8 +31,10 @@ export function createGraveContainer(state: BattleState, grave: Grave): Containe
     at: grave.hex,
     tables,
     ...source,
-    origin,
+    dropContext,
+    tableContexts,
     tokenSource: tokens,
+    uniqueDropOverride: state.uniqueDropOverride,
   });
   if (!grave.trophyBonuses?.some((bonus) => bonus > 0)) return container;
 
@@ -36,16 +47,20 @@ export function createGraveContainer(state: BattleState, grave: Grave): Containe
         ? rollLoot(
             { ...table, rolls: [bonus, bonus], guaranteed: [] },
             rng,
-            dimensionOfItemFamily(origin.realm),
+            dimensionOfTokenType(tableContexts[index].tokenType),
           )
         : [],
     ];
   });
-  const extra = tokenizeLootLists(rolled, {
-    seed: tokens.seed,
-    sourceId: tokenSourceIdOf('grave', ...tokens.scope, id, 'trophy'),
-    origin,
-  });
+  const extra = tokenizeLootLists(
+    rolled,
+    {
+      seed: tokens.seed,
+      sourceId: tokenSourceIdOf('grave', ...tokens.scope, id, 'trophy'),
+      dropContext,
+    },
+    tableContexts.filter((_, index) => tables[index]),
+  );
   const contents = container.contents ?? [];
   return { ...container, contents: contents.map((list, index) => [...list, ...extra[index]]) };
 }

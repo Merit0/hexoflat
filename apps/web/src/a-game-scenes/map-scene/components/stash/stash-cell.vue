@@ -5,7 +5,7 @@
     :data-testid="testid"
     :data-item-key="item?.key"
     :data-item-amount="item?.amount"
-    :data-rarity="rarity"
+    :data-light="lightName"
     :data-drop-container="location.container"
     :data-drop-index="location.container === 'equip' ? undefined : location.index"
     :data-drop-slot="location.container === 'equip' ? location.slot : undefined"
@@ -31,7 +31,7 @@ import { computed, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { InventoryItem } from '@hexoflat/engine/abstraction/inventory-abstraction';
 import type { TItemLocation } from '@hexoflat/engine/inventory/item-location';
-import { itemRarityTone } from '@/render/token-look';
+import { itemLightName } from '@/render/token-look';
 import { itemTitle } from '@/services/tokens/token-text';
 import { showsCounter } from '@/composables/item-counter';
 import { locationKey, stashFx } from '@/composables/stash-drag-state';
@@ -54,7 +54,9 @@ const tooltipPrice = computed(() => {
   return priceOf ? () => priceOf(props.location) : undefined;
 });
 
-const rarity = computed(() => (props.item ? (itemRarityTone(props.item) ?? undefined) : undefined));
+const lightName = computed(() =>
+  props.item ? (itemLightName(props.item) ?? undefined) : undefined,
+);
 
 const label = computed(() => (props.item ? itemTitle(props.item, i18n.locale.value) : undefined));
 

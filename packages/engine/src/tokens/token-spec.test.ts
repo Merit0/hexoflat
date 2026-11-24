@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import {
   executePlayerCommand,
   type PlayerCommandContext,
@@ -42,20 +42,20 @@ function grantTokens(payload: Record<string, unknown>, ctx = DEV): ItemToken[] {
 
 const shieldSpec = {
   type: HEXOBJECT_KEYS.SHIELD,
-  realm: ERarityKind.IDOL,
+  tokenType: ETokenType.IDOL,
   mapTier: 1,
 };
 
 describe('LG5e: DEV_GRANT_ITEM with a token spec', () => {
-  it('sets the given attributes and price on a factory token of the given realm and tier', () => {
+  it('sets the given attributes and price on a factory token of the given tokenType and tier', () => {
     const [token] = grantTokens({
       key: HEXOBJECT_KEYS.SHIELD,
-      token: { ...shieldSpec, realm: ERarityKind.GLOOM, mapTier: 3, attributes: [], price: 77 },
+      token: { ...shieldSpec, tokenType: ETokenType.GLOOM, mapTier: 3, attributes: [], price: 77 },
     });
 
     expect(token).toMatchObject({
       type: HEXOBJECT_KEYS.SHIELD,
-      rarity: ERarityKind.GLOOM,
+      tokenType: ETokenType.GLOOM,
       mapTier: 3,
       attributes: [],
       price: 77,
@@ -118,8 +118,8 @@ describe('LG5e: DEV_GRANT_ITEM with a token spec', () => {
       { key: HEXOBJECT_KEYS.COINS, token: { ...shieldSpec, type: HEXOBJECT_KEYS.COINS } },
     ],
     [
-      'the alien realm',
-      { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, realm: ERarityKind.ALIEN } },
+      'the alien tokenType',
+      { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, tokenType: ETokenType.ALIEN } },
     ],
     ['a zero price', { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, price: 0 } }],
     ['tier 5', { key: HEXOBJECT_KEYS.SHIELD, token: { ...shieldSpec, mapTier: 5 } }],

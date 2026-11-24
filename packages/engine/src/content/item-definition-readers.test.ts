@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
+import { EHexobjectGroup, ETokenType } from '../abstraction/hexobject-abstraction';
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
 import { createContext } from '../commands/command-test-context';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { resolveActions } from '../game-resolvers/interactions-resolver';
-import { rarityToneOf } from '../inventory/item-queries';
+import { inventoryLightNameOf } from '../inventory/item-queries';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
 import { ACTION_STARTERS } from '../registry/action-starters-registry';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
@@ -139,22 +139,22 @@ describe('LG5d characterization: cut and mine readers', () => {
   });
 });
 
-describe('LG5d characterization: rarity readers', () => {
+describe('LG5d characterization: tokenType readers', () => {
   it.each(GEAR)('%s without a token is an idol item', (key) => {
-    expect(resolveItemTooltip(key).rarity).toEqual({ kind: ERarityKind.IDOL, boss: false });
-    expect(resolveItemTooltip(key).rarityTone).toBe('idol');
-    expect(rarityToneOf(ITEMS[key])).toBe('idol');
+    expect(resolveItemTooltip(key).tokenType).toEqual({ kind: ETokenType.IDOL, boss: false });
+    expect(resolveItemTooltip(key).lightName).toBe('idol');
+    expect(inventoryLightNameOf(ITEMS[key])).toBe('idol');
   });
 });
 
-describe('LG5d: rarity comes from the token', () => {
+describe('LG5d: tokenType comes from the token', () => {
   it('sorts a gloom sword token as gloom and a unique as a boss tone', () => {
-    const gloom = { ...ITEMS[SWORD], token: sampleToken({ rarity: ERarityKind.GLOOM }) };
-    expect(rarityToneOf(gloom as InventoryItem)).toBe('gloom');
+    const gloom = { ...ITEMS[SWORD], token: sampleToken({ tokenType: ETokenType.GLOOM }) };
+    expect(inventoryLightNameOf(gloom as InventoryItem)).toBe('gloom');
     const unique = {
       ...ITEMS[SWORD],
-      token: sampleToken({ origin: 'unique', rarity: ERarityKind.ALIEN }),
+      token: sampleToken({ tier: 'unique', tokenType: ETokenType.ALIEN }),
     };
-    expect(rarityToneOf(unique as InventoryItem)).toBe('alien');
+    expect(inventoryLightNameOf(unique as InventoryItem)).toBe('alien');
   });
 });

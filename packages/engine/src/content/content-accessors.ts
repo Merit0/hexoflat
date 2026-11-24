@@ -3,7 +3,7 @@ import { EHexActionType } from '../enums/hex-action-type';
 import type { THexobjectKey } from '../registry/hexobjects-registry';
 import { assertNever } from '../utils/assert-never';
 import { CONTENT } from './content-map';
-import { DEFAULT_RARITY } from './rarity-rules';
+import { DEFAULT_ITEM_TOKEN_TYPE } from './token-type-rules';
 import type { IHexobjectMeta, ObjectTag, TContentDefinition } from './content-schema';
 
 export function getPrototype(key: THexobjectKey): THexobjectPrototype {
@@ -31,7 +31,7 @@ export function getPrototype(key: THexobjectKey): THexobjectPrototype {
       return {
         ...base,
         groupType: content.groupType,
-        tool: { ...content.tool, rarity: content.tool.rarity ?? DEFAULT_RARITY },
+        tool: { ...content.tool, tokenType: content.tool.tokenType ?? DEFAULT_ITEM_TOKEN_TYPE },
       };
     case EHexobjectGroup.CONSTRUCTION:
       return { ...base, groupType: content.groupType, construction: content.construction };
@@ -41,7 +41,7 @@ export function getPrototype(key: THexobjectKey): THexobjectPrototype {
         groupType: content.groupType,
         equipment: {
           ...content.equipment,
-          rarity: content.equipment.rarity ?? DEFAULT_RARITY,
+          tokenType: content.equipment.tokenType ?? DEFAULT_ITEM_TOKEN_TYPE,
         },
         weapon: content.weapon,
       };

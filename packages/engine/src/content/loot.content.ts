@@ -1,5 +1,5 @@
 import { EDimension } from '../dimensions/dimensions';
-import { EHexCollision, EHexobjectGroup, ERarityKind } from '../abstraction/hexobject-abstraction';
+import { EHexCollision, EHexobjectGroup, ETokenType } from '../abstraction/hexobject-abstraction';
 import { EHexActionType } from '../enums/hex-action-type';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import type { TContentDefinition } from './content-schema';
@@ -49,7 +49,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Health Potion',
       amount: 1,
-      rarity: { kind: ERarityKind.IDOL, boss: false },
+      tokenType: { kind: ETokenType.IDOL, boss: false },
       usePrice: 3,
       traits: {
         stackable: true,
@@ -75,7 +75,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Energy Potion',
       amount: 10,
-      rarity: { kind: ERarityKind.IDOL, boss: false },
+      tokenType: { kind: ETokenType.IDOL, boss: false },
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.ENERGY_BOTTLE,
@@ -100,7 +100,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Mana Potion',
       amount: 10,
-      rarity: { kind: ERarityKind.IDOL, boss: false },
+      tokenType: { kind: ETokenType.IDOL, boss: false },
       traits: {
         stackable: true,
         stackKey: HEXOBJECT_KEYS.MANA_BOTTLE,
@@ -132,7 +132,7 @@ export const LOOT_CONTENT: Record<TLootKeys, TContentDefinition> = {
     loot: {
       name: 'Return Scroll',
       amount: 1,
-      rarity: { kind: ERarityKind.SPARK, boss: false },
+      tokenType: { kind: ETokenType.SPARK, boss: false },
       usePrice: 10,
       traits: {
         stackable: true,

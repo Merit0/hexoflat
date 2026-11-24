@@ -1,5 +1,5 @@
 export * from './token-generation';
-export { RealmTypePicker } from './type-picker';
+export { BaseTypePicker } from './type-picker';
 export { AdjectiveNameGenerator, adjectiveBandFor } from './name-generator';
 export { ManifestSpriteResolver } from './sprite-resolver';
 export { EmptySkillGenerator } from './skill-generator';
@@ -7,7 +7,7 @@ export { RangePriceGenerator, priceBandOf, PRICE_BANDS } from './price-generator
 export {
   SpecSheetDescriptionBuilder,
   TOKEN_LINE_KEYS,
-  realmTextKey,
+  tokenTypeTextKey,
   toolTextKey,
   descriptionLocaleKeys,
 } from './description-builder';

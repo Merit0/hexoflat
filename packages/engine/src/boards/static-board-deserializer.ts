@@ -1,4 +1,4 @@
-import { dimensionSchema } from '../dimensions/dimensions';
+import { locationDimensionSchema } from '../dimensions/dimensions';
 import type { StaticBoardDrawing } from '../content/boards/schemas';
 
 function matchRequired(source: string, pattern: RegExp, label: string): string {
@@ -55,7 +55,7 @@ export function deserializeStaticBoardDrawing(source: string): StaticBoardDrawin
     }
   }
 
-  const dimension = dimensionSchema.parse(
+  const dimension = locationDimensionSchema.parse(
     matchRequired(source, /dimension:\s*EDimension\.(\w+)/, 'dimension').toLowerCase(),
   );
   return { id, dimension, background, legend, rows };

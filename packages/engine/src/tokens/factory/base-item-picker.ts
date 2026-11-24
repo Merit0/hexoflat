@@ -1,5 +1,5 @@
 import { availableInDimension } from '../../dimensions/availability';
-import { dimensionOfItemFamily } from '../../dimensions/dimensions';
+import { dimensionOfTokenType } from '../../dimensions/dimensions';
 import { pickRandom, type RandomNumberGenerator } from '../../utils/random';
 import type { BaseItemDefinition } from '../base-item';
 import type { BaseItemRegistry } from '../base-item-registry';
@@ -10,7 +10,7 @@ export function pickBaseItem(
   context: GenerationContext,
   rng: RandomNumberGenerator,
 ): TokenResult<BaseItemDefinition> {
-  const dimension = dimensionOfItemFamily(context.realm);
+  const dimension = dimensionOfTokenType(context.tokenType);
   if (context.baseKey !== undefined) {
     const entry = registry.get(context.baseKey);
     if (!entry) return refuseToken('UNKNOWN_BASE_ITEM', `Unknown base item: ${context.baseKey}`);
@@ -30,9 +30,9 @@ export function pickBaseItem(
     return refuseToken(
       context.type
         ? registry.hasType(context.type)
-          ? 'TYPE_NOT_IN_REALM'
+          ? 'TYPE_NOT_IN_TOKEN_TYPE'
           : 'UNKNOWN_TYPE'
-        : 'NO_TYPE_IN_REALM',
+        : 'NO_TYPE_IN_TOKEN_TYPE',
       `No base item for ${context.type ?? 'any type'} in ${dimension}`,
     );
   return { ok: true, value: entry };

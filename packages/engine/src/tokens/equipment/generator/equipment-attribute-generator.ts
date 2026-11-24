@@ -51,6 +51,7 @@ export class EquipmentAttributeGenerator implements IAttributeGenerator {
       group: ctx.group,
       type: ctx.type,
       allowedKeys: ctx.allowedKeys,
+      authoredKeys: ctx.authoredKeys,
     });
     const count = this.parts.counts.roll(
       { countWeights: profile.countWeights, maxCount: profile.maxCount, poolSize: pool.length },
@@ -64,7 +65,10 @@ export class EquipmentAttributeGenerator implements IAttributeGenerator {
     const remaining = [...pool];
     const picked: TokenAttribute[] = [];
     for (let index = 0; index < count; index += 1) {
-      const keys = new Set(picked.map((attribute) => attribute.key));
+      const keys = new Set([
+        ...(ctx.authoredKeys ?? []),
+        ...picked.map((attribute) => attribute.key),
+      ]);
       const open = remaining.filter((entry) =>
         (entry.requires ?? []).every((key) => keys.has(key)),
       );

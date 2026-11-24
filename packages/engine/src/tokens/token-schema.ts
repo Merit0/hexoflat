@@ -1,9 +1,17 @@
 import { BASE_ITEMS } from '../content/base-items.content';
 import { baseItemKeySchema } from './base-item';
-import { dimensionSchema, itemFamilyOfDimension } from '../dimensions/dimensions';
+import {
+  dimensionSchema,
+  tokenTypeOfDimension,
+  tiersOfTokenType,
+  TOKEN_TIERS,
+  tokenTypeAllowsTier,
+} from '../dimensions/dimensions';
 import { upcastTokenDimension } from './upcast-token-dimension';
+import { upcastTokenSprite } from './upcast-token-sprite';
+import { upcastUniqueInstance } from './upcast-unique-instance';
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
 import { skillIdSchema } from '../skills/skill-content';
 import {
@@ -14,8 +22,9 @@ import {
   itemTokenIdSchema,
   itemTypeKeySchema,
   mapTierSchema,
+  isOwnSpriteKey,
   spriteKeySchema,
-  TOKEN_ORIGINS,
+  uniqueInstanceIdSchema,
   uniqueKeySchema,
   wordKeySchemaFor,
 } from './token-keys';
@@ -72,39 +81,40 @@ function hasDuplicates(values: readonly string[]): boolean {
 export const currentItemTokenSchema = z
   .strictObject({
     id: itemTokenIdSchema,
-    origin: z.enum(TOKEN_ORIGINS),
+    tier: z.enum(TOKEN_TIERS),
     uniqueKey: uniqueKeySchema.optional(),
+    instanceId: uniqueInstanceIdSchema.optional(),
     baseKey: baseItemKeySchema.optional(),
     type: itemTypeKeySchema,
-    rarity: z.enum(ERarityKind),
+    tokenType: z.enum(ETokenType),
     dimension: dimensionSchema,
     name: tokenNameSchema,
     description: z.array(descriptionLineSchema),
     attributes: z.array(tokenAttributeSchema),
     skills: z.array(skillIdSchema),
     price: z.number().int().positive(),
-    sprite: spriteKeySchema,
+    sprite: spriteKeySchema.nullable().optional(),
     mapTier: mapTierSchema,
     generatorVersion: z.number().int().positive(),
     ext: tokenExtensionsSchema,
   })
   .superRefine((token, ctx) => {
-    if (itemFamilyOfDimension(token.dimension) !== token.rarity) {
+    if (tokenTypeOfDimension(token.dimension) !== token.tokenType) {
       ctx.addIssue({
         code: 'custom',
         path: ['dimension'],
-        message: 'Dimension differs from item family',
+        message: 'Dimension differs from token type',
       });
     }
-    const unique = token.origin === 'unique';
+    const unique = token.tier === 'unique';
     const base = token.baseKey
       ? BASE_ITEMS.find((entry) => entry.key === token.baseKey)
       : undefined;
-    if (base && (base.dimension !== token.dimension || base.type !== token.type)) {
+    if (base && base.type !== token.type) {
       ctx.addIssue({
         code: 'custom',
         path: ['baseKey'],
-        message: 'Concrete base identity differs from token ownership/type',
+        message: 'Concrete base identity differs from the token type',
       });
     }
     if (unique ? token.baseKey !== undefined : token.baseKey === undefined) {
@@ -121,11 +131,32 @@ export const currentItemTokenSchema = z
         message: 'uniqueKey is set only on a unique token',
       });
     }
-    if (!unique && token.rarity === ERarityKind.ALIEN) {
+    if (unique !== (token.instanceId !== undefined)) {
       ctx.addIssue({
         code: 'custom',
-        path: ['rarity'],
-        message: 'alien tokens are unique only',
+        path: ['instanceId'],
+        message: 'instanceId is set only on a unique token',
+      });
+    }
+    if (unique !== (token.sprite === undefined)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sprite'],
+        message: 'a base token stores its sprite or null, a unique token stores none',
+      });
+    }
+    if (token.sprite && !isOwnSpriteKey(token.tokenType, token.type, token.sprite)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sprite'],
+        message: 'a fallback sprite is never stored',
+      });
+    }
+    if (!tokenTypeAllowsTier(token.tokenType, token.tier)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['tokenType'],
+        message: `${token.tokenType} tokens are ${tiersOfTokenType(token.tokenType).join(' and ')} only`,
       });
     }
     if (token.name.kind === 'generated' && !token.name.prefix && !token.name.suffix) {
@@ -154,7 +185,10 @@ export const currentItemTokenSchema = z
     }
   });
 /** Persisted readers normalize legacy family/ownership before strict validation. */
-export const itemTokenSchema = z.preprocess(upcastTokenDimension, currentItemTokenSchema);
+export const itemTokenSchema = z.preprocess(
+  (raw) => upcastUniqueInstance(upcastTokenSprite(upcastTokenDimension(raw))),
+  currentItemTokenSchema,
+);
 export type ItemToken = z.infer<typeof currentItemTokenSchema>;
 
 const KNOWN_ITEM_KEYS: ReadonlySet<string> = new Set(Object.values(HEXOBJECT_KEYS));

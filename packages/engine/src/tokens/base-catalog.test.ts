@@ -3,10 +3,10 @@ import { EHexActionType } from '../enums/hex-action-type';
 import { createContext } from '../commands/command-test-context';
 import { HexObjectFactory } from '../factory/hex-object-factory';
 import { HexMapBuilder } from '../map/builders/hex-map-builder';
-import { locationTokenOrigin } from '../registry/location-token-origin';
+import { locationDropContext } from '../registry/location-drop-context';
 import { describe, expect, it } from 'vitest';
 import { createTokenFactory } from './factory/create-token-factory';
-import { TOKEN_CONTENT, type TokenContent } from '../content/token-content';
+import { TOKEN_CONTENT } from '../content/token-content';
 import { EDimension } from '../dimensions/dimensions';
 import { createServerWorld } from '../world/server-world';
 import { rollChestLoot } from '../chests/plan-chest-loot';
@@ -24,9 +24,7 @@ describe('catalogue validation and generation context', () => {
     { baseItems: [{ ...base, attributes: ['unknown'] }] },
     { baseItems: [{ ...base, attributes: ['heart', 'heart'] }] },
   ])('refuses invalid authored catalogue entries at construction', (changes) => {
-    expect(() =>
-      createTokenFactory({ ...TOKEN_CONTENT, ...changes } as unknown as TokenContent),
-    ).toThrow();
+    expect(() => createTokenFactory({ ...TOKEN_CONTENT, ...changes })).toThrow();
   });
 
   it('does not enable disabled type mechanics through a new base definition', () => {
@@ -42,7 +40,7 @@ describe('catalogue validation and generation context', () => {
     const world = createServerWorld('cave', 'scope-map', 'scope-seed', 'hero');
     const chest = world.map.tiles.find((tile) => tile.hexobject?.hexobjectKey === 'chest')!;
     expect(() => rollChestLoot(chest, { seed: 'secret', sourceId: 'map' })).toThrow(
-      'TOKEN_ORIGIN_REQUIRED',
+      'DROP_CONTEXT_REQUIRED',
     );
     expect(() =>
       generateChestDrop({
@@ -50,7 +48,7 @@ describe('catalogue validation and generation context', () => {
         chestHex: chest.coordinates,
         tableId: 'seeker-1-chest-loot',
       }),
-    ).toThrow('TOKEN_ORIGIN_REQUIRED');
+    ).toThrow('DROP_CONTEXT_REQUIRED');
     expect(
       stockTokenSupply(emptyInventoryState('hero'), { seed: 'secret', sourceId: 'map' }),
     ).toBeUndefined();
@@ -76,14 +74,18 @@ describe('ownership during raw legacy pickup', () => {
         map,
         now: 1,
         inventory,
-        loot: { seed: 'secret', sourceId: 'underworld-map', origin: locationTokenOrigin('cave') },
+        loot: {
+          seed: 'secret',
+          sourceId: 'underworld-map',
+          dropContext: locationDropContext('cave'),
+        },
       },
     );
     expect(result).toBe(true);
     expect(inventory.current.bag[0]!.token).toMatchObject({
       baseKey: 'earth-sword',
       dimension: 'earth',
-      rarity: 'idol',
+      tokenType: 'idol',
     });
     expect(tile.hexobject).toBeNull();
   });

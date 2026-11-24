@@ -1,16 +1,10 @@
 import type { EDimension } from '../../dimensions/dimensions';
-import type { ERarityKind } from '../../abstraction/hexobject-abstraction';
+import type { ETokenType } from '../../abstraction/hexobject-abstraction';
 import type { SkillId } from '../../skills/skill-content';
 import type { RandomNumberGenerator } from '../../utils/random';
 import type { ItemTypeDefinition } from '../token-content-schema';
-import type {
-  I18nKey,
-  ItemTypeKey,
-  SpriteKey,
-  TBaseRealm,
-  TMapTier,
-  UniqueKey,
-} from '../token-keys';
+import type { I18nKey, ItemTypeKey, SpriteKey, TBaseTokenType, TMapTier } from '../token-keys';
+import type { AuthoredAttribute } from '../unique-schema';
 import type { DescriptionLine, ItemToken, TokenAttribute, TokenName } from '../token-schema';
 
 export const TOKEN_GENERATOR_VERSION = 6;
@@ -27,12 +21,11 @@ export const TOKEN_REFUSALS = [
   'UNKNOWN_TYPE',
   'UNKNOWN_BASE_ITEM',
   'BASE_ITEM_NOT_IN_DIMENSION',
-  'TYPE_NOT_IN_REALM',
-  'NO_TYPE_IN_REALM',
+  'TYPE_NOT_IN_TOKEN_TYPE',
+  'NO_TYPE_IN_TOKEN_TYPE',
   'INVALID_TOKEN',
   'UNKNOWN_UNIQUE',
   'UNIQUE_NOT_IN_DIMENSION',
-  'UNIQUE_ALREADY_OWNED',
 ] as const;
 export type TTokenRefusalCode = (typeof TOKEN_REFUSALS)[number];
 
@@ -54,7 +47,7 @@ export interface GenerationContext {
   seed: string;
   sourceId: string;
   n: number;
-  realm: ERarityKind;
+  tokenType: ETokenType;
   mapTier: TMapTier;
   type?: ItemTypeKey;
   baseKey?: string;
@@ -71,21 +64,21 @@ export interface UniqueGenerationContext {
   sourceId: string;
   n: number;
   mapTier: TMapTier;
-  ownedUniques: readonly UniqueKey[];
 }
 
 export interface TokenSheet {
   type: ItemTypeDefinition;
-  realm: ERarityKind;
+  tokenType: ETokenType;
   mapTier: TMapTier;
   descriptionKey?: I18nKey;
 }
 
 export interface AttributeSheet {
   type: ItemTypeDefinition;
-  origin: 'base' | 'unique';
+  tier: 'base' | 'unique';
   mapTier: TMapTier;
   attributes: readonly TokenAttribute[];
+  authored?: readonly AuthoredAttribute[];
 }
 
 export interface NameRequest {
@@ -94,7 +87,7 @@ export interface NameRequest {
 }
 
 export interface ITypePicker {
-  pick(realm: TBaseRealm, key: ItemTypeKey): TokenResult<ItemTypeDefinition>;
+  pick(tokenType: TBaseTokenType, key: ItemTypeKey): TokenResult<ItemTypeDefinition>;
 }
 
 export interface INameGenerator {
@@ -102,11 +95,11 @@ export interface INameGenerator {
 }
 
 export interface ISpriteResolver {
-  resolve(type: ItemTypeDefinition, realm: TBaseRealm, rng: RandomNumberGenerator): SpriteKey;
-}
-
-export interface IUniqueSpriteResolver {
-  resolveUnique(uniqueKey: UniqueKey): SpriteKey;
+  resolve(
+    type: ItemTypeDefinition,
+    tokenType: TBaseTokenType,
+    rng: RandomNumberGenerator,
+  ): SpriteKey | null;
 }
 
 export interface ISkillGenerator {
@@ -114,7 +107,7 @@ export interface ISkillGenerator {
 }
 
 export interface IPriceGenerator {
-  generate(realm: TBaseRealm, attributeCount: number, rng: RandomNumberGenerator): number;
+  generate(tokenType: TBaseTokenType, attributeCount: number, rng: RandomNumberGenerator): number;
 }
 
 export interface IDescriptionBuilder {

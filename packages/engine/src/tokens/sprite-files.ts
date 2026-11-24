@@ -1,26 +1,29 @@
 import { z } from 'zod';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
+import { TOKEN_TYPES, tokenTypeAllowsTier, type TTokenTier } from '../dimensions/dimensions';
 import {
-  BASE_REALMS,
-  baseRealmSchema,
+  PLACEHOLDER_SPRITE_KEY,
+  baseTokenTypeSchema,
   itemTypeKeySchema,
   uniqueKeySchema,
+  uniqueSpriteKey,
   type ItemTypeKey,
+  type UniqueKey,
 } from './token-keys';
+import type { TUniqueArt } from './unique-schema';
 
 export const SPRITE_SIZE = 512;
 export const SPRITE_ROOT = '/hex-assets/items';
-export const PLACEHOLDER_SPRITE_KEY = '_placeholder';
-export const PLACEHOLDER_SPRITE_FILE = 'base/_placeholder.png';
+export const PLACEHOLDER_SPRITE_FILE = `base/${PLACEHOLDER_SPRITE_KEY}.png`;
 export const PNG_HEADER_BYTES = 26;
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const PNG_RGBA_COLOR_TYPE = 6;
 const PNG_RGBA_BIT_DEPTH = 8;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const BASE_NUMBER = /^(?:0[1-9]|[1-9]\d)$/;
-const REALM_VALUES = Object.values(ERarityKind) as string[];
-const BASE_REALM_VALUES = BASE_REALMS as readonly string[];
+const BASE_FILE = /^(.+)-(?:0[1-9]|[1-9]\d)\.png$/;
+const BASE_SHAPE = 'expected base/<tokenType>-<type>/<tokenType>-<type>-<NN>.png with NN = 01..99';
+const TOKEN_TYPE_VALUES: readonly string[] = TOKEN_TYPES;
 
 export interface PngHeader {
   width: number;
@@ -38,21 +41,21 @@ const spritePathSchema = z.string().startsWith(`${SPRITE_ROOT}/`);
 
 export const baseSpriteEntrySchema = z.strictObject({
   key: z.string().regex(SLUG),
-  origin: z.literal('base'),
-  realm: baseRealmSchema,
+  tier: z.literal('base'),
+  tokenType: baseTokenTypeSchema,
   type: itemTypeKeySchema,
   path: spritePathSchema,
 });
 
 export const uniqueSpriteEntrySchema = z.strictObject({
   key: uniqueKeySchema,
-  origin: z.literal('unique'),
-  realm: z.null(),
+  tier: z.literal('unique'),
+  tokenType: z.null(),
   type: z.null(),
   path: spritePathSchema,
 });
 
-export const spriteManifestEntrySchema = z.discriminatedUnion('origin', [
+export const spriteManifestEntrySchema = z.discriminatedUnion('tier', [
   baseSpriteEntrySchema,
   uniqueSpriteEntrySchema,
 ]);
@@ -67,12 +70,17 @@ export type SpriteManifest = z.infer<typeof spriteManifestSchema>;
 
 export type TSpriteFailureCode =
   | 'NAME_PATTERN'
-  | 'UNKNOWN_REALM'
+  | 'PREFIX_MISMATCH'
+  | 'UNKNOWN_TOKEN_TYPE'
   | 'ALIEN_IN_BASE'
   | 'UNKNOWN_TYPE'
   | 'WRONG_SIZE'
   | 'NOT_PNG_RGBA'
   | 'DUPLICATE_KEY'
+  | 'ORPHAN_UNIQUE'
+  | 'UNIQUE_FILE_MISSING'
+  | 'UNIQUE_ART_PENDING'
+  | 'UNIQUE_TIER_NOT_ALLOWED'
   | 'NO_PLACEHOLDER';
 
 export interface SpriteFailure {
@@ -82,10 +90,29 @@ export interface SpriteFailure {
 }
 
 export type SpriteManifestResult =
-  { ok: true; manifest: SpriteManifest } | { ok: false; failures: SpriteFailure[] };
+  | { ok: true; manifest: SpriteManifest; warnings: SpriteFailure[] }
+  | { ok: false; failures: SpriteFailure[] };
 
 export interface SpriteTypeLookup {
   has(key: ItemTypeKey): boolean;
+}
+
+export interface SpriteUniqueTemplate {
+  key: UniqueKey;
+  tokenType: string;
+  art: TUniqueArt;
+}
+
+export interface SpriteCatalogue {
+  types: SpriteTypeLookup;
+  uniques: { has(key: UniqueKey): boolean; all(): readonly SpriteUniqueTemplate[] };
+}
+
+export type AllowsTier = (tokenType: string, tier: TTokenTier) => boolean;
+
+interface SpriteRules {
+  catalogue: SpriteCatalogue;
+  allowsTier: AllowsTier;
 }
 
 type NamedFile =
@@ -114,68 +141,72 @@ function fail(code: TSpriteFailureCode, path: string, message: string): NamedFil
   return { kind: 'failure', failure: { code, path, message: `${path}: ${message}` } };
 }
 
-function realmOf(folder: string): string | null {
-  const matches = REALM_VALUES.filter((realm) => folder.startsWith(`${realm}-`));
+function tokenTypeOfFolder(folder: string): string | null {
+  const matches = TOKEN_TYPE_VALUES.filter((tokenType) => folder.startsWith(`${tokenType}-`));
   return matches.sort((a, b) => b.length - a.length)[0] ?? null;
 }
 
-function nameBaseFile(
-  path: string,
-  folder: string,
-  file: string,
-  types: SpriteTypeLookup,
-): NamedFile {
-  const number = file.startsWith(`${folder}-`) ? file.slice(folder.length + 1, -4) : '';
-  if (!SLUG.test(folder) || !file.endsWith('.png') || !BASE_NUMBER.test(number)) {
+function nameBaseFile(path: string, folder: string, file: string, rules: SpriteRules): NamedFile {
+  const tokenType = tokenTypeOfFolder(folder);
+  if (tokenType !== null && !rules.allowsTier(tokenType, 'base')) {
+    return fail('ALIEN_IN_BASE', path, `${tokenType} items are unique only, not base`);
+  }
+  const prefix = BASE_FILE.exec(file)?.[1];
+  if (!SLUG.test(folder) || prefix === undefined) return fail('NAME_PATTERN', path, BASE_SHAPE);
+  if (tokenType === null) {
+    const given = folder.split('-')[0];
     return fail(
-      'NAME_PATTERN',
+      'UNKNOWN_TOKEN_TYPE',
       path,
-      `expected base/<realm>-<type>/<realm>-<type>-<NN>.png with NN = 01..99`,
+      `tokenType "${given}" is not one of ${TOKEN_TYPE_VALUES.join(', ')}`,
     );
   }
-  const realm = realmOf(folder);
-  if (realm === null) {
-    const given = folder.split('-')[0];
-    return fail('UNKNOWN_REALM', path, `realm "${given}" is not one of ${REALM_VALUES.join(', ')}`);
+  if (prefix !== folder) {
+    return fail('PREFIX_MISMATCH', path, `file prefix "${prefix}" differs from folder "${folder}"`);
   }
-  if (!BASE_REALM_VALUES.includes(realm)) {
-    return fail('ALIEN_IN_BASE', path, `${realm} items are unique only, not base`);
-  }
-  const type = folder.slice(realm.length + 1);
-  if (!types.has(type)) {
+  const type = folder.slice(tokenType.length + 1);
+  if (!rules.catalogue.types.has(type)) {
     return fail('UNKNOWN_TYPE', path, `type "${type}" is not in the TypeRegistry`);
   }
   const entry = {
-    key: `${folder}-${number}`,
-    origin: 'base',
-    realm,
+    key: file.slice(0, -4),
+    tier: 'base',
+    tokenType,
     type,
     path: `${SPRITE_ROOT}/${path}`,
   };
   return { kind: 'entry', entry: baseSpriteEntrySchema.parse(entry) };
 }
 
-function nameUniqueFile(path: string, file: string): NamedFile {
+function nameUniqueFile(path: string, file: string, rules: SpriteRules): NamedFile {
   const key = file.endsWith('.png') ? file.slice(0, -4) : '';
   if (!SLUG.test(key)) {
     return fail('NAME_PATTERN', path, `expected unique/<uniqueKey>.png with a lower-case slug key`);
   }
-  const entry = { key, origin: 'unique', realm: null, type: null, path: `${SPRITE_ROOT}/${path}` };
+  if (!rules.catalogue.uniques.has(key)) {
+    return fail('ORPHAN_UNIQUE', path, `no unique template has the key "${key}"`);
+  }
+  const entry = {
+    key,
+    tier: 'unique',
+    tokenType: null,
+    type: null,
+    path: `${SPRITE_ROOT}/${path}`,
+  };
   return { kind: 'entry', entry: uniqueSpriteEntrySchema.parse(entry) };
 }
 
-function nameFile(path: string, types: SpriteTypeLookup): NamedFile {
+function nameFile(path: string, rules: SpriteRules): NamedFile {
   const segments = path.split('/');
   if (path === PLACEHOLDER_SPRITE_FILE) return { kind: 'placeholder' };
-  if (segments.length === 3 && segments[0] === 'base') {
-    return nameBaseFile(path, segments[1], segments[2], types);
+  if (segments[0] === 'base' && segments.length > 1) {
+    const [, folder, ...rest] = segments;
+    return nameBaseFile(path, folder, rest.length === 1 ? rest[0] : '', rules);
   }
-  if (segments.length === 2 && segments[0] === 'unique') return nameUniqueFile(path, segments[1]);
-  return fail(
-    'NAME_PATTERN',
-    path,
-    `expected base/<realm>-<type>/<realm>-<type>-<NN>.png or unique/<uniqueKey>.png`,
-  );
+  if (segments.length === 2 && segments[0] === 'unique') {
+    return nameUniqueFile(path, segments[1], rules);
+  }
+  return fail('NAME_PATTERN', path, `${BASE_SHAPE} or unique/<uniqueKey>.png`);
 }
 
 function imageFailures(file: SpriteFile): SpriteFailure[] {
@@ -213,43 +244,90 @@ function duplicateFailures(entries: readonly SpriteManifestEntry[]): SpriteFailu
   return failures;
 }
 
+function templateFailures(rules: SpriteRules): SpriteFailure[] {
+  return rules.catalogue.uniques
+    .all()
+    .filter((unique) => !rules.allowsTier(unique.tokenType, 'unique'))
+    .map((unique) => {
+      const path = `unique/${uniqueSpriteKey(unique.key)}.png`;
+      const message = `${path}: ${unique.tokenType} tokens have no unique tier`;
+      return { code: 'UNIQUE_TIER_NOT_ALLOWED', path, message };
+    });
+}
+
+function missingUniques(
+  files: readonly SpriteFile[],
+  catalogue: SpriteCatalogue,
+  art: TUniqueArt,
+): SpriteFailure[] {
+  const paths = new Set(files.map((file) => file.path));
+  return catalogue.uniques.all().flatMap((unique): SpriteFailure[] => {
+    const path = `unique/${uniqueSpriteKey(unique.key)}.png`;
+    if (unique.art !== art || paths.has(path)) return [];
+    const message = `${path}: unique "${unique.key}" has no sprite file, the placeholder is used`;
+    return [
+      { code: art === 'ready' ? 'UNIQUE_FILE_MISSING' : 'UNIQUE_ART_PENDING', path, message },
+    ];
+  });
+}
+
 export function buildSpriteManifest(
   files: readonly SpriteFile[],
-  types: SpriteTypeLookup,
+  catalogue: SpriteCatalogue,
+  allowsTier: AllowsTier = tokenTypeAllowsTier,
 ): SpriteManifestResult {
+  const rules: SpriteRules = { catalogue, allowsTier };
   const sorted = [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   const failures: SpriteFailure[] = [];
   const entries: SpriteManifestEntry[] = [];
   let placeholder = false;
   for (const file of sorted) {
-    const named = nameFile(file.path, types);
+    const named = nameFile(file.path, rules);
     if (named.kind === 'failure') failures.push(named.failure);
     if (named.kind === 'entry') entries.push(named.entry);
     if (named.kind === 'placeholder') placeholder = true;
     if (named.kind !== 'failure') failures.push(...imageFailures(file));
   }
-  failures.push(...duplicateFailures(entries));
+  failures.push(
+    ...duplicateFailures(entries),
+    ...templateFailures(rules),
+    ...missingUniques(sorted, catalogue, 'ready'),
+  );
   if (!placeholder) {
     const message = `${PLACEHOLDER_SPRITE_FILE}: the placeholder sprite is missing`;
     failures.push({ code: 'NO_PLACEHOLDER', path: PLACEHOLDER_SPRITE_FILE, message });
   }
   if (failures.length > 0) return { ok: false, failures };
   const manifest = { placeholder: `${SPRITE_ROOT}/${PLACEHOLDER_SPRITE_FILE}`, entries };
-  return { ok: true, manifest: spriteManifestSchema.parse(manifest) };
+  return {
+    ok: true,
+    manifest: spriteManifestSchema.parse(manifest),
+    warnings: missingUniques(sorted, catalogue, 'pending'),
+  };
 }
 
-function realmSource(realm: ERarityKind | null): string {
-  if (realm === null) return 'null';
-  const member = Object.entries(ERarityKind).find(([, value]) => value === realm);
-  return `ERarityKind.${member?.[0] ?? ''}`;
+export function validateSpriteFiles(
+  files: readonly SpriteFile[],
+  catalogue: SpriteCatalogue,
+  allowsTier: AllowsTier = tokenTypeAllowsTier,
+): SpriteFailure[] {
+  const result = buildSpriteManifest(files, catalogue, allowsTier);
+  const failures = result.ok ? [] : result.failures;
+  return [...failures, ...missingUniques(files, catalogue, 'pending')];
+}
+
+function tokenTypeSource(tokenType: ETokenType | null): string {
+  if (tokenType === null) return 'null';
+  const member = Object.entries(ETokenType).find(([, value]) => value === tokenType);
+  return `ETokenType.${member?.[0] ?? ''}`;
 }
 
 function entrySource(entry: SpriteManifestEntry): string {
   return [
     '    {',
     `      key: '${entry.key}',`,
-    `      origin: '${entry.origin}',`,
-    `      realm: ${realmSource(entry.realm)},`,
+    `      tier: '${entry.tier}',`,
+    `      tokenType: ${tokenTypeSource(entry.tokenType)},`,
     `      type: ${entry.type === null ? 'null' : `'${entry.type}'`},`,
     `      path: '${entry.path}',`,
     '    },',
@@ -258,9 +336,11 @@ function entrySource(entry: SpriteManifestEntry): string {
 
 export function spriteManifestSource(manifest: SpriteManifest): string {
   const entries = manifest.entries.map(entrySource);
-  const usesRealm = manifest.entries.some((entry) => entry.realm !== null);
+  const usesTokenType = manifest.entries.some((entry) => entry.tokenType !== null);
   return [
-    ...(usesRealm ? [`import { ERarityKind } from '../abstraction/hexobject-abstraction';`] : []),
+    ...(usesTokenType
+      ? [`import { ETokenType } from '../abstraction/hexobject-abstraction';`]
+      : []),
     `import type { SpriteManifest } from './sprite-files';`,
     '',
     'export const SPRITE_MANIFEST: SpriteManifest = {',

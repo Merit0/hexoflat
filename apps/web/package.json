@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "size-limit": "size-limit",
     "tokens:manifest": "tsx scripts/build-sprite-manifest.ts",
+    "sprites:coverage": "tsx scripts/print-sprite-coverage.ts",
     "tokens:sample": "tsx scripts/print-token-sample.ts"
   },
   "size-limit": [

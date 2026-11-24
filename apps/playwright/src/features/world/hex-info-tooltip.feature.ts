@@ -46,22 +46,22 @@ export class HexInfoTooltipFeature extends BaseFeature {
     );
   }
 
-  async verifyShowsItemIconAndRarity(rarity: RegExp): Promise<void> {
+  async verifyShowsItemIconAndTokenType(tokenType: RegExp): Promise<void> {
     await this.step(
-      `Verify the hover card shows an item icon and the rarity "${rarity}"`,
+      `Verify the hover card shows an item icon and the token type "${tokenType}"`,
       async () => {
         await this.campingMap.hexInfoTooltip.verifyIconIsShown();
-        await this.campingMap.hexInfoTooltip.verifyRarity(rarity);
-        await this.campingMap.hexInfoTooltip.verifyDividerFollowsRarity();
+        await this.campingMap.hexInfoTooltip.verifyTokenType(tokenType);
+        await this.campingMap.hexInfoTooltip.verifyDividerFollowsLight();
       },
     );
   }
 
-  async verifyShowsIconWithoutRarity(): Promise<void> {
-    await this.step('Verify the hover card shows an icon but no rarity', async () => {
+  async verifyShowsIconWithoutTokenType(): Promise<void> {
+    await this.step('Verify the hover card shows an icon but no token type', async () => {
       await this.campingMap.hexInfoTooltip.verifyIconIsShown();
-      await this.campingMap.hexInfoTooltip.verifyNoRarity();
-      await this.campingMap.hexInfoTooltip.verifyDividerHasNoRarity();
+      await this.campingMap.hexInfoTooltip.verifyNoTokenType();
+      await this.campingMap.hexInfoTooltip.verifyDividerHasNoLight();
     });
   }
 

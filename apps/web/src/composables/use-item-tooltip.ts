@@ -6,9 +6,9 @@ import {
 } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import type { SkillRanks } from '@hexoflat/engine/skills/skill-rules';
 import { tokenHeartPoints } from '@hexoflat/engine/combat/heart-points';
-import { tokenRarity } from '@hexoflat/engine/content/rarity-rules';
+import { itemTokenTypeOf } from '@hexoflat/engine/content/token-type-rules';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
-import { tokenRarityTone } from '@/render/token-look';
+import { tokenLightName } from '@/render/token-look';
 import { useHeroStore } from '@/stores/hero-store';
 import { useHeroInventoryStore, type InventoryItem } from '@/stores/hero-inventory-store';
 import { useHeroStashStore } from '@/stores/hero-stash-store';
@@ -41,8 +41,8 @@ export function withToken(
     ...view,
     token,
     dimension: token.dimension,
-    rarity: tokenRarity(token),
-    rarityTone: tokenRarityTone(token),
+    tokenType: itemTokenTypeOf(token),
+    lightName: tokenLightName(token),
     hearts: tokenHeartPoints(token),
   };
 }

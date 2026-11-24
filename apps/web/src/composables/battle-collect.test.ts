@@ -1,4 +1,4 @@
-import { locationTokenOrigin } from '@hexoflat/engine/registry/location-token-origin';
+import { locationDropContext } from '@hexoflat/engine/registry/location-drop-context';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BATTLE_RULES } from '@hexoflat/engine/battle/battle-content';
@@ -38,7 +38,7 @@ function fight(): BattleState {
     { id: 'b', seed: 's', board: floor(), creatures, tokenSecret: TEST_TOKEN_SECRET },
     BATTLE_RULES,
   ).battle;
-  return { ...battle, tokenOrigin: locationTokenOrigin('cave') };
+  return { ...battle, dropContext: locationDropContext('cave') };
 }
 
 function victory(): BattleState {

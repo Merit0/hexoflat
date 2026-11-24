@@ -63,7 +63,7 @@ export class BattleFlowFeature extends BaseFeature {
   private async equipAShieldOnTheMap(): Promise<void> {
     await new VerifyInventoryFeature().givenTokenItem({
       type: 'shield',
-      realm: 'idol',
+      tokenType: 'idol',
       mapTier: 1,
       attributes: [],
     });

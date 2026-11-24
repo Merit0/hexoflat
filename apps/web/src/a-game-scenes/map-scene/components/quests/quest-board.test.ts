@@ -3,7 +3,7 @@ import { createApp, nextTick, type App } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
 import { mintBaseToken, tokenSourceIdOf } from '@hexoflat/engine/tokens/game-tokens';
-import { DEFAULT_TOKEN_ORIGIN } from '@hexoflat/engine/tokens/token-origin';
+import { DEFAULT_DROP_CONTEXT } from '@hexoflat/engine/tokens/drop-context';
 import { i18n } from '@/i18n';
 import { applyQuestProjection, resetQuestProjection } from '@/services/quests/quest-projection';
 import {
@@ -228,7 +228,7 @@ describe('quest board layout and details', () => {
       {
         seed: 'quest-reward',
         sourceId: tokenSourceIdOf('quest', wood.id),
-        origin: DEFAULT_TOKEN_ORIGIN,
+        dropContext: DEFAULT_DROP_CONTEXT,
       },
       itemKey,
       0,
@@ -247,6 +247,34 @@ describe('quest board layout and details', () => {
     expect(details?.querySelector<HTMLElement>('.item-icon')?.style.backgroundImage).toContain(
       tokenSpriteUrl(token),
     );
+  });
+
+  it.each([
+    ['an EARTH location', wood, 'dimensions.earth'],
+    ['an UNDERWORLD location', bone, 'dimensions.underworld'],
+    ['a moved quest', { ...wood, locations: ['cave' as const] }, 'dimensions.underworld'],
+  ])('shows the dimension of %s in the details', async (_case, offer, dimensionKey) => {
+    expect(offer).not.toHaveProperty('dimension');
+    applyQuestProjection({ questBoard: { ...board, offers: [offer] } });
+    mount();
+    byId(`quest-row-${offer.id}`)!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    const label = document.querySelector(`[data-testid="quest-details-${offer.id}"] .dimension`);
+    expect(label?.textContent).toBe(
+      i18n.global.t('dimensions.label', { name: i18n.global.t(dimensionKey) }),
+    );
+  });
+
+  it('shows the location dimension of a quest accepted in an older save', async () => {
+    applyQuestProjection({
+      quests: { active: [{ questId: 'bone-hunter', progress: 0, state: 'active' }], done: {} },
+    });
+    mount();
+    byId('quest-row-bone-hunter')!.dispatchEvent(new MouseEvent('mouseenter'));
+    await nextTick();
+    expect(
+      document.querySelector('[data-testid="quest-details-bone-hunter"] .dimension')?.textContent,
+    ).toBe(i18n.global.t('dimensions.label', { name: i18n.global.t('dimensions.underworld') }));
   });
 
   it('opens the details on hover only and closes them after the pointer leaves', async () => {

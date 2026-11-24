@@ -31,22 +31,22 @@ test.describe('hex hover card', { tag: ['@board'] }, () => {
     await hexInfo.verifySealState('interactable');
   });
 
-  test('An item shows its icon and rarity, and the divider gem follows the rarity', async () => {
+  test('An item shows its icon and token type, and the divider gem follows the light', async () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
 
     await hexInfo.placeItemAndHover(HexobjectKeys.sword);
 
-    await hexInfo.verifyShowsItemIconAndRarity(/Idol/i);
+    await hexInfo.verifyShowsItemIconAndTokenType(/Idol/i);
   });
 
-  test('A construction shows a general icon on top and no rarity', async () => {
+  test('A construction shows a general icon on top and no token type', async () => {
     await new OpenCampingMapFeature().open();
     const hexInfo = new HexInfoTooltipFeature();
 
     await hexInfo.hoverFirstHexWithKey(HexobjectKeys.fireplace);
 
-    await hexInfo.verifyShowsIconWithoutRarity();
+    await hexInfo.verifyShowsIconWithoutTokenType();
   });
 
   test('The card disappears when the pointer leaves the board', async () => {

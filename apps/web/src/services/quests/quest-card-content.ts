@@ -1,14 +1,16 @@
 import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
 import { describeQuest } from '@hexoflat/engine/quests/objectives';
+import { uniqueRewardKey } from '@hexoflat/engine/quests/quest-definition';
 import type { QuestOfferProjection } from '@hexoflat/engine/quests/quest-board-projection';
 import { questRuleParams } from './quest-rule-params';
 
-export type QuestCardContent = Omit<QuestOfferProjection, 'dayId' | 'locations' | 'turnIn'>;
+export type QuestCardContent = Omit<QuestOfferProjection, 'dayId' | 'turnIn'>;
 
 export function legacyQuestCard(id: string): QuestCardContent | undefined {
   const definition = ALL_QUESTS[id];
   if (!definition) return;
-  const { nameKey, descKey, tableRule, dimension, accept, rewards, repeat, objective } = definition;
+  const { nameKey, descKey, tableRule, locations, accept, rewards, repeat, objective } = definition;
+  const uniqueReward = uniqueRewardKey(definition);
   return {
     id,
     templateId: id,
@@ -16,11 +18,12 @@ export function legacyQuestCard(id: string): QuestCardContent | undefined {
     descKey,
     tableRule,
     howKey: `quest.${id}.how`,
-    dimension,
+    locations,
     accept,
     rewards,
     repeat,
     goal: describeQuest(definition),
+    ...(uniqueReward ? { uniqueReward } : {}),
     ...(objective.kind === 'expedition' ? { expedition: objective.params } : {}),
   };
 }

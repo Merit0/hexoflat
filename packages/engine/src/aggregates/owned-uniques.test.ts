@@ -4,23 +4,28 @@ import { emptyProgressState, progressStateSchema } from './progress-state';
 
 const HERO = 'hero-1';
 
-describe('progress.ownedUniques (LG5a)', () => {
-  it('declares progress schema version 11 and starts a new hero with no uniques', () => {
-    expect(AGGREGATES.progress.schemaVersion).toBe(11);
-    expect(emptyProgressState(HERO).ownedUniques).toEqual([]);
+describe('progress.ownedUniques is removed (DA5a-2, Q5)', () => {
+  it('declares progress schema version 14 without the field', () => {
+    expect(AGGREGATES.progress.schemaVersion).toBe(14);
+    expect(emptyProgressState(HERO)).not.toHaveProperty('ownedUniques');
+    expect(
+      progressStateSchema.safeParse({ ...emptyProgressState(HERO), ownedUniques: [] }).success,
+    ).toBe(false);
   });
 
-  it('upcasts a v9 document with an empty list', () => {
+  it('upcasts a v9 document without the field', () => {
     const v9 = JSON.parse(JSON.stringify(emptyProgressState(HERO))) as Record<string, unknown>;
-    delete v9.ownedUniques;
     expect(upcastAggregate('progress', 9, v9, { heroId: HERO })).toEqual(emptyProgressState(HERO));
   });
 
-  it('keeps owned unique keys and refuses a key that is not a slug', () => {
-    const state = { ...emptyProgressState(HERO), ownedUniques: ['lantern-eater'] };
-    expect(progressStateSchema.parse(state).ownedUniques).toEqual(['lantern-eater']);
-    expect(progressStateSchema.safeParse({ ...state, ownedUniques: ['Bad Key'] }).success).toBe(
-      false,
-    );
-  });
+  it.each([[[]], [['lantern-eater', 'last-verdict']]])(
+    'drops only ownedUniques %j from a v12 document',
+    (ownedUniques) => {
+      const current = { ...emptyProgressState(HERO), steps: 41, kills: 3, trips: 2 };
+      const v12 = { ...current, ownedUniques };
+      const before = structuredClone(v12);
+      expect(upcastAggregate('progress', 12, v12, { heroId: HERO })).toEqual(current);
+      expect(v12).toEqual(before);
+    },
+  );
 });

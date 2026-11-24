@@ -7,7 +7,8 @@ import { TOKEN_UNIQUES } from '../../content/token-uniques.content';
 import { attributeProfilesSchema } from '../equipment/attribute-profile-schema';
 import { createEquipmentAttributeGenerator } from '../equipment/generator/create-equipment-attribute-generator';
 import type { SpriteManifest } from '../sprite-files';
-import type { UniqueTokenDefinition } from '../unique-schema';
+import { uniqueAttributeProfiles } from '../unique-attribute-profiles';
+import type { UniqueTokenContent } from '../unique-schema';
 import { SPRITE_MANIFEST } from '../sprite-manifest';
 import { ManifestSpriteRegistry } from '../sprite-registry';
 import { SpecSheetDescriptionBuilder } from './description-builder';
@@ -17,13 +18,13 @@ import { EmptySkillGenerator } from './skill-generator';
 import { ManifestSpriteResolver } from './sprite-resolver';
 import { TokenFactory, type TokenFactoryParts } from './token-factory';
 import { ZodTokenValidator } from './token-validator';
-import { RealmTypePicker } from './type-picker';
+import { BaseTypePicker } from './type-picker';
 import { validateFactoryContent } from './validate-factory-content';
 
 export function createTokenFactory(
   content: TokenContent = TOKEN_CONTENT,
   manifest: SpriteManifest = SPRITE_MANIFEST,
-  uniqueDefinitions: readonly UniqueTokenDefinition[] = TOKEN_UNIQUES,
+  uniqueDefinitions: readonly UniqueTokenContent[] = TOKEN_UNIQUES,
   steps: Partial<Omit<TokenFactoryParts, 'validator'>> = {},
 ): TokenFactory {
   const profiles = attributeProfilesSchema.parse(content.profiles);
@@ -31,21 +32,25 @@ export function createTokenFactory(
     content,
     uniqueDefinitions,
   );
-  validateFactoryContent({ types, attributes, uniques, content });
-  const spriteResolver = new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest));
+  const uniqueProfiles = uniqueAttributeProfiles(profiles, attributes.all());
+  validateFactoryContent({ types, attributes, uniques, content, uniqueProfiles });
   return new TokenFactory(
     {
       baseItems,
-      typePicker: new RealmTypePicker(types),
+      typePicker: new BaseTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(content.adjectives),
-      spriteResolver,
+      spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(manifest)),
       attributeGenerator: createEquipmentAttributeGenerator(attributes, profiles),
+      uniqueAttributeGenerator: createEquipmentAttributeGenerator(attributes, uniqueProfiles),
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(content.priceRanges),
       descriptionBuilder: new SpecSheetDescriptionBuilder(),
       ...steps,
-      validator: new ZodTokenValidator(types, attributes, profiles, baseItems),
+      validator: new ZodTokenValidator(types, attributes, profiles, baseItems, {
+        uniques,
+        profiles: uniqueProfiles,
+      }),
     },
-    { types, uniques, spriteResolver },
+    { types, uniques },
   );
 }

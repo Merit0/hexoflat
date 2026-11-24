@@ -22,14 +22,14 @@ export class EquipmentCritFeature extends BaseFeature {
         const grants = new VerifyInventoryFeature();
         const plain = await grants.givenTokenItem({
           type: 'sword',
-          realm: 'idol',
+          tokenType: 'idol',
           mapTier: 1,
           attributes: [],
         });
         this.replacement = plain.id;
         const weapon = await grants.givenTokenItem({
           type: 'sword',
-          realm: 'idol',
+          tokenType: 'idol',
           mapTier: multiplier === 2 ? 1 : 4,
           attributes: [
             { key: 'crit-chance', value: multiplier === 2 ? 2 : 10 },

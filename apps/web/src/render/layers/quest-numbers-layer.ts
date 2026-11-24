@@ -1,6 +1,6 @@
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { itemLook } from '@/render/token-look';
-import { RARITY_FRAME_URLS } from '@/render/rarity';
+import { LIGHT_NAME_FRAME_URLS } from '@/render/light';
 import { CREATURE_SPRITES } from '@/render/creature-sprites';
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { getPrototype } from '@hexoflat/engine';
@@ -48,7 +48,7 @@ export function questLayerAssetPaths(floorSprite: string): string[] {
     floorSprite,
     '/hex-assets/hex-constructs/camping-door-hex.png',
     QUEST_CHEST_SPRITE,
-    ...Object.values(RARITY_FRAME_URLS),
+    ...Object.values(LIGHT_NAME_FRAME_URLS),
     CREATURE_SPRITES.hero,
     hiddenTileLook('mist').url,
     ...terrainLookPaths(),
@@ -246,7 +246,7 @@ export function createQuestNumbersLayer(deps: QuestLayerDeps): QuestNumbersLayer
       place(
         marks,
         `g:${coordinateKey(stack.hex)}`,
-        `${stack.itemKey}|${stack.amount}|${model.collect}|${stack.token?.id}|${stack.token?.sprite}|${stack.token?.rarity}|${stack.token?.origin}`,
+        `${stack.itemKey}|${stack.amount}|${model.collect}|${stack.token?.id}|${stack.token?.sprite}|${stack.token?.tokenType}|${stack.token?.tier}`,
         () =>
           tileAt(stack.hex, stackSprite(stack.itemKey, stack.amount, stack.token), model.collect),
       );

@@ -5,7 +5,7 @@ import { apiClient } from '@/api/client';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { applyProgress, settleInventorySync } from '@/services/inventory/inventory-sync';
 import type { ProjectedAggregate } from '@/services/player/player-socket';
-import { currentInventory } from '@/services/trade/trade-commands';
+import { currentInventory, heldUniques } from '@/services/trade/trade-commands';
 import { previewRefresh } from '@/services/trade/trade-preview';
 import { traderProjection } from '@/services/trade/trader-projection';
 import { useTraderStore } from '@/stores/trader-store';
@@ -26,6 +26,7 @@ function testTrader(key: TTraderKey, state: TraderState): TestTrader {
     trips,
     goods: state.goods.map((cell) => (cell ? { ...cell } : null)),
     buyback: state.buyback.map((cell) => (cell ? { ...cell } : null)),
+    uniqueBuyback: heldUniques(key).map((entry) => ({ ...entry })),
     refreshPrice: previewRefresh(key, state, trips, will).price,
   };
 }

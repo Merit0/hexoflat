@@ -3,12 +3,13 @@ import { describeQuest } from './objectives';
 import { questBoardRefreshCost } from './quest-board';
 import type { QuestLog } from './quest-log-state';
 import type { QuestOffer } from './quest-offer';
+import { uniqueRewardKey } from './quest-definition';
 
 export function projectQuestOffer(offer: QuestOffer) {
   const { definition, howKey, templateId, id, dayId } = offer;
-  const { nameKey, descKey, tableRule, dimension, locations, accept, rewards, repeat, turnIn } =
-    definition;
+  const { nameKey, descKey, tableRule, locations, accept, rewards, repeat, turnIn } = definition;
   const objective = definition.objective;
+  const uniqueReward = uniqueRewardKey(definition);
   return {
     id,
     templateId,
@@ -17,13 +18,13 @@ export function projectQuestOffer(offer: QuestOffer) {
     descKey,
     tableRule,
     howKey,
-    dimension,
     locations,
     accept,
     rewards,
     repeat,
     turnIn,
     goal: describeQuest(definition),
+    ...(uniqueReward ? { uniqueReward } : {}),
     ...(objective.kind === 'expedition'
       ? {
           expedition: {

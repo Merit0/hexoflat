@@ -39,7 +39,7 @@ describe('buildHexInfo icon', () => {
   it('uses the skull for creatures', () => {
     const view = buildHexInfo(placed('skeleton-pack'), 'Creature', t, te);
     expect(view.icon).toBe('skull');
-    expect(view.rarity).toBeNull();
+    expect(view.tokenType).toBeNull();
   });
 
   it('uses the item own icon for a sword', () => {
@@ -56,7 +56,7 @@ describe('buildHexInfo icon', () => {
   });
 });
 
-describe('LG5d characterization: gear headline and rarity without a token', () => {
+describe('LG5d characterization: gear headline and tokenType without a token', () => {
   it('shows the sword damage as one heart', () => {
     expect(buildHexInfo(placed('sword'), 'Equipment', t, te).headline).toEqual({
       value: '1',
@@ -72,8 +72,8 @@ describe('LG5d characterization: gear headline and rarity without a token', () =
 
   it.each(['sword', 'shield', 'axe', 'pickaxe'] as const)('%s reads as an idol item', (key) => {
     const view = buildHexInfo(placed(key), 'Gear', t, te);
-    expect(view.rarity?.tone).toBe('idol');
-    expect(view.rarity?.label).toBe('itemTooltip.rarity.idol');
+    expect(view.tokenType?.tone).toBe('idol');
+    expect(view.tokenType?.label).toBe('content.tokens.tokenType.idol');
   });
 });
 

@@ -84,7 +84,7 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
     scroll();
     const tool = useHeroToolStore();
     expect(tool.isDragging).toBe(true);
-    expect(tool.origin).toEqual(position.value);
+    expect(tool.heroHex).toEqual(position.value);
     tool.stopTool();
     enabled.value = false;
     scroll();
@@ -148,7 +148,7 @@ describe('the mouse wheel takes the hand only when no hand action is running', (
   it('uses the active quest position by default without a board-specific origin override', () => {
     questRun.value = { position: position.value } as QuestProjection;
     scroll();
-    expect(useHeroToolStore().origin).toEqual(position.value);
+    expect(useHeroToolStore().heroHex).toEqual(position.value);
   });
 
   it('does nothing while a world action locks the tool', () => {

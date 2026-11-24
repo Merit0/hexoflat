@@ -164,6 +164,51 @@ describe.skipIf(!dbAvailable)('generated quest board (PostgreSQL)', () => {
     );
   });
 
+  it('DA8-3 the unique reward fixture is refused without the fixtures flag and in production', async () => {
+    const player = await campPlayer();
+    await send(player, 'QUEST_BOARD_SYNC');
+    const initial = await board(player);
+    const fixture = () =>
+      kit.service.questFixture(player.userId, player.heroId, { uniqueReward: true });
+    const { HEXOFLAT_E2E_FIXTURES: flag, NODE_ENV: mode } = process.env;
+    try {
+      process.env.HEXOFLAT_E2E_FIXTURES = '';
+      await expect(fixture()).rejects.toThrow('FORBIDDEN');
+      process.env.HEXOFLAT_E2E_FIXTURES = '1';
+      process.env.NODE_ENV = 'production';
+      await expect(fixture()).rejects.toThrow('FORBIDDEN');
+    } finally {
+      process.env.HEXOFLAT_E2E_FIXTURES = flag;
+      process.env.NODE_ENV = mode;
+    }
+    expect(await board(player)).toEqual(initial);
+  });
+
+  it('DA8-3 with the flag the fixture offers a quest that grants one lantern-eater', async () => {
+    const player = await campPlayer();
+    const { HEXOFLAT_E2E_FIXTURES: flag } = process.env;
+    process.env.HEXOFLAT_E2E_FIXTURES = '1';
+    const fixture = (raw: unknown) => kit.service.questFixture(player.userId, player.heroId, raw);
+    try {
+      await expect(fixture({ uniqueReward: true })).rejects.toThrow('INVALID_COMMAND');
+      await send(player, 'QUEST_BOARD_SYNC');
+      await fixture({ uniqueReward: true });
+      const { offers } = await board(player);
+      expect(offers).toHaveLength(7);
+      const offer = offers.find(({ uniqueReward }) => uniqueReward === 'lantern-eater')!;
+      expect((await send(player, 'QUEST_ACCEPT', { questId: offer.id })).result).toBe('applied');
+      await expect(fixture({ uniqueReward: true })).rejects.toThrow('INVALID_COMMAND');
+      await fixture({ active: [{ questId: offer.id, progress: 3, state: 'ready' }] });
+      expect((await send(player, 'QUEST_CLAIM', { questId: offer.id })).result).toBe('applied');
+    } finally {
+      process.env.HEXOFLAT_E2E_FIXTURES = flag;
+    }
+    const inventory = (await snapshot(player)).aggregates.inventory!.state as InventoryState;
+    expect(inventory.bag.flatMap((cell) => cell?.token?.uniqueKey ?? [])).toEqual([
+      'lantern-eater',
+    ]);
+  });
+
   it('keeps old accepted template IDs claimable after generated offers are enabled', async () => {
     const player = await campPlayer();
     await kit.service.questFixture(player.userId, player.heroId, {

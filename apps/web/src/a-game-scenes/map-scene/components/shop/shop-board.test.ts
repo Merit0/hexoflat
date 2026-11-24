@@ -91,7 +91,7 @@ describe('shop board layout', () => {
     const potion = byId('shop-goods-cell-0')!;
     expect(potion.dataset.itemKey).toBe(K.HEALTH_BOTTLE);
     expect(potion.dataset.itemAmount).toBe('3');
-    expect(potion.dataset.rarity).toBeTruthy();
+    expect(potion.dataset.light).toBeTruthy();
     expect(potion.dataset.price).toBe(String(coinPriceOf(K.HEALTH_BOTTLE)! * 3));
     expect(byId('shop-price-0')!.textContent.trim()).toBe(
       String(coinPriceOf(K.HEALTH_BOTTLE)! * 3),

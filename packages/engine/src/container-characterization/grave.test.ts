@@ -1,3 +1,4 @@
+import { EDimension } from '../dimensions/dimensions';
 import { describe, expect, it } from 'vitest';
 import { keysOf } from './golden-setup';
 import { creatureById } from '../battle/battle-board';
@@ -83,6 +84,7 @@ describe('CH-P0 grave: price, hero move, room, bag', () => {
       {
         hex: TARGET,
         tables: ['skeleton-warrior-loot'],
+        dimensions: [EDimension.UNDERWORLD],
         examined: true,
         container: { id: '1,0', kind: 'grave', at: TARGET, contents: [], status: 'empty' },
       },

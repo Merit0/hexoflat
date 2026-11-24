@@ -29,6 +29,23 @@ describe('static board serializer/deserializer', () => {
     expect(textAgain).toBe(text);
   });
 
+  it.each(Object.values(EDimension))(
+    'B4: reading a %s drawing gives the same answer as the drawing schema',
+    (dimension) => {
+      const drawing = { ...SILESIA_BOARD, dimension };
+      const text = serializeStaticBoardDrawing(drawing);
+      const schema = StaticBoardDrawingSchema.safeParse(drawing);
+      if (schema.success) {
+        expect(deserializeStaticBoardDrawing(text).dimension).toBe(dimension);
+        return;
+      }
+      expect(dimension).toBe(EDimension.NOWHERE);
+      const [issue] = schema.error.issues;
+      expect(issue.message).toBe('NOT_A_LOCATION_DIMENSION: nowhere');
+      expect(() => deserializeStaticBoardDrawing(text)).toThrow(issue.message);
+    },
+  );
+
   it('sorts the legend and drops letters no longer used by any cell', () => {
     const drawing = {
       id: 'test',

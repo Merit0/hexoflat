@@ -2,7 +2,7 @@
   <tool-hex-anchor
     v-slot="{ flipped }"
     :at="at"
-    :origin="origin"
+    :hero-hex="heroHex"
     :tile-width="tileWidth"
     :tile-height="tileHeight"
     data-testid="quest-tool-hex"
@@ -34,7 +34,7 @@ import type { QuestHandAction } from '@/services/quests/quest-field-model';
 
 const props = defineProps<{
   at: IHexCoordinates;
-  origin: IHexCoordinates;
+  heroHex: IHexCoordinates;
   action: QuestHandAction | null;
   toolKey: THeroToolKey;
   tileWidth: number;

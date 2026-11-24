@@ -13,7 +13,7 @@
       <quest-tool-hex
         v-if="tool"
         :at="tool.at"
-        :origin="tool.origin"
+        :hero-hex="tool.heroHex"
         :action="tool.action"
         :tool-key="tool.toolKey"
         :tile-width="tileScreenSize(camera).w"
@@ -86,7 +86,7 @@ const tool = computed(() => {
   const at = heroTool.hover;
   if (!at) return null;
   const action = toolKey === HEXOBJECT_KEYS.HAND ? questHandAction(projection, at) : null;
-  return { at, origin: projection.position, action, toolKey };
+  return { at, heroHex: projection.position, action, toolKey };
 });
 
 const handWorking = ref(false);

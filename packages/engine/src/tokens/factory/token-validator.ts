@@ -1,3 +1,4 @@
+import { availableInDimension } from '../../dimensions/availability';
 import type { BaseItemRegistry } from '../base-item-registry';
 import { currentItemTokenSchema, type ItemToken } from '../token-schema';
 import {
@@ -6,10 +7,15 @@ import {
   type ITokenValidator,
   type TokenResult,
 } from './token-generation';
-import { attributeFailure, attributeSetFailure } from '../attribute-rules';
+import { attributeFailure, attributeSetFailure, type AttributeCheck } from '../attribute-rules';
 import type { AttributeProfiles } from '../equipment/attribute-profile-schema';
-import type { AttributeRegistry, TypeRegistry } from '../registries';
+import type { AttributeRegistry, TypeRegistry, UniqueRegistry } from '../registries';
 import { mapTierSchema } from '../token-keys';
+
+export interface UniqueValidation {
+  uniques: UniqueRegistry;
+  profiles: AttributeProfiles;
+}
 
 export class ZodTokenValidator implements ITokenValidator {
   constructor(
@@ -17,18 +23,26 @@ export class ZodTokenValidator implements ITokenValidator {
     private readonly attributes: AttributeRegistry,
     private readonly profiles: AttributeProfiles,
     private readonly bases: BaseItemRegistry,
+    private readonly unique: UniqueValidation,
   ) {}
 
   validateAttributes(sheet: AttributeSheet): TokenResult<true> {
     if (!mapTierSchema.safeParse(sheet.mapTier).success)
       return refuseToken('INVALID_TOKEN', 'Invalid source tier');
-    const check =
-      sheet.origin === 'base'
-        ? { origin: 'base' as const, profiles: this.profiles }
-        : { origin: 'unique' as const };
-    const maxCount = this.profiles[`tier-${sheet.mapTier}`].maxCount;
-    if (sheet.origin === 'base' && sheet.attributes.length > maxCount) {
-      return refuseToken('INVALID_TOKEN', 'Too many base token attributes');
+    const authored = sheet.authored ?? [];
+    const check: AttributeCheck =
+      sheet.tier === 'base'
+        ? { tier: 'base', profiles: this.profiles }
+        : { tier: 'unique', profiles: this.unique.profiles, authored };
+    const missing = authored.filter(
+      (entry) => !sheet.attributes.some((attribute) => attribute.key === entry.attribute),
+    );
+    if (missing.length > 0) {
+      return refuseToken('INVALID_TOKEN', `Authored attribute ${missing[0].attribute} is missing`);
+    }
+    const { maxCount } = check.profiles[`tier-${sheet.mapTier}`];
+    if (sheet.attributes.length - authored.length > maxCount) {
+      return refuseToken('INVALID_TOKEN', `Too many ${sheet.tier} token attributes`);
     }
     for (const attribute of sheet.attributes) {
       const failure = attributeFailure(
@@ -50,9 +64,9 @@ export class ZodTokenValidator implements ITokenValidator {
     if (parsed.success) {
       const token = parsed.data;
       if (!this.types.has(token.type)) return refuseToken('INVALID_TOKEN', 'Unknown token type');
-      if (token.origin === 'base') {
+      if (token.tier === 'base') {
         const base = this.bases.get(token.baseKey!);
-        if (!base || base.dimension !== token.dimension || base.type !== token.type)
+        if (!base || !availableInDimension(base, token.dimension) || base.type !== token.type)
           return refuseToken('INVALID_TOKEN', 'Invalid concrete base item identity');
         if (
           base.attributes &&
@@ -60,11 +74,17 @@ export class ZodTokenValidator implements ITokenValidator {
         )
           return refuseToken('INVALID_TOKEN', 'Attribute is outside the base item pool');
       }
+      if (token.tier === 'unique' && !this.unique.uniques.has(token.uniqueKey!))
+        return refuseToken('INVALID_TOKEN', 'Unknown unique template');
       const checked = this.validateAttributes({
         type: this.types.get(token.type),
-        origin: token.origin,
+        tier: token.tier,
         mapTier: token.mapTier,
         attributes: token.attributes,
+        authored:
+          token.tier === 'unique'
+            ? this.unique.uniques.get(token.uniqueKey!).authoredAttributes
+            : [],
       });
       return checked.ok ? { ok: true, value: token } : checked;
     }

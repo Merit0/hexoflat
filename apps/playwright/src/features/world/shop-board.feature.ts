@@ -46,7 +46,7 @@ export class ShopBoardFeature extends BaseFeature {
     return this.step(`Put a "${type}" token in the bag through the dev grant`, () =>
       new VerifyInventoryFeature().givenTokenItem({
         type,
-        realm: 'idol',
+        tokenType: 'idol',
         mapTier: 1,
         ...(price === undefined ? {} : { price }),
       }),

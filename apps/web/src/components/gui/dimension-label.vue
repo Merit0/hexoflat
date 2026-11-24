@@ -1,5 +1,9 @@
 <template>
-  <span class="dimension">{{ t('dimensions.label', { name: names[dimension] }) }}</span>
+  <span class="dimension">{{
+    origin
+      ? t('dimensions.origin', { name: names[dimension] })
+      : t('dimensions.label', { name: names[dimension] })
+  }}</span>
 </template>
 
 <script setup lang="ts">
@@ -7,7 +11,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 
-defineProps<{ dimension: EDimension }>();
+defineProps<{ dimension: EDimension; origin?: boolean }>();
 const { t } = useI18n();
 const names = computed(() => ({
   [EDimension.HEAVEN]: t('dimensions.heaven'),

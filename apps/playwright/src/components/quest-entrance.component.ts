@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
 import type { TestHexCoordinates, TestTerrainHex } from '@web-test-api';
 
-export type QuestOrigin = {
+export type ClonedFieldSource = {
   marker: TestHexCoordinates;
   hero: TestHexCoordinates;
   terrain: TestTerrainHex[];
@@ -61,25 +61,25 @@ export class QuestEntranceComponent extends BaseComponent {
     await expect(this.page.getByTestId('quest-tool-hex')).toBeVisible();
   }
 
-  async readOrigin(marker: TestHexCoordinates): Promise<QuestOrigin> {
-    const origin = await this.page.evaluate(() => {
+  async readFieldSource(marker: TestHexCoordinates): Promise<ClonedFieldSource> {
+    const source = await this.page.evaluate(() => {
       const api = window.__HEXOFLAT_TEST__!;
       return { hero: api.getHeroCoordinates(), terrain: api.getImpassableTerrain() };
     });
-    if (!origin.hero) throw new Error('The hero is not on the world map');
-    expect(origin.terrain.length).toBeGreaterThan(0);
-    return { marker, hero: origin.hero, terrain: origin.terrain };
+    if (!source.hero) throw new Error('The hero is not on the world map');
+    expect(source.terrain.length).toBeGreaterThan(0);
+    return { marker, hero: source.hero, terrain: source.terrain };
   }
 
-  async verifyClonedField(origin: QuestOrigin) {
+  async verifyClonedField(source: ClonedFieldSource) {
     const field = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getQuestField());
     if (!field) throw new Error('No quest run is open');
-    expect(field.border).toEqual([{ hex: origin.marker, objectKey: 'camping-entrance' }]);
-    expect(field.exit).toEqual(origin.marker);
-    expect(field.position).toEqual(origin.hero);
+    expect(field.border).toEqual([{ hex: source.marker, objectKey: 'camping-entrance' }]);
+    expect(field.exit).toEqual(source.marker);
+    expect(field.position).toEqual(source.hero);
     expect(field.chest).toBeNull();
     expect(field.ground).toHaveLength(0);
-    expect(sortTerrain(field.terrain)).toEqual(sortTerrain(origin.terrain));
+    expect(sortTerrain(field.terrain)).toEqual(sortTerrain(source.terrain));
   }
 
   async freeNeighbour(): Promise<TestHexCoordinates> {

@@ -6,8 +6,11 @@ import type { AttributeRegistry } from './registries';
 import type { ItemTypeDefinition } from './token-content-schema';
 import type { TMapTier } from './token-keys';
 import type { TokenAttribute } from './token-schema';
+import type { AuthoredAttribute } from './unique-schema';
 
-export type AttributeCheck = { origin: 'base'; profiles: AttributeProfiles } | { origin: 'unique' };
+export type AttributeCheck =
+  | { tier: 'base'; profiles: AttributeProfiles }
+  | { tier: 'unique'; profiles: AttributeProfiles; authored: readonly AuthoredAttribute[] };
 
 export type AttributeTarget = Pick<ItemTypeDefinition, 'key' | 'tool' | 'group'>;
 
@@ -31,7 +34,7 @@ function typeFailure(
   return null;
 }
 
-function baseFailure(
+function rolledFailure(
   definition: EquipmentAttributeDefinition,
   type: AttributeTarget,
   attribute: TokenAttribute,
@@ -52,14 +55,9 @@ function baseFailure(
   return null;
 }
 
-function uniqueFailure(
-  definition: EquipmentAttributeDefinition,
-  attribute: TokenAttribute,
-): string | null {
-  if (definition.itemMax !== undefined && attribute.value > definition.itemMax) {
-    return `Attribute ${definition.key} value ${attribute.value} is above its itemMax ${definition.itemMax}`;
-  }
-  return null;
+function authoredRangeFailure(entry: AuthoredAttribute, attribute: TokenAttribute): string | null {
+  if (attribute.value >= entry.min && attribute.value <= entry.max) return null;
+  return `Attribute ${entry.attribute} value ${attribute.value} is outside its authored [${entry.min}, ${entry.max}]`;
 }
 
 function dependencyFailure(
@@ -79,6 +77,29 @@ function dependencyFailure(
   return null;
 }
 
+function carrierFailure(
+  registry: AttributeRegistry,
+  type: AttributeTarget,
+  key: string,
+): string | null {
+  if (!registry.has(key)) return `Attribute ${key} is unknown`;
+  const definition = registry.get(key);
+  if (!definition.implemented) return `Attribute ${key} is not implemented`;
+  return typeFailure(definition, type);
+}
+
+export function authoredAttributeFailure(
+  registry: AttributeRegistry,
+  type: AttributeTarget,
+  entry: AuthoredAttribute,
+): string | null {
+  const failure = carrierFailure(registry, type, entry.attribute);
+  if (failure) return failure;
+  const { itemMax } = registry.get(entry.attribute);
+  if (itemMax === undefined || entry.max <= itemMax) return null;
+  return `Attribute ${entry.attribute} value ${entry.max} is above its itemMax ${itemMax}`;
+}
+
 export function attributeFailure(
   registry: AttributeRegistry,
   type: AttributeTarget,
@@ -86,17 +107,16 @@ export function attributeFailure(
   check: AttributeCheck,
   tier: TMapTier,
 ): string | null {
-  if (!registry.has(attribute.key)) return `Attribute ${attribute.key} is unknown`;
-  const definition = registry.get(attribute.key);
-  if (!definition.implemented) return `Attribute ${attribute.key} is not implemented`;
+  const failure = carrierFailure(registry, type, attribute.key);
+  if (failure) return failure;
   if (!Number.isSafeInteger(attribute.value) || attribute.value < 1) {
     return `Attribute ${attribute.key} value ${attribute.value} is not a whole number from 1`;
   }
-  const failure = typeFailure(definition, type);
-  if (failure) return failure;
-  return check.origin === 'base'
-    ? baseFailure(definition, type, attribute, { profiles: check.profiles, tier })
-    : uniqueFailure(definition, attribute);
+  const authored =
+    check.tier === 'unique' && check.authored.find((entry) => entry.attribute === attribute.key);
+  if (authored) return authoredRangeFailure(authored, attribute);
+  const range = { profiles: check.profiles, tier };
+  return rolledFailure(registry.get(attribute.key), type, attribute, range);
 }
 
 function totalCapFailure(

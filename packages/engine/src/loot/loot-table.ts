@@ -1,6 +1,7 @@
 import { baseItemKeySchema } from '../tokens/base-item';
 import { z } from 'zod';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
+import { uniqueDropRulesSchema } from '../tokens/unique-drop';
 import type { ItemToken } from '../tokens/token-schema';
 
 const itemKeys = Object.values(HEXOBJECT_KEYS) as [THexobjectKey, ...THexobjectKey[]];
@@ -31,6 +32,8 @@ export const lootTableSchema = z
     rolls: rollsSchema,
     guaranteed: z.array(lootEntrySchema).optional(),
     entries: z.array(weightedLootEntrySchema),
+    uniqueDrops: uniqueDropRulesSchema.optional(),
+    alienRoll: z.boolean().optional(),
   })
   .refine((table) => table.entries.length > 0 || table.rolls[1] === 0, {
     message: 'a table that rolls needs at least one entry',

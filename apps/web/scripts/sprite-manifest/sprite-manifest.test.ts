@@ -10,16 +10,17 @@ import {
   SPRITE_SIZE,
   spriteManifestSource,
   TypeRegistry,
+  validateSpriteFiles,
 } from '@hexoflat/engine';
 import { collectSpriteFiles } from './collect-sprite-files';
 import { writePng } from './png-fixture';
 import { ITEMS_DIR, MANIFEST_FILE, runSpriteManifest } from './run-sprite-manifest';
 
-const types = createTokenRegistries().types;
+const catalogue = createTokenRegistries();
 
 describe('TG-10: item sprites in apps/web/public/hex-assets/items', () => {
   const files = collectSpriteFiles(ITEMS_DIR);
-  const result = buildSpriteManifest(files, types);
+  const result = buildSpriteManifest(files, catalogue);
 
   it('every file follows the name pattern and is a 512×512 RGBA PNG', () => {
     expect(result.ok ? [] : result.failures.map((failure) => failure.message)).toEqual([]);
@@ -31,6 +32,15 @@ describe('TG-10: item sprites in apps/web/public/hex-assets/items', () => {
         colorType: 6,
       });
     }
+  });
+
+  it('DA4-2: the real folder has no violations, only the two uniques with pending art', () => {
+    expect(
+      validateSpriteFiles(files, catalogue).map(({ code, path: file }) => [code, file]),
+    ).toEqual([
+      ['UNIQUE_ART_PENDING', 'unique/lantern-eater.png'],
+      ['UNIQUE_ART_PENDING', 'unique/last-verdict.png'],
+    ]);
   });
 
   it('the committed manifest equals the folders', () => {
@@ -74,19 +84,23 @@ describe('runSpriteManifest on a fixture folder', () => {
   });
 
   it('writes the manifest and ignores hidden files', () => {
-    expect(runSpriteManifest({ itemsDir, outFile, types })).toEqual({
+    expect(runSpriteManifest({ itemsDir, outFile, catalogue })).toEqual({
       ok: true,
       count: 1,
       changed: true,
+      warnings: [
+        expect.objectContaining({ code: 'UNIQUE_ART_PENDING', path: 'unique/lantern-eater.png' }),
+        expect.objectContaining({ code: 'UNIQUE_ART_PENDING', path: 'unique/last-verdict.png' }),
+      ],
     });
     expect(readFileSync(outFile, 'utf-8')).toContain(`key: 'idol-sword-01'`);
-    expect(runSpriteManifest({ itemsDir, outFile, types })).toMatchObject({ changed: false });
+    expect(runSpriteManifest({ itemsDir, outFile, catalogue })).toMatchObject({ changed: false });
   });
 
   it('fails with a clear message and writes nothing when a sprite is wrong', () => {
     writePng(path.join(itemsDir, 'base/idol-axe/idol-axe-01.png'), 256);
     writePng(path.join(itemsDir, 'base/idol-shield/idol-shield-01.png'), 512, 2);
-    expect(runSpriteManifest({ itemsDir, outFile, types })).toEqual({
+    expect(runSpriteManifest({ itemsDir, outFile, catalogue })).toEqual({
       ok: false,
       failures: [
         {
@@ -106,12 +120,14 @@ describe('runSpriteManifest on a fixture folder', () => {
 
   it('takes a new type folder with no code change once the type is registered', () => {
     writePng(path.join(itemsDir, 'base/gloom-hammer/gloom-hammer-01.png'));
-    expect(runSpriteManifest({ itemsDir, outFile, types })).toMatchObject({ ok: false });
+    expect(runSpriteManifest({ itemsDir, outFile, catalogue })).toMatchObject({ ok: false });
     const withHammer = new TypeRegistry([
       ...ITEM_TYPES,
       { ...ITEM_TYPES[0], key: 'hammer', nounKey: 'content.tokens.noun.hammer' },
     ]);
-    expect(runSpriteManifest({ itemsDir, outFile, types: withHammer })).toMatchObject({
+    expect(
+      runSpriteManifest({ itemsDir, outFile, catalogue: { ...catalogue, types: withHammer } }),
+    ).toMatchObject({
       ok: true,
       count: 2,
     });

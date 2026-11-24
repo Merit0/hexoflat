@@ -1,28 +1,35 @@
+import { upcastDimensionVocabulary } from '../dimensions/upcast-vocabulary';
 import { upcastTokenIdentities } from '../inventory/upcast-token-identities';
+import { upcastTokenSprites } from '../tokens/upcast-token-sprite';
+import { upcastUniqueInstances } from '../tokens/upcast-unique-instance';
 import type { z } from 'zod';
 import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventory-state';
 import type { InventoryState } from '../inventory/inventory-state';
 import { upcastInventoryTokens } from '../inventory/upcast-item-tokens';
+import { gameDayAt } from '../game-day/game-day';
 import type { TAggregateKind } from './aggregate-kinds';
 import { createKnowledgeState } from '../knowledge/state';
 import { emptyQuestLog } from '../quests/quest-log-state';
 import { emptyListings } from '../trade/listing-state';
 import { emptyProgressState, progressStateSchema, type ProgressState } from './progress-state';
 import { tradersForClient } from '../trade/trader-view';
+import { expireUniqueBuyback } from '../trade/unique-buyback';
 import { projectQuestBoard } from '../quests/quest-board-projection';
 
 export interface AggregateServerState {
   rngSeed?: string;
 }
 
-function projectProgress(state: ProgressState, server: AggregateServerState) {
+function projectProgress(state: ProgressState, server: AggregateServerState, now: number) {
   if (!server.rngSeed) throw new Error(`Progress of ${state.knowledge.heroId} has no rngSeed`);
   const { active, done, placementActivations } = state.quests;
   const quests = { active, done, ...(placementActivations ? { placementActivations } : {}) };
   const questBoard = projectQuestBoard(state.quests);
+  const { day } = gameDayAt(state.day, now);
   return {
     ...state,
     quests,
+    uniqueBuyback: expireUniqueBuyback(state.uniqueBuyback, day.id).held,
     traders: tradersForClient(state, server.rngSeed),
     ...(questBoard ? { questBoard } : {}),
   };
@@ -34,16 +41,19 @@ export interface IAggregateDefinition<TState> {
   schema: z.ZodType<TState>;
   upcasters: Record<number, (old: unknown, ctx: { heroId: string }) => unknown>;
   createInitial(ctx: { heroId: string }): TState;
-  project(state: TState, server: AggregateServerState): unknown;
+  project(state: TState, server: AggregateServerState, now: number): unknown;
 }
 
 const inventoryDefinition: IAggregateDefinition<InventoryState> = {
   kind: 'inventory',
-  schemaVersion: 3,
+  schemaVersion: 6,
   schema: inventoryStateSchema as unknown as z.ZodType<InventoryState>,
   upcasters: {
     1: upcastInventoryTokens,
     2: upcastTokenIdentities,
+    3: upcastDimensionVocabulary,
+    4: upcastTokenSprites,
+    5: upcastUniqueInstances,
   },
   createInitial: ({ heroId }) => emptyInventoryState(heroId),
   project: (state) => state,
@@ -53,7 +63,7 @@ const LEGACY_GRAVE_EXIT_REWARD = 'grave-exit-warning-acknowledged';
 
 const progressDefinition: IAggregateDefinition<ProgressState> = {
   kind: 'progress',
-  schemaVersion: 11,
+  schemaVersion: 14,
   schema: progressStateSchema,
   upcasters: {
     1: (old, { heroId }) => ({
@@ -78,6 +88,13 @@ const progressDefinition: IAggregateDefinition<ProgressState> = {
     },
     9: (old) => ({ ...(old as object), ownedUniques: [] }),
     10: (old) => ({ ...(old as object), paidSteps: 0 }),
+    11: upcastDimensionVocabulary,
+    12: (old) => {
+      const rest = { ...(old as Record<string, unknown>) };
+      delete rest.ownedUniques;
+      return rest;
+    },
+    13: (old) => ({ ...(old as object), uniqueBuyback: {} }),
   },
   createInitial: ({ heroId }) => emptyProgressState(heroId),
   project: projectProgress,

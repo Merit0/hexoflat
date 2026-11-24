@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 export function useHeroDetailsLabels() {
   const { t } = useI18n();
   return computed(() => ({
+    noLocation: t('heroDetails.noLocation'),
     vitals: {
       hearts: t('heroDetails.vitals.hearts'),
       shields: t('heroDetails.vitals.shields'),

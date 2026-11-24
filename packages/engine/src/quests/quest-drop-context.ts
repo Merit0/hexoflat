@@ -1,18 +1,18 @@
-import { locationTokenOrigin, campTokenOrigin } from '../registry/location-token-origin';
-import { DEFAULT_MAP_TIER, type TokenOrigin } from '../tokens/token-origin';
+import { locationDropContext, campDropContext } from '../registry/location-drop-context';
+import { DEFAULT_MAP_TIER, type DropContext } from '../tokens/drop-context';
 import type { ContainerTokenSource } from '../containers/create-container';
 import { sha256Hex } from '../utils/hash/sha256';
 import type { QuestRun } from './quest-state';
 
 const QUEST_RUN_ID_LENGTH = 32;
 
-export function questTokenOrigin(run: Pick<QuestRun, 'field' | 'tokenOrigin'>): TokenOrigin {
-  if (run.tokenOrigin) return { ...run.tokenOrigin };
+export function questDropContext(run: Pick<QuestRun, 'field' | 'dropContext'>): DropContext {
+  if (run.dropContext) return { ...run.dropContext };
   // Compatibility for fieldless runs authored before location-backed quests; their source was camp.
-  if (!run.field) return campTokenOrigin();
-  if (run.field.tokenOrigin) return { ...run.field.tokenOrigin };
+  if (!run.field) return campDropContext();
+  if (run.field.dropContext) return { ...run.field.dropContext };
   return {
-    realm: locationTokenOrigin(run.field.origin).realm,
+    tokenType: locationDropContext(run.field.origin).tokenType,
     mapTier: run.field.mapTier ?? DEFAULT_MAP_TIER,
   };
 }

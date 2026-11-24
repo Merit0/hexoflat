@@ -1,8 +1,10 @@
 import { z } from 'zod';
+import { locationDimensionSchema } from '../dimensions/dimensions';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
 import { itemTokenSchema } from '../tokens/token-schema';
-import { tokenOriginSchema } from '../tokens/token-origin';
+import { dropContextSchema } from '../tokens/drop-context';
+import { basisPointsSchema } from '../tokens/token-keys';
 
 export const axialSchema = z.object({ q: z.number().int(), r: z.number().int() });
 export type BattleHex = z.infer<typeof axialSchema>;
@@ -123,6 +125,7 @@ export type BattleReaction = z.infer<typeof reactionSchema>;
 export const graveSchema = z.object({
   hex: axialSchema,
   tables: z.array(z.string().min(1)),
+  dimensions: z.array(locationDimensionSchema).optional(),
   examined: z.boolean(),
   trophyBonuses: z.array(z.number().int().min(0).max(2)).optional(),
   container: containerStateSchema.optional(),
@@ -181,9 +184,10 @@ export const battleStateSchema = z.object({
   lootEnabled: z.boolean().optional(),
   fallen: z.array(z.string()).optional(),
   collect: collectSchema.optional(),
-  tokenOrigin: tokenOriginSchema.optional(),
+  dropContext: dropContextSchema.optional(),
   tokenSecret: battleTokenSecretSchema,
   critOverride: z.strictObject({ heroBaseCrit: z.number().int().min(0).max(100) }).optional(),
+  uniqueDropOverride: z.strictObject({ chanceBp: basisPointsSchema }).optional(),
 });
 export type BattleState = z.infer<typeof battleStateSchema>;
 

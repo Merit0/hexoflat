@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createApp, nextTick, type App } from 'vue';
 import { createPinia } from 'pinia';
 import { EQUIPMENT_ATTRIBUTES } from '@hexoflat/engine';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS as K } from '@hexoflat/engine/registry/hexobjects-registry';
 import { resolveItemTooltip } from '@hexoflat/engine/utils/inventory/item-tooltip';
 import { createTokenFactory } from '@hexoflat/engine/tokens/factory/create-token-factory';
@@ -25,7 +25,7 @@ function shieldWith(attributes: ItemToken['attributes']): ItemToken {
       seed: 'ea-13',
       sourceId: 'test:ea13',
       n: 0,
-      realm: ERarityKind.IDOL,
+      tokenType: ETokenType.IDOL,
       mapTier: 4,
       type: K.SHIELD,
     },

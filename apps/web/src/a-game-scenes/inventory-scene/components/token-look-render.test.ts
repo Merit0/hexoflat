@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp, nextTick, type App, type Component } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { SPRITE_MANIFEST } from '@hexoflat/engine/tokens/sprite-manifest';
 import type { ItemToken } from '@hexoflat/engine/tokens/token-schema';
 import { i18n } from '@/i18n';
@@ -18,10 +18,9 @@ let app: App | null = null;
 let host: HTMLElement;
 
 function spriteOf(token: ItemToken): string {
-  return (
-    SPRITE_MANIFEST.entries.find((entry) => entry.key === token.sprite)?.path ??
-    SPRITE_MANIFEST.placeholder
-  );
+  return token.tier === 'unique'
+    ? SPRITE_MANIFEST.placeholder
+    : '/hex-assets/items/base/idol-sword/idol-sword-01.png';
 }
 
 async function mount(component: Component, props: Record<string, unknown> = {}) {
@@ -38,7 +37,7 @@ function background(selector: string): string {
   return host.querySelector<HTMLElement>(selector)?.style.backgroundImage ?? '';
 }
 
-const BASE = () => baseTestToken('sword', ERarityKind.GLOOM);
+const BASE = () => baseTestToken('sword', ETokenType.GLOOM);
 const UNIQUE = () => uniqueTestToken('lantern-eater');
 
 const CASES = [
@@ -64,7 +63,7 @@ describe.each(CASES)('a $name token is drawn from its own data', ({ token, light
     await mount(InventoryToken, { item });
 
     expect(background('.icon')).toContain(spriteOf(item.token!));
-    expect(background('.rarity-glow')).toContain(light);
+    expect(background('.light-glow')).toContain(light);
   });
 
   it('equipped hand token: sprite', async () => {
@@ -96,7 +95,7 @@ describe.each(CASES)('a $name token is drawn from its own data', ({ token, light
     await mount(StashItemToken, { item, standalone: true, rotationDeg: 0 });
 
     expect(background('.icon')).toContain(spriteOf(item.token!));
-    expect(background('.rarity-glow')).toContain(light);
+    expect(background('.light-glow')).toContain(light);
   });
 
   it('shop goods cell: token name and light tone', async () => {
@@ -117,7 +116,7 @@ describe.each(CASES)('a $name token is drawn from its own data', ({ token, light
     });
 
     const cell = host.querySelector<HTMLElement>('[data-testid="cell"]')!;
-    expect(cell.dataset.rarity).toBe(tone);
+    expect(cell.dataset.light).toBe(tone);
     expect(cell.getAttribute('aria-label')).toBe(tokenName(item.token!, 'en'));
     expect(background('.icon')).toContain(spriteOf(item.token!));
   });

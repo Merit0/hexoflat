@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { EDimension } from '@hexoflat/engine/dimensions/dimensions';
 import { ApiError } from '../api/client';
 import { useUserStore } from './user-store';
 
@@ -30,6 +31,7 @@ const FAKE_HERO: IHero = {
   imgPath: '',
   heroLocation: { columnIndex: 0, rowIndex: 0 },
   heroSteps: 0,
+  origin: EDimension.NOWHERE,
 };
 
 describe('useUserStore restoreSession', () => {

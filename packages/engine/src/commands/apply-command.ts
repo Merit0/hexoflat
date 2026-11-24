@@ -381,11 +381,11 @@ function applyKnowledgeState(state: HexEngineState, command: KnowledgeCommand): 
   }
   const { action } = command.payload;
   if (action.kind === 'step') {
-    const origin = state.knowledgeContext.coordinates;
+    const heroHex = state.knowledgeContext.coordinates;
     if (
-      !origin ||
+      !heroHex ||
       !action.target ||
-      hexDistance(origin, action.target) !== 1 ||
+      hexDistance(heroHex, action.target) !== 1 ||
       !isEnterableTile(state.map, action.target)
     ) {
       return [{ type: 'KNOWLEDGE_REJECTED', payload: { reason: 'Invalid movement step' } }];

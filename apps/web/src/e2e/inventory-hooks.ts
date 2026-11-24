@@ -30,7 +30,7 @@ async function grantLegacyAttribute(
 ): Promise<ItemToken> {
   const token = await grantTokenItem({
     type: 'shield',
-    realm: 'idol',
+    tokenType: 'idol',
     mapTier: 1,
     attributes: [],
   });
@@ -63,13 +63,17 @@ export const inventoryTestApi = {
   },
   async grantUniqueTokenItem(uniqueKey: string): Promise<ItemToken> {
     if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
-    const base = await grantTokenItem({ type: 'sword', realm: 'idol', mapTier: 1, attributes: [] });
+    const base = await grantTokenItem({
+      type: 'sword',
+      tokenType: 'idol',
+      mapTier: 1,
+      attributes: [],
+    });
     const made = gameTokenFactory().createUnique(uniqueKey, {
       seed: 'e2e-unique-fixture',
       sourceId: tokenSourceIdOf('dev', base.id, 'unique'),
       n: 0,
       mapTier: 3,
-      ownedUniques: heldTokens().flatMap((token) => (token.uniqueKey ? [token.uniqueKey] : [])),
     });
     if (!made.ok) throw new Error(made.refusal.code);
     const item = useHeroInventoryStore().items.find((entry) => entry.token?.id === base.id);
@@ -85,7 +89,7 @@ export const inventoryTestApi = {
       throw new Error('Invalid Will bonus');
     return grantTokenItem({
       type: 'shield',
-      realm: 'idol',
+      tokenType: 'idol',
       mapTier,
       attributes: [{ key: 'will', value: bonus }],
     });

@@ -1,7 +1,6 @@
 import { CONTENT } from '../content/content-map';
 import { assertDimensionRelation } from '../dimensions/relation';
-import { LOCATION_DIMENSIONS } from '../registry/location-key';
-import { QuestDefinitionSchema } from './quest-definition';
+import { QuestDefinitionSchema, questDimension } from './quest-definition';
 import type { ProgressState } from '../aggregates/progress-state';
 import { isTerrainPassable } from '../boards/terrain';
 import { EHexCollision } from '../abstraction/hexobject-abstraction';
@@ -15,7 +14,7 @@ import { ALL_QUESTS } from './all-quests';
 import type { QuestCatalogue } from './quest-definition';
 import type { LocationKey } from '../registry/location-key';
 import type { HexTileModel } from '../map/models/hex-tile-model';
-import { cloneOriginField, type SeekerEntrance } from './origin-field';
+import { cloneWorldField, type SeekerEntrance } from './cloned-field';
 import { questDefinitionFor } from './quest-lookup';
 
 export const questEntranceId = (questId: string) => `quest-entrance:${questId}`;
@@ -70,7 +69,7 @@ export function installQuestEntrances(
     if (!quest || placement?.targetMap !== world.locationKey) return [];
     QuestDefinitionSchema.parse(quest);
     const key = placement.objectKey;
-    assertDimensionRelation(`quest:${questId}`, 'place', key, CONTENT[key], quest.dimension);
+    assertDimensionRelation(`quest:${questId}`, 'place', key, CONTENT[key], questDimension(quest));
     return [{ questId, placement }];
   });
   const bindings = (world.questEntrances ??= {});
@@ -141,8 +140,8 @@ function entranceTile(
   catalogue: QuestCatalogue,
 ): HexTileModel | null {
   const quest = catalogue[questId];
-  if (quest?.dimension !== LOCATION_DIMENSIONS[world.locationKey]) return null;
-  const placement = quest?.mapObjectPlacement;
+  if (!quest?.locations.includes(world.locationKey)) return null;
+  const placement = quest.mapObjectPlacement;
   if (world.locationKey !== placement?.targetMap) return null;
   const tile = placedEntranceTile(world, questId, placement.objectKey);
   if (!tile?.hexobject) return null;
@@ -166,7 +165,7 @@ export function questEntranceFor(
   const tile = entranceTile(world, questId, catalogue);
   if (!tile || !world.heroCoordinates) return null;
   return {
-    field: cloneOriginField(world, tile.coordinates),
+    field: cloneWorldField(world, tile.coordinates),
     start: { ...world.heroCoordinates },
   };
 }

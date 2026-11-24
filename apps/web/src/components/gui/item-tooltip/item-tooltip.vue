@@ -2,14 +2,14 @@
   <div
     class="tip"
     :class="{ 'tip--square': square }"
-    :style="{ '--rarity': rarityColor }"
+    :style="{ '--light': lightColor }"
     data-testid="item-tooltip"
   >
     <div class="tip__frame">
       <div class="tip__body">
         <header class="tip__head">
-          <div class="tip__rarity-row">
-            <span class="tip__rarity">{{ rarityLabel }}</span>
+          <div class="tip__token-type-row">
+            <span class="tip__token-type">{{ tokenTypeLabel }}</span>
             <span v-if="view.equipped" class="tip__badge" data-testid="item-tooltip-equipped">{{
               t('itemTooltip.equipped')
             }}</span>
@@ -133,7 +133,8 @@ import {
   type TIconName,
 } from '@/components/gui/icons/item-icons';
 import { SKILL_ICON } from '@/components/gui/icons/skill-presentation';
-import { RARITY_COLOR } from '@/render/rarity';
+import { LIGHT_NAME_COLOR } from '@/render/light';
+import { tokenTypeTextKey } from '@hexoflat/engine/tokens/factory/description-builder';
 import { useItemTooltipLabels } from './use-item-tooltip-labels';
 
 const SHIELD_ICON_URL = '/board-assets/hero-board/shield-icon.png';
@@ -153,8 +154,8 @@ const attributeRows = computed(() =>
 );
 const labels = useItemTooltipLabels();
 
-const rarityColor = computed(() => RARITY_COLOR[props.view.rarityTone]);
-const rarityLabel = computed(() => labels.value.rarity[props.view.rarity.kind]);
+const lightColor = computed(() => LIGHT_NAME_COLOR[props.view.lightName]);
+const tokenTypeLabel = computed(() => t(tokenTypeTextKey(props.view.tokenType.kind)));
 const typeLabel = computed(() =>
   props.view.equipSlot
     ? labels.value.slot[props.view.equipSlot]
@@ -217,7 +218,7 @@ const stackText = computed(() => {
   filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.6));
 }
 .tip__frame {
-  background: color-mix(in srgb, var(--rarity) 60%, #000);
+  background: color-mix(in srgb, var(--light) 60%, #000);
   clip-path: polygon(
     0 30px,
     50% 0,
@@ -236,7 +237,7 @@ const stackText = computed(() => {
   background:
     radial-gradient(
       120% 60% at 50% 0%,
-      color-mix(in srgb, var(--rarity) 12%, transparent),
+      color-mix(in srgb, var(--light) 12%, transparent),
       transparent 70%
     ),
     var(--body);
@@ -255,14 +256,14 @@ const stackText = computed(() => {
   gap: 2px;
   text-align: center;
 }
-.tip__rarity-row {
+.tip__token-type-row {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
 }
-.tip__rarity {
-  color: var(--rarity);
+.tip__token-type {
+  color: var(--light);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -292,7 +293,7 @@ const stackText = computed(() => {
 
 .tip__title {
   margin: 0;
-  color: var(--rarity);
+  color: var(--light);
   font-family: 'Alegreya SC', var(--font-main, serif), serif;
   font-size: 1.5rem;
   font-weight: 700;
@@ -375,7 +376,7 @@ const stackText = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--rarity);
+  color: var(--light);
   font-size: 1.05rem;
   font-weight: 800;
   text-align: left;
@@ -455,7 +456,7 @@ const stackText = computed(() => {
   width: 60px;
   height: 66px;
   transform: translateX(-50%);
-  background: var(--rarity);
+  background: var(--light);
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
 .tip__medal-core {
@@ -465,7 +466,7 @@ const stackText = computed(() => {
   place-items: center;
   background: #0f0d0a;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  color: var(--rarity);
+  color: var(--light);
 }
 .tip__medal-core svg {
   width: 28px;

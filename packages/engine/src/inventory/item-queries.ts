@@ -1,6 +1,12 @@
 import { itemDimensionOf } from './item-dimension';
 import { getMeta, getPrototype, usePriceOf } from '../content';
-import { DEFAULT_RARITY, rarityTone, tokenRarity, type TRarityTone } from '../content/rarity-rules';
+import {
+  DEFAULT_ITEM_TOKEN_TYPE,
+  LIGHT_NAMES_BY_SORT_RANK,
+  lightNameOf,
+  itemTokenTypeOf,
+  type TLightName,
+} from '../content/token-type-rules';
 import { EHexobjectGroup, type TEquipSlot } from '../abstraction/hexobject-abstraction';
 import type { InventoryItem } from '../abstraction/inventory-abstraction';
 import { calculateCarriedWeightKg } from '../utils/inventory/traits-resolver';
@@ -18,15 +24,7 @@ export const CATEGORY_ORDER: readonly TItemCategory[] = [
   'quest',
 ];
 
-export const TONE_SORT_ORDER: readonly TRarityTone[] = [
-  'alien',
-  'spark-boss',
-  'gloom-boss',
-  'idol-boss',
-  'spark',
-  'gloom',
-  'idol',
-];
+export const TONE_SORT_ORDER: readonly TLightName[] = LIGHT_NAMES_BY_SORT_RANK;
 
 export function stackLimit(item: InventoryItem): number | null {
   const traits = getMeta(item.key)?.traits;
@@ -54,23 +52,23 @@ export function categoryOf(item: InventoryItem): TItemCategory {
   }
 }
 
-export function rarityToneOf(item: InventoryItem): TRarityTone | null {
-  if (item.token) return rarityTone(tokenRarity(item.token));
+export function inventoryLightNameOf(item: InventoryItem): TLightName | null {
+  if (item.token) return lightNameOf(itemTokenTypeOf(item.token));
   const proto = getPrototype(item.key);
   if (proto.groupType === EHexobjectGroup.TOOL) {
-    return rarityTone(proto.tool.rarity ?? DEFAULT_RARITY);
+    return lightNameOf(proto.tool.tokenType ?? DEFAULT_ITEM_TOKEN_TYPE);
   }
   if (proto.groupType === EHexobjectGroup.EQUIPMENT) {
-    return rarityTone(proto.equipment.rarity ?? DEFAULT_RARITY);
+    return lightNameOf(proto.equipment.tokenType ?? DEFAULT_ITEM_TOKEN_TYPE);
   }
-  if (proto.groupType === EHexobjectGroup.LOOT && proto.loot.rarity) {
-    return rarityTone(proto.loot.rarity);
+  if (proto.groupType === EHexobjectGroup.LOOT && proto.loot.tokenType) {
+    return lightNameOf(proto.loot.tokenType);
   }
   return null;
 }
 
 function toneRank(item: InventoryItem): number {
-  const tone = rarityToneOf(item);
+  const tone = inventoryLightNameOf(item);
   return tone ? TONE_SORT_ORDER.indexOf(tone) : TONE_SORT_ORDER.length;
 }
 

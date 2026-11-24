@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ERarityKind } from '../abstraction/hexobject-abstraction';
+import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { TOKEN_CONTENT } from '../content/token-content';
 import { TOKEN_UNIQUES } from '../content/token-uniques.content';
 import { TRADERS } from '../content/traders.content';
@@ -14,7 +14,7 @@ const CONTEXT = {
   seed: 'audit-secret',
   sourceId: 'test:audit',
   n: 0,
-  realm: ERarityKind.IDOL,
+  tokenType: ETokenType.IDOL,
   mapTier: 1 as const,
   type: 'shield',
 };
@@ -61,10 +61,10 @@ describe('token audit regressions', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it.each(['bad', '1/' + '9'.repeat(310), '9007199254740992/9007199254740992'])(
-    'refuses malformed/unsafe fraction %s without throwing',
-    (chance) => {
-      expect(uniqueDropRulesSchema.safeParse([{ uniqueKey: 'a', chance }]).success).toBe(false);
+  it.each(['bad', '1/2', 1e308, Number.POSITIVE_INFINITY, 9007199254740992])(
+    'refuses malformed/unsafe chance %s without throwing',
+    (chanceBp) => {
+      expect(uniqueDropRulesSchema.safeParse([{ uniqueKey: 'a', chanceBp }]).success).toBe(false);
     },
   );
 
@@ -107,14 +107,12 @@ describe('token audit regressions', () => {
     ).toBe(true);
   });
 
-  it('checks fixed unique attributes against the attribute itemMax, not the source tier', () => {
+  it('checks authored unique attributes against the attribute itemMax, not the source tier', () => {
     const factory = createTokenFactory();
-    expect(
-      factory.createUnique('last-verdict', { ...CONTEXT, mapTier: 1, ownedUniques: [] }).ok,
-    ).toBe(true);
+    expect(factory.createUnique('last-verdict', { ...CONTEXT, mapTier: 1 }).ok).toBe(true);
     expect(() =>
       createTokenFactory(TOKEN_CONTENT, undefined, [
-        { ...TOKEN_UNIQUES[0], attributes: [{ key: 'heart', value: 11 }] },
+        { ...TOKEN_UNIQUES[0], authoredAttributes: [{ attribute: 'heart', min: 1, max: 11 }] },
       ]),
     ).toThrow(/above its itemMax 10/);
   });
@@ -124,9 +122,9 @@ describe('token audit regressions', () => {
       createTokenFactory(TOKEN_CONTENT, undefined, [
         {
           ...TOKEN_UNIQUES[0],
-          attributes: [{ key: 'shield', value: 999 }],
+          authoredAttributes: [{ attribute: 'shield', min: 1, max: 1 }],
         },
       ]),
-    ).toThrow();
+    ).toThrow(/shield is not allowed on type sword/);
   });
 });

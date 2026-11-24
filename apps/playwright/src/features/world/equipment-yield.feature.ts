@@ -34,7 +34,7 @@ export class EquipmentYieldFeature extends BaseFeature {
     await this.step(`Grant ${name}: ${tool} with Yield +${bonus}`, async () => {
       const token = await new VerifyInventoryFeature().givenTokenItem({
         type: tool,
-        realm: 'idol',
+        tokenType: 'idol',
         mapTier: bonus === 2 ? 3 : 1,
         attributes: bonus ? [{ key: 'yield', value: bonus }] : [],
       });

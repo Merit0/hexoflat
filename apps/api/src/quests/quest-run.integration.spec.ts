@@ -389,13 +389,13 @@ describe.skipIf(!dbAvailable)('the seeker run on the server (real Postgres)', ()
     const { userId, heroId } = await heroAt(NEAR);
     const expeditionId = await ensureExpedition(kit.db, userId, heroId);
     const presence = (await stateOf(userId, heroId)).presence!;
-    const origin = JSON.parse(
+    const entranceWorld = JSON.parse(
       (await readServerDocument(kit.db, expeditionId, `srv-world:${presence.mapId}`))!,
     ) as { questEntrances: Record<string, string>; map: { tiles: unknown[] } };
     const silesia = await world.ensure(userId, heroId, 'silesia');
     const held = deserializeWorld(silesia, Date.now());
     const marker = held.map.tiles.find(
-      (tile) => tile.hexobject?.id === origin.questEntrances['seeker-1'],
+      (tile) => tile.hexobject?.id === entranceWorld.questEntrances['seeker-1'],
     )!;
 
     const entered = await send(userId, heroId, 'QUEST_ENTER', { questId: 'seeker-1' });

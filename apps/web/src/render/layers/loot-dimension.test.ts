@@ -1,6 +1,6 @@
 import { Container } from 'pixi.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ERarityKind } from '@hexoflat/engine/abstraction/hexobject-abstraction';
+import { ETokenType } from '@hexoflat/engine/abstraction/hexobject-abstraction';
 import { baseTestToken, uniqueTestToken } from '@/test-support/token-fixtures';
 import { tokenLightUrl, tokenSpriteUrl } from '@/render/token-look';
 import { EMPTY_FIELD } from '@/services/quests/quest-field-model';
@@ -16,10 +16,10 @@ vi.mock('@/render/texture-cache', async () => {
 beforeEach(() => vi.clearAllMocks());
 
 describe('loot sprites retain token ownership', () => {
-  it.each([ERarityKind.GLOOM, ERarityKind.SPARK])(
+  it.each([ETokenType.GLOOM, ETokenType.SPARK])(
     'draws %s battle loot using its stored sprite and light',
-    (realm) => {
-      const token = baseTestToken('sword', realm);
+    (tokenType) => {
+      const token = baseTestToken('sword', tokenType);
       const world = new Container();
       const layer = createBattleLootLayer({
         worldContainer: world,
@@ -48,7 +48,7 @@ describe('loot sprites retain token ownership', () => {
       floorSprite: 'floor.png',
     });
     const hex = { columnIndex: 1, rowIndex: 1 };
-    const base = baseTestToken('sword', ERarityKind.GLOOM);
+    const base = baseTestToken('sword', ETokenType.GLOOM);
     const alien = uniqueTestToken('last-verdict');
     for (const token of [base, alien]) {
       layer.sync({
@@ -63,7 +63,7 @@ describe('loot sprites retain token ownership', () => {
     world.destroy({ children: true });
   });
 
-  it('keeps hidden loot hidden and gives coins no rarity light', () => {
+  it('keeps hidden loot hidden and gives coins no tokenType light', () => {
     const world = new Container();
     let hidden = true;
     const layer = createBattleLootLayer({

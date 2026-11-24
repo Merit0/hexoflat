@@ -1,11 +1,47 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { IHero } from '@hexoflat/engine/abstraction/hero-abstraction';
+import { DEFAULT_HERO_ORIGIN } from '@hexoflat/engine/dimensions/hero-origin';
 import type { IHexCoordinates } from '@hexoflat/engine/map/interfaces/hex-tile-config-interface';
 import { DB, type Db } from '../db/db.module';
 import { heroes, users } from '../db/schema';
 import { createInitialAggregates } from '../player/aggregate-store';
-import { HeroDataSchema, type HeroData } from './heroes.dto';
+import {
+  HeroDataError,
+  checkedHeroData,
+  mergeHeroData,
+  readHeroData,
+  type HeroData,
+  type HeroDataPatch,
+} from './heroes.dto';
+
+const logger = new Logger('HeroData');
+const reportedUnknownKeys = new Set<string>();
+
+function reportUnknownKeys(heroId: string, keys: readonly string[]): void {
+  const entry = `${heroId}:${keys.join(',')}`;
+  if (keys.length === 0 || process.env.NODE_ENV === 'production') return;
+  if (reportedUnknownKeys.has(entry)) return;
+  reportedUnknownKeys.add(entry);
+  logger.warn(`Hero ${heroId} stores unknown fields, ignored: ${keys.join(', ')}`);
+}
+
+function storedHeroData(heroId: string, stored: unknown): HeroData {
+  try {
+    const { data, unknownKeys } = readHeroData(stored);
+    reportUnknownKeys(heroId, unknownKeys);
+    return data;
+  } catch (error) {
+    if (error instanceof HeroDataError) {
+      logger.error(`Hero ${heroId} has an unreadable row: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+function heroView(record: typeof heroes.$inferSelect): IHero {
+  return { id: record.id, name: record.name, ...storedHeroData(record.id, record.data) };
+}
 
 // A fresh hero's base stats. HP starts small (3 hearts, not the 100 a hero can
 // eventually grow into) — see the "0/100" bug this was chasing: nothing ever
@@ -24,6 +60,7 @@ function starterHeroData(): HeroData {
     imgPath: '',
     heroLocation: { columnIndex: 0, rowIndex: 0 },
     heroSteps: 0,
+    origin: DEFAULT_HERO_ORIGIN,
   };
 }
 
@@ -42,11 +79,7 @@ export class HeroesService {
       .where(and(eq(heroes.userId, userId), isNull(heroes.deletedAt)))
       .orderBy(asc(heroes.createdAt), asc(heroes.id))
       .limit(1);
-    if (!record) {
-      return null;
-    }
-    const data = HeroDataSchema.parse(record.data);
-    return { id: record.id, name: record.name, ...data };
+    return record ? heroView(record) : null;
   };
 
   /** The hero when it exists, belongs to this account and is not deleted; otherwise null. */
@@ -87,7 +120,7 @@ export class HeroesService {
         .limit(1);
       if (again) {
         await createInitialAggregates(tx, again.id);
-        return { id: again.id, name: again.name, ...HeroDataSchema.parse(again.data) };
+        return heroView(again);
       }
 
       const [userRecord] = await tx
@@ -96,14 +129,14 @@ export class HeroesService {
         .where(eq(users.id, userId))
         .limit(1);
 
-      const data = starterHeroData();
+      const data = checkedHeroData(starterHeroData());
       const [record] = await tx
         .insert(heroes)
         .values({ userId, name: userRecord?.name ?? 'Hero', data })
         .returning();
       await createInitialAggregates(tx, record.id);
 
-      return { id: record.id, name: record.name, ...data };
+      return heroView(record);
     });
   }
 
@@ -117,16 +150,20 @@ export class HeroesService {
     heroLocation: IHexCoordinates,
     heroSteps: number,
     db: Db = this.db,
-  ): Promise<void> => {
-    const [record] = await db.select().from(heroes).where(eq(heroes.id, heroId)).limit(1);
-    if (!record) {
-      return;
-    }
+  ): Promise<void> => this.updateData(heroId, { heroLocation, heroSteps }, db);
 
-    const data = HeroDataSchema.parse(record.data);
-    await db
-      .update(heroes)
-      .set({ data: { ...data, heroLocation, heroSteps }, updatedAt: new Date().toISOString() })
-      .where(eq(heroes.id, heroId));
-  };
+  updateData = async (heroId: string, patch: HeroDataPatch, db: Db = this.db): Promise<void> =>
+    db.transaction(async (tx) => {
+      const [record] = await tx
+        .select({ data: heroes.data })
+        .from(heroes)
+        .where(eq(heroes.id, heroId))
+        .for('update');
+      if (!record) return;
+      const data = mergeHeroData(storedHeroData(heroId, record.data), patch);
+      await tx
+        .update(heroes)
+        .set({ data, updatedAt: new Date().toISOString() })
+        .where(eq(heroes.id, heroId));
+    });
 }

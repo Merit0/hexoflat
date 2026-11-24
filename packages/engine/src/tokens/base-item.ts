@@ -1,6 +1,6 @@
 import { sharedWithSchema } from '../dimensions/availability';
 import { z } from 'zod';
-import { dimensionSchema, EDimension } from '../dimensions/dimensions';
+import { dimensionAllowsTier, dimensionSchema } from '../dimensions/dimensions';
 import { attributeKeySchema, itemTypeKeySchema } from './token-keys';
 
 export const baseItemKeySchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -9,7 +9,7 @@ export const baseItemKeySchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 export const baseItemDefinitionSchema = z.strictObject({
   key: baseItemKeySchema,
   dimension: dimensionSchema.refine(
-    (dimension) => dimension !== EDimension.NOWHERE,
+    (dimension) => dimensionAllowsTier(dimension, 'base'),
     'NOWHERE has no generatable base items',
   ),
   type: itemTypeKeySchema,
