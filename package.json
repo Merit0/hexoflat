@@ -12,7 +12,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:e2e:push": "sh scripts/pre-push-e2e.sh",
-    "test:e2e:slow": "E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow --workers=1",
+    "test:e2e:slow": "E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow --workers=2",
     "e2e:map:check": "pnpm --silent --filter @hexoflat/playwright e2e:map:check",
     "tokens:manifest": "pnpm --silent --filter @hexoflat/web tokens:manifest",
     "sprites:coverage": "pnpm --silent --filter @hexoflat/web sprites:coverage",
