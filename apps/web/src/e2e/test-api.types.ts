@@ -104,6 +104,7 @@ export interface TestQuestFixture {
   active?: { questId: string; progress: number; state: 'active' | 'ready' }[];
   done?: Record<string, number>;
   previousUtcDay?: true;
+  uniqueReward?: true;
 }
 
 export interface TestQuests {
