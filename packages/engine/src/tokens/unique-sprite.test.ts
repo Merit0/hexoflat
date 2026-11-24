@@ -8,11 +8,11 @@ const WITH_UNIQUE = {
   entries: [
     ...SPRITE_MANIFEST.entries,
     {
-      key: 'unique-last-verdict',
+      key: 'last-verdict',
       tier: 'unique' as const,
       tokenType: null,
       type: null,
-      path: '/hex-assets/items/unique/unique-last-verdict.png',
+      path: '/hex-assets/items/unique/last-verdict.png',
     },
   ],
 };
@@ -20,18 +20,12 @@ const WITH_UNIQUE = {
 describe('unique sprites', () => {
   const sprites = new ManifestSpriteRegistry(WITH_UNIQUE);
 
-  it('names the sprite unique-<uniqueKey>', () => {
-    expect(uniqueSpriteKey('last-verdict')).toBe('unique-last-verdict');
+  it('names the sprite after the unique key', () => {
+    expect(uniqueSpriteKey('last-verdict')).toBe('last-verdict');
   });
 
   it('finds the unique sprite in the manifest, else the placeholder', () => {
-    expect(sprites.uniqueSprite('last-verdict').key).toBe('unique-last-verdict');
+    expect(sprites.uniqueSprite('last-verdict').key).toBe('last-verdict');
     expect(sprites.uniqueSprite('lantern-eater')).toEqual(sprites.placeholder);
-  });
-
-  it('lists the uniques without a sprite', () => {
-    expect(sprites.missingUniqueSprites(['last-verdict', 'lantern-eater'])).toEqual([
-      'lantern-eater',
-    ]);
   });
 });

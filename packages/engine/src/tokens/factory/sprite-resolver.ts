@@ -1,4 +1,5 @@
 import { pickRandom, type RandomNumberGenerator } from '../../utils/random';
+import { reportSpriteFallback } from '../sprite-fallback-log';
 import type { ManifestSpriteRegistry } from '../sprite-registry';
 import type { ItemTypeDefinition } from '../token-content-schema';
 import type { SpriteKey, TBaseTokenType, UniqueKey } from '../token-keys';
@@ -12,8 +13,9 @@ export class ManifestSpriteResolver implements ISpriteResolver, IUniqueSpriteRes
     tokenType: TBaseTokenType,
     rng: RandomNumberGenerator,
   ): SpriteKey {
-    const refs = this.sprites.spritesFor('base', tokenType, type.key);
-    return (pickRandom([...refs], rng) ?? this.sprites.placeholder).key;
+    const resolution = this.sprites.resolveBase(tokenType, type.key);
+    reportSpriteFallback(tokenType, type.key, resolution);
+    return (pickRandom([...resolution.refs], rng) ?? this.sprites.placeholder).key;
   }
 
   resolveUnique(uniqueKey: UniqueKey): SpriteKey {

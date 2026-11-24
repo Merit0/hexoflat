@@ -145,7 +145,7 @@ uk:  Меч · Морок
 ## 7. Спрайти
 
 - Базові: `apps/web/public/hex-assets/items/base/<realm>-<type>/<realm>-<type>-<NN>.png`, приклад `items/base/idol-sword/idol-sword-01.png`.
-- Унікальні: `items/unique/unique-<uniqueKey>.png`.
+- Унікальні: `items/unique/<uniqueKey>.png` (без префікса `unique-` від DA4, 2026-11-24).
 - Усі спрайти однакового розміру й формату (розмір фіксує LG0 за наявними).
 - Скрипт збирання створює **маніфест** спрайтів, який читає engine (engine не бачить файлової системи).
 - Тест: кожен файл відповідає шаблону й розміру; маніфест збігається з теками.

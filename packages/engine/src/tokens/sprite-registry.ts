@@ -1,54 +1,49 @@
 import type { ETokenType } from '../abstraction/hexobject-abstraction';
+import type { TTokenTier } from '../dimensions/dimensions';
 import {
-  PLACEHOLDER_SPRITE_KEY,
+  placeholderRef,
+  resolveBaseSprites,
+  type SpriteRef,
+  type SpriteResolution,
+} from './sprite-fallback';
+import {
   spriteManifestSchema,
   type SpriteManifest,
   type SpriteManifestEntry,
 } from './sprite-files';
-import type { TTokenTier } from '../dimensions/dimensions';
 import type { ItemTypeKey, UniqueKey } from './token-keys';
 import { uniqueSpriteKey } from './unique-schema';
 
-export interface SpriteRef {
-  key: string;
-  path: string;
-}
-
 export class ManifestSpriteRegistry {
-  private readonly entries: readonly SpriteManifestEntry[];
-  private readonly placeholderRef: SpriteRef;
+  private readonly manifest: SpriteManifest;
+  private readonly placeholderSprite: SpriteRef;
 
   constructor(manifest: SpriteManifest) {
-    const parsed = spriteManifestSchema.parse(manifest);
-    this.entries = parsed.entries;
-    this.placeholderRef = { key: PLACEHOLDER_SPRITE_KEY, path: parsed.placeholder };
+    this.manifest = spriteManifestSchema.parse(manifest);
+    this.placeholderSprite = placeholderRef(this.manifest);
   }
 
   get placeholder(): SpriteRef {
-    return this.placeholderRef;
+    return this.placeholderSprite;
   }
 
   all(): readonly SpriteManifestEntry[] {
-    return this.entries;
+    return this.manifest.entries;
+  }
+
+  resolveBase(tokenType: ETokenType, type: ItemTypeKey): SpriteResolution {
+    return resolveBaseSprites(this.manifest, tokenType, type);
   }
 
   spritesFor(tier: TTokenTier, tokenType: ETokenType, type: ItemTypeKey): readonly SpriteRef[] {
-    const ofType = this.entries.filter((entry) => entry.tier === tier && entry.type === type);
-    const exact = ofType.filter((entry) => entry.tokenType === tokenType);
-    if (exact.length > 0) return exact;
-    if (ofType.length > 0) return ofType;
-    return [this.placeholderRef];
+    return tier === 'base' ? this.resolveBase(tokenType, type).refs : [this.placeholderSprite];
   }
 
   uniqueSprite(uniqueKey: UniqueKey): SpriteRef {
     const key = uniqueSpriteKey(uniqueKey);
-    const entry = this.entries.find(
+    const entry = this.manifest.entries.find(
       (candidate) => candidate.tier === 'unique' && candidate.key === key,
     );
-    return entry ?? this.placeholderRef;
-  }
-
-  missingUniqueSprites(uniqueKeys: readonly UniqueKey[]): UniqueKey[] {
-    return uniqueKeys.filter((key) => this.uniqueSprite(key) === this.placeholderRef);
+    return entry ?? this.placeholderSprite;
   }
 }

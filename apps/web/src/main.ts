@@ -5,6 +5,7 @@ import { createPinia } from 'pinia';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import router from './router';
 import { validateContent } from '@hexoflat/engine/content/validate-content';
+import { setSpriteFallbackLog } from '@hexoflat/engine/tokens/sprite-fallback-log';
 import { queryClient } from './api/query-client';
 import { useUserStore } from './stores/user-store';
 import { i18n } from './i18n';
@@ -12,6 +13,7 @@ import { persistHeroStore } from './stores/hero-store-blob';
 
 if (import.meta.env.DEV) {
   validateContent();
+  setSpriteFallbackLog((message) => console.warn(message));
 }
 
 const pinia = createPinia();

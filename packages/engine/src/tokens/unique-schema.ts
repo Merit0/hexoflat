@@ -17,10 +17,8 @@ function distinct(values: readonly string[]): boolean {
   return new Set(values).size === values.length;
 }
 
-export const UNIQUE_SPRITE_PREFIX = 'unique-';
-
 export function uniqueSpriteKey(uniqueKey: UniqueKey): SpriteKey {
-  return `${UNIQUE_SPRITE_PREFIX}${uniqueKey}`;
+  return uniqueKey;
 }
 
 export function uniqueTextKeys(uniqueKey: UniqueKey): { name: string; description: string } {

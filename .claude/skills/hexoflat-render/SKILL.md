@@ -164,3 +164,5 @@ Block sides (2026-11-21): battle-tool-key identifies native shield tools through
 Light frames (DA3a, 2026-11-24): the frame URL of a token or light name comes from `LIGHT_FRAME_URLS` in `render/light.ts` (was `render/rarity.ts` before DA3b), keyed by the engine light id of the `DIMENSIONS` record; colours are the record's `light.color`. Do not add a second light table in a layer.
 
 The exceptional token family/light tone is ALIEN (`alien`, `alien-unique`), replacing God Executor. Keep the existing red frame asset. Render tokens from their own family/identity, not their generic catalogue key. Saved legacy family normalization belongs to the engine token reader.
+
+Sprite fallback (DA4, 2026-11-24): `tokenSpriteUrl` draws the stored manifest sprite; when it is missing, a base token follows the engine chain `resolveBaseSprites` and a unique gets the placeholder. The light comes from the token itself. Do not write another fallback in a layer.

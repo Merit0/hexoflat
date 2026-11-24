@@ -42,6 +42,7 @@ const tierConfigSchema = z.strictObject({
   light: lightSchema,
   price: tierPriceSchema,
   sortRank: z.number().int().nonnegative(),
+  spriteFallbackRank: z.number().int().nonnegative().optional(),
 });
 
 const dimensionConfigSchema = z.strictObject({
@@ -54,6 +55,12 @@ const dimensionConfigSchema = z.strictObject({
     })
     .refine((tiers) => !tiers.unique || tiers.unique.price.kind === 'manual', {
       message: 'a unique tier is priced by its definition',
+    })
+    .refine((tiers) => !tiers.base || tiers.base.spriteFallbackRank !== undefined, {
+      message: 'a base tier needs a sprite fallback rank',
+    })
+    .refine((tiers) => tiers.unique?.spriteFallbackRank === undefined, {
+      message: 'a unique tier lends no sprites',
     }),
 });
 
@@ -86,12 +93,23 @@ export const dimensionConfigRecordSchema = z
         ),
       ),
     { message: 'a sort rank is used twice' },
+  )
+  .refine(
+    (record) =>
+      distinct(
+        Object.values(record).flatMap((config) => {
+          const rank = config.tiers.base?.spriteFallbackRank;
+          return rank === undefined ? [] : [String(rank)];
+        }),
+      ),
+    { message: 'a sprite fallback rank is used twice' },
   );
 
 interface TierShape {
   readonly light: DimensionLight;
   readonly price: TierPrice;
   readonly sortRank: number;
+  readonly spriteFallbackRank?: number;
 }
 
 interface DimensionShape {
@@ -107,6 +125,7 @@ const DIMENSION_CONFIG = {
         light: { id: 'blue', color: '#3E8BFF' },
         price: { kind: 'range', range: [60, 800] },
         sortRank: 5,
+        spriteFallbackRank: 1,
       },
       unique: {
         light: { id: 'violet', color: '#A855F7' },
@@ -122,6 +141,7 @@ const DIMENSION_CONFIG = {
         light: { id: 'gray', color: '#A9AEB4' },
         price: { kind: 'range', range: [40, 600] },
         sortRank: 6,
+        spriteFallbackRank: 0,
       },
       unique: {
         light: { id: 'green', color: '#4FD27A' },
@@ -137,6 +157,7 @@ const DIMENSION_CONFIG = {
         light: { id: 'yellow', color: '#F5D33B' },
         price: { kind: 'range', range: [100, 1200] },
         sortRank: 4,
+        spriteFallbackRank: 2,
       },
       unique: {
         light: { id: 'orange', color: '#FF8A2A' },
@@ -266,6 +287,16 @@ export function tokenTypesWithTier<T extends TTokenTier>(
     (view) => view.tokenType as TTokenTypeWithTier<T>,
   );
 }
+
+function spriteFallbackRankOf(dimension: EDimension): number {
+  return tierConfigOf(dimension, 'base')?.spriteFallbackRank ?? Number.MAX_SAFE_INTEGER;
+}
+
+export const SPRITE_FALLBACK_ORDER: readonly TTokenTypeWithTier<'base'>[] = Object.freeze(
+  DIMENSION_TIERS.filter((view) => view.tier === 'base')
+    .sort((a, b) => spriteFallbackRankOf(a.dimension) - spriteFallbackRankOf(b.dimension))
+    .map((view) => view.tokenType as TTokenTypeWithTier<'base'>),
+);
 
 export const TOKEN_TYPES: readonly TTokenType[] = Object.freeze(
   Object.values(DIMENSIONS).map((config) => config.tokenType),

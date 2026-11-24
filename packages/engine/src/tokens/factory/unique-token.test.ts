@@ -79,7 +79,7 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
       }
     });
 
-    it('uses the placeholder while the sprite unique-<key> is not in the manifest', () => {
+    it('uses the placeholder while the sprite <key> is not in the manifest', () => {
       for (const token of tokens) expect(token.sprite).toBe('_placeholder');
     });
   },
@@ -125,17 +125,17 @@ describe('EA-5: createUnique never calls the attribute generator', () => {
       entries: [
         ...SPRITE_MANIFEST.entries,
         {
-          key: 'unique-lantern-eater',
+          key: 'lantern-eater',
           tier: 'unique' as const,
           tokenType: null,
           type: null,
-          path: '/hex-assets/items/unique/unique-lantern-eater.png',
+          path: '/hex-assets/items/unique/lantern-eater.png',
         },
       ],
     };
     const factory = createTokenFactory(TOKEN_CONTENT, manifest);
     const token = valueOf(factory.createUnique('lantern-eater', uniqueContext(1)));
-    expect(token.sprite).toBe('unique-lantern-eater');
+    expect(token.sprite).toBe('lantern-eater');
   });
 });
 

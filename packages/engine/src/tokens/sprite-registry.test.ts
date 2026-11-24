@@ -42,12 +42,8 @@ describe('ManifestSpriteRegistry.spritesFor', () => {
     expect(keysFor(ETokenType.IDOL, 'sword')).toEqual(['idol-sword-01', 'idol-sword-02']);
   });
 
-  it('falls back to the same type in any tokenType when the tokenType has none', () => {
-    expect(keysFor(ETokenType.SPARK, 'sword')).toEqual([
-      'idol-sword-01',
-      'idol-sword-02',
-      'gloom-sword-01',
-    ]);
+  it('falls back to the same type of the first tokenType in idol, gloom, spark order', () => {
+    expect(keysFor(ETokenType.SPARK, 'sword')).toEqual(['idol-sword-01', 'idol-sword-02']);
   });
 
   it('falls back to the placeholder when no tokenType has the type', () => {

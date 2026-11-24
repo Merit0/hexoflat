@@ -15,6 +15,7 @@
     "test:e2e:slow": "E2E_INCLUDE_SLOW=1 sh scripts/pre-push-e2e.sh e2e/slow --workers=1",
     "e2e:map:check": "pnpm --silent --filter @hexoflat/playwright e2e:map:check",
     "tokens:manifest": "pnpm --silent --filter @hexoflat/web tokens:manifest",
+    "sprites:coverage": "pnpm --silent --filter @hexoflat/web sprites:coverage",
     "tokens:sample": "pnpm --silent --filter @hexoflat/web tokens:sample",
     "test:coverage": "turbo run test:coverage",
     "size-limit": "turbo run size-limit",

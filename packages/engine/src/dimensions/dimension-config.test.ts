@@ -213,3 +213,35 @@ describe('DA3a: derived views keep the values and order they had before', () => 
     });
   });
 });
+
+describe('DA4: sprite fallback ranks of the record', () => {
+  function withBase(change: Record<string, unknown>) {
+    const record = structuredClone(DIMENSIONS) as Record<string, { tiers: { base?: object } }>;
+    Object.assign(record[EDimension.HEAVEN].tiers.base!, change);
+    return record;
+  }
+
+  it('accepts a distinct rank on every base tier', () => {
+    expect(dimensionConfigRecordSchema.safeParse(withBase({ spriteFallbackRank: 7 })).success).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    ['no rank on a base tier', withBase({ spriteFallbackRank: undefined })],
+    ['a rank used twice', withBase({ spriteFallbackRank: 0 })],
+    [
+      'a rank on a unique tier',
+      recordWith({
+        [EDimension.NOWHERE]: {
+          tokenType: ETokenType.ALIEN,
+          tiers: {
+            unique: { ...DIMENSIONS[EDimension.NOWHERE].tiers.unique, spriteFallbackRank: 9 },
+          },
+        },
+      }),
+    ],
+  ])('the schema refuses %s', (_name, record) => {
+    expect(dimensionConfigRecordSchema.safeParse(record).success).toBe(false);
+  });
+});

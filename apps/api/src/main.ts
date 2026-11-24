@@ -1,5 +1,7 @@
 import 'reflect-metadata';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { setSpriteFallbackLog } from '@hexoflat/engine';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from '@fastify/helmet';
@@ -10,6 +12,10 @@ import { assertE2eFixturesSafe } from './common/e2e-fixtures';
 
 async function bootstrap() {
   assertE2eFixturesSafe();
+  if (process.env.NODE_ENV !== 'production') {
+    const logger = new Logger('Sprites');
+    setSpriteFallbackLog((message) => logger.warn(message));
+  }
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ bodyLimit: 8 * 1024 * 1024 }),

@@ -12,6 +12,8 @@ export const adjectiveKeySchema = z.string().regex(SLUG);
 export const i18nKeySchema = z.string().regex(/^content(?:\.[A-Za-z0-9_-]+)+$/);
 export const spriteKeySchema = z.string().regex(/^_?[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
+export const PLACEHOLDER_SPRITE_KEY = '_placeholder';
+
 export const TOKEN_SOURCE_KINDS = [
   'chest',
   'grave',
