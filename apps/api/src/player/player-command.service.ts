@@ -23,6 +23,7 @@ import {
   serverQuestContext,
   serverTradeContext,
   type DomainEvent,
+  upcastJournalEvents,
   type PlayerAggregates,
   type PlayerCommandOutcome,
   type TAggregateKind,
@@ -399,7 +400,7 @@ export class PlayerCommandService {
         result: prior.result,
         ...(prior.reason ? { code: prior.reason } : {}),
         replayed: true,
-        events: prior.events as DomainEvent[],
+        events: upcastJournalEvents(prior.events),
         aggregates: projectAll(loaded),
       };
     }

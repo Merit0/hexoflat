@@ -1,3 +1,4 @@
+import type { DomainEvent } from '../commands/types';
 import { upcastDropContext } from '../tokens/drop-context';
 import { upcastTokenDimension } from '../tokens/upcast-token-dimension';
 
@@ -25,4 +26,9 @@ export function upcastDimensionVocabulary(raw: unknown): unknown {
     renamed[target] = DROP_CONTEXT_KEYS.has(target) ? upcastDropContext(walked) : walked;
   }
   return isLegacyToken(renamed) ? upcastTokenDimension(renamed) : renamed;
+}
+
+/** Old-save reader for journal replies: events written before DA3b leave the server in the new vocabulary. */
+export function upcastJournalEvents(raw: unknown): DomainEvent[] {
+  return upcastDimensionVocabulary(raw) as DomainEvent[];
 }

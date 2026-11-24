@@ -9,6 +9,7 @@ import {
   parseQuestRunDoc,
   projectQuestForClient,
   type DomainEvent,
+  upcastJournalEvents,
   type Presence,
   type ProgressState,
   type QuestProjection,
@@ -181,7 +182,7 @@ export class QuestRunService {
         }
         return respond(
           prior.result,
-          prior.events as DomainEvent[],
+          upcastJournalEvents(prior.events),
           prior.reason ?? undefined,
           doc,
           progress,
