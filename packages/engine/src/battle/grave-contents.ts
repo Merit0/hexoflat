@@ -34,6 +34,7 @@ export function createGraveContainer(state: BattleState, grave: Grave): Containe
     dropContext,
     tableContexts,
     tokenSource: tokens,
+    uniqueDropOverride: state.uniqueDropOverride,
   });
   if (!grave.trophyBonuses?.some((bonus) => bonus > 0)) return container;
 

@@ -161,6 +161,16 @@ export interface HexoflatTestApi {
   prepareShieldStrike(openDirections?: boolean): Promise<void>;
   prepareTrophyTarget(): Promise<void>;
   prepareCritTarget(): Promise<void>;
+  forceUniqueDrops(): Promise<void>;
+  getBattleUniqueItems(): {
+    q: number;
+    r: number;
+    tokenId: string;
+    uniqueKey: string | null;
+    tokenType: string;
+    tier: string;
+    light: string | null;
+  }[];
   getLastBattleStrike(): {
     critical: boolean;
     damageBeforeBlock: number;

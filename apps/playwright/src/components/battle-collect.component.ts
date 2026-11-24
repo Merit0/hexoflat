@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { BaseComponent } from '@framework/base-component';
+import type { HexoflatTestApi } from '@framework/test-api';
 
 export interface CollectGrave {
   q: number;
@@ -15,6 +16,8 @@ export interface CollectItem {
   amount: number;
   standHexes: { q: number; r: number }[];
 }
+
+export type UniqueItem = ReturnType<HexoflatTestApi['getBattleUniqueItems']>[number];
 
 export interface CollectSnapshot {
   collecting: boolean;
@@ -45,6 +48,22 @@ export class BattleCollectComponent extends BaseComponent {
     const snapshot = await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleCollect());
     if (!snapshot) throw new Error('No battle is open.');
     return snapshot;
+  }
+
+  async forceUniqueDrops(): Promise<void> {
+    await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.forceUniqueDrops());
+  }
+
+  async uniqueItems(): Promise<UniqueItem[]> {
+    return this.page.evaluate(() => window.__HEXOFLAT_TEST__!.getBattleUniqueItems());
+  }
+
+  async verifyOwned(unique: UniqueItem): Promise<void> {
+    await expect
+      .poll(() =>
+        this.page.evaluate((id) => window.__HEXOFLAT_TEST__!.getInventoryToken(id), unique.tokenId),
+      )
+      .toMatchObject({ id: unique.tokenId, uniqueKey: unique.uniqueKey });
   }
 
   async waitForCollecting(): Promise<void> {

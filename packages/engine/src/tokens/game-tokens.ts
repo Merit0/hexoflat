@@ -1,4 +1,5 @@
 import { ITEM_TYPES } from '../content/item-types.content';
+import { dimensionOfTokenType } from '../dimensions/dimensions';
 import { createTokenFactory } from './factory/create-token-factory';
 import type { TokenFactory } from './factory/token-factory';
 export { tokenSourceIdOf } from './source-id';
@@ -39,6 +40,18 @@ export function mintBaseToken(
     mapTier: mint.dropContext.mapTier,
     type,
     baseKey,
+  });
+  if (!result.ok) throw new Error(`TOKEN_REFUSED:${result.refusal.code}:${result.refusal.message}`);
+  return result.value;
+}
+
+export function mintUniqueToken(mint: TokenMint, uniqueKey: string, n: number): ItemToken {
+  const result = (mint.factory ?? gameTokenFactory()).createUnique(uniqueKey, {
+    seed: mint.seed,
+    sourceId: mint.sourceId,
+    n,
+    mapTier: mint.dropContext.mapTier,
+    dimension: dimensionOfTokenType(mint.dropContext.tokenType),
   });
   if (!result.ok) throw new Error(`TOKEN_REFUSED:${result.refusal.code}:${result.refusal.message}`);
   return result.value;

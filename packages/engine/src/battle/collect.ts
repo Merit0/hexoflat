@@ -2,6 +2,8 @@ import type { DomainEvent } from '../commands/types';
 import type { IInventoryDraft } from '../inventory/apply-stock';
 import { pickupStack } from '../loot';
 import { openInSpace } from '../containers';
+import { carriesUniqueDrops } from '../containers/unique-drops';
+import { lootTableOf } from '../content/loot-tables.content';
 import { fallenEnemies, graveCarriersAt } from './grave-carriers';
 import { createGraveContainer } from './grave-contents';
 import { collectActorRefusal, graveAt, graveSpace } from './grave-container-space';
@@ -45,6 +47,8 @@ export function enterCollectPhase(state: BattleState): DomainEvent[] {
       ...(bonuses.some((bonus) => bonus > 0) ? { trophyBonuses: bonuses } : {}),
     };
     graves.push({ ...grave, container: createGraveContainer(state, grave) });
+    if (grave.tables.some((id) => carriesUniqueDrops(lootTableOf(id))))
+      delete state.uniqueDropOverride;
   }
   state.collect = { graves, items: [] };
   return [

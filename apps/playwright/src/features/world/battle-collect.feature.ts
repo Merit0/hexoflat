@@ -27,6 +27,61 @@ export class BattleCollectFeature extends BaseFeature {
     });
   }
 
+  async winTheBattleWithForcedUniqueDrops(squad: string): Promise<void> {
+    await this.step('Force the unique rolls of the boss and win the battle', async () => {
+      await new BattleFlowFeature().startBattleNextToTheSquad({ squad });
+      await this.collect.forceUniqueDrops();
+      await this.campingMap.hexBoard.finishBattle('victory');
+      await this.collect.waitForCollecting();
+      await this.collect.waitForBoardStill();
+      expect(await this.collect.uniqueItems()).toEqual([]);
+    });
+  }
+
+  async findTheUniqueAndVerifyItsLight(expected: {
+    uniqueKey: string;
+    tokenType: string;
+    light: RegExp;
+  }): Promise<void> {
+    await this.step('Read the graves until the unique lies on the field', async () => {
+      const graves = (await this.collect.read()).graves.sort(
+        (a, b) => b.standHexes.length - a.standHexes.length,
+      );
+      for (const grave of graves) {
+        await this.lookThrough(grave);
+        if ((await this.collect.uniqueItems()).length > 0) break;
+      }
+      expect(await this.collect.uniqueItems()).toEqual([
+        expect.objectContaining({
+          uniqueKey: expected.uniqueKey,
+          tokenType: expected.tokenType,
+          tier: 'unique',
+          light: expect.stringMatching(expected.light),
+        }),
+      ]);
+    });
+  }
+
+  async verifyOnlyOneUniqueAfterEveryGrave(): Promise<void> {
+    await this.step('Read the other graves and verify there is still one unique', async () => {
+      for (const grave of (await this.collect.read()).graves)
+        if (!grave.examined) await this.lookThrough(grave);
+      expect(await this.collect.uniqueItems()).toHaveLength(1);
+    });
+  }
+
+  async pickUpTheUniqueAndVerifyTheBag(): Promise<void> {
+    await this.step('Pick the unique up with the hand and find it in the bag', async () => {
+      const [unique] = await this.collect.uniqueItems();
+      const item = (await this.collect.read()).items.find(
+        ({ q, r }) => q === unique.q && r === unique.r,
+      )!;
+      await this.pickUp(item);
+      await this.page.evaluate(() => window.__HEXOFLAT_TEST__!.settleInventorySync());
+      await this.collect.verifyOwned(unique);
+    });
+  }
+
   async verifyToolActivationAfterVictory(via: 'wheel' | 'inventory'): Promise<void> {
     await this.step(
       `Activate the hero tool through ${via} after all enemies are dead and read a grave`,
@@ -119,17 +174,19 @@ export class BattleCollectFeature extends BaseFeature {
 
   async pickUpEverythingLyingAround(): Promise<void> {
     await this.step('Pick up every item lying on the field with the hand', async () => {
-      for (const item of (await this.collect.read()).items) {
-        const stand = await this.collect.clickFirstUncoveredHex(item.standHexes);
-        await this.collect.verifyHeroStandsAt(stand);
-        await this.collect.waitForBoardStill();
-        await this.collect.openTheHandTool();
-        await this.collect.hoverHex(item);
-        await this.collect.pressToolAction();
-        await this.collect.verifyItemGone(item);
-        await this.collect.waitForBoardStill();
-      }
+      for (const item of (await this.collect.read()).items) await this.pickUp(item);
     });
+  }
+
+  private async pickUp(item: CollectItem): Promise<void> {
+    const stand = await this.collect.clickFirstUncoveredHex(item.standHexes);
+    await this.collect.verifyHeroStandsAt(stand);
+    await this.collect.waitForBoardStill();
+    await this.collect.openTheHandTool();
+    await this.collect.hoverHex(item);
+    await this.collect.pressToolAction();
+    await this.collect.verifyItemGone(item);
+    await this.collect.waitForBoardStill();
   }
 
   async verifyTheBagHoldsTheLoot(): Promise<void> {

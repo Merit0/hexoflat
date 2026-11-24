@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { parseQuestRunDoc, type ProgressState } from '@hexoflat/engine';
+import type { InventoryState } from '@hexoflat/engine/inventory/inventory-state';
 import { isAlive, isFreeHex } from '@hexoflat/engine/battle/battle-board';
 import { lootTableIdOfKind } from '@hexoflat/engine/battle/battle-catalogue';
 import { battlefieldSeed } from '@hexoflat/engine/battle/battlefield';
@@ -13,7 +14,9 @@ import type { LootLists } from '@hexoflat/engine/containers/container';
 import { lootTableOf } from '@hexoflat/engine/content/loot-tables.content';
 import { locationDropContext } from '@hexoflat/engine/registry/location-drop-context';
 import { campObjectSpots } from '@hexoflat/engine/content/boards/camp-object-spot';
-import { LOOT_TABLES } from '@hexoflat/engine/content/loot-tables.content';
+import { LOOT_TABLES, SKELETON_KING_TABLE_ID } from '@hexoflat/engine/content/loot-tables.content';
+import { ALL_QUESTS } from '@hexoflat/engine/quests/all-quests';
+import type { QuestDefinition } from '@hexoflat/engine/quests/quest-definition';
 import { lootStreamLabel } from '@hexoflat/engine/loot/roll-loot';
 import { HexObjectFactory } from '@hexoflat/engine/factory/hex-object-factory';
 import { HEXOBJECT_KEYS } from '@hexoflat/engine/registry/hexobjects-registry';
@@ -52,6 +55,10 @@ const SECRET_KEYS = [
   'contents',
   'sourceId',
   'rngSeed',
+  'uniqueDrops',
+  'alienRoll',
+  'uniqueDropOverride',
+  'chanceBp',
 ];
 
 const SECRET_TEXTS = ['"status":"full"', `"${lootStreamLabel('', '').split(':')[0]}:`];
@@ -285,7 +292,10 @@ describe.skipIf(!dbAvailable)(
       expect(text).toContain('"chest"');
     });
 
-    async function wonGrave(squadKey: string = HEXOBJECT_KEYS.SKELETON_PACK) {
+    async function wonGrave(
+      squadKey: string = HEXOBJECT_KEYS.SKELETON_PACK,
+      boss: { tableId: string } | null = null,
+    ) {
       process.env.HEXOFLAT_E2E_FIXTURES = '1';
       const { userId, heroId } = await kit.newPlayer();
       await kit.service.grantItem(userId, heroId, HEXOBJECT_KEYS.SWORD, 1, 'dev');
@@ -314,6 +324,7 @@ describe.skipIf(!dbAvailable)(
         toolKey: HEXOBJECT_KEYS.HAND,
       });
       await sendWorld(userId, heroId, 'WORLD_BATTLE', { kind: 'start' });
+      if (boss) await world.battleFixture(userId, heroId, { kind: 'force-unique-drops' });
       await world.battleFixture(userId, heroId, { kind: 'finish', outcome: 'victory' });
       const held = await heldWorld(userId, heroId);
       const battle = held.loaded.battle!;
@@ -323,7 +334,10 @@ describe.skipIf(!dbAvailable)(
       });
       const roomy = (hex: { q: number; r: number }) =>
         hexNeighbours(hex).filter((n) => isFreeHex(battle, n)).length;
-      const grave = [...battle.collect!.graves].sort((a, b) => roomy(b.hex) - roomy(a.hex))[0].hex;
+      const graves = battle.collect!.graves.filter(
+        ({ tables }) => !boss || tables.includes(boss.tableId),
+      );
+      const grave = graves.sort((a, b) => roomy(b.hex) - roomy(a.hex))[0].hex;
       const hero = battle.creatures.find((c) => c.side === 'heroes')!;
       hero.pos = hexNeighbours(grave).find((hex) => isFreeHex(battle, hex, hero.id))!;
       await saveWorld(held.expeditionId, held.docKey, held.loaded);
@@ -376,6 +390,52 @@ describe.skipIf(!dbAvailable)(
         secrets,
         c.seeds,
       );
+    });
+
+    it('DA5b-5 a boss grave with a forced Alien: no answer or projection carries a chance, a rule or a seed', async () => {
+      const c = await wonGrave(HEXOBJECT_KEYS.BONE_COURT, { tableId: SKELETON_KING_TABLE_ID });
+      const held = (await heldWorld(c.userId, c.heroId)).loaded.battle!;
+      expect(held.uniqueDropOverride).toBeUndefined();
+      const stored = held.collect!.graves.find((grave) => sameHex(grave.hex, c.grave))!;
+      const aliens = stored.container!.contents!.flat().filter((drop) => drop.token?.uniqueKey);
+      expect(aliens.map((drop) => drop.token!.uniqueKey)).toEqual(['last-verdict']);
+      const { instanceId } = aliens[0].token!;
+      const before = await world.snapshot(c.userId, c.heroId);
+      expectNoSecrets('battle view before loot', before, [c.seed, instanceId!], c.seeds);
+      const looted = await sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', {
+        kind: 'hero',
+        action: { kind: 'loot-grave', hex: c.grave },
+      });
+      expect(looted.result).toBe('applied');
+      expect(JSON.stringify(looted)).toContain(instanceId);
+      expectNoSecrets('loot answer', looted, [c.seed], c.seeds);
+      const view = (await world.snapshot(c.userId, c.heroId)) as { battleView: BattleProjection };
+      expectNoSecrets('battle view after loot', view, [c.seed], c.seeds);
+      const item = view.battleView.collect!.items.find(({ token }) => token?.tier === 'unique');
+      expect(item?.token).toMatchObject({ instanceId, tokenType: 'alien' });
+      const picked = await sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', {
+        kind: 'hero',
+        action: { kind: 'pickup-loot', hex: item!.hex },
+      });
+      expectNoSecrets('pickup answer', picked, [c.seed], c.seeds);
+      expectNoSecrets(
+        'hero snapshot',
+        await kit.service.snapshot(c.userId, c.heroId),
+        [c.seed],
+        c.seeds,
+      );
+    });
+
+    it('DA5b-5 the force hook is refused without the fixtures flag and cannot be sent as a command', async () => {
+      const c = await wonGrave();
+      process.env.HEXOFLAT_E2E_FIXTURES = '';
+      await expect(
+        world.battleFixture(c.userId, c.heroId, { kind: 'force-unique-drops' }),
+      ).rejects.toThrow('FORBIDDEN');
+      await expect(
+        sendWorld(c.userId, c.heroId, 'WORLD_BATTLE', { kind: 'force-unique-drops' }),
+      ).rejects.toThrow('INVALID_COMMAND');
+      process.env.HEXOFLAT_E2E_FIXTURES = '1';
     });
 
     const itemsOf = (lists: LootLists) =>
@@ -482,6 +542,37 @@ describe.skipIf(!dbAvailable)(
         expectNoSecrets(`quest answer #${index}`, answer, secrets, seeds),
       );
       expect(((await progressOf(userId, heroId)).state as ProgressState).presence).toBeNull();
+    });
+
+    it('DA5b-4 the same QUEST_CLAIM commandId sent twice leaves one unique instance', async () => {
+      process.env.HEXOFLAT_E2E_FIXTURES = '1';
+      const catalogue = ALL_QUESTS as Record<string, QuestDefinition>;
+      const questId = 'bone-hunter';
+      const authored = catalogue[questId];
+      catalogue[questId] = {
+        ...authored,
+        rewards: [{ kind: 'item', itemKey: HEXOBJECT_KEYS.SWORD, amount: 1 }],
+        rewardDropContext: { mapTier: 1, tier: 'unique', templateKey: 'lantern-eater' },
+      };
+      try {
+        const { userId, heroId } = await boardHero();
+        await kit.service.questFixture(userId, heroId, {
+          active: [{ questId, progress: 1, state: 'ready' }],
+        });
+        const { revision } = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!;
+        const claim = envelope(heroId, 'QUEST_CLAIM', { questId }, revision);
+        const first = await kit.service.execute(userId, claim);
+        const again = await kit.service.execute(userId, claim);
+        expect(first.result).toBe('applied');
+        expect(again).toMatchObject({ result: 'applied', replayed: true, events: first.events });
+        const inventory = (await kit.service.snapshot(userId, heroId)).aggregates.inventory!
+          .state as InventoryState;
+        const uniques = inventory.bag.filter((cell) => cell?.token?.tier === 'unique');
+        expect(uniques.map((cell) => cell!.token!.uniqueKey)).toEqual(['lantern-eater']);
+        expectNoSecrets('claim answer', first, [], await serverSeeds(userId, heroId));
+      } finally {
+        catalogue[questId] = authored;
+      }
     });
 
     it('LG5f camp chest and quest reward: the claim answers and the hero snapshot carry no server seed', async () => {

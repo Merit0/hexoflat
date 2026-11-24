@@ -10,6 +10,8 @@ import { apiClient } from '@/api/client';
 import { inventorySession } from '@/services/inventory/inventory-session';
 import { observeServerClock } from '@/services/battle/battle-clock';
 import { useBattleStore } from '@/stores/battle-store';
+import { itemLook } from '@/render/token-look';
+import type { THexobjectKey } from '@hexoflat/engine/registry/hexobjects-registry';
 
 interface FixtureAnswer {
   battleView: BattleProjection | null;
@@ -263,6 +265,28 @@ export function battleTestHooks() {
             items: view.collect?.items ?? [],
           }
         : null;
+    },
+    async forceUniqueDrops(): Promise<void> {
+      if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');
+      await serverFixture({ kind: 'force-unique-drops' });
+    },
+    getBattleUniqueItems() {
+      const items = useBattleStore().projection?.collect?.items ?? [];
+      return items.flatMap(({ hex, itemKey, token }) =>
+        token?.tier === 'unique'
+          ? [
+              {
+                q: hex.q,
+                r: hex.r,
+                tokenId: token.id,
+                uniqueKey: token.uniqueKey ?? null,
+                tokenType: token.tokenType,
+                tier: token.tier,
+                light: itemLook({ key: itemKey as THexobjectKey, token }).light,
+              },
+            ]
+          : [],
+      );
     },
     async openBattleTask(): Promise<number> {
       if (import.meta.env.VITE_E2E_HOOKS !== 'true') throw new Error('E2E hooks are off');

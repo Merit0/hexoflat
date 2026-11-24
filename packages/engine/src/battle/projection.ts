@@ -17,7 +17,8 @@ type HiddenFields =
   | 'collect'
   | 'tokenSecret'
   | 'dropContext'
-  | 'critOverride';
+  | 'critOverride'
+  | 'uniqueDropOverride';
 export interface ProjectedCollect {
   graves: { hex: BattleHex; examined: boolean }[];
   items: GroundItem[];
@@ -62,6 +63,7 @@ function publicPart(state: BattleState, viewer: BattleSide): Omit<BattleState, H
   delete copy.dropContext;
   delete copy.tokenSecret;
   delete copy.critOverride;
+  delete copy.uniqueDropOverride;
   delete copy.lootEnabled;
   delete copy.fallen;
   delete copy.collect;

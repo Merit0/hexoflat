@@ -7,6 +7,10 @@ import { enterCollectPhase } from './collect';
 import { issueTask } from './timed-task';
 import { performAction } from './perform-action';
 import { BATTLE_RULES } from './battle-content';
+import { carriesUniqueDrops } from '../containers/unique-drops';
+import { lootTableOf } from '../content/loot-tables.content';
+import { lootTableIdOfKind } from './battle-catalogue';
+import { BASIS_POINTS } from '../tokens/token-keys';
 
 export const battleFixtureSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('trophy-target') }).strict(),
@@ -29,6 +33,7 @@ export const battleFixtureSchema = z.discriminatedUnion('kind', [
   z
     .object({ kind: z.literal('hero-base-crit'), heroBaseCrit: z.number().int().min(0).max(100) })
     .strict(),
+  z.object({ kind: z.literal('force-unique-drops') }).strict(),
 ]);
 
 export type BattleFixture = z.infer<typeof battleFixtureSchema>;
@@ -89,6 +94,19 @@ function crowd(battle: BattleState, adjacent: number, far: number): void {
   };
   enemies.slice(0, adjacent).forEach((enemy) => place(enemy, 1));
   enemies.slice(adjacent, adjacent + far).forEach((enemy) => place(enemy, 2));
+}
+
+function openGroundForCarrier(battle: BattleState): void {
+  const carrier = battle.creatures.find(
+    ({ side, hp, kind }) =>
+      side === 'enemies' && hp > 0 && carriesUniqueDrops(lootTableOf(lootTableIdOfKind(kind))),
+  );
+  if (!carrier) return;
+  const room = (hex: Hex) => hexNeighbours(hex).filter((near) => isFreeHex(battle, near)).length;
+  const [spot] = floorHexes(battle)
+    .filter((hex) => isFreeHex(battle, hex, carrier.id))
+    .sort((a, b) => room(b) - room(a));
+  if (spot) carrier.pos = spot;
 }
 
 function finish(battle: BattleState, outcome: 'victory' | 'defeat'): void {
@@ -196,6 +214,10 @@ export function applyBattleFixture(
       break;
     case 'hero-base-crit':
       battle.critOverride = { heroBaseCrit: fixture.heroBaseCrit };
+      break;
+    case 'force-unique-drops':
+      battle.uniqueDropOverride = { chanceBp: BASIS_POINTS };
+      openGroundForCarrier(battle);
       break;
   }
   return battle;

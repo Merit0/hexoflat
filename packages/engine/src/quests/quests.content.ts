@@ -1,11 +1,15 @@
 import { CONTENT } from '../content/content-map';
-import { availableInDimension } from '../dimensions/availability';
+import { availableInDimension, uniqueAvailableInDimension } from '../dimensions/availability';
+import { uniquesDropAnywhere } from '../dimensions/dimensions';
+import { isTokenType } from '../tokens/game-tokens';
+import { TOKEN_UNIQUES } from '../content/token-uniques.content';
 import { TRADERS } from '../content/traders.content';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
-import { sellPriceOf } from '../trade/price-of';
+import { sellPriceFrom, sellPriceOf } from '../trade/price-of';
 import {
   QuestDefinitionSchema,
   questDimension,
+  uniqueRewardKey,
   type QuestCatalogue,
   type QuestDefinition,
   type Reward,
@@ -128,7 +132,42 @@ export function rewardSellValue(reward: Reward): number {
 }
 
 export function questSellValue(quest: QuestDefinition): number {
-  return quest.rewards.reduce((sum, reward) => sum + rewardSellValue(reward), 0);
+  const unique = uniqueRewardOf(quest);
+  return quest.rewards.reduce(
+    (sum, reward) =>
+      sum +
+      (unique && reward.kind === 'item' && reward.itemKey === unique.type
+        ? (sellPriceFrom(TRADERS.ilva, unique.price) ?? 0)
+        : rewardSellValue(reward)),
+    0,
+  );
+}
+
+function uniqueRewardOf(quest: QuestDefinition) {
+  const key = uniqueRewardKey(quest);
+  return TOKEN_UNIQUES.find((entry) => entry.key === key);
+}
+
+function uniqueRewardFailures(quest: QuestDefinition): string[] {
+  const key = uniqueRewardKey(quest);
+  if (!key) return [];
+  const unique = uniqueRewardOf(quest);
+  if (!unique) return [`${quest.id}: unknown unique reward ${key}`];
+  if (uniquesDropAnywhere(unique.dimension))
+    return [`${quest.id}: ${key} drops only by the alien roll`];
+  if (!uniqueAvailableInDimension(unique, questDimension(quest)))
+    return [`${quest.id}: unique reward ${key} is outside its dimension`];
+  const gear = quest.rewards.filter(
+    (reward) => reward.kind === 'item' && isTokenType(reward.itemKey),
+  );
+  const [only] = gear;
+  const fits =
+    gear.length === 1 &&
+    only.kind === 'item' &&
+    only.itemKey === unique.type &&
+    only.amount === 1 &&
+    !only.token;
+  return fits ? [] : [`${quest.id}: a unique reward needs exactly one ${unique.type} reward`];
 }
 
 export function questContentFailures(quests: readonly QuestDefinition[] = BOARD_QUESTS): string[] {
@@ -146,6 +185,7 @@ export function questContentFailures(quests: readonly QuestDefinition[] = BOARD_
       );
     if (ids.has(quest.id)) failures.push(`${quest.id}: duplicate id`);
     ids.add(quest.id);
+    failures.push(...uniqueRewardFailures(quest));
     if (quest.rewards.length === 0 && quest.turnIn === 'board') {
       failures.push(`${quest.id}: board turn-in without a reward`);
     }

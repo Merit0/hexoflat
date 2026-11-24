@@ -1,4 +1,4 @@
-import { mapTierSchema } from '../tokens/token-keys';
+import { mapTierSchema, uniqueKeySchema } from '../tokens/token-keys';
 import { itemTokenSchema } from '../tokens/token-schema';
 import { z } from 'zod';
 import { hexobjectKeySchema } from '../content/content-schema';
@@ -116,8 +116,20 @@ export const QuestMapObjectPlacementSchema = z
   })
   .strict();
 
-export const RewardDropContextSchema = z.strictObject({ mapTier: mapTierSchema });
+export const RewardDropContextSchema = z.union([
+  z.strictObject({ mapTier: mapTierSchema, tier: z.literal('base').optional() }),
+  z.strictObject({
+    mapTier: mapTierSchema,
+    tier: z.literal('unique'),
+    templateKey: uniqueKeySchema,
+  }),
+]);
 export type RewardDropContext = z.infer<typeof RewardDropContextSchema>;
+
+export function uniqueRewardKey(quest: { rewardDropContext?: RewardDropContext }): string | null {
+  const context = quest.rewardDropContext;
+  return context?.tier === 'unique' ? context.templateKey : null;
+}
 
 export const QuestDefinitionSchema = z
   .object({

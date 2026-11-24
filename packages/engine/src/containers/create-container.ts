@@ -6,6 +6,7 @@ import type { DropContext } from '../tokens/drop-context';
 import type { TokenFactory } from '../tokens/factory/token-factory';
 import type { Axial } from '../utils/hex-utils';
 import type { ContainerKind, ContainerState, LootLists } from './container';
+import { rollUniqueDrops, type UniqueDropOverride } from './unique-drops';
 
 export interface ContainerTokenSource {
   seed: string;
@@ -22,6 +23,7 @@ export interface ContainerRollInput {
   tableContexts?: readonly DropContext[];
   tokenSource?: ContainerTokenSource;
   tokenFactory?: TokenFactory;
+  uniqueDropOverride?: UniqueDropOverride;
 }
 
 export interface CreateContainerInput extends ContainerRollInput {
@@ -49,16 +51,32 @@ export function rollContainerContents(input: ContainerRollInput): LootLists {
     },
   );
   const tokens = input.tokenSource ?? { seed: input.seed, scope: [input.sourceId] };
-  return tokenizeLootLists(
+  const scope = [TOKEN_SOURCE_OF[input.kind], ...tokens.scope, input.targetKey] as const;
+  const based = tokenizeLootLists(
     lists,
     {
       seed: tokens.seed,
-      sourceId: tokenSourceIdOf(TOKEN_SOURCE_OF[input.kind], ...tokens.scope, input.targetKey),
+      sourceId: tokenSourceIdOf(...scope),
       dropContext: input.dropContext,
       factory: input.tokenFactory,
     },
     rolls.map(({ dropContext }) => dropContext),
   );
+  return based.map((list, index) => [
+    ...list,
+    ...rollUniqueDrops({
+      table: rolls[index].table,
+      mint: {
+        seed: tokens.seed,
+        sourceId: tokenSourceIdOf(...scope, 'unique', String(index)),
+        dropContext: rolls[index].dropContext,
+        factory: input.tokenFactory,
+      },
+      seed: input.seed,
+      streamLabel: `${input.sourceId}:${input.kind}:${input.targetKey}:${index}`,
+      override: input.uniqueDropOverride,
+    }),
+  ]);
 }
 
 export function createContainer(input: CreateContainerInput): ContainerState {

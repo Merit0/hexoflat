@@ -6,7 +6,12 @@ import { sha256Hex } from '../utils/hash/sha256';
 import { pickRandom, type RandomNumberGenerator } from '../utils/random';
 import { deriveStream } from '../utils/random-seeded';
 import { ALL_QUESTS } from './all-quests';
-import type { Objective, QuestCatalogue, QuestDefinition } from './quest-definition';
+import {
+  uniqueRewardKey,
+  type Objective,
+  type QuestCatalogue,
+  type QuestDefinition,
+} from './quest-definition';
 import {
   QUEST_GENERATION_PROFILES,
   QUEST_GENERATOR_VERSION,
@@ -86,7 +91,7 @@ function candidatesFor(
       const sourceLocation = placement?.targetMap ?? locations[0];
       const dropContext: DropContext = {
         ...input.locationDropContexts[sourceLocation]!,
-        ...template.rewardDropContext,
+        ...(template.rewardDropContext ? { mapTier: template.rewardDropContext.mapTier } : {}),
       };
 
       return [...profile.variants]
@@ -139,7 +144,7 @@ function materialize(
   const id = `qo-${sha256Hex(JSON.stringify([input.rngSeed, label])).slice(0, 32)}`;
   const { howKey, ...text } = questOfferTextKeys(profile.templateId, variant.id);
   const generated: QuestDefinition = { ...definition, ...text };
-  if (variant.reward) {
+  if (variant.reward && !uniqueRewardKey(definition)) {
     const random = deriveStream(input.rngSeed, `${label}:reward`);
     generated.rewardDropContext = { mapTier: dropContext.mapTier };
     generated.rewards = [

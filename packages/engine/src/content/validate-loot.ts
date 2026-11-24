@@ -2,10 +2,12 @@ import { BASE_ITEMS } from './base-items.content';
 import { EChestType, EHexobjectGroup } from '../abstraction/hexobject-abstraction';
 import { BATTLE_CREATURES } from '../battle/battle-catalogue';
 import { lootTableSchema } from '../loot/loot-table';
+import { uniquesDropAnywhere } from '../dimensions/dimensions';
 import { HEXOBJECT_KEYS, type THexobjectKey } from '../registry/hexobjects-registry';
 import { coinPriceOf } from './content-accessors';
 import { CONTENT } from './content-map';
 import { LOOT_TABLES } from './loot-tables.content';
+import { TOKEN_UNIQUES } from './token-uniques.content';
 
 export interface LootReference {
   owner: string;
@@ -39,6 +41,12 @@ export function lootTableProblems(
         problems.push(`[loot:${table.id}] ${itemKey} is sellable loot without a coinPrice`);
       }
     }
+    for (const { uniqueKey } of table.uniqueDrops ?? []) {
+      const unique = TOKEN_UNIQUES.find((entry) => entry.key === uniqueKey);
+      if (!unique) problems.push(`[loot:${table.id}] unknown unique ${uniqueKey}`);
+      else if (uniquesDropAnywhere(unique.dimension))
+        problems.push(`[loot:${table.id}] ${uniqueKey} drops only by the alien roll`);
+    }
   }
   return problems;
 }
@@ -66,11 +74,24 @@ export function bossTableProblems(
   });
 }
 
+export function bossAlienProblems(
+  bosses: readonly LootReference[],
+  tables: Record<string, unknown>,
+): string[] {
+  return bosses.flatMap(({ owner, tableId }) => {
+    const parsed = lootTableSchema.safeParse(tableId ? tables[tableId] : undefined);
+    return parsed.success && !parsed.data.alienRoll
+      ? [`[${owner}] a boss table needs the alien roll`]
+      : [];
+  });
+}
+
 export function lootContentProblems(input: LootContentInput): string[] {
   return [
     ...lootTableProblems(input.tables, input.priceOf),
     ...lootReferenceProblems(input.references, input.tables),
     ...bossTableProblems(input.bosses, input.tables),
+    ...bossAlienProblems(input.bosses, input.tables),
   ];
 }
 

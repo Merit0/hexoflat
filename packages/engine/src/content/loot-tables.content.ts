@@ -84,6 +84,7 @@ const SKELETON_KING: LootTable = {
     { itemKey: HEXOBJECT_KEYS.RETURN_SCROLL, weight: 3, amount: [1, 1] },
     { itemKey: HEXOBJECT_KEYS.HEALTH_BOTTLE, weight: 4, amount: [1, 2] },
   ],
+  alienRoll: true,
 };
 
 export const NOTHING_FIXTURE_TABLE_ID = 'nothing-fixture';
