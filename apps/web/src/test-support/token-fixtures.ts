@@ -29,7 +29,6 @@ export function uniqueTestToken(uniqueKey = 'lantern-eater'): ItemToken {
     sourceId: 'test:web.unique',
     n: 0,
     mapTier: 3,
-    ownedUniques: [],
   });
   if (!result.ok) throw new Error(result.refusal.code);
   return result.value;

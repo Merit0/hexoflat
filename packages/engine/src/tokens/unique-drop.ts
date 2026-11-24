@@ -60,7 +60,6 @@ export const uniqueDropRulesSchema = z
 
 export function resolveUniqueDrop(
   rules: readonly UniqueDropRule[],
-  ownedUniques: readonly UniqueKey[],
   rng: RandomNumberGenerator,
   scope?: { dimension: EDimension; definitions?: readonly UniqueTokenContent[] },
 ): UniqueKey | null {
@@ -72,12 +71,9 @@ export function resolveUniqueDrop(
     if (!definition) throw new Error(`UNKNOWN_UNIQUE_DROP: ${rule.uniqueKey}`);
     return availableInDimension(definition, scope.dimension);
   });
-  const owned = new Set(ownedUniques);
   const roll = rng();
   let floor = 0;
   for (const rule of parsed) {
-    if (owned.has(rule.uniqueKey)) continue;
-
     const { num, den } = fractionOf(rule);
     const ceiling = floor + num / den;
     if (roll < ceiling) return rule.uniqueKey;

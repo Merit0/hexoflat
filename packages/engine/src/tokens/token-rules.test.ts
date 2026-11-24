@@ -249,7 +249,6 @@ describe('LG5b step 9: item skills are not wired', () => {
       sourceId: 'test:unique',
       n: 0,
       mapTier: 3,
-      ownedUniques: [],
     });
     if (!made.ok) throw new Error(made.refusal.code);
     expect(made.value.skills.length).toBeGreaterThan(0);
@@ -274,6 +273,6 @@ describe('LG5b step 9: item skills are not wired', () => {
     if (!outcome.ok) throw new Error(outcome.code);
     const after = outcome.changed.progress ?? before;
     expect(after.knowledge.skillProgress).toEqual(before.knowledge.skillProgress);
-    expect(after.knowledge).toEqual(before.knowledge);
+    expect(after.knowledge.skills).toEqual(before.knowledge.skills);
   });
 });

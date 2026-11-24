@@ -46,6 +46,11 @@ export const itemTokenIdSchema = z
   .string()
   .regex(new RegExp(`^${SOURCE_ID_PART}:(?:0|[1-9]\\d*)$`));
 
+export const UNIQUE_INSTANCE_ID_LENGTH = 32;
+export const uniqueInstanceIdSchema = z
+  .string()
+  .regex(new RegExp(`^[0-9a-f]{${UNIQUE_INSTANCE_ID_LENGTH}}$`));
+
 export function itemTokenIdOf(sourceId: string, n: number): string {
   return `${sourceId}:${n}`;
 }
@@ -58,6 +63,7 @@ export type AdjectiveKey = z.infer<typeof adjectiveKeySchema>;
 export type I18nKey = z.infer<typeof i18nKeySchema>;
 export type SpriteKey = z.infer<typeof spriteKeySchema>;
 export type ItemTokenId = z.infer<typeof itemTokenIdSchema>;
+export type UniqueInstanceId = z.infer<typeof uniqueInstanceIdSchema>;
 export type TokenSourceId = z.infer<typeof tokenSourceIdSchema>;
 
 export const WORD_SLOTS = ['prefix', 'suffix', 'noun'] as const;

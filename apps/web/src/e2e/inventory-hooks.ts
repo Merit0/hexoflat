@@ -74,7 +74,6 @@ export const inventoryTestApi = {
       sourceId: tokenSourceIdOf('dev', base.id, 'unique'),
       n: 0,
       mapTier: 3,
-      ownedUniques: heldTokens().flatMap((token) => (token.uniqueKey ? [token.uniqueKey] : [])),
     });
     if (!made.ok) throw new Error(made.refusal.code);
     const item = useHeroInventoryStore().items.find((entry) => entry.token?.id === base.id);

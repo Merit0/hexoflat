@@ -40,7 +40,6 @@ function uniqueToken(uniqueKey: string): ItemToken {
     sourceId: 'test:da2.c10',
     n: 0,
     mapTier: 4,
-    ownedUniques: [],
   });
   if (!made.ok) throw new Error(made.refusal.code);
   return made.value;

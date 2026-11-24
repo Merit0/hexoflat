@@ -17,6 +17,7 @@ import {
 } from '../token-keys';
 import type { TypeRegistry, UniqueRegistry } from '../registries';
 import { emptyTokenExtensions, type ItemToken } from '../token-schema';
+import { rollAuthoredAttributes, uniqueInstanceId } from '../unique-instance';
 import type { UniqueTokenDefinition } from '../unique-schema';
 import type { IAttributeGenerator as IEquipmentAttributeGenerator } from '../equipment/generator/generator-contracts';
 import { seededRandomStreams } from '../equipment/generator/attribute-streams';
@@ -43,6 +44,7 @@ export interface TokenFactoryParts {
   nameGenerator: INameGenerator;
   spriteResolver: ISpriteResolver;
   attributeGenerator: IEquipmentAttributeGenerator;
+  uniqueAttributeGenerator: IEquipmentAttributeGenerator;
   skillGenerator: ISkillGenerator;
   priceGenerator: IPriceGenerator;
   descriptionBuilder: IDescriptionBuilder;
@@ -163,9 +165,6 @@ export class TokenFactory {
     if (!unique?.uniques.has(uniqueKey)) {
       return refuseToken('UNKNOWN_UNIQUE', `unique "${uniqueKey}" is not in the UniqueRegistry`);
     }
-    if (ctx.ownedUniques.includes(uniqueKey)) {
-      return refuseToken('UNIQUE_ALREADY_OWNED', `the hero already owns unique "${uniqueKey}"`);
-    }
     const definition = unique.uniques.get(uniqueKey);
     if (ctx.dimension !== undefined && !availableInDimension(definition, ctx.dimension))
       return refuseToken('UNIQUE_NOT_IN_DIMENSION', 'Unique is outside the source dimension pool');
@@ -182,18 +181,22 @@ export class TokenFactory {
   ): TokenResult<ItemToken> {
     const id = itemTokenIdOf(ctx.sourceId, ctx.n);
     const type = unique.types.get(definition.type);
-    const attributes = definition.attributes.map((attribute) => ({ ...attribute }));
-    const checked = this.parts.validator.validateAttributes({
+    if (!type.group) return refuseToken('INVALID_TOKEN', `item type "${type.key}" has no group`);
+    const rng = seededRandomStreams(ctx.seed);
+    const generated = this.parts.uniqueAttributeGenerator.generate({
+      authoredKeys: definition.authoredAttributes.map((entry) => entry.attribute),
+      level: ctx.mapTier,
+      group: type.group,
       type,
-      tier: 'unique',
-      mapTier: ctx.mapTier,
-      attributes,
+      tokenId: id,
+      rng,
     });
-    if (!checked.ok) return checked;
+    const authored = rollAuthoredAttributes(definition.authoredAttributes, id, rng);
     return this.parts.validator.validate({
       id,
       tier: 'unique',
       uniqueKey: definition.key,
+      instanceId: uniqueInstanceId(ctx.seed, id),
       type: type.key,
       tokenType: definition.tokenType,
       dimension: definition.dimension,
@@ -204,7 +207,7 @@ export class TokenFactory {
         mapTier: ctx.mapTier,
         descriptionKey: definition.descriptionKey,
       }),
-      attributes,
+      attributes: [...generated, ...authored],
       skills: [...definition.skills],
       price: definition.price,
       mapTier: ctx.mapTier,

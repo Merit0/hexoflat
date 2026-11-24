@@ -36,19 +36,19 @@ describe('unique token content', () => {
     expect(uniqueContentFailures()).toEqual([]);
   });
 
-  it('has a gloom sword with one fixed heart', () => {
+  it('has a gloom sword with one authored half-heart', () => {
     expect(GLOOM_SWORD).toMatchObject({
       type: 'sword',
       tokenType: ETokenType.GLOOM,
-      attributes: [{ key: 'heart', value: 1 }],
+      authoredAttributes: [{ attribute: 'heart', min: 1, max: 1 }],
     });
     expect('rolled' in GLOOM_SWORD).toBe(false);
   });
 
-  it('has an alien sword with fixed attributes', () => {
+  it('has an alien sword with authored attributes', () => {
     expect(ALIEN_SWORD.type).toBe('sword');
     expect(ALIEN_SWORD.tokenType).toBe(ETokenType.ALIEN);
-    expect(ALIEN_SWORD.attributes.length).toBeGreaterThan(0);
+    expect(ALIEN_SWORD.authoredAttributes.length).toBeGreaterThan(0);
     expect('rolled' in ALIEN_SWORD).toBe(false);
   });
 
@@ -63,20 +63,48 @@ describe('unique token content', () => {
 
   it.each<[string, Partial<UniqueTokenContent>, RegExp]>([
     ['an unknown type', { type: 'dragon-lance' }, /unknown type/],
-    ['an unknown attribute', { attributes: [{ key: 'luck', value: 1 }] }, /luck is unknown/],
+    [
+      'an unknown attribute',
+      { authoredAttributes: [{ attribute: 'luck', min: 1, max: 1 }] },
+      /luck is not in the attribute catalogue/,
+    ],
     [
       'a value above the itemMax',
-      { attributes: [{ key: 'heart', value: 11 }] },
+      { authoredAttributes: [{ attribute: 'heart', min: 1, max: 11 }] },
       /above its itemMax 10/,
     ],
     [
       'an attribute that is not implemented',
-      { attributes: [{ key: 'force', value: 1 }] },
+      { authoredAttributes: [{ attribute: 'force', min: 1, max: 1 }] },
       /force is not implemented/,
     ],
     ['a broken schema', { price: 0 }, /price/],
   ])('reports %s', (_label, changes, message) => {
     expect(uniqueContentFailures(withUnique(changes)).join('\n')).toMatch(message);
+  });
+
+  it.each([
+    ['min above max', { attribute: 'heart', min: 3, max: 2 }, 'min is above max'],
+    [
+      'an unknown attribute key',
+      { attribute: 'luck', min: 1, max: 2 },
+      'attribute luck is not in the attribute catalogue',
+    ],
+    ['a zero minimum', { attribute: 'heart', min: 0, max: 2 }, null],
+    ['a fraction', { attribute: 'heart', min: 1, max: 1.5 }, null],
+    ['an extra field', { attribute: 'heart', min: 1, max: 2, value: 1 }, null],
+  ])('DA4b-4: the schema rejects an authored attribute with %s', (_label, entry, message) => {
+    const parsed = uniqueTokenDefinitionSchema.safeParse({
+      ...GLOOM_SWORD,
+      authoredAttributes: [entry],
+    });
+    expect(parsed.success).toBe(false);
+    if (message) expect(parsed.error!.issues.map((issue) => issue.message)).toContain(message);
+    const valid = { attribute: 'heart', min: 2, max: 2 };
+    expect(
+      uniqueTokenDefinitionSchema.safeParse({ ...GLOOM_SWORD, authoredAttributes: [valid] })
+        .success,
+    ).toBe(true);
   });
 
   it('refuses a broken definition in the schema and the registry', () => {
@@ -87,7 +115,9 @@ describe('unique token content', () => {
     expect(bad({ skills: ['b_strike', 'b_strike'] })).toBe(false);
     expect(bad({ rolled: { attributes: 1 } })).toBe(false);
     expect(bad({ price: 1.5 })).toBe(false);
-    expect(bad({ attributes: [GLOOM_SWORD.attributes[0], GLOOM_SWORD.attributes[0]] })).toBe(false);
+    const [heart] = GLOOM_SWORD.authoredAttributes;
+    expect(bad({ authoredAttributes: [heart, heart] })).toBe(false);
+    expect(bad({ attributes: [{ key: 'heart', value: 1 }] })).toBe(false);
     expect(bad({ tokenType: ETokenType.ALIEN })).toBe(false);
     expect(bad({ tokenType: ETokenType.ALIEN, dimension: 'nowhere' })).toBe(true);
     expect(() => new UniqueRegistry([GLOOM_SWORD, GLOOM_SWORD])).toThrow(/listed twice/);

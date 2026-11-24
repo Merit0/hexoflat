@@ -14,6 +14,7 @@ export class RegistryAttributePoolFilter implements IAttributePoolFilter {
     const pool: PoolEntry[] = [];
     for (const [key, entry] of Object.entries(request.profile.attributes)) {
       if (request.allowedKeys && !request.allowedKeys.includes(key)) continue;
+      if (request.authoredKeys?.includes(key)) continue;
       const definition = this.attributes.has(key) ? this.attributes.get(key) : undefined;
       const weight = entry.weight[request.group];
       if (!definition || weight === undefined || !generatable(definition, request)) continue;

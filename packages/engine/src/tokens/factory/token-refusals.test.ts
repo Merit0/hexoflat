@@ -68,15 +68,17 @@ describe('TokenFactory.createBase refusals', () => {
       validateAttributes: () => ({ ok: true, value: true }),
       validate: () => ({ ok: false, refusal: { code: 'INVALID_TOKEN', message: 'test' } }),
     };
+    const attributeGenerator = createEquipmentAttributeGenerator(
+      new AttributeRegistry(TOKEN_CONTENT.attributes),
+      TOKEN_CONTENT.profiles,
+    );
     const factory = new TokenFactory({
       baseItems,
       typePicker: new BaseTypePicker(types),
       nameGenerator: new AdjectiveNameGenerator(TOKEN_CONTENT.adjectives),
       spriteResolver: new ManifestSpriteResolver(new ManifestSpriteRegistry(SPRITE_MANIFEST)),
-      attributeGenerator: createEquipmentAttributeGenerator(
-        new AttributeRegistry(TOKEN_CONTENT.attributes),
-        TOKEN_CONTENT.profiles,
-      ),
+      attributeGenerator,
+      uniqueAttributeGenerator: attributeGenerator,
       skillGenerator: new EmptySkillGenerator(),
       priceGenerator: new RangePriceGenerator(TOKEN_CONTENT.priceRanges),
       descriptionBuilder: new SpecSheetDescriptionBuilder(),
@@ -103,7 +105,6 @@ describe('TokenFactory.createBase refusals', () => {
         sourceId,
         n: 0,
         mapTier: 1,
-        ownedUniques: [],
       });
       expect(unique.ok ? null : unique.refusal.code).toBe('SOURCE_ID_CONTAINS_SEED');
     }

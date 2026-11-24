@@ -13,6 +13,8 @@ export { TypeRegistry, AttributeRegistry, UniqueRegistry } from './registries';
 export * from './attribute-display';
 export * from './unique-schema';
 export * from './unique-drop';
+export { uniqueAttributeProfiles, uniqueBounds } from './unique-attribute-profiles';
+export { UNIQUE_ATTRIBUTE_MULTIPLIER } from '../content/unique-rules.content';
 export { TOKEN_UNIQUES } from '../content/token-uniques.content';
 export * from './equipment';
 export { ITEM_TYPES, PLANNED_ITEM_TYPES, EQUIPMENT_TYPES } from '../content/item-types.content';

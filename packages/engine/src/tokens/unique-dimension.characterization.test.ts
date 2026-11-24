@@ -5,7 +5,7 @@ import { PLAYER_COMMAND_SCHEMAS } from '../aggregates/player-commands';
 import { emptyProgressState } from '../aggregates/progress-state';
 import { TRADERS } from '../content/traders.content';
 import { EDimension } from '../dimensions/dimensions';
-import { emptyInventoryState } from '../inventory/inventory-state';
+import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventory-state';
 import { sellPriceOf } from '../trade/price-of';
 import { HERO } from '../trade/trade-test-setup';
 import { deriveStream } from '../utils/random-seeded';
@@ -17,8 +17,8 @@ import type { UniqueGenerationContext } from './factory/token-generation';
 const ALIEN_RULE: UniqueDropRule[] = [{ uniqueKey: 'last-verdict', chance: '1/1' }];
 const SEEDS = ['da2-b1-a', 'da2-b1-b', 'da2-b1-c'];
 
-function uniqueContext(n: number, ownedUniques: string[] = []): UniqueGenerationContext {
-  return { seed: 'da2-unique-seed', sourceId: 'test:da2.unique', n, mapTier: 2, ownedUniques };
+function uniqueContext(n: number): UniqueGenerationContext {
+  return { seed: 'da2-unique-seed', sourceId: 'test:da2.unique', n, mapTier: 2 };
 }
 
 function lastVerdict(n = 0): ItemToken {
@@ -33,7 +33,7 @@ describe('DA2 B1: an Alien unique in a location scope', () => {
     (dimension) => {
       for (const seed of SEEDS) {
         const rng = deriveStream(seed, 'test:da2:b1');
-        expect(resolveUniqueDrop(ALIEN_RULE, [], rng, { dimension })).toBeNull();
+        expect(resolveUniqueDrop(ALIEN_RULE, rng, { dimension })).toBeNull();
       }
     },
   );
@@ -41,7 +41,7 @@ describe('DA2 B1: an Alien unique in a location scope', () => {
   it('B1: without a scope the same rule drops the Alien unique and mints an Alien token', () => {
     for (const seed of SEEDS) {
       const rng = deriveStream(seed, 'test:da2:b1');
-      expect(resolveUniqueDrop(ALIEN_RULE, [], rng)).toBe('last-verdict');
+      expect(resolveUniqueDrop(ALIEN_RULE, rng)).toBe('last-verdict');
     }
     const token = lastVerdict();
     expect(token).toMatchObject({
@@ -54,20 +54,27 @@ describe('DA2 B1: an Alien unique in a location scope', () => {
 });
 
 describe('DA2 B2: unique duplicates', () => {
-  it('CURRENT (B2): a second createUnique of an owned key is refused with UNIQUE_ALREADY_OWNED', () => {
-    const factory = gameTokenFactory();
-    expect(factory.createUnique('last-verdict', uniqueContext(0)).ok).toBe(true);
-    expect(factory.createUnique('last-verdict', uniqueContext(1, ['last-verdict']))).toMatchObject({
-      ok: false,
-      refusal: { code: 'UNIQUE_ALREADY_OWNED' },
-    });
-  });
-
-  it('CURRENT (B2): without the key in the owned set a second instance is made', () => {
+  it('B2 (Q5): the same template creates two instances with different ids', () => {
     const first = lastVerdict(0);
     const second = lastVerdict(1);
-    expect(second.id).not.toBe(first.id);
     expect(second.uniqueKey).toBe(first.uniqueKey);
+    expect(second.id).not.toBe(first.id);
+    expect(second.instanceId).not.toBe(first.instanceId);
+  });
+
+  it('B2 (Q5): a hero can hold two instances of one template', () => {
+    const inventory = emptyInventoryState(HERO);
+    [lastVerdict(0), lastVerdict(1)].forEach((token, index) => {
+      inventory.bag[index] = {
+        id: `${HERO}:${index}`,
+        key: token.type as never,
+        type: 'equipment' as never,
+        amount: 1,
+        token,
+      };
+    });
+    inventory.idSeq = 2;
+    expect(inventoryStateSchema.safeParse(inventory).success).toBe(true);
   });
 
   it('CURRENT (B2): progress.ownedUniques stays empty after createUnique and after a sale', () => {

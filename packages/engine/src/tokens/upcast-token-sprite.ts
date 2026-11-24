@@ -1,11 +1,5 @@
 import { isOwnSpriteKey, spriteKeySchema } from './token-keys';
-
-function isToken(value: Record<string, unknown>): boolean {
-  return (
-    (value.tier === 'base' || value.tier === 'unique') &&
-    ['tokenType', 'mapTier', 'generatorVersion'].every((key) => key in value)
-  );
-}
+import { upcastTokensIn } from './upcast-tokens-in';
 
 export function upcastTokenSprite(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
@@ -20,10 +14,5 @@ export function upcastTokenSprite(raw: unknown): unknown {
 }
 
 export function upcastTokenSprites(raw: unknown): unknown {
-  if (Array.isArray(raw)) return raw.map(upcastTokenSprites);
-  if (!raw || typeof raw !== 'object') return raw;
-  const walked = Object.fromEntries(
-    Object.entries(raw).map(([key, value]) => [key, upcastTokenSprites(value)]),
-  );
-  return isToken(walked) ? upcastTokenSprite(walked) : walked;
+  return upcastTokensIn(raw, upcastTokenSprite);
 }

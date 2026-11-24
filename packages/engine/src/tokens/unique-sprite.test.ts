@@ -24,7 +24,6 @@ function unique(key: string) {
     sourceId: 'test:unique.sprite',
     n: 0,
     mapTier: 1,
-    ownedUniques: [],
   });
   if (!made.ok) throw new Error(made.refusal.code);
   return made.value;

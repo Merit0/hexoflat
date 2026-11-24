@@ -9,6 +9,7 @@ import {
 } from '../dimensions/dimensions';
 import { upcastTokenDimension } from './upcast-token-dimension';
 import { upcastTokenSprite } from './upcast-token-sprite';
+import { upcastUniqueInstance } from './upcast-unique-instance';
 import { z } from 'zod';
 import { ETokenType } from '../abstraction/hexobject-abstraction';
 import { HEXOBJECT_KEYS } from '../registry/hexobjects-registry';
@@ -23,6 +24,7 @@ import {
   mapTierSchema,
   isOwnSpriteKey,
   spriteKeySchema,
+  uniqueInstanceIdSchema,
   uniqueKeySchema,
   wordKeySchemaFor,
 } from './token-keys';
@@ -81,6 +83,7 @@ export const currentItemTokenSchema = z
     id: itemTokenIdSchema,
     tier: z.enum(TOKEN_TIERS),
     uniqueKey: uniqueKeySchema.optional(),
+    instanceId: uniqueInstanceIdSchema.optional(),
     baseKey: baseItemKeySchema.optional(),
     type: itemTypeKeySchema,
     tokenType: z.enum(ETokenType),
@@ -126,6 +129,13 @@ export const currentItemTokenSchema = z
         code: 'custom',
         path: ['uniqueKey'],
         message: 'uniqueKey is set only on a unique token',
+      });
+    }
+    if (unique !== (token.instanceId !== undefined)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['instanceId'],
+        message: 'instanceId is set only on a unique token',
       });
     }
     if (unique !== (token.sprite === undefined)) {
@@ -176,7 +186,7 @@ export const currentItemTokenSchema = z
   });
 /** Persisted readers normalize legacy family/ownership before strict validation. */
 export const itemTokenSchema = z.preprocess(
-  (raw) => upcastTokenSprite(upcastTokenDimension(raw)),
+  (raw) => upcastUniqueInstance(upcastTokenSprite(upcastTokenDimension(raw))),
   currentItemTokenSchema,
 );
 export type ItemToken = z.infer<typeof currentItemTokenSchema>;

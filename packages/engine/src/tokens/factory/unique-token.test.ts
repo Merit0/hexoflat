@@ -24,7 +24,6 @@ function uniqueContext(
     sourceId: 'test:unique',
     n: seed,
     mapTier: seed % 2 === 0 ? 3 : 4,
-    ownedUniques: [],
     ...overrides,
   };
 }
@@ -49,7 +48,7 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
       for (const token of tokens) expect(itemTokenSchema.safeParse(token).success).toBe(true);
     });
 
-    it('copies the fixed fields of the definition', () => {
+    it('copies the fixed fields of the template', () => {
       for (const token of tokens) {
         expect(token.tier).toBe('unique');
         expect(token.uniqueKey).toBe(unique.key);
@@ -67,10 +66,6 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
       }
     });
 
-    it('EA-5: keeps exactly the attributes of the definition', () => {
-      for (const token of tokens) expect(token.attributes).toEqual(unique.attributes);
-    });
-
     it('stores no attribute line in the description', () => {
       for (const token of tokens) {
         expect(token.description.some((line) => line.key.startsWith('content.tokens.attr.'))).toBe(
@@ -85,19 +80,23 @@ describe.each(TOKEN_UNIQUES.map((unique) => [unique.key, unique] as const))(
   },
 );
 
-describe('EA-5: createUnique never calls the attribute generator', () => {
-  it('leaves the generator untouched and copies the definition attributes', () => {
-    const generate = vi.fn(() => [{ key: 'heart', value: 1 }]);
+describe('createUnique layers', () => {
+  it('rolls the generated layer with the unique generator and never with the base one', () => {
+    const base = vi.fn(() => []);
+    const unique = vi.fn(() => [{ key: 'will', value: 2 }]);
     const factory = createTokenFactory(TOKEN_CONTENT, SPRITE_MANIFEST, TOKEN_UNIQUES, {
-      attributeGenerator: { generate },
+      attributeGenerator: { generate: base },
+      uniqueAttributeGenerator: { generate: unique },
     });
-    for (const unique of TOKEN_UNIQUES) {
-      for (const seed of SEEDS.slice(0, 50)) {
-        const token = valueOf(factory.createUnique(unique.key, uniqueContext(seed)));
-        expect(token.attributes).toEqual(unique.attributes);
-      }
+    for (const definition of TOKEN_UNIQUES) {
+      const token = valueOf(factory.createUnique(definition.key, uniqueContext(2)));
+      expect(token.attributes.map((attribute) => attribute.key)).toEqual([
+        'will',
+        ...definition.authoredAttributes.map((entry) => entry.attribute),
+      ]);
     }
-    expect(generate).not.toHaveBeenCalled();
+    expect(base).not.toHaveBeenCalled();
+    expect(unique).toHaveBeenCalledTimes(TOKEN_UNIQUES.length);
     factory.createBase({
       seed: '1',
       sourceId: 'test:spy',
@@ -106,7 +105,28 @@ describe('EA-5: createUnique never calls the attribute generator', () => {
       mapTier: 1,
       type: 'shield',
     });
-    expect(generate).toHaveBeenCalledTimes(1);
+    expect(base).toHaveBeenCalledTimes(1);
+    expect(unique).toHaveBeenCalledTimes(TOKEN_UNIQUES.length);
+  });
+
+  it('refuses a generated layer that repeats an authored key or leaves its bounds', () => {
+    const create = (attributes: { key: string; value: number }[]) =>
+      createTokenFactory(TOKEN_CONTENT, SPRITE_MANIFEST, TOKEN_UNIQUES, {
+        uniqueAttributeGenerator: { generate: () => attributes },
+      }).createUnique('lantern-eater', uniqueContext(2));
+    expect(create([]).ok).toBe(true);
+    expect(refusalOf(create([{ key: 'heart', value: 1 }]))).toBe('INVALID_TOKEN');
+    expect(refusalOf(create([{ key: 'will', value: 46 }]))).toBe('INVALID_TOKEN');
+    expect(refusalOf(create([{ key: 'shield', value: 1 }]))).toBe('INVALID_TOKEN');
+    expect(
+      refusalOf(
+        create([
+          { key: 'will', value: 2 },
+          { key: 'trophy', value: 2 },
+          { key: 'crit-chance', value: 4 },
+        ]),
+      ),
+    ).toBe('INVALID_TOKEN');
   });
 
   it('gives a deeply equal token for the same seed and context', () => {
@@ -146,14 +166,6 @@ describe('createUnique refusals', () => {
     );
   });
 
-  it('TG-11: refuses a unique the hero already owns', () => {
-    const ctx = uniqueContext(1, { ownedUniques: ['lantern-eater'] });
-    expect(refusalOf(defaultFactory.createUnique('lantern-eater', ctx))).toBe(
-      'UNIQUE_ALREADY_OWNED',
-    );
-    expect(refusalOf(defaultFactory.createUnique('last-verdict', ctx))).toBeNull();
-  });
-
   it('refuses a bad source id and a bad item index', () => {
     expect(
       refusalOf(defaultFactory.createUnique('last-verdict', uniqueContext(1, { sourceId: 'x' }))),
@@ -164,10 +176,7 @@ describe('createUnique refusals', () => {
   });
 
   it('never falls back to a base token', () => {
-    const result = defaultFactory.createUnique(
-      'lantern-eater',
-      uniqueContext(1, { ownedUniques: ['lantern-eater'] }),
-    );
+    const result = defaultFactory.createUnique('dragon-crown', uniqueContext(1));
     expect(result.ok).toBe(false);
     expect('value' in result).toBe(false);
   });

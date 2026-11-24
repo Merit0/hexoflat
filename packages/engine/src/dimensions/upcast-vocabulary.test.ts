@@ -81,7 +81,7 @@ describe('DA3b-3: pre-DA3b saves load with identical tokens', () => {
   });
 
   it('upcasts inventory v3 to the current version without changing slots, ids or tokens', () => {
-    expect(AGGREGATES.inventory.schemaVersion).toBe(5);
+    expect(AGGREGATES.inventory.schemaVersion).toBe(6);
     const state = emptyInventoryState('hero');
     state.bag[0] = {
       id: 'hero:0',

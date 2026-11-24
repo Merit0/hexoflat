@@ -3,14 +3,8 @@ import type { ETokenType } from '../../abstraction/hexobject-abstraction';
 import type { SkillId } from '../../skills/skill-content';
 import type { RandomNumberGenerator } from '../../utils/random';
 import type { ItemTypeDefinition } from '../token-content-schema';
-import type {
-  I18nKey,
-  ItemTypeKey,
-  SpriteKey,
-  TBaseTokenType,
-  TMapTier,
-  UniqueKey,
-} from '../token-keys';
+import type { I18nKey, ItemTypeKey, SpriteKey, TBaseTokenType, TMapTier } from '../token-keys';
+import type { AuthoredAttribute } from '../unique-schema';
 import type { DescriptionLine, ItemToken, TokenAttribute, TokenName } from '../token-schema';
 
 export const TOKEN_GENERATOR_VERSION = 6;
@@ -32,7 +26,6 @@ export const TOKEN_REFUSALS = [
   'INVALID_TOKEN',
   'UNKNOWN_UNIQUE',
   'UNIQUE_NOT_IN_DIMENSION',
-  'UNIQUE_ALREADY_OWNED',
 ] as const;
 export type TTokenRefusalCode = (typeof TOKEN_REFUSALS)[number];
 
@@ -71,7 +64,6 @@ export interface UniqueGenerationContext {
   sourceId: string;
   n: number;
   mapTier: TMapTier;
-  ownedUniques: readonly UniqueKey[];
 }
 
 export interface TokenSheet {
@@ -86,6 +78,7 @@ export interface AttributeSheet {
   tier: 'base' | 'unique';
   mapTier: TMapTier;
   attributes: readonly TokenAttribute[];
+  authored?: readonly AuthoredAttribute[];
 }
 
 export interface NameRequest {

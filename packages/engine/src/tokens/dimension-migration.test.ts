@@ -22,7 +22,6 @@ function legacyUnique() {
     sourceId: 'test:legacy',
     n: 0,
     mapTier: 4,
-    ownedUniques: [],
   });
   if (!result.ok) throw new Error(result.refusal.code);
   return result.value;

@@ -21,7 +21,6 @@ function unique(): ItemToken {
     sourceId: 'test:upcast.sprite',
     n: 0,
     mapTier: 1,
-    ownedUniques: [],
   });
   if (!made.ok) throw new Error(made.refusal.code);
   return made.value;
@@ -90,7 +89,7 @@ describe('DA4 O10: stored sprite keys of old saves', () => {
   });
 
   it('inventory v4 -> v5 normalizes the bag, the hands and the stash', () => {
-    expect(AGGREGATES.inventory.schemaVersion).toBe(5);
+    expect(AGGREGATES.inventory.schemaVersion).toBe(6);
     const cell = (id: string, token: Record<string, unknown>) => ({
       id,
       key: 'sword',

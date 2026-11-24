@@ -262,7 +262,9 @@ describe('AG4 F2: attribute requirements', () => {
 
   it('refuses a unique whose attribute misses its requirement', () => {
     const unique = TOKEN_UNIQUES[0];
-    const uniques = [{ ...unique, type: 'sword', attributes: [{ key: 'crit-dmg', value: 3 }] }];
+    const uniques = [
+      { ...unique, type: 'sword', authoredAttributes: [{ attribute: 'crit-dmg', min: 3, max: 3 }] },
+    ];
     expect(uniqueContentFailures(uniques, dependentContent)).toContain(
       `unique ${unique.key}: Attribute crit-dmg needs crit-chance on the same item`,
     );
@@ -294,7 +296,11 @@ describe('AG4 F2: attribute requirements', () => {
 describe('AG5 F5: itemMax and totalCap', () => {
   const byKey = (key: string) => EQUIPMENT_CONTENT.attributes.find((entry) => entry.key === key)!;
   const shieldUnique = (value: number) => [
-    { ...TOKEN_UNIQUES[0], type: 'shield', attributes: [{ key: 'shield', value }] },
+    {
+      ...TOKEN_UNIQUES[0],
+      type: 'shield',
+      authoredAttributes: [{ attribute: 'shield', min: 1, max: value }],
+    },
   ];
 
   it('refuses a cap on a min aggregate and an itemMax above totalCap', () => {
@@ -319,7 +325,11 @@ describe('AG5 F5: itemMax and totalCap', () => {
 
   it('bounds a unique by itemMax, also for an attribute without totalCap', () => {
     const uniques = [
-      { ...TOKEN_UNIQUES[0], type: 'sword', attributes: [{ key: 'will', value: 41 }] },
+      {
+        ...TOKEN_UNIQUES[0],
+        type: 'sword',
+        authoredAttributes: [{ attribute: 'will', min: 1, max: 41 }],
+      },
     ];
     expect(uniqueContentFailures(uniques)).toContain(
       `unique ${TOKEN_UNIQUES[0].key}: Attribute will value 41 is above its itemMax 40`,

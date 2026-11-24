@@ -107,14 +107,12 @@ describe('token audit regressions', () => {
     ).toBe(true);
   });
 
-  it('checks fixed unique attributes against the attribute itemMax, not the source tier', () => {
+  it('checks authored unique attributes against the attribute itemMax, not the source tier', () => {
     const factory = createTokenFactory();
-    expect(
-      factory.createUnique('last-verdict', { ...CONTEXT, mapTier: 1, ownedUniques: [] }).ok,
-    ).toBe(true);
+    expect(factory.createUnique('last-verdict', { ...CONTEXT, mapTier: 1 }).ok).toBe(true);
     expect(() =>
       createTokenFactory(TOKEN_CONTENT, undefined, [
-        { ...TOKEN_UNIQUES[0], attributes: [{ key: 'heart', value: 11 }] },
+        { ...TOKEN_UNIQUES[0], authoredAttributes: [{ attribute: 'heart', min: 1, max: 11 }] },
       ]),
     ).toThrow(/above its itemMax 10/);
   });
@@ -124,9 +122,9 @@ describe('token audit regressions', () => {
       createTokenFactory(TOKEN_CONTENT, undefined, [
         {
           ...TOKEN_UNIQUES[0],
-          attributes: [{ key: 'shield', value: 999 }],
+          authoredAttributes: [{ attribute: 'shield', min: 1, max: 1 }],
         },
       ]),
-    ).toThrow();
+    ).toThrow(/shield is not allowed on type sword/);
   });
 });

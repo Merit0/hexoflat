@@ -100,13 +100,17 @@ describe('separate concrete dimensional catalogues', () => {
     ).toBe(false);
   });
 
-  it('keeps manually authored unique stats and skills fixed and respects source scope', () => {
+  it('keeps the authored layer, skills and price of a unique and respects source scope', () => {
     const definition = TOKEN_UNIQUES.find((entry) => entry.key === 'lantern-eater')!;
-    const uniqueContext = { ...context, dimension: EDimension.UNDERWORLD, ownedUniques: [] };
+    const uniqueContext = { ...context, dimension: EDimension.UNDERWORLD };
     for (let n = 0; n < 10; n++) {
       const made = factory.createUnique(definition.key, { ...uniqueContext, n });
       if (!made.ok) throw new Error(made.refusal.code);
-      expect(made.value.attributes).toEqual(definition.attributes);
+      for (const { attribute, min, max } of definition.authoredAttributes) {
+        const rolled = made.value.attributes.find((entry) => entry.key === attribute);
+        expect(rolled?.value).toBeGreaterThanOrEqual(min);
+        expect(rolled?.value).toBeLessThanOrEqual(max);
+      }
       expect(made.value.skills).toEqual(definition.skills);
       expect(made.value.price).toBe(definition.price);
     }
