@@ -124,6 +124,29 @@ describe('DA2 B3: the drop world of a grave', () => {
     expect(createGraveContainer(loaded, loaded.collect!.graves[0])).toEqual(grave.container);
   });
 
+  it('B3: an old grave table without a matching body falls back to the map world, no error', () => {
+    const tokens = BATTLE_IDS.flatMap((id) => {
+      const state = killed([EARTH_KIND], locationDropContext('cave'), id);
+      const [grave] = state.collect!.graves;
+      const old: Grave = {
+        hex: grave.hex,
+        tables: [...grave.tables, CAVE_CHEST_TABLE_ID],
+        examined: false,
+      };
+      const container = createGraveContainer(state, old);
+      const [matched, orphan] = tokensByTable({ ...old, container });
+      expect(matched.every((token) => token.dimension === EDimension.EARTH)).toBe(true);
+      return orphan;
+    });
+    expect(tokens.length).toBeGreaterThan(0);
+    for (const token of tokens) {
+      expect(token).toMatchObject({
+        dimension: EDimension.UNDERWORLD,
+        tokenType: ETokenType.GLOOM,
+      });
+    }
+  });
+
   it('B3: a saved battle keeps the list and refuses nowhere in it', () => {
     const state = killed([EARTH_KIND], locationDropContext('cave'), 'da5a-save');
     const raw = JSON.parse(JSON.stringify(state)) as BattleState;
