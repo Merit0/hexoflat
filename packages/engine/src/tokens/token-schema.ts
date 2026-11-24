@@ -110,11 +110,11 @@ export const currentItemTokenSchema = z
     const base = token.baseKey
       ? BASE_ITEMS.find((entry) => entry.key === token.baseKey)
       : undefined;
-    if (base && (base.dimension !== token.dimension || base.type !== token.type)) {
+    if (base && base.type !== token.type) {
       ctx.addIssue({
         code: 'custom',
         path: ['baseKey'],
-        message: 'Concrete base identity differs from token ownership/type',
+        message: 'Concrete base identity differs from the token type',
       });
     }
     if (unique ? token.baseKey !== undefined : token.baseKey === undefined) {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { dimensionSchema, type EDimension } from './dimensions';
+import { dimensionSchema, uniquesDropAnywhere, type EDimension } from './dimensions';
 
 export const sharedWithSchema = z.union([
   z.literal('all'),
@@ -23,4 +23,11 @@ export function availableInDimension(item: DimensionAvailability, source: EDimen
     item.sharedWith === 'all' ||
     item.sharedWith?.includes(source) === true
   );
+}
+
+export function uniqueAvailableInDimension(
+  unique: DimensionAvailability,
+  source: EDimension,
+): boolean {
+  return uniquesDropAnywhere(unique.dimension) || availableInDimension(unique, source);
 }

@@ -9,17 +9,18 @@ export interface LootRollSource {
   sourceId: string;
   targetKey: string;
   dimension?: EDimension;
+  dimensions?: readonly (EDimension | undefined)[];
 }
 
 export function rollLootLists(
   tables: readonly (LootTable | null | undefined)[],
   source: LootRollSource,
 ): LootDrop[][] {
-  const scoped = tables.flatMap((table) =>
-    table
-      ? [source.dimension === undefined ? table : dimensionLootTable(table, source.dimension)]
-      : [],
-  );
+  const scoped = tables.flatMap((table, index) => {
+    if (!table) return [];
+    const dimension = source.dimensions?.[index] ?? source.dimension;
+    return [dimension === undefined ? table : dimensionLootTable(table, dimension)];
+  });
   const rng = deriveStream(source.seed, lootStreamLabel(source.sourceId, source.targetKey));
   return scoped.map((table) => rollLoot(table, rng));
 }

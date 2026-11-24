@@ -9,12 +9,17 @@ import { emptyInventoryState, inventoryStateSchema } from '../inventory/inventor
 import { sellPriceOf } from '../trade/price-of';
 import { HERO } from '../trade/trade-test-setup';
 import { deriveStream } from '../utils/random-seeded';
+import { createTokenRegistries } from '../content/token-content';
+import { ALIEN_UNIQUE_CHANCE_BP } from '../content/unique-rules.content';
+import { BASIS_POINTS } from './token-keys';
 import { gameTokenFactory } from './game-tokens';
 import type { ItemToken } from './token-schema';
 import { resolveUniqueDrop, type UniqueDropRule } from './unique-drop';
 import type { UniqueGenerationContext } from './factory/token-generation';
 
-const ALIEN_RULE: UniqueDropRule[] = [{ uniqueKey: 'last-verdict', chance: '1/1' }];
+const ALIEN_RULE: UniqueDropRule[] = [{ uniqueKey: 'last-verdict', chanceBp: BASIS_POINTS }];
+const NO_ALIEN_RULE: UniqueDropRule[] = [{ uniqueKey: 'last-verdict', chanceBp: 0 }];
+const LOCATION_SCOPES = [EDimension.EARTH, EDimension.UNDERWORLD, EDimension.HEAVEN];
 const SEEDS = ['da2-b1-a', 'da2-b1-b', 'da2-b1-c'];
 
 function uniqueContext(n: number): UniqueGenerationContext {
@@ -28,15 +33,72 @@ function lastVerdict(n = 0): ItemToken {
 }
 
 describe('DA2 B1: an Alien unique in a location scope', () => {
-  it.each([EDimension.EARTH, EDimension.UNDERWORLD])(
-    'CURRENT (B1): a 1/1 Alien rule scoped to %s drops nothing',
+  it.each(LOCATION_SCOPES)(
+    'DA5a-2 B1: a 10000 bp Alien rule scoped to %s drops a minted Alien instance',
     (dimension) => {
       for (const seed of SEEDS) {
         const rng = deriveStream(seed, 'test:da2:b1');
-        expect(resolveUniqueDrop(ALIEN_RULE, rng, { dimension })).toBeNull();
+        const key = resolveUniqueDrop(ALIEN_RULE, rng, { dimension });
+        expect(key).toBe('last-verdict');
+        const made = gameTokenFactory().createUnique(key!, {
+          ...uniqueContext(0),
+          seed,
+          dimension,
+        });
+        if (!made.ok) throw new Error(made.refusal.code);
+        expect(made.value).toMatchObject({
+          tier: 'unique',
+          uniqueKey: 'last-verdict',
+          tokenType: ETokenType.ALIEN,
+          dimension: EDimension.NOWHERE,
+        });
+        expect(made.value.instanceId).toMatch(/^[0-9a-f]{32}$/);
       }
     },
   );
+
+  it.each(LOCATION_SCOPES)(
+    'DA5a-2 B1: a 0 bp Alien rule scoped to %s drops nothing',
+    (dimension) => {
+      for (const seed of SEEDS) {
+        const rng = deriveStream(seed, 'test:da2:b1');
+        expect(resolveUniqueDrop(NO_ALIEN_RULE, rng, { dimension })).toBeNull();
+      }
+    },
+  );
+
+  it('B1: a unique of another world still stays inside its own scope', () => {
+    const gloom: UniqueDropRule[] = [{ uniqueKey: 'lantern-eater', chanceBp: BASIS_POINTS }];
+    const drop = (dimension: EDimension) =>
+      resolveUniqueDrop(gloom, deriveStream('da5a-b1', 'test:da5a:b1'), { dimension });
+    expect(drop(EDimension.UNDERWORLD)).toBe('lantern-eater');
+    expect(drop(EDimension.EARTH)).toBeNull();
+    expect(
+      gameTokenFactory().createUnique('lantern-eater', {
+        ...uniqueContext(0),
+        dimension: EDimension.EARTH,
+      }),
+    ).toMatchObject({ ok: false, refusal: { code: 'UNIQUE_NOT_IN_DIMENSION' } });
+  });
+
+  it('B1: the unique registry lists the Alien template for every location', () => {
+    const { uniques } = createTokenRegistries();
+    for (const dimension of LOCATION_SCOPES) {
+      expect(uniques.forDimension(dimension).map(({ key }) => key)).toContain('last-verdict');
+    }
+  });
+
+  it('Q2: the Alien chance is one config value of 50 basis points', () => {
+    expect(ALIEN_UNIQUE_CHANCE_BP).toBe(50);
+    const rules: UniqueDropRule[] = [
+      { uniqueKey: 'last-verdict', chanceBp: ALIEN_UNIQUE_CHANCE_BP },
+    ];
+    const dropAt = (roll: number) =>
+      resolveUniqueDrop(rules, () => roll, { dimension: EDimension.EARTH });
+    expect(dropAt(0)).toBe('last-verdict');
+    expect(dropAt(0.0049)).toBe('last-verdict');
+    expect(dropAt(0.005)).toBeNull();
+  });
 
   it('B1: without a scope the same rule drops the Alien unique and mints an Alien token', () => {
     for (const seed of SEEDS) {

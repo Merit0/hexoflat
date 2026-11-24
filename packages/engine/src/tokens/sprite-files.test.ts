@@ -97,7 +97,7 @@ describe('buildSpriteManifest', () => {
 
   it('rejects a tokenType that is not an ETokenType value', () => {
     expect(failureCodes(withFile(spriteFile('base/fire-sword/fire-sword-01.png')))).toEqual([
-      'UNKNOWN_REALM',
+      'UNKNOWN_TOKEN_TYPE',
     ]);
   });
 
@@ -152,7 +152,11 @@ describe('buildSpriteManifest', () => {
       spriteFile('base/idol-axe/idol-axe-01.png', rgbaHeader(256)),
       spriteFile('notes.txt', null),
     ];
-    expect(failureCodes(files).sort()).toEqual(['NAME_PATTERN', 'UNKNOWN_REALM', 'WRONG_SIZE']);
+    expect(failureCodes(files).sort()).toEqual([
+      'NAME_PATTERN',
+      'UNKNOWN_TOKEN_TYPE',
+      'WRONG_SIZE',
+    ]);
   });
 
   it('accepts a new type folder when the type is in the registry, with no code change', () => {

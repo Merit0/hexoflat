@@ -10,7 +10,10 @@ export class BaseTypePicker implements ITypePicker {
     if (!this.types.has(key)) return refuseToken('UNKNOWN_TYPE', `unknown item type "${key}"`);
     const type = this.types.get(key);
     if (!type.tokenTypes.includes(tokenType)) {
-      return refuseToken('TYPE_NOT_IN_REALM', `item type "${key}" is not allowed in ${tokenType}`);
+      return refuseToken(
+        'TYPE_NOT_IN_TOKEN_TYPE',
+        `item type "${key}" is not allowed in ${tokenType}`,
+      );
     }
     return { ok: true, value: type };
   }

@@ -71,7 +71,7 @@ export type SpriteManifest = z.infer<typeof spriteManifestSchema>;
 export type TSpriteFailureCode =
   | 'NAME_PATTERN'
   | 'PREFIX_MISMATCH'
-  | 'UNKNOWN_REALM'
+  | 'UNKNOWN_TOKEN_TYPE'
   | 'ALIEN_IN_BASE'
   | 'UNKNOWN_TYPE'
   | 'WRONG_SIZE'
@@ -156,7 +156,7 @@ function nameBaseFile(path: string, folder: string, file: string, rules: SpriteR
   if (tokenType === null) {
     const given = folder.split('-')[0];
     return fail(
-      'UNKNOWN_REALM',
+      'UNKNOWN_TOKEN_TYPE',
       path,
       `tokenType "${given}" is not one of ${TOKEN_TYPE_VALUES.join(', ')}`,
     );

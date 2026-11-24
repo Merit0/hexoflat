@@ -19,6 +19,7 @@ export interface ContainerRollInput {
   sourceId: string;
   targetKey: string;
   dropContext: DropContext;
+  tableContexts?: readonly DropContext[];
   tokenSource?: ContainerTokenSource;
   tokenFactory?: TokenFactory;
 }
@@ -35,19 +36,29 @@ const TOKEN_SOURCE_OF: Record<ContainerKind, TTokenSourceKind> = {
 };
 
 export function rollContainerContents(input: ContainerRollInput): LootLists {
-  const lists = rollLootLists(input.tables, {
-    seed: input.seed,
-    sourceId: input.sourceId,
-    targetKey: input.targetKey,
-    dimension: dimensionOfTokenType(input.dropContext.tokenType),
-  });
+  const rolls = input.tables.flatMap((table, index) =>
+    table ? [{ table, dropContext: input.tableContexts?.[index] ?? input.dropContext }] : [],
+  );
+  const lists = rollLootLists(
+    rolls.map(({ table }) => table),
+    {
+      seed: input.seed,
+      sourceId: input.sourceId,
+      targetKey: input.targetKey,
+      dimensions: rolls.map(({ dropContext }) => dimensionOfTokenType(dropContext.tokenType)),
+    },
+  );
   const tokens = input.tokenSource ?? { seed: input.seed, scope: [input.sourceId] };
-  return tokenizeLootLists(lists, {
-    seed: tokens.seed,
-    sourceId: tokenSourceIdOf(TOKEN_SOURCE_OF[input.kind], ...tokens.scope, input.targetKey),
-    dropContext: input.dropContext,
-    factory: input.tokenFactory,
-  });
+  return tokenizeLootLists(
+    lists,
+    {
+      seed: tokens.seed,
+      sourceId: tokenSourceIdOf(TOKEN_SOURCE_OF[input.kind], ...tokens.scope, input.targetKey),
+      dropContext: input.dropContext,
+      factory: input.tokenFactory,
+    },
+    rolls.map(({ dropContext }) => dropContext),
+  );
 }
 
 export function createContainer(input: CreateContainerInput): ContainerState {

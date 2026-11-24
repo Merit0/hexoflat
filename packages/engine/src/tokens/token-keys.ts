@@ -90,6 +90,9 @@ export const BASE_TOKEN_TYPES: readonly TBaseTokenType[] = Object.freeze(
 );
 export const baseTokenTypeSchema = z.enum(BASE_TOKEN_TYPES);
 
+export const BASIS_POINTS = 10_000;
+export const basisPointsSchema = z.number().int().min(0).max(BASIS_POINTS);
+
 export const MAP_TIERS = [1, 2, 3, 4] as const;
 export type TMapTier = (typeof MAP_TIERS)[number];
 export const mapTierSchema = z.literal(MAP_TIERS);

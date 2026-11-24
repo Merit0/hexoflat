@@ -1,11 +1,7 @@
-import { availableInDimension } from '../../dimensions/availability';
+import { uniqueAvailableInDimension } from '../../dimensions/availability';
 import { pickBaseItem } from './base-item-picker';
 import type { BaseItemRegistry } from '../base-item-registry';
-import {
-  dimensionOfTokenType,
-  tokenTypeOfDimension,
-  tokenTypeAllowsTier,
-} from '../../dimensions/dimensions';
+import { dimensionOfTokenType, tokenTypeAllowsTier } from '../../dimensions/dimensions';
 import { decodedSourceId } from '../source-id';
 import { ETokenType } from '../../abstraction/hexobject-abstraction';
 import { deriveStream } from '../../utils/random-seeded';
@@ -99,15 +95,6 @@ function sourceRefusal(ctx: {
   return null;
 }
 
-function contextRefusal(ctx: GenerationContext): TokenResult<never> | null {
-  const refusal = sourceRefusal(ctx);
-  if (refusal) return refusal;
-  if (baseTokenTypeOf(ctx.tokenType) === null) {
-    return refuseToken('ALIEN_NOT_BASE', `${ctx.tokenType} items are unique only`);
-  }
-  return null;
-}
-
 export class TokenFactory {
   constructor(
     private readonly parts: TokenFactoryParts,
@@ -115,13 +102,16 @@ export class TokenFactory {
   ) {}
 
   createBase(ctx: GenerationContext, overrides: TokenOverrides = {}): TokenResult<ItemToken> {
-    const refusal = contextRefusal(ctx);
+    const refusal = sourceRefusal(ctx);
     if (refusal) return refusal;
+    const tokenType = baseTokenTypeOf(ctx.tokenType);
+    if (tokenType === null) {
+      return refuseToken('ALIEN_NOT_BASE', `${ctx.tokenType} items are unique only`);
+    }
     const id = itemTokenIdOf(ctx.sourceId, ctx.n);
     const stream = (step: TTokenStep) => deriveStream(ctx.seed, tokenStreamLabel(id, step));
     const base = pickBaseItem(this.parts.baseItems, ctx, stream('type'));
     if (!base.ok) return base;
-    const tokenType = baseTokenTypeOf(tokenTypeOfDimension(base.value.dimension)) as TBaseTokenType;
     const picked = this.parts.typePicker.pick(tokenType, base.value.type);
     if (!picked.ok) return picked;
     const type = picked.value;
@@ -166,7 +156,7 @@ export class TokenFactory {
       return refuseToken('UNKNOWN_UNIQUE', `unique "${uniqueKey}" is not in the UniqueRegistry`);
     }
     const definition = unique.uniques.get(uniqueKey);
-    if (ctx.dimension !== undefined && !availableInDimension(definition, ctx.dimension))
+    if (ctx.dimension !== undefined && !uniqueAvailableInDimension(definition, ctx.dimension))
       return refuseToken('UNIQUE_NOT_IN_DIMENSION', 'Unique is outside the source dimension pool');
     if (!unique.types.has(definition.type)) {
       return refuseToken('UNKNOWN_TYPE', `item type "${definition.type}" is not in the registry`);

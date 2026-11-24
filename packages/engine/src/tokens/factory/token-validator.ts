@@ -1,3 +1,4 @@
+import { availableInDimension } from '../../dimensions/availability';
 import type { BaseItemRegistry } from '../base-item-registry';
 import { currentItemTokenSchema, type ItemToken } from '../token-schema';
 import {
@@ -65,7 +66,7 @@ export class ZodTokenValidator implements ITokenValidator {
       if (!this.types.has(token.type)) return refuseToken('INVALID_TOKEN', 'Unknown token type');
       if (token.tier === 'base') {
         const base = this.bases.get(token.baseKey!);
-        if (!base || base.dimension !== token.dimension || base.type !== token.type)
+        if (!base || !availableInDimension(base, token.dimension) || base.type !== token.type)
           return refuseToken('INVALID_TOKEN', 'Invalid concrete base item identity');
         if (
           base.attributes &&

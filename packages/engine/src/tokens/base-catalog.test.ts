@@ -40,7 +40,7 @@ describe('catalogue validation and generation context', () => {
     const world = createServerWorld('cave', 'scope-map', 'scope-seed', 'hero');
     const chest = world.map.tiles.find((tile) => tile.hexobject?.hexobjectKey === 'chest')!;
     expect(() => rollChestLoot(chest, { seed: 'secret', sourceId: 'map' })).toThrow(
-      'TOKEN_ORIGIN_REQUIRED',
+      'DROP_CONTEXT_REQUIRED',
     );
     expect(() =>
       generateChestDrop({
@@ -48,7 +48,7 @@ describe('catalogue validation and generation context', () => {
         chestHex: chest.coordinates,
         tableId: 'seeker-1-chest-loot',
       }),
-    ).toThrow('TOKEN_ORIGIN_REQUIRED');
+    ).toThrow('DROP_CONTEXT_REQUIRED');
     expect(
       stockTokenSupply(emptyInventoryState('hero'), { seed: 'secret', sourceId: 'map' }),
     ).toBeUndefined();

@@ -1,51 +1,19 @@
-import { availableInDimension } from '../dimensions/availability';
+import { uniqueAvailableInDimension } from '../dimensions/availability';
 import type { EDimension } from '../dimensions/dimensions';
 import { TOKEN_UNIQUES } from '../content/token-uniques.content';
 import type { UniqueTokenContent } from './unique-schema';
 import { z } from 'zod';
 import type { RandomNumberGenerator } from '../utils/random';
-import { uniqueKeySchema, type UniqueKey } from './token-keys';
-
-const FRACTION = /^([1-9]\d*)\/([1-9]\d*)$/;
-
-export interface Fraction {
-  num: number;
-  den: number;
-}
-
-export function parseChance(chance: string): Fraction | null {
-  const match = FRACTION.exec(chance);
-  if (!match) return null;
-  const num = Number(match[1]);
-  const den = Number(match[2]);
-  return Number.isSafeInteger(num) && Number.isSafeInteger(den) && num <= den ? { num, den } : null;
-}
-
-export const uniqueChanceSchema = z
-  .string()
-  .refine((chance) => parseChance(chance) !== null, 'chance is a fraction "a/b" with 1 <= a <= b');
+import { BASIS_POINTS, basisPointsSchema, uniqueKeySchema, type UniqueKey } from './token-keys';
 
 export const uniqueDropRuleSchema = z.strictObject({
   uniqueKey: uniqueKeySchema,
-  chance: uniqueChanceSchema,
+  chanceBp: basisPointsSchema,
 });
 export type UniqueDropRule = z.infer<typeof uniqueDropRuleSchema>;
 
-function fractionOf(rule: UniqueDropRule): Fraction {
-  return parseChance(rule.chance) as Fraction;
-}
-
-function validTotal(rules: readonly UniqueDropRule[]): boolean {
-  let num = 0n;
-  let den = 1n;
-  for (const rule of rules) {
-    const fraction = parseChance(rule.chance);
-    if (!fraction) return false;
-    num = num * BigInt(fraction.den) + BigInt(fraction.num) * den;
-    den *= BigInt(fraction.den);
-    if (num > den) return false;
-  }
-  return true;
+function totalChance(rules: readonly UniqueDropRule[]): number {
+  return rules.reduce((sum, rule) => sum + rule.chanceBp, 0);
 }
 
 export const uniqueDropRulesSchema = z
@@ -54,8 +22,8 @@ export const uniqueDropRulesSchema = z
   .refine((rules) => new Set(rules.map((rule) => rule.uniqueKey)).size === rules.length, {
     message: 'a unique is listed twice',
   })
-  .refine((rules) => rules.length <= 1000 && validTotal(rules), {
-    message: 'the chances add up to more than 1',
+  .refine((rules) => totalChance(rules) <= BASIS_POINTS, {
+    message: 'the chances add up to more than 10000 basis points',
   });
 
 export function resolveUniqueDrop(
@@ -69,15 +37,13 @@ export function resolveUniqueDrop(
       (entry) => entry.key === rule.uniqueKey,
     );
     if (!definition) throw new Error(`UNKNOWN_UNIQUE_DROP: ${rule.uniqueKey}`);
-    return availableInDimension(definition, scope.dimension);
+    return uniqueAvailableInDimension(definition, scope.dimension);
   });
-  const roll = rng();
-  let floor = 0;
+  const roll = Math.floor(rng() * BASIS_POINTS);
+  let ceiling = 0;
   for (const rule of parsed) {
-    const { num, den } = fractionOf(rule);
-    const ceiling = floor + num / den;
+    ceiling += rule.chanceBp;
     if (roll < ceiling) return rule.uniqueKey;
-    floor = ceiling;
   }
   return null;
 }

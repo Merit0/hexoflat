@@ -35,7 +35,7 @@ describe('TokenFactory.createBase refusals', () => {
     [
       'a type not allowed in the tokenType',
       { type: 'hammer', tokenType: ETokenType.GLOOM },
-      'TYPE_NOT_IN_REALM',
+      'TYPE_NOT_IN_TOKEN_TYPE',
       sparkOnly,
     ],
     ['the alien tokenType', { tokenType: ETokenType.ALIEN }, 'ALIEN_NOT_BASE'],
@@ -58,7 +58,7 @@ describe('TokenFactory.createBase refusals', () => {
       [],
     );
     expect(refusalOf(contextFor(3, { tokenType: ETokenType.IDOL }), noIdol)).toBe(
-      'NO_TYPE_IN_REALM',
+      'NO_TYPE_IN_TOKEN_TYPE',
     );
   });
 

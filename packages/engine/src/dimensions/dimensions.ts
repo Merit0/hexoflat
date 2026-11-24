@@ -47,6 +47,8 @@ const tierConfigSchema = z.strictObject({
 
 const dimensionConfigSchema = z.strictObject({
   tokenType: tokenTypeSchema,
+  isLocation: z.boolean(),
+  uniqueDropsAnywhere: z.boolean(),
   tiers: z
     .strictObject({ base: tierConfigSchema.optional(), unique: tierConfigSchema.optional() })
     .refine((tiers) => TOKEN_TIERS.some((tier) => tiers[tier]), 'a dimension needs a tier')
@@ -114,12 +116,16 @@ interface TierShape {
 
 interface DimensionShape {
   readonly tokenType: TTokenType;
+  readonly isLocation: boolean;
+  readonly uniqueDropsAnywhere: boolean;
   readonly tiers: { readonly base?: TierShape; readonly unique?: TierShape };
 }
 
 const DIMENSION_CONFIG = {
   [EDimension.UNDERWORLD]: {
     tokenType: ETokenType.GLOOM,
+    isLocation: true,
+    uniqueDropsAnywhere: false,
     tiers: {
       base: {
         light: { id: 'blue', color: '#3E8BFF' },
@@ -136,6 +142,8 @@ const DIMENSION_CONFIG = {
   },
   [EDimension.EARTH]: {
     tokenType: ETokenType.IDOL,
+    isLocation: true,
+    uniqueDropsAnywhere: false,
     tiers: {
       base: {
         light: { id: 'gray', color: '#A9AEB4' },
@@ -152,6 +160,8 @@ const DIMENSION_CONFIG = {
   },
   [EDimension.HEAVEN]: {
     tokenType: ETokenType.SPARK,
+    isLocation: true,
+    uniqueDropsAnywhere: false,
     tiers: {
       base: {
         light: { id: 'yellow', color: '#F5D33B' },
@@ -168,6 +178,8 @@ const DIMENSION_CONFIG = {
   },
   [EDimension.NOWHERE]: {
     tokenType: ETokenType.ALIEN,
+    isLocation: false,
+    uniqueDropsAnywhere: true,
     tiers: {
       unique: { light: { id: 'red', color: '#FF3B3B' }, price: { kind: 'manual' }, sortRank: 0 },
     },
@@ -216,6 +228,18 @@ function deepFreeze<T>(value: T): T {
 
 /** Ownership is independent of board construction and current location. */
 export const DIMENSIONS: DimensionConfigs = deepFreeze(DIMENSION_CONFIG);
+
+export function dimensionIsLocation(dimension: EDimension): boolean {
+  return DIMENSIONS[dimension].isLocation;
+}
+
+export function uniquesDropAnywhere(dimension: EDimension): boolean {
+  return DIMENSIONS[dimension].uniqueDropsAnywhere;
+}
+
+export const locationDimensionSchema = dimensionSchema.refine(dimensionIsLocation, {
+  error: (issue) => `NOT_A_LOCATION_DIMENSION: ${String(issue.input)}`,
+});
 
 export interface DimensionTierView {
   dimension: EDimension;

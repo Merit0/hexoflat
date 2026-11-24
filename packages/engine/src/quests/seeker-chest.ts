@@ -36,7 +36,7 @@ export function generateChestDrop(input: {
   tableId: string | undefined;
   dropContext?: DropContext;
 }): LootDrop[] {
-  if (!input.dropContext) throw new Error('TOKEN_ORIGIN_REQUIRED: quest chest');
+  if (!input.dropContext) throw new Error('DROP_CONTEXT_REQUIRED: quest chest');
   const [drops] = rollContainerContents({
     kind: 'quest-chest',
     tables: [lootTableOf(input.tableId)],

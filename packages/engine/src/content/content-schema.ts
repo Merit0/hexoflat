@@ -1,5 +1,5 @@
 import { sharedWithSchema } from '../dimensions/availability';
-import { dimensionSchema } from '../dimensions/dimensions';
+import { dimensionSchema, locationDimensionSchema } from '../dimensions/dimensions';
 import { validateContentDimension } from './content-dimension';
 import { dropContextSchema } from '../tokens/drop-context';
 import { z } from 'zod';
@@ -195,6 +195,7 @@ const LootContentSchema = z.object({
 
 const CreatureContentSchema = z.object({
   ...baseContentFields,
+  dimension: locationDimensionSchema,
   groupType: z.literal(EHexobjectGroup.CREATURE),
   creature: creatureSchema,
 });

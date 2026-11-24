@@ -55,11 +55,11 @@ describe('separate concrete dimensional catalogues', () => {
     });
     expect(factory.createBase({ ...context, baseKey: 'missing' }).ok).toBe(false);
     expect(
-      itemTokenSchema.safeParse({ ...baseToken('heaven-sword'), baseKey: 'earth-sword' }).success,
+      itemTokenSchema.safeParse({ ...baseToken('heaven-sword'), baseKey: 'earth-shield' }).success,
     ).toBe(false);
   });
 
-  it('permits an explicitly shared base and preserves its owner in a foreign dimension', () => {
+  it('D4: an explicitly shared base takes the carrier dimension', () => {
     const shared = createTokenFactory({
       ...TOKEN_CONTENT,
       baseItems: TOKEN_CONTENT.baseItems.map((item) =>
@@ -70,8 +70,8 @@ describe('separate concrete dimensional catalogues', () => {
     if (!result.ok) throw new Error(result.refusal.code);
     expect(result.value).toMatchObject({
       baseKey: 'earth-sword',
-      dimension: 'earth',
-      tokenType: 'idol',
+      dimension: 'heaven',
+      tokenType: 'spark',
     });
     expect(itemTokenSchema.parse(result.value)).toEqual(result.value);
   });

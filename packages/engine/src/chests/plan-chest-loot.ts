@@ -23,7 +23,7 @@ export function rollChestLoot(
   const tableId =
     proto?.groupType === EHexobjectGroup.CONSTRUCTION ? proto.construction.lootTableId : undefined;
   if (!context) return [];
-  if (!context.dropContext) throw new Error('TOKEN_ORIGIN_REQUIRED: chest');
+  if (!context.dropContext) throw new Error('DROP_CONTEXT_REQUIRED: chest');
   const [drops] = rollContainerContents({
     kind: 'chest',
     tables: [lootTableOf(tableId)],

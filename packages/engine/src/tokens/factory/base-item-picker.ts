@@ -30,9 +30,9 @@ export function pickBaseItem(
     return refuseToken(
       context.type
         ? registry.hasType(context.type)
-          ? 'TYPE_NOT_IN_REALM'
+          ? 'TYPE_NOT_IN_TOKEN_TYPE'
           : 'UNKNOWN_TYPE'
-        : 'NO_TYPE_IN_REALM',
+        : 'NO_TYPE_IN_TOKEN_TYPE',
       `No base item for ${context.type ?? 'any type'} in ${dimension}`,
     );
   return { ok: true, value: entry };

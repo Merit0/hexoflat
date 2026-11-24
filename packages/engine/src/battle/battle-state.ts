@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { locationDimensionSchema } from '../dimensions/dimensions';
 import { containerStateSchema } from '../containers/container';
 import { refineTokenEntry } from '../tokens/token-entry';
 import { itemTokenSchema } from '../tokens/token-schema';
@@ -123,6 +124,7 @@ export type BattleReaction = z.infer<typeof reactionSchema>;
 export const graveSchema = z.object({
   hex: axialSchema,
   tables: z.array(z.string().min(1)),
+  dimensions: z.array(locationDimensionSchema).optional(),
   examined: z.boolean(),
   trophyBonuses: z.array(z.number().int().min(0).max(2)).optional(),
   container: containerStateSchema.optional(),

@@ -1,4 +1,4 @@
-import { availableInDimension } from '../dimensions/availability';
+import { uniqueAvailableInDimension } from '../dimensions/availability';
 import type { EDimension } from '../dimensions/dimensions';
 import {
   equipmentAttributeDefinitionSchema,
@@ -103,7 +103,7 @@ export class UniqueRegistry {
   }
 
   forDimension(dimension: EDimension): readonly UniqueTokenDefinition[] {
-    return this.all().filter((entry) => availableInDimension(entry, dimension));
+    return this.all().filter((entry) => uniqueAvailableInDimension(entry, dimension));
   }
 
   all(): readonly UniqueTokenDefinition[] {

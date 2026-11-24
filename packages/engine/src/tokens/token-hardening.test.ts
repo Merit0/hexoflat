@@ -61,10 +61,10 @@ describe('token audit regressions', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it.each(['bad', '1/' + '9'.repeat(310), '9007199254740992/9007199254740992'])(
-    'refuses malformed/unsafe fraction %s without throwing',
-    (chance) => {
-      expect(uniqueDropRulesSchema.safeParse([{ uniqueKey: 'a', chance }]).success).toBe(false);
+  it.each(['bad', '1/2', 1e308, Number.POSITIVE_INFINITY, 9007199254740992])(
+    'refuses malformed/unsafe chance %s without throwing',
+    (chanceBp) => {
+      expect(uniqueDropRulesSchema.safeParse([{ uniqueKey: 'a', chanceBp }]).success).toBe(false);
     },
   );
 
