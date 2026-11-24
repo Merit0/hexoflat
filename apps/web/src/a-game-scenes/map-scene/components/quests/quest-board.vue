@@ -16,20 +16,15 @@
       @close="closeKnowledgePanel()"
     >
       <template v-if="quote && !run && !result" #actions>
-        <quest-action-button
+        <board-refresh-button
           testid="quest-board-refresh"
-          :aria-label="t('quest.board.refresh.label', { n: quote.refreshPrice })"
+          tip-below
+          :label="t('quest.board.refresh.label', { n: quote.refreshPrice })"
+          :price="quote.refreshPrice"
+          :affordable="will.value >= quote.refreshPrice"
           :disabled="boardBusy || questBusy"
-          @click="refresh"
-        >
-          <span class="refresh-copy">
-            {{ t('quest.board.refresh.action') }}
-            <span class="refresh-price">
-              <img :src="WILL_ICON_URL" alt="" />
-              {{ quote.refreshPrice }}
-            </span>
-          </span>
-        </quest-action-button>
+          @refresh="refresh"
+        />
       </template>
     </board-header>
     <quest-run-panel v-if="run || result" />
@@ -127,12 +122,12 @@ import { useQuestRunActions } from '@/composables/use-quest-run-actions';
 import WillNumber from '@/components/gui/will-number.vue';
 import QuestRow from './quest-row.vue';
 import QuestRunPanel from './quest-run-panel.vue';
+import BoardRefreshButton from '@/components/gui/board/board-refresh-button.vue';
 import BoardHeader from '../board-header.vue';
 import BoardOrnament from '../board-ornament.vue';
 import QuestTakenBar from './quest-taken-bar.vue';
 import QuestDragGhost from './quest-drag-ghost.vue';
 import QuestDetailsPopover from './quest-details-popover.vue';
-import QuestActionButton from './quest-action-button.vue';
 
 const { t } = useI18n();
 const { active, available, rowById, will, coins, slots } = useQuestBoardView();
@@ -188,22 +183,6 @@ onBeforeUnmount(() => {
 }
 .header {
   margin: -16px -16px 0;
-}
-.refresh-copy {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  font-size: 1rem;
-}
-.refresh-price {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  color: #ffe98a;
-}
-.refresh-price img {
-  width: 14px;
-  height: 14px;
 }
 .banner {
   --diamond: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5 0L10 5L5 10L0 5Z' fill='%23b8864a'/></svg>");
