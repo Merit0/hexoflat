@@ -13,10 +13,18 @@
   padding: 0;
   border: 0;
   color: #f3e8d2;
-  font-family: inherit;
+  font-family: 'Alegreya Sans', system-ui, sans-serif;
   font-size: 1.7rem;
+  font-style: normal;
+  font-variant: normal;
   font-weight: 700;
   line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: center;
+  text-indent: 0;
+  text-transform: none;
+  text-shadow: none;
   cursor: pointer;
   background: var(--edge);
   clip-path: polygon(
