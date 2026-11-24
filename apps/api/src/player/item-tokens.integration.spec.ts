@@ -213,12 +213,12 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       mapTier: 4,
     });
     if (!made.ok) throw new Error(made.refusal.code);
-    const { instanceId: _instanceId, ...rest } = made.value;
     const authored = TOKEN_UNIQUES.find(
       (unique) => unique.key === 'lantern-eater',
     )!.authoredAttributes;
     const oldToken = {
-      ...rest,
+      ...made.value,
+      instanceId: undefined,
       attributes: authored.map(({ attribute, min }) => ({ key: attribute, value: min })),
     };
     const cell = { ...mintItem(inventory, 'sword', 1), token: oldToken };
@@ -240,7 +240,7 @@ describe.skipIf(!dbAvailable)('item tokens in stored heroes (real Postgres)', ()
       expect(value).toBeGreaterThanOrEqual(min);
       expect(value).toBeLessThanOrEqual(max);
     }
-    expect({ ...first, instanceId: undefined }).toEqual({ ...oldToken, instanceId: undefined });
+    expect({ ...first, instanceId: undefined, attributes: oldToken.attributes }).toEqual(oldToken);
     expect((await inventoryOf(userId, heroId)).bag[0]!.token).toEqual(first);
 
     const moved = await kit.service.execute(

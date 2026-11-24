@@ -40,11 +40,12 @@ describe('DA4b: unique tokens of old saves', () => {
     const old = oldUnique();
     const before = structuredClone(old);
     const loaded = itemTokenSchema.parse(old);
-    const { instanceId, ...rest } = loaded;
+    const { instanceId, attributes } = loaded;
     expect(instanceId).toMatch(/^[0-9a-f]{32}$/);
-    expect(rest).toEqual(before);
+    expect({ ...loaded, instanceId: undefined, attributes: before.attributes }).toEqual(before);
     expect(old).toEqual(before);
-    expect(loaded.attributes).toEqual([{ key: 'heart', value: 1 }]);
+    expect(attributes).toEqual([{ key: 'heart', value: expect.any(Number) as number }]);
+    expect([1, 2]).toContain(attributes[0].value);
   });
 
   it('roll every authored attribute inside its range from a seed derived from the token id', () => {
@@ -72,10 +73,9 @@ describe('DA4b: unique tokens of old saves', () => {
 
   it('keep an owned attribute that the template does not author', () => {
     const old = { ...oldUnique(), attributes: [{ key: 'trophy', value: 2 }] };
-    expect(itemTokenSchema.parse(old).attributes).toEqual([
-      { key: 'trophy', value: 2 },
-      { key: 'heart', value: 1 },
-    ]);
+    const { attributes } = itemTokenSchema.parse(old);
+    expect(attributes[0]).toEqual({ key: 'trophy', value: 2 });
+    expect(attributes.map((attribute) => attribute.key)).toEqual(['trophy', 'heart']);
   });
 
   it('keep their attributes when the template is gone', () => {

@@ -36,19 +36,19 @@ describe('unique token content', () => {
     expect(uniqueContentFailures()).toEqual([]);
   });
 
-  it('has a gloom sword with one authored half-heart', () => {
+  it('has a gloom sword with an authored heart of 1-2', () => {
     expect(GLOOM_SWORD).toMatchObject({
       type: 'sword',
       tokenType: ETokenType.GLOOM,
-      authoredAttributes: [{ attribute: 'heart', min: 1, max: 1 }],
+      authoredAttributes: [{ attribute: 'heart', min: 1, max: 2 }],
     });
     expect('rolled' in GLOOM_SWORD).toBe(false);
   });
 
-  it('has an alien sword with authored attributes', () => {
+  it('has an alien sword with an authored heart of 2-3', () => {
     expect(ALIEN_SWORD.type).toBe('sword');
     expect(ALIEN_SWORD.tokenType).toBe(ETokenType.ALIEN);
-    expect(ALIEN_SWORD.authoredAttributes.length).toBeGreaterThan(0);
+    expect(ALIEN_SWORD.authoredAttributes).toEqual([{ attribute: 'heart', min: 2, max: 3 }]);
     expect('rolled' in ALIEN_SWORD).toBe(false);
   });
 
