@@ -1145,7 +1145,6 @@
   },
   "dimensions": {
     "label": "Dimension: {name}",
-    "origin": "Origin: {name}",
     "heaven": "Heaven",
     "earth": "Earth",
     "underworld": "Underworld",

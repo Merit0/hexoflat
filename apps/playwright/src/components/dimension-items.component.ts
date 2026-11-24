@@ -15,10 +15,6 @@ export class DimensionItemsComponent extends BaseComponent {
     await expect(this.page.getByTestId('item-tooltip').getByText(label)).toBeVisible();
   }
 
-  async verifyLocationDimension(label: RegExp): Promise<void> {
-    await expect(this.page.getByTestId('hero-details-meta').getByText(label)).toBeVisible();
-  }
-
   async verifyBuybackToken(token: TestItemToken): Promise<void> {
     await expect
       .poll(() =>

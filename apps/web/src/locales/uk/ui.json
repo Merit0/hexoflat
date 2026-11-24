@@ -1150,7 +1150,6 @@
   },
   "dimensions": {
     "label": "Вимір: {name}",
-    "origin": "Походження: {name}",
     "heaven": "Небо",
     "earth": "Земля",
     "underworld": "Підземний світ",

@@ -7,15 +7,8 @@
     ></div>
     <div class="meta" data-testid="hero-details-meta">
       <div class="name" data-testid="topbar-hero-name">{{ view.name }}</div>
-      <div class="rank" data-testid="topbar-scout-chip">
-        {{ view.rank.roman }} · {{ view.rank.title }}
-      </div>
-      <div class="chips" data-testid="hero-details-chips">
-        <span class="chip" data-testid="topbar-map-chip">{{
-          view.locationTitle ?? labels.noLocation
-        }}</span>
-        <DimensionLabel v-if="view.locationDimension" :dimension="view.locationDimension" />
-        <DimensionLabel :dimension="view.origin" origin data-testid="hero-details-origin" />
+      <div class="location" data-testid="hero-details-location">
+        {{ view.locationTitle ?? labels.noLocation }}
       </div>
     </div>
     <template v-if="view.will">
@@ -32,7 +25,6 @@
 </template>
 
 <script setup lang="ts">
-import DimensionLabel from '@/components/gui/dimension-label.vue';
 import {
   HERO_PORTRAIT_URL,
   WILL_ICON_URL,
@@ -67,7 +59,7 @@ const labels = useHeroDetailsLabels();
 .meta {
   flex: 1;
   display: grid;
-  gap: 6px;
+  gap: 10px;
   min-width: 0;
 }
 .name {
@@ -77,22 +69,26 @@ const labels = useHeroDetailsLabels();
   font-weight: 700;
   line-height: 1;
 }
-.rank {
-  color: #cbbfa6;
-  font-size: 1rem;
-}
-.chips {
+.location {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 10px;
+  align-items: center;
+  padding-top: 10px;
+  border-image: linear-gradient(90deg, rgba(232, 215, 168, 0.45), transparent 85%) 1;
+  border-top: 1px solid;
+  color: #cbbfa6;
+  font-family: 'Alegreya SC', serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
 }
-.chip {
-  padding: 4px 16px;
-  border-radius: 999px;
-  background: #23292c;
-  border: 1px solid #3a474e;
-  color: #ede3d2;
-  font-size: 0.95rem;
+.location::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: #e8d7a8;
+  transform: rotate(45deg);
 }
 .divider {
   align-self: stretch;

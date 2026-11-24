@@ -26,8 +26,8 @@
 
 1. **Шапка** — темна панель з радіусом 16px:
    - гекс-портрет 104×118 (`/hero-asssets/human-hex.png` — той самий, що в центрі `hero-equip-board.vue`; винести шлях у спільну константу);
-   - ім'я (`heroStore.hero.name`), рядок рангу розвідника `III · <назва рангу>` (`getScoutProgress(heroSteps)`);
-   - чипи: локація (`heroLocation`, як зараз). Чип «Рівень N» — **сховати**, поки немає джерела рівня.
+   - ім'я (`heroStore.hero.name`), ~~рядок рангу розвідника~~ (прибрано 2026-11-24, Олег: ранг видно лише в картці «Розвідник»);
+   - локація: простий текст під іменем, з тонкою золотою лінією і ромбом, без бейджа (Олег, 2026-11-24). Чип «Рівень N» — **сховати**, поки немає джерела рівня.
 2. **Ряд життєвих показників** — 3 сланцеві клітинки (як клітинки інвентаря):
    - **Серця**: іконки сердець з половинками, `currentHealth / maxHealth` (половина серця = 0.5);
    - **Щити**: 6 гекс-гнізд, заповнені = кількість щитів. Джерела кількості щитів поза боєм зараз немає → поки показувати `0 / 6` і лишити TODO;
@@ -53,7 +53,7 @@
 ### Тести
 
 - Vitest на `use-hero-details` (серця з половинками, приховані плитки без даних, прогрес рангу).
-- Playwright: оновити `apps/playwright/src/components/hero-board-panel.component.ts`. Зберегти існуючі `data-testid` (`hero-tab-content`, `topbar-hero-name`, `topbar-hp-bar`, `topbar-hp-value`, `topbar-steps-chip`, `topbar-scout-chip`, `topbar-map-chip`, `hero-faith-bar`) або перейменувати разом з page object. Нові: `hero-vitals-will`, `hero-vitals-shields`, `hero-stat-<id>`, `hero-details-tab-state`, `hero-details-tab-path`. Скіл `hexoflat-e2e`.
+- Playwright: оновити `apps/playwright/src/components/hero-board-panel.component.ts`. Зберегти існуючі `data-testid` (`hero-tab-content`, `topbar-hero-name`, `topbar-hp-bar`, `topbar-hp-value`, `topbar-steps-chip`, `hero-details-location`, `hero-faith-bar`) або перейменувати разом з page object. Нові: `hero-vitals-will`, `hero-vitals-shields`, `hero-stat-<id>`, `hero-details-tab-state`, `hero-details-tab-path`. Скіл `hexoflat-e2e`.
 
 ## Фаза 2 — характеристики ростуть від прогресу у випробуваннях (ЧЕКАЄ РІШЕННЯ ОЛЕГА — не реалізовувати без підтвердження)
 

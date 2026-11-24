@@ -128,12 +128,8 @@ export class HeroBoardPanelComponent extends BaseComponent {
     return this.page.getByTestId('hero-path-steps');
   }
 
-  private get scoutChip(): Locator {
-    return this.page.getByTestId('topbar-scout-chip');
-  }
-
-  private get mapChip(): Locator {
-    return this.page.getByTestId('topbar-map-chip');
+  private get locationText(): Locator {
+    return this.page.getByTestId('hero-details-location');
   }
 
   async verifyIsVisible(): Promise<void> {
@@ -170,8 +166,7 @@ export class HeroBoardPanelComponent extends BaseComponent {
     await expect(this.healthBar).toBeVisible();
     await expect(this.shieldsVitals).toBeVisible();
     await expect(this.willVitals).toBeVisible();
-    await expect(this.scoutChip).toBeVisible();
-    await expect(this.mapChip).toBeVisible();
+    await expect(this.locationText).toBeVisible();
   }
 
   async clickDetailsTab(tab: HeroDetailsTab): Promise<void> {
@@ -301,8 +296,8 @@ export class HeroBoardPanelComponent extends BaseComponent {
     await expect(this.stepsText).not.toHaveText(previous);
   }
 
-  async verifyMapChipContains(text: string): Promise<void> {
-    await expect(this.mapChip).toContainText(text);
+  async verifyLocationContains(text: string): Promise<void> {
+    await expect(this.locationText).toContainText(text);
   }
 
   async getHeroHealth(): Promise<TestHeroHealth> {
